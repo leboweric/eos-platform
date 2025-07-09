@@ -135,7 +135,7 @@ const CardInputForm = ({ onSuccess }) => {
       </Button>
 
       <p className="text-sm text-gray-500 text-center">
-        Your card will be charged $99/month after the 30-day trial ends.
+        Your card will be charged $5 per user per month after the 30-day trial ends.
         Cancel anytime.
       </p>
     </form>
@@ -241,7 +241,7 @@ const BillingPage = () => {
               <CardHeader>
                 <CardTitle>Start Your Free Trial</CardTitle>
                 <CardDescription>
-                  Get 30 days free, then $99/month. Cancel anytime.
+                  Get 30 days free, then $5 per user per month. Cancel anytime.
                 </CardDescription>
               </CardHeader>
               <CardContent>
@@ -293,6 +293,23 @@ const BillingPage = () => {
                       )}
                     </>
                   )}
+
+                  <div className="flex items-center justify-between">
+                    <span className="font-medium">Number of Users</span>
+                    <span>{subscription.userCount || 1}</span>
+                  </div>
+                  
+                  <div className="flex items-center justify-between">
+                    <span className="font-medium">Price per User</span>
+                    <span>${subscription.pricePerUser || 5}/month</span>
+                  </div>
+                  
+                  <div className="flex items-center justify-between">
+                    <span className="font-medium">Monthly Total</span>
+                    <span className="text-lg font-semibold">
+                      ${subscription.monthlyTotal || (subscription.userCount || 1) * 5}/month
+                    </span>
+                  </div>
 
                   {subscription.currentPeriodEnd && subscription.status === 'active' && (
                     <div className="flex items-center justify-between">

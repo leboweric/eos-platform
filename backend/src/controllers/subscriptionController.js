@@ -16,10 +16,13 @@ const startTrial = async (req, res) => {
     }
 
     // Get organization details
-    const organization = await Organization.findById(organizationId);
+    const organization = await Organization.findById(organizationId).populate('users');
     if (!organization) {
       return res.status(404).json({ error: 'Organization not found' });
     }
+
+    // Count active users in organization
+    const userCount = organization.users ? organization.users.length : 1;
 
     // Create Stripe customer
     const customer = await stripe.customers.create({
@@ -41,7 +44,8 @@ const startTrial = async (req, res) => {
       stripePaymentMethodId: paymentMethodId,
       billingEmail,
       status: 'trialing',
-      planId: 'pro'
+      planId: 'pro',
+      userCount: userCount
     });
 
     await subscription.save();
@@ -55,7 +59,9 @@ const startTrial = async (req, res) => {
       subscription: {
         status: subscription.status,
         trialEndDate: subscription.trialEndDate,
-        trialDaysRemaining: subscription.trialDaysRemaining
+        trialDaysRemaining: subscription.trialDaysRemaining,
+        userCount: subscription.userCount,
+        monthlyTotal: subscription.monthlyTotal
       }
     });
   } catch (error) {
@@ -81,7 +87,10 @@ const getSubscriptionStatus = async (req, res) => {
       trialEndDate: subscription.trialEndDate,
       trialDaysRemaining: subscription.trialDaysRemaining,
       isTrialExpired: subscription.isTrialExpired,
-      currentPeriodEnd: subscription.currentPeriodEnd
+      currentPeriodEnd: subscription.currentPeriodEnd,
+      userCount: subscription.userCount,
+      pricePerUser: subscription.pricePerUser,
+      monthlyTotal: subscription.monthlyTotal
     });
   } catch (error) {
     console.error('Get subscription error:', error);
@@ -201,27 +210,38 @@ const processTrialEndings = async () => {
     const expiredTrials = await Subscription.find({
       status: 'trialing',
       trialEndDate: { $lte: new Date() }
-    });
+    }).populate('organization');
 
     for (const subscription of expiredTrials) {
       try {
-        // Create Stripe subscription
+        // Get organization to count users
+        const organization = await Organization.findById(subscription.organization).populate('users');
+        const userCount = organization.users ? organization.users.length : 1;
+
+        // Update user count before creating subscription
+        subscription.userCount = userCount;
+
+        // Create Stripe subscription with quantity for per-user pricing
         const stripeSubscription = await stripe.subscriptions.create({
           customer: subscription.stripeCustomerId,
-          items: [{ price: STRIPE_PRICES[subscription.planId] }],
+          items: [{ 
+            price: STRIPE_PRICES[subscription.planId],
+            quantity: userCount
+          }],
           metadata: {
             organizationId: subscription.organization.toString()
           }
         });
 
-        // Update subscription record
+        // Store the subscription item ID for future quantity updates
         subscription.stripeSubscriptionId = stripeSubscription.id;
+        subscription.stripeSubscriptionItemId = stripeSubscription.items.data[0].id;
         subscription.status = 'active';
         subscription.currentPeriodStart = new Date(stripeSubscription.current_period_start * 1000);
         subscription.currentPeriodEnd = new Date(stripeSubscription.current_period_end * 1000);
         await subscription.save();
 
-        console.log(`Converted trial to paid subscription for organization ${subscription.organization}`);
+        console.log(`Converted trial to paid subscription for organization ${subscription.organization} with ${userCount} users`);
       } catch (error) {
         console.error(`Failed to convert trial for organization ${subscription.organization}:`, error);
         
@@ -239,6 +259,47 @@ const processTrialEndings = async () => {
     }
   } catch (error) {
     console.error('Process trial endings error:', error);
+  }
+};
+
+// Update subscription user count (called when users join/leave organization)
+const updateSubscriptionUserCount = async (organizationId) => {
+  try {
+    const subscription = await Subscription.findOne({ 
+      organization: organizationId,
+      status: { $in: ['active', 'trialing'] }
+    });
+
+    if (!subscription) {
+      return;
+    }
+
+    // Get current user count
+    const organization = await Organization.findById(organizationId).populate('users');
+    const newUserCount = organization.users ? organization.users.length : 1;
+
+    // Update local record
+    subscription.userCount = newUserCount;
+    await subscription.save();
+
+    // If there's an active Stripe subscription, update the quantity
+    if (subscription.stripeSubscriptionId && subscription.stripeSubscriptionItemId && subscription.status === 'active') {
+      try {
+        await stripe.subscriptions.update(subscription.stripeSubscriptionId, {
+          items: [{
+            id: subscription.stripeSubscriptionItemId,
+            quantity: newUserCount
+          }],
+          proration_behavior: 'create_prorations' // Stripe will prorate the charges
+        });
+        
+        console.log(`Updated subscription quantity for organization ${organizationId} to ${newUserCount} users`);
+      } catch (error) {
+        console.error(`Failed to update Stripe subscription quantity:`, error);
+      }
+    }
+  } catch (error) {
+    console.error('Update subscription user count error:', error);
   }
 };
 
@@ -295,5 +356,6 @@ module.exports = {
   updatePaymentMethod,
   getBillingHistory,
   processTrialEndings,
-  sendTrialReminders
+  sendTrialReminders,
+  updateSubscriptionUserCount
 };

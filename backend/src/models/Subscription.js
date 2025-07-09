@@ -19,6 +19,10 @@ const subscriptionSchema = new mongoose.Schema({
     type: String,
     required: true
   },
+  stripeSubscriptionItemId: {
+    type: String,
+    sparse: true // The ID of the subscription item for quantity updates
+  },
   status: {
     type: String,
     enum: ['trialing', 'active', 'past_due', 'canceled', 'unpaid', 'incomplete'],
@@ -28,6 +32,16 @@ const subscriptionSchema = new mongoose.Schema({
     type: String,
     default: 'pro', // Can be expanded later for different tiers
     enum: ['pro', 'enterprise']
+  },
+  userCount: {
+    type: Number,
+    required: true,
+    default: 1,
+    min: 1
+  },
+  pricePerUser: {
+    type: Number,
+    default: 5 // $5 per user
   },
   trialStartDate: {
     type: Date,
@@ -87,6 +101,11 @@ subscriptionSchema.virtual('trialDaysRemaining').get(function() {
 subscriptionSchema.virtual('isTrialExpired').get(function() {
   if (this.status !== 'trialing') return false;
   return new Date() > new Date(this.trialEndDate);
+});
+
+// Calculate total monthly cost
+subscriptionSchema.virtual('monthlyTotal').get(function() {
+  return this.userCount * this.pricePerUser;
 });
 
 // Method to check which reminder should be sent

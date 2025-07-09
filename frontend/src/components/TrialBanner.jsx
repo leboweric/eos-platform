@@ -50,6 +50,11 @@ const TrialBanner = () => {
             <Link to="/billing" className="font-medium underline ml-1">
               Add payment method
             </Link> to continue using EOS Platform.
+            {subscription.userCount && subscription.monthlyTotal && (
+              <span className="ml-1">
+                (${subscription.monthlyTotal}/month for {subscription.userCount} users)
+              </span>
+            )}
           </>
         ) : (
           <>
@@ -57,6 +62,11 @@ const TrialBanner = () => {
             <Link to="/billing" className="font-medium underline ml-1">
               Add payment method
             </Link> to ensure uninterrupted service.
+            {subscription.userCount && subscription.monthlyTotal && (
+              <span className="ml-1">
+                (${subscription.monthlyTotal}/month for {subscription.userCount} users)
+              </span>
+            )}
           </>
         )}
       </AlertDescription>

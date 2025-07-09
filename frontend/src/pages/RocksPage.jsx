@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -7,6 +7,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { 
   CheckSquare, 
   Plus, 
@@ -18,12 +19,26 @@ import {
   CheckCircle,
   Clock,
   Edit,
-  Trash2
+  Trash2,
+  Building2,
+  Filter
 } from 'lucide-react';
 
 const RocksPage = () => {
   const [selectedQuarter, setSelectedQuarter] = useState('Q1 2025');
   const [showAddRock, setShowAddRock] = useState(false);
+  const [selectedDepartment, setSelectedDepartment] = useState('all');
+  const [departments, setDepartments] = useState([]);
+
+  // Mock fetch departments
+  useEffect(() => {
+    const mockDepartments = [
+      { id: '1', name: 'Sales', description: 'Revenue generation' },
+      { id: '2', name: 'Marketing', description: 'Brand and lead generation' },
+      { id: '3', name: 'Engineering', description: 'Product development' }
+    ];
+    setDepartments(mockDepartments);
+  }, []);
 
   // Mock data - in a real app, this would come from API
   const [rocks, setRocks] = useState([
@@ -37,6 +52,8 @@ const RocksPage = () => {
         email: 'john@company.com',
         avatar: null
       },
+      departmentId: '3', // Engineering
+      departmentName: 'Engineering',
       dueDate: '2025-03-31',
       status: 'on-track',
       progress: 65,
@@ -67,6 +84,8 @@ const RocksPage = () => {
         email: 'sarah@company.com',
         avatar: null
       },
+      departmentId: '3', // Engineering
+      departmentName: 'Engineering',
       dueDate: '2025-03-31',
       status: 'at-risk',
       progress: 40,
@@ -97,6 +116,8 @@ const RocksPage = () => {
         email: 'mike@company.com',
         avatar: null
       },
+      departmentId: '1', // Sales
+      departmentName: 'Sales',
       dueDate: '2025-03-31',
       status: 'complete',
       progress: 100,
@@ -186,38 +207,64 @@ const RocksPage = () => {
 
   const quarters = ['Q4 2024', 'Q1 2025', 'Q2 2025', 'Q3 2025', 'Q4 2025'];
 
+  // Filter rocks by department
+  const filteredRocks = selectedDepartment === 'all' 
+    ? rocks 
+    : rocks.filter(r => r.departmentId === selectedDepartment || r.isCompanyRock);
+
   const stats = {
-    total: rocks.length,
-    completed: rocks.filter(r => r.status === 'complete').length,
-    onTrack: rocks.filter(r => r.status === 'on-track').length,
-    atRisk: rocks.filter(r => r.status === 'at-risk').length,
-    offTrack: rocks.filter(r => r.status === 'off-track').length
+    total: filteredRocks.length,
+    completed: filteredRocks.filter(r => r.status === 'complete').length,
+    onTrack: filteredRocks.filter(r => r.status === 'on-track').length,
+    atRisk: filteredRocks.filter(r => r.status === 'at-risk').length,
+    offTrack: filteredRocks.filter(r => r.status === 'off-track').length
   };
 
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-3xl font-bold">Rocks</h1>
-          <p className="text-gray-600 mt-2">
-            Quarterly priorities and goals for your organization
-          </p>
+      <div className="space-y-4">
+        <div className="flex items-center justify-between">
+          <div>
+            <h1 className="text-3xl font-bold">Rocks</h1>
+            <p className="text-gray-600 mt-2">
+              Quarterly priorities and goals for your organization
+            </p>
+          </div>
+          <div className="flex space-x-2">
+            <select 
+              value={selectedQuarter}
+              onChange={(e) => setSelectedQuarter(e.target.value)}
+              className="px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary"
+            >
+              {quarters.map(quarter => (
+                <option key={quarter} value={quarter}>{quarter}</option>
+              ))}
+            </select>
+            <Button onClick={() => setShowAddRock(true)}>
+              <Plus className="mr-2 h-4 w-4" />
+              Add Rock
+            </Button>
+          </div>
         </div>
-        <div className="flex space-x-2">
-          <select 
-            value={selectedQuarter}
-            onChange={(e) => setSelectedQuarter(e.target.value)}
-            className="px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary"
-          >
-            {quarters.map(quarter => (
-              <option key={quarter} value={quarter}>{quarter}</option>
-            ))}
-          </select>
-          <Button onClick={() => setShowAddRock(true)}>
-            <Plus className="mr-2 h-4 w-4" />
-            Add Rock
-          </Button>
+
+        {/* Filters */}
+        <div className="flex items-center space-x-4">
+          <Filter className="h-5 w-5 text-gray-500" />
+          <Label htmlFor="department">Department:</Label>
+          <Select value={selectedDepartment} onValueChange={setSelectedDepartment}>
+            <SelectTrigger className="w-[200px]">
+              <SelectValue placeholder="All departments" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All departments</SelectItem>
+              {departments.map(dept => (
+                <SelectItem key={dept.id} value={dept.id}>
+                  {dept.name}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
         </div>
       </div>
 
@@ -286,7 +333,7 @@ const RocksPage = () => {
 
       {/* Rocks List */}
       <div className="space-y-4">
-        {rocks.map((rock) => (
+        {filteredRocks.map((rock) => (
           <Card key={rock.id} className="hover:shadow-md transition-shadow">
             <CardHeader>
               <div className="flex items-start justify-between">
@@ -319,7 +366,7 @@ const RocksPage = () => {
             <CardContent>
               <div className="space-y-4">
                 {/* Progress and Details */}
-                <div className="grid md:grid-cols-3 gap-4">
+                <div className="grid md:grid-cols-4 gap-4">
                   <div>
                     <Label className="text-sm text-gray-600">Owner</Label>
                     <div className="flex items-center space-x-2 mt-1">
@@ -330,6 +377,13 @@ const RocksPage = () => {
                         </AvatarFallback>
                       </Avatar>
                       <span className="text-sm">{rock.owner.name}</span>
+                    </div>
+                  </div>
+                  <div>
+                    <Label className="text-sm text-gray-600">Department</Label>
+                    <div className="flex items-center space-x-2 mt-1">
+                      <Building2 className="h-4 w-4 text-gray-400" />
+                      <span className="text-sm">{rock.departmentName || 'Company-wide'}</span>
                     </div>
                   </div>
                   <div>

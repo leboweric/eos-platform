@@ -5,7 +5,9 @@ import {
   getVTO,
   upsertCoreValue,
   deleteCoreValue,
-  updateCoreFocus
+  updateCoreFocus,
+  updateTenYearTarget,
+  updateMarketingStrategy
 } from '../controllers/vtoController.js';
 
 const router = express.Router({ mergeParams: true });
@@ -32,9 +34,20 @@ router.put('/core-focus', [
   body('niche').notEmpty().withMessage('Niche is required')
 ], updateCoreFocus);
 
-// TODO: Add endpoints for other VTO components:
-// - Ten Year Target
-// - Marketing Strategy
+// Ten Year Target endpoint
+router.put('/ten-year-target', [
+  body('targetDescription').notEmpty().withMessage('Target description is required'),
+  body('targetYear').isInt().withMessage('Target year must be a valid year')
+], updateTenYearTarget);
+
+// Marketing Strategy endpoint
+router.put('/marketing-strategy', [
+  body('targetMarket').notEmpty().withMessage('Target market is required'),
+  body('threeUniques').notEmpty().withMessage('Three uniques are required'),
+  body('provenProcess').notEmpty().withMessage('Proven process is required')
+], updateMarketingStrategy);
+
+// TODO: Add endpoints for:
 // - Three Year Picture
 // - One Year Plan
 
