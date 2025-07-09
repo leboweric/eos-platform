@@ -47,6 +47,7 @@ const Layout = ({ children }) => {
     { name: 'To-Dos', href: '/todos', icon: ClipboardList },
     { name: 'Issues', href: '/issues', icon: MessageSquare },
     { name: 'Departments', href: '/departments', icon: Building2 },
+    { name: 'Team', href: '/users', icon: Users },
     { name: 'Billing', href: '/billing', icon: CreditCard },
   ];
 

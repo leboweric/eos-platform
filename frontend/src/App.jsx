@@ -17,6 +17,8 @@ import LandingPage from './pages/LandingPage';
 import DepartmentsPage from './pages/DepartmentsPage';
 import AccountabilityChart from './pages/AccountabilityChart';
 import BillingPage from './pages/BillingPage';
+import UsersPage from './pages/UsersPage';
+import AcceptInvitationPage from './pages/AcceptInvitationPage';
 
 import './App.css';
 
@@ -43,6 +45,7 @@ function App() {
           <Route path="/" element={!user ? <LandingPage /> : <Navigate to="/dashboard" />} />
           <Route path="/login" element={!user ? <LoginPage /> : <Navigate to="/dashboard" />} />
           <Route path="/register" element={!user ? <RegisterPage /> : <Navigate to="/dashboard" />} />
+          <Route path="/accept-invitation" element={<AcceptInvitationPage />} />
           
           {/* Protected routes */}
           <Route path="/dashboard" element={user ? <Layout><Dashboard /></Layout> : <Navigate to="/login" />} />
@@ -55,6 +58,7 @@ function App() {
           <Route path="/departments" element={user ? <Layout><DepartmentsPage /></Layout> : <Navigate to="/login" />} />
           <Route path="/accountability" element={user ? <Layout><AccountabilityChart /></Layout> : <Navigate to="/login" />} />
           <Route path="/billing" element={user ? <Layout><BillingPage /></Layout> : <Navigate to="/login" />} />
+          <Route path="/users" element={user ? <Layout><UsersPage /></Layout> : <Navigate to="/login" />} />
           
           {/* Catch all route */}
           <Route path="*" element={<Navigate to={user ? "/dashboard" : "/"} />} />
