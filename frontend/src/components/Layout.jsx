@@ -3,6 +3,7 @@ import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useAuthStore } from '../stores/authStore';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import TrialBanner from './TrialBanner';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -26,7 +27,8 @@ import {
   Settings,
   User,
   Building2,
-  Network
+  Network,
+  CreditCard
 } from 'lucide-react';
 
 const Layout = ({ children }) => {
@@ -45,6 +47,7 @@ const Layout = ({ children }) => {
     { name: 'To-Dos', href: '/todos', icon: ClipboardList },
     { name: 'Issues', href: '/issues', icon: MessageSquare },
     { name: 'Departments', href: '/departments', icon: Building2 },
+    { name: 'Billing', href: '/billing', icon: CreditCard },
   ];
 
   const handleLogout = async () => {
@@ -180,6 +183,7 @@ const Layout = ({ children }) => {
 
         {/* Page content */}
         <main className="flex-1 p-6 overflow-auto">
+          <TrialBanner />
           {children}
         </main>
       </div>

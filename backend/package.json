@@ -10,7 +10,12 @@
     "test": "echo \"Error: no test specified\" && exit 1",
     "migrate": "node src/migrate.js"
   },
-  "keywords": ["eos", "management", "api", "express"],
+  "keywords": [
+    "eos",
+    "management",
+    "api",
+    "express"
+  ],
   "author": "",
   "license": "ISC",
   "dependencies": {
@@ -23,11 +28,12 @@
     "helmet": "^8.0.0",
     "jsonwebtoken": "^9.0.2",
     "morgan": "^1.10.0",
+    "node-cron": "^4.2.0",
     "pg": "^8.13.1",
+    "stripe": "^18.3.0",
     "uuid": "^11.0.3"
   },
   "devDependencies": {
     "nodemon": "^3.1.9"
   }
 }
-

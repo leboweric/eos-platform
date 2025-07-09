@@ -14,6 +14,9 @@ import MeetingsPage from './pages/MeetingsPage';
 import TodosPage from './pages/TodosPage';
 import IssuesPage from './pages/IssuesPage';
 import LandingPage from './pages/LandingPage';
+import DepartmentsPage from './pages/DepartmentsPage';
+import AccountabilityChart from './pages/AccountabilityChart';
+import BillingPage from './pages/BillingPage';
 
 import './App.css';
 
@@ -49,6 +52,9 @@ function App() {
           <Route path="/meetings" element={user ? <Layout><MeetingsPage /></Layout> : <Navigate to="/login" />} />
           <Route path="/todos" element={user ? <Layout><TodosPage /></Layout> : <Navigate to="/login" />} />
           <Route path="/issues" element={user ? <Layout><IssuesPage /></Layout> : <Navigate to="/login" />} />
+          <Route path="/departments" element={user ? <Layout><DepartmentsPage /></Layout> : <Navigate to="/login" />} />
+          <Route path="/accountability" element={user ? <Layout><AccountabilityChart /></Layout> : <Navigate to="/login" />} />
+          <Route path="/billing" element={user ? <Layout><BillingPage /></Layout> : <Navigate to="/login" />} />
           
           {/* Catch all route */}
           <Route path="*" element={<Navigate to={user ? "/dashboard" : "/"} />} />
