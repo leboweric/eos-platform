@@ -35,6 +35,8 @@ import TenYearTargetDialog from '@/components/vto/TenYearTargetDialog';
 import MarketingStrategyDialog from '@/components/vto/MarketingStrategyDialog';
 import ThreeYearPictureDialog from '@/components/vto/ThreeYearPictureDialog';
 import OneYearPlanDialog from '@/components/vto/OneYearPlanDialog';
+import RockDialog from '@/components/vto/RockDialog';
+import IssueDialog from '@/components/vto/IssueDialog';
 
 const VTOPage = () => {
   const [activeTab, setActiveTab] = useState('vision');
@@ -44,6 +46,8 @@ const VTOPage = () => {
   const [marketingStrategyDialog, setMarketingStrategyDialog] = useState(false);
   const [threeYearPictureDialog, setThreeYearPictureDialog] = useState(false);
   const [oneYearPlanDialog, setOneYearPlanDialog] = useState(false);
+  const [rockDialog, setRockDialog] = useState({ open: false, rock: null });
+  const [issueDialog, setIssueDialog] = useState({ open: false, issue: null });
   const [deleteDialog, setDeleteDialog] = useState({ open: false, type: null, id: null });
   const [selectedDepartment, setSelectedDepartment] = useState('company');
   const [departments, setDepartments] = useState([]);
@@ -119,7 +123,9 @@ const VTOPage = () => {
         { id: 2, name: 'Customer Churn Rate', target: 5 },
         { id: 3, name: 'Net Promoter Score', target: 70 }
       ]
-    }
+    },
+    quarterlyRocks: [],
+    issues: []
   });
 
   // Core Value handlers
@@ -217,6 +223,83 @@ const VTOPage = () => {
     setVtoData(prev => ({
       ...prev,
       oneYearPlan: data
+    }));
+  };
+
+  // Rock handlers
+  const handleAddRock = () => {
+    setRockDialog({ open: true, rock: null });
+  };
+
+  const handleEditRock = (rock) => {
+    setRockDialog({ open: true, rock });
+  };
+
+  const handleSaveRock = (rock) => {
+    if (rock.id) {
+      // Update existing rock
+      setVtoData(prev => ({
+        ...prev,
+        quarterlyRocks: prev.quarterlyRocks.map(r =>
+          r.id === rock.id ? rock : r
+        )
+      }));
+    } else {
+      // Add new rock
+      const newRock = {
+        ...rock,
+        id: Date.now(),
+        progress: 0
+      };
+      setVtoData(prev => ({
+        ...prev,
+        quarterlyRocks: [...prev.quarterlyRocks, newRock]
+      }));
+    }
+  };
+
+  const handleDeleteRock = (id) => {
+    setVtoData(prev => ({
+      ...prev,
+      quarterlyRocks: prev.quarterlyRocks.filter(r => r.id !== id)
+    }));
+  };
+
+  // Issue handlers
+  const handleAddIssue = () => {
+    setIssueDialog({ open: true, issue: null });
+  };
+
+  const handleEditIssue = (issue) => {
+    setIssueDialog({ open: true, issue });
+  };
+
+  const handleSaveIssue = (issue) => {
+    if (issue.id) {
+      // Update existing issue
+      setVtoData(prev => ({
+        ...prev,
+        issues: prev.issues.map(i =>
+          i.id === issue.id ? issue : i
+        )
+      }));
+    } else {
+      // Add new issue
+      const newIssue = {
+        ...issue,
+        id: Date.now()
+      };
+      setVtoData(prev => ({
+        ...prev,
+        issues: [...prev.issues, newIssue]
+      }));
+    }
+  };
+
+  const handleDeleteIssue = (id) => {
+    setVtoData(prev => ({
+      ...prev,
+      issues: prev.issues.filter(i => i.id !== id)
     }));
   };
 
@@ -585,11 +668,53 @@ const VTOPage = () => {
               </div>
             </CardHeader>
             <CardContent>
-              <div className="text-center py-8 text-gray-500">
-                <Target className="mx-auto h-12 w-12 mb-4 opacity-50" />
-                <p>Rocks will be displayed here when created</p>
-                <Button className="mt-4">Create First Rock</Button>
-              </div>
+              {vtoData.quarterlyRocks.length === 0 ? (
+                <div className="text-center py-8 text-gray-500">
+                  <Target className="mx-auto h-12 w-12 mb-4 opacity-50" />
+                  <p>Rocks will be displayed here when created</p>
+                  <Button className="mt-4" onClick={handleAddRock}>Create Rock</Button>
+                </div>
+              ) : (
+                <div className="space-y-4">
+                  <Button onClick={handleAddRock} size="sm" variant="outline" className="w-full">
+                    <Plus className="mr-2 h-4 w-4" />
+                    Add Rock
+                  </Button>
+                  {vtoData.quarterlyRocks.map((rock) => (
+                    <div key={rock.id} className="border rounded-lg p-4 hover:bg-gray-50 cursor-pointer" onClick={() => handleEditRock(rock)}>
+                      <div className="flex items-start justify-between">
+                        <div className="flex-1">
+                          <div className="flex items-center gap-2 mb-1">
+                            <h4 className="font-semibold">{rock.title}</h4>
+                            {rock.type === 'company' && (
+                              <Badge variant="secondary">Company</Badge>
+                            )}
+                          </div>
+                          <p className="text-sm text-gray-600">{rock.description}</p>
+                          <div className="flex items-center gap-4 mt-2 text-sm text-gray-500">
+                            <span>Owner: {rock.owner}</span>
+                            <span>Due: {new Date(rock.dueDate).toLocaleDateString()}</span>
+                            <Badge variant={
+                              rock.status === 'complete' ? 'default' :
+                              rock.status === 'on-track' ? 'secondary' :
+                              rock.status === 'at-risk' ? 'outline' :
+                              'destructive'
+                            }>
+                              {rock.status.replace('-', ' ')}
+                            </Badge>
+                          </div>
+                        </div>
+                        <Button variant="ghost" size="sm" onClick={(e) => {
+                          e.stopPropagation();
+                          handleDeleteRock(rock.id);
+                        }}>
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
             </CardContent>
           </Card>
 
@@ -609,10 +734,50 @@ const VTOPage = () => {
               </div>
             </CardHeader>
             <CardContent>
-              <div className="text-center py-8 text-gray-500">
-                <p>Issues will be displayed here when identified</p>
-                <Button className="mt-4">Add First Issue</Button>
-              </div>
+              {vtoData.issues.length === 0 ? (
+                <div className="text-center py-8 text-gray-500">
+                  <p>Issues will be displayed here when identified</p>
+                  <Button className="mt-4" onClick={handleAddIssue}>Add First Issue</Button>
+                </div>
+              ) : (
+                <div className="space-y-4">
+                  <Button onClick={handleAddIssue} size="sm" variant="outline" className="w-full">
+                    <Plus className="mr-2 h-4 w-4" />
+                    Add Issue
+                  </Button>
+                  {vtoData.issues.map((issue) => (
+                    <div key={issue.id} className="border rounded-lg p-4 hover:bg-gray-50 cursor-pointer" onClick={() => handleEditIssue(issue)}>
+                      <div className="flex items-start justify-between">
+                        <div className="flex-1">
+                          <div className="flex items-center gap-2 mb-1">
+                            <h4 className="font-semibold">{issue.title}</h4>
+                            <Badge variant={issue.term === 'short' ? 'default' : 'secondary'}>
+                              {issue.term === 'short' ? 'Short Term' : 'Long Term'}
+                            </Badge>
+                            <Badge variant={
+                              issue.priority === 'high' ? 'destructive' :
+                              issue.priority === 'medium' ? 'outline' :
+                              'secondary'
+                            }>
+                              {issue.priority}
+                            </Badge>
+                          </div>
+                          <p className="text-sm text-gray-600">{issue.description}</p>
+                          {issue.owner && (
+                            <p className="text-sm text-gray-500 mt-2">Owner: {issue.owner}</p>
+                          )}
+                        </div>
+                        <Button variant="ghost" size="sm" onClick={(e) => {
+                          e.stopPropagation();
+                          handleDeleteIssue(issue.id);
+                        }}>
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
             </CardContent>
           </Card>
         </TabsContent>
@@ -664,6 +829,22 @@ const VTOPage = () => {
         onOpenChange={setOneYearPlanDialog}
         data={vtoData.oneYearPlan}
         onSave={handleSaveOneYearPlan}
+      />
+
+      {/* Rock Dialog */}
+      <RockDialog
+        open={rockDialog.open}
+        onOpenChange={(open) => setRockDialog({ open, rock: null })}
+        rock={rockDialog.rock}
+        onSave={handleSaveRock}
+      />
+
+      {/* Issue Dialog */}
+      <IssueDialog
+        open={issueDialog.open}
+        onOpenChange={(open) => setIssueDialog({ open, issue: null })}
+        issue={issueDialog.issue}
+        onSave={handleSaveIssue}
       />
 
       {/* Delete Confirmation Dialog */}
