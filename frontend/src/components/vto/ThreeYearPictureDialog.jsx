@@ -12,8 +12,8 @@ const ThreeYearPictureDialog = ({ open, onOpenChange, data, onSave }) => {
     revenue: '',
     profit: '',
     profitPercentage: '',
-    description: '',
-    measurables: []
+    measurables: [],
+    whatDoesItLookLike: []
   });
 
   useEffect(() => {
@@ -23,8 +23,8 @@ const ThreeYearPictureDialog = ({ open, onOpenChange, data, onSave }) => {
         revenue: data.revenue || '',
         profit: data.profit || '',
         profitPercentage: data.profitPercentage || '',
-        description: data.description || '',
-        measurables: data.measurables || []
+        measurables: data.measurables || [],
+        whatDoesItLookLike: data.whatDoesItLookLike || []
       });
     }
   }, [data]);
@@ -62,6 +62,32 @@ const ThreeYearPictureDialog = ({ open, onOpenChange, data, onSave }) => {
       ...formData,
       measurables: formData.measurables.map(m =>
         m.id === id ? { ...m, [field]: value } : m
+      )
+    });
+  };
+
+  const handleAddWhatDoesItLookLike = () => {
+    setFormData({
+      ...formData,
+      whatDoesItLookLike: [
+        ...formData.whatDoesItLookLike,
+        { id: Date.now(), description: '' }
+      ]
+    });
+  };
+
+  const handleRemoveWhatDoesItLookLike = (id) => {
+    setFormData({
+      ...formData,
+      whatDoesItLookLike: formData.whatDoesItLookLike.filter(item => item.id !== id)
+    });
+  };
+
+  const handleWhatDoesItLookLikeChange = (id, value) => {
+    setFormData({
+      ...formData,
+      whatDoesItLookLike: formData.whatDoesItLookLike.map(item =>
+        item.id === id ? { ...item, description: value } : item
       )
     });
   };
@@ -126,17 +152,6 @@ const ThreeYearPictureDialog = ({ open, onOpenChange, data, onSave }) => {
               </div>
             </div>
             <div className="space-y-2">
-              <Label htmlFor="description">Vision Description</Label>
-              <Textarea
-                id="description"
-                value={formData.description}
-                onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-                placeholder="Describe what your organization will look like in 3 years..."
-                rows={3}
-                required
-              />
-            </div>
-            <div className="space-y-2">
               <div className="flex items-center justify-between">
                 <Label>Measurables</Label>
                 <Button
@@ -170,6 +185,40 @@ const ThreeYearPictureDialog = ({ open, onOpenChange, data, onSave }) => {
                       variant="ghost"
                       size="sm"
                       onClick={() => handleRemoveMeasurable(measurable.id)}
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </Button>
+                  </div>
+                ))}
+              </div>
+            </div>
+            <div className="space-y-2">
+              <div className="flex items-center justify-between">
+                <Label>What Does it Look Like</Label>
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={handleAddWhatDoesItLookLike}
+                >
+                  <Plus className="h-4 w-4 mr-1" />
+                  Add Description
+                </Button>
+              </div>
+              <div className="space-y-2">
+                {formData.whatDoesItLookLike.map((item) => (
+                  <div key={item.id} className="flex gap-2 items-center">
+                    <Input
+                      value={item.description}
+                      onChange={(e) => handleWhatDoesItLookLikeChange(item.id, e.target.value)}
+                      placeholder="e.g., 100 Right People Right Seats"
+                      className="flex-1"
+                    />
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => handleRemoveWhatDoesItLookLike(item.id)}
                     >
                       <Trash2 className="h-4 w-4" />
                     </Button>

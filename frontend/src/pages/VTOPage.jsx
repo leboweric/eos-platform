@@ -93,11 +93,15 @@ const VTOPage = () => {
       revenue: 10000000,
       profit: 2000000,
       profitPercentage: 20,
-      description: 'Market leader in EOS digital tools with global presence',
       measurables: [
         { id: 1, name: 'Active Organizations', target: 1000 },
         { id: 2, name: 'Monthly Active Users', target: 25000 },
         { id: 3, name: 'Customer Satisfaction', target: 95 }
+      ],
+      whatDoesItLookLike: [
+        { id: 1, description: '100 Right People Right Seats' },
+        { id: 2, description: 'A remote office in Duluth' },
+        { id: 3, description: 'Market leader in EOS digital tools with global presence' }
       ]
     },
     oneYearPlan: {
@@ -459,10 +463,6 @@ const VTOPage = () => {
                   </div>
                 </div>
                 <div>
-                  <Label className="text-sm font-medium text-gray-700">Vision Description</Label>
-                  <p className="mt-1 text-gray-900">{vtoData.threeYearPicture.description}</p>
-                </div>
-                <div>
                   <Label className="text-sm font-medium text-gray-700">Measurables</Label>
                   <div className="mt-2 space-y-2">
                     {vtoData.threeYearPicture.measurables.map((measurable) => (
@@ -471,6 +471,17 @@ const VTOPage = () => {
                         <Badge variant="outline">{measurable.target.toLocaleString()}</Badge>
                       </div>
                     ))}
+                  </div>
+                </div>
+                <div>
+                  <Label className="text-sm font-medium text-gray-700">What Does it Look Like</Label>
+                  <div className="mt-2 space-y-2">
+                    {vtoData.threeYearPicture.whatDoesItLookLike?.map((item) => (
+                      <div key={item.id} className="flex items-start p-2 bg-gray-50 rounded">
+                        <span className="text-gray-600 mr-2">•</span>
+                        <span>{item.description}</span>
+                      </div>
+                    )) || <p className="text-gray-500 italic">No descriptions added yet</p>}
                   </div>
                 </div>
               </div>
