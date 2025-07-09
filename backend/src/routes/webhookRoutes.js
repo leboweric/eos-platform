@@ -27,6 +27,7 @@ router.post('/stripe', express.raw({ type: 'application/json' }), async (req, re
         await handlePaymentFailed(event.data.object);
         break;
       
+      case 'customer.subscription.created':
       case 'customer.subscription.updated':
         await handleSubscriptionUpdated(event.data.object);
         break;
@@ -86,6 +87,12 @@ async function handleSubscriptionUpdated(stripeSubscription) {
   subscription.status = stripeSubscription.status;
   subscription.currentPeriodStart = new Date(stripeSubscription.current_period_start * 1000);
   subscription.currentPeriodEnd = new Date(stripeSubscription.current_period_end * 1000);
+  
+  // Update user count if quantity changed
+  if (stripeSubscription.items && stripeSubscription.items.data[0]) {
+    subscription.userCount = stripeSubscription.items.data[0].quantity;
+    subscription.stripeSubscriptionItemId = stripeSubscription.items.data[0].id;
+  }
   
   if (stripeSubscription.cancel_at_period_end) {
     subscription.canceledAt = new Date();
