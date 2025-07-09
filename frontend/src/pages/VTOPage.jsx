@@ -14,12 +14,26 @@ import {
   Plus,
   Edit,
   Save,
-  X
+  X,
+  Trash2
 } from 'lucide-react';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
+import CoreValueDialog from '@/components/vto/CoreValueDialog';
 
 const VTOPage = () => {
   const [activeTab, setActiveTab] = useState('vision');
   const [editingSection, setEditingSection] = useState(null);
+  const [coreValueDialog, setCoreValueDialog] = useState({ open: false, value: null });
+  const [deleteDialog, setDeleteDialog] = useState({ open: false, type: null, id: null });
 
   // Mock data - in a real app, this would come from API
   const [vtoData, setVtoData] = useState({
@@ -86,16 +100,53 @@ const VTOPage = () => {
     setEditingSection(null);
   };
 
-  const addCoreValue = () => {
-    const newValue = {
-      id: Date.now(),
-      value: 'New Core Value',
-      description: 'Description of the core value'
-    };
-    setVtoData(prev => ({
-      ...prev,
-      coreValues: [...prev.coreValues, newValue]
-    }));
+  // Core Value handlers
+  const handleAddCoreValue = () => {
+    setCoreValueDialog({ open: true, value: null });
+  };
+
+  const handleEditCoreValue = (value) => {
+    setCoreValueDialog({ open: true, value });
+  };
+
+  const handleSaveCoreValue = (coreValue) => {
+    if (coreValue.id) {
+      // Update existing value
+      setVtoData(prev => ({
+        ...prev,
+        coreValues: prev.coreValues.map(v => 
+          v.id === coreValue.id ? coreValue : v
+        )
+      }));
+    } else {
+      // Add new value
+      const newValue = {
+        ...coreValue,
+        id: Date.now()
+      };
+      setVtoData(prev => ({
+        ...prev,
+        coreValues: [...prev.coreValues, newValue]
+      }));
+    }
+  };
+
+  const handleDeleteCoreValue = (id) => {
+    setDeleteDialog({ open: true, type: 'coreValue', id });
+  };
+
+  const confirmDelete = () => {
+    const { type, id } = deleteDialog;
+    
+    if (type === 'coreValue') {
+      setVtoData(prev => ({
+        ...prev,
+        coreValues: prev.coreValues.filter(v => v.id !== id)
+      }));
+    }
+    // Add other delete handlers for different types here
+    
+    setDeleteDialog({ open: false, type: null, id: null });
   };
 
   const formatCurrency = (amount) => {
@@ -151,7 +202,7 @@ const VTOPage = () => {
                     The fundamental beliefs that guide your organization
                   </CardDescription>
                 </div>
-                <Button variant="outline" size="sm" onClick={addCoreValue}>
+                <Button variant="outline" size="sm" onClick={handleAddCoreValue}>
                   <Plus className="mr-2 h-4 w-4" />
                   Add Value
                 </Button>
@@ -166,9 +217,14 @@ const VTOPage = () => {
                         <h4 className="font-semibold text-lg">{value.value}</h4>
                         <p className="text-gray-600 mt-1">{value.description}</p>
                       </div>
-                      <Button variant="ghost" size="sm" onClick={() => handleEdit(`coreValue-${value.id}`)}>
-                        <Edit className="h-4 w-4" />
-                      </Button>
+                      <div className="flex space-x-2">
+                        <Button variant="ghost" size="sm" onClick={() => handleEditCoreValue(value)}>
+                          <Edit className="h-4 w-4" />
+                        </Button>
+                        <Button variant="ghost" size="sm" onClick={() => handleDeleteCoreValue(value.id)}>
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                      </div>
                     </div>
                   </div>
                 ))}
@@ -462,6 +518,30 @@ const VTOPage = () => {
           </Card>
         </TabsContent>
       </Tabs>
+
+      {/* Core Value Dialog */}
+      <CoreValueDialog
+        open={coreValueDialog.open}
+        onOpenChange={(open) => setCoreValueDialog({ open, value: null })}
+        value={coreValueDialog.value}
+        onSave={handleSaveCoreValue}
+      />
+
+      {/* Delete Confirmation Dialog */}
+      <AlertDialog open={deleteDialog.open} onOpenChange={(open) => setDeleteDialog({ open, type: null, id: null })}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Are you sure?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This action cannot be undone. This will permanently delete this item.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={confirmDelete}>Delete</AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 };
