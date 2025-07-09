@@ -1,28 +1,38 @@
-const Subscription = require('../models/Subscription');
-const Organization = require('../models/Organization');
-const User = require('../models/User');
-const { stripe, STRIPE_PRICES } = require('../config/stripe');
+import { query } from '../config/database.js';
+import { stripe, STRIPE_PRICES } from '../config/stripe.js';
 
 // Start a free trial with credit card
 const startTrial = async (req, res) => {
   try {
     const { paymentMethodId, billingEmail } = req.body;
-    const organizationId = req.user.organization;
+    const organizationId = req.user.organization_id;
 
     // Check if organization already has a subscription
-    const existingSubscription = await Subscription.findOne({ organization: organizationId });
-    if (existingSubscription) {
+    const existingSubscription = await query(
+      'SELECT id FROM subscriptions WHERE organization_id = $1',
+      [organizationId]
+    );
+    
+    if (existingSubscription.rows.length > 0) {
       return res.status(400).json({ error: 'Organization already has a subscription' });
     }
 
-    // Get organization details
-    const organization = await Organization.findById(organizationId).populate('users');
-    if (!organization) {
+    // Get organization details and user count
+    const orgResult = await query(
+      `SELECT o.*, COUNT(u.id) as user_count 
+       FROM organizations o 
+       LEFT JOIN users u ON u.organization_id = o.id 
+       WHERE o.id = $1 
+       GROUP BY o.id`,
+      [organizationId]
+    );
+    
+    if (orgResult.rows.length === 0) {
       return res.status(404).json({ error: 'Organization not found' });
     }
 
-    // Count active users in organization
-    const userCount = organization.users ? organization.users.length : 1;
+    const organization = orgResult.rows[0];
+    const userCount = parseInt(organization.user_count) || 1;
 
     // Create Stripe customer
     const customer = await stripe.customers.create({
@@ -38,30 +48,39 @@ const startTrial = async (req, res) => {
     });
 
     // Create subscription record (trial only, no Stripe subscription yet)
-    const subscription = new Subscription({
-      organization: organizationId,
-      stripeCustomerId: customer.id,
-      stripePaymentMethodId: paymentMethodId,
-      billingEmail,
-      status: 'trialing',
-      planId: 'pro',
-      userCount: userCount
-    });
+    const trialEndDate = new Date();
+    trialEndDate.setDate(trialEndDate.getDate() + 30);
 
-    await subscription.save();
+    const subscriptionResult = await query(
+      `INSERT INTO subscriptions (
+        organization_id, stripe_customer_id, stripe_payment_method_id,
+        billing_email, status, plan_id, user_count, price_per_user,
+        trial_start_date, trial_end_date
+      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
+      RETURNING *`,
+      [
+        organizationId, customer.id, paymentMethodId,
+        billingEmail, 'trialing', 'pro', userCount, 5,
+        new Date(), trialEndDate
+      ]
+    );
+
+    const subscription = subscriptionResult.rows[0];
 
     // Update organization with subscription status
-    organization.hasActiveSubscription = true;
-    await organization.save();
+    await query(
+      'UPDATE organizations SET has_active_subscription = true WHERE id = $1',
+      [organizationId]
+    );
 
     res.json({
       success: true,
       subscription: {
         status: subscription.status,
-        trialEndDate: subscription.trialEndDate,
-        trialDaysRemaining: subscription.trialDaysRemaining,
-        userCount: subscription.userCount,
-        monthlyTotal: subscription.monthlyTotal
+        trialEndDate: subscription.trial_end_date,
+        trialDaysRemaining: Math.ceil((trialEndDate - new Date()) / (1000 * 60 * 60 * 24)),
+        userCount: subscription.user_count,
+        monthlyTotal: subscription.user_count * subscription.price_per_user
       }
     });
   } catch (error) {
@@ -73,24 +92,41 @@ const startTrial = async (req, res) => {
 // Get subscription status
 const getSubscriptionStatus = async (req, res) => {
   try {
-    const organizationId = req.user.organization;
-    const subscription = await Subscription.findOne({ organization: organizationId });
+    const organizationId = req.user.organization_id;
+    
+    const result = await query(
+      `SELECT *, 
+       CASE 
+         WHEN status = 'trialing' THEN GREATEST(0, CEIL(EXTRACT(EPOCH FROM (trial_end_date - NOW())) / 86400))
+         ELSE 0 
+       END as trial_days_remaining,
+       CASE
+         WHEN status = 'trialing' AND trial_end_date < NOW() THEN true
+         ELSE false
+       END as is_trial_expired,
+       user_count * price_per_user as monthly_total
+       FROM subscriptions 
+       WHERE organization_id = $1`,
+      [organizationId]
+    );
 
-    if (!subscription) {
+    if (result.rows.length === 0) {
       return res.json({ hasSubscription: false });
     }
+
+    const subscription = result.rows[0];
 
     res.json({
       hasSubscription: true,
       status: subscription.status,
-      planId: subscription.planId,
-      trialEndDate: subscription.trialEndDate,
-      trialDaysRemaining: subscription.trialDaysRemaining,
-      isTrialExpired: subscription.isTrialExpired,
-      currentPeriodEnd: subscription.currentPeriodEnd,
-      userCount: subscription.userCount,
-      pricePerUser: subscription.pricePerUser,
-      monthlyTotal: subscription.monthlyTotal
+      planId: subscription.plan_id,
+      trialEndDate: subscription.trial_end_date,
+      trialDaysRemaining: parseInt(subscription.trial_days_remaining),
+      isTrialExpired: subscription.is_trial_expired,
+      currentPeriodEnd: subscription.current_period_end,
+      userCount: subscription.user_count,
+      pricePerUser: subscription.price_per_user,
+      monthlyTotal: parseFloat(subscription.monthly_total)
     });
   } catch (error) {
     console.error('Get subscription error:', error);
@@ -102,16 +138,22 @@ const getSubscriptionStatus = async (req, res) => {
 const cancelSubscription = async (req, res) => {
   try {
     const { reason } = req.body;
-    const organizationId = req.user.organization;
-    const subscription = await Subscription.findOne({ organization: organizationId });
+    const organizationId = req.user.organization_id;
+    
+    const result = await query(
+      'SELECT * FROM subscriptions WHERE organization_id = $1',
+      [organizationId]
+    );
 
-    if (!subscription) {
+    if (result.rows.length === 0) {
       return res.status(404).json({ error: 'No subscription found' });
     }
 
+    const subscription = result.rows[0];
+
     // If there's an active Stripe subscription, cancel it
-    if (subscription.stripeSubscriptionId) {
-      await stripe.subscriptions.update(subscription.stripeSubscriptionId, {
+    if (subscription.stripe_subscription_id) {
+      await stripe.subscriptions.update(subscription.stripe_subscription_id, {
         cancel_at_period_end: true,
         metadata: {
           cancelReason: reason
@@ -120,15 +162,18 @@ const cancelSubscription = async (req, res) => {
     }
 
     // Update subscription record
-    subscription.canceledAt = new Date();
-    subscription.cancelReason = reason;
-    subscription.status = 'canceled';
-    await subscription.save();
+    await query(
+      `UPDATE subscriptions 
+       SET status = 'canceled', canceled_at = NOW(), cancel_reason = $1 
+       WHERE organization_id = $2`,
+      [reason, organizationId]
+    );
 
     // Update organization
-    const organization = await Organization.findById(organizationId);
-    organization.hasActiveSubscription = false;
-    await organization.save();
+    await query(
+      'UPDATE organizations SET has_active_subscription = false WHERE id = $1',
+      [organizationId]
+    );
 
     res.json({ success: true, message: 'Subscription canceled' });
   } catch (error) {
@@ -141,28 +186,36 @@ const cancelSubscription = async (req, res) => {
 const updatePaymentMethod = async (req, res) => {
   try {
     const { paymentMethodId } = req.body;
-    const organizationId = req.user.organization;
-    const subscription = await Subscription.findOne({ organization: organizationId });
+    const organizationId = req.user.organization_id;
+    
+    const result = await query(
+      'SELECT * FROM subscriptions WHERE organization_id = $1',
+      [organizationId]
+    );
 
-    if (!subscription) {
+    if (result.rows.length === 0) {
       return res.status(404).json({ error: 'No subscription found' });
     }
 
+    const subscription = result.rows[0];
+
     // Attach payment method to customer
     await stripe.paymentMethods.attach(paymentMethodId, {
-      customer: subscription.stripeCustomerId
+      customer: subscription.stripe_customer_id
     });
 
     // Set as default payment method
-    await stripe.customers.update(subscription.stripeCustomerId, {
+    await stripe.customers.update(subscription.stripe_customer_id, {
       invoice_settings: {
         default_payment_method: paymentMethodId
       }
     });
 
     // Update subscription record
-    subscription.stripePaymentMethodId = paymentMethodId;
-    await subscription.save();
+    await query(
+      'UPDATE subscriptions SET stripe_payment_method_id = $1 WHERE organization_id = $2',
+      [paymentMethodId, organizationId]
+    );
 
     res.json({ success: true, message: 'Payment method updated' });
   } catch (error) {
@@ -174,16 +227,22 @@ const updatePaymentMethod = async (req, res) => {
 // Get billing history
 const getBillingHistory = async (req, res) => {
   try {
-    const organizationId = req.user.organization;
-    const subscription = await Subscription.findOne({ organization: organizationId });
+    const organizationId = req.user.organization_id;
+    
+    const result = await query(
+      'SELECT stripe_customer_id FROM subscriptions WHERE organization_id = $1',
+      [organizationId]
+    );
 
-    if (!subscription) {
+    if (result.rows.length === 0) {
       return res.json({ invoices: [] });
     }
 
+    const subscription = result.rows[0];
+
     // Get invoices from Stripe
     const invoices = await stripe.invoices.list({
-      customer: subscription.stripeCustomerId,
+      customer: subscription.stripe_customer_id,
       limit: 20
     });
 
@@ -207,54 +266,71 @@ const getBillingHistory = async (req, res) => {
 const processTrialEndings = async () => {
   try {
     // Find all trialing subscriptions that have expired
-    const expiredTrials = await Subscription.find({
-      status: 'trialing',
-      trialEndDate: { $lte: new Date() }
-    }).populate('organization');
+    const expiredTrials = await query(
+      `SELECT s.*, o.name as organization_name, 
+       COUNT(u.id) as current_user_count
+       FROM subscriptions s
+       JOIN organizations o ON s.organization_id = o.id
+       LEFT JOIN users u ON u.organization_id = o.id
+       WHERE s.status = 'trialing' AND s.trial_end_date <= NOW()
+       GROUP BY s.id, o.id`
+    );
 
-    for (const subscription of expiredTrials) {
+    for (const subscription of expiredTrials.rows) {
       try {
-        // Get organization to count users
-        const organization = await Organization.findById(subscription.organization).populate('users');
-        const userCount = organization.users ? organization.users.length : 1;
+        const userCount = parseInt(subscription.current_user_count) || 1;
 
         // Update user count before creating subscription
-        subscription.userCount = userCount;
+        await query(
+          'UPDATE subscriptions SET user_count = $1 WHERE id = $2',
+          [userCount, subscription.id]
+        );
 
         // Create Stripe subscription with quantity for per-user pricing
         const stripeSubscription = await stripe.subscriptions.create({
-          customer: subscription.stripeCustomerId,
+          customer: subscription.stripe_customer_id,
           items: [{ 
-            price: STRIPE_PRICES[subscription.planId],
+            price: STRIPE_PRICES[subscription.plan_id],
             quantity: userCount
           }],
           metadata: {
-            organizationId: subscription.organization.toString()
+            organizationId: subscription.organization_id.toString()
           }
         });
 
-        // Store the subscription item ID for future quantity updates
-        subscription.stripeSubscriptionId = stripeSubscription.id;
-        subscription.stripeSubscriptionItemId = stripeSubscription.items.data[0].id;
-        subscription.status = 'active';
-        subscription.currentPeriodStart = new Date(stripeSubscription.current_period_start * 1000);
-        subscription.currentPeriodEnd = new Date(stripeSubscription.current_period_end * 1000);
-        await subscription.save();
+        // Update subscription record
+        await query(
+          `UPDATE subscriptions 
+           SET stripe_subscription_id = $1, 
+               stripe_subscription_item_id = $2,
+               status = 'active',
+               current_period_start = $3,
+               current_period_end = $4
+           WHERE id = $5`,
+          [
+            stripeSubscription.id,
+            stripeSubscription.items.data[0].id,
+            new Date(stripeSubscription.current_period_start * 1000),
+            new Date(stripeSubscription.current_period_end * 1000),
+            subscription.id
+          ]
+        );
 
-        console.log(`Converted trial to paid subscription for organization ${subscription.organization} with ${userCount} users`);
+        console.log(`Converted trial to paid subscription for organization ${subscription.organization_id} with ${userCount} users`);
       } catch (error) {
-        console.error(`Failed to convert trial for organization ${subscription.organization}:`, error);
+        console.error(`Failed to convert trial for organization ${subscription.organization_id}:`, error);
         
         // Update subscription status to incomplete
-        subscription.status = 'incomplete';
-        await subscription.save();
+        await query(
+          'UPDATE subscriptions SET status = $1 WHERE id = $2',
+          ['incomplete', subscription.id]
+        );
 
         // Update organization
-        const organization = await Organization.findById(subscription.organization);
-        if (organization) {
-          organization.hasActiveSubscription = false;
-          await organization.save();
-        }
+        await query(
+          'UPDATE organizations SET has_active_subscription = false WHERE id = $1',
+          [subscription.organization_id]
+        );
       }
     }
   } catch (error) {
@@ -262,35 +338,98 @@ const processTrialEndings = async () => {
   }
 };
 
+// Send trial reminders (called by cron job)
+const sendTrialReminders = async () => {
+  try {
+    // Find all trialing subscriptions
+    const trialSubscriptions = await query(
+      `SELECT s.*, o.name as organization_name,
+       CEIL(EXTRACT(EPOCH FROM (s.trial_end_date - NOW())) / 86400) as days_remaining
+       FROM subscriptions s
+       JOIN organizations o ON s.organization_id = o.id
+       WHERE s.status = 'trialing'`
+    );
+
+    for (const subscription of trialSubscriptions.rows) {
+      const daysRemaining = parseInt(subscription.days_remaining);
+      let reminderType = null;
+      
+      // Determine which reminder to send
+      if (daysRemaining <= 1 && subscription.last_reminder_sent !== '1_day') {
+        reminderType = '1_day';
+      } else if (daysRemaining <= 3 && daysRemaining > 1 && subscription.last_reminder_sent !== '3_days') {
+        reminderType = '3_days';
+      } else if (daysRemaining <= 7 && daysRemaining > 3 && !subscription.last_reminder_sent) {
+        reminderType = '7_days';
+      }
+      
+      if (reminderType) {
+        // Get organization admin
+        const adminResult = await query(
+          `SELECT email, first_name, last_name 
+           FROM users 
+           WHERE organization_id = $1 AND role = 'admin' 
+           LIMIT 1`,
+          [subscription.organization_id]
+        );
+
+        if (adminResult.rows.length > 0) {
+          const admin = adminResult.rows[0];
+          
+          // Here you would send an email using your email service
+          console.log(`Sending ${reminderType} reminder to ${admin.email} for organization ${subscription.organization_name}`);
+          
+          // Update last reminder sent
+          await query(
+            'UPDATE subscriptions SET last_reminder_sent = $1 WHERE id = $2',
+            [reminderType, subscription.id]
+          );
+        }
+      }
+    }
+  } catch (error) {
+    console.error('Send trial reminders error:', error);
+  }
+};
+
 // Update subscription user count (called when users join/leave organization)
 const updateSubscriptionUserCount = async (organizationId) => {
   try {
-    const subscription = await Subscription.findOne({ 
-      organization: organizationId,
-      status: { $in: ['active', 'trialing'] }
-    });
+    const subscriptionResult = await query(
+      `SELECT * FROM subscriptions 
+       WHERE organization_id = $1 AND status IN ('active', 'trialing')`,
+      [organizationId]
+    );
 
-    if (!subscription) {
+    if (subscriptionResult.rows.length === 0) {
       return;
     }
 
+    const subscription = subscriptionResult.rows[0];
+
     // Get current user count
-    const organization = await Organization.findById(organizationId).populate('users');
-    const newUserCount = organization.users ? organization.users.length : 1;
+    const userCountResult = await query(
+      'SELECT COUNT(*) as count FROM users WHERE organization_id = $1',
+      [organizationId]
+    );
+    
+    const newUserCount = parseInt(userCountResult.rows[0].count) || 1;
 
     // Update local record
-    subscription.userCount = newUserCount;
-    await subscription.save();
+    await query(
+      'UPDATE subscriptions SET user_count = $1 WHERE id = $2',
+      [newUserCount, subscription.id]
+    );
 
     // If there's an active Stripe subscription, update the quantity
-    if (subscription.stripeSubscriptionId && subscription.stripeSubscriptionItemId && subscription.status === 'active') {
+    if (subscription.stripe_subscription_id && subscription.stripe_subscription_item_id && subscription.status === 'active') {
       try {
-        await stripe.subscriptions.update(subscription.stripeSubscriptionId, {
+        await stripe.subscriptions.update(subscription.stripe_subscription_id, {
           items: [{
-            id: subscription.stripeSubscriptionItemId,
+            id: subscription.stripe_subscription_item_id,
             quantity: newUserCount
           }],
-          proration_behavior: 'create_prorations' // Stripe will prorate the charges
+          proration_behavior: 'create_prorations'
         });
         
         console.log(`Updated subscription quantity for organization ${organizationId} to ${newUserCount} users`);
@@ -303,53 +442,7 @@ const updateSubscriptionUserCount = async (organizationId) => {
   }
 };
 
-// Send trial reminders (called by cron job)
-const sendTrialReminders = async () => {
-  try {
-    // Find all trialing subscriptions
-    const trialSubscriptions = await Subscription.find({
-      status: 'trialing'
-    }).populate('organization');
-
-    for (const subscription of trialSubscriptions) {
-      const reminderType = subscription.getRequiredReminder();
-      
-      if (reminderType) {
-        // Get organization admin
-        const admin = await User.findOne({
-          organization: subscription.organization._id,
-          role: 'admin'
-        });
-
-        if (admin) {
-          // Here you would send an email using your email service
-          // For now, we'll just log it
-          console.log(`Sending ${reminderType} reminder to ${admin.email} for organization ${subscription.organization.name}`);
-          
-          // Update last reminder sent
-          subscription.lastReminderSent = reminderType;
-          await subscription.save();
-
-          // In production, you would call your email service here
-          // await sendEmail({
-          //   to: admin.email,
-          //   subject: getEmailSubject(reminderType),
-          //   template: 'trial-reminder',
-          //   data: {
-          //     organizationName: subscription.organization.name,
-          //     daysRemaining: subscription.trialDaysRemaining,
-          //     trialEndDate: subscription.trialEndDate
-          //   }
-          // });
-        }
-      }
-    }
-  } catch (error) {
-    console.error('Send trial reminders error:', error);
-  }
-};
-
-module.exports = {
+export {
   startTrial,
   getSubscriptionStatus,
   cancelSubscription,

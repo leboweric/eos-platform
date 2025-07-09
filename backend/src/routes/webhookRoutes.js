@@ -1,8 +1,7 @@
-const express = require('express');
+import express from 'express';
 const router = express.Router();
-const { stripe, STRIPE_WEBHOOK_SECRET } = require('../config/stripe');
-const Subscription = require('../models/Subscription');
-const Organization = require('../models/Organization');
+import { stripe, STRIPE_WEBHOOK_SECRET } from '../config/stripe.js';
+import { query } from '../config/database.js';
 
 // Stripe webhook endpoint (no auth middleware - Stripe will validate)
 router.post('/stripe', express.raw({ type: 'application/json' }), async (req, res) => {
@@ -49,73 +48,117 @@ router.post('/stripe', express.raw({ type: 'application/json' }), async (req, re
 
 // Handle successful payment
 async function handlePaymentSucceeded(invoice) {
-  const subscription = await Subscription.findOne({ stripeCustomerId: invoice.customer });
-  if (!subscription) return;
+  const result = await query(
+    'SELECT * FROM subscriptions WHERE stripe_customer_id = $1',
+    [invoice.customer]
+  );
+  
+  if (result.rows.length === 0) return;
 
-  subscription.lastPaymentStatus = 'succeeded';
-  subscription.lastPaymentAmount = invoice.amount_paid / 100;
-  subscription.lastPaymentDate = new Date();
-  subscription.status = 'active';
-  await subscription.save();
+  const subscription = result.rows[0];
+
+  await query(
+    `UPDATE subscriptions 
+     SET last_payment_status = 'succeeded',
+         last_payment_amount = $1,
+         last_payment_date = NOW(),
+         status = 'active'
+     WHERE id = $2`,
+    [invoice.amount_paid / 100, subscription.id]
+  );
 
   // Ensure organization is marked as active
-  const organization = await Organization.findById(subscription.organization);
-  if (organization) {
-    organization.hasActiveSubscription = true;
-    await organization.save();
-  }
+  await query(
+    'UPDATE organizations SET has_active_subscription = true WHERE id = $1',
+    [subscription.organization_id]
+  );
 }
 
 // Handle failed payment
 async function handlePaymentFailed(invoice) {
-  const subscription = await Subscription.findOne({ stripeCustomerId: invoice.customer });
-  if (!subscription) return;
+  const result = await query(
+    'SELECT * FROM subscriptions WHERE stripe_customer_id = $1',
+    [invoice.customer]
+  );
+  
+  if (result.rows.length === 0) return;
 
-  subscription.lastPaymentStatus = 'failed';
-  subscription.status = 'past_due';
-  await subscription.save();
+  const subscription = result.rows[0];
+
+  await query(
+    `UPDATE subscriptions 
+     SET last_payment_status = 'failed',
+         status = 'past_due'
+     WHERE id = $1`,
+    [subscription.id]
+  );
 
   // Here you would send a payment failure email
-  console.log(`Payment failed for subscription ${subscription._id}`);
+  console.log(`Payment failed for subscription ${subscription.id}`);
 }
 
 // Handle subscription updates
 async function handleSubscriptionUpdated(stripeSubscription) {
-  const subscription = await Subscription.findOne({ stripeSubscriptionId: stripeSubscription.id });
-  if (!subscription) return;
+  const result = await query(
+    'SELECT * FROM subscriptions WHERE stripe_subscription_id = $1',
+    [stripeSubscription.id]
+  );
+  
+  if (result.rows.length === 0) return;
 
-  subscription.status = stripeSubscription.status;
-  subscription.currentPeriodStart = new Date(stripeSubscription.current_period_start * 1000);
-  subscription.currentPeriodEnd = new Date(stripeSubscription.current_period_end * 1000);
-  
+  const subscription = result.rows[0];
+
   // Update user count if quantity changed
+  let userCount = subscription.user_count;
   if (stripeSubscription.items && stripeSubscription.items.data[0]) {
-    subscription.userCount = stripeSubscription.items.data[0].quantity;
-    subscription.stripeSubscriptionItemId = stripeSubscription.items.data[0].id;
+    userCount = stripeSubscription.items.data[0].quantity;
   }
-  
-  if (stripeSubscription.cancel_at_period_end) {
-    subscription.canceledAt = new Date();
-  }
-  
-  await subscription.save();
+
+  await query(
+    `UPDATE subscriptions 
+     SET status = $1,
+         current_period_start = $2,
+         current_period_end = $3,
+         user_count = $4,
+         stripe_subscription_item_id = $5,
+         canceled_at = $6
+     WHERE id = $7`,
+    [
+      stripeSubscription.status,
+      new Date(stripeSubscription.current_period_start * 1000),
+      new Date(stripeSubscription.current_period_end * 1000),
+      userCount,
+      stripeSubscription.items.data[0]?.id || subscription.stripe_subscription_item_id,
+      stripeSubscription.cancel_at_period_end ? new Date() : null,
+      subscription.id
+    ]
+  );
 }
 
 // Handle subscription deletion
 async function handleSubscriptionDeleted(stripeSubscription) {
-  const subscription = await Subscription.findOne({ stripeSubscriptionId: stripeSubscription.id });
-  if (!subscription) return;
+  const result = await query(
+    'SELECT * FROM subscriptions WHERE stripe_subscription_id = $1',
+    [stripeSubscription.id]
+  );
+  
+  if (result.rows.length === 0) return;
 
-  subscription.status = 'canceled';
-  subscription.canceledAt = new Date();
-  await subscription.save();
+  const subscription = result.rows[0];
+
+  await query(
+    `UPDATE subscriptions 
+     SET status = 'canceled',
+         canceled_at = NOW()
+     WHERE id = $1`,
+    [subscription.id]
+  );
 
   // Update organization
-  const organization = await Organization.findById(subscription.organization);
-  if (organization) {
-    organization.hasActiveSubscription = false;
-    await organization.save();
-  }
+  await query(
+    'UPDATE organizations SET has_active_subscription = false WHERE id = $1',
+    [subscription.organization_id]
+  );
 }
 
-module.exports = router;
+export default router;

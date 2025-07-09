@@ -1,14 +1,14 @@
-const express = require('express');
+import express from 'express';
 const router = express.Router();
-const auth = require('../middleware/auth');
-const adminAuth = require('../middleware/adminAuth');
-const {
+import auth from '../middleware/auth.js';
+import adminAuth from '../middleware/adminAuth.js';
+import {
   startTrial,
   getSubscriptionStatus,
   cancelSubscription,
   updatePaymentMethod,
   getBillingHistory
-} = require('../controllers/subscriptionController');
+} from '../controllers/subscriptionController.js';
 
 // All routes require authentication
 router.use(auth);
@@ -28,4 +28,4 @@ router.post('/cancel', adminAuth, cancelSubscription);
 // Update payment method (requires admin)
 router.put('/payment-method', adminAuth, updatePaymentMethod);
 
-module.exports = router;
+export default router;

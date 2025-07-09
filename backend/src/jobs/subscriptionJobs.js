@@ -1,5 +1,5 @@
-const cron = require('node-cron');
-const { processTrialEndings, sendTrialReminders } = require('../controllers/subscriptionController');
+import cron from 'node-cron';
+import { processTrialEndings, sendTrialReminders } from '../controllers/subscriptionController.js';
 
 // Initialize subscription-related cron jobs
 const initializeSubscriptionJobs = () => {
@@ -28,4 +28,4 @@ const initializeSubscriptionJobs = () => {
   console.log('Subscription cron jobs initialized');
 };
 
-module.exports = { initializeSubscriptionJobs };
+export { initializeSubscriptionJobs };

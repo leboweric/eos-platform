@@ -1,4 +1,4 @@
-const Stripe = require('stripe');
+import Stripe from 'stripe';
 
 // Initialize Stripe with your secret key
 // In production, use environment variable: process.env.STRIPE_SECRET_KEY
@@ -14,7 +14,7 @@ const STRIPE_PRICES = {
 // Webhook secret for validating Stripe webhooks
 const STRIPE_WEBHOOK_SECRET = process.env.STRIPE_WEBHOOK_SECRET || 'whsec_YOUR_WEBHOOK_SECRET';
 
-module.exports = {
+export {
   stripe,
   STRIPE_PRICES,
   STRIPE_WEBHOOK_SECRET
