@@ -7,7 +7,7 @@ const stripe = Stripe(process.env.STRIPE_SECRET_KEY || 'sk_test_YOUR_TEST_KEY');
 // Stripe price IDs for different plans
 // Note: This should be a per-seat price ID from Stripe Dashboard
 const STRIPE_PRICES = {
-  pro: process.env.STRIPE_PRO_PRICE_ID || 'price_YOUR_PRO_PRICE_ID', // $5/user/month
+  pro: process.env.STRIPE_PRO_PRICE_ID || 'price_1Rj5XuK5ClkyxluBanf9wvuL', // $5/user/month
   enterprise: process.env.STRIPE_ENTERPRISE_PRICE_ID || 'price_YOUR_ENTERPRISE_PRICE_ID'
 };
 
