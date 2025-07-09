@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -6,6 +6,7 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Badge } from '@/components/ui/badge';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { 
   Target, 
   Eye, 
@@ -15,7 +16,8 @@ import {
   Edit,
   Save,
   X,
-  Trash2
+  Trash2,
+  Building2
 } from 'lucide-react';
 import {
   AlertDialog,
@@ -28,14 +30,43 @@ import {
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
 import CoreValueDialog from '@/components/vto/CoreValueDialog';
+import CoreFocusDialog from '@/components/vto/CoreFocusDialog';
+import TenYearTargetDialog from '@/components/vto/TenYearTargetDialog';
+import MarketingStrategyDialog from '@/components/vto/MarketingStrategyDialog';
+import ThreeYearPictureDialog from '@/components/vto/ThreeYearPictureDialog';
+import OneYearPlanDialog from '@/components/vto/OneYearPlanDialog';
 
 const VTOPage = () => {
   const [activeTab, setActiveTab] = useState('vision');
-  const [editingSection, setEditingSection] = useState(null);
   const [coreValueDialog, setCoreValueDialog] = useState({ open: false, value: null });
+  const [coreFocusDialog, setCoreFocusDialog] = useState(false);
+  const [tenYearTargetDialog, setTenYearTargetDialog] = useState(false);
+  const [marketingStrategyDialog, setMarketingStrategyDialog] = useState(false);
+  const [threeYearPictureDialog, setThreeYearPictureDialog] = useState(false);
+  const [oneYearPlanDialog, setOneYearPlanDialog] = useState(false);
   const [deleteDialog, setDeleteDialog] = useState({ open: false, type: null, id: null });
+  const [selectedDepartment, setSelectedDepartment] = useState('company');
+  const [departments, setDepartments] = useState([]);
 
-  // Mock data - in a real app, this would come from API
+  // Mock fetch departments - in production, use API
+  useEffect(() => {
+    const mockDepartments = [
+      { id: '1', name: 'Sales', description: 'Revenue generation' },
+      { id: '2', name: 'Marketing', description: 'Brand and lead generation' },
+      { id: '3', name: 'Engineering', description: 'Product development' }
+    ];
+    setDepartments(mockDepartments);
+  }, []);
+
+  // Fetch VTO data when department changes
+  useEffect(() => {
+    // In production, this would fetch from API based on selectedDepartment
+    // For now, we'll just update the title to show department context
+    console.log(`Loading VTO for: ${selectedDepartment === 'company' ? 'Company-wide' : `Department ${selectedDepartment}`}`);
+    // API call would be here
+  }, [selectedDepartment]);
+
+  // Mock data - in a real app, this would come from API based on selected department
   const [vtoData, setVtoData] = useState({
     coreValues: [
       { id: 1, value: 'Integrity', description: 'We do the right thing, even when no one is watching' },
@@ -87,19 +118,6 @@ const VTOPage = () => {
     }
   });
 
-  const handleEdit = (section) => {
-    setEditingSection(section);
-  };
-
-  const handleSave = (section) => {
-    // In a real app, this would make an API call
-    setEditingSection(null);
-  };
-
-  const handleCancel = () => {
-    setEditingSection(null);
-  };
-
   // Core Value handlers
   const handleAddCoreValue = () => {
     setCoreValueDialog({ open: true, value: null });
@@ -149,6 +167,55 @@ const VTOPage = () => {
     setDeleteDialog({ open: false, type: null, id: null });
   };
 
+  // Core Focus handlers
+  const handleSaveCoreFocus = (data) => {
+    setVtoData(prev => ({
+      ...prev,
+      coreFocus: data
+    }));
+  };
+
+  // Ten Year Target handlers
+  const handleSaveTenYearTarget = (data) => {
+    setVtoData(prev => ({
+      ...prev,
+      tenYearTarget: {
+        description: data.targetDescription,
+        year: data.targetYear,
+        runningTotal: data.currentRunningTotal
+      }
+    }));
+  };
+
+  // Marketing Strategy handlers
+  const handleSaveMarketingStrategy = (data) => {
+    setVtoData(prev => ({
+      ...prev,
+      marketingStrategy: {
+        targetMarket: data.targetMarket,
+        threeUniques: data.threeUniques,
+        provenProcess: data.provenProcess,
+        guarantee: data.guarantee
+      }
+    }));
+  };
+
+  // Three Year Picture handlers
+  const handleSaveThreeYearPicture = (data) => {
+    setVtoData(prev => ({
+      ...prev,
+      threeYearPicture: data
+    }));
+  };
+
+  // One Year Plan handlers
+  const handleSaveOneYearPlan = (data) => {
+    setVtoData(prev => ({
+      ...prev,
+      oneYearPlan: data
+    }));
+  };
+
   const formatCurrency = (amount) => {
     return new Intl.NumberFormat('en-US', {
       style: 'currency',
@@ -161,22 +228,43 @@ const VTOPage = () => {
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-3xl font-bold">Vision/Traction Organizer®</h1>
-          <p className="text-gray-600 mt-2">
-            Your organization's strategic foundation and execution plan
-          </p>
+      <div className="space-y-4">
+        <div className="flex items-center justify-between">
+          <div>
+            <h1 className="text-3xl font-bold">Vision/Traction Organizer®</h1>
+            <p className="text-gray-600 mt-2">
+              Your organization's strategic foundation and execution plan
+            </p>
+          </div>
+          <div className="flex space-x-2">
+            <Button variant="outline">
+              <Eye className="mr-2 h-4 w-4" />
+              Preview
+            </Button>
+            <Button>
+              <Save className="mr-2 h-4 w-4" />
+              Save Changes
+            </Button>
+          </div>
         </div>
-        <div className="flex space-x-2">
-          <Button variant="outline">
-            <Eye className="mr-2 h-4 w-4" />
-            Preview
-          </Button>
-          <Button>
-            <Save className="mr-2 h-4 w-4" />
-            Save Changes
-          </Button>
+        
+        {/* Department Selector */}
+        <div className="flex items-center space-x-4">
+          <Building2 className="h-5 w-5 text-gray-500" />
+          <Label htmlFor="department">View VTO for:</Label>
+          <Select value={selectedDepartment} onValueChange={setSelectedDepartment}>
+            <SelectTrigger className="w-[250px]">
+              <SelectValue placeholder="Select department" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="company">Company-wide</SelectItem>
+              {departments.map(dept => (
+                <SelectItem key={dept.id} value={dept.id}>
+                  {dept.name}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
         </div>
       </div>
 
@@ -242,7 +330,7 @@ const VTOPage = () => {
                     Your organization's purpose and niche
                   </CardDescription>
                 </div>
-                <Button variant="ghost" size="sm" onClick={() => handleEdit('coreFocus')}>
+                <Button variant="ghost" size="sm" onClick={() => setCoreFocusDialog(true)}>
                   <Edit className="h-4 w-4" />
                 </Button>
               </div>
@@ -271,7 +359,7 @@ const VTOPage = () => {
                     Your long-term vision and measurable goal
                   </CardDescription>
                 </div>
-                <Button variant="ghost" size="sm" onClick={() => handleEdit('tenYearTarget')}>
+                <Button variant="ghost" size="sm" onClick={() => setTenYearTargetDialog(true)}>
                   <Edit className="h-4 w-4" />
                 </Button>
               </div>
@@ -306,7 +394,7 @@ const VTOPage = () => {
                     How you reach and serve your target market
                   </CardDescription>
                 </div>
-                <Button variant="ghost" size="sm" onClick={() => handleEdit('marketingStrategy')}>
+                <Button variant="ghost" size="sm" onClick={() => setMarketingStrategyDialog(true)}>
                   <Edit className="h-4 w-4" />
                 </Button>
               </div>
@@ -343,7 +431,7 @@ const VTOPage = () => {
                     Your mid-term vision with specific targets
                   </CardDescription>
                 </div>
-                <Button variant="ghost" size="sm" onClick={() => handleEdit('threeYearPicture')}>
+                <Button variant="ghost" size="sm" onClick={() => setThreeYearPictureDialog(true)}>
                   <Edit className="h-4 w-4" />
                 </Button>
               </div>
@@ -405,7 +493,7 @@ const VTOPage = () => {
                     Your annual goals and financial targets
                   </CardDescription>
                 </div>
-                <Button variant="ghost" size="sm" onClick={() => handleEdit('oneYearPlan')}>
+                <Button variant="ghost" size="sm" onClick={() => setOneYearPlanDialog(true)}>
                   <Edit className="h-4 w-4" />
                 </Button>
               </div>
@@ -525,6 +613,46 @@ const VTOPage = () => {
         onOpenChange={(open) => setCoreValueDialog({ open, value: null })}
         value={coreValueDialog.value}
         onSave={handleSaveCoreValue}
+      />
+
+      {/* Core Focus Dialog */}
+      <CoreFocusDialog
+        open={coreFocusDialog}
+        onOpenChange={setCoreFocusDialog}
+        data={vtoData.coreFocus}
+        onSave={handleSaveCoreFocus}
+      />
+
+      {/* Ten Year Target Dialog */}
+      <TenYearTargetDialog
+        open={tenYearTargetDialog}
+        onOpenChange={setTenYearTargetDialog}
+        data={vtoData.tenYearTarget}
+        onSave={handleSaveTenYearTarget}
+      />
+
+      {/* Marketing Strategy Dialog */}
+      <MarketingStrategyDialog
+        open={marketingStrategyDialog}
+        onOpenChange={setMarketingStrategyDialog}
+        data={vtoData.marketingStrategy}
+        onSave={handleSaveMarketingStrategy}
+      />
+
+      {/* Three Year Picture Dialog */}
+      <ThreeYearPictureDialog
+        open={threeYearPictureDialog}
+        onOpenChange={setThreeYearPictureDialog}
+        data={vtoData.threeYearPicture}
+        onSave={handleSaveThreeYearPicture}
+      />
+
+      {/* One Year Plan Dialog */}
+      <OneYearPlanDialog
+        open={oneYearPlanDialog}
+        onOpenChange={setOneYearPlanDialog}
+        data={vtoData.oneYearPlan}
+        onSave={handleSaveOneYearPlan}
       />
 
       {/* Delete Confirmation Dialog */}
