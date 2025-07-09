@@ -20,6 +20,9 @@ import { format } from 'date-fns';
 // Initialize Stripe (use your publishable key)
 const stripePromise = loadStripe(import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY || 'pk_test_YOUR_KEY');
 
+// API base URL
+const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3001/api/v1';
+
 // Card input component
 const CardInputForm = ({ onSuccess }) => {
   const stripe = useStripe();
@@ -52,7 +55,8 @@ const CardInputForm = ({ onSuccess }) => {
 
     // Send payment method to backend
     try {
-      const response = await fetch('/api/v1/subscription/start-trial', {
+      const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:3001/api/v1';
+      const response = await fetch(`${apiUrl}/subscription/start-trial`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -156,7 +160,7 @@ const BillingPage = () => {
 
   const fetchSubscriptionStatus = async () => {
     try {
-      const response = await fetch('/api/v1/subscription/status', {
+      const response = await fetch(`${API_URL}/subscription/status`, {
         headers: {
           'Authorization': `Bearer ${localStorage.getItem('token')}`
         }
@@ -175,7 +179,7 @@ const BillingPage = () => {
 
   const fetchBillingHistory = async () => {
     try {
-      const response = await fetch('/api/v1/subscription/billing-history', {
+      const response = await fetch(`${API_URL}/subscription/billing-history`, {
         headers: {
           'Authorization': `Bearer ${localStorage.getItem('token')}`
         }
@@ -191,7 +195,7 @@ const BillingPage = () => {
     if (!window.confirm('Are you sure you want to cancel your subscription?')) return;
 
     try {
-      const response = await fetch('/api/v1/subscription/cancel', {
+      const response = await fetch(`${API_URL}/subscription/cancel`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

@@ -4,6 +4,8 @@ import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
 import { AlertCircle, X } from 'lucide-react';
 
+const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3001/api/v1';
+
 const TrialBanner = () => {
   const [subscription, setSubscription] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -15,7 +17,7 @@ const TrialBanner = () => {
 
   const fetchSubscriptionStatus = async () => {
     try {
-      const response = await fetch('/api/v1/subscription/status', {
+      const response = await fetch(`${API_URL}/subscription/status`, {
         headers: {
           'Authorization': `Bearer ${localStorage.getItem('token')}`
         }
