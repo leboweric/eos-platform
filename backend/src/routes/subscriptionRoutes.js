@@ -1,7 +1,6 @@
 import express from 'express';
 const router = express.Router();
-import auth from '../middleware/auth.js';
-import adminAuth from '../middleware/adminAuth.js';
+import { authenticate, authorize } from '../middleware/auth.js';
 import {
   startTrial,
   getSubscriptionStatus,
@@ -11,7 +10,7 @@ import {
 } from '../controllers/subscriptionController.js';
 
 // All routes require authentication
-router.use(auth);
+router.use(authenticate);
 
 // Get subscription status
 router.get('/status', getSubscriptionStatus);
@@ -20,12 +19,12 @@ router.get('/status', getSubscriptionStatus);
 router.get('/billing-history', getBillingHistory);
 
 // Start trial (requires admin)
-router.post('/start-trial', adminAuth, startTrial);
+router.post('/start-trial', authorize('admin'), startTrial);
 
 // Cancel subscription (requires admin)
-router.post('/cancel', adminAuth, cancelSubscription);
+router.post('/cancel', authorize('admin'), cancelSubscription);
 
 // Update payment method (requires admin)
-router.put('/payment-method', adminAuth, updatePaymentMethod);
+router.put('/payment-method', authorize('admin'), updatePaymentMethod);
 
 export default router;

@@ -1,31 +1,31 @@
-const express = require('express');
-const cors = require('cors');
-const helmet = require('helmet');
-const morgan = require('morgan');
-const dotenv = require('dotenv');
-const rateLimit = require('express-rate-limit');
+import express from 'express';
+import cors from 'cors';
+import helmet from 'helmet';
+import morgan from 'morgan';
+import dotenv from 'dotenv';
+import rateLimit from 'express-rate-limit';
 
 // Import routes
-const authRoutes = require('./routes/auth');
-const organizationRoutes = require('./routes/organizations');
-const teamRoutes = require('./routes/teams');
-const vtoRoutes = require('./routes/vto');
-const rocksRoutes = require('./routes/rocks');
-const scorecardRoutes = require('./routes/scorecard');
-const meetingRoutes = require('./routes/meetings');
-const todoRoutes = require('./routes/todos');
-const issueRoutes = require('./routes/issues');
-const departmentRoutes = require('./routes/departmentRoutes');
-const accountabilityRoutes = require('./routes/accountabilityRoutes');
-const subscriptionRoutes = require('./routes/subscriptionRoutes');
-const webhookRoutes = require('./routes/webhookRoutes');
+import authRoutes from './routes/auth.js';
+import organizationRoutes from './routes/organizations.js';
+import teamRoutes from './routes/teams.js';
+import vtoRoutes from './routes/vto.js';
+import rocksRoutes from './routes/rocks.js';
+import scorecardRoutes from './routes/scorecard.js';
+import meetingRoutes from './routes/meetings.js';
+import todoRoutes from './routes/todos.js';
+import issueRoutes from './routes/issues.js';
+import departmentRoutes from './routes/departmentRoutes.js';
+import accountabilityRoutes from './routes/accountabilityRoutes.js';
+import subscriptionRoutes from './routes/subscriptionRoutes.js';
+import webhookRoutes from './routes/webhookRoutes.js';
 
 // Import middleware
-const { errorHandler } = require('./middleware/errorHandler');
-const { notFound } = require('./middleware/notFound');
+import { errorHandler } from './middleware/errorHandler.js';
+import { notFound } from './middleware/notFound.js';
 
 // Import jobs
-const { initializeSubscriptionJobs } = require('./jobs/subscriptionJobs');
+import { initializeSubscriptionJobs } from './jobs/subscriptionJobs.js';
 
 // Load environment variables
 dotenv.config();
@@ -92,4 +92,3 @@ app.listen(PORT, () => {
 });
 
 export default app;
-
