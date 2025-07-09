@@ -1,5 +1,6 @@
 import { query } from '../config/database.js';
 import { stripe, STRIPE_PRICES } from '../config/stripe.js';
+import { sendEmail } from '../services/emailService.js';
 
 // Start a free trial with credit card
 const startTrial = async (req, res) => {
@@ -376,8 +377,22 @@ const sendTrialReminders = async () => {
         if (adminResult.rows.length > 0) {
           const admin = adminResult.rows[0];
           
-          // Here you would send an email using your email service
-          console.log(`Sending ${reminderType} reminder to ${admin.email} for organization ${subscription.organization_name}`);
+          // Send reminder email
+          try {
+            const daysText = daysRemaining === 1 ? '1 day' : `${daysRemaining} days`;
+            await sendEmail(admin.email, 'trialReminder', {
+              firstName: admin.first_name,
+              organizationName: subscription.organization_name,
+              daysRemaining: daysText,
+              monthlyTotal: subscription.user_count * subscription.price_per_user,
+              userCount: subscription.user_count,
+              billingUrl: `${process.env.FRONTEND_URL || 'http://localhost:5173'}/billing`
+            });
+            
+            console.log(`Sent ${reminderType} reminder to ${admin.email} for organization ${subscription.organization_name}`);
+          } catch (emailError) {
+            console.error(`Failed to send trial reminder email:`, emailError);
+          }
           
           // Update last reminder sent
           await query(

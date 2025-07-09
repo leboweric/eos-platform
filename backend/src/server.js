@@ -19,6 +19,7 @@ import departmentRoutes from './routes/departmentRoutes.js';
 import accountabilityRoutes from './routes/accountabilityRoutes.js';
 import subscriptionRoutes from './routes/subscriptionRoutes.js';
 import webhookRoutes from './routes/webhookRoutes.js';
+import userRoutes from './routes/userRoutes.js';
 
 // Import middleware
 import { errorHandler } from './middleware/errorHandler.js';
@@ -65,6 +66,7 @@ app.get('/health', (req, res) => {
 
 // API Routes
 app.use('/api/v1/auth', authRoutes);
+app.use('/api/v1/users', userRoutes);
 app.use('/api/v1/organizations', organizationRoutes);
 app.use('/api/v1/organizations/:orgId/teams', teamRoutes);
 app.use('/api/v1/organizations/:orgId/teams/:teamId/vto', vtoRoutes);
