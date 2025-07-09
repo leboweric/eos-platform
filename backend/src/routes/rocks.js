@@ -7,12 +7,12 @@ import {
   deleteRock,
   updateRockStatus
 } from '../controllers/rocksController.js';
-import { authenticateToken } from '../middleware/auth.js';
+import { authenticate } from '../middleware/auth.js';
 
 const router = express.Router({ mergeParams: true });
 
 // All routes require authentication
-router.use(authenticateToken);
+router.use(authenticate);
 
 // Get all rocks (with optional department filter)
 router.get('/', getRocks);

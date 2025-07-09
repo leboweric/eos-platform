@@ -1,12 +1,12 @@
 import express from 'express';
 import { getDepartments, getDepartment, createDepartment, updateDepartment, deleteDepartment } from '../controllers/departmentController.js';
 import { getDepartmentVTO } from '../controllers/vtoController.js';
-import { authenticateToken } from '../middleware/auth.js';
+import { authenticate } from '../middleware/auth.js';
 
 const router = express.Router();
 
 // All routes require authentication
-router.use(authenticateToken);
+router.use(authenticate);
 
 // Get all departments for organization
 router.get('/', getDepartments);

@@ -8,12 +8,12 @@ import {
   updateResponsibilities,
   assignUser
 } from '../controllers/accountabilityController.js';
-import { authenticateToken } from '../middleware/auth.js';
+import { authenticate } from '../middleware/auth.js';
 
 const router = express.Router();
 
 // All routes require authentication
-router.use(authenticateToken);
+router.use(authenticate);
 
 // Get all seats for organization
 router.get('/', getSeats);
