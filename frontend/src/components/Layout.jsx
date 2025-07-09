@@ -24,7 +24,9 @@ import {
   X,
   LogOut,
   Settings,
-  User
+  User,
+  Building2,
+  Network
 } from 'lucide-react';
 
 const Layout = ({ children }) => {
@@ -36,11 +38,13 @@ const Layout = ({ children }) => {
   const navigation = [
     { name: 'Dashboard', href: '/dashboard', icon: Home },
     { name: 'V/TO®', href: '/vto', icon: Target },
+    { name: 'Accountability Chart', href: '/accountability', icon: Network },
     { name: 'Rocks', href: '/rocks', icon: CheckSquare },
     { name: 'Scorecard', href: '/scorecard', icon: BarChart3 },
     { name: 'Meetings', href: '/meetings', icon: Calendar },
     { name: 'To-Dos', href: '/todos', icon: ClipboardList },
     { name: 'Issues', href: '/issues', icon: MessageSquare },
+    { name: 'Departments', href: '/departments', icon: Building2 },
   ];
 
   const handleLogout = async () => {
@@ -54,7 +58,7 @@ const Layout = ({ children }) => {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-gray-50 flex">
       {/* Mobile sidebar overlay */}
       {sidebarOpen && (
         <div
@@ -65,7 +69,7 @@ const Layout = ({ children }) => {
 
       {/* Sidebar */}
       <div className={`
-        fixed inset-y-0 left-0 z-50 w-64 bg-white shadow-lg transform transition-transform duration-300 ease-in-out lg:translate-x-0 lg:static lg:inset-0
+        fixed inset-y-0 left-0 z-50 w-64 bg-white shadow-lg transform transition-transform duration-300 ease-in-out lg:translate-x-0 lg:relative lg:inset-auto lg:flex lg:flex-col lg:min-h-screen
         ${sidebarOpen ? 'translate-x-0' : '-translate-x-full'}
       `}>
         <div className="flex items-center justify-between h-16 px-6 border-b">
@@ -107,7 +111,7 @@ const Layout = ({ children }) => {
         </nav>
 
         {/* Organization info */}
-        <div className="absolute bottom-0 left-0 right-0 p-4 border-t bg-gray-50">
+        <div className="mt-auto p-4 border-t bg-gray-50">
           <div className="text-xs text-gray-500 mb-1">Organization</div>
           <div className="text-sm font-medium text-gray-900 truncate">
             {user?.organizationName || 'Loading...'}
@@ -116,7 +120,7 @@ const Layout = ({ children }) => {
       </div>
 
       {/* Main content */}
-      <div className="lg:pl-64">
+      <div className="flex-1 flex flex-col">
         {/* Top bar */}
         <div className="sticky top-0 z-30 bg-white border-b px-4 py-3">
           <div className="flex items-center justify-between">
@@ -175,7 +179,7 @@ const Layout = ({ children }) => {
         </div>
 
         {/* Page content */}
-        <main className="p-6">
+        <main className="flex-1 p-6 overflow-auto">
           {children}
         </main>
       </div>
