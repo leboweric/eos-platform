@@ -101,7 +101,12 @@ const Layout = ({ children }) => {
         <div className="flex items-center justify-between h-16 px-6 border-b">
           <Link to="/dashboard" className="flex items-center space-x-2">
             <Target className="h-8 w-8 text-primary" />
-            <span className="text-xl font-bold">Strategic Execution Platform</span>
+            <div className="flex flex-col">
+              <span className="text-xl font-bold">SEP</span>
+              {user?.organizationName && (
+                <span className="text-xs text-gray-600">{user.organizationName}</span>
+              )}
+            </div>
           </Link>
           <button
             onClick={() => setSidebarOpen(false)}
@@ -158,6 +163,9 @@ const Layout = ({ children }) => {
                 <Menu className="h-6 w-6" />
               </button>
               <h1 className="text-xl font-semibold text-gray-900">
+                {user?.organizationName && (
+                  <span>{user.organizationName} </span>
+                )}
                 {navigation.find(item => item.href === location.pathname)?.name || 'Strategic Execution Platform'}
               </h1>
             </div>
