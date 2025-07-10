@@ -91,7 +91,10 @@ export const getVTO = async (req, res) => {
       success: true,
       data: {
         vto: vto,
-        coreValues: coreValues.rows,
+        coreValues: coreValues.rows.map(cv => ({
+          ...cv,
+          value: cv.value_text  // Map value_text to value for frontend compatibility
+        })),
         coreFocus: coreFocus.rows[0] || null,
         tenYearTarget: tenYearTarget.rows[0] || null,
         marketingStrategy: marketingStrategy.rows[0] || null,
@@ -139,7 +142,10 @@ export const upsertCoreValue = async (req, res) => {
 
       res.json({
         success: true,
-        data: result.rows[0]
+        data: {
+          ...result.rows[0],
+          value: result.rows[0].value_text  // Map value_text to value
+        }
       });
     } else {
       // Create new
@@ -153,7 +159,10 @@ export const upsertCoreValue = async (req, res) => {
 
       res.status(201).json({
         success: true,
-        data: result.rows[0]
+        data: {
+          ...result.rows[0],
+          value: result.rows[0].value_text  // Map value_text to value
+        }
       });
     }
   } catch (error) {
@@ -179,9 +188,9 @@ export const deleteCoreValue = async (req, res) => {
        WHERE id = $1 
        AND vto_id IN (
          SELECT id FROM business_blueprints 
-         WHERE organization_id = $2 AND team_id = $3
+         WHERE organization_id = $2 AND team_id IS NULL
        )`,
-      [valueId, orgId, teamId]
+      [valueId, orgId]
     );
 
     if (result.rowCount === 0) {
