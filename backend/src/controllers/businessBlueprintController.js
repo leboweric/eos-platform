@@ -3,17 +3,18 @@ import { v4 as uuidv4 } from 'uuid';
 
 // Helper function to get or create VTO
 const getOrCreateVTO = async (orgId, teamId) => {
-  const vtoResult = await query(
-    'SELECT id FROM business_blueprints WHERE organization_id = $1 AND team_id = $2',
-    [orgId, teamId]
+  // First try to find without team_id (organization-level)
+  let vtoResult = await query(
+    'SELECT id FROM business_blueprints WHERE organization_id = $1 AND team_id IS NULL',
+    [orgId]
   );
 
   if (vtoResult.rows.length === 0) {
-    // Create VTO if it doesn't exist
+    // Create VTO if it doesn't exist - without team_id for now
     const newVtoId = uuidv4();
     await query(
-      'INSERT INTO business_blueprints (id, organization_id, team_id) VALUES ($1, $2, $3)',
-      [newVtoId, orgId, teamId]
+      'INSERT INTO business_blueprints (id, organization_id) VALUES ($1, $2)',
+      [newVtoId, orgId]
     );
     return newVtoId;
   }
@@ -38,37 +39,21 @@ export const getVTO = async (req, res) => {
       });
     }
 
-    // Get VTO - support both team-level and department-level VTOs
-    let vtoResult;
-    if (departmentId) {
-      vtoResult = await query(
-        'SELECT * FROM business_blueprints WHERE organization_id = $1 AND department_id = $2',
-        [orgId, departmentId]
-      );
-    } else {
-      vtoResult = await query(
-        'SELECT * FROM business_blueprints WHERE organization_id = $1 AND team_id = $2',
-        [orgId, teamId]
-      );
-    }
+    // Get VTO - look for organization-level VTO (team_id = NULL)
+    let vtoResult = await query(
+      'SELECT * FROM business_blueprints WHERE organization_id = $1 AND team_id IS NULL',
+      [orgId]
+    );
 
     let vto;
     if (vtoResult.rows.length === 0) {
-      // Create default VTO if none exists
+      // Create default VTO if none exists - organization level for now
       const newVtoId = uuidv4();
-      if (departmentId) {
-        await query(
-          'INSERT INTO business_blueprints (id, organization_id, department_id) VALUES ($1, $2, $3)',
-          [newVtoId, orgId, departmentId]
-        );
-        vto = { id: newVtoId, organization_id: orgId, department_id: departmentId };
-      } else {
-        await query(
-          'INSERT INTO business_blueprints (id, organization_id, team_id) VALUES ($1, $2, $3)',
-          [newVtoId, orgId, teamId]
-        );
-        vto = { id: newVtoId, organization_id: orgId, team_id: teamId };
-      }
+      await query(
+        'INSERT INTO business_blueprints (id, organization_id) VALUES ($1, $2)',
+        [newVtoId, orgId]
+      );
+      vto = { id: newVtoId, organization_id: orgId };
     } else {
       vto = vtoResult.rows[0];
     }
