@@ -74,7 +74,7 @@ export const getOrganizationalCharts = async (req, res) => {
       `;
     }
 
-    chartsQuery += ' ORDER BY oc.updated_at DESC';
+    chartsQuery += ' ORDER BY updated_at DESC';
 
     const result = await query(chartsQuery, queryParams);
 
