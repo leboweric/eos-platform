@@ -21,6 +21,8 @@ import subscriptionRoutes from './routes/subscriptionRoutes.js';
 import webhookRoutes from './routes/webhookRoutes.js';
 import userRoutes from './routes/userRoutes.js';
 import consultantRoutes from './routes/consultantRoutes.js';
+import organizationalChartRoutes from './routes/organizationalChart.js';
+import skillsRoutes from './routes/skills.js';
 
 // Import middleware
 import { errorHandler } from './middleware/errorHandler.js';
@@ -75,6 +77,7 @@ app.get('/health', (req, res) => {
 // API Routes
 app.use('/api/v1/auth', authRoutes);
 app.use('/api/v1/users', userRoutes);
+app.use('/api/v1/organizations/:orgId/users', userRoutes); // For org-scoped user operations
 app.use('/api/v1/organizations', organizationRoutes);
 app.use('/api/v1/organizations/:orgId/teams', teamRoutes);
 app.use('/api/v1/organizations/:orgId/teams/:teamId/business-blueprint', businessBlueprintRoutes);
@@ -87,6 +90,8 @@ app.use('/api/v1/departments', departmentRoutes);
 app.use('/api/v1/accountability', accountabilityRoutes);
 app.use('/api/v1/subscription', subscriptionRoutes);
 app.use('/api/v1/consultant', consultantRoutes);
+app.use('/api/v1/organizations/:orgId/organizational-charts', organizationalChartRoutes);
+app.use('/api/v1/organizations/:orgId/skills', skillsRoutes);
 
 // Webhook routes (must be before express.json() middleware for raw body)
 app.use('/webhooks', webhookRoutes);
