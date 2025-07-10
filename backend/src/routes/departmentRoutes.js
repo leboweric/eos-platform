@@ -1,6 +1,6 @@
 import express from 'express';
 import { getDepartments, getDepartment, createDepartment, updateDepartment, deleteDepartment } from '../controllers/departmentController.js';
-import { getDepartmentVTO } from '../controllers/vtoController.js';
+import { getDepartmentVTO } from '../controllers/businessBlueprintController.js';
 import { authenticate } from '../middleware/auth.js';
 
 const router = express.Router();
@@ -32,7 +32,7 @@ router.get('/:departmentId/rocks', (req, res, next) => {
   req.query.departmentId = req.params.departmentId;
   next();
 }, async (req, res) => {
-  const { getRocks } = await import('../controllers/rocksController.js');
+  const { getRocks } = await import('../controllers/quarterlyPrioritiesController.js');
   return getRocks(req, res);
 });
 
