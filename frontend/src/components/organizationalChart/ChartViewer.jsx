@@ -13,6 +13,8 @@ import {
   Edit
 } from 'lucide-react';
 import VisualOrgChart from './VisualOrgChart';
+import EditPositionDialog from './EditPositionDialog';
+import AddPositionDialog from './AddPositionDialog';
 import { useAuthStore } from '../../stores/authStore';
 
 const ChartViewer = ({ chartId, onEdit }) => {
@@ -21,6 +23,10 @@ const ChartViewer = ({ chartId, onEdit }) => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [chartData, setChartData] = useState(null);
+  const [showEditDialog, setShowEditDialog] = useState(false);
+  const [showAddDialog, setShowAddDialog] = useState(false);
+  const [editingPosition, setEditingPosition] = useState(null);
+  const [parentPosition, setParentPosition] = useState(null);
 
   const canEdit = ['admin', 'manager'].includes(user?.role) || user?.isConsultant;
 
@@ -42,19 +48,40 @@ const ChartViewer = ({ chartId, onEdit }) => {
     }
   };
 
-  const handleAddPosition = (parentPosition) => {
-    // This would open a dialog or navigate to edit mode
-    console.log('Add position under:', parentPosition);
-    if (onEdit) {
-      onEdit();
-    }
+  const handleAddPosition = (parent) => {
+    setParentPosition(parent);
+    setShowAddDialog(true);
   };
 
   const handleEditPosition = (position) => {
-    // This would open a dialog or navigate to edit mode
-    console.log('Edit position:', position);
-    if (onEdit) {
-      onEdit();
+    setEditingPosition(position);
+    setShowEditDialog(true);
+  };
+
+  const handleCreatePosition = async (positionData) => {
+    try {
+      await organizationalChartService.addPosition(chartId, {
+        ...positionData,
+        parentPositionId: parentPosition?.id
+      });
+      await fetchChartData();
+      setShowAddDialog(false);
+      setParentPosition(null);
+    } catch (error) {
+      console.error('Failed to add position:', error);
+      throw error;
+    }
+  };
+
+  const handleUpdatePosition = async (positionData) => {
+    try {
+      await organizationalChartService.updatePosition(chartId, editingPosition.id, positionData);
+      await fetchChartData();
+      setShowEditDialog(false);
+      setEditingPosition(null);
+    } catch (error) {
+      console.error('Failed to update position:', error);
+      throw error;
     }
   };
 
@@ -195,6 +222,34 @@ const ChartViewer = ({ chartId, onEdit }) => {
           </CardContent>
         </Card>
       </div>
+
+      {/* Edit Position Dialog */}
+      {showEditDialog && editingPosition && (
+        <EditPositionDialog
+          open={showEditDialog}
+          onClose={() => {
+            setShowEditDialog(false);
+            setEditingPosition(null);
+          }}
+          onSave={handleUpdatePosition}
+          position={editingPosition}
+          skills={[]} // TODO: fetch skills if needed
+        />
+      )}
+
+      {/* Add Position Dialog */}
+      {showAddDialog && (
+        <AddPositionDialog
+          open={showAddDialog}
+          onClose={() => {
+            setShowAddDialog(false);
+            setParentPosition(null);
+          }}
+          onCreate={handleCreatePosition}
+          parentPosition={parentPosition}
+          skills={[]} // TODO: fetch skills if needed
+        />
+      )}
     </div>
   );
 };
