@@ -26,9 +26,9 @@ router.delete('/:id', deleteDepartment);
 // Get VTO for department
 router.get('/:departmentId/vto', getDepartmentVTO);
 
-// Get rocks for department
+// Get quarterly priorities for department
 router.get('/:departmentId/rocks', (req, res, next) => {
-  // Pass departmentId as query parameter to rocks controller
+  // Pass departmentId as query parameter to quarterly priorities controller
   req.query.departmentId = req.params.departmentId;
   next();
 }, async (req, res) => {

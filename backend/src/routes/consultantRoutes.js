@@ -6,7 +6,7 @@ import {
   getClientOrganizations,
   switchToClientOrganization,
   getClientDashboard
-} from '../controllers/eosiController.js';
+} from '../controllers/consultantController.js';
 
 const router = express.Router();
 

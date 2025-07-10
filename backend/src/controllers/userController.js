@@ -35,7 +35,7 @@ export const inviteUser = async (req, res) => {
     const invitedBy = req.user.id;
 
     // Check if user can invite (must be admin or EOSI)
-    if (req.user.role !== 'admin' && !req.user.is_eosi) {
+    if (req.user.role !== 'admin' && !req.user.is_consultant) {
       return res.status(403).json({ error: 'Only administrators can invite users' });
     }
 
@@ -188,7 +188,7 @@ export const removeUser = async (req, res) => {
     const organizationId = req.user.organization_id;
 
     // Check if user can remove (must be admin or EOSI)
-    if (req.user.role !== 'admin' && !req.user.is_eosi) {
+    if (req.user.role !== 'admin' && !req.user.is_consultant) {
       return res.status(403).json({ error: 'Only administrators can remove users' });
     }
 
@@ -272,7 +272,7 @@ export const cancelInvitation = async (req, res) => {
     const organizationId = req.user.organization_id;
 
     // Check if user can cancel (must be admin or EOSI)
-    if (req.user.role !== 'admin' && !req.user.is_eosi) {
+    if (req.user.role !== 'admin' && !req.user.is_consultant) {
       return res.status(403).json({ error: 'Only administrators can cancel invitations' });
     }
 

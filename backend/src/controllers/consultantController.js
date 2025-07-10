@@ -11,7 +11,7 @@ export const createClientOrganization = async (req, res) => {
     const consultantUserId = req.user.id;
 
     // Verify user is Consultant
-    if (!req.user.is_eosi) {
+    if (!req.user.is_consultant) {
       return res.status(403).json({ error: 'Only Consultant users can create client organizations' });
     }
 
@@ -40,7 +40,7 @@ export const createClientOrganization = async (req, res) => {
 
       // Create Consultant-organization relationship
       await client.query(
-        'INSERT INTO eosi_organizations (eosi_user_id, organization_id) VALUES ($1, $2)',
+        'INSERT INTO consultant_organizations (consultant_user_id, organization_id) VALUES ($1, $2)',
         [consultantUserId, organizationId]
       );
 
@@ -105,7 +105,7 @@ export const createClientOrganization = async (req, res) => {
 // Get all client organizations for Consultant
 export const getClientOrganizations = async (req, res) => {
   try {
-    if (!req.user.is_eosi) {
+    if (!req.user.is_consultant) {
       return res.status(403).json({ error: 'Only Consultant users can access this endpoint' });
     }
 
@@ -117,13 +117,13 @@ export const getClientOrganizations = async (req, res) => {
               COUNT(DISTINCT r.id) FILTER (WHERE r.status = 'at_risk') as rocks_at_risk,
               s.status as subscription_status,
               s.user_count * s.price_per_user as monthly_revenue
-       FROM eosi_organizations eo
+       FROM consultant_organizations eo
        JOIN organizations o ON eo.organization_id = o.id
        LEFT JOIN users u ON u.organization_id = o.id
        LEFT JOIN rocks r ON r.organization_id = o.id AND r.quarter = 
          (SELECT MAX(quarter) FROM rocks WHERE organization_id = o.id)
        LEFT JOIN subscriptions s ON s.organization_id = o.id
-       WHERE eo.eosi_user_id = $1
+       WHERE eo.consultant_user_id = $1
        GROUP BY o.id, s.status, s.user_count, s.price_per_user
        ORDER BY o.name`,
       [req.user.id]
@@ -145,13 +145,13 @@ export const switchToClientOrganization = async (req, res) => {
   try {
     const { organizationId } = req.params;
 
-    if (!req.user.is_eosi) {
+    if (!req.user.is_consultant) {
       return res.status(403).json({ error: 'Only Consultant users can switch organizations' });
     }
 
     // Verify Consultant has access to this organization
     const accessCheck = await query(
-      'SELECT 1 FROM eosi_organizations WHERE eosi_user_id = $1 AND organization_id = $2',
+      'SELECT 1 FROM consultant_organizations WHERE consultant_user_id = $1 AND organization_id = $2',
       [req.user.id, organizationId]
     );
 
@@ -194,13 +194,13 @@ export const getClientDashboard = async (req, res) => {
   try {
     const { organizationId } = req.params;
 
-    if (!req.user.is_eosi) {
+    if (!req.user.is_consultant) {
       return res.status(403).json({ error: 'Only Consultant users can access this endpoint' });
     }
 
     // Verify Consultant has access to this organization
     const accessCheck = await query(
-      'SELECT 1 FROM eosi_organizations WHERE eosi_user_id = $1 AND organization_id = $2',
+      'SELECT 1 FROM consultant_organizations WHERE consultant_user_id = $1 AND organization_id = $2',
       [req.user.id, organizationId]
     );
 

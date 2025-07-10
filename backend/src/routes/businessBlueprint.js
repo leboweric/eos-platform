@@ -8,7 +8,7 @@ import {
   updateCoreFocus,
   updateTenYearTarget,
   updateMarketingStrategy
-} from '../controllers/vtoController.js';
+} from '../controllers/businessBlueprintController.js';
 
 const router = express.Router({ mergeParams: true });
 

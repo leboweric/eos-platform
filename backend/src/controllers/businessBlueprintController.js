@@ -27,12 +27,12 @@ export const getVTO = async (req, res) => {
     let vtoResult;
     if (departmentId) {
       vtoResult = await query(
-        'SELECT * FROM vtos WHERE organization_id = $1 AND department_id = $2',
+        'SELECT * FROM business_blueprints WHERE organization_id = $1 AND department_id = $2',
         [orgId, departmentId]
       );
     } else {
       vtoResult = await query(
-        'SELECT * FROM vtos WHERE organization_id = $1 AND team_id = $2',
+        'SELECT * FROM business_blueprints WHERE organization_id = $1 AND team_id = $2',
         [orgId, teamId]
       );
     }
@@ -43,13 +43,13 @@ export const getVTO = async (req, res) => {
       const newVtoId = uuidv4();
       if (departmentId) {
         await query(
-          'INSERT INTO vtos (id, organization_id, department_id) VALUES ($1, $2, $3)',
+          'INSERT INTO business_blueprints (id, organization_id, department_id) VALUES ($1, $2, $3)',
           [newVtoId, orgId, departmentId]
         );
         vto = { id: newVtoId, organization_id: orgId, department_id: departmentId };
       } else {
         await query(
-          'INSERT INTO vtos (id, organization_id, team_id) VALUES ($1, $2, $3)',
+          'INSERT INTO business_blueprints (id, organization_id, team_id) VALUES ($1, $2, $3)',
           [newVtoId, orgId, teamId]
         );
         vto = { id: newVtoId, organization_id: orgId, team_id: teamId };
@@ -126,7 +126,7 @@ export const upsertCoreValue = async (req, res) => {
 
     // Get VTO ID
     const vtoResult = await query(
-      'SELECT id FROM vtos WHERE organization_id = $1 AND team_id = $2',
+      'SELECT id FROM business_blueprints WHERE organization_id = $1 AND team_id = $2',
       [orgId, teamId]
     );
 
@@ -190,7 +190,7 @@ export const deleteCoreValue = async (req, res) => {
       `DELETE FROM core_values 
        WHERE id = $1 
        AND vto_id IN (
-         SELECT id FROM vtos 
+         SELECT id FROM business_blueprints 
          WHERE organization_id = $2 AND team_id = $3
        )`,
       [valueId, orgId, teamId]
@@ -227,7 +227,7 @@ export const updateCoreFocus = async (req, res) => {
 
     // Get VTO ID
     const vtoResult = await query(
-      'SELECT id FROM vtos WHERE organization_id = $1 AND team_id = $2',
+      'SELECT id FROM business_blueprints WHERE organization_id = $1 AND team_id = $2',
       [orgId, teamId]
     );
 
@@ -291,7 +291,7 @@ export const updateTenYearTarget = async (req, res) => {
 
     // Get VTO ID
     const vtoResult = await query(
-      'SELECT id FROM vtos WHERE organization_id = $1 AND team_id = $2',
+      'SELECT id FROM business_blueprints WHERE organization_id = $1 AND team_id = $2',
       [orgId, teamId]
     );
 
@@ -358,7 +358,7 @@ export const updateMarketingStrategy = async (req, res) => {
 
     // Get VTO ID
     const vtoResult = await query(
-      'SELECT id FROM vtos WHERE organization_id = $1 AND team_id = $2',
+      'SELECT id FROM business_blueprints WHERE organization_id = $1 AND team_id = $2',
       [orgId, teamId]
     );
 
@@ -437,7 +437,7 @@ export const getDepartmentVTO = async (req, res) => {
 
     // Get VTO
     const vtoResult = await query(
-      'SELECT * FROM vtos WHERE department_id = $1',
+      'SELECT * FROM business_blueprints WHERE department_id = $1',
       [departmentId]
     );
 
@@ -446,7 +446,7 @@ export const getDepartmentVTO = async (req, res) => {
       // Create default VTO if none exists
       const newVtoId = uuidv4();
       await query(
-        'INSERT INTO vtos (id, organization_id, department_id) VALUES ($1, $2, $3)',
+        'INSERT INTO business_blueprints (id, organization_id, department_id) VALUES ($1, $2, $3)',
         [newVtoId, organizationId, departmentId]
       );
       vto = { id: newVtoId, organization_id: organizationId, department_id: departmentId };

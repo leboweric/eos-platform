@@ -1,7 +1,7 @@
 import db from '../config/database.js';
 import logger from '../utils/logger.js';
 
-// Get all rocks with optional department filter
+// Get all quarterly_priorities with optional department filter
 const getRocks = async (req, res) => {
   try {
     const { organizationId } = req.user;
@@ -26,7 +26,7 @@ const getRocks = async (req, res) => {
         u.first_name || ' ' || u.last_name as owner_name,
         t.name as team_name,
         d.name as department_name
-      FROM rocks r
+      FROM quarterly_priorities r
       LEFT JOIN users u ON u.id = r.owner_id
       LEFT JOIN teams t ON t.id = r.team_id
       LEFT JOIN departments d ON d.id = r.department_id
@@ -72,8 +72,8 @@ const getRocks = async (req, res) => {
 
     res.json(rows);
   } catch (error) {
-    logger.error('Error fetching rocks:', error);
-    res.status(500).json({ error: 'Failed to fetch rocks' });
+    logger.error('Error fetching quarterly_priorities:', error);
+    res.status(500).json({ error: 'Failed to fetch quarterly_priorities' });
   }
 };
 
@@ -102,7 +102,7 @@ const getRock = async (req, res) => {
           FROM rock_milestones m
           WHERE m.rock_id = r.id
         ) as milestones
-      FROM rocks r
+      FROM quarterly_priorities r
       LEFT JOIN users u ON u.id = r.owner_id
       LEFT JOIN teams t ON t.id = r.team_id
       LEFT JOIN departments d ON d.id = r.department_id
@@ -159,7 +159,7 @@ const createRock = async (req, res) => {
 
     // Create rock
     const rockQuery = `
-      INSERT INTO rocks (
+      INSERT INTO quarterly_priorities (
         name, description, organization_id, owner_id, team_id, department_id,
         due_date, quarter, year, is_company_rock, status
       )
@@ -229,7 +229,7 @@ const updateRock = async (req, res) => {
 
     // Check rock exists and belongs to org
     const existingCheck = await client.query(
-      'SELECT id FROM rocks WHERE id = $1 AND organization_id = $2',
+      'SELECT id FROM quarterly_priorities WHERE id = $1 AND organization_id = $2',
       [id, organizationId]
     );
     if (existingCheck.rows.length === 0) {
@@ -238,7 +238,7 @@ const updateRock = async (req, res) => {
 
     // Update rock
     const updateQuery = `
-      UPDATE rocks 
+      UPDATE quarterly_priorities 
       SET name = $1, description = $2, owner_id = $3, team_id = $4, 
           department_id = $5, due_date = $6, status = $7, 
           completion_percentage = $8, updated_at = NOW()
@@ -303,7 +303,7 @@ const deleteRock = async (req, res) => {
 
     // Delete rock
     const result = await client.query(
-      'DELETE FROM rocks WHERE id = $1 AND organization_id = $2 RETURNING id',
+      'DELETE FROM quarterly_priorities WHERE id = $1 AND organization_id = $2 RETURNING id',
       [id, organizationId]
     );
 
@@ -330,7 +330,7 @@ const updateRockStatus = async (req, res) => {
     const { status, completionPercentage } = req.body;
 
     const query = `
-      UPDATE rocks 
+      UPDATE quarterly_priorities 
       SET status = $1, completion_percentage = $2, updated_at = NOW()
       WHERE id = $3 AND organization_id = $4
       RETURNING *`;
@@ -375,7 +375,7 @@ const getRockWithDetails = async (rockId, organizationId) => {
         FROM rock_milestones m
         WHERE m.rock_id = r.id
       ) as milestones
-    FROM rocks r
+    FROM quarterly_priorities r
     LEFT JOIN users u ON u.id = r.owner_id
     LEFT JOIN teams t ON t.id = r.team_id
     LEFT JOIN departments d ON d.id = r.department_id

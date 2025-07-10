@@ -56,7 +56,7 @@ export const register = async (req, res) => {
 
     // Check if this is a Consultant user
     // TODO: Replace with proper consultant verification logic
-    const isEOSI = email.toLowerCase().endsWith('@eosworldwide.com');
+    const isConsultant = email.toLowerCase().endsWith('@eosworldwide.com');
 
     // Create organization slug
     let slug = createSlug(organizationName);
@@ -84,9 +84,9 @@ export const register = async (req, res) => {
 
       // Create user
       const userResult = await client.query(
-        `INSERT INTO users (organization_id, email, password_hash, first_name, last_name, role, is_eosi, eosi_email) 
-         VALUES ($1, $2, $3, $4, $5, $6, $7, $8) RETURNING id, email, first_name, last_name, role, is_eosi`,
-        [organizationId, email, passwordHash, firstName, lastName, 'admin', isEOSI, isEOSI ? email : null]
+        `INSERT INTO users (organization_id, email, password_hash, first_name, last_name, role, is_consultant, consultant_email) 
+         VALUES ($1, $2, $3, $4, $5, $6, $7, $8) RETURNING id, email, first_name, last_name, role, is_consultant`,
+        [organizationId, email, passwordHash, firstName, lastName, 'admin', isConsultant, isConsultant ? email : null]
       );
       const user = userResult.rows[0];
 
@@ -119,7 +119,7 @@ export const register = async (req, res) => {
             role: user.role,
             organizationId,
             organizationName,
-            isConsultant: user.is_eosi
+            isConsultant: user.is_consultant
           },
           accessToken,
           refreshToken
@@ -159,7 +159,7 @@ export const login = async (req, res) => {
     // Get user with organization info
     const result = await query(
       `SELECT u.id, u.email, u.password_hash, u.first_name, u.last_name, u.role, u.organization_id,
-              u.is_eosi, o.name as organization_name, o.slug as organization_slug
+              u.is_consultant, o.name as organization_name, o.slug as organization_slug
        FROM users u
        JOIN organizations o ON u.organization_id = o.id
        WHERE u.email = $1`,
@@ -195,12 +195,12 @@ export const login = async (req, res) => {
 
     // If Consultant user, get their client organizations
     let clientOrganizations = [];
-    if (user.is_eosi) {
+    if (user.is_consultant) {
       const clientOrgsResult = await query(
         `SELECT o.id, o.name, o.slug 
-         FROM eosi_organizations eo
+         FROM consultant_organizations eo
          JOIN organizations o ON eo.organization_id = o.id
-         WHERE eo.eosi_user_id = $1
+         WHERE eo.consultant_user_id = $1
          ORDER BY o.name`,
         [user.id]
       );
@@ -219,7 +219,7 @@ export const login = async (req, res) => {
           organizationId: user.organization_id,
           organizationName: user.organization_name,
           organizationSlug: user.organization_slug,
-          isConsultant: user.is_eosi,
+          isConsultant: user.is_consultant,
           clientOrganizations
         },
         accessToken,
@@ -304,7 +304,7 @@ export const getProfile = async (req, res) => {
   try {
     const result = await query(
       `SELECT u.id, u.email, u.first_name, u.last_name, u.role, u.avatar_url, u.settings,
-              u.organization_id, u.is_eosi, o.name as organization_name, o.slug as organization_slug
+              u.organization_id, u.is_consultant, o.name as organization_name, o.slug as organization_slug
        FROM users u
        JOIN organizations o ON u.organization_id = o.id
        WHERE u.id = $1`,
@@ -333,7 +333,7 @@ export const getProfile = async (req, res) => {
         organizationId: user.organization_id,
         organizationName: user.organization_name,
         organizationSlug: user.organization_slug,
-        isConsultant: user.is_eosi
+        isConsultant: user.is_consultant
       }
     });
 

@@ -16,7 +16,7 @@ export const authenticate = async (req, res, next) => {
     
     // Get user from database
     const result = await query(
-      'SELECT id, email, first_name, last_name, role, organization_id, is_eosi FROM users WHERE id = $1',
+      'SELECT id, email, first_name, last_name, role, organization_id, is_consultant FROM users WHERE id = $1',
       [decoded.userId]
     );
 
@@ -71,15 +71,15 @@ export const checkOrganizationAccess = async (req, res, next) => {
 
     // Check if user belongs to the organization
     if (req.user.organization_id !== orgId) {
-      // Check if user is EOSI with access to this organization
-      if (req.user.is_eosi) {
+      // Check if user is Consultant with access to this organization
+      if (req.user.is_consultant) {
         const accessCheck = await query(
-          'SELECT 1 FROM eosi_organizations WHERE eosi_user_id = $1 AND organization_id = $2',
+          'SELECT 1 FROM consultant_organizations WHERE consultant_user_id = $1 AND organization_id = $2',
           [req.user.id, orgId]
         );
         
         if (accessCheck.rows.length > 0) {
-          // EOSI has access, allow them through
+          // Consultant has access, allow them through
           next();
           return;
         }

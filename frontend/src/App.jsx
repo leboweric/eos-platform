@@ -7,8 +7,8 @@ import Layout from './components/Layout';
 import LoginPage from './pages/LoginPage';
 import RegisterPage from './pages/RegisterPage';
 import Dashboard from './pages/Dashboard';
-import BusinessBlueprintPage from './pages/VTOPage';
-import QuarterlyPrioritiesPage from './pages/RocksPage';
+import BusinessBlueprintPage from './pages/BusinessBlueprintPage';
+import QuarterlyPrioritiesPage from './pages/QuarterlyPrioritiesPage';
 import ScorecardPage from './pages/ScorecardPage';
 import MeetingsPage from './pages/MeetingsPage';
 import TodosPage from './pages/TodosPage';
@@ -19,8 +19,8 @@ import AccountabilityChart from './pages/AccountabilityChart';
 import BillingPage from './pages/BillingPage';
 import UsersPage from './pages/UsersPage';
 import AcceptInvitationPage from './pages/AcceptInvitationPage';
-import ConsultantDashboard from './pages/EOSIDashboard';
-import ConsultantRegisterPage from './pages/EOSIRegisterPage';
+import ConsultantDashboard from './pages/ConsultantDashboard';
+import ConsultantRegisterPage from './pages/ConsultantRegisterPage';
 
 import './App.css';
 

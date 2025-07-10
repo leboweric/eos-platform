@@ -6,7 +6,7 @@ import {
   updateRock, 
   deleteRock,
   updateRockStatus
-} from '../controllers/rocksController.js';
+} from '../controllers/quarterlyPrioritiesController.js';
 import { authenticate } from '../middleware/auth.js';
 
 const router = express.Router({ mergeParams: true });
