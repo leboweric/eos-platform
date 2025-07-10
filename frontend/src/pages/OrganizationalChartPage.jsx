@@ -210,7 +210,13 @@ const OrganizationalChartPage = () => {
 
         {selectedChart && (
           <TabsContent value="view">
-            <ChartViewer chartId={selectedChart.id} />
+            <ChartViewer 
+              chartId={selectedChart.id} 
+              onEdit={() => {
+                setEditingChart(selectedChart);
+                setActiveTab('edit');
+              }}
+            />
           </TabsContent>
         )}
 

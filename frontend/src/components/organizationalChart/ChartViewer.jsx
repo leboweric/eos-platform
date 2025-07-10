@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { organizationalChartService } from '../../services/organizationalChartService';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -8,20 +9,20 @@ import {
   Loader2,
   AlertCircle,
   Users,
-  User,
-  ChevronDown,
-  ChevronRight,
   Building2,
-  Briefcase,
-  Star
+  Edit
 } from 'lucide-react';
-import PositionNode from './PositionNode';
+import VisualOrgChart from './VisualOrgChart';
+import { useAuthStore } from '../../stores/authStore';
 
-const ChartViewer = ({ chartId }) => {
+const ChartViewer = ({ chartId, onEdit }) => {
+  const navigate = useNavigate();
+  const { user } = useAuthStore();
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [chartData, setChartData] = useState(null);
-  const [expandedNodes, setExpandedNodes] = useState(new Set());
+
+  const canEdit = ['admin', 'manager'].includes(user?.role) || user?.isConsultant;
 
   useEffect(() => {
     fetchChartData();
@@ -33,11 +34,6 @@ const ChartViewer = ({ chartId }) => {
       setError(null);
       const data = await organizationalChartService.getChart(chartId);
       setChartData(data);
-      // Expand root nodes by default
-      if (data.positions) {
-        const rootIds = data.positions.map(p => p.id);
-        setExpandedNodes(new Set(rootIds));
-      }
     } catch (error) {
       console.error('Failed to fetch chart data:', error);
       setError('Failed to load organizational chart');
@@ -46,16 +42,20 @@ const ChartViewer = ({ chartId }) => {
     }
   };
 
-  const toggleNode = (nodeId) => {
-    setExpandedNodes(prev => {
-      const newSet = new Set(prev);
-      if (newSet.has(nodeId)) {
-        newSet.delete(nodeId);
-      } else {
-        newSet.add(nodeId);
-      }
-      return newSet;
-    });
+  const handleAddPosition = (parentPosition) => {
+    // This would open a dialog or navigate to edit mode
+    console.log('Add position under:', parentPosition);
+    if (onEdit) {
+      onEdit();
+    }
+  };
+
+  const handleEditPosition = (position) => {
+    // This would open a dialog or navigate to edit mode
+    console.log('Edit position:', position);
+    if (onEdit) {
+      onEdit();
+    }
   };
 
   if (loading) {
@@ -83,6 +83,7 @@ const ChartViewer = ({ chartId }) => {
 
   return (
     <div className="space-y-6">
+      {/* Chart Info Header */}
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center justify-between">
@@ -95,31 +96,28 @@ const ChartViewer = ({ chartId }) => {
         </CardHeader>
       </Card>
 
+      {/* Visual Org Chart */}
       <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center">
-            <Building2 className="mr-2 h-5 w-5" />
-            Organization Structure
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
+        <CardContent className="p-6">
           {positions.length === 0 ? (
             <div className="flex flex-col items-center justify-center py-12 text-gray-500">
               <Users className="h-12 w-12 mb-4" />
-              <p>No positions defined yet</p>
+              <p className="mb-4">No positions defined yet</p>
+              {canEdit && (
+                <Button onClick={onEdit}>
+                  <Edit className="mr-2 h-4 w-4" />
+                  Start Building Chart
+                </Button>
+              )}
             </div>
           ) : (
-            <div className="space-y-4">
-              {positions.map((position) => (
-                <PositionNode
-                  key={position.id}
-                  position={position}
-                  expanded={expandedNodes.has(position.id)}
-                  onToggle={() => toggleNode(position.id)}
-                  level={0}
-                />
-              ))}
-            </div>
+            <VisualOrgChart
+              positions={positions}
+              onEdit={onEdit}
+              onAddPosition={handleAddPosition}
+              onEditPosition={handleEditPosition}
+              canEdit={canEdit}
+            />
           )}
         </CardContent>
       </Card>
