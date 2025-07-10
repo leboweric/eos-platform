@@ -41,7 +41,7 @@ import { format } from 'date-fns';
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3001/api/v1';
 
 const ConsultantDashboard = () => {
-  const { user } = useAuthStore();
+  const { user, switchToClientOrganization } = useAuthStore();
   const navigate = useNavigate();
   const [clientOrganizations, setClientOrganizations] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -131,7 +131,10 @@ const ConsultantDashboard = () => {
         // Store the impersonation state
         localStorage.setItem('consultantImpersonating', 'true');
         localStorage.setItem('consultantOriginalOrg', user.organizationId);
-        localStorage.setItem('impersonatedOrgId', orgId);
+        localStorage.setItem('impersonatedOrgId', data.data.organizationId);
+        
+        // Update the auth store with the new organization context
+        switchToClientOrganization(data.data.organizationId, data.data.organizationName);
         
         // Navigate to the client's dashboard
         navigate('/dashboard');

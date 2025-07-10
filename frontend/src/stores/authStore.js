@@ -169,6 +169,22 @@ export const useAuthStore = create((set, get) => ({
   },
 
   // Clear error
-  clearError: () => set({ error: null })
+  clearError: () => set({ error: null }),
+
+  // Switch to client organization (for consultants)
+  switchToClientOrganization: (organizationId, organizationName) => {
+    const currentUser = get().user;
+    if (currentUser) {
+      set({
+        user: {
+          ...currentUser,
+          organizationId,
+          organizationName,
+          isImpersonating: true,
+          originalOrganizationId: currentUser.organizationId
+        }
+      });
+    }
+  }
 }));
 
