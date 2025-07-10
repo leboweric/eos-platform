@@ -42,15 +42,15 @@ const Layout = ({ children }) => {
   const { user, logout } = useAuthStore();
 
   useEffect(() => {
-    // Check if EOSI is impersonating a client
-    setIsImpersonating(localStorage.getItem('eosiImpersonating') === 'true');
+    // Check if consultant is impersonating a client
+    setIsImpersonating(localStorage.getItem('consultantImpersonating') === 'true');
   }, []);
 
   const navigation = [
     { name: 'Dashboard', href: '/dashboard', icon: Home },
-    { name: 'V/TO®', href: '/vto', icon: Target },
+    { name: 'Business Blueprint', href: '/vto', icon: Target },
     { name: 'Accountability Chart', href: '/accountability', icon: Network },
-    { name: 'Rocks', href: '/rocks', icon: CheckSquare },
+    { name: 'Quarterly Priorities', href: '/rocks', icon: CheckSquare },
     { name: 'Scorecard', href: '/scorecard', icon: BarChart3 },
     { name: 'Meetings', href: '/meetings', icon: Calendar },
     { name: 'To-Dos', href: '/todos', icon: ClipboardList },
@@ -60,9 +60,9 @@ const Layout = ({ children }) => {
     { name: 'Billing', href: '/billing', icon: CreditCard },
   ];
 
-  // Add EOSI Dashboard if user is EOSI and not impersonating
-  if (user?.isEOSI && !isImpersonating) {
-    navigation.unshift({ name: 'EOSI Dashboard', href: '/eosi', icon: Briefcase });
+  // Add Consultant Dashboard if user is consultant and not impersonating
+  if (user?.isConsultant && !isImpersonating) {
+    navigation.unshift({ name: 'Consultant Dashboard', href: '/consultant', icon: Briefcase });
   }
 
   const handleLogout = async () => {
@@ -70,12 +70,12 @@ const Layout = ({ children }) => {
     navigate('/login');
   };
 
-  const handleReturnToEOSI = () => {
+  const handleReturnToConsultant = () => {
     // Clear impersonation state
-    localStorage.removeItem('eosiImpersonating');
+    localStorage.removeItem('consultantImpersonating');
     localStorage.removeItem('impersonatedOrgId');
     // Force reload to refresh auth state
-    window.location.href = '/eosi';
+    window.location.href = '/consultant';
   };
 
   const getUserInitials = () => {
@@ -101,7 +101,7 @@ const Layout = ({ children }) => {
         <div className="flex items-center justify-between h-16 px-6 border-b">
           <Link to="/dashboard" className="flex items-center space-x-2">
             <Target className="h-8 w-8 text-primary" />
-            <span className="text-xl font-bold">EOS Platform</span>
+            <span className="text-xl font-bold">Strategic Execution Platform</span>
           </Link>
           <button
             onClick={() => setSidebarOpen(false)}
@@ -158,7 +158,7 @@ const Layout = ({ children }) => {
                 <Menu className="h-6 w-6" />
               </button>
               <h1 className="text-xl font-semibold text-gray-900">
-                {navigation.find(item => item.href === location.pathname)?.name || 'EOS Platform'}
+                {navigation.find(item => item.href === location.pathname)?.name || 'Strategic Execution Platform'}
               </h1>
             </div>
 
@@ -211,16 +211,16 @@ const Layout = ({ children }) => {
             <Alert className="mb-4 border-blue-200 bg-blue-50">
               <AlertDescription className="flex items-center justify-between">
                 <span>
-                  You are currently viewing this organization as an EOS Implementer.
+                  You are currently viewing this organization as a Strategy Consultant.
                 </span>
                 <Button
                   variant="outline"
                   size="sm"
-                  onClick={handleReturnToEOSI}
+                  onClick={handleReturnToConsultant}
                   className="ml-4"
                 >
                   <ArrowLeft className="mr-2 h-4 w-4" />
-                  Return to EOSI Dashboard
+                  Return to Consultant Dashboard
                 </Button>
               </AlertDescription>
             </Alert>

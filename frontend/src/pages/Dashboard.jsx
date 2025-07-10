@@ -26,9 +26,9 @@ const Dashboard = () => {
   const navigate = useNavigate();
   
   useEffect(() => {
-    // If EOSI user and not impersonating, redirect to EOSI dashboard
-    if (user?.isEOSI && localStorage.getItem('eosiImpersonating') !== 'true') {
-      navigate('/eosi');
+    // If consultant user and not impersonating, redirect to consultant dashboard
+    if (user?.isConsultant && localStorage.getItem('consultantImpersonating') !== 'true') {
+      navigate('/consultant');
     }
   }, [user, navigate]);
 

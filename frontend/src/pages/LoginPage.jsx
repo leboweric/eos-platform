@@ -48,7 +48,7 @@ const LoginPage = () => {
         <div className="text-center mb-8">
           <Link to="/" className="inline-flex items-center space-x-2">
             <Target className="h-8 w-8 text-primary" />
-            <span className="text-2xl font-bold">EOS Platform</span>
+            <span className="text-2xl font-bold">Strategic Execution Platform</span>
           </Link>
         </div>
 
@@ -56,12 +56,13 @@ const LoginPage = () => {
           <CardHeader className="text-center">
             <CardTitle className="text-2xl">Welcome Back</CardTitle>
             <CardDescription>
-              Sign in to your EOS Platform account
+              Sign in to your Strategic Execution Platform account
             </CardDescription>
+            {/* TODO: Update this check for more generic consultant verification */}
             {emailValue.toLowerCase().endsWith('@eosworldwide.com') && (
               <Badge variant="secondary" className="mt-2 mx-auto">
                 <Briefcase className="mr-1 h-3 w-3" />
-                EOS Implementer Account
+                Strategy Consultant Account
               </Badge>
             )}
           </CardHeader>
@@ -146,9 +147,9 @@ const LoginPage = () => {
                 </Link>
               </p>
               <p className="text-sm text-gray-600">
-                EOS Implementer?{' '}
-                <Link to="/eosi-register" className="text-primary hover:underline font-medium">
-                  Create EOSI account
+                Strategy Consultant?{' '}
+                <Link to="/consultant-register" className="text-primary hover:underline font-medium">
+                  Create Consultant account
                 </Link>
               </p>
             </div>

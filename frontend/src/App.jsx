@@ -7,8 +7,8 @@ import Layout from './components/Layout';
 import LoginPage from './pages/LoginPage';
 import RegisterPage from './pages/RegisterPage';
 import Dashboard from './pages/Dashboard';
-import VTOPage from './pages/VTOPage';
-import RocksPage from './pages/RocksPage';
+import BusinessBlueprintPage from './pages/VTOPage';
+import QuarterlyPrioritiesPage from './pages/RocksPage';
 import ScorecardPage from './pages/ScorecardPage';
 import MeetingsPage from './pages/MeetingsPage';
 import TodosPage from './pages/TodosPage';
@@ -19,8 +19,8 @@ import AccountabilityChart from './pages/AccountabilityChart';
 import BillingPage from './pages/BillingPage';
 import UsersPage from './pages/UsersPage';
 import AcceptInvitationPage from './pages/AcceptInvitationPage';
-import EOSIDashboard from './pages/EOSIDashboard';
-import EOSIRegisterPage from './pages/EOSIRegisterPage';
+import ConsultantDashboard from './pages/EOSIDashboard';
+import ConsultantRegisterPage from './pages/EOSIRegisterPage';
 
 import './App.css';
 
@@ -47,13 +47,13 @@ function App() {
           <Route path="/" element={!user ? <LandingPage /> : <Navigate to="/dashboard" />} />
           <Route path="/login" element={!user ? <LoginPage /> : <Navigate to="/dashboard" />} />
           <Route path="/register" element={!user ? <RegisterPage /> : <Navigate to="/dashboard" />} />
-          <Route path="/eosi-register" element={!user ? <EOSIRegisterPage /> : <Navigate to="/dashboard" />} />
+          <Route path="/consultant-register" element={!user ? <ConsultantRegisterPage /> : <Navigate to="/dashboard" />} />
           <Route path="/accept-invitation" element={<AcceptInvitationPage />} />
           
           {/* Protected routes */}
           <Route path="/dashboard" element={user ? <Layout><Dashboard /></Layout> : <Navigate to="/login" />} />
-          <Route path="/vto" element={user ? <Layout><VTOPage /></Layout> : <Navigate to="/login" />} />
-          <Route path="/rocks" element={user ? <Layout><RocksPage /></Layout> : <Navigate to="/login" />} />
+          <Route path="/business-blueprint" element={user ? <Layout><BusinessBlueprintPage /></Layout> : <Navigate to="/login" />} />
+          <Route path="/quarterly-priorities" element={user ? <Layout><QuarterlyPrioritiesPage /></Layout> : <Navigate to="/login" />} />
           <Route path="/scorecard" element={user ? <Layout><ScorecardPage /></Layout> : <Navigate to="/login" />} />
           <Route path="/meetings" element={user ? <Layout><MeetingsPage /></Layout> : <Navigate to="/login" />} />
           <Route path="/todos" element={user ? <Layout><TodosPage /></Layout> : <Navigate to="/login" />} />
@@ -62,7 +62,7 @@ function App() {
           <Route path="/accountability" element={user ? <Layout><AccountabilityChart /></Layout> : <Navigate to="/login" />} />
           <Route path="/billing" element={user ? <Layout><BillingPage /></Layout> : <Navigate to="/login" />} />
           <Route path="/users" element={user ? <Layout><UsersPage /></Layout> : <Navigate to="/login" />} />
-          <Route path="/eosi" element={user ? <Layout><EOSIDashboard /></Layout> : <Navigate to="/login" />} />
+          <Route path="/consultant" element={user ? <Layout><ConsultantDashboard /></Layout> : <Navigate to="/login" />} />
           
           {/* Catch all route */}
           <Route path="*" element={<Navigate to={user ? "/dashboard" : "/"} />} />

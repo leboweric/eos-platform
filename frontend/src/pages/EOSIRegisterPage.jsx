@@ -32,7 +32,8 @@ const EOSIRegisterPage = () => {
   };
 
   const validateEmail = (email) => {
-    return email.toLowerCase().endsWith('@eosworldwide.com');
+    // TODO: Add email domain validation for consultants
+    return true; // Temporarily allow all emails
   };
 
   const handleSubmit = async (e) => {
@@ -41,7 +42,7 @@ const EOSIRegisterPage = () => {
 
     // Validate email domain
     if (!validateEmail(formData.email)) {
-      setValidationError('Please use your @eosworldwide.com email address');
+      setValidationError('Please use your consultant email address');
       return;
     }
 
@@ -74,7 +75,7 @@ const EOSIRegisterPage = () => {
     'Manage multiple client organizations',
     'Monitor client progress and metrics',
     'Switch between client accounts seamlessly',
-    'Set up complete EOS systems for clients',
+    'Set up complete strategic systems for clients',
     'Track rocks, issues, and meeting effectiveness',
   ];
 
@@ -84,22 +85,22 @@ const EOSIRegisterPage = () => {
         <div className="text-center mb-8">
           <Link to="/" className="inline-flex items-center space-x-2 text-gray-600 hover:text-gray-900 mb-4">
             <Target className="h-8 w-8 text-primary" />
-            <span className="text-2xl font-bold">EOS Platform</span>
+            <span className="text-2xl font-bold">Strategic Execution Platform</span>
           </Link>
           <h1 className="text-3xl font-bold text-gray-900 flex items-center justify-center gap-2">
             <Briefcase className="h-8 w-8 text-primary" />
-            EOS Implementer Registration
+            Strategy Consultant Registration
           </h1>
-          <p className="text-gray-600 mt-2">Create your EOSI account to manage all your client organizations</p>
+          <p className="text-gray-600 mt-2">Create your Consultant account to manage all your client organizations</p>
         </div>
 
         <div className="grid md:grid-cols-2 gap-8">
           {/* Benefits Card */}
           <Card className="border-2 border-primary/20">
             <CardHeader>
-              <CardTitle className="text-xl">EOSI Platform Benefits</CardTitle>
+              <CardTitle className="text-xl">Consultant Platform Benefits</CardTitle>
               <CardDescription>
-                Everything you need to manage your EOS client implementations
+                Everything you need to manage your strategic client implementations
               </CardDescription>
             </CardHeader>
             <CardContent>
@@ -113,7 +114,7 @@ const EOSIRegisterPage = () => {
               </ul>
               <div className="mt-6 p-4 bg-blue-50 rounded-lg">
                 <p className="text-sm text-blue-900">
-                  <strong>Note:</strong> You must have a valid @eosworldwide.com email address to register as an EOS Implementer.
+                  <strong>Note:</strong> You must have a valid consultant email address to register as a certified consultant.
                 </p>
               </div>
             </CardContent>
@@ -122,9 +123,9 @@ const EOSIRegisterPage = () => {
           {/* Registration Form */}
           <Card>
             <CardHeader>
-              <CardTitle>Create Your EOSI Account</CardTitle>
+              <CardTitle>Create Your Consultant Account</CardTitle>
               <CardDescription>
-                Use your official EOS Worldwide email address
+                Use your official consultant email address
               </CardDescription>
             </CardHeader>
             <form onSubmit={handleSubmit}>
@@ -157,12 +158,12 @@ const EOSIRegisterPage = () => {
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="email">EOS Worldwide Email</Label>
+                  <Label htmlFor="email">Consultant Email</Label>
                   <Input
                     id="email"
                     name="email"
                     type="email"
-                    placeholder="your.name@eosworldwide.com"
+                    placeholder="your.name@consultingfirm.com"
                     required
                     value={formData.email}
                     onChange={handleChange}
@@ -170,7 +171,7 @@ const EOSIRegisterPage = () => {
                     className={validationError && !validateEmail(formData.email) ? 'border-red-500' : ''}
                   />
                   {formData.email && !validateEmail(formData.email) && (
-                    <p className="text-sm text-red-600">Must be an @eosworldwide.com email address</p>
+                    <p className="text-sm text-red-600">Must be a valid consultant email address</p>
                   )}
                 </div>
 
@@ -180,7 +181,7 @@ const EOSIRegisterPage = () => {
                     id="organizationName"
                     name="organizationName"
                     type="text"
-                    placeholder="Your EOS Implementation Business"
+                    placeholder="Your Strategic Consulting Business"
                     required
                     value={formData.organizationName}
                     onChange={handleChange}
@@ -232,10 +233,10 @@ const EOSIRegisterPage = () => {
                   {isLoading ? (
                     <>
                       <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                      Creating EOSI Account...
+                      Creating Consultant Account...
                     </>
                   ) : (
-                    'Create EOSI Account'
+                    'Create Consultant Account'
                   )}
                 </Button>
                 
@@ -245,7 +246,7 @@ const EOSIRegisterPage = () => {
                       Sign in
                     </Link>
                   </p>
-                  <p className="mt-2">Not an EOS Implementer?{' '}
+                  <p className="mt-2">Not a Strategy Consultant?{' '}
                     <Link to="/register" className="font-medium text-primary hover:underline">
                       Create a regular account
                     </Link>

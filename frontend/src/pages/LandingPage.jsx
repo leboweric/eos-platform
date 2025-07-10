@@ -50,19 +50,19 @@ const LandingPage = () => {
     {
       name: 'Sarah Johnson',
       role: 'CEO, TechStart Inc.',
-      content: 'This platform has transformed how we implement EOS. The AI insights are game-changing.',
+      content: 'This platform has transformed how we implement strategic initiatives. The AI insights are game-changing.',
       rating: 5
     },
     {
       name: 'Mike Chen',
-      role: 'EOS Implementer',
+      role: 'Strategy Consultant',
       content: 'My clients love the intuitive interface and real-time collaboration features.',
       rating: 5
     },
     {
       name: 'Lisa Rodriguez',
       role: 'Operations Director',
-      content: 'Finally, an EOS tool that actually makes our meetings more productive.',
+      content: 'Finally, a strategic tool that actually makes our meetings more productive.',
       rating: 5
     }
   ];
@@ -74,7 +74,7 @@ const LandingPage = () => {
         <div className="container mx-auto px-4 py-4 flex items-center justify-between">
           <div className="flex items-center space-x-2">
             <Target className="h-8 w-8 text-primary" />
-            <span className="text-2xl font-bold">EOS Platform</span>
+            <span className="text-2xl font-bold">Strategic Execution Platform</span>
           </div>
           <div className="flex items-center space-x-4">
             <Link to="/login">
@@ -91,11 +91,11 @@ const LandingPage = () => {
       <section className="py-20 px-4 text-center bg-gradient-to-br from-blue-50 to-indigo-100">
         <div className="container mx-auto max-w-4xl">
           <h1 className="text-5xl md:text-6xl font-bold mb-6 bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent">
-            Master Your EOS Implementation
+            Master Your Strategic Execution
           </h1>
           <p className="text-xl md:text-2xl text-gray-600 mb-8 max-w-3xl mx-auto">
-            The most advanced platform for implementing and managing the Entrepreneurial Operating System. 
-            Built for EOS implementers and their clients.
+            The most advanced platform for implementing and managing proven business strategies. 
+            Built for strategy consultants and their clients.
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
             <Link to="/register">
@@ -109,10 +109,10 @@ const LandingPage = () => {
             </Button>
           </div>
           <div className="mt-6">
-            <p className="text-sm text-gray-600 mb-2">Are you an EOS Implementer?</p>
+            <p className="text-sm text-gray-600 mb-2">Are you a Strategy Consultant?</p>
             <Link to="/eosi-register">
               <Button variant="link" className="text-primary hover:underline">
-                Create your EOSI account here →
+                Create your Consultant account here →
               </Button>
             </Link>
           </div>
@@ -123,9 +123,9 @@ const LandingPage = () => {
       <section className="py-20 px-4">
         <div className="container mx-auto max-w-6xl">
           <div className="text-center mb-16">
-            <h2 className="text-4xl font-bold mb-4">Everything You Need for EOS Success</h2>
+            <h2 className="text-4xl font-bold mb-4">Everything You Need for Strategic Success</h2>
             <p className="text-xl text-gray-600 max-w-2xl mx-auto">
-              Comprehensive tools designed specifically for EOS methodology implementation and management.
+              Comprehensive tools designed specifically for strategic methodology implementation and management.
             </p>
           </div>
           
@@ -151,9 +151,9 @@ const LandingPage = () => {
       <section className="py-20 px-4 bg-gray-50">
         <div className="container mx-auto max-w-6xl">
           <div className="text-center mb-16">
-            <h2 className="text-4xl font-bold mb-4">AI-Powered EOS Intelligence</h2>
+            <h2 className="text-4xl font-bold mb-4">AI-Powered Strategic Intelligence</h2>
             <p className="text-xl text-gray-600 max-w-2xl mx-auto">
-              Leverage artificial intelligence to enhance your EOS implementation with smart insights and automation.
+              Leverage artificial intelligence to enhance your strategic implementation with smart insights and automation.
             </p>
           </div>
           
@@ -194,9 +194,9 @@ const LandingPage = () => {
       <section className="py-20 px-4">
         <div className="container mx-auto max-w-6xl">
           <div className="text-center mb-16">
-            <h2 className="text-4xl font-bold mb-4">Trusted by EOS Implementers</h2>
+            <h2 className="text-4xl font-bold mb-4">Trusted by Strategy Consultants</h2>
             <p className="text-xl text-gray-600">
-              See what EOS professionals and their clients are saying about our platform.
+              See what strategy professionals and their clients are saying about our platform.
             </p>
           </div>
           
@@ -226,9 +226,9 @@ const LandingPage = () => {
       {/* CTA Section */}
       <section className="py-20 px-4 bg-primary text-white">
         <div className="container mx-auto max-w-4xl text-center">
-          <h2 className="text-4xl font-bold mb-6">Ready to Transform Your EOS Implementation?</h2>
+          <h2 className="text-4xl font-bold mb-6">Ready to Transform Your Strategic Implementation?</h2>
           <p className="text-xl mb-8 opacity-90">
-            Join hundreds of EOS implementers and organizations already using our platform to achieve better results.
+            Join hundreds of strategy consultants and organizations already using our platform to achieve better results.
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
             <Link to="/register">
@@ -251,10 +251,10 @@ const LandingPage = () => {
             <div>
               <div className="flex items-center space-x-2 mb-4">
                 <Target className="h-6 w-6" />
-                <span className="text-lg font-bold">EOS Platform</span>
+                <span className="text-lg font-bold">Strategic Execution Platform</span>
               </div>
               <p className="text-gray-400">
-                The most advanced platform for EOS implementation and management.
+                The most advanced platform for strategic implementation and management.
               </p>
             </div>
             <div>
@@ -286,7 +286,7 @@ const LandingPage = () => {
             </div>
           </div>
           <div className="border-t border-gray-800 mt-8 pt-8 text-center text-gray-400">
-            <p>&copy; 2025 EOS Platform. All rights reserved.</p>
+            <p>&copy; 2025 Strategic Execution Platform. All rights reserved.</p>
           </div>
         </div>
       </footer>

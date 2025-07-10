@@ -55,7 +55,7 @@ axios.interceptors.response.use(
         localStorage.removeItem('accessToken');
         localStorage.removeItem('refreshToken');
         // Only redirect if we're not already on a public page
-        if (!window.location.pathname.match(/^\/(login|register|eosi-register|$)/)) {
+        if (!window.location.pathname.match(/^\/(login|register|consultant-register|$)/)) {
           window.location.href = '/login';
         }
       }

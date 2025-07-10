@@ -56,7 +56,7 @@ const RegisterPage = () => {
         <div className="text-center mb-8">
           <Link to="/" className="inline-flex items-center space-x-2">
             <Target className="h-8 w-8 text-primary" />
-            <span className="text-2xl font-bold">EOS Platform</span>
+            <span className="text-2xl font-bold">Strategic Execution Platform</span>
           </Link>
         </div>
 
@@ -64,7 +64,7 @@ const RegisterPage = () => {
           <CardHeader className="text-center">
             <CardTitle className="text-2xl">Create Your Account</CardTitle>
             <CardDescription>
-              Start your EOS journey today
+              Start your strategic journey today
             </CardDescription>
           </CardHeader>
           <CardContent>
@@ -115,12 +115,13 @@ const RegisterPage = () => {
                 {errors.email && (
                   <p className="text-sm text-red-500">{errors.email.message}</p>
                 )}
-                {emailValue.toLowerCase().endsWith('@eosworldwide.com') && (
+                {/* TODO: Add email domain validation for consultants */}
+                {false && (
                   <Alert className="mt-2">
                     <AlertDescription className="text-sm">
-                      EOS Implementers should use the{' '}
-                      <Link to="/eosi-register" className="font-medium text-primary hover:underline">
-                        EOSI registration page
+                      Strategy Consultants should use the{' '}
+                      <Link to="/consultant-register" className="font-medium text-primary hover:underline">
+                        Consultant registration page
                       </Link>
                     </AlertDescription>
                   </Alert>
@@ -222,9 +223,9 @@ const RegisterPage = () => {
                 </Link>
               </p>
               <p className="text-sm text-gray-600">
-                EOS Implementer?{' '}
-                <Link to="/eosi-register" className="text-primary hover:underline font-medium">
-                  Create EOSI account
+                Strategy Consultant?{' '}
+                <Link to="/consultant-register" className="text-primary hover:underline font-medium">
+                  Create Consultant account
                 </Link>
               </p>
             </div>
