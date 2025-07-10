@@ -12,6 +12,7 @@ import {
 } from 'lucide-react';
 import PositionEditor from './PositionEditor';
 import AddPositionDialog from './AddPositionDialog';
+import EditPositionDialog from './EditPositionDialog';
 
 const ChartEditor = ({ chartId, onUpdate }) => {
   const [loading, setLoading] = useState(true);
@@ -20,7 +21,9 @@ const ChartEditor = ({ chartId, onUpdate }) => {
   const [chartData, setChartData] = useState(null);
   const [skills, setSkills] = useState([]);
   const [showAddDialog, setShowAddDialog] = useState(false);
+  const [showEditDialog, setShowEditDialog] = useState(false);
   const [parentPosition, setParentPosition] = useState(null);
+  const [editingPosition, setEditingPosition] = useState(null);
 
   useEffect(() => {
     fetchData();
@@ -63,14 +66,21 @@ const ChartEditor = ({ chartId, onUpdate }) => {
     }
   };
 
-  const handleUpdatePosition = async (positionId, positionData) => {
+  const handleEditPosition = (position) => {
+    setEditingPosition(position);
+    setShowEditDialog(true);
+  };
+
+  const handleUpdatePosition = async (positionData) => {
     try {
       setSaving(true);
-      await organizationalChartService.updatePosition(chartId, positionId, positionData);
+      await organizationalChartService.updatePosition(chartId, editingPosition.id, positionData);
       await fetchData();
+      setShowEditDialog(false);
+      setEditingPosition(null);
     } catch (error) {
       console.error('Failed to update position:', error);
-      setError('Failed to update position');
+      throw error;
     } finally {
       setSaving(false);
     }
@@ -187,7 +197,7 @@ const ChartEditor = ({ chartId, onUpdate }) => {
                   key={position.id}
                   position={position}
                   skills={skills}
-                  onUpdate={handleUpdatePosition}
+                  onUpdate={() => handleEditPosition(position)}
                   onDelete={handleDeletePosition}
                   onAddChild={handleAddPosition}
                   onAssignHolder={handleAssignHolder}
@@ -206,6 +216,19 @@ const ChartEditor = ({ chartId, onUpdate }) => {
           onClose={() => setShowAddDialog(false)}
           onCreate={handleCreatePosition}
           parentPosition={parentPosition}
+          skills={skills}
+        />
+      )}
+
+      {showEditDialog && editingPosition && (
+        <EditPositionDialog
+          open={showEditDialog}
+          onClose={() => {
+            setShowEditDialog(false);
+            setEditingPosition(null);
+          }}
+          onSave={handleUpdatePosition}
+          position={editingPosition}
           skills={skills}
         />
       )}

@@ -471,7 +471,7 @@ export const updatePosition = async (req, res) => {
   
   try {
     const { chartId, positionId } = req.params;
-    const { title, description, positionType } = req.body;
+    const { title, description, positionType, responsibilities, skills } = req.body;
     const userId = req.user.id;
 
     const result = await client.query(
@@ -488,6 +488,49 @@ export const updatePosition = async (req, res) => {
         success: false,
         error: 'Position not found'
       });
+    }
+
+    // Update responsibilities if provided
+    if (responsibilities !== undefined) {
+      // Delete existing responsibilities
+      await client.query(
+        'DELETE FROM position_responsibilities WHERE position_id = $1',
+        [positionId]
+      );
+
+      // Add new responsibilities
+      if (responsibilities && responsibilities.length > 0) {
+        for (let i = 0; i < responsibilities.length; i++) {
+          await client.query(
+            `INSERT INTO position_responsibilities 
+             (position_id, responsibility, priority, sort_order)
+             VALUES ($1, $2, $3, $4)`,
+            [positionId, responsibilities[i].responsibility, 
+             responsibilities[i].priority || 'medium', 
+             responsibilities[i].sort_order || i]
+          );
+        }
+      }
+    }
+
+    // Update skills if provided
+    if (skills !== undefined) {
+      // Delete existing skills
+      await client.query(
+        'DELETE FROM position_skills WHERE position_id = $1',
+        [positionId]
+      );
+
+      // Add new skills
+      if (skills && skills.length > 0) {
+        for (const skill of skills) {
+          await client.query(
+            `INSERT INTO position_skills (position_id, skill_id, importance_level)
+             VALUES ($1, $2, $3)`,
+            [positionId, skill.skillId, skill.importanceLevel]
+          );
+        }
+      }
     }
 
     // Update chart version and history

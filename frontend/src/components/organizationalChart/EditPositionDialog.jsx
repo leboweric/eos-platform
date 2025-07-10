@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import {
   Dialog,
   DialogContent,
@@ -13,6 +13,7 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Alert, AlertDescription } from '@/components/ui/alert';
+import { Badge } from '@/components/ui/badge';
 import { 
   Loader2, 
   Plus, 
@@ -21,7 +22,7 @@ import {
   CheckCircle
 } from 'lucide-react';
 
-const AddPositionDialog = ({ open, onClose, onCreate, parentPosition, skills }) => {
+const EditPositionDialog = ({ open, onClose, onSave, position, skills }) => {
   const [formData, setFormData] = useState({
     title: '',
     description: '',
@@ -32,6 +33,21 @@ const AddPositionDialog = ({ open, onClose, onCreate, parentPosition, skills }) 
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [validationErrors, setValidationErrors] = useState({});
+
+  useEffect(() => {
+    if (position) {
+      setFormData({
+        title: position.title || '',
+        description: position.description || '',
+        positionType: position.position_type || 'individual_contributor',
+        responsibilities: position.responsibilities?.map(r => ({
+          id: r.id,
+          responsibility: r.responsibility,
+          priority: r.priority || 'medium'
+        })) || []
+      });
+    }
+  }, [position]);
 
   const validateForm = () => {
     const errors = {};
@@ -94,7 +110,7 @@ const AddPositionDialog = ({ open, onClose, onCreate, parentPosition, skills }) 
     setError(null);
 
     try {
-      await onCreate({
+      await onSave({
         ...formData,
         responsibilities: formData.responsibilities.map((r, index) => ({
           responsibility: r.responsibility,
@@ -104,7 +120,7 @@ const AddPositionDialog = ({ open, onClose, onCreate, parentPosition, skills }) 
       });
       onClose();
     } catch (error) {
-      setError(error.response?.data?.error || 'Failed to create position');
+      setError(error.response?.data?.error || 'Failed to save position');
     } finally {
       setLoading(false);
     }
@@ -122,12 +138,11 @@ const AddPositionDialog = ({ open, onClose, onCreate, parentPosition, skills }) 
       <DialogContent className="sm:max-w-[625px] max-h-[90vh] overflow-y-auto">
         <form onSubmit={handleSubmit}>
           <DialogHeader>
-            <DialogTitle>Add New Position</DialogTitle>
+            <DialogTitle>
+              {position ? 'Edit Position' : 'Create Position'}
+            </DialogTitle>
             <DialogDescription>
-              {parentPosition 
-                ? `Adding a position under: ${parentPosition.title}`
-                : 'Adding a root-level position'
-              }
+              Define the position details and accountabilities. Each position should have 3-5 clear roles/responsibilities.
             </DialogDescription>
           </DialogHeader>
 
@@ -283,12 +298,12 @@ const AddPositionDialog = ({ open, onClose, onCreate, parentPosition, skills }) 
               {loading ? (
                 <>
                   <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  Creating...
+                  Saving...
                 </>
               ) : (
                 <>
                   <CheckCircle className="mr-2 h-4 w-4" />
-                  Create Position
+                  Save Position
                 </>
               )}
             </Button>
@@ -299,4 +314,4 @@ const AddPositionDialog = ({ open, onClose, onCreate, parentPosition, skills }) 
   );
 };
 
-export default AddPositionDialog;
+export default EditPositionDialog;

@@ -73,7 +73,7 @@ const PositionEditor = ({
               <Plus className="h-4 w-4" />
             </Button>
             
-            <Button size="sm" variant="ghost" onClick={() => onUpdate(position.id, position)}>
+            <Button size="sm" variant="ghost" onClick={onUpdate}>
               <Edit2 className="h-4 w-4" />
             </Button>
             

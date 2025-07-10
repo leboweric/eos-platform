@@ -153,7 +153,7 @@ const OrgNode = ({ position, isExpanded, onToggle, expandedNodes, toggleNode, on
     <div className="flex flex-col items-center">
       {/* Position Card */}
       <Card 
-        className="bg-white p-6 shadow-md hover:shadow-lg transition-shadow cursor-pointer relative"
+        className={`bg-white p-6 shadow-md hover:shadow-lg transition-shadow relative ${canEdit ? 'cursor-pointer' : ''}`}
         style={{ minWidth: '320px', maxWidth: '400px' }}
         onClick={() => canEdit && onEditPosition(position)}
       >
