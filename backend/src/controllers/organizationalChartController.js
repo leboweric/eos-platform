@@ -20,13 +20,26 @@ export const getOrganizationalCharts = async (req, res) => {
 
     let chartsQuery = `
       SELECT 
-        oc.*,
+        oc.id,
+        oc.organization_id,
+        oc.team_id,
+        oc.department_id,
+        oc.name,
+        oc.description,
+        oc.version,
+        oc.is_template,
+        oc.created_by,
+        oc.created_at,
+        oc.updated_at,
         u.first_name || ' ' || u.last_name as created_by_name,
         COUNT(DISTINCT p.id) as position_count
       FROM organizational_charts oc
       LEFT JOIN users u ON oc.created_by = u.id
       LEFT JOIN positions p ON p.chart_id = oc.id
       WHERE oc.organization_id = $1
+      GROUP BY oc.id, oc.organization_id, oc.team_id, oc.department_id, 
+               oc.name, oc.description, oc.version, oc.is_template, 
+               oc.created_by, oc.created_at, oc.updated_at, u.first_name, u.last_name
     `;
     
     const queryParams = [orgId];
@@ -37,7 +50,17 @@ export const getOrganizationalCharts = async (req, res) => {
         ${chartsQuery}
         UNION
         SELECT 
-          oc.*,
+          oc.id,
+          oc.organization_id,
+          oc.team_id,
+          oc.department_id,
+          oc.name,
+          oc.description,
+          oc.version,
+          oc.is_template,
+          oc.created_by,
+          oc.created_at,
+          oc.updated_at,
           u.first_name || ' ' || u.last_name as created_by_name,
           COUNT(DISTINCT p.id) as position_count
         FROM organizational_charts oc
@@ -45,10 +68,13 @@ export const getOrganizationalCharts = async (req, res) => {
         LEFT JOIN positions p ON p.chart_id = oc.id
         JOIN chart_sharing cs ON cs.chart_id = oc.id
         WHERE cs.shared_with_organization_id = $1
+        GROUP BY oc.id, oc.organization_id, oc.team_id, oc.department_id, 
+                 oc.name, oc.description, oc.version, oc.is_template, 
+                 oc.created_by, oc.created_at, oc.updated_at, u.first_name, u.last_name
       `;
     }
 
-    chartsQuery += ' GROUP BY oc.id, u.first_name, u.last_name ORDER BY oc.updated_at DESC';
+    chartsQuery += ' ORDER BY oc.updated_at DESC';
 
     const result = await query(chartsQuery, queryParams);
 
