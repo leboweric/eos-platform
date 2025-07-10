@@ -20,7 +20,7 @@ import accountabilityRoutes from './routes/accountabilityRoutes.js';
 import subscriptionRoutes from './routes/subscriptionRoutes.js';
 import webhookRoutes from './routes/webhookRoutes.js';
 import userRoutes from './routes/userRoutes.js';
-import consultantRoutes from './routes/consultantRoutes.js';
+import consultantRoutes from './routes/eosiRoutes.js';
 
 // Import middleware
 import { errorHandler } from './middleware/errorHandler.js';
