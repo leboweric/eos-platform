@@ -26,7 +26,14 @@ axios.interceptors.response.use(
   async (error) => {
     const originalRequest = error.config;
 
-    if (error.response?.status === 401 && !originalRequest._retry) {
+    // Don't retry refresh requests or requests that have already been retried
+    if (
+      error.response?.status === 401 && 
+      !originalRequest._retry && 
+      !originalRequest.url?.includes('/auth/refresh') &&
+      !originalRequest.url?.includes('/auth/login') &&
+      !originalRequest.url?.includes('/auth/register')
+    ) {
       originalRequest._retry = true;
 
       try {
@@ -47,7 +54,10 @@ axios.interceptors.response.use(
         // Refresh failed, redirect to login
         localStorage.removeItem('accessToken');
         localStorage.removeItem('refreshToken');
-        window.location.href = '/login';
+        // Only redirect if we're not already on a public page
+        if (!window.location.pathname.match(/^\/(login|register|eosi-register|$)/)) {
+          window.location.href = '/login';
+        }
       }
     }
 
