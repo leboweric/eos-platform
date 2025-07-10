@@ -116,7 +116,9 @@ export const register = async (req, res) => {
             firstName: user.first_name,
             lastName: user.last_name,
             role: user.role,
-            organizationId
+            organizationId,
+            organizationName,
+            isEOSI: user.is_eosi
           },
           accessToken,
           refreshToken
@@ -301,7 +303,7 @@ export const getProfile = async (req, res) => {
   try {
     const result = await query(
       `SELECT u.id, u.email, u.first_name, u.last_name, u.role, u.avatar_url, u.settings,
-              u.organization_id, o.name as organization_name, o.slug as organization_slug
+              u.organization_id, u.is_eosi, o.name as organization_name, o.slug as organization_slug
        FROM users u
        JOIN organizations o ON u.organization_id = o.id
        WHERE u.id = $1`,
@@ -329,7 +331,8 @@ export const getProfile = async (req, res) => {
         settings: user.settings,
         organizationId: user.organization_id,
         organizationName: user.organization_name,
-        organizationSlug: user.organization_slug
+        organizationSlug: user.organization_slug,
+        isEOSI: user.is_eosi
       }
     });
 
