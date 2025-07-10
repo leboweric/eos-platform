@@ -375,7 +375,7 @@ export const deleteOrganizationalChart = async (req, res) => {
   }
 };
 
-// @desc    Add a position to the chart
+// @desc    Add a seat to the chart
 // @route   POST /api/v1/organizations/:orgId/organizational-charts/:chartId/positions
 // @access  Private (Admin, Manager, or Editor)
 export const addPosition = async (req, res) => {
@@ -383,7 +383,7 @@ export const addPosition = async (req, res) => {
   
   try {
     const { chartId } = req.params;
-    const { parentPositionId, title, description, positionType, skills, responsibilities } = req.body;
+    const { parentPositionId, title, positionType, skills, responsibilities } = req.body;
     const userId = req.user.id;
 
     // Calculate level based on parent
@@ -402,10 +402,10 @@ export const addPosition = async (req, res) => {
     const positionId = uuidv4();
     const positionResult = await client.query(
       `INSERT INTO positions 
-       (id, chart_id, parent_position_id, title, description, level, position_type)
-       VALUES ($1, $2, $3, $4, $5, $6, $7)
+       (id, chart_id, parent_position_id, title, level, position_type)
+       VALUES ($1, $2, $3, $4, $5, $6)
        RETURNING *`,
-      [positionId, chartId, parentPositionId, title, description, level, positionType]
+      [positionId, chartId, parentPositionId, title, level, positionType]
     );
 
     // Add skills if provided
@@ -444,7 +444,7 @@ export const addPosition = async (req, res) => {
        (chart_id, version, change_type, change_description, changed_by, change_data)
        VALUES ($1, (SELECT version FROM organizational_charts WHERE id = $1), 
                'position_added', $2, $3, $4)`,
-      [chartId, `Added position: ${title}`, userId, JSON.stringify({ positionId, title })]
+      [chartId, `Added seat: ${title}`, userId, JSON.stringify({ positionId, title })]
     );
 
     await commitTransaction(client);
@@ -455,15 +455,15 @@ export const addPosition = async (req, res) => {
     });
   } catch (error) {
     await rollbackTransaction(client);
-    console.error('Error adding position:', error);
+    console.error('Error adding seat:', error);
     res.status(500).json({
       success: false,
-      error: 'Failed to add position'
+      error: 'Failed to add seat'
     });
   }
 };
 
-// @desc    Update a position
+// @desc    Update a seat
 // @route   PUT /api/v1/organizations/:orgId/organizational-charts/:chartId/positions/:positionId
 // @access  Private (Admin, Manager, or Editor)
 export const updatePosition = async (req, res) => {
@@ -471,22 +471,22 @@ export const updatePosition = async (req, res) => {
   
   try {
     const { chartId, positionId } = req.params;
-    const { title, description, positionType, responsibilities, skills } = req.body;
+    const { title, positionType, responsibilities, skills } = req.body;
     const userId = req.user.id;
 
     const result = await client.query(
       `UPDATE positions 
-       SET title = $1, description = $2, position_type = $3
-       WHERE id = $4 AND chart_id = $5
+       SET title = $1, position_type = $2
+       WHERE id = $3 AND chart_id = $4
        RETURNING *`,
-      [title, description, positionType, positionId, chartId]
+      [title, positionType, positionId, chartId]
     );
 
     if (result.rows.length === 0) {
       await rollbackTransaction(client);
       return res.status(404).json({
         success: false,
-        error: 'Position not found'
+        error: 'Seat not found'
       });
     }
 
@@ -546,7 +546,7 @@ export const updatePosition = async (req, res) => {
        (chart_id, version, change_type, change_description, changed_by, change_data)
        VALUES ($1, (SELECT version FROM organizational_charts WHERE id = $1), 
                'position_updated', $2, $3, $4)`,
-      [chartId, `Updated position: ${title}`, userId, JSON.stringify({ positionId, title })]
+      [chartId, `Updated seat: ${title}`, userId, JSON.stringify({ positionId, title })]
     );
 
     await commitTransaction(client);
@@ -557,15 +557,15 @@ export const updatePosition = async (req, res) => {
     });
   } catch (error) {
     await rollbackTransaction(client);
-    console.error('Error updating position:', error);
+    console.error('Error updating seat:', error);
     res.status(500).json({
       success: false,
-      error: 'Failed to update position'
+      error: 'Failed to update seat'
     });
   }
 };
 
-// @desc    Delete a position
+// @desc    Delete a seat
 // @route   DELETE /api/v1/organizations/:orgId/organizational-charts/:chartId/positions/:positionId
 // @access  Private (Admin, Manager, or Editor)
 export const deletePosition = async (req, res) => {
@@ -585,7 +585,7 @@ export const deletePosition = async (req, res) => {
       await rollbackTransaction(client);
       return res.status(404).json({
         success: false,
-        error: 'Position not found'
+        error: 'Seat not found'
       });
     }
 
@@ -610,26 +610,26 @@ export const deletePosition = async (req, res) => {
        (chart_id, version, change_type, change_description, changed_by, change_data)
        VALUES ($1, (SELECT version FROM organizational_charts WHERE id = $1), 
                'position_removed', $2, $3, $4)`,
-      [chartId, `Removed position: ${positionTitle}`, userId, JSON.stringify({ positionId, title: positionTitle })]
+      [chartId, `Removed seat: ${positionTitle}`, userId, JSON.stringify({ positionId, title: positionTitle })]
     );
 
     await commitTransaction(client);
 
     res.json({
       success: true,
-      message: 'Position deleted successfully'
+      message: 'Seat deleted successfully'
     });
   } catch (error) {
     await rollbackTransaction(client);
-    console.error('Error deleting position:', error);
+    console.error('Error deleting seat:', error);
     res.status(500).json({
       success: false,
-      error: 'Failed to delete position'
+      error: 'Failed to delete seat'
     });
   }
 };
 
-// @desc    Assign a person to a position
+// @desc    Assign a person to a seat
 // @route   POST /api/v1/organizations/:orgId/organizational-charts/:chartId/positions/:positionId/assign
 // @access  Private (Admin, Manager, or Editor)
 export const assignPositionHolder = async (req, res) => {
@@ -675,7 +675,7 @@ export const assignPositionHolder = async (req, res) => {
        (chart_id, version, change_type, change_description, changed_by, change_data)
        VALUES ($1, (SELECT version FROM organizational_charts WHERE id = $1), 
                'holder_changed', $2, $3, $4)`,
-      [chartId, `Assigned ${holderName.first_name} ${holderName.last_name} to position`, userId, 
+      [chartId, `Assigned ${holderName.first_name} ${holderName.last_name} to seat`, userId, 
        JSON.stringify({ positionId, holderId, name: `${holderName.first_name} ${holderName.last_name}` })]
     );
 
@@ -687,15 +687,15 @@ export const assignPositionHolder = async (req, res) => {
     });
   } catch (error) {
     await rollbackTransaction(client);
-    console.error('Error assigning position holder:', error);
+    console.error('Error assigning seat holder:', error);
     res.status(500).json({
       success: false,
-      error: 'Failed to assign position holder'
+      error: 'Failed to assign seat holder'
     });
   }
 };
 
-// @desc    Remove a person from a position
+// @desc    Remove a person from a seat
 // @route   DELETE /api/v1/organizations/:orgId/organizational-charts/:chartId/positions/:positionId/holder
 // @access  Private (Admin, Manager, or Editor)
 export const removePositionHolder = async (req, res) => {
@@ -717,7 +717,7 @@ export const removePositionHolder = async (req, res) => {
       await rollbackTransaction(client);
       return res.status(404).json({
         success: false,
-        error: 'No active holder found for this position'
+        error: 'No active holder found for this seat'
       });
     }
 
@@ -733,7 +733,7 @@ export const removePositionHolder = async (req, res) => {
       `INSERT INTO chart_history 
        (chart_id, version, change_type, change_description, changed_by, change_data)
        VALUES ($1, (SELECT version FROM organizational_charts WHERE id = $1), 
-               'holder_changed', 'Removed position holder', $2, $3)`,
+               'holder_changed', 'Removed seat holder', $2, $3)`,
       [chartId, userId, JSON.stringify({ positionId })]
     );
 
@@ -741,14 +741,14 @@ export const removePositionHolder = async (req, res) => {
 
     res.json({
       success: true,
-      message: 'Position holder removed successfully'
+      message: 'Seat holder removed successfully'
     });
   } catch (error) {
     await rollbackTransaction(client);
-    console.error('Error removing position holder:', error);
+    console.error('Error removing seat holder:', error);
     res.status(500).json({
       success: false,
-      error: 'Failed to remove position holder'
+      error: 'Failed to remove seat holder'
     });
   }
 };

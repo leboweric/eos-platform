@@ -24,7 +24,6 @@ import {
 const AddPositionDialog = ({ open, onClose, onCreate, parentPosition, skills }) => {
   const [formData, setFormData] = useState({
     title: '',
-    description: '',
     positionType: 'individual_contributor',
     responsibilities: []
   });
@@ -37,13 +36,13 @@ const AddPositionDialog = ({ open, onClose, onCreate, parentPosition, skills }) 
     const errors = {};
     
     if (!formData.title.trim()) {
-      errors.title = 'Position title is required';
+      errors.title = 'Seat title is required';
     }
     
-    if (formData.responsibilities.length < 3) {
-      errors.responsibilities = 'Please add at least 3 roles/responsibilities';
-    } else if (formData.responsibilities.length > 5) {
-      errors.responsibilities = 'Maximum 5 roles/responsibilities allowed';
+    if (formData.responsibilities.length < 1) {
+      errors.responsibilities = 'Please add at least 1 role/responsibility';
+    } else if (formData.responsibilities.length > 7) {
+      errors.responsibilities = 'Maximum 7 roles/responsibilities allowed';
     }
     
     setValidationErrors(errors);
@@ -53,10 +52,10 @@ const AddPositionDialog = ({ open, onClose, onCreate, parentPosition, skills }) 
   const handleAddResponsibility = () => {
     if (!newResponsibility.trim()) return;
     
-    if (formData.responsibilities.length >= 5) {
+    if (formData.responsibilities.length >= 7) {
       setValidationErrors({ 
         ...validationErrors, 
-        responsibilities: 'Maximum 5 roles/responsibilities allowed' 
+        responsibilities: 'Maximum 7 roles/responsibilities allowed' 
       });
       return;
     }
@@ -71,7 +70,7 @@ const AddPositionDialog = ({ open, onClose, onCreate, parentPosition, skills }) 
     setNewResponsibility('');
     
     // Clear validation error if we now have enough responsibilities
-    if (formData.responsibilities.length >= 2) {
+    if (formData.responsibilities.length >= 0) {
       setValidationErrors({ ...validationErrors, responsibilities: null });
     }
   };
@@ -104,7 +103,7 @@ const AddPositionDialog = ({ open, onClose, onCreate, parentPosition, skills }) 
       });
       onClose();
     } catch (error) {
-      setError(error.response?.data?.error || 'Failed to create position');
+      setError(error.response?.data?.error || 'Failed to create seat');
     } finally {
       setLoading(false);
     }
@@ -112,8 +111,8 @@ const AddPositionDialog = ({ open, onClose, onCreate, parentPosition, skills }) 
 
   const getResponsibilityCountColor = () => {
     const count = formData.responsibilities.length;
-    if (count < 3) return 'text-red-600';
-    if (count > 5) return 'text-orange-600';
+    if (count < 1) return 'text-red-600';
+    if (count > 7) return 'text-orange-600';
     return 'text-green-600';
   };
 
@@ -122,11 +121,11 @@ const AddPositionDialog = ({ open, onClose, onCreate, parentPosition, skills }) 
       <DialogContent className="sm:max-w-[625px] max-h-[90vh] overflow-y-auto">
         <form onSubmit={handleSubmit}>
           <DialogHeader>
-            <DialogTitle>Add New Position</DialogTitle>
+            <DialogTitle>Add New Seat</DialogTitle>
             <DialogDescription>
               {parentPosition 
-                ? `Adding a position under: ${parentPosition.title}`
-                : 'Adding a root-level position'
+                ? `Adding a seat under: ${parentPosition.title}`
+                : 'Adding a root-level seat'
               }
             </DialogDescription>
           </DialogHeader>
@@ -141,7 +140,7 @@ const AddPositionDialog = ({ open, onClose, onCreate, parentPosition, skills }) 
 
             <div className="grid gap-2">
               <Label htmlFor="title">
-                Position Title <span className="text-red-500">*</span>
+                Seat Title <span className="text-red-500">*</span>
               </Label>
               <Input
                 id="title"
@@ -156,18 +155,7 @@ const AddPositionDialog = ({ open, onClose, onCreate, parentPosition, skills }) 
             </div>
 
             <div className="grid gap-2">
-              <Label htmlFor="description">Description</Label>
-              <Textarea
-                id="description"
-                value={formData.description}
-                onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-                placeholder="Brief description of this position's purpose"
-                rows={2}
-              />
-            </div>
-
-            <div className="grid gap-2">
-              <Label htmlFor="type">Position Type</Label>
+              <Label htmlFor="type">Seat Type</Label>
               <Select
                 value={formData.positionType}
                 onValueChange={(value) => setFormData({ ...formData, positionType: value })}
@@ -189,8 +177,8 @@ const AddPositionDialog = ({ open, onClose, onCreate, parentPosition, skills }) 
                   Roles & Responsibilities <span className="text-red-500">*</span>
                 </Label>
                 <span className={`text-sm font-medium ${getResponsibilityCountColor()}`}>
-                  {formData.responsibilities.length}/5 
-                  {formData.responsibilities.length < 3 && ' (min 3 required)'}
+                  {formData.responsibilities.length}/7 
+                  {formData.responsibilities.length < 1 && ' (min 1 required)'}
                 </span>
               </div>
               
@@ -199,7 +187,7 @@ const AddPositionDialog = ({ open, onClose, onCreate, parentPosition, skills }) 
                 <div className="flex items-start">
                   <AlertCircle className="h-4 w-4 text-blue-600 mt-0.5 mr-2 flex-shrink-0" />
                   <div className="text-blue-800">
-                    Each position must have <strong>3-5 clear accountabilities</strong>. These are the key roles and responsibilities that this seat owns.
+                    Each seat must have <strong>1-7 clear accountabilities</strong>. These are the key roles and responsibilities that this seat owns.
                   </div>
                 </div>
               </div>
@@ -228,7 +216,7 @@ const AddPositionDialog = ({ open, onClose, onCreate, parentPosition, skills }) 
               )}
 
               {/* Add new responsibility */}
-              {formData.responsibilities.length < 5 && (
+              {formData.responsibilities.length < 7 && (
                 <div className="flex space-x-2">
                   <Input
                     placeholder="Enter a role or responsibility..."
@@ -240,7 +228,7 @@ const AddPositionDialog = ({ open, onClose, onCreate, parentPosition, skills }) 
                         handleAddResponsibility();
                       }
                     }}
-                    className={validationErrors.responsibilities && formData.responsibilities.length < 3 ? 'border-red-500' : ''}
+                    className={validationErrors.responsibilities && formData.responsibilities.length < 1 ? 'border-red-500' : ''}
                   />
                   <Button
                     type="button"
@@ -258,12 +246,12 @@ const AddPositionDialog = ({ open, onClose, onCreate, parentPosition, skills }) 
 
               {/* Progress indicator */}
               <div className="flex items-center space-x-2 mt-2">
-                {[1, 2, 3, 4, 5].map((num) => (
+                {[1, 2, 3, 4, 5, 6, 7].map((num) => (
                   <div
                     key={num}
                     className={`h-2 flex-1 rounded-full transition-colors ${
                       formData.responsibilities.length >= num
-                        ? num <= 3 ? 'bg-green-500' : 'bg-blue-500'
+                        ? 'bg-green-500'
                         : 'bg-gray-200'
                     }`}
                   />
@@ -278,7 +266,7 @@ const AddPositionDialog = ({ open, onClose, onCreate, parentPosition, skills }) 
             </Button>
             <Button 
               type="submit" 
-              disabled={loading || formData.responsibilities.length < 3}
+              disabled={loading || formData.responsibilities.length < 1}
             >
               {loading ? (
                 <>
@@ -288,7 +276,7 @@ const AddPositionDialog = ({ open, onClose, onCreate, parentPosition, skills }) 
               ) : (
                 <>
                   <CheckCircle className="mr-2 h-4 w-4" />
-                  Create Position
+                  Create Seat
                 </>
               )}
             </Button>
