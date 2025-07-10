@@ -9,7 +9,8 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import { Target, Eye, EyeOff } from 'lucide-react';
+import { Badge } from '@/components/ui/badge';
+import { Target, Eye, EyeOff, Briefcase } from 'lucide-react';
 
 const loginSchema = z.object({
   email: z.string().email('Please enter a valid email address'),
@@ -24,10 +25,13 @@ const LoginPage = () => {
   const {
     register,
     handleSubmit,
+    watch,
     formState: { errors }
   } = useForm({
     resolver: zodResolver(loginSchema)
   });
+
+  const emailValue = watch('email', '');
 
   const onSubmit = async (data) => {
     clearError();
@@ -54,6 +58,12 @@ const LoginPage = () => {
             <CardDescription>
               Sign in to your EOS Platform account
             </CardDescription>
+            {emailValue.toLowerCase().endsWith('@eosworldwide.com') && (
+              <Badge variant="secondary" className="mt-2 mx-auto">
+                <Briefcase className="mr-1 h-3 w-3" />
+                EOS Implementer Account
+              </Badge>
+            )}
           </CardHeader>
           <CardContent>
             <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
@@ -128,11 +138,17 @@ const LoginPage = () => {
               </Button>
             </form>
 
-            <div className="mt-6 text-center">
+            <div className="mt-6 text-center space-y-2">
               <p className="text-sm text-gray-600">
                 Don't have an account?{' '}
                 <Link to="/register" className="text-primary hover:underline font-medium">
                   Sign up
+                </Link>
+              </p>
+              <p className="text-sm text-gray-600">
+                EOS Implementer?{' '}
+                <Link to="/eosi-register" className="text-primary hover:underline font-medium">
+                  Create EOSI account
                 </Link>
               </p>
             </div>

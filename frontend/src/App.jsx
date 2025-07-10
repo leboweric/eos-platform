@@ -20,6 +20,7 @@ import BillingPage from './pages/BillingPage';
 import UsersPage from './pages/UsersPage';
 import AcceptInvitationPage from './pages/AcceptInvitationPage';
 import EOSIDashboard from './pages/EOSIDashboard';
+import EOSIRegisterPage from './pages/EOSIRegisterPage';
 
 import './App.css';
 
@@ -46,6 +47,7 @@ function App() {
           <Route path="/" element={!user ? <LandingPage /> : <Navigate to="/dashboard" />} />
           <Route path="/login" element={!user ? <LoginPage /> : <Navigate to="/dashboard" />} />
           <Route path="/register" element={!user ? <RegisterPage /> : <Navigate to="/dashboard" />} />
+          <Route path="/eosi-register" element={!user ? <EOSIRegisterPage /> : <Navigate to="/dashboard" />} />
           <Route path="/accept-invitation" element={<AcceptInvitationPage />} />
           
           {/* Protected routes */}

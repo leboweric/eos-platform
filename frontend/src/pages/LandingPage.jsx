@@ -108,6 +108,14 @@ const LandingPage = () => {
               Watch Demo
             </Button>
           </div>
+          <div className="mt-6">
+            <p className="text-sm text-gray-600 mb-2">Are you an EOS Implementer?</p>
+            <Link to="/eosi-register">
+              <Button variant="link" className="text-primary hover:underline">
+                Create your EOSI account here →
+              </Button>
+            </Link>
+          </div>
         </div>
       </section>
 
