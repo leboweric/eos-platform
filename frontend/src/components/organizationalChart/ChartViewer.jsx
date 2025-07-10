@@ -1,0 +1,251 @@
+import { useState, useEffect } from 'react';
+import { organizationalChartService } from '../../services/organizationalChartService';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
+import { Alert, AlertDescription } from '@/components/ui/alert';
+import { 
+  Loader2,
+  AlertCircle,
+  Users,
+  User,
+  ChevronDown,
+  ChevronRight,
+  Building2,
+  Briefcase,
+  Star
+} from 'lucide-react';
+import PositionNode from './PositionNode';
+
+const ChartViewer = ({ chartId }) => {
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+  const [chartData, setChartData] = useState(null);
+  const [expandedNodes, setExpandedNodes] = useState(new Set());
+
+  useEffect(() => {
+    fetchChartData();
+  }, [chartId]);
+
+  const fetchChartData = async () => {
+    try {
+      setLoading(true);
+      setError(null);
+      const data = await organizationalChartService.getChart(chartId);
+      setChartData(data);
+      // Expand root nodes by default
+      if (data.positions) {
+        const rootIds = data.positions.map(p => p.id);
+        setExpandedNodes(new Set(rootIds));
+      }
+    } catch (error) {
+      console.error('Failed to fetch chart data:', error);
+      setError('Failed to load organizational chart');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const toggleNode = (nodeId) => {
+    setExpandedNodes(prev => {
+      const newSet = new Set(prev);
+      if (newSet.has(nodeId)) {
+        newSet.delete(nodeId);
+      } else {
+        newSet.add(nodeId);
+      }
+      return newSet;
+    });
+  };
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center h-96">
+        <Loader2 className="h-8 w-8 animate-spin" />
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <Alert className="border-red-200 bg-red-50">
+        <AlertCircle className="h-4 w-4" />
+        <AlertDescription>{error}</AlertDescription>
+      </Alert>
+    );
+  }
+
+  if (!chartData) {
+    return null;
+  }
+
+  const { chart, positions } = chartData;
+
+  return (
+    <div className="space-y-6">
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center justify-between">
+            <span>{chart.name}</span>
+            <Badge variant="secondary">Version {chart.version}</Badge>
+          </CardTitle>
+          {chart.description && (
+            <p className="text-sm text-gray-600 mt-2">{chart.description}</p>
+          )}
+        </CardHeader>
+      </Card>
+
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center">
+            <Building2 className="mr-2 h-5 w-5" />
+            Organization Structure
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          {positions.length === 0 ? (
+            <div className="flex flex-col items-center justify-center py-12 text-gray-500">
+              <Users className="h-12 w-12 mb-4" />
+              <p>No positions defined yet</p>
+            </div>
+          ) : (
+            <div className="space-y-4">
+              {positions.map((position) => (
+                <PositionNode
+                  key={position.id}
+                  position={position}
+                  expanded={expandedNodes.has(position.id)}
+                  onToggle={() => toggleNode(position.id)}
+                  level={0}
+                />
+              ))}
+            </div>
+          )}
+        </CardContent>
+      </Card>
+
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-lg">Statistics</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-3">
+            <div className="flex justify-between">
+              <span className="text-sm text-gray-600">Total Positions</span>
+              <span className="font-medium">{countPositions(positions)}</span>
+            </div>
+            <div className="flex justify-between">
+              <span className="text-sm text-gray-600">Filled Positions</span>
+              <span className="font-medium">{countFilledPositions(positions)}</span>
+            </div>
+            <div className="flex justify-between">
+              <span className="text-sm text-gray-600">Open Positions</span>
+              <span className="font-medium">
+                {countPositions(positions) - countFilledPositions(positions)}
+              </span>
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-lg">Position Types</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-3">
+            <div className="flex justify-between">
+              <span className="text-sm text-gray-600">Leadership</span>
+              <span className="font-medium">
+                {countPositionsByType(positions, 'leadership')}
+              </span>
+            </div>
+            <div className="flex justify-between">
+              <span className="text-sm text-gray-600">Management</span>
+              <span className="font-medium">
+                {countPositionsByType(positions, 'management')}
+              </span>
+            </div>
+            <div className="flex justify-between">
+              <span className="text-sm text-gray-600">Individual Contributors</span>
+              <span className="font-medium">
+                {countPositionsByType(positions, 'individual_contributor')}
+              </span>
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-lg">Chart Info</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-3">
+            <div className="flex justify-between">
+              <span className="text-sm text-gray-600">Created by</span>
+              <span className="font-medium">{chart.created_by_name}</span>
+            </div>
+            <div className="flex justify-between">
+              <span className="text-sm text-gray-600">Created on</span>
+              <span className="font-medium">
+                {new Date(chart.created_at).toLocaleDateString()}
+              </span>
+            </div>
+            <div className="flex justify-between">
+              <span className="text-sm text-gray-600">Last updated</span>
+              <span className="font-medium">
+                {new Date(chart.updated_at).toLocaleDateString()}
+              </span>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+    </div>
+  );
+};
+
+// Helper functions
+const countPositions = (positions) => {
+  let count = 0;
+  const traverse = (nodes) => {
+    nodes.forEach(node => {
+      count++;
+      if (node.children) {
+        traverse(node.children);
+      }
+    });
+  };
+  traverse(positions);
+  return count;
+};
+
+const countFilledPositions = (positions) => {
+  let count = 0;
+  const traverse = (nodes) => {
+    nodes.forEach(node => {
+      if (node.holder_id) {
+        count++;
+      }
+      if (node.children) {
+        traverse(node.children);
+      }
+    });
+  };
+  traverse(positions);
+  return count;
+};
+
+const countPositionsByType = (positions, type) => {
+  let count = 0;
+  const traverse = (nodes) => {
+    nodes.forEach(node => {
+      if (node.position_type === type) {
+        count++;
+      }
+      if (node.children) {
+        traverse(node.children);
+      }
+    });
+  };
+  traverse(positions);
+  return count;
+};
+
+export default ChartViewer;

@@ -22,6 +22,7 @@ import AcceptInvitationPage from './pages/AcceptInvitationPage';
 import ConsultantDashboard from './pages/ConsultantDashboard';
 import ConsultantRegisterPage from './pages/ConsultantRegisterPage';
 import OrganizationSettings from './pages/OrganizationSettings';
+import OrganizationalChartPage from './pages/OrganizationalChartPage';
 
 import './App.css';
 
@@ -65,6 +66,7 @@ function App() {
           <Route path="/users" element={user ? <Layout><UsersPage /></Layout> : <Navigate to="/login" />} />
           <Route path="/consultant" element={user ? <Layout><ConsultantDashboard /></Layout> : <Navigate to="/login" />} />
           <Route path="/organization-settings" element={user ? <Layout><OrganizationSettings /></Layout> : <Navigate to="/login" />} />
+          <Route path="/organizational-chart" element={user ? <Layout><OrganizationalChartPage /></Layout> : <Navigate to="/login" />} />
           
           {/* Legacy route redirects */}
           <Route path="/vto" element={<Navigate to="/business-blueprint" />} />

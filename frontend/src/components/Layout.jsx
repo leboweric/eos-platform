@@ -31,7 +31,8 @@ import {
   Network,
   CreditCard,
   ArrowLeft,
-  Briefcase
+  Briefcase,
+  GitBranch
 } from 'lucide-react';
 
 const Layout = ({ children }) => {
@@ -49,6 +50,7 @@ const Layout = ({ children }) => {
   const navigation = [
     { name: 'Dashboard', href: '/dashboard', icon: Home },
     { name: 'Business Blueprint', href: '/business-blueprint', icon: Target },
+    { name: 'Organizational Chart', href: '/organizational-chart', icon: GitBranch },
     { name: 'Accountability Chart', href: '/accountability', icon: Network },
     { name: 'Quarterly Priorities', href: '/quarterly-priorities', icon: CheckSquare },
     { name: 'Scorecard', href: '/scorecard', icon: BarChart3 },
