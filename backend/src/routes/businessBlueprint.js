@@ -28,10 +28,11 @@ router.delete('/core-values/:valueId', [
   param('valueId').isUUID().withMessage('Invalid value ID')
 ], deleteCoreValue);
 
-// Core Focus endpoint
+// Core Focus (Hedgehog) endpoint
 router.put('/core-focus', [
-  body('purpose').notEmpty().withMessage('Purpose is required'),
-  body('niche').notEmpty().withMessage('Niche is required')
+  body('purpose').notEmpty().withMessage('Purpose/Cause/Passion is required'),
+  body('niche').notEmpty().withMessage('Niche is required'),
+  body('hedgehogType').isIn(['purpose', 'cause', 'passion']).withMessage('Hedgehog type must be purpose, cause, or passion')
 ], updateCoreFocus);
 
 // Ten Year Target endpoint
@@ -43,8 +44,11 @@ router.put('/ten-year-target', [
 // Marketing Strategy endpoint
 router.put('/marketing-strategy', [
   body('targetMarket').notEmpty().withMessage('Target market is required'),
-  body('threeUniques').notEmpty().withMessage('Three uniques are required'),
-  body('provenProcess').notEmpty().withMessage('Proven process is required')
+  body('differentiator1').optional(),
+  body('differentiator2').optional(),
+  body('differentiator3').optional(),
+  body('provenProcessExists').isBoolean().withMessage('Proven process must be true or false'),
+  body('guaranteeExists').isBoolean().withMessage('Guarantee must be true or false')
 ], updateMarketingStrategy);
 
 // TODO: Add endpoints for:

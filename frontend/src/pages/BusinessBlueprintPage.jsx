@@ -1,870 +1,538 @@
 import { useState, useEffect } from 'react';
+import { useAuthStore } from '../stores/authStore';
+import { businessBlueprintService } from '../services/businessBlueprintService';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Badge } from '@/components/ui/badge';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Alert, AlertDescription } from '@/components/ui/alert';
+import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
+import { Switch } from '@/components/ui/switch';
 import { 
   Target, 
-  Eye, 
-  TrendingUp, 
-  Calendar,
-  Plus,
-  Edit,
   Save,
-  X,
+  Plus,
   Trash2,
-  Building2
+  Loader2,
+  AlertCircle,
+  Lightbulb,
+  Users,
+  TrendingUp,
+  Calendar
 } from 'lucide-react';
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from '@/components/ui/alert-dialog';
-import CoreValueDialog from '@/components/vto/CoreValueDialog';
-import CoreFocusDialog from '@/components/vto/CoreFocusDialog';
-import TenYearTargetDialog from '@/components/vto/TenYearTargetDialog';
-import MarketingStrategyDialog from '@/components/vto/MarketingStrategyDialog';
-import ThreeYearPictureDialog from '@/components/vto/ThreeYearPictureDialog';
-import OneYearPlanDialog from '@/components/vto/OneYearPlanDialog';
-import RockDialog from '@/components/vto/RockDialog';
-import IssueDialog from '@/components/vto/IssueDialog';
 
-const VTOPage = () => {
+const BusinessBlueprintPage = () => {
+  const { user } = useAuthStore();
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState(null);
+  const [success, setSuccess] = useState(null);
   const [activeTab, setActiveTab] = useState('vision');
-  const [coreValueDialog, setCoreValueDialog] = useState({ open: false, value: null });
-  const [coreFocusDialog, setCoreFocusDialog] = useState(false);
-  const [tenYearTargetDialog, setTenYearTargetDialog] = useState(false);
-  const [marketingStrategyDialog, setMarketingStrategyDialog] = useState(false);
-  const [threeYearPictureDialog, setThreeYearPictureDialog] = useState(false);
-  const [oneYearPlanDialog, setOneYearPlanDialog] = useState(false);
-  const [rockDialog, setRockDialog] = useState({ open: false, rock: null });
-  const [issueDialog, setIssueDialog] = useState({ open: false, issue: null });
-  const [deleteDialog, setDeleteDialog] = useState({ open: false, type: null, id: null });
-  const [selectedDepartment, setSelectedDepartment] = useState('company');
-  const [departments, setDepartments] = useState([]);
-
-  // Mock fetch departments - in production, use API
-  useEffect(() => {
-    const mockDepartments = [
-      { id: '1', name: 'Sales', description: 'Revenue generation' },
-      { id: '2', name: 'Marketing', description: 'Brand and lead generation' },
-      { id: '3', name: 'Engineering', description: 'Product development' }
-    ];
-    setDepartments(mockDepartments);
-  }, []);
-
-  // Fetch Business Blueprint data when department changes
-  useEffect(() => {
-    // In production, this would fetch from API based on selectedDepartment
-    // For now, we'll just update the title to show department context
-    console.log(`Loading Business Blueprint for: ${selectedDepartment === 'company' ? 'Company-wide' : `Department ${selectedDepartment}`}`);
-    // API call would be here
-  }, [selectedDepartment]);
-
-  // Mock data - in a real app, this would come from API based on selected department
+  
+  // Business Blueprint data
   const [blueprintData, setBlueprintData] = useState({
-    coreValues: [
-      { id: 1, value: 'Integrity', description: 'We do the right thing, even when no one is watching' },
-      { id: 2, value: 'Excellence', description: 'We strive for excellence in everything we do' },
-      { id: 3, value: 'Innovation', description: 'We embrace change and continuously improve' }
-    ],
+    coreValues: [],
     coreFocus: {
-      purpose: 'To help businesses achieve their full potential',
-      niche: 'Small to medium-sized businesses implementing EOS'
+      purpose: '',
+      niche: '',
+      hedgehogType: 'purpose'
     },
-    tenYearTarget: {
-      description: 'Be the leading EOS implementation platform with 10,000+ active organizations',
-      year: 2035,
-      runningTotal: '$50M ARR'
+    bhag: {
+      description: '',
+      year: new Date().getFullYear() + 10,
+      runningTotal: ''
     },
     marketingStrategy: {
-      targetMarket: 'EOS Implementers and their client organizations',
-      threeUniques: '1. AI-powered insights, 2. Real-time collaboration, 3. Mobile-first design',
-      provenProcess: 'EOS methodology with enhanced digital tools',
-      guarantee: '90-day money-back guarantee'
+      targetMarket: '',
+      differentiator1: '',
+      differentiator2: '',
+      differentiator3: '',
+      provenProcessExists: false,
+      guaranteeExists: false
     },
-    threeYearPicture: {
-      date: '2028-01-01',
-      revenue: 10000000,
-      profit: 2000000,
-      profitPercentage: 20,
-      measurables: [
-        { id: 1, name: 'Active Organizations', target: 1000 },
-        { id: 2, name: 'Monthly Active Users', target: 25000 },
-        { id: 3, name: 'Customer Satisfaction', target: 95 }
-      ],
-      whatDoesItLookLike: [
-        { id: 1, description: '100 Right People Right Seats' },
-        { id: 2, description: 'A remote office in Duluth' },
-        { id: 3, description: 'Market leader in EOS digital tools with global presence' }
-      ]
-    },
-    oneYearPlan: {
-      date: '2026-01-01',
-      revenue: 2000000,
-      profit: 300000,
-      profitPercentage: 15,
-      goals: [
-        { id: 1, text: 'Launch AI-powered features', completed: false },
-        { id: 2, text: 'Reach 100 paying organizations', completed: false },
-        { id: 3, text: 'Establish partner program', completed: true }
-      ],
-      measurables: [
-        { id: 1, name: 'Monthly Recurring Revenue', target: 150000 },
-        { id: 2, name: 'Customer Churn Rate', target: 5 },
-        { id: 3, name: 'Net Promoter Score', target: 70 }
-      ]
-    },
-    quarterlyRocks: [],
-    issues: []
+    threeYearPicture: null,
+    oneYearPlan: null
   });
 
-  // Core Value handlers
-  const handleAddCoreValue = () => {
-    setCoreValueDialog({ open: true, value: null });
-  };
+  // New core value form
+  const [newCoreValue, setNewCoreValue] = useState({ value: '', description: '' });
+  const [editingCoreValue, setEditingCoreValue] = useState(null);
 
-  const handleEditCoreValue = (value) => {
-    setCoreValueDialog({ open: true, value });
-  };
+  useEffect(() => {
+    fetchBusinessBlueprint();
+  }, []);
 
-  const handleSaveCoreValue = (coreValue) => {
-    if (coreValue.id) {
-      // Update existing value
-      setBlueprintData(prev => ({
-        ...prev,
-        coreValues: prev.coreValues.map(v => 
-          v.id === coreValue.id ? coreValue : v
-        )
-      }));
-    } else {
-      // Add new value
-      const newValue = {
-        ...coreValue,
-        id: Date.now()
-      };
-      setBlueprintData(prev => ({
-        ...prev,
-        coreValues: [...prev.coreValues, newValue]
-      }));
+  const fetchBusinessBlueprint = async () => {
+    try {
+      setLoading(true);
+      setError(null);
+      const data = await businessBlueprintService.getBusinessBlueprint();
+      
+      // Transform API data to component state
+      setBlueprintData({
+        coreValues: data.coreValues || [],
+        coreFocus: data.coreFocus || { purpose: '', niche: '', hedgehogType: 'purpose' },
+        bhag: {
+          description: data.tenYearTarget?.target_description || '',
+          year: data.tenYearTarget?.target_year || new Date().getFullYear() + 10,
+          runningTotal: data.tenYearTarget?.running_total_description || ''
+        },
+        marketingStrategy: {
+          targetMarket: data.marketingStrategy?.target_market || '',
+          differentiator1: data.marketingStrategy?.differentiator_1 || '',
+          differentiator2: data.marketingStrategy?.differentiator_2 || '',
+          differentiator3: data.marketingStrategy?.differentiator_3 || '',
+          provenProcessExists: data.marketingStrategy?.proven_process_exists || false,
+          guaranteeExists: data.marketingStrategy?.guarantee_exists || false
+        },
+        threeYearPicture: data.threeYearPicture,
+        oneYearPlan: data.oneYearPlan
+      });
+    } catch (error) {
+      console.error('Failed to fetch business blueprint:', error);
+      setError('Failed to load business blueprint data');
+    } finally {
+      setLoading(false);
     }
   };
 
-  const handleDeleteCoreValue = (id) => {
-    setDeleteDialog({ open: true, type: 'coreValue', id });
-  };
-
-  const confirmDelete = () => {
-    const { type, id } = deleteDialog;
+  // Core Values handlers
+  const handleAddCoreValue = async () => {
+    if (!newCoreValue.value.trim()) return;
     
-    if (type === 'coreValue') {
+    try {
+      setSaving(true);
+      setError(null);
+      const savedValue = await businessBlueprintService.upsertCoreValue(newCoreValue);
       setBlueprintData(prev => ({
         ...prev,
-        coreValues: prev.coreValues.filter(v => v.id !== id)
+        coreValues: [...prev.coreValues, savedValue]
       }));
-    }
-    // Add other delete handlers for different types here
-    
-    setDeleteDialog({ open: false, type: null, id: null });
-  };
-
-  // Core Focus handlers
-  const handleSaveCoreFocus = (data) => {
-    setBlueprintData(prev => ({
-      ...prev,
-      coreFocus: data
-    }));
-  };
-
-  // Ten Year Target handlers
-  const handleSaveTenYearTarget = (data) => {
-    setBlueprintData(prev => ({
-      ...prev,
-      tenYearTarget: {
-        description: data.targetDescription,
-        year: data.targetYear,
-        runningTotal: data.currentRunningTotal
-      }
-    }));
-  };
-
-  // Marketing Strategy handlers
-  const handleSaveMarketingStrategy = (data) => {
-    setBlueprintData(prev => ({
-      ...prev,
-      marketingStrategy: {
-        targetMarket: data.targetMarket,
-        threeUniques: data.threeUniques,
-        provenProcess: data.provenProcess,
-        guarantee: data.guarantee
-      }
-    }));
-  };
-
-  // Three Year Picture handlers
-  const handleSaveThreeYearPicture = (data) => {
-    setBlueprintData(prev => ({
-      ...prev,
-      threeYearPicture: data
-    }));
-  };
-
-  // One Year Plan handlers
-  const handleSaveOneYearPlan = (data) => {
-    setBlueprintData(prev => ({
-      ...prev,
-      oneYearPlan: data
-    }));
-  };
-
-  // Rock handlers
-  const handleAddRock = () => {
-    setRockDialog({ open: true, rock: null });
-  };
-
-  const handleEditRock = (rock) => {
-    setRockDialog({ open: true, rock });
-  };
-
-  const handleSaveRock = (rock) => {
-    if (rock.id) {
-      // Update existing priority
-      setBlueprintData(prev => ({
-        ...prev,
-        quarterlyRocks: prev.quarterlyRocks.map(r =>
-          r.id === rock.id ? rock : r
-        )
-      }));
-    } else {
-      // Add new priority
-      const newPriority = {
-        ...rock,
-        id: Date.now(),
-        progress: 0
-      };
-      setBlueprintData(prev => ({
-        ...prev,
-        quarterlyRocks: [...prev.quarterlyRocks, newPriority]
-      }));
+      setNewCoreValue({ value: '', description: '' });
+      setSuccess('Core value added successfully');
+    } catch (error) {
+      setError('Failed to add core value');
+    } finally {
+      setSaving(false);
     }
   };
 
-  const handleDeleteRock = (id) => {
-    setBlueprintData(prev => ({
-      ...prev,
-      quarterlyRocks: prev.quarterlyRocks.filter(r => r.id !== id)
-    }));
-  };
-
-  // Issue handlers
-  const handleAddIssue = () => {
-    setIssueDialog({ open: true, issue: null });
-  };
-
-  const handleEditIssue = (issue) => {
-    setIssueDialog({ open: true, issue });
-  };
-
-  const handleSaveIssue = (issue) => {
-    if (issue.id) {
-      // Update existing issue
+  const handleDeleteCoreValue = async (valueId) => {
+    try {
+      setSaving(true);
+      setError(null);
+      await businessBlueprintService.deleteCoreValue(valueId);
       setBlueprintData(prev => ({
         ...prev,
-        issues: prev.issues.map(i =>
-          i.id === issue.id ? issue : i
-        )
+        coreValues: prev.coreValues.filter(v => v.id !== valueId)
       }));
-    } else {
-      // Add new issue
-      const newIssue = {
-        ...issue,
-        id: Date.now()
-      };
-      setBlueprintData(prev => ({
-        ...prev,
-        issues: [...prev.issues, newIssue]
-      }));
+      setSuccess('Core value deleted successfully');
+    } catch (error) {
+      setError('Failed to delete core value');
+    } finally {
+      setSaving(false);
     }
   };
 
-  const handleDeleteIssue = (id) => {
-    setBlueprintData(prev => ({
-      ...prev,
-      issues: prev.issues.filter(i => i.id !== id)
-    }));
+  // Core Focus (Hedgehog) handler
+  const handleSaveCoreFocus = async () => {
+    try {
+      setSaving(true);
+      setError(null);
+      await businessBlueprintService.updateCoreFocus(blueprintData.coreFocus);
+      setSuccess('Hedgehog updated successfully');
+    } catch (error) {
+      setError('Failed to update Hedgehog');
+    } finally {
+      setSaving(false);
+    }
   };
 
-  const formatCurrency = (amount) => {
-    return new Intl.NumberFormat('en-US', {
-      style: 'currency',
-      currency: 'USD',
-      minimumFractionDigits: 0,
-      maximumFractionDigits: 0
-    }).format(amount);
+  // BHAG handler
+  const handleSaveBHAG = async () => {
+    try {
+      setSaving(true);
+      setError(null);
+      await businessBlueprintService.updateBHAG(blueprintData.bhag);
+      setSuccess('BHAG updated successfully');
+    } catch (error) {
+      setError('Failed to update BHAG');
+    } finally {
+      setSaving(false);
+    }
   };
+
+  // Marketing Strategy handler
+  const handleSaveMarketingStrategy = async () => {
+    try {
+      setSaving(true);
+      setError(null);
+      await businessBlueprintService.updateMarketingStrategy(blueprintData.marketingStrategy);
+      setSuccess('Marketing strategy updated successfully');
+    } catch (error) {
+      setError('Failed to update marketing strategy');
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <Loader2 className="h-8 w-8 animate-spin" />
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">
-      {/* Header */}
-      <div className="space-y-4">
-        <div className="flex items-center justify-between">
-          <div>
-            <h1 className="text-3xl font-bold">Business Blueprint</h1>
-            <p className="text-gray-600 mt-2">
-              Your organization's Business Strategy Blueprint
-            </p>
-          </div>
-          <div className="flex space-x-2">
-            <Button variant="outline">
-              <Eye className="mr-2 h-4 w-4" />
-              Preview
-            </Button>
-            <Button>
-              <Save className="mr-2 h-4 w-4" />
-              Save Changes
-            </Button>
-          </div>
-        </div>
-        
-        {/* Department Selector */}
-        <div className="flex items-center space-x-4">
-          <Building2 className="h-5 w-5 text-gray-500" />
-          <Label htmlFor="department">View Business Blueprint for:</Label>
-          <Select value={selectedDepartment} onValueChange={setSelectedDepartment}>
-            <SelectTrigger className="w-[250px]">
-              <SelectValue placeholder="Select department" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="company">Company-wide</SelectItem>
-              {departments.map(dept => (
-                <SelectItem key={dept.id} value={dept.id}>
-                  {dept.name}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-3xl font-bold">Business Blueprint</h1>
+          <p className="text-gray-600 mt-2">Define your organization's vision and strategy</p>
         </div>
       </div>
 
-      {/* Tabs */}
+      {error && (
+        <Alert className="border-red-200 bg-red-50">
+          <AlertCircle className="h-4 w-4" />
+          <AlertDescription>{error}</AlertDescription>
+        </Alert>
+      )}
+
+      {success && (
+        <Alert className="border-green-200 bg-green-50">
+          <AlertDescription>{success}</AlertDescription>
+        </Alert>
+      )}
+
       <Tabs value={activeTab} onValueChange={setActiveTab}>
         <TabsList className="grid w-full grid-cols-2">
           <TabsTrigger value="vision">Vision</TabsTrigger>
           <TabsTrigger value="traction">Traction</TabsTrigger>
         </TabsList>
 
-        {/* Vision Tab */}
         <TabsContent value="vision" className="space-y-6">
           {/* Core Values */}
           <Card>
             <CardHeader>
-              <div className="flex items-center justify-between">
-                <div>
-                  <CardTitle className="flex items-center">
-                    <Target className="mr-2 h-5 w-5" />
-                    Core Values
-                  </CardTitle>
-                  <CardDescription>
-                    The fundamental beliefs that guide your organization
-                  </CardDescription>
-                </div>
-                <Button variant="outline" size="sm" onClick={handleAddCoreValue}>
-                  <Plus className="mr-2 h-4 w-4" />
-                  Add Value
-                </Button>
-              </div>
+              <CardTitle className="flex items-center">
+                <Users className="mr-2 h-5 w-5" />
+                Core Values
+              </CardTitle>
+              <CardDescription>
+                3-7 rules that define your culture and Right People
+              </CardDescription>
             </CardHeader>
-            <CardContent>
-              <div className="space-y-4">
-                {blueprintData.coreValues.map((value) => (
-                  <div key={value.id} className="border rounded-lg p-4">
-                    <div className="flex items-start justify-between">
-                      <div className="flex-1">
-                        <h4 className="font-semibold text-lg">{value.value}</h4>
-                        <p className="text-gray-600 mt-1">{value.description}</p>
-                      </div>
-                      <div className="flex space-x-2">
-                        <Button variant="ghost" size="sm" onClick={() => handleEditCoreValue(value)}>
-                          <Edit className="h-4 w-4" />
-                        </Button>
-                        <Button variant="ghost" size="sm" onClick={() => handleDeleteCoreValue(value.id)}>
-                          <Trash2 className="h-4 w-4" />
-                        </Button>
-                      </div>
-                    </div>
+            <CardContent className="space-y-4">
+              {blueprintData.coreValues.map((value) => (
+                <div key={value.id} className="flex items-start justify-between p-3 border rounded-lg">
+                  <div className="flex-1">
+                    <h4 className="font-semibold">{value.value}</h4>
+                    {value.description && (
+                      <p className="text-sm text-gray-600 mt-1">{value.description}</p>
+                    )}
                   </div>
-                ))}
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => handleDeleteCoreValue(value.id)}
+                  >
+                    <Trash2 className="h-4 w-4" />
+                  </Button>
+                </div>
+              ))}
+
+              <div className="space-y-3 pt-4 border-t">
+                <Input
+                  placeholder="Core Value"
+                  value={newCoreValue.value}
+                  onChange={(e) => setNewCoreValue({ ...newCoreValue, value: e.target.value })}
+                />
+                <Textarea
+                  placeholder="Description (optional)"
+                  value={newCoreValue.description}
+                  onChange={(e) => setNewCoreValue({ ...newCoreValue, description: e.target.value })}
+                />
+                <Button onClick={handleAddCoreValue} disabled={saving}>
+                  {saving ? (
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  ) : (
+                    <Plus className="mr-2 h-4 w-4" />
+                  )}
+                  Add Core Value
+                </Button>
               </div>
             </CardContent>
           </Card>
 
-          {/* Core Focus */}
+          {/* Core Focus (Hedgehog) */}
           <Card>
             <CardHeader>
-              <div className="flex items-center justify-between">
-                <div>
-                  <CardTitle>Core Focus™</CardTitle>
-                  <CardDescription>
-                    Your organization's purpose and niche
-                  </CardDescription>
-                </div>
-                <Button variant="ghost" size="sm" onClick={() => setCoreFocusDialog(true)}>
-                  <Edit className="h-4 w-4" />
-                </Button>
-              </div>
+              <CardTitle className="flex items-center">
+                <Target className="mr-2 h-5 w-5" />
+                Hedgehog
+              </CardTitle>
+              <CardDescription>
+                Your organization's core focus - what drives you
+              </CardDescription>
             </CardHeader>
-            <CardContent>
-              <div className="grid md:grid-cols-2 gap-6">
-                <div>
-                  <Label className="text-sm font-medium text-gray-700">Purpose/Cause/Passion</Label>
-                  <p className="mt-1 text-gray-900">{blueprintData.coreFocus.purpose}</p>
-                </div>
-                <div>
-                  <Label className="text-sm font-medium text-gray-700">Niche</Label>
-                  <p className="mt-1 text-gray-900">{blueprintData.coreFocus.niche}</p>
-                </div>
+            <CardContent className="space-y-4">
+              <div>
+                <Label>Select your Hedgehog type</Label>
+                <RadioGroup
+                  value={blueprintData.coreFocus.hedgehogType}
+                  onValueChange={(value) => setBlueprintData(prev => ({
+                    ...prev,
+                    coreFocus: { ...prev.coreFocus, hedgehogType: value }
+                  }))}
+                  className="mt-2"
+                >
+                  <div className="flex items-center space-x-2">
+                    <RadioGroupItem value="purpose" id="purpose" />
+                    <Label htmlFor="purpose">Purpose</Label>
+                  </div>
+                  <div className="flex items-center space-x-2">
+                    <RadioGroupItem value="cause" id="cause" />
+                    <Label htmlFor="cause">Cause</Label>
+                  </div>
+                  <div className="flex items-center space-x-2">
+                    <RadioGroupItem value="passion" id="passion" />
+                    <Label htmlFor="passion">Passion</Label>
+                  </div>
+                </RadioGroup>
               </div>
+
+              <div>
+                <Label htmlFor="purpose">
+                  {blueprintData.coreFocus.hedgehogType === 'purpose' ? 'Purpose' : 
+                   blueprintData.coreFocus.hedgehogType === 'cause' ? 'Cause' : 'Passion'}
+                </Label>
+                <Textarea
+                  id="purpose"
+                  value={blueprintData.coreFocus.purpose}
+                  onChange={(e) => setBlueprintData(prev => ({
+                    ...prev,
+                    coreFocus: { ...prev.coreFocus, purpose: e.target.value }
+                  }))}
+                  placeholder={`Enter your ${blueprintData.coreFocus.hedgehogType}...`}
+                />
+              </div>
+
+              <div>
+                <Label htmlFor="niche">Niche</Label>
+                <Textarea
+                  id="niche"
+                  value={blueprintData.coreFocus.niche}
+                  onChange={(e) => setBlueprintData(prev => ({
+                    ...prev,
+                    coreFocus: { ...prev.coreFocus, niche: e.target.value }
+                  }))}
+                  placeholder="What is your niche?"
+                />
+              </div>
+
+              <Button onClick={handleSaveCoreFocus} disabled={saving}>
+                {saving ? (
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                ) : (
+                  <Save className="mr-2 h-4 w-4" />
+                )}
+                Save Hedgehog
+              </Button>
             </CardContent>
           </Card>
 
-          {/* 10-Year Target */}
+          {/* BHAG (Big Hairy Audacious Goal) */}
           <Card>
             <CardHeader>
-              <div className="flex items-center justify-between">
-                <div>
-                  <CardTitle>10-Year Target™</CardTitle>
-                  <CardDescription>
-                    Your long-term vision and measurable goal
-                  </CardDescription>
-                </div>
-                <Button variant="ghost" size="sm" onClick={() => setTenYearTargetDialog(true)}>
-                  <Edit className="h-4 w-4" />
-                </Button>
-              </div>
+              <CardTitle className="flex items-center">
+                <TrendingUp className="mr-2 h-5 w-5" />
+                Big Hairy Audacious Goal (BHAG)
+              </CardTitle>
+              <CardDescription>
+                Your 10+ year ambitious goal
+              </CardDescription>
             </CardHeader>
-            <CardContent>
-              <div className="space-y-4">
-                <div>
-                  <Label className="text-sm font-medium text-gray-700">Target Description</Label>
-                  <p className="mt-1 text-gray-900">{blueprintData.tenYearTarget.description}</p>
-                </div>
-                <div className="grid md:grid-cols-2 gap-4">
-                  <div>
-                    <Label className="text-sm font-medium text-gray-700">Target Year</Label>
-                    <p className="mt-1 text-gray-900">{blueprintData.tenYearTarget.year}</p>
-                  </div>
-                  <div>
-                    <Label className="text-sm font-medium text-gray-700">Running Total</Label>
-                    <p className="mt-1 text-gray-900">{blueprintData.tenYearTarget.runningTotal}</p>
-                  </div>
-                </div>
+            <CardContent className="space-y-4">
+              <div>
+                <Label htmlFor="bhagYear">Target Year</Label>
+                <Input
+                  id="bhagYear"
+                  type="number"
+                  value={blueprintData.bhag.year}
+                  onChange={(e) => setBlueprintData(prev => ({
+                    ...prev,
+                    bhag: { ...prev.bhag, year: parseInt(e.target.value) }
+                  }))}
+                  min={new Date().getFullYear() + 1}
+                />
               </div>
+
+              <div>
+                <Label htmlFor="bhagDescription">BHAG Description</Label>
+                <Textarea
+                  id="bhagDescription"
+                  value={blueprintData.bhag.description}
+                  onChange={(e) => setBlueprintData(prev => ({
+                    ...prev,
+                    bhag: { ...prev.bhag, description: e.target.value }
+                  }))}
+                  placeholder="Describe your Big Hairy Audacious Goal..."
+                />
+              </div>
+
+              <div>
+                <Label htmlFor="runningTotal">Running Total (optional)</Label>
+                <Input
+                  id="runningTotal"
+                  value={blueprintData.bhag.runningTotal}
+                  onChange={(e) => setBlueprintData(prev => ({
+                    ...prev,
+                    bhag: { ...prev.bhag, runningTotal: e.target.value }
+                  }))}
+                  placeholder="e.g., $50M ARR"
+                />
+              </div>
+
+              <Button onClick={handleSaveBHAG} disabled={saving}>
+                {saving ? (
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                ) : (
+                  <Save className="mr-2 h-4 w-4" />
+                )}
+                Save BHAG
+              </Button>
             </CardContent>
           </Card>
 
           {/* Marketing Strategy */}
           <Card>
             <CardHeader>
-              <div className="flex items-center justify-between">
-                <div>
-                  <CardTitle>Marketing Strategy</CardTitle>
-                  <CardDescription>
-                    How you reach and serve your target market
-                  </CardDescription>
-                </div>
-                <Button variant="ghost" size="sm" onClick={() => setMarketingStrategyDialog(true)}>
-                  <Edit className="h-4 w-4" />
-                </Button>
-              </div>
+              <CardTitle className="flex items-center">
+                <Lightbulb className="mr-2 h-5 w-5" />
+                Marketing Strategy
+              </CardTitle>
+              <CardDescription>
+                Who you want to talk to and what you say when you do
+              </CardDescription>
             </CardHeader>
-            <CardContent>
-              <div className="space-y-4">
-                <div>
-                  <Label className="text-sm font-medium text-gray-700">Target Market</Label>
-                  <p className="mt-1 text-gray-900">{blueprintData.marketingStrategy.targetMarket}</p>
-                </div>
-                <div>
-                  <Label className="text-sm font-medium text-gray-700">Three Uniques</Label>
-                  <p className="mt-1 text-gray-900">{blueprintData.marketingStrategy.threeUniques}</p>
-                </div>
-                <div>
-                  <Label className="text-sm font-medium text-gray-700">Proven Process</Label>
-                  <p className="mt-1 text-gray-900">{blueprintData.marketingStrategy.provenProcess}</p>
-                </div>
-                <div>
-                  <Label className="text-sm font-medium text-gray-700">Guarantee</Label>
-                  <p className="mt-1 text-gray-900">{blueprintData.marketingStrategy.guarantee}</p>
-                </div>
+            <CardContent className="space-y-4">
+              <div>
+                <Label htmlFor="targetMarket">Target Market</Label>
+                <Textarea
+                  id="targetMarket"
+                  value={blueprintData.marketingStrategy.targetMarket}
+                  onChange={(e) => setBlueprintData(prev => ({
+                    ...prev,
+                    marketingStrategy: { ...prev.marketingStrategy, targetMarket: e.target.value }
+                  }))}
+                  placeholder="Describe your target market..."
+                />
               </div>
-            </CardContent>
-          </Card>
 
-          {/* 3-Year Picture */}
-          <Card>
-            <CardHeader>
+              <div>
+                <Label>3 Differentiators</Label>
+                <div className="space-y-2 mt-2">
+                  <Input
+                    placeholder="Differentiator 1"
+                    value={blueprintData.marketingStrategy.differentiator1}
+                    onChange={(e) => setBlueprintData(prev => ({
+                      ...prev,
+                      marketingStrategy: { ...prev.marketingStrategy, differentiator1: e.target.value }
+                    }))}
+                  />
+                  <Input
+                    placeholder="Differentiator 2"
+                    value={blueprintData.marketingStrategy.differentiator2}
+                    onChange={(e) => setBlueprintData(prev => ({
+                      ...prev,
+                      marketingStrategy: { ...prev.marketingStrategy, differentiator2: e.target.value }
+                    }))}
+                  />
+                  <Input
+                    placeholder="Differentiator 3"
+                    value={blueprintData.marketingStrategy.differentiator3}
+                    onChange={(e) => setBlueprintData(prev => ({
+                      ...prev,
+                      marketingStrategy: { ...prev.marketingStrategy, differentiator3: e.target.value }
+                    }))}
+                  />
+                </div>
+              </div>
+
               <div className="flex items-center justify-between">
-                <div>
-                  <CardTitle>3-Year Picture</CardTitle>
-                  <CardDescription>
-                    Your mid-term vision with specific targets
-                  </CardDescription>
-                </div>
-                <Button variant="ghost" size="sm" onClick={() => setThreeYearPictureDialog(true)}>
-                  <Edit className="h-4 w-4" />
-                </Button>
+                <Label htmlFor="provenProcess">Proven Process</Label>
+                <Switch
+                  id="provenProcess"
+                  checked={blueprintData.marketingStrategy.provenProcessExists}
+                  onCheckedChange={(checked) => setBlueprintData(prev => ({
+                    ...prev,
+                    marketingStrategy: { ...prev.marketingStrategy, provenProcessExists: checked }
+                  }))}
+                />
               </div>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-4">
-                <div className="grid md:grid-cols-3 gap-4">
-                  <div>
-                    <Label className="text-sm font-medium text-gray-700">Revenue Target</Label>
-                    <p className="mt-1 text-2xl font-bold text-green-600">
-                      {formatCurrency(blueprintData.threeYearPicture.revenue)}
-                    </p>
-                  </div>
-                  <div>
-                    <Label className="text-sm font-medium text-gray-700">Profit Target</Label>
-                    <p className="mt-1 text-2xl font-bold text-blue-600">
-                      {formatCurrency(blueprintData.threeYearPicture.profit)}
-                    </p>
-                  </div>
-                  <div>
-                    <Label className="text-sm font-medium text-gray-700">Profit %</Label>
-                    <p className="mt-1 text-2xl font-bold text-purple-600">
-                      {blueprintData.threeYearPicture.profitPercentage}%
-                    </p>
-                  </div>
-                </div>
-                <div>
-                  <Label className="text-sm font-medium text-gray-700">Measurables</Label>
-                  <div className="mt-2 space-y-2">
-                    {blueprintData.threeYearPicture.measurables.map((measurable) => (
-                      <div key={measurable.id} className="flex justify-between items-center p-2 bg-gray-50 rounded">
-                        <span>{measurable.name}</span>
-                        <Badge variant="outline">{measurable.target.toLocaleString()}</Badge>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-                <div>
-                  <Label className="text-sm font-medium text-gray-700">What Does it Look Like</Label>
-                  <div className="mt-2 space-y-2">
-                    {blueprintData.threeYearPicture.whatDoesItLookLike?.map((item) => (
-                      <div key={item.id} className="flex items-start p-2 bg-gray-50 rounded">
-                        <span className="text-gray-600 mr-2">•</span>
-                        <span>{item.description}</span>
-                      </div>
-                    )) || <p className="text-gray-500 italic">No descriptions added yet</p>}
-                  </div>
-                </div>
+
+              <div className="flex items-center justify-between">
+                <Label htmlFor="guarantee">Guarantee</Label>
+                <Switch
+                  id="guarantee"
+                  checked={blueprintData.marketingStrategy.guaranteeExists}
+                  onCheckedChange={(checked) => setBlueprintData(prev => ({
+                    ...prev,
+                    marketingStrategy: { ...prev.marketingStrategy, guaranteeExists: checked }
+                  }))}
+                />
               </div>
+
+              <Button onClick={handleSaveMarketingStrategy} disabled={saving}>
+                {saving ? (
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                ) : (
+                  <Save className="mr-2 h-4 w-4" />
+                )}
+                Save Marketing Strategy
+              </Button>
             </CardContent>
           </Card>
         </TabsContent>
 
-        {/* Traction Tab */}
         <TabsContent value="traction" className="space-y-6">
-          {/* 1-Year Plan */}
           <Card>
             <CardHeader>
-              <div className="flex items-center justify-between">
-                <div>
-                  <CardTitle className="flex items-center">
-                    <Calendar className="mr-2 h-5 w-5" />
-                    1-Year Plan
-                  </CardTitle>
-                  <CardDescription>
-                    Your annual goals and financial targets
-                  </CardDescription>
-                </div>
-                <Button variant="ghost" size="sm" onClick={() => setOneYearPlanDialog(true)}>
-                  <Edit className="h-4 w-4" />
-                </Button>
-              </div>
+              <CardTitle>3-Year Picture</CardTitle>
+              <CardDescription>Your organization's 3-year vision</CardDescription>
             </CardHeader>
             <CardContent>
-              <div className="space-y-6">
-                <div className="grid md:grid-cols-3 gap-4">
-                  <div>
-                    <Label className="text-sm font-medium text-gray-700">Revenue Target</Label>
-                    <p className="mt-1 text-2xl font-bold text-green-600">
-                      {formatCurrency(blueprintData.oneYearPlan.revenue)}
-                    </p>
-                  </div>
-                  <div>
-                    <Label className="text-sm font-medium text-gray-700">Profit Target</Label>
-                    <p className="mt-1 text-2xl font-bold text-blue-600">
-                      {formatCurrency(blueprintData.oneYearPlan.profit)}
-                    </p>
-                  </div>
-                  <div>
-                    <Label className="text-sm font-medium text-gray-700">Profit %</Label>
-                    <p className="mt-1 text-2xl font-bold text-purple-600">
-                      {blueprintData.oneYearPlan.profitPercentage}%
-                    </p>
-                  </div>
-                </div>
-
-                <div>
-                  <Label className="text-sm font-medium text-gray-700 mb-3 block">Goals</Label>
-                  <div className="space-y-2">
-                    {blueprintData.oneYearPlan.goals.map((goal) => (
-                      <div key={goal.id} className="flex items-center space-x-3">
-                        <input
-                          type="checkbox"
-                          checked={goal.completed}
-                          className="rounded border-gray-300 text-primary focus:ring-primary"
-                          readOnly
-                        />
-                        <span className={goal.completed ? 'line-through text-gray-500' : ''}>
-                          {goal.text}
-                        </span>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-
-                <div>
-                  <Label className="text-sm font-medium text-gray-700 mb-3 block">Measurables</Label>
-                  <div className="space-y-2">
-                    {blueprintData.oneYearPlan.measurables.map((measurable) => (
-                      <div key={measurable.id} className="flex justify-between items-center p-2 bg-gray-50 rounded">
-                        <span>{measurable.name}</span>
-                        <Badge variant="outline">{measurable.target.toLocaleString()}</Badge>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              </div>
+              <p className="text-gray-500">Coming soon...</p>
             </CardContent>
           </Card>
 
-          {/* Quarterly Rocks */}
           <Card>
             <CardHeader>
-              <div className="flex items-center justify-between">
-                <div>
-                  <CardTitle className="flex items-center">
-                    <TrendingUp className="mr-2 h-5 w-5" />
-                    Quarterly Priorities
-                  </CardTitle>
-                  <CardDescription>
-                    Current quarter priorities and goals
-                  </CardDescription>
-                </div>
-                <Button variant="outline" size="sm">
-                  View All Priorities
-                </Button>
-              </div>
+              <CardTitle>1-Year Plan</CardTitle>
+              <CardDescription>Your goals for the next year</CardDescription>
             </CardHeader>
             <CardContent>
-              {blueprintData.quarterlyRocks.length === 0 ? (
-                <div className="text-center py-8 text-gray-500">
-                  <Target className="mx-auto h-12 w-12 mb-4 opacity-50" />
-                  <p>Priorities will be displayed here when created</p>
-                  <Button className="mt-4" onClick={handleAddRock}>Create Priority</Button>
-                </div>
-              ) : (
-                <div className="space-y-4">
-                  <Button onClick={handleAddRock} size="sm" variant="outline" className="w-full">
-                    <Plus className="mr-2 h-4 w-4" />
-                    Add Priority
-                  </Button>
-                  {blueprintData.quarterlyRocks.map((rock) => (
-                    <div key={rock.id} className="border rounded-lg p-4 hover:bg-gray-50 cursor-pointer" onClick={() => handleEditRock(rock)}>
-                      <div className="flex items-start justify-between">
-                        <div className="flex-1">
-                          <div className="flex items-center gap-2 mb-1">
-                            <h4 className="font-semibold">{rock.title}</h4>
-                            {rock.type === 'company' && (
-                              <Badge variant="secondary">Company</Badge>
-                            )}
-                          </div>
-                          <p className="text-sm text-gray-600">{rock.description}</p>
-                          <div className="flex items-center gap-4 mt-2 text-sm text-gray-500">
-                            <span>Owner: {rock.owner}</span>
-                            <span>Due: {new Date(rock.dueDate).toLocaleDateString()}</span>
-                            <Badge variant={
-                              rock.status === 'complete' ? 'default' :
-                              rock.status === 'on-track' ? 'secondary' :
-                              rock.status === 'at-risk' ? 'outline' :
-                              'destructive'
-                            }>
-                              {rock.status.replace('-', ' ')}
-                            </Badge>
-                          </div>
-                        </div>
-                        <Button variant="ghost" size="sm" onClick={(e) => {
-                          e.stopPropagation();
-                          handleDeleteRock(rock.id);
-                        }}>
-                          <Trash2 className="h-4 w-4" />
-                        </Button>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              )}
+              <p className="text-gray-500">Coming soon...</p>
             </CardContent>
           </Card>
 
-          {/* Issues List */}
           <Card>
             <CardHeader>
-              <div className="flex items-center justify-between">
-                <div>
-                  <CardTitle>Issues List</CardTitle>
-                  <CardDescription>
-                    Long-term issues and obstacles to address
-                  </CardDescription>
-                </div>
-                <Button variant="outline" size="sm">
-                  Manage Issues
-                </Button>
-              </div>
+              <CardTitle>Quarterly Priorities</CardTitle>
+              <CardDescription>Your priorities for this quarter</CardDescription>
             </CardHeader>
             <CardContent>
-              {blueprintData.issues.length === 0 ? (
-                <div className="text-center py-8 text-gray-500">
-                  <p>Issues will be displayed here when identified</p>
-                  <Button className="mt-4" onClick={handleAddIssue}>Add First Issue</Button>
-                </div>
-              ) : (
-                <div className="space-y-4">
-                  <Button onClick={handleAddIssue} size="sm" variant="outline" className="w-full">
-                    <Plus className="mr-2 h-4 w-4" />
-                    Add Issue
-                  </Button>
-                  {blueprintData.issues.map((issue) => (
-                    <div key={issue.id} className="border rounded-lg p-4 hover:bg-gray-50 cursor-pointer" onClick={() => handleEditIssue(issue)}>
-                      <div className="flex items-start justify-between">
-                        <div className="flex-1">
-                          <div className="flex items-center gap-2 mb-1">
-                            <h4 className="font-semibold">{issue.title}</h4>
-                            <Badge variant={issue.term === 'short' ? 'default' : 'secondary'}>
-                              {issue.term === 'short' ? 'Short Term' : 'Long Term'}
-                            </Badge>
-                            <Badge variant={
-                              issue.priority === 'high' ? 'destructive' :
-                              issue.priority === 'medium' ? 'outline' :
-                              'secondary'
-                            }>
-                              {issue.priority}
-                            </Badge>
-                          </div>
-                          <p className="text-sm text-gray-600">{issue.description}</p>
-                          {issue.owner && (
-                            <p className="text-sm text-gray-500 mt-2">Owner: {issue.owner}</p>
-                          )}
-                        </div>
-                        <Button variant="ghost" size="sm" onClick={(e) => {
-                          e.stopPropagation();
-                          handleDeleteIssue(issue.id);
-                        }}>
-                          <Trash2 className="h-4 w-4" />
-                        </Button>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              )}
+              <p className="text-gray-500">Coming soon...</p>
             </CardContent>
           </Card>
         </TabsContent>
       </Tabs>
-
-      {/* Core Value Dialog */}
-      <CoreValueDialog
-        open={coreValueDialog.open}
-        onOpenChange={(open) => setCoreValueDialog({ open, value: null })}
-        value={coreValueDialog.value}
-        onSave={handleSaveCoreValue}
-      />
-
-      {/* Core Focus Dialog */}
-      <CoreFocusDialog
-        open={coreFocusDialog}
-        onOpenChange={setCoreFocusDialog}
-        data={blueprintData.coreFocus}
-        onSave={handleSaveCoreFocus}
-      />
-
-      {/* Ten Year Target Dialog */}
-      <TenYearTargetDialog
-        open={tenYearTargetDialog}
-        onOpenChange={setTenYearTargetDialog}
-        data={blueprintData.tenYearTarget}
-        onSave={handleSaveTenYearTarget}
-      />
-
-      {/* Marketing Strategy Dialog */}
-      <MarketingStrategyDialog
-        open={marketingStrategyDialog}
-        onOpenChange={setMarketingStrategyDialog}
-        data={blueprintData.marketingStrategy}
-        onSave={handleSaveMarketingStrategy}
-      />
-
-      {/* Three Year Picture Dialog */}
-      <ThreeYearPictureDialog
-        open={threeYearPictureDialog}
-        onOpenChange={setThreeYearPictureDialog}
-        data={blueprintData.threeYearPicture}
-        onSave={handleSaveThreeYearPicture}
-      />
-
-      {/* One Year Plan Dialog */}
-      <OneYearPlanDialog
-        open={oneYearPlanDialog}
-        onOpenChange={setOneYearPlanDialog}
-        data={blueprintData.oneYearPlan}
-        onSave={handleSaveOneYearPlan}
-      />
-
-      {/* Priority Dialog */}
-      <RockDialog
-        open={rockDialog.open}
-        onOpenChange={(open) => setRockDialog({ open, rock: null })}
-        rock={rockDialog.rock}
-        onSave={handleSaveRock}
-      />
-
-      {/* Issue Dialog */}
-      <IssueDialog
-        open={issueDialog.open}
-        onOpenChange={(open) => setIssueDialog({ open, issue: null })}
-        issue={issueDialog.issue}
-        onSave={handleSaveIssue}
-      />
-
-      {/* Delete Confirmation Dialog */}
-      <AlertDialog open={deleteDialog.open} onOpenChange={(open) => setDeleteDialog({ open, type: null, id: null })}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Are you sure?</AlertDialogTitle>
-            <AlertDialogDescription>
-              This action cannot be undone. This will permanently delete this item.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel>Cancel</AlertDialogCancel>
-            <AlertDialogAction onClick={confirmDelete}>Delete</AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
     </div>
   );
 };
 
-export default VTOPage;
-
+export default BusinessBlueprintPage;

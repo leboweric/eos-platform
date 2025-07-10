@@ -216,13 +216,13 @@ export const deleteCoreValue = async (req, res) => {
   }
 };
 
-// @desc    Update core focus
+// @desc    Update core focus (Hedgehog)
 // @route   PUT /api/v1/organizations/:orgId/teams/:teamId/vto/core-focus
 // @access  Private
 export const updateCoreFocus = async (req, res) => {
   try {
     const { orgId, teamId } = req.params;
-    const { purpose, niche } = req.body;
+    const { purpose, niche, hedgehogType } = req.body;
     const userId = req.user.userId;
 
     // Get VTO ID
@@ -251,19 +251,19 @@ export const updateCoreFocus = async (req, res) => {
       // Update
       result = await query(
         `UPDATE core_focus 
-         SET purpose_cause_passion = $1, niche = $2, updated_at = NOW()
-         WHERE vto_id = $3
+         SET purpose_cause_passion = $1, niche = $2, hedgehog_type = $3, updated_at = NOW()
+         WHERE vto_id = $4
          RETURNING *`,
-        [purpose, niche, vtoId]
+        [purpose, niche, hedgehogType, vtoId]
       );
     } else {
       // Create
       const newId = uuidv4();
       result = await query(
-        `INSERT INTO core_focus (id, vto_id, purpose_cause_passion, niche)
-         VALUES ($1, $2, $3, $4)
+        `INSERT INTO core_focus (id, vto_id, purpose_cause_passion, niche, hedgehog_type)
+         VALUES ($1, $2, $3, $4, $5)
          RETURNING *`,
-        [newId, vtoId, purpose, niche]
+        [newId, vtoId, purpose, niche, hedgehogType]
       );
     }
 
@@ -353,7 +353,14 @@ export const updateTenYearTarget = async (req, res) => {
 export const updateMarketingStrategy = async (req, res) => {
   try {
     const { orgId, teamId } = req.params;
-    const { targetMarket, threeUniques, provenProcess, guarantee } = req.body;
+    const { 
+      targetMarket, 
+      differentiator1, 
+      differentiator2, 
+      differentiator3,
+      provenProcessExists,
+      guaranteeExists
+    } = req.body;
     const userId = req.user.userId;
 
     // Get VTO ID
@@ -382,22 +389,22 @@ export const updateMarketingStrategy = async (req, res) => {
       // Update
       result = await query(
         `UPDATE marketing_strategies 
-         SET target_market = $1, three_uniques = $2, 
-             proven_process = $3, guarantee = $4, 
+         SET target_market = $1, differentiator_1 = $2, differentiator_2 = $3,
+             differentiator_3 = $4, proven_process_exists = $5, guarantee_exists = $6,
              updated_at = NOW()
-         WHERE vto_id = $5
+         WHERE vto_id = $7
          RETURNING *`,
-        [targetMarket, threeUniques, provenProcess, guarantee, vtoId]
+        [targetMarket, differentiator1, differentiator2, differentiator3, provenProcessExists, guaranteeExists, vtoId]
       );
     } else {
       // Create
       const newId = uuidv4();
       result = await query(
         `INSERT INTO marketing_strategies 
-         (id, vto_id, target_market, three_uniques, proven_process, guarantee)
-         VALUES ($1, $2, $3, $4, $5, $6)
+         (id, vto_id, target_market, differentiator_1, differentiator_2, differentiator_3, proven_process_exists, guarantee_exists)
+         VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
          RETURNING *`,
-        [newId, vtoId, targetMarket, threeUniques, provenProcess, guarantee]
+        [newId, vtoId, targetMarket, differentiator1, differentiator2, differentiator3, provenProcessExists, guaranteeExists]
       );
     }
 
