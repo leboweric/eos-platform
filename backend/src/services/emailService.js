@@ -8,12 +8,12 @@ if (process.env.SENDGRID_API_KEY) {
 // Email templates
 const templates = {
   invitation: (data) => ({
-    subject: `You're invited to join ${data.organizationName} on EOS Platform`,
+    subject: `You're invited to join ${data.organizationName} on Strategic Execution Platform`,
     html: `
       <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
         <h2>You're invited to join ${data.organizationName}</h2>
         <p>Hi there,</p>
-        <p>${data.invitedByName} has invited you to join ${data.organizationName} on EOS Platform as a ${data.role}.</p>
+        <p>${data.invitedByName} has invited you to join ${data.organizationName} on Strategic Execution Platform as a ${data.role}.</p>
         <p>Click the button below to accept your invitation and create your account:</p>
         <div style="text-align: center; margin: 30px 0;">
           <a href="${data.invitationLink}" style="background-color: #4F46E5; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; display: inline-block;">
@@ -26,7 +26,7 @@ const templates = {
       </div>
     `,
     text: `
-      You're invited to join ${data.organizationName} on EOS Platform
+      You're invited to join ${data.organizationName} on Strategic Execution Platform
       
       ${data.invitedByName} has invited you to join ${data.organizationName} as a ${data.role}.
       
@@ -37,7 +37,7 @@ const templates = {
   }),
 
   trialReminder: (data) => ({
-    subject: `Your EOS Platform trial ends in ${data.daysRemaining} days`,
+    subject: `Your Strategic Execution Platform trial ends in ${data.daysRemaining} days`,
     html: `
       <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
         <h2>Your trial is ending soon</h2>
@@ -94,12 +94,12 @@ const templates = {
   }),
 
   clientWelcome: (data) => ({
-    subject: `Welcome to EOS Platform - ${data.organizationName}`,
+    subject: `Welcome to Strategic Execution Platform - ${data.organizationName}`,
     html: `
       <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
-        <h2>Welcome to EOS Platform!</h2>
+        <h2>Welcome to Strategic Execution Platform!</h2>
         <p>Hi ${data.firstName},</p>
-        <p>Your EOS Implementer, ${data.eosiName}, has created an account for ${data.organizationName} on the EOS Platform.</p>
+        <p>Your Strategy Consultant, ${data.eosiName}, has created an account for ${data.organizationName} on the Strategic Execution Platform.</p>
         <p>Here are your login credentials:</p>
         <div style="background-color: #f5f5f5; padding: 20px; border-radius: 8px; margin: 20px 0;">
           <p><strong>Email:</strong> ${data.email}</p>
@@ -108,19 +108,19 @@ const templates = {
         <p style="color: #DC2626;"><strong>Important:</strong> Please change your password after your first login.</p>
         <div style="text-align: center; margin: 30px 0;">
           <a href="${data.loginUrl}" style="background-color: #4F46E5; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; display: inline-block;">
-            Log In to EOS Platform
+            Log In to Strategic Execution Platform
           </a>
         </div>
-        <p>The EOS Platform will help you implement the Entrepreneurial Operating System® in your organization.</p>
-        <p>If you have any questions, please contact your EOS Implementer.</p>
+        <p>The Strategic Execution Platform will help you implement proven business strategies in your organization.</p>
+        <p>If you have any questions, please contact your Strategy Consultant.</p>
       </div>
     `,
     text: `
-      Welcome to EOS Platform!
+      Welcome to Strategic Execution Platform!
       
       Hi ${data.firstName},
       
-      Your EOS Implementer, ${data.eosiName}, has created an account for ${data.organizationName} on the EOS Platform.
+      Your Strategy Consultant, ${data.eosiName}, has created an account for ${data.organizationName} on the Strategic Execution Platform.
       
       Your login credentials:
       Email: ${data.email}
@@ -130,7 +130,7 @@ const templates = {
       
       Log in here: ${data.loginUrl}
       
-      The EOS Platform will help you implement the Entrepreneurial Operating System® in your organization.
+      The Strategic Execution Platform will help you implement proven business strategies in your organization.
     `
   })
 };
@@ -153,7 +153,7 @@ export const sendEmail = async (to, templateName, data) => {
     
     const msg = {
       to,
-      from: process.env.SENDGRID_FROM_EMAIL || 'noreply@eosplatform.com',
+      from: process.env.SENDGRID_FROM_EMAIL || 'noreply@strategicexecution.com',
       subject: emailContent.subject,
       text: emailContent.text,
       html: emailContent.html

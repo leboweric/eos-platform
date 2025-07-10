@@ -34,15 +34,15 @@ const Dashboard = () => {
 
   // Mock data - in a real app, this would come from API calls
   const stats = {
-    rocksCompleted: 3,
-    totalRocks: 5,
-    rocksProgress: 60,
+    prioritiesCompleted: 3,
+    totalPriorities: 5,
+    prioritiesProgress: 60,
     meetingsThisWeek: 2,
     overdueItems: 4,
     issuesOpen: 12
   };
 
-  const recentRocks = [
+  const recentPriorities = [
     {
       id: 1,
       title: 'Implement new CRM system',
@@ -154,12 +154,12 @@ const Dashboard = () => {
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Rocks Progress</CardTitle>
+            <CardTitle className="text-sm font-medium">Priorities Progress</CardTitle>
             <Target className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{stats.rocksCompleted}/{stats.totalRocks}</div>
-            <Progress value={stats.rocksProgress} className="mt-2" />
+            <div className="text-2xl font-bold">{stats.prioritiesCompleted}/{stats.totalPriorities}</div>
+            <Progress value={stats.prioritiesProgress} className="mt-2" />
             <p className="text-xs text-muted-foreground mt-2">
               {stats.rocksProgress}% complete this quarter
             </p>
@@ -210,13 +210,13 @@ const Dashboard = () => {
 
       {/* Main Content Grid */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* Recent Rocks */}
+        {/* Recent Priorities */}
         <Card>
           <CardHeader>
             <div className="flex items-center justify-between">
               <div>
-                <CardTitle>Recent Rocks</CardTitle>
-                <CardDescription>Your quarterly goals progress</CardDescription>
+                <CardTitle>Recent Priorities</CardTitle>
+                <CardDescription>Your quarterly priorities progress</CardDescription>
               </div>
               <Link to="/rocks">
                 <Button variant="outline" size="sm">
@@ -228,19 +228,19 @@ const Dashboard = () => {
           </CardHeader>
           <CardContent>
             <div className="space-y-4">
-              {recentRocks.map((rock) => (
-                <div key={rock.id} className="flex items-center space-x-4">
-                  <div className={`w-3 h-3 rounded-full ${getStatusColor(rock.status)}`} />
+              {recentPriorities.map((priority) => (
+                <div key={priority.id} className="flex items-center space-x-4">
+                  <div className={`w-3 h-3 rounded-full ${getStatusColor(priority.status)}`} />
                   <div className="flex-1 min-w-0">
                     <p className="text-sm font-medium text-gray-900 truncate">
-                      {rock.title}
+                      {priority.title}
                     </p>
                     <p className="text-sm text-gray-500">
-                      {rock.owner} • Due {new Date(rock.dueDate).toLocaleDateString()}
+                      {priority.owner} • Due {new Date(priority.dueDate).toLocaleDateString()}
                     </p>
                   </div>
                   <div className="text-sm text-gray-500">
-                    {rock.progress}%
+                    {priority.progress}%
                   </div>
                 </div>
               ))}
@@ -341,7 +341,7 @@ const Dashboard = () => {
               <Link to="/rocks">
                 <Button variant="outline" className="w-full justify-start">
                   <Plus className="mr-2 h-4 w-4" />
-                  Add Rock
+                  Add Priority
                 </Button>
               </Link>
               <Link to="/meetings">

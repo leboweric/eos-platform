@@ -54,7 +54,8 @@ export const register = async (req, res) => {
       });
     }
 
-    // Check if this is an EOSI user
+    // Check if this is a Consultant user
+    // TODO: Replace with proper consultant verification logic
     const isEOSI = email.toLowerCase().endsWith('@eosworldwide.com');
 
     // Create organization slug
@@ -118,7 +119,7 @@ export const register = async (req, res) => {
             role: user.role,
             organizationId,
             organizationName,
-            isEOSI: user.is_eosi
+            isConsultant: user.is_eosi
           },
           accessToken,
           refreshToken
@@ -192,7 +193,7 @@ export const login = async (req, res) => {
     // Generate tokens
     const { accessToken, refreshToken } = generateTokens(user.id);
 
-    // If EOSI user, get their client organizations
+    // If Consultant user, get their client organizations
     let clientOrganizations = [];
     if (user.is_eosi) {
       const clientOrgsResult = await query(
@@ -218,7 +219,7 @@ export const login = async (req, res) => {
           organizationId: user.organization_id,
           organizationName: user.organization_name,
           organizationSlug: user.organization_slug,
-          isEOSI: user.is_eosi,
+          isConsultant: user.is_eosi,
           clientOrganizations
         },
         accessToken,
@@ -332,7 +333,7 @@ export const getProfile = async (req, res) => {
         organizationId: user.organization_id,
         organizationName: user.organization_name,
         organizationSlug: user.organization_slug,
-        isEOSI: user.is_eosi
+        isConsultant: user.is_eosi
       }
     });
 

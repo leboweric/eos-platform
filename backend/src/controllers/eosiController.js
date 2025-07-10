@@ -1,3 +1,4 @@
+// This file should be renamed to consultantController.js
 import { query, beginTransaction, commitTransaction, rollbackTransaction } from '../config/database.js';
 import bcrypt from 'bcryptjs';
 import { sendEmail } from '../services/emailService.js';
@@ -7,11 +8,11 @@ import { v4 as uuidv4 } from 'uuid';
 export const createClientOrganization = async (req, res) => {
   try {
     const { name, adminEmail, adminFirstName, adminLastName } = req.body;
-    const eosiUserId = req.user.id;
+    const consultantUserId = req.user.id;
 
-    // Verify user is EOSI
+    // Verify user is Consultant
     if (!req.user.is_eosi) {
-      return res.status(403).json({ error: 'Only EOSI users can create client organizations' });
+      return res.status(403).json({ error: 'Only Consultant users can create client organizations' });
     }
 
     // Check if admin email already exists
@@ -37,10 +38,10 @@ export const createClientOrganization = async (req, res) => {
       );
       const organizationId = orgResult.rows[0].id;
 
-      // Create EOSI-organization relationship
+      // Create Consultant-organization relationship
       await client.query(
         'INSERT INTO eosi_organizations (eosi_user_id, organization_id) VALUES ($1, $2)',
-        [eosiUserId, organizationId]
+        [consultantUserId, organizationId]
       );
 
       // Generate temporary password
@@ -76,7 +77,7 @@ export const createClientOrganization = async (req, res) => {
         organizationName: name,
         email: adminEmail,
         tempPassword,
-        eosiName: `${req.user.first_name} ${req.user.last_name}`,
+        consultantName: `${req.user.first_name} ${req.user.last_name}`,
         loginUrl: `${process.env.FRONTEND_URL || 'http://localhost:5173'}/login`
       });
 
@@ -101,11 +102,11 @@ export const createClientOrganization = async (req, res) => {
   }
 };
 
-// Get all client organizations for EOSI
+// Get all client organizations for Consultant
 export const getClientOrganizations = async (req, res) => {
   try {
     if (!req.user.is_eosi) {
-      return res.status(403).json({ error: 'Only EOSI users can access this endpoint' });
+      return res.status(403).json({ error: 'Only Consultant users can access this endpoint' });
     }
 
     const result = await query(
@@ -145,10 +146,10 @@ export const switchToClientOrganization = async (req, res) => {
     const { organizationId } = req.params;
 
     if (!req.user.is_eosi) {
-      return res.status(403).json({ error: 'Only EOSI users can switch organizations' });
+      return res.status(403).json({ error: 'Only Consultant users can switch organizations' });
     }
 
-    // Verify EOSI has access to this organization
+    // Verify Consultant has access to this organization
     const accessCheck = await query(
       'SELECT 1 FROM eosi_organizations WHERE eosi_user_id = $1 AND organization_id = $2',
       [req.user.id, organizationId]
@@ -170,7 +171,7 @@ export const switchToClientOrganization = async (req, res) => {
 
     const organization = orgResult.rows[0];
 
-    // Return a special token that includes both EOSI status and current organization
+    // Return a special token that includes both Consultant status and current organization
     res.json({
       success: true,
       data: {
@@ -178,7 +179,7 @@ export const switchToClientOrganization = async (req, res) => {
         organizationId: organization.id,
         organizationName: organization.name,
         organizationSlug: organization.slug,
-        returnToEOSI: true
+        returnToConsultant: true
       }
     });
 
@@ -194,10 +195,10 @@ export const getClientDashboard = async (req, res) => {
     const { organizationId } = req.params;
 
     if (!req.user.is_eosi) {
-      return res.status(403).json({ error: 'Only EOSI users can access this endpoint' });
+      return res.status(403).json({ error: 'Only Consultant users can access this endpoint' });
     }
 
-    // Verify EOSI has access to this organization
+    // Verify Consultant has access to this organization
     const accessCheck = await query(
       'SELECT 1 FROM eosi_organizations WHERE eosi_user_id = $1 AND organization_id = $2',
       [req.user.id, organizationId]

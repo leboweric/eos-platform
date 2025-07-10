@@ -34,7 +34,7 @@ const RockDialog = ({ open, onOpenChange, rock, onSave }) => {
         status: rock.status || 'on-track'
       });
     } else {
-      // Reset form for new rock
+      // Reset form for new priority
       setFormData({
         title: '',
         description: '',
@@ -62,14 +62,14 @@ const RockDialog = ({ open, onOpenChange, rock, onSave }) => {
       <DialogContent className="max-w-2xl">
         <form onSubmit={handleSubmit}>
           <DialogHeader>
-            <DialogTitle>{rock ? 'Edit Rock' : 'Create New Rock'}</DialogTitle>
+            <DialogTitle>{rock ? 'Edit Priority' : 'Create New Priority'}</DialogTitle>
             <DialogDescription>
               Define a quarterly priority that moves your organization forward.
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-4 py-4">
             <div className="space-y-2">
-              <Label htmlFor="title">Rock Title</Label>
+              <Label htmlFor="title">Priority Title</Label>
               <Input
                 id="title"
                 value={formData.title}
@@ -85,13 +85,13 @@ const RockDialog = ({ open, onOpenChange, rock, onSave }) => {
                 id="description"
                 value={formData.description}
                 onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-                placeholder="Describe what success looks like for this Rock..."
+                placeholder="Describe what success looks like for this Priority..."
                 rows={3}
               />
             </div>
 
             <div className="space-y-2">
-              <Label>Rock Type</Label>
+              <Label>Priority Type</Label>
               <RadioGroup
                 value={formData.type}
                 onValueChange={(value) => setFormData({ ...formData, type: value })}
@@ -99,13 +99,13 @@ const RockDialog = ({ open, onOpenChange, rock, onSave }) => {
                 <div className="flex items-center space-x-2">
                   <RadioGroupItem value="company" id="company" />
                   <Label htmlFor="company" className="font-normal">
-                    Company Rock (shared across the organization)
+                    Company Priority (shared across the organization)
                   </Label>
                 </div>
                 <div className="flex items-center space-x-2">
                   <RadioGroupItem value="individual" id="individual" />
                   <Label htmlFor="individual" className="font-normal">
-                    Individual Rock (assigned to one person)
+                    Individual Priority (assigned to one person)
                   </Label>
                 </div>
               </RadioGroup>
@@ -118,7 +118,7 @@ const RockDialog = ({ open, onOpenChange, rock, onSave }) => {
                   id="owner"
                   value={formData.owner}
                   onChange={(e) => setFormData({ ...formData, owner: e.target.value })}
-                  placeholder="Who owns this Rock?"
+                  placeholder="Who owns this Priority?"
                   required
                 />
               </div>
@@ -179,7 +179,7 @@ const RockDialog = ({ open, onOpenChange, rock, onSave }) => {
               Cancel
             </Button>
             <Button type="submit">
-              {rock ? 'Save Rock' : 'Create Rock'}
+              {rock ? 'Save Priority' : 'Create Priority'}
             </Button>
           </DialogFooter>
         </form>

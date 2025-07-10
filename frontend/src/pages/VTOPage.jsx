@@ -62,16 +62,16 @@ const VTOPage = () => {
     setDepartments(mockDepartments);
   }, []);
 
-  // Fetch VTO data when department changes
+  // Fetch Business Blueprint data when department changes
   useEffect(() => {
     // In production, this would fetch from API based on selectedDepartment
     // For now, we'll just update the title to show department context
-    console.log(`Loading VTO for: ${selectedDepartment === 'company' ? 'Company-wide' : `Department ${selectedDepartment}`}`);
+    console.log(`Loading Business Blueprint for: ${selectedDepartment === 'company' ? 'Company-wide' : `Department ${selectedDepartment}`}`);
     // API call would be here
   }, [selectedDepartment]);
 
   // Mock data - in a real app, this would come from API based on selected department
-  const [vtoData, setVtoData] = useState({
+  const [blueprintData, setBlueprintData] = useState({
     coreValues: [
       { id: 1, value: 'Integrity', description: 'We do the right thing, even when no one is watching' },
       { id: 2, value: 'Excellence', description: 'We strive for excellence in everything we do' },
@@ -140,7 +140,7 @@ const VTOPage = () => {
   const handleSaveCoreValue = (coreValue) => {
     if (coreValue.id) {
       // Update existing value
-      setVtoData(prev => ({
+      setBlueprintData(prev => ({
         ...prev,
         coreValues: prev.coreValues.map(v => 
           v.id === coreValue.id ? coreValue : v
@@ -152,7 +152,7 @@ const VTOPage = () => {
         ...coreValue,
         id: Date.now()
       };
-      setVtoData(prev => ({
+      setBlueprintData(prev => ({
         ...prev,
         coreValues: [...prev.coreValues, newValue]
       }));
@@ -167,7 +167,7 @@ const VTOPage = () => {
     const { type, id } = deleteDialog;
     
     if (type === 'coreValue') {
-      setVtoData(prev => ({
+      setBlueprintData(prev => ({
         ...prev,
         coreValues: prev.coreValues.filter(v => v.id !== id)
       }));
@@ -179,7 +179,7 @@ const VTOPage = () => {
 
   // Core Focus handlers
   const handleSaveCoreFocus = (data) => {
-    setVtoData(prev => ({
+    setBlueprintData(prev => ({
       ...prev,
       coreFocus: data
     }));
@@ -187,7 +187,7 @@ const VTOPage = () => {
 
   // Ten Year Target handlers
   const handleSaveTenYearTarget = (data) => {
-    setVtoData(prev => ({
+    setBlueprintData(prev => ({
       ...prev,
       tenYearTarget: {
         description: data.targetDescription,
@@ -199,7 +199,7 @@ const VTOPage = () => {
 
   // Marketing Strategy handlers
   const handleSaveMarketingStrategy = (data) => {
-    setVtoData(prev => ({
+    setBlueprintData(prev => ({
       ...prev,
       marketingStrategy: {
         targetMarket: data.targetMarket,
@@ -212,7 +212,7 @@ const VTOPage = () => {
 
   // Three Year Picture handlers
   const handleSaveThreeYearPicture = (data) => {
-    setVtoData(prev => ({
+    setBlueprintData(prev => ({
       ...prev,
       threeYearPicture: data
     }));
@@ -220,7 +220,7 @@ const VTOPage = () => {
 
   // One Year Plan handlers
   const handleSaveOneYearPlan = (data) => {
-    setVtoData(prev => ({
+    setBlueprintData(prev => ({
       ...prev,
       oneYearPlan: data
     }));
@@ -237,29 +237,29 @@ const VTOPage = () => {
 
   const handleSaveRock = (rock) => {
     if (rock.id) {
-      // Update existing rock
-      setVtoData(prev => ({
+      // Update existing priority
+      setBlueprintData(prev => ({
         ...prev,
         quarterlyRocks: prev.quarterlyRocks.map(r =>
           r.id === rock.id ? rock : r
         )
       }));
     } else {
-      // Add new rock
-      const newRock = {
+      // Add new priority
+      const newPriority = {
         ...rock,
         id: Date.now(),
         progress: 0
       };
-      setVtoData(prev => ({
+      setBlueprintData(prev => ({
         ...prev,
-        quarterlyRocks: [...prev.quarterlyRocks, newRock]
+        quarterlyRocks: [...prev.quarterlyRocks, newPriority]
       }));
     }
   };
 
   const handleDeleteRock = (id) => {
-    setVtoData(prev => ({
+    setBlueprintData(prev => ({
       ...prev,
       quarterlyRocks: prev.quarterlyRocks.filter(r => r.id !== id)
     }));
@@ -277,7 +277,7 @@ const VTOPage = () => {
   const handleSaveIssue = (issue) => {
     if (issue.id) {
       // Update existing issue
-      setVtoData(prev => ({
+      setBlueprintData(prev => ({
         ...prev,
         issues: prev.issues.map(i =>
           i.id === issue.id ? issue : i
@@ -289,7 +289,7 @@ const VTOPage = () => {
         ...issue,
         id: Date.now()
       };
-      setVtoData(prev => ({
+      setBlueprintData(prev => ({
         ...prev,
         issues: [...prev.issues, newIssue]
       }));
@@ -297,7 +297,7 @@ const VTOPage = () => {
   };
 
   const handleDeleteIssue = (id) => {
-    setVtoData(prev => ({
+    setBlueprintData(prev => ({
       ...prev,
       issues: prev.issues.filter(i => i.id !== id)
     }));
@@ -318,9 +318,9 @@ const VTOPage = () => {
       <div className="space-y-4">
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-3xl font-bold">Vision/Traction Organizer®</h1>
+            <h1 className="text-3xl font-bold">Business Blueprint</h1>
             <p className="text-gray-600 mt-2">
-              Your organization's strategic foundation and execution plan
+              Your organization's Business Strategy Blueprint
             </p>
           </div>
           <div className="flex space-x-2">
@@ -338,7 +338,7 @@ const VTOPage = () => {
         {/* Department Selector */}
         <div className="flex items-center space-x-4">
           <Building2 className="h-5 w-5 text-gray-500" />
-          <Label htmlFor="department">View VTO for:</Label>
+          <Label htmlFor="department">View Business Blueprint for:</Label>
           <Select value={selectedDepartment} onValueChange={setSelectedDepartment}>
             <SelectTrigger className="w-[250px]">
               <SelectValue placeholder="Select department" />
@@ -385,7 +385,7 @@ const VTOPage = () => {
             </CardHeader>
             <CardContent>
               <div className="space-y-4">
-                {vtoData.coreValues.map((value) => (
+                {blueprintData.coreValues.map((value) => (
                   <div key={value.id} className="border rounded-lg p-4">
                     <div className="flex items-start justify-between">
                       <div className="flex-1">
@@ -426,11 +426,11 @@ const VTOPage = () => {
               <div className="grid md:grid-cols-2 gap-6">
                 <div>
                   <Label className="text-sm font-medium text-gray-700">Purpose/Cause/Passion</Label>
-                  <p className="mt-1 text-gray-900">{vtoData.coreFocus.purpose}</p>
+                  <p className="mt-1 text-gray-900">{blueprintData.coreFocus.purpose}</p>
                 </div>
                 <div>
                   <Label className="text-sm font-medium text-gray-700">Niche</Label>
-                  <p className="mt-1 text-gray-900">{vtoData.coreFocus.niche}</p>
+                  <p className="mt-1 text-gray-900">{blueprintData.coreFocus.niche}</p>
                 </div>
               </div>
             </CardContent>
@@ -455,16 +455,16 @@ const VTOPage = () => {
               <div className="space-y-4">
                 <div>
                   <Label className="text-sm font-medium text-gray-700">Target Description</Label>
-                  <p className="mt-1 text-gray-900">{vtoData.tenYearTarget.description}</p>
+                  <p className="mt-1 text-gray-900">{blueprintData.tenYearTarget.description}</p>
                 </div>
                 <div className="grid md:grid-cols-2 gap-4">
                   <div>
                     <Label className="text-sm font-medium text-gray-700">Target Year</Label>
-                    <p className="mt-1 text-gray-900">{vtoData.tenYearTarget.year}</p>
+                    <p className="mt-1 text-gray-900">{blueprintData.tenYearTarget.year}</p>
                   </div>
                   <div>
                     <Label className="text-sm font-medium text-gray-700">Running Total</Label>
-                    <p className="mt-1 text-gray-900">{vtoData.tenYearTarget.runningTotal}</p>
+                    <p className="mt-1 text-gray-900">{blueprintData.tenYearTarget.runningTotal}</p>
                   </div>
                 </div>
               </div>
@@ -490,19 +490,19 @@ const VTOPage = () => {
               <div className="space-y-4">
                 <div>
                   <Label className="text-sm font-medium text-gray-700">Target Market</Label>
-                  <p className="mt-1 text-gray-900">{vtoData.marketingStrategy.targetMarket}</p>
+                  <p className="mt-1 text-gray-900">{blueprintData.marketingStrategy.targetMarket}</p>
                 </div>
                 <div>
                   <Label className="text-sm font-medium text-gray-700">Three Uniques</Label>
-                  <p className="mt-1 text-gray-900">{vtoData.marketingStrategy.threeUniques}</p>
+                  <p className="mt-1 text-gray-900">{blueprintData.marketingStrategy.threeUniques}</p>
                 </div>
                 <div>
                   <Label className="text-sm font-medium text-gray-700">Proven Process</Label>
-                  <p className="mt-1 text-gray-900">{vtoData.marketingStrategy.provenProcess}</p>
+                  <p className="mt-1 text-gray-900">{blueprintData.marketingStrategy.provenProcess}</p>
                 </div>
                 <div>
                   <Label className="text-sm font-medium text-gray-700">Guarantee</Label>
-                  <p className="mt-1 text-gray-900">{vtoData.marketingStrategy.guarantee}</p>
+                  <p className="mt-1 text-gray-900">{blueprintData.marketingStrategy.guarantee}</p>
                 </div>
               </div>
             </CardContent>
@@ -529,26 +529,26 @@ const VTOPage = () => {
                   <div>
                     <Label className="text-sm font-medium text-gray-700">Revenue Target</Label>
                     <p className="mt-1 text-2xl font-bold text-green-600">
-                      {formatCurrency(vtoData.threeYearPicture.revenue)}
+                      {formatCurrency(blueprintData.threeYearPicture.revenue)}
                     </p>
                   </div>
                   <div>
                     <Label className="text-sm font-medium text-gray-700">Profit Target</Label>
                     <p className="mt-1 text-2xl font-bold text-blue-600">
-                      {formatCurrency(vtoData.threeYearPicture.profit)}
+                      {formatCurrency(blueprintData.threeYearPicture.profit)}
                     </p>
                   </div>
                   <div>
                     <Label className="text-sm font-medium text-gray-700">Profit %</Label>
                     <p className="mt-1 text-2xl font-bold text-purple-600">
-                      {vtoData.threeYearPicture.profitPercentage}%
+                      {blueprintData.threeYearPicture.profitPercentage}%
                     </p>
                   </div>
                 </div>
                 <div>
                   <Label className="text-sm font-medium text-gray-700">Measurables</Label>
                   <div className="mt-2 space-y-2">
-                    {vtoData.threeYearPicture.measurables.map((measurable) => (
+                    {blueprintData.threeYearPicture.measurables.map((measurable) => (
                       <div key={measurable.id} className="flex justify-between items-center p-2 bg-gray-50 rounded">
                         <span>{measurable.name}</span>
                         <Badge variant="outline">{measurable.target.toLocaleString()}</Badge>
@@ -559,7 +559,7 @@ const VTOPage = () => {
                 <div>
                   <Label className="text-sm font-medium text-gray-700">What Does it Look Like</Label>
                   <div className="mt-2 space-y-2">
-                    {vtoData.threeYearPicture.whatDoesItLookLike?.map((item) => (
+                    {blueprintData.threeYearPicture.whatDoesItLookLike?.map((item) => (
                       <div key={item.id} className="flex items-start p-2 bg-gray-50 rounded">
                         <span className="text-gray-600 mr-2">•</span>
                         <span>{item.description}</span>
@@ -598,19 +598,19 @@ const VTOPage = () => {
                   <div>
                     <Label className="text-sm font-medium text-gray-700">Revenue Target</Label>
                     <p className="mt-1 text-2xl font-bold text-green-600">
-                      {formatCurrency(vtoData.oneYearPlan.revenue)}
+                      {formatCurrency(blueprintData.oneYearPlan.revenue)}
                     </p>
                   </div>
                   <div>
                     <Label className="text-sm font-medium text-gray-700">Profit Target</Label>
                     <p className="mt-1 text-2xl font-bold text-blue-600">
-                      {formatCurrency(vtoData.oneYearPlan.profit)}
+                      {formatCurrency(blueprintData.oneYearPlan.profit)}
                     </p>
                   </div>
                   <div>
                     <Label className="text-sm font-medium text-gray-700">Profit %</Label>
                     <p className="mt-1 text-2xl font-bold text-purple-600">
-                      {vtoData.oneYearPlan.profitPercentage}%
+                      {blueprintData.oneYearPlan.profitPercentage}%
                     </p>
                   </div>
                 </div>
@@ -618,7 +618,7 @@ const VTOPage = () => {
                 <div>
                   <Label className="text-sm font-medium text-gray-700 mb-3 block">Goals</Label>
                   <div className="space-y-2">
-                    {vtoData.oneYearPlan.goals.map((goal) => (
+                    {blueprintData.oneYearPlan.goals.map((goal) => (
                       <div key={goal.id} className="flex items-center space-x-3">
                         <input
                           type="checkbox"
@@ -637,7 +637,7 @@ const VTOPage = () => {
                 <div>
                   <Label className="text-sm font-medium text-gray-700 mb-3 block">Measurables</Label>
                   <div className="space-y-2">
-                    {vtoData.oneYearPlan.measurables.map((measurable) => (
+                    {blueprintData.oneYearPlan.measurables.map((measurable) => (
                       <div key={measurable.id} className="flex justify-between items-center p-2 bg-gray-50 rounded">
                         <span>{measurable.name}</span>
                         <Badge variant="outline">{measurable.target.toLocaleString()}</Badge>
@@ -656,31 +656,31 @@ const VTOPage = () => {
                 <div>
                   <CardTitle className="flex items-center">
                     <TrendingUp className="mr-2 h-5 w-5" />
-                    Quarterly Rocks
+                    Quarterly Priorities
                   </CardTitle>
                   <CardDescription>
                     Current quarter priorities and goals
                   </CardDescription>
                 </div>
                 <Button variant="outline" size="sm">
-                  View All Rocks
+                  View All Priorities
                 </Button>
               </div>
             </CardHeader>
             <CardContent>
-              {vtoData.quarterlyRocks.length === 0 ? (
+              {blueprintData.quarterlyRocks.length === 0 ? (
                 <div className="text-center py-8 text-gray-500">
                   <Target className="mx-auto h-12 w-12 mb-4 opacity-50" />
-                  <p>Rocks will be displayed here when created</p>
-                  <Button className="mt-4" onClick={handleAddRock}>Create Rock</Button>
+                  <p>Priorities will be displayed here when created</p>
+                  <Button className="mt-4" onClick={handleAddRock}>Create Priority</Button>
                 </div>
               ) : (
                 <div className="space-y-4">
                   <Button onClick={handleAddRock} size="sm" variant="outline" className="w-full">
                     <Plus className="mr-2 h-4 w-4" />
-                    Add Rock
+                    Add Priority
                   </Button>
-                  {vtoData.quarterlyRocks.map((rock) => (
+                  {blueprintData.quarterlyRocks.map((rock) => (
                     <div key={rock.id} className="border rounded-lg p-4 hover:bg-gray-50 cursor-pointer" onClick={() => handleEditRock(rock)}>
                       <div className="flex items-start justify-between">
                         <div className="flex-1">
@@ -734,7 +734,7 @@ const VTOPage = () => {
               </div>
             </CardHeader>
             <CardContent>
-              {vtoData.issues.length === 0 ? (
+              {blueprintData.issues.length === 0 ? (
                 <div className="text-center py-8 text-gray-500">
                   <p>Issues will be displayed here when identified</p>
                   <Button className="mt-4" onClick={handleAddIssue}>Add First Issue</Button>
@@ -745,7 +745,7 @@ const VTOPage = () => {
                     <Plus className="mr-2 h-4 w-4" />
                     Add Issue
                   </Button>
-                  {vtoData.issues.map((issue) => (
+                  {blueprintData.issues.map((issue) => (
                     <div key={issue.id} className="border rounded-lg p-4 hover:bg-gray-50 cursor-pointer" onClick={() => handleEditIssue(issue)}>
                       <div className="flex items-start justify-between">
                         <div className="flex-1">
@@ -795,7 +795,7 @@ const VTOPage = () => {
       <CoreFocusDialog
         open={coreFocusDialog}
         onOpenChange={setCoreFocusDialog}
-        data={vtoData.coreFocus}
+        data={blueprintData.coreFocus}
         onSave={handleSaveCoreFocus}
       />
 
@@ -803,7 +803,7 @@ const VTOPage = () => {
       <TenYearTargetDialog
         open={tenYearTargetDialog}
         onOpenChange={setTenYearTargetDialog}
-        data={vtoData.tenYearTarget}
+        data={blueprintData.tenYearTarget}
         onSave={handleSaveTenYearTarget}
       />
 
@@ -811,7 +811,7 @@ const VTOPage = () => {
       <MarketingStrategyDialog
         open={marketingStrategyDialog}
         onOpenChange={setMarketingStrategyDialog}
-        data={vtoData.marketingStrategy}
+        data={blueprintData.marketingStrategy}
         onSave={handleSaveMarketingStrategy}
       />
 
@@ -819,7 +819,7 @@ const VTOPage = () => {
       <ThreeYearPictureDialog
         open={threeYearPictureDialog}
         onOpenChange={setThreeYearPictureDialog}
-        data={vtoData.threeYearPicture}
+        data={blueprintData.threeYearPicture}
         onSave={handleSaveThreeYearPicture}
       />
 
@@ -827,11 +827,11 @@ const VTOPage = () => {
       <OneYearPlanDialog
         open={oneYearPlanDialog}
         onOpenChange={setOneYearPlanDialog}
-        data={vtoData.oneYearPlan}
+        data={blueprintData.oneYearPlan}
         onSave={handleSaveOneYearPlan}
       />
 
-      {/* Rock Dialog */}
+      {/* Priority Dialog */}
       <RockDialog
         open={rockDialog.open}
         onOpenChange={(open) => setRockDialog({ open, rock: null })}

@@ -207,7 +207,7 @@ const RocksPage = () => {
 
   const quarters = ['Q4 2024', 'Q1 2025', 'Q2 2025', 'Q3 2025', 'Q4 2025'];
 
-  // Filter rocks by department
+  // Filter priorities by department
   const filteredRocks = selectedDepartment === 'all' 
     ? rocks 
     : rocks.filter(r => r.departmentId === selectedDepartment || r.isCompanyRock);
@@ -226,9 +226,9 @@ const RocksPage = () => {
       <div className="space-y-4">
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-3xl font-bold">Rocks</h1>
+            <h1 className="text-3xl font-bold">Quarterly Priorities</h1>
             <p className="text-gray-600 mt-2">
-              Quarterly priorities and goals for your organization
+              Set your priorities and goals for your organization
             </p>
           </div>
           <div className="flex space-x-2">
@@ -243,7 +243,7 @@ const RocksPage = () => {
             </select>
             <Button onClick={() => setShowAddRock(true)}>
               <Plus className="mr-2 h-4 w-4" />
-              Add Rock
+              Add Priority
             </Button>
           </div>
         </div>
@@ -274,7 +274,7 @@ const RocksPage = () => {
           <CardContent className="p-4">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-gray-600">Total Rocks</p>
+                <p className="text-sm text-gray-600">Total Priorities</p>
                 <p className="text-2xl font-bold">{stats.total}</p>
               </div>
               <CheckSquare className="h-8 w-8 text-gray-400" />
@@ -331,7 +331,7 @@ const RocksPage = () => {
         </Card>
       </div>
 
-      {/* Rocks List */}
+      {/* Priorities List */}
       <div className="space-y-4">
         {filteredRocks.map((rock) => (
           <Card key={rock.id} className="hover:shadow-md transition-shadow">
@@ -342,7 +342,7 @@ const RocksPage = () => {
                     <div className={`w-3 h-3 rounded-full ${getStatusColor(rock.status)}`} />
                     <CardTitle className="text-lg">{rock.title}</CardTitle>
                     {rock.isCompanyRock && (
-                      <Badge variant="outline">Company Rock</Badge>
+                      <Badge variant="outline">Company Priority</Badge>
                     )}
                     <Badge variant={getStatusBadgeVariant(rock.status)} className="flex items-center space-x-1">
                       {getStatusIcon(rock.status)}
@@ -454,13 +454,13 @@ const RocksPage = () => {
         <Card>
           <CardContent className="text-center py-12">
             <Target className="mx-auto h-12 w-12 text-gray-400 mb-4" />
-            <h3 className="text-lg font-medium text-gray-900 mb-2">No rocks for {selectedQuarter}</h3>
+            <h3 className="text-lg font-medium text-gray-900 mb-2">No priorities for {selectedQuarter}</h3>
             <p className="text-gray-500 mb-4">
-              Get started by creating your first quarterly rock.
+              Get started by creating your first quarterly priority.
             </p>
             <Button onClick={() => setShowAddRock(true)}>
               <Plus className="mr-2 h-4 w-4" />
-              Create First Rock
+              Create First Priority
             </Button>
           </CardContent>
         </Card>

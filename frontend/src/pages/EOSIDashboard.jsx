@@ -149,7 +149,7 @@ const EOSIDashboard = () => {
     return clientOrganizations.reduce((sum, org) => sum + (org.user_count || 0), 0);
   };
 
-  const getRockStats = () => {
+  const getPriorityStats = () => {
     return clientOrganizations.reduce((stats, org) => ({
       onTrack: stats.onTrack + (org.rocks_on_track || 0),
       offTrack: stats.offTrack + (org.rocks_off_track || 0),
@@ -165,7 +165,7 @@ const EOSIDashboard = () => {
     );
   }
 
-  const rockStats = getRockStats();
+  const priorityStats = getPriorityStats();
 
   return (
     <div className="p-6 space-y-6">
@@ -293,16 +293,16 @@ const EOSIDashboard = () => {
         </Card>
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Rocks Status</CardTitle>
+            <CardTitle className="text-sm font-medium">Priorities Status</CardTitle>
             <Target className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
             <div className="flex items-center space-x-2">
-              <span className="text-green-600">{rockStats.onTrack}</span>
+              <span className="text-green-600">{priorityStats.onTrack}</span>
               <span className="text-gray-400">/</span>
-              <span className="text-yellow-600">{rockStats.atRisk}</span>
+              <span className="text-yellow-600">{priorityStats.atRisk}</span>
               <span className="text-gray-400">/</span>
-              <span className="text-red-600">{rockStats.offTrack}</span>
+              <span className="text-red-600">{priorityStats.offTrack}</span>
             </div>
           </CardContent>
         </Card>
@@ -323,7 +323,7 @@ const EOSIDashboard = () => {
                 <TableHead>Organization</TableHead>
                 <TableHead>Users</TableHead>
                 <TableHead>Subscription</TableHead>
-                <TableHead>Rocks Status</TableHead>
+                <TableHead>Priorities Status</TableHead>
                 <TableHead>Monthly Revenue</TableHead>
                 <TableHead>Created</TableHead>
                 <TableHead className="text-right">Actions</TableHead>

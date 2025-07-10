@@ -16,13 +16,13 @@ const LandingPage = () => {
   const features = [
     {
       icon: Target,
-      title: 'V/TO® Management',
-      description: 'Create and manage your Vision/Traction Organizer with collaborative editing and real-time updates.'
+      title: 'Business Blueprint Management',
+      description: 'Create and manage your Business Strategy Blueprint with collaborative editing and real-time updates.'
     },
     {
       icon: CheckCircle,
-      title: 'Rocks Tracking',
-      description: 'Set, track, and achieve your quarterly goals with milestone management and progress monitoring.'
+      title: 'Quarterly Priorities Tracking',
+      description: 'Set, track, and achieve your quarterly priorities with milestone management and progress monitoring.'
     },
     {
       icon: BarChart3,
@@ -177,7 +177,7 @@ const LandingPage = () => {
             </div>
             <div className="bg-white p-8 rounded-lg shadow-lg">
               <div className="text-sm text-gray-500 mb-2">AI Suggestion</div>
-              <div className="font-semibold mb-4">Recommended Q1 Rock:</div>
+              <div className="font-semibold mb-4">Recommended Q1 Priority:</div>
               <div className="bg-blue-50 p-4 rounded border-l-4 border-blue-500">
                 <div className="font-medium">Implement new CRM system</div>
                 <div className="text-sm text-gray-600 mt-2">

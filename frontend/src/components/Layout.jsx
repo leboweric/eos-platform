@@ -48,9 +48,9 @@ const Layout = ({ children }) => {
 
   const navigation = [
     { name: 'Dashboard', href: '/dashboard', icon: Home },
-    { name: 'Business Blueprint', href: '/vto', icon: Target },
+    { name: 'Business Blueprint', href: '/business-blueprint', icon: Target },
     { name: 'Accountability Chart', href: '/accountability', icon: Network },
-    { name: 'Quarterly Priorities', href: '/rocks', icon: CheckSquare },
+    { name: 'Quarterly Priorities', href: '/quarterly-priorities', icon: CheckSquare },
     { name: 'Scorecard', href: '/scorecard', icon: BarChart3 },
     { name: 'Meetings', href: '/meetings', icon: Calendar },
     { name: 'To-Dos', href: '/todos', icon: ClipboardList },

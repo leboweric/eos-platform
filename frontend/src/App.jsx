@@ -64,6 +64,10 @@ function App() {
           <Route path="/users" element={user ? <Layout><UsersPage /></Layout> : <Navigate to="/login" />} />
           <Route path="/consultant" element={user ? <Layout><ConsultantDashboard /></Layout> : <Navigate to="/login" />} />
           
+          {/* Legacy route redirects */}
+          <Route path="/vto" element={<Navigate to="/business-blueprint" />} />
+          <Route path="/rocks" element={<Navigate to="/quarterly-priorities" />} />
+          
           {/* Catch all route */}
           <Route path="*" element={<Navigate to={user ? "/dashboard" : "/"} />} />
         </Routes>

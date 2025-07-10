@@ -1,3 +1,4 @@
+// This file should be renamed to consultantRoutes.js
 import express from 'express';
 import { authenticate } from '../middleware/auth.js';
 import {
@@ -9,10 +10,10 @@ import {
 
 const router = express.Router();
 
-// All routes require authentication and EOSI status
+// All routes require authentication and Consultant status
 router.use(authenticate);
 
-// EOSI routes
+// Consultant routes
 router.post('/organizations', createClientOrganization);
 router.get('/organizations', getClientOrganizations);
 router.post('/organizations/:organizationId/switch', switchToClientOrganization);
