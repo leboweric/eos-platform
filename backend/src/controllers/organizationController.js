@@ -27,12 +27,23 @@ export const getOrganization = async (req, res) => {
 // Update organization details
 export const updateOrganization = async (req, res) => {
   try {
-    const { organizationId, role } = req.user;
+    const { organizationId, role, is_consultant, id: userId } = req.user;
     const { name } = req.body;
 
-    // Only admins can update organization details
-    if (role !== 'admin') {
-      return res.status(403).json({ error: 'Only administrators can update organization details' });
+    // Check permissions: admin or consultant with access to this organization
+    let hasPermission = role === 'admin';
+    
+    if (!hasPermission && is_consultant) {
+      // Check if consultant has access to this organization
+      const accessCheck = await query(
+        'SELECT 1 FROM consultant_organizations WHERE consultant_user_id = $1 AND organization_id = $2',
+        [userId, organizationId]
+      );
+      hasPermission = accessCheck.rows.length > 0;
+    }
+
+    if (!hasPermission) {
+      return res.status(403).json({ error: 'You do not have permission to update this organization' });
     }
 
     if (!name || name.trim().length === 0) {

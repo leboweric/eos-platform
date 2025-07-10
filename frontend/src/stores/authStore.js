@@ -6,13 +6,20 @@ const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3001/api/
 // Configure axios defaults
 axios.defaults.baseURL = API_BASE_URL;
 
-// Add request interceptor to include auth token
+// Add request interceptor to include auth token and impersonation header
 axios.interceptors.request.use(
   (config) => {
     const token = localStorage.getItem('accessToken');
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;
     }
+    
+    // Add impersonation header if consultant is viewing client org
+    const impersonatedOrgId = localStorage.getItem('impersonatedOrgId');
+    if (impersonatedOrgId && localStorage.getItem('consultantImpersonating') === 'true') {
+      config.headers['X-Impersonated-Org-Id'] = impersonatedOrgId;
+    }
+    
     return config;
   },
   (error) => {

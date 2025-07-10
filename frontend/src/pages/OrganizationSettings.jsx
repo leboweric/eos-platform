@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useAuthStore } from '../stores/authStore';
+import axios from 'axios';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -7,7 +8,6 @@ import { Label } from '@/components/ui/label';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Building2, Save, Loader2 } from 'lucide-react';
 
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3001/api/v1';
 
 const OrganizationSettings = () => {
   const { user, checkAuth } = useAuthStore();
@@ -28,21 +28,12 @@ const OrganizationSettings = () => {
   const fetchOrganizationDetails = async () => {
     try {
       setLoading(true);
-      const response = await fetch(`${API_URL}/organizations/current`, {
-        headers: {
-          Authorization: `Bearer ${localStorage.getItem('accessToken')}`
-        }
-      });
+      const response = await axios.get('/organizations/current');
 
-      if (response.ok) {
-        const data = await response.json();
-        setOrganizationData(data.data);
-      } else {
-        setError('Failed to load organization details');
-      }
+      setOrganizationData(response.data.data);
     } catch (error) {
       console.error('Failed to fetch organization:', error);
-      setError('Failed to load organization details');
+      setError(error.response?.data?.error || 'Failed to load organization details');
     } finally {
       setLoading(false);
     }
@@ -55,30 +46,17 @@ const OrganizationSettings = () => {
     setSaving(true);
 
     try {
-      const response = await fetch(`${API_URL}/organizations/current`, {
-        method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${localStorage.getItem('accessToken')}`
-        },
-        body: JSON.stringify({
-          name: organizationData.name
-        })
+      const response = await axios.put('/organizations/current', {
+        name: organizationData.name
       });
 
-      const data = await response.json();
-
-      if (response.ok) {
-        setSuccess('Organization updated successfully');
-        setOrganizationData(data.data);
-        // Refresh auth to update the organization name in the UI
-        await checkAuth();
-      } else {
-        setError(data.error || 'Failed to update organization');
-      }
+      setSuccess('Organization updated successfully');
+      setOrganizationData(response.data.data);
+      // Refresh auth to update the organization name in the UI
+      await checkAuth();
     } catch (error) {
       console.error('Update error:', error);
-      setError('Failed to update organization');
+      setError(error.response?.data?.error || 'Failed to update organization');
     } finally {
       setSaving(false);
     }
@@ -92,13 +70,15 @@ const OrganizationSettings = () => {
     );
   }
 
-  // Check if user is admin
-  if (user?.role !== 'admin') {
+  // Check if user has permission (admin or consultant)
+  const hasPermission = user?.role === 'admin' || user?.isConsultant;
+  
+  if (!hasPermission) {
     return (
       <div className="p-6">
         <Alert className="border-red-200 bg-red-50">
           <AlertDescription>
-            Only administrators can access organization settings.
+            You do not have permission to access organization settings.
           </AlertDescription>
         </Alert>
       </div>

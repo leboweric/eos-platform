@@ -28,6 +28,25 @@ export const authenticate = async (req, res, next) => {
     }
 
     req.user = result.rows[0];
+    
+    // Check for impersonation header (when consultant is viewing client org)
+    const impersonatedOrgId = req.header('X-Impersonated-Org-Id');
+    if (impersonatedOrgId && req.user.is_consultant) {
+      // Verify consultant has access to this organization
+      const accessCheck = await query(
+        'SELECT 1 FROM consultant_organizations WHERE consultant_user_id = $1 AND organization_id = $2',
+        [req.user.id, impersonatedOrgId]
+      );
+      
+      if (accessCheck.rows.length > 0) {
+        // Override the organization context
+        req.user.organizationId = impersonatedOrgId;
+        req.user.isImpersonating = true;
+      }
+    } else {
+      req.user.organizationId = req.user.organization_id;
+    }
+    
     next();
   } catch (error) {
     console.error('Authentication error:', error);

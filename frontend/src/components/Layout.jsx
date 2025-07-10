@@ -57,7 +57,7 @@ const Layout = ({ children }) => {
     { name: 'Issues', href: '/issues', icon: MessageSquare },
     { name: 'Departments', href: '/departments', icon: Building2 },
     { name: 'Team', href: '/users', icon: Users },
-    { name: 'Organization', href: '/organization-settings', icon: Building2, adminOnly: true },
+    { name: 'Organization', href: '/organization-settings', icon: Settings },
     { name: 'Billing', href: '/billing', icon: CreditCard },
   ];
 
@@ -120,11 +120,6 @@ const Layout = ({ children }) => {
         <nav className="mt-6 px-3">
           <div className="space-y-1">
             {navigation.map((item) => {
-              // Skip admin-only items if user is not admin
-              if (item.adminOnly && user?.role !== 'admin') {
-                return null;
-              }
-              
               const isActive = location.pathname === item.href;
               return (
                 <Link
