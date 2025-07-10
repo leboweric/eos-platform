@@ -1,6 +1,26 @@
 import { query, beginTransaction, commitTransaction, rollbackTransaction } from '../config/database.js';
 import { v4 as uuidv4 } from 'uuid';
 
+// Helper function to get or create VTO
+const getOrCreateVTO = async (orgId, teamId) => {
+  const vtoResult = await query(
+    'SELECT id FROM business_blueprints WHERE organization_id = $1 AND team_id = $2',
+    [orgId, teamId]
+  );
+
+  if (vtoResult.rows.length === 0) {
+    // Create VTO if it doesn't exist
+    const newVtoId = uuidv4();
+    await query(
+      'INSERT INTO business_blueprints (id, organization_id, team_id) VALUES ($1, $2, $3)',
+      [newVtoId, orgId, teamId]
+    );
+    return newVtoId;
+  }
+  
+  return vtoResult.rows[0].id;
+};
+
 // @desc    Get VTO for a team
 // @route   GET /api/v1/organizations/:orgId/teams/:teamId/vto
 // @access  Private
@@ -8,15 +28,10 @@ export const getVTO = async (req, res) => {
   try {
     const { orgId, teamId } = req.params;
     const { departmentId } = req.query; // Support department filter
-    const userId = req.user.userId;
+    const userId = req.user.id;
 
-    // Check user has access to this organization
-    const userCheck = await query(
-      'SELECT id FROM users WHERE id = $1 AND organization_id = $2',
-      [userId, orgId]
-    );
-
-    if (userCheck.rows.length === 0) {
+    // Verify access - either user belongs to org or is consultant with access
+    if (req.user.organizationId !== orgId && !req.user.isImpersonating) {
       return res.status(403).json({
         success: false,
         error: 'Access denied'
@@ -122,22 +137,10 @@ export const upsertCoreValue = async (req, res) => {
   try {
     const { orgId, teamId } = req.params;
     const { id, value, description, sortOrder } = req.body;
-    const userId = req.user.userId;
+    const userId = req.user.id;
 
-    // Get VTO ID
-    const vtoResult = await query(
-      'SELECT id FROM business_blueprints WHERE organization_id = $1 AND team_id = $2',
-      [orgId, teamId]
-    );
-
-    if (vtoResult.rows.length === 0) {
-      return res.status(404).json({
-        success: false,
-        error: 'VTO not found'
-      });
-    }
-
-    const vtoId = vtoResult.rows[0].id;
+    // Get or create VTO
+    const vtoId = await getOrCreateVTO(orgId, teamId);
 
     if (id) {
       // Update existing
@@ -183,7 +186,7 @@ export const upsertCoreValue = async (req, res) => {
 export const deleteCoreValue = async (req, res) => {
   try {
     const { orgId, teamId, valueId } = req.params;
-    const userId = req.user.userId;
+    const userId = req.user.id;
 
     // Verify access and delete
     const result = await query(
@@ -223,22 +226,10 @@ export const updateCoreFocus = async (req, res) => {
   try {
     const { orgId, teamId } = req.params;
     const { purpose, niche, hedgehogType } = req.body;
-    const userId = req.user.userId;
+    const userId = req.user.id;
 
-    // Get VTO ID
-    const vtoResult = await query(
-      'SELECT id FROM business_blueprints WHERE organization_id = $1 AND team_id = $2',
-      [orgId, teamId]
-    );
-
-    if (vtoResult.rows.length === 0) {
-      return res.status(404).json({
-        success: false,
-        error: 'VTO not found'
-      });
-    }
-
-    const vtoId = vtoResult.rows[0].id;
+    // Get or create VTO
+    const vtoId = await getOrCreateVTO(orgId, teamId);
 
     // Check if core focus exists
     const existing = await query(
@@ -287,22 +278,10 @@ export const updateTenYearTarget = async (req, res) => {
   try {
     const { orgId, teamId } = req.params;
     const { targetDescription, targetYear, runningTotalDescription, currentRunningTotal } = req.body;
-    const userId = req.user.userId;
+    const userId = req.user.id;
 
-    // Get VTO ID
-    const vtoResult = await query(
-      'SELECT id FROM business_blueprints WHERE organization_id = $1 AND team_id = $2',
-      [orgId, teamId]
-    );
-
-    if (vtoResult.rows.length === 0) {
-      return res.status(404).json({
-        success: false,
-        error: 'VTO not found'
-      });
-    }
-
-    const vtoId = vtoResult.rows[0].id;
+    // Get or create VTO
+    const vtoId = await getOrCreateVTO(orgId, teamId);
 
     // Check if target exists
     const existing = await query(
@@ -361,22 +340,10 @@ export const updateMarketingStrategy = async (req, res) => {
       provenProcessExists,
       guaranteeExists
     } = req.body;
-    const userId = req.user.userId;
+    const userId = req.user.id;
 
-    // Get VTO ID
-    const vtoResult = await query(
-      'SELECT id FROM business_blueprints WHERE organization_id = $1 AND team_id = $2',
-      [orgId, teamId]
-    );
-
-    if (vtoResult.rows.length === 0) {
-      return res.status(404).json({
-        success: false,
-        error: 'VTO not found'
-      });
-    }
-
-    const vtoId = vtoResult.rows[0].id;
+    // Get or create VTO
+    const vtoId = await getOrCreateVTO(orgId, teamId);
 
     // Check if strategy exists
     const existing = await query(
