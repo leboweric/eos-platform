@@ -32,10 +32,13 @@ const RegisterPage = () => {
   const {
     register,
     handleSubmit,
+    watch,
     formState: { errors }
   } = useForm({
     resolver: zodResolver(registerSchema)
   });
+
+  const emailValue = watch('email', '');
 
   const onSubmit = async (data) => {
     clearError();
@@ -111,6 +114,16 @@ const RegisterPage = () => {
                 />
                 {errors.email && (
                   <p className="text-sm text-red-500">{errors.email.message}</p>
+                )}
+                {emailValue.toLowerCase().endsWith('@eosworldwide.com') && (
+                  <Alert className="mt-2">
+                    <AlertDescription className="text-sm">
+                      EOS Implementers should use the{' '}
+                      <Link to="/eosi-register" className="font-medium text-primary hover:underline">
+                        EOSI registration page
+                      </Link>
+                    </AlertDescription>
+                  </Alert>
                 )}
               </div>
 
@@ -201,11 +214,17 @@ const RegisterPage = () => {
               </Button>
             </form>
 
-            <div className="mt-6 text-center">
+            <div className="mt-6 text-center space-y-2">
               <p className="text-sm text-gray-600">
                 Already have an account?{' '}
                 <Link to="/login" className="text-primary hover:underline font-medium">
                   Sign in
+                </Link>
+              </p>
+              <p className="text-sm text-gray-600">
+                EOS Implementer?{' '}
+                <Link to="/eosi-register" className="text-primary hover:underline font-medium">
+                  Create EOSI account
                 </Link>
               </p>
             </div>
