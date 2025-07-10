@@ -40,7 +40,7 @@ import { format } from 'date-fns';
 
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3001/api/v1';
 
-const EOSIDashboard = () => {
+const ConsultantDashboard = () => {
   const { user } = useAuthStore();
   const navigate = useNavigate();
   const [clientOrganizations, setClientOrganizations] = useState([]);
@@ -134,7 +134,7 @@ const EOSIDashboard = () => {
         localStorage.setItem('impersonatedOrgId', orgId);
         
         // Navigate to the client's dashboard
-        window.location.href = '/dashboard';
+        navigate('/dashboard');
       }
     } catch (error) {
       setError('Failed to switch to client organization');
@@ -343,15 +343,15 @@ const EOSIDashboard = () => {
                     <div className="flex items-center space-x-1">
                       <span className="flex items-center">
                         <TrendingUp className="h-4 w-4 text-green-600 mr-1" />
-                        {org.rocks_on_track || 0}
+                        {org.priorities_on_track || 0}
                       </span>
                       <span className="flex items-center">
                         <AlertTriangle className="h-4 w-4 text-yellow-600 mr-1" />
-                        {org.rocks_at_risk || 0}
+                        {org.priorities_at_risk || 0}
                       </span>
                       <span className="flex items-center">
                         <TrendingDown className="h-4 w-4 text-red-600 mr-1" />
-                        {org.rocks_off_track || 0}
+                        {org.priorities_off_track || 0}
                       </span>
                     </div>
                   </TableCell>
@@ -376,4 +376,4 @@ const EOSIDashboard = () => {
   );
 };
 
-export default EOSIDashboard;
+export default ConsultantDashboard;
