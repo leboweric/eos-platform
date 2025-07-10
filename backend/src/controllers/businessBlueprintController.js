@@ -414,10 +414,10 @@ export const updateMarketingStrategy = async (req, res) => {
   }
 };
 
-// @desc    Get VTO for a department
-// @route   GET /api/v1/departments/:departmentId/vto
+// @desc    Get Business Blueprint for a department
+// @route   GET /api/v1/departments/:departmentId/business-blueprint
 // @access  Private
-export const getDepartmentVTO = async (req, res) => {
+export const getDepartmentBusinessBlueprint = async (req, res) => {
   try {
     const { departmentId } = req.params;
     const { organizationId } = req.user;
@@ -513,7 +513,7 @@ export const getDepartmentVTO = async (req, res) => {
 
 export default {
   getVTO,
-  getDepartmentVTO,
+  getDepartmentBusinessBlueprint,
   upsertCoreValue,
   deleteCoreValue,
   updateCoreFocus,

@@ -31,8 +31,8 @@ const LandingPage = () => {
     },
     {
       icon: Calendar,
-      title: 'L10 Meetings',
-      description: 'Facilitate effective Level 10 meetings with structured agendas and action item tracking.'
+      title: 'Accountability Meetings',
+      description: 'Facilitate effective accountability meetings with structured agendas and action item tracking.'
     },
     {
       icon: Users,

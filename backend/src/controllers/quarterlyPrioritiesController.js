@@ -2,7 +2,7 @@ import db from '../config/database.js';
 import logger from '../utils/logger.js';
 
 // Get all quarterly_priorities with optional department filter
-const getRocks = async (req, res) => {
+const getQuarterlyPriorities = async (req, res) => {
   try {
     const { organizationId } = req.user;
     const { departmentId, teamId, status, quarter, year } = req.query;
@@ -78,7 +78,7 @@ const getRocks = async (req, res) => {
 };
 
 // Get single rock
-const getRock = async (req, res) => {
+const getQuarterlyPriority = async (req, res) => {
   try {
     const { id } = req.params;
     const { organizationId } = req.user;
@@ -122,7 +122,7 @@ const getRock = async (req, res) => {
 };
 
 // Create new rock
-const createRock = async (req, res) => {
+const createQuarterlyPriority = async (req, res) => {
   const client = await db.connect();
   try {
     await client.query('BEGIN');
@@ -195,7 +195,7 @@ const createRock = async (req, res) => {
     await client.query('COMMIT');
 
     // Fetch complete rock with relationships
-    const completeRock = await getRockWithDetails(rock.id, organizationId);
+    const completeRock = await getQuarterlyPriorityWithDetails(rock.id, organizationId);
     
     res.status(201).json(completeRock);
   } catch (error) {
@@ -208,7 +208,7 @@ const createRock = async (req, res) => {
 };
 
 // Update rock
-const updateRock = async (req, res) => {
+const updateQuarterlyPriority = async (req, res) => {
   const client = await db.connect();
   try {
     await client.query('BEGIN');
@@ -278,7 +278,7 @@ const updateRock = async (req, res) => {
     await client.query('COMMIT');
 
     // Fetch updated rock
-    const rock = await getRockWithDetails(id, organizationId);
+    const rock = await getQuarterlyPriorityWithDetails(id, organizationId);
     res.json(rock);
   } catch (error) {
     await client.query('ROLLBACK');
@@ -290,7 +290,7 @@ const updateRock = async (req, res) => {
 };
 
 // Delete rock
-const deleteRock = async (req, res) => {
+const deleteQuarterlyPriority = async (req, res) => {
   const client = await db.connect();
   try {
     await client.query('BEGIN');
@@ -323,7 +323,7 @@ const deleteRock = async (req, res) => {
 };
 
 // Update rock status
-const updateRockStatus = async (req, res) => {
+const updateQuarterlyPriorityStatus = async (req, res) => {
   try {
     const { id } = req.params;
     const { organizationId } = req.user;
@@ -346,7 +346,7 @@ const updateRockStatus = async (req, res) => {
       return res.status(404).json({ error: 'Rock not found' });
     }
 
-    const rock = await getRockWithDetails(id, organizationId);
+    const rock = await getQuarterlyPriorityWithDetails(id, organizationId);
     res.json(rock);
   } catch (error) {
     logger.error('Error updating rock status:', error);
@@ -355,7 +355,7 @@ const updateRockStatus = async (req, res) => {
 };
 
 // Helper function to get rock with details
-const getRockWithDetails = async (rockId, organizationId) => {
+const getQuarterlyPriorityWithDetails = async (rockId, organizationId) => {
   const query = `
     SELECT 
       r.*,
@@ -386,10 +386,10 @@ const getRockWithDetails = async (rockId, organizationId) => {
 };
 
 export {
-  getRocks,
-  getRock,
-  createRock,
-  updateRock,
-  deleteRock,
-  updateRockStatus
+  getQuarterlyPriorities,
+  getQuarterlyPriority,
+  createQuarterlyPriority,
+  updateQuarterlyPriority,
+  deleteQuarterlyPriority,
+  updateQuarterlyPriorityStatus
 };

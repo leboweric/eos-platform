@@ -99,7 +99,7 @@ const templates = {
       <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
         <h2>Welcome to Strategic Execution Platform!</h2>
         <p>Hi ${data.firstName},</p>
-        <p>Your Strategy Consultant, ${data.eosiName}, has created an account for ${data.organizationName} on the Strategic Execution Platform.</p>
+        <p>Your Strategy Consultant, ${data.consultantName}, has created an account for ${data.organizationName} on the Strategic Execution Platform.</p>
         <p>Here are your login credentials:</p>
         <div style="background-color: #f5f5f5; padding: 20px; border-radius: 8px; margin: 20px 0;">
           <p><strong>Email:</strong> ${data.email}</p>
@@ -120,7 +120,7 @@ const templates = {
       
       Hi ${data.firstName},
       
-      Your Strategy Consultant, ${data.eosiName}, has created an account for ${data.organizationName} on the Strategic Execution Platform.
+      Your Strategy Consultant, ${data.consultantName}, has created an account for ${data.organizationName} on the Strategic Execution Platform.
       
       Your login credentials:
       Email: ${data.email}

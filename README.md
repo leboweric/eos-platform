@@ -1,14 +1,14 @@
-# EOS Platform - Version 1.0
+# Strategic Execution Platform - Version 1.0
 
-A comprehensive Entrepreneurial Operating System (EOS) management platform built with Next.js, Node.js, and PostgreSQL. This platform provides all the tools needed to implement and manage EOS methodology for organizations and their teams.
+A comprehensive strategic execution management platform built with Next.js, Node.js, and PostgreSQL. This platform provides all the tools needed to implement and manage proven business strategies for organizations and their teams.
 
 ## 🚀 Features
 
-### Core EOS Components
-- **V/TO® (Vision/Traction Organizer)** - Complete vision and traction management
-- **Rocks Management** - Quarterly goal setting and tracking
+### Core Strategic Components
+- **Business Blueprint** - Complete vision and strategy management
+- **Quarterly Priorities** - Quarterly goal setting and tracking
 - **Scorecard** - KPI monitoring and analytics
-- **L10 Meetings** - Structured meeting management
+- **Accountability Meetings** - Structured meeting management
 - **Issues List** - Issue identification and resolution
 - **To-Dos** - Action item tracking
 
@@ -182,10 +182,10 @@ The platform uses a comprehensive multi-tenant database schema:
 - **Organizations** - Tenant root with complete data isolation
 - **Users** - User accounts with role-based access
 - **Teams** - Hierarchical team structure
-- **V/TO Components** - Core values, focus, targets, strategy
-- **Rocks** - Quarterly goals with milestones and updates
+- **Business Blueprint Components** - Core values, focus, targets, strategy
+- **Quarterly Priorities** - Quarterly goals with milestones and updates
 - **Scorecard** - KPIs and measurable tracking
-- **Meetings** - L10 meetings with agendas and attendance
+- **Meetings** - Accountability meetings with agendas and attendance
 - **Issues** - Issue tracking and resolution
 - **To-Dos** - Action items and task management
 

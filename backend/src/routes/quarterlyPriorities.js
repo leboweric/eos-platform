@@ -1,11 +1,11 @@
 import express from 'express';
 import { 
-  getRocks, 
-  getRock, 
-  createRock, 
-  updateRock, 
-  deleteRock,
-  updateRockStatus
+  getQuarterlyPriorities, 
+  getQuarterlyPriority, 
+  createQuarterlyPriority, 
+  updateQuarterlyPriority, 
+  deleteQuarterlyPriority,
+  updateQuarterlyPriorityStatus
 } from '../controllers/quarterlyPrioritiesController.js';
 import { authenticate } from '../middleware/auth.js';
 
@@ -14,22 +14,22 @@ const router = express.Router({ mergeParams: true });
 // All routes require authentication
 router.use(authenticate);
 
-// Get all rocks (with optional department filter)
-router.get('/', getRocks);
+// Get all quarterly priorities (with optional department filter)
+router.get('/', getQuarterlyPriorities);
 
-// Get single rock
-router.get('/:id', getRock);
+// Get single quarterly priority
+router.get('/:id', getQuarterlyPriority);
 
-// Create new rock
-router.post('/', createRock);
+// Create new quarterly priority
+router.post('/', createQuarterlyPriority);
 
-// Update rock
-router.put('/:id', updateRock);
+// Update quarterly priority
+router.put('/:id', updateQuarterlyPriority);
 
-// Update rock status
-router.patch('/:id/status', updateRockStatus);
+// Update quarterly priority status
+router.patch('/:id/status', updateQuarterlyPriorityStatus);
 
-// Delete rock
-router.delete('/:id', deleteRock);
+// Delete quarterly priority
+router.delete('/:id', deleteQuarterlyPriority);
 
 export default router;

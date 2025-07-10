@@ -72,7 +72,7 @@ const Dashboard = () => {
   const upcomingMeetings = [
     {
       id: 1,
-      title: 'Weekly L10 Meeting',
+      title: 'Weekly Accountability Meeting',
       date: '2025-01-09',
       time: '09:00 AM',
       attendees: 8

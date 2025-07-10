@@ -62,7 +62,7 @@ const EOSIDashboard = () => {
 
   const fetchClientOrganizations = async () => {
     try {
-      const response = await fetch(`${API_URL}/eosi/organizations`, {
+      const response = await fetch(`${API_URL}/consultant/organizations`, {
         headers: {
           Authorization: `Bearer ${localStorage.getItem('accessToken')}`,
         },
@@ -86,7 +86,7 @@ const EOSIDashboard = () => {
     setError(null);
 
     try {
-      const response = await fetch(`${API_URL}/eosi/organizations`, {
+      const response = await fetch(`${API_URL}/consultant/organizations`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -119,7 +119,7 @@ const EOSIDashboard = () => {
 
   const handleSwitchToOrganization = async (orgId) => {
     try {
-      const response = await fetch(`${API_URL}/eosi/organizations/${orgId}/switch`, {
+      const response = await fetch(`${API_URL}/consultant/organizations/${orgId}/switch`, {
         method: 'POST',
         headers: {
           Authorization: `Bearer ${localStorage.getItem('accessToken')}`,
@@ -129,8 +129,8 @@ const EOSIDashboard = () => {
       if (response.ok) {
         const data = await response.json();
         // Store the impersonation state
-        localStorage.setItem('eosiImpersonating', 'true');
-        localStorage.setItem('eosiOriginalOrg', user.organizationId);
+        localStorage.setItem('consultantImpersonating', 'true');
+        localStorage.setItem('consultantOriginalOrg', user.organizationId);
         localStorage.setItem('impersonatedOrgId', orgId);
         
         // Navigate to the client's dashboard
@@ -151,9 +151,9 @@ const EOSIDashboard = () => {
 
   const getPriorityStats = () => {
     return clientOrganizations.reduce((stats, org) => ({
-      onTrack: stats.onTrack + (org.rocks_on_track || 0),
-      offTrack: stats.offTrack + (org.rocks_off_track || 0),
-      atRisk: stats.atRisk + (org.rocks_at_risk || 0),
+      onTrack: stats.onTrack + (org.priorities_on_track || 0),
+      offTrack: stats.offTrack + (org.priorities_off_track || 0),
+      atRisk: stats.atRisk + (org.priorities_at_risk || 0),
     }), { onTrack: 0, offTrack: 0, atRisk: 0 });
   };
 
@@ -171,8 +171,8 @@ const EOSIDashboard = () => {
     <div className="p-6 space-y-6">
       <div className="flex justify-between items-center">
         <div>
-          <h1 className="text-3xl font-bold">EOSI Dashboard</h1>
-          <p className="text-gray-600 mt-2">Manage your EOS client organizations</p>
+          <h1 className="text-3xl font-bold">Consultant Dashboard</h1>
+          <p className="text-gray-600 mt-2">Manage your strategy consulting client organizations</p>
         </div>
         <Dialog open={createDialogOpen} onOpenChange={setCreateDialogOpen}>
           <DialogTrigger asChild>
@@ -186,7 +186,7 @@ const EOSIDashboard = () => {
               <DialogHeader>
                 <DialogTitle>Create Client Organization</DialogTitle>
                 <DialogDescription>
-                  Create a new organization for your EOS client. The admin will receive login credentials via email.
+                  Create a new organization for your strategy consulting client. The admin will receive login credentials via email.
                 </DialogDescription>
               </DialogHeader>
               <div className="space-y-4 py-4">

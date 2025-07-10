@@ -13,8 +13,8 @@
 | @eosworldwide.com | @strategyconsultant.com | Email domain validation |
 | Rocks | Quarterly Priorities | Goal tracking |
 | V/TO® or VTO | Business Blueprint | Vision/strategy document |
-| Level 10 Meeting | Strategic Alignment Meeting | Meeting type |
-| L10 | SAM (Strategic Alignment Meeting) | Abbreviated form |
+| Level 10 Meeting | Accountability Meeting | Meeting type |
+| L10 | Accountability Meeting | Abbreviated form |
 
 ### Database Schema Changes
 
@@ -61,7 +61,7 @@
 | "Rocks Tracking" | "Quarterly Priority Tracking" |
 | "Set your Rocks" | "Set your Quarterly Priorities" |
 | "V/TO® Management" | "Business Blueprint Management" |
-| "L10 Meetings" | "Strategic Alignment Meetings" |
+| "L10 Meetings" | "Accountability Meetings" |
 
 ### Email Domain Logic
 - Remove all checks for `@eosworldwide.com`

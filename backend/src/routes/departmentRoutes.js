@@ -1,6 +1,6 @@
 import express from 'express';
 import { getDepartments, getDepartment, createDepartment, updateDepartment, deleteDepartment } from '../controllers/departmentController.js';
-import { getDepartmentVTO } from '../controllers/businessBlueprintController.js';
+import { getDepartmentBusinessBlueprint } from '../controllers/businessBlueprintController.js';
 import { authenticate } from '../middleware/auth.js';
 
 const router = express.Router();
@@ -23,17 +23,17 @@ router.put('/:id', updateDepartment);
 // Delete department
 router.delete('/:id', deleteDepartment);
 
-// Get VTO for department
-router.get('/:departmentId/vto', getDepartmentVTO);
+// Get Business Blueprint for department
+router.get('/:departmentId/business-blueprint', getDepartmentBusinessBlueprint);
 
 // Get quarterly priorities for department
-router.get('/:departmentId/rocks', (req, res, next) => {
+router.get('/:departmentId/quarterly-priorities', (req, res, next) => {
   // Pass departmentId as query parameter to quarterly priorities controller
   req.query.departmentId = req.params.departmentId;
   next();
 }, async (req, res) => {
-  const { getRocks } = await import('../controllers/quarterlyPrioritiesController.js');
-  return getRocks(req, res);
+  const { getQuarterlyPriorities } = await import('../controllers/quarterlyPrioritiesController.js');
+  return getQuarterlyPriorities(req, res);
 });
 
 export default router;

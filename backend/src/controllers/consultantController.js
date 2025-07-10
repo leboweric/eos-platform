@@ -112,16 +112,16 @@ export const getClientOrganizations = async (req, res) => {
     const result = await query(
       `SELECT o.id, o.name, o.slug, o.created_at,
               COUNT(DISTINCT u.id) as user_count,
-              COUNT(DISTINCT r.id) FILTER (WHERE r.status = 'on_track') as rocks_on_track,
-              COUNT(DISTINCT r.id) FILTER (WHERE r.status = 'off_track') as rocks_off_track,
-              COUNT(DISTINCT r.id) FILTER (WHERE r.status = 'at_risk') as rocks_at_risk,
+              COUNT(DISTINCT r.id) FILTER (WHERE r.status = 'on_track') as priorities_on_track,
+              COUNT(DISTINCT r.id) FILTER (WHERE r.status = 'off_track') as priorities_off_track,
+              COUNT(DISTINCT r.id) FILTER (WHERE r.status = 'at_risk') as priorities_at_risk,
               s.status as subscription_status,
               s.user_count * s.price_per_user as monthly_revenue
        FROM consultant_organizations eo
        JOIN organizations o ON eo.organization_id = o.id
        LEFT JOIN users u ON u.organization_id = o.id
-       LEFT JOIN rocks r ON r.organization_id = o.id AND r.quarter = 
-         (SELECT MAX(quarter) FROM rocks WHERE organization_id = o.id)
+       LEFT JOIN quarterly_priorities r ON r.organization_id = o.id AND r.quarter = 
+         (SELECT MAX(quarter) FROM quarterly_priorities WHERE organization_id = o.id)
        LEFT JOIN subscriptions s ON s.organization_id = o.id
        WHERE eo.consultant_user_id = $1
        GROUP BY o.id, s.status, s.user_count, s.price_per_user
@@ -236,24 +236,24 @@ export const getClientDashboard = async (req, res) => {
          CASE WHEN marketing_strategy IS NOT NULL THEN 1 ELSE 0 END +
          CASE WHEN three_year_picture IS NOT NULL THEN 1 ELSE 0 END +
          CASE WHEN one_year_plan IS NOT NULL THEN 1 ELSE 0 END) * 100.0 / 6 as completion_percentage
-       FROM vtos WHERE organization_id = $1`,
+       FROM business_blueprints WHERE organization_id = $1`,
       [organizationId]
     );
     dashboardData.vtoCompletion = vtoResult.rows[0]?.completion_percentage || 0;
 
-    // Current quarter rocks
+    // Current quarter priorities
     const currentQuarter = `Q${Math.ceil((new Date().getMonth() + 1) / 3)} ${new Date().getFullYear()}`;
-    const rocksResult = await query(
+    const prioritiesResult = await query(
       `SELECT status, COUNT(*) as count
-       FROM rocks 
+       FROM quarterly_priorities 
        WHERE organization_id = $1 AND quarter = $2
        GROUP BY status`,
       [organizationId, currentQuarter]
     );
     
-    dashboardData.rocks = {
+    dashboardData.priorities = {
       quarter: currentQuarter,
-      byStatus: rocksResult.rows.reduce((acc, row) => {
+      byStatus: prioritiesResult.rows.reduce((acc, row) => {
         acc[row.status] = parseInt(row.count);
         return acc;
       }, { on_track: 0, off_track: 0, at_risk: 0 })
