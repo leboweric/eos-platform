@@ -20,6 +20,7 @@ import accountabilityRoutes from './routes/accountabilityRoutes.js';
 import subscriptionRoutes from './routes/subscriptionRoutes.js';
 import webhookRoutes from './routes/webhookRoutes.js';
 import userRoutes from './routes/userRoutes.js';
+import eosiRoutes from './routes/eosiRoutes.js';
 
 // Import middleware
 import { errorHandler } from './middleware/errorHandler.js';
@@ -78,6 +79,7 @@ app.use('/api/v1/organizations/:orgId/teams/:teamId/issues', issueRoutes);
 app.use('/api/v1/departments', departmentRoutes);
 app.use('/api/v1/accountability', accountabilityRoutes);
 app.use('/api/v1/subscription', subscriptionRoutes);
+app.use('/api/v1/eosi', eosiRoutes);
 
 // Webhook routes (must be before express.json() middleware for raw body)
 app.use('/webhooks', webhookRoutes);

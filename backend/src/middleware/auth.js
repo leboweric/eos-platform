@@ -71,6 +71,20 @@ export const checkOrganizationAccess = async (req, res, next) => {
 
     // Check if user belongs to the organization
     if (req.user.organization_id !== orgId) {
+      // Check if user is EOSI with access to this organization
+      if (req.user.is_eosi) {
+        const accessCheck = await query(
+          'SELECT 1 FROM eosi_organizations WHERE eosi_user_id = $1 AND organization_id = $2',
+          [req.user.id, orgId]
+        );
+        
+        if (accessCheck.rows.length > 0) {
+          // EOSI has access, allow them through
+          next();
+          return;
+        }
+      }
+      
       return res.status(403).json({
         success: false,
         error: 'Access denied. You do not have access to this organization.'

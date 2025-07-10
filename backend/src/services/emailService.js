@@ -91,6 +91,47 @@ const templates = {
       
       Update payment method: ${data.billingUrl}
     `
+  }),
+
+  clientWelcome: (data) => ({
+    subject: `Welcome to EOS Platform - ${data.organizationName}`,
+    html: `
+      <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+        <h2>Welcome to EOS Platform!</h2>
+        <p>Hi ${data.firstName},</p>
+        <p>Your EOS Implementer, ${data.eosiName}, has created an account for ${data.organizationName} on the EOS Platform.</p>
+        <p>Here are your login credentials:</p>
+        <div style="background-color: #f5f5f5; padding: 20px; border-radius: 8px; margin: 20px 0;">
+          <p><strong>Email:</strong> ${data.email}</p>
+          <p><strong>Temporary Password:</strong> ${data.tempPassword}</p>
+        </div>
+        <p style="color: #DC2626;"><strong>Important:</strong> Please change your password after your first login.</p>
+        <div style="text-align: center; margin: 30px 0;">
+          <a href="${data.loginUrl}" style="background-color: #4F46E5; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; display: inline-block;">
+            Log In to EOS Platform
+          </a>
+        </div>
+        <p>The EOS Platform will help you implement the Entrepreneurial Operating System® in your organization.</p>
+        <p>If you have any questions, please contact your EOS Implementer.</p>
+      </div>
+    `,
+    text: `
+      Welcome to EOS Platform!
+      
+      Hi ${data.firstName},
+      
+      Your EOS Implementer, ${data.eosiName}, has created an account for ${data.organizationName} on the EOS Platform.
+      
+      Your login credentials:
+      Email: ${data.email}
+      Temporary Password: ${data.tempPassword}
+      
+      Important: Please change your password after your first login.
+      
+      Log in here: ${data.loginUrl}
+      
+      The EOS Platform will help you implement the Entrepreneurial Operating System® in your organization.
+    `
   })
 };
 

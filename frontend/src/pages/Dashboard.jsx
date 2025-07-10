@@ -1,4 +1,6 @@
+import { useEffect } from 'react';
 import { useAuthStore } from '../stores/authStore';
+import { useNavigate } from 'react-router-dom';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -21,6 +23,14 @@ import { Link } from 'react-router-dom';
 
 const Dashboard = () => {
   const { user } = useAuthStore();
+  const navigate = useNavigate();
+  
+  useEffect(() => {
+    // If EOSI user and not impersonating, redirect to EOSI dashboard
+    if (user?.isEOSI && localStorage.getItem('eosiImpersonating') !== 'true') {
+      navigate('/eosi');
+    }
+  }, [user, navigate]);
 
   // Mock data - in a real app, this would come from API calls
   const stats = {

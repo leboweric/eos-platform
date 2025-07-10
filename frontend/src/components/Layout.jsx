@@ -1,9 +1,10 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useAuthStore } from '../stores/authStore';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import TrialBanner from './TrialBanner';
+import { Alert, AlertDescription } from '@/components/ui/alert';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -28,14 +29,22 @@ import {
   User,
   Building2,
   Network,
-  CreditCard
+  CreditCard,
+  ArrowLeft,
+  Briefcase
 } from 'lucide-react';
 
 const Layout = ({ children }) => {
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [isImpersonating, setIsImpersonating] = useState(false);
   const location = useLocation();
   const navigate = useNavigate();
   const { user, logout } = useAuthStore();
+
+  useEffect(() => {
+    // Check if EOSI is impersonating a client
+    setIsImpersonating(localStorage.getItem('eosiImpersonating') === 'true');
+  }, []);
 
   const navigation = [
     { name: 'Dashboard', href: '/dashboard', icon: Home },
@@ -51,9 +60,22 @@ const Layout = ({ children }) => {
     { name: 'Billing', href: '/billing', icon: CreditCard },
   ];
 
+  // Add EOSI Dashboard if user is EOSI and not impersonating
+  if (user?.isEOSI && !isImpersonating) {
+    navigation.unshift({ name: 'EOSI Dashboard', href: '/eosi', icon: Briefcase });
+  }
+
   const handleLogout = async () => {
     await logout();
     navigate('/login');
+  };
+
+  const handleReturnToEOSI = () => {
+    // Clear impersonation state
+    localStorage.removeItem('eosiImpersonating');
+    localStorage.removeItem('impersonatedOrgId');
+    // Force reload to refresh auth state
+    window.location.href = '/eosi';
   };
 
   const getUserInitials = () => {
@@ -185,6 +207,24 @@ const Layout = ({ children }) => {
         {/* Page content */}
         <main className="flex-1 p-6 overflow-auto">
           <TrialBanner />
+          {isImpersonating && (
+            <Alert className="mb-4 border-blue-200 bg-blue-50">
+              <AlertDescription className="flex items-center justify-between">
+                <span>
+                  You are currently viewing this organization as an EOS Implementer.
+                </span>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={handleReturnToEOSI}
+                  className="ml-4"
+                >
+                  <ArrowLeft className="mr-2 h-4 w-4" />
+                  Return to EOSI Dashboard
+                </Button>
+              </AlertDescription>
+            </Alert>
+          )}
           {children}
         </main>
       </div>

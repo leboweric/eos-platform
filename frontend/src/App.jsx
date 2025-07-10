@@ -19,6 +19,7 @@ import AccountabilityChart from './pages/AccountabilityChart';
 import BillingPage from './pages/BillingPage';
 import UsersPage from './pages/UsersPage';
 import AcceptInvitationPage from './pages/AcceptInvitationPage';
+import EOSIDashboard from './pages/EOSIDashboard';
 
 import './App.css';
 
@@ -59,6 +60,7 @@ function App() {
           <Route path="/accountability" element={user ? <Layout><AccountabilityChart /></Layout> : <Navigate to="/login" />} />
           <Route path="/billing" element={user ? <Layout><BillingPage /></Layout> : <Navigate to="/login" />} />
           <Route path="/users" element={user ? <Layout><UsersPage /></Layout> : <Navigate to="/login" />} />
+          <Route path="/eosi" element={user ? <Layout><EOSIDashboard /></Layout> : <Navigate to="/login" />} />
           
           {/* Catch all route */}
           <Route path="*" element={<Navigate to={user ? "/dashboard" : "/"} />} />
