@@ -51,12 +51,30 @@ const ScorecardPage = () => {
     try {
       setLoading(true);
       setError(null);
-      const data = await scorecardService.getScorecard();
-      setMetrics(data.metrics || []);
-      setWeeklyScores(data.weeklyScores || {});
+      const response = await scorecardService.getScorecard();
+      
+      // Handle placeholder response from backend
+      if (response && response.message && response.message.includes('coming soon')) {
+        setMetrics([]);
+        setWeeklyScores({});
+      } else if (response && response.data) {
+        setMetrics(response.data.metrics || []);
+        setWeeklyScores(response.data.weeklyScores || {});
+      } else if (response) {
+        setMetrics(response.metrics || []);
+        setWeeklyScores(response.weeklyScores || {});
+      } else {
+        setMetrics([]);
+        setWeeklyScores({});
+      }
     } catch (error) {
       console.error('Failed to fetch scorecard:', error);
-      setError('Failed to load scorecard data');
+      // Don't show error for placeholder response
+      if (!error.response || error.response.status !== 304) {
+        setError('Scorecard feature is coming soon');
+      }
+      setMetrics([]);
+      setWeeklyScores({});
     } finally {
       setLoading(false);
     }
@@ -89,14 +107,19 @@ const ScorecardPage = () => {
       setSaving(true);
       setError(null);
       
+      // For now, just add to local state since backend is not implemented
       if (editingMetric) {
-        const updatedMetric = await scorecardService.updateMetric(editingMetric.id, metricForm);
-        setMetrics(prev => prev.map(m => m.id === updatedMetric.id ? updatedMetric : m));
-        setSuccess('Metric updated successfully');
+        // Simulate update
+        setMetrics(prev => prev.map(m => m.id === editingMetric.id ? { ...editingMetric, ...metricForm } : m));
+        setSuccess('Metric updated locally (backend coming soon)');
       } else {
-        const newMetric = await scorecardService.createMetric(metricForm);
+        // Simulate create with temporary ID
+        const newMetric = {
+          id: `temp-${Date.now()}`,
+          ...metricForm
+        };
         setMetrics(prev => [...prev, newMetric]);
-        setSuccess('Metric added successfully');
+        setSuccess('Metric added locally (backend coming soon)');
       }
       
       setShowMetricDialog(false);
@@ -107,7 +130,7 @@ const ScorecardPage = () => {
         type: 'weekly'
       });
     } catch (error) {
-      setError('Failed to save metric');
+      setError('Scorecard backend is coming soon');
     } finally {
       setSaving(false);
     }
@@ -119,11 +142,11 @@ const ScorecardPage = () => {
     try {
       setSaving(true);
       setError(null);
-      await scorecardService.deleteMetric(metricId);
+      // For now, just remove from local state since backend is not implemented
       setMetrics(prev => prev.filter(m => m.id !== metricId));
-      setSuccess('Metric deleted successfully');
+      setSuccess('Metric deleted locally (backend coming soon)');
     } catch (error) {
-      setError('Failed to delete metric');
+      setError('Scorecard backend is coming soon');
     } finally {
       setSaving(false);
     }
@@ -137,8 +160,8 @@ const ScorecardPage = () => {
     try {
       setSaving(true);
       setError(null);
-      await scorecardService.updateScore(metricId, week, value);
       
+      // For now, just update local state since backend is not implemented
       setWeeklyScores(prev => ({
         ...prev,
         [metricId]: {
@@ -148,9 +171,9 @@ const ScorecardPage = () => {
       }));
       
       setEditingScore(null);
-      setSuccess('Score updated successfully');
+      setSuccess('Score updated locally (backend coming soon)');
     } catch (error) {
-      setError('Failed to update score');
+      setError('Scorecard backend is coming soon');
     } finally {
       setSaving(false);
     }

@@ -19,7 +19,11 @@ export const scorecardService = {
   // Get complete scorecard with metrics and scores
   getScorecard: async () => {
     const response = await axios.get(buildUrl());
-    return response.data.data;
+    // Handle different response formats
+    if (response.data && response.data.data) {
+      return response.data.data;
+    }
+    return response.data || {};
   },
 
   // Create a new metric
