@@ -38,6 +38,8 @@ const BusinessBlueprintPage = () => {
     coreValues: [],
     coreFocus: {
       purpose: '',
+      cause: '',
+      passion: '',
       niche: '',
       hedgehogType: 'purpose'
     },
@@ -78,6 +80,8 @@ const BusinessBlueprintPage = () => {
         coreValues: data.coreValues || [],
         coreFocus: {
           purpose: data.coreFocus?.purpose || '',
+          cause: data.coreFocus?.cause || '',
+          passion: data.coreFocus?.passion || '',
           niche: data.coreFocus?.niche || '',
           hedgehogType: data.coreFocus?.hedgehogType || 'purpose'
         },
@@ -333,16 +337,19 @@ const BusinessBlueprintPage = () => {
               </div>
 
               <div>
-                <Label htmlFor="purpose">
+                <Label htmlFor="hedgehog-description">
                   {blueprintData.coreFocus.hedgehogType === 'purpose' ? 'Purpose' : 
                    blueprintData.coreFocus.hedgehogType === 'cause' ? 'Cause' : 'Passion'}
                 </Label>
                 <Textarea
-                  id="purpose"
-                  value={blueprintData.coreFocus.purpose}
+                  id="hedgehog-description"
+                  value={blueprintData.coreFocus[blueprintData.coreFocus.hedgehogType]}
                   onChange={(e) => setBlueprintData(prev => ({
                     ...prev,
-                    coreFocus: { ...prev.coreFocus, purpose: e.target.value }
+                    coreFocus: { 
+                      ...prev.coreFocus, 
+                      [prev.coreFocus.hedgehogType]: e.target.value 
+                    }
                   }))}
                   placeholder={`Enter your ${blueprintData.coreFocus.hedgehogType}...`}
                 />
