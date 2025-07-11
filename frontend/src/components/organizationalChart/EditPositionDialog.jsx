@@ -35,6 +35,7 @@ const EditPositionDialog = ({ open, onClose, onSave, position, skills }) => {
 
   useEffect(() => {
     if (position) {
+      console.log('EditPositionDialog received position:', position.title, 'ID:', position.id, 'Full position:', position);
       setFormData({
         title: position.title || '',
         positionType: position.position_type || 'individual_contributor',

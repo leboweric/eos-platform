@@ -21,6 +21,21 @@ const VisualOrgChart = ({ positions, onEdit, onAddPosition, onEditPosition, canE
   useEffect(() => {
     const allNodeIds = getAllNodeIds(positions);
     setExpandedNodes(new Set(allNodeIds));
+    
+    // Debug: Check for duplicate IDs
+    const idCounts = {};
+    const checkDuplicates = (nodes) => {
+      nodes.forEach(node => {
+        idCounts[node.id] = (idCounts[node.id] || 0) + 1;
+        if (node.children) checkDuplicates(node.children);
+      });
+    };
+    checkDuplicates(positions);
+    
+    const duplicates = Object.entries(idCounts).filter(([id, count]) => count > 1);
+    if (duplicates.length > 0) {
+      console.warn('Duplicate position IDs found:', duplicates);
+    }
   }, [positions]);
 
   const getAllNodeIds = (nodes) => {
@@ -127,6 +142,22 @@ const VisualOrgChart = ({ positions, onEdit, onAddPosition, onEditPosition, canE
 const OrgNode = ({ position, isExpanded, onToggle, expandedNodes, toggleNode, onAddPosition, onEditPosition, canEdit, level }) => {
   const hasChildren = position.children && position.children.length > 0;
   const isVacant = !position.holder_id;
+  
+  
+  // Create handler functions that capture the current position
+  const handleEditClick = (e) => {
+    e.stopPropagation();
+    if (canEdit) {
+      console.log('handleEditClick - Position:', position.title, 'ID:', position.id, 'Full position:', position);
+      onEditPosition(position);
+    }
+  };
+  
+  const handleAddClick = (e) => {
+    e.stopPropagation();
+    console.log('handleAddClick - Position:', position.title, 'ID:', position.id);
+    onAddPosition(position);
+  };
 
   const getUserInitials = () => {
     if (position.first_name && position.last_name) {
@@ -155,7 +186,9 @@ const OrgNode = ({ position, isExpanded, onToggle, expandedNodes, toggleNode, on
       <Card 
         className={`bg-white p-6 shadow-md hover:shadow-lg transition-shadow relative ${canEdit ? 'cursor-pointer' : ''}`}
         style={{ minWidth: '320px', maxWidth: '400px' }}
-        onClick={() => canEdit && onEditPosition(position)}
+        onClick={handleEditClick}
+        data-position-id={position.id}
+        data-position-title={position.title}
       >
         {/* Header */}
         <div className="flex items-center justify-between mb-4">
@@ -213,10 +246,7 @@ const OrgNode = ({ position, isExpanded, onToggle, expandedNodes, toggleNode, on
           <Button
             variant="ghost"
             size="sm"
-            onClick={(e) => {
-              e.stopPropagation();
-              onAddPosition(position);
-            }}
+            onClick={handleAddClick}
             className="absolute bottom-2 right-2 p-1"
           >
             <Plus className="h-4 w-4" />

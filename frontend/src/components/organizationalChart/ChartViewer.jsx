@@ -54,6 +54,7 @@ const ChartViewer = ({ chartId, onEdit }) => {
   };
 
   const handleEditPosition = (position) => {
+    console.log('handleEditPosition called with:', position.title, 'ID:', position.id, 'Full position:', position);
     setEditingPosition(position);
     setShowEditDialog(true);
   };
@@ -226,6 +227,7 @@ const ChartViewer = ({ chartId, onEdit }) => {
       {/* Edit Position Dialog */}
       {showEditDialog && editingPosition && (
         <EditPositionDialog
+          key={editingPosition.id} // Add key to force re-render with new position
           open={showEditDialog}
           onClose={() => {
             setShowEditDialog(false);
