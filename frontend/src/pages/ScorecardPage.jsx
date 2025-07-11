@@ -298,7 +298,8 @@ const ScorecardPage = () => {
                                   <Input
                                     type="number"
                                     className="w-16 h-8 text-center"
-                                    defaultValue={score || ''}
+                                    defaultValue={score ? Math.round(parseFloat(score)) : ''}
+                                    step="1"
                                     onKeyDown={(e) => {
                                       if (e.key === 'Enter') {
                                         handleScoreSave(metric.id, weekDate, e.target.value);
@@ -338,7 +339,7 @@ const ScorecardPage = () => {
                                   }`}
                                   onClick={() => handleScoreEdit(metric.id, weekDate)}
                                 >
-                                  {score || '-'}
+                                  {score ? Math.round(parseFloat(score)) : '-'}
                                 </div>
                               )}
                             </td>
@@ -360,7 +361,7 @@ const ScorecardPage = () => {
                               <span className={`px-2 py-1 rounded ${
                                 isGoalMet ? 'text-green-800' : 'text-red-800'
                               }`}>
-                                {average.toFixed(1)}
+                                {Math.round(average)}
                               </span>
                             );
                           })()}
@@ -434,6 +435,7 @@ const ScorecardPage = () => {
                 <Input
                   id="metric-goal"
                   type="number"
+                  step="1"
                   value={metricForm.goal}
                   onChange={(e) => setMetricForm(prev => ({ ...prev, goal: e.target.value }))}
                   placeholder="e.g., 50, 95"
