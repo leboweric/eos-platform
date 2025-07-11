@@ -54,13 +54,32 @@ const ChartViewer = ({ chartId, onEdit }) => {
   };
 
   const handleEditPosition = (position) => {
-    console.log('ChartViewer handleEditPosition called with:', position.title, 'ID:', position.id, 'Full position:', position);
-    // Ensure we're setting a fresh copy of the position
+    console.log('ChartViewer handleEditPosition called with:', position.title, 'ID:', position.id);
+    console.log('Position has children?', position.children ? 'YES - THIS IS THE BUG!' : 'No');
+    
+    // CRITICAL: Ensure we're setting a fresh copy WITHOUT children
     const positionToEdit = {
-      ...position,
+      id: position.id,
+      chart_id: position.chart_id,
+      parent_position_id: position.parent_position_id,
+      title: position.title,
+      description: position.description,
+      level: position.level,
+      position_type: position.position_type,
+      holder_id: position.holder_id,
+      holder_user_id: position.holder_user_id,
+      external_name: position.external_name,
+      external_email: position.external_email,
+      start_date: position.start_date,
+      is_primary: position.is_primary,
+      first_name: position.first_name,
+      last_name: position.last_name,
+      user_email: position.user_email,
+      skills: position.skills ? [...position.skills] : [],
       responsibilities: position.responsibilities ? [...position.responsibilities] : []
+      // EXPLICITLY NOT including children
     };
-    console.log('Setting editingPosition to:', positionToEdit);
+    console.log('Setting editingPosition to clean copy:', positionToEdit);
     setEditingPosition(positionToEdit);
     setShowEditDialog(true);
   };

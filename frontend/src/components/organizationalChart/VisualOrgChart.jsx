@@ -16,32 +16,60 @@ const VisualOrgChart = ({ positions, onEdit, onAddPosition, onEditPosition, canE
   const [expandedNodes, setExpandedNodes] = useState(new Set());
   const [searchQuery, setSearchQuery] = useState('');
   const containerRef = useRef(null);
+  
+  // Create a flat map of all positions for quick lookup
+  const positionMap = useRef({});
 
   // Expand all nodes by default
   useEffect(() => {
     const allNodeIds = getAllNodeIds(positions);
     setExpandedNodes(new Set(allNodeIds));
     
-    // Debug: Check for duplicate IDs and log position structure
-    console.log('Initial positions structure:', JSON.stringify(positions, null, 2));
+    // Build position map and check for duplicates
+    console.log('=== Building Position Map ===');
+    const newPositionMap = {};
     const idCounts = {};
-    const positionMap = {};
-    const checkDuplicates = (nodes, parentTitle = 'root') => {
+    
+    const buildMap = (nodes, parentTitle = 'root') => {
       nodes.forEach(node => {
+        // Create a clean copy without children for the map
+        const cleanNode = {
+          id: node.id,
+          chart_id: node.chart_id,
+          parent_position_id: node.parent_position_id,
+          title: node.title,
+          description: node.description,
+          level: node.level,
+          position_type: node.position_type,
+          holder_id: node.holder_id,
+          holder_user_id: node.holder_user_id,
+          external_name: node.external_name,
+          external_email: node.external_email,
+          start_date: node.start_date,
+          is_primary: node.is_primary,
+          first_name: node.first_name,
+          last_name: node.last_name,
+          user_email: node.user_email,
+          skills: node.skills,
+          responsibilities: node.responsibilities
+        };
+        
+        newPositionMap[node.id] = cleanNode;
         idCounts[node.id] = (idCounts[node.id] || 0) + 1;
-        positionMap[node.id] = { title: node.title, parent: parentTitle };
-        if (node.children) checkDuplicates(node.children, node.title);
+        console.log(`Mapped: ${node.title} (ID: ${node.id}) under ${parentTitle}`);
+        
+        if (node.children) buildMap(node.children, node.title);
       });
     };
-    checkDuplicates(positions);
+    
+    buildMap(positions);
+    positionMap.current = newPositionMap;
     
     const duplicates = Object.entries(idCounts).filter(([id, count]) => count > 1);
     if (duplicates.length > 0) {
-      console.error('CRITICAL: Duplicate position IDs found:', duplicates);
-      console.error('Position map:', positionMap);
-    } else {
-      console.log('No duplicate IDs found. Position map:', positionMap);
+      console.error('⚠️ CRITICAL: Duplicate position IDs found:', duplicates);
     }
+    console.log('=== Position Map Complete ===');
   }, [positions]);
 
   const getAllNodeIds = (nodes) => {
@@ -163,10 +191,11 @@ const OrgNode = ({ position, isExpanded, onToggle, expandedNodes, toggleNode, on
     console.log('Clicked element data-position-title:', clickedCard.getAttribute('data-position-title'));
     console.log('Clicked element data-level:', clickedCard.getAttribute('data-level'));
     console.log('Position object - Title:', position.title, 'ID:', position.id, 'Level:', level);
+    console.log('Has children?', position.children ? `Yes (${position.children.length})` : 'No');
     console.log('=========================');
     
     if (canEdit) {
-      // Create a clean copy without children to avoid circular references
+      // CRITICAL: Create a clean copy WITHOUT children to avoid any references
       const positionCopy = {
         id: position.id,
         chart_id: position.chart_id,
