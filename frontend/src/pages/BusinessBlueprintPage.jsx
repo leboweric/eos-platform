@@ -268,52 +268,62 @@ const BusinessBlueprintPage = () => {
   }
 
   return (
-    <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-3xl font-bold">Business Blueprint</h1>
-          <p className="text-gray-600 mt-2">Define your organization's vision and strategy</p>
+    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100">
+      <div className="max-w-7xl mx-auto p-6 space-y-6">
+        <div className="flex items-center justify-between mb-8">
+          <div>
+            <h1 className="text-4xl font-bold bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent">
+              Vision/Traction Organizer™
+            </h1>
+            <p className="text-gray-600 mt-2 text-lg">Define your organization's vision and strategy for success</p>
+          </div>
         </div>
-      </div>
 
-      {error && (
-        <Alert className="border-red-200 bg-red-50">
-          <AlertCircle className="h-4 w-4" />
-          <AlertDescription>{error}</AlertDescription>
-        </Alert>
-      )}
+        {error && (
+          <Alert className="border-red-200 bg-red-50">
+            <AlertCircle className="h-4 w-4 text-red-600" />
+            <AlertDescription className="text-red-800">{error}</AlertDescription>
+          </Alert>
+        )}
 
-      {success && (
-        <Alert className="border-green-200 bg-green-50">
-          <AlertDescription>{success}</AlertDescription>
-        </Alert>
-      )}
+        {success && (
+          <Alert className="border-green-200 bg-green-50">
+            <AlertCircle className="h-4 w-4 text-green-600" />
+            <AlertDescription className="text-green-800">{success}</AlertDescription>
+          </Alert>
+        )}
 
-      <Tabs value={activeTab} onValueChange={setActiveTab}>
-        <TabsList className="grid w-full grid-cols-2">
-          <TabsTrigger value="vision">Vision</TabsTrigger>
-          <TabsTrigger value="execution">Execution</TabsTrigger>
-        </TabsList>
+        <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
+          <TabsList className="grid w-full grid-cols-2 h-14 bg-white shadow-sm">
+            <TabsTrigger value="vision" className="data-[state=active]:bg-blue-500 data-[state=active]:text-white text-lg font-medium">
+              <Target className="mr-2 h-5 w-5" />
+              Vision
+            </TabsTrigger>
+            <TabsTrigger value="execution" className="data-[state=active]:bg-green-500 data-[state=active]:text-white text-lg font-medium">
+              <TrendingUp className="mr-2 h-5 w-5" />
+              Execution
+            </TabsTrigger>
+          </TabsList>
 
         <TabsContent value="vision" className="space-y-6">
           {/* Core Values */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center">
-                <Users className="mr-2 h-5 w-5" />
+          <Card className="shadow-lg border-0 overflow-hidden">
+            <CardHeader className="bg-gradient-to-r from-purple-500 to-pink-500 text-white">
+              <CardTitle className="flex items-center text-xl">
+                <Users className="mr-2 h-6 w-6" />
                 Core Values
               </CardTitle>
-              <CardDescription>
+              <CardDescription className="text-purple-100">
                 3-7 rules that define your culture and Right People
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
               {blueprintData.coreValues.map((value) => (
-                <div key={value.id} className="flex items-start justify-between p-3 border rounded-lg">
+                <div key={value.id} className="flex items-start justify-between p-4 bg-purple-50 border border-purple-200 rounded-lg hover:shadow-md transition-shadow">
                   <div className="flex-1">
-                    <h4 className="font-semibold">{value.value}</h4>
+                    <h4 className="font-semibold text-purple-900">{value.value}</h4>
                     {value.description && (
-                      <p className="text-sm text-gray-600 mt-1">{value.description}</p>
+                      <p className="text-sm text-purple-700 mt-1">{value.description}</p>
                     )}
                   </div>
                   <div className="flex space-x-2">
@@ -336,7 +346,7 @@ const BusinessBlueprintPage = () => {
               ))}
 
               <div className="pt-4 border-t">
-                <Button onClick={handleAddCoreValue} disabled={saving}>
+                <Button onClick={handleAddCoreValue} disabled={saving} className="bg-purple-600 hover:bg-purple-700 text-white">
                   <Plus className="mr-2 h-4 w-4" />
                   Add Core Value
                 </Button>
@@ -345,13 +355,13 @@ const BusinessBlueprintPage = () => {
           </Card>
 
           {/* Core Focus (Hedgehog) */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center">
-                <Target className="mr-2 h-5 w-5" />
+          <Card className="shadow-lg border-0 overflow-hidden">
+            <CardHeader className="bg-gradient-to-r from-orange-500 to-red-500 text-white">
+              <CardTitle className="flex items-center text-xl">
+                <Target className="mr-2 h-6 w-6" />
                 Hedgehog
               </CardTitle>
-              <CardDescription>
+              <CardDescription className="text-orange-100">
                 Your organization's core focus - what drives you
               </CardDescription>
             </CardHeader>
@@ -413,7 +423,7 @@ const BusinessBlueprintPage = () => {
                 />
               </div>
 
-              <Button onClick={handleSaveCoreFocus} disabled={saving}>
+              <Button onClick={handleSaveCoreFocus} disabled={saving} className="bg-orange-600 hover:bg-orange-700 text-white">
                 {saving ? (
                   <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                 ) : (
@@ -425,13 +435,13 @@ const BusinessBlueprintPage = () => {
           </Card>
 
           {/* BHAG (Big Hairy Audacious Goal) */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center">
-                <TrendingUp className="mr-2 h-5 w-5" />
+          <Card className="shadow-lg border-0 overflow-hidden">
+            <CardHeader className="bg-gradient-to-r from-blue-500 to-cyan-500 text-white">
+              <CardTitle className="flex items-center text-xl">
+                <TrendingUp className="mr-2 h-6 w-6" />
                 Big Hairy Audacious Goal (BHAG)
               </CardTitle>
-              <CardDescription>
+              <CardDescription className="text-blue-100">
                 Your 10+ year ambitious goal
               </CardDescription>
             </CardHeader>
@@ -476,7 +486,7 @@ const BusinessBlueprintPage = () => {
                 />
               </div>
 
-              <Button onClick={handleSaveBHAG} disabled={saving}>
+              <Button onClick={handleSaveBHAG} disabled={saving} className="bg-blue-600 hover:bg-blue-700 text-white">
                 {saving ? (
                   <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                 ) : (
@@ -488,13 +498,13 @@ const BusinessBlueprintPage = () => {
           </Card>
 
           {/* Marketing Strategy */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center">
-                <Lightbulb className="mr-2 h-5 w-5" />
+          <Card className="shadow-lg border-0 overflow-hidden">
+            <CardHeader className="bg-gradient-to-r from-green-500 to-teal-500 text-white">
+              <CardTitle className="flex items-center text-xl">
+                <Lightbulb className="mr-2 h-6 w-6" />
                 Marketing Strategy
               </CardTitle>
-              <CardDescription>
+              <CardDescription className="text-green-100">
                 Who you want to talk to and what you say when you do
               </CardDescription>
             </CardHeader>
@@ -566,7 +576,7 @@ const BusinessBlueprintPage = () => {
                 />
               </div>
 
-              <Button onClick={handleSaveMarketingStrategy} disabled={saving}>
+              <Button onClick={handleSaveMarketingStrategy} disabled={saving} className="bg-green-600 hover:bg-green-700 text-white">
                 {saving ? (
                   <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                 ) : (
@@ -728,6 +738,7 @@ const BusinessBlueprintPage = () => {
         data={blueprintData.oneYearPlan}
         onSave={handleSaveOneYearPlan}
       />
+      </div>
     </div>
   );
 };
