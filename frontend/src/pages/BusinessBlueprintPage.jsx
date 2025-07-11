@@ -13,6 +13,7 @@ import { Switch } from '@/components/ui/switch';
 import CoreValueDialog from '../components/vto/CoreValueDialog';
 import ThreeYearPictureDialog from '../components/vto/ThreeYearPictureDialog';
 import OneYearPlanDialog from '../components/vto/OneYearPlanDialog';
+import QuarterlyPrioritiesDialog from '../components/vto/QuarterlyPrioritiesDialog';
 import { 
   Target, 
   Save,
@@ -59,7 +60,8 @@ const BusinessBlueprintPage = () => {
       guaranteeExists: false
     },
     threeYearPicture: null,
-    oneYearPlan: null
+    oneYearPlan: null,
+    quarterlyPriorities: null
   });
 
   // New core value form
@@ -106,7 +108,8 @@ const BusinessBlueprintPage = () => {
           guaranteeExists: data.marketingStrategy?.guarantee_exists || false
         },
         threeYearPicture: data.threeYearPicture,
-        oneYearPlan: data.oneYearPlan
+        oneYearPlan: data.oneYearPlan,
+        quarterlyPriorities: data.quarterlyPriorities
       });
     } catch (error) {
       console.error('Failed to fetch business blueprint:', error);
@@ -253,6 +256,25 @@ const BusinessBlueprintPage = () => {
       setSuccess('1-Year Plan updated successfully');
     } catch (error) {
       setError('Failed to update 1-Year Plan');
+      throw error;
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  // Quarterly Priorities handler
+  const handleSaveQuarterlyPriorities = async (data) => {
+    try {
+      setSaving(true);
+      setError(null);
+      await businessBlueprintService.updateQuarterlyPriorities(data);
+      setBlueprintData(prev => ({
+        ...prev,
+        quarterlyPriorities: data
+      }));
+      setSuccess('Quarterly Priorities updated successfully');
+    } catch (error) {
+      setError('Failed to update Quarterly Priorities');
       throw error;
     } finally {
       setSaving(false);
@@ -699,9 +721,10 @@ const BusinessBlueprintPage = () => {
                   <CardDescription>Your priorities for this quarter</CardDescription>
                 </div>
                 <Button 
-                  variant="outline" 
+                  variant="secondary" 
                   size="sm"
-                  onClick={() => alert('Quarterly Priorities editing coming soon!')}
+                  onClick={() => setShowQuarterlyDialog(true)}
+                  className="bg-white text-amber-600 hover:bg-amber-50"
                 >
                   <Edit className="h-4 w-4 mr-2" />
                   Edit
@@ -709,7 +732,45 @@ const BusinessBlueprintPage = () => {
               </div>
             </CardHeader>
             <CardContent>
-              <p className="text-gray-500">Click edit to define your quarterly priorities</p>
+              {blueprintData.quarterlyPriorities ? (
+                <div className="space-y-4">
+                  <div className="grid grid-cols-2 gap-4">
+                    {blueprintData.quarterlyPriorities.revenue && (
+                      <div className="p-4 bg-amber-50 rounded-lg">
+                        <p className="text-sm font-medium text-amber-600">Quarterly Revenue Target</p>
+                        <p className="text-xl font-semibold text-amber-900">{blueprintData.quarterlyPriorities.revenue}</p>
+                      </div>
+                    )}
+                    {blueprintData.quarterlyPriorities.profit && (
+                      <div className="p-4 bg-orange-50 rounded-lg">
+                        <p className="text-sm font-medium text-orange-600">Quarterly Profit Target</p>
+                        <p className="text-xl font-semibold text-orange-900">{blueprintData.quarterlyPriorities.profit}</p>
+                      </div>
+                    )}
+                  </div>
+                  {blueprintData.quarterlyPriorities.priorities && blueprintData.quarterlyPriorities.priorities.length > 0 && (
+                    <div>
+                      <p className="text-sm font-medium text-gray-700 mb-2">Priorities ({blueprintData.quarterlyPriorities.quarter} {blueprintData.quarterlyPriorities.year})</p>
+                      <ol className="space-y-2">
+                        {blueprintData.quarterlyPriorities.priorities.map((priority, index) => (
+                          <li key={priority.id || index} className="flex items-start">
+                            <span className="text-amber-600 font-medium mr-2">{index + 1}.</span>
+                            <span className="text-gray-700">{priority.text}</span>
+                          </li>
+                        ))}
+                      </ol>
+                    </div>
+                  )}
+                  {blueprintData.quarterlyPriorities.rocks && (
+                    <div>
+                      <p className="text-sm font-medium text-gray-700">Rocks</p>
+                      <p className="whitespace-pre-wrap text-gray-600">{blueprintData.quarterlyPriorities.rocks}</p>
+                    </div>
+                  )}
+                </div>
+              ) : (
+                <p className="text-amber-700 text-center py-8">Click edit to define your quarterly priorities</p>
+              )}
             </CardContent>
           </Card>
         </TabsContent>
@@ -737,6 +798,14 @@ const BusinessBlueprintPage = () => {
         onOpenChange={setShowOneYearDialog}
         data={blueprintData.oneYearPlan}
         onSave={handleSaveOneYearPlan}
+      />
+
+      {/* Quarterly Priorities Dialog */}
+      <QuarterlyPrioritiesDialog
+        open={showQuarterlyDialog}
+        onOpenChange={setShowQuarterlyDialog}
+        data={blueprintData.quarterlyPriorities}
+        onSave={handleSaveQuarterlyPriorities}
       />
       </div>
     </div>

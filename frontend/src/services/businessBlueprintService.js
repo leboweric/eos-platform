@@ -64,5 +64,11 @@ export const businessBlueprintService = {
   updateOneYearPlan: async (plan) => {
     const response = await axios.put(buildUrl('/one-year-plan'), plan);
     return response.data.data;
+  },
+
+  // Quarterly Priorities
+  updateQuarterlyPriorities: async (priorities) => {
+    const response = await axios.put(buildUrl('/quarterly-priorities'), priorities);
+    return response.data.data;
   }
 };
