@@ -285,13 +285,15 @@ const ScorecardPage = () => {
                         </th>
                       );
                     })}
+                    <th className="text-center p-4 font-semibold text-gray-700 min-w-[100px] bg-gray-100">Average</th>
+                    <th className="text-center p-4 font-semibold text-gray-700 min-w-[100px] bg-gray-100">Total</th>
                     <th className="text-center p-4 font-semibold text-gray-700 min-w-[100px]">Actions</th>
                   </tr>
                 </thead>
                 <tbody>
                   {metrics.length === 0 ? (
                     <tr>
-                      <td colSpan={weekLabels.length + 4} className="text-center p-8 text-gray-500">
+                      <td colSpan={weekLabels.length + 6} className="text-center p-8 text-gray-500">
                         No metrics defined. Click "Add Metric" to get started.
                       </td>
                     </tr>
@@ -359,6 +361,45 @@ const ScorecardPage = () => {
                             </td>
                           );
                         })}
+                        {/* Average column */}
+                        <td className="p-4 text-center bg-gray-50 font-semibold">
+                          {(() => {
+                            const scores = weekDates
+                              .map(weekDate => weeklyScores[metric.id]?.[weekDate])
+                              .filter(score => score !== undefined && score !== null && score !== '');
+                            
+                            if (scores.length === 0) return '-';
+                            
+                            const average = scores.reduce((sum, score) => sum + parseFloat(score), 0) / scores.length;
+                            const isGoalMet = average >= parseFloat(metric.goal);
+                            
+                            return (
+                              <span className={`px-2 py-1 rounded ${
+                                isGoalMet ? 'text-green-800' : 'text-red-800'
+                              }`}>
+                                {average.toFixed(1)}
+                              </span>
+                            );
+                          })()}
+                        </td>
+                        {/* Total column */}
+                        <td className="p-4 text-center bg-gray-50 font-semibold">
+                          {(() => {
+                            const scores = weekDates
+                              .map(weekDate => weeklyScores[metric.id]?.[weekDate])
+                              .filter(score => score !== undefined && score !== null && score !== '');
+                            
+                            if (scores.length === 0) return '-';
+                            
+                            const total = scores.reduce((sum, score) => sum + parseFloat(score), 0);
+                            
+                            return (
+                              <span className="text-gray-700">
+                                {total.toFixed(0)}
+                              </span>
+                            );
+                          })()}
+                        </td>
                         <td className="p-4 text-center">
                           <div className="flex justify-center space-x-2">
                             <Button
