@@ -1,4 +1,5 @@
 import express from 'express';
+import { authenticate } from '../middleware/auth.js';
 import {
   getScorecard,
   createMetric,
@@ -7,7 +8,10 @@ import {
   updateScore
 } from '../controllers/scorecardController.js';
 
-const router = express.Router();
+const router = express.Router({ mergeParams: true });
+
+// All routes require authentication
+router.use(authenticate);
 
 // Get complete scorecard
 router.get('/', getScorecard);
