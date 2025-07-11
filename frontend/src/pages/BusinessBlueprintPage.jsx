@@ -64,6 +64,11 @@ const BusinessBlueprintPage = () => {
   const [newCoreValue, setNewCoreValue] = useState({ value: '', description: '' });
   const [editingCoreValue, setEditingCoreValue] = useState(null);
   const [showCoreValueDialog, setShowCoreValueDialog] = useState(false);
+  
+  // Dialog states for planning sections
+  const [showThreeYearDialog, setShowThreeYearDialog] = useState(false);
+  const [showOneYearDialog, setShowOneYearDialog] = useState(false);
+  const [showQuarterlyDialog, setShowQuarterlyDialog] = useState(false);
 
   useEffect(() => {
     fetchBusinessBlueprint();
@@ -541,7 +546,11 @@ const BusinessBlueprintPage = () => {
                   <CardTitle>3-Year Picture</CardTitle>
                   <CardDescription>Your organization's 3-year vision</CardDescription>
                 </div>
-                <Button variant="outline" size="sm">
+                <Button 
+                  variant="outline" 
+                  size="sm"
+                  onClick={() => alert('3-Year Picture editing coming soon!')}
+                >
                   <Edit className="h-4 w-4 mr-2" />
                   Edit
                 </Button>
@@ -559,7 +568,11 @@ const BusinessBlueprintPage = () => {
                   <CardTitle>1-Year Plan</CardTitle>
                   <CardDescription>Your goals for the next year</CardDescription>
                 </div>
-                <Button variant="outline" size="sm">
+                <Button 
+                  variant="outline" 
+                  size="sm"
+                  onClick={() => alert('1-Year Plan editing coming soon!')}
+                >
                   <Edit className="h-4 w-4 mr-2" />
                   Edit
                 </Button>
@@ -577,7 +590,11 @@ const BusinessBlueprintPage = () => {
                   <CardTitle>Quarterly Priorities</CardTitle>
                   <CardDescription>Your priorities for this quarter</CardDescription>
                 </div>
-                <Button variant="outline" size="sm">
+                <Button 
+                  variant="outline" 
+                  size="sm"
+                  onClick={() => alert('Quarterly Priorities editing coming soon!')}
+                >
                   <Edit className="h-4 w-4 mr-2" />
                   Edit
                 </Button>
