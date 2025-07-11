@@ -10,6 +10,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Switch } from '@/components/ui/switch';
+import CoreValueDialog from '../components/vto/CoreValueDialog';
 import { 
   Target, 
   Save,
@@ -20,7 +21,8 @@ import {
   Lightbulb,
   Users,
   TrendingUp,
-  Calendar
+  Calendar,
+  Edit
 } from 'lucide-react';
 
 const BusinessBlueprintPage = () => {
@@ -59,6 +61,7 @@ const BusinessBlueprintPage = () => {
   // New core value form
   const [newCoreValue, setNewCoreValue] = useState({ value: '', description: '' });
   const [editingCoreValue, setEditingCoreValue] = useState(null);
+  const [showCoreValueDialog, setShowCoreValueDialog] = useState(false);
 
   useEffect(() => {
     fetchBusinessBlueprint();
@@ -73,7 +76,11 @@ const BusinessBlueprintPage = () => {
       // Transform API data to component state
       setBlueprintData({
         coreValues: data.coreValues || [],
-        coreFocus: data.coreFocus || { purpose: '', niche: '', hedgehogType: 'purpose' },
+        coreFocus: {
+          purpose: data.coreFocus?.purpose || '',
+          niche: data.coreFocus?.niche || '',
+          hedgehogType: data.coreFocus?.hedgehogType || 'purpose'
+        },
         bhag: {
           description: data.tenYearTarget?.target_description || '',
           year: data.tenYearTarget?.target_year || new Date().getFullYear() + 10,
@@ -99,18 +106,20 @@ const BusinessBlueprintPage = () => {
   };
 
   // Core Values handlers
-  const handleAddCoreValue = async () => {
-    if (!newCoreValue.value.trim()) return;
-    
+  const handleAddCoreValue = () => {
+    setEditingCoreValue(null);
+    setShowCoreValueDialog(true);
+  };
+
+  const handleSaveNewCoreValue = async (newValue) => {
     try {
       setSaving(true);
       setError(null);
-      const savedValue = await businessBlueprintService.upsertCoreValue(newCoreValue);
+      const savedValue = await businessBlueprintService.upsertCoreValue(newValue);
       setBlueprintData(prev => ({
         ...prev,
         coreValues: [...prev.coreValues, savedValue]
       }));
-      setNewCoreValue({ value: '', description: '' });
       setSuccess('Core value added successfully');
     } catch (error) {
       setError('Failed to add core value');
@@ -131,6 +140,29 @@ const BusinessBlueprintPage = () => {
       setSuccess('Core value deleted successfully');
     } catch (error) {
       setError('Failed to delete core value');
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const handleEditCoreValue = (value) => {
+    setEditingCoreValue(value);
+    setShowCoreValueDialog(true);
+  };
+
+  const handleSaveCoreValue = async (updatedValue) => {
+    try {
+      setSaving(true);
+      setError(null);
+      const savedValue = await businessBlueprintService.upsertCoreValue(updatedValue);
+      setBlueprintData(prev => ({
+        ...prev,
+        coreValues: prev.coreValues.map(v => v.id === savedValue.id ? savedValue : v)
+      }));
+      setEditingCoreValue(null);
+      setSuccess('Core value updated successfully');
+    } catch (error) {
+      setError('Failed to update core value');
     } finally {
       setSaving(false);
     }
@@ -211,7 +243,7 @@ const BusinessBlueprintPage = () => {
       <Tabs value={activeTab} onValueChange={setActiveTab}>
         <TabsList className="grid w-full grid-cols-2">
           <TabsTrigger value="vision">Vision</TabsTrigger>
-          <TabsTrigger value="traction">Traction</TabsTrigger>
+          <TabsTrigger value="execution">Execution</TabsTrigger>
         </TabsList>
 
         <TabsContent value="vision" className="space-y-6">
@@ -235,33 +267,28 @@ const BusinessBlueprintPage = () => {
                       <p className="text-sm text-gray-600 mt-1">{value.description}</p>
                     )}
                   </div>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => handleDeleteCoreValue(value.id)}
-                  >
-                    <Trash2 className="h-4 w-4" />
-                  </Button>
+                  <div className="flex space-x-2">
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => handleEditCoreValue(value)}
+                    >
+                      <Edit className="h-4 w-4" />
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => handleDeleteCoreValue(value.id)}
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </Button>
+                  </div>
                 </div>
               ))}
 
-              <div className="space-y-3 pt-4 border-t">
-                <Input
-                  placeholder="Core Value"
-                  value={newCoreValue.value}
-                  onChange={(e) => setNewCoreValue({ ...newCoreValue, value: e.target.value })}
-                />
-                <Textarea
-                  placeholder="Description (optional)"
-                  value={newCoreValue.description}
-                  onChange={(e) => setNewCoreValue({ ...newCoreValue, description: e.target.value })}
-                />
+              <div className="pt-4 border-t">
                 <Button onClick={handleAddCoreValue} disabled={saving}>
-                  {saving ? (
-                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  ) : (
-                    <Plus className="mr-2 h-4 w-4" />
-                  )}
+                  <Plus className="mr-2 h-4 w-4" />
                   Add Core Value
                 </Button>
               </div>
@@ -499,38 +526,70 @@ const BusinessBlueprintPage = () => {
           </Card>
         </TabsContent>
 
-        <TabsContent value="traction" className="space-y-6">
+        <TabsContent value="execution" className="space-y-6">
           <Card>
             <CardHeader>
-              <CardTitle>3-Year Picture</CardTitle>
-              <CardDescription>Your organization's 3-year vision</CardDescription>
+              <div className="flex items-center justify-between">
+                <div>
+                  <CardTitle>3-Year Picture</CardTitle>
+                  <CardDescription>Your organization's 3-year vision</CardDescription>
+                </div>
+                <Button variant="outline" size="sm">
+                  <Edit className="h-4 w-4 mr-2" />
+                  Edit
+                </Button>
+              </div>
             </CardHeader>
             <CardContent>
-              <p className="text-gray-500">Coming soon...</p>
+              <p className="text-gray-500">Click edit to define your 3-year vision</p>
             </CardContent>
           </Card>
 
           <Card>
             <CardHeader>
-              <CardTitle>1-Year Plan</CardTitle>
-              <CardDescription>Your goals for the next year</CardDescription>
+              <div className="flex items-center justify-between">
+                <div>
+                  <CardTitle>1-Year Plan</CardTitle>
+                  <CardDescription>Your goals for the next year</CardDescription>
+                </div>
+                <Button variant="outline" size="sm">
+                  <Edit className="h-4 w-4 mr-2" />
+                  Edit
+                </Button>
+              </div>
             </CardHeader>
             <CardContent>
-              <p className="text-gray-500">Coming soon...</p>
+              <p className="text-gray-500">Click edit to define your 1-year plan</p>
             </CardContent>
           </Card>
 
           <Card>
             <CardHeader>
-              <CardTitle>Quarterly Priorities</CardTitle>
-              <CardDescription>Your priorities for this quarter</CardDescription>
+              <div className="flex items-center justify-between">
+                <div>
+                  <CardTitle>Quarterly Priorities</CardTitle>
+                  <CardDescription>Your priorities for this quarter</CardDescription>
+                </div>
+                <Button variant="outline" size="sm">
+                  <Edit className="h-4 w-4 mr-2" />
+                  Edit
+                </Button>
+              </div>
             </CardHeader>
             <CardContent>
-              <p className="text-gray-500">Coming soon...</p>
+              <p className="text-gray-500">Click edit to define your quarterly priorities</p>
             </CardContent>
           </Card>
         </TabsContent>
       </Tabs>
+
+      {/* Core Value Edit Dialog */}
+      <CoreValueDialog
+        open={showCoreValueDialog}
+        onOpenChange={setShowCoreValueDialog}
+        value={editingCoreValue}
+        onSave={editingCoreValue ? handleSaveCoreValue : handleSaveNewCoreValue}
+      />
     </div>
   );
 };
