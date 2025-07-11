@@ -54,7 +54,8 @@ const ChartViewer = ({ chartId, onEdit }) => {
   };
 
   const handleEditPosition = (position) => {
-    console.log('ChartViewer handleEditPosition called with:', position.title, 'ID:', position.id);
+    console.log('ChartViewer handleEditPosition v2 called with:', position.title, 'ID:', position.id);
+    console.log('Timestamp:', new Date().toISOString());
     console.log('Position has children?', position.children ? 'YES - THIS IS THE BUG!' : 'No');
     
     // CRITICAL: Ensure we're setting a fresh copy WITHOUT children

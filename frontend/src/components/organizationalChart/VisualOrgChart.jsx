@@ -121,8 +121,14 @@ const VisualOrgChart = ({ positions, onEdit, onAddPosition, onEditPosition, canE
 
   return (
     <div className="w-full">
+      {/* Version indicator for cache debugging */}
+      <div className="text-xs text-red-600 mb-2 bg-yellow-100 p-2 rounded">
+        🔴 v3 - If you see this, new code is loaded! Time: {new Date().toLocaleTimeString()}
+      </div>
+      
       {/* Header */}
       <div className="flex items-center justify-between mb-8">
+        <div className="text-xs text-gray-400 mr-4">v2</div>
         <div className="relative flex-1 max-w-md">
           <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
           <Input
@@ -186,13 +192,17 @@ const OrgNode = ({ position, isExpanded, onToggle, expandedNodes, toggleNode, on
     
     // Log the actual clicked element to debug
     const clickedCard = e.currentTarget;
-    console.log('=== CLICK EVENT DEBUG ===');
-    console.log('Clicked element data-position-id:', clickedCard.getAttribute('data-position-id'));
-    console.log('Clicked element data-position-title:', clickedCard.getAttribute('data-position-title'));
-    console.log('Clicked element data-level:', clickedCard.getAttribute('data-level'));
-    console.log('Position object - Title:', position.title, 'ID:', position.id, 'Level:', level);
-    console.log('Has children?', position.children ? `Yes (${position.children.length})` : 'No');
-    console.log('=========================');
+    // TEMPORARY: Alert to ensure new code is running
+    alert(`CLICKED v3: ${position.title} (Level ${level})\nIf you see this, new code is loaded!`);
+    
+    console.log('\n🔴 === CLICK EVENT DEBUG v3 ===');
+    console.log('🕐 Timestamp:', new Date().toISOString());
+    console.log('📍 Clicked element data-position-id:', clickedCard.getAttribute('data-position-id'));
+    console.log('📍 Clicked element data-position-title:', clickedCard.getAttribute('data-position-title'));
+    console.log('📍 Clicked element data-level:', clickedCard.getAttribute('data-level'));
+    console.log('📦 Position object - Title:', position.title, 'ID:', position.id, 'Level:', level);
+    console.log('👶 Has children?', position.children ? `YES!! (${position.children.length} children) - THIS IS THE BUG!` : '✅ No children');
+    console.log('🔴 ============================\n');
     
     if (canEdit) {
       // CRITICAL: Create a clean copy WITHOUT children to avoid any references
