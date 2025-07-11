@@ -54,8 +54,14 @@ const ChartViewer = ({ chartId, onEdit }) => {
   };
 
   const handleEditPosition = (position) => {
-    console.log('handleEditPosition called with:', position.title, 'ID:', position.id, 'Full position:', position);
-    setEditingPosition(position);
+    console.log('ChartViewer handleEditPosition called with:', position.title, 'ID:', position.id, 'Full position:', position);
+    // Ensure we're setting a fresh copy of the position
+    const positionToEdit = {
+      ...position,
+      responsibilities: position.responsibilities ? [...position.responsibilities] : []
+    };
+    console.log('Setting editingPosition to:', positionToEdit);
+    setEditingPosition(positionToEdit);
     setShowEditDialog(true);
   };
 
@@ -227,9 +233,10 @@ const ChartViewer = ({ chartId, onEdit }) => {
       {/* Edit Position Dialog */}
       {showEditDialog && editingPosition && (
         <EditPositionDialog
-          key={editingPosition.id} // Add key to force re-render with new position
+          key={`edit-${editingPosition.id}-${Date.now()}`} // Add timestamp to force re-render
           open={showEditDialog}
           onClose={() => {
+            console.log('Closing edit dialog');
             setShowEditDialog(false);
             setEditingPosition(null);
           }}

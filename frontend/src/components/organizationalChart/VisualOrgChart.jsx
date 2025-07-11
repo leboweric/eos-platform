@@ -22,19 +22,25 @@ const VisualOrgChart = ({ positions, onEdit, onAddPosition, onEditPosition, canE
     const allNodeIds = getAllNodeIds(positions);
     setExpandedNodes(new Set(allNodeIds));
     
-    // Debug: Check for duplicate IDs
+    // Debug: Check for duplicate IDs and log position structure
+    console.log('Initial positions structure:', JSON.stringify(positions, null, 2));
     const idCounts = {};
-    const checkDuplicates = (nodes) => {
+    const positionMap = {};
+    const checkDuplicates = (nodes, parentTitle = 'root') => {
       nodes.forEach(node => {
         idCounts[node.id] = (idCounts[node.id] || 0) + 1;
-        if (node.children) checkDuplicates(node.children);
+        positionMap[node.id] = { title: node.title, parent: parentTitle };
+        if (node.children) checkDuplicates(node.children, node.title);
       });
     };
     checkDuplicates(positions);
     
     const duplicates = Object.entries(idCounts).filter(([id, count]) => count > 1);
     if (duplicates.length > 0) {
-      console.warn('Duplicate position IDs found:', duplicates);
+      console.error('CRITICAL: Duplicate position IDs found:', duplicates);
+      console.error('Position map:', positionMap);
+    } else {
+      console.log('No duplicate IDs found. Position map:', positionMap);
     }
   }, [positions]);
 
@@ -119,6 +125,7 @@ const VisualOrgChart = ({ positions, onEdit, onAddPosition, onEditPosition, canE
               {filteredPositions.map((position, index) => (
                 <div key={position.id} className={index > 0 ? 'mt-8' : ''}>
                   <OrgNode
+                    key={`root-node-${position.id}`}
                     position={position}
                     isExpanded={expandedNodes.has(position.id)}
                     onToggle={() => toggleNode(position.id)}
@@ -147,15 +154,61 @@ const OrgNode = ({ position, isExpanded, onToggle, expandedNodes, toggleNode, on
   // Create handler functions that capture the current position
   const handleEditClick = (e) => {
     e.stopPropagation();
+    e.preventDefault();
+    
+    // Log the actual clicked element to debug
+    const clickedCard = e.currentTarget;
+    console.log('=== CLICK EVENT DEBUG ===');
+    console.log('Clicked element data-position-id:', clickedCard.getAttribute('data-position-id'));
+    console.log('Clicked element data-position-title:', clickedCard.getAttribute('data-position-title'));
+    console.log('Clicked element data-level:', clickedCard.getAttribute('data-level'));
+    console.log('Position object - Title:', position.title, 'ID:', position.id, 'Level:', level);
+    console.log('=========================');
+    
     if (canEdit) {
-      console.log('handleEditClick - Position:', position.title, 'ID:', position.id, 'Full position:', position);
-      onEditPosition(position);
+      // Create a clean copy without children to avoid circular references
+      const positionCopy = {
+        id: position.id,
+        chart_id: position.chart_id,
+        parent_position_id: position.parent_position_id,
+        title: position.title,
+        description: position.description,
+        level: position.level,
+        position_type: position.position_type,
+        holder_id: position.holder_id,
+        holder_user_id: position.holder_user_id,
+        external_name: position.external_name,
+        external_email: position.external_email,
+        start_date: position.start_date,
+        is_primary: position.is_primary,
+        first_name: position.first_name,
+        last_name: position.last_name,
+        user_email: position.user_email,
+        avatar_url: position.avatar_url,
+        skills: position.skills ? [...position.skills] : [],
+        responsibilities: position.responsibilities ? [...position.responsibilities] : []
+      };
+      console.log('Passing position copy:', positionCopy);
+      onEditPosition(positionCopy);
     }
   };
   
   const handleAddClick = (e) => {
     e.stopPropagation();
-    console.log('handleAddClick - Position:', position.title, 'ID:', position.id);
+    e.preventDefault();
+    console.log('handleAddClick - Position:', position.title, 'ID:', position.id, 'Level:', level);
+    // Create a clean copy without children to avoid circular references
+    const positionCopy = {
+      id: position.id,
+      title: position.title,
+      position_type: position.position_type,
+      holder_id: position.holder_id,
+      first_name: position.first_name,
+      last_name: position.last_name,
+      external_name: position.external_name,
+      avatar_url: position.avatar_url,
+      responsibilities: position.responsibilities ? [...position.responsibilities] : []
+    };
     onAddPosition(position);
   };
 
@@ -189,6 +242,7 @@ const OrgNode = ({ position, isExpanded, onToggle, expandedNodes, toggleNode, on
         onClick={handleEditClick}
         data-position-id={position.id}
         data-position-title={position.title}
+        data-level={level}
       >
         {/* Header */}
         <div className="flex items-center justify-between mb-4">
@@ -280,6 +334,7 @@ const OrgNode = ({ position, isExpanded, onToggle, expandedNodes, toggleNode, on
                 )}
                 
                 <OrgNode
+                  key={`node-${child.id}-${level}`}
                   position={child}
                   isExpanded={expandedNodes.has(child.id)}
                   onToggle={() => toggleNode(child.id)}
