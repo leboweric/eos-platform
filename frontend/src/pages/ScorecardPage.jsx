@@ -179,25 +179,40 @@ const ScorecardPage = () => {
     }
   };
 
-  // Get current week and past 12 weeks
-  const getCurrentWeek = () => {
-    const now = new Date();
-    const start = new Date(now.getFullYear(), 0, 1);
-    const diff = now - start;
-    const oneWeek = 1000 * 60 * 60 * 24 * 7;
-    return Math.floor(diff / oneWeek) + 1;
+  // Get week start date for a given date
+  const getWeekStartDate = (date) => {
+    const d = new Date(date);
+    const day = d.getDay();
+    const diff = d.getDate() - day + (day === 0 ? -6 : 1); // adjust when day is sunday
+    return new Date(d.setDate(diff));
   };
 
+  // Format date as "MMM D"
+  const formatWeekLabel = (date) => {
+    const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+    return `${months[date.getMonth()]} ${date.getDate()}`;
+  };
+
+  // Get week labels for the past 12 weeks
   const getWeekLabels = () => {
-    const currentWeek = getCurrentWeek();
     const labels = [];
+    const weekDates = [];
+    const today = new Date();
+    
     for (let i = 11; i >= 0; i--) {
-      labels.push(`W${currentWeek - i}`);
+      const weekStart = new Date(today);
+      weekStart.setDate(today.getDate() - (i * 7));
+      const mondayOfWeek = getWeekStartDate(weekStart);
+      
+      labels.push(formatWeekLabel(mondayOfWeek));
+      // Store the week identifier in ISO format for consistent storage
+      weekDates.push(mondayOfWeek.toISOString().split('T')[0]);
     }
-    return labels;
+    
+    return { labels, weekDates };
   };
 
-  const weekLabels = getWeekLabels();
+  const { labels: weekLabels, weekDates } = getWeekLabels();
 
   if (loading) {
     return (
@@ -255,11 +270,21 @@ const ScorecardPage = () => {
                     <th className="text-left p-4 font-semibold text-gray-700 min-w-[200px]">Metric</th>
                     <th className="text-center p-4 font-semibold text-gray-700 min-w-[100px]">Goal</th>
                     <th className="text-center p-4 font-semibold text-gray-700 min-w-[150px]">Owner</th>
-                    {weekLabels.map(week => (
-                      <th key={week} className="text-center p-4 font-semibold text-gray-700 min-w-[80px]">
-                        {week}
-                      </th>
-                    ))}
+                    {weekLabels.map((label, index) => {
+                      const isCurrentWeek = index === weekLabels.length - 1;
+                      return (
+                        <th key={weekDates[index]} className={`text-center p-4 font-semibold min-w-[80px] ${
+                          isCurrentWeek ? 'text-indigo-700 bg-indigo-50' : 'text-gray-700'
+                        }`}>
+                          <div className="flex flex-col items-center">
+                            <span className="text-xs font-normal text-gray-500 mb-1">
+                              {isCurrentWeek ? 'Current' : ''}
+                            </span>
+                            <span>{label}</span>
+                          </div>
+                        </th>
+                      );
+                    })}
                     <th className="text-center p-4 font-semibold text-gray-700 min-w-[100px]">Actions</th>
                   </tr>
                 </thead>
@@ -276,13 +301,13 @@ const ScorecardPage = () => {
                         <td className="p-4 font-medium">{metric.name}</td>
                         <td className="p-4 text-center font-semibold text-indigo-600">{metric.goal}</td>
                         <td className="p-4 text-center">{metric.owner}</td>
-                        {weekLabels.map(week => {
-                          const score = weeklyScores[metric.id]?.[week];
-                          const isEditing = editingScore?.metricId === metric.id && editingScore?.week === week;
+                        {weekDates.map((weekDate, index) => {
+                          const score = weeklyScores[metric.id]?.[weekDate];
+                          const isEditing = editingScore?.metricId === metric.id && editingScore?.week === weekDate;
                           const isGoalMet = score && parseFloat(score) >= parseFloat(metric.goal);
                           
                           return (
-                            <td key={week} className="p-4 text-center">
+                            <td key={weekDate} className="p-4 text-center">
                               {isEditing ? (
                                 <div className="flex items-center space-x-1">
                                   <Input
@@ -291,7 +316,7 @@ const ScorecardPage = () => {
                                     defaultValue={score || ''}
                                     onKeyDown={(e) => {
                                       if (e.key === 'Enter') {
-                                        handleScoreSave(metric.id, week, e.target.value);
+                                        handleScoreSave(metric.id, weekDate, e.target.value);
                                       }
                                       if (e.key === 'Escape') {
                                         setEditingScore(null);
@@ -304,7 +329,7 @@ const ScorecardPage = () => {
                                     variant="ghost"
                                     onClick={(e) => {
                                       const input = e.target.previousSibling;
-                                      handleScoreSave(metric.id, week, input.value);
+                                      handleScoreSave(metric.id, weekDate, input.value);
                                     }}
                                   >
                                     <Save className="h-3 w-3" />
@@ -326,7 +351,7 @@ const ScorecardPage = () => {
                                         : 'bg-red-100 text-red-800'
                                       : 'text-gray-400 hover:bg-gray-100'
                                   }`}
-                                  onClick={() => handleScoreEdit(metric.id, week)}
+                                  onClick={() => handleScoreEdit(metric.id, weekDate)}
                                 >
                                   {score || '-'}
                                 </div>
