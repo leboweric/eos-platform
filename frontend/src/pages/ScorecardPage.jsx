@@ -284,7 +284,7 @@ const ScorecardPage = () => {
                     metrics.map(metric => (
                       <tr key={metric.id} className="border-b hover:bg-gray-50">
                         <td className="p-4 font-medium">{metric.name}</td>
-                        <td className="p-4 text-center font-semibold text-indigo-600">{metric.goal}</td>
+                        <td className="p-4 text-center font-semibold text-indigo-600">{Math.round(parseFloat(metric.goal))}</td>
                         <td className="p-4 text-center">{metric.owner}</td>
                         {weekDates.map((weekDate, index) => {
                           const score = weeklyScores[metric.id]?.[weekDate];
