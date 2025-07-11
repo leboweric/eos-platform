@@ -25,51 +25,16 @@ const VisualOrgChart = ({ positions, onEdit, onAddPosition, onEditPosition, canE
     const allNodeIds = getAllNodeIds(positions);
     setExpandedNodes(new Set(allNodeIds));
     
-    // Build position map and check for duplicates
-    console.log('=== Building Position Map ===');
+    // Build position map for quick lookup
     const newPositionMap = {};
-    const idCounts = {};
-    
-    const buildMap = (nodes, parentTitle = 'root') => {
+    const buildMap = (nodes) => {
       nodes.forEach(node => {
-        // Create a clean copy without children for the map
-        const cleanNode = {
-          id: node.id,
-          chart_id: node.chart_id,
-          parent_position_id: node.parent_position_id,
-          title: node.title,
-          description: node.description,
-          level: node.level,
-          position_type: node.position_type,
-          holder_id: node.holder_id,
-          holder_user_id: node.holder_user_id,
-          external_name: node.external_name,
-          external_email: node.external_email,
-          start_date: node.start_date,
-          is_primary: node.is_primary,
-          first_name: node.first_name,
-          last_name: node.last_name,
-          user_email: node.user_email,
-          skills: node.skills,
-          responsibilities: node.responsibilities
-        };
-        
-        newPositionMap[node.id] = cleanNode;
-        idCounts[node.id] = (idCounts[node.id] || 0) + 1;
-        console.log(`Mapped: ${node.title} (ID: ${node.id}) under ${parentTitle}`);
-        
-        if (node.children) buildMap(node.children, node.title);
+        newPositionMap[node.id] = node;
+        if (node.children) buildMap(node.children);
       });
     };
-    
     buildMap(positions);
     positionMap.current = newPositionMap;
-    
-    const duplicates = Object.entries(idCounts).filter(([id, count]) => count > 1);
-    if (duplicates.length > 0) {
-      console.error('⚠️ CRITICAL: Duplicate position IDs found:', duplicates);
-    }
-    console.log('=== Position Map Complete ===');
   }, [positions]);
 
   const getAllNodeIds = (nodes) => {
@@ -121,14 +86,8 @@ const VisualOrgChart = ({ positions, onEdit, onAddPosition, onEditPosition, canE
 
   return (
     <div className="w-full">
-      {/* Version indicator for cache debugging */}
-      <div className="text-xs text-red-600 mb-2 bg-yellow-100 p-2 rounded">
-        🔴 v3 - If you see this, new code is loaded! Time: {new Date().toLocaleTimeString()}
-      </div>
-      
       {/* Header */}
       <div className="flex items-center justify-between mb-8">
-        <div className="text-xs text-gray-400 mr-4">v2</div>
         <div className="relative flex-1 max-w-md">
           <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
           <Input
@@ -190,22 +149,8 @@ const OrgNode = ({ position, isExpanded, onToggle, expandedNodes, toggleNode, on
     e.stopPropagation();
     e.preventDefault();
     
-    // Log the actual clicked element to debug
-    const clickedCard = e.currentTarget;
-    // TEMPORARY: Alert to ensure new code is running
-    alert(`CLICKED v3: ${position.title} (Level ${level})\nIf you see this, new code is loaded!`);
-    
-    console.log('\n🔴 === CLICK EVENT DEBUG v3 ===');
-    console.log('🕐 Timestamp:', new Date().toISOString());
-    console.log('📍 Clicked element data-position-id:', clickedCard.getAttribute('data-position-id'));
-    console.log('📍 Clicked element data-position-title:', clickedCard.getAttribute('data-position-title'));
-    console.log('📍 Clicked element data-level:', clickedCard.getAttribute('data-level'));
-    console.log('📦 Position object - Title:', position.title, 'ID:', position.id, 'Level:', level);
-    console.log('👶 Has children?', position.children ? `YES!! (${position.children.length} children) - THIS IS THE BUG!` : '✅ No children');
-    console.log('🔴 ============================\n');
-    
     if (canEdit) {
-      // CRITICAL: Create a clean copy WITHOUT children to avoid any references
+      // Create a clean copy without children to avoid circular references
       const positionCopy = {
         id: position.id,
         chart_id: position.chart_id,
@@ -227,7 +172,6 @@ const OrgNode = ({ position, isExpanded, onToggle, expandedNodes, toggleNode, on
         skills: position.skills ? [...position.skills] : [],
         responsibilities: position.responsibilities ? [...position.responsibilities] : []
       };
-      console.log('Passing position copy:', positionCopy);
       onEditPosition(positionCopy);
     }
   };

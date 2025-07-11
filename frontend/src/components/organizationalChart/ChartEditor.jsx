@@ -67,7 +67,6 @@ const ChartEditor = ({ chartId, onUpdate }) => {
   };
 
   const handleEditPosition = (position) => {
-    console.log('ChartEditor handleEditPosition called with:', position.title, 'ID:', position.id);
     // Create a clean copy without children to avoid the bug
     const cleanPosition = {
       id: position.id,
@@ -90,7 +89,6 @@ const ChartEditor = ({ chartId, onUpdate }) => {
       responsibilities: position.responsibilities ? [...position.responsibilities] : []
       // Explicitly NOT including children
     };
-    console.log('Setting editingPosition to clean copy');
     setEditingPosition(cleanPosition);
     setShowEditDialog(true);
   };

@@ -54,11 +54,7 @@ const ChartViewer = ({ chartId, onEdit }) => {
   };
 
   const handleEditPosition = (position) => {
-    console.log('ChartViewer handleEditPosition v2 called with:', position.title, 'ID:', position.id);
-    console.log('Timestamp:', new Date().toISOString());
-    console.log('Position has children?', position.children ? 'YES - THIS IS THE BUG!' : 'No');
-    
-    // CRITICAL: Ensure we're setting a fresh copy WITHOUT children
+    // Ensure we're setting a fresh copy without children
     const positionToEdit = {
       id: position.id,
       chart_id: position.chart_id,
@@ -78,9 +74,8 @@ const ChartViewer = ({ chartId, onEdit }) => {
       user_email: position.user_email,
       skills: position.skills ? [...position.skills] : [],
       responsibilities: position.responsibilities ? [...position.responsibilities] : []
-      // EXPLICITLY NOT including children
+      // Explicitly not including children
     };
-    console.log('Setting editingPosition to clean copy:', positionToEdit);
     setEditingPosition(positionToEdit);
     setShowEditDialog(true);
   };
@@ -256,7 +251,6 @@ const ChartViewer = ({ chartId, onEdit }) => {
           key={`edit-${editingPosition.id}-${Date.now()}`} // Add timestamp to force re-render
           open={showEditDialog}
           onClose={() => {
-            console.log('Closing edit dialog');
             setShowEditDialog(false);
             setEditingPosition(null);
           }}

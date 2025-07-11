@@ -35,9 +35,7 @@ const EditPositionDialog = ({ open, onClose, onSave, position, skills }) => {
 
   useEffect(() => {
     if (position) {
-      console.log('EditPositionDialog useEffect - received position:', position.title, 'ID:', position.id);
-      console.log('Full position object:', JSON.stringify(position, null, 2));
-      const newFormData = {
+      setFormData({
         title: position.title || '',
         positionType: position.position_type || 'individual_contributor',
         responsibilities: position.responsibilities?.map(r => ({
@@ -45,9 +43,7 @@ const EditPositionDialog = ({ open, onClose, onSave, position, skills }) => {
           responsibility: r.responsibility,
           priority: r.priority || 'medium'
         })) || []
-      };
-      console.log('Setting form data to:', newFormData);
-      setFormData(newFormData);
+      });
     }
   }, [position]);
 
