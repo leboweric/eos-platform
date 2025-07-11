@@ -1,237 +1,127 @@
 import { useState, useEffect } from 'react';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
-import { Plus, Trash2 } from 'lucide-react';
+import { Input } from '@/components/ui/input';
+import { Alert, AlertDescription } from '@/components/ui/alert';
+import { Loader2, Save, AlertCircle } from 'lucide-react';
 
 const ThreeYearPictureDialog = ({ open, onOpenChange, data, onSave }) => {
   const [formData, setFormData] = useState({
-    date: '',
     revenue: '',
     profit: '',
-    profitPercentage: '',
-    measurables: [],
-    whatDoesItLookLike: []
+    measurables: '',
+    lookLike: ''
   });
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState(null);
 
   useEffect(() => {
     if (data) {
       setFormData({
-        date: data.date || '',
         revenue: data.revenue || '',
         profit: data.profit || '',
-        profitPercentage: data.profitPercentage || '',
-        measurables: data.measurables || [],
-        whatDoesItLookLike: data.whatDoesItLookLike || []
+        measurables: data.measurables || '',
+        lookLike: data.lookLike || ''
       });
     }
   }, [data]);
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    onSave({
-      ...formData,
-      revenue: parseFloat(formData.revenue) || 0,
-      profit: parseFloat(formData.profit) || 0,
-      profitPercentage: parseFloat(formData.profitPercentage) || 0
-    });
-    onOpenChange(false);
-  };
-
-  const handleAddMeasurable = () => {
-    setFormData({
-      ...formData,
-      measurables: [
-        ...formData.measurables,
-        { id: Date.now(), name: '', target: '' }
-      ]
-    });
-  };
-
-  const handleRemoveMeasurable = (id) => {
-    setFormData({
-      ...formData,
-      measurables: formData.measurables.filter(m => m.id !== id)
-    });
-  };
-
-  const handleMeasurableChange = (id, field, value) => {
-    setFormData({
-      ...formData,
-      measurables: formData.measurables.map(m =>
-        m.id === id ? { ...m, [field]: value } : m
-      )
-    });
-  };
-
-  const handleAddWhatDoesItLookLike = () => {
-    setFormData({
-      ...formData,
-      whatDoesItLookLike: [
-        ...formData.whatDoesItLookLike,
-        { id: Date.now(), description: '' }
-      ]
-    });
-  };
-
-  const handleRemoveWhatDoesItLookLike = (id) => {
-    setFormData({
-      ...formData,
-      whatDoesItLookLike: formData.whatDoesItLookLike.filter(item => item.id !== id)
-    });
-  };
-
-  const handleWhatDoesItLookLikeChange = (id, value) => {
-    setFormData({
-      ...formData,
-      whatDoesItLookLike: formData.whatDoesItLookLike.map(item =>
-        item.id === id ? { ...item, description: value } : item
-      )
-    });
+    setSaving(true);
+    setError(null);
+    
+    try {
+      await onSave(formData);
+      onOpenChange(false);
+    } catch (error) {
+      setError(error.message || 'Failed to save 3-Year Picture');
+    } finally {
+      setSaving(false);
+    }
   };
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
+      <DialogContent className="sm:max-w-[600px]">
         <form onSubmit={handleSubmit}>
           <DialogHeader>
-            <DialogTitle>Edit 3-Year Picture</DialogTitle>
+            <DialogTitle>3-Year Picture</DialogTitle>
             <DialogDescription>
-              Define your organization's mid-term vision with specific financial and operational targets.
+              Paint a picture of what your organization will look like in 3 years
             </DialogDescription>
           </DialogHeader>
+          
           <div className="space-y-4 py-4">
-            <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label htmlFor="date">Target Date</Label>
-                <Input
-                  id="date"
-                  type="date"
-                  value={formData.date}
-                  onChange={(e) => setFormData({ ...formData, date: e.target.value })}
-                  required
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="revenue">Revenue Target</Label>
-                <Input
-                  id="revenue"
-                  type="number"
-                  value={formData.revenue}
-                  onChange={(e) => setFormData({ ...formData, revenue: e.target.value })}
-                  placeholder="e.g., 10000000"
-                  required
-                />
-              </div>
-            </div>
-            <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label htmlFor="profit">Profit Target</Label>
-                <Input
-                  id="profit"
-                  type="number"
-                  value={formData.profit}
-                  onChange={(e) => setFormData({ ...formData, profit: e.target.value })}
-                  placeholder="e.g., 2000000"
-                  required
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="profitPercentage">Profit Percentage</Label>
-                <Input
-                  id="profitPercentage"
-                  type="number"
-                  value={formData.profitPercentage}
-                  onChange={(e) => setFormData({ ...formData, profitPercentage: e.target.value })}
-                  placeholder="e.g., 20"
-                  step="0.1"
-                  required
-                />
-              </div>
-            </div>
+            {error && (
+              <Alert className="border-red-200 bg-red-50">
+                <AlertCircle className="h-4 w-4" />
+                <AlertDescription>{error}</AlertDescription>
+              </Alert>
+            )}
+
             <div className="space-y-2">
-              <div className="flex items-center justify-between">
-                <Label>Measurables</Label>
-                <Button
-                  type="button"
-                  variant="outline"
-                  size="sm"
-                  onClick={handleAddMeasurable}
-                >
-                  <Plus className="h-4 w-4 mr-1" />
-                  Add Measurable
-                </Button>
-              </div>
-              <div className="space-y-2">
-                {formData.measurables.map((measurable) => (
-                  <div key={measurable.id} className="flex gap-2 items-center">
-                    <Input
-                      value={measurable.name}
-                      onChange={(e) => handleMeasurableChange(measurable.id, 'name', e.target.value)}
-                      placeholder="Measurable name"
-                      className="flex-1"
-                    />
-                    <Input
-                      type="number"
-                      value={measurable.target}
-                      onChange={(e) => handleMeasurableChange(measurable.id, 'target', e.target.value)}
-                      placeholder="Target"
-                      className="w-32"
-                    />
-                    <Button
-                      type="button"
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => handleRemoveMeasurable(measurable.id)}
-                    >
-                      <Trash2 className="h-4 w-4" />
-                    </Button>
-                  </div>
-                ))}
-              </div>
+              <Label htmlFor="revenue">Revenue Target</Label>
+              <Input
+                id="revenue"
+                value={formData.revenue}
+                onChange={(e) => setFormData({ ...formData, revenue: e.target.value })}
+                placeholder="e.g., $10M"
+              />
             </div>
+
             <div className="space-y-2">
-              <div className="flex items-center justify-between">
-                <Label>What Does it Look Like</Label>
-                <Button
-                  type="button"
-                  variant="outline"
-                  size="sm"
-                  onClick={handleAddWhatDoesItLookLike}
-                >
-                  <Plus className="h-4 w-4 mr-1" />
-                  Add Description
-                </Button>
-              </div>
-              <div className="space-y-2">
-                {formData.whatDoesItLookLike.map((item) => (
-                  <div key={item.id} className="flex gap-2 items-center">
-                    <Input
-                      value={item.description}
-                      onChange={(e) => handleWhatDoesItLookLikeChange(item.id, e.target.value)}
-                      placeholder="e.g., 100 Right People Right Seats"
-                      className="flex-1"
-                    />
-                    <Button
-                      type="button"
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => handleRemoveWhatDoesItLookLike(item.id)}
-                    >
-                      <Trash2 className="h-4 w-4" />
-                    </Button>
-                  </div>
-                ))}
-              </div>
+              <Label htmlFor="profit">Profit Target</Label>
+              <Input
+                id="profit"
+                value={formData.profit}
+                onChange={(e) => setFormData({ ...formData, profit: e.target.value })}
+                placeholder="e.g., $2M or 20%"
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="measurables">Key Measurables</Label>
+              <Textarea
+                id="measurables"
+                value={formData.measurables}
+                onChange={(e) => setFormData({ ...formData, measurables: e.target.value })}
+                placeholder="What are the 5-15 most important measurables in 3 years?"
+                rows={4}
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="lookLike">What Does It Look Like?</Label>
+              <Textarea
+                id="lookLike"
+                value={formData.lookLike}
+                onChange={(e) => setFormData({ ...formData, lookLike: e.target.value })}
+                placeholder="Describe what your organization looks and feels like in 3 years..."
+                rows={6}
+              />
             </div>
           </div>
+
           <DialogFooter>
             <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
               Cancel
             </Button>
-            <Button type="submit">Save 3-Year Picture</Button>
+            <Button type="submit" disabled={saving}>
+              {saving ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Saving...
+                </>
+              ) : (
+                <>
+                  <Save className="mr-2 h-4 w-4" />
+                  Save 3-Year Picture
+                </>
+              )}
+            </Button>
           </DialogFooter>
         </form>
       </DialogContent>

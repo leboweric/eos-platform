@@ -11,6 +11,8 @@ import { Alert, AlertDescription } from '@/components/ui/alert';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Switch } from '@/components/ui/switch';
 import CoreValueDialog from '../components/vto/CoreValueDialog';
+import ThreeYearPictureDialog from '../components/vto/ThreeYearPictureDialog';
+import OneYearPlanDialog from '../components/vto/OneYearPlanDialog';
 import { 
   Target, 
   Save,
@@ -214,6 +216,44 @@ const BusinessBlueprintPage = () => {
       setSuccess('Marketing strategy updated successfully');
     } catch (error) {
       setError('Failed to update marketing strategy');
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  // Three Year Picture handler
+  const handleSaveThreeYearPicture = async (data) => {
+    try {
+      setSaving(true);
+      setError(null);
+      await businessBlueprintService.updateThreeYearPicture(data);
+      setBlueprintData(prev => ({
+        ...prev,
+        threeYearPicture: data
+      }));
+      setSuccess('3-Year Picture updated successfully');
+    } catch (error) {
+      setError('Failed to update 3-Year Picture');
+      throw error;
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  // One Year Plan handler
+  const handleSaveOneYearPlan = async (data) => {
+    try {
+      setSaving(true);
+      setError(null);
+      await businessBlueprintService.updateOneYearPlan(data);
+      setBlueprintData(prev => ({
+        ...prev,
+        oneYearPlan: data
+      }));
+      setSuccess('1-Year Plan updated successfully');
+    } catch (error) {
+      setError('Failed to update 1-Year Plan');
+      throw error;
     } finally {
       setSaving(false);
     }
@@ -549,7 +589,7 @@ const BusinessBlueprintPage = () => {
                 <Button 
                   variant="outline" 
                   size="sm"
-                  onClick={() => alert('3-Year Picture editing coming soon!')}
+                  onClick={() => setShowThreeYearDialog(true)}
                 >
                   <Edit className="h-4 w-4 mr-2" />
                   Edit
@@ -557,7 +597,36 @@ const BusinessBlueprintPage = () => {
               </div>
             </CardHeader>
             <CardContent>
-              <p className="text-gray-500">Click edit to define your 3-year vision</p>
+              {blueprintData.threeYearPicture ? (
+                <div className="space-y-4">
+                  {blueprintData.threeYearPicture.revenue && (
+                    <div>
+                      <p className="text-sm font-medium text-gray-500">Revenue Target</p>
+                      <p className="text-lg">{blueprintData.threeYearPicture.revenue}</p>
+                    </div>
+                  )}
+                  {blueprintData.threeYearPicture.profit && (
+                    <div>
+                      <p className="text-sm font-medium text-gray-500">Profit Target</p>
+                      <p className="text-lg">{blueprintData.threeYearPicture.profit}</p>
+                    </div>
+                  )}
+                  {blueprintData.threeYearPicture.measurables && (
+                    <div>
+                      <p className="text-sm font-medium text-gray-500">Key Measurables</p>
+                      <p className="whitespace-pre-wrap">{blueprintData.threeYearPicture.measurables}</p>
+                    </div>
+                  )}
+                  {blueprintData.threeYearPicture.lookLike && (
+                    <div>
+                      <p className="text-sm font-medium text-gray-500">What Does It Look Like?</p>
+                      <p className="whitespace-pre-wrap">{blueprintData.threeYearPicture.lookLike}</p>
+                    </div>
+                  )}
+                </div>
+              ) : (
+                <p className="text-gray-500">Click edit to define your 3-year vision</p>
+              )}
             </CardContent>
           </Card>
 
@@ -571,7 +640,7 @@ const BusinessBlueprintPage = () => {
                 <Button 
                   variant="outline" 
                   size="sm"
-                  onClick={() => alert('1-Year Plan editing coming soon!')}
+                  onClick={() => setShowOneYearDialog(true)}
                 >
                   <Edit className="h-4 w-4 mr-2" />
                   Edit
@@ -579,7 +648,36 @@ const BusinessBlueprintPage = () => {
               </div>
             </CardHeader>
             <CardContent>
-              <p className="text-gray-500">Click edit to define your 1-year plan</p>
+              {blueprintData.oneYearPlan ? (
+                <div className="space-y-4">
+                  {blueprintData.oneYearPlan.revenue && (
+                    <div>
+                      <p className="text-sm font-medium text-gray-500">Revenue Target</p>
+                      <p className="text-lg">{blueprintData.oneYearPlan.revenue}</p>
+                    </div>
+                  )}
+                  {blueprintData.oneYearPlan.profit && (
+                    <div>
+                      <p className="text-sm font-medium text-gray-500">Profit Target</p>
+                      <p className="text-lg">{blueprintData.oneYearPlan.profit}</p>
+                    </div>
+                  )}
+                  {blueprintData.oneYearPlan.goals && (
+                    <div>
+                      <p className="text-sm font-medium text-gray-500">Goals</p>
+                      <p className="whitespace-pre-wrap">{blueprintData.oneYearPlan.goals}</p>
+                    </div>
+                  )}
+                  {blueprintData.oneYearPlan.measurables && (
+                    <div>
+                      <p className="text-sm font-medium text-gray-500">Key Measurables</p>
+                      <p className="whitespace-pre-wrap">{blueprintData.oneYearPlan.measurables}</p>
+                    </div>
+                  )}
+                </div>
+              ) : (
+                <p className="text-gray-500">Click edit to define your 1-year plan</p>
+              )}
             </CardContent>
           </Card>
 
@@ -613,6 +711,22 @@ const BusinessBlueprintPage = () => {
         onOpenChange={setShowCoreValueDialog}
         value={editingCoreValue}
         onSave={editingCoreValue ? handleSaveCoreValue : handleSaveNewCoreValue}
+      />
+
+      {/* Three Year Picture Dialog */}
+      <ThreeYearPictureDialog
+        open={showThreeYearDialog}
+        onOpenChange={setShowThreeYearDialog}
+        data={blueprintData.threeYearPicture}
+        onSave={handleSaveThreeYearPicture}
+      />
+
+      {/* One Year Plan Dialog */}
+      <OneYearPlanDialog
+        open={showOneYearDialog}
+        onOpenChange={setShowOneYearDialog}
+        data={blueprintData.oneYearPlan}
+        onSave={handleSaveOneYearPlan}
       />
     </div>
   );

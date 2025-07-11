@@ -1,243 +1,127 @@
 import { useState, useEffect } from 'react';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Checkbox } from '@/components/ui/checkbox';
-import { Plus, Trash2 } from 'lucide-react';
+import { Textarea } from '@/components/ui/textarea';
+import { Input } from '@/components/ui/input';
+import { Alert, AlertDescription } from '@/components/ui/alert';
+import { Loader2, Save, AlertCircle } from 'lucide-react';
 
 const OneYearPlanDialog = ({ open, onOpenChange, data, onSave }) => {
   const [formData, setFormData] = useState({
-    date: '',
     revenue: '',
     profit: '',
-    profitPercentage: '',
-    goals: [],
-    measurables: []
+    goals: '',
+    measurables: ''
   });
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState(null);
 
   useEffect(() => {
     if (data) {
       setFormData({
-        date: data.date || '',
         revenue: data.revenue || '',
         profit: data.profit || '',
-        profitPercentage: data.profitPercentage || '',
-        goals: data.goals || [],
-        measurables: data.measurables || []
+        goals: data.goals || '',
+        measurables: data.measurables || ''
       });
     }
   }, [data]);
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    onSave({
-      ...formData,
-      revenue: parseFloat(formData.revenue) || 0,
-      profit: parseFloat(formData.profit) || 0,
-      profitPercentage: parseFloat(formData.profitPercentage) || 0
-    });
-    onOpenChange(false);
-  };
-
-  const handleAddGoal = () => {
-    setFormData({
-      ...formData,
-      goals: [
-        ...formData.goals,
-        { id: Date.now(), text: '', completed: false }
-      ]
-    });
-  };
-
-  const handleRemoveGoal = (id) => {
-    setFormData({
-      ...formData,
-      goals: formData.goals.filter(g => g.id !== id)
-    });
-  };
-
-  const handleGoalChange = (id, field, value) => {
-    setFormData({
-      ...formData,
-      goals: formData.goals.map(g =>
-        g.id === id ? { ...g, [field]: value } : g
-      )
-    });
-  };
-
-  const handleAddMeasurable = () => {
-    setFormData({
-      ...formData,
-      measurables: [
-        ...formData.measurables,
-        { id: Date.now(), name: '', target: '' }
-      ]
-    });
-  };
-
-  const handleRemoveMeasurable = (id) => {
-    setFormData({
-      ...formData,
-      measurables: formData.measurables.filter(m => m.id !== id)
-    });
-  };
-
-  const handleMeasurableChange = (id, field, value) => {
-    setFormData({
-      ...formData,
-      measurables: formData.measurables.map(m =>
-        m.id === id ? { ...m, [field]: value } : m
-      )
-    });
+    setSaving(true);
+    setError(null);
+    
+    try {
+      await onSave(formData);
+      onOpenChange(false);
+    } catch (error) {
+      setError(error.message || 'Failed to save 1-Year Plan');
+    } finally {
+      setSaving(false);
+    }
   };
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
+      <DialogContent className="sm:max-w-[600px]">
         <form onSubmit={handleSubmit}>
           <DialogHeader>
-            <DialogTitle>Edit 1-Year Plan</DialogTitle>
+            <DialogTitle>1-Year Plan</DialogTitle>
             <DialogDescription>
-              Set your annual goals and financial targets.
+              Define your goals and targets for the coming year
             </DialogDescription>
           </DialogHeader>
+          
           <div className="space-y-4 py-4">
-            <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label htmlFor="date">Target Date</Label>
-                <Input
-                  id="date"
-                  type="date"
-                  value={formData.date}
-                  onChange={(e) => setFormData({ ...formData, date: e.target.value })}
-                  required
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="revenue">Revenue Target</Label>
-                <Input
-                  id="revenue"
-                  type="number"
-                  value={formData.revenue}
-                  onChange={(e) => setFormData({ ...formData, revenue: e.target.value })}
-                  placeholder="e.g., 2000000"
-                  required
-                />
-              </div>
-            </div>
-            <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label htmlFor="profit">Profit Target</Label>
-                <Input
-                  id="profit"
-                  type="number"
-                  value={formData.profit}
-                  onChange={(e) => setFormData({ ...formData, profit: e.target.value })}
-                  placeholder="e.g., 300000"
-                  required
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="profitPercentage">Profit Percentage</Label>
-                <Input
-                  id="profitPercentage"
-                  type="number"
-                  value={formData.profitPercentage}
-                  onChange={(e) => setFormData({ ...formData, profitPercentage: e.target.value })}
-                  placeholder="e.g., 15"
-                  step="0.1"
-                  required
-                />
-              </div>
-            </div>
-            
+            {error && (
+              <Alert className="border-red-200 bg-red-50">
+                <AlertCircle className="h-4 w-4" />
+                <AlertDescription>{error}</AlertDescription>
+              </Alert>
+            )}
+
             <div className="space-y-2">
-              <div className="flex items-center justify-between">
-                <Label>Goals</Label>
-                <Button
-                  type="button"
-                  variant="outline"
-                  size="sm"
-                  onClick={handleAddGoal}
-                >
-                  <Plus className="h-4 w-4 mr-1" />
-                  Add Goal
-                </Button>
-              </div>
-              <div className="space-y-2">
-                {formData.goals.map((goal) => (
-                  <div key={goal.id} className="flex gap-2 items-center">
-                    <Checkbox
-                      checked={goal.completed}
-                      onCheckedChange={(checked) => handleGoalChange(goal.id, 'completed', checked)}
-                    />
-                    <Input
-                      value={goal.text}
-                      onChange={(e) => handleGoalChange(goal.id, 'text', e.target.value)}
-                      placeholder="Goal description"
-                      className="flex-1"
-                    />
-                    <Button
-                      type="button"
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => handleRemoveGoal(goal.id)}
-                    >
-                      <Trash2 className="h-4 w-4" />
-                    </Button>
-                  </div>
-                ))}
-              </div>
+              <Label htmlFor="revenue">Revenue Target</Label>
+              <Input
+                id="revenue"
+                value={formData.revenue}
+                onChange={(e) => setFormData({ ...formData, revenue: e.target.value })}
+                placeholder="e.g., $2M"
+              />
             </div>
 
             <div className="space-y-2">
-              <div className="flex items-center justify-between">
-                <Label>Measurables</Label>
-                <Button
-                  type="button"
-                  variant="outline"
-                  size="sm"
-                  onClick={handleAddMeasurable}
-                >
-                  <Plus className="h-4 w-4 mr-1" />
-                  Add Measurable
-                </Button>
-              </div>
-              <div className="space-y-2">
-                {formData.measurables.map((measurable) => (
-                  <div key={measurable.id} className="flex gap-2 items-center">
-                    <Input
-                      value={measurable.name}
-                      onChange={(e) => handleMeasurableChange(measurable.id, 'name', e.target.value)}
-                      placeholder="Measurable name"
-                      className="flex-1"
-                    />
-                    <Input
-                      type="number"
-                      value={measurable.target}
-                      onChange={(e) => handleMeasurableChange(measurable.id, 'target', e.target.value)}
-                      placeholder="Target"
-                      className="w-32"
-                    />
-                    <Button
-                      type="button"
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => handleRemoveMeasurable(measurable.id)}
-                    >
-                      <Trash2 className="h-4 w-4" />
-                    </Button>
-                  </div>
-                ))}
-              </div>
+              <Label htmlFor="profit">Profit Target</Label>
+              <Input
+                id="profit"
+                value={formData.profit}
+                onChange={(e) => setFormData({ ...formData, profit: e.target.value })}
+                placeholder="e.g., $300K or 15%"
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="goals">Goals (3-7)</Label>
+              <Textarea
+                id="goals"
+                value={formData.goals}
+                onChange={(e) => setFormData({ ...formData, goals: e.target.value })}
+                placeholder="List your 3-7 most important goals for the year..."
+                rows={4}
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="measurables">Key Measurables</Label>
+              <Textarea
+                id="measurables"
+                value={formData.measurables}
+                onChange={(e) => setFormData({ ...formData, measurables: e.target.value })}
+                placeholder="What will you measure to track progress?"
+                rows={4}
+              />
             </div>
           </div>
+
           <DialogFooter>
             <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
               Cancel
             </Button>
-            <Button type="submit">Save 1-Year Plan</Button>
+            <Button type="submit" disabled={saving}>
+              {saving ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Saving...
+                </>
+              ) : (
+                <>
+                  <Save className="mr-2 h-4 w-4" />
+                  Save 1-Year Plan
+                </>
+              )}
+            </Button>
           </DialogFooter>
         </form>
       </DialogContent>
