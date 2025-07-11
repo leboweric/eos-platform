@@ -1,0 +1,20 @@
+# Netlify configuration for React SPA
+
+[build]
+  publish = "dist"
+  command = "npm run build"
+
+# SPA redirect rule - all routes serve index.html
+[[redirects]]
+  from = "/*"
+  to = "/index.html"
+  status = 200
+
+# Optional: Add headers for better security
+[[headers]]
+  for = "/*"
+  [headers.values]
+    X-Frame-Options = "DENY"
+    X-XSS-Protection = "1; mode=block"
+    X-Content-Type-Options = "nosniff"
+    Referrer-Policy = "no-referrer-when-downgrade"
