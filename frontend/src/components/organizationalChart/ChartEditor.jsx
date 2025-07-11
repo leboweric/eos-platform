@@ -67,7 +67,31 @@ const ChartEditor = ({ chartId, onUpdate }) => {
   };
 
   const handleEditPosition = (position) => {
-    setEditingPosition(position);
+    console.log('ChartEditor handleEditPosition called with:', position.title, 'ID:', position.id);
+    // Create a clean copy without children to avoid the bug
+    const cleanPosition = {
+      id: position.id,
+      chart_id: position.chart_id,
+      parent_position_id: position.parent_position_id,
+      title: position.title,
+      description: position.description,
+      level: position.level,
+      position_type: position.position_type,
+      holder_id: position.holder_id,
+      holder_user_id: position.holder_user_id,
+      external_name: position.external_name,
+      external_email: position.external_email,
+      start_date: position.start_date,
+      is_primary: position.is_primary,
+      first_name: position.first_name,
+      last_name: position.last_name,
+      user_email: position.user_email,
+      skills: position.skills ? [...position.skills] : [],
+      responsibilities: position.responsibilities ? [...position.responsibilities] : []
+      // Explicitly NOT including children
+    };
+    console.log('Setting editingPosition to clean copy');
+    setEditingPosition(cleanPosition);
     setShowEditDialog(true);
   };
 
@@ -202,6 +226,7 @@ const ChartEditor = ({ chartId, onUpdate }) => {
                   onAddChild={handleAddPosition}
                   onAssignHolder={handleAssignHolder}
                   onRemoveHolder={handleRemoveHolder}
+                  handleEditPosition={handleEditPosition}
                   level={0}
                 />
               ))}

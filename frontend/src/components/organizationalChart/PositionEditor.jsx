@@ -21,6 +21,7 @@ const PositionEditor = ({
   onAddChild, 
   onAssignHolder,
   onRemoveHolder,
+  handleEditPosition,
   level = 0 
 }) => {
   const [expanded, setExpanded] = useState(true);
@@ -91,11 +92,12 @@ const PositionEditor = ({
               key={child.id}
               position={child}
               skills={skills}
-              onUpdate={onUpdate}
+              onUpdate={handleEditPosition ? () => handleEditPosition(child) : onUpdate}
               onDelete={onDelete}
               onAddChild={onAddChild}
               onAssignHolder={onAssignHolder}
               onRemoveHolder={onRemoveHolder}
+              handleEditPosition={handleEditPosition}
               level={level + 1}
             />
           ))}
