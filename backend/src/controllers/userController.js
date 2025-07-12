@@ -15,6 +15,7 @@ export const getOrganizationUsers = async (req, res) => {
     console.log('Getting users for organization:', {
       organizationId,
       paramOrgId: req.params.orgId,
+      allParams: req.params,
       isImpersonating: req.user.isImpersonating,
       userOrgId: req.user.organization_id,
       impersonatedOrgId: req.user.organizationId
