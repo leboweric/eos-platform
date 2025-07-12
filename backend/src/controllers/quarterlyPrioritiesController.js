@@ -131,7 +131,8 @@ export const getQuarterlyPriorities = async (req, res) => {
               'id', m.id,
               'title', m.title,
               'completed', m.completed,
-              'due_date', m.due_date
+              'due_date', m.due_date,
+              'dueDate', m.due_date
             ) ORDER BY m.due_date
           ) FILTER (WHERE m.id IS NOT NULL) as milestones
          FROM quarterly_priorities p
@@ -538,12 +539,19 @@ export const createMilestone = async (req, res) => {
     const { orgId, teamId, priorityId } = req.params;
     const { title, dueDate } = req.body;
     
+    console.log('Creating milestone with data:', { title, dueDate, body: req.body });
+    
+    // Validate required fields
+    if (!title) {
+      return res.status(400).json({ error: 'Milestone title is required' });
+    }
+    
     const result = await query(
       `INSERT INTO priority_milestones 
        (id, priority_id, title, due_date, completed)
        VALUES ($1, $2, $3, $4, false)
        RETURNING *`,
-      [uuidv4(), priorityId, title, dueDate]
+      [uuidv4(), priorityId, title, dueDate || null]
     );
     
     // Update priority progress
@@ -775,7 +783,8 @@ export const getArchivedPriorities = async (req, res) => {
             'id', m.id,
             'title', m.title,
             'completed', m.completed,
-            'due_date', m.due_date
+            'due_date', m.due_date,
+            'dueDate', m.due_date
           ) ORDER BY m.due_date
         ) FILTER (WHERE m.id IS NOT NULL) as milestones
        FROM quarterly_priorities p
