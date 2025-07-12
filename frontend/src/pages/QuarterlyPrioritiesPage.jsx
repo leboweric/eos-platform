@@ -332,11 +332,16 @@ const QuarterlyPrioritiesPage = () => {
       const orgId = user?.organizationId;
       const teamId = user?.teamId || '00000000-0000-0000-0000-000000000000';
       
-      await quarterlyPrioritiesService.createPriority(orgId, teamId, {
+      const priorityData = {
         ...priorityForm,
         quarter,
         year: parseInt(year)
-      });
+      };
+      
+      console.log('Creating priority with data:', priorityData);
+      console.log('isCompanyPriority value:', priorityForm.isCompanyPriority, 'type:', typeof priorityForm.isCompanyPriority);
+      
+      await quarterlyPrioritiesService.createPriority(orgId, teamId, priorityData);
       
       setShowAddPriority(false);
       setPriorityForm({

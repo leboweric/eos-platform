@@ -245,6 +245,13 @@ export const createPriority = async (req, res) => {
       return res.status(400).json({ error: 'Title is required' });
     }
     
+    if (!quarter || !year) {
+      return res.status(400).json({ 
+        error: 'Quarter and year are required',
+        received: { quarter, year }
+      });
+    }
+    
     // Use the current user's ID if no owner is specified
     actualOwnerId = ownerId || req.user.id;
     
@@ -334,7 +341,9 @@ export const createPriority = async (req, res) => {
     
     res.status(500).json({ 
       error: 'Failed to create priority',
-      details: process.env.NODE_ENV === 'development' ? error.message : undefined
+      details: error.message,
+      code: error.code,
+      requestBody: req.body
     });
   }
 };
