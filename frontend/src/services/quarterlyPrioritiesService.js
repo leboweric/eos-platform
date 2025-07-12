@@ -190,6 +190,26 @@ export const quarterlyPrioritiesService = {
     }
   },
 
+  // Get archived priorities (all non-current quarters)
+  async getArchivedPriorities(orgId, teamId) {
+    const token = localStorage.getItem('accessToken');
+    const response = await fetch(
+      `${API_URL}/organizations/${orgId}/teams/${teamId}/quarterly-priorities/archived`,
+      {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      }
+    );
+    
+    if (!response.ok) {
+      throw new Error('Failed to fetch archived priorities');
+    }
+    
+    const data = await response.json();
+    return data.data;
+  },
+
   // Add priority update
   async addPriorityUpdate(orgId, teamId, priorityId, updateText, statusChange) {
     const token = localStorage.getItem('accessToken');

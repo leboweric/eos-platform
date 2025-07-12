@@ -80,7 +80,7 @@ class ErrorBoundary extends Component {
 
 const QuarterlyPrioritiesPage = () => {
   const { user } = useAuthStore();
-  const [selectedQuarter, setSelectedQuarter] = useState('Q1 2025');
+  const [showArchived, setShowArchived] = useState(false);
   const [showAddPriority, setShowAddPriority] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
@@ -117,17 +117,20 @@ const QuarterlyPrioritiesPage = () => {
     dueDate: ''
   });
 
-  // Mock data - replace with API calls
+  // Fetch data on mount
   useEffect(() => {
     fetchQuarterlyData();
-  }, [selectedQuarter]);
+  }, [showArchived]);
 
   const fetchQuarterlyData = async () => {
     setLoading(true);
     setError(null);
     try {
-      // Extract quarter and year from selectedQuarter (e.g., "Q1 2025")
-      const [quarter, year] = selectedQuarter.split(' ');
+      // Get current quarter and year
+      const now = new Date();
+      const currentQuarter = Math.floor((now.getMonth() / 3)) + 1;
+      const currentYear = now.getFullYear();
+      const quarter = `Q${currentQuarter}`;
       
       // Get organization and team IDs from user context
       const orgId = user?.organizationId;
@@ -137,7 +140,10 @@ const QuarterlyPrioritiesPage = () => {
         throw new Error('No organization ID found');
       }
       
-      const data = await quarterlyPrioritiesService.getQuarterlyPriorities(orgId, teamId, quarter, parseInt(year));
+      // Fetch either active or archived priorities
+      const data = showArchived 
+        ? await quarterlyPrioritiesService.getArchivedPriorities(orgId, teamId)
+        : await quarterlyPrioritiesService.getQuarterlyPriorities(orgId, teamId, quarter, currentYear);
       
       // Ensure predictions have all required nested properties
       const safePredictions = data.predictions || {};
@@ -241,13 +247,18 @@ const QuarterlyPrioritiesPage = () => {
 
   const handleSavePredictions = async () => {
     try {
-      const [quarter, year] = selectedQuarter.split(' ');
+      // Get current quarter and year
+      const now = new Date();
+      const currentQuarter = Math.floor((now.getMonth() / 3)) + 1;
+      const currentYear = now.getFullYear();
+      const quarter = `Q${currentQuarter}`;
+      
       const orgId = user?.organizationId;
       const teamId = user?.teamId || '00000000-0000-0000-0000-000000000000';
       
       await quarterlyPrioritiesService.updatePredictions(orgId, teamId, {
         quarter,
-        year: parseInt(year),
+        year: currentYear,
         revenue: predictions.revenue,
         profit: predictions.profit,
         measurables: predictions.measurables
@@ -371,14 +382,19 @@ const QuarterlyPrioritiesPage = () => {
 
   const handleCreatePriority = async () => {
     try {
-      const [quarter, year] = selectedQuarter.split(' ');
+      // Get current quarter and year
+      const now = new Date();
+      const currentQuarter = Math.floor((now.getMonth() / 3)) + 1;
+      const currentYear = now.getFullYear();
+      const quarter = `Q${currentQuarter}`;
+      
       const orgId = user?.organizationId;
       const teamId = user?.teamId || '00000000-0000-0000-0000-000000000000';
       
       const priorityData = {
         ...priorityForm,
         quarter,
-        year: parseInt(year)
+        year: currentYear
       };
       
       console.log('Creating priority with data:', priorityData);
@@ -424,7 +440,13 @@ const QuarterlyPrioritiesPage = () => {
     }
   };
 
-  const quarters = ['Q4 2024', 'Q1 2025', 'Q2 2025', 'Q3 2025', 'Q4 2025'];
+  // Get current quarter for display
+  const getCurrentQuarterDisplay = () => {
+    const now = new Date();
+    const currentQuarter = Math.floor((now.getMonth() / 3)) + 1;
+    const currentYear = now.getFullYear();
+    return `Q${currentQuarter} ${currentYear}`;
+  };
 
   // Calculate stats without "at-risk"
   const allPriorities = [
@@ -902,31 +924,32 @@ const QuarterlyPrioritiesPage = () => {
         <div>
           <h1 className="text-3xl font-bold">Quarterly Priorities</h1>
           <p className="text-gray-600 mt-2">
-            Track progress on your most important initiatives for {selectedQuarter}
+            {showArchived 
+              ? 'Viewing archived priorities from previous quarters'
+              : `Track progress on your most important initiatives for ${getCurrentQuarterDisplay()}`
+            }
           </p>
         </div>
         <div className="flex space-x-2">
-          <Select value={selectedQuarter} onValueChange={setSelectedQuarter}>
-            <SelectTrigger className="w-[150px]">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              {quarters.map(quarter => (
-                <SelectItem key={quarter} value={quarter}>{quarter}</SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-          <Button onClick={() => {
-            // Set default owner to current user when opening dialog
-            setPriorityForm({
-              ...priorityForm,
-              ownerId: user?.id || ''
-            });
-            setShowAddPriority(true);
-          }}>
-            <Plus className="mr-2 h-4 w-4" />
-            Add Priority
+          <Button 
+            variant={showArchived ? "default" : "outline"}
+            onClick={() => setShowArchived(!showArchived)}
+          >
+            {showArchived ? 'View Current' : 'View Archive'}
           </Button>
+          {!showArchived && (
+            <Button onClick={() => {
+              // Set default owner to current user when opening dialog
+              setPriorityForm({
+                ...priorityForm,
+                ownerId: user?.id || ''
+              });
+              setShowAddPriority(true);
+            }}>
+              <Plus className="mr-2 h-4 w-4" />
+              Add Priority
+            </Button>
+          )}
         </div>
       </div>
 
@@ -938,8 +961,9 @@ const QuarterlyPrioritiesPage = () => {
         </Alert>
       )}
 
-      {/* Stats Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+      {/* Stats Cards - Only show for current priorities */}
+      {!showArchived && (
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
         <Card>
           <CardContent className="p-4">
             <div className="flex items-center justify-between">
@@ -988,9 +1012,11 @@ const QuarterlyPrioritiesPage = () => {
           </CardContent>
         </Card>
       </div>
+      )}
 
-      {/* Predictions Card */}
-      <Card>
+      {/* Predictions Card - Only show for current priorities */}
+      {!showArchived && (
+        <Card>
         <CardHeader>
           <div className="flex items-center justify-between">
             <CardTitle>Quarterly Predictions</CardTitle>
@@ -1003,7 +1029,7 @@ const QuarterlyPrioritiesPage = () => {
             </Button>
           </div>
           <CardDescription>
-            Revenue, profit and measurables forecasts for {selectedQuarter}
+            Revenue, profit and measurables forecasts for {getCurrentQuarterDisplay()}
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -1149,12 +1175,15 @@ const QuarterlyPrioritiesPage = () => {
           )}
         </CardContent>
       </Card>
+      )}
 
       {/* Company Priorities */}
       <div className="space-y-4">
         <div className="flex items-center space-x-2">
           <Building2 className="h-6 w-6 text-blue-600" />
-          <h2 className="text-2xl font-bold">Company Priorities</h2>
+          <h2 className="text-2xl font-bold">
+            {showArchived ? 'Archived Company Priorities' : 'Company Priorities'}
+          </h2>
         </div>
         {(companyPriorities || []).map(priority => (
           <PriorityCard key={priority.id} priority={priority} isCompany={true} />
@@ -1165,7 +1194,9 @@ const QuarterlyPrioritiesPage = () => {
       <div className="space-y-6">
         <div className="flex items-center space-x-2">
           <Users className="h-6 w-6 text-purple-600" />
-          <h2 className="text-2xl font-bold">Individual Priorities</h2>
+          <h2 className="text-2xl font-bold">
+            {showArchived ? 'Archived Individual Priorities' : 'Individual Priorities'}
+          </h2>
         </div>
         {(teamMembers || []).map(member => {
           const memberPriorities = teamMemberPriorities[member.id] || [];
@@ -1196,7 +1227,7 @@ const QuarterlyPrioritiesPage = () => {
           <DialogHeader>
             <DialogTitle>Add New Priority</DialogTitle>
             <DialogDescription>
-              Create a new quarterly priority for {selectedQuarter}
+              Create a new quarterly priority for {getCurrentQuarterDisplay()}
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-4">
