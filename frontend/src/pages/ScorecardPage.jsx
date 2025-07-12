@@ -42,7 +42,9 @@ const ScorecardPage = () => {
     goal: '',
     ownerId: '',
     ownerName: '',
-    type: 'weekly' // weekly, monthly, quarterly
+    type: 'weekly', // weekly, monthly, quarterly
+    valueType: 'number', // number, currency, percentage
+    comparisonOperator: 'greater_equal' // greater_equal, less_equal, equal
   });
 
   useEffect(() => {
@@ -93,7 +95,9 @@ const ScorecardPage = () => {
       goal: '',
       ownerId: '',
       ownerName: '',
-      type: 'weekly'
+      type: 'weekly',
+      valueType: 'number',
+      comparisonOperator: 'greater_equal'
     });
     setShowMetricDialog(true);
   };
@@ -105,7 +109,9 @@ const ScorecardPage = () => {
       goal: metric.goal,
       ownerId: metric.ownerId || '',
       ownerName: metric.owner || metric.ownerName || '',
-      type: metric.type || 'weekly'
+      type: metric.type || 'weekly',
+      valueType: metric.value_type || 'number',
+      comparisonOperator: metric.comparison_operator || 'greater_equal'
     });
     setShowMetricDialog(true);
   };
@@ -144,7 +150,9 @@ const ScorecardPage = () => {
         goal: '',
         ownerId: '',
         ownerName: '',
-        type: 'weekly'
+        type: 'weekly',
+        valueType: 'number',
+        comparisonOperator: 'greater_equal'
       });
     } catch {
       setError('Failed to save metric');
@@ -247,6 +255,47 @@ const ScorecardPage = () => {
 
   const { labels: weekLabels, weekDates } = getWeekLabels();
 
+  // Helper functions for value formatting and goal achievement
+  const formatValue = (value, valueType) => {
+    if (!value && value !== 0) return '-';
+    
+    const numValue = parseFloat(value);
+    switch (valueType) {
+      case 'currency':
+        return new Intl.NumberFormat('en-US', {
+          style: 'currency',
+          currency: 'USD'
+        }).format(numValue);
+      case 'percentage':
+        return `${numValue}%`;
+      default:
+        return Math.round(numValue).toString();
+    }
+  };
+
+  const formatGoal = (goal, valueType) => {
+    if (!goal && goal !== 0) return 'No goal';
+    return formatValue(goal, valueType);
+  };
+
+  const isGoalMet = (score, goal, comparisonOperator) => {
+    if (!score || !goal) return false;
+    
+    const scoreVal = parseFloat(score);
+    const goalVal = parseFloat(goal);
+    
+    switch (comparisonOperator) {
+      case 'greater_equal':
+        return scoreVal >= goalVal;
+      case 'less_equal':
+        return scoreVal <= goalVal;
+      case 'equal':
+        return Math.abs(scoreVal - goalVal) < 0.01; // Allow small floating point differences
+      default:
+        return scoreVal >= goalVal;
+    }
+  };
+
   if (loading) {
     return (
       <div className="flex items-center justify-center min-h-screen">
@@ -334,12 +383,12 @@ const ScorecardPage = () => {
                     metrics.map(metric => (
                       <tr key={metric.id} className="border-b hover:bg-gray-50">
                         <td className="p-4 font-medium">{metric.name}</td>
-                        <td className="p-4 text-center font-semibold text-indigo-600">{Math.round(parseFloat(metric.goal))}</td>
+                        <td className="p-4 text-center font-semibold text-indigo-600">{formatGoal(metric.goal, metric.value_type)}</td>
                         <td className="p-4 text-center">{metric.ownerName || metric.owner}</td>
                         {weekDates.map((weekDate) => {
                           const score = weeklyScores[metric.id]?.[weekDate];
                           const isEditing = editingScore?.metricId === metric.id && editingScore?.week === weekDate;
-                          const isGoalMet = score && parseFloat(score) >= parseFloat(metric.goal);
+                          const goalMet = score && isGoalMet(score, metric.goal, metric.comparison_operator);
                           
                           return (
                             <td key={weekDate} className="p-4 text-center">
@@ -382,14 +431,14 @@ const ScorecardPage = () => {
                                 <div
                                   className={`cursor-pointer px-2 py-1 rounded ${
                                     score
-                                      ? isGoalMet
+                                      ? goalMet
                                         ? 'bg-green-100 text-green-800'
                                         : 'bg-red-100 text-red-800'
                                       : 'text-gray-400 hover:bg-gray-100'
                                   }`}
                                   onClick={() => handleScoreEdit(metric.id, weekDate)}
                                 >
-                                  {score ? Math.round(parseFloat(score)) : '-'}
+                                  {score ? formatValue(score, metric.value_type) : '-'}
                                 </div>
                               )}
                             </td>
@@ -405,13 +454,13 @@ const ScorecardPage = () => {
                             if (scores.length === 0) return '-';
                             
                             const average = scores.reduce((sum, score) => sum + parseFloat(score), 0) / scores.length;
-                            const isGoalMet = average >= parseFloat(metric.goal);
+                            const avgGoalMet = isGoalMet(average, metric.goal, metric.comparison_operator);
                             
                             return (
                               <span className={`px-2 py-1 rounded ${
-                                isGoalMet ? 'text-green-800' : 'text-red-800'
+                                avgGoalMet ? 'text-green-800' : 'text-red-800'
                               }`}>
-                                {Math.round(average)}
+                                {formatValue(average, metric.value_type)}
                               </span>
                             );
                           })()}
@@ -429,7 +478,7 @@ const ScorecardPage = () => {
                             
                             return (
                               <span className="text-gray-700">
-                                {total.toFixed(0)}
+                                {formatValue(total, metric.value_type)}
                               </span>
                             );
                           })()}
@@ -517,7 +566,39 @@ const ScorecardPage = () => {
                 </Select>
               </div>
               <div>
-                <Label htmlFor="metric-type">Type</Label>
+                <Label htmlFor="metric-value-type">Value Type</Label>
+                <Select
+                  value={metricForm.valueType}
+                  onValueChange={(value) => setMetricForm(prev => ({ ...prev, valueType: value }))}
+                >
+                  <SelectTrigger id="metric-value-type">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="number">Number</SelectItem>
+                    <SelectItem value="currency">Currency ($)</SelectItem>
+                    <SelectItem value="percentage">Percentage (%)</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div>
+                <Label htmlFor="metric-comparison">Goal Achievement</Label>
+                <Select
+                  value={metricForm.comparisonOperator}
+                  onValueChange={(value) => setMetricForm(prev => ({ ...prev, comparisonOperator: value }))}
+                >
+                  <SelectTrigger id="metric-comparison">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="greater_equal">Greater than or equal to goal (≥)</SelectItem>
+                    <SelectItem value="less_equal">Less than or equal to goal (≤)</SelectItem>
+                    <SelectItem value="equal">Equal to goal (=)</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div>
+                <Label htmlFor="metric-type">Frequency</Label>
                 <Select
                   value={metricForm.type}
                   onValueChange={(value) => setMetricForm(prev => ({ ...prev, type: value }))}

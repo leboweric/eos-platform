@@ -27,7 +27,7 @@ export const getScorecard = async (req, res) => {
     
     // Get all metrics for the team
     const metricsQuery = `
-      SELECT id, name, goal, owner, type, created_at, updated_at
+      SELECT id, name, goal, owner, type, value_type, comparison_operator, created_at, updated_at
       FROM scorecard_metrics
       WHERE organization_id = $1 AND team_id = $2
       ORDER BY created_at ASC
@@ -80,16 +80,16 @@ export const getScorecard = async (req, res) => {
 export const createMetric = async (req, res) => {
   try {
     const { orgId, teamId } = req.params;
-    const { name, goal, owner, type = 'weekly' } = req.body;
+    const { name, goal, owner, type = 'weekly', valueType = 'number', comparisonOperator = 'greater_equal' } = req.body;
     
     const query = `
       INSERT INTO scorecard_metrics (
-        organization_id, team_id, name, goal, owner, type
-      ) VALUES ($1, $2, $3, $4, $5, $6)
-      RETURNING id, name, goal, owner, type, created_at, updated_at
+        organization_id, team_id, name, goal, owner, type, value_type, comparison_operator
+      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+      RETURNING id, name, goal, owner, type, value_type, comparison_operator, created_at, updated_at
     `;
     
-    const result = await db.query(query, [orgId, teamId, name, goal, owner, type]);
+    const result = await db.query(query, [orgId, teamId, name, goal, owner, type, valueType, comparisonOperator]);
     
     res.json({
       success: true,
@@ -108,16 +108,16 @@ export const createMetric = async (req, res) => {
 export const updateMetric = async (req, res) => {
   try {
     const { orgId, teamId, metricId } = req.params;
-    const { name, goal, owner, type } = req.body;
+    const { name, goal, owner, type, valueType, comparisonOperator } = req.body;
     
     const query = `
       UPDATE scorecard_metrics
-      SET name = $1, goal = $2, owner = $3, type = $4, updated_at = CURRENT_TIMESTAMP
-      WHERE id = $5 AND organization_id = $6 AND team_id = $7
-      RETURNING id, name, goal, owner, type, created_at, updated_at
+      SET name = $1, goal = $2, owner = $3, type = $4, value_type = $5, comparison_operator = $6, updated_at = CURRENT_TIMESTAMP
+      WHERE id = $7 AND organization_id = $8 AND team_id = $9
+      RETURNING id, name, goal, owner, type, value_type, comparison_operator, created_at, updated_at
     `;
     
-    const result = await db.query(query, [name, goal, owner, type, metricId, orgId, teamId]);
+    const result = await db.query(query, [name, goal, owner, type, valueType, comparisonOperator, metricId, orgId, teamId]);
     
     if (result.rows.length === 0) {
       return res.status(404).json({
