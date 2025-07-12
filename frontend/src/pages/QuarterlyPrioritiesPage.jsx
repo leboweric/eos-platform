@@ -1032,7 +1032,7 @@ const QuarterlyPrioritiesPage = () => {
               Create Priority
             </Button>
           </DialogFooter>
-        </Dialog>
+        </DialogContent>
       </Dialog>
     </div>
   );
