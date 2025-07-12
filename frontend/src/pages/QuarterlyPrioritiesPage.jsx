@@ -217,11 +217,20 @@ const QuarterlyPrioritiesPage = () => {
   const formatDate = (dateString) => {
     if (!dateString) return 'No date set';
     try {
+      // If the date string is in YYYY-MM-DD format, parse it as local date
+      if (dateString.match(/^\d{4}-\d{2}-\d{2}$/)) {
+        const [year, month, day] = dateString.split('-').map(Number);
+        const date = new Date(year, month - 1, day);
+        return format(date, 'MMM d, yyyy');
+      }
+      
+      // Otherwise, handle as ISO date
       const date = new Date(dateString);
       if (isNaN(date.getTime())) {
         return 'Invalid date';
       }
-      return format(date, 'MMM d, yyyy');
+      // For ISO dates, use the local date portion
+      return format(new Date(date.getFullYear(), date.getMonth(), date.getDate()), 'MMM d, yyyy');
     } catch (error) {
       console.error('Error formatting date:', dateString, error);
       return 'Invalid date';
@@ -232,10 +241,23 @@ const QuarterlyPrioritiesPage = () => {
     if (!dueDate) return 0;
     try {
       const today = new Date();
-      const due = new Date(dueDate);
+      today.setHours(0, 0, 0, 0); // Reset time to start of day
+      
+      let due;
+      // If the date string is in YYYY-MM-DD format, parse it as local date
+      if (typeof dueDate === 'string' && dueDate.match(/^\d{4}-\d{2}-\d{2}$/)) {
+        const [year, month, day] = dueDate.split('-').map(Number);
+        due = new Date(year, month - 1, day);
+      } else {
+        due = new Date(dueDate);
+        // Reset to start of day in local timezone
+        due = new Date(due.getFullYear(), due.getMonth(), due.getDate());
+      }
+      
       if (isNaN(due.getTime())) {
         return 0;
       }
+      
       const diffTime = due - today;
       const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
       return diffDays;
