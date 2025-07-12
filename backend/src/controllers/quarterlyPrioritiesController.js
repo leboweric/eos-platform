@@ -343,7 +343,7 @@ export const createPriority = async (req, res) => {
 export const updatePriority = async (req, res) => {
   try {
     const { orgId, teamId, priorityId } = req.params;
-    const { title, description, status, progress } = req.body;
+    const { title, description, status, progress, dueDate } = req.body;
     
     // Get progress-safe query parts
     const { update } = await getProgressSafeQuery();
@@ -353,11 +353,12 @@ export const updatePriority = async (req, res) => {
        SET title = COALESCE($1, title),
            description = COALESCE($2, description),
            status = COALESCE($3, status),
+           due_date = COALESCE($4, due_date),
            ${update}
            updated_at = NOW()
-       WHERE id = $5 AND organization_id = $6
+       WHERE id = $6 AND organization_id = $7
        RETURNING *`,
-      [title, description, status, progress, priorityId, orgId]
+      [title, description, status, dueDate, progress, priorityId, orgId]
     );
     
     if (result.rows.length === 0) {

@@ -406,7 +406,8 @@ const QuarterlyPrioritiesPage = () => {
       title: priority.title,
       description: priority.description,
       status: priority.status,
-      progress: priority.progress
+      progress: priority.progress,
+      dueDate: priority.dueDate
     });
 
     const handleSave = () => {
@@ -501,13 +502,22 @@ const QuarterlyPrioritiesPage = () => {
               </div>
               <div>
                 <Label className="text-sm text-gray-600">Due Date</Label>
-                <div className="flex items-center space-x-2 mt-1">
-                  <Calendar className="h-4 w-4 text-gray-400" />
-                  <span className="text-sm">{formatDate(priority.dueDate)}</span>
-                  <span className="text-xs text-gray-500">
-                    ({getDaysUntilDue(priority.dueDate)} days)
-                  </span>
-                </div>
+                {isEditing ? (
+                  <Input
+                    type="date"
+                    value={editForm.dueDate ? new Date(editForm.dueDate).toISOString().split('T')[0] : ''}
+                    onChange={(e) => setEditForm({ ...editForm, dueDate: e.target.value })}
+                    className="mt-1"
+                  />
+                ) : (
+                  <div className="flex items-center space-x-2 mt-1">
+                    <Calendar className="h-4 w-4 text-gray-400" />
+                    <span className="text-sm">{formatDate(priority.dueDate)}</span>
+                    <span className="text-xs text-gray-500">
+                      ({getDaysUntilDue(priority.dueDate)} days)
+                    </span>
+                  </div>
+                )}
               </div>
               <div>
                 <Label className="text-sm text-gray-600">Status</Label>
@@ -1144,65 +1154,6 @@ const QuarterlyPrioritiesPage = () => {
                 className="rounded border-gray-300"
               />
               <Label htmlFor="isCompany">This is a company-wide priority</Label>
-            </div>
-            {/* Milestones for new priority */}
-            <div>
-              <div className="flex items-center justify-between mb-2">
-                <Label>Milestones</Label>
-                <Button
-                  type="button"
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => {
-                    if (newMilestoneForm.title && newMilestoneForm.dueDate) {
-                      setPriorityForm({
-                        ...priorityForm,
-                        milestones: [...priorityForm.milestones, { ...newMilestoneForm, id: Date.now() }]
-                      });
-                      setNewMilestoneForm({ title: '', dueDate: '' });
-                    }
-                  }}
-                  disabled={!newMilestoneForm.title || !newMilestoneForm.dueDate}
-                >
-                  <Plus className="h-3 w-3 mr-1" />
-                  Add Milestone
-                </Button>
-              </div>
-              <div className="space-y-2">
-                {priorityForm.milestones.map((milestone) => (
-                  <div key={milestone.id} className="flex items-center space-x-3">
-                    <span className="text-sm flex-1">{milestone.title}</span>
-                    <span className="text-xs text-gray-500">{formatDate(milestone.dueDate)}</span>
-                    <Button
-                      type="button"
-                      size="sm"
-                      variant="ghost"
-                      onClick={() => {
-                        setPriorityForm({
-                          ...priorityForm,
-                          milestones: priorityForm.milestones.filter(m => m.id !== milestone.id)
-                        });
-                      }}
-                    >
-                      <Trash2 className="h-3 w-3" />
-                    </Button>
-                  </div>
-                ))}
-                <div className="flex items-center space-x-3">
-                  <Input
-                    value={newMilestoneForm.title}
-                    onChange={(e) => setNewMilestoneForm({ ...newMilestoneForm, title: e.target.value })}
-                    placeholder="Milestone title"
-                    className="flex-1 text-sm"
-                  />
-                  <Input
-                    type="date"
-                    value={newMilestoneForm.dueDate}
-                    onChange={(e) => setNewMilestoneForm({ ...newMilestoneForm, dueDate: e.target.value })}
-                    className="w-32 text-xs"
-                  />
-                </div>
-              </div>
             </div>
           </div>
           <DialogFooter>
