@@ -43,7 +43,7 @@ export const businessBlueprintService = {
     const response = await axios.put(buildUrl('/ten-year-target'), {
       targetDescription: bhag.description,
       targetYear: bhag.year,
-      runningTotalDescription: bhag.runningTotal
+      runningTotalDescription: ''
     });
     return response.data.data;
   },

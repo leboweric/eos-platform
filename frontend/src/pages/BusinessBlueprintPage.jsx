@@ -53,9 +53,7 @@ const BusinessBlueprintPage = () => {
     },
     marketingStrategy: {
       targetMarket: '',
-      differentiator1: '',
-      differentiator2: '',
-      differentiator3: '',
+      differentiators: ['', '', ''],
       provenProcessExists: false,
       guaranteeExists: false
     },
@@ -101,9 +99,11 @@ const BusinessBlueprintPage = () => {
         },
         marketingStrategy: {
           targetMarket: data.marketingStrategy?.target_market || '',
-          differentiator1: data.marketingStrategy?.differentiator_1 || '',
-          differentiator2: data.marketingStrategy?.differentiator_2 || '',
-          differentiator3: data.marketingStrategy?.differentiator_3 || '',
+          differentiators: [
+            data.marketingStrategy?.differentiator_1 || '',
+            data.marketingStrategy?.differentiator_2 || '',
+            data.marketingStrategy?.differentiator_3 || ''
+          ],
           provenProcessExists: data.marketingStrategy?.proven_process_exists || false,
           guaranteeExists: data.marketingStrategy?.guarantee_exists || false
         },
@@ -187,7 +187,16 @@ const BusinessBlueprintPage = () => {
     try {
       setSaving(true);
       setError(null);
-      await businessBlueprintService.updateCoreFocus(blueprintData.coreFocus);
+      // Backend expects 'purpose' field regardless of hedgehog type
+      const { hedgehogType, niche, purpose, cause, passion } = blueprintData.coreFocus;
+      const purposeValue = hedgehogType === 'purpose' ? purpose : 
+                          hedgehogType === 'cause' ? cause : passion;
+      
+      await businessBlueprintService.updateCoreFocus({
+        purpose: purposeValue,
+        niche,
+        hedgehogType
+      });
       setSuccess('Hedgehog updated successfully');
     } catch (error) {
       setError('Failed to update Hedgehog');
@@ -215,7 +224,20 @@ const BusinessBlueprintPage = () => {
     try {
       setSaving(true);
       setError(null);
-      await businessBlueprintService.updateMarketingStrategy(blueprintData.marketingStrategy);
+      // Convert array to individual fields for backend
+      const { targetMarket, differentiators, provenProcessExists, guaranteeExists } = blueprintData.marketingStrategy;
+      const strategyData = {
+        targetMarket,
+        differentiator1: differentiators[0] || '',
+        differentiator2: differentiators[1] || '',
+        differentiator3: differentiators[2] || '',
+        // Backend doesn't support 4th and 5th differentiators yet, but we'll send them anyway
+        differentiator4: differentiators[3] || '',
+        differentiator5: differentiators[4] || '',
+        provenProcessExists,
+        guaranteeExists
+      };
+      await businessBlueprintService.updateMarketingStrategy(strategyData);
       setSuccess('Marketing strategy updated successfully');
     } catch (error) {
       setError('Failed to update marketing strategy');
@@ -295,7 +317,7 @@ const BusinessBlueprintPage = () => {
         <div className="flex items-center justify-between mb-8">
           <div>
             <h1 className="text-4xl font-bold text-gray-900">
-              Vision/Traction Organizer™
+              Business Blueprint
             </h1>
             <p className="text-gray-600 mt-2 text-lg">Define your organization's vision and strategy for success</p>
           </div>
@@ -384,7 +406,7 @@ const BusinessBlueprintPage = () => {
                 Hedgehog
               </CardTitle>
               <CardDescription className="text-gray-600">
-                Your organization's core focus - what drives you
+                Your sweet spot
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
@@ -464,7 +486,7 @@ const BusinessBlueprintPage = () => {
                 Big Hairy Audacious Goal (BHAG)
               </CardTitle>
               <CardDescription className="text-gray-600">
-                Your 10+ year ambitious goal
+                Your Long Range Vision
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
@@ -495,17 +517,6 @@ const BusinessBlueprintPage = () => {
                 />
               </div>
 
-              <div>
-                <Label htmlFor="runningTotal">Running Total (optional)</Label>
-                <Input
-                  id="runningTotal"
-                  value={blueprintData.bhag.runningTotal}
-                  onChange={(e) => setBlueprintData(prev => ({
-                    ...prev,
-                    bhag: { ...prev.bhag, runningTotal: e.target.value }
-                  }))}
-                  placeholder="e.g., $50M ARR"
-                />
               </div>
 
               <Button onClick={handleSaveBHAG} disabled={saving} className="bg-indigo-600 hover:bg-indigo-700 text-white">
@@ -545,32 +556,61 @@ const BusinessBlueprintPage = () => {
               </div>
 
               <div>
-                <Label>3 Differentiators</Label>
-                <div className="space-y-2 mt-2">
-                  <Input
-                    placeholder="Differentiator 1"
-                    value={blueprintData.marketingStrategy.differentiator1}
-                    onChange={(e) => setBlueprintData(prev => ({
-                      ...prev,
-                      marketingStrategy: { ...prev.marketingStrategy, differentiator1: e.target.value }
-                    }))}
-                  />
-                  <Input
-                    placeholder="Differentiator 2"
-                    value={blueprintData.marketingStrategy.differentiator2}
-                    onChange={(e) => setBlueprintData(prev => ({
-                      ...prev,
-                      marketingStrategy: { ...prev.marketingStrategy, differentiator2: e.target.value }
-                    }))}
-                  />
-                  <Input
-                    placeholder="Differentiator 3"
-                    value={blueprintData.marketingStrategy.differentiator3}
-                    onChange={(e) => setBlueprintData(prev => ({
-                      ...prev,
-                      marketingStrategy: { ...prev.marketingStrategy, differentiator3: e.target.value }
-                    }))}
-                  />
+                <div className="flex items-center justify-between mb-2">
+                  <Label>Differentiators (3-5)</Label>
+                  {blueprintData.marketingStrategy.differentiators.length < 5 && (
+                    <Button
+                      type="button"
+                      size="sm"
+                      variant="outline"
+                      onClick={() => setBlueprintData(prev => ({
+                        ...prev,
+                        marketingStrategy: {
+                          ...prev.marketingStrategy,
+                          differentiators: [...prev.marketingStrategy.differentiators, '']
+                        }
+                      }))}
+                    >
+                      <Plus className="h-4 w-4" />
+                    </Button>
+                  )}
+                </div>
+                <div className="space-y-2">
+                  {blueprintData.marketingStrategy.differentiators.map((diff, index) => (
+                    <div key={index} className="flex gap-2">
+                      <Input
+                        placeholder={`Differentiator ${index + 1}`}
+                        value={diff}
+                        onChange={(e) => setBlueprintData(prev => {
+                          const newDifferentiators = [...prev.marketingStrategy.differentiators];
+                          newDifferentiators[index] = e.target.value;
+                          return {
+                            ...prev,
+                            marketingStrategy: {
+                              ...prev.marketingStrategy,
+                              differentiators: newDifferentiators
+                            }
+                          };
+                        })}
+                      />
+                      {blueprintData.marketingStrategy.differentiators.length > 3 && (
+                        <Button
+                          type="button"
+                          size="sm"
+                          variant="ghost"
+                          onClick={() => setBlueprintData(prev => ({
+                            ...prev,
+                            marketingStrategy: {
+                              ...prev.marketingStrategy,
+                              differentiators: prev.marketingStrategy.differentiators.filter((_, i) => i !== index)
+                            }
+                          }))}
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                      )}
+                    </div>
+                  ))}
                 </div>
               </div>
 
