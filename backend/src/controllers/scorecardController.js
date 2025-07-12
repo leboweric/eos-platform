@@ -1,5 +1,25 @@
 import db from '../config/database.js';
 
+// Helper function to get team members
+async function getTeamMembers(orgId) {
+  console.log('Getting team members for scorecard org:', orgId);
+  const result = await db.query(
+    `SELECT 
+      u.id,
+      u.first_name || ' ' || u.last_name as name,
+      u.role,
+      u.first_name,
+      u.last_name
+     FROM users u
+     WHERE u.organization_id = $1
+     ORDER BY u.first_name, u.last_name`,
+    [orgId]
+  );
+  
+  console.log(`Found ${result.rows.length} team members for scorecard`);
+  return result.rows;
+}
+
 // Get complete scorecard with metrics and scores
 export const getScorecard = async (req, res) => {
   try {
@@ -36,11 +56,15 @@ export const getScorecard = async (req, res) => {
       weeklyScores[score.metric_id][weekDate] = score.value;
     });
     
+    // Get team members for the organization
+    const teamMembers = await getTeamMembers(orgId);
+    
     res.json({
       success: true,
       data: {
         metrics: metrics.rows,
-        weeklyScores
+        weeklyScores,
+        teamMembers
       }
     });
   } catch (error) {

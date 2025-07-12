@@ -51,7 +51,6 @@ const ScorecardPage = () => {
     
     if (user?.organizationId) {
       fetchScorecard();
-      fetchUsers();
     }
   }, [user?.organizationId]);
 
@@ -72,9 +71,11 @@ const ScorecardPage = () => {
       if (response && response.data) {
         setMetrics(response.data.metrics || []);
         setWeeklyScores(response.data.weeklyScores || {});
+        setUsers(response.data.teamMembers || []);
       } else if (response) {
         setMetrics(response.metrics || []);
         setWeeklyScores(response.weeklyScores || {});
+        setUsers(response.teamMembers || []);
       }
     } catch (error) {
       console.error('Failed to fetch scorecard:', error);
@@ -84,40 +85,6 @@ const ScorecardPage = () => {
     }
   };
 
-  const fetchUsers = async () => {
-    try {
-      const orgId = user?.organizationId;
-      console.log('Fetching users for orgId:', orgId);
-      
-      if (!orgId) {
-        console.error('No organization ID found for fetching users');
-        return;
-      }
-      
-      const token = localStorage.getItem('accessToken');
-      const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3001/api/v1';
-      const url = `${API_URL}/organizations/${orgId}/users/organization`;
-      console.log('Making request to:', url);
-      
-      const response = await fetch(url, {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      });
-      
-      console.log('Users fetch response status:', response.status);
-      
-      if (response.ok) {
-        const data = await response.json();
-        console.log('Users data received:', data);
-        setUsers(data.data || []);
-      } else {
-        console.error('Failed to fetch users - response not ok:', response.status, await response.text());
-      }
-    } catch (error) {
-      console.error('Failed to fetch users:', error);
-    }
-  };
 
   const handleAddMetric = () => {
     setEditingMetric(null);
