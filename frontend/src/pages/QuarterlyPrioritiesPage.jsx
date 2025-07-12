@@ -413,7 +413,8 @@ const QuarterlyPrioritiesPage = () => {
       status: priority.status,
       progress: priority.progress,
       dueDate: priority.dueDate,
-      ownerId: priority.owner.id
+      ownerId: priority.owner.id,
+      isCompanyPriority: priority.isCompanyPriority
     });
 
     const handleSave = () => {
@@ -597,6 +598,20 @@ const QuarterlyPrioritiesPage = () => {
                 </div>
               </div>
             </div>
+
+            {/* Company/Individual Priority Toggle (only in edit mode) */}
+            {isEditing && (
+              <div className="flex items-center space-x-2 mt-4">
+                <input
+                  type="checkbox"
+                  id="editIsCompany"
+                  checked={editForm.isCompanyPriority}
+                  onChange={(e) => setEditForm({ ...editForm, isCompanyPriority: e.target.checked })}
+                  className="rounded border-gray-300"
+                />
+                <Label htmlFor="editIsCompany" className="text-sm">This is a company-wide priority</Label>
+              </div>
+            )}
 
             {/* Milestones */}
             <div>
