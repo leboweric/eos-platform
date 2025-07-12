@@ -47,6 +47,11 @@ const limiter = rateLimit({
   message: 'Too many requests from this IP, please try again later.',
   standardHeaders: true, // Return rate limit info in the `RateLimit-*` headers
   legacyHeaders: false, // Disable the `X-RateLimit-*` headers
+  // Use X-Forwarded-For header for Railway deployment
+  keyGenerator: (req) => {
+    // Get the real IP from X-Forwarded-For header (Railway proxy)
+    return req.headers['x-forwarded-for']?.split(',')[0] || req.ip;
+  },
   // Skip auth endpoints from rate limiting or give them higher limits
   skip: (req) => {
     // Skip rate limiting for auth endpoints to prevent login/register issues

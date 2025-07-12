@@ -20,7 +20,7 @@ export const issuesService = {
     
     const params = timeline ? { timeline } : {};
     const response = await axios.get(
-      `/api/v1/organizations/${orgId}/teams/${teamId}/issues`,
+      `/organizations/${orgId}/teams/${teamId}/issues`,
       { params }
     );
     return response.data;
@@ -32,7 +32,7 @@ export const issuesService = {
     const teamId = getTeamId();
     
     const response = await axios.post(
-      `/api/v1/organizations/${orgId}/teams/${teamId}/issues`,
+      `/organizations/${orgId}/teams/${teamId}/issues`,
       {
         ...issueData,
         teamId
@@ -47,7 +47,7 @@ export const issuesService = {
     const teamId = getTeamId();
     
     const response = await axios.put(
-      `/api/v1/organizations/${orgId}/teams/${teamId}/issues/${issueId}`,
+      `/organizations/${orgId}/teams/${teamId}/issues/${issueId}`,
       issueData
     );
     return response.data.data;
@@ -59,7 +59,7 @@ export const issuesService = {
     const teamId = getTeamId();
     
     await axios.delete(
-      `/api/v1/organizations/${orgId}/teams/${teamId}/issues/${issueId}`
+      `/organizations/${orgId}/teams/${teamId}/issues/${issueId}`
     );
   },
 
@@ -69,7 +69,7 @@ export const issuesService = {
     const teamId = getTeamId();
     
     await axios.put(
-      `/api/v1/organizations/${orgId}/teams/${teamId}/issues/priorities`,
+      `/organizations/${orgId}/teams/${teamId}/issues/priorities`,
       { updates }
     );
   },
@@ -80,7 +80,7 @@ export const issuesService = {
     const teamId = getTeamId();
     
     const response = await axios.get(
-      `/api/v1/organizations/${orgId}/teams/${teamId}/issues/${issueId}/attachments`
+      `/organizations/${orgId}/teams/${teamId}/issues/${issueId}/attachments`
     );
     return response.data.data;
   },
@@ -94,7 +94,7 @@ export const issuesService = {
     formData.append('file', file);
     
     const response = await axios.post(
-      `/api/v1/organizations/${orgId}/teams/${teamId}/issues/${issueId}/attachments`,
+      `/organizations/${orgId}/teams/${teamId}/issues/${issueId}/attachments`,
       formData,
       {
         headers: {
@@ -111,7 +111,7 @@ export const issuesService = {
     const teamId = getTeamId();
     
     const response = await axios.get(
-      `/api/v1/organizations/${orgId}/teams/${teamId}/issues/${issueId}/attachments/${attachmentId}`,
+      `/organizations/${orgId}/teams/${teamId}/issues/${issueId}/attachments/${attachmentId}`,
       {
         responseType: 'blob'
       }
@@ -125,7 +125,7 @@ export const issuesService = {
     const teamId = getTeamId();
     
     await axios.delete(
-      `/api/v1/organizations/${orgId}/teams/${teamId}/issues/${issueId}/attachments/${attachmentId}`
+      `/organizations/${orgId}/teams/${teamId}/issues/${issueId}/attachments/${attachmentId}`
     );
   }
 };
