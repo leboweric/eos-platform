@@ -86,11 +86,11 @@ const BusinessBlueprintPage = () => {
       setBlueprintData({
         coreValues: data.coreValues || [],
         coreFocus: {
-          purpose: data.coreFocus?.purpose || '',
-          cause: data.coreFocus?.cause || '',
-          passion: data.coreFocus?.passion || '',
+          purpose: data.coreFocus?.hedgehog_type === 'purpose' ? (data.coreFocus?.purpose_cause_passion || '') : '',
+          cause: data.coreFocus?.hedgehog_type === 'cause' ? (data.coreFocus?.purpose_cause_passion || '') : '',
+          passion: data.coreFocus?.hedgehog_type === 'passion' ? (data.coreFocus?.purpose_cause_passion || '') : '',
           niche: data.coreFocus?.niche || '',
-          hedgehogType: data.coreFocus?.hedgehogType || 'purpose'
+          hedgehogType: data.coreFocus?.hedgehog_type || 'purpose'
         },
         bhag: {
           description: data.tenYearTarget?.target_description || '',
