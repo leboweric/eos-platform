@@ -94,6 +94,24 @@ export const getOrganizationalCharts = async (req, res) => {
 // @desc    Get a specific organizational chart with all details
 // @route   GET /api/v1/organizations/:orgId/organizational-charts/:chartId
 // @access  Private
+// Helper function to get team members
+async function getTeamMembers(orgId) {
+  const result = await query(
+    `SELECT 
+      u.id,
+      u.first_name || ' ' || u.last_name as name,
+      u.role,
+      u.first_name,
+      u.last_name
+     FROM users u
+     WHERE u.organization_id = $1
+     ORDER BY u.first_name, u.last_name`,
+    [orgId]
+  );
+  
+  return result.rows;
+}
+
 export const getOrganizationalChart = async (req, res) => {
   try {
     const { orgId, chartId } = req.params;
@@ -213,11 +231,15 @@ export const getOrganizationalChart = async (req, res) => {
       }
     });
 
+    // Get team members for the organization
+    const teamMembers = await getTeamMembers(orgId);
+
     res.json({
       success: true,
       data: {
         chart,
-        positions: rootPositions
+        positions: rootPositions,
+        teamMembers
       }
     });
   } catch (error) {

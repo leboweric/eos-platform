@@ -13,6 +13,7 @@ import {
 import PositionEditor from './PositionEditor';
 import AddPositionDialog from './AddPositionDialog';
 import EditPositionDialog from './EditPositionDialog';
+import AssignHolderDialog from './AssignHolderDialog';
 
 const ChartEditor = ({ chartId, onUpdate }) => {
   const [loading, setLoading] = useState(true);
@@ -20,10 +21,13 @@ const ChartEditor = ({ chartId, onUpdate }) => {
   const [error, setError] = useState(null);
   const [chartData, setChartData] = useState(null);
   const [skills, setSkills] = useState([]);
+  const [teamMembers, setTeamMembers] = useState([]);
   const [showAddDialog, setShowAddDialog] = useState(false);
   const [showEditDialog, setShowEditDialog] = useState(false);
+  const [showAssignDialog, setShowAssignDialog] = useState(false);
   const [parentPosition, setParentPosition] = useState(null);
   const [editingPosition, setEditingPosition] = useState(null);
+  const [assigningPosition, setAssigningPosition] = useState(null);
 
   useEffect(() => {
     fetchData();
@@ -39,6 +43,10 @@ const ChartEditor = ({ chartId, onUpdate }) => {
       ]);
       setChartData(chartResponse);
       setSkills(skillsResponse);
+      // Extract team members from chart response
+      if (chartResponse?.teamMembers) {
+        setTeamMembers(chartResponse.teamMembers);
+      }
     } catch (error) {
       console.error('Failed to fetch data:', error);
       setError('Failed to load chart data');
@@ -122,10 +130,17 @@ const ChartEditor = ({ chartId, onUpdate }) => {
     }
   };
 
+  const handleShowAssignDialog = (position) => {
+    setAssigningPosition(position);
+    setShowAssignDialog(true);
+  };
+
   const handleAssignHolder = async (positionId, holderData) => {
     try {
       await organizationalChartService.assignPositionHolder(chartId, positionId, holderData);
       await fetchData();
+      setShowAssignDialog(false);
+      setAssigningPosition(null);
     } catch (error) {
       console.error('Failed to assign holder:', error);
       throw error;
@@ -222,7 +237,7 @@ const ChartEditor = ({ chartId, onUpdate }) => {
                   onUpdate={() => handleEditPosition(position)}
                   onDelete={handleDeletePosition}
                   onAddChild={handleAddPosition}
-                  onAssignHolder={handleAssignHolder}
+                  onAssignHolder={handleShowAssignDialog}
                   onRemoveHolder={handleRemoveHolder}
                   handleEditPosition={handleEditPosition}
                   level={0}
@@ -253,6 +268,19 @@ const ChartEditor = ({ chartId, onUpdate }) => {
           onSave={handleUpdatePosition}
           position={editingPosition}
           skills={skills}
+        />
+      )}
+
+      {showAssignDialog && assigningPosition && (
+        <AssignHolderDialog
+          open={showAssignDialog}
+          onClose={() => {
+            setShowAssignDialog(false);
+            setAssigningPosition(null);
+          }}
+          onAssign={handleAssignHolder}
+          position={assigningPosition}
+          teamMembers={teamMembers}
         />
       )}
     </div>
