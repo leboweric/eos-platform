@@ -152,7 +152,7 @@ const QuarterlyPrioritiesPage = () => {
       case 'complete':
         return 'default';
       case 'on-track':
-        return 'default';
+        return 'success';
       case 'off-track':
         return 'destructive';
       default:
@@ -412,7 +412,8 @@ const QuarterlyPrioritiesPage = () => {
       description: priority.description,
       status: priority.status,
       progress: priority.progress,
-      dueDate: priority.dueDate
+      dueDate: priority.dueDate,
+      ownerId: priority.owner.id
     });
 
     const handleSave = () => {
@@ -433,7 +434,7 @@ const QuarterlyPrioritiesPage = () => {
           <div className="flex items-start justify-between">
             <div className="flex-1">
               <div className="flex items-center space-x-3 mb-2">
-                <div className={`w-3 h-3 rounded-full ${getStatusColor(priority.status)}`} />
+                <div className={`w-3 h-3 rounded-full ${getStatusColor(isEditing ? editForm.status : priority.status)}`} />
                 {isEditing ? (
                   <Input
                     value={editForm.title}
@@ -449,9 +450,16 @@ const QuarterlyPrioritiesPage = () => {
                     Company Priority
                   </Badge>
                 )}
-                <Badge variant={getStatusBadgeVariant(priority.status)} className="flex items-center space-x-1">
-                  {getStatusIcon(priority.status)}
-                  <span className="capitalize">{priority.status.replace('-', ' ')}</span>
+                <Badge 
+                  variant={getStatusBadgeVariant(isEditing ? editForm.status : priority.status)} 
+                  className={`flex items-center space-x-1 ${
+                    (isEditing ? editForm.status : priority.status) === 'on-track' ? 'bg-green-100 text-green-800 border-green-300' :
+                    (isEditing ? editForm.status : priority.status) === 'off-track' ? 'bg-red-100 text-red-800 border-red-300' :
+                    (isEditing ? editForm.status : priority.status) === 'complete' ? 'bg-gray-100 text-gray-800 border-gray-300' : ''
+                  }`}
+                >
+                  {getStatusIcon(isEditing ? editForm.status : priority.status)}
+                  <span className="capitalize">{(isEditing ? editForm.status : priority.status).replace('-', ' ')}</span>
                 </Badge>
               </div>
               {isEditing ? (
@@ -496,14 +504,32 @@ const QuarterlyPrioritiesPage = () => {
             <div className="grid md:grid-cols-4 gap-4">
               <div>
                 <Label className="text-sm text-gray-600">Owner</Label>
-                <div className="flex items-center space-x-2 mt-1">
-                  <Avatar className="h-6 w-6">
-                    <AvatarFallback className="text-xs">
-                      {getUserInitials(priority.owner.name)}
-                    </AvatarFallback>
-                  </Avatar>
-                  <span className="text-sm">{priority.owner.name}</span>
-                </div>
+                {isEditing ? (
+                  <Select
+                    value={editForm.ownerId}
+                    onValueChange={(value) => setEditForm({ ...editForm, ownerId: value })}
+                  >
+                    <SelectTrigger className="h-8 mt-1">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {teamMembers.map(member => (
+                        <SelectItem key={member.id} value={member.id}>
+                          {member.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                ) : (
+                  <div className="flex items-center space-x-2 mt-1">
+                    <Avatar className="h-6 w-6">
+                      <AvatarFallback className="text-xs">
+                        {getUserInitials(priority.owner.name)}
+                      </AvatarFallback>
+                    </Avatar>
+                    <span className="text-sm">{priority.owner.name}</span>
+                  </div>
+                )}
               </div>
               <div>
                 <Label className="text-sm text-gray-600">Due Date</Label>
