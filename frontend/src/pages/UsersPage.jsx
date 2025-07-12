@@ -103,6 +103,7 @@ const UsersPage = () => {
       });
       if (response.ok) {
         const data = await response.json();
+        console.log('Organizations loaded:', data.data);
         setOrganizations(data.data || []);
         // Set default to current organization
         setSelectedOrgId(user?.organizationId);
@@ -330,6 +331,7 @@ const UsersPage = () => {
             <Select
               value={selectedOrgId || user?.organizationId}
               onValueChange={(value) => {
+                console.log('Organization selected:', value, organizations.find(o => o.id === value)?.name);
                 setSelectedOrgId(value);
                 // Refresh users when organization changes
                 setTimeout(() => fetchUsers(), 100);
