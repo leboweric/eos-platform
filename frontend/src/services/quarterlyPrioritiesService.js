@@ -85,6 +85,24 @@ export const quarterlyPrioritiesService = {
     }
   },
 
+  // Archive a priority (soft delete)
+  async archivePriority(orgId, teamId, priorityId) {
+    const token = localStorage.getItem('accessToken');
+    const response = await fetch(
+      `${API_URL}/organizations/${orgId}/teams/${teamId}/quarterly-priorities/priorities/${priorityId}/archive`,
+      {
+        method: 'PUT',
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      }
+    );
+    
+    if (!response.ok) {
+      throw new Error('Failed to archive priority');
+    }
+  },
+
   // Update predictions
   async updatePredictions(orgId, teamId, predictions) {
     const token = localStorage.getItem('accessToken');

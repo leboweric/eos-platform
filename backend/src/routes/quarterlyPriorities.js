@@ -6,6 +6,8 @@ import {
   createPriority,
   updatePriority,
   deletePriority,
+  archivePriority,
+  getArchivedPriorities,
   updatePredictions,
   createMilestone,
   updateMilestone,
@@ -21,10 +23,14 @@ router.use(authenticate);
 // Get priorities for a quarter
 router.get('/', getQuarterlyPriorities);
 
+// Get archived priorities
+router.get('/archived', getArchivedPriorities);
+
 // Priority CRUD
 router.post('/priorities', createPriority);
 router.put('/priorities/:priorityId', updatePriority);
 router.delete('/priorities/:priorityId', deletePriority);
+router.put('/priorities/:priorityId/archive', archivePriority);
 
 // Predictions
 router.put('/predictions', updatePredictions);

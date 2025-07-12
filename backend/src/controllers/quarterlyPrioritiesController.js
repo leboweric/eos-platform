@@ -131,6 +131,7 @@ export const getQuarterlyPriorities = async (req, res) => {
          WHERE p.organization_id = $1::uuid 
            AND p.quarter = $2::varchar(2)
            AND p.year = $3::integer
+           AND p.deleted_at IS NULL
          GROUP BY p.id, u.first_name, u.last_name, u.email
          ORDER BY p.is_company_priority DESC, p.created_at`,
         [orgId, currentQuarter, currentYear]
@@ -424,6 +425,34 @@ export const deletePriority = async (req, res) => {
   }
 };
 
+// Archive a priority (soft delete)
+export const archivePriority = async (req, res) => {
+  try {
+    const { orgId, teamId, priorityId } = req.params;
+    
+    const result = await query(
+      `UPDATE quarterly_priorities 
+       SET deleted_at = NOW()
+       WHERE id = $1 AND organization_id = $2 AND deleted_at IS NULL
+       RETURNING *`,
+      [priorityId, orgId]
+    );
+    
+    if (result.rows.length === 0) {
+      return res.status(404).json({ error: 'Priority not found or already archived' });
+    }
+    
+    res.json({
+      success: true,
+      message: 'Priority archived successfully',
+      data: result.rows[0]
+    });
+  } catch (error) {
+    console.error('Archive priority error:', error);
+    res.status(500).json({ error: 'Failed to archive priority' });
+  }
+};
+
 // Update predictions
 export const updatePredictions = async (req, res) => {
   try {
@@ -673,3 +702,121 @@ async function updatePriorityProgress(priorityId) {
     // Don't throw - just log the error
   }
 }
+
+// Get archived priorities
+export const getArchivedPriorities = async (req, res) => {
+  const { orgId, teamId } = req.params;
+  
+  try {
+    console.log('Fetching archived priorities:', { orgId, teamId });
+    
+    // Get progress-safe query
+    const { select } = await getProgressSafeQuery();
+    
+    // Get all archived priorities
+    const prioritiesResult = await query(
+      `SELECT 
+        p.*,
+        u.first_name || ' ' || u.last_name as owner_name,
+        u.email as owner_email,
+        array_agg(
+          json_build_object(
+            'id', m.id,
+            'title', m.title,
+            'completed', m.completed,
+            'due_date', m.due_date
+          ) ORDER BY m.due_date
+        ) FILTER (WHERE m.id IS NOT NULL) as milestones
+       FROM quarterly_priorities p
+       LEFT JOIN users u ON p.owner_id = u.id
+       LEFT JOIN priority_milestones m ON p.id = m.priority_id
+       WHERE p.organization_id = $1::uuid 
+         AND p.deleted_at IS NOT NULL
+       GROUP BY p.id, u.first_name, u.last_name, u.email
+       ORDER BY p.deleted_at DESC, p.is_company_priority DESC, p.created_at`,
+      [orgId]
+    );
+    
+    // Get latest updates for each priority
+    const priorityIds = prioritiesResult.rows.map(p => p.id);
+    let updates = {};
+    
+    if (priorityIds.length > 0) {
+      const updatesResult = await query(
+        `SELECT DISTINCT ON (priority_id) 
+          priority_id,
+          update_text,
+          pu.created_at,
+          u.first_name || ' ' || u.last_name as author_name
+         FROM priority_updates pu
+         JOIN users u ON pu.created_by = u.id
+         WHERE priority_id = ANY($1)
+         ORDER BY priority_id, pu.created_at DESC`,
+        [priorityIds]
+      );
+      
+      updatesResult.rows.forEach(update => {
+        updates[update.priority_id] = {
+          text: update.update_text,
+          date: update.created_at,
+          author: update.author_name
+        };
+      });
+    }
+    
+    // Format response
+    const priorities = prioritiesResult.rows.map(p => ({
+      id: p.id,
+      title: p.title,
+      description: p.description,
+      owner: {
+        id: p.owner_id,
+        name: p.owner_name,
+        email: p.owner_email
+      },
+      dueDate: p.due_date,
+      status: p.status,
+      progress: p.progress,
+      isCompanyPriority: p.is_company_priority,
+      milestones: p.milestones || [],
+      latestUpdate: updates[p.id] || null,
+      quarter: p.quarter,
+      year: p.year,
+      archivedAt: p.deleted_at
+    }));
+    
+    // Group by quarter/year
+    const groupedPriorities = {};
+    priorities.forEach(p => {
+      const key = `${p.quarter} ${p.year}`;
+      if (!groupedPriorities[key]) {
+        groupedPriorities[key] = {
+          quarter: p.quarter,
+          year: p.year,
+          companyPriorities: [],
+          teamMemberPriorities: {}
+        };
+      }
+      
+      if (p.isCompanyPriority) {
+        groupedPriorities[key].companyPriorities.push(p);
+      } else {
+        if (!groupedPriorities[key].teamMemberPriorities[p.owner.id]) {
+          groupedPriorities[key].teamMemberPriorities[p.owner.id] = [];
+        }
+        groupedPriorities[key].teamMemberPriorities[p.owner.id].push(p);
+      }
+    });
+    
+    res.json({
+      success: true,
+      data: groupedPriorities
+    });
+  } catch (error) {
+    console.error('Get archived priorities error:', error);
+    res.status(500).json({ 
+      error: 'Failed to fetch archived priorities',
+      details: process.env.NODE_ENV === 'development' ? error.message : undefined
+    });
+  }
+};

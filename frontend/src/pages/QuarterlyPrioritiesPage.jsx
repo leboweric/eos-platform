@@ -31,7 +31,8 @@ import {
   Save,
   X,
   Users,
-  Loader2
+  Loader2,
+  Archive
 } from 'lucide-react';
 import { format, addMonths, startOfQuarter, endOfQuarter } from 'date-fns';
 
@@ -97,6 +98,7 @@ const QuarterlyPrioritiesPage = () => {
   const [companyPriorities, setCompanyPriorities] = useState([]);
   const [teamMemberPriorities, setTeamMemberPriorities] = useState({});
   const [teamMembers, setTeamMembers] = useState([]);
+  const [archivedQuarters, setArchivedQuarters] = useState({});
   
   // Editing states
   const [editingPredictions, setEditingPredictions] = useState(false);
@@ -141,24 +143,33 @@ const QuarterlyPrioritiesPage = () => {
       }
       
       // Fetch either active or archived priorities
-      const data = showArchived 
-        ? await quarterlyPrioritiesService.getArchivedPriorities(orgId, teamId)
-        : await quarterlyPrioritiesService.getQuarterlyPriorities(orgId, teamId, quarter, currentYear);
-      
-      // Ensure predictions have all required nested properties
-      const safePredictions = data.predictions || {};
-      setPredictions({
-        revenue: safePredictions.revenue || { target: 0, current: 0 },
-        profit: safePredictions.profit || { target: 0, current: 0 },
-        measurables: safePredictions.measurables || { onTrack: 0, total: 0 }
-      });
-      
-      setCompanyPriorities(data.companyPriorities || []);
-      setTeamMemberPriorities(data.teamMemberPriorities || {});
-      setTeamMembers(data.teamMembers || []);
+      if (showArchived) {
+        const archivedData = await quarterlyPrioritiesService.getArchivedPriorities(orgId, teamId);
+        setArchivedQuarters(archivedData || {});
+        // Clear current priorities data when viewing archived
+        setPredictions(getDefaultPredictions());
+        setCompanyPriorities([]);
+        setTeamMemberPriorities({});
+        setTeamMembers([]);
+      } else {
+        const data = await quarterlyPrioritiesService.getQuarterlyPriorities(orgId, teamId, quarter, currentYear);
+        
+        // Ensure predictions have all required nested properties
+        const safePredictions = data.predictions || {};
+        setPredictions({
+          revenue: safePredictions.revenue || { target: 0, current: 0 },
+          profit: safePredictions.profit || { target: 0, current: 0 },
+          measurables: safePredictions.measurables || { onTrack: 0, total: 0 }
+        });
+        
+        setCompanyPriorities(data.companyPriorities || []);
+        setTeamMemberPriorities(data.teamMemberPriorities || {});
+        setTeamMembers(data.teamMembers || []);
+        setArchivedQuarters({});
+      }
     } catch (err) {
       console.error('Failed to fetch quarterly data:', err);
-      setError('Failed to load quarterly priorities. Please try again later.');
+      setError('Failed to load data. Please try again later.');
       
       // Set empty data on error
       setPredictions(getDefaultPredictions());
@@ -305,7 +316,7 @@ const QuarterlyPrioritiesPage = () => {
       setEditingPriority(null);
     } catch (err) {
       console.error('Failed to update priority:', err);
-      setError('Failed to update priority');
+      setError('Failed to save changes');
     }
   };
 
@@ -440,12 +451,12 @@ const QuarterlyPrioritiesPage = () => {
       await fetchQuarterlyData();
     } catch (err) {
       console.error('Failed to create priority:', err);
-      setError('Failed to create priority');
+      setError('Failed to create item');
     }
   };
 
-  const handleDeletePriority = async (priorityId) => {
-    if (!window.confirm('Are you sure you want to delete this priority?')) {
+  const handleArchivePriority = async (priorityId) => {
+    if (!window.confirm('Are you sure you want to archive this priority?')) {
       return;
     }
     
@@ -453,13 +464,13 @@ const QuarterlyPrioritiesPage = () => {
       const orgId = user?.organizationId;
       const teamId = user?.teamId || '00000000-0000-0000-0000-000000000000';
       
-      await quarterlyPrioritiesService.deletePriority(orgId, teamId, priorityId);
+      await quarterlyPrioritiesService.archivePriority(orgId, teamId, priorityId);
       
       // Refresh data
       await fetchQuarterlyData();
     } catch (err) {
-      console.error('Failed to delete priority:', err);
-      setError('Failed to delete priority');
+      console.error('Failed to archive priority:', err);
+      setError('Failed to archive item');
     }
   };
 
@@ -484,7 +495,7 @@ const QuarterlyPrioritiesPage = () => {
     offTrack: allPriorities.filter(p => p.status === 'off-track').length
   };
 
-  const PriorityCard = ({ priority, isCompany = false }) => {
+  const PriorityCard = ({ priority, isCompany = false, isArchived = false }) => {
     // Validate priority data
     if (!priority || !priority.owner) {
       console.error('Invalid priority data:', priority);
@@ -586,9 +597,16 @@ const QuarterlyPrioritiesPage = () => {
                   <Button variant="ghost" size="sm" onClick={() => setIsEditing(true)}>
                     <Edit className="h-4 w-4" />
                   </Button>
-                  <Button variant="ghost" size="sm" onClick={() => handleDeletePriority(priority.id)}>
-                    <Trash2 className="h-4 w-4" />
-                  </Button>
+                  {!isArchived && (
+                    <Button 
+                      variant="ghost" 
+                      size="sm" 
+                      onClick={() => handleArchivePriority(priority.id)}
+                      title="Archive priority"
+                    >
+                      <Archive className="h-4 w-4" />
+                    </Button>
+                  )}
                 </>
               )}
             </div>
@@ -1208,49 +1226,110 @@ const QuarterlyPrioritiesPage = () => {
       </Card>
       )}
 
-      {/* Company Priorities */}
-      <div className="space-y-4">
-        <div className="flex items-center space-x-2">
-          <Building2 className="h-6 w-6 text-blue-600" />
-          <h2 className="text-2xl font-bold">
-            {showArchived ? 'Archived Company Priorities' : 'Company Priorities'}
-          </h2>
-        </div>
-        {(companyPriorities || []).map(priority => (
-          <PriorityCard key={priority.id} priority={priority} isCompany={true} />
-        ))}
-      </div>
-
-      {/* Team Member Priorities */}
-      <div className="space-y-6">
-        <div className="flex items-center space-x-2">
-          <Users className="h-6 w-6 text-purple-600" />
-          <h2 className="text-2xl font-bold">
-            {showArchived ? 'Archived Individual Priorities' : 'Individual Priorities'}
-          </h2>
-        </div>
-        {(teamMembers || []).map(member => {
-          const memberPriorities = teamMemberPriorities[member.id] || [];
-          if (memberPriorities.length === 0) return null;
-
-          return (
-            <div key={member.id} className="space-y-4">
-              <div className="flex items-center space-x-3">
-                <Avatar className="h-8 w-8">
-                  <AvatarFallback>{getUserInitials(member.name)}</AvatarFallback>
-                </Avatar>
-                <div>
-                  <h3 className="text-lg font-semibold">{member.name}</h3>
-                  <p className="text-sm text-gray-600">{member.role} • {member.department}</p>
-                </div>
-              </div>
-              {memberPriorities.map(priority => (
-                <PriorityCard key={priority.id} priority={priority} />
-              ))}
+      {/* Display archived priorities by quarter if showing archived */}
+      {showArchived ? (
+        <div className="space-y-8">
+          {Object.entries(archivedQuarters).length === 0 ? (
+            <div className="text-center py-12">
+              <Archive className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+              <p className="text-gray-500">No archived priorities found</p>
             </div>
-          );
-        })}
-      </div>
+          ) : (
+            Object.entries(archivedQuarters)
+              .sort(([a], [b]) => b.localeCompare(a)) // Sort quarters in reverse order
+              .map(([quarterKey, quarterData]) => (
+                <div key={quarterKey} className="space-y-6">
+                  <div className="border-b pb-2">
+                    <h2 className="text-2xl font-bold">{quarterKey}</h2>
+                  </div>
+                  
+                  {/* Company Priorities for this quarter */}
+                  {quarterData.companyPriorities.length > 0 && (
+                    <div className="space-y-4">
+                      <div className="flex items-center space-x-2">
+                        <Building2 className="h-6 w-6 text-blue-600" />
+                        <h3 className="text-xl font-semibold">Company Priorities</h3>
+                      </div>
+                      {quarterData.companyPriorities.map(priority => (
+                        <PriorityCard key={priority.id} priority={priority} isCompany={true} isArchived={true} />
+                      ))}
+                    </div>
+                  )}
+                  
+                  {/* Individual Priorities for this quarter */}
+                  {Object.keys(quarterData.teamMemberPriorities).length > 0 && (
+                    <div className="space-y-6">
+                      <div className="flex items-center space-x-2">
+                        <Users className="h-6 w-6 text-purple-600" />
+                        <h3 className="text-xl font-semibold">Individual Priorities</h3>
+                      </div>
+                      {Object.entries(quarterData.teamMemberPriorities).map(([memberId, priorities]) => {
+                        const firstPriority = priorities[0];
+                        return (
+                          <div key={memberId} className="space-y-4">
+                            <div className="flex items-center space-x-3">
+                              <Avatar className="h-8 w-8">
+                                <AvatarFallback>{getUserInitials(firstPriority.owner.name)}</AvatarFallback>
+                              </Avatar>
+                              <div>
+                                <h4 className="text-lg font-semibold">{firstPriority.owner.name}</h4>
+                              </div>
+                            </div>
+                            {priorities.map(priority => (
+                              <PriorityCard key={priority.id} priority={priority} isArchived={true} />
+                            ))}
+                          </div>
+                        );
+                      })}
+                    </div>
+                  )}
+                </div>
+              ))
+          )}
+        </div>
+      ) : (
+        <>
+          {/* Company Priorities */}
+          <div className="space-y-4">
+            <div className="flex items-center space-x-2">
+              <Building2 className="h-6 w-6 text-blue-600" />
+              <h2 className="text-2xl font-bold">Company Priorities</h2>
+            </div>
+            {(companyPriorities || []).map(priority => (
+              <PriorityCard key={priority.id} priority={priority} isCompany={true} />
+            ))}
+          </div>
+
+          {/* Team Member Priorities */}
+          <div className="space-y-6">
+            <div className="flex items-center space-x-2">
+              <Users className="h-6 w-6 text-purple-600" />
+              <h2 className="text-2xl font-bold">Individual Priorities</h2>
+            </div>
+            {(teamMembers || []).map(member => {
+              const memberPriorities = teamMemberPriorities[member.id] || [];
+              if (memberPriorities.length === 0) return null;
+
+              return (
+                <div key={member.id} className="space-y-4">
+                  <div className="flex items-center space-x-3">
+                    <Avatar className="h-8 w-8">
+                      <AvatarFallback>{getUserInitials(member.name)}</AvatarFallback>
+                    </Avatar>
+                    <div>
+                      <h3 className="text-lg font-semibold">{member.name}</h3>
+                      <p className="text-sm text-gray-600">{member.role} • {member.department}</p>
+                    </div>
+                  </div>
+                  {memberPriorities.map(priority => (
+                    <PriorityCard key={priority.id} priority={priority} />
+                  ))}
+                </div>
+              );
+            })}
+          </div>
+        </>
+      )}
 
       {/* Add Priority Dialog */}
       <Dialog open={showAddPriority} onOpenChange={setShowAddPriority}>
