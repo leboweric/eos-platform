@@ -60,7 +60,7 @@ const CardInputForm = ({ onSuccess }) => {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${localStorage.getItem('token')}`
+          'Authorization': `Bearer ${localStorage.getItem('accessToken')}`
         },
         body: JSON.stringify({
           paymentMethodId: paymentMethod.id,
@@ -162,7 +162,7 @@ const BillingPage = () => {
     try {
       const response = await fetch(`${API_URL}/subscription/status`, {
         headers: {
-          'Authorization': `Bearer ${localStorage.getItem('token')}`
+          'Authorization': `Bearer ${localStorage.getItem('accessToken')}`
         }
       });
       const data = await response.json();
@@ -181,7 +181,7 @@ const BillingPage = () => {
     try {
       const response = await fetch(`${API_URL}/subscription/billing-history`, {
         headers: {
-          'Authorization': `Bearer ${localStorage.getItem('token')}`
+          'Authorization': `Bearer ${localStorage.getItem('accessToken')}`
         }
       });
       const data = await response.json();
@@ -199,7 +199,7 @@ const BillingPage = () => {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${localStorage.getItem('token')}`
+          'Authorization': `Bearer ${localStorage.getItem('accessToken')}`
         },
         body: JSON.stringify({
           reason: 'User requested cancellation'

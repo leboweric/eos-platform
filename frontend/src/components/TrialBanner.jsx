@@ -19,7 +19,7 @@ const TrialBanner = () => {
     try {
       const response = await fetch(`${API_URL}/subscription/status`, {
         headers: {
-          'Authorization': `Bearer ${localStorage.getItem('token')}`
+          'Authorization': `Bearer ${localStorage.getItem('accessToken')}`
         }
       });
       const data = await response.json();

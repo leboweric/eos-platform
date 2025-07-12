@@ -3,7 +3,7 @@ const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3001/api/v1';
 export const quarterlyPrioritiesService = {
   // Get all priorities for a quarter
   async getQuarterlyPriorities(orgId, teamId, quarter, year) {
-    const token = localStorage.getItem('token');
+    const token = localStorage.getItem('accessToken');
     const response = await fetch(
       `${API_URL}/organizations/${orgId}/teams/${teamId}/quarterly-priorities?quarter=${quarter}&year=${year}`,
       {
@@ -23,7 +23,7 @@ export const quarterlyPrioritiesService = {
 
   // Create a new priority
   async createPriority(orgId, teamId, priorityData) {
-    const token = localStorage.getItem('token');
+    const token = localStorage.getItem('accessToken');
     const response = await fetch(
       `${API_URL}/organizations/${orgId}/teams/${teamId}/quarterly-priorities/priorities`,
       {
@@ -46,7 +46,7 @@ export const quarterlyPrioritiesService = {
 
   // Update a priority
   async updatePriority(orgId, teamId, priorityId, updates) {
-    const token = localStorage.getItem('token');
+    const token = localStorage.getItem('accessToken');
     const response = await fetch(
       `${API_URL}/organizations/${orgId}/teams/${teamId}/quarterly-priorities/priorities/${priorityId}`,
       {
@@ -69,7 +69,7 @@ export const quarterlyPrioritiesService = {
 
   // Delete a priority
   async deletePriority(orgId, teamId, priorityId) {
-    const token = localStorage.getItem('token');
+    const token = localStorage.getItem('accessToken');
     const response = await fetch(
       `${API_URL}/organizations/${orgId}/teams/${teamId}/quarterly-priorities/priorities/${priorityId}`,
       {
@@ -87,7 +87,7 @@ export const quarterlyPrioritiesService = {
 
   // Update predictions
   async updatePredictions(orgId, teamId, predictions) {
-    const token = localStorage.getItem('token');
+    const token = localStorage.getItem('accessToken');
     const response = await fetch(
       `${API_URL}/organizations/${orgId}/teams/${teamId}/quarterly-priorities/predictions`,
       {
@@ -110,7 +110,7 @@ export const quarterlyPrioritiesService = {
 
   // Update milestone completion status
   async updateMilestone(orgId, teamId, milestoneId, completed) {
-    const token = localStorage.getItem('token');
+    const token = localStorage.getItem('accessToken');
     const response = await fetch(
       `${API_URL}/organizations/${orgId}/teams/${teamId}/quarterly-priorities/milestones/${milestoneId}`,
       {
@@ -133,7 +133,7 @@ export const quarterlyPrioritiesService = {
 
   // Add priority update
   async addPriorityUpdate(orgId, teamId, priorityId, updateText, statusChange) {
-    const token = localStorage.getItem('token');
+    const token = localStorage.getItem('accessToken');
     const response = await fetch(
       `${API_URL}/organizations/${orgId}/teams/${teamId}/quarterly-priorities/priorities/${priorityId}/updates`,
       {
