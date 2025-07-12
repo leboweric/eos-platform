@@ -354,22 +354,38 @@ export const updatePriority = async (req, res) => {
     const { orgId, teamId, priorityId } = req.params;
     const { title, description, status, progress, dueDate, ownerId } = req.body;
     
-    // Get progress-safe query parts
-    const { update } = await getProgressSafeQuery();
+    // Check if progress column exists
+    const hasProgress = await checkProgressColumn();
     
-    const result = await query(
-      `UPDATE quarterly_priorities 
+    let query_text;
+    let query_params;
+    
+    if (hasProgress) {
+      query_text = `UPDATE quarterly_priorities 
        SET title = COALESCE($1, title),
            description = COALESCE($2, description),
            status = COALESCE($3, status),
            due_date = COALESCE($4, due_date),
            owner_id = COALESCE($5, owner_id),
-           ${update}
+           progress = COALESCE($6, progress),
            updated_at = NOW()
        WHERE id = $7 AND organization_id = $8
-       RETURNING *`,
-      [title, description, status, dueDate, ownerId, progress, priorityId, orgId]
-    );
+       RETURNING *`;
+      query_params = [title, description, status, dueDate, ownerId, progress, priorityId, orgId];
+    } else {
+      query_text = `UPDATE quarterly_priorities 
+       SET title = COALESCE($1, title),
+           description = COALESCE($2, description),
+           status = COALESCE($3, status),
+           due_date = COALESCE($4, due_date),
+           owner_id = COALESCE($5, owner_id),
+           updated_at = NOW()
+       WHERE id = $6 AND organization_id = $7
+       RETURNING *`;
+      query_params = [title, description, status, dueDate, ownerId, priorityId, orgId];
+    }
+    
+    const result = await query(query_text, query_params);
     
     if (result.rows.length === 0) {
       return res.status(404).json({ error: 'Priority not found' });
