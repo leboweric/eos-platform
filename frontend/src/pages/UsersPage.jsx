@@ -86,6 +86,14 @@ const UsersPage = () => {
     }
   }, [isConsultant]);
 
+  // Refetch when selected org changes
+  useEffect(() => {
+    if (selectedOrgId) {
+      fetchUsers();
+      fetchInvitations();
+    }
+  }, [selectedOrgId]);
+
   const fetchOrganizations = async () => {
     try {
       const response = await fetch(`${API_URL}/consultant/organizations`, {
@@ -110,9 +118,10 @@ const UsersPage = () => {
         Authorization: `Bearer ${localStorage.getItem('accessToken')}`,
       };
       
-      // If consultant has selected a different org, use that
-      if (isConsultant && selectedOrgId && selectedOrgId !== user?.organizationId) {
+      // If consultant has selected an org, always send it (even if it's their own)
+      if (isConsultant && selectedOrgId) {
         headers['X-Impersonated-Org-Id'] = selectedOrgId;
+        console.log('Fetching users with impersonated org:', selectedOrgId);
       }
       
       const response = await fetch(`${API_URL}/users/organization`, {
@@ -131,10 +140,17 @@ const UsersPage = () => {
 
   const fetchInvitations = async () => {
     try {
+      const headers = {
+        Authorization: `Bearer ${localStorage.getItem('accessToken')}`,
+      };
+      
+      // If consultant has selected an org, always send it (even if it's their own)
+      if (isConsultant && selectedOrgId) {
+        headers['X-Impersonated-Org-Id'] = selectedOrgId;
+      }
+      
       const response = await fetch(`${API_URL}/users/invitations`, {
-        headers: {
-          Authorization: `Bearer ${localStorage.getItem('accessToken')}`,
-        },
+        headers,
       });
       if (response.ok) {
         const data = await response.json();
@@ -156,8 +172,8 @@ const UsersPage = () => {
         Authorization: `Bearer ${localStorage.getItem('accessToken')}`,
       };
       
-      // If consultant has selected a different org, use that
-      if (isConsultant && selectedOrgId && selectedOrgId !== user?.organizationId) {
+      // If consultant has selected an org, always send it (even if it's their own)
+      if (isConsultant && selectedOrgId) {
         headers['X-Impersonated-Org-Id'] = selectedOrgId;
       }
       
@@ -203,8 +219,8 @@ const UsersPage = () => {
         Authorization: `Bearer ${localStorage.getItem('accessToken')}`,
       };
       
-      // If consultant has selected a different org, use that
-      if (isConsultant && selectedOrgId && selectedOrgId !== user?.organizationId) {
+      // If consultant has selected an org, always send it (even if it's their own)
+      if (isConsultant && selectedOrgId) {
         headers['X-Impersonated-Org-Id'] = selectedOrgId;
       }
       
