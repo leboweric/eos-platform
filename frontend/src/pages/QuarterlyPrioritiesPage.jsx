@@ -1006,12 +1006,11 @@ const QuarterlyPrioritiesPage = () => {
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-3xl font-bold">Quarterly Priorities</h1>
-          <p className="text-gray-600 mt-2">
-            {showArchived 
-              ? 'Viewing archived priorities from previous quarters'
-              : `Track progress on your most important initiatives for ${getCurrentQuarterDisplay()}`
-            }
-          </p>
+          {showArchived && (
+            <p className="text-gray-600 mt-2">
+              Viewing archived priorities from previous quarters
+            </p>
+          )}
         </div>
         <div className="flex space-x-2">
           <Button 
