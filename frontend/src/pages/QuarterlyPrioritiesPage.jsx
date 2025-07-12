@@ -228,20 +228,29 @@ const QuarterlyPrioritiesPage = () => {
   const formatDate = (dateString) => {
     if (!dateString) return 'No date set';
     try {
-      // If the date string is in YYYY-MM-DD format, parse it as local date
-      if (dateString.match(/^\d{4}-\d{2}-\d{2}$/)) {
+      // If the date string is already in YYYY-MM-DD format, parse it as local date
+      if (typeof dateString === 'string' && dateString.match(/^\d{4}-\d{2}-\d{2}$/)) {
         const [year, month, day] = dateString.split('-').map(Number);
         const date = new Date(year, month - 1, day);
         return format(date, 'MMM d, yyyy');
       }
       
-      // Otherwise, handle as ISO date
+      // For ISO date strings (with time), extract just the date part
+      if (typeof dateString === 'string' && dateString.includes('T')) {
+        const datePart = dateString.split('T')[0];
+        const [year, month, day] = datePart.split('-').map(Number);
+        const date = new Date(year, month - 1, day);
+        return format(date, 'MMM d, yyyy');
+      }
+      
+      // For other date formats, parse and use local date
       const date = new Date(dateString);
       if (isNaN(date.getTime())) {
         return 'Invalid date';
       }
-      // For ISO dates, use the local date portion
-      return format(new Date(date.getFullYear(), date.getMonth(), date.getDate()), 'MMM d, yyyy');
+      // Use the local date to avoid timezone issues
+      const localDate = new Date(date.getFullYear(), date.getMonth(), date.getDate());
+      return format(localDate, 'MMM d, yyyy');
     } catch (error) {
       console.error('Error formatting date:', dateString, error);
       return 'Invalid date';
@@ -538,7 +547,11 @@ const QuarterlyPrioritiesPage = () => {
       description: priority.description || '',
       status: priority.status || 'on-track',
       progress: priority.progress || 0,
-      dueDate: priority.dueDate || '',
+      dueDate: priority.dueDate ? (
+        priority.dueDate.includes('T') 
+          ? priority.dueDate.split('T')[0]
+          : priority.dueDate
+      ) : '',
       ownerId: priority.owner?.id || '',
       isCompanyPriority: priority.isCompanyPriority || false
     });
@@ -671,7 +684,7 @@ const QuarterlyPrioritiesPage = () => {
                 {isEditing ? (
                   <Input
                     type="date"
-                    value={editForm.dueDate ? new Date(editForm.dueDate).toISOString().split('T')[0] : ''}
+                    value={editForm.dueDate}
                     onChange={(e) => setEditForm({ ...editForm, dueDate: e.target.value })}
                     className="mt-1"
                   />
