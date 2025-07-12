@@ -397,6 +397,12 @@ const QuarterlyPrioritiesPage = () => {
   };
 
   const PriorityCard = ({ priority, isCompany = false }) => {
+    // Validate priority data
+    if (!priority || !priority.owner) {
+      console.error('Invalid priority data:', priority);
+      return null;
+    }
+    
     const [isEditing, setIsEditing] = useState(false);
     const [showUpdateDialog, setShowUpdateDialog] = useState(false);
     const [updateText, setUpdateText] = useState('');
@@ -408,13 +414,13 @@ const QuarterlyPrioritiesPage = () => {
       dueDate: ''
     });
     const [editForm, setEditForm] = useState({
-      title: priority.title,
-      description: priority.description,
-      status: priority.status,
-      progress: priority.progress,
-      dueDate: priority.dueDate,
-      ownerId: priority.owner.id,
-      isCompanyPriority: priority.isCompanyPriority
+      title: priority.title || '',
+      description: priority.description || '',
+      status: priority.status || 'on-track',
+      progress: priority.progress || 0,
+      dueDate: priority.dueDate || '',
+      ownerId: priority.owner?.id || '',
+      isCompanyPriority: priority.isCompanyPriority || false
     });
 
     const handleSave = () => {
@@ -429,7 +435,8 @@ const QuarterlyPrioritiesPage = () => {
       setShowUpdateDialog(false);
     };
 
-    return (
+    try {
+      return (
       <Card className="hover:shadow-md transition-shadow">
         <CardHeader>
           <div className="flex items-start justify-between">
@@ -471,8 +478,8 @@ const QuarterlyPrioritiesPage = () => {
                   rows={2}
                 />
               ) : (
-                <CardDescription className="text-base">
-                  {priority.description}
+                <CardDescription className="text-base whitespace-pre-wrap">
+                  {priority.description || ''}
                 </CardDescription>
               )}
             </div>
@@ -628,7 +635,7 @@ const QuarterlyPrioritiesPage = () => {
                 </Button>
               </div>
               <div className="space-y-2">
-                {priority.milestones.map((milestone) => (
+                {(priority.milestones || []).map((milestone) => (
                   <div key={milestone.id} className="flex items-center space-x-3 group">
                     <input
                       type="checkbox"
@@ -820,6 +827,21 @@ const QuarterlyPrioritiesPage = () => {
         </Dialog>
       </Card>
     );
+    } catch (error) {
+      console.error('Error rendering priority card:', error, priority);
+      return (
+        <Card className="hover:shadow-md transition-shadow">
+          <CardContent className="p-6">
+            <Alert variant="destructive">
+              <AlertCircle className="h-4 w-4" />
+              <AlertDescription>
+                Error displaying priority. Please refresh the page.
+              </AlertDescription>
+            </Alert>
+          </CardContent>
+        </Card>
+      );
+    }
   };
 
   if (loading) {
