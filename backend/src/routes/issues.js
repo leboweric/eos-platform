@@ -10,7 +10,8 @@ import {
   getAttachments,
   downloadAttachment,
   deleteAttachment,
-  upload
+  upload,
+  archiveClosedIssues
 } from '../controllers/issuesController.js';
 
 const router = express.Router({ mergeParams: true });
@@ -24,6 +25,9 @@ router.route('/')
 
 router.route('/priorities')
   .put(updateIssuePriority);
+
+router.route('/archive-closed')
+  .post(archiveClosedIssues);
 
 router.route('/:issueId')
   .put(updateIssue)

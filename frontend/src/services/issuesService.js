@@ -119,5 +119,16 @@ export const issuesService = {
     await axios.delete(
       `/organizations/${orgId}/issues/${issueId}/attachments/${attachmentId}`
     );
+  },
+
+  // Archive all closed issues
+  archiveClosedIssues: async (timeline = null) => {
+    const orgId = getOrgId();
+    
+    const response = await axios.post(
+      `/organizations/${orgId}/issues/archive-closed`,
+      { timeline }
+    );
+    return response.data;
   }
 };

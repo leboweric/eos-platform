@@ -15,7 +15,8 @@ import {
   Paperclip,
   CheckCircle,
   Clock,
-  AlertTriangle
+  AlertTriangle,
+  Archive
 } from 'lucide-react';
 import IssueDialog from '../components/issues/IssueDialog';
 import IssueCard from '../components/issues/IssueCard';
@@ -120,14 +121,23 @@ const IssuesPage = () => {
     }
   };
 
+  const handleArchiveClosed = async () => {
+    if (!confirm('Are you sure you want to archive all closed issues? This will hide them from view.')) return;
+    
+    try {
+      const result = await issuesService.archiveClosedIssues(activeTab);
+      setSuccess(`${result.count} closed issue(s) archived successfully`);
+      await fetchIssues();
+    } catch (error) {
+      console.error('Failed to archive closed issues:', error);
+      setError('Failed to archive closed issues');
+    }
+  };
+
   const getStatusColor = (status) => {
     switch (status) {
       case 'open':
         return 'bg-yellow-100 text-yellow-800';
-      case 'in-progress':
-        return 'bg-blue-100 text-blue-800';
-      case 'resolved':
-        return 'bg-green-100 text-green-800';
       case 'closed':
         return 'bg-gray-100 text-gray-800';
       default:
@@ -139,9 +149,7 @@ const IssuesPage = () => {
     switch (status) {
       case 'open':
         return <AlertTriangle className="h-4 w-4" />;
-      case 'in-progress':
-        return <Clock className="h-4 w-4" />;
-      case 'resolved':
+      case 'closed':
         return <CheckCircle className="h-4 w-4" />;
       default:
         return null;
@@ -157,6 +165,7 @@ const IssuesPage = () => {
   }
 
   const currentIssues = activeTab === 'short_term' ? shortTermIssues : longTermIssues;
+  const hasClosedIssues = currentIssues.some(issue => issue.status === 'closed');
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -168,10 +177,22 @@ const IssuesPage = () => {
             </h1>
             <p className="text-gray-600 mt-2 text-lg">Track and resolve organizational issues</p>
           </div>
-          <Button onClick={handleCreateIssue} className="bg-indigo-600 hover:bg-indigo-700 text-white">
-            <Plus className="mr-2 h-4 w-4" />
-            Add Issue
-          </Button>
+          <div className="flex gap-2">
+            {hasClosedIssues && (
+              <Button 
+                onClick={handleArchiveClosed} 
+                variant="outline"
+                className="text-gray-600"
+              >
+                <Archive className="mr-2 h-4 w-4" />
+                Archive Closed
+              </Button>
+            )}
+            <Button onClick={handleCreateIssue} className="bg-indigo-600 hover:bg-indigo-700 text-white">
+              <Plus className="mr-2 h-4 w-4" />
+              Add Issue
+            </Button>
+          </div>
         </div>
 
         {error && (

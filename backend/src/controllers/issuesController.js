@@ -60,7 +60,7 @@ export const getIssues = async (req, res) => {
       LEFT JOIN users owner ON i.owner_id = owner.id
       LEFT JOIN teams t ON i.team_id = t.id
       LEFT JOIN issue_attachments ia ON ia.issue_id = i.id
-      WHERE i.organization_id = $1
+      WHERE i.organization_id = $1 AND i.archived = FALSE
     `;
     
     const params = [orgId];
@@ -203,11 +203,6 @@ export const updateIssue = async (req, res) => {
     if (resolutionNotes !== undefined) {
       updateFields.push(`resolution_notes = $${paramCount++}`);
       values.push(resolutionNotes);
-    }
-    
-    // Add resolved_at if status is being set to resolved
-    if (status === 'resolved') {
-      updateFields.push(`resolved_at = CURRENT_TIMESTAMP`);
     }
     
     updateFields.push(`updated_at = CURRENT_TIMESTAMP`);
@@ -470,6 +465,45 @@ export const deleteAttachment = async (req, res) => {
     res.status(500).json({
       success: false,
       message: 'Failed to delete attachment'
+    });
+  }
+};
+
+// Archive all closed issues
+export const archiveClosedIssues = async (req, res) => {
+  try {
+    const { orgId } = req.params;
+    const { timeline } = req.body; // Optional: archive only for specific timeline
+    
+    let query = `
+      UPDATE issues 
+      SET archived = TRUE, updated_at = CURRENT_TIMESTAMP
+      WHERE organization_id = $1 
+      AND status = 'closed' 
+      AND archived = FALSE
+    `;
+    
+    const params = [orgId];
+    
+    if (timeline) {
+      query += ` AND timeline = $2`;
+      params.push(timeline);
+    }
+    
+    query += ` RETURNING id`;
+    
+    const result = await db.query(query, params);
+    
+    res.json({
+      success: true,
+      message: `Archived ${result.rows.length} closed issue(s)`,
+      count: result.rows.length
+    });
+  } catch (error) {
+    console.error('Error archiving closed issues:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Failed to archive closed issues'
     });
   }
 };
