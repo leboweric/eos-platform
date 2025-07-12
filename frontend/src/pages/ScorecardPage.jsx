@@ -81,8 +81,15 @@ const ScorecardPage = () => {
 
   const fetchUsers = async () => {
     try {
+      const orgId = user?.organizationId;
+      
+      if (!orgId) {
+        console.error('No organization ID found for fetching users');
+        return;
+      }
+      
       const token = localStorage.getItem('accessToken');
-      const response = await fetch('/api/v1/users/organization', {
+      const response = await fetch(`/api/v1/organizations/${orgId}/users/organization`, {
         headers: {
           Authorization: `Bearer ${token}`,
         },
@@ -91,6 +98,8 @@ const ScorecardPage = () => {
       if (response.ok) {
         const data = await response.json();
         setUsers(data.data || []);
+      } else {
+        console.error('Failed to fetch users - response not ok:', response.status);
       }
     } catch (error) {
       console.error('Failed to fetch users:', error);
