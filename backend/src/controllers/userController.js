@@ -8,7 +8,14 @@ import { v4 as uuidv4 } from 'uuid';
 // Get all users in organization
 export const getOrganizationUsers = async (req, res) => {
   try {
-    const organizationId = req.user.organization_id;
+    const organizationId = req.user.organizationId || req.user.organization_id;
+    
+    console.log('Getting users for organization:', {
+      organizationId,
+      isImpersonating: req.user.isImpersonating,
+      userOrgId: req.user.organization_id,
+      impersonatedOrgId: req.user.organizationId
+    });
     
     const result = await query(
       `SELECT id, email, first_name, last_name, role, created_at, last_login_at
@@ -32,7 +39,7 @@ export const getOrganizationUsers = async (req, res) => {
 export const createUser = async (req, res) => {
   try {
     const { email, firstName, lastName, role = 'member', sendWelcomeEmail = true } = req.body;
-    const organizationId = req.user.organization_id;
+    const organizationId = req.user.organizationId || req.user.organization_id;
     const createdBy = req.user.id;
 
     // Check if user can create users (must be consultant)
@@ -115,7 +122,7 @@ export const createUser = async (req, res) => {
 export const inviteUser = async (req, res) => {
   try {
     const { email, role = 'member' } = req.body;
-    const organizationId = req.user.organization_id;
+    const organizationId = req.user.organizationId || req.user.organization_id;
     const invitedBy = req.user.id;
 
     // Check if user can invite (must be admin or EOSI)
@@ -269,7 +276,7 @@ export const acceptInvitation = async (req, res) => {
 export const removeUser = async (req, res) => {
   try {
     const { userId } = req.params;
-    const organizationId = req.user.organization_id;
+    const organizationId = req.user.organizationId || req.user.organization_id;
 
     // Check if user can remove (must be admin or EOSI)
     if (req.user.role !== 'admin' && !req.user.is_consultant) {
@@ -327,7 +334,7 @@ export const removeUser = async (req, res) => {
 // Get pending invitations
 export const getPendingInvitations = async (req, res) => {
   try {
-    const organizationId = req.user.organization_id;
+    const organizationId = req.user.organizationId || req.user.organization_id;
 
     const result = await query(
       `SELECT i.id, i.email, i.role, i.expires_at, i.created_at,
@@ -353,7 +360,7 @@ export const getPendingInvitations = async (req, res) => {
 export const cancelInvitation = async (req, res) => {
   try {
     const { invitationId } = req.params;
-    const organizationId = req.user.organization_id;
+    const organizationId = req.user.organizationId || req.user.organization_id;
 
     // Check if user can cancel (must be admin or EOSI)
     if (req.user.role !== 'admin' && !req.user.is_consultant) {
