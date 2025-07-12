@@ -485,11 +485,19 @@ export const getDepartmentBusinessBlueprint = async (req, res) => {
 export const updateThreeYearPicture = async (req, res) => {
   try {
     const { orgId, teamId } = req.params;
-    let { revenue, profit, measurables, lookLikeItems } = req.body;
+    let { revenue, profit, measurables, lookLikeItems, futureDate } = req.body;
     
     // Convert revenue and profit to numbers if they're strings
     revenue = revenue ? parseFloat(revenue) : null;
     profit = profit ? parseFloat(profit) : null;
+    
+    // Validate futureDate
+    if (!futureDate) {
+      return res.status(400).json({
+        success: false,
+        error: 'Target date is required'
+      });
+    }
     
     // Get or create VTO
     const vtoId = await getOrCreateVTO(orgId, teamId);
@@ -499,10 +507,6 @@ export const updateThreeYearPicture = async (req, res) => {
       'SELECT id FROM three_year_pictures WHERE vto_id = $1',
       [vtoId]
     );
-    
-    // Calculate future date (3 years from now)
-    const futureDate = new Date();
-    futureDate.setFullYear(futureDate.getFullYear() + 3);
     
     let pictureResult;
     if (existing.rows.length > 0) {

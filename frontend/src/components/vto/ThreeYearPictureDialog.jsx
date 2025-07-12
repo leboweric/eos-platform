@@ -12,7 +12,8 @@ const ThreeYearPictureDialog = ({ open, onOpenChange, data, onSave }) => {
     revenue: '',
     profit: '',
     measurables: [],
-    lookLikeItems: ['']
+    lookLikeItems: [''],
+    futureDate: new Date(new Date().getFullYear() + 3, 0, 1).toISOString().split('T')[0] // Default to Jan 1, 3 years from now
   });
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState(null);
@@ -23,7 +24,8 @@ const ThreeYearPictureDialog = ({ open, onOpenChange, data, onSave }) => {
         revenue: data.revenue || '',
         profit: data.profit || '',
         measurables: data.measurables || [],
-        lookLikeItems: data.lookLikeItems && data.lookLikeItems.length > 0 ? data.lookLikeItems : ['']
+        lookLikeItems: data.lookLikeItems && data.lookLikeItems.length > 0 ? data.lookLikeItems : [''],
+        futureDate: data.future_date ? new Date(data.future_date).toISOString().split('T')[0] : new Date(new Date().getFullYear() + 3, 0, 1).toISOString().split('T')[0]
       });
     }
   }, [data]);
@@ -61,6 +63,18 @@ const ThreeYearPictureDialog = ({ open, onOpenChange, data, onSave }) => {
                 <AlertDescription>{error}</AlertDescription>
               </Alert>
             )}
+
+            <div className="space-y-2">
+              <Label htmlFor="futureDate">Target Date</Label>
+              <Input
+                id="futureDate"
+                type="date"
+                value={formData.futureDate}
+                onChange={(e) => setFormData({ ...formData, futureDate: e.target.value })}
+                required
+              />
+              <p className="text-xs text-gray-500">Select the date 3 years from now</p>
+            </div>
 
             <div className="space-y-2">
               <Label htmlFor="revenue">Revenue Target (in millions)</Label>

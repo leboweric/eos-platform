@@ -680,6 +680,18 @@ const BusinessBlueprintPage = () => {
               <CardContent className="space-y-4 pt-6">
                 {blueprintData.threeYearPicture ? (
                   <div className="space-y-4">
+                    {blueprintData.threeYearPicture.future_date && (
+                      <div>
+                        <p className="text-sm font-medium text-gray-500">Target Date</p>
+                        <p className="text-lg font-semibold">
+                          {new Date(blueprintData.threeYearPicture.future_date).toLocaleDateString('en-US', { 
+                            year: 'numeric', 
+                            month: 'long', 
+                            day: 'numeric' 
+                          })}
+                        </p>
+                      </div>
+                    )}
                     {blueprintData.threeYearPicture.revenue && (
                       <div>
                         <p className="text-sm font-medium text-gray-500">Revenue Target</p>
