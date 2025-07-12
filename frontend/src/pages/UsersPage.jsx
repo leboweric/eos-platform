@@ -72,6 +72,8 @@ const UsersPage = () => {
   const [successMessage, setSuccessMessage] = useState(null);
   const [copiedLink, setCopiedLink] = useState(false);
   const [temporaryPassword, setTemporaryPassword] = useState(null);
+  const [organizations, setOrganizations] = useState([]);
+  const [selectedOrgId, setSelectedOrgId] = useState(null);
 
   const isAdmin = user?.role === 'admin' || user?.isConsultant;
   const isConsultant = user?.isConsultant;
@@ -79,14 +81,42 @@ const UsersPage = () => {
   useEffect(() => {
     fetchUsers();
     fetchInvitations();
-  }, []);
+    if (isConsultant) {
+      fetchOrganizations();
+    }
+  }, [isConsultant]);
 
-  const fetchUsers = async () => {
+  const fetchOrganizations = async () => {
     try {
-      const response = await fetch(`${API_URL}/users/organization`, {
+      const response = await fetch(`${API_URL}/consultant/organizations`, {
         headers: {
           Authorization: `Bearer ${localStorage.getItem('accessToken')}`,
         },
+      });
+      if (response.ok) {
+        const data = await response.json();
+        setOrganizations(data.data || []);
+        // Set default to current organization
+        setSelectedOrgId(user?.organizationId);
+      }
+    } catch (error) {
+      console.error('Failed to fetch organizations:', error);
+    }
+  };
+
+  const fetchUsers = async () => {
+    try {
+      const headers = {
+        Authorization: `Bearer ${localStorage.getItem('accessToken')}`,
+      };
+      
+      // If consultant has selected a different org, use that
+      if (isConsultant && selectedOrgId && selectedOrgId !== user?.organizationId) {
+        headers['X-Impersonated-Org-Id'] = selectedOrgId;
+      }
+      
+      const response = await fetch(`${API_URL}/users/organization`, {
+        headers,
       });
       if (response.ok) {
         const data = await response.json();
@@ -121,12 +151,19 @@ const UsersPage = () => {
     setError(null);
 
     try {
+      const headers = {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${localStorage.getItem('accessToken')}`,
+      };
+      
+      // If consultant has selected a different org, use that
+      if (isConsultant && selectedOrgId && selectedOrgId !== user?.organizationId) {
+        headers['X-Impersonated-Org-Id'] = selectedOrgId;
+      }
+      
       const response = await fetch(`${API_URL}/users/invite`, {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${localStorage.getItem('accessToken')}`,
-        },
+        headers,
         body: JSON.stringify(inviteForm),
       });
 
@@ -161,12 +198,19 @@ const UsersPage = () => {
     setTemporaryPassword(null);
 
     try {
+      const headers = {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${localStorage.getItem('accessToken')}`,
+      };
+      
+      // If consultant has selected a different org, use that
+      if (isConsultant && selectedOrgId && selectedOrgId !== user?.organizationId) {
+        headers['X-Impersonated-Org-Id'] = selectedOrgId;
+      }
+      
       const response = await fetch(`${API_URL}/users/create`, {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${localStorage.getItem('accessToken')}`,
-        },
+        headers,
         body: JSON.stringify(createForm),
       });
 
@@ -260,6 +304,35 @@ const UsersPage = () => {
 
   return (
     <div className="space-y-6">
+      {isConsultant && organizations.length > 0 && (
+        <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center space-x-2">
+              <Users className="h-5 w-5 text-blue-600" />
+              <span className="text-sm font-medium text-blue-800">Viewing organization:</span>
+            </div>
+            <Select
+              value={selectedOrgId || user?.organizationId}
+              onValueChange={(value) => {
+                setSelectedOrgId(value);
+                // Refresh users when organization changes
+                setTimeout(() => fetchUsers(), 100);
+              }}
+            >
+              <SelectTrigger className="w-auto">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {organizations.map((org) => (
+                  <SelectItem key={org.id} value={org.id}>
+                    {org.name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+        </div>
+      )}
       <div className="flex justify-between items-center">
         <div>
           <h1 className="text-3xl font-bold">Team Members</h1>
@@ -286,6 +359,29 @@ const UsersPage = () => {
                       </DialogDescription>
                     </DialogHeader>
                     <div className="space-y-4 py-4">
+                      {isConsultant && organizations.length > 0 && (
+                        <div className="space-y-2">
+                          <Label htmlFor="organization">Organization</Label>
+                          <Select
+                            value={selectedOrgId || user?.organizationId}
+                            onValueChange={(value) => setSelectedOrgId(value)}
+                          >
+                            <SelectTrigger>
+                              <SelectValue placeholder="Select organization" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              {organizations.map((org) => (
+                                <SelectItem key={org.id} value={org.id}>
+                                  {org.name}
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                          <p className="text-sm text-gray-600">
+                            Select which organization to create this user in
+                          </p>
+                        </div>
+                      )}
                       <div className="grid grid-cols-2 gap-4">
                         <div className="space-y-2">
                           <Label htmlFor="firstName">First Name</Label>
