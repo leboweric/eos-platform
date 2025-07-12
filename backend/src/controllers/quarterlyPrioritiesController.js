@@ -239,11 +239,17 @@ export const createPriority = async (req, res) => {
     // Build dynamic insert query based on available columns
     let columns = ['id', 'organization_id', 'title', 'description', 'owner_id', 'due_date', 'quarter', 'year', 'is_company_priority', 'status'];
     let values = [priorityId, orgId, title, description, ownerId, dueDate, quarter, year, isCompanyPriority, 'on-track'];
-    let placeholders = ['$1', '$2', '$3', '$4', '$5', '$6', '$7', '$8', '$9', `'on-track'`];
+    let placeholders = [];
+    
+    // Build placeholders for the initial values
+    for (let i = 1; i <= values.length; i++) {
+      placeholders.push(`$${i}`);
+    }
     
     if (hasProgress) {
       columns.push('progress');
-      placeholders.push('0');
+      values.push(0);
+      placeholders.push(`$${values.length}`);
     }
     
     if (hasCreatedBy) {
