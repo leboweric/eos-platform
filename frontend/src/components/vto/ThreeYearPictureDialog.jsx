@@ -65,18 +65,6 @@ const ThreeYearPictureDialog = ({ open, onOpenChange, data, onSave }) => {
             )}
 
             <div className="space-y-2">
-              <Label htmlFor="futureDate">Target Date</Label>
-              <Input
-                id="futureDate"
-                type="date"
-                value={formData.futureDate}
-                onChange={(e) => setFormData({ ...formData, futureDate: e.target.value })}
-                required
-              />
-              <p className="text-xs text-gray-500">Select the date 3 years from now</p>
-            </div>
-
-            <div className="space-y-2">
               <Label htmlFor="revenue">Revenue Target (in millions)</Label>
               <div className="relative">
                 <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500">$</span>
@@ -111,6 +99,18 @@ const ThreeYearPictureDialog = ({ open, onOpenChange, data, onSave }) => {
                 <span className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500">%</span>
               </div>
               <p className="text-xs text-gray-500">Enter profit margin as a percentage</p>
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="futureDate">Target Date</Label>
+              <Input
+                id="futureDate"
+                type="date"
+                value={formData.futureDate}
+                onChange={(e) => setFormData({ ...formData, futureDate: e.target.value })}
+                required
+              />
+              <p className="text-xs text-gray-500">Select the date 3 years from now</p>
             </div>
 
             <div className="space-y-2">
