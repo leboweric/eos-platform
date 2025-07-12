@@ -290,11 +290,11 @@ const BusinessBlueprintPage = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100">
+    <div className="min-h-screen bg-gray-50">
       <div className="max-w-7xl mx-auto p-6 space-y-6">
         <div className="flex items-center justify-between mb-8">
           <div>
-            <h1 className="text-4xl font-bold bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent">
+            <h1 className="text-4xl font-bold text-gray-900">
               Vision/Traction Organizer™
             </h1>
             <p className="text-gray-600 mt-2 text-lg">Define your organization's vision and strategy for success</p>
@@ -317,11 +317,11 @@ const BusinessBlueprintPage = () => {
 
         <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
           <TabsList className="grid w-full grid-cols-2 h-14 bg-white shadow-sm">
-            <TabsTrigger value="vision" className="data-[state=active]:bg-blue-500 data-[state=active]:text-white text-lg font-medium">
+            <TabsTrigger value="vision" className="data-[state=active]:bg-indigo-600 data-[state=active]:text-white text-lg font-medium">
               <Target className="mr-2 h-5 w-5" />
               Vision
             </TabsTrigger>
-            <TabsTrigger value="execution" className="data-[state=active]:bg-green-500 data-[state=active]:text-white text-lg font-medium">
+            <TabsTrigger value="execution" className="data-[state=active]:bg-indigo-600 data-[state=active]:text-white text-lg font-medium">
               <TrendingUp className="mr-2 h-5 w-5" />
               Execution
             </TabsTrigger>
@@ -330,22 +330,22 @@ const BusinessBlueprintPage = () => {
         <TabsContent value="vision" className="space-y-6">
           {/* Core Values */}
           <Card className="shadow-lg border-0 overflow-hidden">
-            <CardHeader className="bg-gradient-to-r from-purple-500 to-pink-500 text-white">
-              <CardTitle className="flex items-center text-xl">
-                <Users className="mr-2 h-6 w-6" />
+            <CardHeader className="bg-white border-b">
+              <CardTitle className="flex items-center text-xl text-gray-900">
+                <Users className="mr-2 h-6 w-6 text-indigo-600" />
                 Core Values
               </CardTitle>
-              <CardDescription className="text-purple-100">
+              <CardDescription className="text-gray-600">
                 3-7 rules that define your culture and Right People
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
               {blueprintData.coreValues.map((value) => (
-                <div key={value.id} className="flex items-start justify-between p-4 bg-purple-50 border border-purple-200 rounded-lg hover:shadow-md transition-shadow">
+                <div key={value.id} className="flex items-start justify-between p-4 bg-gray-50 border border-gray-200 rounded-lg hover:shadow-md transition-shadow">
                   <div className="flex-1">
-                    <h4 className="font-semibold text-purple-900">{value.value}</h4>
+                    <h4 className="font-semibold text-gray-900">{value.value}</h4>
                     {value.description && (
-                      <p className="text-sm text-purple-700 mt-1">{value.description}</p>
+                      <p className="text-sm text-gray-600 mt-1">{value.description}</p>
                     )}
                   </div>
                   <div className="flex space-x-2">
@@ -368,7 +368,7 @@ const BusinessBlueprintPage = () => {
               ))}
 
               <div className="pt-4 border-t">
-                <Button onClick={handleAddCoreValue} disabled={saving} className="bg-purple-600 hover:bg-purple-700 text-white">
+                <Button onClick={handleAddCoreValue} disabled={saving} className="bg-indigo-600 hover:bg-indigo-700 text-white">
                   <Plus className="mr-2 h-4 w-4" />
                   Add Core Value
                 </Button>
@@ -378,12 +378,12 @@ const BusinessBlueprintPage = () => {
 
           {/* Core Focus (Hedgehog) */}
           <Card className="shadow-lg border-0 overflow-hidden">
-            <CardHeader className="bg-gradient-to-r from-orange-500 to-red-500 text-white">
-              <CardTitle className="flex items-center text-xl">
-                <Target className="mr-2 h-6 w-6" />
+            <CardHeader className="bg-white border-b">
+              <CardTitle className="flex items-center text-xl text-gray-900">
+                <Target className="mr-2 h-6 w-6 text-indigo-600" />
                 Hedgehog
               </CardTitle>
-              <CardDescription className="text-orange-100">
+              <CardDescription className="text-gray-600">
                 Your organization's core focus - what drives you
               </CardDescription>
             </CardHeader>
@@ -445,7 +445,7 @@ const BusinessBlueprintPage = () => {
                 />
               </div>
 
-              <Button onClick={handleSaveCoreFocus} disabled={saving} className="bg-orange-600 hover:bg-orange-700 text-white">
+              <Button onClick={handleSaveCoreFocus} disabled={saving} className="bg-indigo-600 hover:bg-indigo-700 text-white">
                 {saving ? (
                   <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                 ) : (
@@ -458,12 +458,12 @@ const BusinessBlueprintPage = () => {
 
           {/* BHAG (Big Hairy Audacious Goal) */}
           <Card className="shadow-lg border-0 overflow-hidden">
-            <CardHeader className="bg-gradient-to-r from-blue-500 to-cyan-500 text-white">
-              <CardTitle className="flex items-center text-xl">
-                <TrendingUp className="mr-2 h-6 w-6" />
+            <CardHeader className="bg-white border-b">
+              <CardTitle className="flex items-center text-xl text-gray-900">
+                <TrendingUp className="mr-2 h-6 w-6 text-indigo-600" />
                 Big Hairy Audacious Goal (BHAG)
               </CardTitle>
-              <CardDescription className="text-blue-100">
+              <CardDescription className="text-gray-600">
                 Your 10+ year ambitious goal
               </CardDescription>
             </CardHeader>
@@ -508,7 +508,7 @@ const BusinessBlueprintPage = () => {
                 />
               </div>
 
-              <Button onClick={handleSaveBHAG} disabled={saving} className="bg-blue-600 hover:bg-blue-700 text-white">
+              <Button onClick={handleSaveBHAG} disabled={saving} className="bg-indigo-600 hover:bg-indigo-700 text-white">
                 {saving ? (
                   <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                 ) : (
@@ -521,12 +521,12 @@ const BusinessBlueprintPage = () => {
 
           {/* Marketing Strategy */}
           <Card className="shadow-lg border-0 overflow-hidden">
-            <CardHeader className="bg-gradient-to-r from-green-500 to-teal-500 text-white">
-              <CardTitle className="flex items-center text-xl">
-                <Lightbulb className="mr-2 h-6 w-6" />
+            <CardHeader className="bg-white border-b">
+              <CardTitle className="flex items-center text-xl text-gray-900">
+                <Lightbulb className="mr-2 h-6 w-6 text-indigo-600" />
                 Marketing Strategy
               </CardTitle>
-              <CardDescription className="text-green-100">
+              <CardDescription className="text-gray-600">
                 Who you want to talk to and what you say when you do
               </CardDescription>
             </CardHeader>
@@ -598,7 +598,7 @@ const BusinessBlueprintPage = () => {
                 />
               </div>
 
-              <Button onClick={handleSaveMarketingStrategy} disabled={saving} className="bg-green-600 hover:bg-green-700 text-white">
+              <Button onClick={handleSaveMarketingStrategy} disabled={saving} className="bg-indigo-600 hover:bg-indigo-700 text-white">
                 {saving ? (
                   <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                 ) : (
@@ -721,10 +721,9 @@ const BusinessBlueprintPage = () => {
                   <CardDescription>Your priorities for this quarter</CardDescription>
                 </div>
                 <Button 
-                  variant="secondary" 
+                  variant="outline" 
                   size="sm"
                   onClick={() => setShowQuarterlyDialog(true)}
-                  className="bg-white text-amber-600 hover:bg-amber-50"
                 >
                   <Edit className="h-4 w-4 mr-2" />
                   Edit
@@ -736,15 +735,15 @@ const BusinessBlueprintPage = () => {
                 <div className="space-y-4">
                   <div className="grid grid-cols-2 gap-4">
                     {blueprintData.quarterlyPriorities.revenue && (
-                      <div className="p-4 bg-amber-50 rounded-lg">
-                        <p className="text-sm font-medium text-amber-600">Quarterly Revenue Target</p>
-                        <p className="text-xl font-semibold text-amber-900">{blueprintData.quarterlyPriorities.revenue}</p>
+                      <div className="p-4 bg-gray-50 rounded-lg">
+                        <p className="text-sm font-medium text-gray-600">Quarterly Revenue Target</p>
+                        <p className="text-xl font-semibold text-gray-900">{blueprintData.quarterlyPriorities.revenue}</p>
                       </div>
                     )}
                     {blueprintData.quarterlyPriorities.profit && (
-                      <div className="p-4 bg-orange-50 rounded-lg">
-                        <p className="text-sm font-medium text-orange-600">Quarterly Profit Target</p>
-                        <p className="text-xl font-semibold text-orange-900">{blueprintData.quarterlyPriorities.profit}</p>
+                      <div className="p-4 bg-gray-50 rounded-lg">
+                        <p className="text-sm font-medium text-gray-600">Quarterly Profit Target</p>
+                        <p className="text-xl font-semibold text-gray-900">{blueprintData.quarterlyPriorities.profit}</p>
                       </div>
                     )}
                   </div>
@@ -754,7 +753,7 @@ const BusinessBlueprintPage = () => {
                       <ol className="space-y-2">
                         {blueprintData.quarterlyPriorities.priorities.map((priority, index) => (
                           <li key={priority.id || index} className="flex items-start">
-                            <span className="text-amber-600 font-medium mr-2">{index + 1}.</span>
+                            <span className="text-indigo-600 font-medium mr-2">{index + 1}.</span>
                             <span className="text-gray-700">{priority.text}</span>
                           </li>
                         ))}
@@ -769,7 +768,7 @@ const BusinessBlueprintPage = () => {
                   )}
                 </div>
               ) : (
-                <p className="text-amber-700 text-center py-8">Click edit to define your quarterly priorities</p>
+                <p className="text-gray-500 text-center py-8">Click edit to define your quarterly priorities</p>
               )}
             </CardContent>
           </Card>
