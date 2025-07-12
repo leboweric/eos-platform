@@ -85,12 +85,14 @@ const QuarterlyPrioritiesPage = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   
-  // State for priorities data
-  const [predictions, setPredictions] = useState({
-    revenue: { target: 5000000, current: 4200000, trend: 'up' },
-    profit: { target: 1000000, current: 850000, trend: 'up' },
-    measurables: { onTrack: 8, total: 10 }
+  // State for priorities data with safe defaults
+  const getDefaultPredictions = () => ({
+    revenue: { target: 0, current: 0, trend: 'up' },
+    profit: { target: 0, current: 0, trend: 'up' },
+    measurables: { onTrack: 0, total: 0 }
   });
+  
+  const [predictions, setPredictions] = useState(getDefaultPredictions());
   
   const [companyPriorities, setCompanyPriorities] = useState([]);
   const [teamMemberPriorities, setTeamMemberPriorities] = useState({});
@@ -137,10 +139,12 @@ const QuarterlyPrioritiesPage = () => {
       
       const data = await quarterlyPrioritiesService.getQuarterlyPriorities(orgId, teamId, quarter, parseInt(year));
       
-      setPredictions(data.predictions || {
-        revenue: { target: 0, current: 0 },
-        profit: { target: 0, current: 0 },
-        measurables: { onTrack: 0, total: 0 }
+      // Ensure predictions have all required nested properties
+      const safePredictions = data.predictions || {};
+      setPredictions({
+        revenue: safePredictions.revenue || { target: 0, current: 0 },
+        profit: safePredictions.profit || { target: 0, current: 0 },
+        measurables: safePredictions.measurables || { onTrack: 0, total: 0 }
       });
       
       setCompanyPriorities(data.companyPriorities || []);
@@ -151,11 +155,7 @@ const QuarterlyPrioritiesPage = () => {
       setError('Failed to load quarterly priorities. Please try again later.');
       
       // Set empty data on error
-      setPredictions({
-        revenue: { target: 0, current: 0 },
-        profit: { target: 0, current: 0 },
-        measurables: { onTrack: 0, total: 0 }
-      });
+      setPredictions(getDefaultPredictions());
       setCompanyPriorities([]);
       setTeamMembers([]);
       setTeamMemberPriorities({});
@@ -1019,7 +1019,7 @@ const QuarterlyPrioritiesPage = () => {
                     <Label className="text-xs">Target</Label>
                     <Input
                       type="number"
-                      value={predictions.revenue.target}
+                      value={predictions?.revenue?.target || 0}
                       onChange={(e) => setPredictions({
                         ...predictions,
                         revenue: { ...predictions.revenue, target: parseFloat(e.target.value) || 0 }
@@ -1031,7 +1031,7 @@ const QuarterlyPrioritiesPage = () => {
                     <Label className="text-xs">Current</Label>
                     <Input
                       type="number"
-                      value={predictions.revenue.current}
+                      value={predictions?.revenue?.current || 0}
                       onChange={(e) => setPredictions({
                         ...predictions,
                         revenue: { ...predictions.revenue, current: parseFloat(e.target.value) || 0 }
@@ -1042,10 +1042,10 @@ const QuarterlyPrioritiesPage = () => {
                 </div>
               ) : (
                 <div>
-                  <p className="text-2xl font-bold">${(predictions.revenue.current / 1000000).toFixed(1)}M</p>
-                  <p className="text-sm text-gray-600">Target: ${(predictions.revenue.target / 1000000).toFixed(1)}M</p>
+                  <p className="text-2xl font-bold">${((predictions?.revenue?.current || 0) / 1000000).toFixed(1)}M</p>
+                  <p className="text-sm text-gray-600">Target: ${((predictions?.revenue?.target || 0) / 1000000).toFixed(1)}M</p>
                   <Progress 
-                    value={(predictions.revenue.current / predictions.revenue.target) * 100} 
+                    value={predictions?.revenue?.target ? ((predictions?.revenue?.current || 0) / predictions.revenue.target) * 100 : 0} 
                     className="mt-2"
                   />
                 </div>
@@ -1063,7 +1063,7 @@ const QuarterlyPrioritiesPage = () => {
                     <Label className="text-xs">Target</Label>
                     <Input
                       type="number"
-                      value={predictions.profit.target}
+                      value={predictions?.profit?.target || 0}
                       onChange={(e) => setPredictions({
                         ...predictions,
                         profit: { ...predictions.profit, target: parseFloat(e.target.value) || 0 }
@@ -1075,7 +1075,7 @@ const QuarterlyPrioritiesPage = () => {
                     <Label className="text-xs">Current</Label>
                     <Input
                       type="number"
-                      value={predictions.profit.current}
+                      value={predictions?.profit?.current || 0}
                       onChange={(e) => setPredictions({
                         ...predictions,
                         profit: { ...predictions.profit, current: parseFloat(e.target.value) || 0 }
@@ -1086,10 +1086,10 @@ const QuarterlyPrioritiesPage = () => {
                 </div>
               ) : (
                 <div>
-                  <p className="text-2xl font-bold">${(predictions.profit.current / 1000000).toFixed(1)}M</p>
-                  <p className="text-sm text-gray-600">Target: ${(predictions.profit.target / 1000000).toFixed(1)}M</p>
+                  <p className="text-2xl font-bold">${((predictions?.profit?.current || 0) / 1000000).toFixed(1)}M</p>
+                  <p className="text-sm text-gray-600">Target: ${((predictions?.profit?.target || 0) / 1000000).toFixed(1)}M</p>
                   <Progress 
-                    value={(predictions.profit.current / predictions.profit.target) * 100} 
+                    value={predictions?.profit?.target ? ((predictions?.profit?.current || 0) / predictions.profit.target) * 100 : 0} 
                     className="mt-2"
                   />
                 </div>
@@ -1107,7 +1107,7 @@ const QuarterlyPrioritiesPage = () => {
                     <Label className="text-xs">On Track</Label>
                     <Input
                       type="number"
-                      value={predictions.measurables.onTrack}
+                      value={predictions?.measurables?.onTrack || 0}
                       onChange={(e) => setPredictions({
                         ...predictions,
                         measurables: { ...predictions.measurables, onTrack: parseInt(e.target.value) || 0 }
@@ -1119,7 +1119,7 @@ const QuarterlyPrioritiesPage = () => {
                     <Label className="text-xs">Total</Label>
                     <Input
                       type="number"
-                      value={predictions.measurables.total}
+                      value={predictions?.measurables?.total || 0}
                       onChange={(e) => setPredictions({
                         ...predictions,
                         measurables: { ...predictions.measurables, total: parseInt(e.target.value) || 0 }
@@ -1130,10 +1130,10 @@ const QuarterlyPrioritiesPage = () => {
                 </div>
               ) : (
                 <div>
-                  <p className="text-2xl font-bold">{predictions.measurables.onTrack}/{predictions.measurables.total}</p>
+                  <p className="text-2xl font-bold">{predictions?.measurables?.onTrack || 0}/{predictions?.measurables?.total || 0}</p>
                   <p className="text-sm text-gray-600">Measurables on track</p>
                   <Progress 
-                    value={(predictions.measurables.onTrack / predictions.measurables.total) * 100} 
+                    value={predictions?.measurables?.total ? ((predictions?.measurables?.onTrack || 0) / predictions.measurables.total) * 100 : 0} 
                     className="mt-2"
                   />
                 </div>
