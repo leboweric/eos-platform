@@ -76,11 +76,12 @@ const IssuesPage = () => {
 
   const handleSaveIssue = async (issueData) => {
     try {
+      let savedIssue;
       if (editingIssue) {
-        await issuesService.updateIssue(editingIssue.id, issueData);
+        savedIssue = await issuesService.updateIssue(editingIssue.id, issueData);
         setSuccess('Issue updated successfully');
       } else {
-        await issuesService.createIssue({
+        savedIssue = await issuesService.createIssue({
           ...issueData,
           timeline: activeTab
         });
@@ -89,6 +90,7 @@ const IssuesPage = () => {
       
       await fetchIssues();
       setShowIssueDialog(false);
+      return savedIssue; // Return the saved issue for attachment uploads
     } catch (error) {
       console.error('Failed to save issue:', error);
       throw error;

@@ -74,6 +74,17 @@ export const issuesService = {
     );
   },
 
+  // Get attachments for an issue
+  getAttachments: async (issueId) => {
+    const orgId = getOrgId();
+    const teamId = getTeamId();
+    
+    const response = await axios.get(
+      `/api/v1/organizations/${orgId}/teams/${teamId}/issues/${issueId}/attachments`
+    );
+    return response.data.data;
+  },
+
   // Upload attachment
   uploadAttachment: async (issueId, file) => {
     const orgId = getOrgId();
@@ -92,6 +103,20 @@ export const issuesService = {
       }
     );
     return response.data.data;
+  },
+
+  // Download attachment
+  downloadAttachment: async (issueId, attachmentId) => {
+    const orgId = getOrgId();
+    const teamId = getTeamId();
+    
+    const response = await axios.get(
+      `/api/v1/organizations/${orgId}/teams/${teamId}/issues/${issueId}/attachments/${attachmentId}`,
+      {
+        responseType: 'blob'
+      }
+    );
+    return response.data;
   },
 
   // Delete attachment
