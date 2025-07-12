@@ -335,7 +335,7 @@ const QuarterlyPrioritiesPage = () => {
       const orgId = user?.organizationId;
       const teamId = user?.teamId || '00000000-0000-0000-0000-000000000000';
       
-      await quarterlyPrioritiesService.updateMilestone(orgId, teamId, priorityId, milestoneId, { completed });
+      await quarterlyPrioritiesService.updateMilestone(orgId, teamId, milestoneId, completed);
       
       // Refresh data to get updated progress
       await fetchQuarterlyData();
@@ -345,57 +345,26 @@ const QuarterlyPrioritiesPage = () => {
     }
   };
 
+  // Note: The backend API currently only supports updating milestone completion status.
+  // Full CRUD operations for milestones would require backend API changes.
   const handleCreateMilestone = async (priorityId, milestoneData) => {
-    try {
-      const orgId = user?.organizationId;
-      const teamId = user?.teamId || '00000000-0000-0000-0000-000000000000';
-      
-      await quarterlyPrioritiesService.createMilestone(orgId, teamId, priorityId, milestoneData);
-      
-      // Refresh data
-      await fetchQuarterlyData();
-    } catch (err) {
-      console.error('Failed to create milestone:', err);
-      setError('Failed to create milestone');
-    }
+    setError('Creating milestones requires backend API support. Milestones can only be added when creating a new priority.');
   };
 
   const handleEditMilestone = async (priorityId, milestoneId, updates) => {
-    try {
-      const orgId = user?.organizationId;
-      const teamId = user?.teamId || '00000000-0000-0000-0000-000000000000';
-      
-      await quarterlyPrioritiesService.updateMilestone(orgId, teamId, priorityId, milestoneId, updates);
-      
-      // Refresh data
-      await fetchQuarterlyData();
-    } catch (err) {
-      console.error('Failed to update milestone:', err);
-      setError('Failed to update milestone');
-    }
+    setError('Editing milestone details requires backend API support. Only completion status can be updated.');
   };
 
   const handleDeleteMilestone = async (priorityId, milestoneId) => {
-    try {
-      const orgId = user?.organizationId;
-      const teamId = user?.teamId || '00000000-0000-0000-0000-000000000000';
-      
-      await quarterlyPrioritiesService.deleteMilestone(orgId, teamId, priorityId, milestoneId);
-      
-      // Refresh data
-      await fetchQuarterlyData();
-    } catch (err) {
-      console.error('Failed to delete milestone:', err);
-      setError('Failed to delete milestone');
-    }
+    setError('Deleting milestones requires backend API support.');
   };
 
-  const handleAddUpdate = async (priorityId, updateText) => {
+  const handleAddUpdate = async (priorityId, updateText, statusChange = null) => {
     try {
       const orgId = user?.organizationId;
       const teamId = user?.teamId || '00000000-0000-0000-0000-000000000000';
       
-      await quarterlyPrioritiesService.addPriorityUpdate(orgId, teamId, priorityId, updateText);
+      await quarterlyPrioritiesService.addPriorityUpdate(orgId, teamId, priorityId, updateText, statusChange);
       
       // Refresh data to show new update
       await fetchQuarterlyData();
@@ -474,6 +443,7 @@ const QuarterlyPrioritiesPage = () => {
     const [isEditing, setIsEditing] = useState(false);
     const [showUpdateDialog, setShowUpdateDialog] = useState(false);
     const [updateText, setUpdateText] = useState('');
+    const [updateStatusChange, setUpdateStatusChange] = useState(null);
     const [showAddMilestone, setShowAddMilestone] = useState(false);
     const [editingMilestoneId, setEditingMilestoneId] = useState(null);
     const [milestoneForm, setMilestoneForm] = useState({
@@ -493,8 +463,9 @@ const QuarterlyPrioritiesPage = () => {
     };
 
     const handleAddUpdateSubmit = () => {
-      handleAddUpdate(priority.id, updateText);
+      handleAddUpdate(priority.id, updateText, updateStatusChange);
       setUpdateText('');
+      setUpdateStatusChange(null);
       setShowUpdateDialog(false);
     };
 
@@ -675,8 +646,8 @@ const QuarterlyPrioritiesPage = () => {
                           size="sm"
                           variant="ghost"
                           onClick={() => {
-                            handleEditMilestone(priority.id, milestone.id, milestoneForm);
                             setEditingMilestoneId(null);
+                            setError('Editing milestone details requires backend API support.');
                           }}
                         >
                           <CheckSquare className="h-3 w-3" />
@@ -745,9 +716,9 @@ const QuarterlyPrioritiesPage = () => {
                       size="sm"
                       variant="ghost"
                       onClick={() => {
-                        handleCreateMilestone(priority.id, milestoneForm);
-                        setMilestoneForm({ title: '', dueDate: '' });
                         setShowAddMilestone(false);
+                        setMilestoneForm({ title: '', dueDate: '' });
+                        setError('Adding milestones to existing priorities requires backend API support.');
                       }}
                       disabled={!milestoneForm.title || !milestoneForm.dueDate}
                     >
@@ -811,6 +782,23 @@ const QuarterlyPrioritiesPage = () => {
                 onChange={(e) => setUpdateText(e.target.value)}
                 rows={4}
               />
+              <div>
+                <Label htmlFor="statusChange">Update Status (optional)</Label>
+                <Select
+                  value={updateStatusChange || ''}
+                  onValueChange={(value) => setUpdateStatusChange(value || null)}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Keep current status" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="">Keep current status</SelectItem>
+                    <SelectItem value="on-track">On Track</SelectItem>
+                    <SelectItem value="off-track">Off Track</SelectItem>
+                    <SelectItem value="complete">Complete</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
             </div>
             <DialogFooter>
               <Button variant="outline" onClick={() => setShowUpdateDialog(false)}>

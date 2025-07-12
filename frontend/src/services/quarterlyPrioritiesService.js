@@ -108,41 +108,18 @@ export const quarterlyPrioritiesService = {
     return data.data;
   },
 
-  // Create milestone
-  async createMilestone(orgId, teamId, priorityId, milestoneData) {
+  // Update milestone completion status
+  async updateMilestone(orgId, teamId, milestoneId, completed) {
     const token = localStorage.getItem('token');
     const response = await fetch(
-      `${API_URL}/organizations/${orgId}/teams/${teamId}/quarterly-priorities/priorities/${priorityId}/milestones`,
-      {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${token}`,
-        },
-        body: JSON.stringify(milestoneData),
-      }
-    );
-    
-    if (!response.ok) {
-      throw new Error('Failed to create milestone');
-    }
-    
-    const data = await response.json();
-    return data.data;
-  },
-
-  // Update milestone
-  async updateMilestone(orgId, teamId, priorityId, milestoneId, updates) {
-    const token = localStorage.getItem('token');
-    const response = await fetch(
-      `${API_URL}/organizations/${orgId}/teams/${teamId}/quarterly-priorities/priorities/${priorityId}/milestones/${milestoneId}`,
+      `${API_URL}/organizations/${orgId}/teams/${teamId}/quarterly-priorities/milestones/${milestoneId}`,
       {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
           Authorization: `Bearer ${token}`,
         },
-        body: JSON.stringify(updates),
+        body: JSON.stringify({ completed }),
       }
     );
     
@@ -152,24 +129,6 @@ export const quarterlyPrioritiesService = {
     
     const data = await response.json();
     return data.data;
-  },
-
-  // Delete milestone
-  async deleteMilestone(orgId, teamId, priorityId, milestoneId) {
-    const token = localStorage.getItem('token');
-    const response = await fetch(
-      `${API_URL}/organizations/${orgId}/teams/${teamId}/quarterly-priorities/priorities/${priorityId}/milestones/${milestoneId}`,
-      {
-        method: 'DELETE',
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      }
-    );
-    
-    if (!response.ok) {
-      throw new Error('Failed to delete milestone');
-    }
   },
 
   // Add priority update
