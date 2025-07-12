@@ -1,20 +1,26 @@
 import { query } from '../config/database.js';
 import { v4 as uuidv4 } from 'uuid';
 
-// Check if progress column exists in quarterly_priorities table
-async function checkProgressColumn() {
+// Check if a column exists in quarterly_priorities table
+async function checkColumn(columnName) {
   try {
     const result = await query(
       `SELECT column_name 
        FROM information_schema.columns 
        WHERE table_name = 'quarterly_priorities' 
-       AND column_name = 'progress'`
+       AND column_name = $1`,
+      [columnName]
     );
     return result.rows.length > 0;
   } catch (error) {
-    console.error('Error checking progress column:', error);
+    console.error(`Error checking ${columnName} column:`, error);
     return false;
   }
+}
+
+// Check if progress column exists in quarterly_priorities table
+async function checkProgressColumn() {
+  return checkColumn('progress');
 }
 
 // Get progress-safe query
@@ -226,25 +232,36 @@ export const createPriority = async (req, res) => {
     
     const priorityId = uuidv4();
     
-    // Check if progress column exists
+    // Check which columns exist
     const hasProgress = await checkProgressColumn();
+    const hasCreatedBy = await checkColumn('created_by');
     
-    // Create priority with or without progress column
-    const result = await query(
-      hasProgress ? 
-      `INSERT INTO quarterly_priorities 
-       (id, organization_id, title, description, owner_id, due_date, quarter, year, 
-        is_company_priority, status, progress, created_by)
-       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, 'on-track', 0, $10)
-       RETURNING *` :
-      `INSERT INTO quarterly_priorities 
-       (id, organization_id, title, description, owner_id, due_date, quarter, year, 
-        is_company_priority, status, created_by)
-       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, 'on-track', $10)
-       RETURNING *`,
-      [priorityId, orgId, title, description, ownerId, dueDate, quarter, year, 
-       isCompanyPriority, req.user.id]
-    );
+    // Build dynamic insert query based on available columns
+    let columns = ['id', 'organization_id', 'title', 'description', 'owner_id', 'due_date', 'quarter', 'year', 'is_company_priority', 'status'];
+    let values = [priorityId, orgId, title, description, ownerId, dueDate, quarter, year, isCompanyPriority, 'on-track'];
+    let placeholders = ['$1', '$2', '$3', '$4', '$5', '$6', '$7', '$8', '$9', `'on-track'`];
+    
+    if (hasProgress) {
+      columns.push('progress');
+      placeholders.push('0');
+    }
+    
+    if (hasCreatedBy) {
+      columns.push('created_by');
+      values.push(req.user.id);
+      placeholders.push(`$${values.length}`);
+    }
+    
+    const insertQuery = `
+      INSERT INTO quarterly_priorities (${columns.join(', ')})
+      VALUES (${placeholders.join(', ')})
+      RETURNING *
+    `;
+    
+    console.log('Creating priority with query:', insertQuery);
+    console.log('Values:', values);
+    
+    const result = await query(insertQuery, values);
     
     // Create milestones if provided
     if (milestones.length > 0) {
