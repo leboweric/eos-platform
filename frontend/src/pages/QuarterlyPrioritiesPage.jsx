@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, Component } from 'react';
 import { useAuthStore } from '../stores/authStore';
 import { quarterlyPrioritiesService } from '../services/quarterlyPrioritiesService';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -34,6 +34,49 @@ import {
   Loader2
 } from 'lucide-react';
 import { format, addMonths, startOfQuarter, endOfQuarter } from 'date-fns';
+
+// Error Boundary Component
+class ErrorBoundary extends Component {
+  constructor(props) {
+    super(props);
+    this.state = { hasError: false, error: null };
+  }
+
+  static getDerivedStateFromError(error) {
+    return { hasError: true, error };
+  }
+
+  componentDidCatch(error, errorInfo) {
+    console.error('QuarterlyPriorities Error:', error, errorInfo);
+  }
+
+  render() {
+    if (this.state.hasError) {
+      return (
+        <div className="p-6">
+          <Alert variant="destructive">
+            <AlertCircle className="h-4 w-4" />
+            <AlertDescription>
+              <div className="space-y-2">
+                <p>An error occurred loading quarterly priorities.</p>
+                <p className="text-sm">Error: {this.state.error?.message}</p>
+                <Button 
+                  onClick={() => window.location.reload()} 
+                  size="sm"
+                  variant="outline"
+                >
+                  Refresh Page
+                </Button>
+              </div>
+            </AlertDescription>
+          </Alert>
+        </div>
+      );
+    }
+
+    return this.props.children;
+  }
+}
 
 const QuarterlyPrioritiesPage = () => {
   const { user } = useAuthStore();
@@ -521,7 +564,7 @@ const QuarterlyPrioritiesPage = () => {
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
-                      {teamMembers.map(member => (
+                      {(teamMembers || []).map(member => (
                         <SelectItem key={member.id} value={member.id}>
                           {member.name}
                         </SelectItem>
@@ -1113,7 +1156,7 @@ const QuarterlyPrioritiesPage = () => {
           <Building2 className="h-6 w-6 text-blue-600" />
           <h2 className="text-2xl font-bold">Company Priorities</h2>
         </div>
-        {companyPriorities.map(priority => (
+        {(companyPriorities || []).map(priority => (
           <PriorityCard key={priority.id} priority={priority} isCompany={true} />
         ))}
       </div>
@@ -1124,7 +1167,7 @@ const QuarterlyPrioritiesPage = () => {
           <Users className="h-6 w-6 text-purple-600" />
           <h2 className="text-2xl font-bold">Individual Priorities</h2>
         </div>
-        {teamMembers.map(member => {
+        {(teamMembers || []).map(member => {
           const memberPriorities = teamMemberPriorities[member.id] || [];
           if (memberPriorities.length === 0) return null;
 
@@ -1187,7 +1230,7 @@ const QuarterlyPrioritiesPage = () => {
                     <SelectValue placeholder="Select owner" />
                   </SelectTrigger>
                   <SelectContent>
-                    {teamMembers.length > 0 ? (
+                    {(teamMembers || []).length > 0 ? (
                       teamMembers.map(member => (
                         <SelectItem key={member.id} value={member.id}>
                           {member.name}
@@ -1238,4 +1281,11 @@ const QuarterlyPrioritiesPage = () => {
   );
 };
 
-export default QuarterlyPrioritiesPage;
+// Wrap with Error Boundary
+const QuarterlyPrioritiesWithErrorBoundary = () => (
+  <ErrorBoundary>
+    <QuarterlyPrioritiesPage />
+  </ErrorBoundary>
+);
+
+export default QuarterlyPrioritiesWithErrorBoundary;
