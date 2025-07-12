@@ -33,7 +33,7 @@ async function getTeamMembers(orgId) {
 export const getIssues = async (req, res) => {
   try {
     const { orgId } = req.params;
-    const { timeline } = req.query; // 'short_term' or 'long_term'
+    const { timeline, includeArchived } = req.query; // 'short_term' or 'long_term', includeArchived=true to show only archived
     
     let query = `
       SELECT 
@@ -51,6 +51,7 @@ export const getIssues = async (req, res) => {
         i.resolved_at,
         i.created_at,
         i.updated_at,
+        i.archived,
         creator.first_name || ' ' || creator.last_name as created_by_name,
         owner.first_name || ' ' || owner.last_name as owner_name,
         t.name as team_name,
@@ -60,14 +61,23 @@ export const getIssues = async (req, res) => {
       LEFT JOIN users owner ON i.owner_id = owner.id
       LEFT JOIN teams t ON i.team_id = t.id
       LEFT JOIN issue_attachments ia ON ia.issue_id = i.id
-      WHERE i.organization_id = $1 AND i.archived = FALSE
+      WHERE i.organization_id = $1
     `;
     
     const params = [orgId];
+    let paramCount = 2;
+    
+    // Filter by archived status
+    if (includeArchived === 'true') {
+      query += ` AND i.archived = TRUE`;
+    } else {
+      query += ` AND i.archived = FALSE`;
+    }
     
     if (timeline) {
-      query += ` AND i.timeline = $2`;
+      query += ` AND i.timeline = $${paramCount}`;
       params.push(timeline);
+      paramCount++;
     }
     
     query += ` GROUP BY i.id, creator.first_name, creator.last_name, owner.first_name, owner.last_name, t.name
@@ -504,6 +514,40 @@ export const archiveClosedIssues = async (req, res) => {
     res.status(500).json({
       success: false,
       message: 'Failed to archive closed issues'
+    });
+  }
+};
+
+// Unarchive an issue
+export const unarchiveIssue = async (req, res) => {
+  try {
+    const { orgId, issueId } = req.params;
+    
+    const result = await db.query(
+      `UPDATE issues 
+       SET archived = FALSE, status = 'open', updated_at = CURRENT_TIMESTAMP
+       WHERE id = $1 AND organization_id = $2
+       RETURNING *`,
+      [issueId, orgId]
+    );
+    
+    if (result.rows.length === 0) {
+      return res.status(404).json({
+        success: false,
+        message: 'Issue not found'
+      });
+    }
+    
+    res.json({
+      success: true,
+      message: 'Issue unarchived successfully',
+      data: result.rows[0]
+    });
+  } catch (error) {
+    console.error('Error unarchiving issue:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Failed to unarchive issue'
     });
   }
 };

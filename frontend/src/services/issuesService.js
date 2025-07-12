@@ -14,10 +14,13 @@ const getTeamId = () => {
 
 export const issuesService = {
   // Get all issues
-  getIssues: async (timeline = null) => {
+  getIssues: async (timeline = null, includeArchived = false) => {
     const orgId = getOrgId();
     
-    const params = timeline ? { timeline } : {};
+    const params = {};
+    if (timeline) params.timeline = timeline;
+    if (includeArchived) params.includeArchived = 'true';
+    
     const response = await axios.get(
       `/organizations/${orgId}/issues`,
       { params }
@@ -128,6 +131,16 @@ export const issuesService = {
     const response = await axios.post(
       `/organizations/${orgId}/issues/archive-closed`,
       { timeline }
+    );
+    return response.data;
+  },
+
+  // Unarchive an issue
+  unarchiveIssue: async (issueId) => {
+    const orgId = getOrgId();
+    
+    const response = await axios.post(
+      `/organizations/${orgId}/issues/${issueId}/unarchive`
     );
     return response.data;
   }

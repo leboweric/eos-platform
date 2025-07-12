@@ -20,6 +20,7 @@ import {
 } from 'lucide-react';
 import IssueDialog from '../components/issues/IssueDialog';
 import IssueCard from '../components/issues/IssueCard';
+import ArchivedIssueCard from '../components/issues/ArchivedIssueCard';
 
 const IssuesPage = () => {
   const { user } = useAuthStore();
@@ -31,6 +32,7 @@ const IssuesPage = () => {
   // Issues data
   const [shortTermIssues, setShortTermIssues] = useState([]);
   const [longTermIssues, setLongTermIssues] = useState([]);
+  const [archivedIssues, setArchivedIssues] = useState([]);
   const [teamMembers, setTeamMembers] = useState([]);
   
   // Dialog states
@@ -46,14 +48,16 @@ const IssuesPage = () => {
       setLoading(true);
       setError(null);
       
-      // Fetch both short-term and long-term issues
-      const [shortTermResponse, longTermResponse] = await Promise.all([
+      // Fetch all types of issues
+      const [shortTermResponse, longTermResponse, archivedResponse] = await Promise.all([
         issuesService.getIssues('short_term'),
-        issuesService.getIssues('long_term')
+        issuesService.getIssues('long_term'),
+        issuesService.getIssues(null, true) // Get all archived issues
       ]);
       
       setShortTermIssues(shortTermResponse.data.issues || []);
       setLongTermIssues(longTermResponse.data.issues || []);
+      setArchivedIssues(archivedResponse.data.issues || []);
       
       // Team members come from either response (they're the same)
       setTeamMembers(shortTermResponse.data.teamMembers || []);
@@ -98,18 +102,6 @@ const IssuesPage = () => {
     }
   };
 
-  const handleDeleteIssue = async (issueId) => {
-    if (!confirm('Are you sure you want to delete this issue?')) return;
-    
-    try {
-      await issuesService.deleteIssue(issueId);
-      setSuccess('Issue deleted successfully');
-      await fetchIssues();
-    } catch (error) {
-      console.error('Failed to delete issue:', error);
-      setError('Failed to delete issue');
-    }
-  };
 
   const handleStatusChange = async (issueId, newStatus) => {
     try {
@@ -131,6 +123,17 @@ const IssuesPage = () => {
     } catch (error) {
       console.error('Failed to archive closed issues:', error);
       setError('Failed to archive closed issues');
+    }
+  };
+
+  const handleUnarchive = async (issueId) => {
+    try {
+      await issuesService.unarchiveIssue(issueId);
+      setSuccess('Issue restored successfully');
+      await fetchIssues();
+    } catch (error) {
+      console.error('Failed to unarchive issue:', error);
+      setError('Failed to restore issue');
     }
   };
 
@@ -164,8 +167,8 @@ const IssuesPage = () => {
     );
   }
 
-  const currentIssues = activeTab === 'short_term' ? shortTermIssues : longTermIssues;
-  const hasClosedIssues = currentIssues.some(issue => issue.status === 'closed');
+  const currentIssues = activeTab === 'short_term' ? shortTermIssues : activeTab === 'long_term' ? longTermIssues : archivedIssues;
+  const hasClosedIssues = activeTab !== 'archived' && currentIssues.some(issue => issue.status === 'closed');
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -188,10 +191,12 @@ const IssuesPage = () => {
                 Archive Closed
               </Button>
             )}
-            <Button onClick={handleCreateIssue} className="bg-indigo-600 hover:bg-indigo-700 text-white">
-              <Plus className="mr-2 h-4 w-4" />
-              Add Issue
-            </Button>
+            {activeTab !== 'archived' && (
+              <Button onClick={handleCreateIssue} className="bg-indigo-600 hover:bg-indigo-700 text-white">
+                <Plus className="mr-2 h-4 w-4" />
+                Add Issue
+              </Button>
+            )}
           </div>
         </div>
 
@@ -210,7 +215,7 @@ const IssuesPage = () => {
         )}
 
         <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-          <TabsList className="grid w-full grid-cols-2 h-14 bg-white shadow-sm">
+          <TabsList className="grid w-full grid-cols-3 h-14 bg-white shadow-sm">
             <TabsTrigger value="short_term" className="data-[state=active]:bg-indigo-600 data-[state=active]:text-white text-lg font-medium">
               <Calendar className="mr-2 h-5 w-5" />
               Short Term (This Quarter)
@@ -218,6 +223,10 @@ const IssuesPage = () => {
             <TabsTrigger value="long_term" className="data-[state=active]:bg-indigo-600 data-[state=active]:text-white text-lg font-medium">
               <Calendar className="mr-2 h-5 w-5" />
               Long Term (Next Quarter)
+            </TabsTrigger>
+            <TabsTrigger value="archived" className="data-[state=active]:bg-indigo-600 data-[state=active]:text-white text-lg font-medium">
+              <Archive className="mr-2 h-5 w-5" />
+              Archived ({archivedIssues.length})
             </TabsTrigger>
           </TabsList>
 
@@ -227,29 +236,40 @@ const IssuesPage = () => {
                 <CardContent>
                   <AlertTriangle className="h-12 w-12 text-gray-400 mx-auto mb-4" />
                   <h3 className="text-lg font-medium text-gray-900 mb-2">
-                    No {activeTab === 'short_term' ? 'short-term' : 'long-term'} issues yet
+                    {activeTab === 'archived' ? 'No archived issues' : `No ${activeTab === 'short_term' ? 'short-term' : 'long-term'} issues yet`}
                   </h3>
                   <p className="text-gray-500 mb-6">
-                    Create your first issue to start tracking
+                    {activeTab === 'archived' ? 'Archived issues will appear here' : 'Create your first issue to start tracking'}
                   </p>
-                  <Button onClick={handleCreateIssue}>
-                    <Plus className="mr-2 h-4 w-4" />
-                    Create Issue
-                  </Button>
+                  {activeTab !== 'archived' && (
+                    <Button onClick={handleCreateIssue}>
+                      <Plus className="mr-2 h-4 w-4" />
+                      Create Issue
+                    </Button>
+                  )}
                 </CardContent>
               </Card>
             ) : (
               <div className="grid gap-4">
                 {currentIssues.map((issue) => (
-                  <IssueCard
-                    key={issue.id}
-                    issue={issue}
-                    onEdit={handleEditIssue}
-                    onDelete={handleDeleteIssue}
-                    onStatusChange={handleStatusChange}
-                    getStatusColor={getStatusColor}
-                    getStatusIcon={getStatusIcon}
-                  />
+                  activeTab === 'archived' ? (
+                    <ArchivedIssueCard
+                      key={issue.id}
+                      issue={issue}
+                      onUnarchive={handleUnarchive}
+                      getStatusColor={getStatusColor}
+                      getStatusIcon={getStatusIcon}
+                    />
+                  ) : (
+                    <IssueCard
+                      key={issue.id}
+                      issue={issue}
+                      onEdit={handleEditIssue}
+                      onStatusChange={handleStatusChange}
+                      getStatusColor={getStatusColor}
+                      getStatusIcon={getStatusIcon}
+                    />
+                  )
                 ))}
               </div>
             )}

@@ -1,16 +1,8 @@
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu';
 import { 
-  MoreVertical,
-  Edit,
+  RotateCcw,
   User,
   Calendar,
   Paperclip,
@@ -18,7 +10,7 @@ import {
   AlertTriangle
 } from 'lucide-react';
 
-const IssueCard = ({ issue, onEdit, onStatusChange, getStatusColor, getStatusIcon }) => {
+const ArchivedIssueCard = ({ issue, onUnarchive, getStatusColor, getStatusIcon }) => {
   const formatDate = (dateString) => {
     const date = new Date(dateString);
     return date.toLocaleDateString('en-US', { 
@@ -28,13 +20,8 @@ const IssueCard = ({ issue, onEdit, onStatusChange, getStatusColor, getStatusIco
     });
   };
 
-  const statusOptions = [
-    { value: 'open', label: 'Open', icon: <AlertTriangle className="h-4 w-4" /> },
-    { value: 'closed', label: 'Closed', icon: <CheckCircle className="h-4 w-4" /> }
-  ];
-
   return (
-    <Card className="hover:shadow-md transition-shadow">
+    <Card className="hover:shadow-md transition-shadow opacity-75">
       <CardContent className="p-6">
         <div className="flex items-start justify-between">
           <div className="flex-1">
@@ -69,6 +56,11 @@ const IssueCard = ({ issue, onEdit, onStatusChange, getStatusColor, getStatusIco
                       <span>{issue.attachment_count} attachment{issue.attachment_count > 1 ? 's' : ''}</span>
                     </div>
                   )}
+
+                  <div className="flex items-center gap-1 text-gray-500">
+                    <span className="font-medium">Timeline:</span>
+                    <span className="capitalize">{issue.timeline?.replace('_', ' ') || 'Not specified'}</span>
+                  </div>
                 </div>
               </div>
 
@@ -78,33 +70,15 @@ const IssueCard = ({ issue, onEdit, onStatusChange, getStatusColor, getStatusIco
                   <span className="capitalize">{issue.status.replace('-', ' ')}</span>
                 </Badge>
 
-                <DropdownMenu>
-                  <DropdownMenuTrigger asChild>
-                    <Button variant="ghost" size="sm">
-                      <MoreVertical className="h-4 w-4" />
-                    </Button>
-                  </DropdownMenuTrigger>
-                  <DropdownMenuContent align="end">
-                    <DropdownMenuItem onClick={() => onEdit(issue)}>
-                      <Edit className="mr-2 h-4 w-4" />
-                      Edit
-                    </DropdownMenuItem>
-                    
-                    <DropdownMenuSeparator />
-                    
-                    <div className="px-2 py-1.5 text-sm font-medium">Change Status</div>
-                    {statusOptions.map(option => (
-                      <DropdownMenuItem
-                        key={option.value}
-                        onClick={() => onStatusChange(issue.id, option.value)}
-                        disabled={issue.status === option.value}
-                      >
-                        <span className="mr-2">{option.icon}</span>
-                        {option.label}
-                      </DropdownMenuItem>
-                    ))}
-                  </DropdownMenuContent>
-                </DropdownMenu>
+                <Button 
+                  onClick={() => onUnarchive(issue.id)}
+                  variant="outline"
+                  size="sm"
+                  className="flex items-center gap-1"
+                >
+                  <RotateCcw className="h-4 w-4" />
+                  Restore
+                </Button>
               </div>
             </div>
           </div>
@@ -114,4 +88,4 @@ const IssueCard = ({ issue, onEdit, onStatusChange, getStatusColor, getStatusIco
   );
 };
 
-export default IssueCard;
+export default ArchivedIssueCard;
