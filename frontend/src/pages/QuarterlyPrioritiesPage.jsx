@@ -67,6 +67,10 @@ const QuarterlyPrioritiesPage = () => {
     isCompanyPriority: false,
     milestones: []
   });
+  const [newMilestoneForm, setNewMilestoneForm] = useState({
+    title: '',
+    dueDate: ''
+  });
 
   // Mock data - replace with API calls
   useEffect(() => {
@@ -331,13 +335,58 @@ const QuarterlyPrioritiesPage = () => {
       const orgId = user?.organizationId;
       const teamId = user?.teamId || '00000000-0000-0000-0000-000000000000';
       
-      await quarterlyPrioritiesService.updateMilestone(orgId, teamId, milestoneId, completed);
+      await quarterlyPrioritiesService.updateMilestone(orgId, teamId, priorityId, milestoneId, { completed });
       
       // Refresh data to get updated progress
       await fetchQuarterlyData();
     } catch (err) {
       console.error('Failed to update milestone:', err);
       setError('Failed to update milestone');
+    }
+  };
+
+  const handleCreateMilestone = async (priorityId, milestoneData) => {
+    try {
+      const orgId = user?.organizationId;
+      const teamId = user?.teamId || '00000000-0000-0000-0000-000000000000';
+      
+      await quarterlyPrioritiesService.createMilestone(orgId, teamId, priorityId, milestoneData);
+      
+      // Refresh data
+      await fetchQuarterlyData();
+    } catch (err) {
+      console.error('Failed to create milestone:', err);
+      setError('Failed to create milestone');
+    }
+  };
+
+  const handleEditMilestone = async (priorityId, milestoneId, updates) => {
+    try {
+      const orgId = user?.organizationId;
+      const teamId = user?.teamId || '00000000-0000-0000-0000-000000000000';
+      
+      await quarterlyPrioritiesService.updateMilestone(orgId, teamId, priorityId, milestoneId, updates);
+      
+      // Refresh data
+      await fetchQuarterlyData();
+    } catch (err) {
+      console.error('Failed to update milestone:', err);
+      setError('Failed to update milestone');
+    }
+  };
+
+  const handleDeleteMilestone = async (priorityId, milestoneId) => {
+    try {
+      const orgId = user?.organizationId;
+      const teamId = user?.teamId || '00000000-0000-0000-0000-000000000000';
+      
+      await quarterlyPrioritiesService.deleteMilestone(orgId, teamId, priorityId, milestoneId);
+      
+      // Refresh data
+      await fetchQuarterlyData();
+    } catch (err) {
+      console.error('Failed to delete milestone:', err);
+      setError('Failed to delete milestone');
     }
   };
 
@@ -377,6 +426,7 @@ const QuarterlyPrioritiesPage = () => {
         isCompanyPriority: false,
         milestones: []
       });
+      setNewMilestoneForm({ title: '', dueDate: '' });
       
       // Refresh data
       await fetchQuarterlyData();
@@ -424,6 +474,12 @@ const QuarterlyPrioritiesPage = () => {
     const [isEditing, setIsEditing] = useState(false);
     const [showUpdateDialog, setShowUpdateDialog] = useState(false);
     const [updateText, setUpdateText] = useState('');
+    const [showAddMilestone, setShowAddMilestone] = useState(false);
+    const [editingMilestoneId, setEditingMilestoneId] = useState(null);
+    const [milestoneForm, setMilestoneForm] = useState({
+      title: '',
+      dueDate: ''
+    });
     const [editForm, setEditForm] = useState({
       title: priority.title,
       description: priority.description,
@@ -580,24 +636,135 @@ const QuarterlyPrioritiesPage = () => {
 
             {/* Milestones */}
             <div>
-              <Label className="text-sm text-gray-600 mb-2 block">Milestones</Label>
+              <div className="flex items-center justify-between mb-2">
+                <Label className="text-sm text-gray-600">Milestones</Label>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => setShowAddMilestone(true)}
+                  className="text-xs"
+                >
+                  <Plus className="h-3 w-3 mr-1" />
+                  Add Milestone
+                </Button>
+              </div>
               <div className="space-y-2">
                 {priority.milestones.map((milestone) => (
-                  <div key={milestone.id} className="flex items-center space-x-3">
+                  <div key={milestone.id} className="flex items-center space-x-3 group">
                     <input
                       type="checkbox"
                       checked={milestone.completed}
                       onChange={(e) => handleUpdateMilestone(priority.id, milestone.id, e.target.checked)}
                       className="rounded border-gray-300 text-primary focus:ring-primary"
                     />
-                    <span className={`text-sm flex-1 ${milestone.completed ? 'line-through text-gray-500' : ''}`}>
-                      {milestone.title}
-                    </span>
-                    <span className="text-xs text-gray-500">
-                      {formatDate(milestone.dueDate)}
-                    </span>
+                    {editingMilestoneId === milestone.id ? (
+                      <>
+                        <Input
+                          value={milestoneForm.title}
+                          onChange={(e) => setMilestoneForm({ ...milestoneForm, title: e.target.value })}
+                          className="flex-1 text-sm"
+                          placeholder="Milestone title"
+                        />
+                        <Input
+                          type="date"
+                          value={milestoneForm.dueDate}
+                          onChange={(e) => setMilestoneForm({ ...milestoneForm, dueDate: e.target.value })}
+                          className="w-32 text-xs"
+                        />
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          onClick={() => {
+                            handleEditMilestone(priority.id, milestone.id, milestoneForm);
+                            setEditingMilestoneId(null);
+                          }}
+                        >
+                          <CheckSquare className="h-3 w-3" />
+                        </Button>
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          onClick={() => setEditingMilestoneId(null)}
+                        >
+                          <X className="h-3 w-3" />
+                        </Button>
+                      </>
+                    ) : (
+                      <>
+                        <span className={`text-sm flex-1 ${milestone.completed ? 'line-through text-gray-500' : ''}`}>
+                          {milestone.title}
+                        </span>
+                        <span className="text-xs text-gray-500">
+                          {formatDate(milestone.dueDate)}
+                        </span>
+                        <div className="opacity-0 group-hover:opacity-100 transition-opacity flex items-center space-x-1">
+                          <Button
+                            size="sm"
+                            variant="ghost"
+                            onClick={() => {
+                              setEditingMilestoneId(milestone.id);
+                              setMilestoneForm({
+                                title: milestone.title,
+                                dueDate: milestone.dueDate
+                              });
+                            }}
+                          >
+                            <Edit className="h-3 w-3" />
+                          </Button>
+                          <Button
+                            size="sm"
+                            variant="ghost"
+                            onClick={() => {
+                              if (window.confirm('Are you sure you want to delete this milestone?')) {
+                                handleDeleteMilestone(priority.id, milestone.id);
+                              }
+                            }}
+                          >
+                            <Trash2 className="h-3 w-3" />
+                          </Button>
+                        </div>
+                      </>
+                    )}
                   </div>
                 ))}
+                {showAddMilestone && (
+                  <div className="flex items-center space-x-3 mt-2">
+                    <Input
+                      value={milestoneForm.title}
+                      onChange={(e) => setMilestoneForm({ ...milestoneForm, title: e.target.value })}
+                      placeholder="New milestone title"
+                      className="flex-1 text-sm"
+                    />
+                    <Input
+                      type="date"
+                      value={milestoneForm.dueDate}
+                      onChange={(e) => setMilestoneForm({ ...milestoneForm, dueDate: e.target.value })}
+                      className="w-32 text-xs"
+                    />
+                    <Button
+                      size="sm"
+                      variant="ghost"
+                      onClick={() => {
+                        handleCreateMilestone(priority.id, milestoneForm);
+                        setMilestoneForm({ title: '', dueDate: '' });
+                        setShowAddMilestone(false);
+                      }}
+                      disabled={!milestoneForm.title || !milestoneForm.dueDate}
+                    >
+                      <CheckSquare className="h-3 w-3" />
+                    </Button>
+                    <Button
+                      size="sm"
+                      variant="ghost"
+                      onClick={() => {
+                        setShowAddMilestone(false);
+                        setMilestoneForm({ title: '', dueDate: '' });
+                      }}
+                    >
+                      <X className="h-3 w-3" />
+                    </Button>
+                  </div>
+                )}
               </div>
             </div>
 
@@ -1022,6 +1189,65 @@ const QuarterlyPrioritiesPage = () => {
                 className="rounded border-gray-300"
               />
               <Label htmlFor="isCompany">This is a company-wide priority</Label>
+            </div>
+            {/* Milestones for new priority */}
+            <div>
+              <div className="flex items-center justify-between mb-2">
+                <Label>Milestones</Label>
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => {
+                    if (newMilestoneForm.title && newMilestoneForm.dueDate) {
+                      setPriorityForm({
+                        ...priorityForm,
+                        milestones: [...priorityForm.milestones, { ...newMilestoneForm, id: Date.now() }]
+                      });
+                      setNewMilestoneForm({ title: '', dueDate: '' });
+                    }
+                  }}
+                  disabled={!newMilestoneForm.title || !newMilestoneForm.dueDate}
+                >
+                  <Plus className="h-3 w-3 mr-1" />
+                  Add Milestone
+                </Button>
+              </div>
+              <div className="space-y-2">
+                {priorityForm.milestones.map((milestone) => (
+                  <div key={milestone.id} className="flex items-center space-x-3">
+                    <span className="text-sm flex-1">{milestone.title}</span>
+                    <span className="text-xs text-gray-500">{formatDate(milestone.dueDate)}</span>
+                    <Button
+                      type="button"
+                      size="sm"
+                      variant="ghost"
+                      onClick={() => {
+                        setPriorityForm({
+                          ...priorityForm,
+                          milestones: priorityForm.milestones.filter(m => m.id !== milestone.id)
+                        });
+                      }}
+                    >
+                      <Trash2 className="h-3 w-3" />
+                    </Button>
+                  </div>
+                ))}
+                <div className="flex items-center space-x-3">
+                  <Input
+                    value={newMilestoneForm.title}
+                    onChange={(e) => setNewMilestoneForm({ ...newMilestoneForm, title: e.target.value })}
+                    placeholder="Milestone title"
+                    className="flex-1 text-sm"
+                  />
+                  <Input
+                    type="date"
+                    value={newMilestoneForm.dueDate}
+                    onChange={(e) => setNewMilestoneForm({ ...newMilestoneForm, dueDate: e.target.value })}
+                    className="w-32 text-xs"
+                  />
+                </div>
+              </div>
             </div>
           </div>
           <DialogFooter>
