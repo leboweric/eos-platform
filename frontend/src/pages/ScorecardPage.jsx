@@ -95,9 +95,11 @@ const ScorecardPage = () => {
       }
       
       const token = localStorage.getItem('accessToken');
-      console.log('Making request to:', `/api/v1/users/organization`);
+      const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3001/api/v1';
+      const url = `${API_URL}/users/organization`;
+      console.log('Making request to:', url);
       
-      const response = await fetch(`/api/v1/users/organization`, {
+      const response = await fetch(url, {
         headers: {
           Authorization: `Bearer ${token}`,
         },
