@@ -6,7 +6,9 @@ import {
   updatePriority,
   deletePriority,
   updatePredictions,
+  createMilestone,
   updateMilestone,
+  deleteMilestone,
   addPriorityUpdate
 } from '../controllers/quarterlyPrioritiesController.js';
 
@@ -27,7 +29,9 @@ router.delete('/priorities/:priorityId', deletePriority);
 router.put('/predictions', updatePredictions);
 
 // Milestones
-router.put('/milestones/:milestoneId', updateMilestone);
+router.post('/priorities/:priorityId/milestones', createMilestone);
+router.put('/priorities/:priorityId/milestones/:milestoneId', updateMilestone);
+router.delete('/priorities/:priorityId/milestones/:milestoneId', deleteMilestone);
 
 // Priority updates
 router.post('/priorities/:priorityId/updates', addPriorityUpdate);

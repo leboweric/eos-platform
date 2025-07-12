@@ -4,14 +4,14 @@ import { v4 as uuidv4 } from 'uuid';
 // Get all priorities for a quarter
 export const getQuarterlyPriorities = async (req, res) => {
   try {
-    const { orgId } = req.params;
+    const { orgId, teamId } = req.params;
     const { quarter, year } = req.query;
     
     // Get predictions
     const predictionsResult = await query(
       `SELECT * FROM quarterly_predictions 
        WHERE organization_id = $1 AND quarter = $2 AND year = $3`,
-      [orgId, quarter || 'Q1', year || new Date().getFullYear()]
+      [orgId, quarter || 'Q1', parseInt(year) || new Date().getFullYear()]
     );
     
     // Get all priorities
@@ -36,7 +36,7 @@ export const getQuarterlyPriorities = async (req, res) => {
          AND p.year = $3
        GROUP BY p.id, u.first_name, u.last_name, u.email
        ORDER BY p.is_company_priority DESC, p.created_at`,
-      [orgId, quarter || 'Q1', year || new Date().getFullYear()]
+      [orgId, quarter || 'Q1', parseInt(year) || new Date().getFullYear()]
     );
     
     // Get latest updates for each priority
@@ -119,7 +119,7 @@ export const getQuarterlyPriorities = async (req, res) => {
 // Create a new priority
 export const createPriority = async (req, res) => {
   try {
-    const { orgId } = req.params;
+    const { orgId, teamId } = req.params;
     const { 
       title, 
       description, 
@@ -169,7 +169,7 @@ export const createPriority = async (req, res) => {
 // Update a priority
 export const updatePriority = async (req, res) => {
   try {
-    const { orgId, priorityId } = req.params;
+    const { orgId, teamId, priorityId } = req.params;
     const { title, description, status, progress } = req.body;
     
     const result = await query(
@@ -201,7 +201,7 @@ export const updatePriority = async (req, res) => {
 // Delete a priority
 export const deletePriority = async (req, res) => {
   try {
-    const { orgId, priorityId } = req.params;
+    const { orgId, teamId, priorityId } = req.params;
     
     await query(
       `DELETE FROM quarterly_priorities 
@@ -222,7 +222,7 @@ export const deletePriority = async (req, res) => {
 // Update predictions
 export const updatePredictions = async (req, res) => {
   try {
-    const { orgId } = req.params;
+    const { orgId, teamId } = req.params;
     const { quarter, year, revenue, profit, measurables } = req.body;
     
     // Upsert predictions
@@ -259,18 +259,48 @@ export const updatePredictions = async (req, res) => {
   }
 };
 
+// Create milestone
+export const createMilestone = async (req, res) => {
+  try {
+    const { orgId, teamId, priorityId } = req.params;
+    const { title, dueDate } = req.body;
+    
+    const result = await query(
+      `INSERT INTO priority_milestones 
+       (id, priority_id, title, due_date, completed)
+       VALUES ($1, $2, $3, $4, false)
+       RETURNING *`,
+      [uuidv4(), priorityId, title, dueDate]
+    );
+    
+    // Update priority progress
+    await updatePriorityProgress(priorityId);
+    
+    res.json({
+      success: true,
+      data: result.rows[0]
+    });
+  } catch (error) {
+    console.error('Create milestone error:', error);
+    res.status(500).json({ error: 'Failed to create milestone' });
+  }
+};
+
 // Update milestone
 export const updateMilestone = async (req, res) => {
   try {
-    const { milestoneId } = req.params;
-    const { completed } = req.body;
+    const { orgId, teamId, priorityId, milestoneId } = req.params;
+    const { title, dueDate, completed } = req.body;
     
     const result = await query(
       `UPDATE priority_milestones 
-       SET completed = $1, updated_at = NOW()
-       WHERE id = $2
+       SET title = COALESCE($1, title),
+           due_date = COALESCE($2, due_date),
+           completed = COALESCE($3, completed),
+           updated_at = NOW()
+       WHERE id = $4
        RETURNING *`,
-      [completed, milestoneId]
+      [title, dueDate, completed, milestoneId]
     );
     
     if (result.rows.length === 0) {
@@ -290,10 +320,39 @@ export const updateMilestone = async (req, res) => {
   }
 };
 
+// Delete milestone
+export const deleteMilestone = async (req, res) => {
+  try {
+    const { orgId, teamId, priorityId, milestoneId } = req.params;
+    
+    const result = await query(
+      `DELETE FROM priority_milestones 
+       WHERE id = $1 AND priority_id = $2
+       RETURNING priority_id`,
+      [milestoneId, priorityId]
+    );
+    
+    if (result.rows.length === 0) {
+      return res.status(404).json({ error: 'Milestone not found' });
+    }
+    
+    // Update priority progress
+    await updatePriorityProgress(priorityId);
+    
+    res.json({
+      success: true,
+      message: 'Milestone deleted successfully'
+    });
+  } catch (error) {
+    console.error('Delete milestone error:', error);
+    res.status(500).json({ error: 'Failed to delete milestone' });
+  }
+};
+
 // Add update to priority
 export const addPriorityUpdate = async (req, res) => {
   try {
-    const { priorityId } = req.params;
+    const { orgId, teamId, priorityId } = req.params;
     const { updateText, statusChange } = req.body;
     
     const result = await query(

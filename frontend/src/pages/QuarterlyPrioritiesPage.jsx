@@ -105,7 +105,7 @@ const QuarterlyPrioritiesPage = () => {
       setTeamMembers(data.teamMembers || []);
     } catch (err) {
       console.error('Failed to fetch quarterly data:', err);
-      setError('Backend API integration is in progress. Using demo data for now.');
+      setError('Failed to load quarterly priorities');
       
       // Set default data if fetch fails
       setPredictions({
@@ -310,7 +310,7 @@ const QuarterlyPrioritiesPage = () => {
       setEditingPredictions(false);
     } catch (err) {
       console.error('Failed to save predictions:', err);
-      setError('Predictions save backend integration in progress');
+      setError('Failed to save predictions');
     }
   };
 
@@ -335,28 +335,59 @@ const QuarterlyPrioritiesPage = () => {
       const orgId = user?.organizationId;
       const teamId = user?.teamId || '00000000-0000-0000-0000-000000000000';
       
-      await quarterlyPrioritiesService.updateMilestone(orgId, teamId, milestoneId, completed);
+      await quarterlyPrioritiesService.updateMilestone(orgId, teamId, priorityId, milestoneId, { completed });
       
       // Refresh data to get updated progress
       await fetchQuarterlyData();
     } catch (err) {
       console.error('Failed to update milestone:', err);
-      setError('Milestone update backend integration in progress');
+      setError('Failed to update milestone');
     }
   };
 
-  // Note: The backend API currently only supports updating milestone completion status.
-  // Full CRUD operations for milestones would require backend API changes.
   const handleCreateMilestone = async (priorityId, milestoneData) => {
-    setError('Creating milestones requires backend API support. Milestones can only be added when creating a new priority.');
+    try {
+      const orgId = user?.organizationId;
+      const teamId = user?.teamId || '00000000-0000-0000-0000-000000000000';
+      
+      await quarterlyPrioritiesService.createMilestone(orgId, teamId, priorityId, milestoneData);
+      
+      // Refresh data
+      await fetchQuarterlyData();
+    } catch (err) {
+      console.error('Failed to create milestone:', err);
+      setError('Failed to create milestone');
+    }
   };
 
   const handleEditMilestone = async (priorityId, milestoneId, updates) => {
-    setError('Editing milestone details requires backend API support. Only completion status can be updated.');
+    try {
+      const orgId = user?.organizationId;
+      const teamId = user?.teamId || '00000000-0000-0000-0000-000000000000';
+      
+      await quarterlyPrioritiesService.updateMilestone(orgId, teamId, priorityId, milestoneId, updates);
+      
+      // Refresh data
+      await fetchQuarterlyData();
+    } catch (err) {
+      console.error('Failed to update milestone:', err);
+      setError('Failed to update milestone');
+    }
   };
 
   const handleDeleteMilestone = async (priorityId, milestoneId) => {
-    setError('Deleting milestones requires backend API support.');
+    try {
+      const orgId = user?.organizationId;
+      const teamId = user?.teamId || '00000000-0000-0000-0000-000000000000';
+      
+      await quarterlyPrioritiesService.deleteMilestone(orgId, teamId, priorityId, milestoneId);
+      
+      // Refresh data
+      await fetchQuarterlyData();
+    } catch (err) {
+      console.error('Failed to delete milestone:', err);
+      setError('Failed to delete milestone');
+    }
   };
 
   const handleAddUpdate = async (priorityId, updateText, statusChange = null) => {
@@ -646,8 +677,8 @@ const QuarterlyPrioritiesPage = () => {
                           size="sm"
                           variant="ghost"
                           onClick={() => {
+                            handleEditMilestone(priority.id, milestone.id, milestoneForm);
                             setEditingMilestoneId(null);
-                            setError('Editing milestone details requires backend API support.');
                           }}
                         >
                           <CheckSquare className="h-3 w-3" />
@@ -716,9 +747,9 @@ const QuarterlyPrioritiesPage = () => {
                       size="sm"
                       variant="ghost"
                       onClick={() => {
-                        setShowAddMilestone(false);
+                        handleCreateMilestone(priority.id, milestoneForm);
                         setMilestoneForm({ title: '', dueDate: '' });
-                        setError('Adding milestones to existing priorities requires backend API support.');
+                        setShowAddMilestone(false);
                       }}
                       disabled={!milestoneForm.title || !milestoneForm.dueDate}
                     >
@@ -824,15 +855,6 @@ const QuarterlyPrioritiesPage = () => {
 
   return (
     <div className="space-y-6">
-      {/* Backend Integration Notice */}
-      <Alert className="bg-blue-50 border-blue-200">
-        <AlertCircle className="h-4 w-4 text-blue-600" />
-        <AlertDescription className="text-blue-800">
-          <strong>Note:</strong> The quarterly priorities feature is currently using demo data while backend integration is being completed. 
-          Your changes will not be saved at this time.
-        </AlertDescription>
-      </Alert>
-      
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
