@@ -95,9 +95,9 @@ const ScorecardPage = () => {
       }
       
       const token = localStorage.getItem('accessToken');
-      console.log('Making request to:', `/api/v1/organizations/${orgId}/users/organization`);
+      console.log('Making request to:', `/api/v1/users/organization`);
       
-      const response = await fetch(`/api/v1/organizations/${orgId}/users/organization`, {
+      const response = await fetch(`/api/v1/users/organization`, {
         headers: {
           Authorization: `Bearer ${token}`,
         },
