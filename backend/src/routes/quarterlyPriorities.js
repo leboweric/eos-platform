@@ -1,5 +1,6 @@
 import express from 'express';
 import { authenticate } from '../middleware/auth.js';
+import { query } from '../config/database.js';
 import {
   getQuarterlyPriorities,
   createPriority,
@@ -35,5 +36,27 @@ router.delete('/priorities/:priorityId/milestones/:milestoneId', deleteMilestone
 
 // Priority updates
 router.post('/priorities/:priorityId/updates', addPriorityUpdate);
+
+// Debug endpoint (only in development)
+if (process.env.NODE_ENV !== 'production') {
+  router.get('/debug/milestone-sync', async (req, res) => {
+    try {
+      const { orgId } = req.params;
+      const milestones = await query('SELECT id, title, priority_id FROM priority_milestones WHERE priority_id IN (SELECT id FROM quarterly_priorities WHERE organization_id = $1)', [orgId]);
+      const priorities = await query('SELECT id, title FROM quarterly_priorities WHERE organization_id = $1', [orgId]);
+      
+      res.json({
+        milestones: milestones.rows,
+        priorities: priorities.rows,
+        counts: {
+          milestones: milestones.rows.length,
+          priorities: priorities.rows.length
+        }
+      });
+    } catch (error) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+}
 
 export default router;

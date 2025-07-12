@@ -42,13 +42,26 @@ export const getQuarterlyPriorities = async (req, res) => {
     const { orgId, teamId } = req.params;
     const { quarter, year } = req.query;
     
+    // Validate required parameters
+    if (!quarter || !year) {
+      return res.status(400).json({ 
+        error: 'Quarter and year are required',
+        received: { quarter, year }
+      });
+    }
+    
     // Default values for quarter and year - ensure correct types
-    const currentQuarter = String(quarter || 'Q1');
-    const currentYear = parseInt(year) || new Date().getFullYear();
+    const currentQuarter = String(quarter);
+    const currentYear = parseInt(year);
     
     // Validate quarter format
     if (!['Q1', 'Q2', 'Q3', 'Q4'].includes(currentQuarter)) {
       return res.status(400).json({ error: 'Invalid quarter format. Must be Q1, Q2, Q3, or Q4' });
+    }
+    
+    // Validate year is a number
+    if (isNaN(currentYear)) {
+      return res.status(400).json({ error: 'Year must be a valid number' });
     }
     
     console.log('Fetching quarterly priorities:', { orgId, teamId, quarter: currentQuarter, year: currentYear });
@@ -187,7 +200,12 @@ export const getQuarterlyPriorities = async (req, res) => {
     });
   } catch (error) {
     console.error('Get quarterly priorities error:', error);
-    res.status(500).json({ error: 'Failed to fetch quarterly priorities' });
+    console.error('Stack trace:', error.stack);
+    res.status(500).json({ 
+      error: 'Failed to fetch quarterly priorities',
+      details: process.env.NODE_ENV === 'development' ? error.message : undefined,
+      query: { orgId, teamId, quarter: req.query.quarter, year: req.query.year }
+    });
   }
 };
 
@@ -379,6 +397,29 @@ export const updateMilestone = async (req, res) => {
     const { orgId, teamId, priorityId, milestoneId } = req.params;
     const { title, dueDate, completed } = req.body;
     
+    // First, check if milestone exists
+    const existingMilestone = await query(
+      'SELECT id, priority_id FROM priority_milestones WHERE id = $1',
+      [milestoneId]
+    );
+    
+    if (existingMilestone.rows.length === 0) {
+      console.warn(`Milestone not found: ${milestoneId}`);
+      return res.status(404).json({ 
+        error: 'Milestone not found',
+        milestoneId: milestoneId
+      });
+    }
+    
+    // Verify milestone belongs to the correct priority
+    if (existingMilestone.rows[0].priority_id !== priorityId) {
+      return res.status(404).json({ 
+        error: 'Milestone does not belong to this priority',
+        milestoneId: milestoneId,
+        priorityId: priorityId
+      });
+    }
+    
     const result = await query(
       `UPDATE priority_milestones 
        SET title = COALESCE($1, title),
@@ -390,10 +431,6 @@ export const updateMilestone = async (req, res) => {
       [title, dueDate, completed, milestoneId]
     );
     
-    if (result.rows.length === 0) {
-      return res.status(404).json({ error: 'Milestone not found' });
-    }
-    
     // Update priority progress based on milestones
     await updatePriorityProgress(result.rows[0].priority_id);
     
@@ -403,7 +440,11 @@ export const updateMilestone = async (req, res) => {
     });
   } catch (error) {
     console.error('Update milestone error:', error);
-    res.status(500).json({ error: 'Failed to update milestone' });
+    console.error('Params:', { orgId, teamId, priorityId, milestoneId });
+    res.status(500).json({ 
+      error: 'Failed to update milestone',
+      details: process.env.NODE_ENV === 'development' ? error.message : undefined
+    });
   }
 };
 
@@ -412,16 +453,27 @@ export const deleteMilestone = async (req, res) => {
   try {
     const { orgId, teamId, priorityId, milestoneId } = req.params;
     
+    // First, check if milestone exists
+    const existingMilestone = await query(
+      'SELECT id FROM priority_milestones WHERE id = $1 AND priority_id = $2',
+      [milestoneId, priorityId]
+    );
+    
+    if (existingMilestone.rows.length === 0) {
+      console.warn(`Milestone not found for deletion: ${milestoneId}`);
+      return res.status(404).json({ 
+        error: 'Milestone not found',
+        milestoneId: milestoneId,
+        priorityId: priorityId
+      });
+    }
+    
     const result = await query(
       `DELETE FROM priority_milestones 
        WHERE id = $1 AND priority_id = $2
        RETURNING priority_id`,
       [milestoneId, priorityId]
     );
-    
-    if (result.rows.length === 0) {
-      return res.status(404).json({ error: 'Milestone not found' });
-    }
     
     // Update priority progress
     await updatePriorityProgress(priorityId);

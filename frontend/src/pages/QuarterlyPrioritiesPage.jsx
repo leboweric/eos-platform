@@ -224,7 +224,13 @@ const QuarterlyPrioritiesPage = () => {
       await fetchQuarterlyData();
     } catch (err) {
       console.error('Failed to update milestone:', err);
-      setError('Failed to update milestone');
+      if (err.status === 404) {
+        // Milestone doesn't exist, refresh to remove from UI
+        console.warn(`Milestone ${milestoneId} not found, refreshing data`);
+        await fetchQuarterlyData();
+      } else {
+        setError('Failed to update milestone');
+      }
     }
   };
 
@@ -254,7 +260,13 @@ const QuarterlyPrioritiesPage = () => {
       await fetchQuarterlyData();
     } catch (err) {
       console.error('Failed to update milestone:', err);
-      setError('Failed to update milestone');
+      if (err.status === 404) {
+        // Milestone doesn't exist, refresh to remove from UI
+        console.warn(`Milestone ${milestoneId} not found, refreshing data`);
+        await fetchQuarterlyData();
+      } else {
+        setError('Failed to update milestone');
+      }
     }
   };
 
@@ -269,7 +281,13 @@ const QuarterlyPrioritiesPage = () => {
       await fetchQuarterlyData();
     } catch (err) {
       console.error('Failed to delete milestone:', err);
-      setError('Failed to delete milestone');
+      // For delete, we don't show error for 404 since the milestone is already gone
+      if (err.message && !err.message.includes('not found')) {
+        setError('Failed to delete milestone');
+      } else {
+        // Still refresh to ensure UI is in sync
+        await fetchQuarterlyData();
+      }
     }
   };
 

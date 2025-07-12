@@ -146,8 +146,18 @@ export const quarterlyPrioritiesService = {
       }
     );
     
+    if (response.status === 404) {
+      const errorData = await response.json();
+      console.warn(`Milestone ${milestoneId} not found:`, errorData);
+      const error = new Error(errorData.error || 'Milestone not found');
+      error.status = 404;
+      error.milestoneId = milestoneId;
+      throw error;
+    }
+    
     if (!response.ok) {
-      throw new Error('Failed to update milestone');
+      const errorData = await response.json().catch(() => ({}));
+      throw new Error(errorData.error || 'Failed to update milestone');
     }
     
     const data = await response.json();
@@ -167,8 +177,16 @@ export const quarterlyPrioritiesService = {
       }
     );
     
+    if (response.status === 404) {
+      const errorData = await response.json();
+      console.warn(`Milestone ${milestoneId} not found for deletion:`, errorData);
+      // Don't throw for 404 on delete - it's already gone
+      return;
+    }
+    
     if (!response.ok) {
-      throw new Error('Failed to delete milestone');
+      const errorData = await response.json().catch(() => ({}));
+      throw new Error(errorData.error || 'Failed to delete milestone');
     }
   },
 
