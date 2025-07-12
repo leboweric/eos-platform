@@ -15,10 +15,11 @@ import {
   Calendar,
   Paperclip,
   CheckCircle,
-  AlertTriangle
+  AlertTriangle,
+  ArrowRight
 } from 'lucide-react';
 
-const IssueCard = ({ issue, onEdit, onStatusChange, getStatusColor, getStatusIcon }) => {
+const IssueCard = ({ issue, onEdit, onStatusChange, onTimelineChange, getStatusColor, getStatusIcon }) => {
   const formatDate = (dateString) => {
     const date = new Date(dateString);
     return date.toLocaleDateString('en-US', { 
@@ -69,6 +70,12 @@ const IssueCard = ({ issue, onEdit, onStatusChange, getStatusColor, getStatusIco
                       <span>{issue.attachment_count} attachment{issue.attachment_count > 1 ? 's' : ''}</span>
                     </div>
                   )}
+                  
+                  <div className="flex items-center gap-1 text-gray-500">
+                    <span className="text-xs px-2 py-1 bg-gray-100 rounded-full">
+                      {issue.timeline === 'short_term' ? 'Short Term' : 'Long Term'}
+                    </span>
+                  </div>
                 </div>
               </div>
 
@@ -103,6 +110,15 @@ const IssueCard = ({ issue, onEdit, onStatusChange, getStatusColor, getStatusIco
                         {option.label}
                       </DropdownMenuItem>
                     ))}
+                    
+                    <DropdownMenuSeparator />
+                    
+                    <DropdownMenuItem 
+                      onClick={() => onTimelineChange(issue.id, issue.timeline === 'short_term' ? 'long_term' : 'short_term')}
+                    >
+                      <ArrowRight className="mr-2 h-4 w-4" />
+                      Move to {issue.timeline === 'short_term' ? 'Long Term' : 'Short Term'}
+                    </DropdownMenuItem>
                   </DropdownMenuContent>
                 </DropdownMenu>
               </div>

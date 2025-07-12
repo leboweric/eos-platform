@@ -113,6 +113,17 @@ const IssuesPage = () => {
     }
   };
 
+  const handleTimelineChange = async (issueId, newTimeline) => {
+    try {
+      await issuesService.updateIssue(issueId, { timeline: newTimeline });
+      setSuccess(`Issue moved to ${newTimeline === 'short_term' ? 'Short Term' : 'Long Term'}`);
+      await fetchIssues();
+    } catch (error) {
+      console.error('Failed to update issue timeline:', error);
+      setError('Failed to move issue');
+    }
+  };
+
   const handleArchiveClosed = async () => {
     if (!confirm('Are you sure you want to archive all closed issues? This will hide them from view.')) return;
     
@@ -266,6 +277,7 @@ const IssuesPage = () => {
                       issue={issue}
                       onEdit={handleEditIssue}
                       onStatusChange={handleStatusChange}
+                      onTimelineChange={handleTimelineChange}
                       getStatusColor={getStatusColor}
                       getStatusIcon={getStatusIcon}
                     />
