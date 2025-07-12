@@ -572,6 +572,100 @@ export const updateThreeYearPicture = async (req, res) => {
   }
 };
 
+// @desc    Update one year plan
+// @route   PUT /api/v1/organizations/:orgId/teams/:teamId/business-blueprint/one-year-plan
+// @access  Private
+export const updateOneYearPlan = async (req, res) => {
+  try {
+    const { orgId, teamId } = req.params;
+    let { revenue, profit, targetDate, goals, measurables } = req.body;
+    
+    // Convert revenue and profit to numbers if they're strings
+    revenue = revenue ? parseFloat(revenue) : null;
+    profit = profit ? parseFloat(profit) : null;
+    
+    // Validate targetDate
+    if (!targetDate) {
+      return res.status(400).json({
+        success: false,
+        error: 'Target date is required'
+      });
+    }
+    
+    // Get or create VTO
+    const vtoId = await getOrCreateVTO(orgId, teamId);
+    
+    // Check if one year plan exists
+    const existing = await query(
+      'SELECT id FROM one_year_plans WHERE vto_id = $1',
+      [vtoId]
+    );
+    
+    let planResult;
+    if (existing.rows.length > 0) {
+      // Update
+      planResult = await query(
+        `UPDATE one_year_plans 
+         SET revenue_target = $1, profit_percentage = $2, future_date = $3, updated_at = NOW()
+         WHERE vto_id = $4
+         RETURNING *`,
+        [revenue, profit, targetDate, vtoId]
+      );
+    } else {
+      // Create
+      const newId = uuidv4();
+      planResult = await query(
+        `INSERT INTO one_year_plans (id, vto_id, future_date, revenue_target, profit_percentage)
+         VALUES ($1, $2, $3, $4, $5)
+         RETURNING *`,
+        [newId, vtoId, targetDate, revenue, profit]
+      );
+    }
+    
+    const planId = planResult.rows[0].id;
+    
+    // Handle goals
+    if (goals && Array.isArray(goals)) {
+      // Delete existing goals
+      await query('DELETE FROM one_year_goals WHERE one_year_plan_id = $1', [planId]);
+      
+      // Insert new goals
+      for (let i = 0; i < goals.length; i++) {
+        const goal = goals[i];
+        if (goal && goal.trim()) {
+          await query(
+            `INSERT INTO one_year_goals (id, one_year_plan_id, goal_text, sort_order)
+             VALUES ($1, $2, $3, $4)`,
+            [uuidv4(), planId, goal.trim(), i]
+          );
+        }
+      }
+    }
+    
+    // Handle measurables (similar to three-year picture)
+    if (measurables) {
+      // For now, we'll store measurables as text. In the future, we could make this a dynamic list too
+      await query(
+        `UPDATE one_year_plans 
+         SET profit_target = $1
+         WHERE id = $2`,
+        [measurables, planId]
+      );
+    }
+    
+    res.json({
+      success: true,
+      data: planResult.rows[0]
+    });
+  } catch (error) {
+    console.error('Error updating one year plan:', error);
+    res.status(500).json({
+      success: false,
+      error: error.message || 'Server error while updating one year plan'
+    });
+  }
+};
+
 export default {
   getVTO,
   getDepartmentBusinessBlueprint,
@@ -580,5 +674,6 @@ export default {
   updateCoreFocus,
   updateTenYearTarget,
   updateMarketingStrategy,
-  updateThreeYearPicture
+  updateThreeYearPicture,
+  updateOneYearPlan
 };

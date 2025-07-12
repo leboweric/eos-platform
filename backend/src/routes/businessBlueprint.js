@@ -8,7 +8,8 @@ import {
   updateCoreFocus,
   updateTenYearTarget,
   updateMarketingStrategy,
-  updateThreeYearPicture
+  updateThreeYearPicture,
+  updateOneYearPlan
 } from '../controllers/businessBlueprintController.js';
 
 const router = express.Router({ mergeParams: true });
@@ -60,7 +61,13 @@ router.put('/three-year-picture', [
   body('lookLikeItems').optional().isArray()
 ], updateThreeYearPicture);
 
-// TODO: Add endpoints for:
-// - One Year Plan
+// One Year Plan endpoint
+router.put('/one-year-plan', [
+  body('revenue').optional(),
+  body('profit').optional(),
+  body('targetDate').isISO8601().withMessage('Target date must be a valid date'),
+  body('goals').optional().isArray(),
+  body('measurables').optional()
+], updateOneYearPlan);
 
 export default router;

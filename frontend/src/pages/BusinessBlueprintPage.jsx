@@ -114,7 +114,13 @@ const BusinessBlueprintPage = () => {
           lookLikeItems: data.threeYearPicture.what_does_it_look_like ? 
             JSON.parse(data.threeYearPicture.what_does_it_look_like) : []
         } : null,
-        oneYearPlan: data.oneYearPlan,
+        oneYearPlan: data.oneYearPlan ? {
+          ...data.oneYearPlan,
+          revenue: data.oneYearPlan.revenue_target || '',
+          profit: data.oneYearPlan.profit_percentage || '',
+          goals: data.oneYearPlan.goals && Array.isArray(data.oneYearPlan.goals) ? 
+            data.oneYearPlan.goals.map(g => g.goal_text) : ['', '', '']
+        } : null,
         quarterlyPriorities: data.quarterlyPriorities
       });
     } catch (error) {
@@ -778,33 +784,65 @@ const BusinessBlueprintPage = () => {
             <CardContent>
               {blueprintData.oneYearPlan ? (
                 <div className="space-y-4">
+                  {blueprintData.oneYearPlan.future_date && (
+                    <div>
+                      <p className="text-sm font-medium text-gray-500">Target Date</p>
+                      <p className="text-lg font-semibold">
+                        {new Date(blueprintData.oneYearPlan.future_date).toLocaleDateString('en-US', { 
+                          year: 'numeric', 
+                          month: 'long', 
+                          day: 'numeric' 
+                        })}
+                      </p>
+                    </div>
+                  )}
                   {blueprintData.oneYearPlan.revenue && (
                     <div>
                       <p className="text-sm font-medium text-gray-500">Revenue Target</p>
-                      <p className="text-lg">{blueprintData.oneYearPlan.revenue}</p>
+                      <p className="text-lg font-semibold">
+                        ${Number(blueprintData.oneYearPlan.revenue) < 1 
+                          ? `${(Number(blueprintData.oneYearPlan.revenue) * 1000).toFixed(0)}K`
+                          : `${Number(blueprintData.oneYearPlan.revenue).toFixed(1)}M`}
+                      </p>
                     </div>
                   )}
                   {blueprintData.oneYearPlan.profit && (
                     <div>
                       <p className="text-sm font-medium text-gray-500">Profit Target</p>
-                      <p className="text-lg">{blueprintData.oneYearPlan.profit}</p>
+                      <p className="text-lg font-semibold">{blueprintData.oneYearPlan.profit}%</p>
                     </div>
                   )}
-                  {blueprintData.oneYearPlan.goals && (
+                  {blueprintData.oneYearPlan.goals && Array.isArray(blueprintData.oneYearPlan.goals) && blueprintData.oneYearPlan.goals.filter(goal => goal).length > 0 && (
                     <div>
-                      <p className="text-sm font-medium text-gray-500">Goals</p>
-                      <p className="whitespace-pre-wrap">{blueprintData.oneYearPlan.goals}</p>
+                      <p className="text-sm font-medium text-gray-500 mb-2">Goals</p>
+                      <ol className="space-y-2">
+                        {blueprintData.oneYearPlan.goals.filter(goal => goal).map((goal, index) => (
+                          <li key={index} className="flex items-start">
+                            <span className="text-indigo-600 font-medium mr-2">{index + 1}.</span>
+                            <span className="text-gray-700">{goal}</span>
+                          </li>
+                        ))}
+                      </ol>
                     </div>
                   )}
                   {blueprintData.oneYearPlan.measurables && (
                     <div>
                       <p className="text-sm font-medium text-gray-500">Key Measurables</p>
-                      <p className="whitespace-pre-wrap">{blueprintData.oneYearPlan.measurables}</p>
+                      <p className="whitespace-pre-wrap text-gray-700">{blueprintData.oneYearPlan.measurables}</p>
                     </div>
                   )}
                 </div>
               ) : (
-                <p className="text-gray-500">Click edit to define your 1-year plan</p>
+                <div className="text-center py-8">
+                  <p className="text-gray-500 mb-4">No 1-Year Plan set yet</p>
+                  <Button 
+                    variant="outline"
+                    onClick={() => setShowOneYearDialog(true)}
+                  >
+                    <Plus className="h-4 w-4 mr-2" />
+                    Create 1-Year Plan
+                  </Button>
+                </div>
               )}
             </CardContent>
           </Card>
