@@ -99,7 +99,6 @@ export const getVTO = async (req, res) => {
        WHERE p.organization_id = $1 
        AND p.quarter = $2 
        AND p.year = $3
-       AND p.is_archived = false
        ORDER BY p.created_at`,
       [orgId, currentQuarter, currentYear]
     );
@@ -485,7 +484,6 @@ export const getDepartmentBusinessBlueprint = async (req, res) => {
        WHERE p.department_id = $1 
        AND p.quarter = $2 
        AND p.year = $3
-       AND p.is_archived = false
        ORDER BY p.created_at`,
       [departmentId, currentQuarter, currentYear]
     );
