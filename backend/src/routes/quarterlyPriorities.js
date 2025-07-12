@@ -1,35 +1,35 @@
 import express from 'express';
-import { 
-  getQuarterlyPriorities, 
-  getQuarterlyPriority, 
-  createQuarterlyPriority, 
-  updateQuarterlyPriority, 
-  deleteQuarterlyPriority,
-  updateQuarterlyPriorityStatus
-} from '../controllers/quarterlyPrioritiesController.js';
 import { authenticate } from '../middleware/auth.js';
+import {
+  getQuarterlyPriorities,
+  createPriority,
+  updatePriority,
+  deletePriority,
+  updatePredictions,
+  updateMilestone,
+  addPriorityUpdate
+} from '../controllers/quarterlyPrioritiesController.js';
 
 const router = express.Router({ mergeParams: true });
 
 // All routes require authentication
 router.use(authenticate);
 
-// Get all quarterly priorities (with optional department filter)
+// Get priorities for a quarter
 router.get('/', getQuarterlyPriorities);
 
-// Get single quarterly priority
-router.get('/:id', getQuarterlyPriority);
+// Priority CRUD
+router.post('/priorities', createPriority);
+router.put('/priorities/:priorityId', updatePriority);
+router.delete('/priorities/:priorityId', deletePriority);
 
-// Create new quarterly priority
-router.post('/', createQuarterlyPriority);
+// Predictions
+router.put('/predictions', updatePredictions);
 
-// Update quarterly priority
-router.put('/:id', updateQuarterlyPriority);
+// Milestones
+router.put('/milestones/:milestoneId', updateMilestone);
 
-// Update quarterly priority status
-router.patch('/:id/status', updateQuarterlyPriorityStatus);
-
-// Delete quarterly priority
-router.delete('/:id', deleteQuarterlyPriority);
+// Priority updates
+router.post('/priorities/:priorityId/updates', addPriorityUpdate);
 
 export default router;

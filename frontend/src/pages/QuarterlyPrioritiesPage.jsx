@@ -1,4 +1,6 @@
 import { useState, useEffect } from 'react';
+import { useAuthStore } from '../stores/authStore';
+import { quarterlyPrioritiesService } from '../services/quarterlyPrioritiesService';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -8,6 +10,8 @@ import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Alert, AlertDescription } from '@/components/ui/alert';
 import { 
   CheckSquare, 
   Plus, 
@@ -16,129 +20,221 @@ import {
   Target,
   TrendingUp,
   AlertTriangle,
+  AlertCircle,
   CheckCircle,
   Clock,
   Edit,
   Trash2,
   Building2,
-  Filter
+  DollarSign,
+  BarChart,
+  Save,
+  X,
+  Users,
+  Loader2
 } from 'lucide-react';
+import { format, addMonths, startOfQuarter, endOfQuarter } from 'date-fns';
 
-const RocksPage = () => {
+const QuarterlyPrioritiesPage = () => {
+  const { user } = useAuthStore();
   const [selectedQuarter, setSelectedQuarter] = useState('Q1 2025');
-  const [showAddRock, setShowAddRock] = useState(false);
-  const [selectedDepartment, setSelectedDepartment] = useState('all');
-  const [departments, setDepartments] = useState([]);
+  const [showAddPriority, setShowAddPriority] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(null);
+  
+  // State for priorities data
+  const [predictions, setPredictions] = useState({
+    revenue: { target: 5000000, current: 4200000, trend: 'up' },
+    profit: { target: 1000000, current: 850000, trend: 'up' },
+    measurables: { onTrack: 8, total: 10 }
+  });
+  
+  const [companyPriorities, setCompanyPriorities] = useState([]);
+  const [teamMemberPriorities, setTeamMemberPriorities] = useState({});
+  const [teamMembers, setTeamMembers] = useState([]);
+  
+  // Editing states
+  const [editingPredictions, setEditingPredictions] = useState(false);
+  const [editingPriority, setEditingPriority] = useState(null);
+  const [editingMilestone, setEditingMilestone] = useState(null);
+  
+  // Form states
+  const [priorityForm, setPriorityForm] = useState({
+    title: '',
+    description: '',
+    ownerId: '',
+    dueDate: '',
+    isCompanyPriority: false,
+    milestones: []
+  });
 
-  // Mock fetch departments
+  // Mock data - replace with API calls
   useEffect(() => {
-    const mockDepartments = [
-      { id: '1', name: 'Sales', description: 'Revenue generation' },
-      { id: '2', name: 'Marketing', description: 'Brand and lead generation' },
-      { id: '3', name: 'Engineering', description: 'Product development' }
-    ];
-    setDepartments(mockDepartments);
-  }, []);
+    fetchQuarterlyData();
+  }, [selectedQuarter]);
 
-  // Mock data - in a real app, this would come from API
-  const [rocks, setRocks] = useState([
-    {
-      id: 1,
-      title: 'Implement AI-powered goal recommendations',
-      description: 'Build and deploy machine learning models to suggest quarterly rocks based on historical performance and business goals.',
-      owner: {
-        id: 1,
-        name: 'John Doe',
-        email: 'john@company.com',
-        avatar: null
-      },
-      departmentId: '3', // Engineering
-      departmentName: 'Engineering',
-      dueDate: '2025-03-31',
-      status: 'on-track',
-      progress: 65,
-      isCompanyRock: true,
-      milestones: [
-        { id: 1, title: 'Research ML frameworks', completed: true, dueDate: '2025-01-15' },
-        { id: 2, title: 'Build prototype model', completed: true, dueDate: '2025-02-15' },
-        { id: 3, title: 'Integrate with platform', completed: false, dueDate: '2025-03-15' },
-        { id: 4, title: 'Deploy to production', completed: false, dueDate: '2025-03-31' }
-      ],
-      updates: [
+  const fetchQuarterlyData = async () => {
+    setLoading(true);
+    setError(null);
+    try {
+      // Extract quarter and year from selectedQuarter (e.g., "Q1 2025")
+      const [quarter, year] = selectedQuarter.split(' ');
+      
+      // Get organization and team IDs from user context
+      const orgId = user?.organizationId;
+      const teamId = user?.teamId || '00000000-0000-0000-0000-000000000000'; // Default team ID
+      
+      if (!orgId) {
+        throw new Error('No organization ID found');
+      }
+      
+      const data = await quarterlyPrioritiesService.getQuarterlyPriorities(orgId, teamId, quarter, parseInt(year));
+      
+      setPredictions(data.predictions || {
+        revenue: { target: 0, current: 0 },
+        profit: { target: 0, current: 0 },
+        measurables: { onTrack: 0, total: 0 }
+      });
+      
+      setCompanyPriorities(data.companyPriorities || []);
+      setTeamMemberPriorities(data.teamMemberPriorities || {});
+      setTeamMembers(data.teamMembers || []);
+    } catch (err) {
+      console.error('Failed to fetch quarterly data:', err);
+      setError('Failed to load quarterly priorities');
+      
+      // Set default data if fetch fails
+      setPredictions({
+        revenue: { target: 5000000, current: 4200000 },
+        profit: { target: 1000000, current: 850000 },
+        measurables: { onTrack: 8, total: 10 }
+      });
+      
+      // Mock data for development/demo
+      const mockCompanyPriorities = [
         {
           id: 1,
-          date: '2025-01-08',
-          author: 'John Doe',
-          text: 'Completed initial research on ML frameworks. TensorFlow looks promising for our use case.',
-          statusChange: null
-        }
-      ]
-    },
-    {
-      id: 2,
-      title: 'Launch mobile app beta',
-      description: 'Develop and release beta version of mobile application for iOS and Android platforms.',
-      owner: {
-        id: 2,
-        name: 'Sarah Wilson',
-        email: 'sarah@company.com',
-        avatar: null
-      },
-      departmentId: '3', // Engineering
-      departmentName: 'Engineering',
-      dueDate: '2025-03-31',
-      status: 'at-risk',
-      progress: 40,
-      isCompanyRock: false,
-      milestones: [
-        { id: 1, title: 'Complete UI/UX design', completed: true, dueDate: '2025-01-31' },
-        { id: 2, title: 'Develop core features', completed: false, dueDate: '2025-02-28' },
-        { id: 3, title: 'Beta testing', completed: false, dueDate: '2025-03-15' },
-        { id: 4, title: 'App store submission', completed: false, dueDate: '2025-03-31' }
-      ],
-      updates: [
+          title: 'Expand into European market',
+          description: 'Launch operations in 3 key European countries',
+          owner: { id: 1, name: 'John Doe', email: 'john@company.com' },
+          dueDate: '2025-03-31',
+          status: 'on-track',
+          progress: 45,
+          milestones: [
+            { id: 1, title: 'Market research complete', completed: true, dueDate: '2025-01-15' },
+            { id: 2, title: 'Legal entity established', completed: true, dueDate: '2025-02-01' },
+            { id: 3, title: 'First customer signed', completed: false, dueDate: '2025-03-15' }
+          ],
+          latestUpdate: {
+            date: '2025-01-12',
+            text: 'Legal entities established in Germany and France. Working on UK setup.',
+            author: 'John Doe'
+          }
+        },
         {
-          id: 1,
-          date: '2025-01-07',
-          author: 'Sarah Wilson',
-          text: 'UI designs are complete but development is behind schedule due to technical challenges.',
-          statusChange: 'at-risk'
+          id: 2,
+          title: 'Launch AI-powered analytics platform',
+          description: 'Develop and release advanced analytics features using machine learning',
+          owner: { id: 2, name: 'Sarah Wilson', email: 'sarah@company.com' },
+          dueDate: '2025-03-31',
+          status: 'on-track',
+          progress: 60,
+          milestones: [
+            { id: 1, title: 'ML model trained', completed: true, dueDate: '2025-01-31' },
+            { id: 2, title: 'Integration complete', completed: false, dueDate: '2025-02-28' },
+            { id: 3, title: 'Beta launch', completed: false, dueDate: '2025-03-20' }
+          ],
+          latestUpdate: {
+            date: '2025-01-10',
+            text: 'ML models showing 92% accuracy. Beginning integration phase next week.',
+            author: 'Sarah Wilson'
+          }
         }
-      ]
-    },
-    {
-      id: 3,
-      title: 'Establish enterprise sales process',
-      description: 'Create standardized sales process and materials for enterprise customers.',
-      owner: {
-        id: 3,
-        name: 'Mike Johnson',
-        email: 'mike@company.com',
-        avatar: null
-      },
-      departmentId: '1', // Sales
-      departmentName: 'Sales',
-      dueDate: '2025-03-31',
-      status: 'complete',
-      progress: 100,
-      isCompanyRock: true,
-      milestones: [
-        { id: 1, title: 'Define sales stages', completed: true, dueDate: '2025-01-15' },
-        { id: 2, title: 'Create sales materials', completed: true, dueDate: '2025-02-15' },
-        { id: 3, title: 'Train sales team', completed: true, dueDate: '2025-03-15' },
-        { id: 4, title: 'Launch process', completed: true, dueDate: '2025-03-31' }
-      ],
-      updates: [
-        {
-          id: 1,
-          date: '2025-01-05',
-          author: 'Mike Johnson',
-          text: 'Sales process is now live and team has been trained. First enterprise deals in pipeline.',
-          statusChange: 'complete'
-        }
-      ]
+      ];
+
+      const mockTeamMembers = [
+        { id: 1, name: 'John Doe', role: 'CEO', department: 'Executive' },
+        { id: 2, name: 'Sarah Wilson', role: 'CTO', department: 'Engineering' },
+        { id: 3, name: 'Mike Johnson', role: 'VP Sales', department: 'Sales' },
+        { id: 4, name: 'Emily Chen', role: 'Marketing Director', department: 'Marketing' },
+        { id: 5, name: 'Robert Smith', role: 'Product Manager', department: 'Product' }
+      ];
+
+      const mockTeamPriorities = {
+        1: [ // John Doe's priorities
+          {
+            id: 3,
+            title: 'Secure Series B funding',
+            description: 'Close $20M Series B round with strategic investors',
+            owner: { id: 1, name: 'John Doe', email: 'john@company.com' },
+            dueDate: '2025-03-31',
+            status: 'on-track',
+            progress: 30,
+            milestones: [
+              { id: 1, title: 'Pitch deck finalized', completed: true, dueDate: '2025-01-15' },
+              { id: 2, title: 'Due diligence complete', completed: false, dueDate: '2025-02-28' },
+              { id: 3, title: 'Term sheet signed', completed: false, dueDate: '2025-03-25' }
+            ],
+            latestUpdate: {
+              date: '2025-01-11',
+              text: 'In discussions with 3 VCs. Initial feedback very positive.',
+              author: 'John Doe'
+            }
+          }
+        ],
+        2: [ // Sarah Wilson's priorities
+          {
+            id: 4,
+            title: 'Improve system performance by 50%',
+            description: 'Optimize database queries and implement caching strategies',
+            owner: { id: 2, name: 'Sarah Wilson', email: 'sarah@company.com' },
+            dueDate: '2025-03-31',
+            status: 'complete',
+            progress: 100,
+            milestones: [
+              { id: 1, title: 'Performance audit complete', completed: true, dueDate: '2025-01-10' },
+              { id: 2, title: 'Caching implemented', completed: true, dueDate: '2025-01-25' },
+              { id: 3, title: 'Database optimized', completed: true, dueDate: '2025-02-10' }
+            ],
+            latestUpdate: {
+              date: '2025-01-09',
+              text: 'All optimizations complete. Achieved 65% performance improvement!',
+              author: 'Sarah Wilson'
+            }
+          }
+        ],
+        3: [ // Mike Johnson's priorities
+          {
+            id: 5,
+            title: 'Close 10 enterprise deals',
+            description: 'Sign 10 new enterprise customers with minimum $100k ACV',
+            owner: { id: 3, name: 'Mike Johnson', email: 'mike@company.com' },
+            dueDate: '2025-03-31',
+            status: 'off-track',
+            progress: 20,
+            milestones: [
+              { id: 1, title: 'Pipeline built (30 prospects)', completed: true, dueDate: '2025-01-20' },
+              { id: 2, title: '5 deals closed', completed: false, dueDate: '2025-02-15' },
+              { id: 3, title: '10 deals closed', completed: false, dueDate: '2025-03-31' }
+            ],
+            latestUpdate: {
+              date: '2025-01-08',
+              text: 'Only 2 deals closed so far. Need to accelerate sales cycle.',
+              author: 'Mike Johnson'
+            }
+          }
+        ]
+      };
+
+      setCompanyPriorities(mockCompanyPriorities);
+      setTeamMembers(mockTeamMembers);
+      setTeamMemberPriorities(mockTeamPriorities);
+    } catch (err) {
+      setError('Failed to load quarterly priorities');
+    } finally {
+      setLoading(false);
     }
-  ]);
+  };
 
   const getStatusColor = (status) => {
     switch (status) {
@@ -146,8 +242,6 @@ const RocksPage = () => {
         return 'bg-green-500';
       case 'on-track':
         return 'bg-blue-500';
-      case 'at-risk':
-        return 'bg-yellow-500';
       case 'off-track':
         return 'bg-red-500';
       default:
@@ -161,8 +255,6 @@ const RocksPage = () => {
         return <CheckCircle className="h-4 w-4" />;
       case 'on-track':
         return <TrendingUp className="h-4 w-4" />;
-      case 'at-risk':
-        return <AlertTriangle className="h-4 w-4" />;
       case 'off-track':
         return <AlertTriangle className="h-4 w-4" />;
       default:
@@ -176,8 +268,6 @@ const RocksPage = () => {
         return 'default';
       case 'on-track':
         return 'default';
-      case 'at-risk':
-        return 'secondary';
       case 'off-track':
         return 'destructive';
       default:
@@ -185,16 +275,12 @@ const RocksPage = () => {
     }
   };
 
-  const getUserInitials = (user) => {
-    return user.name.split(' ').map(n => n[0]).join('').toUpperCase();
+  const getUserInitials = (name) => {
+    return name.split(' ').map(n => n[0]).join('').toUpperCase();
   };
 
   const formatDate = (dateString) => {
-    return new Date(dateString).toLocaleDateString('en-US', {
-      month: 'short',
-      day: 'numeric',
-      year: 'numeric'
-    });
+    return format(new Date(dateString), 'MMM d, yyyy');
   };
 
   const getDaysUntilDue = (dueDate) => {
@@ -205,71 +291,422 @@ const RocksPage = () => {
     return diffDays;
   };
 
+  const handleSavePredictions = async () => {
+    try {
+      const [quarter, year] = selectedQuarter.split(' ');
+      const orgId = user?.organizationId;
+      const teamId = user?.teamId || '00000000-0000-0000-0000-000000000000';
+      
+      await quarterlyPrioritiesService.updatePredictions(orgId, teamId, {
+        quarter,
+        year: parseInt(year),
+        revenue: predictions.revenue,
+        profit: predictions.profit,
+        measurables: predictions.measurables
+      });
+      
+      setEditingPredictions(false);
+    } catch (err) {
+      console.error('Failed to save predictions:', err);
+      setError('Failed to save predictions');
+    }
+  };
+
+  const handleUpdatePriority = async (priorityId, updates) => {
+    try {
+      const orgId = user?.organizationId;
+      const teamId = user?.teamId || '00000000-0000-0000-0000-000000000000';
+      
+      await quarterlyPrioritiesService.updatePriority(orgId, teamId, priorityId, updates);
+      
+      // Refresh data
+      await fetchQuarterlyData();
+      setEditingPriority(null);
+    } catch (err) {
+      console.error('Failed to update priority:', err);
+      setError('Failed to update priority');
+    }
+  };
+
+  const handleUpdateMilestone = async (priorityId, milestoneId, completed) => {
+    try {
+      const orgId = user?.organizationId;
+      const teamId = user?.teamId || '00000000-0000-0000-0000-000000000000';
+      
+      await quarterlyPrioritiesService.updateMilestone(orgId, teamId, milestoneId, completed);
+      
+      // Refresh data to get updated progress
+      await fetchQuarterlyData();
+    } catch (err) {
+      console.error('Failed to update milestone:', err);
+      setError('Failed to update milestone');
+    }
+  };
+
+  const handleAddUpdate = async (priorityId, updateText) => {
+    try {
+      const orgId = user?.organizationId;
+      const teamId = user?.teamId || '00000000-0000-0000-0000-000000000000';
+      
+      await quarterlyPrioritiesService.addPriorityUpdate(orgId, teamId, priorityId, updateText);
+      
+      // Refresh data to show new update
+      await fetchQuarterlyData();
+    } catch (err) {
+      console.error('Failed to add update:', err);
+      setError('Failed to add update');
+    }
+  };
+
+  const handleCreatePriority = async () => {
+    try {
+      const [quarter, year] = selectedQuarter.split(' ');
+      const orgId = user?.organizationId;
+      const teamId = user?.teamId || '00000000-0000-0000-0000-000000000000';
+      
+      await quarterlyPrioritiesService.createPriority(orgId, teamId, {
+        ...priorityForm,
+        quarter,
+        year: parseInt(year)
+      });
+      
+      setShowAddPriority(false);
+      setPriorityForm({
+        title: '',
+        description: '',
+        ownerId: '',
+        dueDate: '',
+        isCompanyPriority: false,
+        milestones: []
+      });
+      
+      // Refresh data
+      await fetchQuarterlyData();
+    } catch (err) {
+      console.error('Failed to create priority:', err);
+      setError('Failed to create priority');
+    }
+  };
+
+  const handleDeletePriority = async (priorityId) => {
+    if (!window.confirm('Are you sure you want to delete this priority?')) {
+      return;
+    }
+    
+    try {
+      const orgId = user?.organizationId;
+      const teamId = user?.teamId || '00000000-0000-0000-0000-000000000000';
+      
+      await quarterlyPrioritiesService.deletePriority(orgId, teamId, priorityId);
+      
+      // Refresh data
+      await fetchQuarterlyData();
+    } catch (err) {
+      console.error('Failed to delete priority:', err);
+      setError('Failed to delete priority');
+    }
+  };
+
   const quarters = ['Q4 2024', 'Q1 2025', 'Q2 2025', 'Q3 2025', 'Q4 2025'];
 
-  // Filter priorities by department
-  const filteredRocks = selectedDepartment === 'all' 
-    ? rocks 
-    : rocks.filter(r => r.departmentId === selectedDepartment || r.isCompanyRock);
-
+  // Calculate stats without "at-risk"
+  const allPriorities = [
+    ...companyPriorities,
+    ...Object.values(teamMemberPriorities).flat()
+  ];
+  
   const stats = {
-    total: filteredRocks.length,
-    completed: filteredRocks.filter(r => r.status === 'complete').length,
-    onTrack: filteredRocks.filter(r => r.status === 'on-track').length,
-    atRisk: filteredRocks.filter(r => r.status === 'at-risk').length,
-    offTrack: filteredRocks.filter(r => r.status === 'off-track').length
+    total: allPriorities.length,
+    completed: allPriorities.filter(p => p.status === 'complete').length,
+    onTrack: allPriorities.filter(p => p.status === 'on-track').length,
+    offTrack: allPriorities.filter(p => p.status === 'off-track').length
   };
+
+  const PriorityCard = ({ priority, isCompany = false }) => {
+    const [isEditing, setIsEditing] = useState(false);
+    const [showUpdateDialog, setShowUpdateDialog] = useState(false);
+    const [updateText, setUpdateText] = useState('');
+    const [editForm, setEditForm] = useState({
+      title: priority.title,
+      description: priority.description,
+      status: priority.status,
+      progress: priority.progress
+    });
+
+    const handleSave = () => {
+      handleUpdatePriority(priority.id, editForm);
+      setIsEditing(false);
+    };
+
+    const handleAddUpdateSubmit = () => {
+      handleAddUpdate(priority.id, updateText);
+      setUpdateText('');
+      setShowUpdateDialog(false);
+    };
+
+    return (
+      <Card className="hover:shadow-md transition-shadow">
+        <CardHeader>
+          <div className="flex items-start justify-between">
+            <div className="flex-1">
+              <div className="flex items-center space-x-3 mb-2">
+                <div className={`w-3 h-3 rounded-full ${getStatusColor(priority.status)}`} />
+                {isEditing ? (
+                  <Input
+                    value={editForm.title}
+                    onChange={(e) => setEditForm({ ...editForm, title: e.target.value })}
+                    className="flex-1 font-semibold"
+                  />
+                ) : (
+                  <CardTitle className="text-lg">{priority.title}</CardTitle>
+                )}
+                {isCompany && (
+                  <Badge variant="outline" className="bg-blue-50">
+                    <Building2 className="h-3 w-3 mr-1" />
+                    Company Priority
+                  </Badge>
+                )}
+                <Badge variant={getStatusBadgeVariant(priority.status)} className="flex items-center space-x-1">
+                  {getStatusIcon(priority.status)}
+                  <span className="capitalize">{priority.status.replace('-', ' ')}</span>
+                </Badge>
+              </div>
+              {isEditing ? (
+                <Textarea
+                  value={editForm.description}
+                  onChange={(e) => setEditForm({ ...editForm, description: e.target.value })}
+                  className="mt-2"
+                  rows={2}
+                />
+              ) : (
+                <CardDescription className="text-base">
+                  {priority.description}
+                </CardDescription>
+              )}
+            </div>
+            <div className="flex space-x-2">
+              {isEditing ? (
+                <>
+                  <Button variant="ghost" size="sm" onClick={handleSave}>
+                    <Save className="h-4 w-4" />
+                  </Button>
+                  <Button variant="ghost" size="sm" onClick={() => setIsEditing(false)}>
+                    <X className="h-4 w-4" />
+                  </Button>
+                </>
+              ) : (
+                <>
+                  <Button variant="ghost" size="sm" onClick={() => setIsEditing(true)}>
+                    <Edit className="h-4 w-4" />
+                  </Button>
+                  <Button variant="ghost" size="sm" onClick={() => handleDeletePriority(priority.id)}>
+                    <Trash2 className="h-4 w-4" />
+                  </Button>
+                </>
+              )}
+            </div>
+          </div>
+        </CardHeader>
+        <CardContent>
+          <div className="space-y-4">
+            {/* Progress and Details */}
+            <div className="grid md:grid-cols-4 gap-4">
+              <div>
+                <Label className="text-sm text-gray-600">Owner</Label>
+                <div className="flex items-center space-x-2 mt-1">
+                  <Avatar className="h-6 w-6">
+                    <AvatarFallback className="text-xs">
+                      {getUserInitials(priority.owner.name)}
+                    </AvatarFallback>
+                  </Avatar>
+                  <span className="text-sm">{priority.owner.name}</span>
+                </div>
+              </div>
+              <div>
+                <Label className="text-sm text-gray-600">Due Date</Label>
+                <div className="flex items-center space-x-2 mt-1">
+                  <Calendar className="h-4 w-4 text-gray-400" />
+                  <span className="text-sm">{formatDate(priority.dueDate)}</span>
+                  <span className="text-xs text-gray-500">
+                    ({getDaysUntilDue(priority.dueDate)} days)
+                  </span>
+                </div>
+              </div>
+              <div>
+                <Label className="text-sm text-gray-600">Status</Label>
+                {isEditing ? (
+                  <Select
+                    value={editForm.status}
+                    onValueChange={(value) => setEditForm({ ...editForm, status: value })}
+                  >
+                    <SelectTrigger className="h-8 mt-1">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="on-track">On Track</SelectItem>
+                      <SelectItem value="off-track">Off Track</SelectItem>
+                      <SelectItem value="complete">Complete</SelectItem>
+                    </SelectContent>
+                  </Select>
+                ) : (
+                  <div className="mt-1">
+                    <Badge variant={getStatusBadgeVariant(priority.status)}>
+                      {priority.status.replace('-', ' ')}
+                    </Badge>
+                  </div>
+                )}
+              </div>
+              <div>
+                <Label className="text-sm text-gray-600">Progress</Label>
+                <div className="mt-1">
+                  <div className="flex items-center space-x-2">
+                    {isEditing ? (
+                      <Input
+                        type="number"
+                        min="0"
+                        max="100"
+                        value={editForm.progress}
+                        onChange={(e) => setEditForm({ ...editForm, progress: parseInt(e.target.value) || 0 })}
+                        className="w-20 h-8"
+                      />
+                    ) : (
+                      <>
+                        <Progress value={priority.progress} className="flex-1" />
+                        <span className="text-sm font-medium">{priority.progress}%</span>
+                      </>
+                    )}
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Milestones */}
+            <div>
+              <Label className="text-sm text-gray-600 mb-2 block">Milestones</Label>
+              <div className="space-y-2">
+                {priority.milestones.map((milestone) => (
+                  <div key={milestone.id} className="flex items-center space-x-3">
+                    <input
+                      type="checkbox"
+                      checked={milestone.completed}
+                      onChange={(e) => handleUpdateMilestone(priority.id, milestone.id, e.target.checked)}
+                      className="rounded border-gray-300 text-primary focus:ring-primary"
+                    />
+                    <span className={`text-sm flex-1 ${milestone.completed ? 'line-through text-gray-500' : ''}`}>
+                      {milestone.title}
+                    </span>
+                    <span className="text-xs text-gray-500">
+                      {formatDate(milestone.dueDate)}
+                    </span>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {/* Latest Update */}
+            {priority.latestUpdate && (
+              <div>
+                <div className="flex items-center justify-between mb-2">
+                  <Label className="text-sm text-gray-600">Latest Update</Label>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => setShowUpdateDialog(true)}
+                    className="text-xs"
+                  >
+                    <Plus className="h-3 w-3 mr-1" />
+                    Add Update
+                  </Button>
+                </div>
+                <div className="bg-gray-50 p-3 rounded-lg">
+                  <div className="flex items-center justify-between mb-2">
+                    <span className="text-sm font-medium">{priority.latestUpdate.author}</span>
+                    <span className="text-xs text-gray-500">{formatDate(priority.latestUpdate.date)}</span>
+                  </div>
+                  <p className="text-sm text-gray-700">{priority.latestUpdate.text}</p>
+                </div>
+              </div>
+            )}
+          </div>
+        </CardContent>
+
+        {/* Add Update Dialog */}
+        <Dialog open={showUpdateDialog} onOpenChange={setShowUpdateDialog}>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>Add Update</DialogTitle>
+              <DialogDescription>
+                Share progress or any blockers for this priority
+              </DialogDescription>
+            </DialogHeader>
+            <div className="space-y-4">
+              <Textarea
+                placeholder="What's the latest status?"
+                value={updateText}
+                onChange={(e) => setUpdateText(e.target.value)}
+                rows={4}
+              />
+            </div>
+            <DialogFooter>
+              <Button variant="outline" onClick={() => setShowUpdateDialog(false)}>
+                Cancel
+              </Button>
+              <Button onClick={handleAddUpdateSubmit}>
+                Add Update
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+      </Card>
+    );
+  };
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <Loader2 className="h-8 w-8 animate-spin" />
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="space-y-4">
-        <div className="flex items-center justify-between">
-          <div>
-            <h1 className="text-3xl font-bold">Quarterly Priorities</h1>
-            <p className="text-gray-600 mt-2">
-              Set your priorities and goals for your organization
-            </p>
-          </div>
-          <div className="flex space-x-2">
-            <select 
-              value={selectedQuarter}
-              onChange={(e) => setSelectedQuarter(e.target.value)}
-              className="px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary"
-            >
-              {quarters.map(quarter => (
-                <option key={quarter} value={quarter}>{quarter}</option>
-              ))}
-            </select>
-            <Button onClick={() => setShowAddRock(true)}>
-              <Plus className="mr-2 h-4 w-4" />
-              Add Priority
-            </Button>
-          </div>
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-3xl font-bold">Quarterly Priorities</h1>
+          <p className="text-gray-600 mt-2">
+            Track progress on your most important initiatives for {selectedQuarter}
+          </p>
         </div>
-
-        {/* Filters */}
-        <div className="flex items-center space-x-4">
-          <Filter className="h-5 w-5 text-gray-500" />
-          <Label htmlFor="department">Department:</Label>
-          <Select value={selectedDepartment} onValueChange={setSelectedDepartment}>
-            <SelectTrigger className="w-[200px]">
-              <SelectValue placeholder="All departments" />
+        <div className="flex space-x-2">
+          <Select value={selectedQuarter} onValueChange={setSelectedQuarter}>
+            <SelectTrigger className="w-[150px]">
+              <SelectValue />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="all">All departments</SelectItem>
-              {departments.map(dept => (
-                <SelectItem key={dept.id} value={dept.id}>
-                  {dept.name}
-                </SelectItem>
+              {quarters.map(quarter => (
+                <SelectItem key={quarter} value={quarter}>{quarter}</SelectItem>
               ))}
             </SelectContent>
           </Select>
+          <Button onClick={() => setShowAddPriority(true)}>
+            <Plus className="mr-2 h-4 w-4" />
+            Add Priority
+          </Button>
         </div>
       </div>
 
+      {/* Error Alert */}
+      {error && (
+        <Alert variant="destructive">
+          <AlertCircle className="h-4 w-4" />
+          <AlertDescription>{error}</AlertDescription>
+        </Alert>
+      )}
+
       {/* Stats Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
         <Card>
           <CardContent className="p-4">
             <div className="flex items-center justify-between">
@@ -310,18 +747,6 @@ const RocksPage = () => {
           <CardContent className="p-4">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-gray-600">At Risk</p>
-                <p className="text-2xl font-bold text-yellow-600">{stats.atRisk}</p>
-              </div>
-              <AlertTriangle className="h-8 w-8 text-yellow-400" />
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardContent className="p-4">
-            <div className="flex items-center justify-between">
-              <div>
                 <p className="text-sm text-gray-600">Off Track</p>
                 <p className="text-2xl font-bold text-red-600">{stats.offTrack}</p>
               </div>
@@ -331,143 +756,288 @@ const RocksPage = () => {
         </Card>
       </div>
 
-      {/* Priorities List */}
-      <div className="space-y-4">
-        {filteredRocks.map((rock) => (
-          <Card key={rock.id} className="hover:shadow-md transition-shadow">
-            <CardHeader>
-              <div className="flex items-start justify-between">
-                <div className="flex-1">
-                  <div className="flex items-center space-x-3 mb-2">
-                    <div className={`w-3 h-3 rounded-full ${getStatusColor(rock.status)}`} />
-                    <CardTitle className="text-lg">{rock.title}</CardTitle>
-                    {rock.isCompanyRock && (
-                      <Badge variant="outline">Company Priority</Badge>
-                    )}
-                    <Badge variant={getStatusBadgeVariant(rock.status)} className="flex items-center space-x-1">
-                      {getStatusIcon(rock.status)}
-                      <span className="capitalize">{rock.status.replace('-', ' ')}</span>
-                    </Badge>
-                  </div>
-                  <CardDescription className="text-base">
-                    {rock.description}
-                  </CardDescription>
-                </div>
-                <div className="flex space-x-2">
-                  <Button variant="ghost" size="sm">
-                    <Edit className="h-4 w-4" />
-                  </Button>
-                  <Button variant="ghost" size="sm">
-                    <Trash2 className="h-4 w-4" />
-                  </Button>
-                </div>
+      {/* Predictions Card */}
+      <Card>
+        <CardHeader>
+          <div className="flex items-center justify-between">
+            <CardTitle>Quarterly Predictions</CardTitle>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => setEditingPredictions(!editingPredictions)}
+            >
+              {editingPredictions ? <X className="h-4 w-4" /> : <Edit className="h-4 w-4" />}
+            </Button>
+          </div>
+          <CardDescription>
+            Revenue, profit and measurables forecasts for {selectedQuarter}
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="grid md:grid-cols-3 gap-6">
+            <div>
+              <div className="flex items-center space-x-2 mb-2">
+                <DollarSign className="h-5 w-5 text-green-600" />
+                <Label className="text-base font-semibold">Revenue</Label>
               </div>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-4">
-                {/* Progress and Details */}
-                <div className="grid md:grid-cols-4 gap-4">
+              {editingPredictions ? (
+                <div className="space-y-2">
                   <div>
-                    <Label className="text-sm text-gray-600">Owner</Label>
-                    <div className="flex items-center space-x-2 mt-1">
-                      <Avatar className="h-6 w-6">
-                        <AvatarImage src={rock.owner.avatar} />
-                        <AvatarFallback className="text-xs">
-                          {getUserInitials(rock.owner)}
-                        </AvatarFallback>
-                      </Avatar>
-                      <span className="text-sm">{rock.owner.name}</span>
-                    </div>
+                    <Label className="text-xs">Target</Label>
+                    <Input
+                      type="number"
+                      value={predictions.revenue.target}
+                      onChange={(e) => setPredictions({
+                        ...predictions,
+                        revenue: { ...predictions.revenue, target: parseFloat(e.target.value) || 0 }
+                      })}
+                      className="h-8"
+                    />
                   </div>
                   <div>
-                    <Label className="text-sm text-gray-600">Department</Label>
-                    <div className="flex items-center space-x-2 mt-1">
-                      <Building2 className="h-4 w-4 text-gray-400" />
-                      <span className="text-sm">{rock.departmentName || 'Company-wide'}</span>
-                    </div>
-                  </div>
-                  <div>
-                    <Label className="text-sm text-gray-600">Due Date</Label>
-                    <div className="flex items-center space-x-2 mt-1">
-                      <Calendar className="h-4 w-4 text-gray-400" />
-                      <span className="text-sm">{formatDate(rock.dueDate)}</span>
-                      <span className="text-xs text-gray-500">
-                        ({getDaysUntilDue(rock.dueDate)} days)
-                      </span>
-                    </div>
-                  </div>
-                  <div>
-                    <Label className="text-sm text-gray-600">Progress</Label>
-                    <div className="mt-1">
-                      <div className="flex items-center space-x-2">
-                        <Progress value={rock.progress} className="flex-1" />
-                        <span className="text-sm font-medium">{rock.progress}%</span>
-                      </div>
-                    </div>
+                    <Label className="text-xs">Current</Label>
+                    <Input
+                      type="number"
+                      value={predictions.revenue.current}
+                      onChange={(e) => setPredictions({
+                        ...predictions,
+                        revenue: { ...predictions.revenue, current: parseFloat(e.target.value) || 0 }
+                      })}
+                      className="h-8"
+                    />
                   </div>
                 </div>
-
-                {/* Milestones */}
+              ) : (
                 <div>
-                  <Label className="text-sm text-gray-600 mb-2 block">Milestones</Label>
-                  <div className="space-y-2">
-                    {rock.milestones.map((milestone) => (
-                      <div key={milestone.id} className="flex items-center space-x-3">
-                        <input
-                          type="checkbox"
-                          checked={milestone.completed}
-                          className="rounded border-gray-300 text-primary focus:ring-primary"
-                          readOnly
-                        />
-                        <span className={`text-sm flex-1 ${milestone.completed ? 'line-through text-gray-500' : ''}`}>
-                          {milestone.title}
-                        </span>
-                        <span className="text-xs text-gray-500">
-                          {formatDate(milestone.dueDate)}
-                        </span>
-                      </div>
-                    ))}
+                  <p className="text-2xl font-bold">${(predictions.revenue.current / 1000000).toFixed(1)}M</p>
+                  <p className="text-sm text-gray-600">Target: ${(predictions.revenue.target / 1000000).toFixed(1)}M</p>
+                  <Progress 
+                    value={(predictions.revenue.current / predictions.revenue.target) * 100} 
+                    className="mt-2"
+                  />
+                </div>
+              )}
+            </div>
+
+            <div>
+              <div className="flex items-center space-x-2 mb-2">
+                <BarChart className="h-5 w-5 text-blue-600" />
+                <Label className="text-base font-semibold">Profit</Label>
+              </div>
+              {editingPredictions ? (
+                <div className="space-y-2">
+                  <div>
+                    <Label className="text-xs">Target</Label>
+                    <Input
+                      type="number"
+                      value={predictions.profit.target}
+                      onChange={(e) => setPredictions({
+                        ...predictions,
+                        profit: { ...predictions.profit, target: parseFloat(e.target.value) || 0 }
+                      })}
+                      className="h-8"
+                    />
+                  </div>
+                  <div>
+                    <Label className="text-xs">Current</Label>
+                    <Input
+                      type="number"
+                      value={predictions.profit.current}
+                      onChange={(e) => setPredictions({
+                        ...predictions,
+                        profit: { ...predictions.profit, current: parseFloat(e.target.value) || 0 }
+                      })}
+                      className="h-8"
+                    />
                   </div>
                 </div>
+              ) : (
+                <div>
+                  <p className="text-2xl font-bold">${(predictions.profit.current / 1000000).toFixed(1)}M</p>
+                  <p className="text-sm text-gray-600">Target: ${(predictions.profit.target / 1000000).toFixed(1)}M</p>
+                  <Progress 
+                    value={(predictions.profit.current / predictions.profit.target) * 100} 
+                    className="mt-2"
+                  />
+                </div>
+              )}
+            </div>
 
-                {/* Latest Update */}
-                {rock.updates.length > 0 && (
-                  <div>
-                    <Label className="text-sm text-gray-600 mb-2 block">Latest Update</Label>
-                    <div className="bg-gray-50 p-3 rounded-lg">
-                      <div className="flex items-center justify-between mb-2">
-                        <span className="text-sm font-medium">{rock.updates[0].author}</span>
-                        <span className="text-xs text-gray-500">{formatDate(rock.updates[0].date)}</span>
-                      </div>
-                      <p className="text-sm text-gray-700">{rock.updates[0].text}</p>
-                    </div>
-                  </div>
-                )}
+            <div>
+              <div className="flex items-center space-x-2 mb-2">
+                <Target className="h-5 w-5 text-purple-600" />
+                <Label className="text-base font-semibold">Measurables</Label>
               </div>
-            </CardContent>
-          </Card>
+              {editingPredictions ? (
+                <div className="space-y-2">
+                  <div>
+                    <Label className="text-xs">On Track</Label>
+                    <Input
+                      type="number"
+                      value={predictions.measurables.onTrack}
+                      onChange={(e) => setPredictions({
+                        ...predictions,
+                        measurables: { ...predictions.measurables, onTrack: parseInt(e.target.value) || 0 }
+                      })}
+                      className="h-8"
+                    />
+                  </div>
+                  <div>
+                    <Label className="text-xs">Total</Label>
+                    <Input
+                      type="number"
+                      value={predictions.measurables.total}
+                      onChange={(e) => setPredictions({
+                        ...predictions,
+                        measurables: { ...predictions.measurables, total: parseInt(e.target.value) || 0 }
+                      })}
+                      className="h-8"
+                    />
+                  </div>
+                </div>
+              ) : (
+                <div>
+                  <p className="text-2xl font-bold">{predictions.measurables.onTrack}/{predictions.measurables.total}</p>
+                  <p className="text-sm text-gray-600">Measurables on track</p>
+                  <Progress 
+                    value={(predictions.measurables.onTrack / predictions.measurables.total) * 100} 
+                    className="mt-2"
+                  />
+                </div>
+              )}
+            </div>
+          </div>
+          {editingPredictions && (
+            <div className="flex justify-end mt-4">
+              <Button onClick={handleSavePredictions} size="sm">
+                Save Predictions
+              </Button>
+            </div>
+          )}
+        </CardContent>
+      </Card>
+
+      {/* Company Priorities */}
+      <div className="space-y-4">
+        <div className="flex items-center space-x-2">
+          <Building2 className="h-6 w-6 text-blue-600" />
+          <h2 className="text-2xl font-bold">Company Priorities</h2>
+        </div>
+        {companyPriorities.map(priority => (
+          <PriorityCard key={priority.id} priority={priority} isCompany={true} />
         ))}
       </div>
 
-      {/* Empty State */}
-      {rocks.length === 0 && (
-        <Card>
-          <CardContent className="text-center py-12">
-            <Target className="mx-auto h-12 w-12 text-gray-400 mb-4" />
-            <h3 className="text-lg font-medium text-gray-900 mb-2">No priorities for {selectedQuarter}</h3>
-            <p className="text-gray-500 mb-4">
-              Get started by creating your first quarterly priority.
-            </p>
-            <Button onClick={() => setShowAddRock(true)}>
-              <Plus className="mr-2 h-4 w-4" />
-              Create First Priority
+      {/* Team Member Priorities */}
+      <div className="space-y-6">
+        <div className="flex items-center space-x-2">
+          <Users className="h-6 w-6 text-purple-600" />
+          <h2 className="text-2xl font-bold">Individual Priorities</h2>
+        </div>
+        {teamMembers.map(member => {
+          const memberPriorities = teamMemberPriorities[member.id] || [];
+          if (memberPriorities.length === 0) return null;
+
+          return (
+            <div key={member.id} className="space-y-4">
+              <div className="flex items-center space-x-3">
+                <Avatar className="h-8 w-8">
+                  <AvatarFallback>{getUserInitials(member.name)}</AvatarFallback>
+                </Avatar>
+                <div>
+                  <h3 className="text-lg font-semibold">{member.name}</h3>
+                  <p className="text-sm text-gray-600">{member.role} • {member.department}</p>
+                </div>
+              </div>
+              {memberPriorities.map(priority => (
+                <PriorityCard key={priority.id} priority={priority} />
+              ))}
+            </div>
+          );
+        })}
+      </div>
+
+      {/* Add Priority Dialog */}
+      <Dialog open={showAddPriority} onOpenChange={setShowAddPriority}>
+        <DialogContent className="max-w-2xl">
+          <DialogHeader>
+            <DialogTitle>Add New Priority</DialogTitle>
+            <DialogDescription>
+              Create a new quarterly priority for {selectedQuarter}
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div>
+              <Label htmlFor="title">Title</Label>
+              <Input
+                id="title"
+                value={priorityForm.title}
+                onChange={(e) => setPriorityForm({ ...priorityForm, title: e.target.value })}
+                placeholder="Enter priority title"
+              />
+            </div>
+            <div>
+              <Label htmlFor="description">Description</Label>
+              <Textarea
+                id="description"
+                value={priorityForm.description}
+                onChange={(e) => setPriorityForm({ ...priorityForm, description: e.target.value })}
+                placeholder="Describe what needs to be accomplished"
+                rows={3}
+              />
+            </div>
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <Label htmlFor="owner">Owner</Label>
+                <Select
+                  value={priorityForm.ownerId}
+                  onValueChange={(value) => setPriorityForm({ ...priorityForm, ownerId: value })}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select owner" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {teamMembers.map(member => (
+                      <SelectItem key={member.id} value={member.id.toString()}>
+                        {member.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div>
+                <Label htmlFor="dueDate">Due Date</Label>
+                <Input
+                  id="dueDate"
+                  type="date"
+                  value={priorityForm.dueDate}
+                  onChange={(e) => setPriorityForm({ ...priorityForm, dueDate: e.target.value })}
+                />
+              </div>
+            </div>
+            <div className="flex items-center space-x-2">
+              <input
+                type="checkbox"
+                id="isCompany"
+                checked={priorityForm.isCompanyPriority}
+                onChange={(e) => setPriorityForm({ ...priorityForm, isCompanyPriority: e.target.checked })}
+                className="rounded border-gray-300"
+              />
+              <Label htmlFor="isCompany">This is a company-wide priority</Label>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setShowAddPriority(false)}>
+              Cancel
             </Button>
-          </CardContent>
-        </Card>
-      )}
+            <Button onClick={handleCreatePriority}>
+              Create Priority
+            </Button>
+          </DialogFooter>
+        </Dialog>
+      </Dialog>
     </div>
   );
 };
 
-export default RocksPage;
-
+export default QuarterlyPrioritiesPage;

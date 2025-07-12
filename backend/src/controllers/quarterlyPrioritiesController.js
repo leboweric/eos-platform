@@ -1,395 +1,365 @@
-import db from '../config/database.js';
-import logger from '../utils/logger.js';
+import { query } from '../config/database.js';
+import { v4 as uuidv4 } from 'uuid';
 
-// Get all quarterly_priorities with optional department filter
-const getQuarterlyPriorities = async (req, res) => {
+// Get all priorities for a quarter
+export const getQuarterlyPriorities = async (req, res) => {
   try {
-    const { organizationId } = req.user;
-    const { departmentId, teamId, status, quarter, year } = req.query;
-
-    let query = `
-      SELECT 
-        r.id,
-        r.name,
-        r.description,
-        r.owner_id,
-        r.team_id,
-        r.department_id,
-        r.due_date,
-        r.status,
-        r.completion_percentage,
-        r.quarter,
-        r.year,
-        r.is_company_rock,
-        r.created_at,
-        r.updated_at,
+    const { orgId } = req.params;
+    const { quarter, year } = req.query;
+    
+    // Get predictions
+    const predictionsResult = await query(
+      `SELECT * FROM quarterly_predictions 
+       WHERE organization_id = $1 AND quarter = $2 AND year = $3`,
+      [orgId, quarter || 'Q1', year || new Date().getFullYear()]
+    );
+    
+    // Get all priorities
+    const prioritiesResult = await query(
+      `SELECT 
+        p.*,
         u.first_name || ' ' || u.last_name as owner_name,
-        t.name as team_name,
-        d.name as department_name
-      FROM quarterly_priorities r
-      LEFT JOIN users u ON u.id = r.owner_id
-      LEFT JOIN teams t ON t.id = r.team_id
-      LEFT JOIN departments d ON d.id = r.department_id
-      WHERE r.organization_id = $1`;
-
-    const params = [organizationId];
-    let paramCount = 1;
-
-    // Add filters
-    if (departmentId) {
-      paramCount++;
-      query += ` AND r.department_id = $${paramCount}`;
-      params.push(departmentId);
-    }
-
-    if (teamId) {
-      paramCount++;
-      query += ` AND r.team_id = $${paramCount}`;
-      params.push(teamId);
-    }
-
-    if (status) {
-      paramCount++;
-      query += ` AND r.status = $${paramCount}`;
-      params.push(status);
-    }
-
-    if (quarter) {
-      paramCount++;
-      query += ` AND r.quarter = $${paramCount}`;
-      params.push(quarter);
-    }
-
-    if (year) {
-      paramCount++;
-      query += ` AND r.year = $${paramCount}`;
-      params.push(year);
-    }
-
-    query += ` ORDER BY r.is_company_rock DESC, r.created_at DESC`;
-
-    const { rows } = await db.query(query, params);
-
-    res.json(rows);
-  } catch (error) {
-    logger.error('Error fetching quarterly_priorities:', error);
-    res.status(500).json({ error: 'Failed to fetch quarterly_priorities' });
-  }
-};
-
-// Get single rock
-const getQuarterlyPriority = async (req, res) => {
-  try {
-    const { id } = req.params;
-    const { organizationId } = req.user;
-
-    const query = `
-      SELECT 
-        r.*,
-        u.first_name || ' ' || u.last_name as owner_name,
-        t.name as team_name,
-        d.name as department_name,
-        (
-          SELECT json_agg(
-            json_build_object(
-              'id', m.id,
-              'milestone', m.milestone,
-              'due_date', m.due_date,
-              'is_completed', m.is_completed,
-              'completed_at', m.completed_at
-            ) ORDER BY m.due_date
-          )
-          FROM rock_milestones m
-          WHERE m.rock_id = r.id
-        ) as milestones
-      FROM quarterly_priorities r
-      LEFT JOIN users u ON u.id = r.owner_id
-      LEFT JOIN teams t ON t.id = r.team_id
-      LEFT JOIN departments d ON d.id = r.department_id
-      WHERE r.id = $1 AND r.organization_id = $2`;
-
-    const { rows } = await db.query(query, [id, organizationId]);
-
-    if (rows.length === 0) {
-      return res.status(404).json({ error: 'Rock not found' });
-    }
-
-    res.json(rows[0]);
-  } catch (error) {
-    logger.error('Error fetching rock:', error);
-    res.status(500).json({ error: 'Failed to fetch rock' });
-  }
-};
-
-// Create new rock
-const createQuarterlyPriority = async (req, res) => {
-  const client = await db.connect();
-  try {
-    await client.query('BEGIN');
-    
-    const { organizationId } = req.user;
-    const { 
-      name, 
-      description, 
-      ownerId, 
-      teamId, 
-      departmentId,
-      dueDate, 
-      quarter, 
-      year, 
-      isCompanyRock,
-      milestones 
-    } = req.body;
-
-    // Validate required fields
-    if (!name || !ownerId || !quarter || !year) {
-      return res.status(400).json({ 
-        error: 'Name, owner, quarter, and year are required' 
-      });
-    }
-
-    // Verify owner belongs to organization
-    const ownerCheck = await client.query(
-      'SELECT id FROM users WHERE id = $1 AND organization_id = $2',
-      [ownerId, organizationId]
-    );
-    if (ownerCheck.rows.length === 0) {
-      return res.status(400).json({ error: 'Invalid owner' });
-    }
-
-    // Create rock
-    const rockQuery = `
-      INSERT INTO quarterly_priorities (
-        name, description, organization_id, owner_id, team_id, department_id,
-        due_date, quarter, year, is_company_rock, status
-      )
-      VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, 'on_track')
-      RETURNING *`;
-
-    const rockValues = [
-      name, 
-      description, 
-      organizationId, 
-      ownerId, 
-      teamId || null, 
-      departmentId || null,
-      dueDate, 
-      quarter, 
-      year, 
-      isCompanyRock || false
-    ];
-
-    const { rows: [rock] } = await client.query(rockQuery, rockValues);
-
-    // Add milestones if provided
-    if (milestones && milestones.length > 0) {
-      for (const milestone of milestones) {
-        await client.query(
-          `INSERT INTO rock_milestones (rock_id, milestone, due_date)
-           VALUES ($1, $2, $3)`,
-          [rock.id, milestone.milestone, milestone.dueDate]
-        );
-      }
-    }
-
-    await client.query('COMMIT');
-
-    // Fetch complete rock with relationships
-    const completeRock = await getQuarterlyPriorityWithDetails(rock.id, organizationId);
-    
-    res.status(201).json(completeRock);
-  } catch (error) {
-    await client.query('ROLLBACK');
-    logger.error('Error creating rock:', error);
-    res.status(500).json({ error: 'Failed to create rock' });
-  } finally {
-    client.release();
-  }
-};
-
-// Update rock
-const updateQuarterlyPriority = async (req, res) => {
-  const client = await db.connect();
-  try {
-    await client.query('BEGIN');
-    
-    const { id } = req.params;
-    const { organizationId } = req.user;
-    const { 
-      name, 
-      description, 
-      ownerId, 
-      teamId, 
-      departmentId,
-      dueDate, 
-      status,
-      completionPercentage,
-      milestones 
-    } = req.body;
-
-    // Check rock exists and belongs to org
-    const existingCheck = await client.query(
-      'SELECT id FROM quarterly_priorities WHERE id = $1 AND organization_id = $2',
-      [id, organizationId]
-    );
-    if (existingCheck.rows.length === 0) {
-      return res.status(404).json({ error: 'Rock not found' });
-    }
-
-    // Update rock
-    const updateQuery = `
-      UPDATE quarterly_priorities 
-      SET name = $1, description = $2, owner_id = $3, team_id = $4, 
-          department_id = $5, due_date = $6, status = $7, 
-          completion_percentage = $8, updated_at = NOW()
-      WHERE id = $9 AND organization_id = $10
-      RETURNING *`;
-
-    const values = [
-      name, 
-      description, 
-      ownerId, 
-      teamId || null, 
-      departmentId || null,
-      dueDate, 
-      status, 
-      completionPercentage || 0,
-      id, 
-      organizationId
-    ];
-
-    await client.query(updateQuery, values);
-
-    // Update milestones if provided
-    if (milestones !== undefined) {
-      // Delete existing milestones
-      await client.query('DELETE FROM rock_milestones WHERE rock_id = $1', [id]);
-      
-      // Add new milestones
-      for (const milestone of milestones) {
-        await client.query(
-          `INSERT INTO rock_milestones (rock_id, milestone, due_date, is_completed, completed_at)
-           VALUES ($1, $2, $3, $4, $5)`,
-          [id, milestone.milestone, milestone.dueDate, milestone.isCompleted || false, milestone.completedAt || null]
-        );
-      }
-    }
-
-    await client.query('COMMIT');
-
-    // Fetch updated rock
-    const rock = await getQuarterlyPriorityWithDetails(id, organizationId);
-    res.json(rock);
-  } catch (error) {
-    await client.query('ROLLBACK');
-    logger.error('Error updating rock:', error);
-    res.status(500).json({ error: 'Failed to update rock' });
-  } finally {
-    client.release();
-  }
-};
-
-// Delete rock
-const deleteQuarterlyPriority = async (req, res) => {
-  const client = await db.connect();
-  try {
-    await client.query('BEGIN');
-    
-    const { id } = req.params;
-    const { organizationId } = req.user;
-
-    // Delete milestones first
-    await client.query('DELETE FROM rock_milestones WHERE rock_id = $1', [id]);
-
-    // Delete rock
-    const result = await client.query(
-      'DELETE FROM quarterly_priorities WHERE id = $1 AND organization_id = $2 RETURNING id',
-      [id, organizationId]
-    );
-
-    if (result.rowCount === 0) {
-      return res.status(404).json({ error: 'Rock not found' });
-    }
-
-    await client.query('COMMIT');
-    res.json({ message: 'Rock deleted successfully' });
-  } catch (error) {
-    await client.query('ROLLBACK');
-    logger.error('Error deleting rock:', error);
-    res.status(500).json({ error: 'Failed to delete rock' });
-  } finally {
-    client.release();
-  }
-};
-
-// Update rock status
-const updateQuarterlyPriorityStatus = async (req, res) => {
-  try {
-    const { id } = req.params;
-    const { organizationId } = req.user;
-    const { status, completionPercentage } = req.body;
-
-    const query = `
-      UPDATE quarterly_priorities 
-      SET status = $1, completion_percentage = $2, updated_at = NOW()
-      WHERE id = $3 AND organization_id = $4
-      RETURNING *`;
-
-    const { rows } = await db.query(query, [
-      status, 
-      completionPercentage || 0, 
-      id, 
-      organizationId
-    ]);
-
-    if (rows.length === 0) {
-      return res.status(404).json({ error: 'Rock not found' });
-    }
-
-    const rock = await getQuarterlyPriorityWithDetails(id, organizationId);
-    res.json(rock);
-  } catch (error) {
-    logger.error('Error updating rock status:', error);
-    res.status(500).json({ error: 'Failed to update rock status' });
-  }
-};
-
-// Helper function to get rock with details
-const getQuarterlyPriorityWithDetails = async (rockId, organizationId) => {
-  const query = `
-    SELECT 
-      r.*,
-      u.first_name || ' ' || u.last_name as owner_name,
-      t.name as team_name,
-      d.name as department_name,
-      (
-        SELECT json_agg(
+        u.email as owner_email,
+        array_agg(
           json_build_object(
             'id', m.id,
-            'milestone', m.milestone,
-            'due_date', m.due_date,
-            'is_completed', m.is_completed,
-            'completed_at', m.completed_at
+            'title', m.title,
+            'completed', m.completed,
+            'due_date', m.due_date
           ) ORDER BY m.due_date
-        )
-        FROM rock_milestones m
-        WHERE m.rock_id = r.id
-      ) as milestones
-    FROM quarterly_priorities r
-    LEFT JOIN users u ON u.id = r.owner_id
-    LEFT JOIN teams t ON t.id = r.team_id
-    LEFT JOIN departments d ON d.id = r.department_id
-    WHERE r.id = $1 AND r.organization_id = $2`;
-
-  const { rows } = await db.query(query, [rockId, organizationId]);
-  return rows[0];
+        ) FILTER (WHERE m.id IS NOT NULL) as milestones
+       FROM quarterly_priorities p
+       LEFT JOIN users u ON p.owner_id = u.id
+       LEFT JOIN priority_milestones m ON p.id = m.priority_id
+       WHERE p.organization_id = $1 
+         AND p.quarter = $2 
+         AND p.year = $3
+       GROUP BY p.id, u.first_name, u.last_name, u.email
+       ORDER BY p.is_company_priority DESC, p.created_at`,
+      [orgId, quarter || 'Q1', year || new Date().getFullYear()]
+    );
+    
+    // Get latest updates for each priority
+    const priorityIds = prioritiesResult.rows.map(p => p.id);
+    let updates = {};
+    
+    if (priorityIds.length > 0) {
+      const updatesResult = await query(
+        `SELECT DISTINCT ON (priority_id) 
+          priority_id,
+          update_text,
+          created_at,
+          u.first_name || ' ' || u.last_name as author_name
+         FROM priority_updates pu
+         JOIN users u ON pu.created_by = u.id
+         WHERE priority_id = ANY($1)
+         ORDER BY priority_id, created_at DESC`,
+        [priorityIds]
+      );
+      
+      updatesResult.rows.forEach(update => {
+        updates[update.priority_id] = {
+          text: update.update_text,
+          date: update.created_at,
+          author: update.author_name
+        };
+      });
+    }
+    
+    // Format response
+    const priorities = prioritiesResult.rows.map(p => ({
+      id: p.id,
+      title: p.title,
+      description: p.description,
+      owner: {
+        id: p.owner_id,
+        name: p.owner_name,
+        email: p.owner_email
+      },
+      dueDate: p.due_date,
+      status: p.status,
+      progress: p.progress,
+      isCompanyPriority: p.is_company_priority,
+      milestones: p.milestones || [],
+      latestUpdate: updates[p.id] || null
+    }));
+    
+    // Separate company and individual priorities
+    const companyPriorities = priorities.filter(p => p.isCompanyPriority);
+    const individualPriorities = priorities.filter(p => !p.isCompanyPriority);
+    
+    // Group individual priorities by owner
+    const teamMemberPriorities = {};
+    individualPriorities.forEach(p => {
+      if (!teamMemberPriorities[p.owner.id]) {
+        teamMemberPriorities[p.owner.id] = [];
+      }
+      teamMemberPriorities[p.owner.id].push(p);
+    });
+    
+    res.json({
+      success: true,
+      data: {
+        predictions: predictionsResult.rows[0] || {
+          revenue: { target: 0, current: 0 },
+          profit: { target: 0, current: 0 },
+          measurables: { onTrack: 0, total: 0 }
+        },
+        companyPriorities,
+        teamMemberPriorities,
+        teamMembers: await getTeamMembers(orgId)
+      }
+    });
+  } catch (error) {
+    console.error('Get quarterly priorities error:', error);
+    res.status(500).json({ error: 'Failed to fetch quarterly priorities' });
+  }
 };
 
-export {
-  getQuarterlyPriorities,
-  getQuarterlyPriority,
-  createQuarterlyPriority,
-  updateQuarterlyPriority,
-  deleteQuarterlyPriority,
-  updateQuarterlyPriorityStatus
+// Create a new priority
+export const createPriority = async (req, res) => {
+  try {
+    const { orgId } = req.params;
+    const { 
+      title, 
+      description, 
+      ownerId, 
+      dueDate, 
+      quarter, 
+      year,
+      isCompanyPriority,
+      milestones = []
+    } = req.body;
+    
+    const priorityId = uuidv4();
+    
+    // Create priority
+    const result = await query(
+      `INSERT INTO quarterly_priorities 
+       (id, organization_id, title, description, owner_id, due_date, quarter, year, 
+        is_company_priority, status, progress, created_by)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, 'on-track', 0, $10)
+       RETURNING *`,
+      [priorityId, orgId, title, description, ownerId, dueDate, quarter, year, 
+       isCompanyPriority, req.user.id]
+    );
+    
+    // Create milestones if provided
+    if (milestones.length > 0) {
+      const milestoneValues = milestones.map(m => 
+        `('${uuidv4()}', '${priorityId}', '${m.title}', '${m.dueDate}', false)`
+      ).join(',');
+      
+      await query(
+        `INSERT INTO priority_milestones (id, priority_id, title, due_date, completed)
+         VALUES ${milestoneValues}`
+      );
+    }
+    
+    res.json({
+      success: true,
+      data: result.rows[0]
+    });
+  } catch (error) {
+    console.error('Create priority error:', error);
+    res.status(500).json({ error: 'Failed to create priority' });
+  }
 };
+
+// Update a priority
+export const updatePriority = async (req, res) => {
+  try {
+    const { orgId, priorityId } = req.params;
+    const { title, description, status, progress } = req.body;
+    
+    const result = await query(
+      `UPDATE quarterly_priorities 
+       SET title = COALESCE($1, title),
+           description = COALESCE($2, description),
+           status = COALESCE($3, status),
+           progress = COALESCE($4, progress),
+           updated_at = NOW()
+       WHERE id = $5 AND organization_id = $6
+       RETURNING *`,
+      [title, description, status, progress, priorityId, orgId]
+    );
+    
+    if (result.rows.length === 0) {
+      return res.status(404).json({ error: 'Priority not found' });
+    }
+    
+    res.json({
+      success: true,
+      data: result.rows[0]
+    });
+  } catch (error) {
+    console.error('Update priority error:', error);
+    res.status(500).json({ error: 'Failed to update priority' });
+  }
+};
+
+// Delete a priority
+export const deletePriority = async (req, res) => {
+  try {
+    const { orgId, priorityId } = req.params;
+    
+    await query(
+      `DELETE FROM quarterly_priorities 
+       WHERE id = $1 AND organization_id = $2`,
+      [priorityId, orgId]
+    );
+    
+    res.json({
+      success: true,
+      message: 'Priority deleted successfully'
+    });
+  } catch (error) {
+    console.error('Delete priority error:', error);
+    res.status(500).json({ error: 'Failed to delete priority' });
+  }
+};
+
+// Update predictions
+export const updatePredictions = async (req, res) => {
+  try {
+    const { orgId } = req.params;
+    const { quarter, year, revenue, profit, measurables } = req.body;
+    
+    // Upsert predictions
+    const result = await query(
+      `INSERT INTO quarterly_predictions 
+       (id, organization_id, quarter, year, revenue_target, revenue_current, 
+        profit_target, profit_current, measurables_on_track, measurables_total)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
+       ON CONFLICT (organization_id, quarter, year) 
+       DO UPDATE SET
+         revenue_target = $5,
+         revenue_current = $6,
+         profit_target = $7,
+         profit_current = $8,
+         measurables_on_track = $9,
+         measurables_total = $10,
+         updated_at = NOW()
+       RETURNING *`,
+      [
+        uuidv4(), orgId, quarter, year,
+        revenue.target, revenue.current,
+        profit.target, profit.current,
+        measurables.onTrack, measurables.total
+      ]
+    );
+    
+    res.json({
+      success: true,
+      data: result.rows[0]
+    });
+  } catch (error) {
+    console.error('Update predictions error:', error);
+    res.status(500).json({ error: 'Failed to update predictions' });
+  }
+};
+
+// Update milestone
+export const updateMilestone = async (req, res) => {
+  try {
+    const { milestoneId } = req.params;
+    const { completed } = req.body;
+    
+    const result = await query(
+      `UPDATE priority_milestones 
+       SET completed = $1, updated_at = NOW()
+       WHERE id = $2
+       RETURNING *`,
+      [completed, milestoneId]
+    );
+    
+    if (result.rows.length === 0) {
+      return res.status(404).json({ error: 'Milestone not found' });
+    }
+    
+    // Update priority progress based on milestones
+    await updatePriorityProgress(result.rows[0].priority_id);
+    
+    res.json({
+      success: true,
+      data: result.rows[0]
+    });
+  } catch (error) {
+    console.error('Update milestone error:', error);
+    res.status(500).json({ error: 'Failed to update milestone' });
+  }
+};
+
+// Add update to priority
+export const addPriorityUpdate = async (req, res) => {
+  try {
+    const { priorityId } = req.params;
+    const { updateText, statusChange } = req.body;
+    
+    const result = await query(
+      `INSERT INTO priority_updates 
+       (id, priority_id, update_text, status_change, created_by)
+       VALUES ($1, $2, $3, $4, $5)
+       RETURNING *`,
+      [uuidv4(), priorityId, updateText, statusChange, req.user.id]
+    );
+    
+    // If status changed, update the priority
+    if (statusChange) {
+      await query(
+        `UPDATE quarterly_priorities 
+         SET status = $1 
+         WHERE id = $2`,
+        [statusChange, priorityId]
+      );
+    }
+    
+    res.json({
+      success: true,
+      data: result.rows[0]
+    });
+  } catch (error) {
+    console.error('Add priority update error:', error);
+    res.status(500).json({ error: 'Failed to add update' });
+  }
+};
+
+// Helper function to get team members
+async function getTeamMembers(orgId) {
+  const result = await query(
+    `SELECT 
+      u.id,
+      u.first_name || ' ' || u.last_name as name,
+      u.role,
+      d.name as department
+     FROM users u
+     LEFT JOIN departments d ON u.department_id = d.id
+     WHERE u.organization_id = $1
+     ORDER BY u.first_name, u.last_name`,
+    [orgId]
+  );
+  
+  return result.rows;
+}
+
+// Helper function to update priority progress based on milestones
+async function updatePriorityProgress(priorityId) {
+  const result = await query(
+    `SELECT 
+      COUNT(*) as total,
+      COUNT(*) FILTER (WHERE completed = true) as completed
+     FROM priority_milestones
+     WHERE priority_id = $1`,
+    [priorityId]
+  );
+  
+  const { total, completed } = result.rows[0];
+  const progress = total > 0 ? Math.round((completed / total) * 100) : 0;
+  
+  await query(
+    `UPDATE quarterly_priorities 
+     SET progress = $1 
+     WHERE id = $2`,
+    [progress, priorityId]
+  );
+}
