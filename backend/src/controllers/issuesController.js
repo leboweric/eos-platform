@@ -94,6 +94,21 @@ export const getIssues = async (req, res) => {
   }
 };
 
+// Helper function to check if timeline column exists
+async function checkTimelineColumn() {
+  try {
+    const result = await db.query(
+      `SELECT column_name 
+       FROM information_schema.columns 
+       WHERE table_name = 'issues' AND column_name = 'timeline'`
+    );
+    return result.rows.length > 0;
+  } catch (error) {
+    console.error('Error checking timeline column:', error);
+    return false;
+  }
+}
+
 // Create a new issue
 export const createIssue = async (req, res) => {
   try {
@@ -101,28 +116,45 @@ export const createIssue = async (req, res) => {
     const { title, description, ownerId, timeline, teamId } = req.body;
     const createdById = req.user.id;
     
+    // Check if timeline column exists
+    const hasTimelineColumn = await checkTimelineColumn();
+    
     // Get the next priority rank
-    const maxRankResult = await db.query(
-      'SELECT MAX(priority_rank) as max_rank FROM issues WHERE organization_id = $1 AND timeline = $2',
-      [orgId, timeline || 'short_term']
-    );
+    let maxRankQuery = 'SELECT MAX(priority_rank) as max_rank FROM issues WHERE organization_id = $1';
+    let maxRankParams = [orgId];
+    
+    if (hasTimelineColumn) {
+      maxRankQuery += ' AND timeline = $2';
+      maxRankParams.push(timeline || 'short_term');
+    }
+    
+    const maxRankResult = await db.query(maxRankQuery, maxRankParams);
     const nextRank = (maxRankResult.rows[0].max_rank || 0) + 1;
     
+    // Build insert query based on available columns
+    let columns = ['organization_id', 'team_id', 'created_by_id', 'owner_id', 'title', 'description', 'priority_rank'];
+    let values = [
+      orgId,
+      teamId && teamId !== '00000000-0000-0000-0000-000000000000' ? teamId : null,
+      createdById,
+      ownerId,
+      title,
+      description,
+      nextRank
+    ];
+    let placeholders = ['$1', '$2', '$3', '$4', '$5', '$6', '$7'];
+    
+    if (hasTimelineColumn) {
+      columns.push('timeline');
+      values.push(timeline || 'short_term');
+      placeholders.push('$8');
+    }
+    
     const result = await db.query(
-      `INSERT INTO issues 
-       (organization_id, team_id, created_by_id, owner_id, title, description, priority_rank, timeline)
-       VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+      `INSERT INTO issues (${columns.join(', ')})
+       VALUES (${placeholders.join(', ')})
        RETURNING *`,
-      [
-        orgId,
-        teamId || '00000000-0000-0000-0000-000000000000',
-        createdById,
-        ownerId,
-        title,
-        description,
-        nextRank,
-        timeline || 'short_term'
-      ]
+      values
     );
     
     res.status(201).json({

@@ -88,7 +88,7 @@ const IssueDialog = ({ open, onClose, onSave, issue, teamMembers, timeline }) =>
       const savedIssue = await onSave({
         title: formData.title,
         description: formData.description,
-        ownerId: formData.ownerId || null,
+        ownerId: formData.ownerId === 'no-owner' ? null : (formData.ownerId || null),
         status: formData.status,
         timeline: issue ? issue.timeline : timeline
       });
