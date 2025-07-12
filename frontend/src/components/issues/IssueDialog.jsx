@@ -202,21 +202,29 @@ const IssueDialog = ({ open, onClose, onSave, issue, teamMembers, timeline }) =>
             <div className="grid gap-2">
               <Label htmlFor="owner">Owner</Label>
               <Select
-                value={formData.ownerId}
+                value={formData.ownerId || 'no-owner'}
                 onValueChange={(userId) => {
-                  const selectedUser = teamMembers.find(u => u.id === userId);
-                  setFormData({ 
-                    ...formData, 
-                    ownerId: userId,
-                    ownerName: selectedUser ? `${selectedUser.first_name} ${selectedUser.last_name}` : ''
-                  });
+                  if (userId === 'no-owner') {
+                    setFormData({ 
+                      ...formData, 
+                      ownerId: '',
+                      ownerName: ''
+                    });
+                  } else {
+                    const selectedUser = teamMembers.find(u => u.id === userId);
+                    setFormData({ 
+                      ...formData, 
+                      ownerId: userId,
+                      ownerName: selectedUser ? `${selectedUser.first_name} ${selectedUser.last_name}` : ''
+                    });
+                  }
                 }}
               >
                 <SelectTrigger id="owner">
                   <SelectValue placeholder="Select an owner (optional)" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">No owner</SelectItem>
+                  <SelectItem value="no-owner">No owner</SelectItem>
                   {teamMembers.map(member => (
                     <SelectItem key={member.id} value={member.id}>
                       {member.first_name} {member.last_name}
