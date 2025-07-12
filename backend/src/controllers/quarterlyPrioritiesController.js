@@ -260,8 +260,8 @@ export const createPriority = async (req, res) => {
     const hasCreatedBy = await checkColumn('created_by');
     
     // Build dynamic insert query based on available columns
-    let columns = ['id', 'organization_id', 'title', 'description', 'owner_id', 'due_date', 'quarter', 'year', 'is_company_priority', 'status'];
-    let values = [priorityId, orgId, title, description, actualOwnerId, dueDate, quarter, year, isCompanyPriority, 'on-track'];
+    let columns = ['id', 'organization_id', 'team_id', 'title', 'description', 'owner_id', 'due_date', 'quarter', 'year', 'is_company_priority', 'status'];
+    let values = [priorityId, orgId, teamId, title, description, actualOwnerId, dueDate, quarter, year, isCompanyPriority, 'on-track'];
     let placeholders = [];
     
     // Build placeholders for the initial values
