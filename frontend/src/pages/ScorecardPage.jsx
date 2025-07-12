@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { useAuthStore } from '../stores/authStore';
 import { scorecardService } from '../services/scorecardService';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -21,6 +22,7 @@ import {
 } from 'lucide-react';
 
 const ScorecardPage = () => {
+  const { user } = useAuthStore();
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState(null);
@@ -52,7 +54,15 @@ const ScorecardPage = () => {
     try {
       setLoading(true);
       setError(null);
-      const response = await scorecardService.getScorecard();
+      
+      const orgId = user?.organizationId;
+      const teamId = user?.teamId || '00000000-0000-0000-0000-000000000000';
+      
+      if (!orgId) {
+        throw new Error('No organization ID found');
+      }
+      
+      const response = await scorecardService.getScorecard(orgId, teamId);
       
       if (response && response.data) {
         setMetrics(response.data.metrics || []);
@@ -116,6 +126,13 @@ const ScorecardPage = () => {
       setSaving(true);
       setError(null);
       
+      const orgId = user?.organizationId;
+      const teamId = user?.teamId || '00000000-0000-0000-0000-000000000000';
+      
+      if (!orgId) {
+        throw new Error('No organization ID found');
+      }
+      
       // Prepare the metric data with owner name for the backend
       const metricData = {
         ...metricForm,
@@ -123,11 +140,11 @@ const ScorecardPage = () => {
       };
       
       if (editingMetric) {
-        const updatedMetric = await scorecardService.updateMetric(editingMetric.id, metricData);
+        const updatedMetric = await scorecardService.updateMetric(orgId, teamId, editingMetric.id, metricData);
         setMetrics(prev => prev.map(m => m.id === updatedMetric.id ? {...updatedMetric, ownerId: metricForm.ownerId, ownerName: metricForm.ownerName} : m));
         setSuccess('Metric updated successfully');
       } else {
-        const newMetric = await scorecardService.createMetric(metricData);
+        const newMetric = await scorecardService.createMetric(orgId, teamId, metricData);
         setMetrics(prev => [...prev, {...newMetric, ownerId: metricForm.ownerId, ownerName: metricForm.ownerName}]);
         setSuccess('Metric added successfully');
       }
@@ -153,7 +170,15 @@ const ScorecardPage = () => {
     try {
       setSaving(true);
       setError(null);
-      await scorecardService.deleteMetric(metricId);
+      
+      const orgId = user?.organizationId;
+      const teamId = user?.teamId || '00000000-0000-0000-0000-000000000000';
+      
+      if (!orgId) {
+        throw new Error('No organization ID found');
+      }
+      
+      await scorecardService.deleteMetric(orgId, teamId, metricId);
       setMetrics(prev => prev.filter(m => m.id !== metricId));
       setSuccess('Metric deleted successfully');
     } catch {
@@ -171,7 +196,15 @@ const ScorecardPage = () => {
     try {
       setSaving(true);
       setError(null);
-      await scorecardService.updateScore(metricId, week, value);
+      
+      const orgId = user?.organizationId;
+      const teamId = user?.teamId || '00000000-0000-0000-0000-000000000000';
+      
+      if (!orgId) {
+        throw new Error('No organization ID found');
+      }
+      
+      await scorecardService.updateScore(orgId, teamId, metricId, week, value);
       
       setWeeklyScores(prev => ({
         ...prev,

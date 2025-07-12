@@ -1,63 +1,136 @@
 import axios from 'axios';
 
-const API_BASE = '/organizations/:orgId/teams/:teamId/scorecard';
-
-// Helper to build URL with org and team IDs
-const buildUrl = (endpoint = '') => {
-  // Get org from the current auth context
-  const authState = JSON.parse(localStorage.getItem('auth-store') || '{}');
-  const user = authState?.state?.user;
-  const orgId = localStorage.getItem('impersonatedOrgId') || user?.organizationId;
-  
-  // For now, use a default team ID since teams aren't implemented yet
-  const teamId = '00000000-0000-0000-0000-000000000000';
-  
-  return API_BASE.replace(':orgId', orgId).replace(':teamId', teamId) + endpoint;
-};
+const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3001/api/v1';
 
 export const scorecardService = {
   // Get complete scorecard with metrics and scores
-  getScorecard: async () => {
-    const response = await axios.get(buildUrl());
-    // Handle different response formats
-    if (response.data && response.data.data) {
-      return response.data.data;
+  getScorecard: async (orgId, teamId) => {
+    const token = localStorage.getItem('accessToken');
+    const response = await fetch(
+      `${API_URL}/organizations/${orgId}/teams/${teamId}/scorecard`,
+      {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      }
+    );
+    
+    if (!response.ok) {
+      throw new Error('Failed to fetch scorecard');
     }
-    return response.data || {};
+    
+    const data = await response.json();
+    return data.data || data;
   },
 
   // Create a new metric
-  createMetric: async (metric) => {
-    const response = await axios.post(buildUrl('/metrics'), metric);
-    return response.data.data;
+  createMetric: async (orgId, teamId, metric) => {
+    const token = localStorage.getItem('accessToken');
+    const response = await fetch(
+      `${API_URL}/organizations/${orgId}/teams/${teamId}/scorecard/metrics`,
+      {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify(metric),
+      }
+    );
+    
+    if (!response.ok) {
+      throw new Error('Failed to create metric');
+    }
+    
+    const data = await response.json();
+    return data.data;
   },
 
   // Update an existing metric
-  updateMetric: async (metricId, metric) => {
-    const response = await axios.put(buildUrl(`/metrics/${metricId}`), metric);
-    return response.data.data;
+  updateMetric: async (orgId, teamId, metricId, metric) => {
+    const token = localStorage.getItem('accessToken');
+    const response = await fetch(
+      `${API_URL}/organizations/${orgId}/teams/${teamId}/scorecard/metrics/${metricId}`,
+      {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify(metric),
+      }
+    );
+    
+    if (!response.ok) {
+      throw new Error('Failed to update metric');
+    }
+    
+    const data = await response.json();
+    return data.data;
   },
 
   // Delete a metric
-  deleteMetric: async (metricId) => {
-    await axios.delete(buildUrl(`/metrics/${metricId}`));
+  deleteMetric: async (orgId, teamId, metricId) => {
+    const token = localStorage.getItem('accessToken');
+    const response = await fetch(
+      `${API_URL}/organizations/${orgId}/teams/${teamId}/scorecard/metrics/${metricId}`,
+      {
+        method: 'DELETE',
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      }
+    );
+    
+    if (!response.ok) {
+      throw new Error('Failed to delete metric');
+    }
   },
 
   // Update a weekly score
-  updateScore: async (metricId, week, value) => {
-    const response = await axios.put(buildUrl(`/scores`), {
-      metricId,
-      week,
-      value
-    });
-    return response.data.data;
+  updateScore: async (orgId, teamId, metricId, week, value) => {
+    const token = localStorage.getItem('accessToken');
+    const response = await fetch(
+      `${API_URL}/organizations/${orgId}/teams/${teamId}/scorecard/scores`,
+      {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+          metricId,
+          week,
+          value
+        }),
+      }
+    );
+    
+    if (!response.ok) {
+      throw new Error('Failed to update score');
+    }
+    
+    const data = await response.json();
+    return data.data;
   },
 
   // Get scores for a specific week range
-  getScoresForRange: async (startWeek, endWeek) => {
-    const response = await axios.get(buildUrl('/scores'), {
-      params: { startWeek, endWeek }
-    });
-    return response.data.data;
+  getScoresForRange: async (orgId, teamId, startWeek, endWeek) => {
+    const token = localStorage.getItem('accessToken');
+    const response = await fetch(
+      `${API_URL}/organizations/${orgId}/teams/${teamId}/scorecard/scores?startWeek=${startWeek}&endWeek=${endWeek}`,
+      {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      }
+    );
+    
+    if (!response.ok) {
+      throw new Error('Failed to fetch scores');
+    }
+    
+    const data = await response.json();
+    return data.data;
   }
 };
