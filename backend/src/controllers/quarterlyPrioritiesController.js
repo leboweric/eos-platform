@@ -289,6 +289,10 @@ export const createPriority = async (req, res) => {
     
     console.log('Creating priority with query:', insertQuery);
     console.log('Values:', values);
+    console.log('Values mapped to columns:');
+    columns.forEach((col, index) => {
+      console.log(`  ${col}: ${values[index]} (type: ${typeof values[index]})`);
+    });
     
     const result = await query(insertQuery, values);
     
@@ -585,6 +589,7 @@ export const addPriorityUpdate = async (req, res) => {
 
 // Helper function to get team members
 async function getTeamMembers(orgId) {
+  console.log('Getting team members for org:', orgId);
   const result = await query(
     `SELECT 
       u.id,
@@ -593,11 +598,12 @@ async function getTeamMembers(orgId) {
       d.name as department
      FROM users u
      LEFT JOIN departments d ON u.department_id = d.id
-     WHERE u.organization_id = $1
+     WHERE u.organization_id = $1 AND u.deleted_at IS NULL
      ORDER BY u.first_name, u.last_name`,
     [orgId]
   );
   
+  console.log(`Found ${result.rows.length} team members`);
   return result.rows;
 }
 
