@@ -1140,49 +1140,47 @@ const QuarterlyPrioritiesPage = () => {
             <div>
               <div className="flex items-center space-x-2 mb-2">
                 <BarChart className="h-5 w-5 text-blue-600" />
-                <Label className="text-base font-semibold">Profit</Label>
+                <Label className="text-base font-semibold">Profit Margin</Label>
               </div>
               {editingPredictions ? (
                 <div className="space-y-2">
                   <div>
-                    <Label className="text-xs">Target (in millions)</Label>
+                    <Label className="text-xs">Target (%)</Label>
                     <div className="flex items-center space-x-1">
-                      <span className="text-sm">$</span>
                       <Input
                         type="number"
                         step="0.1"
-                        value={((predictions?.profit?.target || 0) / 1000000).toFixed(1)}
+                        value={predictions?.profit?.target || 0}
                         onChange={(e) => setPredictions({
                           ...predictions,
-                          profit: { ...predictions.profit, target: parseFloat(e.target.value) * 1000000 || 0 }
+                          profit: { ...predictions.profit, target: parseFloat(e.target.value) || 0 }
                         })}
                         className="h-8"
                       />
-                      <span className="text-sm">M</span>
+                      <span className="text-sm">%</span>
                     </div>
                   </div>
                   <div>
-                    <Label className="text-xs">Current (in millions)</Label>
+                    <Label className="text-xs">Current (%)</Label>
                     <div className="flex items-center space-x-1">
-                      <span className="text-sm">$</span>
                       <Input
                         type="number"
                         step="0.1"
-                        value={((predictions?.profit?.current || 0) / 1000000).toFixed(1)}
+                        value={predictions?.profit?.current || 0}
                         onChange={(e) => setPredictions({
                           ...predictions,
-                          profit: { ...predictions.profit, current: parseFloat(e.target.value) * 1000000 || 0 }
+                          profit: { ...predictions.profit, current: parseFloat(e.target.value) || 0 }
                         })}
                         className="h-8"
                       />
-                      <span className="text-sm">M</span>
+                      <span className="text-sm">%</span>
                     </div>
                   </div>
                 </div>
               ) : (
                 <div>
-                  <p className="text-2xl font-bold">${((predictions?.profit?.current || 0) / 1000000).toFixed(1)}M</p>
-                  <p className="text-sm text-gray-600">Target: ${((predictions?.profit?.target || 0) / 1000000).toFixed(1)}M</p>
+                  <p className="text-2xl font-bold">{(predictions?.profit?.current || 0).toFixed(1)}%</p>
+                  <p className="text-sm text-gray-600">Target: {(predictions?.profit?.target || 0).toFixed(1)}%</p>
                   <Progress 
                     value={predictions?.profit?.target ? ((predictions?.profit?.current || 0) / predictions.profit.target) * 100 : 0} 
                     className="mt-2"
