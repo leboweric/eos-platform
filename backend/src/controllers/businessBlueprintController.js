@@ -500,24 +500,28 @@ export const updateThreeYearPicture = async (req, res) => {
       [vtoId]
     );
     
+    // Calculate future date (3 years from now)
+    const futureDate = new Date();
+    futureDate.setFullYear(futureDate.getFullYear() + 3);
+    
     let pictureResult;
     if (existing.rows.length > 0) {
       // Update
       pictureResult = await query(
         `UPDATE three_year_pictures 
-         SET revenue_target = $1, profit_target = $2, updated_at = NOW()
-         WHERE vto_id = $3
+         SET revenue_target = $1, profit_target = $2, future_date = $3, updated_at = NOW()
+         WHERE vto_id = $4
          RETURNING *`,
-        [revenue, profit, vtoId]
+        [revenue, profit, futureDate, vtoId]
       );
     } else {
       // Create
       const newId = uuidv4();
       pictureResult = await query(
-        `INSERT INTO three_year_pictures (id, vto_id, revenue_target, profit_target)
-         VALUES ($1, $2, $3, $4)
+        `INSERT INTO three_year_pictures (id, vto_id, future_date, revenue_target, profit_target)
+         VALUES ($1, $2, $3, $4, $5)
          RETURNING *`,
-        [newId, vtoId, revenue, profit]
+        [newId, vtoId, futureDate, revenue, profit]
       );
     }
     
