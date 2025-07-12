@@ -229,9 +229,6 @@ const QuarterlyPrioritiesPage = () => {
       setCompanyPriorities(mockCompanyPriorities);
       setTeamMembers(mockTeamMembers);
       setTeamMemberPriorities(mockTeamPriorities);
-    } catch (err) {
-      console.error('Failed to fetch quarterly data:', err);
-      setError('Failed to load quarterly priorities');
     } finally {
       setLoading(false);
     }
