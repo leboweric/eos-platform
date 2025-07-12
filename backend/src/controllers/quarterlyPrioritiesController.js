@@ -1,23 +1,67 @@
 import { query } from '../config/database.js';
 import { v4 as uuidv4 } from 'uuid';
 
+// Check if progress column exists in quarterly_priorities table
+async function checkProgressColumn() {
+  try {
+    const result = await query(
+      `SELECT column_name 
+       FROM information_schema.columns 
+       WHERE table_name = 'quarterly_priorities' 
+       AND column_name = 'progress'`
+    );
+    return result.rows.length > 0;
+  } catch (error) {
+    console.error('Error checking progress column:', error);
+    return false;
+  }
+}
+
+// Get progress-safe query
+async function getProgressSafeQuery() {
+  const hasProgress = await checkProgressColumn();
+  if (hasProgress) {
+    return {
+      select: 'p.*',
+      update: `progress = COALESCE($4, progress),`
+    };
+  } else {
+    console.warn('Progress column not found in quarterly_priorities table - database migration may be needed');
+    return {
+      select: `p.id, p.organization_id, p.title, p.description, p.owner_id, p.due_date, 
+               p.quarter, p.year, p.is_company_priority, p.status, p.created_by, 
+               p.created_at, p.updated_at, p.deleted_at, 0 as progress`,
+      update: ''
+    };
+  }
+}
+
 // Get all priorities for a quarter
 export const getQuarterlyPriorities = async (req, res) => {
   try {
     const { orgId, teamId } = req.params;
     const { quarter, year } = req.query;
     
+    // Default values for quarter and year
+    const currentQuarter = quarter || 'Q1';
+    const currentYear = year ? parseInt(year) : new Date().getFullYear();
+    
+    console.log('Fetching quarterly priorities:', { orgId, teamId, quarter: currentQuarter, year: currentYear });
+    
     // Get predictions
     const predictionsResult = await query(
       `SELECT * FROM quarterly_predictions 
        WHERE organization_id = $1 AND quarter = $2 AND year = $3`,
-      [orgId, quarter || 'Q1', parseInt(year) || new Date().getFullYear()]
+      [orgId, currentQuarter, currentYear]
     );
+    
+    // Get progress-safe query parts
+    const { select } = await getProgressSafeQuery();
     
     // Get all priorities
     const prioritiesResult = await query(
       `SELECT 
-        p.*,
+        ${select},
         u.first_name || ' ' || u.last_name as owner_name,
         u.email as owner_email,
         array_agg(
@@ -36,7 +80,7 @@ export const getQuarterlyPriorities = async (req, res) => {
          AND p.year = $3
        GROUP BY p.id, u.first_name, u.last_name, u.email
        ORDER BY p.is_company_priority DESC, p.created_at`,
-      [orgId, quarter || 'Q1', parseInt(year) || new Date().getFullYear()]
+      [orgId, currentQuarter, currentYear]
     );
     
     // Get latest updates for each priority
@@ -133,12 +177,21 @@ export const createPriority = async (req, res) => {
     
     const priorityId = uuidv4();
     
-    // Create priority
+    // Check if progress column exists
+    const hasProgress = await checkProgressColumn();
+    
+    // Create priority with or without progress column
     const result = await query(
+      hasProgress ? 
       `INSERT INTO quarterly_priorities 
        (id, organization_id, title, description, owner_id, due_date, quarter, year, 
         is_company_priority, status, progress, created_by)
        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, 'on-track', 0, $10)
+       RETURNING *` :
+      `INSERT INTO quarterly_priorities 
+       (id, organization_id, title, description, owner_id, due_date, quarter, year, 
+        is_company_priority, status, created_by)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, 'on-track', $10)
        RETURNING *`,
       [priorityId, orgId, title, description, ownerId, dueDate, quarter, year, 
        isCompanyPriority, req.user.id]
@@ -172,12 +225,15 @@ export const updatePriority = async (req, res) => {
     const { orgId, teamId, priorityId } = req.params;
     const { title, description, status, progress } = req.body;
     
+    // Get progress-safe query parts
+    const { update } = await getProgressSafeQuery();
+    
     const result = await query(
       `UPDATE quarterly_priorities 
        SET title = COALESCE($1, title),
            description = COALESCE($2, description),
            status = COALESCE($3, status),
-           progress = COALESCE($4, progress),
+           ${update}
            updated_at = NOW()
        WHERE id = $5 AND organization_id = $6
        RETURNING *`,
@@ -403,22 +459,34 @@ async function getTeamMembers(orgId) {
 
 // Helper function to update priority progress based on milestones
 async function updatePriorityProgress(priorityId) {
-  const result = await query(
-    `SELECT 
-      COUNT(*) as total,
-      COUNT(*) FILTER (WHERE completed = true) as completed
-     FROM priority_milestones
-     WHERE priority_id = $1`,
-    [priorityId]
-  );
-  
-  const { total, completed } = result.rows[0];
-  const progress = total > 0 ? Math.round((completed / total) * 100) : 0;
-  
-  await query(
-    `UPDATE quarterly_priorities 
-     SET progress = $1 
-     WHERE id = $2`,
-    [progress, priorityId]
-  );
+  try {
+    // Check if progress column exists
+    const hasProgress = await checkProgressColumn();
+    if (!hasProgress) {
+      console.log('Skipping progress update - column does not exist');
+      return;
+    }
+    
+    const result = await query(
+      `SELECT 
+        COUNT(*) as total,
+        COUNT(*) FILTER (WHERE completed = true) as completed
+       FROM priority_milestones
+       WHERE priority_id = $1`,
+      [priorityId]
+    );
+    
+    const { total, completed } = result.rows[0];
+    const progress = total > 0 ? Math.round((completed / total) * 100) : 0;
+    
+    await query(
+      `UPDATE quarterly_priorities 
+       SET progress = $1 
+       WHERE id = $2`,
+      [progress, priorityId]
+    );
+  } catch (error) {
+    console.error('Error updating priority progress:', error);
+    // Don't throw - just log the error
+  }
 }
