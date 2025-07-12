@@ -328,6 +328,7 @@ const QuarterlyPrioritiesPage = () => {
       const orgId = user?.organizationId;
       const teamId = user?.teamId || '00000000-0000-0000-0000-000000000000';
       
+      console.log('Updating milestone with:', updates);
       await quarterlyPrioritiesService.updateMilestone(orgId, teamId, priorityId, milestoneId, updates);
       
       // Refresh data
@@ -726,8 +727,13 @@ const QuarterlyPrioritiesPage = () => {
                           size="sm"
                           variant="ghost"
                           onClick={() => {
-                            handleEditMilestone(priority.id, milestone.id, milestoneForm);
+                            handleEditMilestone(priority.id, milestone.id, {
+                              title: milestoneForm.title,
+                              dueDate: milestoneForm.dueDate,
+                              completed: milestone.completed
+                            });
                             setEditingMilestoneId(null);
+                            setMilestoneForm({ title: '', dueDate: '' });
                           }}
                         >
                           <CheckSquare className="h-3 w-3" />
@@ -735,7 +741,10 @@ const QuarterlyPrioritiesPage = () => {
                         <Button
                           size="sm"
                           variant="ghost"
-                          onClick={() => setEditingMilestoneId(null)}
+                          onClick={() => {
+                            setEditingMilestoneId(null);
+                            setMilestoneForm({ title: '', dueDate: '' });
+                          }}
                         >
                           <X className="h-3 w-3" />
                         </Button>
@@ -756,7 +765,7 @@ const QuarterlyPrioritiesPage = () => {
                               setEditingMilestoneId(milestone.id);
                               setMilestoneForm({
                                 title: milestone.title,
-                                dueDate: milestone.dueDate
+                                dueDate: milestone.dueDate ? new Date(milestone.dueDate).toISOString().split('T')[0] : ''
                               });
                             }}
                           >
