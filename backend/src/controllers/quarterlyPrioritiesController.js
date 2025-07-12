@@ -18,6 +18,11 @@ async function checkColumn(columnName) {
   }
 }
 
+// Check if deleted_at column exists
+async function checkDeletedAtColumn() {
+  return checkColumn('deleted_at');
+}
+
 // Check if progress column exists in quarterly_priorities table
 async function checkProgressColumn() {
   return checkColumn('progress');
@@ -111,6 +116,10 @@ export const getQuarterlyPriorities = async (req, res) => {
       );
       console.log('Simple query worked, count:', testResult.rows[0].count);
       
+      // Check if deleted_at column exists
+      const hasDeletedAt = await checkDeletedAtColumn();
+      const deletedAtClause = hasDeletedAt ? ' AND p.deleted_at IS NULL' : '';
+      
       // Now try the full query with explicit columns
       prioritiesResult = await query(
         `SELECT 
@@ -131,7 +140,7 @@ export const getQuarterlyPriorities = async (req, res) => {
          WHERE p.organization_id = $1::uuid 
            AND p.quarter = $2::varchar(2)
            AND p.year = $3::integer
-           AND p.deleted_at IS NULL
+           ${deletedAtClause}
          GROUP BY p.id, u.first_name, u.last_name, u.email
          ORDER BY p.is_company_priority DESC, p.created_at`,
         [orgId, currentQuarter, currentYear]
@@ -430,6 +439,15 @@ export const archivePriority = async (req, res) => {
   try {
     const { orgId, teamId, priorityId } = req.params;
     
+    // Check if deleted_at column exists
+    const hasDeletedAt = await checkDeletedAtColumn();
+    
+    if (!hasDeletedAt) {
+      // If deleted_at column doesn't exist, fall back to hard delete
+      console.warn('deleted_at column not found, falling back to hard delete');
+      return deletePriority(req, res);
+    }
+    
     const result = await query(
       `UPDATE quarterly_priorities 
        SET deleted_at = NOW()
@@ -709,6 +727,18 @@ export const getArchivedPriorities = async (req, res) => {
   
   try {
     console.log('Fetching archived priorities:', { orgId, teamId });
+    
+    // Check if deleted_at column exists
+    const hasDeletedAt = await checkDeletedAtColumn();
+    
+    if (!hasDeletedAt) {
+      // If deleted_at column doesn't exist, return empty result
+      console.warn('deleted_at column not found, returning empty archived priorities');
+      return res.json({
+        success: true,
+        data: {}
+      });
+    }
     
     // Get progress-safe query
     const { select } = await getProgressSafeQuery();
