@@ -8,10 +8,13 @@ import { v4 as uuidv4 } from 'uuid';
 // Get all users in organization
 export const getOrganizationUsers = async (req, res) => {
   try {
-    const organizationId = req.user.organizationId || req.user.organization_id;
+    // Use orgId from URL params if available (for organization-scoped routes)
+    // Otherwise fall back to user's organization
+    const organizationId = req.params.orgId || req.user.organizationId || req.user.organization_id;
     
     console.log('Getting users for organization:', {
       organizationId,
+      paramOrgId: req.params.orgId,
       isImpersonating: req.user.isImpersonating,
       userOrgId: req.user.organization_id,
       impersonatedOrgId: req.user.organizationId
