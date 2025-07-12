@@ -209,14 +209,35 @@ export const getQuarterlyPriorities = async (req, res) => {
       teamMemberPriorities[p.owner.id].push(p);
     });
     
+    // Format predictions data from database format to expected frontend format
+    let formattedPredictions = {
+      revenue: { target: 0, current: 0 },
+      profit: { target: 0, current: 0 },
+      measurables: { onTrack: 0, total: 0 }
+    };
+    
+    if (predictionsResult.rows[0]) {
+      const dbPredictions = predictionsResult.rows[0];
+      formattedPredictions = {
+        revenue: {
+          target: parseFloat(dbPredictions.revenue_target) || 0,
+          current: parseFloat(dbPredictions.revenue_current) || 0
+        },
+        profit: {
+          target: parseFloat(dbPredictions.profit_target) || 0,
+          current: parseFloat(dbPredictions.profit_current) || 0
+        },
+        measurables: {
+          onTrack: parseInt(dbPredictions.measurables_on_track) || 0,
+          total: parseInt(dbPredictions.measurables_total) || 0
+        }
+      };
+    }
+    
     res.json({
       success: true,
       data: {
-        predictions: predictionsResult.rows[0] || {
-          revenue: { target: 0, current: 0 },
-          profit: { target: 0, current: 0 },
-          measurables: { onTrack: 0, total: 0 }
-        },
+        predictions: formattedPredictions,
         companyPriorities,
         teamMemberPriorities,
         teamMembers: await getTeamMembers(orgId)

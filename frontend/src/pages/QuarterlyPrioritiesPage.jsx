@@ -1091,28 +1091,38 @@ const QuarterlyPrioritiesPage = () => {
               {editingPredictions ? (
                 <div className="space-y-2">
                   <div>
-                    <Label className="text-xs">Target</Label>
-                    <Input
-                      type="number"
-                      value={predictions?.revenue?.target || 0}
-                      onChange={(e) => setPredictions({
-                        ...predictions,
-                        revenue: { ...predictions.revenue, target: parseFloat(e.target.value) || 0 }
-                      })}
-                      className="h-8"
-                    />
+                    <Label className="text-xs">Target (in millions)</Label>
+                    <div className="flex items-center space-x-1">
+                      <span className="text-sm">$</span>
+                      <Input
+                        type="number"
+                        step="0.1"
+                        value={((predictions?.revenue?.target || 0) / 1000000).toFixed(1)}
+                        onChange={(e) => setPredictions({
+                          ...predictions,
+                          revenue: { ...predictions.revenue, target: parseFloat(e.target.value) * 1000000 || 0 }
+                        })}
+                        className="h-8"
+                      />
+                      <span className="text-sm">M</span>
+                    </div>
                   </div>
                   <div>
-                    <Label className="text-xs">Current</Label>
-                    <Input
-                      type="number"
-                      value={predictions?.revenue?.current || 0}
-                      onChange={(e) => setPredictions({
-                        ...predictions,
-                        revenue: { ...predictions.revenue, current: parseFloat(e.target.value) || 0 }
-                      })}
-                      className="h-8"
-                    />
+                    <Label className="text-xs">Current (in millions)</Label>
+                    <div className="flex items-center space-x-1">
+                      <span className="text-sm">$</span>
+                      <Input
+                        type="number"
+                        step="0.1"
+                        value={((predictions?.revenue?.current || 0) / 1000000).toFixed(1)}
+                        onChange={(e) => setPredictions({
+                          ...predictions,
+                          revenue: { ...predictions.revenue, current: parseFloat(e.target.value) * 1000000 || 0 }
+                        })}
+                        className="h-8"
+                      />
+                      <span className="text-sm">M</span>
+                    </div>
                   </div>
                 </div>
               ) : (
@@ -1135,28 +1145,38 @@ const QuarterlyPrioritiesPage = () => {
               {editingPredictions ? (
                 <div className="space-y-2">
                   <div>
-                    <Label className="text-xs">Target</Label>
-                    <Input
-                      type="number"
-                      value={predictions?.profit?.target || 0}
-                      onChange={(e) => setPredictions({
-                        ...predictions,
-                        profit: { ...predictions.profit, target: parseFloat(e.target.value) || 0 }
-                      })}
-                      className="h-8"
-                    />
+                    <Label className="text-xs">Target (in millions)</Label>
+                    <div className="flex items-center space-x-1">
+                      <span className="text-sm">$</span>
+                      <Input
+                        type="number"
+                        step="0.1"
+                        value={((predictions?.profit?.target || 0) / 1000000).toFixed(1)}
+                        onChange={(e) => setPredictions({
+                          ...predictions,
+                          profit: { ...predictions.profit, target: parseFloat(e.target.value) * 1000000 || 0 }
+                        })}
+                        className="h-8"
+                      />
+                      <span className="text-sm">M</span>
+                    </div>
                   </div>
                   <div>
-                    <Label className="text-xs">Current</Label>
-                    <Input
-                      type="number"
-                      value={predictions?.profit?.current || 0}
-                      onChange={(e) => setPredictions({
-                        ...predictions,
-                        profit: { ...predictions.profit, current: parseFloat(e.target.value) || 0 }
-                      })}
-                      className="h-8"
-                    />
+                    <Label className="text-xs">Current (in millions)</Label>
+                    <div className="flex items-center space-x-1">
+                      <span className="text-sm">$</span>
+                      <Input
+                        type="number"
+                        step="0.1"
+                        value={((predictions?.profit?.current || 0) / 1000000).toFixed(1)}
+                        onChange={(e) => setPredictions({
+                          ...predictions,
+                          profit: { ...predictions.profit, current: parseFloat(e.target.value) * 1000000 || 0 }
+                        })}
+                        className="h-8"
+                      />
+                      <span className="text-sm">M</span>
+                    </div>
                   </div>
                 </div>
               ) : (
