@@ -105,134 +105,17 @@ const QuarterlyPrioritiesPage = () => {
       setTeamMembers(data.teamMembers || []);
     } catch (err) {
       console.error('Failed to fetch quarterly data:', err);
-      setError('Failed to load quarterly priorities');
+      setError('Failed to load quarterly priorities. Please try again later.');
       
-      // Set default data if fetch fails
+      // Set empty data on error
       setPredictions({
-        revenue: { target: 5000000, current: 4200000 },
-        profit: { target: 1000000, current: 850000 },
-        measurables: { onTrack: 8, total: 10 }
+        revenue: { target: 0, current: 0 },
+        profit: { target: 0, current: 0 },
+        measurables: { onTrack: 0, total: 0 }
       });
-      
-      // Mock data for development/demo
-      const mockCompanyPriorities = [
-        {
-          id: 'f47ac10b-58cc-4372-a567-0e02b2c3d479',
-          title: 'Expand into European market',
-          description: 'Launch operations in 3 key European countries',
-          owner: { id: 'a47ac10b-58cc-4372-a567-0e02b2c3d471', name: 'John Doe', email: 'john@company.com' },
-          dueDate: '2025-03-31',
-          status: 'on-track',
-          progress: 45,
-          milestones: [
-            { id: 'b47ac10b-58cc-4372-a567-0e02b2c3d481', title: 'Market research complete', completed: true, dueDate: '2025-01-15' },
-            { id: 'b47ac10b-58cc-4372-a567-0e02b2c3d482', title: 'Legal entity established', completed: true, dueDate: '2025-02-01' },
-            { id: 'b47ac10b-58cc-4372-a567-0e02b2c3d483', title: 'First customer signed', completed: false, dueDate: '2025-03-15' }
-          ],
-          latestUpdate: {
-            date: '2025-01-12',
-            text: 'Legal entities established in Germany and France. Working on UK setup.',
-            author: 'John Doe'
-          }
-        },
-        {
-          id: 'f47ac10b-58cc-4372-a567-0e02b2c3d480',
-          title: 'Launch AI-powered analytics platform',
-          description: 'Develop and release advanced analytics features using machine learning',
-          owner: { id: 'a47ac10b-58cc-4372-a567-0e02b2c3d472', name: 'Sarah Wilson', email: 'sarah@company.com' },
-          dueDate: '2025-03-31',
-          status: 'on-track',
-          progress: 60,
-          milestones: [
-            { id: 'b47ac10b-58cc-4372-a567-0e02b2c3d484', title: 'ML model trained', completed: true, dueDate: '2025-01-31' },
-            { id: 'b47ac10b-58cc-4372-a567-0e02b2c3d485', title: 'Integration complete', completed: false, dueDate: '2025-02-28' },
-            { id: 'b47ac10b-58cc-4372-a567-0e02b2c3d486', title: 'Beta launch', completed: false, dueDate: '2025-03-20' }
-          ],
-          latestUpdate: {
-            date: '2025-01-10',
-            text: 'ML models showing 92% accuracy. Beginning integration phase next week.',
-            author: 'Sarah Wilson'
-          }
-        }
-      ];
-
-      const mockTeamMembers = [
-        { id: 'a47ac10b-58cc-4372-a567-0e02b2c3d471', name: 'John Doe', role: 'CEO', department: 'Executive' },
-        { id: 'a47ac10b-58cc-4372-a567-0e02b2c3d472', name: 'Sarah Wilson', role: 'CTO', department: 'Engineering' },
-        { id: 'a47ac10b-58cc-4372-a567-0e02b2c3d473', name: 'Mike Johnson', role: 'VP Sales', department: 'Sales' },
-        { id: 'a47ac10b-58cc-4372-a567-0e02b2c3d474', name: 'Emily Chen', role: 'Marketing Director', department: 'Marketing' },
-        { id: 'a47ac10b-58cc-4372-a567-0e02b2c3d475', name: 'Robert Smith', role: 'Product Manager', department: 'Product' }
-      ];
-
-      const mockTeamPriorities = {
-        'a47ac10b-58cc-4372-a567-0e02b2c3d471': [ // John Doe's priorities
-          {
-            id: 'f47ac10b-58cc-4372-a567-0e02b2c3d481',
-            title: 'Secure Series B funding',
-            description: 'Close $20M Series B round with strategic investors',
-            owner: { id: 'a47ac10b-58cc-4372-a567-0e02b2c3d471', name: 'John Doe', email: 'john@company.com' },
-            dueDate: '2025-03-31',
-            status: 'on-track',
-            progress: 30,
-            milestones: [
-              { id: 'b47ac10b-58cc-4372-a567-0e02b2c3d487', title: 'Pitch deck finalized', completed: true, dueDate: '2025-01-15' },
-              { id: 'b47ac10b-58cc-4372-a567-0e02b2c3d488', title: 'Due diligence complete', completed: false, dueDate: '2025-02-28' },
-              { id: 'b47ac10b-58cc-4372-a567-0e02b2c3d489', title: 'Term sheet signed', completed: false, dueDate: '2025-03-25' }
-            ],
-            latestUpdate: {
-              date: '2025-01-11',
-              text: 'In discussions with 3 VCs. Initial feedback very positive.',
-              author: 'John Doe'
-            }
-          }
-        ],
-        'a47ac10b-58cc-4372-a567-0e02b2c3d472': [ // Sarah Wilson's priorities
-          {
-            id: 'f47ac10b-58cc-4372-a567-0e02b2c3d482',
-            title: 'Improve system performance by 50%',
-            description: 'Optimize database queries and implement caching strategies',
-            owner: { id: 'a47ac10b-58cc-4372-a567-0e02b2c3d472', name: 'Sarah Wilson', email: 'sarah@company.com' },
-            dueDate: '2025-03-31',
-            status: 'complete',
-            progress: 100,
-            milestones: [
-              { id: 'b47ac10b-58cc-4372-a567-0e02b2c3d490', title: 'Performance audit complete', completed: true, dueDate: '2025-01-10' },
-              { id: 'b47ac10b-58cc-4372-a567-0e02b2c3d491', title: 'Caching implemented', completed: true, dueDate: '2025-01-25' },
-              { id: 'b47ac10b-58cc-4372-a567-0e02b2c3d492', title: 'Database optimized', completed: true, dueDate: '2025-02-10' }
-            ],
-            latestUpdate: {
-              date: '2025-01-09',
-              text: 'All optimizations complete. Achieved 65% performance improvement!',
-              author: 'Sarah Wilson'
-            }
-          }
-        ],
-        'a47ac10b-58cc-4372-a567-0e02b2c3d473': [ // Mike Johnson's priorities
-          {
-            id: 'f47ac10b-58cc-4372-a567-0e02b2c3d483',
-            title: 'Close 10 enterprise deals',
-            description: 'Sign 10 new enterprise customers with minimum $100k ACV',
-            owner: { id: 'a47ac10b-58cc-4372-a567-0e02b2c3d473', name: 'Mike Johnson', email: 'mike@company.com' },
-            dueDate: '2025-03-31',
-            status: 'off-track',
-            progress: 20,
-            milestones: [
-              { id: 'b47ac10b-58cc-4372-a567-0e02b2c3d493', title: 'Pipeline built (30 prospects)', completed: true, dueDate: '2025-01-20' },
-              { id: 'b47ac10b-58cc-4372-a567-0e02b2c3d494', title: '5 deals closed', completed: false, dueDate: '2025-02-15' },
-              { id: 'b47ac10b-58cc-4372-a567-0e02b2c3d495', title: '10 deals closed', completed: false, dueDate: '2025-03-31' }
-            ],
-            latestUpdate: {
-              date: '2025-01-08',
-              text: 'Only 2 deals closed so far. Need to accelerate sales cycle.',
-              author: 'Mike Johnson'
-            }
-          }
-        ]
-      };
-
-      setCompanyPriorities(mockCompanyPriorities);
-      setTeamMembers(mockTeamMembers);
-      setTeamMemberPriorities(mockTeamPriorities);
+      setCompanyPriorities([]);
+      setTeamMembers([]);
+      setTeamMemberPriorities({});
     } finally {
       setLoading(false);
     }
