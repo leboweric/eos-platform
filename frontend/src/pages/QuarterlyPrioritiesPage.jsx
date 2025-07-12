@@ -161,19 +161,39 @@ const QuarterlyPrioritiesPage = () => {
   };
 
   const getUserInitials = (name) => {
+    if (!name) return '??';
     return name.split(' ').map(n => n[0]).join('').toUpperCase();
   };
 
   const formatDate = (dateString) => {
-    return format(new Date(dateString), 'MMM d, yyyy');
+    if (!dateString) return 'No date set';
+    try {
+      const date = new Date(dateString);
+      if (isNaN(date.getTime())) {
+        return 'Invalid date';
+      }
+      return format(date, 'MMM d, yyyy');
+    } catch (error) {
+      console.error('Error formatting date:', dateString, error);
+      return 'Invalid date';
+    }
   };
 
   const getDaysUntilDue = (dueDate) => {
-    const today = new Date();
-    const due = new Date(dueDate);
-    const diffTime = due - today;
-    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-    return diffDays;
+    if (!dueDate) return 0;
+    try {
+      const today = new Date();
+      const due = new Date(dueDate);
+      if (isNaN(due.getTime())) {
+        return 0;
+      }
+      const diffTime = due - today;
+      const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+      return diffDays;
+    } catch (error) {
+      console.error('Error calculating days until due:', dueDate, error);
+      return 0;
+    }
   };
 
   const handleSavePredictions = async () => {
