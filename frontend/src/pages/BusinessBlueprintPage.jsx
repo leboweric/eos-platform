@@ -107,7 +107,13 @@ const BusinessBlueprintPage = () => {
           provenProcessExists: data.marketingStrategy?.proven_process_exists || false,
           guaranteeExists: data.marketingStrategy?.guarantee_exists || false
         },
-        threeYearPicture: data.threeYearPicture,
+        threeYearPicture: data.threeYearPicture ? {
+          ...data.threeYearPicture,
+          revenue: data.threeYearPicture.revenue_target,
+          profit: data.threeYearPicture.profit_target,
+          lookLikeItems: data.threeYearPicture.what_does_it_look_like ? 
+            JSON.parse(data.threeYearPicture.what_does_it_look_like) : []
+        } : null,
         oneYearPlan: data.oneYearPlan,
         quarterlyPriorities: data.quarterlyPriorities
       });
@@ -704,10 +710,17 @@ const BusinessBlueprintPage = () => {
                         </ul>
                       </div>
                     )}
-                    {blueprintData.threeYearPicture.looksLike && (
+                    {blueprintData.threeYearPicture.lookLikeItems && blueprintData.threeYearPicture.lookLikeItems.length > 0 && (
                       <div>
-                        <p className="text-sm font-medium text-gray-500">What does it look like?</p>
-                        <p className="text-sm text-gray-700 whitespace-pre-wrap">{blueprintData.threeYearPicture.looksLike}</p>
+                        <p className="text-sm font-medium text-gray-500 mb-2">What does it look like?</p>
+                        <ul className="space-y-1">
+                          {blueprintData.threeYearPicture.lookLikeItems.filter(item => item).map((item, index) => (
+                            <li key={index} className="flex items-start">
+                              <span className="text-indigo-600 mr-2">•</span>
+                              <span className="text-sm text-gray-700">{item}</span>
+                            </li>
+                          ))}
+                        </ul>
                       </div>
                     )}
                   </div>

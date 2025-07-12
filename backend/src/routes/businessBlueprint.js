@@ -7,7 +7,8 @@ import {
   deleteCoreValue,
   updateCoreFocus,
   updateTenYearTarget,
-  updateMarketingStrategy
+  updateMarketingStrategy,
+  updateThreeYearPicture
 } from '../controllers/businessBlueprintController.js';
 
 const router = express.Router({ mergeParams: true });
@@ -51,8 +52,15 @@ router.put('/marketing-strategy', [
   body('guaranteeExists').isBoolean().withMessage('Guarantee must be true or false')
 ], updateMarketingStrategy);
 
+// Three Year Picture endpoint
+router.put('/three-year-picture', [
+  body('revenue').optional(),
+  body('profit').optional(),
+  body('measurables').optional().isArray(),
+  body('lookLikeItems').optional().isArray()
+], updateThreeYearPicture);
+
 // TODO: Add endpoints for:
-// - Three Year Picture
 // - One Year Plan
 
 export default router;

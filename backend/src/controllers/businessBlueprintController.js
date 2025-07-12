@@ -479,6 +479,87 @@ export const getDepartmentBusinessBlueprint = async (req, res) => {
   }
 };
 
+// @desc    Update three year picture
+// @route   PUT /api/v1/organizations/:orgId/teams/:teamId/business-blueprint/three-year-picture
+// @access  Private
+export const updateThreeYearPicture = async (req, res) => {
+  try {
+    const { orgId, teamId } = req.params;
+    const { revenue, profit, measurables, lookLikeItems } = req.body;
+    
+    // Get or create VTO
+    const vtoId = await getOrCreateVTO(orgId, teamId);
+    
+    // Check if three year picture exists
+    const existing = await query(
+      'SELECT id FROM three_year_pictures WHERE vto_id = $1',
+      [vtoId]
+    );
+    
+    let pictureResult;
+    if (existing.rows.length > 0) {
+      // Update
+      pictureResult = await query(
+        `UPDATE three_year_pictures 
+         SET revenue_target = $1, profit_target = $2, updated_at = NOW()
+         WHERE vto_id = $3
+         RETURNING *`,
+        [revenue, profit, vtoId]
+      );
+    } else {
+      // Create
+      const newId = uuidv4();
+      pictureResult = await query(
+        `INSERT INTO three_year_pictures (id, vto_id, revenue_target, profit_target)
+         VALUES ($1, $2, $3, $4)
+         RETURNING *`,
+        [newId, vtoId, revenue, profit]
+      );
+    }
+    
+    const pictureId = pictureResult.rows[0].id;
+    
+    // Handle measurables
+    if (measurables && Array.isArray(measurables)) {
+      // Delete existing measurables
+      await query('DELETE FROM three_year_measurables WHERE three_year_picture_id = $1', [pictureId]);
+      
+      // Insert new measurables
+      for (let i = 0; i < measurables.length; i++) {
+        const measurable = measurables[i];
+        if (measurable.name || measurable.value) {
+          await query(
+            `INSERT INTO three_year_measurables (id, three_year_picture_id, measurable_name, measurable_value, sort_order)
+             VALUES ($1, $2, $3, $4, $5)`,
+            [uuidv4(), pictureId, measurable.name, measurable.value, i]
+          );
+        }
+      }
+    }
+    
+    // Handle look like items (for now store as JSON in a text field)
+    if (lookLikeItems && Array.isArray(lookLikeItems)) {
+      await query(
+        `UPDATE three_year_pictures 
+         SET what_does_it_look_like = $1
+         WHERE id = $2`,
+        [JSON.stringify(lookLikeItems), pictureId]
+      );
+    }
+    
+    res.json({
+      success: true,
+      data: pictureResult.rows[0]
+    });
+  } catch (error) {
+    console.error('Error updating three year picture:', error);
+    res.status(500).json({
+      success: false,
+      error: error.message || 'Server error while updating three year picture'
+    });
+  }
+};
+
 export default {
   getVTO,
   getDepartmentBusinessBlueprint,
@@ -486,5 +567,6 @@ export default {
   deleteCoreValue,
   updateCoreFocus,
   updateTenYearTarget,
-  updateMarketingStrategy
+  updateMarketingStrategy,
+  updateThreeYearPicture
 };

@@ -5,14 +5,14 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Input } from '@/components/ui/input';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import { Loader2, Save, AlertCircle } from 'lucide-react';
+import { Loader2, Save, AlertCircle, Plus, Trash2 } from 'lucide-react';
 
 const ThreeYearPictureDialog = ({ open, onOpenChange, data, onSave }) => {
   const [formData, setFormData] = useState({
     revenue: '',
     profit: '',
-    measurables: '',
-    lookLike: ''
+    measurables: [],
+    lookLikeItems: ['']
   });
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState(null);
@@ -22,8 +22,8 @@ const ThreeYearPictureDialog = ({ open, onOpenChange, data, onSave }) => {
       setFormData({
         revenue: data.revenue || '',
         profit: data.profit || '',
-        measurables: data.measurables || '',
-        lookLike: data.lookLike || ''
+        measurables: data.measurables || [],
+        lookLikeItems: data.lookLikeItems && data.lookLikeItems.length > 0 ? data.lookLikeItems : ['']
       });
     }
   }, [data]);
@@ -94,14 +94,48 @@ const ThreeYearPictureDialog = ({ open, onOpenChange, data, onSave }) => {
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="lookLike">What Does It Look Like?</Label>
-              <Textarea
-                id="lookLike"
-                value={formData.lookLike}
-                onChange={(e) => setFormData({ ...formData, lookLike: e.target.value })}
-                placeholder="Describe what your organization looks and feels like in 3 years..."
-                rows={6}
-              />
+              <div className="flex items-center justify-between">
+                <Label>What Does It Look Like?</Label>
+                <Button
+                  type="button"
+                  size="sm"
+                  variant="outline"
+                  onClick={() => setFormData(prev => ({
+                    ...prev,
+                    lookLikeItems: [...prev.lookLikeItems, '']
+                  }))}
+                >
+                  <Plus className="h-4 w-4" />
+                </Button>
+              </div>
+              <div className="space-y-2">
+                {formData.lookLikeItems.map((item, index) => (
+                  <div key={index} className="flex gap-2">
+                    <Input
+                      placeholder={`Attribute ${index + 1}`}
+                      value={item}
+                      onChange={(e) => setFormData(prev => {
+                        const newItems = [...prev.lookLikeItems];
+                        newItems[index] = e.target.value;
+                        return { ...prev, lookLikeItems: newItems };
+                      })}
+                    />
+                    {formData.lookLikeItems.length > 1 && (
+                      <Button
+                        type="button"
+                        size="sm"
+                        variant="ghost"
+                        onClick={() => setFormData(prev => ({
+                          ...prev,
+                          lookLikeItems: prev.lookLikeItems.filter((_, i) => i !== index)
+                        }))}
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
+                    )}
+                  </div>
+                ))}
+              </div>
             </div>
           </div>
 
