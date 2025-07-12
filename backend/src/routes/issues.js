@@ -1,5 +1,5 @@
 import express from 'express';
-import { protect } from '../middleware/auth.js';
+import { authenticate } from '../middleware/auth.js';
 import {
   getIssues,
   createIssue,
@@ -16,7 +16,7 @@ import {
 const router = express.Router({ mergeParams: true });
 
 // All routes require authentication
-router.use(protect);
+router.use(authenticate);
 
 router.route('/')
   .get(getIssues)
