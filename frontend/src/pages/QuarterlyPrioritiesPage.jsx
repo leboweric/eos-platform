@@ -278,6 +278,27 @@ const QuarterlyPrioritiesPage = () => {
     }
   };
 
+  const formatRevenue = (value) => {
+    if (!value || value === 0) return '$0';
+    
+    // If value is >= 1 million, show in millions
+    if (value >= 1000000) {
+      const millions = value / 1000000;
+      // Show up to 3 decimal places, but remove trailing zeros
+      return `$${millions.toFixed(3).replace(/\.?0+$/, '')}M`;
+    }
+    
+    // If value is >= 1 thousand, show in thousands
+    if (value >= 1000) {
+      const thousands = value / 1000;
+      // Show up to 1 decimal place, but remove trailing zeros
+      return `$${thousands.toFixed(1).replace(/\.0$/, '')}K`;
+    }
+    
+    // Otherwise show the full value
+    return `$${value.toFixed(0)}`;
+  };
+
   const handleSavePredictions = async () => {
     try {
       // Get current quarter and year
@@ -1091,44 +1112,45 @@ const QuarterlyPrioritiesPage = () => {
               {editingPredictions ? (
                 <div className="space-y-2">
                   <div>
-                    <Label className="text-xs">Target (in millions)</Label>
+                    <Label className="text-xs">Target</Label>
                     <div className="flex items-center space-x-1">
                       <span className="text-sm">$</span>
                       <Input
                         type="number"
-                        step="0.1"
-                        value={((predictions?.revenue?.target || 0) / 1000000).toFixed(1)}
+                        step="1000"
+                        value={predictions?.revenue?.target || 0}
                         onChange={(e) => setPredictions({
                           ...predictions,
-                          revenue: { ...predictions.revenue, target: parseFloat(e.target.value) * 1000000 || 0 }
+                          revenue: { ...predictions.revenue, target: parseFloat(e.target.value) || 0 }
                         })}
                         className="h-8"
+                        placeholder="635000"
                       />
-                      <span className="text-sm">M</span>
                     </div>
+                    <p className="text-xs text-gray-500 mt-1">Enter full amount (e.g., 635000 for $635K)</p>
                   </div>
                   <div>
-                    <Label className="text-xs">Current (in millions)</Label>
+                    <Label className="text-xs">Current</Label>
                     <div className="flex items-center space-x-1">
                       <span className="text-sm">$</span>
                       <Input
                         type="number"
-                        step="0.1"
-                        value={((predictions?.revenue?.current || 0) / 1000000).toFixed(1)}
+                        step="1000"
+                        value={predictions?.revenue?.current || 0}
                         onChange={(e) => setPredictions({
                           ...predictions,
-                          revenue: { ...predictions.revenue, current: parseFloat(e.target.value) * 1000000 || 0 }
+                          revenue: { ...predictions.revenue, current: parseFloat(e.target.value) || 0 }
                         })}
                         className="h-8"
+                        placeholder="450000"
                       />
-                      <span className="text-sm">M</span>
                     </div>
                   </div>
                 </div>
               ) : (
                 <div>
-                  <p className="text-2xl font-bold">${((predictions?.revenue?.current || 0) / 1000000).toFixed(1)}M</p>
-                  <p className="text-sm text-gray-600">Target: ${((predictions?.revenue?.target || 0) / 1000000).toFixed(1)}M</p>
+                  <p className="text-2xl font-bold">{formatRevenue(predictions?.revenue?.current || 0)}</p>
+                  <p className="text-sm text-gray-600">Target: {formatRevenue(predictions?.revenue?.target || 0)}</p>
                   <Progress 
                     value={predictions?.revenue?.target ? ((predictions?.revenue?.current || 0) / predictions.revenue.target) * 100 : 0} 
                     className="mt-2"
