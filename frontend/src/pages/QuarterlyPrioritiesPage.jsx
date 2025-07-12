@@ -775,7 +775,14 @@ const QuarterlyPrioritiesPage = () => {
               ))}
             </SelectContent>
           </Select>
-          <Button onClick={() => setShowAddPriority(true)}>
+          <Button onClick={() => {
+            // Set default owner to current user when opening dialog
+            setPriorityForm({
+              ...priorityForm,
+              ownerId: user?.id || ''
+            });
+            setShowAddPriority(true);
+          }}>
             <Plus className="mr-2 h-4 w-4" />
             Add Priority
           </Button>
@@ -1082,11 +1089,19 @@ const QuarterlyPrioritiesPage = () => {
                     <SelectValue placeholder="Select owner" />
                   </SelectTrigger>
                   <SelectContent>
-                    {teamMembers.map(member => (
-                      <SelectItem key={member.id} value={member.id}>
-                        {member.name}
+                    {teamMembers.length > 0 ? (
+                      teamMembers.map(member => (
+                        <SelectItem key={member.id} value={member.id}>
+                          {member.name}
+                        </SelectItem>
+                      ))
+                    ) : (
+                      <SelectItem value={user?.id || 'current-user'}>
+                        {user?.firstName && user?.lastName 
+                          ? `${user.firstName} ${user.lastName}` 
+                          : user?.email || 'Current User'}
                       </SelectItem>
-                    ))}
+                    )}
                   </SelectContent>
                 </Select>
               </div>

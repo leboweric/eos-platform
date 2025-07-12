@@ -217,6 +217,8 @@ export const getQuarterlyPriorities = async (req, res) => {
 
 // Create a new priority
 export const createPriority = async (req, res) => {
+  let actualOwnerId; // Declare at function scope
+  
   try {
     const { orgId, teamId } = req.params;
     const { 
@@ -230,6 +232,19 @@ export const createPriority = async (req, res) => {
       milestones = []
     } = req.body;
     
+    // Validate required fields
+    if (!title) {
+      return res.status(400).json({ error: 'Title is required' });
+    }
+    
+    // Use the current user's ID if no owner is specified
+    actualOwnerId = ownerId || req.user.id;
+    
+    // Validate owner ID is a valid UUID
+    if (!actualOwnerId || actualOwnerId === '') {
+      return res.status(400).json({ error: 'Owner ID is required' });
+    }
+    
     const priorityId = uuidv4();
     
     // Check which columns exist
@@ -238,7 +253,7 @@ export const createPriority = async (req, res) => {
     
     // Build dynamic insert query based on available columns
     let columns = ['id', 'organization_id', 'title', 'description', 'owner_id', 'due_date', 'quarter', 'year', 'is_company_priority', 'status'];
-    let values = [priorityId, orgId, title, description, ownerId, dueDate, quarter, year, isCompanyPriority, 'on-track'];
+    let values = [priorityId, orgId, title, description, actualOwnerId, dueDate, quarter, year, isCompanyPriority, 'on-track'];
     let placeholders = [];
     
     // Build placeholders for the initial values
@@ -287,7 +302,22 @@ export const createPriority = async (req, res) => {
     });
   } catch (error) {
     console.error('Create priority error:', error);
-    res.status(500).json({ error: 'Failed to create priority' });
+    console.error('Request body:', req.body);
+    console.error('Actual owner ID used:', actualOwnerId);
+    
+    // Provide more specific error messages
+    if (error.code === '22P02' && error.message.includes('uuid')) {
+      return res.status(400).json({ 
+        error: 'Invalid UUID format',
+        details: 'Owner ID must be a valid UUID',
+        receivedOwnerId: req.body.ownerId
+      });
+    }
+    
+    res.status(500).json({ 
+      error: 'Failed to create priority',
+      details: process.env.NODE_ENV === 'development' ? error.message : undefined
+    });
   }
 };
 
