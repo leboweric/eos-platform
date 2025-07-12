@@ -94,13 +94,13 @@ export const getVTO = async (req, res) => {
 
     // Get current quarterly priorities
     const quarterlyPriorities = await query(
-      `SELECT p.id, p.title, p.status, p.position 
+      `SELECT p.id, p.title, p.status 
        FROM quarterly_priorities p
        WHERE p.organization_id = $1 
        AND p.quarter = $2 
        AND p.year = $3
        AND p.is_archived = false
-       ORDER BY p.position`,
+       ORDER BY p.created_at`,
       [orgId, currentQuarter, currentYear]
     );
 
@@ -480,13 +480,13 @@ export const getDepartmentBusinessBlueprint = async (req, res) => {
 
     // Get current quarterly priorities for department
     const quarterlyPriorities = await query(
-      `SELECT p.id, p.title, p.status, p.position 
+      `SELECT p.id, p.title, p.status 
        FROM quarterly_priorities p
        WHERE p.department_id = $1 
        AND p.quarter = $2 
        AND p.year = $3
        AND p.is_archived = false
-       ORDER BY p.position`,
+       ORDER BY p.created_at`,
       [departmentId, currentQuarter, currentYear]
     );
 
