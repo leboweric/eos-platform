@@ -1,5 +1,4 @@
 import { useState, useEffect } from 'react';
-import { useAuthStore } from '../stores/authStore';
 import { scorecardService } from '../services/scorecardService';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -22,7 +21,6 @@ import {
 } from 'lucide-react';
 
 const ScorecardPage = () => {
-  const { user } = useAuthStore();
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState(null);
@@ -34,17 +32,20 @@ const ScorecardPage = () => {
   const [editingMetric, setEditingMetric] = useState(null);
   const [showMetricDialog, setShowMetricDialog] = useState(false);
   const [editingScore, setEditingScore] = useState(null);
+  const [users, setUsers] = useState([]);
   
   // Form data for new/edit metric
   const [metricForm, setMetricForm] = useState({
     name: '',
     goal: '',
-    owner: '',
+    ownerId: '',
+    ownerName: '',
     type: 'weekly' // weekly, monthly, quarterly
   });
 
   useEffect(() => {
     fetchScorecard();
+    fetchUsers();
   }, []);
 
   const fetchScorecard = async () => {
@@ -68,12 +69,31 @@ const ScorecardPage = () => {
     }
   };
 
+  const fetchUsers = async () => {
+    try {
+      const token = localStorage.getItem('accessToken');
+      const response = await fetch('/api/v1/users/organization', {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+      
+      if (response.ok) {
+        const data = await response.json();
+        setUsers(data.data || []);
+      }
+    } catch (error) {
+      console.error('Failed to fetch users:', error);
+    }
+  };
+
   const handleAddMetric = () => {
     setEditingMetric(null);
     setMetricForm({
       name: '',
       goal: '',
-      owner: '',
+      ownerId: '',
+      ownerName: '',
       type: 'weekly'
     });
     setShowMetricDialog(true);
@@ -84,7 +104,8 @@ const ScorecardPage = () => {
     setMetricForm({
       name: metric.name,
       goal: metric.goal,
-      owner: metric.owner,
+      ownerId: metric.ownerId || '',
+      ownerName: metric.owner || metric.ownerName || '',
       type: metric.type || 'weekly'
     });
     setShowMetricDialog(true);
@@ -95,13 +116,19 @@ const ScorecardPage = () => {
       setSaving(true);
       setError(null);
       
+      // Prepare the metric data with owner name for the backend
+      const metricData = {
+        ...metricForm,
+        owner: metricForm.ownerName // Backend expects 'owner' field with the name
+      };
+      
       if (editingMetric) {
-        const updatedMetric = await scorecardService.updateMetric(editingMetric.id, metricForm);
-        setMetrics(prev => prev.map(m => m.id === updatedMetric.id ? updatedMetric : m));
+        const updatedMetric = await scorecardService.updateMetric(editingMetric.id, metricData);
+        setMetrics(prev => prev.map(m => m.id === updatedMetric.id ? {...updatedMetric, ownerId: metricForm.ownerId, ownerName: metricForm.ownerName} : m));
         setSuccess('Metric updated successfully');
       } else {
-        const newMetric = await scorecardService.createMetric(metricForm);
-        setMetrics(prev => [...prev, newMetric]);
+        const newMetric = await scorecardService.createMetric(metricData);
+        setMetrics(prev => [...prev, {...newMetric, ownerId: metricForm.ownerId, ownerName: metricForm.ownerName}]);
         setSuccess('Metric added successfully');
       }
       
@@ -109,10 +136,11 @@ const ScorecardPage = () => {
       setMetricForm({
         name: '',
         goal: '',
-        owner: '',
+        ownerId: '',
+        ownerName: '',
         type: 'weekly'
       });
-    } catch (error) {
+    } catch {
       setError('Failed to save metric');
     } finally {
       setSaving(false);
@@ -128,7 +156,7 @@ const ScorecardPage = () => {
       await scorecardService.deleteMetric(metricId);
       setMetrics(prev => prev.filter(m => m.id !== metricId));
       setSuccess('Metric deleted successfully');
-    } catch (error) {
+    } catch {
       setError('Failed to delete metric');
     } finally {
       setSaving(false);
@@ -155,7 +183,7 @@ const ScorecardPage = () => {
       
       setEditingScore(null);
       setSuccess('Score updated successfully');
-    } catch (error) {
+    } catch {
       setError('Failed to update score');
     } finally {
       setSaving(false);
@@ -285,8 +313,8 @@ const ScorecardPage = () => {
                       <tr key={metric.id} className="border-b hover:bg-gray-50">
                         <td className="p-4 font-medium">{metric.name}</td>
                         <td className="p-4 text-center font-semibold text-indigo-600">{Math.round(parseFloat(metric.goal))}</td>
-                        <td className="p-4 text-center">{metric.owner}</td>
-                        {weekDates.map((weekDate, index) => {
+                        <td className="p-4 text-center">{metric.ownerName || metric.owner}</td>
+                        {weekDates.map((weekDate) => {
                           const score = weeklyScores[metric.id]?.[weekDate];
                           const isEditing = editingScore?.metricId === metric.id && editingScore?.week === weekDate;
                           const isGoalMet = score && parseFloat(score) >= parseFloat(metric.goal);
@@ -443,12 +471,28 @@ const ScorecardPage = () => {
               </div>
               <div>
                 <Label htmlFor="metric-owner">Owner</Label>
-                <Input
-                  id="metric-owner"
-                  value={metricForm.owner}
-                  onChange={(e) => setMetricForm(prev => ({ ...prev, owner: e.target.value }))}
-                  placeholder="e.g., John Smith"
-                />
+                <Select
+                  value={metricForm.ownerId}
+                  onValueChange={(userId) => {
+                    const selectedUser = users.find(u => u.id === userId);
+                    setMetricForm(prev => ({ 
+                      ...prev, 
+                      ownerId: userId,
+                      ownerName: selectedUser ? `${selectedUser.first_name} ${selectedUser.last_name}` : ''
+                    }));
+                  }}
+                >
+                  <SelectTrigger id="metric-owner">
+                    <SelectValue placeholder="Select an owner" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {users.map(user => (
+                      <SelectItem key={user.id} value={user.id}>
+                        {user.first_name} {user.last_name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               </div>
               <div>
                 <Label htmlFor="metric-type">Type</Label>
