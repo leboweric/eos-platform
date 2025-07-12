@@ -105,7 +105,7 @@ const QuarterlyPrioritiesPage = () => {
       setTeamMembers(data.teamMembers || []);
     } catch (err) {
       console.error('Failed to fetch quarterly data:', err);
-      setError('Failed to load quarterly priorities');
+      setError('Backend API integration is in progress. Using demo data for now.');
       
       // Set default data if fetch fails
       setPredictions({
@@ -310,7 +310,7 @@ const QuarterlyPrioritiesPage = () => {
       setEditingPredictions(false);
     } catch (err) {
       console.error('Failed to save predictions:', err);
-      setError('Failed to save predictions');
+      setError('Predictions save backend integration in progress');
     }
   };
 
@@ -341,7 +341,7 @@ const QuarterlyPrioritiesPage = () => {
       await fetchQuarterlyData();
     } catch (err) {
       console.error('Failed to update milestone:', err);
-      setError('Failed to update milestone');
+      setError('Milestone update backend integration in progress');
     }
   };
 
@@ -824,6 +824,15 @@ const QuarterlyPrioritiesPage = () => {
 
   return (
     <div className="space-y-6">
+      {/* Backend Integration Notice */}
+      <Alert className="bg-blue-50 border-blue-200">
+        <AlertCircle className="h-4 w-4 text-blue-600" />
+        <AlertDescription className="text-blue-800">
+          <strong>Note:</strong> The quarterly priorities feature is currently using demo data while backend integration is being completed. 
+          Your changes will not be saved at this time.
+        </AlertDescription>
+      </Alert>
+      
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
