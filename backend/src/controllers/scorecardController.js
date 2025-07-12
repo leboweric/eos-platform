@@ -1,5 +1,21 @@
 import db from '../config/database.js';
 
+// Helper function to check if a column exists
+async function checkColumn(tableName, columnName) {
+  try {
+    const result = await db.query(
+      `SELECT column_name 
+       FROM information_schema.columns 
+       WHERE table_name = $1 AND column_name = $2`,
+      [tableName, columnName]
+    );
+    return result.rows.length > 0;
+  } catch (error) {
+    console.error(`Error checking ${columnName} column:`, error);
+    return false;
+  }
+}
+
 // Helper function to get team members
 async function getTeamMembers(orgId) {
   console.log('Getting team members for scorecard org:', orgId);
@@ -25,9 +41,22 @@ export const getScorecard = async (req, res) => {
   try {
     const { orgId, teamId } = req.params;
     
+    // Check if new columns exist
+    const hasValueType = await checkColumn('scorecard_metrics', 'value_type');
+    const hasComparisonOperator = await checkColumn('scorecard_metrics', 'comparison_operator');
+    
+    // Build query based on available columns
+    let selectColumns = 'id, name, goal, owner, type, created_at, updated_at';
+    if (hasValueType) {
+      selectColumns += ', value_type';
+    }
+    if (hasComparisonOperator) {
+      selectColumns += ', comparison_operator';
+    }
+    
     // Get all metrics for the team
     const metricsQuery = `
-      SELECT id, name, goal, owner, type, value_type, comparison_operator, created_at, updated_at
+      SELECT ${selectColumns}
       FROM scorecard_metrics
       WHERE organization_id = $1 AND team_id = $2
       ORDER BY created_at ASC
@@ -82,14 +111,33 @@ export const createMetric = async (req, res) => {
     const { orgId, teamId } = req.params;
     const { name, goal, owner, type = 'weekly', valueType = 'number', comparisonOperator = 'greater_equal' } = req.body;
     
+    // Check if new columns exist
+    const hasValueType = await checkColumn('scorecard_metrics', 'value_type');
+    const hasComparisonOperator = await checkColumn('scorecard_metrics', 'comparison_operator');
+    
+    // Build insert query based on available columns
+    let columns = ['organization_id', 'team_id', 'name', 'goal', 'owner', 'type'];
+    let values = [orgId, teamId, name, goal, owner, type];
+    let placeholders = ['$1', '$2', '$3', '$4', '$5', '$6'];
+    
+    if (hasValueType) {
+      columns.push('value_type');
+      values.push(valueType);
+      placeholders.push(`$${values.length}`);
+    }
+    if (hasComparisonOperator) {
+      columns.push('comparison_operator');
+      values.push(comparisonOperator);
+      placeholders.push(`$${values.length}`);
+    }
+    
     const query = `
-      INSERT INTO scorecard_metrics (
-        organization_id, team_id, name, goal, owner, type, value_type, comparison_operator
-      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
-      RETURNING id, name, goal, owner, type, value_type, comparison_operator, created_at, updated_at
+      INSERT INTO scorecard_metrics (${columns.join(', ')})
+      VALUES (${placeholders.join(', ')})
+      RETURNING *
     `;
     
-    const result = await db.query(query, [orgId, teamId, name, goal, owner, type, valueType, comparisonOperator]);
+    const result = await db.query(query, values);
     
     res.json({
       success: true,
@@ -110,14 +158,34 @@ export const updateMetric = async (req, res) => {
     const { orgId, teamId, metricId } = req.params;
     const { name, goal, owner, type, valueType, comparisonOperator } = req.body;
     
+    // Check if new columns exist
+    const hasValueType = await checkColumn('scorecard_metrics', 'value_type');
+    const hasComparisonOperator = await checkColumn('scorecard_metrics', 'comparison_operator');
+    
+    // Build update query based on available columns
+    let setClauses = ['name = $1', 'goal = $2', 'owner = $3', 'type = $4'];
+    let values = [name, goal, owner, type];
+    
+    if (hasValueType && valueType !== undefined) {
+      values.push(valueType);
+      setClauses.push(`value_type = $${values.length}`);
+    }
+    if (hasComparisonOperator && comparisonOperator !== undefined) {
+      values.push(comparisonOperator);
+      setClauses.push(`comparison_operator = $${values.length}`);
+    }
+    
+    // Add the WHERE clause parameters
+    values.push(metricId, orgId, teamId);
+    
     const query = `
       UPDATE scorecard_metrics
-      SET name = $1, goal = $2, owner = $3, type = $4, value_type = $5, comparison_operator = $6, updated_at = CURRENT_TIMESTAMP
-      WHERE id = $7 AND organization_id = $8 AND team_id = $9
-      RETURNING id, name, goal, owner, type, value_type, comparison_operator, created_at, updated_at
+      SET ${setClauses.join(', ')}, updated_at = CURRENT_TIMESTAMP
+      WHERE id = $${values.length - 2} AND organization_id = $${values.length - 1} AND team_id = $${values.length}
+      RETURNING *
     `;
     
-    const result = await db.query(query, [name, goal, owner, type, valueType, comparisonOperator, metricId, orgId, teamId]);
+    const result = await db.query(query, values);
     
     if (result.rows.length === 0) {
       return res.status(404).json({
