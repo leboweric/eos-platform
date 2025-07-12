@@ -46,9 +46,14 @@ const ScorecardPage = () => {
   });
 
   useEffect(() => {
-    fetchScorecard();
-    fetchUsers();
-  }, []);
+    console.log('ScorecardPage useEffect - user:', user);
+    console.log('ScorecardPage useEffect - organizationId:', user?.organizationId);
+    
+    if (user?.organizationId) {
+      fetchScorecard();
+      fetchUsers();
+    }
+  }, [user?.organizationId]);
 
   const fetchScorecard = async () => {
     try {
@@ -82,6 +87,7 @@ const ScorecardPage = () => {
   const fetchUsers = async () => {
     try {
       const orgId = user?.organizationId;
+      console.log('Fetching users for orgId:', orgId);
       
       if (!orgId) {
         console.error('No organization ID found for fetching users');
@@ -89,17 +95,22 @@ const ScorecardPage = () => {
       }
       
       const token = localStorage.getItem('accessToken');
+      console.log('Making request to:', `/api/v1/organizations/${orgId}/users/organization`);
+      
       const response = await fetch(`/api/v1/organizations/${orgId}/users/organization`, {
         headers: {
           Authorization: `Bearer ${token}`,
         },
       });
       
+      console.log('Users fetch response status:', response.status);
+      
       if (response.ok) {
         const data = await response.json();
+        console.log('Users data received:', data);
         setUsers(data.data || []);
       } else {
-        console.error('Failed to fetch users - response not ok:', response.status);
+        console.error('Failed to fetch users - response not ok:', response.status, await response.text());
       }
     } catch (error) {
       console.error('Failed to fetch users:', error);
