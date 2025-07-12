@@ -349,9 +349,11 @@ const BusinessBlueprintPage = () => {
             </TabsTrigger>
           </TabsList>
 
-        <TabsContent value="vision" className="space-y-6">
-          {/* Core Values */}
-          <Card className="shadow-lg border-0 overflow-hidden">
+        <TabsContent value="vision" className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          {/* Left Column - Core Values, Hedgehog, BHAG, Marketing Strategy */}
+          <div className="lg:col-span-2 space-y-6">
+            {/* Core Values */}
+            <Card className="shadow-lg border-0 overflow-hidden">
             <CardHeader className="bg-white border-b">
               <CardTitle className="flex items-center text-xl text-gray-900">
                 <Users className="mr-2 h-6 w-6 text-indigo-600" />
@@ -646,60 +648,87 @@ const BusinessBlueprintPage = () => {
               </Button>
             </CardContent>
           </Card>
+          </div>
+
+          {/* Right Column - 3-Year Picture */}
+          <div className="lg:col-span-1">
+            <Card className="shadow-lg border-0 overflow-hidden h-full">
+              <CardHeader className="bg-white border-b">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <CardTitle className="flex items-center text-xl text-gray-900">
+                      <Calendar className="mr-2 h-6 w-6 text-indigo-600" />
+                      3-Year Picture
+                    </CardTitle>
+                    <CardDescription className="text-gray-600">Your organization's 3-year vision</CardDescription>
+                  </div>
+                  <Button 
+                    variant="outline" 
+                    size="sm"
+                    onClick={() => setShowThreeYearDialog(true)}
+                  >
+                    <Edit className="h-4 w-4" />
+                  </Button>
+                </div>
+              </CardHeader>
+              <CardContent className="space-y-4 pt-6">
+                {blueprintData.threeYearPicture ? (
+                  <div className="space-y-4">
+                    {blueprintData.threeYearPicture.revenue && (
+                      <div>
+                        <p className="text-sm font-medium text-gray-500">Revenue Target</p>
+                        <p className="text-lg font-semibold">{blueprintData.threeYearPicture.revenue}</p>
+                      </div>
+                    )}
+                    {blueprintData.threeYearPicture.profit && (
+                      <div>
+                        <p className="text-sm font-medium text-gray-500">Profit Target</p>
+                        <p className="text-lg font-semibold">{blueprintData.threeYearPicture.profit}</p>
+                      </div>
+                    )}
+                    {blueprintData.threeYearPicture.measurables && blueprintData.threeYearPicture.measurables.length > 0 && (
+                      <div>
+                        <p className="text-sm font-medium text-gray-500 mb-2">Key Measurables</p>
+                        <ul className="space-y-2">
+                          {blueprintData.threeYearPicture.measurables.map((measurable, index) => (
+                            <li key={index} className="flex items-start">
+                              <span className="text-indigo-600 mr-2">•</span>
+                              <div className="flex-1">
+                                <p className="font-medium">{measurable.name}</p>
+                                {measurable.value && (
+                                  <p className="text-sm text-gray-600">Target: {measurable.value}</p>
+                                )}
+                              </div>
+                            </li>
+                          ))}
+                        </ul>
+                      </div>
+                    )}
+                    {blueprintData.threeYearPicture.looksLike && (
+                      <div>
+                        <p className="text-sm font-medium text-gray-500">What does it look like?</p>
+                        <p className="text-sm text-gray-700 whitespace-pre-wrap">{blueprintData.threeYearPicture.looksLike}</p>
+                      </div>
+                    )}
+                  </div>
+                ) : (
+                  <div className="text-center py-8">
+                    <p className="text-gray-500 mb-4">No 3-Year Picture set yet</p>
+                    <Button 
+                      variant="outline"
+                      onClick={() => setShowThreeYearDialog(true)}
+                    >
+                      <Plus className="h-4 w-4 mr-2" />
+                      Create 3-Year Picture
+                    </Button>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          </div>
         </TabsContent>
 
         <TabsContent value="execution" className="space-y-6">
-          <Card>
-            <CardHeader>
-              <div className="flex items-center justify-between">
-                <div>
-                  <CardTitle>3-Year Picture</CardTitle>
-                  <CardDescription>Your organization's 3-year vision</CardDescription>
-                </div>
-                <Button 
-                  variant="outline" 
-                  size="sm"
-                  onClick={() => setShowThreeYearDialog(true)}
-                >
-                  <Edit className="h-4 w-4 mr-2" />
-                  Edit
-                </Button>
-              </div>
-            </CardHeader>
-            <CardContent>
-              {blueprintData.threeYearPicture ? (
-                <div className="space-y-4">
-                  {blueprintData.threeYearPicture.revenue && (
-                    <div>
-                      <p className="text-sm font-medium text-gray-500">Revenue Target</p>
-                      <p className="text-lg">{blueprintData.threeYearPicture.revenue}</p>
-                    </div>
-                  )}
-                  {blueprintData.threeYearPicture.profit && (
-                    <div>
-                      <p className="text-sm font-medium text-gray-500">Profit Target</p>
-                      <p className="text-lg">{blueprintData.threeYearPicture.profit}</p>
-                    </div>
-                  )}
-                  {blueprintData.threeYearPicture.measurables && (
-                    <div>
-                      <p className="text-sm font-medium text-gray-500">Key Measurables</p>
-                      <p className="whitespace-pre-wrap">{blueprintData.threeYearPicture.measurables}</p>
-                    </div>
-                  )}
-                  {blueprintData.threeYearPicture.lookLike && (
-                    <div>
-                      <p className="text-sm font-medium text-gray-500">What Does It Look Like?</p>
-                      <p className="whitespace-pre-wrap">{blueprintData.threeYearPicture.lookLike}</p>
-                    </div>
-                  )}
-                </div>
-              ) : (
-                <p className="text-gray-500">Click edit to define your 3-year vision</p>
-              )}
-            </CardContent>
-          </Card>
-
           <Card>
             <CardHeader>
               <div className="flex items-center justify-between">
