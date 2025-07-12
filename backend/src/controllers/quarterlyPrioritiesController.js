@@ -150,12 +150,12 @@ export const getQuarterlyPriorities = async (req, res) => {
         `SELECT DISTINCT ON (priority_id) 
           priority_id,
           update_text,
-          created_at,
+          pu.created_at,
           u.first_name || ' ' || u.last_name as author_name
          FROM priority_updates pu
          JOIN users u ON pu.created_by = u.id
          WHERE priority_id = ANY($1)
-         ORDER BY priority_id, created_at DESC`,
+         ORDER BY priority_id, pu.created_at DESC`,
         [priorityIds]
       );
       
