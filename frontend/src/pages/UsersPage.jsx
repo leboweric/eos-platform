@@ -57,13 +57,24 @@ const UsersPage = () => {
   const [invitations, setInvitations] = useState([]);
   const [loading, setLoading] = useState(true);
   const [inviteDialogOpen, setInviteDialogOpen] = useState(false);
+  const [createDialogOpen, setCreateDialogOpen] = useState(false);
   const [inviteForm, setInviteForm] = useState({ email: '', role: 'member' });
+  const [createForm, setCreateForm] = useState({ 
+    email: '', 
+    firstName: '', 
+    lastName: '', 
+    role: 'member',
+    sendWelcomeEmail: true
+  });
   const [inviteLoading, setInviteLoading] = useState(false);
+  const [createLoading, setCreateLoading] = useState(false);
   const [error, setError] = useState(null);
   const [successMessage, setSuccessMessage] = useState(null);
   const [copiedLink, setCopiedLink] = useState(false);
+  const [temporaryPassword, setTemporaryPassword] = useState(null);
 
-  const isAdmin = user?.role === 'admin' || user?.is_eosi;
+  const isAdmin = user?.role === 'admin' || user?.isConsultant;
+  const isConsultant = user?.isConsultant;
 
   useEffect(() => {
     fetchUsers();
@@ -143,6 +154,55 @@ const UsersPage = () => {
     }
   };
 
+  const handleCreateUser = async (e) => {
+    e.preventDefault();
+    setCreateLoading(true);
+    setError(null);
+    setTemporaryPassword(null);
+
+    try {
+      const response = await fetch(`${API_URL}/users/create`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${localStorage.getItem('token')}`,
+        },
+        body: JSON.stringify(createForm),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.error || 'Failed to create user');
+      }
+
+      setSuccessMessage(`User ${createForm.email} created successfully`);
+      
+      // If email was not sent, show the temporary password
+      if (!createForm.sendWelcomeEmail && data.data.temporaryPassword) {
+        setTemporaryPassword(data.data.temporaryPassword);
+      }
+      
+      setCreateForm({ 
+        email: '', 
+        firstName: '', 
+        lastName: '', 
+        role: 'member',
+        sendWelcomeEmail: true
+      });
+      
+      if (createForm.sendWelcomeEmail) {
+        setCreateDialogOpen(false);
+      }
+      
+      fetchUsers();
+    } catch (error) {
+      setError(error.message);
+    } finally {
+      setCreateLoading(false);
+    }
+  };
+
   const handleRemoveUser = async (userId, userEmail) => {
     if (!window.confirm(`Are you sure you want to remove ${userEmail} from the organization?`)) {
       return;
@@ -208,13 +268,146 @@ const UsersPage = () => {
           </p>
         </div>
         {isAdmin && (
-          <Dialog open={inviteDialogOpen} onOpenChange={setInviteDialogOpen}>
-            <DialogTrigger asChild>
-              <Button>
-                <UserPlus className="mr-2 h-4 w-4" />
-                Invite User
-              </Button>
-            </DialogTrigger>
+          <div className="flex gap-2">
+            {isConsultant && (
+              <Dialog open={createDialogOpen} onOpenChange={setCreateDialogOpen}>
+                <DialogTrigger asChild>
+                  <Button variant="outline">
+                    <UserPlus className="mr-2 h-4 w-4" />
+                    Create User
+                  </Button>
+                </DialogTrigger>
+                <DialogContent>
+                  <form onSubmit={handleCreateUser}>
+                    <DialogHeader>
+                      <DialogTitle>Create New User</DialogTitle>
+                      <DialogDescription>
+                        Create a new user account directly. They'll receive an email with login credentials.
+                      </DialogDescription>
+                    </DialogHeader>
+                    <div className="space-y-4 py-4">
+                      <div className="grid grid-cols-2 gap-4">
+                        <div className="space-y-2">
+                          <Label htmlFor="firstName">First Name</Label>
+                          <Input
+                            id="firstName"
+                            placeholder="John"
+                            value={createForm.firstName}
+                            onChange={(e) => setCreateForm({ ...createForm, firstName: e.target.value })}
+                            required
+                          />
+                        </div>
+                        <div className="space-y-2">
+                          <Label htmlFor="lastName">Last Name</Label>
+                          <Input
+                            id="lastName"
+                            placeholder="Doe"
+                            value={createForm.lastName}
+                            onChange={(e) => setCreateForm({ ...createForm, lastName: e.target.value })}
+                            required
+                          />
+                        </div>
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="createEmail">Email Address</Label>
+                        <Input
+                          id="createEmail"
+                          type="email"
+                          placeholder="user@company.com"
+                          value={createForm.email}
+                          onChange={(e) => setCreateForm({ ...createForm, email: e.target.value })}
+                          required
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="createRole">Role</Label>
+                        <Select
+                          value={createForm.role}
+                          onValueChange={(value) => setCreateForm({ ...createForm, role: value })}
+                        >
+                          <SelectTrigger>
+                            <SelectValue placeholder="Select a role" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="member">Member</SelectItem>
+                            <SelectItem value="admin">Administrator</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+                      <div className="flex items-center space-x-2">
+                        <input
+                          type="checkbox"
+                          id="sendWelcomeEmail"
+                          checked={createForm.sendWelcomeEmail}
+                          onChange={(e) => setCreateForm({ ...createForm, sendWelcomeEmail: e.target.checked })}
+                          className="rounded border-gray-300"
+                        />
+                        <Label htmlFor="sendWelcomeEmail">Send welcome email with credentials</Label>
+                      </div>
+                      {error && (
+                        <Alert variant="destructive">
+                          <AlertCircle className="h-4 w-4" />
+                          <AlertDescription>{error}</AlertDescription>
+                        </Alert>
+                      )}
+                      {temporaryPassword && (
+                        <Alert>
+                          <AlertCircle className="h-4 w-4" />
+                          <AlertDescription>
+                            <div className="space-y-2">
+                              <p>User created successfully. Temporary password:</p>
+                              <div className="flex items-center gap-2">
+                                <code className="bg-gray-100 px-2 py-1 rounded">{temporaryPassword}</code>
+                                <Button
+                                  type="button"
+                                  variant="ghost"
+                                  size="sm"
+                                  onClick={() => {
+                                    navigator.clipboard.writeText(temporaryPassword);
+                                    setCopiedLink(true);
+                                    setTimeout(() => setCopiedLink(false), 3000);
+                                  }}
+                                >
+                                  <Copy className="h-4 w-4" />
+                                </Button>
+                              </div>
+                              <p className="text-sm text-gray-600">Share this password securely with the user.</p>
+                            </div>
+                          </AlertDescription>
+                        </Alert>
+                      )}
+                    </div>
+                    <DialogFooter>
+                      <Button type="button" variant="outline" onClick={() => {
+                        setCreateDialogOpen(false);
+                        setTemporaryPassword(null);
+                      }}>
+                        {temporaryPassword ? 'Close' : 'Cancel'}
+                      </Button>
+                      {!temporaryPassword && (
+                        <Button type="submit" disabled={createLoading}>
+                          {createLoading ? (
+                            <>
+                              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                              Creating...
+                            </>
+                          ) : (
+                            'Create User'
+                          )}
+                        </Button>
+                      )}
+                    </DialogFooter>
+                  </form>
+                </DialogContent>
+              </Dialog>
+            )}
+            <Dialog open={inviteDialogOpen} onOpenChange={setInviteDialogOpen}>
+              <DialogTrigger asChild>
+                <Button>
+                  <Mail className="mr-2 h-4 w-4" />
+                  Invite User
+                </Button>
+              </DialogTrigger>
             <DialogContent>
               <form onSubmit={handleInviteUser}>
                 <DialogHeader>
@@ -274,7 +467,8 @@ const UsersPage = () => {
                 </DialogFooter>
               </form>
             </DialogContent>
-          </Dialog>
+            </Dialog>
+          </div>
         )}
       </div>
 

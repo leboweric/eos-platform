@@ -3,6 +3,7 @@ import bcrypt from 'bcryptjs';
 import crypto from 'crypto';
 import { updateSubscriptionUserCount } from './subscriptionController.js';
 import { sendEmail } from '../services/emailService.js';
+import { v4 as uuidv4 } from 'uuid';
 
 // Get all users in organization
 export const getOrganizationUsers = async (req, res) => {
@@ -24,6 +25,89 @@ export const getOrganizationUsers = async (req, res) => {
   } catch (error) {
     console.error('Get organization users error:', error);
     res.status(500).json({ error: 'Failed to fetch users' });
+  }
+};
+
+// Create user directly (for consultants)
+export const createUser = async (req, res) => {
+  try {
+    const { email, firstName, lastName, role = 'member', sendWelcomeEmail = true } = req.body;
+    const organizationId = req.user.organization_id;
+    const createdBy = req.user.id;
+
+    // Check if user can create users (must be consultant)
+    if (!req.user.is_consultant) {
+      return res.status(403).json({ error: 'Only consultants can create users directly' });
+    }
+
+    // Check if user already exists
+    const existingUser = await query(
+      'SELECT id FROM users WHERE email = $1',
+      [email]
+    );
+
+    if (existingUser.rows.length > 0) {
+      return res.status(400).json({ error: 'User with this email already exists' });
+    }
+
+    // Generate temporary password
+    const temporaryPassword = crypto.randomBytes(8).toString('hex');
+    const passwordHash = await bcrypt.hash(temporaryPassword, 12);
+
+    // Create user
+    const userId = uuidv4();
+    const userResult = await query(
+      `INSERT INTO users (id, email, password_hash, first_name, last_name, role, organization_id, is_temporary_password)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, true)
+       RETURNING id, email, first_name, last_name, role, created_at`,
+      [userId, email, passwordHash, firstName, lastName, role, organizationId]
+    );
+
+    const newUser = userResult.rows[0];
+
+    // Get organization details for email
+    const orgResult = await query(
+      `SELECT o.name as organization_name, 
+              u.first_name || ' ' || u.last_name as created_by_name
+       FROM organizations o
+       JOIN users u ON u.id = $1
+       WHERE o.id = $2`,
+      [createdBy, organizationId]
+    );
+
+    const { organization_name, created_by_name } = orgResult.rows[0];
+    const loginUrl = `${process.env.FRONTEND_URL || 'http://localhost:5173'}/login`;
+
+    // Send welcome email with temporary password
+    if (sendWelcomeEmail) {
+      try {
+        await sendEmail(email, 'user-created', {
+          firstName,
+          organizationName: organization_name,
+          createdByName: created_by_name,
+          email,
+          temporaryPassword,
+          loginUrl
+        });
+      } catch (emailError) {
+        console.error('Failed to send welcome email:', emailError);
+        // Continue even if email fails
+      }
+    }
+
+    // Update subscription user count
+    await updateSubscriptionUserCount(organizationId);
+    
+    res.json({
+      success: true,
+      data: {
+        ...newUser,
+        temporaryPassword: sendWelcomeEmail ? null : temporaryPassword // Only return password if email wasn't sent
+      }
+    });
+  } catch (error) {
+    console.error('Create user error:', error);
+    res.status(500).json({ error: 'Failed to create user' });
   }
 };
 

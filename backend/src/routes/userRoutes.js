@@ -5,6 +5,7 @@ import { validateRequest } from '../middleware/validateRequest.js';
 import {
   getOrganizationUsers,
   inviteUser,
+  createUser,
   acceptInvitation,
   removeUser,
   getPendingInvitations,
@@ -32,6 +33,9 @@ router.get('/invitations', getPendingInvitations);
 
 // Invite a new user (admin only)
 router.post('/invite', inviteUser);
+
+// Create a new user directly (consultant only)
+router.post('/create', createUser);
 
 // Cancel invitation (admin only)
 router.delete('/invitations/:invitationId', cancelInvitation);
