@@ -44,9 +44,10 @@ async function getProgressSafeQuery() {
 
 // Get all priorities for a quarter
 export const getQuarterlyPriorities = async (req, res) => {
+  const { orgId, teamId } = req.params;
+  const { quarter, year } = req.query;
+  
   try {
-    const { orgId, teamId } = req.params;
-    const { quarter, year } = req.query;
     
     // Validate required parameters
     if (!quarter || !year) {
@@ -69,6 +70,13 @@ export const getQuarterlyPriorities = async (req, res) => {
     if (isNaN(currentYear)) {
       return res.status(400).json({ error: 'Year must be a valid number' });
     }
+    
+    // Ensure types are correct
+    console.log('Query parameters:', {
+      orgId: { value: orgId, type: typeof orgId },
+      quarter: { value: currentQuarter, type: typeof currentQuarter },
+      year: { value: currentYear, type: typeof currentYear }
+    });
     
     console.log('Fetching quarterly priorities:', { orgId, teamId, quarter: currentQuarter, year: currentYear });
     
