@@ -59,7 +59,8 @@ const BusinessBlueprintPage = () => {
     },
     threeYearPicture: null,
     oneYearPlan: null,
-    quarterlyPriorities: null
+    quarterlyPriorities: null,
+    longTermIssues: []
   });
 
   // New core value form
@@ -120,7 +121,8 @@ const BusinessBlueprintPage = () => {
           goals: data.oneYearPlan.goals && Array.isArray(data.oneYearPlan.goals) ? 
             data.oneYearPlan.goals.map(g => g.goal_text) : ['', '', '']
         } : null,
-        quarterlyPriorities: data.quarterlyPriorities
+        quarterlyPriorities: data.quarterlyPriorities,
+        longTermIssues: data.longTermIssues || []
       });
     } catch (error) {
       console.error('Failed to fetch business blueprint:', error);
@@ -870,6 +872,51 @@ const BusinessBlueprintPage = () => {
                     className="text-indigo-600 hover:text-indigo-700 font-medium inline-flex items-center"
                   >
                     Go to Quarterly Priorities →
+                  </Link>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader>
+              <div className="flex items-center justify-between">
+                <div>
+                  <CardTitle>Issues</CardTitle>
+                  <CardDescription>Long term issues to address</CardDescription>
+                </div>
+              </div>
+            </CardHeader>
+            <CardContent>
+              {blueprintData.longTermIssues && blueprintData.longTermIssues.length > 0 ? (
+                <div className="space-y-4">
+                  <div>
+                    <ol className="space-y-2">
+                      {blueprintData.longTermIssues.map((issue, index) => (
+                        <li key={issue.id || index} className="flex items-start">
+                          <span className="text-indigo-600 font-medium mr-2">{index + 1}.</span>
+                          <span className="text-gray-700">{issue.title}</span>
+                        </li>
+                      ))}
+                    </ol>
+                  </div>
+                  <div className="pt-4 border-t">
+                    <Link 
+                      to="/issues?timeline=long_term" 
+                      className="text-indigo-600 hover:text-indigo-700 text-sm font-medium inline-flex items-center"
+                    >
+                      View all long term issues →
+                    </Link>
+                  </div>
+                </div>
+              ) : (
+                <div className="text-center py-8">
+                  <p className="text-gray-500 mb-4">No long term issues</p>
+                  <Link 
+                    to="/issues" 
+                    className="text-indigo-600 hover:text-indigo-700 font-medium inline-flex items-center"
+                  >
+                    Go to Issues →
                   </Link>
                 </div>
               )}

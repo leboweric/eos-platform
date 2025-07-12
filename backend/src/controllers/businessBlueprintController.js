@@ -103,6 +103,18 @@ export const getVTO = async (req, res) => {
       [orgId, currentQuarter, currentYear]
     );
 
+    // Get long term issues
+    const longTermIssues = await query(
+      `SELECT i.id, i.title 
+       FROM issues i
+       WHERE i.organization_id = $1 
+       AND i.timeline = 'long_term'
+       AND i.archived = false
+       AND i.status IN ('open', 'in-progress')
+       ORDER BY i.priority_rank, i.created_at`,
+      [orgId]
+    );
+
     res.json({
       success: true,
       data: {
@@ -127,7 +139,8 @@ export const getVTO = async (req, res) => {
           quarter: currentQuarter,
           year: currentYear,
           priorities: quarterlyPriorities.rows
-        } : null
+        } : null,
+        longTermIssues: longTermIssues.rows
       }
     });
   } catch (error) {
@@ -488,6 +501,19 @@ export const getDepartmentBusinessBlueprint = async (req, res) => {
       [departmentId, currentQuarter, currentYear]
     );
 
+    // Get long term issues for department
+    const longTermIssues = await query(
+      `SELECT i.id, i.title 
+       FROM issues i
+       WHERE i.organization_id = $1 
+       AND (i.team_id = $2 OR i.team_id IS NULL)
+       AND i.timeline = 'long_term'
+       AND i.archived = false
+       AND i.status IN ('open', 'in-progress')
+       ORDER BY i.priority_rank, i.created_at`,
+      [organizationId, departmentId]
+    );
+
     res.json({
       success: true,
       data: {
@@ -509,7 +535,8 @@ export const getDepartmentBusinessBlueprint = async (req, res) => {
           quarter: currentQuarter,
           year: currentYear,
           priorities: quarterlyPriorities.rows
-        } : null
+        } : null,
+        longTermIssues: longTermIssues.rows
       }
     });
   } catch (error) {
