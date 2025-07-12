@@ -602,7 +602,7 @@ async function getTeamMembers(orgId) {
       u.first_name || ' ' || u.last_name as name,
       u.role
      FROM users u
-     WHERE u.organization_id = $1 AND u.deleted_at IS NULL
+     WHERE u.organization_id = $1
      ORDER BY u.first_name, u.last_name`,
     [orgId]
   );
