@@ -6,7 +6,8 @@ import {
   refreshToken,
   logout,
   getProfile,
-  updateProfile
+  updateProfile,
+  changePassword
 } from '../controllers/authController.js';
 import { authenticate } from '../middleware/auth.js';
 
@@ -55,6 +56,15 @@ router.put('/profile', [
   body('lastName').optional().trim().isLength({ min: 1 }),
   body('email').optional().isEmail().normalizeEmail()
 ], updateProfile);
+
+// @route   PUT /api/v1/auth/change-password
+// @desc    Change user password
+// @access  Private
+router.put('/change-password', [
+  authenticate,
+  body('currentPassword').exists(),
+  body('newPassword').isLength({ min: 6 })
+], changePassword);
 
 export default router;
 

@@ -57,8 +57,9 @@ export const createUser = async (req, res) => {
       return res.status(400).json({ error: 'User with this email already exists' });
     }
 
-    // Generate temporary password
-    const temporaryPassword = crypto.randomBytes(8).toString('hex');
+    // Generate temporary password - using fixed password for testing
+    // TODO: Change this back to crypto.randomBytes(8).toString('hex') for production
+    const temporaryPassword = 'abc123';
     const passwordHash = await bcrypt.hash(temporaryPassword, 12);
 
     // Create user

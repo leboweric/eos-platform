@@ -443,3 +443,73 @@ export const updateProfile = async (req, res) => {
   }
 };
 
+// @desc    Change password
+// @route   PUT /api/v1/auth/change-password
+// @access  Private
+export const changePassword = async (req, res) => {
+  try {
+    const { currentPassword, newPassword } = req.body;
+    const userId = req.user.id;
+
+    if (!currentPassword || !newPassword) {
+      return res.status(400).json({
+        success: false,
+        error: 'Current password and new password are required'
+      });
+    }
+
+    if (newPassword.length < 6) {
+      return res.status(400).json({
+        success: false,
+        error: 'New password must be at least 6 characters long'
+      });
+    }
+
+    // Get user's current password hash
+    const result = await query(
+      'SELECT password_hash FROM users WHERE id = $1',
+      [userId]
+    );
+
+    if (result.rows.length === 0) {
+      return res.status(404).json({
+        success: false,
+        error: 'User not found'
+      });
+    }
+
+    const user = result.rows[0];
+
+    // Verify current password
+    const isPasswordValid = await bcrypt.compare(currentPassword, user.password_hash);
+    if (!isPasswordValid) {
+      return res.status(401).json({
+        success: false,
+        error: 'Current password is incorrect'
+      });
+    }
+
+    // Hash new password
+    const saltRounds = 12;
+    const newPasswordHash = await bcrypt.hash(newPassword, saltRounds);
+
+    // Update password and clear temporary password flag
+    await query(
+      'UPDATE users SET password_hash = $1, is_temporary_password = false, updated_at = NOW() WHERE id = $2',
+      [newPasswordHash, userId]
+    );
+
+    res.json({
+      success: true,
+      message: 'Password changed successfully'
+    });
+
+  } catch (error) {
+    console.error('Change password error:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Server error while changing password'
+    });
+  }
+};
+
