@@ -63,23 +63,40 @@ const ThreeYearPictureDialog = ({ open, onOpenChange, data, onSave }) => {
             )}
 
             <div className="space-y-2">
-              <Label htmlFor="revenue">Revenue Target</Label>
-              <Input
-                id="revenue"
-                value={formData.revenue}
-                onChange={(e) => setFormData({ ...formData, revenue: e.target.value })}
-                placeholder="e.g., $10M"
-              />
+              <Label htmlFor="revenue">Revenue Target (in millions)</Label>
+              <div className="relative">
+                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500">$</span>
+                <Input
+                  id="revenue"
+                  type="number"
+                  step="0.001"
+                  value={formData.revenue}
+                  onChange={(e) => setFormData({ ...formData, revenue: e.target.value })}
+                  placeholder="0.635"
+                  className="pl-8"
+                />
+                <span className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500">M</span>
+              </div>
+              <p className="text-xs text-gray-500">Enter value in millions (e.g., 0.635 for $635K, 10 for $10M)</p>
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="profit">Profit Target</Label>
-              <Input
-                id="profit"
-                value={formData.profit}
-                onChange={(e) => setFormData({ ...formData, profit: e.target.value })}
-                placeholder="e.g., $2M or 20%"
-              />
+              <Label htmlFor="profit">Profit Target (%)</Label>
+              <div className="relative">
+                <Input
+                  id="profit"
+                  type="number"
+                  step="0.1"
+                  min="0"
+                  max="100"
+                  value={formData.profit}
+                  onChange={(e) => setFormData({ ...formData, profit: e.target.value })}
+                  placeholder="20"
+                  className="pr-8"
+                />
+                <span className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500">%</span>
+              </div>
+              <p className="text-xs text-gray-500">Enter profit margin as a percentage</p>
             </div>
 
             <div className="space-y-2">

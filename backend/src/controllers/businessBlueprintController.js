@@ -485,7 +485,11 @@ export const getDepartmentBusinessBlueprint = async (req, res) => {
 export const updateThreeYearPicture = async (req, res) => {
   try {
     const { orgId, teamId } = req.params;
-    const { revenue, profit, measurables, lookLikeItems } = req.body;
+    let { revenue, profit, measurables, lookLikeItems } = req.body;
+    
+    // Convert revenue and profit to numbers if they're strings
+    revenue = revenue ? parseFloat(revenue) : null;
+    profit = profit ? parseFloat(profit) : null;
     
     // Get or create VTO
     const vtoId = await getOrCreateVTO(orgId, teamId);

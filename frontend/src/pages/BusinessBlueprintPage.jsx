@@ -109,8 +109,8 @@ const BusinessBlueprintPage = () => {
         },
         threeYearPicture: data.threeYearPicture ? {
           ...data.threeYearPicture,
-          revenue: data.threeYearPicture.revenue_target,
-          profit: data.threeYearPicture.profit_target,
+          revenue: data.threeYearPicture.revenue_target || '',
+          profit: data.threeYearPicture.profit_target || '',
           lookLikeItems: data.threeYearPicture.what_does_it_look_like ? 
             JSON.parse(data.threeYearPicture.what_does_it_look_like) : []
         } : null,
@@ -683,13 +683,17 @@ const BusinessBlueprintPage = () => {
                     {blueprintData.threeYearPicture.revenue && (
                       <div>
                         <p className="text-sm font-medium text-gray-500">Revenue Target</p>
-                        <p className="text-lg font-semibold">{blueprintData.threeYearPicture.revenue}</p>
+                        <p className="text-lg font-semibold">
+                          ${Number(blueprintData.threeYearPicture.revenue) < 1 
+                            ? `${(Number(blueprintData.threeYearPicture.revenue) * 1000).toFixed(0)}K`
+                            : `${Number(blueprintData.threeYearPicture.revenue).toFixed(1)}M`}
+                        </p>
                       </div>
                     )}
                     {blueprintData.threeYearPicture.profit && (
                       <div>
                         <p className="text-sm font-medium text-gray-500">Profit Target</p>
-                        <p className="text-lg font-semibold">{blueprintData.threeYearPicture.profit}</p>
+                        <p className="text-lg font-semibold">{blueprintData.threeYearPicture.profit}%</p>
                       </div>
                     )}
                     {blueprintData.threeYearPicture.measurables && blueprintData.threeYearPicture.measurables.length > 0 && (
