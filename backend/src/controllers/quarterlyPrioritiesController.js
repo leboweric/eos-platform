@@ -600,10 +600,8 @@ async function getTeamMembers(orgId) {
     `SELECT 
       u.id,
       u.first_name || ' ' || u.last_name as name,
-      u.role,
-      d.name as department
+      u.role
      FROM users u
-     LEFT JOIN departments d ON u.department_id = d.id
      WHERE u.organization_id = $1 AND u.deleted_at IS NULL
      ORDER BY u.first_name, u.last_name`,
     [orgId]
