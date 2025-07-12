@@ -42,46 +42,77 @@ export const getQuarterlyPriorities = async (req, res) => {
     const { orgId, teamId } = req.params;
     const { quarter, year } = req.query;
     
-    // Default values for quarter and year
-    const currentQuarter = quarter || 'Q1';
-    const currentYear = year ? parseInt(year) : new Date().getFullYear();
+    // Default values for quarter and year - ensure correct types
+    const currentQuarter = String(quarter || 'Q1');
+    const currentYear = parseInt(year) || new Date().getFullYear();
+    
+    // Validate quarter format
+    if (!['Q1', 'Q2', 'Q3', 'Q4'].includes(currentQuarter)) {
+      return res.status(400).json({ error: 'Invalid quarter format. Must be Q1, Q2, Q3, or Q4' });
+    }
     
     console.log('Fetching quarterly priorities:', { orgId, teamId, quarter: currentQuarter, year: currentYear });
     
     // Get predictions
+    console.log('Query params for predictions:', { 
+      $1: orgId, 
+      $2: currentQuarter, 
+      $3: currentYear,
+      types: {
+        orgId: typeof orgId,
+        quarter: typeof currentQuarter,
+        year: typeof currentYear
+      }
+    });
+    
+    // Try with explicit casting to handle potential type mismatches
     const predictionsResult = await query(
       `SELECT * FROM quarterly_predictions 
-       WHERE organization_id = $1 AND quarter = $2 AND year = $3`,
+       WHERE organization_id = $1 AND quarter = $2::varchar AND year = $3::integer`,
       [orgId, currentQuarter, currentYear]
     );
     
-    // Get progress-safe query parts
-    const { select } = await getProgressSafeQuery();
-    
-    // Get all priorities
-    const prioritiesResult = await query(
-      `SELECT 
-        ${select},
-        u.first_name || ' ' || u.last_name as owner_name,
-        u.email as owner_email,
-        array_agg(
-          json_build_object(
-            'id', m.id,
-            'title', m.title,
-            'completed', m.completed,
-            'due_date', m.due_date
-          ) ORDER BY m.due_date
-        ) FILTER (WHERE m.id IS NOT NULL) as milestones
-       FROM quarterly_priorities p
-       LEFT JOIN users u ON p.owner_id = u.id
-       LEFT JOIN priority_milestones m ON p.id = m.priority_id
-       WHERE p.organization_id = $1 
-         AND p.quarter = $2 
-         AND p.year = $3
-       GROUP BY p.id, u.first_name, u.last_name, u.email
-       ORDER BY p.is_company_priority DESC, p.created_at`,
-      [orgId, currentQuarter, currentYear]
-    );
+    // Get all priorities - simplified query to debug
+    let prioritiesResult;
+    try {
+      // First, let's try a simple query to see if basic parameter binding works
+      console.log('Testing with simple query first...');
+      const testResult = await query(
+        `SELECT COUNT(*) FROM quarterly_priorities 
+         WHERE organization_id = $1`,
+        [orgId]
+      );
+      console.log('Simple query worked, count:', testResult.rows[0].count);
+      
+      // Now try the full query with explicit columns
+      prioritiesResult = await query(
+        `SELECT 
+          p.*,
+          u.first_name || ' ' || u.last_name as owner_name,
+          u.email as owner_email,
+          array_agg(
+            json_build_object(
+              'id', m.id,
+              'title', m.title,
+              'completed', m.completed,
+              'due_date', m.due_date
+            ) ORDER BY m.due_date
+          ) FILTER (WHERE m.id IS NOT NULL) as milestones
+         FROM quarterly_priorities p
+         LEFT JOIN users u ON p.owner_id = u.id
+         LEFT JOIN priority_milestones m ON p.id = m.priority_id
+         WHERE p.organization_id = $1::uuid 
+           AND p.quarter = $2::varchar(2)
+           AND p.year = $3::integer
+         GROUP BY p.id, u.first_name, u.last_name, u.email
+         ORDER BY p.is_company_priority DESC, p.created_at`,
+        [orgId, currentQuarter, currentYear]
+      );
+    } catch (queryError) {
+      console.error('Priorities query error:', queryError);
+      console.error('Query parameters were:', { orgId, currentQuarter, currentYear });
+      throw queryError;
+    }
     
     // Get latest updates for each priority
     const priorityIds = prioritiesResult.rows.map(p => p.id);
