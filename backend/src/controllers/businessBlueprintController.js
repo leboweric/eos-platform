@@ -58,6 +58,11 @@ export const getVTO = async (req, res) => {
       vto = vtoResult.rows[0];
     }
 
+    // Get current quarter and year
+    const currentDate = new Date();
+    const currentQuarter = `Q${Math.floor(currentDate.getMonth() / 3) + 1}`;
+    const currentYear = currentDate.getFullYear();
+
     // Get all VTO components
     const [coreValues, coreFocus, tenYearTarget, marketingStrategy, threeYearPicture, oneYearPlan] = await Promise.all([
       query('SELECT * FROM core_values WHERE vto_id = $1 ORDER BY sort_order', [vto.id]),
@@ -87,6 +92,18 @@ export const getVTO = async (req, res) => {
       ]);
     }
 
+    // Get current quarterly priorities
+    const quarterlyPriorities = await query(
+      `SELECT p.id, p.title, p.status, p.position 
+       FROM quarterly_priorities p
+       WHERE p.organization_id = $1 
+       AND p.quarter = $2 
+       AND p.year = $3
+       AND p.is_archived = false
+       ORDER BY p.position`,
+      [orgId, currentQuarter, currentYear]
+    );
+
     res.json({
       success: true,
       data: {
@@ -106,7 +123,12 @@ export const getVTO = async (req, res) => {
           ...oneYearPlan.rows[0],
           goals: oneYearGoals.rows,
           measurables: oneYearMeasurables.rows
-        }
+        },
+        quarterlyPriorities: quarterlyPriorities.rows.length > 0 ? {
+          quarter: currentQuarter,
+          year: currentYear,
+          priorities: quarterlyPriorities.rows
+        } : null
       }
     });
   } catch (error) {
@@ -422,6 +444,11 @@ export const getDepartmentBusinessBlueprint = async (req, res) => {
       vto = vtoResult.rows[0];
     }
 
+    // Get current quarter and year
+    const currentDate = new Date();
+    const currentQuarter = `Q${Math.floor(currentDate.getMonth() / 3) + 1}`;
+    const currentYear = currentDate.getFullYear();
+
     // Get all VTO components (same as getVTO)
     const [coreValues, coreFocus, tenYearTarget, marketingStrategy, threeYearPicture, oneYearPlan] = await Promise.all([
       query('SELECT * FROM core_values WHERE vto_id = $1 ORDER BY sort_order', [vto.id]),
@@ -451,6 +478,18 @@ export const getDepartmentBusinessBlueprint = async (req, res) => {
       ]);
     }
 
+    // Get current quarterly priorities for department
+    const quarterlyPriorities = await query(
+      `SELECT p.id, p.title, p.status, p.position 
+       FROM quarterly_priorities p
+       WHERE p.department_id = $1 
+       AND p.quarter = $2 
+       AND p.year = $3
+       AND p.is_archived = false
+       ORDER BY p.position`,
+      [departmentId, currentQuarter, currentYear]
+    );
+
     res.json({
       success: true,
       data: {
@@ -467,7 +506,12 @@ export const getDepartmentBusinessBlueprint = async (req, res) => {
           ...oneYearPlan.rows[0],
           goals: oneYearGoals.rows,
           measurables: oneYearMeasurables.rows
-        } || null
+        } || null,
+        quarterlyPriorities: quarterlyPriorities.rows.length > 0 ? {
+          quarter: currentQuarter,
+          year: currentYear,
+          priorities: quarterlyPriorities.rows
+        } : null
       }
     });
   } catch (error) {
