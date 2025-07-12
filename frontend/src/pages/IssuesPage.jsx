@@ -236,19 +236,17 @@ const IssuesPage = () => {
         </Tabs>
 
         {/* Issue Dialog */}
-        {showIssueDialog && (
-          <IssueDialog
-            open={showIssueDialog}
-            onClose={() => {
-              setShowIssueDialog(false);
-              setEditingIssue(null);
-            }}
-            onSave={handleSaveIssue}
-            issue={editingIssue}
-            teamMembers={teamMembers}
-            timeline={activeTab}
-          />
-        )}
+        <IssueDialog
+          open={showIssueDialog}
+          onClose={() => {
+            setShowIssueDialog(false);
+            setEditingIssue(null);
+          }}
+          onSave={handleSaveIssue}
+          issue={editingIssue}
+          teamMembers={teamMembers}
+          timeline={activeTab}
+        />
       </div>
     </div>
   );
