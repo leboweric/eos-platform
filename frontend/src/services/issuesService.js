@@ -9,18 +9,17 @@ const getOrgId = () => {
 const getTeamId = () => {
   const authState = JSON.parse(localStorage.getItem('auth-store') || '{}');
   const user = authState?.state?.user;
-  return user?.teamId || '00000000-0000-0000-0000-000000000000';
+  return user?.teamId;
 };
 
 export const issuesService = {
   // Get all issues
   getIssues: async (timeline = null) => {
     const orgId = getOrgId();
-    const teamId = getTeamId();
     
     const params = timeline ? { timeline } : {};
     const response = await axios.get(
-      `/organizations/${orgId}/teams/${teamId}/issues`,
+      `/organizations/${orgId}/issues`,
       { params }
     );
     return response.data;
@@ -32,10 +31,10 @@ export const issuesService = {
     const teamId = getTeamId();
     
     const response = await axios.post(
-      `/organizations/${orgId}/teams/${teamId}/issues`,
+      `/organizations/${orgId}/issues`,
       {
         ...issueData,
-        teamId
+        teamId: teamId || null
       }
     );
     return response.data.data;
@@ -44,10 +43,9 @@ export const issuesService = {
   // Update an issue
   updateIssue: async (issueId, issueData) => {
     const orgId = getOrgId();
-    const teamId = getTeamId();
     
     const response = await axios.put(
-      `/organizations/${orgId}/teams/${teamId}/issues/${issueId}`,
+      `/organizations/${orgId}/issues/${issueId}`,
       issueData
     );
     return response.data.data;
@@ -56,20 +54,18 @@ export const issuesService = {
   // Delete an issue
   deleteIssue: async (issueId) => {
     const orgId = getOrgId();
-    const teamId = getTeamId();
     
     await axios.delete(
-      `/organizations/${orgId}/teams/${teamId}/issues/${issueId}`
+      `/organizations/${orgId}/issues/${issueId}`
     );
   },
 
   // Update issue priorities (for drag and drop reordering)
   updateIssuePriorities: async (updates) => {
     const orgId = getOrgId();
-    const teamId = getTeamId();
     
     await axios.put(
-      `/organizations/${orgId}/teams/${teamId}/issues/priorities`,
+      `/organizations/${orgId}/issues/priorities`,
       { updates }
     );
   },
@@ -77,10 +73,9 @@ export const issuesService = {
   // Get attachments for an issue
   getAttachments: async (issueId) => {
     const orgId = getOrgId();
-    const teamId = getTeamId();
     
     const response = await axios.get(
-      `/organizations/${orgId}/teams/${teamId}/issues/${issueId}/attachments`
+      `/organizations/${orgId}/issues/${issueId}/attachments`
     );
     return response.data.data;
   },
@@ -88,13 +83,12 @@ export const issuesService = {
   // Upload attachment
   uploadAttachment: async (issueId, file) => {
     const orgId = getOrgId();
-    const teamId = getTeamId();
     
     const formData = new FormData();
     formData.append('file', file);
     
     const response = await axios.post(
-      `/organizations/${orgId}/teams/${teamId}/issues/${issueId}/attachments`,
+      `/organizations/${orgId}/issues/${issueId}/attachments`,
       formData,
       {
         headers: {
@@ -108,10 +102,9 @@ export const issuesService = {
   // Download attachment
   downloadAttachment: async (issueId, attachmentId) => {
     const orgId = getOrgId();
-    const teamId = getTeamId();
     
     const response = await axios.get(
-      `/organizations/${orgId}/teams/${teamId}/issues/${issueId}/attachments/${attachmentId}`,
+      `/organizations/${orgId}/issues/${issueId}/attachments/${attachmentId}`,
       {
         responseType: 'blob'
       }
@@ -122,10 +115,9 @@ export const issuesService = {
   // Delete attachment
   deleteAttachment: async (issueId, attachmentId) => {
     const orgId = getOrgId();
-    const teamId = getTeamId();
     
     await axios.delete(
-      `/organizations/${orgId}/teams/${teamId}/issues/${issueId}/attachments/${attachmentId}`
+      `/organizations/${orgId}/issues/${issueId}/attachments/${attachmentId}`
     );
   }
 };
