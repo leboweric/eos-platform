@@ -3,11 +3,13 @@ import axios from 'axios';
 
 const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3001';
 
-// Configure axios defaults
-axios.defaults.baseURL = API_BASE_URL;
+// Create a dedicated axios instance for auth to avoid conflicts
+const authAxios = axios.create({
+  baseURL: API_BASE_URL
+});
 
 // Add request interceptor to include auth token and impersonation header
-axios.interceptors.request.use(
+authAxios.interceptors.request.use(
   (config) => {
     const token = localStorage.getItem('accessToken');
     if (token) {
@@ -28,7 +30,7 @@ axios.interceptors.request.use(
 );
 
 // Add response interceptor to handle token refresh
-axios.interceptors.response.use(
+authAxios.interceptors.response.use(
   (response) => response,
   async (error) => {
     const originalRequest = error.config;
@@ -46,7 +48,7 @@ axios.interceptors.response.use(
       try {
         const refreshToken = localStorage.getItem('refreshToken');
         if (refreshToken) {
-          const response = await axios.post('/api/v1/auth/refresh', {
+          const response = await authAxios.post('/api/v1/auth/refresh', {
             refreshToken
           });
 
@@ -55,7 +57,7 @@ axios.interceptors.response.use(
           localStorage.setItem('refreshToken', newRefreshToken);
 
           originalRequest.headers.Authorization = `Bearer ${accessToken}`;
-          return axios(originalRequest);
+          return authAxios(originalRequest);
         }
       } catch (refreshError) {
         // Refresh failed, redirect to login
@@ -97,7 +99,7 @@ export const useAuthStore = create((set, get) => ({
         return;
       }
 
-      const response = await axios.get('/api/v1/auth/profile');
+      const response = await authAxios.get('/api/v1/auth/profile');
       set({ user: response.data.data, isLoading: false, error: null });
     } catch (error) {
       console.error('Auth check failed:', error);
@@ -112,7 +114,7 @@ export const useAuthStore = create((set, get) => ({
     try {
       set({ isLoading: true, error: null });
       
-      const response = await axios.post('/api/v1/auth/login', {
+      const response = await authAxios.post('/api/v1/auth/login', {
         email,
         password
       });
@@ -136,7 +138,7 @@ export const useAuthStore = create((set, get) => ({
     try {
       set({ isLoading: true, error: null });
       
-      const response = await axios.post('/api/v1/auth/register', userData);
+      const response = await authAxios.post('/api/v1/auth/register', userData);
       
       const { user, accessToken, refreshToken } = response.data.data;
       
@@ -155,7 +157,7 @@ export const useAuthStore = create((set, get) => ({
   // Logout user
   logout: async () => {
     try {
-      await axios.post('/api/v1/auth/logout');
+      await authAxios.post('/api/v1/auth/logout');
     } catch (error) {
       console.error('Logout error:', error);
     } finally {
@@ -170,7 +172,7 @@ export const useAuthStore = create((set, get) => ({
     try {
       set({ isLoading: true, error: null });
       
-      const response = await axios.put('/api/v1/auth/profile', profileData);
+      const response = await authAxios.put('/api/v1/auth/profile', profileData);
       
       set({ 
         user: { ...get().user, ...response.data.data }, 
