@@ -85,6 +85,9 @@ const WeeklyAccountabilityMeetingPage = () => {
       // The response structure from the API has metrics and weeklyScores
       const metrics = response.metrics || response.data?.metrics || [];
       const scores = response.weeklyScores || response.data?.weeklyScores || {};
+      
+      console.log('First metric:', metrics[0]); // Debug log to see field names
+      
       setScorecardMetrics(metrics);
       setWeeklyScores(scores);
       setLoading(false);

@@ -57,10 +57,16 @@ const ScorecardCard = ({ metric, weeklyScore, readOnly = false }) => {
             {metric.unit_of_measure && (
               <p className="text-sm text-gray-500">{metric.unit_of_measure}</p>
             )}
-            {(metric.owner_name || metric.ownerId) && (
+            {(metric.owner_name || metric.ownerName || metric.owner_first_name || metric.ownerId) && (
               <div className="flex items-center gap-1 text-sm text-gray-500 mt-1">
                 <User className="h-3 w-3" />
-                <span>{metric.owner_name || 'Assigned'}</span>
+                <span>
+                  {metric.owner_name || 
+                   metric.ownerName || 
+                   (metric.owner_first_name && metric.owner_last_name ? 
+                    `${metric.owner_first_name} ${metric.owner_last_name}` : 
+                    'Assigned')}
+                </span>
               </div>
             )}
           </div>
