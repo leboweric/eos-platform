@@ -3,7 +3,16 @@ import axios from 'axios';
 // Get API URL from environment or use default
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3001';
 
-// Create axios instance with default config
+// Create base axios instance without interceptors for queue processing
+const baseAxios = axios.create({
+  baseURL: API_URL,
+  timeout: 30000,
+  headers: {
+    'Content-Type': 'application/json'
+  }
+});
+
+// Create main axios instance with same config
 const axiosInstance = axios.create({
   baseURL: API_URL,
   timeout: 30000,
@@ -28,13 +37,16 @@ const processQueue = async () => {
   const { config, resolve, reject } = requestQueue.shift();
 
   try {
-    // Ensure config has proper structure
-    const safeConfig = {
-      ...config,
-      headers: config.headers || {},
-      method: config.method || 'GET'
-    };
-    const response = await axios(safeConfig);
+    // Ensure the auth token is added to baseAxios requests
+    const authStore = JSON.parse(localStorage.getItem('auth-store') || '{}');
+    const token = authStore?.state?.token;
+    
+    if (token && config.headers) {
+      config.headers.Authorization = `Bearer ${token}`;
+    }
+    
+    // Use baseAxios to avoid interceptor loops
+    const response = await baseAxios.request(config);
     resolve(response);
   } catch (error) {
     reject(error);
@@ -47,7 +59,10 @@ const processQueue = async () => {
 // Request interceptor
 axiosInstance.interceptors.request.use(
   (config) => {
-    // Ensure headers object exists
+    // Ensure config has required properties
+    if (!config.method) {
+      config.method = 'GET';
+    }
     if (!config.headers) {
       config.headers = {};
     }
