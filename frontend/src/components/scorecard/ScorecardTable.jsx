@@ -179,13 +179,13 @@ const ScorecardTable = ({ metrics, weeklyScores, readOnly = false, onIssueCreate
                     {showTotal && <th className="text-center p-2 font-semibold text-gray-700 w-20 bg-gray-100">Total</th>}
                   </>
                 )}
-                <th className="text-center p-2 font-semibold text-gray-700 w-20">Actions</th>
+                {!readOnly && <th className="text-center p-2 font-semibold text-gray-700 w-20">Actions</th>}
               </tr>
             </thead>
             <tbody>
               {metrics.length === 0 ? (
                 <tr>
-                  <td colSpan={weekLabels.length + (showTotal ? 6 : 5)} className="text-center p-8 text-gray-500">
+                  <td colSpan={weekLabels.length + (showTotal ? 6 : 5) + (readOnly ? 0 : 1)} className="text-center p-8 text-gray-500">
                     No metrics defined. {!readOnly && 'Click "Add Metric" to get started.'}
                   </td>
                 </tr>
@@ -351,11 +351,9 @@ const ScorecardTable = ({ metrics, weeklyScores, readOnly = false, onIssueCreate
                         )}
                       </>
                     )}
-                    {/* Actions column - always on far right */}
-                    <td className="p-2 text-center">
-                      {readOnly ? (
-                        <span className="text-gray-400">-</span>
-                      ) : (
+                    {/* Actions column - only show when not readOnly */}
+                    {!readOnly && (
+                      <td className="p-2 text-center">
                         <Button 
                           size="sm"
                           variant="ghost"
@@ -363,8 +361,8 @@ const ScorecardTable = ({ metrics, weeklyScores, readOnly = false, onIssueCreate
                         >
                           Edit
                         </Button>
-                      )}
-                    </td>
+                      </td>
+                    )}
                   </tr>
                 ))
               )}

@@ -394,7 +394,7 @@ const WeeklyAccountabilityMeetingPage = () => {
                 <ScorecardTable 
                   metrics={scorecardMetrics} 
                   weeklyScores={weeklyScores} 
-                  readOnly={false}
+                  readOnly={true}
                   isRTL={isRTL}
                   showTotal={showTotal}
                   onIssueCreated={(message) => {
