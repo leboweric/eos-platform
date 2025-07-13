@@ -1008,7 +1008,7 @@ export const getCurrentPriorities = async (req, res) => {
 
     // Get team members list for the frontend
     const teamMembersResult = await query(
-      `SELECT DISTINCT u.id, u.first_name || ' ' || u.last_name as name, u.email, u.role
+      `SELECT DISTINCT u.id, u.first_name || ' ' || u.last_name as name, u.email, u.role, u.first_name
        FROM users u 
        WHERE u.organization_id = $1 AND u.role != 'consultant'
        ORDER BY u.first_name`,
