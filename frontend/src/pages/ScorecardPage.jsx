@@ -37,6 +37,7 @@ const ScorecardPage = () => {
   const [editingScore, setEditingScore] = useState(null);
   const [users, setUsers] = useState([]);
   const [isRTL, setIsRTL] = useState(false); // Right-to-left reading direction
+  const [showTotal, setShowTotal] = useState(true); // Show/hide total column
   
   // Form data for new/edit metric
   const [metricForm, setMetricForm] = useState({
@@ -320,6 +321,13 @@ const ScorecardPage = () => {
           </div>
           <div className="flex gap-2">
             <Button 
+              onClick={() => setShowTotal(!showTotal)} 
+              variant="outline"
+              title={showTotal ? "Hide total column" : "Show total column"}
+            >
+              {showTotal ? "Hide Total" : "Show Total"}
+            </Button>
+            <Button 
               onClick={() => setIsRTL(!isRTL)} 
               variant="outline"
               title={isRTL ? "Switch to left-to-right" : "Switch to right-to-left"}
@@ -362,13 +370,12 @@ const ScorecardPage = () => {
               <table className="w-full">
                 <thead className="bg-gray-50 border-b">
                   <tr>
+                    <th className="text-center p-4 font-semibold text-gray-700 min-w-[150px]">Owner</th>
                     <th className="text-left p-4 font-semibold text-gray-700 min-w-[200px]">Metric</th>
                     <th className="text-center p-4 font-semibold text-gray-700 min-w-[100px]">Goal</th>
-                    <th className="text-center p-4 font-semibold text-gray-700 min-w-[150px]">Owner</th>
                     {isRTL && (
                       <>
-                        <th className="text-center p-4 font-semibold text-gray-700 min-w-[100px]">Actions</th>
-                        <th className="text-center p-4 font-semibold text-gray-700 min-w-[100px] bg-gray-100">Total</th>
+                        {showTotal && <th className="text-center p-4 font-semibold text-gray-700 min-w-[100px] bg-gray-100">Total</th>}
                         <th className="text-center p-4 font-semibold text-gray-700 min-w-[100px] bg-gray-100">Average</th>
                       </>
                     )}
@@ -392,49 +399,32 @@ const ScorecardPage = () => {
                     {!isRTL && (
                       <>
                         <th className="text-center p-4 font-semibold text-gray-700 min-w-[100px] bg-gray-100">Average</th>
-                        <th className="text-center p-4 font-semibold text-gray-700 min-w-[100px] bg-gray-100">Total</th>
-                        <th className="text-center p-4 font-semibold text-gray-700 min-w-[100px]">Actions</th>
+                        {showTotal && <th className="text-center p-4 font-semibold text-gray-700 min-w-[100px] bg-gray-100">Total</th>}
                       </>
                     )}
+                    <th className="text-center p-4 font-semibold text-gray-700 min-w-[100px]">Actions</th>
                   </tr>
                 </thead>
                 <tbody>
                   {metrics.length === 0 ? (
                     <tr>
-                      <td colSpan={weekLabels.length + 6} className="text-center p-8 text-gray-500">
+                      <td colSpan={weekLabels.length + (showTotal ? 6 : 5)} className="text-center p-8 text-gray-500">
                         No metrics defined. Click "Add Metric" to get started.
                       </td>
                     </tr>
                   ) : (
                     metrics.map(metric => (
                       <tr key={metric.id} className="border-b hover:bg-gray-50">
+                        <td className="p-4 text-center">{metric.ownerName || metric.owner}</td>
                         <td className="p-4 font-medium">{metric.name}</td>
                         <td className="p-4 text-center font-semibold text-indigo-600">{formatGoal(metric.goal, metric.value_type)}</td>
-                        <td className="p-4 text-center">{metric.ownerName || metric.owner}</td>
                         
-                        {/* Actions, Total and Average columns for RTL */}
+                        {/* Total and Average columns for RTL */}
                         {isRTL && (
                           <>
-                            <td className="p-4 text-center">
-                              <div className="flex justify-center space-x-2">
-                                <Button
-                                  variant="ghost"
-                                  size="sm"
-                                  onClick={() => handleEditMetric(metric)}
-                                >
-                                  <Edit className="h-4 w-4" />
-                                </Button>
-                                <Button
-                                  variant="ghost"
-                                  size="sm"
-                                  onClick={() => handleDeleteMetric(metric.id)}
-                                >
-                                  <Trash2 className="h-4 w-4" />
-                                </Button>
-                              </div>
-                            </td>
                             {/* Total column */}
-                            <td className="p-4 text-center bg-gray-50 font-semibold">
+                            {showTotal && (
+                              <td className="p-4 text-center bg-gray-50 font-semibold">
                               {(() => {
                                 // Always use original order for calculations
                                 const scores = weekDatesOriginal
@@ -451,7 +441,8 @@ const ScorecardPage = () => {
                                   </span>
                                 );
                               })()}
-                            </td>
+                              </td>
+                            )}
                             {/* Average column */}
                             <td className="p-4 text-center bg-gray-50 font-semibold">
                               {(() => {
@@ -563,7 +554,8 @@ const ScorecardPage = () => {
                               })()}
                             </td>
                             {/* Total column */}
-                            <td className="p-4 text-center bg-gray-50 font-semibold">
+                            {showTotal && (
+                              <td className="p-4 text-center bg-gray-50 font-semibold">
                               {(() => {
                                 // Always use original order for calculations
                                 const scores = weekDatesOriginal
@@ -580,8 +572,12 @@ const ScorecardPage = () => {
                                   </span>
                                 );
                               })()}
-                            </td>
-                            <td className="p-4 text-center">
+                              </td>
+                            )}
+                          </>
+                        )}
+                        {/* Actions column - always on far right */}
+                        <td className="p-4 text-center">
                               <div className="flex justify-center space-x-2">
                                 <Button
                                   variant="ghost"
@@ -598,9 +594,7 @@ const ScorecardPage = () => {
                                   <Trash2 className="h-4 w-4" />
                                 </Button>
                               </div>
-                            </td>
-                          </>
-                        )}
+                        </td>
                       </tr>
                     ))
                   )}

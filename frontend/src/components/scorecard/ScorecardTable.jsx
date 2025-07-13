@@ -5,7 +5,7 @@ import { useState } from 'react';
 import { issuesService } from '../../services/issuesService';
 import { useAuthStore } from '../../stores/authStore';
 
-const ScorecardTable = ({ metrics, weeklyScores, readOnly = false, onIssueCreated, isRTL = false }) => {
+const ScorecardTable = ({ metrics, weeklyScores, readOnly = false, onIssueCreated, isRTL = false, showTotal = true }) => {
   const { user } = useAuthStore();
   const [creatingIssue, setCreatingIssue] = useState({});
   // Get the last 12 weeks
@@ -134,12 +134,12 @@ const ScorecardTable = ({ metrics, weeklyScores, readOnly = false, onIssueCreate
         <table className="w-full">
             <thead className="bg-gray-50 border-b">
               <tr>
+                <th className="text-center p-4 font-semibold text-gray-700 min-w-[150px]">Owner</th>
                 <th className="text-left p-4 font-semibold text-gray-700 min-w-[200px]">Metric</th>
                 <th className="text-center p-4 font-semibold text-gray-700 min-w-[100px]">Goal</th>
-                <th className="text-center p-4 font-semibold text-gray-700 min-w-[150px]">Owner</th>
                 {isRTL && (
                   <>
-                    <th className="text-center p-4 font-semibold text-gray-700 min-w-[100px] bg-gray-100">Total</th>
+                    {showTotal && <th className="text-center p-4 font-semibold text-gray-700 min-w-[100px] bg-gray-100">Total</th>}
                     <th className="text-center p-4 font-semibold text-gray-700 min-w-[100px] bg-gray-100">Average</th>
                   </>
                 )}
@@ -163,32 +163,34 @@ const ScorecardTable = ({ metrics, weeklyScores, readOnly = false, onIssueCreate
                 {!isRTL && (
                   <>
                     <th className="text-center p-4 font-semibold text-gray-700 min-w-[100px] bg-gray-100">Average</th>
-                    <th className="text-center p-4 font-semibold text-gray-700 min-w-[100px] bg-gray-100">Total</th>
+                    {showTotal && <th className="text-center p-4 font-semibold text-gray-700 min-w-[100px] bg-gray-100">Total</th>}
                   </>
                 )}
+                <th className="text-center p-4 font-semibold text-gray-700 min-w-[100px]">Actions</th>
               </tr>
             </thead>
             <tbody>
               {metrics.length === 0 ? (
                 <tr>
-                  <td colSpan={weekLabels.length + 5} className="text-center p-8 text-gray-500">
+                  <td colSpan={weekLabels.length + (showTotal ? 6 : 5)} className="text-center p-8 text-gray-500">
                     No metrics defined. {!readOnly && 'Click "Add Metric" to get started.'}
                   </td>
                 </tr>
               ) : (
                 metrics.map(metric => (
                   <tr key={metric.id} className="border-b hover:bg-gray-50">
+                    <td className="p-4 text-center">{metric.ownerName || metric.owner || '-'}</td>
                     <td className="p-4 font-medium">{metric.name}</td>
                     <td className="p-4 text-center font-semibold text-indigo-600">
                       {formatGoal(metric.goal, metric.value_type)}
                     </td>
-                    <td className="p-4 text-center">{metric.ownerName || metric.owner || '-'}</td>
                     
                     {/* Total and Average columns for RTL */}
                     {isRTL && (
                       <>
                         {/* Total column */}
-                        <td className="p-4 text-center bg-gray-50 font-semibold">
+                        {showTotal && (
+                          <td className="p-4 text-center bg-gray-50 font-semibold">
                           {(() => {
                             // Always use original order for calculations
                             const scores = weekDatesOriginal
@@ -205,7 +207,8 @@ const ScorecardTable = ({ metrics, weeklyScores, readOnly = false, onIssueCreate
                               </span>
                             );
                           })()}
-                        </td>
+                          </td>
+                        )}
                         {/* Average column */}
                         <td className="p-4 text-center bg-gray-50 font-semibold">
                           {(() => {
@@ -301,7 +304,8 @@ const ScorecardTable = ({ metrics, weeklyScores, readOnly = false, onIssueCreate
                           })()}
                         </td>
                         {/* Total column */}
-                        <td className="p-4 text-center bg-gray-50 font-semibold">
+                        {showTotal && (
+                          <td className="p-4 text-center bg-gray-50 font-semibold">
                           {(() => {
                             // Always use original order for calculations
                             const scores = weekDatesOriginal
@@ -318,9 +322,24 @@ const ScorecardTable = ({ metrics, weeklyScores, readOnly = false, onIssueCreate
                               </span>
                             );
                           })()}
-                        </td>
+                          </td>
+                        )}
                       </>
                     )}
+                    {/* Actions column - always on far right */}
+                    <td className="p-4 text-center">
+                      {readOnly ? (
+                        <span className="text-gray-400">-</span>
+                      ) : (
+                        <Button 
+                          size="sm"
+                          variant="ghost"
+                          onClick={() => console.log('Edit metric', metric.id)}
+                        >
+                          Edit
+                        </Button>
+                      )}
+                    </td>
                   </tr>
                 ))
               )}

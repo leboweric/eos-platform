@@ -49,6 +49,7 @@ const WeeklyAccountabilityMeetingPage = () => {
   const [goodNews, setGoodNews] = useState([]);
   const [headlines, setHeadlines] = useState([]);
   const [isRTL, setIsRTL] = useState(false); // Right-to-left reading direction for scorecard
+  const [showTotal, setShowTotal] = useState(true); // Show/hide total column in scorecard
 
   const agendaItems = [
     { id: 'good-news', label: 'Good News', duration: 5, icon: Smile },
@@ -247,7 +248,15 @@ const WeeklyAccountabilityMeetingPage = () => {
               </Card>
             ) : (
               <>
-                <div className="flex justify-end">
+                <div className="flex justify-end gap-2">
+                  <Button 
+                    onClick={() => setShowTotal(!showTotal)} 
+                    variant="outline"
+                    size="sm"
+                    title={showTotal ? "Hide total column" : "Show total column"}
+                  >
+                    {showTotal ? "Hide Total" : "Show Total"}
+                  </Button>
                   <Button 
                     onClick={() => setIsRTL(!isRTL)} 
                     variant="outline"
@@ -263,6 +272,7 @@ const WeeklyAccountabilityMeetingPage = () => {
                   weeklyScores={weeklyScores} 
                   readOnly={false}
                   isRTL={isRTL}
+                  showTotal={showTotal}
                   onIssueCreated={(message) => {
                     setSuccess(message);
                     setTimeout(() => setSuccess(null), 3000);
