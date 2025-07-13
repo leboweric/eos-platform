@@ -138,6 +138,14 @@ const Dashboard = () => {
     }
   };
 
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-6">
       {/* Welcome Section */}
@@ -146,12 +154,12 @@ const Dashboard = () => {
           Welcome back, {user?.firstName}!
         </h1>
         <p className="text-blue-100">
-          Here's what's happening with your EOS implementation today.
+          Here's what's happening today.
         </p>
       </div>
 
       {/* Stats Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Priorities Progress</CardTitle>
@@ -243,7 +251,8 @@ const Dashboard = () => {
                     {priority.progress}%
                   </div>
                 </div>
-              ))}
+              ))
+              )}
             </div>
           </CardContent>
         </Card>
@@ -284,7 +293,8 @@ const Dashboard = () => {
                     {meeting.attendees}
                   </div>
                 </div>
-              ))}
+              ))
+              )}
             </div>
           </CardContent>
         </Card>
