@@ -1,7 +1,11 @@
 import axios from 'axios';
 
+// Get API URL from environment or use default
+const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3001';
+
 // Create axios instance with default config
 const axiosInstance = axios.create({
+  baseURL: API_URL,
   timeout: 30000,
   headers: {
     'Content-Type': 'application/json'
@@ -24,7 +28,13 @@ const processQueue = async () => {
   const { config, resolve, reject } = requestQueue.shift();
 
   try {
-    const response = await axios(config);
+    // Ensure config has proper structure
+    const safeConfig = {
+      ...config,
+      headers: config.headers || {},
+      method: config.method || 'GET'
+    };
+    const response = await axios(safeConfig);
     resolve(response);
   } catch (error) {
     reject(error);
@@ -37,6 +47,11 @@ const processQueue = async () => {
 // Request interceptor
 axiosInstance.interceptors.request.use(
   (config) => {
+    // Ensure headers object exists
+    if (!config.headers) {
+      config.headers = {};
+    }
+    
     // Add auth token if available
     const authStore = JSON.parse(localStorage.getItem('auth-store') || '{}');
     const token = authStore?.state?.token;

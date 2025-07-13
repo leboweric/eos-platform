@@ -169,10 +169,11 @@ export const getLogo = async (req, res) => {
 
     const { logo_data, logo_mime_type } = result.rows[0];
 
-    // Set cache headers
+    // Set cache headers and CORS headers
     res.set({
       'Content-Type': logo_mime_type || 'image/png',
-      'Cache-Control': 'public, max-age=3600' // Cache for 1 hour
+      'Cache-Control': 'public, max-age=3600', // Cache for 1 hour
+      'Cross-Origin-Resource-Policy': 'cross-origin' // Allow cross-origin access
     });
 
     res.send(logo_data);
