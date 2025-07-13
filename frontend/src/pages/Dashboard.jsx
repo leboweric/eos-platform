@@ -91,8 +91,8 @@ const Dashboard = () => {
       const today = new Date();
       today.setHours(0, 0, 0, 0);
       const overdueTodos = userTodos.filter(todo => {
-        if (!todo.dueDate) return false;
-        const dueDate = new Date(todo.dueDate);
+        if (!todo.due_date) return false;
+        const dueDate = new Date(todo.due_date);
         return dueDate < today;
       }).length;
       
