@@ -21,7 +21,7 @@ import {
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import ScorecardTable from '../components/scorecard/ScorecardTable';
-import PriorityCard from '../components/priorities/PriorityCard';
+import PrioritiesTable from '../components/priorities/PrioritiesTable';
 import IssueCard from '../components/issues/IssueCard';
 import TodoCard from '../components/todos/TodoCard';
 import { scorecardService } from '../services/scorecardService';
@@ -108,7 +108,8 @@ const WeeklyAccountabilityMeetingPage = () => {
       const currentYear = now.getFullYear();
       
       const response = await quarterlyPrioritiesService.getQuarterlyPriorities(orgId, teamId, currentQuarter, currentYear);
-      setPriorities(response.data.priorities.filter(p => p.deleted_at === null));
+      const allPriorities = response.data.priorities.filter(p => p.deleted_at === null);
+      setPriorities(allPriorities);
       setLoading(false);
     } catch (error) {
       console.error('Failed to fetch priorities:', error);
@@ -237,27 +238,35 @@ const WeeklyAccountabilityMeetingPage = () => {
       case 'priorities':
         return (
           <div className="space-y-4">
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <Target className="h-5 w-5" />
-                  Quarterly Priorities Review
-                </CardTitle>
-                <CardDescription>Check progress on quarterly priorities (5 minutes)</CardDescription>
-              </CardHeader>
-            </Card>
             {priorities.length === 0 ? (
               <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <Target className="h-5 w-5" />
+                    Quarterly Priorities Review
+                  </CardTitle>
+                  <CardDescription>Check progress on quarterly priorities (5 minutes)</CardDescription>
+                </CardHeader>
                 <CardContent className="text-center py-8">
-                  <p className="text-gray-500">No priorities found</p>
+                  <p className="text-gray-500">No priorities found for this quarter. Set up your priorities to track progress.</p>
+                  <Button 
+                    variant="outline" 
+                    className="mt-4"
+                    onClick={() => navigate('/quarterly-priorities')}
+                  >
+                    Go to Quarterly Priorities
+                  </Button>
                 </CardContent>
               </Card>
             ) : (
-              <div className="grid gap-4">
-                {priorities.map(priority => (
-                  <PriorityCard key={priority.id} priority={priority} readOnly />
-                ))}
-              </div>
+              <PrioritiesTable 
+                priorities={priorities} 
+                readOnly={false}
+                onIssueCreated={(message) => {
+                  setSuccess(message);
+                  setTimeout(() => setSuccess(null), 3000);
+                }}
+              />
             )}
           </div>
         );
@@ -446,7 +455,7 @@ const WeeklyAccountabilityMeetingPage = () => {
 
         {/* Main Content */}
         <div className="flex-1 p-6 overflow-x-auto">
-          <div className={activeSection === 'scorecard' ? 'min-w-fit' : 'max-w-6xl mx-auto'}>
+          <div className={activeSection === 'scorecard' || activeSection === 'priorities' ? 'min-w-fit' : 'max-w-6xl mx-auto'}>
             {error && (
               <Alert className="mb-6 border-red-200 bg-red-50">
                 <AlertCircle className="h-4 w-4 text-red-600" />
