@@ -719,7 +719,10 @@ const WeeklyAccountabilityMeetingPage = () => {
       {/* Issue Edit Dialog */}
       <IssueDialog
         open={showIssueDialog}
-        onOpenChange={setShowIssueDialog}
+        onClose={() => {
+          setShowIssueDialog(false);
+          setEditingIssue(null);
+        }}
         issue={editingIssue}
         onSave={handleSaveIssue}
         teamMembers={teamMembers}
