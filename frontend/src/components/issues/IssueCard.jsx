@@ -16,10 +16,11 @@ import {
   Paperclip,
   CheckCircle,
   AlertTriangle,
-  ArrowRight
+  ArrowRight,
+  ThumbsUp
 } from 'lucide-react';
 
-const IssueCard = ({ issue, onEdit, onStatusChange, onTimelineChange, getStatusColor, getStatusIcon, readOnly = false }) => {
+const IssueCard = ({ issue, onEdit, onStatusChange, onTimelineChange, onVote, getStatusColor, getStatusIcon, readOnly = false, showVoting = false }) => {
   const formatDate = (dateString) => {
     const date = new Date(dateString);
     return date.toLocaleDateString('en-US', { 
@@ -76,6 +77,23 @@ const IssueCard = ({ issue, onEdit, onStatusChange, onTimelineChange, getStatusC
                       {issue.timeline === 'short_term' ? 'Short Term' : 'Long Term'}
                     </span>
                   </div>
+
+                  {showVoting && (
+                    <div className="flex items-center gap-1">
+                      <Button
+                        variant={issue.user_has_voted ? "default" : "outline"}
+                        size="sm"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          onVote(issue.id, !issue.user_has_voted);
+                        }}
+                        className="flex items-center gap-1"
+                      >
+                        <ThumbsUp className={`h-4 w-4 ${issue.user_has_voted ? 'fill-current' : ''}`} />
+                        <span>{issue.vote_count || 0}</span>
+                      </Button>
+                    </div>
+                  )}
                 </div>
               </div>
 

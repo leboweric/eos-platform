@@ -124,6 +124,20 @@ const IssuesPage = () => {
     }
   };
 
+  const handleVote = async (issueId, shouldVote) => {
+    try {
+      if (shouldVote) {
+        await issuesService.voteForIssue(issueId);
+      } else {
+        await issuesService.unvoteForIssue(issueId);
+      }
+      await fetchIssues();
+    } catch (error) {
+      console.error('Failed to vote:', error);
+      setError('Failed to update vote');
+    }
+  };
+
   const handleArchiveClosed = async () => {
     if (!confirm('Are you sure you want to archive all closed issues? This will hide them from view.')) return;
     
@@ -278,8 +292,10 @@ const IssuesPage = () => {
                       onEdit={handleEditIssue}
                       onStatusChange={handleStatusChange}
                       onTimelineChange={handleTimelineChange}
+                      onVote={handleVote}
                       getStatusColor={getStatusColor}
                       getStatusIcon={getStatusIcon}
+                      showVoting={false} // Will be enabled during Weekly Accountability Meetings
                     />
                   )
                 ))}

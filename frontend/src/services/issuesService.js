@@ -143,5 +143,35 @@ export const issuesService = {
       `/organizations/${orgId}/issues/${issueId}/unarchive`
     );
     return response.data;
+  },
+
+  // Vote for an issue
+  voteForIssue: async (issueId) => {
+    const orgId = getOrgId();
+    
+    const response = await axios.post(
+      `/organizations/${orgId}/issues/${issueId}/vote`
+    );
+    return response.data;
+  },
+
+  // Remove vote from an issue
+  unvoteForIssue: async (issueId) => {
+    const orgId = getOrgId();
+    
+    const response = await axios.delete(
+      `/organizations/${orgId}/issues/${issueId}/vote`
+    );
+    return response.data;
+  },
+
+  // Get user's votes
+  getUserVotes: async () => {
+    const orgId = getOrgId();
+    
+    const response = await axios.get(
+      `/organizations/${orgId}/issues/votes`
+    );
+    return response.data.data.votedIssueIds;
   }
 };

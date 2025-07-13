@@ -168,6 +168,20 @@ const WeeklyAccountabilityMeetingPage = () => {
     }
   };
 
+  const handleVote = async (issueId, shouldVote) => {
+    try {
+      if (shouldVote) {
+        await issuesService.voteForIssue(issueId);
+      } else {
+        await issuesService.unvoteForIssue(issueId);
+      }
+      await fetchIssuesData();
+    } catch (error) {
+      console.error('Failed to vote:', error);
+      setError('Failed to update vote');
+    }
+  };
+
   const fetchTodosData = async () => {
     try {
       setLoading(true);
@@ -499,6 +513,8 @@ const WeeklyAccountabilityMeetingPage = () => {
                     key={issue.id} 
                     issue={issue} 
                     readOnly 
+                    showVoting
+                    onVote={handleVote}
                     getStatusColor={(status) => {
                       switch (status) {
                         case 'open': return 'bg-yellow-100 text-yellow-800';

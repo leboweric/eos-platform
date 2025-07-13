@@ -52,10 +52,12 @@ export const getIssues = async (req, res) => {
         i.created_at,
         i.updated_at,
         i.archived,
+        i.vote_count,
         creator.first_name || ' ' || creator.last_name as created_by_name,
         owner.first_name || ' ' || owner.last_name as owner_name,
         t.name as team_name,
-        COUNT(DISTINCT ia.id) as attachment_count
+        COUNT(DISTINCT ia.id) as attachment_count,
+        EXISTS(SELECT 1 FROM issue_votes iv WHERE iv.issue_id = i.id AND iv.user_id = $2) as user_has_voted
       FROM issues i
       LEFT JOIN users creator ON i.created_by_id = creator.id
       LEFT JOIN users owner ON i.owner_id = owner.id
@@ -64,8 +66,8 @@ export const getIssues = async (req, res) => {
       WHERE i.organization_id = $1
     `;
     
-    const params = [orgId];
-    let paramCount = 2;
+    const params = [orgId, req.user.id];
+    let paramCount = 3;
     
     // Filter by archived status
     if (includeArchived === 'true') {
@@ -548,6 +550,122 @@ export const unarchiveIssue = async (req, res) => {
     res.status(500).json({
       success: false,
       message: 'Failed to unarchive issue'
+    });
+  }
+};
+
+// Vote for an issue
+export const voteForIssue = async (req, res) => {
+  try {
+    const { issueId } = req.params;
+    const userId = req.user.id;
+    
+    // Try to insert the vote
+    const result = await db.query(
+      `INSERT INTO issue_votes (issue_id, user_id) 
+       VALUES ($1, $2) 
+       ON CONFLICT (issue_id, user_id) DO NOTHING
+       RETURNING *`,
+      [issueId, userId]
+    );
+    
+    if (result.rowCount === 0) {
+      return res.status(400).json({
+        success: false,
+        message: 'You have already voted for this issue'
+      });
+    }
+    
+    // Get updated issue with vote count
+    const updatedIssue = await db.query(
+      `SELECT vote_count FROM issues WHERE id = $1`,
+      [issueId]
+    );
+    
+    res.json({
+      success: true,
+      message: 'Vote recorded successfully',
+      data: {
+        voteCount: updatedIssue.rows[0].vote_count
+      }
+    });
+  } catch (error) {
+    console.error('Error voting for issue:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Failed to vote for issue'
+    });
+  }
+};
+
+// Remove vote from an issue
+export const unvoteForIssue = async (req, res) => {
+  try {
+    const { issueId } = req.params;
+    const userId = req.user.id;
+    
+    // Delete the vote
+    const result = await db.query(
+      `DELETE FROM issue_votes 
+       WHERE issue_id = $1 AND user_id = $2
+       RETURNING *`,
+      [issueId, userId]
+    );
+    
+    if (result.rowCount === 0) {
+      return res.status(400).json({
+        success: false,
+        message: 'You have not voted for this issue'
+      });
+    }
+    
+    // Get updated issue with vote count
+    const updatedIssue = await db.query(
+      `SELECT vote_count FROM issues WHERE id = $1`,
+      [issueId]
+    );
+    
+    res.json({
+      success: true,
+      message: 'Vote removed successfully',
+      data: {
+        voteCount: updatedIssue.rows[0].vote_count
+      }
+    });
+  } catch (error) {
+    console.error('Error removing vote:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Failed to remove vote'
+    });
+  }
+};
+
+// Get user's votes for issues
+export const getUserVotes = async (req, res) => {
+  try {
+    const { orgId } = req.params;
+    const userId = req.user.id;
+    
+    const result = await db.query(
+      `SELECT iv.issue_id 
+       FROM issue_votes iv
+       JOIN issues i ON iv.issue_id = i.id
+       WHERE iv.user_id = $1 AND i.organization_id = $2`,
+      [userId, orgId]
+    );
+    
+    res.json({
+      success: true,
+      data: {
+        votedIssueIds: result.rows.map(row => row.issue_id)
+      }
+    });
+  } catch (error) {
+    console.error('Error fetching user votes:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Failed to fetch user votes'
     });
   }
 };

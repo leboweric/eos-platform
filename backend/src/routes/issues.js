@@ -12,7 +12,10 @@ import {
   deleteAttachment,
   upload,
   archiveClosedIssues,
-  unarchiveIssue
+  unarchiveIssue,
+  voteForIssue,
+  unvoteForIssue,
+  getUserVotes
 } from '../controllers/issuesController.js';
 
 const router = express.Router({ mergeParams: true });
@@ -36,6 +39,14 @@ router.route('/:issueId')
 
 router.route('/:issueId/unarchive')
   .post(unarchiveIssue);
+
+// Voting routes
+router.route('/votes')
+  .get(getUserVotes);
+
+router.route('/:issueId/vote')
+  .post(voteForIssue)
+  .delete(unvoteForIssue);
 
 // Attachment routes
 router.route('/:issueId/attachments')
