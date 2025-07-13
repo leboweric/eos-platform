@@ -19,8 +19,7 @@ import {
   AlertTriangle,
   CheckSquare,
   ArrowLeftRight,
-  ChevronDown,
-  ChevronRight
+  ChevronDown
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import ScorecardTable from '../components/scorecard/ScorecardTable';
