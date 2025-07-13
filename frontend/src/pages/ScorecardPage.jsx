@@ -389,13 +389,13 @@ const ScorecardPage = () => {
               <table className="w-full table-fixed">
                 <thead className="bg-gray-50 border-b">
                   <tr>
-                    <th className="text-center p-2 font-semibold text-gray-700 w-1/12">Owner</th>
-                    <th className="text-left p-2 font-semibold text-gray-700 w-3/12">Metric</th>
-                    <th className="text-center p-2 font-semibold text-gray-700 w-1/12">Goal</th>
+                    <th className="text-center p-2 font-semibold text-gray-700 w-16">Owner</th>
+                    <th className="text-left p-2 font-semibold text-gray-700 w-48">Metric</th>
+                    <th className="text-center p-2 font-semibold text-gray-700 w-20">Goal</th>
                     {isRTL && (
                       <>
-                        {showTotal && <th className="text-center p-2 font-semibold text-gray-700 w-1/12 bg-gray-100">Total</th>}
-                        <th className="text-center p-2 font-semibold text-gray-700 w-1/12 bg-gray-100">Average</th>
+                        {showTotal && <th className="text-center p-2 font-semibold text-gray-700 w-20 bg-gray-100">Total</th>}
+                        <th className="text-center p-2 font-semibold text-gray-700 w-20 bg-gray-100">Average</th>
                       </>
                     )}
                     {weekLabels.map((label, index) => {
@@ -403,7 +403,7 @@ const ScorecardPage = () => {
                       const originalIndex = isRTL ? weekLabels.length - 1 - index : index;
                       const isCurrentWeek = originalIndex === weekLabelsOriginal.length - 1;
                       return (
-                        <th key={weekDates[index]} className={`text-center p-1 font-semibold text-xs ${
+                        <th key={weekDates[index]} className={`text-center p-2 font-semibold text-xs w-16 ${
                           isCurrentWeek ? 'text-indigo-700 bg-indigo-50' : 'text-gray-700'
                         }`}>
                           <div className="flex flex-col items-center">
@@ -417,11 +417,11 @@ const ScorecardPage = () => {
                     })}
                     {!isRTL && (
                       <>
-                        <th className="text-center p-2 font-semibold text-gray-700 w-1/12 bg-gray-100">Average</th>
-                        {showTotal && <th className="text-center p-2 font-semibold text-gray-700 w-1/12 bg-gray-100">Total</th>}
+                        <th className="text-center p-2 font-semibold text-gray-700 w-20 bg-gray-100">Average</th>
+                        {showTotal && <th className="text-center p-2 font-semibold text-gray-700 w-20 bg-gray-100">Total</th>}
                       </>
                     )}
-                    <th className="text-center p-2 font-semibold text-gray-700 w-1/12">Actions</th>
+                    <th className="text-center p-2 font-semibold text-gray-700 w-20">Actions</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -494,12 +494,12 @@ const ScorecardPage = () => {
                           const goalMet = score && isGoalMet(score, metric.goal, metric.comparison_operator);
                           
                           return (
-                            <td key={weekDate} className="p-1 text-center group">
+                            <td key={weekDate} className="p-2 text-center group">
                               {isEditing ? (
                                 <div className="flex items-center space-x-1">
                                   <Input
                                     type="number"
-                                    className="w-12 h-6 text-center text-xs"
+                                    className="w-14 h-7 text-center text-sm"
                                     defaultValue={score ? Math.round(parseFloat(score)) : ''}
                                     step="1"
                                     onKeyDown={(e) => {
@@ -515,7 +515,7 @@ const ScorecardPage = () => {
                                   <Button
                                     size="sm"
                                     variant="ghost"
-                                    className="h-6 w-6 p-0"
+                                    className="h-7 w-7 p-0"
                                     onClick={(e) => {
                                       const input = e.target.previousSibling;
                                       handleScoreSave(metric.id, weekDate, input.value);
@@ -526,7 +526,7 @@ const ScorecardPage = () => {
                                   <Button
                                     size="sm"
                                     variant="ghost"
-                                    className="h-6 w-6 p-0"
+                                    className="h-7 w-7 p-0"
                                     onClick={() => setEditingScore(null)}
                                   >
                                     <X className="h-3 w-3" />
@@ -534,7 +534,7 @@ const ScorecardPage = () => {
                                 </div>
                               ) : (
                                 <div
-                                  className={`cursor-pointer px-1 py-1 rounded relative text-xs ${
+                                  className={`cursor-pointer px-2 py-1 rounded text-sm min-h-[24px] flex items-center justify-center ${
                                     score
                                       ? goalMet
                                         ? 'bg-green-100 text-green-800'
