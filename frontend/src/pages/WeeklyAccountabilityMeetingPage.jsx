@@ -131,7 +131,7 @@ const WeeklyAccountabilityMeetingPage = () => {
     try {
       setLoading(true);
       const response = await issuesService.getIssues();
-      setIssues(response.data.issues.filter(i => i.status === 'open'));
+      setIssues(response.data.issues.filter(i => i.status === 'open' && i.category === 'short-term'));
       setLoading(false);
     } catch (error) {
       console.error('Failed to fetch issues:', error);
@@ -424,7 +424,7 @@ const WeeklyAccountabilityMeetingPage = () => {
                   <AlertTriangle className="h-5 w-5" />
                   Issues Discussion
                 </CardTitle>
-                <CardDescription>Identify, discuss, and solve issues (60 minutes)</CardDescription>
+                <CardDescription>Review and solve short-term issues (60 minutes)</CardDescription>
               </CardHeader>
             </Card>
             {issues.length === 0 ? (
