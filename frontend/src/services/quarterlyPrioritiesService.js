@@ -14,11 +14,21 @@ export const quarterlyPrioritiesService = {
     );
     
     if (!response.ok) {
-      throw new Error('Failed to fetch current priorities');
+      const errorText = await response.text();
+      console.error('API Error:', response.status, errorText);
+      throw new Error(`Failed to fetch current priorities: ${response.status}`);
     }
     
-    const data = await response.json();
-    return data.data;
+    const result = await response.json();
+    console.log('API Response:', result);
+    
+    // Ensure we always return the expected structure
+    return {
+      companyPriorities: result.data?.companyPriorities || [],
+      teamMemberPriorities: result.data?.teamMemberPriorities || {},
+      predictions: result.data?.predictions || {},
+      teamMembers: result.data?.teamMembers || []
+    };
   },
 
   // Get all priorities for a quarter

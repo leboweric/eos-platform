@@ -1015,20 +1015,37 @@ export const getCurrentPriorities = async (req, res) => {
       [orgId]
     );
 
+    // Ensure data types are correct for frontend
+    const responseData = {
+      companyPriorities: Array.isArray(companyPriorities) ? companyPriorities : [],
+      teamMemberPriorities: typeof teamMemberPriorities === 'object' ? teamMemberPriorities : {},
+      predictions: typeof predictions === 'object' ? predictions : {},
+      teamMembers: Array.isArray(teamMembersResult.rows) ? teamMembersResult.rows : []
+    };
+    
+    console.log('Response data structure:', {
+      companyPriorities: `Array[${responseData.companyPriorities.length}]`,
+      teamMemberPriorities: `Object with ${Object.keys(responseData.teamMemberPriorities).length} keys`,
+      predictions: `Object with keys: ${Object.keys(responseData.predictions).join(', ')}`,
+      teamMembers: `Array[${responseData.teamMembers.length}]`
+    });
+
     res.json({
       success: true,
-      data: {
-        companyPriorities,
-        teamMemberPriorities,
-        predictions,
-        teamMembers: teamMembersResult.rows
-      }
+      data: responseData
     });
   } catch (error) {
     console.error('Get current priorities error:', error);
     res.status(500).json({ 
+      success: false,
       error: 'Failed to fetch current priorities',
-      details: process.env.NODE_ENV === 'development' ? error.message : undefined
+      details: process.env.NODE_ENV === 'development' ? error.message : undefined,
+      data: {
+        companyPriorities: [],
+        teamMemberPriorities: {},
+        predictions: {},
+        teamMembers: []
+      }
     });
   }
 };
