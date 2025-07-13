@@ -19,7 +19,7 @@ import {
   ArrowRight
 } from 'lucide-react';
 
-const IssueCard = ({ issue, onEdit, onStatusChange, onTimelineChange, getStatusColor, getStatusIcon }) => {
+const IssueCard = ({ issue, onEdit, onStatusChange, onTimelineChange, getStatusColor, getStatusIcon, readOnly = false }) => {
   const formatDate = (dateString) => {
     const date = new Date(dateString);
     return date.toLocaleDateString('en-US', { 
@@ -85,42 +85,44 @@ const IssueCard = ({ issue, onEdit, onStatusChange, onTimelineChange, getStatusC
                   <span className="capitalize">{issue.status.replace('-', ' ')}</span>
                 </Badge>
 
-                <DropdownMenu>
-                  <DropdownMenuTrigger asChild>
-                    <Button variant="ghost" size="sm">
-                      <MoreVertical className="h-4 w-4" />
-                    </Button>
-                  </DropdownMenuTrigger>
-                  <DropdownMenuContent align="end">
-                    <DropdownMenuItem onClick={() => onEdit(issue)}>
-                      <Edit className="mr-2 h-4 w-4" />
-                      Edit
-                    </DropdownMenuItem>
-                    
-                    <DropdownMenuSeparator />
-                    
-                    <div className="px-2 py-1.5 text-sm font-medium">Change Status</div>
-                    {statusOptions.map(option => (
-                      <DropdownMenuItem
-                        key={option.value}
-                        onClick={() => onStatusChange(issue.id, option.value)}
-                        disabled={issue.status === option.value}
-                      >
-                        <span className="mr-2">{option.icon}</span>
-                        {option.label}
+                {!readOnly && (
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <Button variant="ghost" size="sm">
+                        <MoreVertical className="h-4 w-4" />
+                      </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="end">
+                      <DropdownMenuItem onClick={() => onEdit(issue)}>
+                        <Edit className="mr-2 h-4 w-4" />
+                        Edit
                       </DropdownMenuItem>
-                    ))}
-                    
-                    <DropdownMenuSeparator />
-                    
-                    <DropdownMenuItem 
-                      onClick={() => onTimelineChange(issue.id, issue.timeline === 'short_term' ? 'long_term' : 'short_term')}
-                    >
-                      <ArrowRight className="mr-2 h-4 w-4" />
-                      Move to {issue.timeline === 'short_term' ? 'Long Term' : 'Short Term'}
-                    </DropdownMenuItem>
-                  </DropdownMenuContent>
-                </DropdownMenu>
+                      
+                      <DropdownMenuSeparator />
+                      
+                      <div className="px-2 py-1.5 text-sm font-medium">Change Status</div>
+                      {statusOptions.map(option => (
+                        <DropdownMenuItem
+                          key={option.value}
+                          onClick={() => onStatusChange(issue.id, option.value)}
+                          disabled={issue.status === option.value}
+                        >
+                          <span className="mr-2">{option.icon}</span>
+                          {option.label}
+                        </DropdownMenuItem>
+                      ))}
+                      
+                      <DropdownMenuSeparator />
+                      
+                      <DropdownMenuItem 
+                        onClick={() => onTimelineChange(issue.id, issue.timeline === 'short_term' ? 'long_term' : 'short_term')}
+                      >
+                        <ArrowRight className="mr-2 h-4 w-4" />
+                        Move to {issue.timeline === 'short_term' ? 'Long Term' : 'Short Term'}
+                      </DropdownMenuItem>
+                    </DropdownMenuContent>
+                  </DropdownMenu>
+                )}
               </div>
             </div>
           </div>

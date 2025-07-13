@@ -23,6 +23,7 @@ import ConsultantDashboard from './pages/ConsultantDashboard';
 import ConsultantRegisterPage from './pages/ConsultantRegisterPage';
 import OrganizationSettings from './pages/OrganizationSettings';
 import OrganizationalChartPage from './pages/OrganizationalChartPage';
+import WeeklyAccountabilityMeetingPage from './pages/WeeklyAccountabilityMeetingPage';
 
 import './App.css';
 
@@ -58,6 +59,7 @@ function App() {
           <Route path="/quarterly-priorities" element={user ? <Layout><QuarterlyPrioritiesPage /></Layout> : <Navigate to="/login" />} />
           <Route path="/scorecard" element={user ? <Layout><ScorecardPage /></Layout> : <Navigate to="/login" />} />
           <Route path="/meetings" element={user ? <Layout><MeetingsPage /></Layout> : <Navigate to="/login" />} />
+          <Route path="/meetings/weekly-accountability/:teamId" element={user ? <Layout><WeeklyAccountabilityMeetingPage /></Layout> : <Navigate to="/login" />} />
           <Route path="/todos" element={user ? <Layout><TodosPage /></Layout> : <Navigate to="/login" />} />
           <Route path="/issues" element={user ? <Layout><IssuesPage /></Layout> : <Navigate to="/login" />} />
           <Route path="/departments" element={user ? <Layout><DepartmentsPage /></Layout> : <Navigate to="/login" />} />

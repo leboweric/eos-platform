@@ -17,7 +17,7 @@ import {
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { todosService } from '../../services/todosService';
 
-const TodoCard = ({ todo, onEdit, onDelete, onUpdate }) => {
+const TodoCard = ({ todo, onEdit, onDelete, onUpdate, readOnly = false }) => {
   const [updating, setUpdating] = useState(false);
 
 
@@ -48,14 +48,16 @@ const TodoCard = ({ todo, onEdit, onDelete, onUpdate }) => {
       <CardHeader className="pb-3">
         <div className="flex items-start justify-between">
           <div className="flex items-start space-x-3 flex-1">
-            <div className={`p-1.5 rounded-md ${todo.status === 'complete' ? 'bg-green-50 border-green-300' : 'bg-indigo-50 border-indigo-300'} border`}>
-              <Checkbox
-                checked={todo.status === 'complete'}
-                onCheckedChange={handleToggleComplete}
-                disabled={updating}
-                className="h-5 w-5 data-[state=checked]:bg-green-600 data-[state=checked]:border-green-600 border-2"
-              />
-            </div>
+            {!readOnly && (
+              <div className={`p-1.5 rounded-md ${todo.status === 'complete' ? 'bg-green-50 border-green-300' : 'bg-indigo-50 border-indigo-300'} border`}>
+                <Checkbox
+                  checked={todo.status === 'complete'}
+                  onCheckedChange={handleToggleComplete}
+                  disabled={updating}
+                  className="h-5 w-5 data-[state=checked]:bg-green-600 data-[state=checked]:border-green-600 border-2"
+                />
+              </div>
+            )}
             <div className="flex-1">
               <h3 className={`font-medium ${todo.status === 'complete' ? 'line-through text-gray-500' : ''}`}>
                 {todo.title}
@@ -66,26 +68,28 @@ const TodoCard = ({ todo, onEdit, onDelete, onUpdate }) => {
             </div>
           </div>
           
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button variant="ghost" size="sm">
-                <MoreVertical className="h-4 w-4" />
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end">
-              <DropdownMenuItem onClick={() => onEdit(todo)}>
-                <Edit className="h-4 w-4 mr-2" />
-                Edit
-              </DropdownMenuItem>
-              <DropdownMenuItem 
-                onClick={() => onDelete(todo.id)}
-                className="text-red-600 focus:text-red-600"
-              >
-                <Trash className="h-4 w-4 mr-2" />
-                Delete
-              </DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
+          {!readOnly && (
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="ghost" size="sm">
+                  <MoreVertical className="h-4 w-4" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end">
+                <DropdownMenuItem onClick={() => onEdit(todo)}>
+                  <Edit className="h-4 w-4 mr-2" />
+                  Edit
+                </DropdownMenuItem>
+                <DropdownMenuItem 
+                  onClick={() => onDelete(todo.id)}
+                  className="text-red-600 focus:text-red-600"
+                >
+                  <Trash className="h-4 w-4 mr-2" />
+                  Delete
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          )}
         </div>
       </CardHeader>
       
