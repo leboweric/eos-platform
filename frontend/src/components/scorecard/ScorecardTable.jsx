@@ -1,6 +1,6 @@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Target, AlertTriangle, Plus, BarChart3 } from 'lucide-react';
+import { Target, AlertTriangle, Plus, BarChart3, Loader2 } from 'lucide-react';
 import { useState } from 'react';
 import { issuesService } from '../../services/issuesService';
 import { useAuthStore } from '../../stores/authStore';
@@ -256,42 +256,48 @@ const ScorecardTable = ({ metrics, weeklyScores, readOnly = false, onIssueCreate
                       const isCurrentWeek = originalIndex === weekDatesOriginal.length - 1;
                       const showCreateIssue = isCurrentWeek && score && !goalMet;
                       
+                      // Debug current week detection
+                      if (index === 0 && metric === metrics[0]) {
+                        console.log('Week detection debug:', {
+                          weekDate,
+                          index,
+                          originalIndex,
+                          isCurrentWeek,
+                          isRTL,
+                          weekDatesLength: weekDates.length,
+                          score,
+                          goalMet,
+                          showCreateIssue
+                        });
+                      }
+                      
                       return (
                         <td key={weekDate} className="p-2 text-center group">
                           {score !== undefined && score !== null && score !== '' ? (
-                            <div className="inline-flex items-center gap-1">
-                              <span className={`inline-block px-2 py-1 rounded text-sm min-h-[24px] flex items-center justify-center ${
+                            <div className="flex items-center justify-center gap-1">
+                              <span className={`inline-block px-2 py-1 rounded text-sm ${
                                 goalMet 
                                   ? 'bg-green-100 text-green-800' 
                                   : 'bg-red-100 text-red-800'
                               }`}>
                                 {formatValue(score, metric.value_type)}
                               </span>
-                              <Button
-                                variant="ghost"
-                                size="sm"
-                                className="h-5 w-5 p-0 opacity-0 group-hover:opacity-100 transition-opacity ml-1"
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  setChartModal({ isOpen: true, metric, metricId: metric.id });
-                                }}
-                                title="View trend chart"
-                              >
-                                <BarChart3 className="h-3 w-3" />
-                              </Button>
                               {showCreateIssue && (
                                 <Button
                                   size="sm"
                                   variant="outline"
-                                  className="h-6 w-6 p-0 hover:bg-red-100 border-red-300 ml-1"
-                                  onClick={() => handleCreateIssue(metric, score)}
+                                  className="h-5 w-5 p-0 hover:bg-red-100 border-red-300 flex items-center justify-center"
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    handleCreateIssue(metric, score);
+                                  }}
                                   disabled={creatingIssue[metric.id]}
                                   title="Create issue for off-track metric"
                                 >
                                   {creatingIssue[metric.id] ? (
-                                    <span className="animate-spin">⏳</span>
+                                    <Loader2 className="h-3 w-3 animate-spin" />
                                   ) : (
-                                    <AlertTriangle className="h-4 w-4 text-red-600" />
+                                    <AlertTriangle className="h-3 w-3 text-red-600" />
                                   )}
                                 </Button>
                               )}
