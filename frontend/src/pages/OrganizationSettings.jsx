@@ -6,7 +6,8 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import { Building2, Save, Loader2 } from 'lucide-react';
+import { Building2, Save, Loader2, Upload, X, Image } from 'lucide-react';
+import { organizationService } from '../services/organizationService';
 
 
 const OrganizationSettings = () => {
@@ -18,19 +19,36 @@ const OrganizationSettings = () => {
   const [organizationData, setOrganizationData] = useState({
     name: '',
     slug: '',
-    created_at: ''
+    created_at: '',
+    logo_updated_at: null
   });
+  const [logoPreview, setLogoPreview] = useState(null);
+  const [selectedFile, setSelectedFile] = useState(null);
+  const [uploadingLogo, setUploadingLogo] = useState(false);
 
   useEffect(() => {
     fetchOrganizationDetails();
   }, []);
+
+  useEffect(() => {
+    // Set logo preview URL when organization data is loaded
+    if (organizationData.id && organizationData.logo_updated_at) {
+      setLogoPreview(organizationService.getLogoUrl(organizationData.id));
+    }
+  }, [organizationData]);
 
   const fetchOrganizationDetails = async () => {
     try {
       setLoading(true);
       const response = await axios.get('/organizations/current');
 
-      setOrganizationData(response.data.data);
+      const orgData = response.data.data;
+      setOrganizationData(orgData);
+      
+      // Set logo preview if logo exists
+      if (orgData.logo_updated_at) {
+        setLogoPreview(organizationService.getLogoUrl(orgData.id));
+      }
     } catch (error) {
       console.error('Failed to fetch organization:', error);
       setError(error.response?.data?.error || 'Failed to load organization details');
@@ -59,6 +77,81 @@ const OrganizationSettings = () => {
       setError(error.response?.data?.error || 'Failed to update organization');
     } finally {
       setSaving(false);
+    }
+  };
+
+  const handleFileSelect = (e) => {
+    const file = e.target.files[0];
+    if (file) {
+      // Validate file type
+      if (!file.type.startsWith('image/')) {
+        setError('Please select an image file');
+        return;
+      }
+      
+      // Validate file size (5MB max)
+      if (file.size > 5 * 1024 * 1024) {
+        setError('Image must be less than 5MB');
+        return;
+      }
+      
+      setSelectedFile(file);
+      
+      // Create preview
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setLogoPreview(reader.result);
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
+  const handleUploadLogo = async () => {
+    if (!selectedFile) return;
+    
+    setError(null);
+    setUploadingLogo(true);
+    
+    try {
+      await organizationService.uploadLogo(selectedFile);
+      setSuccess('Logo uploaded successfully');
+      setSelectedFile(null);
+      
+      // Refresh organization data to get updated logo timestamp
+      await fetchOrganizationDetails();
+      
+      // Force refresh of logo in sidebar
+      window.location.reload();
+    } catch (error) {
+      console.error('Logo upload error:', error);
+      setError(error.response?.data?.error || 'Failed to upload logo');
+    } finally {
+      setUploadingLogo(false);
+    }
+  };
+
+  const handleDeleteLogo = async () => {
+    if (!confirm('Are you sure you want to remove the organization logo?')) return;
+    
+    setError(null);
+    setUploadingLogo(true);
+    
+    try {
+      await organizationService.deleteLogo();
+      setSuccess('Logo removed successfully');
+      setLogoPreview(null);
+      setSelectedFile(null);
+      
+      // Refresh organization data
+      await fetchOrganizationDetails();
+      
+      // Force refresh of logo in sidebar
+      window.location.reload();
+    } catch (error) {
+      console.error('Logo delete error:', error);
+      setError(error.response?.data?.error || 'Failed to remove logo');
+    } finally {
+      setUploadingLogo(false);
     }
   };
 
@@ -170,6 +263,94 @@ const OrganizationSettings = () => {
               </Button>
             </div>
           </form>
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
+          <CardTitle>Organization Logo</CardTitle>
+          <CardDescription>
+            Upload a logo to display in the sidebar
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="space-y-4">
+            {/* Logo Preview */}
+            <div className="flex items-center space-x-4">
+              <div className="w-32 h-32 border-2 border-dashed border-gray-300 rounded-lg flex items-center justify-center bg-gray-50">
+                {logoPreview ? (
+                  <img 
+                    src={logoPreview} 
+                    alt="Organization logo" 
+                    className="max-w-full max-h-full object-contain rounded"
+                  />
+                ) : (
+                  <Image className="h-8 w-8 text-gray-400" />
+                )}
+              </div>
+              
+              <div className="flex-1 space-y-2">
+                <div className="text-sm text-gray-600">
+                  <p>Recommended: Square image, at least 200x200px</p>
+                  <p>Maximum file size: 5MB</p>
+                  <p>Supported formats: JPG, PNG, GIF, SVG</p>
+                </div>
+                
+                <div className="flex items-center space-x-2">
+                  <Label htmlFor="logo-upload" className="cursor-pointer">
+                    <Button type="button" variant="outline" asChild>
+                      <span>
+                        <Upload className="mr-2 h-4 w-4" />
+                        Choose File
+                      </span>
+                    </Button>
+                  </Label>
+                  <Input
+                    id="logo-upload"
+                    type="file"
+                    accept="image/*"
+                    onChange={handleFileSelect}
+                    className="hidden"
+                  />
+                  
+                  {selectedFile && (
+                    <Button 
+                      type="button"
+                      onClick={handleUploadLogo}
+                      disabled={uploadingLogo}
+                    >
+                      {uploadingLogo ? (
+                        <>
+                          <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                          Uploading...
+                        </>
+                      ) : (
+                        'Upload'
+                      )}
+                    </Button>
+                  )}
+                  
+                  {organizationData.logo_updated_at && !selectedFile && (
+                    <Button 
+                      type="button"
+                      variant="destructive"
+                      onClick={handleDeleteLogo}
+                      disabled={uploadingLogo}
+                    >
+                      <X className="mr-2 h-4 w-4" />
+                      Remove Logo
+                    </Button>
+                  )}
+                </div>
+                
+                {selectedFile && (
+                  <p className="text-sm text-gray-600">
+                    Selected: {selectedFile.name}
+                  </p>
+                )}
+              </div>
+            </div>
+          </div>
         </CardContent>
       </Card>
     </div>

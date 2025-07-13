@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import TrialBanner from './TrialBanner';
 import { Alert, AlertDescription } from '@/components/ui/alert';
+import { organizationService } from '../services/organizationService';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -37,6 +38,8 @@ import {
 const Layout = ({ children }) => {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [isImpersonating, setIsImpersonating] = useState(false);
+  const [logoUrl, setLogoUrl] = useState(null);
+  const [logoKey, setLogoKey] = useState(Date.now()); // Force refresh of logo
   const location = useLocation();
   const navigate = useNavigate();
   const { user, logout } = useAuthStore();
@@ -44,7 +47,18 @@ const Layout = ({ children }) => {
   useEffect(() => {
     // Check if consultant is impersonating a client
     setIsImpersonating(localStorage.getItem('consultantImpersonating') === 'true');
-  }, []);
+    
+    // Set logo URL if organization ID is available
+    if (user?.organizationId) {
+      const orgId = localStorage.getItem('impersonatedOrgId') || user.organizationId;
+      setLogoUrl(organizationService.getLogoUrl(orgId));
+    }
+  }, [user]);
+  
+  // Refresh logo when returning to this page
+  useEffect(() => {
+    setLogoKey(Date.now());
+  }, [location.pathname]);
 
   const navigation = [
     { name: 'Dashboard', href: '/dashboard', icon: Home },
@@ -102,12 +116,7 @@ const Layout = ({ children }) => {
         <div className="flex items-center justify-between h-16 px-6 border-b">
           <Link to="/dashboard" className="flex items-center space-x-2">
             <Target className="h-8 w-8 text-primary" />
-            <div className="flex flex-col">
-              <span className="text-xl font-bold">Strategic Execution Platform</span>
-              {user?.organizationName && (
-                <span className="text-xs text-gray-600">{user.organizationName}</span>
-              )}
-            </div>
+            <span className="text-xl font-bold">Strategic Execution Platform</span>
           </Link>
           <button
             onClick={() => setSidebarOpen(false)}
@@ -142,11 +151,26 @@ const Layout = ({ children }) => {
           </div>
         </nav>
 
-        {/* Organization info */}
+        {/* Organization info with logo */}
         <div className="mt-auto p-4 border-t bg-gray-50">
-          <div className="text-xs text-gray-500 mb-1">Organization</div>
-          <div className="text-sm font-medium text-gray-900 truncate">
-            {user?.organizationName || 'Loading...'}
+          <div className="flex items-center space-x-3">
+            {logoUrl && (
+              <img 
+                key={logoKey}
+                src={`${logoUrl}?t=${logoKey}`} 
+                alt={user?.organizationName} 
+                className="h-12 w-12 object-contain rounded"
+                onError={(e) => {
+                  e.target.style.display = 'none';
+                }}
+              />
+            )}
+            <div className="flex-1">
+              <div className="text-xs text-gray-500">Organization</div>
+              <div className="text-sm font-medium text-gray-900 truncate">
+                {user?.organizationName || 'Loading...'}
+              </div>
+            </div>
           </div>
         </div>
       </div>

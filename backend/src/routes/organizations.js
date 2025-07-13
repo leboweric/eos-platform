@@ -1,6 +1,13 @@
 import express from 'express';
 import { authenticate } from '../middleware/auth.js';
-import { getOrganization, updateOrganization } from '../controllers/organizationController.js';
+import { 
+  getOrganization, 
+  updateOrganization, 
+  uploadLogo, 
+  getLogo, 
+  deleteLogo,
+  upload 
+} from '../controllers/organizationController.js';
 
 const router = express.Router();
 
@@ -16,6 +23,21 @@ router.get('/current', getOrganization);
 // @desc    Update current organization details
 // @access  Private (Admin only)
 router.put('/current', updateOrganization);
+
+// @route   POST /api/v1/organizations/current/logo
+// @desc    Upload organization logo
+// @access  Private (Admin only)
+router.post('/current/logo', upload.single('logo'), uploadLogo);
+
+// @route   GET /api/v1/organizations/:orgId/logo
+// @desc    Get organization logo
+// @access  Public (for display purposes)
+router.get('/:orgId/logo', getLogo);
+
+// @route   DELETE /api/v1/organizations/current/logo
+// @desc    Delete organization logo
+// @access  Private (Admin only)
+router.delete('/current/logo', deleteLogo);
 
 export default router;
 
