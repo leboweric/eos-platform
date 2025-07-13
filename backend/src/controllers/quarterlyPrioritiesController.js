@@ -126,6 +126,7 @@ export const getQuarterlyPriorities = async (req, res) => {
           p.*,
           u.first_name || ' ' || u.last_name as owner_name,
           u.email as owner_email,
+          pub.first_name || ' ' || pub.last_name as published_by_name,
           array_agg(
             json_build_object(
               'id', m.id,
@@ -137,12 +138,13 @@ export const getQuarterlyPriorities = async (req, res) => {
           ) FILTER (WHERE m.id IS NOT NULL) as milestones
          FROM quarterly_priorities p
          LEFT JOIN users u ON p.owner_id = u.id
+         LEFT JOIN users pub ON p.published_by = pub.id
          LEFT JOIN priority_milestones m ON p.id = m.priority_id
          WHERE p.organization_id = $1::uuid 
            AND p.quarter = $2::varchar(2)
            AND p.year = $3::integer
            ${deletedAtClause}
-         GROUP BY p.id, u.first_name, u.last_name, u.email
+         GROUP BY p.id, u.first_name, u.last_name, u.email, pub.first_name, pub.last_name
          ORDER BY p.is_company_priority DESC, p.created_at`,
         [orgId, currentQuarter, currentYear]
       );
@@ -194,7 +196,11 @@ export const getQuarterlyPriorities = async (req, res) => {
       progress: p.progress,
       isCompanyPriority: p.is_company_priority,
       milestones: p.milestones || [],
-      latestUpdate: updates[p.id] || null
+      latestUpdate: updates[p.id] || null,
+      isPublishedToDepartments: p.is_published_to_departments,
+      publishedAt: p.published_at,
+      publishedBy: p.published_by,
+      publishedByName: p.published_by_name
     }));
     
     // Separate company and individual priorities
@@ -951,9 +957,11 @@ export const getCurrentPriorities = async (req, res) => {
         u.first_name || ' ' || u.last_name as owner_name,
         u.email as owner_email,
         u.first_name as owner_first_name,
-        u.last_name as owner_last_name
+        u.last_name as owner_last_name,
+        pub.first_name || ' ' || pub.last_name as published_by_name
       FROM quarterly_priorities p
       LEFT JOIN users u ON p.owner_id = u.id
+      LEFT JOIN users pub ON p.published_by = pub.id
       WHERE p.organization_id = $1 
       AND p.deleted_at IS NULL
       ORDER BY p.is_company_priority DESC, p.created_at ASC
@@ -1044,7 +1052,11 @@ export const getCurrentPriorities = async (req, res) => {
         owner_first_name: priority.owner_first_name,
         owner_last_name: priority.owner_last_name,
         latestUpdate: updatesByPriority[priority.id] || null,
-        isCompanyPriority: priority.is_company_priority
+        isCompanyPriority: priority.is_company_priority,
+        isPublishedToDepartments: priority.is_published_to_departments,
+        publishedAt: priority.published_at,
+        publishedBy: priority.published_by,
+        publishedByName: priority.published_by_name
       };
       
       console.log(`Processing priority: ${priority.title}, is_company_priority: ${priority.is_company_priority}, owner_id: ${priority.owner_id}, deleted_at: ${priority.deleted_at}`);

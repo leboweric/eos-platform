@@ -18,6 +18,26 @@ import {
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { todosService } from '../../services/todosService';
 
+/**
+ * TodoCard component for displaying todo item information
+ * @param {Object} props - Component props
+ * @param {Object} props.todo - Todo data
+ * @param {string} props.todo.id - Todo ID
+ * @param {string} props.todo.title - Todo title
+ * @param {string} props.todo.description - Todo description
+ * @param {string} props.todo.status - Todo status (incomplete/complete/cancelled)
+ * @param {string} props.todo.due_date - Todo due date
+ * @param {string} props.todo.owner_id - ID of the todo owner
+ * @param {string} props.todo.team_id - ID of the team
+ * @param {boolean} props.todo.is_published_to_departments - Whether todo is published to departments
+ * @param {string} props.todo.published_at - Publication timestamp
+ * @param {string} props.todo.published_by - ID of user who published
+ * @param {Function} props.onEdit - Edit handler
+ * @param {Function} props.onDelete - Delete handler
+ * @param {Function} props.onUpdate - Update handler
+ * @param {Function} props.onAddToIssues - Add to issues handler
+ * @param {boolean} props.readOnly - Whether in read-only mode
+ */
 const TodoCard = ({ todo, onEdit, onDelete, onUpdate, onAddToIssues, readOnly = false }) => {
   const [updating, setUpdating] = useState(false);
   const [creatingIssue, setCreatingIssue] = useState(false);

@@ -15,6 +15,26 @@ import { issuesService } from '../../services/issuesService';
 import { quarterlyPrioritiesService } from '../../services/quarterlyPrioritiesService';
 import { useAuthStore } from '../../stores/authStore';
 
+/**
+ * PriorityCard component for displaying priority information
+ * @param {Object} props - Component props
+ * @param {Object} props.priority - Priority data
+ * @param {string} props.priority.id - Priority ID
+ * @param {string} props.priority.title - Priority title
+ * @param {string} props.priority.description - Priority description
+ * @param {string} props.priority.status - Priority status (on-track/off-track/at-risk/complete)
+ * @param {string} props.priority.due_date - Priority due date
+ * @param {Object} props.priority.owner - Priority owner object
+ * @param {string} props.priority.owner_first_name - Owner's first name
+ * @param {string} props.priority.owner_last_name - Owner's last name
+ * @param {string} props.priority.team_id - ID of the team
+ * @param {boolean} props.priority.is_published_to_departments - Whether priority is published to departments
+ * @param {string} props.priority.published_at - Publication timestamp
+ * @param {string} props.priority.published_by - ID of user who published
+ * @param {boolean} props.readOnly - Whether in read-only mode
+ * @param {Function} props.onIssueCreated - Issue creation handler
+ * @param {Function} props.onStatusChange - Status change handler
+ */
 const PriorityCard = ({ priority, readOnly = false, onIssueCreated, onStatusChange }) => {
   const { user } = useAuthStore();
   const [creatingIssue, setCreatingIssue] = useState(false);

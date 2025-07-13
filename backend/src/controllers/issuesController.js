@@ -53,14 +53,19 @@ export const getIssues = async (req, res) => {
         i.updated_at,
         i.archived,
         i.vote_count,
+        i.is_published_to_departments,
+        i.published_at,
+        i.published_by,
         creator.first_name || ' ' || creator.last_name as created_by_name,
         owner.first_name || ' ' || owner.last_name as owner_name,
+        pub.first_name || ' ' || pub.last_name as published_by_name,
         t.name as team_name,
         COUNT(DISTINCT ia.id) as attachment_count,
         EXISTS(SELECT 1 FROM issue_votes iv WHERE iv.issue_id = i.id AND iv.user_id = $2) as user_has_voted
       FROM issues i
       LEFT JOIN users creator ON i.created_by_id = creator.id
       LEFT JOIN users owner ON i.owner_id = owner.id
+      LEFT JOIN users pub ON i.published_by = pub.id
       LEFT JOIN teams t ON i.team_id = t.id
       LEFT JOIN issue_attachments ia ON ia.issue_id = i.id
       WHERE i.organization_id = $1
@@ -82,7 +87,7 @@ export const getIssues = async (req, res) => {
       paramCount++;
     }
     
-    query += ` GROUP BY i.id, creator.first_name, creator.last_name, owner.first_name, owner.last_name, t.name
+    query += ` GROUP BY i.id, creator.first_name, creator.last_name, owner.first_name, owner.last_name, pub.first_name, pub.last_name, t.name
                ORDER BY i.priority_rank ASC, i.created_at DESC`;
     
     const issues = await db.query(query, params);
@@ -93,7 +98,13 @@ export const getIssues = async (req, res) => {
     res.json({
       success: true,
       data: {
-        issues: issues.rows,
+        issues: issues.rows.map(issue => ({
+          ...issue,
+          isPublishedToDepartments: issue.is_published_to_departments,
+          publishedAt: issue.published_at,
+          publishedBy: issue.published_by,
+          publishedByName: issue.published_by_name
+        })),
         teamMembers
       }
     });
@@ -144,7 +155,7 @@ export const createIssue = async (req, res) => {
     const nextRank = (maxRankResult.rows[0].max_rank || 0) + 1;
     
     // Build insert query based on available columns
-    let columns = ['organization_id', 'team_id', 'created_by_id', 'owner_id', 'title', 'description', 'priority_rank'];
+    let columns = ['organization_id', 'team_id', 'created_by_id', 'owner_id', 'title', 'description', 'priority_rank', 'is_published_to_departments'];
     let values = [
       orgId,
       teamId && teamId !== '00000000-0000-0000-0000-000000000000' ? teamId : null,
@@ -152,14 +163,15 @@ export const createIssue = async (req, res) => {
       ownerId,
       title,
       description,
-      nextRank
+      nextRank,
+      true // Default is_published_to_departments to true
     ];
-    let placeholders = ['$1', '$2', '$3', '$4', '$5', '$6', '$7'];
+    let placeholders = ['$1', '$2', '$3', '$4', '$5', '$6', '$7', '$8'];
     
     if (hasTimelineColumn) {
       columns.push('timeline');
       values.push(timeline || 'short_term');
-      placeholders.push('$8');
+      placeholders.push('$9');
     }
     
     const result = await db.query(

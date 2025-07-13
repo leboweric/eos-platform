@@ -58,8 +58,8 @@ export const createClientOrganization = async (req, res) => {
 
       // Create default team
       const teamResult = await client.query(
-        'INSERT INTO teams (organization_id, name, description) VALUES ($1, $2, $3) RETURNING id',
-        [organizationId, 'Leadership Team', 'Default leadership team']
+        'INSERT INTO teams (organization_id, name, description, is_leadership_team) VALUES ($1, $2, $3, $4) RETURNING id',
+        [organizationId, 'Leadership Team', 'Default leadership team', true]
       );
       const teamId = teamResult.rows[0].id;
 

@@ -45,11 +45,13 @@ export const getTodos = async (req, res) => {
         assignee.first_name as assignee_first_name,
         assignee.last_name as assignee_last_name,
         assignee.email as assignee_email,
+        pub.first_name || ' ' || pub.last_name as published_by_name,
         (SELECT COUNT(*) FROM todo_attachments WHERE todo_id = t.id) as attachment_count,
         (SELECT COUNT(*) FROM todo_comments WHERE todo_id = t.id) as comment_count
       FROM todos t
       LEFT JOIN users owner ON t.owner_id = owner.id
       LEFT JOIN users assignee ON t.assigned_to_id = assignee.id
+      LEFT JOIN users pub ON t.published_by = pub.id
       WHERE ${conditions.join(' AND ')}
       ORDER BY t.due_date ASC, t.priority DESC, t.created_at DESC`,
       params
@@ -67,7 +69,13 @@ export const getTodos = async (req, res) => {
     res.json({
       success: true,
       data: {
-        todos: todosResult.rows,
+        todos: todosResult.rows.map(todo => ({
+          ...todo,
+          isPublishedToDepartments: todo.is_published_to_departments,
+          publishedAt: todo.published_at,
+          publishedBy: todo.published_by,
+          publishedByName: todo.published_by_name
+        })),
         teamMembers: teamMembersResult.rows
       }
     });
@@ -96,12 +104,12 @@ export const createTodo = async (req, res) => {
     const result = await query(
       `INSERT INTO todos (
         id, organization_id, team_id, owner_id, assigned_to_id, 
-        title, description, due_date, priority, status
-      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
+        title, description, due_date, priority, status, is_published_to_departments
+      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
       RETURNING *`,
       [
         todoId, orgId, teamId || null, userId, assignedToId || userId,
-        title, description, finalDueDate, 'medium', 'incomplete'
+        title, description, finalDueDate, 'medium', 'incomplete', true
       ]
     );
 

@@ -77,6 +77,17 @@ export const useAuthStore = create((set, get) => ({
   isLoading: true,
   error: null,
 
+  /**
+   * Check if the current user is on a leadership team
+   * @returns {boolean} true if user is on a leadership team
+   */
+  isOnLeadershipTeam: () => {
+    const user = get().user;
+    if (!user || !user.teams) return false;
+    
+    return user.teams.some(team => team.is_leadership_team === true);
+  },
+
   // Check if user is authenticated
   checkAuth: async () => {
     try {

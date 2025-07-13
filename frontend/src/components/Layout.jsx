@@ -3,6 +3,7 @@ import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useAuthStore } from '../stores/authStore';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { Badge } from '@/components/ui/badge';
 import TrialBanner from './TrialBanner';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { organizationService } from '../services/organizationService';
@@ -42,7 +43,7 @@ const Layout = ({ children }) => {
   const [logoKey, setLogoKey] = useState(Date.now()); // Force refresh of logo
   const location = useLocation();
   const navigate = useNavigate();
-  const { user, logout } = useAuthStore();
+  const { user, logout, isOnLeadershipTeam } = useAuthStore();
 
   useEffect(() => {
     // Check if consultant is impersonating a client
@@ -196,6 +197,13 @@ const Layout = ({ children }) => {
             </div>
 
             <div className="flex items-center space-x-4">
+              {/* Leadership Team Badge */}
+              {isOnLeadershipTeam() && (
+                <Badge variant="default" className="bg-purple-600 hover:bg-purple-700">
+                  Leadership Team
+                </Badge>
+              )}
+              
               {/* User menu */}
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>

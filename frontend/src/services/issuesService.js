@@ -16,6 +16,14 @@ const getTeamId = () => {
   return user?.teamId;
 };
 
+/**
+ * Issues service for managing issue data
+ * 
+ * Issue objects now include publishing fields:
+ * - is_published_to_departments: boolean indicating if visible to non-leadership teams
+ * - published_at: timestamp when published
+ * - published_by: ID of user who published
+ */
 export const issuesService = {
   // Get all issues
   getIssues: async (timeline = null, includeArchived = false) => {

@@ -1,5 +1,13 @@
 import axios from 'axios';
 
+/**
+ * Quarterly priorities service for managing priority data
+ * 
+ * Priority objects now include publishing fields:
+ * - is_published_to_departments: boolean indicating if visible to non-leadership teams
+ * - published_at: timestamp when published
+ * - published_by: ID of user who published
+ */
 export const quarterlyPrioritiesService = {
   // Get current priorities (simplified - no quarter logic)
   async getCurrentPriorities(orgId, teamId) {

@@ -6,6 +6,30 @@ import {
   User
 } from 'lucide-react';
 
+/**
+ * ScorecardCard component for displaying scorecard metric information
+ * @param {Object} props - Component props
+ * @param {Object} props.metric - Metric data
+ * @param {string} props.metric.id - Metric ID
+ * @param {string} props.metric.name - Metric name
+ * @param {string} props.metric.metric_name - Alternative metric name field
+ * @param {string} props.metric.unit_of_measure - Unit of measure
+ * @param {string} props.metric.value_type - Value type (percentage/currency/decimal/number)
+ * @param {number} props.metric.goal - Goal value
+ * @param {string} props.metric.comparison_operator - Comparison operator (>=/<=/>/<=/=)
+ * @param {string} props.metric.frequency - Measurement frequency
+ * @param {string} props.metric.owner_name - Owner name
+ * @param {string} props.metric.ownerName - Alternative owner name field
+ * @param {string} props.metric.owner_first_name - Owner's first name
+ * @param {string} props.metric.owner_last_name - Owner's last name
+ * @param {string} props.metric.ownerId - Owner ID
+ * @param {string} props.metric.team_id - ID of the team
+ * @param {boolean} props.metric.is_published_to_departments - Whether metric is published to departments
+ * @param {string} props.metric.published_at - Publication timestamp
+ * @param {string} props.metric.published_by - ID of user who published
+ * @param {number} props.weeklyScore - Current weekly score value
+ * @param {boolean} props.readOnly - Whether in read-only mode
+ */
 const ScorecardCard = ({ metric, weeklyScore, readOnly = false }) => {
   // Format value based on type
   const formatValue = (value, type) => {

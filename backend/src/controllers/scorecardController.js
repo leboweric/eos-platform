@@ -46,20 +46,22 @@ export const getScorecard = async (req, res) => {
     const hasComparisonOperator = await checkColumn('scorecard_metrics', 'comparison_operator');
     
     // Build query based on available columns
-    let selectColumns = 'id, name, goal, owner, type, created_at, updated_at';
+    let selectColumns = 'sm.id, sm.name, sm.goal, sm.owner, sm.type, sm.created_at, sm.updated_at, sm.is_published_to_departments, sm.published_at, sm.published_by';
     if (hasValueType) {
-      selectColumns += ', value_type';
+      selectColumns += ', sm.value_type';
     }
     if (hasComparisonOperator) {
-      selectColumns += ', comparison_operator';
+      selectColumns += ', sm.comparison_operator';
     }
+    selectColumns += ', pub.first_name || \' \' || pub.last_name as published_by_name';
     
     // Get all metrics for the team
     const metricsQuery = `
       SELECT ${selectColumns}
-      FROM scorecard_metrics
-      WHERE organization_id = $1 AND team_id = $2
-      ORDER BY created_at ASC
+      FROM scorecard_metrics sm
+      LEFT JOIN users pub ON sm.published_by = pub.id
+      WHERE sm.organization_id = $1 AND sm.team_id = $2
+      ORDER BY sm.created_at ASC
     `;
     const metrics = await db.query(metricsQuery, [orgId, teamId]);
     
@@ -91,7 +93,13 @@ export const getScorecard = async (req, res) => {
     res.json({
       success: true,
       data: {
-        metrics: metrics.rows,
+        metrics: metrics.rows.map(metric => ({
+          ...metric,
+          isPublishedToDepartments: metric.is_published_to_departments,
+          publishedAt: metric.published_at,
+          publishedBy: metric.published_by,
+          publishedByName: metric.published_by_name
+        })),
         weeklyScores,
         teamMembers
       }
@@ -116,9 +124,9 @@ export const createMetric = async (req, res) => {
     const hasComparisonOperator = await checkColumn('scorecard_metrics', 'comparison_operator');
     
     // Build insert query based on available columns
-    let columns = ['organization_id', 'team_id', 'name', 'goal', 'owner', 'type'];
-    let values = [orgId, teamId, name, goal, owner, type];
-    let placeholders = ['$1', '$2', '$3', '$4', '$5', '$6'];
+    let columns = ['organization_id', 'team_id', 'name', 'goal', 'owner', 'type', 'is_published_to_departments'];
+    let values = [orgId, teamId, name, goal, owner, type, true];
+    let placeholders = ['$1', '$2', '$3', '$4', '$5', '$6', '$7'];
     
     if (hasValueType) {
       columns.push('value_type');
@@ -281,14 +289,20 @@ export const getMetricHistory = async (req, res) => {
   try {
     const { metricId } = req.params;
     
-    // Get all historical scores for the metric
+    // Get all historical scores for the metric with publishing info
     const result = await db.query(
       `SELECT 
         ss.week_date,
         ss.value,
         ss.created_at,
-        ss.updated_at
+        ss.updated_at,
+        sm.is_published_to_departments,
+        sm.published_at,
+        sm.published_by,
+        pub.first_name || ' ' || pub.last_name as published_by_name
        FROM scorecard_scores ss
+       JOIN scorecard_metrics sm ON ss.metric_id = sm.id
+       LEFT JOIN users pub ON sm.published_by = pub.id
        WHERE ss.metric_id = $1
        ORDER BY ss.week_date DESC`,
       [metricId]

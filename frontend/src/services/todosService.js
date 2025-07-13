@@ -11,6 +11,14 @@ const getTeamId = () => {
   return user?.teamId;
 };
 
+/**
+ * Todos service for managing todo data
+ * 
+ * Todo objects now include publishing fields:
+ * - is_published_to_departments: boolean indicating if visible to non-leadership teams
+ * - published_at: timestamp when published
+ * - published_by: ID of user who published
+ */
 export const todosService = {
   // Get all todos
   getTodos: async (status = null, assignedTo = null, includeCompleted = false) => {

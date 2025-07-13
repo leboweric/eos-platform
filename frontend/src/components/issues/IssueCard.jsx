@@ -20,6 +20,32 @@ import {
   ThumbsUp
 } from 'lucide-react';
 
+/**
+ * IssueCard component for displaying issue information
+ * @param {Object} props - Component props
+ * @param {Object} props.issue - Issue data
+ * @param {string} props.issue.id - Issue ID
+ * @param {string} props.issue.title - Issue title
+ * @param {string} props.issue.description - Issue description
+ * @param {string} props.issue.status - Issue status (open/closed)
+ * @param {string} props.issue.timeline - Issue timeline (short_term/long_term)
+ * @param {string} props.issue.owner_name - Name of the issue owner
+ * @param {string} props.issue.created_at - Issue creation date
+ * @param {number} props.issue.attachment_count - Number of attachments
+ * @param {boolean} props.issue.user_has_voted - Whether current user has voted
+ * @param {number} props.issue.vote_count - Total number of votes
+ * @param {boolean} props.issue.is_published_to_departments - Whether issue is published to departments
+ * @param {string} props.issue.published_at - Publication timestamp
+ * @param {string} props.issue.published_by - ID of user who published
+ * @param {Function} props.onEdit - Edit handler
+ * @param {Function} props.onStatusChange - Status change handler
+ * @param {Function} props.onTimelineChange - Timeline change handler
+ * @param {Function} props.onVote - Vote handler
+ * @param {Function} props.getStatusColor - Get status color function
+ * @param {Function} props.getStatusIcon - Get status icon function
+ * @param {boolean} props.readOnly - Whether in read-only mode
+ * @param {boolean} props.showVoting - Whether to show voting interface
+ */
 const IssueCard = ({ issue, onEdit, onStatusChange, onTimelineChange, onVote, getStatusColor, getStatusIcon, readOnly = false, showVoting = false }) => {
   const formatDate = (dateString) => {
     const date = new Date(dateString);

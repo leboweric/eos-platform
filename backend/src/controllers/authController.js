@@ -92,8 +92,8 @@ export const register = async (req, res) => {
 
       // Create default team
       const teamResult = await client.query(
-        'INSERT INTO teams (organization_id, name, description) VALUES ($1, $2, $3) RETURNING id',
-        [organizationId, 'Leadership Team', 'Default leadership team']
+        'INSERT INTO teams (organization_id, name, description, is_leadership_team) VALUES ($1, $2, $3, $4) RETURNING id',
+        [organizationId, 'Leadership Team', 'Default leadership team', true]
       );
       const teamId = teamResult.rows[0].id;
 
@@ -207,6 +207,16 @@ export const login = async (req, res) => {
       clientOrganizations = clientOrgsResult.rows;
     }
 
+    // Fetch user's teams
+    const teamsResult = await query(
+      `SELECT t.id, t.name, t.description, t.is_leadership_team, tm.role as member_role
+       FROM teams t
+       JOIN team_members tm ON tm.team_id = t.id
+       WHERE tm.user_id = $1 AND t.organization_id = $2
+       ORDER BY t.is_leadership_team DESC, t.name`,
+      [user.id, user.organization_id]
+    );
+
     res.json({
       success: true,
       data: {
@@ -220,7 +230,8 @@ export const login = async (req, res) => {
           organizationName: user.organization_name,
           organizationSlug: user.organization_slug,
           isConsultant: user.is_consultant,
-          clientOrganizations
+          clientOrganizations,
+          teams: teamsResult.rows
         },
         accessToken,
         refreshToken
@@ -320,6 +331,16 @@ export const getProfile = async (req, res) => {
 
     const user = result.rows[0];
 
+    // Fetch user's teams
+    const teamsResult = await query(
+      `SELECT t.id, t.name, t.description, t.is_leadership_team, tm.role as member_role
+       FROM teams t
+       JOIN team_members tm ON tm.team_id = t.id
+       WHERE tm.user_id = $1 AND t.organization_id = $2
+       ORDER BY t.is_leadership_team DESC, t.name`,
+      [req.user.id, user.organization_id]
+    );
+
     res.json({
       success: true,
       data: {
@@ -333,7 +354,8 @@ export const getProfile = async (req, res) => {
         organizationId: user.organization_id,
         organizationName: user.organization_name,
         organizationSlug: user.organization_slug,
-        isConsultant: user.is_consultant
+        isConsultant: user.is_consultant,
+        teams: teamsResult.rows
       }
     });
 

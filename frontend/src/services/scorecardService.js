@@ -2,6 +2,14 @@ import axios from 'axios';
 
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3001/api/v1';
 
+/**
+ * Scorecard service for managing scorecard metric data
+ * 
+ * Metric objects now include publishing fields:
+ * - is_published_to_departments: boolean indicating if visible to non-leadership teams
+ * - published_at: timestamp when published
+ * - published_by: ID of user who published
+ */
 export const scorecardService = {
   // Get complete scorecard with metrics and scores
   getScorecard: async (orgId, teamId) => {
