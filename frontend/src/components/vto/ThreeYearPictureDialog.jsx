@@ -114,14 +114,50 @@ const ThreeYearPictureDialog = ({ open, onOpenChange, data, onSave }) => {
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="measurables">Key Measurables</Label>
-              <Textarea
-                id="measurables"
-                value={formData.measurables}
-                onChange={(e) => setFormData({ ...formData, measurables: e.target.value })}
-                placeholder="What are the 5-15 most important measurables in 3 years?"
-                rows={4}
-              />
+              <div className="flex items-center justify-between">
+                <Label>Key Measurables</Label>
+                <Button
+                  type="button"
+                  size="sm"
+                  variant="outline"
+                  onClick={() => setFormData(prev => ({
+                    ...prev,
+                    measurables: [...(prev.measurables || []), '']
+                  }))}
+                >
+                  <Plus className="h-4 w-4" />
+                </Button>
+              </div>
+              <p className="text-xs text-gray-500">What are the 5-15 most important measurables in 3 years?</p>
+              <div className="space-y-2">
+                {(formData.measurables || []).map((item, index) => (
+                  <div key={index} className="flex gap-2">
+                    <Input
+                      placeholder={`Measurable ${index + 1}`}
+                      value={item}
+                      onChange={(e) => setFormData(prev => {
+                        const newItems = [...(prev.measurables || [])];
+                        newItems[index] = e.target.value;
+                        return { ...prev, measurables: newItems };
+                      })}
+                    />
+                    <Button
+                      type="button"
+                      size="sm"
+                      variant="ghost"
+                      onClick={() => setFormData(prev => ({
+                        ...prev,
+                        measurables: (prev.measurables || []).filter((_, i) => i !== index)
+                      }))}
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </Button>
+                  </div>
+                ))}
+                {(!formData.measurables || formData.measurables.length === 0) && (
+                  <p className="text-sm text-gray-400 italic">Click + to add measurables</p>
+                )}
+              </div>
             </div>
 
             <div className="space-y-2">
