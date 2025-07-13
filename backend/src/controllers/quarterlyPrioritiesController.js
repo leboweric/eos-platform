@@ -950,6 +950,8 @@ export const getCurrentPriorities = async (req, res) => {
         owner_last_name: priority.owner_last_name
       };
       
+      console.log(`Processing priority: ${priority.title}, is_company_priority: ${priority.is_company_priority}, owner_id: ${priority.owner_id}`);
+      
       if (priority.is_company_priority) {
         companyPriorities.push(priorityWithMilestones);
       } else if (priority.owner_id) {
@@ -964,15 +966,62 @@ export const getCurrentPriorities = async (req, res) => {
           };
         }
         teamMemberPriorities[priority.owner_id].priorities.push(priorityWithMilestones);
+        console.log(`Added individual priority to owner ${priority.owner_id}: ${priority.title}`);
+      } else {
+        console.log(`Priority ${priority.title} has no owner and is not company priority`);
       }
     });
     
+    console.log(`Final counts - Company: ${companyPriorities.length}, Individual owners: ${Object.keys(teamMemberPriorities).length}`);
+    
+    // Get predictions (latest/current predictions for the organization)
+    let predictions = {};
+    try {
+      const predictionsResult = await query(
+        `SELECT * FROM quarterly_predictions 
+         WHERE organization_id = $1 
+         ORDER BY created_at DESC LIMIT 1`,
+        [orgId]
+      );
+      
+      if (predictionsResult.rows.length > 0) {
+        const pred = predictionsResult.rows[0];
+        predictions = {
+          revenue: {
+            target: parseFloat(pred.revenue_target) || 0,
+            current: parseFloat(pred.revenue_current) || 0
+          },
+          profit: {
+            target: parseFloat(pred.profit_target) || 0,
+            current: parseFloat(pred.profit_current) || 0
+          },
+          measurables: {
+            onTrack: parseInt(pred.measurables_on_track) || 0,
+            total: parseInt(pred.measurables_total) || 0
+          }
+        };
+      }
+    } catch (predError) {
+      console.error('Error fetching predictions:', predError);
+      predictions = {};
+    }
+
+    // Get team members list for the frontend
+    const teamMembersResult = await query(
+      `SELECT DISTINCT u.id, u.first_name || ' ' || u.last_name as name, u.email, u.role
+       FROM users u 
+       WHERE u.organization_id = $1 AND u.role != 'consultant'
+       ORDER BY u.first_name`,
+      [orgId]
+    );
+
     res.json({
       success: true,
       data: {
         companyPriorities,
         teamMemberPriorities,
-        predictions: {} // Empty for now, can be enhanced later if needed
+        predictions,
+        teamMembers: teamMembersResult.rows
       }
     });
   } catch (error) {
