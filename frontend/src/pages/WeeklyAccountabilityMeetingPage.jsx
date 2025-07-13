@@ -286,6 +286,49 @@ const WeeklyAccountabilityMeetingPage = () => {
     }
   };
 
+  const handleTodoUpdate = async () => {
+    await fetchTodosData();
+  };
+
+  const handleEditTodo = (todo) => {
+    // For now, we'll just show a message since we don't have a TodoDialog yet
+    setSuccess('Edit functionality coming soon');
+  };
+
+  const handleDeleteTodo = async (todoId) => {
+    if (!confirm('Are you sure you want to delete this to-do?')) return;
+    
+    try {
+      await todosService.deleteTodo(todoId);
+      setSuccess('To-do deleted successfully');
+      await fetchTodosData();
+    } catch (error) {
+      console.error('Failed to delete todo:', error);
+      setError('Failed to delete to-do');
+    }
+  };
+
+  const handleTodoToIssue = async (todo) => {
+    try {
+      const issueData = {
+        title: todo.title,
+        description: `Overdue To-Do: ${todo.description || 'No description'}`,
+        timeline: 'short_term',
+        ownerId: todo.assignee_id || null
+      };
+      
+      await issuesService.createIssue(issueData);
+      setSuccess('Issue created from overdue To-Do');
+      
+      // Optionally mark the todo as complete or cancelled
+      await todosService.updateTodo(todo.id, { status: 'cancelled' });
+      await fetchTodosData();
+    } catch (error) {
+      console.error('Failed to create issue from todo:', error);
+      setError('Failed to create issue from To-Do');
+    }
+  };
+
   const handleSectionChange = (sectionId) => {
     setActiveSection(sectionId);
     setError(null);
@@ -623,7 +666,14 @@ const WeeklyAccountabilityMeetingPage = () => {
                 </div>
                 <div className="space-y-4">
                   {todos.map(todo => (
-                    <TodoCard key={todo.id} todo={todo} readOnly />
+                    <TodoCard 
+                      key={todo.id} 
+                      todo={todo} 
+                      onEdit={handleEditTodo}
+                      onDelete={handleDeleteTodo}
+                      onUpdate={handleTodoUpdate}
+                      onAddToIssues={handleTodoToIssue}
+                    />
                   ))}
                 </div>
               </>

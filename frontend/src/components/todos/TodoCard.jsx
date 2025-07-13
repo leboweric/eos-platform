@@ -12,13 +12,15 @@ import {
   Circle,
   AlertCircle,
   Edit,
-  Trash
+  Trash,
+  AlertTriangle
 } from 'lucide-react';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { todosService } from '../../services/todosService';
 
-const TodoCard = ({ todo, onEdit, onDelete, onUpdate, readOnly = false }) => {
+const TodoCard = ({ todo, onEdit, onDelete, onUpdate, onAddToIssues, readOnly = false }) => {
   const [updating, setUpdating] = useState(false);
+  const [creatingIssue, setCreatingIssue] = useState(false);
 
 
   const statusIcons = {
@@ -43,6 +45,19 @@ const TodoCard = ({ todo, onEdit, onDelete, onUpdate, readOnly = false }) => {
   const isOverdue = todo.due_date && new Date(todo.due_date) < new Date() && todo.status !== 'complete';
   const dueDate = todo.due_date ? new Date(todo.due_date) : null;
 
+  const handleAddToIssues = async () => {
+    if (!onAddToIssues) return;
+    
+    try {
+      setCreatingIssue(true);
+      await onAddToIssues(todo);
+    } catch (error) {
+      console.error('Failed to create issue:', error);
+    } finally {
+      setCreatingIssue(false);
+    }
+  };
+
   return (
     <Card className={`transition-all ${todo.status === 'complete' ? 'opacity-60' : ''} ${isOverdue ? 'border-red-300' : ''}`}>
       <CardHeader className="pb-3">
@@ -59,12 +74,29 @@ const TodoCard = ({ todo, onEdit, onDelete, onUpdate, readOnly = false }) => {
               </div>
             )}
             <div className="flex-1">
-              <h3 className={`font-medium ${todo.status === 'complete' ? 'line-through text-gray-500' : ''}`}>
-                {todo.title}
-              </h3>
-              {todo.description && (
-                <p className="text-sm text-gray-600 mt-1">{todo.description}</p>
-              )}
+              <div className="flex items-start justify-between">
+                <div className="flex-1">
+                  <h3 className={`font-medium ${todo.status === 'complete' ? 'line-through text-gray-500' : ''}`}>
+                    {todo.title}
+                  </h3>
+                  {todo.description && (
+                    <p className="text-sm text-gray-600 mt-1">{todo.description}</p>
+                  )}
+                </div>
+                {isOverdue && !readOnly && onAddToIssues && (
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    className="ml-2 h-8 px-2 border-red-300 hover:bg-red-50"
+                    onClick={handleAddToIssues}
+                    disabled={creatingIssue}
+                    title="Add to Issues List"
+                  >
+                    <AlertTriangle className="h-4 w-4 text-red-600 mr-1" />
+                    <span className="text-xs">Add to Issues</span>
+                  </Button>
+                )}
+              </div>
             </div>
           </div>
           
