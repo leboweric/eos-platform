@@ -19,8 +19,10 @@ import {
   Edit,
   Save,
   X,
-  ArrowLeftRight
+  ArrowLeftRight,
+  BarChart3
 } from 'lucide-react';
+import MetricTrendChart from '../components/scorecard/MetricTrendChart';
 
 const ScorecardPage = () => {
   const { user } = useAuthStore();
@@ -36,6 +38,7 @@ const ScorecardPage = () => {
   const [showMetricDialog, setShowMetricDialog] = useState(false);
   const [editingScore, setEditingScore] = useState(null);
   const [users, setUsers] = useState([]);
+  const [chartModal, setChartModal] = useState({ isOpen: false, metric: null, metricId: null });
   const [isRTL, setIsRTL] = useState(() => {
     // Load RTL preference from localStorage
     const saved = localStorage.getItem('scorecardRTL');
@@ -491,7 +494,7 @@ const ScorecardPage = () => {
                           const goalMet = score && isGoalMet(score, metric.goal, metric.comparison_operator);
                           
                           return (
-                            <td key={weekDate} className="p-4 text-center">
+                            <td key={weekDate} className="p-4 text-center group">
                               {isEditing ? (
                                 <div className="flex items-center space-x-1">
                                   <Input
@@ -529,7 +532,7 @@ const ScorecardPage = () => {
                                 </div>
                               ) : (
                                 <div
-                                  className={`cursor-pointer px-2 py-1 rounded ${
+                                  className={`cursor-pointer px-2 py-1 rounded relative ${
                                     score
                                       ? goalMet
                                         ? 'bg-green-100 text-green-800'
@@ -538,7 +541,27 @@ const ScorecardPage = () => {
                                   }`}
                                   onClick={() => handleScoreEdit(metric.id, weekDate)}
                                 >
-                                  {score ? formatValue(score, metric.value_type) : '-'}
+                                  <div className="flex items-center justify-center gap-1">
+                                    {score ? (
+                                      <>
+                                        <span>{formatValue(score, metric.value_type)}</span>
+                                        <Button
+                                          variant="ghost"
+                                          size="sm"
+                                          className="h-5 w-5 p-0 opacity-0 group-hover:opacity-100 transition-opacity"
+                                          onClick={(e) => {
+                                            e.stopPropagation();
+                                            setChartModal({ isOpen: true, metric, metricId: metric.id });
+                                          }}
+                                          title="View trend chart"
+                                        >
+                                          <BarChart3 className="h-3 w-3" />
+                                        </Button>
+                                      </>
+                                    ) : (
+                                      '-'
+                                    )}
+                                  </div>
                                 </div>
                               )}
                             </td>
@@ -738,6 +761,16 @@ const ScorecardPage = () => {
           </DialogContent>
         </Dialog>
       </div>
+      
+      {/* Metric Trend Chart Modal */}
+      <MetricTrendChart
+        isOpen={chartModal.isOpen}
+        onClose={() => setChartModal({ isOpen: false, metric: null, metricId: null })}
+        metric={chartModal.metric}
+        metricId={chartModal.metricId}
+        orgId={user?.organizationId}
+        teamId={user?.teamId || '00000000-0000-0000-0000-000000000000'}
+      />
     </div>
   );
 };

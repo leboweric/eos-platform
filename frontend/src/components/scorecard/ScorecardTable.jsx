@@ -1,13 +1,15 @@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Target, AlertTriangle, Plus } from 'lucide-react';
+import { Target, AlertTriangle, Plus, BarChart3 } from 'lucide-react';
 import { useState } from 'react';
 import { issuesService } from '../../services/issuesService';
 import { useAuthStore } from '../../stores/authStore';
+import MetricTrendChart from './MetricTrendChart';
 
 const ScorecardTable = ({ metrics, weeklyScores, readOnly = false, onIssueCreated, isRTL = false, showTotal = true }) => {
   const { user } = useAuthStore();
   const [creatingIssue, setCreatingIssue] = useState({});
+  const [chartModal, setChartModal] = useState({ isOpen: false, metric: null, metricId: null });
   // Get the last 12 weeks
   const getWeekDates = () => {
     const weeks = [];
@@ -120,6 +122,7 @@ const ScorecardTable = ({ metrics, weeklyScores, readOnly = false, onIssueCreate
   };
 
   return (
+    <>
     <Card className="shadow-lg border-0">
       <CardHeader className="bg-gradient-to-r from-indigo-500 to-blue-500 text-white">
         <CardTitle className="flex items-center text-xl">
@@ -244,7 +247,7 @@ const ScorecardTable = ({ metrics, weeklyScores, readOnly = false, onIssueCreate
                       const showCreateIssue = !readOnly && isCurrentWeek && score && !goalMet;
                       
                       return (
-                        <td key={weekDate} className="p-4 text-center">
+                        <td key={weekDate} className="p-4 text-center group">
                           {score !== undefined && score !== null && score !== '' ? (
                             <div className="inline-flex items-center gap-1">
                               <span className={`inline-block px-2 py-1 rounded ${
@@ -254,6 +257,18 @@ const ScorecardTable = ({ metrics, weeklyScores, readOnly = false, onIssueCreate
                               }`}>
                                 {formatValue(score, metric.value_type)}
                               </span>
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                className="h-5 w-5 p-0 opacity-0 group-hover:opacity-100 transition-opacity ml-1"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  setChartModal({ isOpen: true, metric, metricId: metric.id });
+                                }}
+                                title="View trend chart"
+                              >
+                                <BarChart3 className="h-3 w-3" />
+                              </Button>
                               {showCreateIssue && (
                                 <Button
                                   size="sm"
@@ -347,6 +362,17 @@ const ScorecardTable = ({ metrics, weeklyScores, readOnly = false, onIssueCreate
           </table>
       </CardContent>
     </Card>
+    
+    {/* Metric Trend Chart Modal */}
+    <MetricTrendChart
+      isOpen={chartModal.isOpen}
+      onClose={() => setChartModal({ isOpen: false, metric: null, metricId: null })}
+      metric={chartModal.metric}
+      metricId={chartModal.metricId}
+      orgId={user?.organizationId}
+      teamId={user?.teamId || '00000000-0000-0000-0000-000000000000'}
+    />
+  </>
   );
 };
 

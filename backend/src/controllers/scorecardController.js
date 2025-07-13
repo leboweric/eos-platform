@@ -276,6 +276,37 @@ export const updateScore = async (req, res) => {
   }
 };
 
+// Get historical data for a specific metric
+export const getMetricHistory = async (req, res) => {
+  try {
+    const { metricId } = req.params;
+    
+    // Get all historical scores for the metric
+    const result = await db.query(
+      `SELECT 
+        ss.week_date,
+        ss.value,
+        ss.created_at,
+        ss.updated_at
+       FROM scorecard_scores ss
+       WHERE ss.metric_id = $1
+       ORDER BY ss.week_date DESC`,
+      [metricId]
+    );
+    
+    res.json({
+      success: true,
+      data: result.rows
+    });
+  } catch (error) {
+    console.error('Error fetching metric history:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Failed to fetch metric history'
+    });
+  }
+};
+
 // Diagnostic endpoint to find scorecard data for an organization
 export const findScorecardData = async (req, res) => {
   try {
