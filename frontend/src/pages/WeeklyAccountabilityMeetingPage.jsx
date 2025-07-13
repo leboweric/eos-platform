@@ -615,11 +615,18 @@ const WeeklyAccountabilityMeetingPage = () => {
                 </CardContent>
               </Card>
             ) : (
-              <div className="space-y-4">
-                {todos.map(todo => (
-                  <TodoCard key={todo.id} todo={todo} readOnly />
-                ))}
-              </div>
+              <>
+                <div className="bg-red-50 border border-red-200 rounded-lg p-4">
+                  <p className="text-red-800 font-semibold text-center">
+                    NO DISCUSSION! The owners of the To Do simply reports "Done" or "Not Done." Not Done To Dos should be dropped to the Issues List. To Dos are solutions to Issues and have a 7 day time frame. World-Class teams complete 90% of the To Dos each week.
+                  </p>
+                </div>
+                <div className="space-y-4">
+                  {todos.map(todo => (
+                    <TodoCard key={todo.id} todo={todo} readOnly />
+                  ))}
+                </div>
+              </>
             )}
           </div>
         );

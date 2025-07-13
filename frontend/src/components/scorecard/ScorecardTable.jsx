@@ -111,9 +111,10 @@ const ScorecardTable = ({ metrics, weeklyScores, readOnly = false, onIssueCreate
         title: `${metric.name} - Off Track`,
         description: `Metric "${metric.name}" is off track. Current: ${formatValue(actualValue, metric.value_type)}, Goal: ${formatGoal(metric.goal, metric.value_type)}`,
         timeline: 'short_term',
-        ownerId: metric.ownerId || null
+        ownerId: metric.ownerId || metric.owner_id || null
       };
       
+      console.log('Creating issue with data:', issueData);
       await issuesService.createIssue(issueData);
       
       // Show success feedback
@@ -281,8 +282,8 @@ const ScorecardTable = ({ metrics, weeklyScores, readOnly = false, onIssueCreate
                               {showCreateIssue && (
                                 <Button
                                   size="sm"
-                                  variant="ghost"
-                                  className="h-6 w-6 p-0 hover:bg-red-100"
+                                  variant="outline"
+                                  className="h-6 w-6 p-0 hover:bg-red-100 border-red-300 ml-1"
                                   onClick={() => handleCreateIssue(metric, score)}
                                   disabled={creatingIssue[metric.id]}
                                   title="Create issue for off-track metric"
