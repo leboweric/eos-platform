@@ -912,7 +912,14 @@ export const getCurrentPriorities = async (req, res) => {
     
     const prioritiesResult = await query(prioritiesQuery, [orgId]);
     console.log(`Found ${prioritiesResult.rows.length} priorities:`, 
-      prioritiesResult.rows.map(p => ({ id: p.id, title: p.title, deleted_at: p.deleted_at })));
+      prioritiesResult.rows.map(p => ({ 
+        id: p.id, 
+        title: p.title, 
+        deleted_at: p.deleted_at,
+        deleted_at_type: typeof p.deleted_at,
+        is_null: p.deleted_at === null,
+        is_undefined: p.deleted_at === undefined
+      })));
     
     // Get milestones for all priorities
     const priorityIds = prioritiesResult.rows.map(p => p.id);
@@ -936,7 +943,18 @@ export const getCurrentPriorities = async (req, res) => {
     const companyPriorities = [];
     const teamMemberPriorities = {};
     
-    prioritiesResult.rows.forEach(priority => {
+    // Filter out any priorities that somehow have deleted_at set (double-check)
+    const activePriorities = prioritiesResult.rows.filter(priority => {
+      const isDeleted = priority.deleted_at !== null && priority.deleted_at !== undefined;
+      if (isDeleted) {
+        console.log(`Filtering out deleted priority: ${priority.title} (deleted_at: ${priority.deleted_at})`);
+      }
+      return !isDeleted;
+    });
+
+    console.log(`After deletion filter: ${activePriorities.length} active priorities`);
+
+    activePriorities.forEach(priority => {
       const priorityWithMilestones = {
         ...priority,
         milestones: milestonesByPriority[priority.id] || [],
@@ -950,7 +968,7 @@ export const getCurrentPriorities = async (req, res) => {
         owner_last_name: priority.owner_last_name
       };
       
-      console.log(`Processing priority: ${priority.title}, is_company_priority: ${priority.is_company_priority}, owner_id: ${priority.owner_id}`);
+      console.log(`Processing priority: ${priority.title}, is_company_priority: ${priority.is_company_priority}, owner_id: ${priority.owner_id}, deleted_at: ${priority.deleted_at}`);
       
       if (priority.is_company_priority) {
         companyPriorities.push(priorityWithMilestones);
