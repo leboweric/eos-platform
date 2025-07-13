@@ -315,7 +315,15 @@ const QuarterlyPrioritiesPage = () => {
       const orgId = user?.organizationId;
       const teamId = user?.teamId || '00000000-0000-0000-0000-000000000000';
       
+      // Get current quarter and year
+      const now = new Date();
+      const currentQuarter = Math.floor((now.getMonth() / 3)) + 1;
+      const currentYear = now.getFullYear();
+      const quarter = `Q${currentQuarter}`;
+      
       await quarterlyPrioritiesService.updatePredictions(orgId, teamId, {
+        quarter,
+        year: currentYear,
         revenue: predictions.revenue,
         profit: predictions.profit,
         measurables: predictions.measurables
