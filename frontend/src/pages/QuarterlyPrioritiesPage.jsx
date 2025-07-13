@@ -82,7 +82,7 @@ class ErrorBoundary extends Component {
 }
 
 const QuarterlyPrioritiesPage = () => {
-  const { user } = useAuthStore();
+  const { user, isOnLeadershipTeam } = useAuthStore();
   const [showArchived, setShowArchived] = useState(false);
   const [showAddPriority, setShowAddPriority] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -709,6 +709,37 @@ const QuarterlyPrioritiesPage = () => {
                   }}>
                     <Edit className="h-4 w-4" />
                   </Button>
+                  {!isArchived && isOnLeadershipTeam() && priority.is_company_priority && (
+                    <Button 
+                      variant="ghost" 
+                      size="sm" 
+                      onClick={async () => {
+                        try {
+                          const orgId = localStorage.getItem('impersonatedOrgId') || user?.organizationId || user?.organization_id;
+                          const teamId = priority.team_id || user?.teamId || '00000000-0000-0000-0000-000000000000';
+                          
+                          if (priority.is_published_to_departments) {
+                            await quarterlyPrioritiesService.unpublishPriority(orgId, teamId, priority.id);
+                          } else {
+                            await quarterlyPrioritiesService.publishPriority(orgId, teamId, priority.id);
+                          }
+                          
+                          // Refresh data
+                          await fetchQuarterlyData();
+                        } catch (error) {
+                          console.error('Failed to toggle publish status:', error);
+                          setError(error.response?.data?.error || 'Failed to update publish status');
+                        }
+                      }}
+                      title={priority.is_published_to_departments ? "Unpublish from departments" : "Publish to departments"}
+                    >
+                      {priority.is_published_to_departments ? (
+                        <Eye className="h-4 w-4" />
+                      ) : (
+                        <EyeOff className="h-4 w-4" />
+                      )}
+                    </Button>
+                  )}
                   {!isArchived && (
                     <Button 
                       variant="ghost" 

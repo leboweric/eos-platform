@@ -8,7 +8,9 @@ import {
   Calendar,
   CheckCircle,
   AlertTriangle,
-  Edit
+  Edit,
+  Eye,
+  EyeOff
 } from 'lucide-react';
 import { useState } from 'react';
 import { issuesService } from '../../services/issuesService';
@@ -35,11 +37,12 @@ import { useAuthStore } from '../../stores/authStore';
  * @param {Function} props.onIssueCreated - Issue creation handler
  * @param {Function} props.onStatusChange - Status change handler
  */
-const PriorityCard = ({ priority, readOnly = false, onIssueCreated, onStatusChange }) => {
-  const { user } = useAuthStore();
+const PriorityCard = ({ priority, readOnly = false, onIssueCreated, onStatusChange, onPublishChange }) => {
+  const { user, isOnLeadershipTeam } = useAuthStore();
   const [creatingIssue, setCreatingIssue] = useState(false);
   const [updatingStatus, setUpdatingStatus] = useState(false);
   const [editingStatus, setEditingStatus] = useState(false);
+  const [publishingStatus, setPublishingStatus] = useState(false);
   const statusColors = {
     'on-track': 'bg-green-100 text-green-700 border-green-200',
     'off-track': 'bg-red-100 text-red-700 border-red-200',
@@ -135,8 +138,35 @@ const PriorityCard = ({ priority, readOnly = false, onIssueCreated, onStatusChan
     }
   };
 
+  const handlePublishToggle = async () => {
+    try {
+      setPublishingStatus(true);
+      
+      const orgId = localStorage.getItem('impersonatedOrgId') || user?.organizationId || user?.organization_id;
+      const teamId = priority.team_id || user?.teamId || '00000000-0000-0000-0000-000000000000';
+      
+      if (priority.is_published_to_departments) {
+        await quarterlyPrioritiesService.unpublishPriority(orgId, teamId, priority.id);
+      } else {
+        await quarterlyPrioritiesService.publishPriority(orgId, teamId, priority.id);
+      }
+      
+      // Notify parent component
+      if (onPublishChange) {
+        onPublishChange(priority.id, !priority.is_published_to_departments);
+      }
+      
+      setPublishingStatus(false);
+    } catch (error) {
+      console.error('Failed to toggle publish status:', error);
+      setPublishingStatus(false);
+      alert(error.response?.data?.error || 'Failed to update publish status');
+    }
+  };
+
   const isOffTrack = priority.status === 'off-track' || priority.status === 'at-risk';
   const showCreateIssue = !readOnly && isOffTrack && priority.status !== 'complete';
+  const showPublishButton = !readOnly && isOnLeadershipTeam() && priority.is_company_priority;
 
   return (
     <Card className={priority.status === 'off-track' ? 'border-red-200' : ''}>
@@ -213,25 +243,56 @@ const PriorityCard = ({ priority, readOnly = false, onIssueCreated, onStatusChan
             )}
           </div>
           
-          {showCreateIssue && (
-            <Button
-              size="sm"
-              variant="ghost"
-              className="h-8 px-2 hover:bg-red-50"
-              onClick={handleCreateIssue}
-              disabled={creatingIssue}
-              title="Create issue for off-track priority"
-            >
-              {creatingIssue ? (
-                <span className="animate-spin">⏳</span>
-              ) : (
-                <>
-                  <AlertTriangle className="h-4 w-4 text-red-600 mr-1" />
-                  <span className="text-xs">Create Issue</span>
-                </>
-              )}
-            </Button>
-          )}
+          <div className="flex items-center gap-2">
+            {showPublishButton && (
+              <Button
+                size="sm"
+                variant={priority.is_published_to_departments ? "default" : "outline"}
+                className="h-8 px-2"
+                onClick={handlePublishToggle}
+                disabled={publishingStatus}
+                title={priority.is_published_to_departments ? "Unpublish from departments" : "Publish to departments"}
+              >
+                {publishingStatus ? (
+                  <span className="animate-spin">⏳</span>
+                ) : (
+                  <>
+                    {priority.is_published_to_departments ? (
+                      <>
+                        <Eye className="h-4 w-4 mr-1" />
+                        <span className="text-xs">Published</span>
+                      </>
+                    ) : (
+                      <>
+                        <EyeOff className="h-4 w-4 mr-1" />
+                        <span className="text-xs">Not Published</span>
+                      </>
+                    )}
+                  </>
+                )}
+              </Button>
+            )}
+            
+            {showCreateIssue && (
+              <Button
+                size="sm"
+                variant="ghost"
+                className="h-8 px-2 hover:bg-red-50"
+                onClick={handleCreateIssue}
+                disabled={creatingIssue}
+                title="Create issue for off-track priority"
+              >
+                {creatingIssue ? (
+                  <span className="animate-spin">⏳</span>
+                ) : (
+                  <>
+                    <AlertTriangle className="h-4 w-4 text-red-600 mr-1" />
+                    <span className="text-xs">Create Issue</span>
+                  </>
+                )}
+              </Button>
+            )}
+          </div>
         </div>
       </CardContent>
     </Card>

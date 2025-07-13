@@ -147,4 +147,21 @@ export const quarterlyPrioritiesService = {
     
     return response.data.data;
   },
+
+  // Publishing controls (Leadership Team only)
+  async publishPriority(orgId, teamId, priorityId) {
+    const response = await axios.put(
+      `/organizations/${orgId}/teams/${teamId}/quarterly-priorities/priorities/${priorityId}/publish`
+    );
+    
+    return response.data;
+  },
+
+  async unpublishPriority(orgId, teamId, priorityId) {
+    const response = await axios.put(
+      `/organizations/${orgId}/teams/${teamId}/quarterly-priorities/priorities/${priorityId}/unpublish`
+    );
+    
+    return response.data;
+  },
 };
