@@ -292,6 +292,9 @@ export const createPriority = async (req, res) => {
       return res.status(400).json({ error: 'Owner ID is required' });
     }
     
+    // Convert empty string to null for date field
+    const parsedDueDate = dueDate === '' ? null : dueDate;
+    
     const priorityId = uuidv4();
     
     // Check which columns exist
@@ -300,7 +303,7 @@ export const createPriority = async (req, res) => {
     
     // Build dynamic insert query based on available columns
     let columns = ['id', 'organization_id', 'title', 'description', 'owner_id', 'due_date', 'quarter', 'year', 'is_company_priority', 'status'];
-    let values = [priorityId, orgId, title, description, actualOwnerId, dueDate, quarter, year, isCompanyPriority, 'on-track'];
+    let values = [priorityId, orgId, title, description, actualOwnerId, parsedDueDate, quarter, year, isCompanyPriority, 'on-track'];
     
     // Only add team_id if it's not the default empty UUID
     if (teamId && teamId !== '00000000-0000-0000-0000-000000000000') {
@@ -343,14 +346,14 @@ export const createPriority = async (req, res) => {
     
     // Create milestones if provided
     if (milestones.length > 0) {
-      const milestoneValues = milestones.map(m => 
-        `('${uuidv4()}', '${priorityId}', '${m.title}', '${m.dueDate}', false)`
-      ).join(',');
-      
-      await query(
-        `INSERT INTO priority_milestones (id, priority_id, title, due_date, completed)
-         VALUES ${milestoneValues}`
-      );
+      for (const milestone of milestones) {
+        const milestoneDueDate = milestone.dueDate === '' ? null : milestone.dueDate;
+        await query(
+          `INSERT INTO priority_milestones (id, priority_id, title, due_date, completed)
+           VALUES ($1, $2, $3, $4, $5)`,
+          [uuidv4(), priorityId, milestone.title, milestoneDueDate, false]
+        );
+      }
     }
     
     res.json({
@@ -386,6 +389,9 @@ export const updatePriority = async (req, res) => {
     const { orgId, teamId, priorityId } = req.params;
     const { title, description, status, progress, dueDate, ownerId, isCompanyPriority } = req.body;
     
+    // Convert empty string to null for date field
+    const parsedDueDate = dueDate === '' ? null : dueDate;
+    
     // Check if progress column exists
     const hasProgress = await checkProgressColumn();
     
@@ -404,7 +410,7 @@ export const updatePriority = async (req, res) => {
            updated_at = NOW()
        WHERE id = $8 AND organization_id = $9
        RETURNING *`;
-      query_params = [title, description, status, dueDate, ownerId, isCompanyPriority, progress, priorityId, orgId];
+      query_params = [title, description, status, parsedDueDate, ownerId, isCompanyPriority, progress, priorityId, orgId];
     } else {
       query_text = `UPDATE quarterly_priorities 
        SET title = COALESCE($1, title),
@@ -416,7 +422,7 @@ export const updatePriority = async (req, res) => {
            updated_at = NOW()
        WHERE id = $7 AND organization_id = $8
        RETURNING *`;
-      query_params = [title, description, status, dueDate, ownerId, isCompanyPriority, priorityId, orgId];
+      query_params = [title, description, status, parsedDueDate, ownerId, isCompanyPriority, priorityId, orgId];
     }
     
     const result = await query(query_text, query_params);
@@ -546,12 +552,15 @@ export const createMilestone = async (req, res) => {
       return res.status(400).json({ error: 'Milestone title is required' });
     }
     
+    // Convert empty string to null for date field
+    const parsedDueDate = dueDate === '' ? null : dueDate;
+    
     const result = await query(
       `INSERT INTO priority_milestones 
        (id, priority_id, title, due_date, completed)
        VALUES ($1, $2, $3, $4, false)
        RETURNING *`,
-      [uuidv4(), priorityId, title, dueDate || null]
+      [uuidv4(), priorityId, title, parsedDueDate]
     );
     
     // Update priority progress
@@ -572,6 +581,9 @@ export const updateMilestone = async (req, res) => {
   try {
     const { orgId, teamId, priorityId, milestoneId } = req.params;
     const { title, dueDate, completed } = req.body;
+    
+    // Convert empty string to null for date field
+    const parsedDueDate = dueDate === '' ? null : dueDate;
     
     // First, check if milestone exists
     const existingMilestone = await query(
@@ -604,7 +616,7 @@ export const updateMilestone = async (req, res) => {
            updated_at = NOW()
        WHERE id = $4
        RETURNING *`,
-      [title, dueDate, completed, milestoneId]
+      [title, parsedDueDate, completed, milestoneId]
     );
     
     // Update priority progress based on milestones
