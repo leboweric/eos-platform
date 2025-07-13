@@ -25,6 +25,14 @@ import OrganizationSettings from './pages/OrganizationSettings';
 import OrganizationalChartPage from './pages/OrganizationalChartPage';
 import WeeklyAccountabilityMeetingPage from './pages/WeeklyAccountabilityMeetingPage';
 
+// Department Components
+import DepartmentLayout from './components/DepartmentLayout';
+import DepartmentPrioritiesPage from './pages/department/DepartmentPrioritiesPage';
+import DepartmentScorecardPage from './pages/department/DepartmentScorecardPage';
+import DepartmentMeetingsPage from './pages/department/DepartmentMeetingsPage';
+import DepartmentTodosPage from './pages/department/DepartmentTodosPage';
+import DepartmentIssuesPage from './pages/department/DepartmentIssuesPage';
+
 import './App.css';
 
 function App() {
@@ -63,6 +71,16 @@ function App() {
           <Route path="/todos" element={user ? <Layout><TodosPage /></Layout> : <Navigate to="/login" />} />
           <Route path="/issues" element={user ? <Layout><IssuesPage /></Layout> : <Navigate to="/login" />} />
           <Route path="/departments" element={user ? <Layout><DepartmentsPage /></Layout> : <Navigate to="/login" />} />
+          
+          {/* Department-specific routes */}
+          <Route path="/departments/:departmentId" element={user ? <Layout><DepartmentLayout /></Layout> : <Navigate to="/login" />}>
+            <Route path="priorities" element={<DepartmentPrioritiesPage />} />
+            <Route path="scorecard" element={<DepartmentScorecardPage />} />
+            <Route path="meetings" element={<DepartmentMeetingsPage />} />
+            <Route path="todos" element={<DepartmentTodosPage />} />
+            <Route path="issues" element={<DepartmentIssuesPage />} />
+          </Route>
+          
           <Route path="/accountability" element={user ? <Layout><AccountabilityChart /></Layout> : <Navigate to="/login" />} />
           <Route path="/billing" element={user ? <Layout><BillingPage /></Layout> : <Navigate to="/login" />} />
           <Route path="/users" element={user ? <Layout><UsersPage /></Layout> : <Navigate to="/login" />} />

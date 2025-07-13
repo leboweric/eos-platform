@@ -12,15 +12,32 @@ import {
   Trash2,
   Users,
   ChevronRight,
-  Search
+  Search,
+  Loader2,
+  Target,
+  BarChart,
+  Calendar,
+  CheckSquare,
+  AlertCircle
 } from 'lucide-react';
 import { Textarea } from '@/components/ui/textarea';
+import { departmentService } from '../services/departmentService';
+import { useAuthStore } from '../stores/authStore';
+import { useNavigate } from 'react-router-dom';
+import { Alert, AlertDescription } from '@/components/ui/alert';
 
 const DepartmentsPage = () => {
   const [departments, setDepartments] = useState([]);
   const [searchTerm, setSearchTerm] = useState('');
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editingDept, setEditingDept] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+  const [saving, setSaving] = useState(false);
+  const [deleting, setDeleting] = useState(null);
+  const navigate = useNavigate();
+  const { user } = useAuthStore();
+  
   const [formData, setFormData] = useState({
     name: '',
     description: '',
@@ -28,50 +45,24 @@ const DepartmentsPage = () => {
     parentDepartmentId: null
   });
 
-  // Mock data - in production, fetch from API
+  // Fetch departments from API
   useEffect(() => {
-    setDepartments([
-      {
-        id: '1',
-        name: 'Sales',
-        description: 'Revenue generation and customer acquisition',
-        memberCount: 12,
-        leaderId: 'user1',
-        leaderName: 'John Smith',
-        parentDepartmentId: null,
-        subDepartments: [
-          {
-            id: '4',
-            name: 'Inside Sales',
-            description: 'Phone and email sales',
-            memberCount: 5,
-            leaderId: 'user4',
-            leaderName: 'Sarah Jones'
-          }
-        ]
-      },
-      {
-        id: '2',
-        name: 'Marketing',
-        description: 'Brand awareness and lead generation',
-        memberCount: 8,
-        leaderId: 'user2',
-        leaderName: 'Jane Doe',
-        parentDepartmentId: null,
-        subDepartments: []
-      },
-      {
-        id: '3',
-        name: 'Engineering',
-        description: 'Product development and technical operations',
-        memberCount: 20,
-        leaderId: 'user3',
-        leaderName: 'Mike Johnson',
-        parentDepartmentId: null,
-        subDepartments: []
-      }
-    ]);
+    fetchDepartments();
   }, []);
+
+  const fetchDepartments = async () => {
+    try {
+      setLoading(true);
+      setError(null);
+      const data = await departmentService.getDepartments();
+      setDepartments(data);
+    } catch (error) {
+      console.error('Error fetching departments:', error);
+      setError('Failed to load departments');
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const handleOpenDialog = (dept = null) => {
     if (dept) {
@@ -94,28 +85,48 @@ const DepartmentsPage = () => {
     setDialogOpen(true);
   };
 
-  const handleSave = () => {
-    if (editingDept) {
-      // Update existing department
-      setDepartments(prev => prev.map(dept => 
-        dept.id === editingDept.id ? { ...dept, ...formData } : dept
-      ));
-    } else {
-      // Add new department
-      const newDept = {
-        id: Date.now().toString(),
-        ...formData,
-        memberCount: 0,
-        subDepartments: []
-      };
-      setDepartments(prev => [...prev, newDept]);
+  const handleSave = async () => {
+    try {
+      setSaving(true);
+      setError(null);
+      
+      if (editingDept) {
+        // Update existing department
+        await departmentService.updateDepartment(editingDept.id, formData);
+      } else {
+        // Add new department
+        await departmentService.createDepartment(formData);
+      }
+      
+      await fetchDepartments();
+      setDialogOpen(false);
+      setFormData({
+        name: '',
+        description: '',
+        leaderId: '',
+        parentDepartmentId: null
+      });
+    } catch (error) {
+      console.error('Error saving department:', error);
+      setError(error.response?.data?.error || 'Failed to save department');
+    } finally {
+      setSaving(false);
     }
-    setDialogOpen(false);
   };
 
-  const handleDelete = (deptId) => {
+  const handleDelete = async (deptId) => {
     if (window.confirm('Are you sure you want to delete this department?')) {
-      setDepartments(prev => prev.filter(dept => dept.id !== deptId));
+      try {
+        setDeleting(deptId);
+        setError(null);
+        await departmentService.deleteDepartment(deptId);
+        await fetchDepartments();
+      } catch (error) {
+        console.error('Error deleting department:', error);
+        setError(error.response?.data?.error || 'Failed to delete department');
+      } finally {
+        setDeleting(null);
+      }
     }
   };
 
@@ -132,9 +143,9 @@ const DepartmentsPage = () => {
             <Building2 className="h-5 w-5 text-gray-600" />
             <div>
               <CardTitle className="text-lg">{department.name}</CardTitle>
-              {department.leaderName && (
+              {department.leader_name && (
                 <p className="text-sm text-gray-600 mt-1">
-                  Led by {department.leaderName}
+                  Led by {department.leader_name}
                 </p>
               )}
             </div>
@@ -142,12 +153,13 @@ const DepartmentsPage = () => {
           <div className="flex items-center space-x-2">
             <Badge variant="secondary">
               <Users className="h-3 w-3 mr-1" />
-              {department.memberCount} members
+              {department.member_count || 0} members
             </Badge>
             <Button
               variant="ghost"
               size="sm"
               onClick={() => handleOpenDialog(department)}
+              title="Edit department"
             >
               <Edit className="h-4 w-4" />
             </Button>
@@ -155,34 +167,90 @@ const DepartmentsPage = () => {
               variant="ghost"
               size="sm"
               onClick={() => handleDelete(department.id)}
+              disabled={deleting === department.id}
+              title="Delete department"
             >
-              <Trash2 className="h-4 w-4" />
+              {deleting === department.id ? (
+                <Loader2 className="h-4 w-4 animate-spin" />
+              ) : (
+                <Trash2 className="h-4 w-4" />
+              )}
             </Button>
           </div>
         </div>
       </CardHeader>
-      {department.description && (
-        <CardContent>
-          <p className="text-gray-600">{department.description}</p>
-          {!isSubDept && department.subDepartments?.length > 0 && (
-            <div className="mt-4">
-              <p className="text-sm font-medium mb-2 flex items-center">
-                <ChevronRight className="h-4 w-4 mr-1" />
-                Sub-departments
-              </p>
-              <div className="space-y-3">
-                {department.subDepartments.map(subDept => (
-                  <DepartmentCard
-                    key={subDept.id}
-                    department={subDept}
-                    isSubDept={true}
-                  />
-                ))}
-              </div>
+      <CardContent>
+        {department.description && (
+          <p className="text-gray-600 mb-4">{department.description}</p>
+        )}
+        
+        {/* Department Management Actions */}
+        <div className="grid grid-cols-2 md:grid-cols-5 gap-2 mb-4">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => navigate(`/departments/${department.id}/priorities`)}
+            className="flex items-center justify-center"
+          >
+            <Target className="h-4 w-4 mr-1" />
+            Priorities
+          </Button>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => navigate(`/departments/${department.id}/scorecard`)}
+            className="flex items-center justify-center"
+          >
+            <BarChart className="h-4 w-4 mr-1" />
+            Scorecard
+          </Button>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => navigate(`/departments/${department.id}/meetings`)}
+            className="flex items-center justify-center"
+          >
+            <Calendar className="h-4 w-4 mr-1" />
+            Meetings
+          </Button>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => navigate(`/departments/${department.id}/todos`)}
+            className="flex items-center justify-center"
+          >
+            <CheckSquare className="h-4 w-4 mr-1" />
+            To-Dos
+          </Button>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => navigate(`/departments/${department.id}/issues`)}
+            className="flex items-center justify-center"
+          >
+            <AlertCircle className="h-4 w-4 mr-1" />
+            Issues
+          </Button>
+        </div>
+        
+        {!isSubDept && department.subDepartments?.length > 0 && (
+          <div className="mt-4 pt-4 border-t">
+            <p className="text-sm font-medium mb-2 flex items-center">
+              <ChevronRight className="h-4 w-4 mr-1" />
+              Sub-departments
+            </p>
+            <div className="space-y-3">
+              {department.subDepartments.map(subDept => (
+                <DepartmentCard
+                  key={subDept.id}
+                  department={subDept}
+                  isSubDept={true}
+                />
+              ))}
             </div>
-          )}
-        </CardContent>
-      )}
+          </div>
+        )}
+      </CardContent>
     </Card>
   );
 
@@ -202,6 +270,14 @@ const DepartmentsPage = () => {
         </Button>
       </div>
 
+      {/* Error Alert */}
+      {error && (
+        <Alert variant="destructive">
+          <AlertCircle className="h-4 w-4" />
+          <AlertDescription>{error}</AlertDescription>
+        </Alert>
+      )}
+
       {/* Search */}
       <div className="relative">
         <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
@@ -214,11 +290,27 @@ const DepartmentsPage = () => {
       </div>
 
       {/* Departments List */}
-      <div className="space-y-4">
-        {filteredDepartments.map(dept => (
-          <DepartmentCard key={dept.id} department={dept} />
-        ))}
-      </div>
+      {loading ? (
+        <div className="flex items-center justify-center py-12">
+          <Loader2 className="h-8 w-8 animate-spin text-gray-400" />
+        </div>
+      ) : filteredDepartments.length === 0 ? (
+        <Card>
+          <CardContent className="flex flex-col items-center justify-center py-12">
+            <Building2 className="h-12 w-12 text-gray-400 mb-4" />
+            <p className="text-gray-600 text-lg font-medium">No departments found</p>
+            <p className="text-gray-500 text-sm mt-1">
+              {searchTerm ? 'Try adjusting your search' : 'Create your first department to get started'}
+            </p>
+          </CardContent>
+        </Card>
+      ) : (
+        <div className="space-y-4">
+          {filteredDepartments.map(dept => (
+            <DepartmentCard key={dept.id} department={dept} />
+          ))}
+        </div>
+      )}
 
       {/* Department Dialog */}
       <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
@@ -267,11 +359,18 @@ const DepartmentsPage = () => {
             </div>
           </div>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setDialogOpen(false)}>
+            <Button variant="outline" onClick={() => setDialogOpen(false)} disabled={saving}>
               Cancel
             </Button>
-            <Button onClick={handleSave}>
-              {editingDept ? 'Update' : 'Create'} Department
+            <Button onClick={handleSave} disabled={saving || !formData.name}>
+              {saving ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  {editingDept ? 'Updating...' : 'Creating...'}
+                </>
+              ) : (
+                <>{editingDept ? 'Update' : 'Create'} Department</>
+              )}
             </Button>
           </DialogFooter>
         </DialogContent>
