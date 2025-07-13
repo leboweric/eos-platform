@@ -979,7 +979,11 @@ const QuarterlyPrioritiesPage = () => {
                 <Button
                   variant="ghost"
                   size="sm"
-                  onClick={() => setShowUpdateDialog(true)}
+                  onClick={() => {
+                    setUpdateText('');
+                    setUpdateStatusChange(null);
+                    setShowUpdateDialog(true);
+                  }}
                   className="text-xs"
                 >
                   <Plus className="h-3 w-3 mr-1" />
