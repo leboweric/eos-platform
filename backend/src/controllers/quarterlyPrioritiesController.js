@@ -1008,7 +1008,10 @@ export const getCurrentPriorities = async (req, res) => {
     activePriorities.forEach(priority => {
       const priorityWithMilestones = {
         ...priority,
-        milestones: milestonesByPriority[priority.id] || [],
+        milestones: (milestonesByPriority[priority.id] || []).map(m => ({
+          ...m,
+          dueDate: m.due_date
+        })),
         owner: priority.owner_id ? {
           id: priority.owner_id,
           name: priority.owner_name,
