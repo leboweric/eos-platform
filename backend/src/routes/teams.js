@@ -1,5 +1,5 @@
 import express from 'express';
-import { authenticateToken } from '../middleware/auth.js';
+import { authenticate } from '../middleware/auth.js';
 import {
   getTeams,
   getTeam,
@@ -12,7 +12,7 @@ import {
 const router = express.Router({ mergeParams: true });
 
 // All routes require authentication
-router.use(authenticateToken);
+router.use(authenticate);
 
 // Team routes
 router.get('/', getTeams);
