@@ -975,6 +975,7 @@ export const getCurrentPriorities = async (req, res) => {
     // Get milestones for all priorities
     const priorityIds = prioritiesResult.rows.map(p => p.id);
     let milestonesByPriority = {};
+    let updatesByPriority = {};
     
     if (priorityIds.length > 0) {
       const milestonesResult = await query(
@@ -987,6 +988,28 @@ export const getCurrentPriorities = async (req, res) => {
           milestonesByPriority[milestone.priority_id] = [];
         }
         milestonesByPriority[milestone.priority_id].push(milestone);
+      });
+      
+      // Get latest update for each priority
+      const updatesResult = await query(
+        `SELECT DISTINCT ON (priority_id) 
+          priority_id,
+          update_text,
+          pu.created_at,
+          u.first_name || ' ' || u.last_name as author_name
+         FROM priority_updates pu
+         JOIN users u ON pu.created_by = u.id
+         WHERE priority_id = ANY($1)
+         ORDER BY priority_id, pu.created_at DESC`,
+        [priorityIds]
+      );
+      
+      updatesResult.rows.forEach(update => {
+        updatesByPriority[update.priority_id] = {
+          text: update.update_text,
+          date: update.created_at,
+          author: update.author_name
+        };
       });
     }
     
@@ -1019,7 +1042,8 @@ export const getCurrentPriorities = async (req, res) => {
         } : null,
         dueDate: priority.due_date,
         owner_first_name: priority.owner_first_name,
-        owner_last_name: priority.owner_last_name
+        owner_last_name: priority.owner_last_name,
+        latestUpdate: updatesByPriority[priority.id] || null
       };
       
       console.log(`Processing priority: ${priority.title}, is_company_priority: ${priority.is_company_priority}, owner_id: ${priority.owner_id}, deleted_at: ${priority.deleted_at}`);

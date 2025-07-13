@@ -973,20 +973,20 @@ const QuarterlyPrioritiesPage = () => {
             </div>
 
             {/* Latest Update */}
-            {priority.latestUpdate && (
-              <div>
-                <div className="flex items-center justify-between mb-2">
-                  <Label className="text-sm text-gray-600">Latest Update</Label>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => setShowUpdateDialog(true)}
-                    className="text-xs"
-                  >
-                    <Plus className="h-3 w-3 mr-1" />
-                    Add Update
-                  </Button>
-                </div>
+            <div>
+              <div className="flex items-center justify-between mb-2">
+                <Label className="text-sm text-gray-600">Latest Update</Label>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => setShowUpdateDialog(true)}
+                  className="text-xs"
+                >
+                  <Plus className="h-3 w-3 mr-1" />
+                  Add Update
+                </Button>
+              </div>
+              {priority.latestUpdate ? (
                 <div className="bg-gray-50 p-3 rounded-lg">
                   <div className="flex items-center justify-between mb-2">
                     <span className="text-sm font-medium">{priority.latestUpdate.author}</span>
@@ -994,8 +994,12 @@ const QuarterlyPrioritiesPage = () => {
                   </div>
                   <p className="text-sm text-gray-700">{priority.latestUpdate.text}</p>
                 </div>
-              </div>
-            )}
+              ) : (
+                <div className="bg-gray-50 p-3 rounded-lg text-center">
+                  <p className="text-sm text-gray-500 italic">No updates yet</p>
+                </div>
+              )}
+            </div>
           </div>
         </CardContent>
 
@@ -1005,7 +1009,7 @@ const QuarterlyPrioritiesPage = () => {
             <DialogHeader>
               <DialogTitle>Add Update</DialogTitle>
               <DialogDescription>
-                Share progress or any blockers for this priority
+                Share progress or any blockers for this priority. Updates should be provided before each weekly accountability meeting.
               </DialogDescription>
             </DialogHeader>
             <div className="space-y-4">
