@@ -74,8 +74,9 @@ const WeeklyAccountabilityMeetingPage = () => {
   const fetchScorecardData = async () => {
     try {
       setLoading(true);
-      const response = await scorecardService.getScorecard(teamId);
-      setScorecardMetrics(response.data.scorecard);
+      const orgId = localStorage.getItem('impersonatedOrgId') || user?.organizationId || user?.organization_id;
+      const response = await scorecardService.getScorecard(orgId, teamId);
+      setScorecardMetrics(response.scorecard || response.data?.scorecard || []);
       setLoading(false);
     } catch (error) {
       console.error('Failed to fetch scorecard:', error);
@@ -87,7 +88,14 @@ const WeeklyAccountabilityMeetingPage = () => {
   const fetchPrioritiesData = async () => {
     try {
       setLoading(true);
-      const response = await quarterlyPrioritiesService.getQuarterlyPriorities(teamId);
+      const orgId = localStorage.getItem('impersonatedOrgId') || user?.organizationId || user?.organization_id;
+      
+      // Get current quarter
+      const now = new Date();
+      const currentQuarter = Math.floor((now.getMonth() + 3) / 3);
+      const currentYear = now.getFullYear();
+      
+      const response = await quarterlyPrioritiesService.getQuarterlyPriorities(orgId, teamId, currentQuarter, currentYear);
       setPriorities(response.data.priorities.filter(p => p.deleted_at === null));
       setLoading(false);
     } catch (error) {
