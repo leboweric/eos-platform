@@ -199,7 +199,6 @@ const ScorecardTable = ({ metrics, weeklyScores, readOnly = false }) => {
               )}
             </tbody>
           </table>
-        </div>
       </CardContent>
     </Card>
   );
