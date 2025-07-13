@@ -156,6 +156,12 @@ const QuarterlyPrioritiesPage = () => {
       } else {
         const data = await quarterlyPrioritiesService.getCurrentPriorities(orgId, teamId);
         
+        // Log the received priorities to check if description is present
+        console.log('[fetchQuarterlyData] Company priorities:', data.companyPriorities);
+        if (data.companyPriorities && data.companyPriorities.length > 0) {
+          console.log('[fetchQuarterlyData] First priority description:', data.companyPriorities[0].description);
+        }
+        
         // Ensure predictions have all required nested properties
         const safePredictions = data.predictions || {};
         setPredictions({
@@ -343,6 +349,11 @@ const QuarterlyPrioritiesPage = () => {
       
       console.log('[QuarterlyPriorities] Updating priority:', priorityId, 'with:', updates);
       console.log('[QuarterlyPriorities] Using orgId:', orgId, 'teamId:', teamId);
+      
+      // Ensure description is included in updates
+      if (updates.description === undefined) {
+        console.warn('[QuarterlyPriorities] Description field missing from updates');
+      }
       
       await quarterlyPrioritiesService.updatePriority(orgId, teamId, priorityId, updates);
       
