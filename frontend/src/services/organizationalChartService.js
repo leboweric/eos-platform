@@ -1,9 +1,29 @@
 import axios from 'axios';
 
 const getOrgId = () => {
+  // First check for impersonated org ID
+  const impersonatedOrgId = localStorage.getItem('impersonatedOrgId');
+  if (impersonatedOrgId) {
+    return impersonatedOrgId;
+  }
+  
+  // Then try to get from auth store
   const authState = JSON.parse(localStorage.getItem('auth-store') || '{}');
   const user = authState?.state?.user;
-  return localStorage.getItem('impersonatedOrgId') || user?.organizationId;
+  
+  // Also check the user object directly if it exists
+  if (user?.organizationId) {
+    return user.organizationId;
+  }
+  
+  // Fallback: try to get from the user's organization_id field (different naming)
+  if (user?.organization_id) {
+    return user.organization_id;
+  }
+  
+  // If still not found, log for debugging
+  console.warn('Organization ID not found in auth store:', authState);
+  return null;
 };
 
 export const organizationalChartService = {
