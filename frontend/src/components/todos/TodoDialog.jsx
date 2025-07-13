@@ -229,7 +229,13 @@ const TodoDialog = ({ open, onOpenChange, todo, teamMembers, onSave }) => {
                           type="button"
                           variant="ghost"
                           size="sm"
-                          onClick={() => window.open(todosService.getAttachmentDownloadUrl(todo.id, attachment.id), '_blank')}
+                          onClick={async () => {
+                            try {
+                              await todosService.downloadAttachment(todo.id, attachment.id, attachment.file_name);
+                            } catch (error) {
+                              setError('Failed to download attachment');
+                            }
+                          }}
                           title="Download"
                         >
                           <Download className="h-4 w-4" />
