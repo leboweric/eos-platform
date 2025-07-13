@@ -13,7 +13,8 @@ import {
   deleteTodo,
   uploadTodoAttachment,
   getTodoAttachments,
-  deleteTodoAttachment
+  deleteTodoAttachment,
+  downloadTodoAttachment
 } from '../controllers/todosController.js';
 
 const router = express.Router({ mergeParams: true });
@@ -89,6 +90,12 @@ router.post('/:todoId/attachments', [
 router.get('/:todoId/attachments', [
   param('todoId').isUUID()
 ], getTodoAttachments);
+
+// Download attachment
+router.get('/:todoId/attachments/:attachmentId/download', [
+  param('todoId').isUUID(),
+  param('attachmentId').isUUID()
+], downloadTodoAttachment);
 
 // Delete an attachment
 router.delete('/:todoId/attachments/:attachmentId', [

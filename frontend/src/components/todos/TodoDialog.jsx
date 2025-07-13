@@ -6,10 +6,12 @@ import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import { Loader2, Save, AlertCircle, Calendar, User, Paperclip, X } from 'lucide-react';
+import { Loader2, Save, AlertCircle, Calendar, User, Paperclip, X, Download } from 'lucide-react';
 import { todosService } from '../../services/todosService';
+import { useAuthStore } from '../../stores/authStore';
 
 const TodoDialog = ({ open, onOpenChange, todo, teamMembers, onSave }) => {
+  const { user } = useAuthStore();
   const [formData, setFormData] = useState({
     title: '',
     description: '',
@@ -221,15 +223,27 @@ const TodoDialog = ({ open, onOpenChange, todo, teamMembers, onSave }) => {
                 <div className="space-y-2">
                   {existingAttachments.map(attachment => (
                     <div key={attachment.id} className="flex items-center justify-between p-2 bg-gray-50 rounded">
-                      <span className="text-sm">{attachment.file_name}</span>
-                      <Button
-                        type="button"
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => deleteAttachment(attachment.id)}
-                      >
-                        <X className="h-4 w-4" />
-                      </Button>
+                      <span className="text-sm flex-1 truncate">{attachment.file_name}</span>
+                      <div className="flex items-center gap-1">
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => window.open(`${import.meta.env.VITE_API_URL}/api/v1/organizations/${user.organization_id}/todos/${todo.id}/attachments/${attachment.id}/download`, '_blank')}
+                          title="Download"
+                        >
+                          <Download className="h-4 w-4" />
+                        </Button>
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => deleteAttachment(attachment.id)}
+                          title="Delete"
+                        >
+                          <X className="h-4 w-4" />
+                        </Button>
+                      </div>
                     </div>
                   ))}
                 </div>

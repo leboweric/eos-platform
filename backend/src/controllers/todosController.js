@@ -1,5 +1,7 @@
 import { query } from '../config/database.js';
 import { v4 as uuidv4 } from 'uuid';
+import path from 'path';
+import fs from 'fs';
 
 // @desc    Get all todos for an organization
 // @route   GET /api/v1/organizations/:orgId/todos
@@ -367,6 +369,57 @@ export const getTodoAttachments = async (req, res) => {
   }
 };
 
+// @desc    Download an attachment
+// @route   GET /api/v1/organizations/:orgId/todos/:todoId/attachments/:attachmentId/download
+// @access  Private
+export const downloadTodoAttachment = async (req, res) => {
+  try {
+    const { orgId, todoId, attachmentId } = req.params;
+
+    // Get attachment details
+    const result = await query(
+      `SELECT a.*, t.organization_id
+       FROM todo_attachments a
+       JOIN todos t ON a.todo_id = t.id
+       WHERE a.id = $1 AND a.todo_id = $2 AND t.organization_id = $3`,
+      [attachmentId, todoId, orgId]
+    );
+
+    if (result.rows.length === 0) {
+      return res.status(404).json({
+        success: false,
+        error: 'Attachment not found'
+      });
+    }
+
+    const attachment = result.rows[0];
+    const filePath = path.resolve(attachment.file_path);
+
+    // Check if file exists
+    if (!fs.existsSync(filePath)) {
+      return res.status(404).json({
+        success: false,
+        error: 'File not found on server'
+      });
+    }
+
+    // Set appropriate headers
+    res.setHeader('Content-Type', attachment.mime_type || 'application/octet-stream');
+    res.setHeader('Content-Disposition', `attachment; filename="${attachment.file_name}"`);
+    res.setHeader('Content-Length', attachment.file_size);
+
+    // Stream the file
+    const fileStream = fs.createReadStream(filePath);
+    fileStream.pipe(res);
+  } catch (error) {
+    console.error('Error downloading attachment:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Failed to download attachment'
+    });
+  }
+};
+
 // @desc    Delete an attachment
 // @route   DELETE /api/v1/organizations/:orgId/todos/:todoId/attachments/:attachmentId
 // @access  Private
@@ -390,8 +443,11 @@ export const deleteTodoAttachment = async (req, res) => {
       });
     }
 
-    // TODO: Delete the actual file from storage
-    // This would depend on your storage solution (local, S3, etc.)
+    // Delete the actual file from storage
+    const filePath = path.resolve(result.rows[0].file_path);
+    if (fs.existsSync(filePath)) {
+      fs.unlinkSync(filePath);
+    }
 
     res.json({
       success: true,
@@ -413,5 +469,6 @@ export default {
   deleteTodo,
   uploadTodoAttachment,
   getTodoAttachments,
+  downloadTodoAttachment,
   deleteTodoAttachment
 };
