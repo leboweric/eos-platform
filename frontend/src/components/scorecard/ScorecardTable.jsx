@@ -5,7 +5,7 @@ import { useState } from 'react';
 import { issuesService } from '../../services/issuesService';
 import { useAuthStore } from '../../stores/authStore';
 
-const ScorecardTable = ({ metrics, weeklyScores, readOnly = false, onIssueCreated }) => {
+const ScorecardTable = ({ metrics, weeklyScores, readOnly = false, onIssueCreated, isRTL = false }) => {
   const { user } = useAuthStore();
   const [creatingIssue, setCreatingIssue] = useState({});
   // Get the last 12 weeks
@@ -24,13 +24,16 @@ const ScorecardTable = ({ metrics, weeklyScores, readOnly = false, onIssueCreate
     return weeks;
   };
 
-  const weekDates = getWeekDates();
-  const weekLabels = weekDates.map((date, index) => {
+  const weekDatesOriginal = getWeekDates();
+  const weekLabelsOriginal = weekDatesOriginal.map((date, index) => {
     const d = new Date(date);
     const month = d.toLocaleDateString('en-US', { month: 'short' });
     const day = d.getDate();
     return `${month} ${day}`;
   });
+  
+  const weekDates = isRTL ? [...weekDatesOriginal].reverse() : weekDatesOriginal;
+  const weekLabels = isRTL ? [...weekLabelsOriginal].reverse() : weekLabelsOriginal;
 
   // Format goal based on value type
   const formatGoal = (goal, valueType) => {
@@ -211,7 +214,8 @@ const ScorecardTable = ({ metrics, weeklyScores, readOnly = false, onIssueCreate
                     {/* Average column */}
                     <td className="p-4 text-center bg-gray-50 font-semibold">
                       {(() => {
-                        const scores = weekDates
+                        // Always use original order for calculations
+                        const scores = weekDatesOriginal
                           .map(weekDate => weeklyScores[metric.id]?.[weekDate])
                           .filter(score => score !== undefined && score !== null && score !== '');
                         
@@ -232,7 +236,8 @@ const ScorecardTable = ({ metrics, weeklyScores, readOnly = false, onIssueCreate
                     {/* Total column */}
                     <td className="p-4 text-center bg-gray-50 font-semibold">
                       {(() => {
-                        const scores = weekDates
+                        // Always use original order for calculations
+                        const scores = weekDatesOriginal
                           .map(weekDate => weeklyScores[metric.id]?.[weekDate])
                           .filter(score => score !== undefined && score !== null && score !== '');
                         

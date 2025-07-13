@@ -17,7 +17,8 @@ import {
   Newspaper,
   ListTodo,
   AlertTriangle,
-  CheckSquare
+  CheckSquare,
+  ArrowLeftRight
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import ScorecardTable from '../components/scorecard/ScorecardTable';
@@ -47,6 +48,7 @@ const WeeklyAccountabilityMeetingPage = () => {
   const [teamMembers, setTeamMembers] = useState([]);
   const [goodNews, setGoodNews] = useState([]);
   const [headlines, setHeadlines] = useState([]);
+  const [isRTL, setIsRTL] = useState(false); // Right-to-left reading direction for scorecard
 
   const agendaItems = [
     { id: 'good-news', label: 'Good News', duration: 5, icon: Smile },
@@ -244,15 +246,29 @@ const WeeklyAccountabilityMeetingPage = () => {
                 </CardContent>
               </Card>
             ) : (
-              <ScorecardTable 
-                metrics={scorecardMetrics} 
-                weeklyScores={weeklyScores} 
-                readOnly={false}
-                onIssueCreated={(message) => {
-                  setSuccess(message);
-                  setTimeout(() => setSuccess(null), 3000);
-                }}
-              />
+              <>
+                <div className="flex justify-end">
+                  <Button 
+                    onClick={() => setIsRTL(!isRTL)} 
+                    variant="outline"
+                    size="sm"
+                    title={isRTL ? "Switch to left-to-right" : "Switch to right-to-left"}
+                  >
+                    <ArrowLeftRight className="h-4 w-4 mr-2" />
+                    {isRTL ? "Switch to LTR" : "Switch to RTL"}
+                  </Button>
+                </div>
+                <ScorecardTable 
+                  metrics={scorecardMetrics} 
+                  weeklyScores={weeklyScores} 
+                  readOnly={false}
+                  isRTL={isRTL}
+                  onIssueCreated={(message) => {
+                    setSuccess(message);
+                    setTimeout(() => setSuccess(null), 3000);
+                  }}
+                />
+              </>
             )}
           </div>
         );

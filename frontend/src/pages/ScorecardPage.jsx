@@ -18,7 +18,8 @@ import {
   Target,
   Edit,
   Save,
-  X
+  X,
+  ArrowLeftRight
 } from 'lucide-react';
 
 const ScorecardPage = () => {
@@ -35,6 +36,7 @@ const ScorecardPage = () => {
   const [showMetricDialog, setShowMetricDialog] = useState(false);
   const [editingScore, setEditingScore] = useState(null);
   const [users, setUsers] = useState([]);
+  const [isRTL, setIsRTL] = useState(false); // Right-to-left reading direction
   
   // Form data for new/edit metric
   const [metricForm, setMetricForm] = useState({
@@ -253,7 +255,9 @@ const ScorecardPage = () => {
     return { labels, weekDates };
   };
 
-  const { labels: weekLabels, weekDates } = getWeekLabels();
+  const { labels: weekLabelsOriginal, weekDates: weekDatesOriginal } = getWeekLabels();
+  const weekLabels = isRTL ? [...weekLabelsOriginal].reverse() : weekLabelsOriginal;
+  const weekDates = isRTL ? [...weekDatesOriginal].reverse() : weekDatesOriginal;
 
   // Helper functions for value formatting and goal achievement
   const formatValue = (value, valueType) => {
@@ -314,10 +318,19 @@ const ScorecardPage = () => {
             </h1>
             <p className="text-gray-600 mt-2 text-lg">Track your key metrics and measurables</p>
           </div>
-          <Button onClick={handleAddMetric} className="bg-indigo-600 hover:bg-indigo-700 text-white">
-            <Plus className="mr-2 h-4 w-4" />
-            Add Metric
-          </Button>
+          <div className="flex gap-2">
+            <Button 
+              onClick={() => setIsRTL(!isRTL)} 
+              variant="outline"
+              title={isRTL ? "Switch to left-to-right" : "Switch to right-to-left"}
+            >
+              <ArrowLeftRight className="h-4 w-4" />
+            </Button>
+            <Button onClick={handleAddMetric} className="bg-indigo-600 hover:bg-indigo-700 text-white">
+              <Plus className="mr-2 h-4 w-4" />
+              Add Metric
+            </Button>
+          </div>
         </div>
 
         {error && (
@@ -447,7 +460,8 @@ const ScorecardPage = () => {
                         {/* Average column */}
                         <td className="p-4 text-center bg-gray-50 font-semibold">
                           {(() => {
-                            const scores = weekDates
+                            // Always use original order for calculations
+                            const scores = weekDatesOriginal
                               .map(weekDate => weeklyScores[metric.id]?.[weekDate])
                               .filter(score => score !== undefined && score !== null && score !== '');
                             
@@ -468,7 +482,8 @@ const ScorecardPage = () => {
                         {/* Total column */}
                         <td className="p-4 text-center bg-gray-50 font-semibold">
                           {(() => {
-                            const scores = weekDates
+                            // Always use original order for calculations
+                            const scores = weekDatesOriginal
                               .map(weekDate => weeklyScores[metric.id]?.[weekDate])
                               .filter(score => score !== undefined && score !== null && score !== '');
                             
