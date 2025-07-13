@@ -125,7 +125,10 @@ export const todosService = {
       return true;
     } catch (error) {
       console.error('Failed to download attachment:', error);
-      throw error;
+      if (error.response?.status === 404) {
+        throw new Error('Attachment not found. It may have been deleted.');
+      }
+      throw new Error('Failed to download attachment. Please try again.');
     }
   }
 };

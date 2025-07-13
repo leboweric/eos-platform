@@ -233,7 +233,7 @@ const TodoDialog = ({ open, onOpenChange, todo, teamMembers, onSave }) => {
                             try {
                               await todosService.downloadAttachment(todo.id, attachment.id, attachment.file_name);
                             } catch (error) {
-                              setError('Failed to download attachment');
+                              setError(error.message || 'Failed to download attachment');
                             }
                           }}
                           title="Download"

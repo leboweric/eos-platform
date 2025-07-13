@@ -397,9 +397,11 @@ export const downloadTodoAttachment = async (req, res) => {
 
     // Check if file exists
     if (!fs.existsSync(filePath)) {
+      console.error('File not found at path:', filePath);
       return res.status(404).json({
         success: false,
-        error: 'File not found on server'
+        error: 'File not found on server',
+        path: process.env.NODE_ENV === 'development' ? filePath : undefined
       });
     }
 
