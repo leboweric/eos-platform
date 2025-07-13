@@ -838,7 +838,7 @@ const QuarterlyPrioritiesPage = () => {
                           type="date"
                           value={milestoneForm.dueDate}
                           onChange={(e) => setMilestoneForm({ ...milestoneForm, dueDate: e.target.value })}
-                          className="w-32 text-xs"
+                          className="w-40 text-xs"
                         />
                         <Button
                           size="sm"
@@ -916,7 +916,7 @@ const QuarterlyPrioritiesPage = () => {
                       type="date"
                       value={milestoneForm.dueDate}
                       onChange={(e) => setMilestoneForm({ ...milestoneForm, dueDate: e.target.value })}
-                      className="w-32 text-xs"
+                      className="w-40 text-xs"
                     />
                     <Button
                       size="sm"
