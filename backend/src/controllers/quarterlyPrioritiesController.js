@@ -1014,7 +1014,7 @@ export const getCurrentPriorities = async (req, res) => {
           name: priority.owner_name,
           email: priority.owner_email
         } : null,
-        due_date: priority.due_date,
+        dueDate: priority.due_date,
         owner_first_name: priority.owner_first_name,
         owner_last_name: priority.owner_last_name
       };
