@@ -39,6 +39,7 @@ const WeeklyAccountabilityMeetingPage = () => {
   
   // Meeting data
   const [scorecardMetrics, setScorecardMetrics] = useState([]);
+  const [weeklyScores, setWeeklyScores] = useState({});
   const [priorities, setPriorities] = useState([]);
   const [issues, setIssues] = useState([]);
   const [todos, setTodos] = useState([]);
@@ -74,9 +75,18 @@ const WeeklyAccountabilityMeetingPage = () => {
   const fetchScorecardData = async () => {
     try {
       setLoading(true);
+      setError(null);
       const orgId = localStorage.getItem('impersonatedOrgId') || user?.organizationId || user?.organization_id;
+      console.log('Fetching scorecard with:', { orgId, teamId });
+      
       const response = await scorecardService.getScorecard(orgId, teamId);
-      setScorecardMetrics(response.scorecard || response.data?.scorecard || []);
+      console.log('Scorecard response:', response);
+      
+      // The response structure from the API has metrics and weeklyScores
+      const metrics = response.metrics || response.data?.metrics || [];
+      const scores = response.weeklyScores || response.data?.weeklyScores || {};
+      setScorecardMetrics(metrics);
+      setWeeklyScores(scores);
       setLoading(false);
     } catch (error) {
       console.error('Failed to fetch scorecard:', error);
@@ -212,9 +222,23 @@ const WeeklyAccountabilityMeetingPage = () => {
               </Card>
             ) : (
               <div className="grid gap-4">
-                {scorecardMetrics.map(metric => (
-                  <ScorecardCard key={metric.id} metric={metric} readOnly />
-                ))}
+                {scorecardMetrics.map(metric => {
+                  // Get the current week's score
+                  const currentWeek = new Date().toISOString().split('T')[0];
+                  const weekStart = new Date(currentWeek);
+                  weekStart.setDate(weekStart.getDate() - weekStart.getDay()); // Start of week
+                  const weekKey = weekStart.toISOString().split('T')[0];
+                  const weeklyScore = weeklyScores[metric.id]?.[weekKey];
+                  
+                  return (
+                    <ScorecardCard 
+                      key={metric.id} 
+                      metric={metric} 
+                      weeklyScore={weeklyScore}
+                      readOnly 
+                    />
+                  );
+                })}
               </div>
             )}
           </div>
