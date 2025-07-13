@@ -389,8 +389,8 @@ export const updatePriority = async (req, res) => {
     const { orgId, teamId, priorityId } = req.params;
     const { title, description, status, progress, dueDate, ownerId, isCompanyPriority } = req.body;
     
-    // Convert empty string to null for date field
-    const parsedDueDate = dueDate === '' ? null : dueDate;
+    // Convert empty string to null for date field, and handle undefined
+    const parsedDueDate = (dueDate === '' || dueDate === undefined) ? null : dueDate;
     
     // Check if progress column exists
     const hasProgress = await checkProgressColumn();
@@ -398,32 +398,71 @@ export const updatePriority = async (req, res) => {
     let query_text;
     let query_params;
     
-    if (hasProgress) {
-      query_text = `UPDATE quarterly_priorities 
-       SET title = COALESCE($1, title),
-           description = COALESCE($2, description),
-           status = COALESCE($3, status),
-           due_date = COALESCE($4, due_date),
-           owner_id = COALESCE($5, owner_id),
-           is_company_priority = COALESCE($6, is_company_priority),
-           progress = COALESCE($7, progress),
-           updated_at = NOW()
-       WHERE id = $8 AND organization_id = $9
-       RETURNING *`;
-      query_params = [title, description, status, parsedDueDate, ownerId, isCompanyPriority, progress, priorityId, orgId];
-    } else {
-      query_text = `UPDATE quarterly_priorities 
-       SET title = COALESCE($1, title),
-           description = COALESCE($2, description),
-           status = COALESCE($3, status),
-           due_date = COALESCE($4, due_date),
-           owner_id = COALESCE($5, owner_id),
-           is_company_priority = COALESCE($6, is_company_priority),
-           updated_at = NOW()
-       WHERE id = $7 AND organization_id = $8
-       RETURNING *`;
-      query_params = [title, description, status, parsedDueDate, ownerId, isCompanyPriority, priorityId, orgId];
+    // Build dynamic UPDATE query based on what fields are provided
+    const updateFields = [];
+    const updateValues = [];
+    let paramCount = 0;
+    
+    if (title !== undefined) {
+      paramCount++;
+      updateFields.push(`title = $${paramCount}`);
+      updateValues.push(title);
     }
+    
+    if (description !== undefined) {
+      paramCount++;
+      updateFields.push(`description = $${paramCount}`);
+      updateValues.push(description);
+    }
+    
+    if (status !== undefined) {
+      paramCount++;
+      updateFields.push(`status = $${paramCount}`);
+      updateValues.push(status);
+    }
+    
+    if (dueDate !== undefined) {
+      paramCount++;
+      updateFields.push(`due_date = $${paramCount}`);
+      updateValues.push(parsedDueDate);
+    }
+    
+    if (ownerId !== undefined) {
+      paramCount++;
+      updateFields.push(`owner_id = $${paramCount}`);
+      updateValues.push(ownerId);
+    }
+    
+    if (isCompanyPriority !== undefined) {
+      paramCount++;
+      updateFields.push(`is_company_priority = $${paramCount}`);
+      updateValues.push(isCompanyPriority);
+    }
+    
+    if (hasProgress && progress !== undefined) {
+      paramCount++;
+      updateFields.push(`progress = $${paramCount}`);
+      updateValues.push(progress);
+    }
+    
+    // Always update the updated_at field
+    updateFields.push('updated_at = NOW()');
+    
+    // Add the WHERE clause parameters
+    paramCount++;
+    const priorityIdParam = paramCount;
+    updateValues.push(priorityId);
+    
+    paramCount++;
+    const orgIdParam = paramCount;
+    updateValues.push(orgId);
+    
+    query_text = `UPDATE quarterly_priorities 
+      SET ${updateFields.join(', ')}
+      WHERE id = $${priorityIdParam} AND organization_id = $${orgIdParam}
+      RETURNING *`;
+    
+    query_params = updateValues;
     
     const result = await query(query_text, query_params);
     
