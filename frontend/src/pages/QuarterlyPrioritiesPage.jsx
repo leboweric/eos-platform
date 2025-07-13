@@ -500,7 +500,7 @@ const QuarterlyPrioritiesPage = () => {
   // Calculate stats without "at-risk"
   const allPriorities = [
     ...companyPriorities,
-    ...Object.values(teamMemberPriorities).flat()
+    ...Object.values(teamMemberPriorities).flatMap(memberData => memberData?.priorities || [])
   ];
   
   const stats = {
@@ -1344,7 +1344,8 @@ const QuarterlyPrioritiesPage = () => {
               <h2 className="text-2xl font-bold">Individual Priorities</h2>
             </div>
             {(teamMembers || []).map(member => {
-              const memberPriorities = teamMemberPriorities[member.id] || [];
+              const memberData = teamMemberPriorities[member.id];
+              const memberPriorities = memberData?.priorities || [];
               if (memberPriorities.length === 0) return null;
 
               return (
