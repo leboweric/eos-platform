@@ -77,6 +77,9 @@ export const quarterlyPrioritiesService = {
   // Update a priority
   async updatePriority(orgId, teamId, priorityId, updates) {
     const token = localStorage.getItem('accessToken');
+    console.log('[Service] Updating priority with:', updates);
+    console.log('[Service] URL:', `${API_URL}/organizations/${orgId}/teams/${teamId}/quarterly-priorities/priorities/${priorityId}`);
+    
     const response = await fetch(
       `${API_URL}/organizations/${orgId}/teams/${teamId}/quarterly-priorities/priorities/${priorityId}`,
       {
@@ -90,7 +93,9 @@ export const quarterlyPrioritiesService = {
     );
     
     if (!response.ok) {
-      throw new Error('Failed to update priority');
+      const errorText = await response.text();
+      console.error('[Service] Update failed:', response.status, errorText);
+      throw new Error(`Failed to update priority: ${response.status} ${errorText}`);
     }
     
     const data = await response.json();

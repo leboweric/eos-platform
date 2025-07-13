@@ -338,8 +338,11 @@ const QuarterlyPrioritiesPage = () => {
 
   const handleUpdatePriority = async (priorityId, updates) => {
     try {
-      const orgId = user?.organizationId;
+      const orgId = user?.organizationId || user?.organization_id;
       const teamId = user?.teamId || '00000000-0000-0000-0000-000000000000';
+      
+      console.log('[QuarterlyPriorities] Updating priority:', priorityId, 'with:', updates);
+      console.log('[QuarterlyPriorities] Using orgId:', orgId, 'teamId:', teamId);
       
       await quarterlyPrioritiesService.updatePriority(orgId, teamId, priorityId, updates);
       
@@ -348,7 +351,8 @@ const QuarterlyPrioritiesPage = () => {
       setEditingPriority(null);
     } catch (err) {
       console.error('Failed to update priority:', err);
-      setError('Failed to save changes');
+      console.error('Error details:', err.message, err.stack);
+      setError('Failed to save changes: ' + err.message);
     }
   };
 
