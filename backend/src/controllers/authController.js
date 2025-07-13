@@ -207,15 +207,32 @@ export const login = async (req, res) => {
       clientOrganizations = clientOrgsResult.rows;
     }
 
-    // Fetch user's teams
-    const teamsResult = await query(
-      `SELECT t.id, t.name, t.description, t.is_leadership_team, tm.role as member_role
-       FROM teams t
-       JOIN team_members tm ON tm.team_id = t.id
-       WHERE tm.user_id = $1 AND t.organization_id = $2
-       ORDER BY t.is_leadership_team DESC, t.name`,
-      [user.id, user.organization_id]
-    );
+    // Fetch user's teams - handle missing is_leadership_team column gracefully
+    let teamsResult;
+    try {
+      teamsResult = await query(
+        `SELECT t.id, t.name, t.description, t.is_leadership_team, tm.role as member_role
+         FROM teams t
+         JOIN team_members tm ON tm.team_id = t.id
+         WHERE tm.user_id = $1 AND t.organization_id = $2
+         ORDER BY t.is_leadership_team DESC, t.name`,
+        [user.id, user.organization_id]
+      );
+    } catch (error) {
+      // If column doesn't exist yet, query without it
+      if (error.code === '42703') {
+        teamsResult = await query(
+          `SELECT t.id, t.name, t.description, false as is_leadership_team, tm.role as member_role
+           FROM teams t
+           JOIN team_members tm ON tm.team_id = t.id
+           WHERE tm.user_id = $1 AND t.organization_id = $2
+           ORDER BY t.name`,
+          [user.id, user.organization_id]
+        );
+      } else {
+        throw error;
+      }
+    }
 
     res.json({
       success: true,
@@ -331,15 +348,32 @@ export const getProfile = async (req, res) => {
 
     const user = result.rows[0];
 
-    // Fetch user's teams
-    const teamsResult = await query(
-      `SELECT t.id, t.name, t.description, t.is_leadership_team, tm.role as member_role
-       FROM teams t
-       JOIN team_members tm ON tm.team_id = t.id
-       WHERE tm.user_id = $1 AND t.organization_id = $2
-       ORDER BY t.is_leadership_team DESC, t.name`,
-      [req.user.id, user.organization_id]
-    );
+    // Fetch user's teams - handle missing is_leadership_team column gracefully
+    let teamsResult;
+    try {
+      teamsResult = await query(
+        `SELECT t.id, t.name, t.description, t.is_leadership_team, tm.role as member_role
+         FROM teams t
+         JOIN team_members tm ON tm.team_id = t.id
+         WHERE tm.user_id = $1 AND t.organization_id = $2
+         ORDER BY t.is_leadership_team DESC, t.name`,
+        [req.user.id, user.organization_id]
+      );
+    } catch (error) {
+      // If column doesn't exist yet, query without it
+      if (error.code === '42703') {
+        teamsResult = await query(
+          `SELECT t.id, t.name, t.description, false as is_leadership_team, tm.role as member_role
+           FROM teams t
+           JOIN team_members tm ON tm.team_id = t.id
+           WHERE tm.user_id = $1 AND t.organization_id = $2
+           ORDER BY t.name`,
+          [req.user.id, user.organization_id]
+        );
+      } else {
+        throw error;
+      }
+    }
 
     res.json({
       success: true,
