@@ -137,8 +137,16 @@ const ScorecardTable = ({ metrics, weeklyScores, readOnly = false, onIssueCreate
                 <th className="text-left p-4 font-semibold text-gray-700 min-w-[200px]">Metric</th>
                 <th className="text-center p-4 font-semibold text-gray-700 min-w-[100px]">Goal</th>
                 <th className="text-center p-4 font-semibold text-gray-700 min-w-[150px]">Owner</th>
+                {isRTL && (
+                  <>
+                    <th className="text-center p-4 font-semibold text-gray-700 min-w-[100px] bg-gray-100">Total</th>
+                    <th className="text-center p-4 font-semibold text-gray-700 min-w-[100px] bg-gray-100">Average</th>
+                  </>
+                )}
                 {weekLabels.map((label, index) => {
-                  const isCurrentWeek = index === weekLabels.length - 1;
+                  // Current week is always the last in original order (most recent date)
+                  const originalIndex = isRTL ? weekLabels.length - 1 - index : index;
+                  const isCurrentWeek = originalIndex === weekLabelsOriginal.length - 1;
                   return (
                     <th key={weekDates[index]} className={`text-center p-4 font-semibold min-w-[80px] ${
                       isCurrentWeek ? 'text-indigo-700 bg-indigo-50' : 'text-gray-700'
@@ -152,8 +160,12 @@ const ScorecardTable = ({ metrics, weeklyScores, readOnly = false, onIssueCreate
                     </th>
                   );
                 })}
-                <th className="text-center p-4 font-semibold text-gray-700 min-w-[100px] bg-gray-100">Average</th>
-                <th className="text-center p-4 font-semibold text-gray-700 min-w-[100px] bg-gray-100">Total</th>
+                {!isRTL && (
+                  <>
+                    <th className="text-center p-4 font-semibold text-gray-700 min-w-[100px] bg-gray-100">Average</th>
+                    <th className="text-center p-4 font-semibold text-gray-700 min-w-[100px] bg-gray-100">Total</th>
+                  </>
+                )}
               </tr>
             </thead>
             <tbody>
@@ -171,10 +183,61 @@ const ScorecardTable = ({ metrics, weeklyScores, readOnly = false, onIssueCreate
                       {formatGoal(metric.goal, metric.value_type)}
                     </td>
                     <td className="p-4 text-center">{metric.ownerName || metric.owner || '-'}</td>
+                    
+                    {/* Total and Average columns for RTL */}
+                    {isRTL && (
+                      <>
+                        {/* Total column */}
+                        <td className="p-4 text-center bg-gray-50 font-semibold">
+                          {(() => {
+                            // Always use original order for calculations
+                            const scores = weekDatesOriginal
+                              .map(weekDate => weeklyScores[metric.id]?.[weekDate])
+                              .filter(score => score !== undefined && score !== null && score !== '');
+                            
+                            if (scores.length === 0) return '-';
+                            
+                            const total = scores.reduce((sum, score) => sum + parseFloat(score), 0);
+                            
+                            return (
+                              <span className="text-gray-700">
+                                {formatValue(total, metric.value_type)}
+                              </span>
+                            );
+                          })()}
+                        </td>
+                        {/* Average column */}
+                        <td className="p-4 text-center bg-gray-50 font-semibold">
+                          {(() => {
+                            // Always use original order for calculations
+                            const scores = weekDatesOriginal
+                              .map(weekDate => weeklyScores[metric.id]?.[weekDate])
+                              .filter(score => score !== undefined && score !== null && score !== '');
+                            
+                            if (scores.length === 0) return '-';
+                            
+                            const average = scores.reduce((sum, score) => sum + parseFloat(score), 0) / scores.length;
+                            const avgGoalMet = isGoalMet(average, metric.goal, metric.comparison_operator);
+                            
+                            return (
+                              <span className={`px-2 py-1 rounded ${
+                                avgGoalMet ? 'text-green-800' : 'text-red-800'
+                              }`}>
+                                {formatValue(average, metric.value_type)}
+                              </span>
+                            );
+                          })()}
+                        </td>
+                      </>
+                    )}
+                    
+                    {/* Week columns */}
                     {weekDates.map((weekDate, index) => {
                       const score = weeklyScores[metric.id]?.[weekDate];
                       const goalMet = score && isGoalMet(score, metric.goal, metric.comparison_operator);
-                      const isCurrentWeek = index === weekDates.length - 1;
+                      // Current week is always the last in original order
+                      const originalIndex = isRTL ? weekDates.length - 1 - index : index;
+                      const isCurrentWeek = originalIndex === weekDatesOriginal.length - 1;
                       const showCreateIssue = !readOnly && isCurrentWeek && score && !goalMet;
                       
                       return (
@@ -211,47 +274,53 @@ const ScorecardTable = ({ metrics, weeklyScores, readOnly = false, onIssueCreate
                         </td>
                       );
                     })}
-                    {/* Average column */}
-                    <td className="p-4 text-center bg-gray-50 font-semibold">
-                      {(() => {
-                        // Always use original order for calculations
-                        const scores = weekDatesOriginal
-                          .map(weekDate => weeklyScores[metric.id]?.[weekDate])
-                          .filter(score => score !== undefined && score !== null && score !== '');
-                        
-                        if (scores.length === 0) return '-';
-                        
-                        const average = scores.reduce((sum, score) => sum + parseFloat(score), 0) / scores.length;
-                        const avgGoalMet = isGoalMet(average, metric.goal, metric.comparison_operator);
-                        
-                        return (
-                          <span className={`px-2 py-1 rounded ${
-                            avgGoalMet ? 'text-green-800' : 'text-red-800'
-                          }`}>
-                            {formatValue(average, metric.value_type)}
-                          </span>
-                        );
-                      })()}
-                    </td>
-                    {/* Total column */}
-                    <td className="p-4 text-center bg-gray-50 font-semibold">
-                      {(() => {
-                        // Always use original order for calculations
-                        const scores = weekDatesOriginal
-                          .map(weekDate => weeklyScores[metric.id]?.[weekDate])
-                          .filter(score => score !== undefined && score !== null && score !== '');
-                        
-                        if (scores.length === 0) return '-';
-                        
-                        const total = scores.reduce((sum, score) => sum + parseFloat(score), 0);
-                        
-                        return (
-                          <span className="text-gray-700">
-                            {formatValue(total, metric.value_type)}
-                          </span>
-                        );
-                      })()}
-                    </td>
+                    
+                    {/* Total and Average columns for LTR */}
+                    {!isRTL && (
+                      <>
+                        {/* Average column */}
+                        <td className="p-4 text-center bg-gray-50 font-semibold">
+                          {(() => {
+                            // Always use original order for calculations
+                            const scores = weekDatesOriginal
+                              .map(weekDate => weeklyScores[metric.id]?.[weekDate])
+                              .filter(score => score !== undefined && score !== null && score !== '');
+                            
+                            if (scores.length === 0) return '-';
+                            
+                            const average = scores.reduce((sum, score) => sum + parseFloat(score), 0) / scores.length;
+                            const avgGoalMet = isGoalMet(average, metric.goal, metric.comparison_operator);
+                            
+                            return (
+                              <span className={`px-2 py-1 rounded ${
+                                avgGoalMet ? 'text-green-800' : 'text-red-800'
+                              }`}>
+                                {formatValue(average, metric.value_type)}
+                              </span>
+                            );
+                          })()}
+                        </td>
+                        {/* Total column */}
+                        <td className="p-4 text-center bg-gray-50 font-semibold">
+                          {(() => {
+                            // Always use original order for calculations
+                            const scores = weekDatesOriginal
+                              .map(weekDate => weeklyScores[metric.id]?.[weekDate])
+                              .filter(score => score !== undefined && score !== null && score !== '');
+                            
+                            if (scores.length === 0) return '-';
+                            
+                            const total = scores.reduce((sum, score) => sum + parseFloat(score), 0);
+                            
+                            return (
+                              <span className="text-gray-700">
+                                {formatValue(total, metric.value_type)}
+                              </span>
+                            );
+                          })()}
+                        </td>
+                      </>
+                    )}
                   </tr>
                 ))
               )}
