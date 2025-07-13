@@ -1,10 +1,13 @@
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { useAuthStore } from '../stores/authStore';
 import { useNavigate } from 'react-router-dom';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
+import { quarterlyPrioritiesService } from '../services/quarterlyPrioritiesService';
+import { todosService } from '../services/todosService';
+import { issuesService } from '../services/issuesService';
 import {
   Target,
   CheckSquare,
@@ -17,98 +20,102 @@ import {
   Clock,
   Users,
   Plus,
-  ArrowRight
+  ArrowRight,
+  AlertCircle
 } from 'lucide-react';
 import { Link } from 'react-router-dom';
 
 const Dashboard = () => {
   const { user } = useAuthStore();
   const navigate = useNavigate();
+  const [loading, setLoading] = useState(true);
+  const [dashboardData, setDashboardData] = useState({
+    priorities: [],
+    todos: [],
+    issues: [],
+    stats: {
+      prioritiesCompleted: 0,
+      totalPriorities: 0,
+      prioritiesProgress: 0,
+      overdueItems: 0,
+      totalShortTermIssues: 0
+    }
+  });
   
   useEffect(() => {
     // If consultant user and not impersonating, redirect to consultant dashboard
     if (user?.isConsultant && localStorage.getItem('consultantImpersonating') !== 'true') {
       navigate('/consultant');
+    } else if (user) {
+      fetchDashboardData();
     }
   }, [user, navigate]);
 
-  // Mock data - in a real app, this would come from API calls
-  const stats = {
-    prioritiesCompleted: 3,
-    totalPriorities: 5,
-    prioritiesProgress: 60,
-    meetingsThisWeek: 2,
-    overdueItems: 4,
-    issuesOpen: 12
+  const fetchDashboardData = async () => {
+    try {
+      setLoading(true);
+      
+      const orgId = localStorage.getItem('impersonatedOrgId') || user?.organizationId || user?.organization_id;
+      const teamId = user?.teamId || '00000000-0000-0000-0000-000000000000';
+      
+      // Fetch all data in parallel
+      const [prioritiesResponse, todosResponse, issuesResponse] = await Promise.all([
+        quarterlyPrioritiesService.getCurrentPriorities(orgId, teamId),
+        todosService.getTodos('all'),
+        issuesService.getIssues()
+      ]);
+      
+      // Process priorities - only user's priorities
+      const userPriorities = [];
+      if (prioritiesResponse.companyPriorities) {
+        userPriorities.push(...prioritiesResponse.companyPriorities.filter(p => p.owner?.id === user.id));
+      }
+      if (prioritiesResponse.teamMemberPriorities?.[user.id]) {
+        userPriorities.push(...prioritiesResponse.teamMemberPriorities[user.id].priorities);
+      }
+      
+      // Calculate priorities stats
+      const completedPriorities = userPriorities.filter(p => p.status === 'complete').length;
+      const totalPriorities = userPriorities.length;
+      const prioritiesProgress = totalPriorities > 0 ? Math.round((completedPriorities / totalPriorities) * 100) : 0;
+      
+      // Process todos - only user's todos
+      const userTodos = todosResponse.data.todos.filter(todo => 
+        todo.assignedTo?.id === user.id && todo.status !== 'completed'
+      );
+      
+      // Calculate overdue todos
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+      const overdueTodos = userTodos.filter(todo => {
+        if (!todo.dueDate) return false;
+        const dueDate = new Date(todo.dueDate);
+        return dueDate < today;
+      }).length;
+      
+      // Process issues - count short term issues
+      const shortTermIssues = issuesResponse.data.issues.filter(issue => 
+        issue.timeline === 'short_term' && issue.status === 'open'
+      );
+      
+      setDashboardData({
+        priorities: userPriorities.slice(0, 5), // Show first 5
+        todos: userTodos.slice(0, 5), // Show first 5
+        issues: shortTermIssues,
+        stats: {
+          prioritiesCompleted: completedPriorities,
+          totalPriorities: totalPriorities,
+          prioritiesProgress: prioritiesProgress,
+          overdueItems: overdueTodos,
+          totalShortTermIssues: shortTermIssues.length
+        }
+      });
+    } catch (error) {
+      console.error('Failed to fetch dashboard data:', error);
+    } finally {
+      setLoading(false);
+    }
   };
-
-  const recentPriorities = [
-    {
-      id: 1,
-      title: 'Implement new CRM system',
-      owner: 'John Doe',
-      status: 'on-track',
-      progress: 75,
-      dueDate: '2025-03-31'
-    },
-    {
-      id: 2,
-      title: 'Launch marketing campaign',
-      owner: 'Jane Smith',
-      status: 'at-risk',
-      progress: 45,
-      dueDate: '2025-03-15'
-    },
-    {
-      id: 3,
-      title: 'Hire 3 new developers',
-      owner: 'Mike Johnson',
-      status: 'complete',
-      progress: 100,
-      dueDate: '2025-02-28'
-    }
-  ];
-
-  const upcomingMeetings = [
-    {
-      id: 1,
-      title: 'Weekly Accountability Meeting',
-      date: '2025-01-09',
-      time: '09:00 AM',
-      attendees: 8
-    },
-    {
-      id: 2,
-      title: 'Quarterly Planning',
-      date: '2025-01-15',
-      time: '02:00 PM',
-      attendees: 12
-    }
-  ];
-
-  const recentTodos = [
-    {
-      id: 1,
-      title: 'Review Q4 performance metrics',
-      assignee: 'You',
-      dueDate: '2025-01-10',
-      priority: 'high'
-    },
-    {
-      id: 2,
-      title: 'Update team accountability chart',
-      assignee: 'Sarah Wilson',
-      dueDate: '2025-01-12',
-      priority: 'medium'
-    },
-    {
-      id: 3,
-      title: 'Prepare monthly scorecard data',
-      assignee: 'You',
-      dueDate: '2025-01-15',
-      priority: 'low'
-    }
-  ];
 
   const getStatusColor = (status) => {
     switch (status) {
@@ -166,35 +173,21 @@ const Dashboard = () => {
             <Target className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{stats.prioritiesCompleted}/{stats.totalPriorities}</div>
-            <Progress value={stats.prioritiesProgress} className="mt-2" />
+            <div className="text-2xl font-bold">{dashboardData.stats.prioritiesCompleted}/{dashboardData.stats.totalPriorities}</div>
+            <Progress value={dashboardData.stats.prioritiesProgress} className="mt-2" />
             <p className="text-xs text-muted-foreground mt-2">
-              {stats.rocksProgress}% complete this quarter
+              {dashboardData.stats.prioritiesProgress}% complete this quarter
             </p>
           </CardContent>
         </Card>
 
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Meetings This Week</CardTitle>
-            <Calendar className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{stats.meetingsThisWeek}</div>
-            <p className="text-xs text-muted-foreground">
-              <TrendingUp className="inline h-3 w-3 mr-1" />
-              2 more than last week
-            </p>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Overdue Items</CardTitle>
+            <CardTitle className="text-sm font-medium">Overdue To Dos</CardTitle>
             <Clock className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-red-600">{stats.overdueItems}</div>
+            <div className="text-2xl font-bold text-red-600">{dashboardData.stats.overdueItems}</div>
             <p className="text-xs text-muted-foreground">
               <TrendingDown className="inline h-3 w-3 mr-1" />
               Needs attention
@@ -204,13 +197,13 @@ const Dashboard = () => {
 
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Open Issues</CardTitle>
+            <CardTitle className="text-sm font-medium">Total Issues</CardTitle>
             <MessageSquare className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{stats.issuesOpen}</div>
+            <div className="text-2xl font-bold">{dashboardData.stats.totalShortTermIssues}</div>
             <p className="text-xs text-muted-foreground">
-              3 high priority
+              Short term issues
             </p>
           </CardContent>
         </Card>
@@ -218,15 +211,15 @@ const Dashboard = () => {
 
       {/* Main Content Grid */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* Recent Priorities */}
+        {/* Your Priorities */}
         <Card>
           <CardHeader>
             <div className="flex items-center justify-between">
               <div>
-                <CardTitle>Recent Priorities</CardTitle>
-                <CardDescription>Your quarterly priorities progress</CardDescription>
+                <CardTitle>Your Priorities</CardTitle>
+                <CardDescription>Priorities assigned to you</CardDescription>
               </div>
-              <Link to="/rocks">
+              <Link to="/quarterly-priorities">
                 <Button variant="outline" size="sm">
                   View All
                   <ArrowRight className="ml-2 h-4 w-4" />
@@ -236,76 +229,37 @@ const Dashboard = () => {
           </CardHeader>
           <CardContent>
             <div className="space-y-4">
-              {recentPriorities.map((priority) => (
-                <div key={priority.id} className="flex items-center space-x-4">
-                  <div className={`w-3 h-3 rounded-full ${getStatusColor(priority.status)}`} />
-                  <div className="flex-1 min-w-0">
-                    <p className="text-sm font-medium text-gray-900 truncate">
-                      {priority.title}
-                    </p>
-                    <p className="text-sm text-gray-500">
-                      {priority.owner} • Due {new Date(priority.dueDate).toLocaleDateString()}
-                    </p>
+              {dashboardData.priorities.length === 0 ? (
+                <p className="text-sm text-gray-500">No priorities assigned to you</p>
+              ) : (
+                dashboardData.priorities.map((priority) => (
+                  <div key={priority.id} className="flex items-center space-x-4">
+                    <div className={`w-3 h-3 rounded-full ${getStatusColor(priority.status)}`} />
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-medium text-gray-900 truncate">
+                        {priority.title}
+                      </p>
+                      <p className="text-sm text-gray-500">
+                        {priority.owner?.name || 'Unassigned'} • Due {priority.dueDate ? new Date(priority.dueDate).toLocaleDateString() : 'No due date'}
+                      </p>
+                    </div>
+                    <div className="text-sm text-gray-500">
+                      {priority.progress}%
+                    </div>
                   </div>
-                  <div className="text-sm text-gray-500">
-                    {priority.progress}%
-                  </div>
-                </div>
-              ))
+                ))
               )}
             </div>
           </CardContent>
         </Card>
 
-        {/* Upcoming Meetings */}
+        {/* To Dos */}
         <Card>
           <CardHeader>
             <div className="flex items-center justify-between">
               <div>
-                <CardTitle>Upcoming Meetings</CardTitle>
-                <CardDescription>Your scheduled EOS meetings</CardDescription>
-              </div>
-              <Link to="/meetings">
-                <Button variant="outline" size="sm">
-                  View All
-                  <ArrowRight className="ml-2 h-4 w-4" />
-                </Button>
-              </Link>
-            </div>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-4">
-              {upcomingMeetings.map((meeting) => (
-                <div key={meeting.id} className="flex items-center space-x-4">
-                  <div className="flex-shrink-0">
-                    <Calendar className="h-8 w-8 text-primary" />
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <p className="text-sm font-medium text-gray-900">
-                      {meeting.title}
-                    </p>
-                    <p className="text-sm text-gray-500">
-                      {new Date(meeting.date).toLocaleDateString()} at {meeting.time}
-                    </p>
-                  </div>
-                  <div className="flex items-center text-sm text-gray-500">
-                    <Users className="h-4 w-4 mr-1" />
-                    {meeting.attendees}
-                  </div>
-                </div>
-              ))
-              )}
-            </div>
-          </CardContent>
-        </Card>
-
-        {/* Recent To-Dos */}
-        <Card>
-          <CardHeader>
-            <div className="flex items-center justify-between">
-              <div>
-                <CardTitle>Recent To-Dos</CardTitle>
-                <CardDescription>Your action items and tasks</CardDescription>
+                <CardTitle>To Dos</CardTitle>
+                <CardDescription>Your assigned action items</CardDescription>
               </div>
               <Link to="/todos">
                 <Button variant="outline" size="sm">
@@ -317,25 +271,29 @@ const Dashboard = () => {
           </CardHeader>
           <CardContent>
             <div className="space-y-4">
-              {recentTodos.map((todo) => (
-                <div key={todo.id} className="flex items-center space-x-4">
-                  <input
-                    type="checkbox"
-                    className="rounded border-gray-300 text-primary focus:ring-primary"
-                  />
-                  <div className="flex-1 min-w-0">
-                    <p className="text-sm font-medium text-gray-900">
-                      {todo.title}
-                    </p>
-                    <p className="text-sm text-gray-500">
-                      {todo.assignee} • Due {new Date(todo.dueDate).toLocaleDateString()}
-                    </p>
+              {dashboardData.todos.length === 0 ? (
+                <p className="text-sm text-gray-500">No to-dos assigned to you</p>
+              ) : (
+                dashboardData.todos.map((todo) => (
+                  <div key={todo.id} className="flex items-center space-x-4">
+                    <input
+                      type="checkbox"
+                      className="rounded border-gray-300 text-primary focus:ring-primary"
+                    />
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-medium text-gray-900">
+                        {todo.title}
+                      </p>
+                      <p className="text-sm text-gray-500">
+                        {todo.assignedTo?.name || 'You'} • Due {todo.dueDate ? new Date(todo.dueDate).toLocaleDateString() : 'No due date'}
+                      </p>
+                    </div>
+                    <Badge variant={getPriorityColor(todo.priority)}>
+                      {todo.priority}
+                    </Badge>
                   </div>
-                  <Badge variant={getPriorityColor(todo.priority)}>
-                    {todo.priority}
-                  </Badge>
-                </div>
-              ))}
+                ))
+              )}
             </div>
           </CardContent>
         </Card>
@@ -348,16 +306,10 @@ const Dashboard = () => {
           </CardHeader>
           <CardContent>
             <div className="grid grid-cols-2 gap-4">
-              <Link to="/rocks">
+              <Link to="/quarterly-priorities">
                 <Button variant="outline" className="w-full justify-start">
                   <Plus className="mr-2 h-4 w-4" />
                   Add Priority
-                </Button>
-              </Link>
-              <Link to="/meetings">
-                <Button variant="outline" className="w-full justify-start">
-                  <Calendar className="mr-2 h-4 w-4" />
-                  Schedule Meeting
                 </Button>
               </Link>
               <Link to="/todos">
@@ -366,10 +318,10 @@ const Dashboard = () => {
                   Add To-Do
                 </Button>
               </Link>
-              <Link to="/scorecard">
+              <Link to="/issues">
                 <Button variant="outline" className="w-full justify-start">
-                  <BarChart3 className="mr-2 h-4 w-4" />
-                  Update Scorecard
+                  <AlertCircle className="mr-2 h-4 w-4" />
+                  Add an Issue
                 </Button>
               </Link>
             </div>
@@ -381,4 +333,3 @@ const Dashboard = () => {
 };
 
 export default Dashboard;
-
