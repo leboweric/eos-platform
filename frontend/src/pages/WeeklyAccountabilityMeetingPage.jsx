@@ -105,7 +105,8 @@ const WeeklyAccountabilityMeetingPage = () => {
       
       // Get current quarter
       const now = new Date();
-      const currentQuarter = Math.floor((now.getMonth() + 3) / 3);
+      const quarterNumber = Math.floor((now.getMonth() / 3)) + 1;
+      const currentQuarter = `Q${quarterNumber}`;
       const currentYear = now.getFullYear();
       
       const response = await quarterlyPrioritiesService.getQuarterlyPriorities(orgId, teamId, currentQuarter, currentYear);
