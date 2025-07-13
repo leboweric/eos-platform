@@ -13,7 +13,8 @@ import {
   createMilestone,
   updateMilestone,
   deleteMilestone,
-  addPriorityUpdate
+  addPriorityUpdate,
+  cleanupTestPriorities
 } from '../controllers/quarterlyPrioritiesController.js';
 
 const router = express.Router({ mergeParams: true });
@@ -46,6 +47,9 @@ router.delete('/priorities/:priorityId/milestones/:milestoneId', deleteMilestone
 
 // Priority updates
 router.post('/priorities/:priorityId/updates', addPriorityUpdate);
+
+// Admin cleanup function
+router.post('/cleanup-test-priorities', cleanupTestPriorities);
 
 // Debug endpoint (only in development)
 if (process.env.NODE_ENV !== 'production') {

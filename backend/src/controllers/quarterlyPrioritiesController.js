@@ -1067,3 +1067,69 @@ export const getCurrentPriorities = async (req, res) => {
     });
   }
 };
+
+// Cleanup test priorities (admin function)
+export const cleanupTestPriorities = async (req, res) => {
+  try {
+    console.log('Starting cleanup of test priorities...');
+    
+    // First, check what we're about to clean up
+    const testPrioritiesQuery = `
+      SELECT id, title, description, deleted_at
+      FROM quarterly_priorities 
+      WHERE (title ILIKE '%test%' 
+         OR title ILIKE '%trests%'
+         OR title ILIKE '%reddfd%'
+         OR description ILIKE '%test%'
+         OR description ILIKE '%dddd%'
+         OR description ILIKE '%dfdfd%'
+         OR description ILIKE '%ddsdfsdfsd%')
+      AND deleted_at IS NULL
+    `;
+    
+    const testPriorities = await query(testPrioritiesQuery);
+    console.log(`Found ${testPriorities.rows.length} test priorities to clean up:`, 
+      testPriorities.rows.map(p => ({ id: p.id, title: p.title })));
+    
+    if (testPriorities.rows.length === 0) {
+      return res.json({
+        success: true,
+        message: 'No test priorities found to clean up',
+        cleanedCount: 0
+      });
+    }
+    
+    // Archive (soft delete) test priorities
+    const cleanupQuery = `
+      UPDATE quarterly_priorities 
+      SET deleted_at = NOW()
+      WHERE (title ILIKE '%test%' 
+         OR title ILIKE '%trests%'
+         OR title ILIKE '%reddfd%'
+         OR description ILIKE '%test%'
+         OR description ILIKE '%dddd%'
+         OR description ILIKE '%dfdfd%'
+         OR description ILIKE '%ddsdfsdfsd%')
+      AND deleted_at IS NULL
+      RETURNING id, title
+    `;
+    
+    const cleanupResult = await query(cleanupQuery);
+    console.log(`Cleaned up ${cleanupResult.rows.length} test priorities`);
+    
+    res.json({
+      success: true,
+      message: `Successfully archived ${cleanupResult.rows.length} test priorities`,
+      cleanedCount: cleanupResult.rows.length,
+      cleanedPriorities: cleanupResult.rows
+    });
+    
+  } catch (error) {
+    console.error('Cleanup test priorities error:', error);
+    res.status(500).json({ 
+      success: false,
+      error: 'Failed to cleanup test priorities',
+      details: process.env.NODE_ENV === 'development' ? error.message : undefined
+    });
+  }
+};
