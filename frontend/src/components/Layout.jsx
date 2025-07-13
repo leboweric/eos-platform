@@ -48,7 +48,7 @@ const Layout = ({ children }) => {
 
   const navigation = [
     { name: 'Dashboard', href: '/dashboard', icon: Home },
-    { name: 'Business Blueprint', href: '/business-blueprint', icon: Target },
+    { name: '2-Page Plan', href: '/business-blueprint', icon: Target },
     { name: 'Organizational Chart', href: '/organizational-chart', icon: GitBranch },
     { name: 'Quarterly Priorities', href: '/quarterly-priorities', icon: CheckSquare },
     { name: 'Scorecard', href: '/scorecard', icon: BarChart3 },

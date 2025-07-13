@@ -16,7 +16,7 @@ const LandingPage = () => {
   const features = [
     {
       icon: Target,
-      title: 'Business Blueprint Management',
+      title: '2-Page Plan Management',
       description: 'Create and manage your Business Strategy Blueprint with collaborative editing and real-time updates.'
     },
     {

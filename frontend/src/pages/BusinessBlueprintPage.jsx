@@ -36,7 +36,7 @@ const BusinessBlueprintPage = () => {
   const [success, setSuccess] = useState(null);
   const [activeTab, setActiveTab] = useState('vision');
   
-  // Business Blueprint data
+  // 2-Page Plan data
   const [blueprintData, setBlueprintData] = useState({
     coreValues: [],
     coreFocus: {
@@ -312,7 +312,7 @@ const BusinessBlueprintPage = () => {
         <div className="flex items-center justify-between mb-8">
           <div>
             <h1 className="text-4xl font-bold text-gray-900">
-              Business Blueprint
+              2-Page Plan
             </h1>
             <p className="text-gray-600 mt-2 text-lg">Define your organization's vision and strategy for success</p>
           </div>
