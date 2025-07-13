@@ -137,11 +137,11 @@ const WeeklyAccountabilityMeetingPage = () => {
         id: i.id,
         title: i.title,
         status: i.status,
-        category: i.category,
-        willShow: i.status === 'open' && i.category === 'short-term'
+        timeline: i.timeline,
+        willShow: i.status === 'open' && i.timeline === 'short_term'
       })));
       
-      const filteredIssues = response.data.issues.filter(i => i.status === 'open' && i.category === 'short-term');
+      const filteredIssues = response.data.issues.filter(i => i.status === 'open' && i.timeline === 'short_term');
       console.log('Filtered short-term issues:', filteredIssues);
       
       setIssues(filteredIssues);
