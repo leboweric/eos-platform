@@ -7,7 +7,7 @@ const buildUrl = (endpoint = '') => {
   // Get org from the current auth context
   const authState = JSON.parse(localStorage.getItem('auth-store') || '{}');
   const user = authState?.state?.user;
-  const orgId = localStorage.getItem('impersonatedOrgId') || user?.organizationId;
+  const orgId = localStorage.getItem('impersonatedOrgId') || user?.organizationId || user?.organization_id;
   
   // For now, use a default team ID since teams aren't implemented yet
   const teamId = '00000000-0000-0000-0000-000000000000';

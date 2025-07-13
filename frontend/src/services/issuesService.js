@@ -3,7 +3,7 @@ import axios from 'axios';
 const getOrgId = () => {
   const authState = JSON.parse(localStorage.getItem('auth-store') || '{}');
   const user = authState?.state?.user;
-  return localStorage.getItem('impersonatedOrgId') || user?.organizationId;
+  return localStorage.getItem('impersonatedOrgId') || user?.organizationId || user?.organization_id;
 };
 
 const getTeamId = () => {
