@@ -7,7 +7,8 @@ import {
   deleteMetric,
   updateScore,
   findScorecardData,
-  getMetricHistory
+  getMetricHistory,
+  checkDuplicateScorecard
 } from '../controllers/scorecardController.js';
 
 const router = express.Router({ mergeParams: true });
@@ -29,5 +30,6 @@ router.put('/scores', updateScore);
 
 // Diagnostic endpoint (for debugging)
 router.get('/find', findScorecardData);
+router.get('/check-duplicates', checkDuplicateScorecard);
 
 export default router;

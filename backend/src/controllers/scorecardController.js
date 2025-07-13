@@ -307,6 +307,83 @@ export const getMetricHistory = async (req, res) => {
   }
 };
 
+// Check for duplicate scorecards in an organization
+export const checkDuplicateScorecard = async (req, res) => {
+  try {
+    const { orgId } = req.params;
+    
+    // Get all unique team IDs for this organization's scorecard metrics
+    const teamResult = await db.query(
+      `SELECT 
+        COUNT(DISTINCT sm.team_id) as unique_team_count,
+        COUNT(*) as total_metrics,
+        STRING_AGG(DISTINCT sm.team_id::text, ', ' ORDER BY sm.team_id) as team_ids,
+        o.name as org_name
+       FROM scorecard_metrics sm
+       JOIN organizations o ON sm.organization_id = o.id
+       WHERE sm.organization_id = $1
+       GROUP BY o.id, o.name`,
+      [orgId]
+    );
+    
+    // Get metrics grouped by team_id
+    const metricsResult = await db.query(
+      `SELECT 
+        sm.team_id,
+        COUNT(*) as metric_count,
+        STRING_AGG(sm.name, ', ' ORDER BY sm.name) as metric_names,
+        MIN(sm.created_at) as earliest_created,
+        MAX(sm.created_at) as latest_created
+       FROM scorecard_metrics sm
+       WHERE sm.organization_id = $1
+       GROUP BY sm.team_id
+       ORDER BY sm.team_id`,
+      [orgId]
+    );
+    
+    // Get recent scores by team_id to see if data differs
+    const scoresResult = await db.query(
+      `SELECT 
+        sm.team_id,
+        COUNT(DISTINCT ss.week_date) as weeks_with_data,
+        COUNT(*) as total_scores,
+        MAX(ss.week_date) as latest_score_date
+       FROM scorecard_metrics sm
+       LEFT JOIN scorecard_scores ss ON sm.id = ss.metric_id
+       WHERE sm.organization_id = $1
+       GROUP BY sm.team_id`,
+      [orgId]
+    );
+    
+    const summary = teamResult.rows[0] || {};
+    const hasDuplicates = summary.unique_team_count > 1;
+    
+    res.json({
+      success: true,
+      data: {
+        summary: {
+          organizationName: summary.org_name,
+          hasDuplicateScorecard: hasDuplicates,
+          uniqueTeamCount: summary.unique_team_count || 0,
+          totalMetrics: summary.total_metrics || 0,
+          teamIds: summary.team_ids ? summary.team_ids.split(', ') : []
+        },
+        metricsByTeam: metricsResult.rows,
+        scoresByTeam: scoresResult.rows,
+        recommendation: hasDuplicates 
+          ? 'Multiple team IDs found! This organization has metrics split across different team IDs.' 
+          : 'No duplicates found. All metrics use the same team ID.'
+      }
+    });
+  } catch (error) {
+    console.error('Error checking duplicate scorecards:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Failed to check duplicate scorecards'
+    });
+  }
+};
+
 // Diagnostic endpoint to find scorecard data for an organization
 export const findScorecardData = async (req, res) => {
   try {
