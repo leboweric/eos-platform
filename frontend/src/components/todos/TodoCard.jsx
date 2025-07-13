@@ -48,12 +48,14 @@ const TodoCard = ({ todo, onEdit, onDelete, onUpdate }) => {
       <CardHeader className="pb-3">
         <div className="flex items-start justify-between">
           <div className="flex items-start space-x-3 flex-1">
-            <Checkbox
-              checked={todo.status === 'complete'}
-              onCheckedChange={handleToggleComplete}
-              disabled={updating}
-              className="mt-1"
-            />
+            <div className={`p-1.5 rounded-md ${todo.status === 'complete' ? 'bg-green-50 border-green-300' : 'bg-indigo-50 border-indigo-300'} border`}>
+              <Checkbox
+                checked={todo.status === 'complete'}
+                onCheckedChange={handleToggleComplete}
+                disabled={updating}
+                className="h-5 w-5 data-[state=checked]:bg-green-600 data-[state=checked]:border-green-600 border-2"
+              />
+            </div>
             <div className="flex-1">
               <h3 className={`font-medium ${todo.status === 'complete' ? 'line-through text-gray-500' : ''}`}>
                 {todo.title}
