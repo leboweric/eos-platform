@@ -84,12 +84,23 @@ const Dashboard = () => {
       
       // Process todos - only user's todos
       console.log('[Dashboard] Todos response:', todosResponse);
+      console.log('[Dashboard] Todos data:', todosResponse.data);
+      console.log('[Dashboard] All todos:', todosResponse.data.todos);
+      console.log('[Dashboard] First todo:', todosResponse.data.todos?.[0]);
       console.log('[Dashboard] Current user ID:', user.id);
       
       const userTodos = todosResponse.data.todos.filter(todo => {
-        const isAssignedToUser = todo.assignedTo?.id === user.id || todo.assigned_to_id === user.id;
+        const assignedToId = todo.assignedTo?.id || todo.assigned_to?.id || todo.assigned_to_id;
+        const isAssignedToUser = assignedToId === user.id;
         const isNotCompleted = todo.status !== 'completed' && todo.status !== 'complete';
-        console.log('[Dashboard] Todo filter - assigned:', isAssignedToUser, 'not completed:', isNotCompleted, 'todo:', todo);
+        console.log('[Dashboard] Todo filter check:', {
+          todo_id: todo.id,
+          assignedToId,
+          user_id: user.id,
+          isAssignedToUser,
+          status: todo.status,
+          isNotCompleted
+        });
         return isAssignedToUser && isNotCompleted;
       });
       
