@@ -3,16 +3,7 @@ import axios from 'axios';
 // Get API URL from environment or use default
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3001';
 
-// Create base axios instance without interceptors for queue processing
-const baseAxios = axios.create({
-  baseURL: API_URL,
-  timeout: 30000,
-  headers: {
-    'Content-Type': 'application/json'
-  }
-});
-
-// Create main axios instance with same config
+// Create axios instance with default config
 const axiosInstance = axios.create({
   baseURL: API_URL,
   timeout: 30000,
@@ -21,72 +12,24 @@ const axiosInstance = axios.create({
   }
 });
 
-// Add request queue to handle rate limiting
-let requestQueue = [];
-let activeRequests = 0;
-const MAX_CONCURRENT_REQUESTS = 3;
-const REQUEST_DELAY = 100; // ms between requests
-
-// Process queue
-const processQueue = async () => {
-  if (activeRequests >= MAX_CONCURRENT_REQUESTS || requestQueue.length === 0) {
-    return;
-  }
-
-  activeRequests++;
-  const { config, resolve, reject } = requestQueue.shift();
-
-  try {
-    // Ensure the auth token is added to baseAxios requests
-    const authStore = JSON.parse(localStorage.getItem('auth-store') || '{}');
-    const token = authStore?.state?.token;
-    
-    if (token && config.headers) {
-      config.headers.Authorization = `Bearer ${token}`;
-    }
-    
-    // Use baseAxios to avoid interceptor loops
-    const response = await baseAxios.request(config);
-    resolve(response);
-  } catch (error) {
-    reject(error);
-  } finally {
-    activeRequests--;
-    setTimeout(processQueue, REQUEST_DELAY);
-  }
-};
-
-// Request interceptor
+// Request interceptor to add auth token
 axiosInstance.interceptors.request.use(
   (config) => {
-    // Ensure config has required properties
-    if (!config.method) {
-      config.method = 'GET';
-    }
-    if (!config.headers) {
-      config.headers = {};
-    }
-    
     // Add auth token if available
-    const authStore = JSON.parse(localStorage.getItem('auth-store') || '{}');
-    const token = authStore?.state?.token;
+    const token = localStorage.getItem('accessToken');
     
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;
     }
-
-    // Add request to queue
-    return new Promise((resolve, reject) => {
-      requestQueue.push({ config, resolve, reject });
-      processQueue();
-    });
+    
+    return config;
   },
   (error) => {
     return Promise.reject(error);
   }
 );
 
-// Response interceptor with retry logic
+// Response interceptor with retry logic for 429 errors
 axiosInstance.interceptors.response.use(
   (response) => response,
   async (error) => {
@@ -116,11 +59,15 @@ axiosInstance.interceptors.response.use(
     if (error.response?.status === 401 && !originalRequest._retry) {
       originalRequest._retry = true;
       
-      // Clear auth state
-      localStorage.removeItem('auth-store');
-      
-      // Redirect to login
-      window.location.href = '/login';
+      // Don't handle auth endpoints
+      if (!originalRequest.url?.includes('/auth/')) {
+        // Clear auth state
+        localStorage.removeItem('accessToken');
+        localStorage.removeItem('refreshToken');
+        
+        // Redirect to login
+        window.location.href = '/login';
+      }
     }
 
     return Promise.reject(error);
