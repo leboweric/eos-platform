@@ -131,7 +131,20 @@ const WeeklyAccountabilityMeetingPage = () => {
     try {
       setLoading(true);
       const response = await issuesService.getIssues();
-      setIssues(response.data.issues.filter(i => i.status === 'open' && i.category === 'short-term'));
+      
+      console.log('All issues from API:', response.data.issues);
+      console.log('Issues breakdown:', response.data.issues.map(i => ({
+        id: i.id,
+        title: i.title,
+        status: i.status,
+        category: i.category,
+        willShow: i.status === 'open' && i.category === 'short-term'
+      })));
+      
+      const filteredIssues = response.data.issues.filter(i => i.status === 'open' && i.category === 'short-term');
+      console.log('Filtered short-term issues:', filteredIssues);
+      
+      setIssues(filteredIssues);
       setLoading(false);
     } catch (error) {
       console.error('Failed to fetch issues:', error);
