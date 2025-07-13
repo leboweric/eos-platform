@@ -58,10 +58,10 @@ const createLimiter = (windowMs, max) => rateLimit({
   }
 });
 
-// General API limiter - more lenient
+// General API limiter - much more lenient for normal usage
 const generalLimiter = createLimiter(
   parseInt(process.env.RATE_LIMIT_WINDOW_MS) || 1 * 60 * 1000, // 1 minute
-  parseInt(process.env.RATE_LIMIT_MAX_REQUESTS) || 60 // 60 requests per minute
+  parseInt(process.env.RATE_LIMIT_MAX_REQUESTS) || 300 // 300 requests per minute
 );
 
 // Strict limiter for auth endpoints
