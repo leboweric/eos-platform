@@ -1,25 +1,18 @@
 import axios from 'axios';
+import { useAuthStore } from '../stores/authStore';
 
 const getOrgId = () => {
-  const authState = JSON.parse(localStorage.getItem('auth-store') || '{}');
-  const user = authState?.state?.user;
+  // Get user from Zustand store
+  const user = useAuthStore.getState().user;
   
-  // Debug logging
-  console.log('[IssuesService] Auth state:', authState);
-  console.log('[IssuesService] User object:', user);
-  console.log('[IssuesService] user.organizationId:', user?.organizationId);
-  console.log('[IssuesService] user.organization_id:', user?.organization_id);
-  console.log('[IssuesService] impersonatedOrgId:', localStorage.getItem('impersonatedOrgId'));
-  
+  // Check for impersonated org ID first, then user's organization ID
   const orgId = localStorage.getItem('impersonatedOrgId') || user?.organizationId || user?.organization_id;
-  console.log('[IssuesService] Final orgId:', orgId);
   
   return orgId;
 };
 
 const getTeamId = () => {
-  const authState = JSON.parse(localStorage.getItem('auth-store') || '{}');
-  const user = authState?.state?.user;
+  const user = useAuthStore.getState().user;
   return user?.teamId;
 };
 

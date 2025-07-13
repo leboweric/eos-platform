@@ -1,14 +1,13 @@
 import axios from 'axios';
+import { useAuthStore } from '../stores/authStore';
 
 const getOrgId = () => {
-  const authState = JSON.parse(localStorage.getItem('auth-store') || '{}');
-  const user = authState?.state?.user;
+  const user = useAuthStore.getState().user;
   return localStorage.getItem('impersonatedOrgId') || user?.organizationId || user?.organization_id;
 };
 
 const getTeamId = () => {
-  const authState = JSON.parse(localStorage.getItem('auth-store') || '{}');
-  const user = authState?.state?.user;
+  const user = useAuthStore.getState().user;
   return user?.teamId;
 };
 
