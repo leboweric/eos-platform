@@ -1,7 +1,7 @@
 import { create } from 'zustand';
 import axios from 'axios';
 
-const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3001/api/v1';
+const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3001';
 
 // Configure axios defaults
 axios.defaults.baseURL = API_BASE_URL;
@@ -46,7 +46,7 @@ axios.interceptors.response.use(
       try {
         const refreshToken = localStorage.getItem('refreshToken');
         if (refreshToken) {
-          const response = await axios.post('/auth/refresh', {
+          const response = await axios.post('/api/v1/auth/refresh', {
             refreshToken
           });
 
@@ -97,7 +97,7 @@ export const useAuthStore = create((set, get) => ({
         return;
       }
 
-      const response = await axios.get('/auth/profile');
+      const response = await axios.get('/api/v1/auth/profile');
       set({ user: response.data.data, isLoading: false, error: null });
     } catch (error) {
       console.error('Auth check failed:', error);
@@ -112,7 +112,7 @@ export const useAuthStore = create((set, get) => ({
     try {
       set({ isLoading: true, error: null });
       
-      const response = await axios.post('/auth/login', {
+      const response = await axios.post('/api/v1/auth/login', {
         email,
         password
       });
@@ -136,7 +136,7 @@ export const useAuthStore = create((set, get) => ({
     try {
       set({ isLoading: true, error: null });
       
-      const response = await axios.post('/auth/register', userData);
+      const response = await axios.post('/api/v1/auth/register', userData);
       
       const { user, accessToken, refreshToken } = response.data.data;
       
@@ -155,7 +155,7 @@ export const useAuthStore = create((set, get) => ({
   // Logout user
   logout: async () => {
     try {
-      await axios.post('/auth/logout');
+      await axios.post('/api/v1/auth/logout');
     } catch (error) {
       console.error('Logout error:', error);
     } finally {
@@ -170,7 +170,7 @@ export const useAuthStore = create((set, get) => ({
     try {
       set({ isLoading: true, error: null });
       
-      const response = await axios.put('/auth/profile', profileData);
+      const response = await axios.put('/api/v1/auth/profile', profileData);
       
       set({ 
         user: { ...get().user, ...response.data.data }, 
