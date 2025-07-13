@@ -65,7 +65,15 @@ const Dashboard = () => {
         issuesService.getIssues()
       ]);
       
-      // Process priorities - only user's priorities
+      // Process priorities - Company priorities for the progress card
+      const companyPriorities = prioritiesResponse.companyPriorities || [];
+      
+      // Calculate company priorities stats
+      const completedCompanyPriorities = companyPriorities.filter(p => p.status === 'complete').length;
+      const totalCompanyPriorities = companyPriorities.length;
+      const companyPrioritiesProgress = totalCompanyPriorities > 0 ? Math.round((completedCompanyPriorities / totalCompanyPriorities) * 100) : 0;
+      
+      // Get user's priorities for the "Your Priorities" section
       const userPriorities = [];
       if (prioritiesResponse.companyPriorities) {
         userPriorities.push(...prioritiesResponse.companyPriorities.filter(p => p.owner?.id === user.id));
@@ -73,11 +81,6 @@ const Dashboard = () => {
       if (prioritiesResponse.teamMemberPriorities?.[user.id]) {
         userPriorities.push(...prioritiesResponse.teamMemberPriorities[user.id].priorities);
       }
-      
-      // Calculate priorities stats
-      const completedPriorities = userPriorities.filter(p => p.status === 'complete').length;
-      const totalPriorities = userPriorities.length;
-      const prioritiesProgress = totalPriorities > 0 ? Math.round((completedPriorities / totalPriorities) * 100) : 0;
       
       // Process todos - only user's todos
       const userTodos = todosResponse.data.todos.filter(todo => 
@@ -103,9 +106,9 @@ const Dashboard = () => {
         todos: userTodos.slice(0, 5), // Show first 5
         issues: shortTermIssues,
         stats: {
-          prioritiesCompleted: completedPriorities,
-          totalPriorities: totalPriorities,
-          prioritiesProgress: prioritiesProgress,
+          prioritiesCompleted: completedCompanyPriorities,
+          totalPriorities: totalCompanyPriorities,
+          prioritiesProgress: companyPrioritiesProgress,
           overdueItems: overdueTodos,
           totalShortTermIssues: shortTermIssues.length
         }
@@ -169,7 +172,7 @@ const Dashboard = () => {
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Priorities Progress</CardTitle>
+            <CardTitle className="text-sm font-medium">Company Priorities Progress</CardTitle>
             <Target className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
