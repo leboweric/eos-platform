@@ -1,6 +1,7 @@
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { useAuthStore } from './stores/authStore';
 import { useEffect } from 'react';
+import { TeamProvider } from './contexts/TeamContext';
 
 // Components
 import Layout from './components/Layout';
@@ -52,8 +53,9 @@ function App() {
 
   return (
     <Router>
-      <div className="min-h-screen bg-background">
-        <Routes>
+      <TeamProvider>
+        <div className="min-h-screen bg-background">
+          <Routes>
           {/* Public routes */}
           <Route path="/" element={!user ? <LandingPage /> : <Navigate to="/dashboard" />} />
           <Route path="/login" element={!user ? <LoginPage /> : <Navigate to="/dashboard" />} />
@@ -96,6 +98,7 @@ function App() {
           <Route path="*" element={<Navigate to={user ? "/dashboard" : "/"} />} />
         </Routes>
       </div>
+      </TeamProvider>
     </Router>
   );
 }

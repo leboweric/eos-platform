@@ -1,5 +1,6 @@
 import axios from 'axios';
 import { useAuthStore } from '../stores/authStore';
+import { getTeamId } from '../utils/teamUtils';
 
 const API_BASE = '/organizations/:orgId/teams/:teamId/business-blueprint';
 
@@ -9,8 +10,8 @@ const buildUrl = (endpoint = '') => {
   const user = useAuthStore.getState().user;
   const orgId = localStorage.getItem('impersonatedOrgId') || user?.organizationId || user?.organization_id;
   
-  // For now, use a default team ID since teams aren't implemented yet
-  const teamId = '00000000-0000-0000-0000-000000000000';
+  // Always use Leadership Team for Business Blueprint
+  const teamId = getTeamId(user, true);
   
   return API_BASE.replace(':orgId', orgId).replace(':teamId', teamId) + endpoint;
 };

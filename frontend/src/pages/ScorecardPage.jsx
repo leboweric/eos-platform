@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useAuthStore } from '../stores/authStore';
 import { scorecardService } from '../services/scorecardService';
+import { getTeamId } from '../utils/teamUtils';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -76,7 +77,7 @@ const ScorecardPage = () => {
       setError(null);
       
       const orgId = localStorage.getItem('impersonatedOrgId') || user?.organizationId || user?.organization_id;
-      const teamId = user?.teamId || '00000000-0000-0000-0000-000000000000';
+      const teamId = getTeamId(user, true);
       
       if (!orgId) {
         throw new Error('No organization ID found');
@@ -136,7 +137,7 @@ const ScorecardPage = () => {
       setError(null);
       
       const orgId = localStorage.getItem('impersonatedOrgId') || user?.organizationId || user?.organization_id;
-      const teamId = user?.teamId || '00000000-0000-0000-0000-000000000000';
+      const teamId = getTeamId(user, true);
       
       if (!orgId) {
         throw new Error('No organization ID found');
@@ -183,7 +184,7 @@ const ScorecardPage = () => {
       setError(null);
       
       const orgId = localStorage.getItem('impersonatedOrgId') || user?.organizationId || user?.organization_id;
-      const teamId = user?.teamId || '00000000-0000-0000-0000-000000000000';
+      const teamId = getTeamId(user, true);
       
       if (!orgId) {
         throw new Error('No organization ID found');
@@ -209,7 +210,7 @@ const ScorecardPage = () => {
       setError(null);
       
       const orgId = localStorage.getItem('impersonatedOrgId') || user?.organizationId || user?.organization_id;
-      const teamId = user?.teamId || '00000000-0000-0000-0000-000000000000';
+      const teamId = getTeamId(user, true);
       
       if (!orgId) {
         throw new Error('No organization ID found');

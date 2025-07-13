@@ -1,6 +1,7 @@
 import { useState, useEffect, Component } from 'react';
 import { useAuthStore } from '../stores/authStore';
 import { quarterlyPrioritiesService } from '../services/quarterlyPrioritiesService';
+import { getTeamId } from '../utils/teamUtils';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -138,7 +139,7 @@ const QuarterlyPrioritiesPage = () => {
     try {
       // Get organization and team IDs from user context
       const orgId = user?.organizationId;
-      const teamId = user?.teamId || '00000000-0000-0000-0000-000000000000'; // Default team ID
+      const teamId = getTeamId(user, true); // Always use Leadership Team for main page
       
       if (!orgId) {
         throw new Error('No organization ID found');
@@ -319,7 +320,7 @@ const QuarterlyPrioritiesPage = () => {
   const handleSavePredictions = async () => {
     try {
       const orgId = user?.organizationId;
-      const teamId = user?.teamId || '00000000-0000-0000-0000-000000000000';
+      const teamId = getTeamId(user, true);
       
       // Get current quarter and year
       const now = new Date();
@@ -345,7 +346,7 @@ const QuarterlyPrioritiesPage = () => {
   const handleUpdatePriority = async (priorityId, updates) => {
     try {
       const orgId = user?.organizationId || user?.organization_id;
-      const teamId = user?.teamId || '00000000-0000-0000-0000-000000000000';
+      const teamId = getTeamId(user, true);
       
       console.log('[QuarterlyPriorities] Updating priority:', priorityId, 'with:', updates);
       console.log('[QuarterlyPriorities] Using orgId:', orgId, 'teamId:', teamId);
@@ -370,7 +371,7 @@ const QuarterlyPrioritiesPage = () => {
   const handleUpdateMilestone = async (priorityId, milestoneId, completed) => {
     try {
       const orgId = user?.organizationId;
-      const teamId = user?.teamId || '00000000-0000-0000-0000-000000000000';
+      const teamId = getTeamId(user, true);
       
       await quarterlyPrioritiesService.updateMilestone(orgId, teamId, priorityId, milestoneId, { completed });
       
@@ -391,7 +392,7 @@ const QuarterlyPrioritiesPage = () => {
   const handleCreateMilestone = async (priorityId, milestoneData) => {
     try {
       const orgId = user?.organizationId;
-      const teamId = user?.teamId || '00000000-0000-0000-0000-000000000000';
+      const teamId = getTeamId(user, true);
       
       await quarterlyPrioritiesService.createMilestone(orgId, teamId, priorityId, milestoneData);
       
@@ -406,7 +407,7 @@ const QuarterlyPrioritiesPage = () => {
   const handleEditMilestone = async (priorityId, milestoneId, updates) => {
     try {
       const orgId = user?.organizationId;
-      const teamId = user?.teamId || '00000000-0000-0000-0000-000000000000';
+      const teamId = getTeamId(user, true);
       
       console.log('Updating milestone with:', updates);
       await quarterlyPrioritiesService.updateMilestone(orgId, teamId, priorityId, milestoneId, updates);
@@ -428,7 +429,7 @@ const QuarterlyPrioritiesPage = () => {
   const handleDeleteMilestone = async (priorityId, milestoneId) => {
     try {
       const orgId = user?.organizationId;
-      const teamId = user?.teamId || '00000000-0000-0000-0000-000000000000';
+      const teamId = getTeamId(user, true);
       
       await quarterlyPrioritiesService.deleteMilestone(orgId, teamId, priorityId, milestoneId);
       
@@ -449,7 +450,7 @@ const QuarterlyPrioritiesPage = () => {
   const handleAddUpdate = async (priorityId, updateText, statusChange = null) => {
     try {
       const orgId = user?.organizationId;
-      const teamId = user?.teamId || '00000000-0000-0000-0000-000000000000';
+      const teamId = getTeamId(user, true);
       
       await quarterlyPrioritiesService.addPriorityUpdate(orgId, teamId, priorityId, updateText, statusChange);
       
@@ -470,7 +471,7 @@ const QuarterlyPrioritiesPage = () => {
       const quarter = `Q${currentQuarter}`;
       
       const orgId = user?.organizationId;
-      const teamId = user?.teamId || '00000000-0000-0000-0000-000000000000';
+      const teamId = getTeamId(user, true);
       
       const priorityData = {
         ...priorityForm,
@@ -509,7 +510,7 @@ const QuarterlyPrioritiesPage = () => {
     
     try {
       const orgId = user?.organizationId;
-      const teamId = user?.teamId || '00000000-0000-0000-0000-000000000000';
+      const teamId = getTeamId(user, true);
       
       await quarterlyPrioritiesService.archivePriority(orgId, teamId, priorityId);
       
