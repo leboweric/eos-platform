@@ -32,7 +32,9 @@ import {
   X,
   Users,
   Loader2,
-  Archive
+  Archive,
+  ChevronDown,
+  ChevronRight
 } from 'lucide-react';
 import { format, addMonths, startOfQuarter, endOfQuarter } from 'date-fns';
 
@@ -99,6 +101,12 @@ const QuarterlyPrioritiesPage = () => {
   const [teamMemberPriorities, setTeamMemberPriorities] = useState({});
   const [teamMembers, setTeamMembers] = useState([]);
   const [archivedQuarters, setArchivedQuarters] = useState({});
+  
+  // Expansion states for collapsible sections
+  const [expandedSections, setExpandedSections] = useState({
+    companyPriorities: false,
+    individualPriorities: {}
+  });
   
   // Editing states
   const [editingPredictions, setEditingPredictions] = useState(false);
@@ -495,6 +503,44 @@ const QuarterlyPrioritiesPage = () => {
     const now = new Date();
     const currentYear = now.getFullYear();
     return `${currentYear}`;
+  };
+
+  // Toggle expansion states
+  const toggleCompanyPriorities = () => {
+    setExpandedSections(prev => ({
+      ...prev,
+      companyPriorities: !prev.companyPriorities
+    }));
+  };
+
+  const toggleIndividualPriorities = (memberId) => {
+    setExpandedSections(prev => ({
+      ...prev,
+      individualPriorities: {
+        ...prev.individualPriorities,
+        [memberId]: !prev.individualPriorities[memberId]
+      }
+    }));
+  };
+
+  const expandAll = () => {
+    const allIndividuals = {};
+    teamMembers.forEach(member => {
+      if (teamMemberPriorities[member.id]?.priorities?.length > 0) {
+        allIndividuals[member.id] = true;
+      }
+    });
+    setExpandedSections({
+      companyPriorities: true,
+      individualPriorities: allIndividuals
+    });
+  };
+
+  const collapseAll = () => {
+    setExpandedSections({
+      companyPriorities: false,
+      individualPriorities: {}
+    });
   };
 
   // Calculate stats without "at-risk"
@@ -998,6 +1044,26 @@ const QuarterlyPrioritiesPage = () => {
           )}
         </div>
         <div className="flex space-x-2">
+          {!showArchived && (
+            <>
+              <Button 
+                variant="outline"
+                size="sm"
+                onClick={expandAll}
+              >
+                <ChevronDown className="mr-1 h-4 w-4" />
+                Expand All
+              </Button>
+              <Button 
+                variant="outline"
+                size="sm"
+                onClick={collapseAll}
+              >
+                <ChevronRight className="mr-1 h-4 w-4" />
+                Collapse All
+              </Button>
+            </>
+          )}
           <Button 
             variant={showArchived ? "default" : "outline"}
             onClick={() => setShowArchived(!showArchived)}
@@ -1328,13 +1394,26 @@ const QuarterlyPrioritiesPage = () => {
         <>
           {/* Company Priorities */}
           <div className="space-y-4">
-            <div className="flex items-center space-x-2">
+            <div 
+              className="flex items-center space-x-2 cursor-pointer hover:bg-gray-50 rounded-lg p-2 -m-2"
+              onClick={toggleCompanyPriorities}
+            >
+              {expandedSections.companyPriorities ? (
+                <ChevronDown className="h-5 w-5 text-gray-600" />
+              ) : (
+                <ChevronRight className="h-5 w-5 text-gray-600" />
+              )}
               <Building2 className="h-6 w-6 text-blue-600" />
               <h2 className="text-2xl font-bold">Company Priorities</h2>
+              <span className="text-sm text-gray-600 ml-2">({companyPriorities.length})</span>
             </div>
-            {(companyPriorities || []).map(priority => (
-              <PriorityCard key={priority.id} priority={priority} isCompany={true} />
-            ))}
+            {expandedSections.companyPriorities && (
+              <div className="space-y-4 ml-7">
+                {(companyPriorities || []).map(priority => (
+                  <PriorityCard key={priority.id} priority={priority} isCompany={true} />
+                ))}
+              </div>
+            )}
           </div>
 
           {/* Team Member Priorities */}
@@ -1350,18 +1429,31 @@ const QuarterlyPrioritiesPage = () => {
 
               return (
                 <div key={member.id} className="space-y-4">
-                  <div className="flex items-center space-x-3">
+                  <div 
+                    className="flex items-center space-x-3 cursor-pointer hover:bg-gray-50 rounded-lg p-2 -m-2"
+                    onClick={() => toggleIndividualPriorities(member.id)}
+                  >
+                    {expandedSections.individualPriorities[member.id] ? (
+                      <ChevronDown className="h-5 w-5 text-gray-600" />
+                    ) : (
+                      <ChevronRight className="h-5 w-5 text-gray-600" />
+                    )}
                     <Avatar className="h-8 w-8">
                       <AvatarFallback>{getUserInitials(member.name)}</AvatarFallback>
                     </Avatar>
-                    <div>
+                    <div className="flex-1">
                       <h3 className="text-lg font-semibold">{member.name}</h3>
                       <p className="text-sm text-gray-600">{member.role} • {member.department}</p>
                     </div>
+                    <span className="text-sm text-gray-600">({memberPriorities.length})</span>
                   </div>
-                  {memberPriorities.map(priority => (
-                    <PriorityCard key={priority.id} priority={priority} />
-                  ))}
+                  {expandedSections.individualPriorities[member.id] && (
+                    <div className="space-y-4 ml-11">
+                      {memberPriorities.map(priority => (
+                        <PriorityCard key={priority.id} priority={priority} />
+                      ))}
+                    </div>
+                  )}
                 </div>
               );
             })}
