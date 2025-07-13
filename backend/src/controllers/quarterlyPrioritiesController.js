@@ -159,16 +159,16 @@ export const getQuarterlyPriorities = async (req, res) => {
            ${deletedAtClause}
            AND (
              -- If accessing Leadership Team (00000000...), show Leadership priorities
-             ($4 = '00000000-0000-0000-0000-000000000000' AND (
-               p.team_id = '00000000-0000-0000-0000-000000000000' OR 
+             ($4::uuid = '00000000-0000-0000-0000-000000000000'::uuid AND (
+               p.team_id = '00000000-0000-0000-0000-000000000000'::uuid OR 
                p.team_id IS NULL OR 
                t.is_leadership_team = true
              ))
              -- If accessing a department, show department priorities and published Leadership priorities
-             OR ($4 != '00000000-0000-0000-0000-000000000000' AND (
-               p.team_id = $4 OR
+             OR ($4::uuid != '00000000-0000-0000-0000-000000000000'::uuid AND (
+               p.team_id = $4::uuid OR
                (CASE 
-                 WHEN p.team_id = '00000000-0000-0000-0000-000000000000' THEN p.is_published_to_departments = true
+                 WHEN p.team_id = '00000000-0000-0000-0000-000000000000'::uuid THEN p.is_published_to_departments = true
                  WHEN p.team_id IS NULL THEN p.is_published_to_departments = true
                  WHEN t.is_leadership_team = true THEN p.is_published_to_departments = true
                  ELSE false
@@ -872,7 +872,7 @@ export const getArchivedPriorities = async (req, res) => {
         u.email as owner_email,
         t.is_leadership_team as priority_from_leadership_team,
         CASE 
-          WHEN p.team_id = '00000000-0000-0000-0000-000000000000' THEN true
+          WHEN p.team_id = '00000000-0000-0000-0000-000000000000'::uuid THEN true
           WHEN p.team_id IS NULL THEN true
           WHEN t.is_leadership_team = true THEN true
           ELSE false
@@ -894,16 +894,16 @@ export const getArchivedPriorities = async (req, res) => {
          AND p.deleted_at IS NOT NULL
          AND (
            -- If accessing Leadership Team (00000000...), show Leadership priorities
-           ($2 = '00000000-0000-0000-0000-000000000000' AND (
-             p.team_id = '00000000-0000-0000-0000-000000000000' OR 
+           ($2::uuid = '00000000-0000-0000-0000-000000000000'::uuid AND (
+             p.team_id = '00000000-0000-0000-0000-000000000000'::uuid OR 
              p.team_id IS NULL OR 
              t.is_leadership_team = true
            ))
            -- If accessing a department, show department priorities and published Leadership priorities
-           OR ($2 != '00000000-0000-0000-0000-000000000000' AND (
-             p.team_id = $2 OR
+           OR ($2::uuid != '00000000-0000-0000-0000-000000000000'::uuid AND (
+             p.team_id = $2::uuid OR
              (CASE 
-               WHEN p.team_id = '00000000-0000-0000-0000-000000000000' THEN p.is_published_to_departments = true
+               WHEN p.team_id = '00000000-0000-0000-0000-000000000000'::uuid THEN p.is_published_to_departments = true
                WHEN p.team_id IS NULL THEN p.is_published_to_departments = true
                WHEN t.is_leadership_team = true THEN p.is_published_to_departments = true
                ELSE false
@@ -1027,7 +1027,7 @@ export const getCurrentPriorities = async (req, res) => {
         pub.first_name || ' ' || pub.last_name as published_by_name,
         t.is_leadership_team as priority_from_leadership_team,
         CASE 
-          WHEN p.team_id = '00000000-0000-0000-0000-000000000000' THEN true
+          WHEN p.team_id = '00000000-0000-0000-0000-000000000000'::uuid THEN true
           WHEN p.team_id IS NULL THEN true
           WHEN t.is_leadership_team = true THEN true
           ELSE false
@@ -1040,16 +1040,16 @@ export const getCurrentPriorities = async (req, res) => {
       AND p.deleted_at IS NULL
       AND (
         -- If accessing Leadership Team (00000000...), show Leadership priorities
-        ($2 = '00000000-0000-0000-0000-000000000000' AND (
-          p.team_id = '00000000-0000-0000-0000-000000000000' OR 
+        ($2::uuid = '00000000-0000-0000-0000-000000000000'::uuid AND (
+          p.team_id = '00000000-0000-0000-0000-000000000000'::uuid OR 
           p.team_id IS NULL OR 
           t.is_leadership_team = true
         ))
         -- If accessing a department, show department priorities and published Leadership priorities
-        OR ($2 != '00000000-0000-0000-0000-000000000000' AND (
-          p.team_id = $2 OR
+        OR ($2::uuid != '00000000-0000-0000-0000-000000000000'::uuid AND (
+          p.team_id = $2::uuid OR
           (CASE 
-            WHEN p.team_id = '00000000-0000-0000-0000-000000000000' THEN p.is_published_to_departments = true
+            WHEN p.team_id = '00000000-0000-0000-0000-000000000000'::uuid THEN p.is_published_to_departments = true
             WHEN p.team_id IS NULL THEN p.is_published_to_departments = true
             WHEN t.is_leadership_team = true THEN p.is_published_to_departments = true
             ELSE false
