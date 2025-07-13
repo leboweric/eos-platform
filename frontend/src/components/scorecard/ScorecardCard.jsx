@@ -53,11 +53,14 @@ const ScorecardCard = ({ metric, weeklyScore, readOnly = false }) => {
       <CardHeader className="pb-3">
         <div className="flex items-start justify-between">
           <div className="flex-1">
-            <h3 className="font-medium">{metric.metric_name}</h3>
-            {metric.owner_name && (
+            <h3 className="font-medium text-lg">{metric.name || metric.metric_name || 'Unnamed Metric'}</h3>
+            {metric.unit_of_measure && (
+              <p className="text-sm text-gray-500">{metric.unit_of_measure}</p>
+            )}
+            {(metric.owner_name || metric.ownerId) && (
               <div className="flex items-center gap-1 text-sm text-gray-500 mt-1">
                 <User className="h-3 w-3" />
-                <span>{metric.owner_name}</span>
+                <span>{metric.owner_name || 'Assigned'}</span>
               </div>
             )}
           </div>
@@ -86,8 +89,8 @@ const ScorecardCard = ({ metric, weeklyScore, readOnly = false }) => {
             </p>
           </div>
           <div>
-            <p className="text-sm text-gray-500">Operator</p>
-            <p className="text-lg font-semibold text-gray-600">{metric.comparison_operator || '>='}</p>
+            <p className="text-sm text-gray-500">Frequency</p>
+            <p className="text-sm font-medium text-gray-600">{metric.frequency || 'Weekly'}</p>
           </div>
         </div>
       </CardContent>
