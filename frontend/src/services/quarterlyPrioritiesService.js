@@ -1,6 +1,26 @@
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3001/api/v1';
 
 export const quarterlyPrioritiesService = {
+  // Get current priorities (simplified - no quarter logic)
+  async getCurrentPriorities(orgId, teamId) {
+    const token = localStorage.getItem('accessToken');
+    const response = await fetch(
+      `${API_URL}/organizations/${orgId}/teams/${teamId}/quarterly-priorities/current`,
+      {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      }
+    );
+    
+    if (!response.ok) {
+      throw new Error('Failed to fetch current priorities');
+    }
+    
+    const data = await response.json();
+    return data.data;
+  },
+
   // Get all priorities for a quarter
   async getQuarterlyPriorities(orgId, teamId, quarter, year) {
     const token = localStorage.getItem('accessToken');

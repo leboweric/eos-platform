@@ -128,12 +128,6 @@ const QuarterlyPrioritiesPage = () => {
     setLoading(true);
     setError(null);
     try {
-      // Get current quarter and year
-      const now = new Date();
-      const currentQuarter = Math.floor((now.getMonth() / 3)) + 1;
-      const currentYear = now.getFullYear();
-      const quarter = `Q${currentQuarter}`;
-      
       // Get organization and team IDs from user context
       const orgId = user?.organizationId;
       const teamId = user?.teamId || '00000000-0000-0000-0000-000000000000'; // Default team ID
@@ -152,7 +146,7 @@ const QuarterlyPrioritiesPage = () => {
         setTeamMemberPriorities({});
         setTeamMembers([]);
       } else {
-        const data = await quarterlyPrioritiesService.getQuarterlyPriorities(orgId, teamId, quarter, currentYear);
+        const data = await quarterlyPrioritiesService.getCurrentPriorities(orgId, teamId);
         
         // Ensure predictions have all required nested properties
         const safePredictions = data.predictions || {};
@@ -310,18 +304,10 @@ const QuarterlyPrioritiesPage = () => {
 
   const handleSavePredictions = async () => {
     try {
-      // Get current quarter and year
-      const now = new Date();
-      const currentQuarter = Math.floor((now.getMonth() / 3)) + 1;
-      const currentYear = now.getFullYear();
-      const quarter = `Q${currentQuarter}`;
-      
       const orgId = user?.organizationId;
       const teamId = user?.teamId || '00000000-0000-0000-0000-000000000000';
       
       await quarterlyPrioritiesService.updatePredictions(orgId, teamId, {
-        quarter,
-        year: currentYear,
         revenue: predictions.revenue,
         profit: predictions.profit,
         measurables: predictions.measurables
@@ -504,12 +490,11 @@ const QuarterlyPrioritiesPage = () => {
     }
   };
 
-  // Get current quarter for display
-  const getCurrentQuarterDisplay = () => {
+  // Get current period for display
+  const getCurrentPeriodDisplay = () => {
     const now = new Date();
-    const currentQuarter = Math.floor((now.getMonth() / 3)) + 1;
     const currentYear = now.getFullYear();
-    return `Q${currentQuarter} ${currentYear}`;
+    return `${currentYear}`;
   };
 
   // Calculate stats without "at-risk"
@@ -1111,7 +1096,7 @@ const QuarterlyPrioritiesPage = () => {
             </Button>
           </div>
           <CardDescription>
-            Revenue, profit and measurables forecasts for {getCurrentQuarterDisplay()}
+            Revenue, profit and measurables forecasts for {getCurrentPeriodDisplay()}
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -1389,7 +1374,7 @@ const QuarterlyPrioritiesPage = () => {
           <DialogHeader>
             <DialogTitle>Add New Priority</DialogTitle>
             <DialogDescription>
-              Create a new quarterly priority for {getCurrentQuarterDisplay()}
+              Create a new priority for {getCurrentPeriodDisplay()}
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-4">

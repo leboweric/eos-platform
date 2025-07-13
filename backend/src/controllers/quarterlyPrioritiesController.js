@@ -880,3 +880,101 @@ export const getArchivedPriorities = async (req, res) => {
     });
   }
 };
+
+// Get current priorities (simplified - no quarter logic)
+export const getCurrentPriorities = async (req, res) => {
+  const { orgId, teamId } = req.params;
+  
+  try {
+    console.log('Fetching current priorities for:', { orgId, teamId });
+    
+    // Check if deleted_at column exists
+    const hasDeletedAt = await checkDeletedAtColumn();
+    const deletedAtCondition = hasDeletedAt ? 'AND p.deleted_at IS NULL' : '';
+    
+    // Get current active priorities (non-deleted)
+    const prioritiesQuery = `
+      SELECT 
+        p.*,
+        u.first_name || ' ' || u.last_name as owner_name,
+        u.email as owner_email,
+        u.first_name as owner_first_name,
+        u.last_name as owner_last_name
+      FROM quarterly_priorities p
+      LEFT JOIN users u ON p.owner_id = u.id
+      WHERE p.organization_id = $1 
+      ${deletedAtCondition}
+      ORDER BY p.is_company_priority DESC, p.created_at ASC
+    `;
+    
+    const prioritiesResult = await query(prioritiesQuery, [orgId]);
+    
+    // Get milestones for all priorities
+    const priorityIds = prioritiesResult.rows.map(p => p.id);
+    let milestonesByPriority = {};
+    
+    if (priorityIds.length > 0) {
+      const milestonesResult = await query(
+        `SELECT * FROM priority_milestones WHERE priority_id = ANY($1) ORDER BY due_date`,
+        [priorityIds]
+      );
+      
+      milestonesResult.rows.forEach(milestone => {
+        if (!milestonesByPriority[milestone.priority_id]) {
+          milestonesByPriority[milestone.priority_id] = [];
+        }
+        milestonesByPriority[milestone.priority_id].push(milestone);
+      });
+    }
+    
+    // Separate company and individual priorities
+    const companyPriorities = [];
+    const teamMemberPriorities = {};
+    
+    prioritiesResult.rows.forEach(priority => {
+      const priorityWithMilestones = {
+        ...priority,
+        milestones: milestonesByPriority[priority.id] || [],
+        owner: priority.owner_id ? {
+          id: priority.owner_id,
+          name: priority.owner_name,
+          email: priority.owner_email
+        } : null,
+        due_date: priority.due_date,
+        owner_first_name: priority.owner_first_name,
+        owner_last_name: priority.owner_last_name
+      };
+      
+      if (priority.is_company_priority) {
+        companyPriorities.push(priorityWithMilestones);
+      } else if (priority.owner_id) {
+        if (!teamMemberPriorities[priority.owner_id]) {
+          teamMemberPriorities[priority.owner_id] = {
+            member: {
+              id: priority.owner_id,
+              name: priority.owner_name,
+              email: priority.owner_email
+            },
+            priorities: []
+          };
+        }
+        teamMemberPriorities[priority.owner_id].priorities.push(priorityWithMilestones);
+      }
+    });
+    
+    res.json({
+      success: true,
+      data: {
+        companyPriorities,
+        teamMemberPriorities,
+        predictions: {} // Empty for now, can be enhanced later if needed
+      }
+    });
+  } catch (error) {
+    console.error('Get current priorities error:', error);
+    res.status(500).json({ 
+      error: 'Failed to fetch current priorities',
+      details: process.env.NODE_ENV === 'development' ? error.message : undefined
+    });
+  }
+};

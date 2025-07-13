@@ -3,6 +3,7 @@ import { authenticate } from '../middleware/auth.js';
 import { query } from '../config/database.js';
 import {
   getQuarterlyPriorities,
+  getCurrentPriorities,
   createPriority,
   updatePriority,
   deletePriority,
@@ -22,6 +23,9 @@ router.use(authenticate);
 
 // Get priorities for a quarter
 router.get('/', getQuarterlyPriorities);
+
+// Get current priorities (simplified - no quarter logic)
+router.get('/current', getCurrentPriorities);
 
 // Get archived priorities
 router.get('/archived', getArchivedPriorities);
