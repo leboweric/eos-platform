@@ -103,7 +103,7 @@ const Layout = ({ children }) => {
           <Link to="/dashboard" className="flex items-center space-x-2">
             <Target className="h-8 w-8 text-primary" />
             <div className="flex flex-col">
-              <span className="text-xl font-bold">SEP</span>
+              <span className="text-xl font-bold">Strategic Execution Platform</span>
               {user?.organizationName && (
                 <span className="text-xs text-gray-600">{user.organizationName}</span>
               )}
