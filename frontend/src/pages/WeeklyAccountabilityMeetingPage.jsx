@@ -84,6 +84,16 @@ const WeeklyAccountabilityMeetingPage = () => {
     }
   }, [activeSection, teamId]);
 
+  // Auto-clear success messages after 3 seconds
+  useEffect(() => {
+    if (success) {
+      const timer = setTimeout(() => {
+        setSuccess(null);
+      }, 3000);
+      return () => clearTimeout(timer);
+    }
+  }, [success]);
+
   const fetchScorecardData = async () => {
     try {
       setLoading(true);
@@ -179,6 +189,33 @@ const WeeklyAccountabilityMeetingPage = () => {
     } catch (error) {
       console.error('Failed to vote:', error);
       setError('Failed to update vote');
+    }
+  };
+
+  const handleEditIssue = (issue) => {
+    // Navigate to the full Issues page for editing
+    navigate('/issues');
+  };
+
+  const handleIssueStatusChange = async (issueId, newStatus) => {
+    try {
+      await issuesService.updateIssue(issueId, { status: newStatus });
+      await fetchIssuesData(); // Refresh the issues list
+      setSuccess(`Issue ${newStatus === 'closed' ? 'closed' : 'reopened'} successfully`);
+    } catch (error) {
+      console.error('Failed to update issue status:', error);
+      setError('Failed to update issue status');
+    }
+  };
+
+  const handleIssueTimelineChange = async (issueId, newTimeline) => {
+    try {
+      await issuesService.updateIssue(issueId, { timeline: newTimeline });
+      await fetchIssuesData(); // Refresh the issues list
+      setSuccess(`Issue moved to ${newTimeline.replace('_', ' ')} successfully`);
+    } catch (error) {
+      console.error('Failed to update issue timeline:', error);
+      setError('Failed to update issue timeline');
     }
   };
 
@@ -512,9 +549,11 @@ const WeeklyAccountabilityMeetingPage = () => {
                   <IssueCard 
                     key={issue.id} 
                     issue={issue} 
-                    readOnly 
                     showVoting
                     onVote={handleVote}
+                    onEdit={handleEditIssue}
+                    onStatusChange={handleIssueStatusChange}
+                    onTimelineChange={handleIssueTimelineChange}
                     getStatusColor={(status) => {
                       switch (status) {
                         case 'open': return 'bg-yellow-100 text-yellow-800';
