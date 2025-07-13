@@ -846,14 +846,45 @@ const BusinessBlueprintPage = () => {
                     <p className="text-sm font-medium text-gray-700 mb-2">
                       {blueprintData.quarterlyPriorities.quarter} {blueprintData.quarterlyPriorities.year} Priorities
                     </p>
-                    <ol className="space-y-2">
-                      {blueprintData.quarterlyPriorities.priorities.map((priority, index) => (
-                        <li key={priority.id || index} className="flex items-start">
-                          <span className="text-indigo-600 font-medium mr-2">{index + 1}.</span>
-                          <span className="text-gray-700">{priority.title || priority.text}</span>
-                        </li>
-                      ))}
-                    </ol>
+                    
+                    {/* Company Priorities */}
+                    {blueprintData.quarterlyPriorities.priorities.some(p => p.is_company_priority) && (
+                      <div className="mb-4">
+                        <h4 className="text-sm font-semibold text-gray-600 mb-2">Company Priorities</h4>
+                        <ol className="space-y-2">
+                          {blueprintData.quarterlyPriorities.priorities
+                            .filter(p => p.is_company_priority)
+                            .map((priority, index) => (
+                              <li key={priority.id} className="flex items-start">
+                                <span className="text-indigo-600 font-medium mr-2">{index + 1}.</span>
+                                <span className="text-gray-700">{priority.title || priority.text}</span>
+                              </li>
+                            ))}
+                        </ol>
+                      </div>
+                    )}
+                    
+                    {/* Individual Priorities */}
+                    {blueprintData.quarterlyPriorities.priorities.some(p => !p.is_company_priority) && (
+                      <div>
+                        <h4 className="text-sm font-semibold text-gray-600 mb-2">Individual Priorities</h4>
+                        <ol className="space-y-2">
+                          {blueprintData.quarterlyPriorities.priorities
+                            .filter(p => !p.is_company_priority)
+                            .map((priority, index) => (
+                              <li key={priority.id} className="flex items-start">
+                                <span className="text-indigo-600 font-medium mr-2">{index + 1}.</span>
+                                <div>
+                                  <span className="text-gray-700">{priority.title || priority.text}</span>
+                                  {priority.owner_name && (
+                                    <span className="text-xs text-gray-500 ml-2">({priority.owner_name})</span>
+                                  )}
+                                </div>
+                              </li>
+                            ))}
+                        </ol>
+                      </div>
+                    )}
                   </div>
                   <div className="pt-4 border-t">
                     <Link 
