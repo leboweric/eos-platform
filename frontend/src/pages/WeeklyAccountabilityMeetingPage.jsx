@@ -287,6 +287,16 @@ const WeeklyAccountabilityMeetingPage = () => {
                           setSuccess(message);
                           setTimeout(() => setSuccess(null), 3000);
                         }}
+                        onStatusChange={(priorityId, newStatus) => {
+                          // Update the priority in local state
+                          setPriorities(prev => 
+                            prev.map(p => 
+                              p.id === priorityId ? { ...p, status: newStatus } : p
+                            )
+                          );
+                          setSuccess(`Priority status updated to ${newStatus}`);
+                          setTimeout(() => setSuccess(null), 3000);
+                        }}
                       />
                     ))}
                   </div>
@@ -322,6 +332,16 @@ const WeeklyAccountabilityMeetingPage = () => {
                                 readOnly={false}
                                 onIssueCreated={(message) => {
                                   setSuccess(message);
+                                  setTimeout(() => setSuccess(null), 3000);
+                                }}
+                                onStatusChange={(priorityId, newStatus) => {
+                                  // Update the priority in local state
+                                  setPriorities(prev => 
+                                    prev.map(p => 
+                                      p.id === priorityId ? { ...p, status: newStatus } : p
+                                    )
+                                  );
+                                  setSuccess(`Priority status updated to ${newStatus}`);
                                   setTimeout(() => setSuccess(null), 3000);
                                 }}
                               />

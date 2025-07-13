@@ -1,29 +1,36 @@
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { 
   Target,
   User,
   Calendar,
   CheckCircle,
-  AlertTriangle
+  AlertTriangle,
+  Edit
 } from 'lucide-react';
 import { useState } from 'react';
 import { issuesService } from '../../services/issuesService';
+import { quarterlyPrioritiesService } from '../../services/quarterlyPrioritiesService';
 import { useAuthStore } from '../../stores/authStore';
 
-const PriorityCard = ({ priority, readOnly = false, onIssueCreated }) => {
+const PriorityCard = ({ priority, readOnly = false, onIssueCreated, onStatusChange }) => {
   const { user } = useAuthStore();
   const [creatingIssue, setCreatingIssue] = useState(false);
+  const [updatingStatus, setUpdatingStatus] = useState(false);
+  const [editingStatus, setEditingStatus] = useState(false);
   const statusColors = {
     'on-track': 'bg-green-100 text-green-700 border-green-200',
     'off-track': 'bg-red-100 text-red-700 border-red-200',
+    'at-risk': 'bg-yellow-100 text-yellow-700 border-yellow-200',
     'complete': 'bg-blue-100 text-blue-700 border-blue-200'
   };
 
   const statusIcons = {
     'on-track': <Target className="h-4 w-4" />,
-    'off-track': <Target className="h-4 w-4" />,
+    'off-track': <AlertTriangle className="h-4 w-4" />,
+    'at-risk': <AlertTriangle className="h-4 w-4" />,
     'complete': <CheckCircle className="h-4 w-4" />
   };
 
@@ -81,6 +88,33 @@ const PriorityCard = ({ priority, readOnly = false, onIssueCreated }) => {
     }
   };
 
+  const handleStatusChange = async (newStatus) => {
+    try {
+      setUpdatingStatus(true);
+      const orgId = localStorage.getItem('impersonatedOrgId') || user?.organizationId || user?.organization_id;
+      const teamId = user?.teamId || '00000000-0000-0000-0000-000000000000';
+      
+      await quarterlyPrioritiesService.updatePriority(orgId, teamId, priority.id, {
+        status: newStatus
+      });
+      
+      // Update local state
+      priority.status = newStatus;
+      setEditingStatus(false);
+      
+      // Notify parent component
+      if (onStatusChange) {
+        onStatusChange(priority.id, newStatus);
+      }
+      
+      setUpdatingStatus(false);
+    } catch (error) {
+      console.error('Failed to update status:', error);
+      setUpdatingStatus(false);
+      alert('Failed to update status. Please try again.');
+    }
+  };
+
   const isOffTrack = priority.status === 'off-track' || priority.status === 'at-risk';
   const showCreateIssue = !readOnly && isOffTrack && priority.status !== 'complete';
 
@@ -94,12 +128,46 @@ const PriorityCard = ({ priority, readOnly = false, onIssueCreated }) => {
               <p className="text-sm text-gray-600 mt-1">{priority.description}</p>
             )}
           </div>
-          <Badge variant="outline" className={statusColors[priority.status] || statusColors['on-track']}>
-            <span className="flex items-center gap-1">
-              {statusIcons[priority.status] || statusIcons['on-track']}
-              {priority.status || 'on-track'}
-            </span>
-          </Badge>
+          {!readOnly && !editingStatus ? (
+            <Button
+              variant="ghost"
+              size="sm"
+              className="h-auto p-1"
+              onClick={() => setEditingStatus(true)}
+              disabled={updatingStatus}
+            >
+              <Badge variant="outline" className={statusColors[priority.status] || statusColors['on-track']}>
+                <span className="flex items-center gap-1">
+                  {statusIcons[priority.status] || statusIcons['on-track']}
+                  {priority.status || 'on-track'}
+                  <Edit className="h-3 w-3 ml-1" />
+                </span>
+              </Badge>
+            </Button>
+          ) : editingStatus ? (
+            <Select 
+              value={priority.status || 'on-track'} 
+              onValueChange={handleStatusChange}
+              disabled={updatingStatus}
+            >
+              <SelectTrigger className="w-32">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="on-track">On Track</SelectItem>
+                <SelectItem value="off-track">Off Track</SelectItem>
+                <SelectItem value="at-risk">At Risk</SelectItem>
+                <SelectItem value="complete">Complete</SelectItem>
+              </SelectContent>
+            </Select>
+          ) : (
+            <Badge variant="outline" className={statusColors[priority.status] || statusColors['on-track']}>
+              <span className="flex items-center gap-1">
+                {statusIcons[priority.status] || statusIcons['on-track']}
+                {priority.status || 'on-track'}
+              </span>
+            </Badge>
+          )}
         </div>
       </CardHeader>
       
