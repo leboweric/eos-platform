@@ -36,6 +36,7 @@ const WeeklyAccountabilityMeetingPage = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [activeSection, setActiveSection] = useState('good-news');
+  const [success, setSuccess] = useState(null);
   
   // Meeting data
   const [scorecardMetrics, setScorecardMetrics] = useState([]);
@@ -223,7 +224,11 @@ const WeeklyAccountabilityMeetingPage = () => {
               <ScorecardTable 
                 metrics={scorecardMetrics} 
                 weeklyScores={weeklyScores} 
-                readOnly 
+                readOnly={false}
+                onIssueCreated={(message) => {
+                  setSuccess(message);
+                  setTimeout(() => setSuccess(null), 3000);
+                }}
               />
             )}
           </div>
@@ -446,6 +451,13 @@ const WeeklyAccountabilityMeetingPage = () => {
               <Alert className="mb-6 border-red-200 bg-red-50">
                 <AlertCircle className="h-4 w-4 text-red-600" />
                 <AlertDescription className="text-red-800">{error}</AlertDescription>
+              </Alert>
+            )}
+
+            {success && (
+              <Alert className="mb-6 border-green-200 bg-green-50">
+                <CheckCircle className="h-4 w-4 text-green-600" />
+                <AlertDescription className="text-green-800">{success}</AlertDescription>
               </Alert>
             )}
 

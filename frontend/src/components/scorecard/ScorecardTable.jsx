@@ -1,7 +1,13 @@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Target } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { Target, AlertTriangle, Plus } from 'lucide-react';
+import { useState } from 'react';
+import { issuesService } from '../../services/issuesService';
+import { useAuthStore } from '../../stores/authStore';
 
-const ScorecardTable = ({ metrics, weeklyScores, readOnly = false }) => {
+const ScorecardTable = ({ metrics, weeklyScores, readOnly = false, onIssueCreated }) => {
+  const { user } = useAuthStore();
+  const [creatingIssue, setCreatingIssue] = useState({});
   // Get the last 12 weeks
   const getWeekDates = () => {
     const weeks = [];
@@ -83,6 +89,33 @@ const ScorecardTable = ({ metrics, weeklyScores, readOnly = false }) => {
     }
   };
 
+  const handleCreateIssue = async (metric, actualValue) => {
+    try {
+      setCreatingIssue(prev => ({ ...prev, [metric.id]: true }));
+      
+      const issueData = {
+        title: `${metric.name} - Off Track`,
+        description: `Metric "${metric.name}" is off track. Current: ${formatValue(actualValue, metric.value_type)}, Goal: ${formatGoal(metric.goal, metric.value_type)}`,
+        category: 'short-term',
+        priority: 'high',
+        assignedToId: metric.ownerId || user?.id
+      };
+      
+      await issuesService.createIssue(issueData);
+      
+      // Show success feedback
+      if (onIssueCreated) {
+        onIssueCreated(`Issue created for ${metric.name}`);
+      }
+      
+      setCreatingIssue(prev => ({ ...prev, [metric.id]: false }));
+    } catch (error) {
+      console.error('Failed to create issue:', error);
+      setCreatingIssue(prev => ({ ...prev, [metric.id]: false }));
+      alert('Failed to create issue. Please try again.');
+    }
+  };
+
   return (
     <Card className="shadow-lg border-0">
       <CardHeader className="bg-gradient-to-r from-indigo-500 to-blue-500 text-white">
@@ -135,20 +168,40 @@ const ScorecardTable = ({ metrics, weeklyScores, readOnly = false }) => {
                       {formatGoal(metric.goal, metric.value_type)}
                     </td>
                     <td className="p-4 text-center">{metric.ownerName || metric.owner || '-'}</td>
-                    {weekDates.map((weekDate) => {
+                    {weekDates.map((weekDate, index) => {
                       const score = weeklyScores[metric.id]?.[weekDate];
                       const goalMet = score && isGoalMet(score, metric.goal, metric.comparison_operator);
+                      const isCurrentWeek = index === weekDates.length - 1;
+                      const showCreateIssue = !readOnly && isCurrentWeek && score && !goalMet;
                       
                       return (
                         <td key={weekDate} className="p-4 text-center">
                           {score !== undefined && score !== null && score !== '' ? (
-                            <span className={`inline-block px-2 py-1 rounded ${
-                              goalMet 
-                                ? 'bg-green-100 text-green-800' 
-                                : 'bg-red-100 text-red-800'
-                            }`}>
-                              {formatValue(score, metric.value_type)}
-                            </span>
+                            <div className="inline-flex items-center gap-1">
+                              <span className={`inline-block px-2 py-1 rounded ${
+                                goalMet 
+                                  ? 'bg-green-100 text-green-800' 
+                                  : 'bg-red-100 text-red-800'
+                              }`}>
+                                {formatValue(score, metric.value_type)}
+                              </span>
+                              {showCreateIssue && (
+                                <Button
+                                  size="sm"
+                                  variant="ghost"
+                                  className="h-6 w-6 p-0 hover:bg-red-100"
+                                  onClick={() => handleCreateIssue(metric, score)}
+                                  disabled={creatingIssue[metric.id]}
+                                  title="Create issue for off-track metric"
+                                >
+                                  {creatingIssue[metric.id] ? (
+                                    <span className="animate-spin">⏳</span>
+                                  ) : (
+                                    <AlertTriangle className="h-4 w-4 text-red-600" />
+                                  )}
+                                </Button>
+                              )}
+                            </div>
                           ) : (
                             <span className="text-gray-400">-</span>
                           )}
