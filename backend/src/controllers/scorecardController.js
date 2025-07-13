@@ -275,3 +275,66 @@ export const updateScore = async (req, res) => {
     });
   }
 };
+
+// Diagnostic endpoint to find scorecard data for an organization
+export const findScorecardData = async (req, res) => {
+  try {
+    const { orgName } = req.query;
+    
+    if (!orgName) {
+      return res.status(400).json({
+        success: false,
+        message: 'Organization name is required'
+      });
+    }
+    
+    // Find all scorecard metrics for organizations matching the name
+    const result = await db.query(
+      `SELECT 
+        sm.*,
+        o.name as org_name,
+        o.id as org_id,
+        u.first_name || ' ' || u.last_name as owner_name
+       FROM scorecard_metrics sm
+       JOIN organizations o ON sm.organization_id = o.id
+       LEFT JOIN users u ON sm.owner_id = u.id
+       WHERE o.name ILIKE $1
+       ORDER BY sm.created_at DESC`,
+      [`%${orgName}%`]
+    );
+    
+    // Also get weekly scores for these metrics
+    const metricIds = result.rows.map(m => m.id);
+    let scores = [];
+    
+    if (metricIds.length > 0) {
+      const scoresResult = await db.query(
+        `SELECT * FROM scorecard_scores 
+         WHERE metric_id = ANY($1)
+         ORDER BY week_date DESC`,
+        [metricIds]
+      );
+      scores = scoresResult.rows;
+    }
+    
+    res.json({
+      success: true,
+      data: {
+        metrics: result.rows,
+        scores: scores,
+        summary: {
+          totalMetrics: result.rows.length,
+          totalScores: scores.length,
+          organizations: [...new Set(result.rows.map(m => ({ id: m.org_id, name: m.org_name })))],
+          teamIds: [...new Set(result.rows.map(m => m.team_id))]
+        }
+      }
+    });
+  } catch (error) {
+    console.error('Error finding scorecard data:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Failed to find scorecard data'
+    });
+  }
+};

@@ -5,7 +5,8 @@ import {
   createMetric,
   updateMetric,
   deleteMetric,
-  updateScore
+  updateScore,
+  findScorecardData
 } from '../controllers/scorecardController.js';
 
 const router = express.Router({ mergeParams: true });
@@ -23,5 +24,8 @@ router.delete('/metrics/:metricId', deleteMetric);
 
 // Score management
 router.put('/scores', updateScore);
+
+// Diagnostic endpoint (for debugging)
+router.get('/find', findScorecardData);
 
 export default router;
