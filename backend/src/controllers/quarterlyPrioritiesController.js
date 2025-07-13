@@ -1043,7 +1043,8 @@ export const getCurrentPriorities = async (req, res) => {
         dueDate: priority.due_date,
         owner_first_name: priority.owner_first_name,
         owner_last_name: priority.owner_last_name,
-        latestUpdate: updatesByPriority[priority.id] || null
+        latestUpdate: updatesByPriority[priority.id] || null,
+        isCompanyPriority: priority.is_company_priority
       };
       
       console.log(`Processing priority: ${priority.title}, is_company_priority: ${priority.is_company_priority}, owner_id: ${priority.owner_id}, deleted_at: ${priority.deleted_at}`);

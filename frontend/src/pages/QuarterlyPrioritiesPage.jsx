@@ -607,7 +607,7 @@ const QuarterlyPrioritiesPage = () => {
           : priority.dueDate
       ) : '',
       ownerId: priority.owner?.id || '',
-      isCompanyPriority: priority.isCompanyPriority || false
+      isCompanyPriority: priority.isCompanyPriority ?? priority.is_company_priority ?? false
     });
 
     const handleSave = () => {
@@ -684,6 +684,14 @@ const QuarterlyPrioritiesPage = () => {
                 <>
                   <Button variant="ghost" size="sm" onClick={() => {
                     // Reset editForm with current priority values when entering edit mode
+                    const isCompanyPriorityValue = priority.isCompanyPriority ?? priority.is_company_priority ?? false;
+                    console.log('[PriorityCard] Entering edit mode:', {
+                      priorityId: priority.id,
+                      priorityTitle: priority.title,
+                      isCompanyPriority: priority.isCompanyPriority,
+                      is_company_priority: priority.is_company_priority,
+                      finalValue: isCompanyPriorityValue
+                    });
                     setEditForm({
                       title: priority.title || '',
                       description: priority.description || '',
@@ -695,7 +703,7 @@ const QuarterlyPrioritiesPage = () => {
                           : priority.dueDate
                       ) : '',
                       ownerId: priority.owner?.id || '',
-                      isCompanyPriority: priority.isCompanyPriority || false
+                      isCompanyPriority: isCompanyPriorityValue
                     });
                     setIsEditing(true);
                   }}>
