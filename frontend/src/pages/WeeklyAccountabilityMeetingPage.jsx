@@ -100,6 +100,7 @@ const WeeklyAccountabilityMeetingPage = () => {
   const fetchPrioritiesData = async () => {
     try {
       setLoading(true);
+      setError(null);
       const orgId = localStorage.getItem('impersonatedOrgId') || user?.organizationId || user?.organization_id;
       
       // Get current quarter
@@ -108,7 +109,17 @@ const WeeklyAccountabilityMeetingPage = () => {
       const currentYear = now.getFullYear();
       
       const response = await quarterlyPrioritiesService.getQuarterlyPriorities(orgId, teamId, currentQuarter, currentYear);
-      const allPriorities = response.data.priorities.filter(p => p.deleted_at === null);
+      
+      // Handle different response structures
+      const prioritiesData = response.data?.priorities || response.priorities || [];
+      const companyPriorities = response.data?.companyPriorities || response.companyPriorities || [];
+      
+      // Combine company and individual priorities
+      const allPriorities = [
+        ...companyPriorities.map(p => ({ ...p, priority_type: 'company' })),
+        ...prioritiesData.map(p => ({ ...p, priority_type: 'individual' }))
+      ].filter(p => !p.deleted_at);
+      
       setPriorities(allPriorities);
       setLoading(false);
     } catch (error) {

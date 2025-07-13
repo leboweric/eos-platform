@@ -18,7 +18,7 @@ export const quarterlyPrioritiesService = {
     }
     
     const data = await response.json();
-    return data.data;
+    return data;
   },
 
   // Create a new priority
@@ -41,7 +41,7 @@ export const quarterlyPrioritiesService = {
     }
     
     const data = await response.json();
-    return data.data;
+    return data;
   },
 
   // Update a priority
@@ -64,7 +64,7 @@ export const quarterlyPrioritiesService = {
     }
     
     const data = await response.json();
-    return data.data;
+    return data;
   },
 
   // Delete a priority
@@ -123,7 +123,7 @@ export const quarterlyPrioritiesService = {
     }
     
     const data = await response.json();
-    return data.data;
+    return data;
   },
 
   // Create milestone
@@ -146,7 +146,7 @@ export const quarterlyPrioritiesService = {
     }
     
     const data = await response.json();
-    return data.data;
+    return data;
   },
 
   // Update milestone
@@ -179,7 +179,7 @@ export const quarterlyPrioritiesService = {
     }
     
     const data = await response.json();
-    return data.data;
+    return data;
   },
 
   // Delete milestone
@@ -225,7 +225,7 @@ export const quarterlyPrioritiesService = {
     }
     
     const data = await response.json();
-    return data.data;
+    return data;
   },
 
   // Add priority update
@@ -248,6 +248,6 @@ export const quarterlyPrioritiesService = {
     }
     
     const data = await response.json();
-    return data.data;
+    return data;
   },
 };
