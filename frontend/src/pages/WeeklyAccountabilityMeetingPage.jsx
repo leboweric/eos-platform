@@ -24,6 +24,7 @@ import { useNavigate } from 'react-router-dom';
 import ScorecardTable from '../components/scorecard/ScorecardTable';
 import PriorityCard from '../components/priorities/PriorityCard';
 import IssueCard from '../components/issues/IssueCard';
+import IssueDialog from '../components/issues/IssueDialog';
 import TodoCard from '../components/todos/TodoCard';
 import { scorecardService } from '../services/scorecardService';
 import { quarterlyPrioritiesService } from '../services/quarterlyPrioritiesService';
@@ -48,6 +49,10 @@ const WeeklyAccountabilityMeetingPage = () => {
   const [teamMembers, setTeamMembers] = useState([]);
   const [goodNews, setGoodNews] = useState([]);
   const [headlines, setHeadlines] = useState([]);
+  
+  // Dialog states
+  const [showIssueDialog, setShowIssueDialog] = useState(false);
+  const [editingIssue, setEditingIssue] = useState(null);
   const [isRTL, setIsRTL] = useState(() => {
     // Load RTL preference from localStorage
     const saved = localStorage.getItem('scorecardRTL');
@@ -170,6 +175,7 @@ const WeeklyAccountabilityMeetingPage = () => {
       console.log('Filtered short-term issues:', filteredIssues);
       
       setIssues(filteredIssues);
+      setTeamMembers(response.data.teamMembers || []);
       setLoading(false);
     } catch (error) {
       console.error('Failed to fetch issues:', error);
@@ -193,8 +199,30 @@ const WeeklyAccountabilityMeetingPage = () => {
   };
 
   const handleEditIssue = (issue) => {
-    // Navigate to the full Issues page for editing
-    navigate('/issues');
+    setEditingIssue(issue);
+    setShowIssueDialog(true);
+  };
+
+  const handleSaveIssue = async (issueData) => {
+    try {
+      if (editingIssue) {
+        await issuesService.updateIssue(editingIssue.id, issueData);
+        setSuccess('Issue updated successfully');
+      } else {
+        await issuesService.createIssue({
+          ...issueData,
+          timeline: 'short_term' // New issues in meetings are short-term
+        });
+        setSuccess('Issue created successfully');
+      }
+      
+      await fetchIssuesData();
+      setShowIssueDialog(false);
+      setEditingIssue(null);
+    } catch (error) {
+      console.error('Failed to save issue:', error);
+      setError('Failed to save issue');
+    }
   };
 
   const handleIssueStatusChange = async (issueId, newStatus) => {
@@ -687,6 +715,15 @@ const WeeklyAccountabilityMeetingPage = () => {
           </div>
         </div>
       </div>
+      
+      {/* Issue Edit Dialog */}
+      <IssueDialog
+        open={showIssueDialog}
+        onOpenChange={setShowIssueDialog}
+        issue={editingIssue}
+        onSave={handleSaveIssue}
+        teamMembers={teamMembers}
+      />
     </div>
   );
 };
