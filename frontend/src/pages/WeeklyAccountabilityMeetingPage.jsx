@@ -21,7 +21,7 @@ import {
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import ScorecardTable from '../components/scorecard/ScorecardTable';
-import PrioritiesTable from '../components/priorities/PrioritiesTable';
+import PriorityCard from '../components/priorities/PriorityCard';
 import IssueCard from '../components/issues/IssueCard';
 import TodoCard from '../components/todos/TodoCard';
 import { scorecardService } from '../services/scorecardService';
@@ -110,22 +110,16 @@ const WeeklyAccountabilityMeetingPage = () => {
       
       const response = await quarterlyPrioritiesService.getQuarterlyPriorities(orgId, teamId, currentQuarter, currentYear);
       
-      // The service returns data.data, so response is already the inner data object
+      // Extract data in the same format as the original page
       const companyPriorities = response.companyPriorities || [];
       const teamMemberPriorities = response.teamMemberPriorities || {};
       
-      // Flatten team member priorities from object to array
-      const individualPriorities = [];
-      Object.values(teamMemberPriorities).forEach(memberData => {
-        if (memberData.priorities && Array.isArray(memberData.priorities)) {
-          individualPriorities.push(...memberData.priorities);
-        }
-      });
-      
-      // Combine company and individual priorities
+      // Flatten the data structure to a simple array for easier handling
       const allPriorities = [
         ...companyPriorities.map(p => ({ ...p, priority_type: 'company' })),
-        ...individualPriorities.map(p => ({ ...p, priority_type: 'individual' }))
+        ...Object.values(teamMemberPriorities).flatMap(memberData => 
+          (memberData.priorities || []).map(p => ({ ...p, priority_type: 'individual' }))
+        )
       ].filter(p => !p.deleted_at);
       
       setPriorities(allPriorities);
@@ -257,17 +251,19 @@ const WeeklyAccountabilityMeetingPage = () => {
       case 'priorities':
         return (
           <div className="space-y-4">
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Target className="h-5 w-5" />
+                  Quarterly Priorities Review
+                </CardTitle>
+                <CardDescription>Check progress on quarterly priorities (5 minutes)</CardDescription>
+              </CardHeader>
+            </Card>
             {priorities.length === 0 ? (
               <Card>
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2">
-                    <Target className="h-5 w-5" />
-                    Quarterly Priorities Review
-                  </CardTitle>
-                  <CardDescription>Check progress on quarterly priorities (5 minutes)</CardDescription>
-                </CardHeader>
                 <CardContent className="text-center py-8">
-                  <p className="text-gray-500">No priorities found for this quarter. Set up your priorities to track progress.</p>
+                  <p className="text-gray-500">No priorities found for this quarter.</p>
                   <Button 
                     variant="outline" 
                     className="mt-4"
@@ -278,14 +274,69 @@ const WeeklyAccountabilityMeetingPage = () => {
                 </CardContent>
               </Card>
             ) : (
-              <PrioritiesTable 
-                priorities={priorities} 
-                readOnly={false}
-                onIssueCreated={(message) => {
-                  setSuccess(message);
-                  setTimeout(() => setSuccess(null), 3000);
-                }}
-              />
+              <>
+                {/* Company Priorities */}
+                {priorities.filter(p => p.priority_type === 'company').length > 0 && (
+                  <div className="space-y-4">
+                    <h3 className="text-lg font-semibold flex items-center gap-2">
+                      <Target className="h-5 w-5 text-blue-600" />
+                      Company Priorities
+                    </h3>
+                    {priorities.filter(p => p.priority_type === 'company').map(priority => (
+                      <PriorityCard 
+                        key={priority.id} 
+                        priority={priority} 
+                        readOnly={false}
+                        onIssueCreated={(message) => {
+                          setSuccess(message);
+                          setTimeout(() => setSuccess(null), 3000);
+                        }}
+                      />
+                    ))}
+                  </div>
+                )}
+                
+                {/* Individual Priorities grouped by owner */}
+                {(() => {
+                  const individualPriorities = priorities.filter(p => p.priority_type !== 'company');
+                  const groupedByOwner = individualPriorities.reduce((acc, priority) => {
+                    const ownerId = priority.owner?.id || 'unassigned';
+                    if (!acc[ownerId]) {
+                      acc[ownerId] = [];
+                    }
+                    acc[ownerId].push(priority);
+                    return acc;
+                  }, {});
+                  
+                  return Object.keys(groupedByOwner).length > 0 && (
+                    <div className="space-y-6">
+                      <h3 className="text-lg font-semibold flex items-center gap-2">
+                        <Target className="h-5 w-5 text-purple-600" />
+                        Individual Priorities
+                      </h3>
+                      {Object.entries(groupedByOwner).map(([ownerId, ownerPriorities]) => {
+                        const owner = ownerPriorities[0]?.owner;
+                        return (
+                          <div key={ownerId} className="space-y-4">
+                            <h4 className="text-md font-medium">{owner?.name || 'Unassigned'}</h4>
+                            {ownerPriorities.map(priority => (
+                              <PriorityCard 
+                                key={priority.id} 
+                                priority={priority} 
+                                readOnly={false}
+                                onIssueCreated={(message) => {
+                                  setSuccess(message);
+                                  setTimeout(() => setSuccess(null), 3000);
+                                }}
+                              />
+                            ))}
+                          </div>
+                        );
+                      })}
+                    </div>
+                  );
+                })()}
+              </>
             )}
           </div>
         );
