@@ -1,4 +1,5 @@
 import axios from 'axios';
+import { useAuthStore } from '../stores/authStore';
 
 const getOrgId = () => {
   // First check for impersonated org ID
@@ -7,11 +8,10 @@ const getOrgId = () => {
     return impersonatedOrgId;
   }
   
-  // Then try to get from auth store
-  const authState = JSON.parse(localStorage.getItem('auth-store') || '{}');
-  const user = authState?.state?.user;
+  // Get user from Zustand store
+  const user = useAuthStore.getState().user;
   
-  // Also check the user object directly if it exists
+  // Check the user object directly if it exists
   if (user?.organizationId) {
     return user.organizationId;
   }
@@ -22,7 +22,7 @@ const getOrgId = () => {
   }
   
   // If still not found, log for debugging
-  console.warn('Organization ID not found in auth store:', authState);
+  console.warn('Organization ID not found in auth store:', user);
   return null;
 };
 
