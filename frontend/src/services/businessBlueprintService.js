@@ -7,7 +7,16 @@ const buildUrl = (endpoint = '') => {
   // Get org from the current auth context
   const authState = JSON.parse(localStorage.getItem('auth-store') || '{}');
   const user = authState?.state?.user;
+  
+  // Debug logging
+  console.log('[BusinessBlueprint] Auth state:', authState);
+  console.log('[BusinessBlueprint] User object:', user);
+  console.log('[BusinessBlueprint] user.organizationId:', user?.organizationId);
+  console.log('[BusinessBlueprint] user.organization_id:', user?.organization_id);
+  console.log('[BusinessBlueprint] impersonatedOrgId:', localStorage.getItem('impersonatedOrgId'));
+  
   const orgId = localStorage.getItem('impersonatedOrgId') || user?.organizationId || user?.organization_id;
+  console.log('[BusinessBlueprint] Final orgId:', orgId);
   
   // For now, use a default team ID since teams aren't implemented yet
   const teamId = '00000000-0000-0000-0000-000000000000';
