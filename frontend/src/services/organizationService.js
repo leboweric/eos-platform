@@ -1,4 +1,4 @@
-import axios from './axiosSetup';
+import axios from './axiosConfig';
 
 export const organizationService = {
   // Get current organization details

@@ -1,4 +1,4 @@
-import axios from './axiosSetup';
+import axios from './axiosConfig';
 
 const API_URL = '/api';
 

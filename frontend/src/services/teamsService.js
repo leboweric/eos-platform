@@ -1,4 +1,4 @@
-import axios from './axiosSetup';
+import axios from './axiosConfig';
 
 const getOrgId = () => {
   const authState = JSON.parse(localStorage.getItem('auth-store') || '{}');

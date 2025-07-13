@@ -1,4 +1,4 @@
-import axios from './axiosSetup';
+import axios from './axiosConfig';
 import { useAuthStore } from '../stores/authStore';
 
 const getOrgId = () => {

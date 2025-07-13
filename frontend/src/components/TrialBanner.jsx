@@ -3,7 +3,7 @@ import { Link } from 'react-router-dom';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
 import { AlertCircle, X } from 'lucide-react';
-import axios from '../services/axiosSetup';
+import axios from '../services/axiosConfig';
 
 const TrialBanner = () => {
   const [subscription, setSubscription] = useState(null);
