@@ -116,7 +116,7 @@ const WeeklyAccountabilityMeetingPage = () => {
         ...Object.values(teamMemberPriorities).flatMap(memberData => 
           (memberData.priorities || []).map(p => ({ ...p, priority_type: 'individual' }))
         )
-      ].filter(p => !p.deleted_at);
+      ];
       
       setPriorities(allPriorities);
       setLoading(false);

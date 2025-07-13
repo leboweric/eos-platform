@@ -890,9 +890,10 @@ export const getCurrentPriorities = async (req, res) => {
     
     // Check if deleted_at column exists
     const hasDeletedAt = await checkDeletedAtColumn();
-    const deletedAtCondition = hasDeletedAt ? 'AND p.deleted_at IS NULL' : '';
+    console.log('deleted_at column exists:', hasDeletedAt);
     
     // Get current active priorities (non-deleted)
+    // Always filter out deleted items - use both deleted_at IS NULL and explicit exclusion
     const prioritiesQuery = `
       SELECT 
         p.*,
@@ -903,11 +904,15 @@ export const getCurrentPriorities = async (req, res) => {
       FROM quarterly_priorities p
       LEFT JOIN users u ON p.owner_id = u.id
       WHERE p.organization_id = $1 
-      ${deletedAtCondition}
+      AND (p.deleted_at IS NULL OR p.deleted_at = '')
       ORDER BY p.is_company_priority DESC, p.created_at ASC
     `;
     
+    console.log('Executing query:', prioritiesQuery);
+    
     const prioritiesResult = await query(prioritiesQuery, [orgId]);
+    console.log(`Found ${prioritiesResult.rows.length} priorities:`, 
+      prioritiesResult.rows.map(p => ({ id: p.id, title: p.title, deleted_at: p.deleted_at })));
     
     // Get milestones for all priorities
     const priorityIds = prioritiesResult.rows.map(p => p.id);
