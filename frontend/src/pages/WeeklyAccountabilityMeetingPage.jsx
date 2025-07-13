@@ -110,14 +110,22 @@ const WeeklyAccountabilityMeetingPage = () => {
       
       const response = await quarterlyPrioritiesService.getQuarterlyPriorities(orgId, teamId, currentQuarter, currentYear);
       
-      // Handle different response structures
-      const prioritiesData = response.data?.priorities || response.priorities || [];
-      const companyPriorities = response.data?.companyPriorities || response.companyPriorities || [];
+      // The service returns data.data, so response is already the inner data object
+      const companyPriorities = response.companyPriorities || [];
+      const teamMemberPriorities = response.teamMemberPriorities || {};
+      
+      // Flatten team member priorities from object to array
+      const individualPriorities = [];
+      Object.values(teamMemberPriorities).forEach(memberData => {
+        if (memberData.priorities && Array.isArray(memberData.priorities)) {
+          individualPriorities.push(...memberData.priorities);
+        }
+      });
       
       // Combine company and individual priorities
       const allPriorities = [
         ...companyPriorities.map(p => ({ ...p, priority_type: 'company' })),
-        ...prioritiesData.map(p => ({ ...p, priority_type: 'individual' }))
+        ...individualPriorities.map(p => ({ ...p, priority_type: 'individual' }))
       ].filter(p => !p.deleted_at);
       
       setPriorities(allPriorities);
