@@ -1,8 +1,9 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuthStore } from '../stores/authStore';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { 
   Users, 
   Calendar,
@@ -12,11 +13,14 @@ import {
   BarChart,
   AlertTriangle
 } from 'lucide-react';
+import { teamsService } from '../services/teamsService';
 
 const MeetingsPage = () => {
   const navigate = useNavigate();
   const { user } = useAuthStore();
-  const teamId = user?.teamId || user?.team_id;
+  const [teams, setTeams] = useState([]);
+  const [selectedTeamId, setSelectedTeamId] = useState(null);
+  const [loadingTeams, setLoadingTeams] = useState(true);
 
   const meetings = [
     {
@@ -68,9 +72,34 @@ const MeetingsPage = () => {
     }
   ];
 
+  useEffect(() => {
+    fetchUserTeams();
+  }, []);
+
+  const fetchUserTeams = async () => {
+    try {
+      setLoadingTeams(true);
+      
+      // Use the same default team ID pattern as other pages
+      const teamId = user?.teamId || '00000000-0000-0000-0000-000000000000';
+      
+      const defaultTeam = {
+        id: teamId,
+        name: 'Leadership Team'
+      };
+      setTeams([defaultTeam]);
+      setSelectedTeamId(teamId);
+    } catch (error) {
+      console.error('Failed to fetch teams:', error);
+      setTeams([]);
+    } finally {
+      setLoadingTeams(false);
+    }
+  };
+
   const handleStartMeeting = (meetingId) => {
-    if (meetingId === 'weekly-accountability' && teamId) {
-      navigate(`/meetings/weekly-accountability/${teamId}`);
+    if (meetingId === 'weekly-accountability' && selectedTeamId) {
+      navigate(`/meetings/weekly-accountability/${selectedTeamId}`);
     }
   };
 
@@ -78,8 +107,29 @@ const MeetingsPage = () => {
     <div className="min-h-screen bg-gray-50">
       <div className="max-w-7xl mx-auto p-6 space-y-6">
         <div className="mb-8">
-          <h1 className="text-4xl font-bold text-gray-900">Meetings</h1>
-          <p className="text-gray-600 mt-2 text-lg">Run effective meetings with structured agendas</p>
+          <div className="flex items-start justify-between">
+            <div>
+              <h1 className="text-4xl font-bold text-gray-900">Meetings</h1>
+              <p className="text-gray-600 mt-2 text-lg">Run effective meetings with structured agendas</p>
+            </div>
+            {teams.length > 1 && (
+              <div className="space-y-2">
+                <label className="text-sm font-medium">Select Team</label>
+                <Select value={selectedTeamId} onValueChange={setSelectedTeamId}>
+                  <SelectTrigger className="w-[250px]">
+                    <SelectValue placeholder="Choose a team" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {teams.map(team => (
+                      <SelectItem key={team.id} value={team.id}>
+                        {team.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            )}
+          </div>
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -127,7 +177,7 @@ const MeetingsPage = () => {
 
                     <Button 
                       onClick={() => handleStartMeeting(meeting.id)}
-                      disabled={meeting.comingSoon || !teamId}
+                      disabled={meeting.comingSoon || !selectedTeamId || loadingTeams}
                       className="w-full"
                     >
                       {meeting.comingSoon ? 'Coming Soon' : 'Start Meeting'}
@@ -140,7 +190,7 @@ const MeetingsPage = () => {
           })}
         </div>
 
-        {!teamId && (
+        {!loadingTeams && teams.length === 0 && (
           <Card className="mt-6 border-orange-200 bg-orange-50">
             <CardHeader>
               <CardTitle className="flex items-center gap-2 text-orange-800">
@@ -150,7 +200,7 @@ const MeetingsPage = () => {
             </CardHeader>
             <CardContent>
               <p className="text-orange-700">
-                You need to be part of a team to start meetings. Please contact your administrator to be assigned to a team.
+                You need to be part of a team to start meetings. A default team will be created for your organization.
               </p>
             </CardContent>
           </Card>
