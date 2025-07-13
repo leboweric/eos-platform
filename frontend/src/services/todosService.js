@@ -3,7 +3,7 @@ import axios from 'axios';
 const getOrgId = () => {
   const authState = JSON.parse(localStorage.getItem('auth-store') || '{}');
   const user = authState?.state?.user;
-  return localStorage.getItem('impersonatedOrgId') || user?.organizationId;
+  return localStorage.getItem('impersonatedOrgId') || user?.organizationId || user?.organization_id;
 };
 
 const getTeamId = () => {
@@ -98,5 +98,12 @@ export const todosService = {
     await axios.delete(
       `/organizations/${orgId}/todos/${todoId}/attachments/${attachmentId}`
     );
+  },
+
+  // Get download URL for attachment
+  getAttachmentDownloadUrl: (todoId, attachmentId) => {
+    const orgId = getOrgId();
+    const baseURL = import.meta.env.VITE_API_URL || 'http://localhost:3001/api/v1';
+    return `${baseURL}/organizations/${orgId}/todos/${todoId}/attachments/${attachmentId}/download`;
   }
 };

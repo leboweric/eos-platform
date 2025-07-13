@@ -229,7 +229,7 @@ const TodoDialog = ({ open, onOpenChange, todo, teamMembers, onSave }) => {
                           type="button"
                           variant="ghost"
                           size="sm"
-                          onClick={() => window.open(`${import.meta.env.VITE_API_URL}/api/v1/organizations/${user.organization_id}/todos/${todo.id}/attachments/${attachment.id}/download`, '_blank')}
+                          onClick={() => window.open(todosService.getAttachmentDownloadUrl(todo.id, attachment.id), '_blank')}
                           title="Download"
                         >
                           <Download className="h-4 w-4" />
