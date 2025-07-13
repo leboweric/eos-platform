@@ -682,7 +682,23 @@ const QuarterlyPrioritiesPage = () => {
                 </>
               ) : (
                 <>
-                  <Button variant="ghost" size="sm" onClick={() => setIsEditing(true)}>
+                  <Button variant="ghost" size="sm" onClick={() => {
+                    // Reset editForm with current priority values when entering edit mode
+                    setEditForm({
+                      title: priority.title || '',
+                      description: priority.description || '',
+                      status: priority.status || 'on-track',
+                      progress: priority.progress || 0,
+                      dueDate: priority.dueDate ? (
+                        priority.dueDate.includes('T') 
+                          ? priority.dueDate.split('T')[0]
+                          : priority.dueDate
+                      ) : '',
+                      ownerId: priority.owner?.id || '',
+                      isCompanyPriority: priority.isCompanyPriority || false
+                    });
+                    setIsEditing(true);
+                  }}>
                     <Edit className="h-4 w-4" />
                   </Button>
                   {!isArchived && (
