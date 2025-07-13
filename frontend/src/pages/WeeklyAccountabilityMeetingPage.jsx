@@ -89,9 +89,11 @@ const WeeklyAccountabilityMeetingPage = () => {
       setLoading(true);
       setError(null);
       const orgId = localStorage.getItem('impersonatedOrgId') || user?.organizationId || user?.organization_id;
-      console.log('Fetching scorecard with:', { orgId, teamId });
+      // Use the same default as ScorecardPage if teamId is not provided
+      const effectiveTeamId = teamId || user?.teamId || '00000000-0000-0000-0000-000000000000';
+      console.log('Fetching scorecard with:', { orgId, teamId: effectiveTeamId });
       
-      const response = await scorecardService.getScorecard(orgId, teamId);
+      const response = await scorecardService.getScorecard(orgId, effectiveTeamId);
       console.log('Scorecard response:', response);
       
       // The response structure from the API has metrics and weeklyScores
@@ -113,9 +115,11 @@ const WeeklyAccountabilityMeetingPage = () => {
       setLoading(true);
       setError(null);
       const orgId = localStorage.getItem('impersonatedOrgId') || user?.organizationId || user?.organization_id;
+      // Use the same default as ScorecardPage if teamId is not provided
+      const effectiveTeamId = teamId || user?.teamId || '00000000-0000-0000-0000-000000000000';
       
       // Use the simplified current priorities endpoint
-      const response = await quarterlyPrioritiesService.getCurrentPriorities(orgId, teamId);
+      const response = await quarterlyPrioritiesService.getCurrentPriorities(orgId, effectiveTeamId);
       
       // Extract data in the same format as the original page
       const companyPriorities = response.companyPriorities || [];

@@ -10,17 +10,26 @@ const ScorecardTable = ({ metrics, weeklyScores, readOnly = false, onIssueCreate
   const { user } = useAuthStore();
   const [creatingIssue, setCreatingIssue] = useState({});
   const [chartModal, setChartModal] = useState({ isOpen: false, metric: null, metricId: null });
+  // Get week start date for a given date (Monday)
+  const getWeekStartDate = (date) => {
+    const d = new Date(date);
+    const day = d.getDay();
+    const diff = d.getDate() - day + (day === 0 ? -6 : 1); // adjust when day is sunday
+    return new Date(d.setDate(diff));
+  };
+
   // Get the last 12 weeks
   const getWeekDates = () => {
     const weeks = [];
     const today = new Date();
-    const currentWeek = new Date(today);
-    currentWeek.setDate(today.getDate() - today.getDay()); // Start of current week (Sunday)
     
     for (let i = 11; i >= 0; i--) {
-      const week = new Date(currentWeek);
-      week.setDate(currentWeek.getDate() - (i * 7));
-      weeks.push(week.toISOString().split('T')[0]);
+      const weekStart = new Date(today);
+      weekStart.setDate(today.getDate() - (i * 7));
+      const mondayOfWeek = getWeekStartDate(weekStart);
+      
+      // Store the week identifier in ISO format for consistent storage
+      weeks.push(mondayOfWeek.toISOString().split('T')[0]);
     }
     
     return weeks;

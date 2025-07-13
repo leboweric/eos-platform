@@ -75,7 +75,7 @@ const ScorecardPage = () => {
       setLoading(true);
       setError(null);
       
-      const orgId = user?.organizationId;
+      const orgId = localStorage.getItem('impersonatedOrgId') || user?.organizationId || user?.organization_id;
       const teamId = user?.teamId || '00000000-0000-0000-0000-000000000000';
       
       if (!orgId) {
@@ -135,7 +135,7 @@ const ScorecardPage = () => {
       setSaving(true);
       setError(null);
       
-      const orgId = user?.organizationId;
+      const orgId = localStorage.getItem('impersonatedOrgId') || user?.organizationId || user?.organization_id;
       const teamId = user?.teamId || '00000000-0000-0000-0000-000000000000';
       
       if (!orgId) {
@@ -182,7 +182,7 @@ const ScorecardPage = () => {
       setSaving(true);
       setError(null);
       
-      const orgId = user?.organizationId;
+      const orgId = localStorage.getItem('impersonatedOrgId') || user?.organizationId || user?.organization_id;
       const teamId = user?.teamId || '00000000-0000-0000-0000-000000000000';
       
       if (!orgId) {
@@ -208,7 +208,7 @@ const ScorecardPage = () => {
       setSaving(true);
       setError(null);
       
-      const orgId = user?.organizationId;
+      const orgId = localStorage.getItem('impersonatedOrgId') || user?.organizationId || user?.organization_id;
       const teamId = user?.teamId || '00000000-0000-0000-0000-000000000000';
       
       if (!orgId) {
