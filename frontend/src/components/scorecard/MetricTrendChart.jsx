@@ -80,7 +80,37 @@ const MetricTrendChart = ({ isOpen, onClose, metric, metricId, orgId, teamId }) 
       };
     });
     
+    // Calculate linear regression trendline for moving totals
+    const movingTotalPoints = dataWithMovingTotal
+      .map((d, i) => ({ x: i, y: d.movingTotal }))
+      .filter(p => p.y !== null);
+    
+    if (movingTotalPoints.length >= 2) {
+      const { slope, intercept } = calculateLinearRegression(movingTotalPoints);
+      
+      // Add trendline values
+      dataWithMovingTotal.forEach((item, index) => {
+        if (item.movingTotal !== null) {
+          item.trendline = slope * index + intercept;
+        }
+      });
+    }
+    
     return dataWithMovingTotal;
+  };
+  
+  // Calculate linear regression
+  const calculateLinearRegression = (points) => {
+    const n = points.length;
+    const sumX = points.reduce((sum, p) => sum + p.x, 0);
+    const sumY = points.reduce((sum, p) => sum + p.y, 0);
+    const sumXY = points.reduce((sum, p) => sum + p.x * p.y, 0);
+    const sumX2 = points.reduce((sum, p) => sum + p.x * p.x, 0);
+    
+    const slope = (n * sumXY - sumX * sumY) / (n * sumX2 - sumX * sumX);
+    const intercept = (sumY - slope * sumX) / n;
+    
+    return { slope, intercept };
   };
 
   const getValueFormatter = (value) => {
@@ -104,14 +134,17 @@ const MetricTrendChart = ({ isOpen, onClose, metric, metricId, orgId, teamId }) 
   const getTrendIcon = () => {
     if (chartData.length < 4) return <Minus className="h-5 w-5 text-gray-500" />;
     
-    const recent = chartData.slice(-4);
-    const recentAvg = recent.reduce((sum, d) => sum + (d.movingTotal || 0), 0) / recent.length;
-    const older = chartData.slice(-8, -4);
-    const olderAvg = older.reduce((sum, d) => sum + (d.movingTotal || 0), 0) / older.length;
+    // Calculate slope from the trendline data
+    const trendlinePoints = chartData.filter(d => d.trendline !== undefined);
+    if (trendlinePoints.length < 2) return <Minus className="h-5 w-5 text-gray-500" />;
     
-    if (recentAvg > olderAvg * 1.05) {
+    const firstTrend = trendlinePoints[0].trendline;
+    const lastTrend = trendlinePoints[trendlinePoints.length - 1].trendline;
+    const changePercent = ((lastTrend - firstTrend) / firstTrend) * 100;
+    
+    if (changePercent > 5) {
       return <TrendingUp className="h-5 w-5 text-green-600" />;
-    } else if (recentAvg < olderAvg * 0.95) {
+    } else if (changePercent < -5) {
       return <TrendingDown className="h-5 w-5 text-red-600" />;
     }
     return <Minus className="h-5 w-5 text-gray-500" />;
@@ -187,6 +220,17 @@ const MetricTrendChart = ({ isOpen, onClose, metric, metricId, orgId, teamId }) 
                     strokeDasharray="5 5"
                   />
                   
+                  {/* Trendline for 3-week moving total */}
+                  <Line 
+                    type="monotone" 
+                    dataKey="trendline" 
+                    stroke="#ef4444" 
+                    name="Trend"
+                    strokeWidth={2}
+                    dot={false}
+                    strokeDasharray="10 5"
+                  />
+                  
                   {/* Goal line (if applicable) */}
                   {metric?.goal && metric?.comparison_operator !== 'less_equal' && (
                     <ReferenceLine 
@@ -200,8 +244,9 @@ const MetricTrendChart = ({ isOpen, onClose, metric, metricId, orgId, teamId }) 
               </ResponsiveContainer>
               
               <div className="mt-4 text-sm text-gray-600">
-                <p>• The dashed line shows the 3-week moving total (sum of current week + 2 previous weeks)</p>
-                <p>• The solid line shows individual weekly values</p>
+                <p>• The blue dashed line shows the 3-week moving total (sum of current week + 2 previous weeks)</p>
+                <p>• The red dashed line shows the trend direction for the 3-week moving total</p>
+                <p>• The purple solid line shows individual weekly values</p>
                 {metric?.goal && <p>• Green dashed line shows the 3-week goal target ({getValueFormatter(metric.goal * 3)})</p>}
               </div>
             </CardContent>
