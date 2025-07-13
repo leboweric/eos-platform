@@ -133,6 +133,12 @@ export const getQuarterlyPriorities = async (req, res) => {
           u.email as owner_email,
           pub.first_name || ' ' || pub.last_name as published_by_name,
           t.is_leadership_team as priority_from_leadership_team,
+          CASE 
+            WHEN p.team_id = '00000000-0000-0000-0000-000000000000' THEN true
+            WHEN p.team_id IS NULL THEN true
+            WHEN t.is_leadership_team = true THEN true
+            ELSE false
+          END as is_from_leadership,
           array_agg(
             json_build_object(
               'id', m.id,
@@ -151,16 +157,27 @@ export const getQuarterlyPriorities = async (req, res) => {
            AND p.quarter = $2::varchar(2)
            AND p.year = $3::integer
            ${deletedAtClause}
-           ${!isLeadership ? `
            AND (
-             -- Show all priorities from non-leadership teams
-             (t.is_leadership_team = false OR t.is_leadership_team IS NULL)
-             -- Or show published priorities from leadership teams
-             OR (t.is_leadership_team = true AND p.is_published_to_departments = true)
-           )` : ''}
+             -- If accessing Leadership Team (00000000...), show Leadership priorities
+             ($4 = '00000000-0000-0000-0000-000000000000' AND (
+               p.team_id = '00000000-0000-0000-0000-000000000000' OR 
+               p.team_id IS NULL OR 
+               t.is_leadership_team = true
+             ))
+             -- If accessing a department, show department priorities and published Leadership priorities
+             OR ($4 != '00000000-0000-0000-0000-000000000000' AND (
+               p.team_id = $4 OR
+               (CASE 
+                 WHEN p.team_id = '00000000-0000-0000-0000-000000000000' THEN p.is_published_to_departments = true
+                 WHEN p.team_id IS NULL THEN p.is_published_to_departments = true
+                 WHEN t.is_leadership_team = true THEN p.is_published_to_departments = true
+                 ELSE false
+               END)
+             ))
+           )
          GROUP BY p.id, u.first_name, u.last_name, u.email, pub.first_name, pub.last_name, t.is_leadership_team
          ORDER BY p.is_company_priority DESC, p.created_at`,
-        [orgId, currentQuarter, currentYear]
+        [orgId, currentQuarter, currentYear, teamId]
       );
     } catch (queryError) {
       console.error('Priorities query error:', queryError);
@@ -854,6 +871,12 @@ export const getArchivedPriorities = async (req, res) => {
         u.first_name || ' ' || u.last_name as owner_name,
         u.email as owner_email,
         t.is_leadership_team as priority_from_leadership_team,
+        CASE 
+          WHEN p.team_id = '00000000-0000-0000-0000-000000000000' THEN true
+          WHEN p.team_id IS NULL THEN true
+          WHEN t.is_leadership_team = true THEN true
+          ELSE false
+        END as is_from_leadership,
         array_agg(
           json_build_object(
             'id', m.id,
@@ -869,16 +892,27 @@ export const getArchivedPriorities = async (req, res) => {
        LEFT JOIN teams t ON p.team_id = t.id
        WHERE p.organization_id = $1::uuid 
          AND p.deleted_at IS NOT NULL
-         ${!isLeadership ? `
          AND (
-           -- Show all priorities from non-leadership teams
-           (t.is_leadership_team = false OR t.is_leadership_team IS NULL)
-           -- Or show published priorities from leadership teams
-           OR (t.is_leadership_team = true AND p.is_published_to_departments = true)
-         )` : ''}
+           -- If accessing Leadership Team (00000000...), show Leadership priorities
+           ($2 = '00000000-0000-0000-0000-000000000000' AND (
+             p.team_id = '00000000-0000-0000-0000-000000000000' OR 
+             p.team_id IS NULL OR 
+             t.is_leadership_team = true
+           ))
+           -- If accessing a department, show department priorities and published Leadership priorities
+           OR ($2 != '00000000-0000-0000-0000-000000000000' AND (
+             p.team_id = $2 OR
+             (CASE 
+               WHEN p.team_id = '00000000-0000-0000-0000-000000000000' THEN p.is_published_to_departments = true
+               WHEN p.team_id IS NULL THEN p.is_published_to_departments = true
+               WHEN t.is_leadership_team = true THEN p.is_published_to_departments = true
+               ELSE false
+             END)
+           ))
+         )
        GROUP BY p.id, u.first_name, u.last_name, u.email, t.is_leadership_team
        ORDER BY p.deleted_at DESC, p.is_company_priority DESC, p.created_at`,
-      [orgId]
+      [orgId, teamId]
     );
     
     // Get latest updates for each priority
@@ -982,7 +1016,7 @@ export const getCurrentPriorities = async (req, res) => {
     
     // Get current active priorities (non-deleted)
     // Always filter out deleted items - only use IS NULL for timestamp columns
-    // Add visibility filtering: if user is not on leadership team, only show published priorities from leadership teams
+    // Add visibility filtering based on the team being accessed
     const prioritiesQuery = `
       SELECT 
         p.*,
@@ -991,27 +1025,44 @@ export const getCurrentPriorities = async (req, res) => {
         u.first_name as owner_first_name,
         u.last_name as owner_last_name,
         pub.first_name || ' ' || pub.last_name as published_by_name,
-        t.is_leadership_team as priority_from_leadership_team
+        t.is_leadership_team as priority_from_leadership_team,
+        CASE 
+          WHEN p.team_id = '00000000-0000-0000-0000-000000000000' THEN true
+          WHEN p.team_id IS NULL THEN true
+          WHEN t.is_leadership_team = true THEN true
+          ELSE false
+        END as is_from_leadership
       FROM quarterly_priorities p
       LEFT JOIN users u ON p.owner_id = u.id
       LEFT JOIN users pub ON p.published_by = pub.id
       LEFT JOIN teams t ON p.team_id = t.id
       WHERE p.organization_id = $1 
       AND p.deleted_at IS NULL
-      ${!isLeadership ? `
       AND (
-        -- Show all priorities from non-leadership teams
-        (t.is_leadership_team = false OR t.is_leadership_team IS NULL)
-        -- Or show published priorities from leadership teams
-        OR (t.is_leadership_team = true AND p.is_published_to_departments = true)
-      )` : ''}
+        -- If accessing Leadership Team (00000000...), show Leadership priorities
+        ($2 = '00000000-0000-0000-0000-000000000000' AND (
+          p.team_id = '00000000-0000-0000-0000-000000000000' OR 
+          p.team_id IS NULL OR 
+          t.is_leadership_team = true
+        ))
+        -- If accessing a department, show department priorities and published Leadership priorities
+        OR ($2 != '00000000-0000-0000-0000-000000000000' AND (
+          p.team_id = $2 OR
+          (CASE 
+            WHEN p.team_id = '00000000-0000-0000-0000-000000000000' THEN p.is_published_to_departments = true
+            WHEN p.team_id IS NULL THEN p.is_published_to_departments = true
+            WHEN t.is_leadership_team = true THEN p.is_published_to_departments = true
+            ELSE false
+          END)
+        ))
+      )
       ORDER BY p.is_company_priority DESC, p.created_at ASC
     `;
     
-    console.log('Executing query:', prioritiesQuery);
+    console.log('Executing query with params:', { orgId, teamId });
     console.log('Is leadership team member:', isLeadership);
     
-    const prioritiesResult = await query(prioritiesQuery, [orgId]);
+    const prioritiesResult = await query(prioritiesQuery, [orgId, teamId]);
     console.log(`Found ${prioritiesResult.rows.length} priorities:`, 
       prioritiesResult.rows.map(p => ({ 
         id: p.id, 
