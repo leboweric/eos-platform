@@ -1,1 +1,88 @@
-import express from 'express'; const router = express.Router(); router.get('/', (req, res) => { res.json({ success: true, message: 'todos endpoint - coming soon' }); }); export default router;
+import express from 'express';
+import { body, param, query } from 'express-validator';
+import { authenticate } from '../middleware/auth.js';
+import multer from 'multer';
+import path from 'path';
+import {
+  getTodos,
+  createTodo,
+  updateTodo,
+  deleteTodo,
+  uploadTodoAttachment,
+  getTodoAttachments,
+  deleteTodoAttachment
+} from '../controllers/todosController.js';
+
+const router = express.Router({ mergeParams: true });
+
+// Configure multer for file uploads
+const storage = multer.diskStorage({
+  destination: function (req, file, cb) {
+    cb(null, 'uploads/todos/')
+  },
+  filename: function (req, file, cb) {
+    const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
+    cb(null, file.fieldname + '-' + uniqueSuffix + path.extname(file.originalname));
+  }
+});
+
+const upload = multer({ 
+  storage: storage,
+  limits: {
+    fileSize: 10 * 1024 * 1024 // 10MB limit
+  }
+});
+
+// All routes require authentication
+router.use(authenticate);
+
+// Get all todos
+router.get('/', [
+  query('status').optional().isIn(['incomplete', 'complete', 'cancelled']),
+  query('assignedTo').optional().isUUID(),
+  query('includeCompleted').optional().isBoolean()
+], getTodos);
+
+// Create a new todo
+router.post('/', [
+  body('title').notEmpty().withMessage('Title is required'),
+  body('description').optional(),
+  body('assignedToId').optional().isUUID(),
+  body('priority').optional().isIn(['low', 'medium', 'high', 'urgent']),
+  body('dueDate').optional().isISO8601(),
+  body('teamId').optional().isUUID()
+], createTodo);
+
+// Update a todo
+router.put('/:todoId', [
+  param('todoId').isUUID(),
+  body('title').optional().notEmpty(),
+  body('description').optional(),
+  body('assignedToId').optional().isUUID(),
+  body('priority').optional().isIn(['low', 'medium', 'high', 'urgent']),
+  body('dueDate').optional().isISO8601(),
+  body('status').optional().isIn(['incomplete', 'complete', 'cancelled'])
+], updateTodo);
+
+// Delete a todo
+router.delete('/:todoId', [
+  param('todoId').isUUID()
+], deleteTodo);
+
+// Upload attachment for a todo
+router.post('/:todoId/attachments', [
+  param('todoId').isUUID()
+], upload.single('file'), uploadTodoAttachment);
+
+// Get attachments for a todo
+router.get('/:todoId/attachments', [
+  param('todoId').isUUID()
+], getTodoAttachments);
+
+// Delete an attachment
+router.delete('/:todoId/attachments/:attachmentId', [
+  param('todoId').isUUID(),
+  param('attachmentId').isUUID()
+], deleteTodoAttachment);
+
+export default router;
