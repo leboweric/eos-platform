@@ -20,7 +20,7 @@ import {
   CheckSquare
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
-import ScorecardCard from '../components/scorecard/ScorecardCard';
+import ScorecardTable from '../components/scorecard/ScorecardTable';
 import PriorityCard from '../components/priorities/PriorityCard';
 import IssueCard from '../components/issues/IssueCard';
 import TodoCard from '../components/todos/TodoCard';
@@ -85,8 +85,6 @@ const WeeklyAccountabilityMeetingPage = () => {
       // The response structure from the API has metrics and weeklyScores
       const metrics = response.metrics || response.data?.metrics || [];
       const scores = response.weeklyScores || response.data?.weeklyScores || {};
-      
-      console.log('First metric:', metrics[0]); // Debug log to see field names
       
       setScorecardMetrics(metrics);
       setWeeklyScores(scores);
@@ -201,17 +199,15 @@ const WeeklyAccountabilityMeetingPage = () => {
       case 'scorecard':
         return (
           <div className="space-y-4">
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <BarChart className="h-5 w-5" />
-                  Scorecard Review
-                </CardTitle>
-                <CardDescription>Review weekly metrics (5 minutes)</CardDescription>
-              </CardHeader>
-            </Card>
             {scorecardMetrics.length === 0 ? (
               <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <BarChart className="h-5 w-5" />
+                    Scorecard Review
+                  </CardTitle>
+                  <CardDescription>Review weekly metrics (5 minutes)</CardDescription>
+                </CardHeader>
                 <CardContent className="text-center py-8">
                   <p className="text-gray-500">No scorecard metrics found. Set up your scorecard to track key metrics.</p>
                   <Button 
@@ -224,25 +220,11 @@ const WeeklyAccountabilityMeetingPage = () => {
                 </CardContent>
               </Card>
             ) : (
-              <div className="grid gap-4">
-                {scorecardMetrics.map(metric => {
-                  // Get the current week's score
-                  const currentWeek = new Date().toISOString().split('T')[0];
-                  const weekStart = new Date(currentWeek);
-                  weekStart.setDate(weekStart.getDate() - weekStart.getDay()); // Start of week
-                  const weekKey = weekStart.toISOString().split('T')[0];
-                  const weeklyScore = weeklyScores[metric.id]?.[weekKey];
-                  
-                  return (
-                    <ScorecardCard 
-                      key={metric.id} 
-                      metric={metric} 
-                      weeklyScore={weeklyScore}
-                      readOnly 
-                    />
-                  );
-                })}
-              </div>
+              <ScorecardTable 
+                metrics={scorecardMetrics} 
+                weeklyScores={weeklyScores} 
+                readOnly 
+              />
             )}
           </div>
         );
