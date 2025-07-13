@@ -366,7 +366,7 @@ const WeeklyAccountabilityMeetingPage = () => {
               <>
                 <div className="bg-red-50 border border-red-200 rounded-lg p-4 mb-4">
                   <p className="text-red-800 font-semibold text-center">
-                    NO DISCUSSION! Simply report on-track or off-track. Off-track numbers should be moved to the Issues List. Off-track numbers are critical to solve.
+                    NO DISCUSSION! The metric owner simply reports "on-track" or "off-track." Off-track numbers should be moved to the Issues List. Off-track numbers are critical to solve.
                   </p>
                 </div>
                 <div className="flex justify-end gap-2">
@@ -441,7 +441,7 @@ const WeeklyAccountabilityMeetingPage = () => {
               <div className="space-y-6">
                 <div className="bg-red-50 border border-red-200 rounded-lg p-4">
                   <p className="text-red-800 font-semibold text-center">
-                    NO DISCUSSION! Simply report off-track or on-track. Off-track Priorities should be dropped to the Issues list. Off-track Priorities (especially Company Priorities) should be solved.
+                    NO DISCUSSION! The owner simply reports "off-track" or "on-track." Off-track Priorities should be dropped to the Issues list. Off-track Priorities (especially Company Priorities) are critical to solve.
                   </p>
                 </div>
                 {/* Company Priorities Section */}
