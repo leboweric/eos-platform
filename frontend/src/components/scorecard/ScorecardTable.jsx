@@ -84,7 +84,7 @@ const ScorecardTable = ({ metrics, weeklyScores, readOnly = false }) => {
   };
 
   return (
-    <Card className="shadow-lg border-0 overflow-x-auto">
+    <Card className="shadow-lg border-0">
       <CardHeader className="bg-gradient-to-r from-indigo-500 to-blue-500 text-white">
         <CardTitle className="flex items-center text-xl">
           <Target className="mr-2 h-6 w-6" />
@@ -94,9 +94,8 @@ const ScorecardTable = ({ metrics, weeklyScores, readOnly = false }) => {
           Track performance over the past 12 weeks
         </CardDescription>
       </CardHeader>
-      <CardContent className="p-0">
-        <div className="overflow-x-auto">
-          <table className="w-full">
+      <CardContent className="p-0 overflow-x-auto">
+        <table className="w-full">
             <thead className="bg-gray-50 border-b">
               <tr>
                 <th className="text-left p-4 font-semibold text-gray-700 min-w-[200px]">Metric</th>

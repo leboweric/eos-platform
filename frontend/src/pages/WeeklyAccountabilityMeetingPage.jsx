@@ -198,7 +198,7 @@ const WeeklyAccountabilityMeetingPage = () => {
 
       case 'scorecard':
         return (
-          <div className="space-y-4">
+          <div className="space-y-4 w-full">
             {scorecardMetrics.length === 0 ? (
               <Card>
                 <CardHeader>
@@ -400,7 +400,7 @@ const WeeklyAccountabilityMeetingPage = () => {
     <div className="min-h-screen bg-gray-50">
       <div className="flex">
         {/* Sidebar */}
-        <div className="w-80 bg-white border-r border-gray-200 min-h-screen">
+        <div className="w-64 bg-white border-r border-gray-200 min-h-screen flex-shrink-0">
           <div className="p-6">
             <h1 className="text-2xl font-bold text-gray-900 mb-2">Weekly Accountability Meeting</h1>
             <p className="text-gray-600 text-sm">90 minutes total</p>
@@ -440,8 +440,8 @@ const WeeklyAccountabilityMeetingPage = () => {
         </div>
 
         {/* Main Content */}
-        <div className="flex-1 p-6">
-          <div className="max-w-6xl mx-auto">
+        <div className="flex-1 p-6 overflow-x-auto">
+          <div className={activeSection === 'scorecard' ? 'min-w-fit' : 'max-w-6xl mx-auto'}>
             {error && (
               <Alert className="mb-6 border-red-200 bg-red-50">
                 <AlertCircle className="h-4 w-4 text-red-600" />
