@@ -48,8 +48,16 @@ const WeeklyAccountabilityMeetingPage = () => {
   const [teamMembers, setTeamMembers] = useState([]);
   const [goodNews, setGoodNews] = useState([]);
   const [headlines, setHeadlines] = useState([]);
-  const [isRTL, setIsRTL] = useState(false); // Right-to-left reading direction for scorecard
-  const [showTotal, setShowTotal] = useState(true); // Show/hide total column in scorecard
+  const [isRTL, setIsRTL] = useState(() => {
+    // Load RTL preference from localStorage
+    const saved = localStorage.getItem('scorecardRTL');
+    return saved === 'true';
+  });
+  const [showTotal, setShowTotal] = useState(() => {
+    // Load showTotal preference from localStorage
+    const saved = localStorage.getItem('scorecardShowTotal');
+    return saved !== null ? saved === 'true' : true; // Default to true if not set
+  });
 
   const agendaItems = [
     { id: 'good-news', label: 'Good News', duration: 5, icon: Smile },
@@ -250,7 +258,11 @@ const WeeklyAccountabilityMeetingPage = () => {
               <>
                 <div className="flex justify-end gap-2">
                   <Button 
-                    onClick={() => setShowTotal(!showTotal)} 
+                    onClick={() => {
+                      const newValue = !showTotal;
+                      setShowTotal(newValue);
+                      localStorage.setItem('scorecardShowTotal', newValue.toString());
+                    }} 
                     variant="outline"
                     size="sm"
                     title={showTotal ? "Hide total column" : "Show total column"}
@@ -258,7 +270,11 @@ const WeeklyAccountabilityMeetingPage = () => {
                     {showTotal ? "Hide Total" : "Show Total"}
                   </Button>
                   <Button 
-                    onClick={() => setIsRTL(!isRTL)} 
+                    onClick={() => {
+                      const newValue = !isRTL;
+                      setIsRTL(newValue);
+                      localStorage.setItem('scorecardRTL', newValue.toString());
+                    }} 
                     variant="outline"
                     size="sm"
                     title={isRTL ? "Switch to left-to-right" : "Switch to right-to-left"}

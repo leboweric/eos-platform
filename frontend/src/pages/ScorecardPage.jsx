@@ -36,8 +36,16 @@ const ScorecardPage = () => {
   const [showMetricDialog, setShowMetricDialog] = useState(false);
   const [editingScore, setEditingScore] = useState(null);
   const [users, setUsers] = useState([]);
-  const [isRTL, setIsRTL] = useState(false); // Right-to-left reading direction
-  const [showTotal, setShowTotal] = useState(true); // Show/hide total column
+  const [isRTL, setIsRTL] = useState(() => {
+    // Load RTL preference from localStorage
+    const saved = localStorage.getItem('scorecardRTL');
+    return saved === 'true';
+  });
+  const [showTotal, setShowTotal] = useState(() => {
+    // Load showTotal preference from localStorage
+    const saved = localStorage.getItem('scorecardShowTotal');
+    return saved !== null ? saved === 'true' : true; // Default to true if not set
+  });
   
   // Form data for new/edit metric
   const [metricForm, setMetricForm] = useState({
@@ -321,14 +329,22 @@ const ScorecardPage = () => {
           </div>
           <div className="flex gap-2">
             <Button 
-              onClick={() => setShowTotal(!showTotal)} 
+              onClick={() => {
+                const newValue = !showTotal;
+                setShowTotal(newValue);
+                localStorage.setItem('scorecardShowTotal', newValue.toString());
+              }} 
               variant="outline"
               title={showTotal ? "Hide total column" : "Show total column"}
             >
               {showTotal ? "Hide Total" : "Show Total"}
             </Button>
             <Button 
-              onClick={() => setIsRTL(!isRTL)} 
+              onClick={() => {
+                const newValue = !isRTL;
+                setIsRTL(newValue);
+                localStorage.setItem('scorecardRTL', newValue.toString());
+              }} 
               variant="outline"
               title={isRTL ? "Switch to left-to-right" : "Switch to right-to-left"}
             >
