@@ -142,17 +142,18 @@ const ScorecardTable = ({ metrics, weeklyScores, readOnly = false, onIssueCreate
           Track performance over the past 12 weeks
         </CardDescription>
       </CardHeader>
-      <CardContent className="p-0 overflow-x-auto">
-        <table className="w-full">
+      <CardContent className="p-0">
+        <div className="overflow-x-auto">
+          <table className="w-full table-fixed">
             <thead className="bg-gray-50 border-b">
               <tr>
-                <th className="text-center p-4 font-semibold text-gray-700 min-w-[150px]">Owner</th>
-                <th className="text-left p-4 font-semibold text-gray-700 min-w-[200px]">Metric</th>
-                <th className="text-center p-4 font-semibold text-gray-700 min-w-[100px]">Goal</th>
+                <th className="text-center p-2 font-semibold text-gray-700 w-16">Owner</th>
+                <th className="text-left p-2 font-semibold text-gray-700 w-48">Metric</th>
+                <th className="text-center p-2 font-semibold text-gray-700 w-20">Goal</th>
                 {isRTL && (
                   <>
-                    {showTotal && <th className="text-center p-4 font-semibold text-gray-700 min-w-[100px] bg-gray-100">Total</th>}
-                    <th className="text-center p-4 font-semibold text-gray-700 min-w-[100px] bg-gray-100">Average</th>
+                    {showTotal && <th className="text-center p-2 font-semibold text-gray-700 w-20 bg-gray-100">Total</th>}
+                    <th className="text-center p-2 font-semibold text-gray-700 w-20 bg-gray-100">Average</th>
                   </>
                 )}
                 {weekLabels.map((label, index) => {
@@ -160,7 +161,7 @@ const ScorecardTable = ({ metrics, weeklyScores, readOnly = false, onIssueCreate
                   const originalIndex = isRTL ? weekLabels.length - 1 - index : index;
                   const isCurrentWeek = originalIndex === weekLabelsOriginal.length - 1;
                   return (
-                    <th key={weekDates[index]} className={`text-center p-4 font-semibold min-w-[80px] ${
+                    <th key={weekDates[index]} className={`text-center p-2 font-semibold text-xs w-16 ${
                       isCurrentWeek ? 'text-indigo-700 bg-indigo-50' : 'text-gray-700'
                     }`}>
                       <div className="flex flex-col items-center">
@@ -174,11 +175,11 @@ const ScorecardTable = ({ metrics, weeklyScores, readOnly = false, onIssueCreate
                 })}
                 {!isRTL && (
                   <>
-                    <th className="text-center p-4 font-semibold text-gray-700 min-w-[100px] bg-gray-100">Average</th>
-                    {showTotal && <th className="text-center p-4 font-semibold text-gray-700 min-w-[100px] bg-gray-100">Total</th>}
+                    <th className="text-center p-2 font-semibold text-gray-700 w-20 bg-gray-100">Average</th>
+                    {showTotal && <th className="text-center p-2 font-semibold text-gray-700 w-20 bg-gray-100">Total</th>}
                   </>
                 )}
-                <th className="text-center p-4 font-semibold text-gray-700 min-w-[100px]">Actions</th>
+                <th className="text-center p-2 font-semibold text-gray-700 w-20">Actions</th>
               </tr>
             </thead>
             <tbody>
@@ -191,9 +192,9 @@ const ScorecardTable = ({ metrics, weeklyScores, readOnly = false, onIssueCreate
               ) : (
                 metrics.map(metric => (
                   <tr key={metric.id} className="border-b hover:bg-gray-50">
-                    <td className="p-4 text-center">{metric.ownerName || metric.owner || '-'}</td>
-                    <td className="p-4 font-medium">{metric.name}</td>
-                    <td className="p-4 text-center font-semibold text-indigo-600">
+                    <td className="p-2 text-center text-sm">{metric.ownerName || metric.owner || '-'}</td>
+                    <td className="p-2 font-medium text-sm">{metric.name}</td>
+                    <td className="p-2 text-center font-semibold text-indigo-600 text-sm">
                       {formatGoal(metric.goal, metric.value_type)}
                     </td>
                     
@@ -202,7 +203,7 @@ const ScorecardTable = ({ metrics, weeklyScores, readOnly = false, onIssueCreate
                       <>
                         {/* Total column */}
                         {showTotal && (
-                          <td className="p-4 text-center bg-gray-50 font-semibold">
+                          <td className="p-2 text-center bg-gray-50 font-semibold text-sm">
                           {(() => {
                             // Always use original order for calculations
                             const scores = weekDatesOriginal
@@ -256,10 +257,10 @@ const ScorecardTable = ({ metrics, weeklyScores, readOnly = false, onIssueCreate
                       const showCreateIssue = !readOnly && isCurrentWeek && score && !goalMet;
                       
                       return (
-                        <td key={weekDate} className="p-4 text-center group">
+                        <td key={weekDate} className="p-2 text-center group">
                           {score !== undefined && score !== null && score !== '' ? (
                             <div className="inline-flex items-center gap-1">
-                              <span className={`inline-block px-2 py-1 rounded ${
+                              <span className={`inline-block px-2 py-1 rounded text-sm min-h-[24px] flex items-center justify-center ${
                                 goalMet 
                                   ? 'bg-green-100 text-green-800' 
                                   : 'bg-red-100 text-red-800'
@@ -329,7 +330,7 @@ const ScorecardTable = ({ metrics, weeklyScores, readOnly = false, onIssueCreate
                         </td>
                         {/* Total column */}
                         {showTotal && (
-                          <td className="p-4 text-center bg-gray-50 font-semibold">
+                          <td className="p-2 text-center bg-gray-50 font-semibold text-sm">
                           {(() => {
                             // Always use original order for calculations
                             const scores = weekDatesOriginal
@@ -351,7 +352,7 @@ const ScorecardTable = ({ metrics, weeklyScores, readOnly = false, onIssueCreate
                       </>
                     )}
                     {/* Actions column - always on far right */}
-                    <td className="p-4 text-center">
+                    <td className="p-2 text-center">
                       {readOnly ? (
                         <span className="text-gray-400">-</span>
                       ) : (
@@ -369,6 +370,7 @@ const ScorecardTable = ({ metrics, weeklyScores, readOnly = false, onIssueCreate
               )}
             </tbody>
           </table>
+        </div>
       </CardContent>
     </Card>
     
