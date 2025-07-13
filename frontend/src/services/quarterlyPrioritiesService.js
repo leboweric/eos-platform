@@ -1,4 +1,4 @@
-import axios from 'axios';
+import axios from './axiosSetup';
 
 /**
  * Quarterly priorities service for managing priority data

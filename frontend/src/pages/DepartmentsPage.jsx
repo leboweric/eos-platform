@@ -18,10 +18,13 @@ import {
   BarChart,
   Calendar,
   CheckSquare,
-  AlertCircle
+  AlertCircle,
+  UserPlus,
+  Settings
 } from 'lucide-react';
 import { Textarea } from '@/components/ui/textarea';
 import { departmentService } from '../services/departmentService';
+import { teamsService } from '../services/teamsService';
 import { useAuthStore } from '../stores/authStore';
 import { useNavigate } from 'react-router-dom';
 import { Alert, AlertDescription } from '@/components/ui/alert';
@@ -35,6 +38,14 @@ const DepartmentsPage = () => {
   const [error, setError] = useState(null);
   const [saving, setSaving] = useState(false);
   const [deleting, setDeleting] = useState(null);
+  const [teamDialogOpen, setTeamDialogOpen] = useState(false);
+  const [selectedDeptForTeams, setSelectedDeptForTeams] = useState(null);
+  const [createTeamDialogOpen, setCreateTeamDialogOpen] = useState(false);
+  const [teamFormData, setTeamFormData] = useState({
+    name: '',
+    description: ''
+  });
+  const [savingTeam, setSavingTeam] = useState(false);
   const navigate = useNavigate();
   const { user } = useAuthStore();
   
@@ -130,6 +141,34 @@ const DepartmentsPage = () => {
     }
   };
 
+  const handleCreateTeam = async () => {
+    try {
+      setSavingTeam(true);
+      setError(null);
+      
+      const newTeam = await teamsService.createTeam({
+        name: teamFormData.name,
+        description: teamFormData.description,
+        department_id: selectedDeptForTeams.id,
+        is_leadership_team: false
+      });
+      
+      // Refresh departments to show the new team
+      await fetchDepartments();
+      
+      // Close dialog and reset form
+      setCreateTeamDialogOpen(false);
+      setTeamFormData({ name: '', description: '' });
+      
+      // Optionally, show success message
+    } catch (error) {
+      console.error('Error creating team:', error);
+      setError(error.response?.data?.error || 'Failed to create team');
+    } finally {
+      setSavingTeam(false);
+    }
+  };
+
   const filteredDepartments = departments.filter(dept =>
     dept.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
     dept.description?.toLowerCase().includes(searchTerm.toLowerCase())
@@ -182,6 +221,40 @@ const DepartmentsPage = () => {
       <CardContent>
         {department.description && (
           <p className="text-gray-600 mb-4">{department.description}</p>
+        )}
+        
+        {/* Teams Section */}
+        {department.teams && department.teams.length > 0 && (
+          <div className="mb-4 p-3 bg-gray-50 rounded-lg">
+            <div className="flex items-center justify-between mb-2">
+              <h4 className="text-sm font-medium text-gray-700 flex items-center">
+                <Users className="h-4 w-4 mr-1" />
+                Teams ({department.teams.length})
+              </h4>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => {
+                  setSelectedDeptForTeams(department);
+                  setTeamDialogOpen(true);
+                }}
+                className="text-xs"
+              >
+                <Settings className="h-3 w-3 mr-1" />
+                Manage
+              </Button>
+            </div>
+            <div className="space-y-1">
+              {department.teams.map(team => (
+                <div key={team.id} className="flex items-center justify-between text-sm">
+                  <span className="text-gray-600">{team.name}</span>
+                  <Badge variant="secondary" className="text-xs">
+                    {team.member_count || 0} members
+                  </Badge>
+                </div>
+              ))}
+            </div>
+          </div>
         )}
         
         {/* Department Management Actions */}
@@ -370,6 +443,121 @@ const DepartmentsPage = () => {
                 </>
               ) : (
                 <>{editingDept ? 'Update' : 'Create'} Department</>
+              )}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Team Management Dialog */}
+      <Dialog open={teamDialogOpen} onOpenChange={setTeamDialogOpen}>
+        <DialogContent className="max-w-2xl">
+          <DialogHeader>
+            <DialogTitle>
+              Manage Teams - {selectedDeptForTeams?.name}
+            </DialogTitle>
+            <DialogDescription>
+              View and manage teams within this department
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            {selectedDeptForTeams?.teams && selectedDeptForTeams.teams.length > 0 ? (
+              <div className="space-y-3">
+                {selectedDeptForTeams.teams.map(team => (
+                  <Card key={team.id}>
+                    <CardContent className="flex items-center justify-between py-4">
+                      <div>
+                        <h4 className="font-medium">{team.name}</h4>
+                        {team.description && (
+                          <p className="text-sm text-gray-600 mt-1">{team.description}</p>
+                        )}
+                        <div className="flex items-center gap-4 mt-2">
+                          <Badge variant="secondary">
+                            <Users className="h-3 w-3 mr-1" />
+                            {team.member_count || 0} members
+                          </Badge>
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => navigate(`/departments/${selectedDeptForTeams.id}/teams/${team.id}`)}
+                        >
+                          <UserPlus className="h-4 w-4 mr-1" />
+                          Manage Members
+                        </Button>
+                      </div>
+                    </CardContent>
+                  </Card>
+                ))}
+              </div>
+            ) : (
+              <div className="text-center py-8 text-gray-600">
+                No teams found for this department
+              </div>
+            )}
+            
+            <div className="pt-4 border-t">
+              <Button 
+                className="w-full"
+                onClick={() => {
+                  setCreateTeamDialogOpen(true);
+                  setTeamFormData({ name: '', description: '' });
+                }}
+              >
+                <Plus className="h-4 w-4 mr-2" />
+                Create New Team
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Create Team Dialog */}
+      <Dialog open={createTeamDialogOpen} onOpenChange={setCreateTeamDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>
+              Create New Team
+            </DialogTitle>
+            <DialogDescription>
+              Add a new team to {selectedDeptForTeams?.name}
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            <div className="space-y-2">
+              <Label htmlFor="teamName">Team Name</Label>
+              <Input
+                id="teamName"
+                value={teamFormData.name}
+                onChange={(e) => setTeamFormData({ ...teamFormData, name: e.target.value })}
+                placeholder="e.g., Product Team, Support Team"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="teamDescription">Description</Label>
+              <Textarea
+                id="teamDescription"
+                value={teamFormData.description}
+                onChange={(e) => setTeamFormData({ ...teamFormData, description: e.target.value })}
+                placeholder="What does this team do?"
+                rows={3}
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setCreateTeamDialogOpen(false)} disabled={savingTeam}>
+              Cancel
+            </Button>
+            <Button onClick={handleCreateTeam} disabled={savingTeam || !teamFormData.name}>
+              {savingTeam ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Creating...
+                </>
+              ) : (
+                'Create Team'
               )}
             </Button>
           </DialogFooter>

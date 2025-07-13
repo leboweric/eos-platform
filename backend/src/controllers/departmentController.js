@@ -6,7 +6,7 @@ const getDepartments = async (req, res) => {
   try {
     const { organizationId } = req.user;
 
-    // Get all departments with their leader info and member count
+    // Get all departments with their leader info, member count, and teams
     const query = `
       WITH department_members AS (
         SELECT 
@@ -16,6 +16,21 @@ const getDepartments = async (req, res) => {
         LEFT JOIN teams t ON t.department_id = d.id
         LEFT JOIN team_members tm ON tm.team_id = t.id
         GROUP BY d.id
+      ),
+      department_teams AS (
+        SELECT 
+          t.department_id,
+          json_agg(json_build_object(
+            'id', t.id,
+            'name', t.name,
+            'description', t.description,
+            'member_count', (
+              SELECT COUNT(*) FROM team_members WHERE team_id = t.id
+            )
+          ) ORDER BY t.name) as teams
+        FROM teams t
+        WHERE t.department_id IS NOT NULL
+        GROUP BY t.department_id
       )
       SELECT 
         d.id,
@@ -26,10 +41,12 @@ const getDepartments = async (req, res) => {
         d.created_at,
         d.updated_at,
         u.first_name || ' ' || u.last_name as leader_name,
-        COALESCE(dm.member_count, 0) as member_count
+        COALESCE(dm.member_count, 0) as member_count,
+        COALESCE(dt.teams, '[]'::json) as teams
       FROM departments d
       LEFT JOIN users u ON u.id = d.leader_id
       LEFT JOIN department_members dm ON dm.department_id = d.id
+      LEFT JOIN department_teams dt ON dt.department_id = d.id
       WHERE d.organization_id = $1
       ORDER BY d.parent_department_id NULLS FIRST, d.name`;
 
@@ -119,19 +136,56 @@ const createDepartment = async (req, res) => {
       }
     }
 
-    // Create department
-    const query = `
-      INSERT INTO departments (name, description, organization_id, leader_id, parent_department_id)
-      VALUES ($1, $2, $3, $4, $5)
-      RETURNING *`;
-
-    const values = [name, description, organizationId, leaderId || null, parentDepartmentId || null];
-    const { rows } = await db.query(query, values);
-
-    // Fetch with leader info
-    const department = await getDepartmentWithDetails(rows[0].id, organizationId);
+    // Start transaction
+    await db.query('BEGIN');
     
-    res.status(201).json(department);
+    try {
+      // Create department
+      const deptQuery = `
+        INSERT INTO departments (name, description, organization_id, leader_id, parent_department_id)
+        VALUES ($1, $2, $3, $4, $5)
+        RETURNING *`;
+
+      const deptValues = [name, description, organizationId, leaderId || null, parentDepartmentId || null];
+      const deptResult = await db.query(deptQuery, deptValues);
+      const newDepartment = deptResult.rows[0];
+      
+      // Create default team for the department
+      const teamQuery = `
+        INSERT INTO teams (organization_id, department_id, name, description, is_leadership_team)
+        VALUES ($1, $2, $3, $4, $5)
+        RETURNING *`;
+      
+      const teamValues = [
+        organizationId,
+        newDepartment.id,
+        name, // Use same name as department
+        description || `Main team for ${name} department`,
+        false // Not a leadership team
+      ];
+      
+      const teamResult = await db.query(teamQuery, teamValues);
+      
+      // If leader is specified, add them to the team
+      if (leaderId) {
+        const memberQuery = `
+          INSERT INTO team_members (team_id, user_id, role)
+          VALUES ($1, $2, $3)
+          ON CONFLICT (team_id, user_id) DO NOTHING`;
+        
+        await db.query(memberQuery, [teamResult.rows[0].id, leaderId, 'leader']);
+      }
+      
+      await db.query('COMMIT');
+      
+      // Fetch with leader info and team details
+      const department = await getDepartmentWithDetails(newDepartment.id, organizationId);
+      
+      res.status(201).json(department);
+    } catch (error) {
+      await db.query('ROLLBACK');
+      throw error;
+    }
   } catch (error) {
     logger.error('Error creating department:', error);
     res.status(500).json({ error: 'Failed to create department' });
@@ -242,7 +296,19 @@ const getDepartmentWithDetails = async (departmentId, organizationId) => {
         FROM teams t
         JOIN team_members tm ON tm.team_id = t.id
         WHERE t.department_id = d.id
-      ) as member_count
+      ) as member_count,
+      (
+        SELECT json_agg(json_build_object(
+          'id', t.id,
+          'name', t.name,
+          'description', t.description,
+          'member_count', (
+            SELECT COUNT(*) FROM team_members WHERE team_id = t.id
+          )
+        ))
+        FROM teams t
+        WHERE t.department_id = d.id
+      ) as teams
     FROM departments d
     LEFT JOIN users u ON u.id = d.leader_id
     WHERE d.id = $1 AND d.organization_id = $2`;

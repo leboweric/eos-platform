@@ -24,12 +24,19 @@ const DepartmentIssuesPage = () => {
   const fetchIssues = async () => {
     try {
       setLoading(true);
+      const orgId = localStorage.getItem('impersonatedOrgId') || user?.organizationId || user?.organization_id;
+      
+      // Use the department's first team ID if available, otherwise use department ID
+      const teamId = department.teams && department.teams.length > 0 
+        ? department.teams[0].id 
+        : department.id;
+      
       // Fetch department-specific issues
       const data = await issuesService.getIssues();
       
-      // Filter issues for this department (you may want to add department_id to issues table)
+      // Filter issues for this department's team
       const departmentIssues = data.filter(issue => 
-        issue.team_id === department.id || issue.department_id === department.id
+        issue.team_id === teamId
       );
       
       setIssues(departmentIssues);

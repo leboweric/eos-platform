@@ -25,6 +25,7 @@ import {
   AlertCircle
 } from 'lucide-react';
 import { Link } from 'react-router-dom';
+import { staggerRequests } from '../utils/requestUtils';
 
 const Dashboard = () => {
   const { user } = useAuthStore();
@@ -59,12 +60,14 @@ const Dashboard = () => {
       const orgId = localStorage.getItem('impersonatedOrgId') || user?.organizationId || user?.organization_id;
       const teamId = getTeamId(user, true);
       
-      // Fetch all data in parallel
-      const [prioritiesResponse, todosResponse, issuesResponse] = await Promise.all([
-        quarterlyPrioritiesService.getCurrentPriorities(orgId, teamId),
-        todosService.getTodos(null, null, true), // status=null, assignedTo=null, includeCompleted=true
-        issuesService.getIssues()
-      ]);
+      // Fetch data with staggered requests to avoid rate limiting
+      const [prioritiesResponse, todosResponse, issuesResponse] = await Promise.all(
+        staggerRequests([
+          () => quarterlyPrioritiesService.getCurrentPriorities(orgId, teamId),
+          () => todosService.getTodos(null, null, true), // status=null, assignedTo=null, includeCompleted=true
+          () => issuesService.getIssues()
+        ], 150) // 150ms delay between requests
+      );
       
       // Process priorities - Company priorities for the progress card
       const companyPriorities = prioritiesResponse.companyPriorities || [];

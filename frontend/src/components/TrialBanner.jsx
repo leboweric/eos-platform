@@ -3,8 +3,7 @@ import { Link } from 'react-router-dom';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
 import { AlertCircle, X } from 'lucide-react';
-
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3001/api/v1';
+import axios from '../services/axiosSetup';
 
 const TrialBanner = () => {
   const [subscription, setSubscription] = useState(null);
@@ -17,18 +16,16 @@ const TrialBanner = () => {
 
   const fetchSubscriptionStatus = async () => {
     try {
-      const response = await fetch(`${API_URL}/subscription/status`, {
-        headers: {
-          'Authorization': `Bearer ${localStorage.getItem('accessToken')}`
-        }
-      });
-      const data = await response.json();
+      const response = await axios.get('/api/v1/subscription/status');
       
-      if (data.hasSubscription) {
-        setSubscription(data);
+      if (response.data.hasSubscription) {
+        setSubscription(response.data);
       }
     } catch (error) {
-      console.error('Failed to fetch subscription:', error);
+      // Silently fail for 429 errors - not critical for UI
+      if (error.response?.status !== 429) {
+        console.error('Failed to fetch subscription:', error);
+      }
     } finally {
       setLoading(false);
     }

@@ -26,10 +26,14 @@ const DepartmentPrioritiesPage = () => {
       setLoading(true);
       const orgId = localStorage.getItem('impersonatedOrgId') || user?.organizationId || user?.organization_id;
       
-      // For department priorities, we'll use the department ID as the team ID
-      const data = await quarterlyPrioritiesService.getCurrentPriorities(orgId, department.id);
+      // Use the department's first team ID if available, otherwise use department ID
+      const teamId = department.teams && department.teams.length > 0 
+        ? department.teams[0].id 
+        : department.id;
       
-      // Filter to show only department priorities
+      const data = await quarterlyPrioritiesService.getCurrentPriorities(orgId, teamId);
+      
+      // Show all priorities for this department's team
       setPriorities(data.companyPriorities || []);
     } catch (error) {
       console.error('Error fetching department priorities:', error);

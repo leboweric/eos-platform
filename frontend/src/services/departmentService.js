@@ -1,4 +1,4 @@
-import axios from 'axios';
+import axios from './axiosSetup';
 
 export const departmentService = {
   // Get all departments for the organization

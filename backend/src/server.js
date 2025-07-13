@@ -46,24 +46,41 @@ const PORT = process.env.PORT || 3001;
 // Trust proxy for Railway deployment
 app.set('trust proxy', true);
 
-// Rate limiting with higher limits for auth endpoints
-const limiter = rateLimit({
-  windowMs: parseInt(process.env.RATE_LIMIT_WINDOW_MS) || 15 * 60 * 1000, // 15 minutes
-  max: parseInt(process.env.RATE_LIMIT_MAX_REQUESTS) || 100, // limit each IP to 100 requests per windowMs
+// Different rate limits for different endpoints
+const createLimiter = (windowMs, max) => rateLimit({
+  windowMs,
+  max,
   message: 'Too many requests from this IP, please try again later.',
-  standardHeaders: true, // Return rate limit info in the `RateLimit-*` headers
-  legacyHeaders: false, // Disable the `X-RateLimit-*` headers
-  // Use X-Forwarded-For header for Railway deployment
+  standardHeaders: true,
+  legacyHeaders: false,
   keyGenerator: (req) => {
-    // Get the real IP from X-Forwarded-For header (Railway proxy)
     return req.headers['x-forwarded-for']?.split(',')[0] || req.ip;
-  },
-  // Skip auth endpoints from rate limiting or give them higher limits
-  skip: (req) => {
-    // Skip rate limiting for auth endpoints to prevent login/register issues
-    return req.path.includes('/auth/');
   }
 });
+
+// General API limiter - more lenient
+const generalLimiter = createLimiter(
+  parseInt(process.env.RATE_LIMIT_WINDOW_MS) || 1 * 60 * 1000, // 1 minute
+  parseInt(process.env.RATE_LIMIT_MAX_REQUESTS) || 60 // 60 requests per minute
+);
+
+// Strict limiter for auth endpoints
+const authLimiter = createLimiter(
+  15 * 60 * 1000, // 15 minutes
+  20 // 20 auth requests per 15 minutes
+);
+
+// Very lenient limiter for read operations
+const readLimiter = createLimiter(
+  1 * 60 * 1000, // 1 minute
+  100 // 100 requests per minute
+);
+
+// Logo endpoint specific limiter (these requests are frequent)
+const logoLimiter = createLimiter(
+  1 * 60 * 1000, // 1 minute
+  200 // 200 requests per minute
+);
 
 // Middleware
 app.use(helmet());
@@ -98,7 +115,8 @@ app.use(cors({
 app.use(morgan('combined'));
 app.use(express.json({ limit: '100mb' }));
 app.use(express.urlencoded({ extended: true, limit: '100mb' }));
-app.use('/api/', limiter);
+// Apply general limiter to all API routes by default
+app.use('/api/', generalLimiter);
 
 // Health check endpoint
 app.get('/health', (req, res) => {
@@ -109,10 +127,12 @@ app.get('/health', (req, res) => {
   });
 });
 
-// API Routes
-app.use('/api/v1/auth', authRoutes);
+// API Routes with specific rate limiters
+app.use('/api/v1/auth', authLimiter, authRoutes);
 app.use('/api/v1/users', userRoutes);
 app.use('/api/v1/organizations/:orgId/users', userRoutes); // For org-scoped user operations
+// Apply logo limiter to logo endpoints specifically
+app.use('/api/v1/organizations/:orgId/logo', logoLimiter);
 app.use('/api/v1/organizations', organizationRoutes);
 app.use('/api/v1/organizations/:orgId/teams', teamRoutes);
 app.use('/api/v1/organizations/:orgId/teams/:teamId/business-blueprint', businessBlueprintRoutes);

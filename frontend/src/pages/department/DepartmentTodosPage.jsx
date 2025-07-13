@@ -27,8 +27,13 @@ const DepartmentTodosPage = () => {
       setLoading(true);
       const orgId = localStorage.getItem('impersonatedOrgId') || user?.organizationId || user?.organization_id;
       
+      // Use the department's first team ID if available, otherwise use department ID
+      const teamId = department.teams && department.teams.length > 0 
+        ? department.teams[0].id 
+        : department.id;
+      
       // Fetch department-specific todos
-      const data = await todosService.getTodos(orgId, department.id);
+      const data = await todosService.getTodos(orgId, teamId);
       setTodos(data.todos || []);
     } catch (error) {
       console.error('Error fetching department todos:', error);
