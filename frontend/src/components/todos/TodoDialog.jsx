@@ -273,12 +273,18 @@ const TodoDialog = ({ open, onOpenChange, todo, teamMembers, onSave }) => {
                 </div>
               )}
               
-              <Input
-                type="file"
-                multiple
-                onChange={handleFileChange}
-                className="cursor-pointer"
-              />
+              <label className="block">
+                <input
+                  type="file"
+                  multiple
+                  onChange={handleFileChange}
+                  className="hidden"
+                />
+                <div className="cursor-pointer border-2 border-dashed border-gray-300 rounded-lg p-4 text-center hover:border-indigo-500 transition-colors">
+                  <Paperclip className="h-8 w-8 mx-auto mb-2 text-gray-400" />
+                  <p className="text-sm text-gray-600">Click here to choose files</p>
+                </div>
+              </label>
               <p className="text-xs text-gray-500">Max file size: 10MB</p>
             </div>
           </div>
