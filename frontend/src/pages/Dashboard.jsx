@@ -61,7 +61,7 @@ const Dashboard = () => {
       // Fetch all data in parallel
       const [prioritiesResponse, todosResponse, issuesResponse] = await Promise.all([
         quarterlyPrioritiesService.getCurrentPriorities(orgId, teamId),
-        todosService.getTodos('all'),
+        todosService.getTodos(null, null, true), // status=null, assignedTo=null, includeCompleted=true
         issuesService.getIssues()
       ]);
       
@@ -83,24 +83,10 @@ const Dashboard = () => {
       }
       
       // Process todos - only user's todos
-      console.log('[Dashboard] Todos response:', todosResponse);
-      console.log('[Dashboard] Todos data:', todosResponse.data);
-      console.log('[Dashboard] All todos:', todosResponse.data.todos);
-      console.log('[Dashboard] First todo:', todosResponse.data.todos?.[0]);
-      console.log('[Dashboard] Current user ID:', user.id);
-      
       const userTodos = todosResponse.data.todos.filter(todo => {
         const assignedToId = todo.assignedTo?.id || todo.assigned_to?.id || todo.assigned_to_id;
         const isAssignedToUser = assignedToId === user.id;
         const isNotCompleted = todo.status !== 'completed' && todo.status !== 'complete';
-        console.log('[Dashboard] Todo filter check:', {
-          todo_id: todo.id,
-          assignedToId,
-          user_id: user.id,
-          isAssignedToUser,
-          status: todo.status,
-          isNotCompleted
-        });
         return isAssignedToUser && isNotCompleted;
       });
       
@@ -108,22 +94,11 @@ const Dashboard = () => {
       const today = new Date();
       today.setHours(0, 0, 0, 0);
       
-      // Debug logging
-      console.log('[Dashboard] User todos:', userTodos);
-      console.log('[Dashboard] Sample todo:', userTodos[0]);
-      
       const overdueTodos = userTodos.filter(todo => {
-        if (!todo.due_date) {
-          console.log('[Dashboard] Todo missing due_date:', todo);
-          return false;
-        }
+        if (!todo.due_date) return false;
         const dueDate = new Date(todo.due_date);
-        const isOverdue = dueDate < today;
-        console.log('[Dashboard] Todo due_date:', todo.due_date, 'isOverdue:', isOverdue);
-        return isOverdue;
+        return dueDate < today;
       }).length;
-      
-      console.log('[Dashboard] Overdue todos count:', overdueTodos);
       
       // Process issues - count short term issues
       const shortTermIssues = issuesResponse.data.issues.filter(issue => 
