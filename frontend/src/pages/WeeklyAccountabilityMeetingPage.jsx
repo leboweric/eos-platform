@@ -18,7 +18,9 @@ import {
   ListTodo,
   AlertTriangle,
   CheckSquare,
-  ArrowLeftRight
+  ArrowLeftRight,
+  ChevronDown,
+  ChevronRight
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import ScorecardTable from '../components/scorecard/ScorecardTable';
@@ -53,6 +55,12 @@ const WeeklyAccountabilityMeetingPage = () => {
   // Dialog states
   const [showIssueDialog, setShowIssueDialog] = useState(false);
   const [editingIssue, setEditingIssue] = useState(null);
+  
+  // Collapsible sections state
+  const [expandedSections, setExpandedSections] = useState({
+    companyPriorities: false,
+    individualPriorities: {}
+  });
   const [isRTL, setIsRTL] = useState(() => {
     // Load RTL preference from localStorage
     const saved = localStorage.getItem('scorecardRTL');
@@ -247,6 +255,24 @@ const WeeklyAccountabilityMeetingPage = () => {
     }
   };
 
+  // Toggle functions for collapsible sections
+  const toggleCompanyPriorities = () => {
+    setExpandedSections(prev => ({
+      ...prev,
+      companyPriorities: !prev.companyPriorities
+    }));
+  };
+
+  const toggleIndividualPriorities = (memberId) => {
+    setExpandedSections(prev => ({
+      ...prev,
+      individualPriorities: {
+        ...prev.individualPriorities,
+        [memberId]: !prev.individualPriorities[memberId]
+      }
+    }));
+  };
+
   const fetchTodosData = async () => {
     try {
       setLoading(true);
@@ -408,39 +434,57 @@ const WeeklyAccountabilityMeetingPage = () => {
                 </CardContent>
               </Card>
             ) : (
-              <>
-                {/* Company Priorities */}
-                {priorities.filter(p => p.priority_type === 'company').length > 0 && (
-                  <div className="space-y-4">
-                    <h3 className="text-lg font-semibold flex items-center gap-2">
-                      <Target className="h-5 w-5 text-blue-600" />
-                      Company Priorities
-                    </h3>
-                    {priorities.filter(p => p.priority_type === 'company').map(priority => (
-                      <PriorityCard 
-                        key={priority.id} 
-                        priority={priority} 
-                        readOnly={false}
-                        onIssueCreated={(message) => {
-                          setSuccess(message);
-                          setTimeout(() => setSuccess(null), 3000);
-                        }}
-                        onStatusChange={(priorityId, newStatus) => {
-                          // Update the priority in local state
-                          setPriorities(prev => 
-                            prev.map(p => 
-                              p.id === priorityId ? { ...p, status: newStatus } : p
-                            )
-                          );
-                          setSuccess(`Priority status updated to ${newStatus}`);
-                          setTimeout(() => setSuccess(null), 3000);
-                        }}
-                      />
-                    ))}
-                  </div>
-                )}
+              <div className="space-y-6">
+                {/* Company Priorities Section */}
+                {(() => {
+                  const companyPriorities = priorities.filter(p => p.priority_type === 'company');
+                  return companyPriorities.length > 0 && (
+                    <div>
+                      <div 
+                        className="flex items-center justify-between p-4 bg-gray-50 rounded-lg cursor-pointer hover:bg-gray-100 transition-colors"
+                        onClick={toggleCompanyPriorities}
+                      >
+                        <div className="flex items-center gap-3">
+                          {expandedSections.companyPriorities ? (
+                            <ChevronDown className="h-5 w-5 text-gray-600" />
+                          ) : (
+                            <ChevronRight className="h-5 w-5 text-gray-600" />
+                          )}
+                          <Target className="h-5 w-5 text-blue-600" />
+                          <h3 className="text-lg font-semibold">
+                            Company Priorities ({companyPriorities.length})
+                          </h3>
+                        </div>
+                      </div>
+                      {expandedSections.companyPriorities && (
+                        <div className="space-y-4 ml-7 mt-4">
+                          {companyPriorities.map(priority => (
+                            <PriorityCard 
+                              key={priority.id} 
+                              priority={priority} 
+                              readOnly={false}
+                              onIssueCreated={(message) => {
+                                setSuccess(message);
+                                setTimeout(() => setSuccess(null), 3000);
+                              }}
+                              onStatusChange={(priorityId, newStatus) => {
+                                setPriorities(prev => 
+                                  prev.map(p => 
+                                    p.id === priorityId ? { ...p, status: newStatus } : p
+                                  )
+                                );
+                                setSuccess(`Priority status updated to ${newStatus}`);
+                                setTimeout(() => setSuccess(null), 3000);
+                              }}
+                            />
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  );
+                })()}
                 
-                {/* Individual Priorities grouped by owner */}
+                {/* Individual Priorities Section */}
                 {(() => {
                   const individualPriorities = priorities.filter(p => p.priority_type !== 'company');
                   const groupedByOwner = individualPriorities.reduce((acc, priority) => {
@@ -453,44 +497,62 @@ const WeeklyAccountabilityMeetingPage = () => {
                   }, {});
                   
                   return Object.keys(groupedByOwner).length > 0 && (
-                    <div className="space-y-6">
-                      <h3 className="text-lg font-semibold flex items-center gap-2">
+                    <div className="space-y-4">
+                      <div className="flex items-center gap-3 p-4 bg-gray-50 rounded-lg">
                         <Target className="h-5 w-5 text-purple-600" />
-                        Individual Priorities
-                      </h3>
+                        <h3 className="text-lg font-semibold">
+                          Individual Priorities ({individualPriorities.length})
+                        </h3>
+                      </div>
                       {Object.entries(groupedByOwner).map(([ownerId, ownerPriorities]) => {
                         const owner = ownerPriorities[0]?.owner;
+                        const isExpanded = expandedSections.individualPriorities[ownerId];
                         return (
-                          <div key={ownerId} className="space-y-4">
-                            <h4 className="text-md font-medium">{owner?.name || 'Unassigned'}</h4>
-                            {ownerPriorities.map(priority => (
-                              <PriorityCard 
-                                key={priority.id} 
-                                priority={priority} 
-                                readOnly={false}
-                                onIssueCreated={(message) => {
-                                  setSuccess(message);
-                                  setTimeout(() => setSuccess(null), 3000);
-                                }}
-                                onStatusChange={(priorityId, newStatus) => {
-                                  // Update the priority in local state
-                                  setPriorities(prev => 
-                                    prev.map(p => 
-                                      p.id === priorityId ? { ...p, status: newStatus } : p
-                                    )
-                                  );
-                                  setSuccess(`Priority status updated to ${newStatus}`);
-                                  setTimeout(() => setSuccess(null), 3000);
-                                }}
-                              />
-                            ))}
+                          <div key={ownerId} className="ml-7">
+                            <div 
+                              className="flex items-center gap-3 p-3 bg-white border rounded-lg cursor-pointer hover:bg-gray-50 transition-colors"
+                              onClick={() => toggleIndividualPriorities(ownerId)}
+                            >
+                              {isExpanded ? (
+                                <ChevronDown className="h-4 w-4 text-gray-600" />
+                              ) : (
+                                <ChevronRight className="h-4 w-4 text-gray-600" />
+                              )}
+                              <h4 className="text-md font-medium">
+                                {owner?.name || 'Unassigned'} ({ownerPriorities.length})
+                              </h4>
+                            </div>
+                            {isExpanded && (
+                              <div className="space-y-4 ml-7 mt-4">
+                                {ownerPriorities.map(priority => (
+                                  <PriorityCard 
+                                    key={priority.id} 
+                                    priority={priority} 
+                                    readOnly={false}
+                                    onIssueCreated={(message) => {
+                                      setSuccess(message);
+                                      setTimeout(() => setSuccess(null), 3000);
+                                    }}
+                                    onStatusChange={(priorityId, newStatus) => {
+                                      setPriorities(prev => 
+                                        prev.map(p => 
+                                          p.id === priorityId ? { ...p, status: newStatus } : p
+                                        )
+                                      );
+                                      setSuccess(`Priority status updated to ${newStatus}`);
+                                      setTimeout(() => setSuccess(null), 3000);
+                                    }}
+                                  />
+                                ))}
+                              </div>
+                            )}
                           </div>
                         );
                       })}
                     </div>
                   );
                 })()}
-              </>
+              </div>
             )}
           </div>
         );
