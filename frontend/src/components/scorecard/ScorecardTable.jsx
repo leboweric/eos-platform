@@ -110,9 +110,8 @@ const ScorecardTable = ({ metrics, weeklyScores, readOnly = false, onIssueCreate
       const issueData = {
         title: `${metric.name} - Off Track`,
         description: `Metric "${metric.name}" is off track. Current: ${formatValue(actualValue, metric.value_type)}, Goal: ${formatGoal(metric.goal, metric.value_type)}`,
-        category: 'short-term',
-        priority: 'high',
-        assignedToId: metric.ownerId || user?.id
+        timeline: 'short_term',
+        ownerId: metric.ownerId || null
       };
       
       await issuesService.createIssue(issueData);
@@ -254,7 +253,7 @@ const ScorecardTable = ({ metrics, weeklyScores, readOnly = false, onIssueCreate
                       // Current week is always the last in original order
                       const originalIndex = isRTL ? weekDates.length - 1 - index : index;
                       const isCurrentWeek = originalIndex === weekDatesOriginal.length - 1;
-                      const showCreateIssue = !readOnly && isCurrentWeek && score && !goalMet;
+                      const showCreateIssue = isCurrentWeek && score && !goalMet;
                       
                       return (
                         <td key={weekDate} className="p-2 text-center group">
