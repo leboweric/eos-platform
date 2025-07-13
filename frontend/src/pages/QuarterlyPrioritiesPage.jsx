@@ -731,7 +731,7 @@ const QuarterlyPrioritiesPage = () => {
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
-                      {(teamMembers || []).map(member => (
+                      {(teamMembers || []).filter(member => member.id).map(member => (
                         <SelectItem key={member.id} value={member.id}>
                           {member.name}
                         </SelectItem>
@@ -1022,14 +1022,14 @@ const QuarterlyPrioritiesPage = () => {
               <div>
                 <Label htmlFor="statusChange">Update Status (optional)</Label>
                 <Select
-                  value={updateStatusChange || ''}
-                  onValueChange={(value) => setUpdateStatusChange(value || null)}
+                  value={updateStatusChange || 'no-change'}
+                  onValueChange={(value) => setUpdateStatusChange(value === 'no-change' ? null : value)}
                 >
                   <SelectTrigger>
                     <SelectValue placeholder="Keep current status" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="">Keep current status</SelectItem>
+                    <SelectItem value="no-change">Keep current status</SelectItem>
                     <SelectItem value="on-track">On Track</SelectItem>
                     <SelectItem value="off-track">Off Track</SelectItem>
                     <SelectItem value="complete">Complete</SelectItem>
@@ -1545,7 +1545,7 @@ const QuarterlyPrioritiesPage = () => {
                   </SelectTrigger>
                   <SelectContent>
                     {(teamMembers || []).length > 0 ? (
-                      teamMembers.map(member => (
+                      teamMembers.filter(member => member.id).map(member => (
                         <SelectItem key={member.id} value={member.id}>
                           {member.name}
                         </SelectItem>
