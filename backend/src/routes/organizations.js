@@ -11,7 +11,13 @@ import {
 
 const router = express.Router();
 
-// All routes require authentication
+// Public routes (no authentication required)
+// @route   GET /api/v1/organizations/:orgId/logo
+// @desc    Get organization logo
+// @access  Public (for display purposes)
+router.get('/:orgId/logo', getLogo);
+
+// Protected routes (authentication required)
 router.use(authenticate);
 
 // @route   GET /api/v1/organizations/current
@@ -28,11 +34,6 @@ router.put('/current', updateOrganization);
 // @desc    Upload organization logo
 // @access  Private (Admin only)
 router.post('/current/logo', upload.single('logo'), uploadLogo);
-
-// @route   GET /api/v1/organizations/:orgId/logo
-// @desc    Get organization logo
-// @access  Public (for display purposes)
-router.get('/:orgId/logo', getLogo);
 
 // @route   DELETE /api/v1/organizations/current/logo
 // @desc    Delete organization logo
