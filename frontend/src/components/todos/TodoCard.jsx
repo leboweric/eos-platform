@@ -20,12 +20,6 @@ import { todosService } from '../../services/todosService';
 const TodoCard = ({ todo, onEdit, onDelete, onUpdate }) => {
   const [updating, setUpdating] = useState(false);
 
-  const priorityColors = {
-    low: 'bg-blue-100 text-blue-700 border-blue-200',
-    medium: 'bg-yellow-100 text-yellow-700 border-yellow-200',
-    high: 'bg-orange-100 text-orange-700 border-orange-200',
-    urgent: 'bg-red-100 text-red-700 border-red-200'
-  };
 
   const statusIcons = {
     incomplete: <Circle className="h-4 w-4" />,
@@ -95,10 +89,6 @@ const TodoCard = ({ todo, onEdit, onDelete, onUpdate }) => {
       
       <CardContent>
         <div className="flex items-center gap-4 text-sm">
-          <Badge variant="outline" className={priorityColors[todo.priority]}>
-            {todo.priority}
-          </Badge>
-          
           {dueDate && (
             <div className={`flex items-center gap-1 ${isOverdue ? 'text-red-600' : 'text-gray-500'}`}>
               <Calendar className="h-4 w-4" />

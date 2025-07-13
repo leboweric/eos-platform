@@ -19,6 +19,10 @@ build/
 */dist/
 */build/
 
+# Uploaded files
+backend/uploads/
+uploads/
+
 # IDE
 .vscode/
 .idea/
@@ -42,3 +46,7 @@ coverage/
 *.pem
 .cache/
 .parcel-cache/
+
+# Uploads
+backend/uploads/
+uploads/

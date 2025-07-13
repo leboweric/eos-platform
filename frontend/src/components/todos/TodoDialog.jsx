@@ -14,7 +14,6 @@ const TodoDialog = ({ open, onOpenChange, todo, teamMembers, onSave }) => {
     title: '',
     description: '',
     assignedToId: '',
-    priority: 'medium',
     dueDate: ''
   });
   const [saving, setSaving] = useState(false);
@@ -29,7 +28,6 @@ const TodoDialog = ({ open, onOpenChange, todo, teamMembers, onSave }) => {
         title: todo.title || '',
         description: todo.description || '',
         assignedToId: todo.assigned_to_id || todo.assignee_id || '',
-        priority: todo.priority || 'medium',
         dueDate: todo.due_date ? new Date(todo.due_date).toISOString().split('T')[0] : ''
       });
       
@@ -55,6 +53,8 @@ const TodoDialog = ({ open, onOpenChange, todo, teamMembers, onSave }) => {
       setExistingAttachments(attachments);
     } catch (error) {
       console.error('Failed to load attachments:', error);
+      // Silently fail for now until migration runs
+      setExistingAttachments([]);
     } finally {
       setLoadingAttachments(false);
     }
@@ -70,12 +70,29 @@ const TodoDialog = ({ open, onOpenChange, todo, teamMembers, onSave }) => {
       
       // Upload any new files
       if (savedTodo && savedTodo.id && files.length > 0) {
+        const uploadErrors = [];
+        let successfulUploads = 0;
+        
         for (const file of files) {
           try {
             await todosService.uploadAttachment(savedTodo.id, file);
+            successfulUploads++;
           } catch (uploadError) {
             console.error('Failed to upload file:', file.name, uploadError);
+            uploadErrors.push(`Failed to upload ${file.name}`);
           }
+        }
+        
+        // If there were upload errors, show them but don't prevent dialog close
+        if (uploadErrors.length > 0) {
+          setError(`Todo saved but some attachments failed: ${uploadErrors.join(', ')}`);
+          // Don't close dialog if all uploads failed
+          if (successfulUploads === 0) {
+            setSaving(false);
+            return;
+          }
+          // Clear error after 5 seconds if some uploads succeeded
+          setTimeout(() => setError(null), 5000);
         }
       }
       
@@ -111,12 +128,6 @@ const TodoDialog = ({ open, onOpenChange, todo, teamMembers, onSave }) => {
     }
   };
 
-  const priorityColors = {
-    low: 'text-blue-600',
-    medium: 'text-yellow-600',
-    high: 'text-orange-600',
-    urgent: 'text-red-600'
-  };
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -159,7 +170,7 @@ const TodoDialog = ({ open, onOpenChange, todo, teamMembers, onSave }) => {
               />
             </div>
 
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 gap-4">
               <div className="space-y-2">
                 <Label htmlFor="assignedTo">
                   <User className="inline-block h-4 w-4 mr-1" />
@@ -182,23 +193,6 @@ const TodoDialog = ({ open, onOpenChange, todo, teamMembers, onSave }) => {
                 </Select>
               </div>
 
-              <div className="space-y-2">
-                <Label htmlFor="priority">Priority</Label>
-                <Select 
-                  value={formData.priority} 
-                  onValueChange={(value) => setFormData({ ...formData, priority: value })}
-                >
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="low" className={priorityColors.low}>Low</SelectItem>
-                    <SelectItem value="medium" className={priorityColors.medium}>Medium</SelectItem>
-                    <SelectItem value="high" className={priorityColors.high}>High</SelectItem>
-                    <SelectItem value="urgent" className={priorityColors.urgent}>Urgent</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
             </div>
 
             <div className="space-y-2">
@@ -216,13 +210,13 @@ const TodoDialog = ({ open, onOpenChange, todo, teamMembers, onSave }) => {
               <p className="text-xs text-gray-500">Defaults to 7 days from creation</p>
             </div>
 
+            {/* Attachments section */}
             <div className="space-y-2">
               <Label>
                 <Paperclip className="inline-block h-4 w-4 mr-1" />
                 Attachments
               </Label>
               
-              {/* Existing attachments */}
               {existingAttachments.length > 0 && (
                 <div className="space-y-2">
                   {existingAttachments.map(attachment => (
@@ -241,7 +235,6 @@ const TodoDialog = ({ open, onOpenChange, todo, teamMembers, onSave }) => {
                 </div>
               )}
               
-              {/* New files to upload */}
               {files.length > 0 && (
                 <div className="space-y-2">
                   {files.map((file, index) => (

@@ -31,8 +31,14 @@ import { notFound } from './middleware/notFound.js';
 // Import jobs
 import { initializeSubscriptionJobs } from './jobs/subscriptionJobs.js';
 
+// Import utilities
+import { ensureUploadsDirectory } from './utils/ensureUploadsDirectory.js';
+
 // Load environment variables
 dotenv.config();
+
+// Ensure uploads directory exists
+ensureUploadsDirectory();
 
 const app = express();
 const PORT = process.env.PORT || 3001;

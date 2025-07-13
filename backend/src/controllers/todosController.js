@@ -84,7 +84,7 @@ export const getTodos = async (req, res) => {
 export const createTodo = async (req, res) => {
   try {
     const { orgId } = req.params;
-    const { title, description, assignedToId, priority, dueDate, teamId } = req.body;
+    const { title, description, assignedToId, dueDate, teamId } = req.body;
     const userId = req.user.id;
 
     // Calculate default due date (7 days from now) if not provided
@@ -99,7 +99,7 @@ export const createTodo = async (req, res) => {
       RETURNING *`,
       [
         todoId, orgId, teamId || null, userId, assignedToId || userId,
-        title, description, finalDueDate, priority || 'medium', 'incomplete'
+        title, description, finalDueDate, 'medium', 'incomplete'
       ]
     );
 
@@ -141,7 +141,7 @@ export const createTodo = async (req, res) => {
 export const updateTodo = async (req, res) => {
   try {
     const { orgId, todoId } = req.params;
-    const { title, description, assignedToId, priority, dueDate, status } = req.body;
+    const { title, description, assignedToId, dueDate, status } = req.body;
     const userId = req.user.id;
 
     // Check if todo exists and belongs to the organization
@@ -177,12 +177,6 @@ export const updateTodo = async (req, res) => {
     if (assignedToId !== undefined) {
       updates.push(`assigned_to_id = $${paramIndex}`);
       values.push(assignedToId);
-      paramIndex++;
-    }
-
-    if (priority !== undefined) {
-      updates.push(`priority = $${paramIndex}`);
-      values.push(priority);
       paramIndex++;
     }
 
@@ -230,7 +224,7 @@ export const updateTodo = async (req, res) => {
         assignee.first_name as assignee_first_name,
         assignee.last_name as assignee_last_name,
         assignee.email as assignee_email,
-        (SELECT COUNT(*) FROM todo_attachments WHERE todo_id = t.id) as attachment_count
+        0 as attachment_count
       FROM todos t
       LEFT JOIN users owner ON t.owner_id = owner.id
       LEFT JOIN users assignee ON t.assigned_to_id = assignee.id

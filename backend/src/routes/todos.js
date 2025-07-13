@@ -3,6 +3,9 @@ import { body, param, query } from 'express-validator';
 import { authenticate } from '../middleware/auth.js';
 import multer from 'multer';
 import path from 'path';
+import fs from 'fs';
+import { fileURLToPath } from 'url';
+import { dirname } from 'path';
 import {
   getTodos,
   createTodo,
@@ -15,10 +18,20 @@ import {
 
 const router = express.Router({ mergeParams: true });
 
+// Get the directory name for ES modules
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = dirname(__filename);
+
+// Ensure upload directory exists
+const uploadDir = path.join(__dirname, '..', '..', 'uploads', 'todos');
+if (!fs.existsSync(uploadDir)) {
+  fs.mkdirSync(uploadDir, { recursive: true });
+}
+
 // Configure multer for file uploads
 const storage = multer.diskStorage({
   destination: function (req, file, cb) {
-    cb(null, 'uploads/todos/')
+    cb(null, uploadDir)
   },
   filename: function (req, file, cb) {
     const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
@@ -48,7 +61,6 @@ router.post('/', [
   body('title').notEmpty().withMessage('Title is required'),
   body('description').optional(),
   body('assignedToId').optional().isUUID(),
-  body('priority').optional().isIn(['low', 'medium', 'high', 'urgent']),
   body('dueDate').optional().isISO8601(),
   body('teamId').optional().isUUID()
 ], createTodo);
@@ -59,7 +71,6 @@ router.put('/:todoId', [
   body('title').optional().notEmpty(),
   body('description').optional(),
   body('assignedToId').optional().isUUID(),
-  body('priority').optional().isIn(['low', 'medium', 'high', 'urgent']),
   body('dueDate').optional().isISO8601(),
   body('status').optional().isIn(['incomplete', 'complete', 'cancelled'])
 ], updateTodo);
@@ -74,7 +85,7 @@ router.post('/:todoId/attachments', [
   param('todoId').isUUID()
 ], upload.single('file'), uploadTodoAttachment);
 
-// Get attachments for a todo
+// Get attachments for a todo  
 router.get('/:todoId/attachments', [
   param('todoId').isUUID()
 ], getTodoAttachments);
