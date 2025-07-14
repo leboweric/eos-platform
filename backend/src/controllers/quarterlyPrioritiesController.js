@@ -144,7 +144,6 @@ export const getQuarterlyPriorities = async (req, res) => {
           ) FILTER (WHERE m.id IS NOT NULL) as milestones
          FROM quarterly_priorities p
          LEFT JOIN users u ON p.owner_id = u.id
-         LEFT JOIN users pub ON p.published_by = pub.id
          LEFT JOIN priority_milestones m ON p.id = m.priority_id
          LEFT JOIN teams t ON p.team_id = t.id
          WHERE p.organization_id = $1::uuid 
@@ -911,22 +910,11 @@ export const getArchivedPriorities = async (req, res) => {
        WHERE p.organization_id = $1::uuid 
          AND p.deleted_at IS NOT NULL
          AND (
-           -- If accessing Leadership Team (00000000...), show Leadership priorities
-           ($2::uuid = '00000000-0000-0000-0000-000000000000'::uuid AND (
-             p.team_id = '00000000-0000-0000-0000-000000000000'::uuid OR 
-             p.team_id IS NULL OR 
-             t.is_leadership_team = true
-           ))
-           -- If accessing a department, show department priorities and published Leadership priorities
-           OR ($2::uuid != '00000000-0000-0000-0000-000000000000'::uuid AND (
-             p.team_id = $2::uuid OR
-             (CASE 
-               WHEN p.team_id = '00000000-0000-0000-0000-000000000000'::uuid THEN p.is_published_to_departments = true
-               WHEN p.team_id IS NULL THEN p.is_published_to_departments = true
-               WHEN t.is_leadership_team = true THEN p.is_published_to_departments = true
-               ELSE false
-             END)
-           ))
+           -- NINETY.IO MODEL: Leadership sees ALL data, Departments see all departments (not Leadership)
+           ($2::uuid = '00000000-0000-0000-0000-000000000000'::uuid) OR
+           ($2::uuid != '00000000-0000-0000-0000-000000000000'::uuid AND 
+            p.team_id != '00000000-0000-0000-0000-000000000000'::uuid AND
+            p.team_id IS NOT NULL)
          )
        GROUP BY p.id, u.first_name, u.last_name, u.email, t.is_leadership_team
        ORDER BY p.deleted_at DESC, p.is_company_priority DESC, p.created_at`,
@@ -1052,27 +1040,15 @@ export const getCurrentPriorities = async (req, res) => {
         END as is_from_leadership
       FROM quarterly_priorities p
       LEFT JOIN users u ON p.owner_id = u.id
-      LEFT JOIN users pub ON p.published_by = pub.id
       LEFT JOIN teams t ON p.team_id = t.id
       WHERE p.organization_id = $1 
       AND p.deleted_at IS NULL
       AND (
-        -- If accessing Leadership Team (00000000...), show Leadership priorities
-        ($2::uuid = '00000000-0000-0000-0000-000000000000'::uuid AND (
-          p.team_id = '00000000-0000-0000-0000-000000000000'::uuid OR 
-          p.team_id IS NULL OR 
-          t.is_leadership_team = true
-        ))
-        -- If accessing a department, show department priorities and published Leadership priorities
-        OR ($2::uuid != '00000000-0000-0000-0000-000000000000'::uuid AND (
-          p.team_id = $2::uuid OR
-          (CASE 
-            WHEN p.team_id = '00000000-0000-0000-0000-000000000000'::uuid THEN p.is_published_to_departments = true
-            WHEN p.team_id IS NULL THEN p.is_published_to_departments = true
-            WHEN t.is_leadership_team = true THEN p.is_published_to_departments = true
-            ELSE false
-          END)
-        ))
+        -- NINETY.IO MODEL: Leadership sees ALL data, Departments see all departments (not Leadership)
+        ($2::uuid = '00000000-0000-0000-0000-000000000000'::uuid) OR
+        ($2::uuid != '00000000-0000-0000-0000-000000000000'::uuid AND 
+         p.team_id != '00000000-0000-0000-0000-000000000000'::uuid AND
+         p.team_id IS NOT NULL)
       )
       ORDER BY p.is_company_priority DESC, p.created_at ASC
     `;
@@ -1164,10 +1140,8 @@ export const getCurrentPriorities = async (req, res) => {
         owner_last_name: priority.owner_last_name,
         latestUpdate: updatesByPriority[priority.id] || null,
         isCompanyPriority: priority.is_company_priority,
-        isPublishedToDepartments: priority.is_published_to_departments,
-        publishedAt: priority.published_at,
-        publishedBy: priority.published_by,
-        publishedByName: priority.published_by_name
+        teamName: priority.team_name,
+        isFromLeadership: priority.team_id === '00000000-0000-0000-0000-000000000000'
       };
       
       console.log(`Processing priority: ${priority.title}, is_company_priority: ${priority.is_company_priority}, owner_id: ${priority.owner_id}, deleted_at: ${priority.deleted_at}`);

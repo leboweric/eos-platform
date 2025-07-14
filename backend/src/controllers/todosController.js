@@ -55,13 +55,13 @@ export const getTodos = async (req, res) => {
         assignee.first_name as assignee_first_name,
         assignee.last_name as assignee_last_name,
         assignee.email as assignee_email,
-        pub.first_name || ' ' || pub.last_name as published_by_name,
+        tm.name as team_name,
         (SELECT COUNT(*) FROM todo_attachments WHERE todo_id = t.id) as attachment_count,
         (SELECT COUNT(*) FROM todo_comments WHERE todo_id = t.id) as comment_count
       FROM todos t
       LEFT JOIN users owner ON t.owner_id = owner.id
       LEFT JOIN users assignee ON t.assigned_to_id = assignee.id
-      LEFT JOIN users pub ON t.published_by = pub.id
+      LEFT JOIN teams tm ON t.team_id = tm.id
       WHERE ${conditions.join(' AND ')}
       ORDER BY t.due_date ASC, t.priority DESC, t.created_at DESC`,
       params
@@ -81,10 +81,7 @@ export const getTodos = async (req, res) => {
       data: {
         todos: todosResult.rows.map(todo => ({
           ...todo,
-          isPublishedToDepartments: todo.is_published_to_departments,
-          publishedAt: todo.published_at,
-          publishedBy: todo.published_by,
-          publishedByName: todo.published_by_name
+          teamName: todo.team_name
         })),
         teamMembers: teamMembersResult.rows
       }

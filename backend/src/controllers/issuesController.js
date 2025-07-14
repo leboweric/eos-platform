@@ -53,19 +53,14 @@ export const getIssues = async (req, res) => {
         i.updated_at,
         i.archived,
         i.vote_count,
-        i.is_published_to_departments,
-        i.published_at,
-        i.published_by,
         creator.first_name || ' ' || creator.last_name as created_by_name,
         owner.first_name || ' ' || owner.last_name as owner_name,
-        pub.first_name || ' ' || pub.last_name as published_by_name,
         t.name as team_name,
         COUNT(DISTINCT ia.id) as attachment_count,
         EXISTS(SELECT 1 FROM issue_votes iv WHERE iv.issue_id = i.id AND iv.user_id = $2) as user_has_voted
       FROM issues i
       LEFT JOIN users creator ON i.created_by_id = creator.id
       LEFT JOIN users owner ON i.owner_id = owner.id
-      LEFT JOIN users pub ON i.published_by = pub.id
       LEFT JOIN teams t ON i.team_id = t.id
       LEFT JOIN issue_attachments ia ON ia.issue_id = i.id
       WHERE i.organization_id = $1
@@ -96,7 +91,7 @@ export const getIssues = async (req, res) => {
       query += ` AND i.team_id != '00000000-0000-0000-0000-000000000000' AND i.team_id IS NOT NULL`;
     }
     
-    query += ` GROUP BY i.id, creator.first_name, creator.last_name, owner.first_name, owner.last_name, pub.first_name, pub.last_name, t.name
+    query += ` GROUP BY i.id, creator.first_name, creator.last_name, owner.first_name, owner.last_name, t.name
                ORDER BY i.priority_rank ASC, i.created_at DESC`;
     
     const issues = await db.query(query, params);
@@ -109,10 +104,7 @@ export const getIssues = async (req, res) => {
       data: {
         issues: issues.rows.map(issue => ({
           ...issue,
-          isPublishedToDepartments: issue.is_published_to_departments,
-          publishedAt: issue.published_at,
-          publishedBy: issue.published_by,
-          publishedByName: issue.published_by_name
+          teamName: issue.team_name
         })),
         teamMembers
       }
