@@ -1,6 +1,7 @@
 import db from '../config/database.js';
 import multer from 'multer';
 import { v4 as uuidv4 } from 'uuid';
+import { getUserTeamContext } from '../utils/teamUtils.js';
 
 // Configure multer for memory storage
 const storage = multer.memoryStorage();
@@ -34,6 +35,11 @@ export const getIssues = async (req, res) => {
   try {
     const { orgId } = req.params;
     const { timeline, includeArchived } = req.query; // 'short_term' or 'long_term', includeArchived=true to show only archived
+    const userId = req.user.id;
+    
+    // Get user's team context
+    const userTeam = await getUserTeamContext(userId, orgId);
+    console.log('User team context for issues:', userTeam);
     
     let query = `
       SELECT 
@@ -82,19 +88,26 @@ export const getIssues = async (req, res) => {
       paramCount++;
     }
     
-    // NINETY.IO FILTERING: Add team-based visibility
-    if (req.params.teamId === '00000000-0000-0000-0000-000000000000') {
-      // Leadership Team sees ALL issues
-      query += ` AND 1 = 1`; // No additional filtering
+    // NINETY.IO MODEL: Apply team-based visibility
+    if (userTeam && userTeam.is_leadership_team) {
+      // Leadership sees ALL data (Leadership + all departments)
+      console.log('User is on leadership team - showing all issues');
+      // No additional filtering needed - show all issues
     } else {
-      // Departments see ALL department issues (exclude Leadership)
-      query += ` AND i.team_id != '00000000-0000-0000-0000-000000000000' AND i.team_id IS NOT NULL`;
+      // Departments see all departments (but NOT Leadership)
+      console.log('User is not on leadership team - filtering out leadership issues');
+      query += ` AND (i.team_id != '00000000-0000-0000-0000-000000000000'::uuid OR i.team_id IS NULL)`;
     }
     
     query += ` GROUP BY i.id, creator.first_name, creator.last_name, owner.first_name, owner.last_name, t.name
                ORDER BY i.priority_rank ASC, i.created_at DESC`;
     
+    console.log('Issues query:', query);
+    console.log('Issues query params:', params);
+    
     const issues = await db.query(query, params);
+    
+    console.log(`Found ${issues.rows.length} issues for org ${orgId}`);
     
     // Get team members for the organization
     const teamMembers = await getTeamMembers(orgId);

@@ -2,6 +2,7 @@ import { query } from '../config/database.js';
 import { v4 as uuidv4 } from 'uuid';
 import path from 'path';
 import fs from 'fs';
+import { getUserTeamContext } from '../utils/teamUtils.js';
 
 // @desc    Get all todos for an organization
 // @route   GET /api/v1/organizations/:orgId/todos
@@ -11,6 +12,10 @@ export const getTodos = async (req, res) => {
     const { orgId, teamId } = req.params;
     const { status, assignedTo, includeCompleted } = req.query;
     const userId = req.user.id;
+
+    // Get user's team context
+    const userTeam = await getUserTeamContext(userId, orgId);
+    console.log('User team context for todos:', userTeam);
 
     // Build query conditions
     let conditions = ['t.organization_id = $1'];
@@ -33,14 +38,15 @@ export const getTodos = async (req, res) => {
       paramIndex++;
     }
     
-    // NINETY.IO FILTERING: Add team-based visibility
-    if (teamId === '00000000-0000-0000-0000-000000000000') {
-      // Leadership Team sees ALL todos
-      // No additional filtering needed
+    // NINETY.IO MODEL: Apply team-based visibility
+    if (userTeam && userTeam.is_leadership_team) {
+      // Leadership sees ALL data (Leadership + all departments)
+      console.log('User is on leadership team - showing all todos');
+      // No additional filtering needed - show all todos
     } else {
-      // Departments see ALL department todos (exclude Leadership)
-      conditions.push(`t.team_id != '00000000-0000-0000-0000-000000000000'`);
-      conditions.push(`t.team_id IS NOT NULL`);
+      // Departments see all departments (but NOT Leadership)
+      console.log('User is not on leadership team - filtering out leadership todos');
+      conditions.push(`(t.team_id != '00000000-0000-0000-0000-000000000000'::uuid OR t.team_id IS NULL)`);
     }
 
     // Get todos with owner and assignee information
@@ -66,6 +72,10 @@ export const getTodos = async (req, res) => {
       ORDER BY t.due_date ASC, t.priority DESC, t.created_at DESC`,
       params
     );
+
+    console.log('Todos query conditions:', conditions.join(' AND '));
+    console.log('Todos query params:', params);
+    console.log(`Found ${todosResult.rows.length} todos for org ${orgId}`);
 
     // Get team members for the dropdown
     const teamMembersResult = await query(

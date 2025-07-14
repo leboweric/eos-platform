@@ -1,5 +1,61 @@
 import db from '../config/database.js';
 
+// Get user's team context for Ninety.io model
+export const getUserTeamContext = async (userId, organizationId) => {
+  try {
+    // First check if team_members table exists and has data
+    const teamMembersCheck = await db.query(`
+      SELECT EXISTS (
+        SELECT 1 
+        FROM information_schema.tables 
+        WHERE table_name = 'team_members'
+      ) as table_exists
+    `);
+    
+    if (teamMembersCheck.rows[0].table_exists) {
+      // Try to get user's team from team_members
+      const result = await db.query(`
+        SELECT t.id, t.name, t.is_leadership_team
+        FROM teams t
+        JOIN team_members tm ON t.id = tm.team_id
+        WHERE tm.user_id = $1 AND t.organization_id = $2
+        LIMIT 1
+      `, [userId, organizationId]);
+      
+      if (result.rows.length > 0) {
+        return result.rows[0];
+      }
+    }
+    
+    // Fallback: Check if user is assigned to Leadership Team
+    const leadershipResult = await db.query(`
+      SELECT id, name, is_leadership_team
+      FROM teams 
+      WHERE organization_id = $1 AND is_leadership_team = true
+      LIMIT 1
+    `, [organizationId]);
+    
+    // For now, assume all users are on leadership team if no team_members data
+    return leadershipResult.rows[0] || null;
+    
+  } catch (error) {
+    console.error('Error getting user team context:', error);
+    // Return leadership context as fallback to ensure data visibility
+    try {
+      const fallbackResult = await db.query(`
+        SELECT id, name, is_leadership_team
+        FROM teams 
+        WHERE organization_id = $1 AND is_leadership_team = true
+        LIMIT 1
+      `, [organizationId]);
+      return fallbackResult.rows[0] || null;
+    } catch (fallbackError) {
+      console.error('Fallback query also failed:', fallbackError);
+      return null;
+    }
+  }
+};
+
 // Check if a user is on a leadership team in a specific organization
 export const isUserOnLeadershipTeam = async (userId, organizationId) => {
   try {
