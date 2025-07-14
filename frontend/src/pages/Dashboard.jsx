@@ -57,7 +57,7 @@ const Dashboard = () => {
       setLoading(true);
       
       const orgId = localStorage.getItem('impersonatedOrgId') || user?.organizationId || user?.organization_id;
-      const teamId = getTeamId(user, true);
+      const teamId = getTeamId(user, 'leadership');
       
       // Fetch all data in parallel
       const [prioritiesResponse, todosResponse, issuesResponse] = await Promise.all([

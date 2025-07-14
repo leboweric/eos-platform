@@ -11,7 +11,7 @@ const buildUrl = (endpoint = '') => {
   const orgId = localStorage.getItem('impersonatedOrgId') || user?.organizationId || user?.organization_id;
   
   // Always use Leadership Team for Business Blueprint
-  const teamId = getTeamId(user, true);
+  const teamId = getTeamId(user, 'leadership');
   
   return API_BASE.replace(':orgId', orgId).replace(':teamId', teamId) + endpoint;
 };

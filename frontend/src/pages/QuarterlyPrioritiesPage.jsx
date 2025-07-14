@@ -141,7 +141,7 @@ const QuarterlyPrioritiesPage = () => {
     try {
       // Get organization and team IDs from user context
       const orgId = user?.organizationId;
-      const teamId = getTeamId(user, true); // Always use Leadership Team for main page
+      const teamId = getTeamId(user, 'leadership'); // Always use Leadership Team for main page
       
       if (!orgId) {
         throw new Error('No organization ID found');
@@ -322,7 +322,7 @@ const QuarterlyPrioritiesPage = () => {
   const handleSavePredictions = async () => {
     try {
       const orgId = user?.organizationId;
-      const teamId = getTeamId(user, true);
+      const teamId = getTeamId(user, 'leadership');
       
       // Get current quarter and year
       const now = new Date();
@@ -348,7 +348,7 @@ const QuarterlyPrioritiesPage = () => {
   const handleUpdatePriority = async (priorityId, updates) => {
     try {
       const orgId = user?.organizationId || user?.organization_id;
-      const teamId = getTeamId(user, true);
+      const teamId = getTeamId(user, 'leadership');
       
       console.log('[QuarterlyPriorities] Updating priority:', priorityId, 'with:', updates);
       console.log('[QuarterlyPriorities] Using orgId:', orgId, 'teamId:', teamId);
@@ -373,7 +373,7 @@ const QuarterlyPrioritiesPage = () => {
   const handleUpdateMilestone = async (priorityId, milestoneId, completed) => {
     try {
       const orgId = user?.organizationId;
-      const teamId = getTeamId(user, true);
+      const teamId = getTeamId(user, 'leadership');
       
       await quarterlyPrioritiesService.updateMilestone(orgId, teamId, priorityId, milestoneId, { completed });
       
@@ -394,7 +394,7 @@ const QuarterlyPrioritiesPage = () => {
   const handleCreateMilestone = async (priorityId, milestoneData) => {
     try {
       const orgId = user?.organizationId;
-      const teamId = getTeamId(user, true);
+      const teamId = getTeamId(user, 'leadership');
       
       await quarterlyPrioritiesService.createMilestone(orgId, teamId, priorityId, milestoneData);
       
@@ -409,7 +409,7 @@ const QuarterlyPrioritiesPage = () => {
   const handleEditMilestone = async (priorityId, milestoneId, updates) => {
     try {
       const orgId = user?.organizationId;
-      const teamId = getTeamId(user, true);
+      const teamId = getTeamId(user, 'leadership');
       
       console.log('Updating milestone with:', updates);
       await quarterlyPrioritiesService.updateMilestone(orgId, teamId, priorityId, milestoneId, updates);
@@ -431,7 +431,7 @@ const QuarterlyPrioritiesPage = () => {
   const handleDeleteMilestone = async (priorityId, milestoneId) => {
     try {
       const orgId = user?.organizationId;
-      const teamId = getTeamId(user, true);
+      const teamId = getTeamId(user, 'leadership');
       
       await quarterlyPrioritiesService.deleteMilestone(orgId, teamId, priorityId, milestoneId);
       
@@ -452,7 +452,7 @@ const QuarterlyPrioritiesPage = () => {
   const handleAddUpdate = async (priorityId, updateText, statusChange = null) => {
     try {
       const orgId = user?.organizationId;
-      const teamId = getTeamId(user, true);
+      const teamId = getTeamId(user, 'leadership');
       
       await quarterlyPrioritiesService.addPriorityUpdate(orgId, teamId, priorityId, updateText, statusChange);
       
@@ -473,7 +473,7 @@ const QuarterlyPrioritiesPage = () => {
       const quarter = `Q${currentQuarter}`;
       
       const orgId = user?.organizationId;
-      const teamId = getTeamId(user, true);
+      const teamId = getTeamId(user, 'leadership');
       
       const priorityData = {
         ...priorityForm,
@@ -512,7 +512,7 @@ const QuarterlyPrioritiesPage = () => {
     
     try {
       const orgId = user?.organizationId;
-      const teamId = getTeamId(user, true);
+      const teamId = getTeamId(user, 'leadership');
       
       await quarterlyPrioritiesService.archivePriority(orgId, teamId, priorityId);
       

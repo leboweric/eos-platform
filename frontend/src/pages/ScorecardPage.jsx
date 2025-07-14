@@ -77,7 +77,7 @@ const ScorecardPage = () => {
       setError(null);
       
       const orgId = localStorage.getItem('impersonatedOrgId') || user?.organizationId || user?.organization_id;
-      const teamId = getTeamId(user, true);
+      const teamId = getTeamId(user, 'leadership');
       
       if (!orgId) {
         throw new Error('No organization ID found');
@@ -137,7 +137,7 @@ const ScorecardPage = () => {
       setError(null);
       
       const orgId = localStorage.getItem('impersonatedOrgId') || user?.organizationId || user?.organization_id;
-      const teamId = getTeamId(user, true);
+      const teamId = getTeamId(user, 'leadership');
       
       if (!orgId) {
         throw new Error('No organization ID found');
@@ -184,7 +184,7 @@ const ScorecardPage = () => {
       setError(null);
       
       const orgId = localStorage.getItem('impersonatedOrgId') || user?.organizationId || user?.organization_id;
-      const teamId = getTeamId(user, true);
+      const teamId = getTeamId(user, 'leadership');
       
       if (!orgId) {
         throw new Error('No organization ID found');
@@ -210,7 +210,7 @@ const ScorecardPage = () => {
       setError(null);
       
       const orgId = localStorage.getItem('impersonatedOrgId') || user?.organizationId || user?.organization_id;
-      const teamId = getTeamId(user, true);
+      const teamId = getTeamId(user, 'leadership');
       
       if (!orgId) {
         throw new Error('No organization ID found');
