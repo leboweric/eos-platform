@@ -39,17 +39,13 @@ const DepartmentSelector = ({ className = '' }) => {
       availableDepartments
     });
     
-    // Show a message in development mode
-    if (process.env.NODE_ENV === 'development') {
-      return (
-        <div className={`flex items-center gap-3 text-sm text-gray-500 ${className}`}>
-          <AlertCircle className="h-4 w-4" />
-          <span>No departments available</span>
-        </div>
-      );
-    }
-    
-    return null;
+    // Always show something so we know the component is rendering
+    return (
+      <div className={`flex items-center gap-3 text-sm ${className}`}>
+        <AlertCircle className="h-4 w-4 text-orange-500" />
+        <span className="text-orange-600 font-medium">No departments available (check console)</span>
+      </div>
+    );
   }
   
   // Don't show selector if user only has access to one department

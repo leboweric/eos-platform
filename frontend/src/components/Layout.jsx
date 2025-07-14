@@ -198,13 +198,8 @@ const Layout = ({ children }) => {
             </div>
 
             <div className="flex items-center space-x-4">
-              {/* Test indicator */}
-              <div className="bg-red-500 text-white px-3 py-1 rounded text-sm font-bold">
-                DEPT SELECTOR HERE
-              </div>
-              
               {/* Department Selector - Global placement */}
-              <DepartmentSelector />
+              <DepartmentSelector className="border-2 border-blue-500" />
               
               {/* Leadership Team Badge */}
               {isOnLeadershipTeam() && (
