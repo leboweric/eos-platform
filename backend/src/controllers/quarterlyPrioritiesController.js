@@ -152,14 +152,14 @@ export const getQuarterlyPriorities = async (req, res) => {
            ${deletedAtClause}
            AND (
              -- NINETY.IO MODEL: Leadership sees ALL data, Departments see all departments (not Leadership)
-             ($4::uuid = '00000000-0000-0000-0000-000000000000'::uuid) OR
-             ($4::uuid != '00000000-0000-0000-0000-000000000000'::uuid AND 
-              p.team_id != '00000000-0000-0000-0000-000000000000'::uuid AND
-              p.team_id IS NOT NULL)
+             CASE
+               WHEN $4 = true THEN true  -- Leadership sees everything
+               ELSE (p.team_id != '00000000-0000-0000-0000-000000000000'::uuid OR p.team_id IS NULL)  -- Departments exclude Leadership
+             END
            )
          GROUP BY p.id, u.first_name, u.last_name, u.email, t.name, t.is_leadership_team
          ORDER BY p.created_at`,
-        [orgId, currentQuarter, currentYear, teamId]
+        [orgId, currentQuarter, currentYear, isLeadership]
       );
     } catch (queryError) {
       console.error('Priorities query error:', queryError);
@@ -877,14 +877,14 @@ export const getArchivedPriorities = async (req, res) => {
          AND p.deleted_at IS NOT NULL
          AND (
            -- NINETY.IO MODEL: Leadership sees ALL data, Departments see all departments (not Leadership)
-           ($2::uuid = '00000000-0000-0000-0000-000000000000'::uuid) OR
-           ($2::uuid != '00000000-0000-0000-0000-000000000000'::uuid AND 
-            p.team_id != '00000000-0000-0000-0000-000000000000'::uuid AND
-            p.team_id IS NOT NULL)
+           CASE
+             WHEN $2 = true THEN true  -- Leadership sees everything
+             ELSE (p.team_id != '00000000-0000-0000-0000-000000000000'::uuid OR p.team_id IS NULL)  -- Departments exclude Leadership
+           END
          )
        GROUP BY p.id, u.first_name, u.last_name, u.email, t.is_leadership_team
        ORDER BY p.deleted_at DESC, p.created_at`,
-      [orgId, teamId]
+      [orgId, isLeadership]
     );
     
     // Get latest updates for each priority
@@ -1003,18 +1003,18 @@ export const getCurrentPriorities = async (req, res) => {
       AND p.deleted_at IS NULL
       AND (
         -- NINETY.IO MODEL: Leadership sees ALL data, Departments see all departments (not Leadership)
-        ($2::uuid = '00000000-0000-0000-0000-000000000000'::uuid) OR
-        ($2::uuid != '00000000-0000-0000-0000-000000000000'::uuid AND 
-         p.team_id != '00000000-0000-0000-0000-000000000000'::uuid AND
-         p.team_id IS NOT NULL)
+        CASE
+          WHEN $2 = true THEN true  -- Leadership sees everything
+          ELSE (p.team_id != '00000000-0000-0000-0000-000000000000'::uuid OR p.team_id IS NULL)  -- Departments exclude Leadership
+        END
       )
       ORDER BY p.created_at ASC
     `;
     
-    console.log('Executing query with params:', { orgId, teamId });
+    console.log('Executing query with params:', { orgId, isLeadership });
     console.log('Is leadership team member:', isLeadership);
     
-    const prioritiesResult = await query(prioritiesQuery, [orgId, teamId]);
+    const prioritiesResult = await query(prioritiesQuery, [orgId, isLeadership]);
     console.log(`Found ${prioritiesResult.rows.length} priorities:`, 
       prioritiesResult.rows.map(p => ({ 
         id: p.id, 

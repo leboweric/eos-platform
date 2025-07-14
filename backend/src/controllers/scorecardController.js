@@ -1,4 +1,5 @@
 import db from '../config/database.js';
+import { getUserTeamContext } from '../utils/teamUtils.js';
 
 // Helper function to check if a column exists
 async function checkColumn(tableName, columnName) {
@@ -40,6 +41,12 @@ async function getTeamMembers(orgId) {
 export const getScorecard = async (req, res) => {
   try {
     const { orgId, teamId } = req.params;
+    const userId = req.user.id;
+    
+    // Get user's team context
+    const userTeam = await getUserTeamContext(userId, orgId);
+    const isLeadership = userTeam && userTeam.is_leadership_team;
+    console.log('User team context for scorecard:', userTeam);
     
     // Check if new columns exist
     const hasValueType = await checkColumn('scorecard_metrics', 'value_type');
@@ -54,10 +61,10 @@ export const getScorecard = async (req, res) => {
       selectColumns += ', sm.comparison_operator';
     }
     
-    // NINETY.IO FILTERING: Add team-based visibility
-    const teamFilter = teamId === '00000000-0000-0000-0000-000000000000' 
+    // NINETY.IO MODEL: Apply team-based visibility
+    const teamFilter = isLeadership 
       ? '' // Leadership sees all
-      : 'AND sm.team_id != \'00000000-0000-0000-0000-000000000000\' AND sm.team_id IS NOT NULL';
+      : 'AND (sm.team_id != \'00000000-0000-0000-0000-000000000000\'::uuid OR sm.team_id IS NULL)';
     
     // Get all metrics for the team
     const metricsQuery = `
@@ -74,11 +81,11 @@ export const getScorecard = async (req, res) => {
       SELECT metric_id, week_date, value
       FROM scorecard_scores
       WHERE metric_id IN (
-        SELECT id FROM scorecard_metrics 
-        WHERE organization_id = $1 AND team_id = $2
+        SELECT id FROM scorecard_metrics sm
+        WHERE sm.organization_id = $1 ${teamFilter}
       )
     `;
-    const scores = await db.query(scoresQuery, [orgId, teamId]);
+    const scores = await db.query(scoresQuery, [orgId]);
     
     // Organize scores by metric and week
     const weeklyScores = {};
