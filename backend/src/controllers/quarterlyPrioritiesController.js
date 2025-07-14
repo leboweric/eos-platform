@@ -207,6 +207,7 @@ export const getQuarterlyPriorities = async (req, res) => {
       dueDate: p.due_date,
       status: p.status,
       progress: p.progress,
+      isCompanyPriority: p.is_company_priority || false,
       milestones: p.milestones || [],
       latestUpdate: updates[p.id] || null,
       // Removed publishing fields for Ninety.io model
@@ -214,9 +215,9 @@ export const getQuarterlyPriorities = async (req, res) => {
       isFromLeadership: p.team_id === '00000000-0000-0000-0000-000000000000'
     }));
     
-    // All priorities are now team-based
-    const companyPriorities = priorities;
-    const individualPriorities = [];
+    // Separate company and individual priorities based on is_company_priority flag
+    const companyPriorities = priorities.filter(p => p.isCompanyPriority === true);
+    const individualPriorities = priorities.filter(p => p.isCompanyPriority === false);
     
     // Group individual priorities by owner
     const teamMemberPriorities = {};
@@ -285,6 +286,7 @@ export const createPriority = async (req, res) => {
       dueDate, 
       quarter, 
       year,
+      isCompanyPriority = false,
       milestones = []
     } = req.body;
     
@@ -319,8 +321,8 @@ export const createPriority = async (req, res) => {
     
     
     // Build dynamic insert query based on available columns
-    let columns = ['id', 'organization_id', 'title', 'description', 'owner_id', 'due_date', 'quarter', 'year', 'status'];
-    let values = [priorityId, orgId, title, description, actualOwnerId, parsedDueDate, quarter, year, 'on-track'];
+    let columns = ['id', 'organization_id', 'title', 'description', 'owner_id', 'due_date', 'quarter', 'year', 'status', 'is_company_priority'];
+    let values = [priorityId, orgId, title, description, actualOwnerId, parsedDueDate, quarter, year, 'on-track', isCompanyPriority];
     
     // Add team_id if provided
     if (teamId) {
@@ -404,7 +406,7 @@ export const createPriority = async (req, res) => {
 export const updatePriority = async (req, res) => {
   try {
     const { orgId, teamId, priorityId } = req.params;
-    const { title, description, status, progress, dueDate, ownerId } = req.body;
+    const { title, description, status, progress, dueDate, ownerId, isCompanyPriority } = req.body;
     
     // Convert empty string to null for date field, and handle undefined
     const parsedDueDate = (dueDate === '' || dueDate === undefined) ? null : dueDate;
@@ -451,6 +453,11 @@ export const updatePriority = async (req, res) => {
       updateValues.push(ownerId);
     }
     
+    if (isCompanyPriority !== undefined) {
+      paramCount++;
+      updateFields.push(`is_company_priority = $${paramCount}`);
+      updateValues.push(isCompanyPriority);
+    }
     
     if (hasProgress && progress !== undefined) {
       paramCount++;
@@ -1090,14 +1097,32 @@ export const getCurrentPriorities = async (req, res) => {
         owner_first_name: priority.owner_first_name,
         owner_last_name: priority.owner_last_name,
         latestUpdate: updatesByPriority[priority.id] || null,
+        isCompanyPriority: priority.is_company_priority || false,
         teamName: priority.team_name,
         isFromLeadership: priority.team_id === '00000000-0000-0000-0000-000000000000'
       };
       
       console.log(`Processing priority: ${priority.title}, owner_id: ${priority.owner_id}, deleted_at: ${priority.deleted_at}`);
       
-      // All priorities are now team-based
-      companyPriorities.push(priorityWithMilestones);
+      // Categorize based on is_company_priority flag
+      if (priority.is_company_priority) {
+        companyPriorities.push(priorityWithMilestones);
+      } else if (priority.owner_id) {
+        if (!teamMemberPriorities[priority.owner_id]) {
+          teamMemberPriorities[priority.owner_id] = {
+            member: {
+              id: priority.owner_id,
+              name: priority.owner_name,
+              email: priority.owner_email
+            },
+            priorities: []
+          };
+        }
+        teamMemberPriorities[priority.owner_id].priorities.push(priorityWithMilestones);
+      } else {
+        // Priority with no owner and not company priority
+        companyPriorities.push(priorityWithMilestones);
+      }
     });
     
     console.log(`Final counts - Company: ${companyPriorities.length}, Individual owners: ${Object.keys(teamMemberPriorities).length}`);
