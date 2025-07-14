@@ -5,6 +5,8 @@ import { Badge } from './ui/badge';
 import { Building2, Crown, AlertCircle } from 'lucide-react';
 
 const DepartmentSelector = ({ className = '' }) => {
+  console.log('[DepartmentSelector] Component rendering');
+  
   const { 
     selectedDepartment, 
     availableDepartments, 
@@ -21,9 +23,11 @@ const DepartmentSelector = ({ className = '' }) => {
   });
   
   if (loading) {
+    console.log('[DepartmentSelector] Showing loading state');
     return (
       <div className={`flex items-center gap-3 ${className}`}>
         <div className="animate-pulse bg-gray-200 h-8 w-48 rounded"></div>
+        <span className="text-xs text-gray-500">Loading departments...</span>
       </div>
     );
   }
