@@ -87,6 +87,15 @@ export const getIssues = async (req, res) => {
       paramCount++;
     }
     
+    // NINETY.IO FILTERING: Add team-based visibility
+    if (req.params.teamId === '00000000-0000-0000-0000-000000000000') {
+      // Leadership Team sees ALL issues
+      query += ` AND 1 = 1`; // No additional filtering
+    } else {
+      // Departments see ALL department issues (exclude Leadership)
+      query += ` AND i.team_id != '00000000-0000-0000-0000-000000000000' AND i.team_id IS NOT NULL`;
+    }
+    
     query += ` GROUP BY i.id, creator.first_name, creator.last_name, owner.first_name, owner.last_name, pub.first_name, pub.last_name, t.name
                ORDER BY i.priority_rank ASC, i.created_at DESC`;
     

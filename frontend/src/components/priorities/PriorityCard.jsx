@@ -8,9 +8,7 @@ import {
   Calendar,
   CheckCircle,
   AlertTriangle,
-  Edit,
-  Eye,
-  EyeOff
+  Edit
 } from 'lucide-react';
 import { useState } from 'react';
 import { issuesService } from '../../services/issuesService';
@@ -30,19 +28,17 @@ import { useAuthStore } from '../../stores/authStore';
  * @param {string} props.priority.owner_first_name - Owner's first name
  * @param {string} props.priority.owner_last_name - Owner's last name
  * @param {string} props.priority.team_id - ID of the team
- * @param {boolean} props.priority.is_published_to_departments - Whether priority is published to departments
- * @param {string} props.priority.published_at - Publication timestamp
- * @param {string} props.priority.published_by - ID of user who published
+ * @param {string} props.priority.teamName - Name of the team that owns this priority
+ * @param {boolean} props.priority.isFromLeadership - Whether priority is from Leadership team
  * @param {boolean} props.readOnly - Whether in read-only mode
  * @param {Function} props.onIssueCreated - Issue creation handler
  * @param {Function} props.onStatusChange - Status change handler
  */
-const PriorityCard = ({ priority, readOnly = false, onIssueCreated, onStatusChange, onPublishChange }) => {
+const PriorityCard = ({ priority, readOnly = false, onIssueCreated, onStatusChange }) => {
   const { user, isOnLeadershipTeam } = useAuthStore();
   const [creatingIssue, setCreatingIssue] = useState(false);
   const [updatingStatus, setUpdatingStatus] = useState(false);
   const [editingStatus, setEditingStatus] = useState(false);
-  const [publishingStatus, setPublishingStatus] = useState(false);
   const statusColors = {
     'on-track': 'bg-green-100 text-green-700 border-green-200',
     'off-track': 'bg-red-100 text-red-700 border-red-200',
@@ -138,42 +134,23 @@ const PriorityCard = ({ priority, readOnly = false, onIssueCreated, onStatusChan
     }
   };
 
-  const handlePublishToggle = async () => {
-    try {
-      setPublishingStatus(true);
-      
-      const orgId = localStorage.getItem('impersonatedOrgId') || user?.organizationId || user?.organization_id;
-      const teamId = priority.team_id || user?.teamId || '00000000-0000-0000-0000-000000000000';
-      
-      if (priority.is_published_to_departments) {
-        await quarterlyPrioritiesService.unpublishPriority(orgId, teamId, priority.id);
-      } else {
-        await quarterlyPrioritiesService.publishPriority(orgId, teamId, priority.id);
-      }
-      
-      // Notify parent component
-      if (onPublishChange) {
-        onPublishChange(priority.id, !priority.is_published_to_departments);
-      }
-      
-      setPublishingStatus(false);
-    } catch (error) {
-      console.error('Failed to toggle publish status:', error);
-      setPublishingStatus(false);
-      alert(error.response?.data?.error || 'Failed to update publish status');
-    }
-  };
 
   const isOffTrack = priority.status === 'off-track' || priority.status === 'at-risk';
   const showCreateIssue = !readOnly && isOffTrack && priority.status !== 'complete';
-  const showPublishButton = !readOnly && isOnLeadershipTeam() && priority.is_company_priority;
 
   return (
     <Card className={priority.status === 'off-track' ? 'border-red-200' : ''}>
       <CardHeader className="pb-3">
         <div className="flex items-start justify-between">
           <div className="flex-1">
-            <h3 className="font-medium">{priority.title}</h3>
+            <div className="flex items-center gap-2">
+              <h3 className="font-medium">{priority.title}</h3>
+              {priority.teamName && (
+                <Badge variant={priority.isFromLeadership ? "default" : "secondary"} className="text-xs">
+                  {priority.teamName}
+                </Badge>
+              )}
+            </div>
             {priority.description && (
               <p className="text-sm text-gray-600 mt-1">{priority.description}</p>
             )}
@@ -244,35 +221,6 @@ const PriorityCard = ({ priority, readOnly = false, onIssueCreated, onStatusChan
           </div>
           
           <div className="flex items-center gap-2">
-            {showPublishButton && (
-              <Button
-                size="sm"
-                variant={priority.is_published_to_departments ? "default" : "outline"}
-                className="h-8 px-2"
-                onClick={handlePublishToggle}
-                disabled={publishingStatus}
-                title={priority.is_published_to_departments ? "Unpublish from departments" : "Publish to departments"}
-              >
-                {publishingStatus ? (
-                  <span className="animate-spin">⏳</span>
-                ) : (
-                  <>
-                    {priority.is_published_to_departments ? (
-                      <>
-                        <Eye className="h-4 w-4 mr-1" />
-                        <span className="text-xs">Published</span>
-                      </>
-                    ) : (
-                      <>
-                        <EyeOff className="h-4 w-4 mr-1" />
-                        <span className="text-xs">Not Published</span>
-                      </>
-                    )}
-                  </>
-                )}
-              </Button>
-            )}
-            
             {showCreateIssue && (
               <Button
                 size="sm"

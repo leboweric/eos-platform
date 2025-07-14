@@ -8,7 +8,7 @@ import fs from 'fs';
 // @access  Private
 export const getTodos = async (req, res) => {
   try {
-    const { orgId } = req.params;
+    const { orgId, teamId } = req.params;
     const { status, assignedTo, includeCompleted } = req.query;
     const userId = req.user.id;
 
@@ -31,6 +31,16 @@ export const getTodos = async (req, res) => {
       conditions.push(`t.assigned_to_id = $${paramIndex}`);
       params.push(assignedTo);
       paramIndex++;
+    }
+    
+    // NINETY.IO FILTERING: Add team-based visibility
+    if (teamId === '00000000-0000-0000-0000-000000000000') {
+      // Leadership Team sees ALL todos
+      // No additional filtering needed
+    } else {
+      // Departments see ALL department todos (exclude Leadership)
+      conditions.push(`t.team_id != '00000000-0000-0000-0000-000000000000'`);
+      conditions.push(`t.team_id IS NOT NULL`);
     }
 
     // Get todos with owner and assignee information

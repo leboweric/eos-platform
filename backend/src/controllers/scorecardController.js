@@ -55,15 +55,20 @@ export const getScorecard = async (req, res) => {
     }
     selectColumns += ', pub.first_name || \' \' || pub.last_name as published_by_name';
     
+    // NINETY.IO FILTERING: Add team-based visibility
+    const teamFilter = teamId === '00000000-0000-0000-0000-000000000000' 
+      ? '' // Leadership sees all
+      : 'AND sm.team_id != \'00000000-0000-0000-0000-000000000000\' AND sm.team_id IS NOT NULL';
+    
     // Get all metrics for the team
     const metricsQuery = `
       SELECT ${selectColumns}
       FROM scorecard_metrics sm
       LEFT JOIN users pub ON sm.published_by = pub.id
-      WHERE sm.organization_id = $1 AND sm.team_id = $2
+      WHERE sm.organization_id = $1 ${teamFilter}
       ORDER BY sm.created_at ASC
     `;
-    const metrics = await db.query(metricsQuery, [orgId, teamId]);
+    const metrics = await db.query(metricsQuery, [orgId]);
     
     // Get all scores for these metrics
     const scoresQuery = `

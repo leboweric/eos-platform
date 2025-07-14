@@ -131,14 +131,8 @@ export const getQuarterlyPriorities = async (req, res) => {
           p.*,
           u.first_name || ' ' || u.last_name as owner_name,
           u.email as owner_email,
-          pub.first_name || ' ' || pub.last_name as published_by_name,
+          t.name as team_name,
           t.is_leadership_team as priority_from_leadership_team,
-          CASE 
-            WHEN p.team_id = '00000000-0000-0000-0000-000000000000' THEN true
-            WHEN p.team_id IS NULL THEN true
-            WHEN t.is_leadership_team = true THEN true
-            ELSE false
-          END as is_from_leadership,
           array_agg(
             json_build_object(
               'id', m.id,
@@ -158,29 +152,13 @@ export const getQuarterlyPriorities = async (req, res) => {
            AND p.year = $3::integer
            ${deletedAtClause}
            AND (
-             -- If accessing Leadership Team, show:
-             -- 1. Leadership Team priorities
-             -- 2. ALL Company priorities regardless of team
-             -- 3. Department priorities that are published to departments
-             ($4::uuid = '00000000-0000-0000-0000-000000000000'::uuid AND (
-               p.team_id = '00000000-0000-0000-0000-000000000000'::uuid OR 
-               p.team_id IS NULL OR 
-               t.is_leadership_team = true OR
-               p.is_company_priority = true OR
-               p.is_published_to_departments = true
-             ))
-             -- If accessing a department, show department priorities and published Leadership priorities
-             OR ($4::uuid != '00000000-0000-0000-0000-000000000000'::uuid AND (
-               p.team_id = $4::uuid OR
-               (CASE 
-                 WHEN p.team_id = '00000000-0000-0000-0000-000000000000'::uuid THEN p.is_published_to_departments = true
-                 WHEN p.team_id IS NULL THEN p.is_published_to_departments = true
-                 WHEN t.is_leadership_team = true THEN p.is_published_to_departments = true
-                 ELSE false
-               END)
-             ))
+             -- NINETY.IO MODEL: Leadership sees ALL data, Departments see all departments (not Leadership)
+             ($4::uuid = '00000000-0000-0000-0000-000000000000'::uuid) OR
+             ($4::uuid != '00000000-0000-0000-0000-000000000000'::uuid AND 
+              p.team_id != '00000000-0000-0000-0000-000000000000'::uuid AND
+              p.team_id IS NOT NULL)
            )
-         GROUP BY p.id, u.first_name, u.last_name, u.email, pub.first_name, pub.last_name, t.is_leadership_team
+         GROUP BY p.id, u.first_name, u.last_name, u.email, t.name, t.is_leadership_team
          ORDER BY p.is_company_priority DESC, p.created_at`,
         [orgId, currentQuarter, currentYear, teamId]
       );
@@ -233,10 +211,9 @@ export const getQuarterlyPriorities = async (req, res) => {
       isCompanyPriority: p.is_company_priority,
       milestones: p.milestones || [],
       latestUpdate: updates[p.id] || null,
-      isPublishedToDepartments: p.is_published_to_departments,
-      publishedAt: p.published_at,
-      publishedBy: p.published_by,
-      publishedByName: p.published_by_name
+      // Removed publishing fields for Ninety.io model
+      teamName: p.team_name || 'Unknown Team',
+      isFromLeadership: p.team_id === '00000000-0000-0000-0000-000000000000'
     }));
     
     // Separate company and individual priorities
@@ -343,13 +320,28 @@ export const createPriority = async (req, res) => {
     const hasProgress = await checkProgressColumn();
     const hasCreatedBy = await checkColumn('created_by');
     
+    // Validate Company Priority creation
+    if (isCompanyPriority) {
+      // Company Priorities must be created from Leadership Team (teamId should be the zero UUID)
+      if (teamId !== '00000000-0000-0000-0000-000000000000') {
+        return res.status(400).json({
+          error: 'Company Priorities can only be created from the Leadership Team page',
+          details: 'Please switch to the Leadership Team to create Company Priorities'
+        });
+      }
+    }
+    
     // Build dynamic insert query based on available columns
     let columns = ['id', 'organization_id', 'title', 'description', 'owner_id', 'due_date', 'quarter', 'year', 'is_company_priority', 'status'];
     let values = [priorityId, orgId, title, description, actualOwnerId, parsedDueDate, quarter, year, isCompanyPriority, 'on-track'];
     
-    // Only add team_id if it's not the default empty UUID
-    if (teamId && teamId !== '00000000-0000-0000-0000-000000000000') {
-      columns.splice(2, 0, 'team_id'); // Insert after organization_id
+    // For Company Priorities, always set team_id to Leadership Team
+    if (isCompanyPriority) {
+      columns.splice(2, 0, 'team_id');
+      values.splice(2, 0, '00000000-0000-0000-0000-000000000000');
+    } else if (teamId && teamId !== '00000000-0000-0000-0000-000000000000') {
+      // Only add team_id for non-Company priorities that aren't Leadership Team
+      columns.splice(2, 0, 'team_id');
       values.splice(2, 0, teamId);
     }
     let placeholders = [];
@@ -433,6 +425,27 @@ export const updatePriority = async (req, res) => {
     
     // Convert empty string to null for date field, and handle undefined
     const parsedDueDate = (dueDate === '' || dueDate === undefined) ? null : dueDate;
+    
+    // If trying to change isCompanyPriority, validate the change
+    if (isCompanyPriority !== undefined) {
+      // Check current priority state
+      const currentPriority = await query(
+        'SELECT is_company_priority, team_id FROM quarterly_priorities WHERE id = $1',
+        [priorityId]
+      );
+      
+      if (currentPriority.rows.length > 0) {
+        const wasCompanyPriority = currentPriority.rows[0].is_company_priority;
+        
+        // If changing to Company Priority, must be from Leadership Team
+        if (!wasCompanyPriority && isCompanyPriority && teamId !== '00000000-0000-0000-0000-000000000000') {
+          return res.status(400).json({
+            error: 'Company Priorities can only be created from the Leadership Team page',
+            details: 'Please switch to the Leadership Team to convert this to a Company Priority'
+          });
+        }
+      }
+    }
     
     // Check if progress column exists
     const hasProgress = await checkProgressColumn();
@@ -1257,121 +1270,9 @@ export const getCurrentPriorities = async (req, res) => {
   }
 };
 
-// @desc    Publish priority to departments
-// @route   PUT /api/v1/quarterly-priorities/:priorityId/publish
-// @access  Private (Leadership Team only)
-export const publishPriority = async (req, res) => {
-  try {
-    const { priorityId } = req.params;
-    const userId = req.user.id;
-    
-    // Check if user is on leadership team
-    const isLeadership = await query(
-      `SELECT EXISTS (
-        SELECT 1 FROM teams t
-        JOIN team_members tm ON t.id = tm.team_id
-        WHERE t.is_leadership_team = true 
-        AND tm.user_id = $1
-        AND t.organization_id = $2
-      ) as is_leadership`,
-      [userId, req.user.organizationId]
-    );
-    
-    if (!isLeadership.rows[0].is_leadership) {
-      return res.status(403).json({
-        success: false,
-        error: 'Only leadership team members can publish priorities'
-      });
-    }
-    
-    // Update the priority
-    const result = await query(
-      `UPDATE quarterly_priorities 
-       SET is_published_to_departments = true,
-           published_at = NOW(),
-           published_by = $1
-       WHERE id = $2 AND organization_id = $3
-       RETURNING id`,
-      [userId, priorityId, req.user.organizationId]
-    );
-    
-    if (result.rows.length === 0) {
-      return res.status(404).json({
-        success: false,
-        error: 'Priority not found'
-      });
-    }
-    
-    res.json({
-      success: true,
-      message: 'Priority published to departments'
-    });
-  } catch (error) {
-    console.error('Error publishing priority:', error);
-    res.status(500).json({
-      success: false,
-      error: 'Failed to publish priority'
-    });
-  }
-};
-
-// @desc    Unpublish priority from departments
-// @route   PUT /api/v1/quarterly-priorities/:priorityId/unpublish
-// @access  Private (Leadership Team only)
-export const unpublishPriority = async (req, res) => {
-  try {
-    const { priorityId } = req.params;
-    const userId = req.user.id;
-    
-    // Check if user is on leadership team
-    const isLeadership = await query(
-      `SELECT EXISTS (
-        SELECT 1 FROM teams t
-        JOIN team_members tm ON t.id = tm.team_id
-        WHERE t.is_leadership_team = true 
-        AND tm.user_id = $1
-        AND t.organization_id = $2
-      ) as is_leadership`,
-      [userId, req.user.organizationId]
-    );
-    
-    if (!isLeadership.rows[0].is_leadership) {
-      return res.status(403).json({
-        success: false,
-        error: 'Only leadership team members can unpublish priorities'
-      });
-    }
-    
-    // Update the priority
-    const result = await query(
-      `UPDATE quarterly_priorities 
-       SET is_published_to_departments = false,
-           published_at = NULL,
-           published_by = NULL
-       WHERE id = $1 AND organization_id = $2
-       RETURNING id`,
-      [priorityId, req.user.organizationId]
-    );
-    
-    if (result.rows.length === 0) {
-      return res.status(404).json({
-        success: false,
-        error: 'Priority not found'
-      });
-    }
-    
-    res.json({
-      success: true,
-      message: 'Priority unpublished from departments'
-    });
-  } catch (error) {
-    console.error('Error unpublishing priority:', error);
-    res.status(500).json({
-      success: false,
-      error: 'Failed to unpublish priority'
-    });
-  }
-};
+// REMOVED: Publishing functions for Ninety.io model redesign
+// The publishPriority and unpublishPriority functions have been removed
+// as the Ninety.io model uses team-based visibility without publishing
 
 // Cleanup test priorities (admin function)
 export const cleanupTestPriorities = async (req, res) => {
