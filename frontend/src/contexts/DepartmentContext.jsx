@@ -22,16 +22,22 @@ export const DepartmentProvider = ({ children }) => {
       console.log('[DepartmentContext] Fetching user departments...');
       console.log('[DepartmentContext] User:', user);
       
-      const token = localStorage.getItem('token');
+      const token = localStorage.getItem('token') || localStorage.getItem('accessToken');
       if (!token) {
-        console.error('[DepartmentContext] No token found');
+        console.error('[DepartmentContext] No token found in localStorage');
+        console.log('[DepartmentContext] Available keys:', Object.keys(localStorage));
         setLoading(false);
         return;
       }
       
-      const response = await fetch('/api/v1/users/departments', {
+      const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:3001/api/v1';
+      const fullUrl = `${apiUrl}/users/departments`;
+      console.log('[DepartmentContext] Making request to:', fullUrl);
+      
+      const response = await fetch(fullUrl, {
         headers: {
-          'Authorization': `Bearer ${token}`
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
         }
       });
       
