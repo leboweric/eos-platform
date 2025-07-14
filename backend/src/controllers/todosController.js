@@ -111,12 +111,12 @@ export const createTodo = async (req, res) => {
     const result = await query(
       `INSERT INTO todos (
         id, organization_id, team_id, owner_id, assigned_to_id, 
-        title, description, due_date, priority, status, is_published_to_departments
-      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
+        title, description, due_date, priority, status
+      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
       RETURNING *`,
       [
         todoId, orgId, teamId || null, userId, assignedToId || userId,
-        title, description, finalDueDate, 'medium', 'incomplete', true
+        title, description, finalDueDate, 'medium', 'incomplete'
       ]
     );
 

@@ -41,7 +41,7 @@ async function getProgressSafeQuery() {
     console.warn('Progress column not found in quarterly_priorities table - database migration may be needed');
     return {
       select: `p.id, p.organization_id, p.title, p.description, p.owner_id, p.due_date, 
-               p.quarter, p.year, p.is_company_priority, p.status, p.created_by, 
+               p.quarter, p.year, p.status, p.created_by, 
                p.created_at, p.updated_at, p.deleted_at, 0 as progress`,
       update: ''
     };
@@ -158,7 +158,7 @@ export const getQuarterlyPriorities = async (req, res) => {
               p.team_id IS NOT NULL)
            )
          GROUP BY p.id, u.first_name, u.last_name, u.email, t.name, t.is_leadership_team
-         ORDER BY p.is_company_priority DESC, p.created_at`,
+         ORDER BY p.created_at`,
         [orgId, currentQuarter, currentYear, teamId]
       );
     } catch (queryError) {
@@ -207,7 +207,6 @@ export const getQuarterlyPriorities = async (req, res) => {
       dueDate: p.due_date,
       status: p.status,
       progress: p.progress,
-      isCompanyPriority: p.is_company_priority,
       milestones: p.milestones || [],
       latestUpdate: updates[p.id] || null,
       // Removed publishing fields for Ninety.io model
@@ -215,9 +214,9 @@ export const getQuarterlyPriorities = async (req, res) => {
       isFromLeadership: p.team_id === '00000000-0000-0000-0000-000000000000'
     }));
     
-    // Separate company and individual priorities
-    const companyPriorities = priorities.filter(p => p.isCompanyPriority);
-    const individualPriorities = priorities.filter(p => !p.isCompanyPriority);
+    // All priorities are now team-based
+    const companyPriorities = priorities;
+    const individualPriorities = [];
     
     // Group individual priorities by owner
     const teamMemberPriorities = {};
@@ -286,7 +285,6 @@ export const createPriority = async (req, res) => {
       dueDate, 
       quarter, 
       year,
-      isCompanyPriority,
       milestones = []
     } = req.body;
     
@@ -319,27 +317,13 @@ export const createPriority = async (req, res) => {
     const hasProgress = await checkProgressColumn();
     const hasCreatedBy = await checkColumn('created_by');
     
-    // Validate Company Priority creation
-    if (isCompanyPriority) {
-      // Company Priorities must be created from Leadership Team (teamId should be the zero UUID)
-      if (teamId !== '00000000-0000-0000-0000-000000000000') {
-        return res.status(400).json({
-          error: 'Company Priorities can only be created from the Leadership Team page',
-          details: 'Please switch to the Leadership Team to create Company Priorities'
-        });
-      }
-    }
     
     // Build dynamic insert query based on available columns
-    let columns = ['id', 'organization_id', 'title', 'description', 'owner_id', 'due_date', 'quarter', 'year', 'is_company_priority', 'status'];
-    let values = [priorityId, orgId, title, description, actualOwnerId, parsedDueDate, quarter, year, isCompanyPriority, 'on-track'];
+    let columns = ['id', 'organization_id', 'title', 'description', 'owner_id', 'due_date', 'quarter', 'year', 'status'];
+    let values = [priorityId, orgId, title, description, actualOwnerId, parsedDueDate, quarter, year, 'on-track'];
     
-    // For Company Priorities, always set team_id to Leadership Team
-    if (isCompanyPriority) {
-      columns.splice(2, 0, 'team_id');
-      values.splice(2, 0, '00000000-0000-0000-0000-000000000000');
-    } else if (teamId && teamId !== '00000000-0000-0000-0000-000000000000') {
-      // Only add team_id for non-Company priorities that aren't Leadership Team
+    // Add team_id if provided
+    if (teamId) {
       columns.splice(2, 0, 'team_id');
       values.splice(2, 0, teamId);
     }
@@ -420,31 +404,11 @@ export const createPriority = async (req, res) => {
 export const updatePriority = async (req, res) => {
   try {
     const { orgId, teamId, priorityId } = req.params;
-    const { title, description, status, progress, dueDate, ownerId, isCompanyPriority } = req.body;
+    const { title, description, status, progress, dueDate, ownerId } = req.body;
     
     // Convert empty string to null for date field, and handle undefined
     const parsedDueDate = (dueDate === '' || dueDate === undefined) ? null : dueDate;
     
-    // If trying to change isCompanyPriority, validate the change
-    if (isCompanyPriority !== undefined) {
-      // Check current priority state
-      const currentPriority = await query(
-        'SELECT is_company_priority, team_id FROM quarterly_priorities WHERE id = $1',
-        [priorityId]
-      );
-      
-      if (currentPriority.rows.length > 0) {
-        const wasCompanyPriority = currentPriority.rows[0].is_company_priority;
-        
-        // If changing to Company Priority, must be from Leadership Team
-        if (!wasCompanyPriority && isCompanyPriority && teamId !== '00000000-0000-0000-0000-000000000000') {
-          return res.status(400).json({
-            error: 'Company Priorities can only be created from the Leadership Team page',
-            details: 'Please switch to the Leadership Team to convert this to a Company Priority'
-          });
-        }
-      }
-    }
     
     // Check if progress column exists
     const hasProgress = await checkProgressColumn();
@@ -487,11 +451,6 @@ export const updatePriority = async (req, res) => {
       updateValues.push(ownerId);
     }
     
-    if (isCompanyPriority !== undefined) {
-      paramCount++;
-      updateFields.push(`is_company_priority = $${paramCount}`);
-      updateValues.push(isCompanyPriority);
-    }
     
     if (hasProgress && progress !== undefined) {
       paramCount++;
@@ -917,7 +876,7 @@ export const getArchivedPriorities = async (req, res) => {
             p.team_id IS NOT NULL)
          )
        GROUP BY p.id, u.first_name, u.last_name, u.email, t.is_leadership_team
-       ORDER BY p.deleted_at DESC, p.is_company_priority DESC, p.created_at`,
+       ORDER BY p.deleted_at DESC, p.created_at`,
       [orgId, teamId]
     );
     
@@ -961,7 +920,6 @@ export const getArchivedPriorities = async (req, res) => {
       dueDate: p.due_date,
       status: p.status,
       progress: p.progress,
-      isCompanyPriority: p.is_company_priority,
       milestones: p.milestones || [],
       latestUpdate: updates[p.id] || null,
       quarter: p.quarter,
@@ -982,14 +940,8 @@ export const getArchivedPriorities = async (req, res) => {
         };
       }
       
-      if (p.isCompanyPriority) {
-        groupedPriorities[key].companyPriorities.push(p);
-      } else {
-        if (!groupedPriorities[key].teamMemberPriorities[p.owner.id]) {
-          groupedPriorities[key].teamMemberPriorities[p.owner.id] = [];
-        }
-        groupedPriorities[key].teamMemberPriorities[p.owner.id].push(p);
-      }
+      // All priorities are now team-based
+      groupedPriorities[key].companyPriorities.push(p);
     });
     
     res.json({
@@ -1030,7 +982,6 @@ export const getCurrentPriorities = async (req, res) => {
         u.email as owner_email,
         u.first_name as owner_first_name,
         u.last_name as owner_last_name,
-        pub.first_name || ' ' || pub.last_name as published_by_name,
         t.is_leadership_team as priority_from_leadership_team,
         CASE 
           WHEN p.team_id = '00000000-0000-0000-0000-000000000000'::uuid THEN true
@@ -1050,7 +1001,7 @@ export const getCurrentPriorities = async (req, res) => {
          p.team_id != '00000000-0000-0000-0000-000000000000'::uuid AND
          p.team_id IS NOT NULL)
       )
-      ORDER BY p.is_company_priority DESC, p.created_at ASC
+      ORDER BY p.created_at ASC
     `;
     
     console.log('Executing query with params:', { orgId, teamId });
@@ -1139,31 +1090,14 @@ export const getCurrentPriorities = async (req, res) => {
         owner_first_name: priority.owner_first_name,
         owner_last_name: priority.owner_last_name,
         latestUpdate: updatesByPriority[priority.id] || null,
-        isCompanyPriority: priority.is_company_priority,
         teamName: priority.team_name,
         isFromLeadership: priority.team_id === '00000000-0000-0000-0000-000000000000'
       };
       
-      console.log(`Processing priority: ${priority.title}, is_company_priority: ${priority.is_company_priority}, owner_id: ${priority.owner_id}, deleted_at: ${priority.deleted_at}`);
+      console.log(`Processing priority: ${priority.title}, owner_id: ${priority.owner_id}, deleted_at: ${priority.deleted_at}`);
       
-      if (priority.is_company_priority) {
-        companyPriorities.push(priorityWithMilestones);
-      } else if (priority.owner_id) {
-        if (!teamMemberPriorities[priority.owner_id]) {
-          teamMemberPriorities[priority.owner_id] = {
-            member: {
-              id: priority.owner_id,
-              name: priority.owner_name,
-              email: priority.owner_email
-            },
-            priorities: []
-          };
-        }
-        teamMemberPriorities[priority.owner_id].priorities.push(priorityWithMilestones);
-        console.log(`Added individual priority to owner ${priority.owner_id}: ${priority.title}`);
-      } else {
-        console.log(`Priority ${priority.title} has no owner and is not company priority`);
-      }
+      // All priorities are now team-based
+      companyPriorities.push(priorityWithMilestones);
     });
     
     console.log(`Final counts - Company: ${companyPriorities.length}, Individual owners: ${Object.keys(teamMemberPriorities).length}`);

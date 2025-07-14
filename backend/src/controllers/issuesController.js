@@ -156,7 +156,7 @@ export const createIssue = async (req, res) => {
     const nextRank = (maxRankResult.rows[0].max_rank || 0) + 1;
     
     // Build insert query based on available columns
-    let columns = ['organization_id', 'team_id', 'created_by_id', 'owner_id', 'title', 'description', 'priority_rank', 'is_published_to_departments'];
+    let columns = ['organization_id', 'team_id', 'created_by_id', 'owner_id', 'title', 'description', 'priority_rank'];
     let values = [
       orgId,
       teamId && teamId !== '00000000-0000-0000-0000-000000000000' ? teamId : null,
@@ -164,8 +164,7 @@ export const createIssue = async (req, res) => {
       ownerId,
       title,
       description,
-      nextRank,
-      true // Default is_published_to_departments to true
+      nextRank
     ];
     let placeholders = ['$1', '$2', '$3', '$4', '$5', '$6', '$7', '$8'];
     

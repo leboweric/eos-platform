@@ -46,14 +46,13 @@ export const getScorecard = async (req, res) => {
     const hasComparisonOperator = await checkColumn('scorecard_metrics', 'comparison_operator');
     
     // Build query based on available columns
-    let selectColumns = 'sm.id, sm.name, sm.goal, sm.owner, sm.type, sm.created_at, sm.updated_at, sm.is_published_to_departments, sm.published_at, sm.published_by';
+    let selectColumns = 'sm.id, sm.name, sm.goal, sm.owner, sm.type, sm.created_at, sm.updated_at, sm.team_id, t.name as team_name';
     if (hasValueType) {
       selectColumns += ', sm.value_type';
     }
     if (hasComparisonOperator) {
       selectColumns += ', sm.comparison_operator';
     }
-    selectColumns += ', pub.first_name || \' \' || pub.last_name as published_by_name';
     
     // NINETY.IO FILTERING: Add team-based visibility
     const teamFilter = teamId === '00000000-0000-0000-0000-000000000000' 
@@ -64,7 +63,7 @@ export const getScorecard = async (req, res) => {
     const metricsQuery = `
       SELECT ${selectColumns}
       FROM scorecard_metrics sm
-      LEFT JOIN users pub ON sm.published_by = pub.id
+      LEFT JOIN teams t ON sm.team_id = t.id
       WHERE sm.organization_id = $1 ${teamFilter}
       ORDER BY sm.created_at ASC
     `;
@@ -100,10 +99,7 @@ export const getScorecard = async (req, res) => {
       data: {
         metrics: metrics.rows.map(metric => ({
           ...metric,
-          isPublishedToDepartments: metric.is_published_to_departments,
-          publishedAt: metric.published_at,
-          publishedBy: metric.published_by,
-          publishedByName: metric.published_by_name
+          teamName: metric.team_name
         })),
         weeklyScores,
         teamMembers
@@ -129,9 +125,9 @@ export const createMetric = async (req, res) => {
     const hasComparisonOperator = await checkColumn('scorecard_metrics', 'comparison_operator');
     
     // Build insert query based on available columns
-    let columns = ['organization_id', 'team_id', 'name', 'goal', 'owner', 'type', 'is_published_to_departments'];
-    let values = [orgId, teamId, name, goal, owner, type, true];
-    let placeholders = ['$1', '$2', '$3', '$4', '$5', '$6', '$7'];
+    let columns = ['organization_id', 'team_id', 'name', 'goal', 'owner', 'type'];
+    let values = [orgId, teamId, name, goal, owner, type];
+    let placeholders = ['$1', '$2', '$3', '$4', '$5', '$6'];
     
     if (hasValueType) {
       columns.push('value_type');
@@ -301,13 +297,10 @@ export const getMetricHistory = async (req, res) => {
         ss.value,
         ss.created_at,
         ss.updated_at,
-        sm.is_published_to_departments,
-        sm.published_at,
-        sm.published_by,
-        pub.first_name || ' ' || pub.last_name as published_by_name
+        t.name as team_name
        FROM scorecard_scores ss
        JOIN scorecard_metrics sm ON ss.metric_id = sm.id
-       LEFT JOIN users pub ON sm.published_by = pub.id
+       LEFT JOIN teams t ON sm.team_id = t.id
        WHERE ss.metric_id = $1
        ORDER BY ss.week_date DESC`,
       [metricId]
