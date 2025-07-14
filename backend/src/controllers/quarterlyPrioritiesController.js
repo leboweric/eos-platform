@@ -158,11 +158,16 @@ export const getQuarterlyPriorities = async (req, res) => {
            AND p.year = $3::integer
            ${deletedAtClause}
            AND (
-             -- If accessing Leadership Team (00000000...), show Leadership priorities
+             -- If accessing Leadership Team, show:
+             -- 1. Leadership Team priorities
+             -- 2. ALL Company priorities regardless of team
+             -- 3. Department priorities that are published to departments
              ($4::uuid = '00000000-0000-0000-0000-000000000000'::uuid AND (
                p.team_id = '00000000-0000-0000-0000-000000000000'::uuid OR 
                p.team_id IS NULL OR 
-               t.is_leadership_team = true
+               t.is_leadership_team = true OR
+               p.is_company_priority = true OR
+               p.is_published_to_departments = true
              ))
              -- If accessing a department, show department priorities and published Leadership priorities
              OR ($4::uuid != '00000000-0000-0000-0000-000000000000'::uuid AND (
