@@ -9,10 +9,12 @@ import axios from './axiosConfig';
  */
 export const quarterlyPrioritiesService = {
   // Get current priorities (simplified - no quarter logic)
-  async getCurrentPriorities(orgId, teamId) {
-    const response = await axios.get(
-      `/organizations/${orgId}/teams/${teamId}/quarterly-priorities/current`
-    );
+  async getCurrentPriorities(orgId, teamId, departmentId = null) {
+    let url = `/organizations/${orgId}/teams/${teamId}/quarterly-priorities/current`;
+    if (departmentId) {
+      url += `?department_id=${departmentId}`;
+    }
+    const response = await axios.get(url);
     
     console.log('API Response:', response.data);
     

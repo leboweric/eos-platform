@@ -967,6 +967,7 @@ export const getArchivedPriorities = async (req, res) => {
 // Get current priorities (simplified - no quarter logic)
 export const getCurrentPriorities = async (req, res) => {
   const { orgId, teamId } = req.params;
+  const { department_id } = req.query;
   
   try {
     console.log('Fetching current priorities for:', { orgId, teamId });
@@ -1004,17 +1005,23 @@ export const getCurrentPriorities = async (req, res) => {
       AND (
         -- NINETY.IO MODEL: Leadership sees ALL data, Departments see all departments (not Leadership)
         CASE
-          WHEN $2 = true THEN true  -- Leadership sees everything
+          WHEN $2 = true THEN 
+            CASE
+              WHEN $3::uuid IS NOT NULL THEN p.team_id = $3::uuid  -- Specific department requested
+              ELSE true  -- Leadership sees everything when no department specified
+            END
           ELSE (p.team_id != '00000000-0000-0000-0000-000000000000'::uuid OR p.team_id IS NULL)  -- Departments exclude Leadership
         END
       )
       ORDER BY p.created_at ASC
     `;
     
-    console.log('Executing query with params:', { orgId, isLeadership });
+    console.log('Executing query with params:', { orgId, isLeadership, department_id });
     console.log('Is leadership team member:', isLeadership);
     
-    const prioritiesResult = await query(prioritiesQuery, [orgId, isLeadership]);
+    // Use department_id if provided, otherwise use existing logic
+    const departmentFilter = department_id || null;
+    const prioritiesResult = await query(prioritiesQuery, [orgId, isLeadership, departmentFilter]);
     console.log(`Found ${prioritiesResult.rows.length} priorities:`, 
       prioritiesResult.rows.map(p => ({ 
         id: p.id, 

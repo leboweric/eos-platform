@@ -34,7 +34,7 @@ async function getTeamMembers(orgId) {
 export const getIssues = async (req, res) => {
   try {
     const { orgId } = req.params;
-    const { timeline, includeArchived } = req.query; // 'short_term' or 'long_term', includeArchived=true to show only archived
+    const { timeline, includeArchived, department_id } = req.query; // 'short_term' or 'long_term', includeArchived=true to show only archived
     const userId = req.user.id;
     
     // Get user's team context
@@ -92,11 +92,26 @@ export const getIssues = async (req, res) => {
     if (userTeam && userTeam.is_leadership_team) {
       // Leadership sees ALL data (Leadership + all departments)
       console.log('User is on leadership team - showing all issues');
-      // No additional filtering needed - show all issues
+      if (department_id) {
+        // Filter to specific department if requested
+        query += ` AND i.team_id = $${paramCount}`;
+        params.push(department_id);
+        paramCount++;
+        console.log('Filtering to specific department:', department_id);
+      }
+      // Otherwise show all issues
     } else {
       // Departments see all departments (but NOT Leadership)
       console.log('User is not on leadership team - filtering out leadership issues');
-      query += ` AND (i.team_id != '00000000-0000-0000-0000-000000000000'::uuid OR i.team_id IS NULL)`;
+      if (department_id) {
+        // Filter to specific department if requested (and ensure it's not Leadership)
+        query += ` AND i.team_id = $${paramCount} AND i.team_id != '00000000-0000-0000-0000-000000000000'::uuid`;
+        params.push(department_id);
+        paramCount++;
+      } else {
+        // Show all departments except Leadership
+        query += ` AND (i.team_id != '00000000-0000-0000-0000-000000000000'::uuid OR i.team_id IS NULL)`;
+      }
     }
     
     query += ` GROUP BY i.id, creator.first_name, creator.last_name, owner.first_name, owner.last_name, t.name

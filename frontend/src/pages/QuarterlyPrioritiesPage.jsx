@@ -2,6 +2,8 @@ import { useState, useEffect, Component } from 'react';
 import { useAuthStore } from '../stores/authStore';
 import { quarterlyPrioritiesService } from '../services/quarterlyPrioritiesService';
 import { getTeamId } from '../utils/teamUtils';
+import { useDepartment } from '../contexts/DepartmentContext';
+import DepartmentSelector from '../components/DepartmentSelector';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -86,6 +88,7 @@ class ErrorBoundary extends Component {
 
 const QuarterlyPrioritiesPage = () => {
   const { user, isOnLeadershipTeam } = useAuthStore();
+  const { selectedDepartment, loading: departmentLoading } = useDepartment();
   const [showArchived, setShowArchived] = useState(false);
   const [showAddPriority, setShowAddPriority] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -130,10 +133,12 @@ const QuarterlyPrioritiesPage = () => {
     dueDate: ''
   });
 
-  // Fetch data on mount
+  // Fetch data when department or archive view changes
   useEffect(() => {
-    fetchQuarterlyData();
-  }, [showArchived]);
+    if (selectedDepartment) {
+      fetchQuarterlyData();
+    }
+  }, [selectedDepartment, showArchived]);
 
   const fetchQuarterlyData = async () => {
     setLoading(true);
@@ -141,10 +146,14 @@ const QuarterlyPrioritiesPage = () => {
     try {
       // Get organization and team IDs from user context
       const orgId = user?.organizationId;
-      const teamId = getTeamId(user, 'leadership'); // Always use Leadership Team for main page
+      const teamId = selectedDepartment?.id;
       
       if (!orgId) {
         throw new Error('No organization ID found');
+      }
+      
+      if (!teamId) {
+        throw new Error('No department selected');
       }
       
       // Fetch either active or archived priorities
@@ -157,7 +166,7 @@ const QuarterlyPrioritiesPage = () => {
         setTeamMemberPriorities({});
         setTeamMembers([]);
       } else {
-        const data = await quarterlyPrioritiesService.getCurrentPriorities(orgId, teamId);
+        const data = await quarterlyPrioritiesService.getCurrentPriorities(orgId, teamId, teamId);
         
         // Log the received priorities to check if description is present
         console.log('[fetchQuarterlyData] Company priorities:', data.companyPriorities);
@@ -473,7 +482,7 @@ const QuarterlyPrioritiesPage = () => {
       const quarter = `Q${currentQuarter}`;
       
       const orgId = user?.organizationId;
-      const teamId = getTeamId(user, 'leadership');
+      const teamId = selectedDepartment?.id;
       
       const priorityData = {
         ...priorityForm,
@@ -1089,12 +1098,24 @@ const QuarterlyPrioritiesPage = () => {
     );
   }
 
+  // Show loading while waiting for department selection
+  if (departmentLoading || !selectedDepartment) {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <Loader2 className="h-8 w-8 animate-spin" />
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-6">
+      {/* Department Selector */}
+      <DepartmentSelector />
+      
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-bold">Quarterly Priorities</h1>
+          <h1 className="text-3xl font-bold">{selectedDepartment.name} Quarterly Priorities</h1>
           {showArchived && (
             <p className="text-gray-600 mt-2">
               Viewing archived priorities from previous quarters

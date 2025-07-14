@@ -10,7 +10,7 @@ import { getUserTeamContext } from '../utils/teamUtils.js';
 export const getTodos = async (req, res) => {
   try {
     const { orgId, teamId } = req.params;
-    const { status, assignedTo, includeCompleted } = req.query;
+    const { status, assignedTo, includeCompleted, department_id } = req.query;
     const userId = req.user.id;
 
     // Get user's team context
@@ -42,11 +42,26 @@ export const getTodos = async (req, res) => {
     if (userTeam && userTeam.is_leadership_team) {
       // Leadership sees ALL data (Leadership + all departments)
       console.log('User is on leadership team - showing all todos');
-      // No additional filtering needed - show all todos
+      if (department_id) {
+        // Filter to specific department if requested
+        conditions.push(`t.team_id = $${paramIndex}`);
+        params.push(department_id);
+        paramIndex++;
+        console.log('Filtering to specific department:', department_id);
+      }
+      // Otherwise show all todos
     } else {
       // Departments see all departments (but NOT Leadership)
       console.log('User is not on leadership team - filtering out leadership todos');
-      conditions.push(`(t.team_id != '00000000-0000-0000-0000-000000000000'::uuid OR t.team_id IS NULL)`);
+      if (department_id) {
+        // Filter to specific department if requested (and ensure it's not Leadership)
+        conditions.push(`t.team_id = $${paramIndex} AND t.team_id != '00000000-0000-0000-0000-000000000000'::uuid`);
+        params.push(department_id);
+        paramIndex++;
+      } else {
+        // Show all departments except Leadership
+        conditions.push(`(t.team_id != '00000000-0000-0000-0000-000000000000'::uuid OR t.team_id IS NULL)`);
+      }
     }
 
     // Get todos with owner and assignee information

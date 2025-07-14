@@ -2,6 +2,7 @@ import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-d
 import { useAuthStore } from './stores/authStore';
 import { useEffect } from 'react';
 import { TeamProvider } from './contexts/TeamContext';
+import { DepartmentProvider } from './contexts/DepartmentContext';
 
 // Components
 import Layout from './components/Layout';
@@ -54,7 +55,8 @@ function App() {
   return (
     <Router>
       <TeamProvider>
-        <div className="min-h-screen bg-background">
+        <DepartmentProvider>
+          <div className="min-h-screen bg-background">
           <Routes>
           {/* Public routes */}
           <Route path="/" element={!user ? <LandingPage /> : <Navigate to="/dashboard" />} />
@@ -97,7 +99,8 @@ function App() {
           {/* Catch all route */}
           <Route path="*" element={<Navigate to={user ? "/dashboard" : "/"} />} />
         </Routes>
-      </div>
+          </div>
+        </DepartmentProvider>
       </TeamProvider>
     </Router>
   );

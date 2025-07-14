@@ -4,6 +4,7 @@ import crypto from 'crypto';
 import { updateSubscriptionUserCount } from './subscriptionController.js';
 import { sendEmail } from '../services/emailService.js';
 import { v4 as uuidv4 } from 'uuid';
+import { getUserTeamContext } from '../utils/teamUtils.js';
 
 // Get all users in organization
 export const getOrganizationUsers = async (req, res) => {
@@ -388,5 +389,70 @@ export const cancelInvitation = async (req, res) => {
   } catch (error) {
     console.error('Cancel invitation error:', error);
     res.status(500).json({ error: 'Failed to cancel invitation' });
+  }
+};
+
+// Get user's available departments based on their permissions
+export const getUserDepartments = async (req, res) => {
+  try {
+    const userId = req.user.id;
+    const organizationId = req.user.organizationId || req.user.organization_id;
+    
+    console.log('Getting departments for user:', { userId, organizationId });
+    
+    // Get user's team context to determine if they're on leadership team
+    const userTeam = await getUserTeamContext(userId, organizationId);
+    const isLeadershipMember = userTeam && userTeam.is_leadership_team;
+    
+    console.log('User team context:', userTeam);
+    console.log('Is leadership member:', isLeadershipMember);
+    
+    let availableDepartments;
+    
+    if (isLeadershipMember) {
+      // Leadership members can see ALL departments
+      const result = await query(
+        `SELECT id, name, is_leadership_team
+         FROM teams 
+         WHERE organization_id = $1
+         ORDER BY is_leadership_team DESC, name ASC`,
+        [organizationId]
+      );
+      availableDepartments = result.rows;
+    } else {
+      // Regular users only see their own departments
+      const result = await query(
+        `SELECT DISTINCT t.id, t.name, t.is_leadership_team
+         FROM teams t
+         JOIN team_members tm ON t.id = tm.team_id
+         WHERE tm.user_id = $1 AND t.organization_id = $2
+         ORDER BY t.name ASC`,
+        [userId, organizationId]
+      );
+      availableDepartments = result.rows;
+    }
+    
+    const departments = availableDepartments.map(team => ({
+      id: team.id,
+      name: team.name,
+      is_leadership_team: team.is_leadership_team
+    }));
+    
+    console.log('Available departments:', departments);
+    
+    res.json({
+      success: true,
+      data: {
+        departments,
+        is_leadership_member: isLeadershipMember
+      }
+    });
+    
+  } catch (error) {
+    console.error('Error fetching user departments:', error);
+    res.status(500).json({ 
+      success: false,
+      error: 'Failed to fetch user departments' 
+    });
   }
 };

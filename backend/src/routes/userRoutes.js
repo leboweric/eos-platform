@@ -9,7 +9,8 @@ import {
   acceptInvitation,
   removeUser,
   getPendingInvitations,
-  cancelInvitation
+  cancelInvitation,
+  getUserDepartments
 } from '../controllers/userController.js';
 import {
   getUserSkills,
@@ -58,5 +59,8 @@ router.delete('/:userId/skills/:skillId', [
   param('userId').isUUID().withMessage('Invalid user ID'),
   param('skillId').isUUID().withMessage('Invalid skill ID')
 ], validateRequest, removeUserSkill);
+
+// Get user's available departments
+router.get('/departments', getUserDepartments);
 
 export default router;
