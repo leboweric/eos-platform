@@ -67,15 +67,6 @@ export const DepartmentProvider = ({ children }) => {
           localStorage.setItem('selectedDepartmentId', defaultDepartment.id);
         } else {
           console.warn('[DepartmentContext] No departments found for user');
-          // Fallback for testing - show Leadership Team
-          const fallbackDepartment = {
-            id: '00000000-0000-0000-0000-000000000000',
-            name: 'Leadership Team',
-            is_leadership_team: true
-          };
-          console.log('[DepartmentContext] Using fallback department:', fallbackDepartment);
-          setSelectedDepartment(fallbackDepartment);
-          setAvailableDepartments([fallbackDepartment]);
         }
       } else {
         console.error('[DepartmentContext] Failed to fetch user departments:', response.status, response.statusText);
@@ -87,29 +78,11 @@ export const DepartmentProvider = ({ children }) => {
           console.error('[DepartmentContext] Departments endpoint not found. Backend may need updating.');
         }
         
-        // Fallback for API errors
-        const fallbackDepartment = {
-          id: '00000000-0000-0000-0000-000000000000',
-          name: 'Leadership Team',
-          is_leadership_team: true
-        };
-        console.log('[DepartmentContext] Using fallback department due to API error');
-        setSelectedDepartment(fallbackDepartment);
-        setAvailableDepartments([fallbackDepartment]);
       }
     } catch (error) {
       console.error('[DepartmentContext] Error fetching user departments:', error);
       console.error('[DepartmentContext] Error details:', error.message, error.stack);
       
-      // Fallback for network errors
-      const fallbackDepartment = {
-        id: '00000000-0000-0000-0000-000000000000',
-        name: 'Leadership Team',
-        is_leadership_team: true
-      };
-      console.log('[DepartmentContext] Using fallback department due to network error');
-      setSelectedDepartment(fallbackDepartment);
-      setAvailableDepartments([fallbackDepartment]);
     } finally {
       setLoading(false);
       console.log('[DepartmentContext] Loading complete. State:', {

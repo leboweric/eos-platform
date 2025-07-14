@@ -440,11 +440,21 @@ export const getUserDepartments = async (req, res) => {
     
     console.log('Available departments:', departments);
     
+    // If no departments found, provide default Leadership Team
+    if (departments.length === 0) {
+      console.log('No departments found, providing default Leadership Team');
+      departments.push({
+        id: '00000000-0000-0000-0000-000000000000',
+        name: 'Leadership Team',
+        is_leadership_team: true
+      });
+    }
+    
     res.json({
       success: true,
       data: {
         departments,
-        is_leadership_member: isLeadershipMember
+        is_leadership_member: isLeadershipMember || departments.length === 1
       }
     });
     
