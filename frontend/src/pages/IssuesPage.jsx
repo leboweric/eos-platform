@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useAuthStore } from '../stores/authStore';
 import { issuesService } from '../services/issuesService';
+import { useDepartment } from '../contexts/DepartmentContext';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -24,6 +25,7 @@ import ArchivedIssueCard from '../components/issues/ArchivedIssueCard';
 
 const IssuesPage = () => {
   const { user } = useAuthStore();
+  const { selectedDepartment } = useDepartment();
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [success, setSuccess] = useState(null);
@@ -41,7 +43,7 @@ const IssuesPage = () => {
 
   useEffect(() => {
     fetchIssues();
-  }, []);
+  }, [selectedDepartment]);
 
   const fetchIssues = async () => {
     try {
@@ -50,9 +52,9 @@ const IssuesPage = () => {
       
       // Fetch all types of issues
       const [shortTermResponse, longTermResponse, archivedResponse] = await Promise.all([
-        issuesService.getIssues('short_term'),
-        issuesService.getIssues('long_term'),
-        issuesService.getIssues(null, true) // Get all archived issues
+        issuesService.getIssues('short_term', false, selectedDepartment?.id),
+        issuesService.getIssues('long_term', false, selectedDepartment?.id),
+        issuesService.getIssues(null, true, selectedDepartment?.id) // Get all archived issues
       ]);
       
       setShortTermIssues(shortTermResponse.data.issues || []);
@@ -88,7 +90,8 @@ const IssuesPage = () => {
       } else {
         savedIssue = await issuesService.createIssue({
           ...issueData,
-          timeline: activeTab
+          timeline: activeTab,
+          department_id: selectedDepartment?.id
         });
         setSuccess('Issue created successfully');
       }
@@ -201,7 +204,7 @@ const IssuesPage = () => {
         <div className="flex items-center justify-between mb-8">
           <div>
             <h1 className="text-4xl font-bold text-gray-900">
-              Issues List
+              Issues List{selectedDepartment ? ` - ${selectedDepartment.name}` : ''}
             </h1>
             <p className="text-gray-600 mt-2 text-lg">Track and resolve organizational issues</p>
           </div>

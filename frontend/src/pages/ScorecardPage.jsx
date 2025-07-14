@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { useAuthStore } from '../stores/authStore';
 import { scorecardService } from '../services/scorecardService';
 import { getTeamId } from '../utils/teamUtils';
+import { useDepartment } from '../contexts/DepartmentContext';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -27,6 +28,7 @@ import MetricTrendChart from '../components/scorecard/MetricTrendChart';
 
 const ScorecardPage = () => {
   const { user } = useAuthStore();
+  const { selectedDepartment } = useDepartment();
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState(null);
@@ -65,11 +67,12 @@ const ScorecardPage = () => {
   useEffect(() => {
     console.log('ScorecardPage useEffect - user:', user);
     console.log('ScorecardPage useEffect - organizationId:', user?.organizationId);
+    console.log('ScorecardPage useEffect - selectedDepartment:', selectedDepartment);
     
-    if (user?.organizationId) {
+    if (user?.organizationId && selectedDepartment) {
       fetchScorecard();
     }
-  }, [user?.organizationId]);
+  }, [user?.organizationId, selectedDepartment]);
 
   const fetchScorecard = async () => {
     try {
@@ -77,13 +80,14 @@ const ScorecardPage = () => {
       setError(null);
       
       const orgId = localStorage.getItem('impersonatedOrgId') || user?.organizationId || user?.organization_id;
-      const teamId = getTeamId(user, 'leadership');
+      const teamId = selectedDepartment?.id || getTeamId(user, 'leadership');
+      const departmentId = selectedDepartment?.id;
       
       if (!orgId) {
         throw new Error('No organization ID found');
       }
       
-      const response = await scorecardService.getScorecard(orgId, teamId);
+      const response = await scorecardService.getScorecard(orgId, teamId, departmentId);
       
       if (response && response.data) {
         setMetrics(response.data.metrics || []);
@@ -327,7 +331,7 @@ const ScorecardPage = () => {
         <div className="flex items-center justify-between mb-8">
           <div>
             <h1 className="text-4xl font-bold bg-gradient-to-r from-indigo-600 to-blue-600 bg-clip-text text-transparent">
-              Scorecard
+              {selectedDepartment?.name || ''} Scorecard
             </h1>
             <p className="text-gray-600 mt-2 text-lg">Track your key metrics and measurables</p>
           </div>

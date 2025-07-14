@@ -21,13 +21,14 @@ const getTeamId = () => {
  */
 export const todosService = {
   // Get all todos
-  getTodos: async (status = null, assignedTo = null, includeCompleted = false) => {
+  getTodos: async (status = null, assignedTo = null, includeCompleted = false, departmentId = null) => {
     const orgId = getOrgId();
     
     const params = {};
     if (status) params.status = status;
     if (assignedTo) params.assignedTo = assignedTo;
     if (includeCompleted) params.includeCompleted = 'true';
+    if (departmentId) params.department_id = departmentId;
     
     const response = await axios.get(
       `/organizations/${orgId}/todos`,

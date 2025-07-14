@@ -3,7 +3,6 @@ import { useAuthStore } from '../stores/authStore';
 import { quarterlyPrioritiesService } from '../services/quarterlyPrioritiesService';
 import { getTeamId } from '../utils/teamUtils';
 import { useDepartment } from '../contexts/DepartmentContext';
-import DepartmentSelector from '../components/DepartmentSelector';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -1109,9 +1108,6 @@ const QuarterlyPrioritiesPage = () => {
 
   return (
     <div className="space-y-6">
-      {/* Department Selector */}
-      <DepartmentSelector />
-      
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>

@@ -7,6 +7,7 @@ import { Badge } from '@/components/ui/badge';
 import TrialBanner from './TrialBanner';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { organizationService } from '../services/organizationService';
+import DepartmentSelector from './DepartmentSelector';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -197,6 +198,9 @@ const Layout = ({ children }) => {
             </div>
 
             <div className="flex items-center space-x-4">
+              {/* Department Selector - Global placement */}
+              <DepartmentSelector />
+              
               {/* Leadership Team Badge */}
               {isOnLeadershipTeam() && (
                 <Badge variant="default" className="bg-purple-600 hover:bg-purple-700">

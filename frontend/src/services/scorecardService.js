@@ -12,10 +12,14 @@ const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3001/api/v1';
  */
 export const scorecardService = {
   // Get complete scorecard with metrics and scores
-  getScorecard: async (orgId, teamId) => {
+  getScorecard: async (orgId, teamId, departmentId = null) => {
     const token = localStorage.getItem('accessToken');
+    let url = `${API_URL}/organizations/${orgId}/teams/${teamId}/scorecard`;
+    if (departmentId) {
+      url += `?department_id=${departmentId}`;
+    }
     const response = await fetch(
-      `${API_URL}/organizations/${orgId}/teams/${teamId}/scorecard`,
+      url,
       {
         headers: {
           Authorization: `Bearer ${token}`,

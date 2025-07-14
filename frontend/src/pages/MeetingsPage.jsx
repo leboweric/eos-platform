@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuthStore } from '../stores/authStore';
+import { useDepartment } from '../contexts/DepartmentContext';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -18,6 +19,7 @@ import { teamsService } from '../services/teamsService';
 const MeetingsPage = () => {
   const navigate = useNavigate();
   const { user } = useAuthStore();
+  const { selectedDepartment } = useDepartment();
   const [teams, setTeams] = useState([]);
   const [selectedTeamId, setSelectedTeamId] = useState(null);
   const [loadingTeams, setLoadingTeams] = useState(true);
@@ -73,19 +75,21 @@ const MeetingsPage = () => {
   ];
 
   useEffect(() => {
-    fetchUserTeams();
-  }, []);
+    if (selectedDepartment) {
+      fetchUserTeams();
+    }
+  }, [selectedDepartment]);
 
   const fetchUserTeams = async () => {
     try {
       setLoadingTeams(true);
       
-      // Use the same default team ID pattern as other pages
-      const teamId = user?.teamId || '00000000-0000-0000-0000-000000000000';
+      // Use the selected department
+      const teamId = selectedDepartment?.id || user?.teamId || '00000000-0000-0000-0000-000000000000';
       
       const defaultTeam = {
         id: teamId,
-        name: 'Leadership Team'
+        name: selectedDepartment?.name || 'Leadership Team'
       };
       setTeams([defaultTeam]);
       setSelectedTeamId(teamId);
@@ -109,7 +113,7 @@ const MeetingsPage = () => {
         <div className="mb-8">
           <div className="flex items-start justify-between">
             <div>
-              <h1 className="text-4xl font-bold text-gray-900">Meetings</h1>
+              <h1 className="text-4xl font-bold text-gray-900">{selectedDepartment?.name || ''} Meetings</h1>
               <p className="text-gray-600 mt-2 text-lg">Run effective meetings with structured agendas</p>
             </div>
             {teams.length > 1 && (

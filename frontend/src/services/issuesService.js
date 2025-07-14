@@ -26,12 +26,13 @@ const getTeamId = () => {
  */
 export const issuesService = {
   // Get all issues
-  getIssues: async (timeline = null, includeArchived = false) => {
+  getIssues: async (timeline = null, includeArchived = false, departmentId = null) => {
     const orgId = getOrgId();
     
     const params = {};
     if (timeline) params.timeline = timeline;
     if (includeArchived) params.includeArchived = 'true';
+    if (departmentId) params.department_id = departmentId;
     
     const response = await axios.get(
       `/organizations/${orgId}/issues`,

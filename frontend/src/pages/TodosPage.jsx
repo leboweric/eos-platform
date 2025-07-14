@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useAuthStore } from '../stores/authStore';
 import { todosService } from '../services/todosService';
+import { useDepartment } from '../contexts/DepartmentContext';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -20,6 +21,7 @@ import TodoCard from '../components/todos/TodoCard';
 
 const TodosPage = () => {
   const { user } = useAuthStore();
+  const { selectedDepartment } = useDepartment();
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [success, setSuccess] = useState(null);
@@ -36,7 +38,7 @@ const TodosPage = () => {
 
   useEffect(() => {
     fetchTodos();
-  }, [activeTab, filterAssignee]);
+  }, [activeTab, filterAssignee, selectedDepartment]);
 
   const fetchTodos = async () => {
     try {
@@ -49,7 +51,8 @@ const TodosPage = () => {
       const response = await todosService.getTodos(
         activeTab === 'all' ? null : activeTab,
         assignedTo,
-        activeTab === 'all'
+        activeTab === 'all',
+        selectedDepartment?.id
       );
       
       setTodos(response.data.todos || []);
@@ -79,7 +82,10 @@ const TodosPage = () => {
         savedTodo = await todosService.updateTodo(editingTodo.id, todoData);
         setSuccess('To-do updated successfully');
       } else {
-        savedTodo = await todosService.createTodo(todoData);
+        savedTodo = await todosService.createTodo({
+          ...todoData,
+          department_id: selectedDepartment?.id
+        });
         setSuccess('To-do created successfully');
       }
       
@@ -129,7 +135,7 @@ const TodosPage = () => {
       <div className="max-w-7xl mx-auto p-6 space-y-6">
         <div className="flex items-center justify-between mb-8">
           <div>
-            <h1 className="text-4xl font-bold text-gray-900">To-Dos</h1>
+            <h1 className="text-4xl font-bold text-gray-900">To-Dos{selectedDepartment ? ` - ${selectedDepartment.name}` : ''}</h1>
             <p className="text-gray-600 mt-2 text-lg">Manage your tasks and action items</p>
           </div>
           <Button onClick={handleCreateTodo} className="bg-indigo-600 hover:bg-indigo-700">
