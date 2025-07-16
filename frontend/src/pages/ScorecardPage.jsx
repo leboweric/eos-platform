@@ -1,7 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useAuthStore } from '../stores/authStore';
 import { scorecardService } from '../services/scorecardService';
-import { getTeamId } from '../utils/teamUtils';
 import { useDepartment } from '../contexts/DepartmentContext';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -80,7 +79,11 @@ const ScorecardPage = () => {
       setError(null);
       
       const orgId = localStorage.getItem('impersonatedOrgId') || user?.organizationId || user?.organization_id;
-      const teamId = selectedDepartment?.id || getTeamId(user, 'leadership');
+      const teamId = selectedDepartment?.id;
+      
+      if (!teamId) {
+        throw new Error('No department selected');
+      }
       const departmentId = selectedDepartment?.id;
       
       if (!orgId) {
@@ -141,7 +144,11 @@ const ScorecardPage = () => {
       setError(null);
       
       const orgId = localStorage.getItem('impersonatedOrgId') || user?.organizationId || user?.organization_id;
-      const teamId = getTeamId(user, 'leadership');
+      const teamId = selectedDepartment?.id;
+      
+      if (!teamId) {
+        throw new Error('No department selected');
+      }
       
       if (!orgId) {
         throw new Error('No organization ID found');
@@ -188,7 +195,11 @@ const ScorecardPage = () => {
       setError(null);
       
       const orgId = localStorage.getItem('impersonatedOrgId') || user?.organizationId || user?.organization_id;
-      const teamId = getTeamId(user, 'leadership');
+      const teamId = selectedDepartment?.id;
+      
+      if (!teamId) {
+        throw new Error('No department selected');
+      }
       
       if (!orgId) {
         throw new Error('No organization ID found');
@@ -214,7 +225,11 @@ const ScorecardPage = () => {
       setError(null);
       
       const orgId = localStorage.getItem('impersonatedOrgId') || user?.organizationId || user?.organization_id;
-      const teamId = getTeamId(user, 'leadership');
+      const teamId = selectedDepartment?.id;
+      
+      if (!teamId) {
+        throw new Error('No department selected');
+      }
       
       if (!orgId) {
         throw new Error('No organization ID found');
@@ -778,7 +793,7 @@ const ScorecardPage = () => {
         metric={chartModal.metric}
         metricId={chartModal.metricId}
         orgId={user?.organizationId}
-        teamId={user?.teamId || '00000000-0000-0000-0000-000000000000'}
+        teamId={selectedDepartment?.id}
       />
     </div>
   );

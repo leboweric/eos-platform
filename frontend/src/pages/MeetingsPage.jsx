@@ -85,11 +85,16 @@ const MeetingsPage = () => {
       setLoadingTeams(true);
       
       // Use the selected department
-      const teamId = selectedDepartment?.id || user?.teamId || '00000000-0000-0000-0000-000000000000';
+      const teamId = selectedDepartment?.id;
+      
+      if (!teamId) {
+        setLoadingTeams(false);
+        return;
+      }
       
       const defaultTeam = {
         id: teamId,
-        name: selectedDepartment?.name || 'Leadership Team'
+        name: selectedDepartment?.name
       };
       setTeams([defaultTeam]);
       setSelectedTeamId(teamId);
