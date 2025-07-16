@@ -1002,25 +1002,20 @@ export const getCurrentPriorities = async (req, res) => {
       WHERE p.organization_id = $1 
       AND p.deleted_at IS NULL
       AND (
-        -- NINETY.IO MODEL: Leadership sees ALL data, Departments see all departments (not Leadership)
+        -- Filter by specific department
         CASE
-          WHEN $2 = true THEN 
-            CASE
-              WHEN $3::uuid IS NOT NULL THEN p.team_id = $3::uuid  -- Specific department requested
-              ELSE true  -- Leadership sees everything when no department specified
-            END
-          ELSE (p.team_id != '00000000-0000-0000-0000-000000000000'::uuid OR p.team_id IS NULL)  -- Departments exclude Leadership
+          WHEN $2::uuid IS NOT NULL THEN p.team_id = $2::uuid  -- Specific department requested
+          ELSE true  -- No department filter
         END
       )
       ORDER BY p.created_at ASC
     `;
     
-    console.log('Executing query with params:', { orgId, isLeadership, teamId });
-    console.log('Is leadership team member:', isLeadership);
+    console.log('Executing query with params:', { orgId, teamId });
     
     // Use teamId from URL params as the department filter
     const departmentFilter = teamId || null;
-    const prioritiesResult = await query(prioritiesQuery, [orgId, isLeadership, departmentFilter]);
+    const prioritiesResult = await query(prioritiesQuery, [orgId, departmentFilter]);
     console.log(`Found ${prioritiesResult.rows.length} priorities:`, 
       prioritiesResult.rows.map(p => ({ 
         id: p.id, 

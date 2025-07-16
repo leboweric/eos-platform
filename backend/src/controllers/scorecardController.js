@@ -61,10 +61,8 @@ export const getScorecard = async (req, res) => {
       selectColumns += ', sm.comparison_operator';
     }
     
-    // NINETY.IO MODEL: Apply team-based visibility
-    const teamFilter = isLeadership 
-      ? '' // Leadership sees all
-      : 'AND (sm.team_id != \'00000000-0000-0000-0000-000000000000\'::uuid OR sm.team_id IS NULL)';
+    // Filter by specific team ID from request
+    const teamFilter = teamId ? 'AND sm.team_id = $2' : '';
     
     // Get all metrics for the team
     const metricsQuery = `
@@ -74,7 +72,8 @@ export const getScorecard = async (req, res) => {
       WHERE sm.organization_id = $1 ${teamFilter}
       ORDER BY sm.created_at ASC
     `;
-    const metrics = await db.query(metricsQuery, [orgId]);
+    const queryParams = teamId ? [orgId, teamId] : [orgId];
+    const metrics = await db.query(metricsQuery, queryParams);
     
     // Get all scores for these metrics
     const scoresQuery = `

@@ -88,30 +88,12 @@ export const getIssues = async (req, res) => {
       paramCount++;
     }
     
-    // NINETY.IO MODEL: Apply team-based visibility
-    if (userTeam && userTeam.is_leadership_team) {
-      // Leadership sees ALL data (Leadership + all departments)
-      console.log('User is on leadership team - showing all issues');
-      if (department_id) {
-        // Filter to specific department if requested
-        query += ` AND i.team_id = $${paramCount}`;
-        params.push(department_id);
-        paramCount++;
-        console.log('Filtering to specific department:', department_id);
-      }
-      // Otherwise show all issues
-    } else {
-      // Departments see all departments (but NOT Leadership)
-      console.log('User is not on leadership team - filtering out leadership issues');
-      if (department_id) {
-        // Filter to specific department if requested (and ensure it's not Leadership)
-        query += ` AND i.team_id = $${paramCount} AND i.team_id != '00000000-0000-0000-0000-000000000000'::uuid`;
-        params.push(department_id);
-        paramCount++;
-      } else {
-        // Show all departments except Leadership
-        query += ` AND (i.team_id != '00000000-0000-0000-0000-000000000000'::uuid OR i.team_id IS NULL)`;
-      }
+    // Always filter by specific department if provided
+    if (department_id) {
+      query += ` AND i.team_id = $${paramCount}`;
+      params.push(department_id);
+      paramCount++;
+      console.log('Filtering to specific department:', department_id);
     }
     
     query += ` GROUP BY i.id, creator.first_name, creator.last_name, owner.first_name, owner.last_name, t.name

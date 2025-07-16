@@ -38,30 +38,12 @@ export const getTodos = async (req, res) => {
       paramIndex++;
     }
     
-    // NINETY.IO MODEL: Apply team-based visibility
-    if (userTeam && userTeam.is_leadership_team) {
-      // Leadership sees ALL data (Leadership + all departments)
-      console.log('User is on leadership team - showing all todos');
-      if (department_id) {
-        // Filter to specific department if requested
-        conditions.push(`t.team_id = $${paramIndex}`);
-        params.push(department_id);
-        paramIndex++;
-        console.log('Filtering to specific department:', department_id);
-      }
-      // Otherwise show all todos
-    } else {
-      // Departments see all departments (but NOT Leadership)
-      console.log('User is not on leadership team - filtering out leadership todos');
-      if (department_id) {
-        // Filter to specific department if requested (and ensure it's not Leadership)
-        conditions.push(`t.team_id = $${paramIndex} AND t.team_id != '00000000-0000-0000-0000-000000000000'::uuid`);
-        params.push(department_id);
-        paramIndex++;
-      } else {
-        // Show all departments except Leadership
-        conditions.push(`(t.team_id != '00000000-0000-0000-0000-000000000000'::uuid OR t.team_id IS NULL)`);
-      }
+    // Always filter by specific department if provided
+    if (department_id) {
+      conditions.push(`t.team_id = $${paramIndex}`);
+      params.push(department_id);
+      paramIndex++;
+      console.log('Filtering to specific department:', department_id);
     }
 
     // Get todos with owner and assignee information
