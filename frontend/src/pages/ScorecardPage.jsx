@@ -27,7 +27,7 @@ import MetricTrendChart from '../components/scorecard/MetricTrendChart';
 
 const ScorecardPage = () => {
   const { user } = useAuthStore();
-  const { selectedDepartment } = useDepartment();
+  const { selectedDepartment, loading: departmentLoading } = useDepartment();
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState(null);
@@ -82,7 +82,8 @@ const ScorecardPage = () => {
       const teamId = selectedDepartment?.id;
       
       if (!teamId) {
-        throw new Error('No department selected');
+        console.log('No department selected yet, skipping operation');
+        return;
       }
       const departmentId = selectedDepartment?.id;
       
@@ -147,7 +148,8 @@ const ScorecardPage = () => {
       const teamId = selectedDepartment?.id;
       
       if (!teamId) {
-        throw new Error('No department selected');
+        console.log('No department selected yet, skipping operation');
+        return;
       }
       
       if (!orgId) {
@@ -198,7 +200,8 @@ const ScorecardPage = () => {
       const teamId = selectedDepartment?.id;
       
       if (!teamId) {
-        throw new Error('No department selected');
+        console.log('No department selected yet, skipping operation');
+        return;
       }
       
       if (!orgId) {
@@ -228,7 +231,8 @@ const ScorecardPage = () => {
       const teamId = selectedDepartment?.id;
       
       if (!teamId) {
-        throw new Error('No department selected');
+        console.log('No department selected yet, skipping operation');
+        return;
       }
       
       if (!orgId) {
@@ -332,7 +336,7 @@ const ScorecardPage = () => {
     }
   };
 
-  if (loading) {
+  if (loading || departmentLoading || !selectedDepartment) {
     return (
       <div className="flex items-center justify-center min-h-screen">
         <Loader2 className="h-8 w-8 animate-spin" />
