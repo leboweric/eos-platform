@@ -37,21 +37,25 @@ const ArchivedIssuesList = ({ issues, onUnarchive, getStatusColor, getStatusIcon
         <Table>
           <TableHeader>
             <TableRow>
-              <TableHead className="w-[40%]">Issue</TableHead>
-              <TableHead className="w-[15%]">Owner</TableHead>
-              <TableHead className="w-[15%]">Archived</TableHead>
-              <TableHead className="w-[10%]">Timeline</TableHead>
-              <TableHead className="w-[10%]">Status</TableHead>
-              <TableHead className="w-[10%] text-right">Actions</TableHead>
+              <TableHead className="w-8">#</TableHead>
+              <TableHead className="min-w-[300px]">Issue</TableHead>
+              <TableHead className="w-32">Owner</TableHead>
+              <TableHead className="w-24">Archived</TableHead>
+              <TableHead className="w-24">Timeline</TableHead>
+              <TableHead className="w-20">Status</TableHead>
+              <TableHead className="w-20 text-right">Actions</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
-            {issues.map((issue) => (
+            {issues.map((issue, index) => (
               <TableRow 
                 key={issue.id} 
                 className="cursor-pointer hover:bg-gray-50"
                 onClick={() => setSelectedIssue(issue)}
               >
+                <TableCell className="text-sm text-gray-500 font-medium">
+                  {index + 1}
+                </TableCell>
                 <TableCell className="font-medium">
                   <div className="flex items-center gap-3">
                     <div className="flex-1">
@@ -74,26 +78,23 @@ const ArchivedIssuesList = ({ issues, onUnarchive, getStatusColor, getStatusIcon
                   </div>
                 </TableCell>
                 <TableCell>
-                  <div className="flex items-center gap-2 text-sm text-gray-500">
-                    <User className="h-4 w-4" />
-                    <span className="truncate">{issue.owner_name || 'Unassigned'}</span>
-                  </div>
+                  <span className="text-sm text-gray-500 truncate block">
+                    {issue.owner_name || 'Unassigned'}
+                  </span>
                 </TableCell>
                 <TableCell>
-                  <div className="flex items-center gap-2 text-sm text-gray-500">
-                    <Calendar className="h-4 w-4" />
+                  <span className="text-sm text-gray-500">
                     {formatDate(issue.archived_at)}
-                  </div>
+                  </span>
                 </TableCell>
                 <TableCell>
-                  <Badge variant="outline" className="text-xs text-gray-500">
-                    {issue.timeline === 'short_term' ? 'Short Term' : 'Long Term'}
-                  </Badge>
+                  <span className="text-xs text-gray-500">
+                    {issue.timeline === 'short_term' ? 'Short' : 'Long'}
+                  </span>
                 </TableCell>
                 <TableCell>
                   <Badge className={`${getStatusColor(issue.status)} text-xs opacity-75`}>
-                    {getStatusIcon(issue.status)}
-                    <span className="ml-1 capitalize">{issue.status}</span>
+                    <span className="capitalize">{issue.status}</span>
                   </Badge>
                 </TableCell>
                 <TableCell className="text-right">
