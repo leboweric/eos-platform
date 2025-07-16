@@ -20,8 +20,8 @@ import {
   Archive
 } from 'lucide-react';
 import IssueDialog from '../components/issues/IssueDialog';
-import IssueCard from '../components/issues/IssueCard';
-import ArchivedIssueCard from '../components/issues/ArchivedIssueCard';
+import IssuesList from '../components/issues/IssuesList';
+import ArchivedIssuesList from '../components/issues/ArchivedIssuesList';
 
 const IssuesPage = () => {
   const { user } = useAuthStore();
@@ -278,31 +278,25 @@ const IssuesPage = () => {
                 </CardContent>
               </Card>
             ) : (
-              <div className="grid gap-4">
-                {currentIssues.map((issue) => (
-                  activeTab === 'archived' ? (
-                    <ArchivedIssueCard
-                      key={issue.id}
-                      issue={issue}
-                      onUnarchive={handleUnarchive}
-                      getStatusColor={getStatusColor}
-                      getStatusIcon={getStatusIcon}
-                    />
-                  ) : (
-                    <IssueCard
-                      key={issue.id}
-                      issue={issue}
-                      onEdit={handleEditIssue}
-                      onStatusChange={handleStatusChange}
-                      onTimelineChange={handleTimelineChange}
-                      onVote={handleVote}
-                      getStatusColor={getStatusColor}
-                      getStatusIcon={getStatusIcon}
-                      showVoting={false} // Will be enabled during Weekly Accountability Meetings
-                    />
-                  )
-                ))}
-              </div>
+              activeTab === 'archived' ? (
+                <ArchivedIssuesList
+                  issues={currentIssues}
+                  onUnarchive={handleUnarchive}
+                  getStatusColor={getStatusColor}
+                  getStatusIcon={getStatusIcon}
+                />
+              ) : (
+                <IssuesList
+                  issues={currentIssues}
+                  onEdit={handleEditIssue}
+                  onStatusChange={handleStatusChange}
+                  onTimelineChange={handleTimelineChange}
+                  onVote={handleVote}
+                  getStatusColor={getStatusColor}
+                  getStatusIcon={getStatusIcon}
+                  showVoting={false} // Will be enabled during Weekly Accountability Meetings
+                />
+              )
             )}
           </TabsContent>
         </Tabs>
