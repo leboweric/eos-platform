@@ -84,7 +84,7 @@ export const getScorecard = async (req, res) => {
         WHERE sm.organization_id = $1 ${teamFilter}
       )
     `;
-    const scores = await db.query(scoresQuery, [orgId]);
+    const scores = await db.query(scoresQuery, queryParams);
     
     // Organize scores by metric and week
     const weeklyScores = {};
