@@ -967,7 +967,6 @@ export const getArchivedPriorities = async (req, res) => {
 // Get current priorities (simplified - no quarter logic)
 export const getCurrentPriorities = async (req, res) => {
   const { orgId, teamId } = req.params;
-  const { department_id } = req.query;
   
   try {
     console.log('Fetching current priorities for:', { orgId, teamId });
@@ -1016,11 +1015,11 @@ export const getCurrentPriorities = async (req, res) => {
       ORDER BY p.created_at ASC
     `;
     
-    console.log('Executing query with params:', { orgId, isLeadership, department_id });
+    console.log('Executing query with params:', { orgId, isLeadership, teamId });
     console.log('Is leadership team member:', isLeadership);
     
-    // Use department_id if provided, otherwise use existing logic
-    const departmentFilter = department_id || null;
+    // Use teamId from URL params as the department filter
+    const departmentFilter = teamId || null;
     const prioritiesResult = await query(prioritiesQuery, [orgId, isLeadership, departmentFilter]);
     console.log(`Found ${prioritiesResult.rows.length} priorities:`, 
       prioritiesResult.rows.map(p => ({ 

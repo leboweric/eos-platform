@@ -1,7 +1,6 @@
 import { useState, useEffect, Component } from 'react';
 import { useAuthStore } from '../stores/authStore';
 import { quarterlyPrioritiesService } from '../services/quarterlyPrioritiesService';
-import { getTeamId } from '../utils/teamUtils';
 import { useDepartment } from '../contexts/DepartmentContext';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -165,7 +164,8 @@ const QuarterlyPrioritiesPage = () => {
         setTeamMemberPriorities({});
         setTeamMembers([]);
       } else {
-        const data = await quarterlyPrioritiesService.getCurrentPriorities(orgId, teamId, teamId);
+        // Use the selected department's ID as the teamId for the API call
+        const data = await quarterlyPrioritiesService.getCurrentPriorities(orgId, teamId);
         
         // Log the received priorities to check if description is present
         console.log('[fetchQuarterlyData] Company priorities:', data.companyPriorities);
@@ -330,7 +330,11 @@ const QuarterlyPrioritiesPage = () => {
   const handleSavePredictions = async () => {
     try {
       const orgId = user?.organizationId;
-      const teamId = getTeamId(user, 'leadership');
+      const teamId = selectedDepartment?.id;
+      
+      if (!orgId || !teamId) {
+        throw new Error('Organization or department not found');
+      }
       
       // Get current quarter and year
       const now = new Date();
@@ -356,7 +360,11 @@ const QuarterlyPrioritiesPage = () => {
   const handleUpdatePriority = async (priorityId, updates) => {
     try {
       const orgId = user?.organizationId || user?.organization_id;
-      const teamId = getTeamId(user, 'leadership');
+      const teamId = selectedDepartment?.id;
+      
+      if (!orgId || !teamId) {
+        throw new Error('Organization or department not found');
+      }
       
       console.log('[QuarterlyPriorities] Updating priority:', priorityId, 'with:', updates);
       console.log('[QuarterlyPriorities] Using orgId:', orgId, 'teamId:', teamId);
@@ -381,7 +389,11 @@ const QuarterlyPrioritiesPage = () => {
   const handleUpdateMilestone = async (priorityId, milestoneId, completed) => {
     try {
       const orgId = user?.organizationId;
-      const teamId = getTeamId(user, 'leadership');
+      const teamId = selectedDepartment?.id;
+      
+      if (!orgId || !teamId) {
+        throw new Error('Organization or department not found');
+      }
       
       await quarterlyPrioritiesService.updateMilestone(orgId, teamId, priorityId, milestoneId, { completed });
       
@@ -402,7 +414,11 @@ const QuarterlyPrioritiesPage = () => {
   const handleCreateMilestone = async (priorityId, milestoneData) => {
     try {
       const orgId = user?.organizationId;
-      const teamId = getTeamId(user, 'leadership');
+      const teamId = selectedDepartment?.id;
+      
+      if (!orgId || !teamId) {
+        throw new Error('Organization or department not found');
+      }
       
       await quarterlyPrioritiesService.createMilestone(orgId, teamId, priorityId, milestoneData);
       
@@ -417,7 +433,11 @@ const QuarterlyPrioritiesPage = () => {
   const handleEditMilestone = async (priorityId, milestoneId, updates) => {
     try {
       const orgId = user?.organizationId;
-      const teamId = getTeamId(user, 'leadership');
+      const teamId = selectedDepartment?.id;
+      
+      if (!orgId || !teamId) {
+        throw new Error('Organization or department not found');
+      }
       
       console.log('Updating milestone with:', updates);
       await quarterlyPrioritiesService.updateMilestone(orgId, teamId, priorityId, milestoneId, updates);
@@ -439,7 +459,11 @@ const QuarterlyPrioritiesPage = () => {
   const handleDeleteMilestone = async (priorityId, milestoneId) => {
     try {
       const orgId = user?.organizationId;
-      const teamId = getTeamId(user, 'leadership');
+      const teamId = selectedDepartment?.id;
+      
+      if (!orgId || !teamId) {
+        throw new Error('Organization or department not found');
+      }
       
       await quarterlyPrioritiesService.deleteMilestone(orgId, teamId, priorityId, milestoneId);
       
@@ -460,7 +484,11 @@ const QuarterlyPrioritiesPage = () => {
   const handleAddUpdate = async (priorityId, updateText, statusChange = null) => {
     try {
       const orgId = user?.organizationId;
-      const teamId = getTeamId(user, 'leadership');
+      const teamId = selectedDepartment?.id;
+      
+      if (!orgId || !teamId) {
+        throw new Error('Organization or department not found');
+      }
       
       await quarterlyPrioritiesService.addPriorityUpdate(orgId, teamId, priorityId, updateText, statusChange);
       
@@ -482,6 +510,10 @@ const QuarterlyPrioritiesPage = () => {
       
       const orgId = user?.organizationId;
       const teamId = selectedDepartment?.id;
+      
+      if (!orgId || !teamId) {
+        throw new Error('Organization or department not found');
+      }
       
       const priorityData = {
         ...priorityForm,
@@ -520,7 +552,11 @@ const QuarterlyPrioritiesPage = () => {
     
     try {
       const orgId = user?.organizationId;
-      const teamId = getTeamId(user, 'leadership');
+      const teamId = selectedDepartment?.id;
+      
+      if (!orgId || !teamId) {
+        throw new Error('Organization or department not found');
+      }
       
       await quarterlyPrioritiesService.archivePriority(orgId, teamId, priorityId);
       
