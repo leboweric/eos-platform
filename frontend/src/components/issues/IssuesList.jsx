@@ -63,14 +63,10 @@ const IssuesList = ({
         <Table>
           <TableHeader>
             <TableRow>
-              <TableHead className="w-8">#</TableHead>
-              <TableHead className="min-w-[300px]">Issue</TableHead>
-              <TableHead className="w-32">Owner</TableHead>
-              <TableHead className="w-24">Created</TableHead>
-              <TableHead className="w-24">Timeline</TableHead>
-              <TableHead className="w-20">Status</TableHead>
-              {showVoting && <TableHead className="w-16 text-center">Votes</TableHead>}
-              {!readOnly && <TableHead className="w-16 text-right">Actions</TableHead>}
+              <TableHead className="w-12">#</TableHead>
+              <TableHead>Issue</TableHead>
+              <TableHead className="w-40">Owner</TableHead>
+              {showVoting && <TableHead className="w-20 text-center">Votes</TableHead>}
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -108,21 +104,6 @@ const IssuesList = ({
                     {issue.owner_name || 'Unassigned'}
                   </span>
                 </TableCell>
-                <TableCell>
-                  <span className="text-sm text-gray-600">
-                    {formatDate(issue.created_at)}
-                  </span>
-                </TableCell>
-                <TableCell>
-                  <span className="text-xs text-gray-600">
-                    {issue.timeline === 'short_term' ? 'Short' : 'Long'}
-                  </span>
-                </TableCell>
-                <TableCell>
-                  <Badge className={`${getStatusColor(issue.status)} text-xs`}>
-                    <span className="capitalize">{issue.status}</span>
-                  </Badge>
-                </TableCell>
                 {showVoting && (
                   <TableCell className="text-center">
                     <Button
@@ -137,55 +118,6 @@ const IssuesList = ({
                       <ThumbsUp className={`h-3 w-3 ${issue.user_has_voted ? 'fill-current' : ''}`} />
                       <span className="ml-1 text-xs">{issue.vote_count || 0}</span>
                     </Button>
-                  </TableCell>
-                )}
-                {!readOnly && (
-                  <TableCell className="text-right">
-                    <DropdownMenu>
-                      <DropdownMenuTrigger asChild onClick={(e) => e.stopPropagation()}>
-                        <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
-                          <MoreVertical className="h-4 w-4" />
-                        </Button>
-                      </DropdownMenuTrigger>
-                      <DropdownMenuContent align="end">
-                        <DropdownMenuItem onClick={(e) => {
-                          e.stopPropagation();
-                          onEdit(issue);
-                        }}>
-                          <Edit className="mr-2 h-4 w-4" />
-                          Edit
-                        </DropdownMenuItem>
-                        
-                        <DropdownMenuSeparator />
-                        
-                        <div className="px-2 py-1.5 text-sm font-medium">Change Status</div>
-                        {statusOptions.map(option => (
-                          <DropdownMenuItem
-                            key={option.value}
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              onStatusChange(issue.id, option.value);
-                            }}
-                            disabled={issue.status === option.value}
-                          >
-                            <span className="mr-2">{option.icon}</span>
-                            {option.label}
-                          </DropdownMenuItem>
-                        ))}
-                        
-                        <DropdownMenuSeparator />
-                        
-                        <DropdownMenuItem 
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            onTimelineChange(issue.id, issue.timeline === 'short_term' ? 'long_term' : 'short_term');
-                          }}
-                        >
-                          <ArrowRight className="mr-2 h-4 w-4" />
-                          Move to {issue.timeline === 'short_term' ? 'Long Term' : 'Short Term'}
-                        </DropdownMenuItem>
-                      </DropdownMenuContent>
-                    </DropdownMenu>
                   </TableCell>
                 )}
               </TableRow>
@@ -272,27 +204,55 @@ const IssuesList = ({
                 )}
 
                 {!readOnly && (
-                  <div className="flex justify-end gap-2 pt-4 border-t">
-                    <Button
-                      variant="outline"
-                      onClick={() => {
-                        onEdit(selectedIssue);
-                        setSelectedIssue(null);
-                      }}
-                    >
-                      <Edit className="mr-2 h-4 w-4" />
-                      Edit Issue
-                    </Button>
-                    <Button
-                      variant="outline"
-                      onClick={() => {
-                        onTimelineChange(selectedIssue.id, selectedIssue.timeline === 'short_term' ? 'long_term' : 'short_term');
-                        setSelectedIssue(null);
-                      }}
-                    >
-                      <ArrowRight className="mr-2 h-4 w-4" />
-                      Move to {selectedIssue.timeline === 'short_term' ? 'Long Term' : 'Short Term'}
-                    </Button>
+                  <div className="flex justify-between items-center pt-4 border-t">
+                    <div className="flex gap-2">
+                      <Button
+                        variant={selectedIssue.status === 'open' ? 'outline' : 'default'}
+                        size="sm"
+                        onClick={() => {
+                          onStatusChange(selectedIssue.id, 'closed');
+                          setSelectedIssue(null);
+                        }}
+                        disabled={selectedIssue.status === 'closed'}
+                      >
+                        <CheckCircle className="mr-2 h-4 w-4" />
+                        Mark Closed
+                      </Button>
+                      <Button
+                        variant={selectedIssue.status === 'closed' ? 'outline' : 'default'}
+                        size="sm"
+                        onClick={() => {
+                          onStatusChange(selectedIssue.id, 'open');
+                          setSelectedIssue(null);
+                        }}
+                        disabled={selectedIssue.status === 'open'}
+                      >
+                        <AlertTriangle className="mr-2 h-4 w-4" />
+                        Reopen
+                      </Button>
+                    </div>
+                    <div className="flex gap-2">
+                      <Button
+                        variant="outline"
+                        onClick={() => {
+                          onTimelineChange(selectedIssue.id, selectedIssue.timeline === 'short_term' ? 'long_term' : 'short_term');
+                          setSelectedIssue(null);
+                        }}
+                      >
+                        <ArrowRight className="mr-2 h-4 w-4" />
+                        Move to {selectedIssue.timeline === 'short_term' ? 'Long Term' : 'Short Term'}
+                      </Button>
+                      <Button
+                        variant="outline"
+                        onClick={() => {
+                          onEdit(selectedIssue);
+                          setSelectedIssue(null);
+                        }}
+                      >
+                        <Edit className="mr-2 h-4 w-4" />
+                        Edit Issue
+                      </Button>
+                    </div>
                   </div>
                 )}
               </div>

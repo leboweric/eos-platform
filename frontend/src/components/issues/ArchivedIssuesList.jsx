@@ -37,13 +37,10 @@ const ArchivedIssuesList = ({ issues, onUnarchive, getStatusColor, getStatusIcon
         <Table>
           <TableHeader>
             <TableRow>
-              <TableHead className="w-8">#</TableHead>
-              <TableHead className="min-w-[300px]">Issue</TableHead>
-              <TableHead className="w-32">Owner</TableHead>
-              <TableHead className="w-24">Archived</TableHead>
-              <TableHead className="w-24">Timeline</TableHead>
-              <TableHead className="w-20">Status</TableHead>
-              <TableHead className="w-20 text-right">Actions</TableHead>
+              <TableHead className="w-12">#</TableHead>
+              <TableHead>Issue</TableHead>
+              <TableHead className="w-40">Owner</TableHead>
+              <TableHead className="w-32">Archived</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -86,30 +83,6 @@ const ArchivedIssuesList = ({ issues, onUnarchive, getStatusColor, getStatusIcon
                   <span className="text-sm text-gray-500">
                     {formatDate(issue.archived_at)}
                   </span>
-                </TableCell>
-                <TableCell>
-                  <span className="text-xs text-gray-500">
-                    {issue.timeline === 'short_term' ? 'Short' : 'Long'}
-                  </span>
-                </TableCell>
-                <TableCell>
-                  <Badge className={`${getStatusColor(issue.status)} text-xs opacity-75`}>
-                    <span className="capitalize">{issue.status}</span>
-                  </Badge>
-                </TableCell>
-                <TableCell className="text-right">
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      onUnarchive(issue.id);
-                    }}
-                    className="h-8"
-                  >
-                    <RotateCcw className="h-4 w-4 mr-1" />
-                    Restore
-                  </Button>
                 </TableCell>
               </TableRow>
             ))}
