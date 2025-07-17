@@ -32,7 +32,7 @@ const OrganizationSettings = () => {
 
   useEffect(() => {
     // Set logo preview URL when organization data is loaded
-    if (organizationData.id && organizationData.logo_updated_at) {
+    if (organizationData?.id && organizationData?.logo_updated_at) {
       setLogoPreview(organizationService.getLogoUrl(organizationData.id));
     }
   }, [organizationData]);
@@ -65,7 +65,7 @@ const OrganizationSettings = () => {
 
     try {
       const response = await axios.put('/organizations/current', {
-        name: organizationData.name
+        name: organizationData?.name || ''
       });
 
       setSuccess('Organization updated successfully');
@@ -213,7 +213,7 @@ const OrganizationSettings = () => {
               <Label htmlFor="name">Organization Name</Label>
               <Input
                 id="name"
-                value={organizationData.name}
+                value={organizationData?.name || ''}
                 onChange={(e) => setOrganizationData({ ...organizationData, name: e.target.value })}
                 placeholder="Enter organization name"
                 required
@@ -227,7 +227,7 @@ const OrganizationSettings = () => {
               <Label htmlFor="slug">Organization URL</Label>
               <Input
                 id="slug"
-                value={organizationData.slug}
+                value={organizationData?.slug || ''}
                 disabled
                 className="bg-gray-50"
               />
@@ -239,11 +239,11 @@ const OrganizationSettings = () => {
             <div className="space-y-2">
               <Label>Created</Label>
               <p className="text-sm text-gray-600">
-                {new Date(organizationData.created_at).toLocaleDateString('en-US', {
+                {organizationData?.created_at ? new Date(organizationData.created_at).toLocaleDateString('en-US', {
                   year: 'numeric',
                   month: 'long',
                   day: 'numeric'
-                })}
+                }) : 'Loading...'}
               </p>
             </div>
 
@@ -330,7 +330,7 @@ const OrganizationSettings = () => {
                     </Button>
                   )}
                   
-                  {organizationData.logo_updated_at && !selectedFile && (
+                  {organizationData?.logo_updated_at && !selectedFile && (
                     <Button 
                       type="button"
                       variant="destructive"
