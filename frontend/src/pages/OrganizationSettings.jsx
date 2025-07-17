@@ -1,6 +1,5 @@
 import { useState, useEffect } from 'react';
 import { useAuthStore } from '../stores/authStore';
-import axios from 'axios';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -40,9 +39,7 @@ const OrganizationSettings = () => {
   const fetchOrganizationDetails = async () => {
     try {
       setLoading(true);
-      const response = await axios.get('/organizations/current');
-
-      const orgData = response.data.data;
+      const orgData = await organizationService.getOrganization();
       setOrganizationData(orgData);
       
       // Set logo preview if logo exists
@@ -64,12 +61,12 @@ const OrganizationSettings = () => {
     setSaving(true);
 
     try {
-      const response = await axios.put('/organizations/current', {
+      const response = await organizationService.updateOrganization({
         name: organizationData?.name || ''
       });
 
       setSuccess('Organization updated successfully');
-      setOrganizationData(response.data.data);
+      setOrganizationData(response.data);
       // Refresh auth to update the organization name in the UI
       await checkAuth();
     } catch (error) {
