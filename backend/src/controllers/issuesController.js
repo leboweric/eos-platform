@@ -90,9 +90,16 @@ export const getIssues = async (req, res) => {
     
     // Always filter by specific department if provided
     if (department_id) {
-      query += ` AND i.team_id = $${paramCount}`;
-      params.push(department_id);
-      paramCount++;
+      // For Leadership Team, include both the specific ID and NULL team_id
+      if (department_id === '00000000-0000-0000-0000-000000000000') {
+        query += ` AND (i.team_id = $${paramCount} OR i.team_id IS NULL)`;
+        params.push(department_id);
+        paramCount++;
+      } else {
+        query += ` AND i.team_id = $${paramCount}`;
+        params.push(department_id);
+        paramCount++;
+      }
       console.log('Filtering to specific department:', department_id);
     }
     
@@ -169,7 +176,7 @@ export const createIssue = async (req, res) => {
     let columns = ['organization_id', 'team_id', 'created_by_id', 'owner_id', 'title', 'description', 'priority_rank'];
     let values = [
       orgId,
-      teamId && teamId !== '00000000-0000-0000-0000-000000000000' ? teamId : null,
+      teamId || null,
       createdById,
       ownerId,
       title,
