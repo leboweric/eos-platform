@@ -74,7 +74,7 @@ const LandingPage = () => {
         <div className="container mx-auto px-4 py-4 flex items-center justify-between">
           <div className="flex items-center space-x-2">
             <Target className="h-8 w-8 text-primary" />
-            <span className="text-2xl font-bold">Strategic Execution Platform</span>
+            <span className="text-2xl font-bold">Forty-2</span>
           </div>
           <div className="flex items-center space-x-4">
             <Link to="/login">
@@ -251,7 +251,7 @@ const LandingPage = () => {
             <div>
               <div className="flex items-center space-x-2 mb-4">
                 <Target className="h-6 w-6" />
-                <span className="text-lg font-bold">Strategic Execution Platform</span>
+                <span className="text-lg font-bold">Forty-2</span>
               </div>
               <p className="text-gray-400">
                 The most advanced platform for strategic implementation and management.
@@ -286,7 +286,7 @@ const LandingPage = () => {
             </div>
           </div>
           <div className="border-t border-gray-800 mt-8 pt-8 text-center text-gray-400">
-            <p>&copy; 2025 Strategic Execution Platform. All rights reserved.</p>
+            <p>&copy; 2025 Forty-2. All rights reserved.</p>
           </div>
         </div>
       </footer>

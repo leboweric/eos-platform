@@ -51,6 +51,7 @@ export const getScorecard = async (req, res) => {
     // Check if new columns exist
     const hasValueType = await checkColumn('scorecard_metrics', 'value_type');
     const hasComparisonOperator = await checkColumn('scorecard_metrics', 'comparison_operator');
+    const hasDescription = await checkColumn('scorecard_metrics', 'description');
     
     // Build query based on available columns
     let selectColumns = 'sm.id, sm.name, sm.goal, sm.owner, sm.type, sm.created_at, sm.updated_at, sm.team_id, t.name as team_name';
@@ -59,6 +60,9 @@ export const getScorecard = async (req, res) => {
     }
     if (hasComparisonOperator) {
       selectColumns += ', sm.comparison_operator';
+    }
+    if (hasDescription) {
+      selectColumns += ', sm.description';
     }
     
     // Filter by specific team ID from request
@@ -124,11 +128,12 @@ export const getScorecard = async (req, res) => {
 export const createMetric = async (req, res) => {
   try {
     const { orgId, teamId } = req.params;
-    const { name, goal, owner, type = 'weekly', valueType = 'number', comparisonOperator = 'greater_equal' } = req.body;
+    const { name, goal, owner, type = 'weekly', valueType = 'number', comparisonOperator = 'greater_equal', description } = req.body;
     
     // Check if new columns exist
     const hasValueType = await checkColumn('scorecard_metrics', 'value_type');
     const hasComparisonOperator = await checkColumn('scorecard_metrics', 'comparison_operator');
+    const hasDescription = await checkColumn('scorecard_metrics', 'description');
     
     // Build insert query based on available columns
     let columns = ['organization_id', 'team_id', 'name', 'goal', 'owner', 'type'];
@@ -143,6 +148,11 @@ export const createMetric = async (req, res) => {
     if (hasComparisonOperator) {
       columns.push('comparison_operator');
       values.push(comparisonOperator);
+      placeholders.push(`$${values.length}`);
+    }
+    if (hasDescription && description !== undefined) {
+      columns.push('description');
+      values.push(description);
       placeholders.push(`$${values.length}`);
     }
     
@@ -171,11 +181,12 @@ export const createMetric = async (req, res) => {
 export const updateMetric = async (req, res) => {
   try {
     const { orgId, teamId, metricId } = req.params;
-    const { name, goal, owner, type, valueType, comparisonOperator } = req.body;
+    const { name, goal, owner, type, valueType, comparisonOperator, description } = req.body;
     
     // Check if new columns exist
     const hasValueType = await checkColumn('scorecard_metrics', 'value_type');
     const hasComparisonOperator = await checkColumn('scorecard_metrics', 'comparison_operator');
+    const hasDescription = await checkColumn('scorecard_metrics', 'description');
     
     // Build update query based on available columns
     let setClauses = ['name = $1', 'goal = $2', 'owner = $3', 'type = $4'];
@@ -188,6 +199,10 @@ export const updateMetric = async (req, res) => {
     if (hasComparisonOperator && comparisonOperator !== undefined) {
       values.push(comparisonOperator);
       setClauses.push(`comparison_operator = $${values.length}`);
+    }
+    if (hasDescription && description !== undefined) {
+      values.push(description);
+      setClauses.push(`description = $${values.length}`);
     }
     
     // Add the WHERE clause parameters
