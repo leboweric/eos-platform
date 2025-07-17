@@ -1,7 +1,8 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
+import { Checkbox } from '@/components/ui/checkbox';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -28,7 +29,8 @@ import {
   ThumbsUp,
   Clock,
   MessageSquare,
-  Archive
+  Archive,
+  Check
 } from 'lucide-react';
 
 const IssuesList = ({ 
@@ -41,7 +43,9 @@ const IssuesList = ({
   getStatusColor, 
   getStatusIcon, 
   readOnly = false, 
-  showVoting = false 
+  showVoting = false,
+  selectedIssues,
+  onSelectionChange
 }) => {
   const [selectedIssue, setSelectedIssue] = useState(null);
 
@@ -65,6 +69,7 @@ const IssuesList = ({
         <Table>
           <TableHeader>
             <TableRow>
+              <TableHead className="w-10"></TableHead>
               <TableHead className="w-12">#</TableHead>
               <TableHead>Issue</TableHead>
               <TableHead className="w-40">Owner</TableHead>
@@ -76,12 +81,32 @@ const IssuesList = ({
               <TableRow 
                 key={issue.id} 
                 className="cursor-pointer hover:bg-green-50"
-                onClick={() => setSelectedIssue(issue)}
               >
-                <TableCell className="text-sm text-gray-500 font-medium">
+                <TableCell 
+                  className="w-10"
+                  onClick={(e) => e.stopPropagation()}
+                >
+                  <div className="flex items-center justify-center">
+                    <Checkbox
+                      checked={selectedIssues?.includes(issue.id) || false}
+                      onCheckedChange={(checked) => {
+                        if (checked) {
+                          onSelectionChange([...(selectedIssues || []), issue.id]);
+                        } else {
+                          onSelectionChange((selectedIssues || []).filter(id => id !== issue.id));
+                        }
+                      }}
+                      className="data-[state=checked]:bg-green-600 data-[state=checked]:border-green-600"
+                    />
+                  </div>
+                </TableCell>
+                <TableCell 
+                  className="text-sm text-gray-500 font-medium"
+                  onClick={() => setSelectedIssue(issue)}
+                >
                   {index + 1}
                 </TableCell>
-                <TableCell className="font-medium">
+                <TableCell className="font-medium" onClick={() => setSelectedIssue(issue)}>
                   <div className="flex items-center gap-3">
                     <div className="flex-1">
                       <div className="text-gray-900 line-clamp-1">{issue.title}</div>
@@ -101,13 +126,13 @@ const IssuesList = ({
                     </div>
                   </div>
                 </TableCell>
-                <TableCell>
+                <TableCell onClick={() => setSelectedIssue(issue)}>
                   <span className="text-sm text-gray-600 truncate block">
                     {issue.owner_name || 'Unassigned'}
                   </span>
                 </TableCell>
                 {showVoting && (
-                  <TableCell className="text-center">
+                  <TableCell className="text-center" onClick={() => setSelectedIssue(issue)}>
                     <Button
                       variant={issue.user_has_voted ? "default" : "outline"}
                       size="sm"
