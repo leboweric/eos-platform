@@ -47,7 +47,7 @@ const ArchivedIssuesList = ({ issues, onUnarchive, getStatusColor, getStatusIcon
             {issues.map((issue, index) => (
               <TableRow 
                 key={issue.id} 
-                className="cursor-pointer hover:bg-gray-50"
+                className="cursor-pointer hover:bg-green-50"
                 onClick={() => setSelectedIssue(issue)}
               >
                 <TableCell className="text-sm text-gray-500 font-medium">

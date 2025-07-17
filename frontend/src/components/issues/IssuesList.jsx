@@ -73,7 +73,7 @@ const IssuesList = ({
             {issues.map((issue, index) => (
               <TableRow 
                 key={issue.id} 
-                className="cursor-pointer hover:bg-gray-50"
+                className="cursor-pointer hover:bg-green-50"
                 onClick={() => setSelectedIssue(issue)}
               >
                 <TableCell className="text-sm text-gray-500 font-medium">
@@ -206,30 +206,19 @@ const IssuesList = ({
                 {!readOnly && (
                   <div className="flex justify-between items-center pt-4 border-t">
                     <div className="flex gap-2">
-                      <Button
-                        variant={selectedIssue.status === 'open' ? 'outline' : 'default'}
-                        size="sm"
-                        onClick={() => {
-                          onStatusChange(selectedIssue.id, 'closed');
-                          setSelectedIssue(null);
-                        }}
-                        disabled={selectedIssue.status === 'closed'}
-                      >
-                        <CheckCircle className="mr-2 h-4 w-4" />
-                        Mark Closed
-                      </Button>
-                      <Button
-                        variant={selectedIssue.status === 'closed' ? 'outline' : 'default'}
-                        size="sm"
-                        onClick={() => {
-                          onStatusChange(selectedIssue.id, 'open');
-                          setSelectedIssue(null);
-                        }}
-                        disabled={selectedIssue.status === 'open'}
-                      >
-                        <AlertTriangle className="mr-2 h-4 w-4" />
-                        Reopen
-                      </Button>
+                      {selectedIssue.status === 'open' && (
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => {
+                            onStatusChange(selectedIssue.id, 'closed');
+                            setSelectedIssue(null);
+                          }}
+                        >
+                          <CheckCircle className="mr-2 h-4 w-4" />
+                          Mark Closed
+                        </Button>
+                      )}
                     </div>
                     <div className="flex gap-2">
                       <Button
