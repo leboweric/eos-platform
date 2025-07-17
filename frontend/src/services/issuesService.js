@@ -46,11 +46,14 @@ export const issuesService = {
     const orgId = getOrgId();
     const teamId = getTeamId();
     
+    // Use department_id if provided, otherwise use user's teamId
+    const finalTeamId = issueData.department_id || issueData.teamId || teamId || null;
+    
     const response = await axios.post(
       `/organizations/${orgId}/issues`,
       {
         ...issueData,
-        teamId: teamId || null
+        teamId: finalTeamId
       }
     );
     return response.data.data;
