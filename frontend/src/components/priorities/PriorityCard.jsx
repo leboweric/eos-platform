@@ -103,9 +103,8 @@ const PriorityCard = ({ priority, readOnly = false, onIssueCreated, onStatusChan
       const issueData = {
         title: `${priority.title} - Off Track`,
         description: `Priority "${priority.title}" is off track. Due: ${formatDate(priority.due_date)}${daysLeft !== null ? ` (${daysLeft} days)` : ''}. Owner: ${ownerName}`,
-        category: 'short-term',
-        priority: 'high',
-        assignedToId: priority.owner?.id || user?.id
+        timeline: 'short_term',
+        ownerId: priority.owner_id || priority.owner?.id || user?.id
       };
       
       await issuesService.createIssue(issueData);
