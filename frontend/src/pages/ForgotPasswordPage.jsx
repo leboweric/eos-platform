@@ -9,7 +9,7 @@ import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Target, ArrowLeft } from 'lucide-react';
-import api from '../services/api';
+import axios from '../services/axiosConfig';
 
 const forgotPasswordSchema = z.object({
   email: z.string().email('Please enter a valid email address')
@@ -34,7 +34,7 @@ const ForgotPasswordPage = () => {
     setSuccess(false);
 
     try {
-      await api.post('/auth/forgot-password', data);
+      await axios.post('/auth/forgot-password', data);
       setSuccess(true);
     } catch (err) {
       setError(err.response?.data?.error || 'An error occurred. Please try again.');

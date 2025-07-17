@@ -9,7 +9,7 @@ import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Target, Eye, EyeOff, CheckCircle } from 'lucide-react';
-import api from '../services/api';
+import axios from '../services/axiosConfig';
 
 const resetPasswordSchema = z.object({
   password: z.string()
@@ -55,7 +55,7 @@ const ResetPasswordPage = () => {
     setError('');
 
     try {
-      await api.post('/auth/reset-password', {
+      await axios.post('/auth/reset-password', {
         token,
         password: data.password
       });
