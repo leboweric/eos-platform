@@ -269,7 +269,7 @@ const WeeklyAccountabilityMeetingPage = () => {
         await issuesService.createIssue({
           ...issueData,
           timeline: 'short_term', // New issues in meetings are short-term
-          department_id: selectedDepartment?.id
+          department_id: user?.teamId || '00000000-0000-0000-0000-000000000000'
         });
         setSuccess('Issue created successfully');
       }
@@ -366,7 +366,7 @@ const WeeklyAccountabilityMeetingPage = () => {
         description: `Overdue To-Do: ${todo.description || 'No description'}`,
         timeline: 'short_term',
         ownerId: todo.assignee_id || null,
-        department_id: selectedDepartment?.id
+        department_id: user?.teamId || '00000000-0000-0000-0000-000000000000'
       };
       
       await issuesService.createIssue(issueData);
@@ -538,7 +538,7 @@ const WeeklyAccountabilityMeetingPage = () => {
                   readOnly={true}
                   isRTL={isRTL}
                   showTotal={showTotal}
-                  departmentId={selectedDepartment?.id}
+                  departmentId={user?.teamId || '00000000-0000-0000-0000-000000000000'}
                   onIssueCreated={(message) => {
                     setSuccess(message);
                     setTimeout(() => setSuccess(null), 3000);
