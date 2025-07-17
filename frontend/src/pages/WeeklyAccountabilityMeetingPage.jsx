@@ -20,7 +20,8 @@ import {
   CheckSquare,
   ArrowLeftRight,
   ChevronDown,
-  Archive
+  Archive,
+  Plus
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import ScorecardTable from '../components/scorecard/ScorecardTable';
@@ -28,6 +29,7 @@ import PriorityCard from '../components/priorities/PriorityCard';
 import IssuesList from '../components/issues/IssuesList';
 import IssueDialog from '../components/issues/IssueDialog';
 import TodoCard from '../components/todos/TodoCard';
+import TodoDialog from '../components/todos/TodoDialog';
 import { scorecardService } from '../services/scorecardService';
 import { quarterlyPrioritiesService } from '../services/quarterlyPrioritiesService';
 import { issuesService } from '../services/issuesService';
@@ -56,6 +58,8 @@ const WeeklyAccountabilityMeetingPage = () => {
   // Dialog states
   const [showIssueDialog, setShowIssueDialog] = useState(false);
   const [editingIssue, setEditingIssue] = useState(null);
+  const [showTodoDialog, setShowTodoDialog] = useState(false);
+  const [editingTodo, setEditingTodo] = useState(null);
   
   // Collapsible sections state
   const [expandedSections, setExpandedSections] = useState({
@@ -371,6 +375,33 @@ const WeeklyAccountabilityMeetingPage = () => {
     } catch (error) {
       console.error('Failed to create issue from todo:', error);
       setError('Failed to create issue from To-Do');
+    }
+  };
+
+  const handleAddTodo = () => {
+    setEditingTodo(null);
+    setShowTodoDialog(true);
+  };
+
+  const handleSaveTodo = async (todoData) => {
+    try {
+      if (editingTodo) {
+        await todosService.updateTodo(editingTodo.id, todoData);
+        setSuccess('To-do updated successfully');
+      } else {
+        await todosService.createTodo(todoData);
+        setSuccess('To-do created successfully');
+      }
+      
+      setShowTodoDialog(false);
+      setEditingTodo(null);
+      // Refresh todos if we're on the todo section
+      if (activeSection === 'todo-list') {
+        await fetchTodosData();
+      }
+    } catch (error) {
+      console.error('Failed to save todo:', error);
+      setError('Failed to save to-do');
     }
   };
 
@@ -739,16 +770,25 @@ const WeeklyAccountabilityMeetingPage = () => {
                     </CardTitle>
                     <CardDescription>Review and solve short-term issues (60 minutes)</CardDescription>
                   </div>
-                  {selectedIssueIds.length > 0 && (
+                  <div className="flex items-center gap-2">
                     <Button 
-                      onClick={handleArchiveSelected}
-                      variant="outline"
-                      className="text-gray-600"
+                      onClick={handleAddTodo}
+                      className="bg-green-600 hover:bg-green-700 text-white"
                     >
-                      <Archive className="mr-2 h-4 w-4" />
-                      Archive Selected ({selectedIssueIds.length})
+                      <Plus className="mr-2 h-4 w-4" />
+                      New To-Do
                     </Button>
-                  )}
+                    {selectedIssueIds.length > 0 && (
+                      <Button 
+                        onClick={handleArchiveSelected}
+                        variant="outline"
+                        className="text-gray-600"
+                      >
+                        <Archive className="mr-2 h-4 w-4" />
+                        Archive Selected ({selectedIssueIds.length})
+                      </Button>
+                    )}
+                  </div>
                 </div>
               </CardHeader>
             </Card>
@@ -910,6 +950,18 @@ const WeeklyAccountabilityMeetingPage = () => {
         }}
         issue={editingIssue}
         onSave={handleSaveIssue}
+        teamMembers={teamMembers}
+      />
+      
+      {/* Todo Dialog */}
+      <TodoDialog
+        open={showTodoDialog}
+        onClose={() => {
+          setShowTodoDialog(false);
+          setEditingTodo(null);
+        }}
+        todo={editingTodo}
+        onSave={handleSaveTodo}
         teamMembers={teamMembers}
       />
     </div>
