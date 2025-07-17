@@ -58,6 +58,7 @@ const ScorecardPage = () => {
   // Form data for new/edit metric
   const [metricForm, setMetricForm] = useState({
     name: '',
+    description: '',
     goal: '',
     ownerId: '',
     ownerName: '',
@@ -118,6 +119,7 @@ const ScorecardPage = () => {
     setEditingMetric(null);
     setMetricForm({
       name: '',
+      description: '',
       goal: '',
       ownerId: '',
       ownerName: '',
@@ -132,6 +134,7 @@ const ScorecardPage = () => {
     setEditingMetric(metric);
     setMetricForm({
       name: metric.name,
+      description: metric.description || '',
       goal: metric.goal,
       ownerId: metric.ownerId || '',
       ownerName: metric.owner || metric.ownerName || '',
@@ -178,6 +181,7 @@ const ScorecardPage = () => {
       setShowMetricDialog(false);
       setMetricForm({
         name: '',
+        description: '',
         goal: '',
         ownerId: '',
         ownerName: '',
@@ -701,6 +705,15 @@ const ScorecardPage = () => {
                   value={metricForm.name}
                   onChange={(e) => setMetricForm(prev => ({ ...prev, name: e.target.value }))}
                   placeholder="e.g., Sales Calls, Customer Satisfaction"
+                />
+              </div>
+              <div>
+                <Label htmlFor="metric-description">Description</Label>
+                <Input
+                  id="metric-description"
+                  value={metricForm.description}
+                  onChange={(e) => setMetricForm(prev => ({ ...prev, description: e.target.value }))}
+                  placeholder="e.g., Data source: CRM system, collected weekly on Fridays"
                 />
               </div>
               <div>
