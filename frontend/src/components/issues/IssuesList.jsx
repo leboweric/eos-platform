@@ -77,11 +77,21 @@ const IssuesList = ({
             </TableRow>
           </TableHeader>
           <TableBody>
-            {issues.map((issue, index) => (
-              <TableRow 
-                key={issue.id} 
-                className="cursor-pointer hover:bg-green-50"
-              >
+            {issues.map((issue, index) => {
+              const hasVotes = (issue.vote_count || 0) > 0;
+              const isTopIssue = index === 0 && hasVotes;
+              
+              return (
+                <TableRow 
+                  key={issue.id} 
+                  className={`cursor-pointer transition-colors ${
+                    isTopIssue 
+                      ? 'bg-blue-50 border-blue-200 hover:bg-blue-100' 
+                      : hasVotes 
+                      ? 'bg-indigo-25 border-indigo-100 hover:bg-indigo-50'
+                      : 'hover:bg-green-50'
+                  }`}
+                >
                 <TableCell 
                   className="w-10"
                   onClick={(e) => e.stopPropagation()}
@@ -101,10 +111,19 @@ const IssuesList = ({
                   </div>
                 </TableCell>
                 <TableCell 
-                  className="text-sm text-gray-500 font-medium"
+                  className={`text-sm font-medium ${
+                    isTopIssue 
+                      ? 'text-blue-700 font-bold'
+                      : hasVotes 
+                      ? 'text-indigo-600 font-semibold'
+                      : 'text-gray-500'
+                  }`}
                   onClick={() => setSelectedIssue(issue)}
                 >
-                  {index + 1}
+                  <div className="flex items-center gap-1">
+                    {isTopIssue && <span className="text-xs text-blue-600">🔥</span>}
+                    {index + 1}
+                  </div>
                 </TableCell>
                 <TableCell className="font-medium" onClick={() => setSelectedIssue(issue)}>
                   <div className="flex items-center gap-3">
@@ -148,7 +167,8 @@ const IssuesList = ({
                   </TableCell>
                 )}
               </TableRow>
-            ))}
+              );
+            })}
           </TableBody>
         </Table>
       </div>

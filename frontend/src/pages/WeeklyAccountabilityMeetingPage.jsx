@@ -183,7 +183,21 @@ const WeeklyAccountabilityMeetingPage = () => {
       const filteredIssues = response.data.issues.filter(i => i.status === 'open' && i.timeline === 'short_term');
       console.log('Filtered short-term issues:', filteredIssues);
       
-      setIssues(filteredIssues);
+      // Sort issues by vote count (highest first), then by creation date
+      const sortedIssues = filteredIssues.sort((a, b) => {
+        const aVotes = a.vote_count || 0;
+        const bVotes = b.vote_count || 0;
+        
+        // If vote counts are different, sort by votes (highest first)
+        if (aVotes !== bVotes) {
+          return bVotes - aVotes;
+        }
+        
+        // If vote counts are the same, sort by creation date (newest first)
+        return new Date(b.created_at) - new Date(a.created_at);
+      });
+      
+      setIssues(sortedIssues);
       setTeamMembers(response.data.teamMembers || []);
       setLoading(false);
     } catch (error) {
