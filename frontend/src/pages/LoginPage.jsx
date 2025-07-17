@@ -155,19 +155,6 @@ const LoginPage = () => {
             </div>
           </CardContent>
         </Card>
-
-        {/* Demo credentials */}
-        <Card className="mt-4 bg-blue-50 border-blue-200">
-          <CardContent className="pt-6">
-            <div className="text-center">
-              <p className="text-sm font-medium text-blue-800 mb-2">Demo Credentials</p>
-              <p className="text-xs text-blue-600">
-                Email: demo@eosplatform.com<br />
-                Password: demo123
-              </p>
-            </div>
-          </CardContent>
-        </Card>
       </div>
     </div>
   );
