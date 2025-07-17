@@ -62,8 +62,17 @@ const TodoCard = ({ todo, onEdit, onDelete, onUpdate, onAddToIssues, readOnly = 
     }
   };
 
-  const isOverdue = todo.due_date && new Date(todo.due_date) < new Date() && todo.status !== 'complete';
-  const dueDate = todo.due_date ? new Date(todo.due_date) : null;
+  // Parse date string as local date, not UTC
+  const parseDateAsLocal = (dateStr) => {
+    if (!dateStr) return null;
+    const [year, month, day] = dateStr.split('-').map(num => parseInt(num));
+    return new Date(year, month - 1, day); // month is 0-indexed in JS
+  };
+  
+  const dueDate = parseDateAsLocal(todo.due_date);
+  const today = new Date();
+  today.setHours(0, 0, 0, 0); // Reset time to start of day for accurate comparison
+  const isOverdue = dueDate && dueDate < today && todo.status !== 'complete';
 
   const handleAddToIssues = async () => {
     if (!onAddToIssues) return;

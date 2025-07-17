@@ -30,7 +30,7 @@ const TodoDialog = ({ open, onOpenChange, todo, teamMembers, onSave }) => {
         title: todo.title || '',
         description: todo.description || '',
         assignedToId: todo.assigned_to_id || todo.assignee_id || '',
-        dueDate: todo.due_date ? new Date(todo.due_date).toISOString().split('T')[0] : ''
+        dueDate: todo.due_date ? todo.due_date.split('T')[0] : '' // Use date string directly, don't convert
       });
       
       // Load existing attachments
