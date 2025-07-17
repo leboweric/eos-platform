@@ -181,7 +181,7 @@ export const createIssue = async (req, res) => {
     if (hasTimelineColumn) {
       columns.push('timeline');
       values.push(timeline || 'short_term');
-      placeholders.push('$9');
+      placeholders.push('$8');
     }
     
     const result = await db.query(
