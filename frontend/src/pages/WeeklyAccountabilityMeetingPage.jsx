@@ -385,23 +385,26 @@ const WeeklyAccountabilityMeetingPage = () => {
 
   const handleSaveTodo = async (todoData) => {
     try {
+      let savedTodo;
+      
       if (editingTodo) {
-        await todosService.updateTodo(editingTodo.id, todoData);
+        savedTodo = await todosService.updateTodo(editingTodo.id, todoData);
         setSuccess('To-do updated successfully');
       } else {
-        await todosService.createTodo(todoData);
+        savedTodo = await todosService.createTodo(todoData);
         setSuccess('To-do created successfully');
       }
       
-      setShowTodoDialog(false);
-      setEditingTodo(null);
       // Refresh todos if we're on the todo section
       if (activeSection === 'todo-list') {
         await fetchTodosData();
       }
+      
+      return savedTodo;
     } catch (error) {
       console.error('Failed to save todo:', error);
       setError('Failed to save to-do');
+      throw error; // Re-throw so TodoDialog can handle it
     }
   };
 
@@ -956,9 +959,11 @@ const WeeklyAccountabilityMeetingPage = () => {
       {/* Todo Dialog */}
       <TodoDialog
         open={showTodoDialog}
-        onClose={() => {
-          setShowTodoDialog(false);
-          setEditingTodo(null);
+        onOpenChange={(open) => {
+          if (!open) {
+            setShowTodoDialog(false);
+            setEditingTodo(null);
+          }
         }}
         todo={editingTodo}
         onSave={handleSaveTodo}
