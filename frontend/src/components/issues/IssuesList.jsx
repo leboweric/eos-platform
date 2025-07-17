@@ -27,7 +27,8 @@ import {
   ArrowRight,
   ThumbsUp,
   Clock,
-  MessageSquare
+  MessageSquare,
+  Archive
 } from 'lucide-react';
 
 const IssuesList = ({ 
@@ -35,6 +36,7 @@ const IssuesList = ({
   onEdit, 
   onStatusChange, 
   onTimelineChange, 
+  onArchive,
   onVote, 
   getStatusColor, 
   getStatusIcon, 
@@ -206,19 +208,17 @@ const IssuesList = ({
                 {!readOnly && (
                   <div className="flex justify-between items-center pt-4 border-t">
                     <div className="flex gap-2">
-                      {selectedIssue.status === 'open' && (
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => {
-                            onStatusChange(selectedIssue.id, 'closed');
-                            setSelectedIssue(null);
-                          }}
-                        >
-                          <CheckCircle className="mr-2 h-4 w-4" />
-                          Mark Closed
-                        </Button>
-                      )}
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => {
+                          onArchive(selectedIssue.id);
+                          setSelectedIssue(null);
+                        }}
+                      >
+                        <Archive className="mr-2 h-4 w-4" />
+                        Archive
+                      </Button>
                     </div>
                     <div className="flex gap-2">
                       <Button

@@ -148,6 +148,16 @@ export const issuesService = {
     return response.data;
   },
 
+  // Archive a single issue
+  archiveIssue: async (issueId) => {
+    const orgId = getOrgId();
+    
+    const response = await axios.post(
+      `/organizations/${orgId}/issues/${issueId}/archive`
+    );
+    return response.data;
+  },
+
   // Unarchive an issue
   unarchiveIssue: async (issueId) => {
     const orgId = getOrgId();

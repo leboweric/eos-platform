@@ -154,6 +154,17 @@ const IssuesPage = () => {
     }
   };
 
+  const handleArchive = async (issueId) => {
+    try {
+      await issuesService.archiveIssue(issueId);
+      setSuccess('Issue archived successfully');
+      await fetchIssues();
+    } catch (error) {
+      console.error('Failed to archive issue:', error);
+      setError('Failed to archive issue');
+    }
+  };
+
   const handleUnarchive = async (issueId) => {
     try {
       await issuesService.unarchiveIssue(issueId);
@@ -291,6 +302,7 @@ const IssuesPage = () => {
                   onEdit={handleEditIssue}
                   onStatusChange={handleStatusChange}
                   onTimelineChange={handleTimelineChange}
+                  onArchive={handleArchive}
                   onVote={handleVote}
                   getStatusColor={getStatusColor}
                   getStatusIcon={getStatusIcon}
