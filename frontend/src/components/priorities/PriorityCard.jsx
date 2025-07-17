@@ -53,6 +53,21 @@ const PriorityCard = ({ priority, readOnly = false, onIssueCreated, onStatusChan
     'complete': <CheckCircle className="h-4 w-4" />
   };
 
+  const getStatusColor = (status) => {
+    switch (status) {
+      case 'complete':
+        return 'bg-green-500';
+      case 'on-track':
+        return 'bg-blue-500';
+      case 'at-risk':
+        return 'bg-yellow-500';
+      case 'off-track':
+        return 'bg-red-500';
+      default:
+        return 'bg-gray-500';
+    }
+  };
+
   const getDaysUntilDue = (dueDate) => {
     if (!dueDate) return null;
     const today = new Date();
@@ -144,6 +159,7 @@ const PriorityCard = ({ priority, readOnly = false, onIssueCreated, onStatusChan
         <div className="flex items-start justify-between">
           <div className="flex-1">
             <div className="flex items-center gap-2">
+              <div className={`w-3 h-3 rounded-full ${getStatusColor(priority.status)}`} />
               <h3 className="font-medium">{priority.title}</h3>
               {priority.teamName && (
                 <Badge variant={priority.isFromLeadership ? "default" : "secondary"} className="text-xs">
