@@ -11,6 +11,7 @@ import {
   AlertCircle,
   CheckCircle,
   ChevronRight,
+  ChevronLeft,
   Smile,
   BarChart,
   Target,
@@ -422,6 +423,14 @@ const WeeklyAccountabilityMeetingPage = () => {
     const currentIndex = agendaItems.findIndex(item => item.id === activeSection);
     if (currentIndex < agendaItems.length - 1) {
       return agendaItems[currentIndex + 1].id;
+    }
+    return null;
+  };
+
+  const getPreviousSection = () => {
+    const currentIndex = agendaItems.findIndex(item => item.id === activeSection);
+    if (currentIndex > 0) {
+      return agendaItems[currentIndex - 1].id;
     }
     return null;
   };
@@ -934,15 +943,31 @@ const WeeklyAccountabilityMeetingPage = () => {
             {renderContent()}
 
             {/* Navigation buttons */}
-            {getNextSection() && (
-              <div className="mt-6 flex justify-end">
-                <Button 
-                  onClick={() => handleSectionChange(getNextSection())}
-                  className="bg-indigo-600 hover:bg-indigo-700"
-                >
-                  Next: {agendaItems.find(item => item.id === getNextSection())?.label}
-                  <ChevronRight className="ml-2 h-4 w-4" />
-                </Button>
+            {(getPreviousSection() || getNextSection()) && (
+              <div className="mt-6 flex justify-between">
+                <div>
+                  {getPreviousSection() && (
+                    <Button 
+                      onClick={() => handleSectionChange(getPreviousSection())}
+                      variant="outline"
+                      className="border-gray-300 hover:bg-gray-50"
+                    >
+                      <ChevronLeft className="mr-2 h-4 w-4" />
+                      Back: {agendaItems.find(item => item.id === getPreviousSection())?.label}
+                    </Button>
+                  )}
+                </div>
+                <div>
+                  {getNextSection() && (
+                    <Button 
+                      onClick={() => handleSectionChange(getNextSection())}
+                      className="bg-indigo-600 hover:bg-indigo-700"
+                    >
+                      Next: {agendaItems.find(item => item.id === getNextSection())?.label}
+                      <ChevronRight className="ml-2 h-4 w-4" />
+                    </Button>
+                  )}
+                </div>
               </div>
             )}
           </div>
