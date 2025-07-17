@@ -500,9 +500,9 @@ const WeeklyAccountabilityMeetingPage = () => {
               </Card>
             ) : (
               <>
-                <div className="bg-red-50 border border-red-200 rounded-lg p-4 mb-4">
-                  <p className="text-red-800 font-semibold text-center">
-                    NO DISCUSSION! The metric owner simply reports "on-track" or "off-track." Off-track numbers should be moved to the Issues List. Off-track numbers are critical to solve.
+                <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-4">
+                  <p className="text-blue-800 text-center">
+                    <span className="font-semibold">Quick Status Update:</span> Metric owners report "on-track" or "off-track" status. Any off-track metrics can be added to the Issues List for collaborative problem-solving.
                   </p>
                 </div>
                 <div className="flex justify-end gap-2">
@@ -575,9 +575,9 @@ const WeeklyAccountabilityMeetingPage = () => {
               </Card>
             ) : (
               <div className="space-y-6">
-                <div className="bg-red-50 border border-red-200 rounded-lg p-4">
-                  <p className="text-red-800 font-semibold text-center">
-                    NO DISCUSSION! The owner simply reports "off-track" or "on-track." Off-track Priorities should be dropped to the Issues list. Off-track Priorities (especially Company Priorities) are critical to solve.
+                <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                  <p className="text-blue-800 text-center">
+                    <span className="font-semibold">Status Check:</span> Priority owners share quick updates on progress. Off-track priorities can be converted to issues for team discussion and resolution.
                   </p>
                 </div>
                 {/* Company Priorities Section */}
@@ -752,9 +752,9 @@ const WeeklyAccountabilityMeetingPage = () => {
               </Card>
             ) : (
               <>
-                <div className="bg-red-50 border border-red-200 rounded-lg p-4">
-                  <p className="text-red-800 font-semibold text-center">
-                    NO DISCUSSION! The owners of the To Do simply reports "Done" or "Not Done." Not Done To Dos should be dropped to the Issues List. To Dos are solutions to Issues and have a 7 day time frame. World-Class teams complete 90% of the To Dos each week.
+                <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                  <p className="text-blue-800 text-center">
+                    <span className="font-semibold">Weekly Check-in:</span> Team members report "Done" or "Not Done" for each to-do. Incomplete items can be moved to Issues if needed. High-performing teams typically complete 90% of their weekly to-dos.
                   </p>
                 </div>
                 <div className="space-y-4">
