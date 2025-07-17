@@ -324,7 +324,7 @@ const WeeklyAccountabilityMeetingPage = () => {
   const fetchTodosData = async () => {
     try {
       setLoading(true);
-      const response = await todosService.getTodos('incomplete');
+      const response = await todosService.getTodos('incomplete', null, false, teamId);
       setTodos(response.data.todos || []);
       setTeamMembers(response.data.teamMembers || []);
       setLoading(false);
@@ -391,7 +391,10 @@ const WeeklyAccountabilityMeetingPage = () => {
         savedTodo = await todosService.updateTodo(editingTodo.id, todoData);
         setSuccess('To-do updated successfully');
       } else {
-        savedTodo = await todosService.createTodo(todoData);
+        savedTodo = await todosService.createTodo({
+          ...todoData,
+          department_id: teamId
+        });
         setSuccess('To-do created successfully');
       }
       
