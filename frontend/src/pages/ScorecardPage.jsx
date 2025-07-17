@@ -324,13 +324,13 @@ const ScorecardPage = () => {
     return `${months[date.getMonth()]} ${date.getDate()}`;
   };
 
-  // Get week labels for the past 12 weeks
+  // Get week labels for the past 10 weeks
   const getWeekLabels = () => {
     const labels = [];
     const weekDates = [];
     const today = new Date();
     
-    for (let i = 11; i >= 0; i--) {
+    for (let i = 9; i >= 0; i--) {
       const weekStart = new Date(today);
       weekStart.setDate(today.getDate() - (i * 7));
       const mondayOfWeek = getWeekStartDate(weekStart);
@@ -457,7 +457,7 @@ const ScorecardPage = () => {
               Weekly Scorecard
             </CardTitle>
             <CardDescription className="text-indigo-100">
-              Track performance over the past 12 weeks
+              Track performance over the past 10 weeks
             </CardDescription>
           </CardHeader>
           <CardContent className="p-0">
@@ -467,6 +467,7 @@ const ScorecardPage = () => {
                   <tr>
                     <th className="text-center p-2 font-semibold text-gray-700 w-16">Owner</th>
                     <th className="text-left p-2 font-semibold text-gray-700 w-48">Metric</th>
+                    <th className="text-center p-2 font-semibold text-gray-700 w-12">Chart</th>
                     <th className="text-center p-2 font-semibold text-gray-700 w-20">Goal</th>
                     {isRTL && (
                       <>
@@ -503,7 +504,7 @@ const ScorecardPage = () => {
                 <tbody>
                   {metrics.length === 0 ? (
                     <tr>
-                      <td colSpan={weekLabels.length + (showTotal ? 6 : 5)} className="text-center p-8 text-gray-500">
+                      <td colSpan={weekLabels.length + (showTotal ? 7 : 6)} className="text-center p-8 text-gray-500">
                         No metrics defined. Click "Add Metric" to get started.
                       </td>
                     </tr>
@@ -512,6 +513,17 @@ const ScorecardPage = () => {
                       <tr key={metric.id} className="border-b hover:bg-gray-50">
                         <td className="p-2 text-center text-sm">{metric.ownerName || metric.owner}</td>
                         <td className="p-2 font-medium text-sm">{metric.name}</td>
+                        <td className="p-2 text-center">
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className="h-8 w-8 p-0 hover:bg-blue-100"
+                            onClick={() => setChartModal({ isOpen: true, metric, metricId: metric.id })}
+                            title="View 3-week moving trend chart"
+                          >
+                            <BarChart3 className="h-4 w-4 text-blue-600" />
+                          </Button>
+                        </td>
                         <td className="p-2 text-center font-semibold text-indigo-600 text-sm">{formatGoal(metric.goal, metric.value_type)}</td>
                         
                         {/* Total and Average columns for RTL */}
