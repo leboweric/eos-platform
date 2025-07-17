@@ -70,10 +70,10 @@ const IssuesList = ({
           <TableHeader>
             <TableRow>
               <TableHead className="w-12"></TableHead>
-              <TableHead className="w-14">#</TableHead>
-              <TableHead>Issue</TableHead>
-              <TableHead className="w-48">Owner</TableHead>
-              {showVoting && <TableHead className="w-24 text-center">Votes</TableHead>}
+              <TableHead className="w-12">#</TableHead>
+              <TableHead className="min-w-0">Issue</TableHead>
+              <TableHead className="w-32">Owner</TableHead>
+              {showVoting && <TableHead className="w-20 text-center">Votes</TableHead>}
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -145,7 +145,7 @@ const IssuesList = ({
                     </div>
                   </div>
                 </TableCell>
-                <TableCell onClick={() => setSelectedIssue(issue)}>
+                <TableCell onClick={() => setSelectedIssue(issue)} className="max-w-0">
                   <span className="text-sm text-gray-600 truncate block">
                     {issue.owner_name || 'Unassigned'}
                   </span>

@@ -868,7 +868,7 @@ const WeeklyAccountabilityMeetingPage = () => {
 
         {/* Main Content */}
         <div className="flex-1 p-6 overflow-x-auto">
-          <div className={activeSection === 'scorecard' || activeSection === 'priorities' ? 'min-w-fit' : 'max-w-6xl mx-auto'}>
+          <div className={activeSection === 'scorecard' || activeSection === 'priorities' || activeSection === 'issues' ? 'min-w-fit' : 'max-w-6xl mx-auto'}>
             {error && (
               <Alert className="mb-6 border-red-200 bg-red-50">
                 <AlertCircle className="h-4 w-4 text-red-600" />
