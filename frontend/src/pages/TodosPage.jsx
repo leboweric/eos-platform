@@ -49,9 +49,9 @@ const TodosPage = () => {
                         filterAssignee === 'all' ? null : filterAssignee;
       
       const response = await todosService.getTodos(
-        activeTab === 'all' ? null : activeTab,
+        null, // Always fetch all todos for accurate counts
         assignedTo,
-        activeTab === 'all',
+        true, // Include completed
         selectedDepartment?.id
       );
       

@@ -2,7 +2,9 @@ import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
 import { validationResult } from 'express-validator';
 import { v4 as uuidv4 } from 'uuid';
+import crypto from 'crypto';
 import { query, beginTransaction, commitTransaction, rollbackTransaction } from '../config/database.js';
+import { sendEmail } from '../services/emailService.js';
 
 // Helper function to generate JWT tokens
 const generateTokens = (userId) => {
@@ -565,6 +567,166 @@ export const changePassword = async (req, res) => {
     res.status(500).json({
       success: false,
       error: 'Server error while changing password'
+    });
+  }
+};
+
+// @desc    Request password reset
+// @route   POST /api/v1/auth/forgot-password
+// @access  Public
+export const forgotPassword = async (req, res) => {
+  try {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      return res.status(400).json({
+        success: false,
+        error: 'Validation failed',
+        details: errors.array()
+      });
+    }
+
+    const { email } = req.body;
+
+    // Find user by email
+    const userResult = await query(
+      'SELECT id, email, first_name FROM users WHERE email = $1',
+      [email]
+    );
+
+    // Always return success to prevent email enumeration
+    if (userResult.rows.length === 0) {
+      return res.json({
+        success: true,
+        message: 'If an account exists with this email, a password reset link has been sent.'
+      });
+    }
+
+    const user = userResult.rows[0];
+
+    // Generate reset token
+    const resetToken = crypto.randomBytes(32).toString('hex');
+    const hashedToken = crypto.createHash('sha256').update(resetToken).digest('hex');
+    
+    // Token expires in 1 hour
+    const expiresAt = new Date(Date.now() + 60 * 60 * 1000);
+
+    // Save token to database
+    await query(
+      `INSERT INTO password_reset_tokens (user_id, token, expires_at) 
+       VALUES ($1, $2, $3)`,
+      [user.id, hashedToken, expiresAt]
+    );
+
+    // Create reset URL
+    const resetUrl = `${process.env.FRONTEND_URL}/reset-password?token=${resetToken}`;
+
+    // Send email
+    try {
+      await sendEmail(user.email, 'passwordReset', {
+        firstName: user.first_name,
+        resetLink: resetUrl
+      });
+    } catch (emailError) {
+      console.error('Error sending password reset email:', emailError);
+      // Delete the token if email fails
+      await query('DELETE FROM password_reset_tokens WHERE token = $1', [hashedToken]);
+      
+      return res.status(500).json({
+        success: false,
+        error: 'Failed to send password reset email. Please try again.'
+      });
+    }
+
+    res.json({
+      success: true,
+      message: 'If an account exists with this email, a password reset link has been sent.'
+    });
+
+  } catch (error) {
+    console.error('Forgot password error:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Server error while processing password reset request'
+    });
+  }
+};
+
+// @desc    Reset password with token
+// @route   POST /api/v1/auth/reset-password
+// @access  Public
+export const resetPassword = async (req, res) => {
+  try {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      return res.status(400).json({
+        success: false,
+        error: 'Validation failed',
+        details: errors.array()
+      });
+    }
+
+    const { token, password } = req.body;
+
+    // Hash the token to match what's in the database
+    const hashedToken = crypto.createHash('sha256').update(token).digest('hex');
+
+    // Find valid token
+    const tokenResult = await query(
+      `SELECT pr.*, u.email, u.first_name 
+       FROM password_reset_tokens pr
+       JOIN users u ON pr.user_id = u.id
+       WHERE pr.token = $1 
+       AND pr.expires_at > CURRENT_TIMESTAMP 
+       AND pr.used = false`,
+      [hashedToken]
+    );
+
+    if (tokenResult.rows.length === 0) {
+      return res.status(400).json({
+        success: false,
+        error: 'Invalid or expired password reset token'
+      });
+    }
+
+    const resetToken = tokenResult.rows[0];
+
+    // Hash new password
+    const salt = await bcrypt.genSalt(10);
+    const hashedPassword = await bcrypt.hash(password, salt);
+
+    // Begin transaction
+    await beginTransaction();
+
+    try {
+      // Update user password
+      await query(
+        'UPDATE users SET password = $1, needs_password_change = false WHERE id = $2',
+        [hashedPassword, resetToken.user_id]
+      );
+
+      // Mark token as used
+      await query(
+        'UPDATE password_reset_tokens SET used = true WHERE id = $1',
+        [resetToken.id]
+      );
+
+      await commitTransaction();
+
+      res.json({
+        success: true,
+        message: 'Password has been reset successfully'
+      });
+
+    } catch (error) {
+      await rollbackTransaction();
+      throw error;
+    }
+
+  } catch (error) {
+    console.error('Reset password error:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Server error while resetting password'
     });
   }
 };

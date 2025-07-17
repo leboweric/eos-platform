@@ -176,7 +176,7 @@ export const createIssue = async (req, res) => {
       description,
       nextRank
     ];
-    let placeholders = ['$1', '$2', '$3', '$4', '$5', '$6', '$7', '$8'];
+    let placeholders = ['$1', '$2', '$3', '$4', '$5', '$6', '$7'];
     
     if (hasTimelineColumn) {
       columns.push('timeline');
@@ -499,6 +499,39 @@ export const deleteAttachment = async (req, res) => {
     res.status(500).json({
       success: false,
       message: 'Failed to delete attachment'
+    });
+  }
+};
+
+// Archive a single issue
+export const archiveIssue = async (req, res) => {
+  try {
+    const { orgId, issueId } = req.params;
+    
+    const result = await db.query(
+      `UPDATE issues 
+       SET archived = TRUE, updated_at = CURRENT_TIMESTAMP
+       WHERE id = $1 AND organization_id = $2
+       RETURNING *`,
+      [issueId, orgId]
+    );
+    
+    if (result.rows.length === 0) {
+      return res.status(404).json({
+        success: false,
+        message: 'Issue not found'
+      });
+    }
+    
+    res.json({
+      success: true,
+      data: result.rows[0]
+    });
+  } catch (error) {
+    console.error('Error archiving issue:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Failed to archive issue'
     });
   }
 };

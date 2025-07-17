@@ -8,6 +8,8 @@ import { DepartmentProvider } from './contexts/DepartmentContext';
 import Layout from './components/Layout';
 import LoginPage from './pages/LoginPage';
 import RegisterPage from './pages/RegisterPage';
+import ForgotPasswordPage from './pages/ForgotPasswordPage';
+import ResetPasswordPage from './pages/ResetPasswordPage';
 import Dashboard from './pages/Dashboard';
 import BusinessBlueprintPage from './pages/BusinessBlueprintPage';
 import QuarterlyPrioritiesPage from './pages/QuarterlyPrioritiesPage';
@@ -63,6 +65,8 @@ function App() {
           <Route path="/login" element={!user ? <LoginPage /> : <Navigate to="/dashboard" />} />
           <Route path="/register" element={!user ? <RegisterPage /> : <Navigate to="/dashboard" />} />
           <Route path="/consultant-register" element={!user ? <ConsultantRegisterPage /> : <Navigate to="/dashboard" />} />
+          <Route path="/forgot-password" element={!user ? <ForgotPasswordPage /> : <Navigate to="/dashboard" />} />
+          <Route path="/reset-password" element={!user ? <ResetPasswordPage /> : <Navigate to="/dashboard" />} />
           <Route path="/accept-invitation" element={<AcceptInvitationPage />} />
           
           {/* Protected routes */}

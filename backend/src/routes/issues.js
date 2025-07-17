@@ -11,6 +11,7 @@ import {
   downloadAttachment,
   deleteAttachment,
   upload,
+  archiveIssue,
   archiveClosedIssues,
   unarchiveIssue,
   voteForIssue,
@@ -36,6 +37,9 @@ router.route('/archive-closed')
 router.route('/:issueId')
   .put(updateIssue)
   .delete(deleteIssue);
+
+router.route('/:issueId/archive')
+  .post(archiveIssue);
 
 router.route('/:issueId/unarchive')
   .post(unarchiveIssue);

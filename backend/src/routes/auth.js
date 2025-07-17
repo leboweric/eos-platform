@@ -7,7 +7,9 @@ import {
   logout,
   getProfile,
   updateProfile,
-  changePassword
+  changePassword,
+  forgotPassword,
+  resetPassword
 } from '../controllers/authController.js';
 import { authenticate } from '../middleware/auth.js';
 
@@ -65,6 +67,21 @@ router.put('/change-password', [
   body('currentPassword').exists(),
   body('newPassword').isLength({ min: 6 })
 ], changePassword);
+
+// @route   POST /api/v1/auth/forgot-password
+// @desc    Request password reset
+// @access  Public
+router.post('/forgot-password', [
+  body('email').isEmail().normalizeEmail()
+], forgotPassword);
+
+// @route   POST /api/v1/auth/reset-password
+// @desc    Reset password with token
+// @access  Public
+router.post('/reset-password', [
+  body('token').exists().trim(),
+  body('password').isLength({ min: 6 })
+], resetPassword);
 
 export default router;
 

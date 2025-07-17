@@ -40,14 +40,19 @@ export const todosService = {
   // Create a new todo
   createTodo: async (todoData) => {
     const orgId = getOrgId();
-    const teamId = getTeamId();
+    
+    // Map frontend field names to backend field names
+    const mappedData = {
+      title: todoData.title,
+      description: todoData.description,
+      assignedToId: todoData.assignedToId,
+      dueDate: todoData.dueDate,
+      teamId: todoData.department_id || todoData.teamId || null
+    };
     
     const response = await axios.post(
       `/organizations/${orgId}/todos`,
-      {
-        ...todoData,
-        teamId: teamId || null
-      }
+      mappedData
     );
     return response.data.data;
   },
