@@ -39,6 +39,9 @@ const ScorecardPage = () => {
   const [editingMetric, setEditingMetric] = useState(null);
   const [showMetricDialog, setShowMetricDialog] = useState(false);
   const [editingScore, setEditingScore] = useState(null);
+  const [showScoreDialog, setShowScoreDialog] = useState(false);
+  const [scoreDialogData, setScoreDialogData] = useState({ metricId: null, weekDate: '', metricName: '', currentValue: '' });
+  const [scoreInputValue, setScoreInputValue] = useState('');
   const [users, setUsers] = useState([]);
   const [chartModal, setChartModal] = useState({ isOpen: false, metric: null, metricId: null });
   const [isRTL, setIsRTL] = useState(() => {
@@ -218,8 +221,57 @@ const ScorecardPage = () => {
     }
   };
 
-  const handleScoreEdit = (metricId, week) => {
-    setEditingScore({ metricId, week });
+  const handleScoreEdit = (metric, weekDate) => {
+    const currentValue = weeklyScores[metric.id] && weeklyScores[metric.id][weekDate] 
+      ? Math.round(parseFloat(weeklyScores[metric.id][weekDate])) 
+      : '';
+    
+    setScoreDialogData({
+      metricId: metric.id,
+      weekDate: weekDate,
+      metricName: metric.name,
+      currentValue: currentValue
+    });
+    setScoreInputValue(currentValue.toString());
+    setShowScoreDialog(true);
+  };
+
+  const handleScoreDialogSave = async () => {
+    try {
+      setSaving(true);
+      setError(null);
+      
+      const orgId = localStorage.getItem('impersonatedOrgId') || user?.organizationId || user?.organization_id;
+      const teamId = selectedDepartment?.id;
+      
+      if (!orgId || !teamId) {
+        console.log('No department selected yet, skipping operation');
+        return;
+      }
+      
+      await scorecardService.updateScore(
+        orgId, 
+        teamId, 
+        scoreDialogData.metricId, 
+        scoreDialogData.weekDate, 
+        scoreInputValue || null
+      );
+      
+      setShowScoreDialog(false);
+      setScoreInputValue('');
+      await fetchScorecard();
+      setSuccess('Score updated successfully');
+    } catch (error) {
+      console.error('Failed to save score:', error);
+      setError('Failed to save score');
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const handleScoreDialogCancel = () => {
+    setShowScoreDialog(false);
+    setScoreInputValue('');
   };
 
   const handleScoreSave = async (metricId, week, value) => {
@@ -514,82 +566,31 @@ const ScorecardPage = () => {
                         {/* Week columns */}
                         {weekDates.map((weekDate, index) => {
                           const score = weeklyScores[metric.id]?.[weekDate];
-                          const isEditing = editingScore?.metricId === metric.id && editingScore?.week === weekDate;
                           const goalMet = score && isGoalMet(score, metric.goal, metric.comparison_operator);
                           
                           return (
                             <td key={weekDate} className="p-2 text-center group">
-                              {isEditing ? (
-                                <div className="flex items-center space-x-1">
-                                  <Input
-                                    type="number"
-                                    className="w-20 h-8 text-center text-sm"
-                                    defaultValue={score ? Math.round(parseFloat(score)) : ''}
-                                    step="1"
-                                    onKeyDown={(e) => {
-                                      if (e.key === 'Enter') {
-                                        handleScoreSave(metric.id, weekDate, e.target.value);
-                                      }
-                                      if (e.key === 'Escape') {
-                                        setEditingScore(null);
-                                      }
-                                    }}
-                                    autoFocus
-                                  />
-                                  <Button
-                                    size="sm"
-                                    variant="ghost"
-                                    className="h-7 w-7 p-0"
-                                    onClick={(e) => {
-                                      const input = e.target.previousSibling;
-                                      handleScoreSave(metric.id, weekDate, input.value);
-                                    }}
-                                  >
-                                    <Save className="h-3 w-3" />
-                                  </Button>
-                                  <Button
-                                    size="sm"
-                                    variant="ghost"
-                                    className="h-7 w-7 p-0"
-                                    onClick={() => setEditingScore(null)}
-                                  >
-                                    <X className="h-3 w-3" />
-                                  </Button>
+                              <button
+                                className={`w-full h-8 rounded text-center font-medium transition-colors cursor-pointer relative group ${
+                                  score
+                                    ? goalMet
+                                      ? 'bg-green-100 text-green-800 hover:bg-green-200'
+                                      : 'bg-red-100 text-red-800 hover:bg-red-200'
+                                    : 'text-gray-400 hover:bg-gray-100'
+                                }`}
+                                onClick={() => handleScoreEdit(metric, weekDate)}
+                              >
+                                <div className="flex items-center justify-center gap-1">
+                                  {score ? (
+                                    <>
+                                      <span>{formatValue(score, metric.value_type)}</span>
+                                      <Edit className="h-3 w-3 opacity-0 group-hover:opacity-100 transition-opacity" />
+                                    </>
+                                  ) : (
+                                    <span>-</span>
+                                  )}
                                 </div>
-                              ) : (
-                                <div
-                                  className={`cursor-pointer px-2 py-1 rounded text-sm min-h-[24px] flex items-center justify-center ${
-                                    score
-                                      ? goalMet
-                                        ? 'bg-green-100 text-green-800'
-                                        : 'bg-red-100 text-red-800'
-                                      : 'text-gray-400 hover:bg-gray-100'
-                                  }`}
-                                  onClick={() => handleScoreEdit(metric.id, weekDate)}
-                                >
-                                  <div className="flex items-center justify-center gap-1">
-                                    {score ? (
-                                      <>
-                                        <span>{formatValue(score, metric.value_type)}</span>
-                                        <Button
-                                          variant="ghost"
-                                          size="sm"
-                                          className="h-5 w-5 p-0 opacity-0 group-hover:opacity-100 transition-opacity"
-                                          onClick={(e) => {
-                                            e.stopPropagation();
-                                            setChartModal({ isOpen: true, metric, metricId: metric.id });
-                                          }}
-                                          title="View trend chart"
-                                        >
-                                          <BarChart3 className="h-3 w-3" />
-                                        </Button>
-                                      </>
-                                    ) : (
-                                      '-'
-                                    )}
-                                  </div>
-                                </div>
-                              )}
+                              </button>
                             </td>
                           );
                         })}
@@ -784,6 +785,43 @@ const ScorecardPage = () => {
                   <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                 ) : null}
                 {editingMetric ? 'Update' : 'Create'}
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+
+        {/* Score Entry Dialog */}
+        <Dialog open={showScoreDialog} onOpenChange={setShowScoreDialog}>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>Update Score</DialogTitle>
+              <DialogDescription>
+                Enter the score for {scoreDialogData.metricName} for the week of {scoreDialogData.weekDate}
+              </DialogDescription>
+            </DialogHeader>
+            <div className="space-y-4">
+              <div>
+                <Label htmlFor="score-input">Score</Label>
+                <Input
+                  id="score-input"
+                  type="number"
+                  step="1"
+                  value={scoreInputValue}
+                  onChange={(e) => setScoreInputValue(e.target.value)}
+                  placeholder="Enter score"
+                  autoFocus
+                />
+              </div>
+            </div>
+            <DialogFooter>
+              <Button variant="outline" onClick={handleScoreDialogCancel}>
+                Cancel
+              </Button>
+              <Button onClick={handleScoreDialogSave} disabled={saving}>
+                {saving ? (
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                ) : null}
+                Save Score
               </Button>
             </DialogFooter>
           </DialogContent>
