@@ -538,6 +538,7 @@ const WeeklyAccountabilityMeetingPage = () => {
                   readOnly={true}
                   isRTL={isRTL}
                   showTotal={showTotal}
+                  departmentId={selectedDepartment?.id}
                   onIssueCreated={(message) => {
                     setSuccess(message);
                     setTimeout(() => setSuccess(null), 3000);

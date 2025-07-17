@@ -6,7 +6,7 @@ import { issuesService } from '../../services/issuesService';
 import { useAuthStore } from '../../stores/authStore';
 import MetricTrendChart from './MetricTrendChart';
 
-const ScorecardTable = ({ metrics, weeklyScores, readOnly = false, onIssueCreated, isRTL = false, showTotal = true }) => {
+const ScorecardTable = ({ metrics, weeklyScores, readOnly = false, onIssueCreated, isRTL = false, showTotal = true, departmentId }) => {
   const { user } = useAuthStore();
   const [creatingIssue, setCreatingIssue] = useState({});
   const [chartModal, setChartModal] = useState({ isOpen: false, metric: null, metricId: null });
@@ -111,7 +111,8 @@ const ScorecardTable = ({ metrics, weeklyScores, readOnly = false, onIssueCreate
         title: `${metric.name} - Off Track`,
         description: `Metric "${metric.name}" is off track. Current: ${formatValue(actualValue, metric.value_type)}, Goal: ${formatGoal(metric.goal, metric.value_type)}`,
         timeline: 'short_term',
-        ownerId: metric.ownerId || metric.owner_id || null
+        ownerId: metric.ownerId || metric.owner_id || null,
+        department_id: departmentId
       };
       
       console.log('Creating issue with data:', issueData);
@@ -298,8 +299,8 @@ const ScorecardTable = ({ metrics, weeklyScores, readOnly = false, onIssueCreate
                               {showCreateIssue && (
                                 <Button
                                   size="sm"
-                                  variant="outline"
-                                  className="h-5 w-5 p-0 hover:bg-red-100 border-red-300 flex items-center justify-center"
+                                  variant="ghost"
+                                  className="ml-1 h-6 px-2 hover:bg-red-50 text-xs flex items-center gap-1"
                                   onClick={(e) => {
                                     e.stopPropagation();
                                     handleCreateIssue(metric, score);
@@ -310,7 +311,10 @@ const ScorecardTable = ({ metrics, weeklyScores, readOnly = false, onIssueCreate
                                   {creatingIssue[metric.id] ? (
                                     <Loader2 className="h-3 w-3 animate-spin" />
                                   ) : (
-                                    <AlertTriangle className="h-3 w-3 text-red-600" />
+                                    <>
+                                      <AlertTriangle className="h-3 w-3 text-red-600" />
+                                      <span className="hidden lg:inline">Issue</span>
+                                    </>
                                   )}
                                 </Button>
                               )}
