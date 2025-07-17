@@ -599,11 +599,11 @@ const ScorecardPage = () => {
                                 <div className="flex items-center justify-center gap-1">
                                   {score ? (
                                     <>
-                                      <span>{formatValue(score, metric.value_type)}</span>
+                                      <span className="text-sm">{formatValue(score, metric.value_type)}</span>
                                       <Edit className="h-3 w-3 opacity-0 group-hover:opacity-100 transition-opacity" />
                                     </>
                                   ) : (
-                                    <span>-</span>
+                                    <span className="text-sm">-</span>
                                   )}
                                 </div>
                               </button>

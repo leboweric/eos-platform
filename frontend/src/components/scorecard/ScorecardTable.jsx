@@ -235,7 +235,7 @@ const ScorecardTable = ({ metrics, weeklyScores, readOnly = false, onIssueCreate
                           </td>
                         )}
                         {/* Average column */}
-                        <td className="p-4 text-center bg-gray-50 font-semibold">
+                        <td className="p-4 text-center bg-gray-50 font-semibold text-sm">
                           {(() => {
                             // Always use original order for calculations
                             const scores = weekDatesOriginal
@@ -326,7 +326,7 @@ const ScorecardTable = ({ metrics, weeklyScores, readOnly = false, onIssueCreate
                     {!isRTL && (
                       <>
                         {/* Average column */}
-                        <td className="p-4 text-center bg-gray-50 font-semibold">
+                        <td className="p-4 text-center bg-gray-50 font-semibold text-sm">
                           {(() => {
                             // Always use original order for calculations
                             const scores = weekDatesOriginal
