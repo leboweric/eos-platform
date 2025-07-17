@@ -69,11 +69,11 @@ const IssuesList = ({
         <Table>
           <TableHeader>
             <TableRow>
-              <TableHead className="w-10"></TableHead>
-              <TableHead className="w-12">#</TableHead>
+              <TableHead className="w-12"></TableHead>
+              <TableHead className="w-14">#</TableHead>
               <TableHead>Issue</TableHead>
-              <TableHead className="w-40">Owner</TableHead>
-              {showVoting && <TableHead className="w-20 text-center">Votes</TableHead>}
+              <TableHead className="w-48">Owner</TableHead>
+              {showVoting && <TableHead className="w-24 text-center">Votes</TableHead>}
             </TableRow>
           </TableHeader>
           <TableBody>

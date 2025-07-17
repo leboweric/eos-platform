@@ -19,7 +19,8 @@ import {
   AlertTriangle,
   CheckSquare,
   ArrowLeftRight,
-  ChevronDown
+  ChevronDown,
+  Archive
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import ScorecardTable from '../components/scorecard/ScorecardTable';
@@ -213,6 +214,25 @@ const WeeklyAccountabilityMeetingPage = () => {
     } catch (error) {
       console.error('Failed to archive issue:', error);
       setError('Failed to archive issue');
+    }
+  };
+
+  const handleArchiveSelected = async () => {
+    if (selectedIssueIds.length === 0) {
+      setError('Please select issues to archive');
+      return;
+    }
+    
+    if (!confirm(`Are you sure you want to archive ${selectedIssueIds.length} selected issue(s)?`)) return;
+    
+    try {
+      // Archive each selected issue
+      await Promise.all(selectedIssueIds.map(id => issuesService.archiveIssue(id)));
+      setSelectedIssueIds([]);
+      await fetchIssuesData();
+    } catch (error) {
+      console.error('Failed to archive selected issues:', error);
+      setError('Failed to archive selected issues');
     }
   };
 
@@ -697,11 +717,25 @@ const WeeklyAccountabilityMeetingPage = () => {
           <div className="space-y-4">
             <Card>
               <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <AlertTriangle className="h-5 w-5" />
-                  Issues Discussion
-                </CardTitle>
-                <CardDescription>Review and solve short-term issues (60 minutes)</CardDescription>
+                <div className="flex items-center justify-between">
+                  <div>
+                    <CardTitle className="flex items-center gap-2">
+                      <AlertTriangle className="h-5 w-5" />
+                      Issues Discussion
+                    </CardTitle>
+                    <CardDescription>Review and solve short-term issues (60 minutes)</CardDescription>
+                  </div>
+                  {selectedIssueIds.length > 0 && (
+                    <Button 
+                      onClick={handleArchiveSelected}
+                      variant="outline"
+                      className="text-gray-600"
+                    >
+                      <Archive className="mr-2 h-4 w-4" />
+                      Archive Selected ({selectedIssueIds.length})
+                    </Button>
+                  )}
+                </div>
               </CardHeader>
             </Card>
             {issues.length === 0 ? (
