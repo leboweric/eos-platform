@@ -708,12 +708,12 @@ const ScorecardPage = () => {
                 />
               </div>
               <div>
-                <Label htmlFor="metric-description">Description</Label>
+                <Label htmlFor="metric-description">Data Source</Label>
                 <Input
                   id="metric-description"
                   value={metricForm.description}
                   onChange={(e) => setMetricForm(prev => ({ ...prev, description: e.target.value }))}
-                  placeholder="e.g., Data source: CRM system, collected weekly on Fridays"
+                  placeholder="e.g., CRM system, collected weekly on Fridays"
                 />
               </div>
               <div>
