@@ -24,7 +24,7 @@ import {
 import { useNavigate } from 'react-router-dom';
 import ScorecardTable from '../components/scorecard/ScorecardTable';
 import PriorityCard from '../components/priorities/PriorityCard';
-import IssueCard from '../components/issues/IssueCard';
+import IssuesList from '../components/issues/IssuesList';
 import IssueDialog from '../components/issues/IssueDialog';
 import TodoCard from '../components/todos/TodoCard';
 import { scorecardService } from '../services/scorecardService';
@@ -46,6 +46,7 @@ const WeeklyAccountabilityMeetingPage = () => {
   const [weeklyScores, setWeeklyScores] = useState({});
   const [priorities, setPriorities] = useState([]);
   const [issues, setIssues] = useState([]);
+  const [selectedIssueIds, setSelectedIssueIds] = useState([]);
   const [todos, setTodos] = useState([]);
   const [teamMembers, setTeamMembers] = useState([]);
   const [goodNews, setGoodNews] = useState([]);
@@ -202,6 +203,16 @@ const WeeklyAccountabilityMeetingPage = () => {
     } catch (error) {
       console.error('Failed to vote:', error);
       setError('Failed to update vote');
+    }
+  };
+
+  const handleArchive = async (issueId) => {
+    try {
+      await issuesService.archiveIssue(issueId);
+      await fetchIssuesData();
+    } catch (error) {
+      console.error('Failed to archive issue:', error);
+      setError('Failed to archive issue');
     }
   };
 
@@ -700,33 +711,31 @@ const WeeklyAccountabilityMeetingPage = () => {
                 </CardContent>
               </Card>
             ) : (
-              <div className="grid gap-4">
-                {issues.map(issue => (
-                  <IssueCard 
-                    key={issue.id} 
-                    issue={issue} 
-                    showVoting
-                    onVote={handleVote}
-                    onEdit={handleEditIssue}
-                    onStatusChange={handleIssueStatusChange}
-                    onTimelineChange={handleIssueTimelineChange}
-                    getStatusColor={(status) => {
-                      switch (status) {
-                        case 'open': return 'bg-yellow-100 text-yellow-800';
-                        case 'closed': return 'bg-green-100 text-green-800';
-                        default: return 'bg-gray-100 text-gray-800';
-                      }
-                    }}
-                    getStatusIcon={(status) => {
-                      switch (status) {
-                        case 'open': return <AlertTriangle className="h-4 w-4" />;
-                        case 'closed': return <CheckCircle className="h-4 w-4" />;
-                        default: return null;
-                      }
-                    }}
-                  />
-                ))}
-              </div>
+              <IssuesList
+                issues={issues}
+                onEdit={handleEditIssue}
+                onStatusChange={handleIssueStatusChange}
+                onTimelineChange={handleIssueTimelineChange}
+                onArchive={handleArchive}
+                onVote={handleVote}
+                getStatusColor={(status) => {
+                  switch (status) {
+                    case 'open': return 'bg-yellow-100 text-yellow-800';
+                    case 'closed': return 'bg-green-100 text-green-800';
+                    default: return 'bg-gray-100 text-gray-800';
+                  }
+                }}
+                getStatusIcon={(status) => {
+                  switch (status) {
+                    case 'open': return <AlertTriangle className="h-4 w-4" />;
+                    case 'closed': return <CheckCircle className="h-4 w-4" />;
+                    default: return null;
+                  }
+                }}
+                showVoting={true}
+                selectedIssues={selectedIssueIds}
+                onSelectionChange={setSelectedIssueIds}
+              />
             )}
           </div>
         );
