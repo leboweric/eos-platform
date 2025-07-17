@@ -523,7 +523,7 @@ const ScorecardPage = () => {
                                 <div className="flex items-center space-x-1">
                                   <Input
                                     type="number"
-                                    className="w-14 h-7 text-center text-sm"
+                                    className="w-20 h-8 text-center text-sm"
                                     defaultValue={score ? Math.round(parseFloat(score)) : ''}
                                     step="1"
                                     onKeyDown={(e) => {
