@@ -304,7 +304,7 @@ const QuarterlyPlanningMeetingPage = () => {
                   
                   {expandedSections.companyPriorities && (
                     <div className="pl-4 space-y-3">
-                      {previousPriorities
+                      {(previousPriorities || [])
                         .filter(p => p.is_company_priority)
                         .map(priority => (
                           <PriorityCard
@@ -315,7 +315,7 @@ const QuarterlyPlanningMeetingPage = () => {
                             isReadOnly={true}
                           />
                         ))}
-                      {previousPriorities.filter(p => p.is_company_priority).length === 0 && (
+                      {(previousPriorities || []).filter(p => p.is_company_priority).length === 0 && (
                         <p className="text-gray-500 text-sm">No company priorities from last quarter</p>
                       )}
                     </div>
@@ -324,7 +324,7 @@ const QuarterlyPlanningMeetingPage = () => {
 
                 {/* Individual Priorities */}
                 {Object.entries(
-                  previousPriorities
+                  (previousPriorities || [])
                     .filter(p => !p.is_company_priority)
                     .reduce((acc, priority) => {
                       const ownerName = priority.owner_name || 'Unassigned';
@@ -403,7 +403,7 @@ const QuarterlyPlanningMeetingPage = () => {
                 <div className="space-y-4">
                   <h4 className="font-medium text-gray-700">Company Priorities</h4>
                   <div className="space-y-3">
-                    {priorities
+                    {(priorities || [])
                       .filter(p => p.is_company_priority)
                       .map(priority => (
                         <PriorityCard
@@ -413,7 +413,7 @@ const QuarterlyPlanningMeetingPage = () => {
                           showActions={true}
                         />
                       ))}
-                    {priorities.filter(p => p.is_company_priority).length === 0 && (
+                    {(priorities || []).filter(p => p.is_company_priority).length === 0 && (
                       <p className="text-gray-500 text-sm">No company priorities set yet</p>
                     )}
                   </div>
@@ -423,7 +423,7 @@ const QuarterlyPlanningMeetingPage = () => {
                 <div className="space-y-4">
                   <h4 className="font-medium text-gray-700">Individual Priorities</h4>
                   {Object.entries(
-                    priorities
+                    (priorities || [])
                       .filter(p => !p.is_company_priority)
                       .reduce((acc, priority) => {
                         const ownerName = priority.owner_name || 'Unassigned';
@@ -446,7 +446,7 @@ const QuarterlyPlanningMeetingPage = () => {
                       </div>
                     </div>
                   ))}
-                  {priorities.filter(p => !p.is_company_priority).length === 0 && (
+                  {(priorities || []).filter(p => !p.is_company_priority).length === 0 && (
                     <p className="text-gray-500 text-sm">No individual priorities set yet</p>
                   )}
                 </div>
