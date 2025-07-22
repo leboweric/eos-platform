@@ -1,4 +1,4 @@
-import { sendEmail } from '../services/emailService.js';
+// Email sending is handled directly with SendGrid in this controller
 
 // Submit feedback (ticket or enhancement request)
 export const submitFeedback = async (req, res) => {
@@ -52,12 +52,28 @@ export const submitFeedback = async (req, res) => {
       </p>
     `;
     
-    // Send email
-    await sendEmail({
+    // For now, we'll use the direct SendGrid approach since we don't have a feedback template
+    // We need to add a custom email send function or update the email service
+    const sgMail = await import('@sendgrid/mail');
+    
+    if (!process.env.SENDGRID_API_KEY) {
+      console.warn('SendGrid API key not configured. Feedback email not sent.');
+      // Still return success to user
+      return res.json({
+        success: true,
+        message: 'Feedback received. Email notifications are currently disabled.'
+      });
+    }
+    
+    sgMail.default.setApiKey(process.env.SENDGRID_API_KEY);
+    
+    // Send email to admin
+    await sgMail.default.send({
       to: 'leboweric@gmail.com',
+      from: process.env.SENDGRID_FROM_EMAIL || 'noreply@42vibes.com',
+      replyTo: user.email,
       subject: emailSubject,
-      html: emailHtml,
-      replyTo: user.email
+      html: emailHtml
     });
     
     // Send confirmation email to user
@@ -85,8 +101,9 @@ export const submitFeedback = async (req, res) => {
       </p>
     `;
     
-    await sendEmail({
+    await sgMail.default.send({
       to: user.email,
+      from: process.env.SENDGRID_FROM_EMAIL || 'noreply@42vibes.com',
       subject: `Confirmation: ${emailSubject}`,
       html: confirmationHtml
     });
@@ -98,6 +115,16 @@ export const submitFeedback = async (req, res) => {
     
   } catch (error) {
     console.error('Error submitting feedback:', error);
+    
+    // If it's a SendGrid error, still save the feedback but notify user
+    if (error.code === 'ENOTFOUND' || error.response?.body?.errors) {
+      return res.json({
+        success: true,
+        message: 'Feedback received. We will review it shortly.',
+        warning: 'Email notification could not be sent at this time.'
+      });
+    }
+    
     res.status(500).json({
       success: false,
       error: 'Failed to submit feedback. Please try again later.'
