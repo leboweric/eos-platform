@@ -47,16 +47,16 @@ const ThreeYearPictureDialog = ({ open, onOpenChange, data, onSave }) => {
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[600px] max-h-[90vh] flex flex-col">
+      <DialogContent className="sm:max-w-[600px] max-h-[85vh] flex flex-col p-0">
         <form onSubmit={handleSubmit} className="flex flex-col h-full">
-          <DialogHeader className="flex-shrink-0">
+          <DialogHeader className="flex-shrink-0 p-6 pb-0">
             <DialogTitle>3-Year Picture</DialogTitle>
             <DialogDescription>
               Paint a picture of what your organization will look like in 3 years
             </DialogDescription>
           </DialogHeader>
           
-          <div className="space-y-4 py-4 overflow-y-auto flex-grow">
+          <div className="space-y-4 p-6 overflow-y-auto flex-grow max-h-[calc(85vh-180px)]">
             {error && (
               <Alert className="border-red-200 bg-red-50">
                 <AlertCircle className="h-4 w-4" />
@@ -122,7 +122,7 @@ const ThreeYearPictureDialog = ({ open, onOpenChange, data, onSave }) => {
                   variant="outline"
                   onClick={() => setFormData(prev => ({
                     ...prev,
-                    measurables: [...(prev.measurables || []), '']
+                    measurables: [...(prev.measurables || []), { name: '', value: '' }]
                   }))}
                 >
                   <Plus className="h-4 w-4" />
@@ -134,12 +134,23 @@ const ThreeYearPictureDialog = ({ open, onOpenChange, data, onSave }) => {
                   <div key={index} className="flex gap-2">
                     <Input
                       placeholder={`Measurable ${index + 1}`}
-                      value={item}
+                      value={item.name || ''}
                       onChange={(e) => setFormData(prev => {
                         const newItems = [...(prev.measurables || [])];
-                        newItems[index] = e.target.value;
+                        newItems[index] = { ...newItems[index], name: e.target.value };
                         return { ...prev, measurables: newItems };
                       })}
+                      className="flex-1"
+                    />
+                    <Input
+                      placeholder="Target value"
+                      value={item.value || ''}
+                      onChange={(e) => setFormData(prev => {
+                        const newItems = [...(prev.measurables || [])];
+                        newItems[index] = { ...newItems[index], value: e.target.value };
+                        return { ...prev, measurables: newItems };
+                      })}
+                      className="w-32"
                     />
                     <Button
                       type="button"
@@ -206,7 +217,7 @@ const ThreeYearPictureDialog = ({ open, onOpenChange, data, onSave }) => {
             </div>
           </div>
 
-          <DialogFooter className="flex-shrink-0 pt-4 border-t">
+          <DialogFooter className="flex-shrink-0 p-6 pt-4 border-t">
             <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
               Cancel
             </Button>
