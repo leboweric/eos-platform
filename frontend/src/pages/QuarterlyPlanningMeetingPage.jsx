@@ -98,12 +98,10 @@ const QuarterlyPlanningMeetingPage = () => {
                 </p>
                 <div className="bg-blue-50 p-4 rounded-lg">
                   <h4 className="font-medium mb-2">Meeting Goals:</h4>
-                  <ul className="list-disc list-inside text-sm space-y-1">
-                    <li>Review and assess the previous quarter's performance</li>
-                    <li>Identify key learnings and areas for improvement</li>
-                    <li>Set clear priorities for the upcoming quarter</li>
-                    <li>Align team on critical issues and next steps</li>
-                    <li>Ensure everyone leaves with clarity on their responsibilities</li>
+                  <ul className="list-disc list-inside text-lg space-y-2">
+                    <li>Clear Vision, All on Same Page</li>
+                    <li>Clear Plan for Next Quarter</li>
+                    <li>Resolve All Key Issues</li>
                   </ul>
                 </div>
               </div>
@@ -128,16 +126,16 @@ const QuarterlyPlanningMeetingPage = () => {
                 </p>
                 <div className="space-y-4">
                   <div className="border-l-4 border-blue-500 pl-4">
-                    <h4 className="font-medium">1. Personal highlight from the last quarter</h4>
-                    <p className="text-sm text-gray-600">What was your biggest personal or professional win?</p>
+                    <h4 className="font-medium">1. Bests</h4>
+                    <p className="text-sm text-gray-600">Personal and professional Best from the last 90 days</p>
                   </div>
                   <div className="border-l-4 border-blue-500 pl-4">
-                    <h4 className="font-medium">2. Key learning or insight</h4>
-                    <p className="text-sm text-gray-600">What did you learn that will help you going forward?</p>
+                    <h4 className="font-medium">2. Update</h4>
+                    <p className="text-sm text-gray-600">What's working/not working?</p>
                   </div>
                   <div className="border-l-4 border-blue-500 pl-4">
-                    <h4 className="font-medium">3. Energy level coming into the new quarter</h4>
-                    <p className="text-sm text-gray-600">Rate your energy/enthusiasm from 1-10 and explain why</p>
+                    <h4 className="font-medium">3. Expectations for this session</h4>
+                    <p className="text-sm text-gray-600">What do you hope to accomplish in this meeting?</p>
                   </div>
                 </div>
               </div>
