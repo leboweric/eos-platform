@@ -11,6 +11,7 @@ import {
   CheckCircle,
   ChevronRight,
   ChevronLeft,
+  ChevronDown,
   Target,
   CheckSquare,
   Calendar,
@@ -19,6 +20,8 @@ import {
   AlertTriangle
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
+import PriorityCard from '../components/priorities/PriorityCard';
+import { quarterlyPrioritiesService } from '../services/quarterlyPrioritiesService';
 
 const QuarterlyPlanningMeetingPage = () => {
   const { user } = useAuthStore();
@@ -28,6 +31,15 @@ const QuarterlyPlanningMeetingPage = () => {
   const [error, setError] = useState(null);
   const [activeSection, setActiveSection] = useState('objectives');
   const [success, setSuccess] = useState(null);
+  
+  // Meeting data
+  const [priorities, setPriorities] = useState([]);
+  
+  // Collapsible sections state
+  const [expandedSections, setExpandedSections] = useState({
+    companyPriorities: false,
+    individualPriorities: {}
+  });
 
   const agendaItems = [
     { id: 'objectives', label: 'Objectives', duration: 5, icon: Target },
@@ -40,6 +52,15 @@ const QuarterlyPlanningMeetingPage = () => {
     { id: 'conclude', label: 'Conclude', duration: 10, icon: CheckSquare }
   ];
 
+  useEffect(() => {
+    if (activeSection === 'review-prior' || activeSection === 'quarterly-priorities') {
+      fetchPrioritiesData();
+    } else {
+      // For non-data sections, ensure loading is false
+      setLoading(false);
+    }
+  }, [activeSection, teamId]);
+
   // Auto-clear success messages after 3 seconds
   useEffect(() => {
     if (success) {
@@ -49,6 +70,55 @@ const QuarterlyPlanningMeetingPage = () => {
       return () => clearTimeout(timer);
     }
   }, [success]);
+
+  const fetchPrioritiesData = async () => {
+    try {
+      setLoading(true);
+      setError(null);
+      const orgId = localStorage.getItem('impersonatedOrgId') || user?.organizationId || user?.organization_id;
+      const effectiveTeamId = teamId || user?.teamId || '00000000-0000-0000-0000-000000000000';
+      
+      // Use the simplified current priorities endpoint
+      const response = await quarterlyPrioritiesService.getCurrentPriorities(orgId, effectiveTeamId);
+      
+      // Extract data in the same format as the original page
+      const companyPriorities = response.companyPriorities || [];
+      const teamMemberPriorities = response.teamMemberPriorities || {};
+      
+      // Flatten the data structure to a simple array for easier handling
+      const allPriorities = [
+        ...companyPriorities.map(p => ({ ...p, priority_type: 'company' })),
+        ...Object.values(teamMemberPriorities).flatMap(memberData => 
+          (memberData.priorities || []).map(p => ({ ...p, priority_type: 'individual' }))
+        )
+      ];
+      
+      setPriorities(allPriorities);
+      setLoading(false);
+    } catch (error) {
+      console.error('Failed to fetch priorities:', error);
+      setError('Failed to load priorities');
+      setLoading(false);
+    }
+  };
+
+  // Toggle functions for collapsible sections
+  const toggleCompanyPriorities = () => {
+    setExpandedSections(prev => ({
+      ...prev,
+      companyPriorities: !prev.companyPriorities
+    }));
+  };
+
+  const toggleIndividualPriorities = (memberId) => {
+    setExpandedSections(prev => ({
+      ...prev,
+      individualPriorities: {
+        ...prev.individualPriorities,
+        [memberId]: !prev.individualPriorities[memberId]
+      }
+    }));
+  };
 
   const handleSectionChange = (sectionId) => {
     setActiveSection(sectionId);
@@ -145,42 +215,164 @@ const QuarterlyPlanningMeetingPage = () => {
         );
 
       case 'review-prior':
+        if (loading) {
+          return (
+            <div className="flex items-center justify-center h-96">
+              <Loader2 className="h-8 w-8 animate-spin" />
+            </div>
+          );
+        }
         return (
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Calendar className="h-5 w-5" />
-                Review Prior Quarter
-              </CardTitle>
-              <CardDescription>Assess last quarter's performance and results (30 minutes)</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-4">
-                <p className="text-gray-600">
-                  Review each priority from last quarter. Discuss what was accomplished, 
-                  what wasn't, and why. Be honest about successes and failures.
-                </p>
-                <div className="bg-blue-50 p-4 rounded-lg">
-                  <h4 className="font-medium mb-2">Review Framework:</h4>
-                  <ul className="list-disc list-inside text-sm space-y-1">
-                    <li>What were our quarterly priorities?</li>
-                    <li>Which ones did we complete successfully?</li>
-                    <li>Which ones did we miss and why?</li>
-                    <li>What obstacles did we encounter?</li>
-                    <li>What can we learn from this quarter?</li>
-                  </ul>
-                </div>
-                <div className="text-center py-8">
+          <div className="space-y-4">
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Calendar className="h-5 w-5" />
+                  Review Prior Quarter
+                </CardTitle>
+                <CardDescription>Check progress on last quarter's priorities (30 minutes)</CardDescription>
+              </CardHeader>
+            </Card>
+            {priorities.length === 0 ? (
+              <Card>
+                <CardContent className="text-center py-8">
+                  <p className="text-gray-500">No priorities found for this quarter.</p>
                   <Button 
                     variant="outline" 
+                    className="mt-4"
                     onClick={() => navigate('/quarterly-priorities')}
                   >
-                    View Quarterly Priorities
+                    Go to Quarterly Priorities
                   </Button>
+                </CardContent>
+              </Card>
+            ) : (
+              <div className="space-y-6">
+                <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                  <p className="text-blue-800 text-center">
+                    <span className="font-semibold">Status Check:</span> Review what was accomplished, what wasn't, and why. Be honest about successes and failures.
+                  </p>
                 </div>
+                {/* Company Priorities Section */}
+                {(() => {
+                  const companyPriorities = priorities.filter(p => p.priority_type === 'company');
+                  return companyPriorities.length > 0 && (
+                    <div>
+                      <div 
+                        className="flex items-center justify-between p-4 bg-gray-50 rounded-lg cursor-pointer hover:bg-gray-100 transition-colors"
+                        onClick={toggleCompanyPriorities}
+                      >
+                        <div className="flex items-center gap-3">
+                          {expandedSections.companyPriorities ? (
+                            <ChevronDown className="h-5 w-5 text-gray-600" />
+                          ) : (
+                            <ChevronRight className="h-5 w-5 text-gray-600" />
+                          )}
+                          <Target className="h-5 w-5 text-blue-600" />
+                          <h3 className="text-lg font-semibold">
+                            Company Priorities ({companyPriorities.length})
+                          </h3>
+                        </div>
+                      </div>
+                      {expandedSections.companyPriorities && (
+                        <div className="space-y-4 ml-7 mt-4">
+                          {companyPriorities.map(priority => (
+                            <PriorityCard 
+                              key={priority.id} 
+                              priority={priority} 
+                              readOnly={false}
+                              onIssueCreated={(message) => {
+                                setSuccess(message);
+                                setTimeout(() => setSuccess(null), 3000);
+                              }}
+                              onStatusChange={(priorityId, newStatus) => {
+                                setPriorities(prev => 
+                                  prev.map(p => 
+                                    p.id === priorityId ? { ...p, status: newStatus } : p
+                                  )
+                                );
+                                setSuccess(`Priority status updated to ${newStatus}`);
+                                setTimeout(() => setSuccess(null), 3000);
+                              }}
+                            />
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  );
+                })()}
+                
+                {/* Individual Priorities Section */}
+                {(() => {
+                  const individualPriorities = priorities.filter(p => p.priority_type !== 'company');
+                  const groupedByOwner = individualPriorities.reduce((acc, priority) => {
+                    const ownerId = priority.owner?.id || 'unassigned';
+                    if (!acc[ownerId]) {
+                      acc[ownerId] = [];
+                    }
+                    acc[ownerId].push(priority);
+                    return acc;
+                  }, {});
+                  
+                  return Object.keys(groupedByOwner).length > 0 && (
+                    <div className="space-y-4">
+                      <div className="flex items-center gap-3 p-4 bg-gray-50 rounded-lg">
+                        <Target className="h-5 w-5 text-purple-600" />
+                        <h3 className="text-lg font-semibold">
+                          Individual Priorities ({individualPriorities.length})
+                        </h3>
+                      </div>
+                      {Object.entries(groupedByOwner).map(([ownerId, ownerPriorities]) => {
+                        const owner = ownerPriorities[0]?.owner;
+                        const isExpanded = expandedSections.individualPriorities[ownerId];
+                        return (
+                          <div key={ownerId} className="ml-7">
+                            <div 
+                              className="flex items-center gap-3 p-3 bg-white border rounded-lg cursor-pointer hover:bg-gray-50 transition-colors"
+                              onClick={() => toggleIndividualPriorities(ownerId)}
+                            >
+                              {isExpanded ? (
+                                <ChevronDown className="h-4 w-4 text-gray-600" />
+                              ) : (
+                                <ChevronRight className="h-4 w-4 text-gray-600" />
+                              )}
+                              <h4 className="text-md font-medium">
+                                {owner?.name || 'Unassigned'} ({ownerPriorities.length})
+                              </h4>
+                            </div>
+                            {isExpanded && (
+                              <div className="space-y-4 ml-7 mt-4">
+                                {ownerPriorities.map(priority => (
+                                  <PriorityCard 
+                                    key={priority.id} 
+                                    priority={priority} 
+                                    readOnly={false}
+                                    onIssueCreated={(message) => {
+                                      setSuccess(message);
+                                      setTimeout(() => setSuccess(null), 3000);
+                                    }}
+                                    onStatusChange={(priorityId, newStatus) => {
+                                      setPriorities(prev => 
+                                        prev.map(p => 
+                                          p.id === priorityId ? { ...p, status: newStatus } : p
+                                        )
+                                      );
+                                      setSuccess(`Priority status updated to ${newStatus}`);
+                                      setTimeout(() => setSuccess(null), 3000);
+                                    }}
+                                  />
+                                ))}
+                              </div>
+                            )}
+                          </div>
+                        );
+                      })}
+                    </div>
+                  );
+                })()}
               </div>
-            </CardContent>
-          </Card>
+            )}
+          </div>
         );
 
       case '2-page-plan':
@@ -222,41 +414,164 @@ const QuarterlyPlanningMeetingPage = () => {
         );
 
       case 'quarterly-priorities':
+        if (loading) {
+          return (
+            <div className="flex items-center justify-center h-96">
+              <Loader2 className="h-8 w-8 animate-spin" />
+            </div>
+          );
+        }
         return (
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <ListChecks className="h-5 w-5" />
-                Set Quarterly Priorities
-              </CardTitle>
-              <CardDescription>Define 3-7 priorities for the upcoming quarter (60 minutes)</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-4">
-                <p className="text-gray-600">
-                  Work together to establish the most important priorities for the next 90 days. 
-                  Each priority should be SMART (Specific, Measurable, Achievable, Relevant, Time-bound).
-                </p>
-                <div className="bg-blue-50 p-4 rounded-lg">
-                  <h4 className="font-medium mb-2">Priority Setting Guidelines:</h4>
-                  <ul className="list-disc list-inside text-sm space-y-1">
-                    <li>Limit to 3-7 priorities total</li>
-                    <li>Make them specific and measurable</li>
-                    <li>Assign clear ownership</li>
-                    <li>Set realistic deadlines</li>
-                    <li>Ensure alignment with annual goals</li>
-                  </ul>
-                </div>
-                <div className="text-center py-8">
+          <div className="space-y-4">
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <ListChecks className="h-5 w-5" />
+                  Set Quarterly Priorities
+                </CardTitle>
+                <CardDescription>Define 3-7 priorities for the upcoming quarter (60 minutes)</CardDescription>
+              </CardHeader>
+            </Card>
+            {priorities.length === 0 ? (
+              <Card>
+                <CardContent className="text-center py-8">
+                  <p className="text-gray-500">No priorities found for this quarter.</p>
                   <Button 
+                    variant="outline" 
+                    className="mt-4"
                     onClick={() => navigate('/quarterly-priorities')}
                   >
                     Go to Quarterly Priorities
                   </Button>
+                </CardContent>
+              </Card>
+            ) : (
+              <div className="space-y-6">
+                <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                  <p className="text-blue-800 text-center">
+                    <span className="font-semibold">Priority Setting:</span> Each priority should be SMART (Specific, Measurable, Achievable, Relevant, Time-bound). Limit to 3-7 priorities total.
+                  </p>
                 </div>
+                {/* Company Priorities Section */}
+                {(() => {
+                  const companyPriorities = priorities.filter(p => p.priority_type === 'company');
+                  return companyPriorities.length > 0 && (
+                    <div>
+                      <div 
+                        className="flex items-center justify-between p-4 bg-gray-50 rounded-lg cursor-pointer hover:bg-gray-100 transition-colors"
+                        onClick={toggleCompanyPriorities}
+                      >
+                        <div className="flex items-center gap-3">
+                          {expandedSections.companyPriorities ? (
+                            <ChevronDown className="h-5 w-5 text-gray-600" />
+                          ) : (
+                            <ChevronRight className="h-5 w-5 text-gray-600" />
+                          )}
+                          <Target className="h-5 w-5 text-blue-600" />
+                          <h3 className="text-lg font-semibold">
+                            Company Priorities ({companyPriorities.length})
+                          </h3>
+                        </div>
+                      </div>
+                      {expandedSections.companyPriorities && (
+                        <div className="space-y-4 ml-7 mt-4">
+                          {companyPriorities.map(priority => (
+                            <PriorityCard 
+                              key={priority.id} 
+                              priority={priority} 
+                              readOnly={false}
+                              onIssueCreated={(message) => {
+                                setSuccess(message);
+                                setTimeout(() => setSuccess(null), 3000);
+                              }}
+                              onStatusChange={(priorityId, newStatus) => {
+                                setPriorities(prev => 
+                                  prev.map(p => 
+                                    p.id === priorityId ? { ...p, status: newStatus } : p
+                                  )
+                                );
+                                setSuccess(`Priority status updated to ${newStatus}`);
+                                setTimeout(() => setSuccess(null), 3000);
+                              }}
+                            />
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  );
+                })()}
+                
+                {/* Individual Priorities Section */}
+                {(() => {
+                  const individualPriorities = priorities.filter(p => p.priority_type !== 'company');
+                  const groupedByOwner = individualPriorities.reduce((acc, priority) => {
+                    const ownerId = priority.owner?.id || 'unassigned';
+                    if (!acc[ownerId]) {
+                      acc[ownerId] = [];
+                    }
+                    acc[ownerId].push(priority);
+                    return acc;
+                  }, {});
+                  
+                  return Object.keys(groupedByOwner).length > 0 && (
+                    <div className="space-y-4">
+                      <div className="flex items-center gap-3 p-4 bg-gray-50 rounded-lg">
+                        <Target className="h-5 w-5 text-purple-600" />
+                        <h3 className="text-lg font-semibold">
+                          Individual Priorities ({individualPriorities.length})
+                        </h3>
+                      </div>
+                      {Object.entries(groupedByOwner).map(([ownerId, ownerPriorities]) => {
+                        const owner = ownerPriorities[0]?.owner;
+                        const isExpanded = expandedSections.individualPriorities[ownerId];
+                        return (
+                          <div key={ownerId} className="ml-7">
+                            <div 
+                              className="flex items-center gap-3 p-3 bg-white border rounded-lg cursor-pointer hover:bg-gray-50 transition-colors"
+                              onClick={() => toggleIndividualPriorities(ownerId)}
+                            >
+                              {isExpanded ? (
+                                <ChevronDown className="h-4 w-4 text-gray-600" />
+                              ) : (
+                                <ChevronRight className="h-4 w-4 text-gray-600" />
+                              )}
+                              <h4 className="text-md font-medium">
+                                {owner?.name || 'Unassigned'} ({ownerPriorities.length})
+                              </h4>
+                            </div>
+                            {isExpanded && (
+                              <div className="space-y-4 ml-7 mt-4">
+                                {ownerPriorities.map(priority => (
+                                  <PriorityCard 
+                                    key={priority.id} 
+                                    priority={priority} 
+                                    readOnly={false}
+                                    onIssueCreated={(message) => {
+                                      setSuccess(message);
+                                      setTimeout(() => setSuccess(null), 3000);
+                                    }}
+                                    onStatusChange={(priorityId, newStatus) => {
+                                      setPriorities(prev => 
+                                        prev.map(p => 
+                                          p.id === priorityId ? { ...p, status: newStatus } : p
+                                        )
+                                      );
+                                      setSuccess(`Priority status updated to ${newStatus}`);
+                                      setTimeout(() => setSuccess(null), 3000);
+                                    }}
+                                  />
+                                ))}
+                              </div>
+                            )}
+                          </div>
+                        );
+                      })}
+                    </div>
+                  );
+                })()}
               </div>
-            </CardContent>
-          </Card>
+            )}
+          </div>
         );
 
       case 'issues':
@@ -440,8 +755,8 @@ const QuarterlyPlanningMeetingPage = () => {
         </div>
 
         {/* Main Content */}
-        <div className="flex-1 p-6">
-          <div className="max-w-6xl mx-auto">
+        <div className="flex-1 p-6 overflow-x-auto">
+          <div className={activeSection === 'review-prior' || activeSection === 'quarterly-priorities' ? 'min-w-fit' : 'max-w-6xl mx-auto'}>
             {error && (
               <Alert className="mb-6 border-red-200 bg-red-50">
                 <AlertCircle className="h-4 w-4 text-red-600" />
