@@ -569,8 +569,24 @@ export const updateThreeYearPicture = async (req, res) => {
     const { orgId, teamId } = req.params;
     let { revenue, profit, measurables, lookLikeItems, futureDate } = req.body;
     
-    // Convert revenue and profit to numbers if they're strings
-    revenue = revenue ? parseFloat(revenue) : null;
+    // Parse revenue - handle formatted strings like "$550M" or "550K"
+    if (revenue && typeof revenue === 'string') {
+      // Remove currency symbols and spaces
+      let cleanRevenue = revenue.replace(/[$,\s]/g, '');
+      
+      // Check for M (millions) or K (thousands) suffix
+      if (cleanRevenue.toUpperCase().endsWith('M')) {
+        revenue = parseFloat(cleanRevenue.slice(0, -1));
+      } else if (cleanRevenue.toUpperCase().endsWith('K')) {
+        revenue = parseFloat(cleanRevenue.slice(0, -1)) / 1000; // Convert K to millions
+      } else {
+        revenue = parseFloat(cleanRevenue);
+      }
+    } else {
+      revenue = revenue ? parseFloat(revenue) : null;
+    }
+    
+    // Convert profit to number if it's a string
     profit = profit ? parseFloat(profit) : null;
     
     // Validate futureDate
@@ -662,8 +678,24 @@ export const updateOneYearPlan = async (req, res) => {
     const { orgId, teamId } = req.params;
     let { revenue, profit, targetDate, goals, measurables } = req.body;
     
-    // Convert revenue and profit to numbers if they're strings
-    revenue = revenue ? parseFloat(revenue) : null;
+    // Parse revenue - handle formatted strings like "$550M" or "550K"
+    if (revenue && typeof revenue === 'string') {
+      // Remove currency symbols and spaces
+      let cleanRevenue = revenue.replace(/[$,\s]/g, '');
+      
+      // Check for M (millions) or K (thousands) suffix
+      if (cleanRevenue.toUpperCase().endsWith('M')) {
+        revenue = parseFloat(cleanRevenue.slice(0, -1));
+      } else if (cleanRevenue.toUpperCase().endsWith('K')) {
+        revenue = parseFloat(cleanRevenue.slice(0, -1)) / 1000; // Convert K to millions
+      } else {
+        revenue = parseFloat(cleanRevenue);
+      }
+    } else {
+      revenue = revenue ? parseFloat(revenue) : null;
+    }
+    
+    // Convert profit to number if it's a string
     profit = profit ? parseFloat(profit) : null;
     
     // Validate targetDate
