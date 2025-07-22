@@ -89,6 +89,7 @@ app.use(helmet());
 const allowedOrigins = [
   'http://localhost:5173',
   'https://eos-platform.netlify.app',
+  'https://42vibes.com',
   process.env.FRONTEND_URL
 ].filter(Boolean);
 
