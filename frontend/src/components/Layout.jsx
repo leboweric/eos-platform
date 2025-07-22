@@ -8,6 +8,7 @@ import TrialBanner from './TrialBanner';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { organizationService } from '../services/organizationService';
 import DepartmentSelector from './DepartmentSelector';
+import HelpWidget from './help/HelpWidget';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -273,6 +274,9 @@ const Layout = ({ children }) => {
           {children}
         </main>
       </div>
+      
+      {/* Help Widget - appears on all pages */}
+      <HelpWidget />
     </div>
   );
 };

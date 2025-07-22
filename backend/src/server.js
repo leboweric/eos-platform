@@ -23,6 +23,7 @@ import userRoutes from './routes/userRoutes.js';
 import consultantRoutes from './routes/consultantRoutes.js';
 import organizationalChartRoutes from './routes/organizationalChart.js';
 import skillsRoutes from './routes/skills.js';
+import feedbackRoutes from './routes/feedbackRoutes.js';
 
 // Import middleware
 import { errorHandler } from './middleware/errorHandler.js';
@@ -148,6 +149,7 @@ app.use('/api/v1/subscription', subscriptionRoutes);
 app.use('/api/v1/consultant', consultantRoutes);
 app.use('/api/v1/organizations/:orgId/organizational-charts', organizationalChartRoutes);
 app.use('/api/v1/organizations/:orgId/skills', skillsRoutes);
+app.use('/api/v1/feedback', feedbackRoutes);
 
 // Webhook routes (must be before express.json() middleware for raw body)
 app.use('/webhooks', webhookRoutes);
