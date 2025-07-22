@@ -21,6 +21,7 @@ import {
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import PriorityCard from '../components/priorities/PriorityCard';
+import TwoPagePlanView from '../components/vto/TwoPagePlanView';
 import { quarterlyPrioritiesService } from '../services/quarterlyPrioritiesService';
 
 const QuarterlyPlanningMeetingPage = () => {
@@ -377,40 +378,31 @@ const QuarterlyPlanningMeetingPage = () => {
 
       case '2-page-plan':
         return (
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <ClipboardList className="h-5 w-5" />
-                2-Page Plan
-              </CardTitle>
-              <CardDescription>Review and update your strategic 2-Page Plan (30 minutes)</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-4">
-                <p className="text-gray-600">
-                  Review your 2-Page Plan to ensure alignment between your long-term vision and quarterly execution.
-                </p>
-                <div className="bg-blue-50 p-4 rounded-lg">
-                  <h4 className="font-medium mb-2">Key Areas to Review:</h4>
-                  <ul className="list-disc list-inside text-sm space-y-1">
-                    <li>Vision/Traction Organizer (V/TO)</li>
-                    <li>Core Values and Core Focus</li>
-                    <li>10-Year Target and 3-Year Picture</li>
-                    <li>1-Year Plan alignment with quarterly priorities</li>
-                    <li>Marketing Strategy and proven process</li>
-                  </ul>
-                </div>
-                <div className="text-center py-8">
-                  <Button 
-                    variant="outline" 
-                    onClick={() => navigate('/business-blueprint')}
-                  >
-                    View Business Blueprint
-                  </Button>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
+          <div className="space-y-4">
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <ClipboardList className="h-5 w-5" />
+                  2-Page Plan
+                </CardTitle>
+                <CardDescription>Review and update your strategic 2-Page Plan (30 minutes)</CardDescription>
+              </CardHeader>
+            </Card>
+            <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-4">
+              <p className="text-blue-800 text-center">
+                <span className="font-semibold">Review Focus:</span> Ensure alignment between your long-term vision and quarterly execution. Update any sections that need refinement.
+              </p>
+            </div>
+            <TwoPagePlanView />
+            <div className="flex justify-center mt-6">
+              <Button 
+                variant="outline" 
+                onClick={() => navigate('/business-blueprint')}
+              >
+                Edit Business Blueprint
+              </Button>
+            </div>
+          </div>
         );
 
       case 'quarterly-priorities':
@@ -756,7 +748,7 @@ const QuarterlyPlanningMeetingPage = () => {
 
         {/* Main Content */}
         <div className="flex-1 p-6 overflow-x-auto">
-          <div className={activeSection === 'review-prior' || activeSection === 'quarterly-priorities' ? 'min-w-fit' : 'max-w-6xl mx-auto'}>
+          <div className={activeSection === 'review-prior' || activeSection === 'quarterly-priorities' || activeSection === '2-page-plan' ? 'min-w-fit' : 'max-w-6xl mx-auto'}>
             {error && (
               <Alert className="mb-6 border-red-200 bg-red-50">
                 <AlertCircle className="h-4 w-4 text-red-600" />
