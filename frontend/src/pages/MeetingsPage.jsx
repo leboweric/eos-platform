@@ -42,19 +42,18 @@ const MeetingsPage = () => {
     },
     {
       id: 'quarterly-planning',
-      title: 'Quarterly Planning',
-      description: 'Set priorities and goals for the upcoming quarter',
-      duration: '4-8 hours',
+      title: 'Quarterly Planning Meeting',
+      description: 'Review past performance and set priorities for the upcoming quarter',
+      duration: '2.5 hours',
       frequency: 'Quarterly',
       icon: Target,
       color: 'bg-green-500',
       features: [
-        'Review previous quarter',
-        'Set new priorities',
-        'Resource planning',
-        'Team alignment'
-      ],
-      comingSoon: true
+        'Review prior quarter performance',
+        'Set quarterly priorities',
+        'Address strategic issues',
+        'Align on next steps'
+      ]
     },
     {
       id: 'annual-planning',
@@ -107,8 +106,12 @@ const MeetingsPage = () => {
   };
 
   const handleStartMeeting = (meetingId) => {
-    if (meetingId === 'weekly-accountability' && selectedTeamId) {
+    if (!selectedTeamId) return;
+    
+    if (meetingId === 'weekly-accountability') {
       navigate(`/meetings/weekly-accountability/${selectedTeamId}`);
+    } else if (meetingId === 'quarterly-planning') {
+      navigate(`/meetings/quarterly-planning/${selectedTeamId}`);
     }
   };
 
