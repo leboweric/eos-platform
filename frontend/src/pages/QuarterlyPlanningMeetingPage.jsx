@@ -33,6 +33,7 @@ const QuarterlyPlanningMeetingPage = () => {
     { id: 'objectives', label: 'Objectives', duration: 5, icon: Target },
     { id: 'check-in', label: 'Check In', duration: 10, icon: CheckSquare },
     { id: 'review-prior', label: 'Review Prior Quarter', duration: 30, icon: Calendar },
+    { id: '2-page-plan', label: '2-Page Plan', duration: 30, icon: ClipboardList },
     { id: 'quarterly-priorities', label: 'Quarterly Priorities', duration: 60, icon: ListChecks },
     { id: 'issues', label: 'Issues', duration: 30, icon: AlertTriangle },
     { id: 'next-steps', label: 'Next Steps', duration: 15, icon: ClipboardList },
@@ -175,6 +176,44 @@ const QuarterlyPlanningMeetingPage = () => {
                     onClick={() => navigate('/quarterly-priorities')}
                   >
                     View Quarterly Priorities
+                  </Button>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        );
+
+      case '2-page-plan':
+        return (
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <ClipboardList className="h-5 w-5" />
+                2-Page Plan
+              </CardTitle>
+              <CardDescription>Review and update your strategic 2-Page Plan (30 minutes)</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-4">
+                <p className="text-gray-600">
+                  Review your 2-Page Plan to ensure alignment between your long-term vision and quarterly execution.
+                </p>
+                <div className="bg-blue-50 p-4 rounded-lg">
+                  <h4 className="font-medium mb-2">Key Areas to Review:</h4>
+                  <ul className="list-disc list-inside text-sm space-y-1">
+                    <li>Vision/Traction Organizer (V/TO)</li>
+                    <li>Core Values and Core Focus</li>
+                    <li>10-Year Target and 3-Year Picture</li>
+                    <li>1-Year Plan alignment with quarterly priorities</li>
+                    <li>Marketing Strategy and proven process</li>
+                  </ul>
+                </div>
+                <div className="text-center py-8">
+                  <Button 
+                    variant="outline" 
+                    onClick={() => navigate('/business-blueprint')}
+                  >
+                    View Business Blueprint
                   </Button>
                 </div>
               </div>
