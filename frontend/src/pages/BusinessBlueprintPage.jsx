@@ -266,12 +266,17 @@ const BusinessBlueprintPage = () => {
     try {
       setSaving(true);
       setError(null);
-      await businessBlueprintService.updateThreeYearPicture(data);
+      const savedData = await businessBlueprintService.updateThreeYearPicture(data);
+      // Update with the saved data from the backend to ensure we have the latest values
       setBlueprintData(prev => ({
         ...prev,
-        threeYearPicture: data
+        threeYearPicture: savedData || data
       }));
       setSuccess('3-Year Picture updated successfully');
+      // Refresh the business blueprint data to ensure everything is in sync
+      setTimeout(() => {
+        fetchBusinessBlueprint();
+      }, 500);
     } catch (error) {
       setError('Failed to update 3-Year Picture');
       throw error;
@@ -285,12 +290,17 @@ const BusinessBlueprintPage = () => {
     try {
       setSaving(true);
       setError(null);
-      await businessBlueprintService.updateOneYearPlan(data);
+      const savedData = await businessBlueprintService.updateOneYearPlan(data);
+      // Update with the saved data from the backend to ensure we have the latest values
       setBlueprintData(prev => ({
         ...prev,
-        oneYearPlan: data
+        oneYearPlan: savedData || data
       }));
       setSuccess('1-Year Plan updated successfully');
+      // Refresh the business blueprint data to ensure everything is in sync
+      setTimeout(() => {
+        fetchBusinessBlueprint();
+      }, 500);
     } catch (error) {
       setError('Failed to update 1-Year Plan');
       throw error;

@@ -193,6 +193,7 @@ const OneYearPlanDialog = ({ open, onOpenChange, data, onSave }) => {
                       className="flex-1"
                     />
                     <Input
+                      type="text"
                       placeholder="Target value"
                       value={item.value || ''}
                       onChange={(e) => setFormData(prev => {

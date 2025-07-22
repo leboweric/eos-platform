@@ -13,13 +13,25 @@ const ThreeYearPictureDialog = ({ open, onOpenChange, data, onSave }) => {
     profit: '',
     measurables: [],
     lookLikeItems: [''],
-    futureDate: new Date(new Date().getFullYear() + 3, 0, 1).toISOString().split('T')[0] // Default to Jan 1, 3 years from now
+    futureDate: new Date(new Date().getFullYear() + 3, 11, 31).toISOString().split('T')[0] // Default to Dec 31, 3 years from now
   });
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState(null);
 
   useEffect(() => {
     if (data) {
+      // Handle timezone issue by adjusting the date
+      let futureDate;
+      if (data.future_date) {
+        // Parse the date and add timezone offset to get correct local date
+        const date = new Date(data.future_date);
+        const offset = date.getTimezoneOffset();
+        const adjustedDate = new Date(date.getTime() + offset * 60 * 1000);
+        futureDate = adjustedDate.toISOString().split('T')[0];
+      } else {
+        futureDate = new Date(new Date().getFullYear() + 3, 0, 1).toISOString().split('T')[0];
+      }
+      
       setFormData({
         revenue: data.revenue || '',
         profit: data.profit || '',
@@ -28,7 +40,7 @@ const ThreeYearPictureDialog = ({ open, onOpenChange, data, onSave }) => {
           value: m.target_value || m.value || ''
         })),
         lookLikeItems: data.lookLikeItems && data.lookLikeItems.length > 0 ? data.lookLikeItems : [''],
-        futureDate: data.future_date ? new Date(data.future_date).toISOString().split('T')[0] : new Date(new Date().getFullYear() + 3, 0, 1).toISOString().split('T')[0]
+        futureDate: futureDate
       });
     }
   }, [data]);
@@ -39,7 +51,13 @@ const ThreeYearPictureDialog = ({ open, onOpenChange, data, onSave }) => {
     setError(null);
     
     try {
-      await onSave(formData);
+      // Adjust date to handle timezone issues - subtract one day to ensure correct display
+      const adjustedFormData = {
+        ...formData,
+        futureDate: formData.futureDate
+      };
+      
+      await onSave(adjustedFormData);
       onOpenChange(false);
     } catch (error) {
       setError(error.message || 'Failed to save 3-Year Picture');
@@ -146,6 +164,7 @@ const ThreeYearPictureDialog = ({ open, onOpenChange, data, onSave }) => {
                       className="flex-1"
                     />
                     <Input
+                      type="text"
                       placeholder="Target value"
                       value={item.value || ''}
                       onChange={(e) => setFormData(prev => {
