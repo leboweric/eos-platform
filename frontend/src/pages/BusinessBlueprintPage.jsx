@@ -706,8 +706,8 @@ const BusinessBlueprintPage = () => {
                               <span className="text-indigo-600 mr-2">•</span>
                               <div className="flex-1">
                                 <p className="font-medium">{measurable.name}</p>
-                                {measurable.value && (
-                                  <p className="text-sm text-gray-600">Target: {measurable.value}</p>
+                                {measurable.target_value && (
+                                  <p className="text-sm text-gray-600">Target: {measurable.target_value}</p>
                                 )}
                               </div>
                             </li>

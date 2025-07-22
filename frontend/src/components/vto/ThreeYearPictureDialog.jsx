@@ -23,7 +23,10 @@ const ThreeYearPictureDialog = ({ open, onOpenChange, data, onSave }) => {
       setFormData({
         revenue: data.revenue || '',
         profit: data.profit || '',
-        measurables: data.measurables || [],
+        measurables: (data.measurables || []).map(m => ({
+          name: m.name || '',
+          value: m.target_value || m.value || ''
+        })),
         lookLikeItems: data.lookLikeItems && data.lookLikeItems.length > 0 ? data.lookLikeItems : [''],
         futureDate: data.future_date ? new Date(data.future_date).toISOString().split('T')[0] : new Date(new Date().getFullYear() + 3, 0, 1).toISOString().split('T')[0]
       });

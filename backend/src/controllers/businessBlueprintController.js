@@ -620,9 +620,9 @@ export const updateThreeYearPicture = async (req, res) => {
         const measurable = measurables[i];
         if (measurable.name || measurable.value) {
           await query(
-            `INSERT INTO three_year_measurables (id, three_year_picture_id, measurable_name, measurable_value, sort_order)
-             VALUES ($1, $2, $3, $4, $5)`,
-            [uuidv4(), pictureId, measurable.name, measurable.value, i]
+            `INSERT INTO three_year_measurables (id, three_year_picture_id, name, target_value)
+             VALUES ($1, $2, $3, $4)`,
+            [uuidv4(), pictureId, measurable.name, measurable.value || 0]
           );
         }
       }
