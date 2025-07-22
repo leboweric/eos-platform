@@ -101,15 +101,33 @@ const QuarterlyPlanningMeetingPage = () => {
       
       const data = await quarterlyPrioritiesService.getCurrentPriorities(orgId, effectiveTeamId);
       console.log('QuarterlyPlanningMeetingPage: Priorities data received:', data);
-      console.log('QuarterlyPlanningMeetingPage: Is data an array?', Array.isArray(data));
       
-      setPriorities(Array.isArray(data) ? data : []);
+      // The service returns an object with companyPriorities and teamMemberPriorities
+      // We need to combine them into a flat array
+      const allPriorities = [];
+      
+      // Add company priorities
+      if (data.companyPriorities && Array.isArray(data.companyPriorities)) {
+        allPriorities.push(...data.companyPriorities);
+      }
+      
+      // Add team member priorities
+      if (data.teamMemberPriorities) {
+        Object.values(data.teamMemberPriorities).forEach(memberPriorities => {
+          if (Array.isArray(memberPriorities)) {
+            allPriorities.push(...memberPriorities);
+          }
+        });
+      }
+      
+      console.log('QuarterlyPlanningMeetingPage: Combined priorities:', allPriorities);
+      setPriorities(allPriorities);
       
       // If reviewing prior quarter, also fetch previous quarter's priorities
       if (activeSection === 'review-prior') {
         // TODO: Implement getPreviousQuarterPriorities in the service
         // For now, we'll use the same data
-        setPreviousPriorities(Array.isArray(data) ? data : []);
+        setPreviousPriorities(allPriorities);
       }
       
       setLoading(false);
@@ -132,7 +150,9 @@ const QuarterlyPlanningMeetingPage = () => {
       
       console.log('QuarterlyPlanningMeetingPage: Fetching issues with orgId:', orgId, 'teamId:', effectiveTeamId);
       
-      const response = await issuesService.getIssues(orgId, effectiveTeamId);
+      // issuesService.getIssues expects (timeline, includeArchived, departmentId)
+      // We need to pass null for timeline and false for includeArchived, then the teamId as departmentId
+      const response = await issuesService.getIssues(null, false, effectiveTeamId);
       console.log('QuarterlyPlanningMeetingPage: Issues response:', response);
       
       // The response structure is {success: true, data: {issues: [...], teamMembers: [...]}}
@@ -174,10 +194,8 @@ const QuarterlyPlanningMeetingPage = () => {
 
   const handleIssueUpdate = async (issueId, updates) => {
     try {
-      const orgId = localStorage.getItem('impersonatedOrgId') || user?.organizationId || user?.organization_id;
-      const effectiveTeamId = teamId || user?.teamId || '00000000-0000-0000-0000-000000000000';
-      
-      await issuesService.updateIssue(orgId, effectiveTeamId, issueId, updates);
+      // issuesService.updateIssue expects (issueId, updates) - no orgId or teamId needed
+      await issuesService.updateIssue(issueId, updates);
       
       // Refresh issues
       await fetchIssuesData();
@@ -198,7 +216,7 @@ const QuarterlyPlanningMeetingPage = () => {
       // Archive each selected issue
       await Promise.all(
         selectedIssueIds.map(issueId =>
-          issuesService.updateIssue(orgId, effectiveTeamId, issueId, { is_archived: true })
+          issuesService.archiveIssue(issueId)
         )
       );
       
@@ -847,9 +865,9 @@ const QuarterlyPlanningMeetingPage = () => {
             const effectiveTeamId = teamId || user?.teamId || '00000000-0000-0000-0000-000000000000';
             
             if (editingIssue) {
-              await issuesService.updateIssue(orgId, effectiveTeamId, editingIssue.id, issueData);
+              await issuesService.updateIssue(editingIssue.id, issueData);
             } else {
-              await issuesService.createIssue(orgId, effectiveTeamId, issueData);
+              await issuesService.createIssue(issueData);
             }
             
             await fetchIssuesData();
