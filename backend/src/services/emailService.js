@@ -163,6 +163,46 @@ const templates = {
     `
   }),
 
+  'user-created': (data) => ({
+    subject: `Your account has been created - ${data.organizationName}`,
+    html: `
+      <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+        <h2>Welcome to Forty-2!</h2>
+        <p>Hi ${data.firstName},</p>
+        <p>${data.createdByName} has created an account for you to access ${data.organizationName}'s business management system.</p>
+        <p>Here are your login credentials:</p>
+        <div style="background-color: #f3f4f6; padding: 20px; border-radius: 8px; margin: 20px 0;">
+          <p style="margin: 5px 0;"><strong>Email:</strong> ${data.email}</p>
+          <p style="margin: 5px 0;"><strong>Temporary Password:</strong> ${data.temporaryPassword}</p>
+        </div>
+        <p style="color: #DC2626; font-weight: bold;">Important: Please change your password after your first login.</p>
+        <div style="text-align: center; margin: 30px 0;">
+          <a href="${data.loginUrl}" style="background-color: #10b981; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; display: inline-block;">
+            Log In Now
+          </a>
+        </div>
+        <p>If you have any questions, please contact ${data.createdByName} or your organization administrator.</p>
+      </div>
+    `,
+    text: `
+      Welcome to Forty-2!
+      
+      Hi ${data.firstName},
+      
+      ${data.createdByName} has created an account for you to access ${data.organizationName}'s business management system.
+      
+      Your login credentials:
+      Email: ${data.email}
+      Temporary Password: ${data.temporaryPassword}
+      
+      Important: Please change your password after your first login.
+      
+      Log in here: ${data.loginUrl}
+      
+      If you have any questions, please contact ${data.createdByName} or your organization administrator.
+    `
+  }),
+
   meetingSummary: (data) => ({
     subject: `Meeting Summary - ${data.meetingType} - ${data.organizationName}`,
     html: `

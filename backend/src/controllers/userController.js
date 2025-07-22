@@ -47,9 +47,9 @@ export const createUser = async (req, res) => {
     const organizationId = req.user.organizationId || req.user.organization_id;
     const createdBy = req.user.id;
 
-    // Check if user can create users (must be consultant)
-    if (!req.user.is_consultant) {
-      return res.status(403).json({ error: 'Only consultants can create users directly' });
+    // Check if user can create users (must be consultant or admin)
+    if (!req.user.is_consultant && req.user.role !== 'admin') {
+      return res.status(403).json({ error: 'Only consultants and admins can create users directly' });
     }
 
     // Check if user already exists
@@ -62,9 +62,8 @@ export const createUser = async (req, res) => {
       return res.status(400).json({ error: 'User with this email already exists' });
     }
 
-    // Generate temporary password - using fixed password for testing
-    // TODO: Change this back to crypto.randomBytes(8).toString('hex') for production
-    const temporaryPassword = 'abc123';
+    // Generate secure temporary password
+    const temporaryPassword = crypto.randomBytes(8).toString('hex');
     const passwordHash = await bcrypt.hash(temporaryPassword, 12);
 
     // Create user

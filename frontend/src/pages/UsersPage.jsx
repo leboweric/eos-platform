@@ -360,7 +360,7 @@ const UsersPage = () => {
         </div>
         {isAdmin && (
           <div className="flex gap-2">
-            {isConsultant && (
+            {(isConsultant || isAdmin) && (
               <Dialog open={createDialogOpen} onOpenChange={setCreateDialogOpen}>
                 <DialogTrigger asChild>
                   <Button variant="outline">
