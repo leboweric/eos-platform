@@ -16,7 +16,7 @@ const TrialBanner = () => {
 
   const fetchSubscriptionStatus = async () => {
     try {
-      const response = await axios.get('/api/v1/subscription/status');
+      const response = await axios.get('/subscription/status');
       
       if (response.data.hasSubscription) {
         setSubscription(response.data);
