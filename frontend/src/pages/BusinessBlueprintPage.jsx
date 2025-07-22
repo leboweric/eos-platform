@@ -685,11 +685,16 @@ const BusinessBlueprintPage = () => {
                       <div>
                         <p className="text-sm font-medium text-gray-500">Target Date</p>
                         <p className="text-lg font-semibold">
-                          {new Date(blueprintData.threeYearPicture.future_date).toLocaleDateString('en-US', { 
-                            year: 'numeric', 
-                            month: 'long', 
-                            day: 'numeric' 
-                          })}
+                          {(() => {
+                            // Parse date string manually to avoid timezone issues
+                            const [year, month, day] = blueprintData.threeYearPicture.future_date.split('T')[0].split('-');
+                            const date = new Date(year, month - 1, day);
+                            return date.toLocaleDateString('en-US', { 
+                              year: 'numeric', 
+                              month: 'long', 
+                              day: 'numeric' 
+                            });
+                          })()}
                         </p>
                       </div>
                     )}

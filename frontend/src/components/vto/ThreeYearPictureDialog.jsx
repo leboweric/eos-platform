@@ -8,28 +8,43 @@ import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Loader2, Save, AlertCircle, Plus, Trash2 } from 'lucide-react';
 
 const ThreeYearPictureDialog = ({ open, onOpenChange, data, onSave }) => {
+  // Calculate default date without timezone conversion
+  const getDefaultDate = () => {
+    const date = new Date();
+    date.setFullYear(date.getFullYear() + 3, 11, 31);
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const day = String(date.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
+  };
+  
   const [formData, setFormData] = useState({
     revenue: '',
     profit: '',
     measurables: [],
     lookLikeItems: [''],
-    futureDate: new Date(new Date().getFullYear() + 3, 11, 31).toISOString().split('T')[0] // Default to Dec 31, 3 years from now
+    futureDate: getDefaultDate() // Default to Dec 31, 3 years from now
   });
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState(null);
 
   useEffect(() => {
     if (data) {
-      // Handle timezone issue by adjusting the date
       let futureDate;
       if (data.future_date) {
-        // Parse the date and add timezone offset to get correct local date
-        const date = new Date(data.future_date);
-        const offset = date.getTimezoneOffset();
-        const adjustedDate = new Date(date.getTime() + offset * 60 * 1000);
-        futureDate = adjustedDate.toISOString().split('T')[0];
+        // Handle date from database - ensure we're using the date as-is without timezone conversion
+        // Since the database stores DATE (not TIMESTAMP), we should interpret it as a plain date
+        const dateStr = data.future_date.split('T')[0]; // Get just YYYY-MM-DD part
+        futureDate = dateStr;
       } else {
-        futureDate = new Date(new Date().getFullYear() + 3, 0, 1).toISOString().split('T')[0];
+        // Default to Dec 31, 3 years from now - using local date to avoid timezone issues
+        const defaultDate = new Date();
+        defaultDate.setFullYear(defaultDate.getFullYear() + 3, 11, 31);
+        // Format as YYYY-MM-DD in local timezone
+        const year = defaultDate.getFullYear();
+        const month = String(defaultDate.getMonth() + 1).padStart(2, '0');
+        const day = String(defaultDate.getDate()).padStart(2, '0');
+        futureDate = `${year}-${month}-${day}`;
       }
       
       setFormData({
@@ -51,13 +66,8 @@ const ThreeYearPictureDialog = ({ open, onOpenChange, data, onSave }) => {
     setError(null);
     
     try {
-      // Adjust date to handle timezone issues - subtract one day to ensure correct display
-      const adjustedFormData = {
-        ...formData,
-        futureDate: formData.futureDate
-      };
-      
-      await onSave(adjustedFormData);
+      // Send the date as-is, let the backend handle timezone
+      await onSave(formData);
       onOpenChange(false);
     } catch (error) {
       setError(error.message || 'Failed to save 3-Year Picture');

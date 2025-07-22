@@ -597,6 +597,12 @@ export const updateThreeYearPicture = async (req, res) => {
       });
     }
     
+    // Ensure the date is in YYYY-MM-DD format without timezone adjustments
+    // This prevents timezone conversion issues with DATE columns
+    if (futureDate.includes('T')) {
+      futureDate = futureDate.split('T')[0];
+    }
+    
     // Get or create VTO
     const vtoId = await getOrCreateVTO(orgId, teamId);
     
