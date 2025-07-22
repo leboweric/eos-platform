@@ -102,8 +102,10 @@ const BusinessBlueprintPage = () => {
           differentiators: [
             data.marketingStrategy?.differentiator_1 || '',
             data.marketingStrategy?.differentiator_2 || '',
-            data.marketingStrategy?.differentiator_3 || ''
-          ],
+            data.marketingStrategy?.differentiator_3 || '',
+            data.marketingStrategy?.differentiator_4 || '',
+            data.marketingStrategy?.differentiator_5 || ''
+          ].filter((d, index) => index < 3 || d), // Keep first 3 always, then only non-empty ones
           provenProcessExists: data.marketingStrategy?.proven_process_exists || false,
           guaranteeExists: data.marketingStrategy?.guarantee_exists || false
         },
@@ -808,10 +810,22 @@ const BusinessBlueprintPage = () => {
                       </ol>
                     </div>
                   )}
-                  {blueprintData.oneYearPlan.measurables && (
+                  {blueprintData.oneYearPlan.measurables && blueprintData.oneYearPlan.measurables.length > 0 && (
                     <div>
-                      <p className="text-sm font-medium text-gray-500">Key Measurables</p>
-                      <p className="whitespace-pre-wrap text-gray-700">{blueprintData.oneYearPlan.measurables}</p>
+                      <p className="text-sm font-medium text-gray-500 mb-2">Key Measurables</p>
+                      <ul className="space-y-2">
+                        {blueprintData.oneYearPlan.measurables.map((measurable, index) => (
+                          <li key={index} className="flex items-start">
+                            <span className="text-indigo-600 mr-2">•</span>
+                            <div className="flex-1">
+                              <p className="font-medium">{measurable.name}</p>
+                              {measurable.target_value && (
+                                <p className="text-sm text-gray-600">Target: {measurable.target_value}</p>
+                              )}
+                            </div>
+                          </li>
+                        ))}
+                      </ul>
                     </div>
                   )}
                 </div>

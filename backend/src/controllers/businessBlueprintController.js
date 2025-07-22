@@ -370,6 +370,8 @@ export const updateMarketingStrategy = async (req, res) => {
       differentiator1, 
       differentiator2, 
       differentiator3,
+      differentiator4,
+      differentiator5,
       provenProcessExists,
       guaranteeExists
     } = req.body;
@@ -390,21 +392,22 @@ export const updateMarketingStrategy = async (req, res) => {
       result = await query(
         `UPDATE marketing_strategies 
          SET target_market = $1, differentiator_1 = $2, differentiator_2 = $3,
-             differentiator_3 = $4, proven_process_exists = $5, guarantee_exists = $6,
+             differentiator_3 = $4, differentiator_4 = $5, differentiator_5 = $6,
+             proven_process_exists = $7, guarantee_exists = $8,
              updated_at = NOW()
-         WHERE vto_id = $7
+         WHERE vto_id = $9
          RETURNING *`,
-        [targetMarket, differentiator1, differentiator2, differentiator3, provenProcessExists, guaranteeExists, vtoId]
+        [targetMarket, differentiator1, differentiator2, differentiator3, differentiator4, differentiator5, provenProcessExists, guaranteeExists, vtoId]
       );
     } else {
       // Create
       const newId = uuidv4();
       result = await query(
         `INSERT INTO marketing_strategies 
-         (id, vto_id, target_market, differentiator_1, differentiator_2, differentiator_3, proven_process_exists, guarantee_exists)
-         VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+         (id, vto_id, target_market, differentiator_1, differentiator_2, differentiator_3, differentiator_4, differentiator_5, proven_process_exists, guarantee_exists)
+         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
          RETURNING *`,
-        [newId, vtoId, targetMarket, differentiator1, differentiator2, differentiator3, provenProcessExists, guaranteeExists]
+        [newId, vtoId, targetMarket, differentiator1, differentiator2, differentiator3, differentiator4, differentiator5, provenProcessExists, guaranteeExists]
       );
     }
 
@@ -721,15 +724,27 @@ export const updateOneYearPlan = async (req, res) => {
       }
     }
     
-    // Handle measurables (similar to three-year picture)
-    if (measurables) {
-      // For now, we'll store measurables as text. In the future, we could make this a dynamic list too
-      await query(
-        `UPDATE one_year_plans 
-         SET profit_target = $1
-         WHERE id = $2`,
-        [measurables, planId]
-      );
+    // Handle measurables
+    // Note: Currently the frontend sends measurables as a string, not an array
+    // TODO: Update frontend to use array of measurables like 3-year picture
+    if (measurables && typeof measurables === 'string') {
+      // For backward compatibility, ignore string measurables for now
+      // In the future, we should handle this properly
+    } else if (measurables && Array.isArray(measurables)) {
+      // Delete existing measurables
+      await query('DELETE FROM one_year_measurables WHERE one_year_plan_id = $1', [planId]);
+      
+      // Insert new measurables
+      for (let i = 0; i < measurables.length; i++) {
+        const measurable = measurables[i];
+        if (measurable.name || measurable.value) {
+          await query(
+            `INSERT INTO one_year_measurables (id, one_year_plan_id, name, target_value)
+             VALUES ($1, $2, $3, $4)`,
+            [uuidv4(), planId, measurable.name, measurable.value || 0]
+          );
+        }
+      }
     }
     
     res.json({

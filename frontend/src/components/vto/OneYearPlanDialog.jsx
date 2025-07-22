@@ -13,7 +13,7 @@ const OneYearPlanDialog = ({ open, onOpenChange, data, onSave }) => {
     profit: '',
     targetDate: new Date(new Date().getFullYear() + 1, 0, 1).toISOString().split('T')[0], // Default to Jan 1, 1 year from now
     goals: ['', '', ''], // Start with 3 goals
-    measurables: ''
+    measurables: []
   });
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState(null);
@@ -25,7 +25,10 @@ const OneYearPlanDialog = ({ open, onOpenChange, data, onSave }) => {
         profit: data.profit || '',
         targetDate: data.target_date ? new Date(data.target_date).toISOString().split('T')[0] : new Date(new Date().getFullYear() + 1, 0, 1).toISOString().split('T')[0],
         goals: data.goals && Array.isArray(data.goals) && data.goals.length > 0 ? data.goals : ['', '', ''],
-        measurables: data.measurables || ''
+        measurables: (data.measurables || []).map(m => ({
+          name: m.name || '',
+          value: m.target_value || m.value || ''
+        }))
       });
     }
   }, [data]);
@@ -47,16 +50,16 @@ const OneYearPlanDialog = ({ open, onOpenChange, data, onSave }) => {
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[600px]">
-        <form onSubmit={handleSubmit}>
-          <DialogHeader>
+      <DialogContent className="sm:max-w-[600px] max-h-[85vh] flex flex-col p-0">
+        <form onSubmit={handleSubmit} className="flex flex-col h-full">
+          <DialogHeader className="flex-shrink-0 p-6 pb-0">
             <DialogTitle>1-Year Plan</DialogTitle>
             <DialogDescription>
               Define your goals and targets for the coming year
             </DialogDescription>
           </DialogHeader>
           
-          <div className="space-y-4 py-4">
+          <div className="space-y-4 p-6 overflow-y-auto flex-grow max-h-[calc(85vh-180px)]">
             {error && (
               <Alert className="border-red-200 bg-red-50">
                 <AlertCircle className="h-4 w-4" />
@@ -161,18 +164,65 @@ const OneYearPlanDialog = ({ open, onOpenChange, data, onSave }) => {
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="measurables">Key Measurables</Label>
-              <Textarea
-                id="measurables"
-                value={formData.measurables}
-                onChange={(e) => setFormData({ ...formData, measurables: e.target.value })}
-                placeholder="What will you measure to track progress?"
-                rows={4}
-              />
+              <div className="flex items-center justify-between">
+                <Label>Key Measurables</Label>
+                <Button
+                  type="button"
+                  size="sm"
+                  variant="outline"
+                  onClick={() => setFormData(prev => ({
+                    ...prev,
+                    measurables: [...(prev.measurables || []), { name: '', value: '' }]
+                  }))}
+                >
+                  <Plus className="h-4 w-4" />
+                </Button>
+              </div>
+              <p className="text-xs text-gray-500">What are the 5-15 most important measurables for this year?</p>
+              <div className="space-y-2">
+                {(formData.measurables || []).map((item, index) => (
+                  <div key={index} className="flex gap-2">
+                    <Input
+                      placeholder={`Measurable ${index + 1}`}
+                      value={item.name || ''}
+                      onChange={(e) => setFormData(prev => {
+                        const newItems = [...(prev.measurables || [])];
+                        newItems[index] = { ...newItems[index], name: e.target.value };
+                        return { ...prev, measurables: newItems };
+                      })}
+                      className="flex-1"
+                    />
+                    <Input
+                      placeholder="Target value"
+                      value={item.value || ''}
+                      onChange={(e) => setFormData(prev => {
+                        const newItems = [...(prev.measurables || [])];
+                        newItems[index] = { ...newItems[index], value: e.target.value };
+                        return { ...prev, measurables: newItems };
+                      })}
+                      className="w-32"
+                    />
+                    <Button
+                      type="button"
+                      size="sm"
+                      variant="ghost"
+                      onClick={() => setFormData(prev => ({
+                        ...prev,
+                        measurables: (prev.measurables || []).filter((_, i) => i !== index)
+                      }))}
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </Button>
+                  </div>
+                ))}
+                {(!formData.measurables || formData.measurables.length === 0) && (
+                  <p className="text-sm text-gray-400 italic">Click + to add measurables</p>
+                )}
+              </div>
             </div>
           </div>
 
-          <DialogFooter>
+          <DialogFooter className="flex-shrink-0 p-6 pt-4 border-t">
             <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
               Cancel
             </Button>

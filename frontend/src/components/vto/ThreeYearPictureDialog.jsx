@@ -176,15 +176,24 @@ const ThreeYearPictureDialog = ({ open, onOpenChange, data, onSave }) => {
 
             <div className="space-y-2">
               <div className="flex items-center justify-between">
-                <Label>What Does It Look Like?</Label>
+                <Label>What Does It Look Like? ({formData.lookLikeItems.length} items)</Label>
                 <Button
                   type="button"
                   size="sm"
                   variant="outline"
-                  onClick={() => setFormData(prev => ({
-                    ...prev,
-                    lookLikeItems: [...prev.lookLikeItems, '']
-                  }))}
+                  onClick={() => {
+                    setFormData(prev => ({
+                      ...prev,
+                      lookLikeItems: [...prev.lookLikeItems, '']
+                    }));
+                    // Scroll to bottom after adding new item
+                    setTimeout(() => {
+                      const scrollContainer = document.querySelector('.overflow-y-auto');
+                      if (scrollContainer) {
+                        scrollContainer.scrollTop = scrollContainer.scrollHeight;
+                      }
+                    }, 100);
+                  }}
                 >
                   <Plus className="h-4 w-4" />
                 </Button>
