@@ -29,6 +29,8 @@ import { quarterlyPrioritiesService } from '../services/quarterlyPrioritiesServi
 import { issuesService } from '../services/issuesService';
 
 const QuarterlyPlanningMeetingPage = () => {
+  console.log('QuarterlyPlanningMeetingPage: Component rendering');
+  
   const { user } = useAuthStore();
   const { teamId } = useParams();
   const navigate = useNavigate();
@@ -37,7 +39,9 @@ const QuarterlyPlanningMeetingPage = () => {
   const [activeSection, setActiveSection] = useState('objectives');
   const [success, setSuccess] = useState(null);
   
-  // Meeting data
+  console.log('QuarterlyPlanningMeetingPage: Initial state - user:', user, 'teamId:', teamId);
+  
+  // Meeting data - ensure all arrays are initialized
   const [priorities, setPriorities] = useState([]);
   const [previousPriorities, setPreviousPriorities] = useState([]);
   const [issues, setIssues] = useState([]);
@@ -63,15 +67,15 @@ const QuarterlyPlanningMeetingPage = () => {
     { id: 'next-steps', label: 'Next Steps', duration: 15, icon: ClipboardList },
     { id: 'conclude', label: 'Conclude', duration: 10, icon: CheckSquare }
   ];
+  
+  console.log('QuarterlyPlanningMeetingPage: agendaItems defined:', agendaItems);
 
   useEffect(() => {
+    console.log('QuarterlyPlanningMeetingPage: useEffect triggered - activeSection:', activeSection);
     if (activeSection === 'quarterly-priorities' || activeSection === 'review-prior') {
       fetchPrioritiesData();
     } else if (activeSection === 'issues') {
       fetchIssuesData();
-    } else {
-      // For non-data sections, ensure loading is false
-      setLoading(false);
     }
   }, [activeSection, teamId]);
 
@@ -86,13 +90,19 @@ const QuarterlyPlanningMeetingPage = () => {
   }, [success]);
 
   const fetchPrioritiesData = async () => {
+    console.log('QuarterlyPlanningMeetingPage: fetchPrioritiesData called');
     try {
       setLoading(true);
       setError(null);
       const orgId = localStorage.getItem('impersonatedOrgId') || user?.organizationId || user?.organization_id;
       const effectiveTeamId = teamId || user?.teamId || '00000000-0000-0000-0000-000000000000';
       
+      console.log('QuarterlyPlanningMeetingPage: Fetching priorities with orgId:', orgId, 'teamId:', effectiveTeamId);
+      
       const data = await quarterlyPrioritiesService.getCurrentPriorities(orgId, effectiveTeamId);
+      console.log('QuarterlyPlanningMeetingPage: Priorities data received:', data);
+      console.log('QuarterlyPlanningMeetingPage: Is data an array?', Array.isArray(data));
+      
       setPriorities(Array.isArray(data) ? data : []);
       
       // If reviewing prior quarter, also fetch previous quarter's priorities
@@ -104,31 +114,44 @@ const QuarterlyPlanningMeetingPage = () => {
       
       setLoading(false);
     } catch (error) {
-      console.error('Failed to fetch priorities:', error);
+      console.error('QuarterlyPlanningMeetingPage: Failed to fetch priorities:', error);
       setError('Failed to load priorities data');
+      setPriorities([]);
+      setPreviousPriorities([]);
       setLoading(false);
     }
   };
 
   const fetchIssuesData = async () => {
+    console.log('QuarterlyPlanningMeetingPage: fetchIssuesData called');
     try {
       setLoading(true);
       setError(null);
       const orgId = localStorage.getItem('impersonatedOrgId') || user?.organizationId || user?.organization_id;
       const effectiveTeamId = teamId || user?.teamId || '00000000-0000-0000-0000-000000000000';
       
+      console.log('QuarterlyPlanningMeetingPage: Fetching issues with orgId:', orgId, 'teamId:', effectiveTeamId);
+      
       const response = await issuesService.getIssues(orgId, effectiveTeamId);
+      console.log('QuarterlyPlanningMeetingPage: Issues response:', response);
+      
       // The response structure is {success: true, data: {issues: [...], teamMembers: [...]}}
       const issuesData = response?.data?.issues || [];
+      console.log('QuarterlyPlanningMeetingPage: Issues data:', issuesData);
+      console.log('QuarterlyPlanningMeetingPage: Is issuesData an array?', Array.isArray(issuesData));
+      
       const activeIssues = issuesData.filter(issue => !issue.is_archived);
+      console.log('QuarterlyPlanningMeetingPage: Active issues:', activeIssues);
+      
       setIssues(activeIssues);
       if (response?.data?.teamMembers) {
         setTeamMembers(response.data.teamMembers);
       }
       setLoading(false);
     } catch (error) {
-      console.error('Failed to fetch issues:', error);
+      console.error('QuarterlyPlanningMeetingPage: Failed to fetch issues:', error);
       setError('Failed to load issues');
+      setIssues([]);
       setLoading(false);
     }
   };
@@ -208,16 +231,41 @@ const QuarterlyPlanningMeetingPage = () => {
   };
 
   const getCompletedSections = () => {
+    console.log('QuarterlyPlanningMeetingPage: getCompletedSections called');
+    console.log('QuarterlyPlanningMeetingPage: activeSection:', activeSection);
+    console.log('QuarterlyPlanningMeetingPage: agendaItems in getCompletedSections:', agendaItems);
+    
     const currentIndex = agendaItems.findIndex(item => item.id === activeSection);
-    return agendaItems.slice(0, currentIndex).map(item => item.id);
+    console.log('QuarterlyPlanningMeetingPage: currentIndex:', currentIndex);
+    
+    const completed = agendaItems.slice(0, currentIndex).map(item => item.id);
+    console.log('QuarterlyPlanningMeetingPage: completed sections:', completed);
+    
+    return completed;
   };
 
   const completedSections = getCompletedSections();
   const currentSectionIndex = agendaItems.findIndex(item => item.id === activeSection);
   const isFirstSection = currentSectionIndex === 0;
   const isLastSection = currentSectionIndex === agendaItems.length - 1;
+  
+  console.log('QuarterlyPlanningMeetingPage: State values -', {
+    completedSections,
+    currentSectionIndex,
+    isFirstSection,
+    isLastSection,
+    priorities: priorities,
+    'priorities is array': Array.isArray(priorities),
+    previousPriorities: previousPriorities,
+    'previousPriorities is array': Array.isArray(previousPriorities),
+    issues: issues,
+    'issues is array': Array.isArray(issues),
+    agendaItems: agendaItems,
+    'agendaItems is array': Array.isArray(agendaItems)
+  });
 
   const renderSectionContent = () => {
+    console.log('QuarterlyPlanningMeetingPage: renderSectionContent called for section:', activeSection);
     switch (activeSection) {
       case 'objectives':
         return (
@@ -291,10 +339,13 @@ const QuarterlyPlanningMeetingPage = () => {
                   <Button
                     variant="ghost"
                     className="w-full justify-between p-4 hover:bg-gray-50"
-                    onClick={() => setExpandedSections(prev => ({
-                      ...prev,
-                      companyPriorities: !prev.companyPriorities
-                    }))}
+                    onClick={() => {
+                      console.log('QuarterlyPlanningMeetingPage: Expanding company priorities');
+                      setExpandedSections(prev => ({
+                        ...prev,
+                        companyPriorities: !prev.companyPriorities
+                      }));
+                    }}
                   >
                     <span className="font-semibold">Company Priorities</span>
                     <ChevronDown className={`h-5 w-5 transition-transform ${
@@ -304,18 +355,28 @@ const QuarterlyPlanningMeetingPage = () => {
                   
                   {expandedSections.companyPriorities && (
                     <div className="pl-4 space-y-3">
-                      {(previousPriorities || [])
-                        .filter(p => p.is_company_priority)
-                        .map(priority => (
-                          <PriorityCard
-                            key={priority.id}
-                            priority={priority}
-                            onUpdate={handlePriorityUpdate}
-                            showActions={false}
-                            isReadOnly={true}
-                          />
-                        ))}
-                      {(previousPriorities || []).filter(p => p.is_company_priority).length === 0 && (
+                      {(() => {
+                        console.log('QuarterlyPlanningMeetingPage: Rendering company priorities');
+                        console.log('QuarterlyPlanningMeetingPage: previousPriorities:', previousPriorities);
+                        console.log('QuarterlyPlanningMeetingPage: Is previousPriorities array?', Array.isArray(previousPriorities));
+                        
+                        if (Array.isArray(previousPriorities)) {
+                          const companyPriorities = previousPriorities.filter(p => p && p.is_company_priority);
+                          console.log('QuarterlyPlanningMeetingPage: Filtered company priorities:', companyPriorities);
+                          
+                          return companyPriorities.map(priority => (
+                            <PriorityCard
+                              key={priority.id}
+                              priority={priority}
+                              onUpdate={handlePriorityUpdate}
+                              showActions={false}
+                              isReadOnly={true}
+                            />
+                          ));
+                        }
+                        return null;
+                      })()}
+                      {(!Array.isArray(previousPriorities) || previousPriorities.filter(p => p && p.is_company_priority).length === 0) && (
                         <p className="text-gray-500 text-sm">No company priorities from last quarter</p>
                       )}
                     </div>
@@ -323,16 +384,27 @@ const QuarterlyPlanningMeetingPage = () => {
                 </div>
 
                 {/* Individual Priorities */}
-                {Object.entries(
-                  (previousPriorities || [])
-                    .filter(p => !p.is_company_priority)
-                    .reduce((acc, priority) => {
-                      const ownerName = priority.owner_name || 'Unassigned';
-                      if (!acc[ownerName]) acc[ownerName] = [];
-                      acc[ownerName].push(priority);
-                      return acc;
-                    }, {})
-                ).map(([ownerName, ownerPriorities]) => (
+                {(() => {
+                  console.log('QuarterlyPlanningMeetingPage: Rendering individual priorities section');
+                  console.log('QuarterlyPlanningMeetingPage: previousPriorities for individual:', previousPriorities);
+                  
+                  if (!Array.isArray(previousPriorities) || previousPriorities.length === 0) {
+                    console.log('QuarterlyPlanningMeetingPage: No previous priorities to render');
+                    return null;
+                  }
+                  
+                  const individualPriorities = previousPriorities.filter(p => p && !p.is_company_priority);
+                  console.log('QuarterlyPlanningMeetingPage: Individual priorities:', individualPriorities);
+                  
+                  const grouped = individualPriorities.reduce((acc, priority) => {
+                    const ownerName = priority.owner_name || 'Unassigned';
+                    if (!acc[ownerName]) acc[ownerName] = [];
+                    acc[ownerName].push(priority);
+                    return acc;
+                  }, {});
+                  console.log('QuarterlyPlanningMeetingPage: Grouped priorities:', grouped);
+                  
+                  return Object.entries(grouped).map(([ownerName, ownerPriorities]) => (
                   <div key={ownerName} className="space-y-4">
                     <Button
                       variant="ghost"
@@ -403,8 +475,8 @@ const QuarterlyPlanningMeetingPage = () => {
                 <div className="space-y-4">
                   <h4 className="font-medium text-gray-700">Company Priorities</h4>
                   <div className="space-y-3">
-                    {(priorities || [])
-                      .filter(p => p.is_company_priority)
+                    {Array.isArray(priorities) && priorities
+                      .filter(p => p && p.is_company_priority)
                       .map(priority => (
                         <PriorityCard
                           key={priority.id}
@@ -413,7 +485,7 @@ const QuarterlyPlanningMeetingPage = () => {
                           showActions={true}
                         />
                       ))}
-                    {(priorities || []).filter(p => p.is_company_priority).length === 0 && (
+                    {(!Array.isArray(priorities) || priorities.filter(p => p && p.is_company_priority).length === 0) && (
                       <p className="text-gray-500 text-sm">No company priorities set yet</p>
                     )}
                   </div>
@@ -422,9 +494,9 @@ const QuarterlyPlanningMeetingPage = () => {
                 {/* Individual Priorities */}
                 <div className="space-y-4">
                   <h4 className="font-medium text-gray-700">Individual Priorities</h4>
-                  {Object.entries(
-                    (priorities || [])
-                      .filter(p => !p.is_company_priority)
+                  {Array.isArray(priorities) && priorities.length > 0 && Object.entries(
+                    priorities
+                      .filter(p => p && !p.is_company_priority)
                       .reduce((acc, priority) => {
                         const ownerName = priority.owner_name || 'Unassigned';
                         if (!acc[ownerName]) acc[ownerName] = [];
@@ -435,7 +507,7 @@ const QuarterlyPlanningMeetingPage = () => {
                     <div key={ownerName} className="space-y-3">
                       <h5 className="text-sm font-medium text-gray-600">{ownerName}</h5>
                       <div className="space-y-3 pl-4">
-                        {ownerPriorities.map(priority => (
+                        {Array.isArray(ownerPriorities) && ownerPriorities.map(priority => (
                           <PriorityCard
                             key={priority.id}
                             priority={priority}
@@ -446,7 +518,7 @@ const QuarterlyPlanningMeetingPage = () => {
                       </div>
                     </div>
                   ))}
-                  {(priorities || []).filter(p => !p.is_company_priority).length === 0 && (
+                  {(!Array.isArray(priorities) || priorities.filter(p => p && !p.is_company_priority).length === 0) && (
                     <p className="text-gray-500 text-sm">No individual priorities set yet</p>
                   )}
                 </div>
@@ -496,7 +568,7 @@ const QuarterlyPlanningMeetingPage = () => {
                 </Alert>
                 
                 <IssuesList
-                  issues={issues}
+                  issues={issues || []}
                   selectedIssueIds={selectedIssueIds}
                   onSelectionChange={setSelectedIssueIds}
                   onEdit={(issue) => {
@@ -614,12 +686,24 @@ const QuarterlyPlanningMeetingPage = () => {
         
         <nav className="flex-1 p-4">
           <ul className="space-y-2">
-            {agendaItems.map((item) => {
-              const Icon = item.icon;
-              const isActive = activeSection === item.id;
-              const isCompleted = completedSections.includes(item.id);
+            {(() => {
+              console.log('QuarterlyPlanningMeetingPage: Rendering sidebar navigation');
+              console.log('QuarterlyPlanningMeetingPage: agendaItems for nav:', agendaItems);
+              console.log('QuarterlyPlanningMeetingPage: Is agendaItems array?', Array.isArray(agendaItems));
               
-              return (
+              if (!Array.isArray(agendaItems)) {
+                console.error('QuarterlyPlanningMeetingPage: agendaItems is not an array!', agendaItems);
+                return <li>Error: Agenda items not available</li>;
+              }
+              
+              return agendaItems.map((item) => {
+                const Icon = item.icon;
+                const isActive = activeSection === item.id;
+                const isCompleted = completedSections.includes(item.id);
+                
+                console.log(`QuarterlyPlanningMeetingPage: Rendering nav item ${item.id}, active: ${isActive}, completed: ${isCompleted}`);
+                
+                return (
                 <li key={item.id}>
                   <button
                     onClick={() => setActiveSection(item.id)}
@@ -643,7 +727,8 @@ const QuarterlyPlanningMeetingPage = () => {
                   </button>
                 </li>
               );
-            })}
+              });
+            })()}
           </ul>
         </nav>
         
@@ -710,18 +795,34 @@ const QuarterlyPlanningMeetingPage = () => {
             </Button>
             
             <div className="flex items-center gap-2">
-              {agendaItems.map((_, index) => (
-                <div
-                  key={index}
-                  className={`h-2 w-2 rounded-full transition-colors ${
+              {(() => {
+                console.log('QuarterlyPlanningMeetingPage: Rendering progress dots');
+                console.log('QuarterlyPlanningMeetingPage: agendaItems for dots:', agendaItems);
+                console.log('QuarterlyPlanningMeetingPage: currentSectionIndex:', currentSectionIndex);
+                
+                if (!Array.isArray(agendaItems)) {
+                  console.error('QuarterlyPlanningMeetingPage: agendaItems is not an array for dots!', agendaItems);
+                  return null;
+                }
+                
+                return agendaItems.map((_, index) => {
+                  const className = `h-2 w-2 rounded-full transition-colors ${
                     index < currentSectionIndex
                       ? 'bg-green-500'
                       : index === currentSectionIndex
                       ? 'bg-indigo-500'
                       : 'bg-gray-300'
-                  }`}
-                />
-              ))}
+                  }`;
+                  console.log(`QuarterlyPlanningMeetingPage: Dot ${index} className: ${className}`);
+                  
+                  return (
+                    <div
+                      key={index}
+                      className={className}
+                    />
+                  );
+                });
+              })()}
             </div>
             
             <Button
