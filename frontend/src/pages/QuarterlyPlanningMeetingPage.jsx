@@ -316,32 +316,31 @@ const QuarterlyPlanningMeetingPage = () => {
               <CardDescription>Wrap up and rate the meeting (10 minutes)</CardDescription>
             </CardHeader>
             <CardContent>
-              <div className="space-y-4">
-                <div className="bg-green-50 p-4 rounded-lg">
-                  <h4 className="font-medium mb-2">Quick Recap:</h4>
-                  <ul className="list-disc list-inside text-sm space-y-1">
-                    <li>Reviewed last quarter's performance</li>
-                    <li>Set new quarterly priorities</li>
-                    <li>Identified key strategic issues</li>
-                    <li>Aligned on next steps and responsibilities</li>
-                  </ul>
-                </div>
-                <div className="text-center py-8">
-                  <h4 className="font-medium mb-4">Rate this Meeting</h4>
-                  <p className="text-sm text-gray-600 mb-4">
-                    On a scale of 1-10, how effective was this meeting?
-                  </p>
-                  <div className="flex justify-center gap-2">
-                    {[...Array(10)].map((_, i) => (
-                      <Button
-                        key={i + 1}
-                        variant="outline"
-                        size="sm"
-                        className="w-10 h-10"
-                      >
-                        {i + 1}
-                      </Button>
-                    ))}
+              <div className="space-y-6">
+                <div className="space-y-4">
+                  <div className="border-l-4 border-blue-500 pl-4">
+                    <h4 className="font-medium">1. Feedback?</h4>
+                    <p className="text-sm text-gray-600">(Where's your head? How are you feeling?)</p>
+                  </div>
+                  <div className="border-l-4 border-blue-500 pl-4">
+                    <h4 className="font-medium">2. Expectations?</h4>
+                    <p className="text-sm text-gray-600">(Were they met? Y/N)</p>
+                  </div>
+                  <div className="border-l-4 border-blue-500 pl-4">
+                    <h4 className="font-medium">3. Session Rating</h4>
+                    <p className="text-sm text-gray-600 mb-3">On a scale of 1-10, how effective was this meeting?</p>
+                    <div className="flex gap-2">
+                      {[...Array(10)].map((_, i) => (
+                        <Button
+                          key={i + 1}
+                          variant="outline"
+                          size="sm"
+                          className="w-10 h-10"
+                        >
+                          {i + 1}
+                        </Button>
+                      ))}
+                    </div>
                   </div>
                 </div>
                 <div className="flex items-center justify-center gap-2 py-8">
