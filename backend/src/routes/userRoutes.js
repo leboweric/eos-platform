@@ -10,7 +10,8 @@ import {
   removeUser,
   getPendingInvitations,
   cancelInvitation,
-  getUserDepartments
+  getUserDepartments,
+  changePassword
 } from '../controllers/userController.js';
 import {
   getUserSkills,
@@ -62,5 +63,13 @@ router.delete('/:userId/skills/:skillId', [
 
 // Get user's available departments
 router.get('/departments', getUserDepartments);
+
+// Change password (authenticated users can change their own password)
+router.post('/change-password', [
+  body('currentPassword').notEmpty().withMessage('Current password is required'),
+  body('newPassword')
+    .isLength({ min: 6 }).withMessage('New password must be at least 6 characters long')
+    .notEmpty().withMessage('New password is required')
+], validateRequest, changePassword);
 
 export default router;

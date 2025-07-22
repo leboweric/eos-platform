@@ -26,6 +26,7 @@ import AcceptInvitationPage from './pages/AcceptInvitationPage';
 import ConsultantDashboard from './pages/ConsultantDashboard';
 import ConsultantRegisterPage from './pages/ConsultantRegisterPage';
 import OrganizationSettings from './pages/OrganizationSettings';
+import UserSettings from './pages/UserSettings';
 import OrganizationalChartPage from './pages/OrganizationalChartPage';
 import WeeklyAccountabilityMeetingPage from './pages/WeeklyAccountabilityMeetingPage';
 import QuarterlyPlanningMeetingPage from './pages/QuarterlyPlanningMeetingPage';
@@ -96,6 +97,7 @@ function App() {
           <Route path="/users" element={user ? <Layout><UsersPage /></Layout> : <Navigate to="/login" />} />
           <Route path="/consultant" element={user ? <Layout><ConsultantDashboard /></Layout> : <Navigate to="/login" />} />
           <Route path="/organization-settings" element={user ? <Layout><OrganizationSettings /></Layout> : <Navigate to="/login" />} />
+          <Route path="/user-settings" element={user ? <Layout><UserSettings /></Layout> : <Navigate to="/login" />} />
           <Route path="/organizational-chart" element={user ? <Layout><OrganizationalChartPage /></Layout> : <Navigate to="/login" />} />
           
           {/* Legacy route redirects */}
