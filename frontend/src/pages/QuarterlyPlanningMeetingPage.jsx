@@ -92,14 +92,14 @@ const QuarterlyPlanningMeetingPage = () => {
       const orgId = localStorage.getItem('impersonatedOrgId') || user?.organizationId || user?.organization_id;
       const effectiveTeamId = teamId || user?.teamId || '00000000-0000-0000-0000-000000000000';
       
-      const response = await quarterlyPrioritiesService.getCurrentPriorities(orgId, effectiveTeamId);
-      setPriorities(response.data || []);
+      const data = await quarterlyPrioritiesService.getCurrentPriorities(orgId, effectiveTeamId);
+      setPriorities(Array.isArray(data) ? data : []);
       
       // If reviewing prior quarter, also fetch previous quarter's priorities
       if (activeSection === 'review-prior') {
         // TODO: Implement getPreviousQuarterPriorities in the service
         // For now, we'll use the same data
-        setPreviousPriorities(response.data || []);
+        setPreviousPriorities(Array.isArray(data) ? data : []);
       }
       
       setLoading(false);
@@ -118,8 +118,13 @@ const QuarterlyPlanningMeetingPage = () => {
       const effectiveTeamId = teamId || user?.teamId || '00000000-0000-0000-0000-000000000000';
       
       const response = await issuesService.getIssues(orgId, effectiveTeamId);
-      const activeIssues = response.data?.filter(issue => !issue.is_archived) || [];
+      // The response structure is {success: true, data: {issues: [...], teamMembers: [...]}}
+      const issuesData = response?.data?.issues || [];
+      const activeIssues = issuesData.filter(issue => !issue.is_archived);
       setIssues(activeIssues);
+      if (response?.data?.teamMembers) {
+        setTeamMembers(response.data.teamMembers);
+      }
       setLoading(false);
     } catch (error) {
       console.error('Failed to fetch issues:', error);
