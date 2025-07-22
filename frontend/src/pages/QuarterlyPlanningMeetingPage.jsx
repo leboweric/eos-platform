@@ -13,24 +13,14 @@ import {
   ChevronLeft,
   Target,
   CheckSquare,
-  AlertTriangle,
+  Calendar,
   ClipboardList,
   ListChecks,
-  Calendar,
-  Plus,
-  ChevronDown,
-  Archive
+  AlertTriangle
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
-import PriorityCard from '../components/priorities/PriorityCard';
-import IssuesList from '../components/issues/IssuesList';
-import IssueDialog from '../components/issues/IssueDialog';
-import { quarterlyPrioritiesService } from '../services/quarterlyPrioritiesService';
-import { issuesService } from '../services/issuesService';
 
 const QuarterlyPlanningMeetingPage = () => {
-  console.log('QuarterlyPlanningMeetingPage: Component rendering');
-  
   const { user } = useAuthStore();
   const { teamId } = useParams();
   const navigate = useNavigate();
@@ -38,25 +28,6 @@ const QuarterlyPlanningMeetingPage = () => {
   const [error, setError] = useState(null);
   const [activeSection, setActiveSection] = useState('objectives');
   const [success, setSuccess] = useState(null);
-  
-  console.log('QuarterlyPlanningMeetingPage: Initial state - user:', user, 'teamId:', teamId);
-  
-  // Meeting data - ensure all arrays are initialized
-  const [priorities, setPriorities] = useState([]);
-  const [previousPriorities, setPreviousPriorities] = useState([]);
-  const [issues, setIssues] = useState([]);
-  const [selectedIssueIds, setSelectedIssueIds] = useState([]);
-  const [teamMembers, setTeamMembers] = useState([]);
-  
-  // Dialog states
-  const [showIssueDialog, setShowIssueDialog] = useState(false);
-  const [editingIssue, setEditingIssue] = useState(null);
-  
-  // Collapsible sections state
-  const [expandedSections, setExpandedSections] = useState({
-    companyPriorities: false,
-    individualPriorities: {}
-  });
 
   const agendaItems = [
     { id: 'objectives', label: 'Objectives', duration: 5, icon: Target },
@@ -67,17 +38,6 @@ const QuarterlyPlanningMeetingPage = () => {
     { id: 'next-steps', label: 'Next Steps', duration: 15, icon: ClipboardList },
     { id: 'conclude', label: 'Conclude', duration: 10, icon: CheckSquare }
   ];
-  
-  console.log('QuarterlyPlanningMeetingPage: agendaItems defined:', agendaItems);
-
-  useEffect(() => {
-    console.log('QuarterlyPlanningMeetingPage: useEffect triggered - activeSection:', activeSection);
-    if (activeSection === 'quarterly-priorities' || activeSection === 'review-prior') {
-      fetchPrioritiesData();
-    } else if (activeSection === 'issues') {
-      fetchIssuesData();
-    }
-  }, [activeSection, teamId]);
 
   // Auto-clear success messages after 3 seconds
   useEffect(() => {
@@ -89,578 +49,291 @@ const QuarterlyPlanningMeetingPage = () => {
     }
   }, [success]);
 
-  const fetchPrioritiesData = async () => {
-    console.log('QuarterlyPlanningMeetingPage: fetchPrioritiesData called');
-    try {
-      setLoading(true);
-      setError(null);
-      const orgId = localStorage.getItem('impersonatedOrgId') || user?.organizationId || user?.organization_id;
-      const effectiveTeamId = teamId || user?.teamId || '00000000-0000-0000-0000-000000000000';
-      
-      console.log('QuarterlyPlanningMeetingPage: Fetching priorities with orgId:', orgId, 'teamId:', effectiveTeamId);
-      
-      const data = await quarterlyPrioritiesService.getCurrentPriorities(orgId, effectiveTeamId);
-      console.log('QuarterlyPlanningMeetingPage: Priorities data received:', data);
-      
-      // The service returns an object with companyPriorities and teamMemberPriorities
-      // We need to combine them into a flat array
-      const allPriorities = [];
-      
-      // Add company priorities
-      if (data.companyPriorities && Array.isArray(data.companyPriorities)) {
-        allPriorities.push(...data.companyPriorities);
-      }
-      
-      // Add team member priorities
-      if (data.teamMemberPriorities) {
-        Object.values(data.teamMemberPriorities).forEach(memberPriorities => {
-          if (Array.isArray(memberPriorities)) {
-            allPriorities.push(...memberPriorities);
-          }
-        });
-      }
-      
-      console.log('QuarterlyPlanningMeetingPage: Combined priorities:', allPriorities);
-      setPriorities(allPriorities);
-      
-      // If reviewing prior quarter, also fetch previous quarter's priorities
-      if (activeSection === 'review-prior') {
-        // TODO: Implement getPreviousQuarterPriorities in the service
-        // For now, we'll use the same data
-        setPreviousPriorities(allPriorities);
-      }
-      
-      setLoading(false);
-    } catch (error) {
-      console.error('QuarterlyPlanningMeetingPage: Failed to fetch priorities:', error);
-      setError('Failed to load priorities data');
-      setPriorities([]);
-      setPreviousPriorities([]);
-      setLoading(false);
-    }
+  const handleSectionChange = (sectionId) => {
+    setActiveSection(sectionId);
+    setError(null);
   };
 
-  const fetchIssuesData = async () => {
-    console.log('QuarterlyPlanningMeetingPage: fetchIssuesData called');
-    try {
-      setLoading(true);
-      setError(null);
-      const orgId = localStorage.getItem('impersonatedOrgId') || user?.organizationId || user?.organization_id;
-      const effectiveTeamId = teamId || user?.teamId || '00000000-0000-0000-0000-000000000000';
-      
-      console.log('QuarterlyPlanningMeetingPage: Fetching issues with orgId:', orgId, 'teamId:', effectiveTeamId);
-      
-      // issuesService.getIssues expects (timeline, includeArchived, departmentId)
-      // We need to pass null for timeline and false for includeArchived, then the teamId as departmentId
-      const response = await issuesService.getIssues(null, false, effectiveTeamId);
-      console.log('QuarterlyPlanningMeetingPage: Issues response:', response);
-      
-      // The response structure is {success: true, data: {issues: [...], teamMembers: [...]}}
-      const issuesData = response?.data?.issues || [];
-      console.log('QuarterlyPlanningMeetingPage: Issues data:', issuesData);
-      console.log('QuarterlyPlanningMeetingPage: Is issuesData an array?', Array.isArray(issuesData));
-      
-      const activeIssues = issuesData.filter(issue => !issue.is_archived);
-      console.log('QuarterlyPlanningMeetingPage: Active issues:', activeIssues);
-      
-      setIssues(activeIssues);
-      if (response?.data?.teamMembers) {
-        setTeamMembers(response.data.teamMembers);
-      }
-      setLoading(false);
-    } catch (error) {
-      console.error('QuarterlyPlanningMeetingPage: Failed to fetch issues:', error);
-      setError('Failed to load issues');
-      setIssues([]);
-      setLoading(false);
-    }
-  };
-
-  const handlePriorityUpdate = async (priorityId, updates) => {
-    try {
-      const orgId = localStorage.getItem('impersonatedOrgId') || user?.organizationId || user?.organization_id;
-      const effectiveTeamId = teamId || user?.teamId || '00000000-0000-0000-0000-000000000000';
-      
-      await quarterlyPrioritiesService.updatePriority(orgId, effectiveTeamId, priorityId, updates);
-      
-      // Refresh data
-      await fetchPrioritiesData();
-      setSuccess('Priority updated successfully');
-    } catch (error) {
-      console.error('Failed to update priority:', error);
-      setError('Failed to update priority');
-    }
-  };
-
-  const handleIssueUpdate = async (issueId, updates) => {
-    try {
-      // issuesService.updateIssue expects (issueId, updates) - no orgId or teamId needed
-      await issuesService.updateIssue(issueId, updates);
-      
-      // Refresh issues
-      await fetchIssuesData();
-      setSuccess('Issue updated successfully');
-    } catch (error) {
-      console.error('Failed to update issue:', error);
-      setError('Failed to update issue');
-    }
-  };
-
-  const handleArchiveIssues = async () => {
-    if (selectedIssueIds.length === 0) return;
-    
-    try {
-      const orgId = localStorage.getItem('impersonatedOrgId') || user?.organizationId || user?.organization_id;
-      const effectiveTeamId = teamId || user?.teamId || '00000000-0000-0000-0000-000000000000';
-      
-      // Archive each selected issue
-      await Promise.all(
-        selectedIssueIds.map(issueId =>
-          issuesService.archiveIssue(issueId)
-        )
-      );
-      
-      // Clear selection and refresh
-      setSelectedIssueIds([]);
-      await fetchIssuesData();
-      setSuccess(`Archived ${selectedIssueIds.length} issue(s)`);
-    } catch (error) {
-      console.error('Failed to archive issues:', error);
-      setError('Failed to archive issues');
-    }
-  };
-
-  const handleBack = () => {
-    navigate('/meetings');
-  };
-
-  const handleNext = () => {
+  const getNextSection = () => {
     const currentIndex = agendaItems.findIndex(item => item.id === activeSection);
     if (currentIndex < agendaItems.length - 1) {
-      setActiveSection(agendaItems[currentIndex + 1].id);
+      return agendaItems[currentIndex + 1].id;
     }
+    return null;
   };
 
-  const handlePrevious = () => {
+  const getPreviousSection = () => {
     const currentIndex = agendaItems.findIndex(item => item.id === activeSection);
     if (currentIndex > 0) {
-      setActiveSection(agendaItems[currentIndex - 1].id);
+      return agendaItems[currentIndex - 1].id;
     }
+    return null;
   };
 
-  const getCompletedSections = () => {
-    console.log('QuarterlyPlanningMeetingPage: getCompletedSections called');
-    console.log('QuarterlyPlanningMeetingPage: activeSection:', activeSection);
-    console.log('QuarterlyPlanningMeetingPage: agendaItems in getCompletedSections:', agendaItems);
-    
-    const currentIndex = agendaItems.findIndex(item => item.id === activeSection);
-    console.log('QuarterlyPlanningMeetingPage: currentIndex:', currentIndex);
-    
-    const completed = agendaItems.slice(0, currentIndex).map(item => item.id);
-    console.log('QuarterlyPlanningMeetingPage: completed sections:', completed);
-    
-    return completed;
-  };
+  const renderContent = () => {
+    if (loading) {
+      return (
+        <div className="flex items-center justify-center h-96">
+          <Loader2 className="h-8 w-8 animate-spin" />
+        </div>
+      );
+    }
 
-  const completedSections = getCompletedSections();
-  const currentSectionIndex = agendaItems.findIndex(item => item.id === activeSection);
-  const isFirstSection = currentSectionIndex === 0;
-  const isLastSection = currentSectionIndex === agendaItems.length - 1;
-  
-  console.log('QuarterlyPlanningMeetingPage: State values -', {
-    completedSections,
-    currentSectionIndex,
-    isFirstSection,
-    isLastSection,
-    priorities: priorities,
-    'priorities is array': Array.isArray(priorities),
-    previousPriorities: previousPriorities,
-    'previousPriorities is array': Array.isArray(previousPriorities),
-    issues: issues,
-    'issues is array': Array.isArray(issues),
-    agendaItems: agendaItems,
-    'agendaItems is array': Array.isArray(agendaItems)
-  });
-
-  const renderSectionContent = () => {
-    console.log('QuarterlyPlanningMeetingPage: renderSectionContent called for section:', activeSection);
     switch (activeSection) {
       case 'objectives':
         return (
-          <div className="space-y-6">
-            <div className="prose max-w-none">
-              <h3 className="text-lg font-semibold mb-4">Meeting Objectives</h3>
-              <ul className="space-y-2">
-                <li>Review and assess the previous quarter's performance</li>
-                <li>Identify key learnings and areas for improvement</li>
-                <li>Set clear priorities for the upcoming quarter</li>
-                <li>Align team on critical issues and next steps</li>
-                <li>Ensure everyone leaves with clarity on their responsibilities</li>
-              </ul>
-            </div>
-            <Alert>
-              <AlertCircle className="h-4 w-4" />
-              <AlertDescription>
-                This meeting is designed to help your team transition effectively from one quarter to the next. 
-                Stay focused on high-level priorities and strategic decisions.
-              </AlertDescription>
-            </Alert>
-          </div>
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Target className="h-5 w-5" />
+                Meeting Objectives
+              </CardTitle>
+              <CardDescription>Review meeting goals and expected outcomes (5 minutes)</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-4">
+                <p className="text-gray-600">
+                  This quarterly planning meeting is designed to help your team transition effectively 
+                  from one quarter to the next.
+                </p>
+                <div className="bg-blue-50 p-4 rounded-lg">
+                  <h4 className="font-medium mb-2">Meeting Goals:</h4>
+                  <ul className="list-disc list-inside text-sm space-y-1">
+                    <li>Review and assess the previous quarter's performance</li>
+                    <li>Identify key learnings and areas for improvement</li>
+                    <li>Set clear priorities for the upcoming quarter</li>
+                    <li>Align team on critical issues and next steps</li>
+                    <li>Ensure everyone leaves with clarity on their responsibilities</li>
+                  </ul>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
         );
 
       case 'check-in':
         return (
-          <div className="space-y-6">
-            <div className="prose max-w-none">
-              <h3 className="text-lg font-semibold mb-4">Team Check-In</h3>
-              <p className="text-gray-600 mb-6">
-                Go around the room and have each team member share:
-              </p>
-              <ol className="space-y-3">
-                <li>
-                  <strong>Personal highlight from the last quarter</strong>
-                  <p className="text-sm text-gray-600">What was your biggest personal or professional win?</p>
-                </li>
-                <li>
-                  <strong>Key learning or insight</strong>
-                  <p className="text-sm text-gray-600">What did you learn that will help you going forward?</p>
-                </li>
-                <li>
-                  <strong>Energy level coming into the new quarter</strong>
-                  <p className="text-sm text-gray-600">Rate your energy/enthusiasm from 1-10 and explain why</p>
-                </li>
-              </ol>
-            </div>
-          </div>
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <CheckSquare className="h-5 w-5" />
+                Team Check-In
+              </CardTitle>
+              <CardDescription>Connect as a team before diving into business (10 minutes)</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-4">
+                <p className="text-gray-600">
+                  Go around the room and have each team member share:
+                </p>
+                <div className="space-y-4">
+                  <div className="border-l-4 border-blue-500 pl-4">
+                    <h4 className="font-medium">1. Personal highlight from the last quarter</h4>
+                    <p className="text-sm text-gray-600">What was your biggest personal or professional win?</p>
+                  </div>
+                  <div className="border-l-4 border-blue-500 pl-4">
+                    <h4 className="font-medium">2. Key learning or insight</h4>
+                    <p className="text-sm text-gray-600">What did you learn that will help you going forward?</p>
+                  </div>
+                  <div className="border-l-4 border-blue-500 pl-4">
+                    <h4 className="font-medium">3. Energy level coming into the new quarter</h4>
+                    <p className="text-sm text-gray-600">Rate your energy/enthusiasm from 1-10 and explain why</p>
+                  </div>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
         );
 
       case 'review-prior':
         return (
-          <div className="space-y-6">
-            <h3 className="text-lg font-semibold mb-4">Review Prior Quarter</h3>
-            {loading ? (
-              <div className="flex items-center justify-center py-8">
-                <Loader2 className="h-8 w-8 animate-spin text-gray-400" />
-              </div>
-            ) : (
-              <>
-                <Alert>
-                  <AlertCircle className="h-4 w-4" />
-                  <AlertDescription>
-                    Review each priority from last quarter. Discuss what was accomplished, 
-                    what wasn't, and why. Be honest about successes and failures.
-                  </AlertDescription>
-                </Alert>
-                
-                {/* Company Priorities */}
-                <div className="space-y-4">
-                  <Button
-                    variant="ghost"
-                    className="w-full justify-between p-4 hover:bg-gray-50"
-                    onClick={() => {
-                      console.log('QuarterlyPlanningMeetingPage: Expanding company priorities');
-                      setExpandedSections(prev => ({
-                        ...prev,
-                        companyPriorities: !prev.companyPriorities
-                      }));
-                    }}
-                  >
-                    <span className="font-semibold">Company Priorities</span>
-                    <ChevronDown className={`h-5 w-5 transition-transform ${
-                      expandedSections.companyPriorities ? 'rotate-180' : ''
-                    }`} />
-                  </Button>
-                  
-                  {expandedSections.companyPriorities && (
-                    <div className="pl-4 space-y-3">
-                      {(() => {
-                        console.log('QuarterlyPlanningMeetingPage: Rendering company priorities');
-                        console.log('QuarterlyPlanningMeetingPage: previousPriorities:', previousPriorities);
-                        console.log('QuarterlyPlanningMeetingPage: Is previousPriorities array?', Array.isArray(previousPriorities));
-                        
-                        if (Array.isArray(previousPriorities)) {
-                          const companyPriorities = previousPriorities.filter(p => p && p.is_company_priority);
-                          console.log('QuarterlyPlanningMeetingPage: Filtered company priorities:', companyPriorities);
-                          
-                          return companyPriorities.map(priority => (
-                            <PriorityCard
-                              key={priority.id}
-                              priority={priority}
-                              onUpdate={handlePriorityUpdate}
-                              showActions={false}
-                              isReadOnly={true}
-                            />
-                          ));
-                        }
-                        return null;
-                      })()}
-                      {(!Array.isArray(previousPriorities) || previousPriorities.filter(p => p && p.is_company_priority).length === 0) && (
-                        <p className="text-gray-500 text-sm">No company priorities from last quarter</p>
-                      )}
-                    </div>
-                  )}
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Calendar className="h-5 w-5" />
+                Review Prior Quarter
+              </CardTitle>
+              <CardDescription>Assess last quarter's performance and results (30 minutes)</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-4">
+                <p className="text-gray-600">
+                  Review each priority from last quarter. Discuss what was accomplished, 
+                  what wasn't, and why. Be honest about successes and failures.
+                </p>
+                <div className="bg-blue-50 p-4 rounded-lg">
+                  <h4 className="font-medium mb-2">Review Framework:</h4>
+                  <ul className="list-disc list-inside text-sm space-y-1">
+                    <li>What were our quarterly priorities?</li>
+                    <li>Which ones did we complete successfully?</li>
+                    <li>Which ones did we miss and why?</li>
+                    <li>What obstacles did we encounter?</li>
+                    <li>What can we learn from this quarter?</li>
+                  </ul>
                 </div>
-
-                {/* Individual Priorities */}
-                {(() => {
-                  console.log('QuarterlyPlanningMeetingPage: Rendering individual priorities section');
-                  console.log('QuarterlyPlanningMeetingPage: previousPriorities for individual:', previousPriorities);
-                  
-                  if (!Array.isArray(previousPriorities) || previousPriorities.length === 0) {
-                    console.log('QuarterlyPlanningMeetingPage: No previous priorities to render');
-                    return null;
-                  }
-                  
-                  const individualPriorities = previousPriorities.filter(p => p && !p.is_company_priority);
-                  console.log('QuarterlyPlanningMeetingPage: Individual priorities:', individualPriorities);
-                  
-                  const grouped = individualPriorities.reduce((acc, priority) => {
-                    const ownerName = priority.owner_name || 'Unassigned';
-                    if (!acc[ownerName]) acc[ownerName] = [];
-                    acc[ownerName].push(priority);
-                    return acc;
-                  }, {});
-                  console.log('QuarterlyPlanningMeetingPage: Grouped priorities:', grouped);
-                  
-                  return Object.entries(grouped).map(([ownerName, ownerPriorities]) => (
-                  <div key={ownerName} className="space-y-4">
-                    <Button
-                      variant="ghost"
-                      className="w-full justify-between p-4 hover:bg-gray-50"
-                      onClick={() => setExpandedSections(prev => ({
-                        ...prev,
-                        individualPriorities: {
-                          ...prev.individualPriorities,
-                          [ownerName]: !prev.individualPriorities[ownerName]
-                        }
-                      }))}
-                    >
-                      <span className="font-semibold">{ownerName}'s Priorities</span>
-                      <ChevronDown className={`h-5 w-5 transition-transform ${
-                        expandedSections.individualPriorities[ownerName] ? 'rotate-180' : ''
-                      }`} />
-                    </Button>
-                    
-                    {expandedSections.individualPriorities[ownerName] && (
-                      <div className="pl-4 space-y-3">
-                        {ownerPriorities.map(priority => (
-                          <PriorityCard
-                            key={priority.id}
-                            priority={priority}
-                            onUpdate={handlePriorityUpdate}
-                            showActions={false}
-                            isReadOnly={true}
-                          />
-                        ))}
-                      </div>
-                    )}
-                  </div>
-                ))}
-              </>
-            )}
-          </div>
+                <div className="text-center py-8">
+                  <Button 
+                    variant="outline" 
+                    onClick={() => navigate('/quarterly-priorities')}
+                  >
+                    View Quarterly Priorities
+                  </Button>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
         );
 
       case 'quarterly-priorities':
         return (
-          <div className="space-y-6">
-            <div className="flex justify-between items-center">
-              <h3 className="text-lg font-semibold">Set Quarterly Priorities</h3>
-              <Button
-                onClick={() => navigate('/priorities')}
-                size="sm"
-              >
-                <Plus className="h-4 w-4 mr-2" />
-                Manage Priorities
-              </Button>
-            </div>
-            
-            {loading ? (
-              <div className="flex items-center justify-center py-8">
-                <Loader2 className="h-8 w-8 animate-spin text-gray-400" />
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <ListChecks className="h-5 w-5" />
+                Set Quarterly Priorities
+              </CardTitle>
+              <CardDescription>Define 3-7 priorities for the upcoming quarter (60 minutes)</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-4">
+                <p className="text-gray-600">
+                  Work together to establish the most important priorities for the next 90 days. 
+                  Each priority should be SMART (Specific, Measurable, Achievable, Relevant, Time-bound).
+                </p>
+                <div className="bg-blue-50 p-4 rounded-lg">
+                  <h4 className="font-medium mb-2">Priority Setting Guidelines:</h4>
+                  <ul className="list-disc list-inside text-sm space-y-1">
+                    <li>Limit to 3-7 priorities total</li>
+                    <li>Make them specific and measurable</li>
+                    <li>Assign clear ownership</li>
+                    <li>Set realistic deadlines</li>
+                    <li>Ensure alignment with annual goals</li>
+                  </ul>
+                </div>
+                <div className="text-center py-8">
+                  <Button 
+                    onClick={() => navigate('/quarterly-priorities')}
+                  >
+                    Go to Quarterly Priorities
+                  </Button>
+                </div>
               </div>
-            ) : (
-              <>
-                <Alert>
-                  <AlertCircle className="h-4 w-4" />
-                  <AlertDescription>
-                    Set 3-7 priorities for the quarter. Each should be SMART 
-                    (Specific, Measurable, Achievable, Relevant, Time-bound).
-                  </AlertDescription>
-                </Alert>
-                
-                {/* Company Priorities */}
-                <div className="space-y-4">
-                  <h4 className="font-medium text-gray-700">Company Priorities</h4>
-                  <div className="space-y-3">
-                    {Array.isArray(priorities) && priorities
-                      .filter(p => p && p.is_company_priority)
-                      .map(priority => (
-                        <PriorityCard
-                          key={priority.id}
-                          priority={priority}
-                          onUpdate={handlePriorityUpdate}
-                          showActions={true}
-                        />
-                      ))}
-                    {(!Array.isArray(priorities) || priorities.filter(p => p && p.is_company_priority).length === 0) && (
-                      <p className="text-gray-500 text-sm">No company priorities set yet</p>
-                    )}
-                  </div>
-                </div>
-
-                {/* Individual Priorities */}
-                <div className="space-y-4">
-                  <h4 className="font-medium text-gray-700">Individual Priorities</h4>
-                  {Array.isArray(priorities) && priorities.length > 0 && Object.entries(
-                    priorities
-                      .filter(p => p && !p.is_company_priority)
-                      .reduce((acc, priority) => {
-                        const ownerName = priority.owner_name || 'Unassigned';
-                        if (!acc[ownerName]) acc[ownerName] = [];
-                        acc[ownerName].push(priority);
-                        return acc;
-                      }, {})
-                  ).map(([ownerName, ownerPriorities]) => (
-                    <div key={ownerName} className="space-y-3">
-                      <h5 className="text-sm font-medium text-gray-600">{ownerName}</h5>
-                      <div className="space-y-3 pl-4">
-                        {Array.isArray(ownerPriorities) && ownerPriorities.map(priority => (
-                          <PriorityCard
-                            key={priority.id}
-                            priority={priority}
-                            onUpdate={handlePriorityUpdate}
-                            showActions={true}
-                          />
-                        ))}
-                      </div>
-                    </div>
-                  ))}
-                  {(!Array.isArray(priorities) || priorities.filter(p => p && !p.is_company_priority).length === 0) && (
-                    <p className="text-gray-500 text-sm">No individual priorities set yet</p>
-                  )}
-                </div>
-              </>
-            )}
-          </div>
+            </CardContent>
+          </Card>
         );
 
       case 'issues':
         return (
-          <div className="space-y-6">
-            <div className="flex justify-between items-center">
-              <h3 className="text-lg font-semibold">Strategic Issues</h3>
-              <div className="flex gap-2">
-                {selectedIssueIds.length > 0 && (
-                  <Button
-                    onClick={handleArchiveIssues}
-                    variant="outline"
-                    size="sm"
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <AlertTriangle className="h-5 w-5" />
+                Strategic Issues
+              </CardTitle>
+              <CardDescription>Identify and discuss strategic issues for the quarter (30 minutes)</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-4">
+                <p className="text-gray-600">
+                  Focus on strategic issues that could impact the quarter ahead. 
+                  Tactical issues should be handled in weekly meetings.
+                </p>
+                <div className="bg-blue-50 p-4 rounded-lg">
+                  <h4 className="font-medium mb-2">Strategic Issue Examples:</h4>
+                  <ul className="list-disc list-inside text-sm space-y-1">
+                    <li>Market changes or competitive threats</li>
+                    <li>Resource constraints or capacity issues</li>
+                    <li>Major process improvements needed</li>
+                    <li>Team structure or role changes</li>
+                    <li>Technology or system upgrades</li>
+                  </ul>
+                </div>
+                <div className="text-center py-8">
+                  <Button 
+                    variant="outline" 
+                    onClick={() => navigate('/issues')}
                   >
-                    <Archive className="h-4 w-4 mr-2" />
-                    Archive ({selectedIssueIds.length})
+                    View Issues List
                   </Button>
-                )}
-                <Button
-                  onClick={() => setShowIssueDialog(true)}
-                  size="sm"
-                >
-                  <Plus className="h-4 w-4 mr-2" />
-                  Add Issue
-                </Button>
+                </div>
               </div>
-            </div>
-            
-            {loading ? (
-              <div className="flex items-center justify-center py-8">
-                <Loader2 className="h-8 w-8 animate-spin text-gray-400" />
-              </div>
-            ) : (
-              <>
-                <Alert>
-                  <AlertCircle className="h-4 w-4" />
-                  <AlertDescription>
-                    Focus on strategic issues that could impact the quarter ahead. 
-                    Tactical issues should be handled in weekly meetings.
-                  </AlertDescription>
-                </Alert>
-                
-                <IssuesList
-                  issues={issues || []}
-                  selectedIssueIds={selectedIssueIds}
-                  onSelectionChange={setSelectedIssueIds}
-                  onEdit={(issue) => {
-                    setEditingIssue(issue);
-                    setShowIssueDialog(true);
-                  }}
-                  onUpdate={handleIssueUpdate}
-                  showVoting={false}
-                />
-              </>
-            )}
-          </div>
+            </CardContent>
+          </Card>
         );
 
       case 'next-steps':
         return (
-          <div className="space-y-6">
-            <div className="prose max-w-none">
-              <h3 className="text-lg font-semibold mb-4">Next Steps</h3>
-              <p className="text-gray-600 mb-6">
-                Review and confirm the following before concluding:
-              </p>
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <ClipboardList className="h-5 w-5" />
+                Next Steps
+              </CardTitle>
+              <CardDescription>Confirm action items and responsibilities (15 minutes)</CardDescription>
+            </CardHeader>
+            <CardContent>
               <div className="space-y-4">
-                <div className="bg-gray-50 p-4 rounded-lg">
-                  <h4 className="font-medium mb-2">1. Priority Owners</h4>
-                  <p className="text-sm text-gray-600">
-                    Ensure each priority has a clear owner who is accountable for its completion.
-                  </p>
-                </div>
-                <div className="bg-gray-50 p-4 rounded-lg">
-                  <h4 className="font-medium mb-2">2. Key Dates</h4>
-                  <p className="text-sm text-gray-600">
-                    Review any critical milestones or deadlines for the quarter.
-                  </p>
-                </div>
-                <div className="bg-gray-50 p-4 rounded-lg">
-                  <h4 className="font-medium mb-2">3. Communication Plan</h4>
-                  <p className="text-sm text-gray-600">
-                    How will priorities and decisions be communicated to the broader team?
-                  </p>
-                </div>
-                <div className="bg-gray-50 p-4 rounded-lg">
-                  <h4 className="font-medium mb-2">4. Support Needed</h4>
-                  <p className="text-sm text-gray-600">
-                    What resources or support do priority owners need to be successful?
-                  </p>
+                <p className="text-gray-600">
+                  Review and confirm the following before concluding:
+                </p>
+                <div className="space-y-4">
+                  <div className="bg-gray-50 p-4 rounded-lg">
+                    <h4 className="font-medium mb-2">1. Priority Owners</h4>
+                    <p className="text-sm text-gray-600">
+                      Ensure each priority has a clear owner who is accountable for its completion.
+                    </p>
+                  </div>
+                  <div className="bg-gray-50 p-4 rounded-lg">
+                    <h4 className="font-medium mb-2">2. Key Dates</h4>
+                    <p className="text-sm text-gray-600">
+                      Review any critical milestones or deadlines for the quarter.
+                    </p>
+                  </div>
+                  <div className="bg-gray-50 p-4 rounded-lg">
+                    <h4 className="font-medium mb-2">3. Communication Plan</h4>
+                    <p className="text-sm text-gray-600">
+                      How will priorities and decisions be communicated to the broader team?
+                    </p>
+                  </div>
+                  <div className="bg-gray-50 p-4 rounded-lg">
+                    <h4 className="font-medium mb-2">4. Support Needed</h4>
+                    <p className="text-sm text-gray-600">
+                      What resources or support do priority owners need to be successful?
+                    </p>
+                  </div>
                 </div>
               </div>
-            </div>
-          </div>
+            </CardContent>
+          </Card>
         );
 
       case 'conclude':
         return (
-          <div className="space-y-6">
-            <div className="prose max-w-none">
-              <h3 className="text-lg font-semibold mb-4">Meeting Conclusion</h3>
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <CheckSquare className="h-5 w-5" />
+                Meeting Conclusion
+              </CardTitle>
+              <CardDescription>Wrap up and rate the meeting (10 minutes)</CardDescription>
+            </CardHeader>
+            <CardContent>
               <div className="space-y-4">
-                <div>
-                  <h4 className="font-medium mb-2">Quick Recap</h4>
-                  <ul className="space-y-1 text-gray-600">
-                    <li>• Reviewed last quarter's performance</li>
-                    <li>• Set new quarterly priorities</li>
-                    <li>• Identified key strategic issues</li>
-                    <li>• Aligned on next steps and responsibilities</li>
+                <div className="bg-green-50 p-4 rounded-lg">
+                  <h4 className="font-medium mb-2">Quick Recap:</h4>
+                  <ul className="list-disc list-inside text-sm space-y-1">
+                    <li>Reviewed last quarter's performance</li>
+                    <li>Set new quarterly priorities</li>
+                    <li>Identified key strategic issues</li>
+                    <li>Aligned on next steps and responsibilities</li>
                   </ul>
                 </div>
-                
-                <div>
-                  <h4 className="font-medium mb-2">Rate this Meeting</h4>
-                  <p className="text-sm text-gray-600 mb-3">
+                <div className="text-center py-8">
+                  <h4 className="font-medium mb-4">Rate this Meeting</h4>
+                  <p className="text-sm text-gray-600 mb-4">
                     On a scale of 1-10, how effective was this meeting?
                   </p>
-                  <div className="flex gap-2">
+                  <div className="flex justify-center gap-2">
                     {[...Array(10)].map((_, i) => (
                       <Button
                         key={i + 1}
@@ -673,17 +346,13 @@ const QuarterlyPlanningMeetingPage = () => {
                     ))}
                   </div>
                 </div>
-                
-                <Alert className="bg-green-50 border-green-200">
-                  <CheckCircle className="h-4 w-4 text-green-600" />
-                  <AlertDescription className="text-green-800">
-                    Great work! You've successfully completed your Quarterly Planning Meeting. 
-                    Remember to follow up on action items and communicate decisions to your team.
-                  </AlertDescription>
-                </Alert>
+                <div className="flex items-center justify-center gap-2 py-8">
+                  <CheckCircle className="h-8 w-8 text-green-600" />
+                  <span className="text-2xl font-semibold">Meeting Complete!</span>
+                </div>
               </div>
-            </div>
-          </div>
+            </CardContent>
+          </Card>
         );
 
       default:
@@ -692,194 +361,98 @@ const QuarterlyPlanningMeetingPage = () => {
   };
 
   return (
-    <div className="flex h-[calc(100vh-4rem)]">
-      {/* Sidebar */}
-      <div className="w-64 bg-gray-50 border-r flex flex-col">
-        <div className="p-4 border-b">
-          <h2 className="font-semibold text-lg">Quarterly Planning</h2>
-          <p className="text-sm text-gray-600 mt-1">
-            Total Duration: {agendaItems.reduce((sum, item) => sum + item.duration, 0)} minutes
-          </p>
-        </div>
-        
-        <nav className="flex-1 p-4">
-          <ul className="space-y-2">
-            {(() => {
-              console.log('QuarterlyPlanningMeetingPage: Rendering sidebar navigation');
-              console.log('QuarterlyPlanningMeetingPage: agendaItems for nav:', agendaItems);
-              console.log('QuarterlyPlanningMeetingPage: Is agendaItems array?', Array.isArray(agendaItems));
+    <div className="min-h-screen bg-gray-50">
+      <div className="flex">
+        {/* Sidebar */}
+        <div className="w-64 bg-white border-r border-gray-200 min-h-screen flex-shrink-0">
+          <div className="p-6">
+            <h1 className="text-2xl font-bold text-gray-900 mb-2">Quarterly Planning Meeting</h1>
+            <p className="text-gray-600 text-sm">2.5 hours total</p>
+          </div>
+          
+          <nav className="px-4 pb-6">
+            {agendaItems.map((item, index) => {
+              const Icon = item.icon;
+              const isActive = activeSection === item.id;
+              const isCompleted = agendaItems.findIndex(i => i.id === activeSection) > index;
               
-              if (!Array.isArray(agendaItems)) {
-                console.error('QuarterlyPlanningMeetingPage: agendaItems is not an array!', agendaItems);
-                return <li>Error: Agenda items not available</li>;
-              }
-              
-              return agendaItems.map((item) => {
-                const Icon = item.icon;
-                const isActive = activeSection === item.id;
-                const isCompleted = completedSections.includes(item.id);
-                
-                console.log(`QuarterlyPlanningMeetingPage: Rendering nav item ${item.id}, active: ${isActive}, completed: ${isCompleted}`);
-                
-                return (
-                <li key={item.id}>
-                  <button
-                    onClick={() => setActiveSection(item.id)}
-                    className={`w-full flex items-center justify-between px-3 py-2 rounded-lg text-sm transition-colors ${
-                      isActive
-                        ? 'bg-indigo-100 text-indigo-700'
-                        : isCompleted
-                        ? 'bg-green-50 text-green-700 hover:bg-green-100'
-                        : 'hover:bg-gray-100'
-                    }`}
-                  >
-                    <div className="flex items-center gap-3">
-                      {isCompleted && !isActive ? (
-                        <CheckCircle className="h-4 w-4" />
-                      ) : (
-                        <Icon className="h-4 w-4" />
-                      )}
-                      <span>{item.label}</span>
-                    </div>
-                    <span className="text-xs text-gray-500">{item.duration}m</span>
-                  </button>
-                </li>
+              return (
+                <button
+                  key={item.id}
+                  onClick={() => handleSectionChange(item.id)}
+                  className={`w-full text-left px-4 py-3 mb-2 rounded-lg transition-colors flex items-center justify-between group ${
+                    isActive 
+                      ? 'bg-indigo-50 text-indigo-700 border border-indigo-200' 
+                      : isCompleted
+                      ? 'bg-green-50 text-green-700 hover:bg-green-100'
+                      : 'hover:bg-gray-100 text-gray-700'
+                  }`}
+                >
+                  <div className="flex items-center gap-3">
+                    <Icon className={`h-5 w-5 ${isActive ? 'text-indigo-600' : isCompleted ? 'text-green-600' : 'text-gray-400'}`} />
+                    <span className="font-medium">{item.label}</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <span className="text-sm text-gray-500">{item.duration}m</span>
+                    {isActive && <ChevronRight className="h-4 w-4" />}
+                    {isCompleted && <CheckCircle className="h-4 w-4 text-green-600" />}
+                  </div>
+                </button>
               );
-              });
-            })()}
-          </ul>
-        </nav>
-        
-        <div className="p-4 border-t">
-          <Button 
-            variant="outline" 
-            className="w-full"
-            onClick={handleBack}
-          >
-            <ChevronLeft className="h-4 w-4 mr-2" />
-            Exit Meeting
-          </Button>
+            })}
+          </nav>
         </div>
-      </div>
 
-      {/* Main Content */}
-      <div className="flex-1 flex flex-col">
-        <div className="flex-1 overflow-y-auto p-6">
-          {error && (
-            <Alert className="mb-6 border-red-200 bg-red-50">
-              <AlertCircle className="h-4 w-4" />
-              <AlertDescription>{error}</AlertDescription>
-            </Alert>
-          )}
-          
-          {success && (
-            <Alert className="mb-6 border-green-200 bg-green-50">
-              <CheckCircle className="h-4 w-4" />
-              <AlertDescription>{success}</AlertDescription>
-            </Alert>
-          )}
-          
-          <Card>
-            <CardHeader>
-              <div className="flex items-center gap-2">
-                {(() => {
-                  const Icon = agendaItems.find(item => item.id === activeSection)?.icon;
-                  return Icon ? <Icon className="h-5 w-5" /> : null;
-                })()}
-                <CardTitle>
-                  {agendaItems.find(item => item.id === activeSection)?.label}
-                </CardTitle>
+        {/* Main Content */}
+        <div className="flex-1 p-6">
+          <div className="max-w-6xl mx-auto">
+            {error && (
+              <Alert className="mb-6 border-red-200 bg-red-50">
+                <AlertCircle className="h-4 w-4 text-red-600" />
+                <AlertDescription className="text-red-800">{error}</AlertDescription>
+              </Alert>
+            )}
+
+            {success && (
+              <Alert className="mb-6 border-green-200 bg-green-50">
+                <CheckCircle className="h-4 w-4 text-green-600" />
+                <AlertDescription className="text-green-800">{success}</AlertDescription>
+              </Alert>
+            )}
+
+            {renderContent()}
+
+            {/* Navigation buttons */}
+            {(getPreviousSection() || getNextSection()) && (
+              <div className="mt-6 flex justify-between">
+                <div>
+                  {getPreviousSection() && (
+                    <Button 
+                      onClick={() => handleSectionChange(getPreviousSection())}
+                      variant="outline"
+                      className="border-gray-300 hover:bg-gray-50"
+                    >
+                      <ChevronLeft className="mr-2 h-4 w-4" />
+                      Back: {agendaItems.find(item => item.id === getPreviousSection())?.label}
+                    </Button>
+                  )}
+                </div>
+                <div>
+                  {getNextSection() && (
+                    <Button 
+                      onClick={() => handleSectionChange(getNextSection())}
+                      className="bg-indigo-600 hover:bg-indigo-700"
+                    >
+                      Next: {agendaItems.find(item => item.id === getNextSection())?.label}
+                      <ChevronRight className="ml-2 h-4 w-4" />
+                    </Button>
+                  )}
+                </div>
               </div>
-              <CardDescription>
-                Duration: {agendaItems.find(item => item.id === activeSection)?.duration} minutes
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              {renderSectionContent()}
-            </CardContent>
-          </Card>
-        </div>
-        
-        {/* Navigation Footer */}
-        <div className="border-t p-4 bg-white">
-          <div className="flex justify-between items-center max-w-4xl mx-auto">
-            <Button
-              variant="outline"
-              onClick={handlePrevious}
-              disabled={isFirstSection}
-            >
-              <ChevronLeft className="h-4 w-4 mr-2" />
-              Previous
-            </Button>
-            
-            <div className="flex items-center gap-2">
-              {(() => {
-                console.log('QuarterlyPlanningMeetingPage: Rendering progress dots');
-                console.log('QuarterlyPlanningMeetingPage: agendaItems for dots:', agendaItems);
-                console.log('QuarterlyPlanningMeetingPage: currentSectionIndex:', currentSectionIndex);
-                
-                if (!Array.isArray(agendaItems)) {
-                  console.error('QuarterlyPlanningMeetingPage: agendaItems is not an array for dots!', agendaItems);
-                  return null;
-                }
-                
-                return agendaItems.map((_, index) => {
-                  const className = `h-2 w-2 rounded-full transition-colors ${
-                    index < currentSectionIndex
-                      ? 'bg-green-500'
-                      : index === currentSectionIndex
-                      ? 'bg-indigo-500'
-                      : 'bg-gray-300'
-                  }`;
-                  console.log(`QuarterlyPlanningMeetingPage: Dot ${index} className: ${className}`);
-                  
-                  return (
-                    <div
-                      key={index}
-                      className={className}
-                    />
-                  );
-                });
-              })()}
-            </div>
-            
-            <Button
-              onClick={handleNext}
-              disabled={isLastSection}
-            >
-              {isLastSection ? 'Complete' : 'Next'}
-              {!isLastSection && <ChevronRight className="h-4 w-4 ml-2" />}
-            </Button>
+            )}
           </div>
         </div>
       </div>
-
-      {/* Issue Dialog */}
-      <IssueDialog
-        open={showIssueDialog}
-        onOpenChange={setShowIssueDialog}
-        issue={editingIssue}
-        onSave={async (issueData) => {
-          try {
-            const orgId = localStorage.getItem('impersonatedOrgId') || user?.organizationId || user?.organization_id;
-            const effectiveTeamId = teamId || user?.teamId || '00000000-0000-0000-0000-000000000000';
-            
-            if (editingIssue) {
-              await issuesService.updateIssue(editingIssue.id, issueData);
-            } else {
-              await issuesService.createIssue(issueData);
-            }
-            
-            await fetchIssuesData();
-            setShowIssueDialog(false);
-            setEditingIssue(null);
-            setSuccess(editingIssue ? 'Issue updated successfully' : 'Issue created successfully');
-          } catch (error) {
-            console.error('Failed to save issue:', error);
-            setError('Failed to save issue');
-          }
-        }}
-      />
     </div>
   );
 };
