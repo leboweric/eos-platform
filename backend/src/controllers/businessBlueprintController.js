@@ -641,7 +641,7 @@ export const updateThreeYearPicture = async (req, res) => {
           await query(
             `INSERT INTO three_year_measurables (id, three_year_picture_id, name, target_value)
              VALUES ($1, $2, $3, $4)`,
-            [uuidv4(), pictureId, measurable.name, measurable.value || 0]
+            [uuidv4(), pictureId, measurable.name, measurable.value || '0']
           );
         }
       }
@@ -773,7 +773,7 @@ export const updateOneYearPlan = async (req, res) => {
           await query(
             `INSERT INTO one_year_measurables (id, one_year_plan_id, name, target_value)
              VALUES ($1, $2, $3, $4)`,
-            [uuidv4(), planId, measurable.name, measurable.value || 0]
+            [uuidv4(), planId, measurable.name, measurable.value || '0']
           );
         }
       }
