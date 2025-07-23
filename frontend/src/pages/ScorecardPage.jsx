@@ -144,6 +144,7 @@ const ScorecardPage = () => {
   };
 
   const handleEditMetric = (metric) => {
+    console.log('Editing metric:', metric);
     setEditingMetric(metric);
     setMetricForm({
       name: metric.name,
@@ -177,17 +178,25 @@ const ScorecardPage = () => {
       
       // Prepare the metric data with owner name for the backend
       const metricData = {
-        ...metricForm,
+        name: metricForm.name,
+        description: metricForm.description,
         goal: metricForm.goal ? Math.round(parseFloat(metricForm.goal)).toString() : metricForm.goal,
-        owner: metricForm.ownerName // Backend expects 'owner' field with the name
+        owner: metricForm.ownerName, // Backend expects 'owner' field with the name
+        type: metricForm.type,
+        valueType: metricForm.valueType,
+        comparisonOperator: metricForm.comparisonOperator
       };
+      
+      console.log('Saving metric with data:', metricData);
       
       if (editingMetric) {
         const updatedMetric = await scorecardService.updateMetric(orgId, teamId, editingMetric.id, metricData);
+        console.log('Updated metric received:', updatedMetric);
         setMetrics(prev => prev.map(m => m.id === updatedMetric.id ? {...updatedMetric, ownerId: metricForm.ownerId, ownerName: metricForm.ownerName} : m));
         setSuccess('Metric updated successfully');
       } else {
         const newMetric = await scorecardService.createMetric(orgId, teamId, metricData);
+        console.log('New metric received:', newMetric);
         setMetrics(prev => [...prev, {...newMetric, ownerId: metricForm.ownerId, ownerName: metricForm.ownerName}]);
         setSuccess('Metric added successfully');
       }
