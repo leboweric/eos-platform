@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Alert, AlertDescription } from '@/components/ui/alert';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Building2, Save, Loader2, Upload, X, Image } from 'lucide-react';
 import { organizationService } from '../services/organizationService';
 
@@ -19,7 +20,9 @@ const OrganizationSettings = () => {
     name: '',
     slug: '',
     created_at: '',
-    logo_updated_at: null
+    logo_updated_at: null,
+    revenue_metric_type: 'revenue',
+    revenue_metric_label: ''
   });
   const [logoPreview, setLogoPreview] = useState(null);
   const [selectedFile, setSelectedFile] = useState(null);
@@ -62,7 +65,9 @@ const OrganizationSettings = () => {
 
     try {
       const response = await organizationService.updateOrganization({
-        name: organizationData?.name || ''
+        name: organizationData?.name || '',
+        revenueMetricType: organizationData?.revenue_metric_type,
+        revenueMetricLabel: organizationData?.revenue_metric_label
       });
 
       setSuccess('Organization updated successfully');
@@ -219,6 +224,43 @@ const OrganizationSettings = () => {
                 This name will appear throughout the platform
               </p>
             </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="revenueMetric">Revenue Metric Type</Label>
+              <Select
+                value={organizationData?.revenue_metric_type || 'revenue'}
+                onValueChange={(value) => setOrganizationData({ ...organizationData, revenue_metric_type: value })}
+              >
+                <SelectTrigger id="revenueMetric">
+                  <SelectValue placeholder="Select revenue metric" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="revenue">Revenue</SelectItem>
+                  <SelectItem value="aum">Assets Under Management (AUM)</SelectItem>
+                  <SelectItem value="arr">Annual Recurring Revenue (ARR)</SelectItem>
+                  <SelectItem value="custom">Custom</SelectItem>
+                </SelectContent>
+              </Select>
+              <p className="text-sm text-gray-500">
+                Choose how revenue is displayed throughout the platform
+              </p>
+            </div>
+
+            {organizationData?.revenue_metric_type === 'custom' && (
+              <div className="space-y-2">
+                <Label htmlFor="customLabel">Custom Revenue Label</Label>
+                <Input
+                  id="customLabel"
+                  value={organizationData?.revenue_metric_label || ''}
+                  onChange={(e) => setOrganizationData({ ...organizationData, revenue_metric_label: e.target.value })}
+                  placeholder="e.g., GMV, Gross Sales, Total Billings"
+                  required={organizationData?.revenue_metric_type === 'custom'}
+                />
+                <p className="text-sm text-gray-500">
+                  This label will be used wherever revenue is displayed
+                </p>
+              </div>
+            )}
 
             <div className="space-y-2">
               <Label htmlFor="slug">Organization URL</Label>
