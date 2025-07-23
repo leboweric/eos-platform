@@ -25,7 +25,7 @@ export const getOrganization = async (req, res) => {
     const { organizationId } = req.user;
 
     const result = await query(
-      'SELECT id, name, slug, logo_url, logo_mime_type, logo_updated_at, created_at FROM organizations WHERE id = $1',
+      'SELECT id, name, slug, logo_url, logo_mime_type, logo_updated_at, created_at, revenue_metric_type, revenue_metric_label FROM organizations WHERE id = $1',
       [organizationId]
     );
 
@@ -47,7 +47,7 @@ export const getOrganization = async (req, res) => {
 export const updateOrganization = async (req, res) => {
   try {
     const { organizationId, role, is_consultant, id: userId } = req.user;
-    const { name } = req.body;
+    const { name, revenueMetricType, revenueMetricLabel } = req.body;
 
     // Check permissions: admin or consultant with access to this organization
     let hasPermission = role === 'admin';
@@ -69,10 +69,45 @@ export const updateOrganization = async (req, res) => {
       return res.status(400).json({ error: 'Organization name is required' });
     }
 
-    // Update organization name
+    // Validate revenue metric type
+    const validMetricTypes = ['revenue', 'aum', 'arr', 'custom'];
+    if (revenueMetricType && !validMetricTypes.includes(revenueMetricType)) {
+      return res.status(400).json({ error: 'Invalid revenue metric type' });
+    }
+
+    // If custom type, require a label
+    if (revenueMetricType === 'custom' && !revenueMetricLabel) {
+      return res.status(400).json({ error: 'Custom revenue metric label is required' });
+    }
+
+    // Build dynamic update query
+    let updateFields = ['name = $1'];
+    let values = [name.trim()];
+    let paramCount = 1;
+
+    if (revenueMetricType !== undefined) {
+      paramCount++;
+      updateFields.push(`revenue_metric_type = $${paramCount}`);
+      values.push(revenueMetricType);
+    }
+
+    if (revenueMetricLabel !== undefined) {
+      paramCount++;
+      updateFields.push(`revenue_metric_label = $${paramCount}`);
+      values.push(revenueMetricLabel);
+    }
+
+    // Add organization ID as last parameter
+    paramCount++;
+    values.push(organizationId);
+
+    // Update organization
     const result = await query(
-      'UPDATE organizations SET name = $1, updated_at = NOW() WHERE id = $2 RETURNING id, name, slug',
-      [name.trim(), organizationId]
+      `UPDATE organizations 
+       SET ${updateFields.join(', ')}, updated_at = NOW() 
+       WHERE id = $${paramCount} 
+       RETURNING id, name, slug, revenue_metric_type, revenue_metric_label`,
+      values
     );
 
     if (result.rows.length === 0) {
