@@ -94,7 +94,7 @@ export const getVTO = async (req, res) => {
 
     // Get current quarterly priorities
     const quarterlyPriorities = await query(
-      `SELECT p.id, p.title, p.status, p.owner_id,
+      `SELECT p.id, p.title, p.status, p.owner_id, p.is_company_priority,
               u.first_name || ' ' || u.last_name as owner_name,
               t.name as team_name
        FROM quarterly_priorities p
@@ -104,7 +104,7 @@ export const getVTO = async (req, res) => {
        AND p.quarter = $2 
        AND p.year = $3
        AND p.deleted_at IS NULL
-       ORDER BY p.created_at`,
+       ORDER BY p.is_company_priority DESC, p.created_at`,
       [orgId, currentQuarter, currentYear]
     );
 
@@ -501,7 +501,7 @@ export const getDepartmentBusinessBlueprint = async (req, res) => {
 
     // Get current quarterly priorities for department
     const quarterlyPriorities = await query(
-      `SELECT p.id, p.title, p.status, p.owner_id,
+      `SELECT p.id, p.title, p.status, p.owner_id, p.is_company_priority,
               u.first_name || ' ' || u.last_name as owner_name,
               t.name as team_name
        FROM quarterly_priorities p
@@ -511,7 +511,7 @@ export const getDepartmentBusinessBlueprint = async (req, res) => {
        AND p.quarter = $2 
        AND p.year = $3
        AND p.deleted_at IS NULL
-       ORDER BY p.created_at`,
+       ORDER BY p.is_company_priority DESC, p.created_at`,
       [departmentId, currentQuarter, currentYear]
     );
 
