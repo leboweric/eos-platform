@@ -427,6 +427,9 @@ const ScorecardPage = () => {
   };
 
   console.log('Render - loading:', loading, 'departmentLoading:', departmentLoading, 'metrics length:', metrics.length);
+  console.log('weekLabels:', weekLabels);
+  console.log('weekDates:', weekDates);
+  console.log('weeklyScores:', weeklyScores);
   
   if (loading || departmentLoading || !selectedDepartment) {
     return (
@@ -490,6 +493,11 @@ const ScorecardPage = () => {
           </Alert>
         )}
 
+        <div style={{border: '5px solid red', padding: '20px'}}>
+          <h2>DEBUG: Metrics count = {metrics.length}</h2>
+          <pre>{JSON.stringify(metrics.map(m => ({id: m.id, name: m.name})), null, 2)}</pre>
+        </div>
+        
         <Card className="shadow-lg border-0">
           <CardHeader className="bg-gradient-to-r from-indigo-500 to-blue-500 text-white">
             <CardTitle className="flex items-center text-xl">
@@ -542,6 +550,7 @@ const ScorecardPage = () => {
                   </tr>
                 </thead>
                 <tbody>
+                  {console.log('About to render metrics table. Metrics:', metrics)}
                   {metrics.length === 0 ? (
                     <tr>
                       <td colSpan={weekLabels.length + (showTotal ? 7 : 6)} className="text-center p-8 text-gray-500">
