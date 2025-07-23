@@ -61,11 +61,14 @@ const Dashboard = () => {
       
       console.log('Dashboard: Fetching data with:', { orgId, teamId, user });
       
+      // Get user's department ID for filtering
+      const userDepartmentId = user?.teamId || user?.team_id;
+      
       // Fetch all data in parallel
       const [prioritiesResponse, todosResponse, issuesResponse] = await Promise.all([
         quarterlyPrioritiesService.getCurrentPriorities(orgId, teamId),
-        todosService.getTodos(null, null, true), // status=null, assignedTo=null, includeCompleted=true
-        issuesService.getIssues()
+        todosService.getTodos(null, null, true, userDepartmentId), // Filter by user's department
+        issuesService.getIssues(null, false, userDepartmentId) // Filter by user's department
       ]);
       
       console.log('Dashboard: Priorities response:', prioritiesResponse);
@@ -307,7 +310,7 @@ const Dashboard = () => {
                         {todo.title}
                       </p>
                       <p className="text-sm text-gray-500">
-                        {todo.assignedTo?.name || 'You'} • Due {todo.dueDate ? new Date(todo.dueDate).toLocaleDateString() : 'No due date'}
+                        {todo.assignedTo?.name || todo.assigned_to?.first_name || 'You'} • Due {todo.due_date ? new Date(todo.due_date).toLocaleDateString() : 'No due date'}
                       </p>
                     </div>
                     <Badge variant={getPriorityColor(todo.priority)}>
