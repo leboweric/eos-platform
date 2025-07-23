@@ -46,18 +46,44 @@ const ScorecardTable = ({ metrics, weeklyScores, readOnly = false, onIssueCreate
   const weekDates = isRTL ? [...weekDatesOriginal].reverse() : weekDatesOriginal;
   const weekLabels = isRTL ? [...weekLabelsOriginal].reverse() : weekLabelsOriginal;
 
-  // Format goal based on value type
-  const formatGoal = (goal, valueType) => {
-    if (!goal) return '-';
-    switch (valueType) {
-      case 'percentage':
-        return `${goal}%`;
-      case 'currency':
-        return `$${parseFloat(goal).toLocaleString()}`;
-      case 'decimal':
-        return parseFloat(goal).toFixed(2);
+  // Format goal based on value type and comparison operator
+  const formatGoal = (goal, valueType, comparisonOperator) => {
+    if (!goal && goal !== 0) return 'No goal';
+    
+    let formattedValue;
+    if (valueType === 'number') {
+      formattedValue = Math.round(parseFloat(goal)).toString();
+    } else {
+      switch (valueType) {
+        case 'percentage':
+          formattedValue = `${Math.round(parseFloat(goal))}%`;
+          break;
+        case 'currency':
+          formattedValue = new Intl.NumberFormat('en-US', {
+            style: 'currency',
+            currency: 'USD',
+            minimumFractionDigits: 0,
+            maximumFractionDigits: 0
+          }).format(parseFloat(goal));
+          break;
+        case 'decimal':
+          formattedValue = parseFloat(goal).toFixed(2);
+          break;
+        default:
+          formattedValue = Math.round(parseFloat(goal)).toString();
+      }
+    }
+    
+    // Add comparison operator
+    switch (comparisonOperator) {
+      case 'greater_equal':
+        return `≥ ${formattedValue}`;
+      case 'less_equal':
+        return `≤ ${formattedValue}`;
+      case 'equal':
+        return `= ${formattedValue}`;
       default:
-        return goal;
+        return `≥ ${formattedValue}`; // Default to >= if not specified
     }
   };
 
@@ -109,7 +135,7 @@ const ScorecardTable = ({ metrics, weeklyScores, readOnly = false, onIssueCreate
       
       const issueData = {
         title: `${metric.name} - Off Track`,
-        description: `Metric "${metric.name}" is off track. Current: ${formatValue(actualValue, metric.value_type)}, Goal: ${formatGoal(metric.goal, metric.value_type)}`,
+        description: `Metric "${metric.name}" is off track. Current: ${formatValue(actualValue, metric.value_type)}, Goal: ${formatGoal(metric.goal, metric.value_type, metric.comparison_operator)}`,
         timeline: 'short_term',
         ownerId: metric.ownerId || metric.owner_id || null,
         department_id: departmentId
@@ -208,7 +234,7 @@ const ScorecardTable = ({ metrics, weeklyScores, readOnly = false, onIssueCreate
                       </Button>
                     </td>
                     <td className="p-2 text-center font-semibold text-indigo-600 text-sm">
-                      {formatGoal(metric.goal, metric.value_type)}
+                      {formatGoal(metric.goal, metric.value_type, metric.comparison_operator)}
                     </td>
                     
                     {/* Total and Average columns for RTL */}
