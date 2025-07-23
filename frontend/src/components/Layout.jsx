@@ -68,20 +68,24 @@ const Layout = ({ children }) => {
     { name: '2-Page Plan', href: '/business-blueprint', icon: Target, requiresLeadership: true },
     { name: 'Quarterly Priorities', href: '/quarterly-priorities', icon: CheckSquare },
     { name: 'Scorecard', href: '/scorecard', icon: BarChart3 },
-    { name: 'Meetings', href: '/meetings', icon: Calendar },
     { name: 'To-Dos', href: '/todos', icon: ClipboardList },
     { name: 'Issues', href: '/issues', icon: MessageSquare },
+    { name: 'Meetings', href: '/meetings', icon: Calendar },
     { name: 'Organizational Chart', href: '/organizational-chart', icon: GitBranch },
-    { name: 'Departments', href: '/departments', icon: Building2 },
-    { name: 'Team', href: '/users', icon: Users },
-    { name: 'Organization', href: '/organization-settings', icon: Settings },
-    { name: 'Billing', href: '/billing', icon: CreditCard },
+    { name: 'Departments', href: '/departments', icon: Building2, requiresAdmin: true },
+    { name: 'Team', href: '/users', icon: Users, requiresAdmin: true },
+    { name: 'Organization', href: '/organization-settings', icon: Settings, requiresAdmin: true },
+    { name: 'Billing', href: '/billing', icon: CreditCard, requiresAdmin: true },
   ];
 
   // Filter navigation based on user permissions
   const navigation = baseNavigation.filter(item => {
     // If item requires leadership and user is not on leadership team, hide it
     if (item.requiresLeadership && !isOnLeadershipTeam()) {
+      return false;
+    }
+    // If item requires admin and user is not admin, hide it
+    if (item.requiresAdmin && user?.role !== 'admin') {
       return false;
     }
     return true;
