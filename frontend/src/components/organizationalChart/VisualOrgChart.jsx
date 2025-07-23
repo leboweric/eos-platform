@@ -20,6 +20,20 @@ const VisualOrgChart = ({ positions, onEdit, onAddPosition, onEditPosition, canE
   // Create a flat map of all positions for quick lookup
   const positionMap = useRef({});
 
+  const getAllNodeIds = (nodes) => {
+    const ids = [];
+    const traverse = (nodeList) => {
+      nodeList.forEach(node => {
+        ids.push(node.id);
+        if (node.children && node.children.length > 0) {
+          traverse(node.children);
+        }
+      });
+    };
+    traverse(nodes);
+    return ids;
+  };
+
   // Expand all nodes by default
   useEffect(() => {
     // Expand all nodes that have children
@@ -37,20 +51,6 @@ const VisualOrgChart = ({ positions, onEdit, onAddPosition, onEditPosition, canE
     buildMap(positions);
     positionMap.current = newPositionMap;
   }, [positions]);
-
-  const getAllNodeIds = (nodes) => {
-    const ids = [];
-    const traverse = (nodeList) => {
-      nodeList.forEach(node => {
-        ids.push(node.id);
-        if (node.children && node.children.length > 0) {
-          traverse(node.children);
-        }
-      });
-    };
-    traverse(nodes);
-    return ids;
-  };
 
   const toggleNode = (nodeId) => {
     setExpandedNodes(prev => {
