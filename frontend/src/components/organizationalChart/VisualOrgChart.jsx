@@ -20,11 +20,11 @@ const VisualOrgChart = ({ positions, onEdit, onAddPosition, onEditPosition, canE
   // Create a flat map of all positions for quick lookup
   const positionMap = useRef({});
 
-  // Expand only top-level nodes by default
+  // Expand all nodes by default
   useEffect(() => {
-    // Only expand root nodes (nodes without parent_position_id)
-    const topLevelNodeIds = positions.map(node => node.id);
-    setExpandedNodes(new Set(topLevelNodeIds));
+    // Expand all nodes that have children
+    const allNodeIds = getAllNodeIds(positions);
+    setExpandedNodes(new Set(allNodeIds));
     
     // Build position map for quick lookup
     const newPositionMap = {};
