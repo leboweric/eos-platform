@@ -719,7 +719,7 @@ const BusinessBlueprintPage = () => {
                         <p className="text-lg font-semibold">
                           ${Number(blueprintData.threeYearPicture.revenue) < 1 
                             ? `${(Number(blueprintData.threeYearPicture.revenue) * 1000).toFixed(0)}K`
-                            : `${Number(blueprintData.threeYearPicture.revenue).toFixed(1)}M`}
+                            : `${Number(blueprintData.threeYearPicture.revenue).toFixed(0)}M`}
                         </p>
                       </div>
                     )}
@@ -817,7 +817,7 @@ const BusinessBlueprintPage = () => {
                       <p className="text-lg font-semibold">
                         ${Number(blueprintData.oneYearPlan.revenue) < 1 
                           ? `${(Number(blueprintData.oneYearPlan.revenue) * 1000).toFixed(0)}K`
-                          : `${Number(blueprintData.oneYearPlan.revenue).toFixed(1)}M`}
+                          : `${Number(blueprintData.oneYearPlan.revenue).toFixed(0)}M`}
                       </p>
                     </div>
                   )}
