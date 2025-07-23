@@ -80,6 +80,11 @@ const BusinessBlueprintPage = () => {
   // Dialog states for planning sections
   const [showThreeYearDialog, setShowThreeYearDialog] = useState(false);
   const [showOneYearDialog, setShowOneYearDialog] = useState(false);
+  
+  // State for editing Core Focus
+  const [editingCoreFocus, setEditingCoreFocus] = useState(false);
+  const [editingBHAG, setEditingBHAG] = useState(false);
+  const [editingMarketingStrategy, setEditingMarketingStrategy] = useState(false);
 
   useEffect(() => {
     fetchBusinessBlueprint();
@@ -440,71 +445,154 @@ const BusinessBlueprintPage = () => {
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
-              <div>
-                <Label>Select your Hedgehog type</Label>
-                <RadioGroup
-                  value={blueprintData.coreFocus.hedgehogType}
-                  onValueChange={(value) => setBlueprintData(prev => ({
-                    ...prev,
-                    coreFocus: { ...prev.coreFocus, hedgehogType: value }
-                  }))}
-                  className="mt-2"
-                >
-                  <div className="flex items-center space-x-2">
-                    <RadioGroupItem value="purpose" id="purpose" />
-                    <Label htmlFor="purpose">Purpose</Label>
+              {/* Display saved values or edit form */}
+              {(!editingCoreFocus && (blueprintData.coreFocus[blueprintData.coreFocus.hedgehogType] || blueprintData.coreFocus.niche)) ? (
+                <>
+                  {/* Purpose/Cause/Passion Display */}
+                  {blueprintData.coreFocus[blueprintData.coreFocus.hedgehogType] && (
+                    <div className="flex items-start justify-between p-4 bg-gray-50 border border-gray-200 rounded-lg hover:shadow-md transition-shadow">
+                      <div className="flex-1">
+                        <h4 className="font-semibold text-gray-900">
+                          {blueprintData.coreFocus.hedgehogType.charAt(0).toUpperCase() + blueprintData.coreFocus.hedgehogType.slice(1)}
+                        </h4>
+                        <p className="text-sm text-gray-600 mt-1">
+                          {blueprintData.coreFocus[blueprintData.coreFocus.hedgehogType]}
+                        </p>
+                      </div>
+                      <div className="flex space-x-2">
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => setEditingCoreFocus(true)}
+                        >
+                          <Edit className="h-4 w-4" />
+                        </Button>
+                      </div>
+                    </div>
+                  )}
+                  
+                  {/* Niche Display */}
+                  {blueprintData.coreFocus.niche && (
+                    <div className="flex items-start justify-between p-4 bg-gray-50 border border-gray-200 rounded-lg hover:shadow-md transition-shadow">
+                      <div className="flex-1">
+                        <h4 className="font-semibold text-gray-900">Niche</h4>
+                        <p className="text-sm text-gray-600 mt-1">
+                          {blueprintData.coreFocus.niche}
+                        </p>
+                      </div>
+                      <div className="flex space-x-2">
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => setEditingCoreFocus(true)}
+                        >
+                          <Edit className="h-4 w-4" />
+                        </Button>
+                      </div>
+                    </div>
+                  )}
+                  
+                  {/* Add button if not all fields are filled */}
+                  {(!blueprintData.coreFocus[blueprintData.coreFocus.hedgehogType] || !blueprintData.coreFocus.niche) && (
+                    <Button
+                      variant="outline"
+                      onClick={() => setEditingCoreFocus(true)}
+                      className="w-full"
+                    >
+                      <Plus className="mr-2 h-4 w-4" />
+                      {!blueprintData.coreFocus[blueprintData.coreFocus.hedgehogType] && !blueprintData.coreFocus.niche 
+                        ? 'Add Core Focus' 
+                        : 'Complete Core Focus'}
+                    </Button>
+                  )}
+                </>
+              ) : (
+                /* Edit Form */
+                <>
+                  <div>
+                    <Label>Select your Hedgehog type</Label>
+                    <RadioGroup
+                      value={blueprintData.coreFocus.hedgehogType}
+                      onValueChange={(value) => setBlueprintData(prev => ({
+                        ...prev,
+                        coreFocus: { ...prev.coreFocus, hedgehogType: value }
+                      }))}
+                      className="mt-2"
+                    >
+                      <div className="flex items-center space-x-2">
+                        <RadioGroupItem value="purpose" id="purpose" />
+                        <Label htmlFor="purpose">Purpose</Label>
+                      </div>
+                      <div className="flex items-center space-x-2">
+                        <RadioGroupItem value="cause" id="cause" />
+                        <Label htmlFor="cause">Cause</Label>
+                      </div>
+                      <div className="flex items-center space-x-2">
+                        <RadioGroupItem value="passion" id="passion" />
+                        <Label htmlFor="passion">Passion</Label>
+                      </div>
+                    </RadioGroup>
                   </div>
-                  <div className="flex items-center space-x-2">
-                    <RadioGroupItem value="cause" id="cause" />
-                    <Label htmlFor="cause">Cause</Label>
+
+                  <div>
+                    <Label htmlFor="hedgehog-description">
+                      {blueprintData.coreFocus.hedgehogType === 'purpose' ? 'Purpose' : 
+                       blueprintData.coreFocus.hedgehogType === 'cause' ? 'Cause' : 'Passion'}
+                    </Label>
+                    <Textarea
+                      id="hedgehog-description"
+                      value={blueprintData.coreFocus[blueprintData.coreFocus.hedgehogType]}
+                      onChange={(e) => setBlueprintData(prev => ({
+                        ...prev,
+                        coreFocus: { 
+                          ...prev.coreFocus, 
+                          [prev.coreFocus.hedgehogType]: e.target.value 
+                        }
+                      }))}
+                      placeholder={`Enter your ${blueprintData.coreFocus.hedgehogType}...`}
+                    />
                   </div>
-                  <div className="flex items-center space-x-2">
-                    <RadioGroupItem value="passion" id="passion" />
-                    <Label htmlFor="passion">Passion</Label>
+
+                  <div>
+                    <Label htmlFor="niche">Niche</Label>
+                    <Textarea
+                      id="niche"
+                      value={blueprintData.coreFocus.niche}
+                      onChange={(e) => setBlueprintData(prev => ({
+                        ...prev,
+                        coreFocus: { ...prev.coreFocus, niche: e.target.value }
+                      }))}
+                      placeholder="What is your niche?"
+                    />
                   </div>
-                </RadioGroup>
-              </div>
 
-              <div>
-                <Label htmlFor="hedgehog-description">
-                  {blueprintData.coreFocus.hedgehogType === 'purpose' ? 'Purpose' : 
-                   blueprintData.coreFocus.hedgehogType === 'cause' ? 'Cause' : 'Passion'}
-                </Label>
-                <Textarea
-                  id="hedgehog-description"
-                  value={blueprintData.coreFocus[blueprintData.coreFocus.hedgehogType]}
-                  onChange={(e) => setBlueprintData(prev => ({
-                    ...prev,
-                    coreFocus: { 
-                      ...prev.coreFocus, 
-                      [prev.coreFocus.hedgehogType]: e.target.value 
-                    }
-                  }))}
-                  placeholder={`Enter your ${blueprintData.coreFocus.hedgehogType}...`}
-                />
-              </div>
-
-              <div>
-                <Label htmlFor="niche">Niche</Label>
-                <Textarea
-                  id="niche"
-                  value={blueprintData.coreFocus.niche}
-                  onChange={(e) => setBlueprintData(prev => ({
-                    ...prev,
-                    coreFocus: { ...prev.coreFocus, niche: e.target.value }
-                  }))}
-                  placeholder="What is your niche?"
-                />
-              </div>
-
-              <Button onClick={handleSaveCoreFocus} disabled={saving} className="bg-indigo-600 hover:bg-indigo-700 text-white">
-                {saving ? (
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                ) : (
-                  <Save className="mr-2 h-4 w-4" />
-                )}
-                Save Hedgehog
-              </Button>
+                  <div className="flex space-x-2">
+                    <Button 
+                      onClick={async () => {
+                        await handleSaveCoreFocus();
+                        setEditingCoreFocus(false);
+                      }} 
+                      disabled={saving} 
+                      className="bg-indigo-600 hover:bg-indigo-700 text-white flex-1"
+                    >
+                      {saving ? (
+                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                      ) : (
+                        <Save className="mr-2 h-4 w-4" />
+                      )}
+                      Save Hedgehog
+                    </Button>
+                    {(blueprintData.coreFocus[blueprintData.coreFocus.hedgehogType] || blueprintData.coreFocus.niche) && (
+                      <Button
+                        variant="outline"
+                        onClick={() => setEditingCoreFocus(false)}
+                      >
+                        Cancel
+                      </Button>
+                    )}
+                  </div>
+                </>
+              )}
             </CardContent>
           </Card>
 
@@ -520,41 +608,122 @@ const BusinessBlueprintPage = () => {
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
-              <div>
-                <Label htmlFor="bhagYear">Target Year</Label>
-                <Input
-                  id="bhagYear"
-                  type="number"
-                  value={blueprintData.bhag.year}
-                  onChange={(e) => setBlueprintData(prev => ({
-                    ...prev,
-                    bhag: { ...prev.bhag, year: parseInt(e.target.value) }
-                  }))}
-                  min={new Date().getFullYear() + 1}
-                />
-              </div>
+              {/* Display saved values or edit form */}
+              {(!editingBHAG && (blueprintData.bhag.year || blueprintData.bhag.description)) ? (
+                <>
+                  {/* Year Display */}
+                  {blueprintData.bhag.year && (
+                    <div className="flex items-start justify-between p-4 bg-gray-50 border border-gray-200 rounded-lg hover:shadow-md transition-shadow">
+                      <div className="flex-1">
+                        <h4 className="font-semibold text-gray-900">Target Year</h4>
+                        <p className="text-sm text-gray-600 mt-1">
+                          {blueprintData.bhag.year}
+                        </p>
+                      </div>
+                      <div className="flex space-x-2">
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => setEditingBHAG(true)}
+                        >
+                          <Edit className="h-4 w-4" />
+                        </Button>
+                      </div>
+                    </div>
+                  )}
+                  
+                  {/* Description Display */}
+                  {blueprintData.bhag.description && (
+                    <div className="flex items-start justify-between p-4 bg-gray-50 border border-gray-200 rounded-lg hover:shadow-md transition-shadow">
+                      <div className="flex-1">
+                        <h4 className="font-semibold text-gray-900">BHAG Description</h4>
+                        <p className="text-sm text-gray-600 mt-1">
+                          {blueprintData.bhag.description}
+                        </p>
+                      </div>
+                      <div className="flex space-x-2">
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => setEditingBHAG(true)}
+                        >
+                          <Edit className="h-4 w-4" />
+                        </Button>
+                      </div>
+                    </div>
+                  )}
+                  
+                  {/* Add button if not all fields are filled */}
+                  {(!blueprintData.bhag.year || !blueprintData.bhag.description) && (
+                    <Button
+                      variant="outline"
+                      onClick={() => setEditingBHAG(true)}
+                      className="w-full"
+                    >
+                      <Plus className="mr-2 h-4 w-4" />
+                      {!blueprintData.bhag.year && !blueprintData.bhag.description 
+                        ? 'Add BHAG' 
+                        : 'Complete BHAG'}
+                    </Button>
+                  )}
+                </>
+              ) : (
+                /* Edit Form */
+                <>
+                  <div>
+                    <Label htmlFor="bhagYear">Target Year</Label>
+                    <Input
+                      id="bhagYear"
+                      type="number"
+                      value={blueprintData.bhag.year}
+                      onChange={(e) => setBlueprintData(prev => ({
+                        ...prev,
+                        bhag: { ...prev.bhag, year: parseInt(e.target.value) }
+                      }))}
+                      min={new Date().getFullYear() + 1}
+                    />
+                  </div>
 
-              <div>
-                <Label htmlFor="bhagDescription">BHAG Description</Label>
-                <Textarea
-                  id="bhagDescription"
-                  value={blueprintData.bhag.description}
-                  onChange={(e) => setBlueprintData(prev => ({
-                    ...prev,
-                    bhag: { ...prev.bhag, description: e.target.value }
-                  }))}
-                  placeholder="Describe your Big Hairy Audacious Goal..."
-                />
-              </div>
+                  <div>
+                    <Label htmlFor="bhagDescription">BHAG Description</Label>
+                    <Textarea
+                      id="bhagDescription"
+                      value={blueprintData.bhag.description}
+                      onChange={(e) => setBlueprintData(prev => ({
+                        ...prev,
+                        bhag: { ...prev.bhag, description: e.target.value }
+                      }))}
+                      placeholder="Describe your Big Hairy Audacious Goal..."
+                    />
+                  </div>
 
-              <Button onClick={handleSaveBHAG} disabled={saving} className="bg-indigo-600 hover:bg-indigo-700 text-white">
-                {saving ? (
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                ) : (
-                  <Save className="mr-2 h-4 w-4" />
-                )}
-                Save BHAG
-              </Button>
+                  <div className="flex space-x-2">
+                    <Button 
+                      onClick={async () => {
+                        await handleSaveBHAG();
+                        setEditingBHAG(false);
+                      }} 
+                      disabled={saving} 
+                      className="bg-indigo-600 hover:bg-indigo-700 text-white flex-1"
+                    >
+                      {saving ? (
+                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                      ) : (
+                        <Save className="mr-2 h-4 w-4" />
+                      )}
+                      Save BHAG
+                    </Button>
+                    {(blueprintData.bhag.year || blueprintData.bhag.description) && (
+                      <Button
+                        variant="outline"
+                        onClick={() => setEditingBHAG(false)}
+                      >
+                        Cancel
+                      </Button>
+                    )}
+                  </div>
+                </>
+              )}
             </CardContent>
           </Card>
 
