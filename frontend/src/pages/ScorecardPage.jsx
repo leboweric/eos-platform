@@ -102,17 +102,22 @@ const ScorecardPage = () => {
         throw new Error('No organization ID found');
       }
       
+      console.log('Fetching scorecard with:', { orgId, teamId, departmentId });
       const response = await scorecardService.getScorecard(orgId, teamId, departmentId);
+      console.log('Scorecard response:', response);
       
       if (response && response.data) {
+        console.log('Response has data wrapper:', response.data);
         setMetrics(response.data.metrics || []);
         setWeeklyScores(response.data.weeklyScores || {});
         setUsers(response.data.teamMembers || []);
       } else if (response) {
+        console.log('Response without data wrapper:', response);
         setMetrics(response.metrics || []);
         setWeeklyScores(response.weeklyScores || {});
         setUsers(response.teamMembers || []);
       }
+      console.log('Metrics set to:', metrics);
     } catch (error) {
       console.error('Failed to fetch scorecard:', error);
       setError('Failed to load scorecard data');
