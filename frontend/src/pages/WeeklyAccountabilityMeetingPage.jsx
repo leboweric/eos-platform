@@ -29,7 +29,7 @@ import ScorecardTable from '../components/scorecard/ScorecardTable';
 import PriorityCard from '../components/priorities/PriorityCard';
 import IssuesList from '../components/issues/IssuesList';
 import IssueDialog from '../components/issues/IssueDialog';
-import TodoCard from '../components/todos/TodoCard';
+import TodosList from '../components/todos/TodosList';
 import TodoDialog from '../components/todos/TodoDialog';
 import { scorecardService } from '../services/scorecardService';
 import { quarterlyPrioritiesService } from '../services/quarterlyPrioritiesService';
@@ -342,8 +342,8 @@ const WeeklyAccountabilityMeetingPage = () => {
   };
 
   const handleEditTodo = (todo) => {
-    // For now, we'll just show a message since we don't have a TodoDialog yet
-    setSuccess('Edit functionality coming soon');
+    setEditingTodo(todo);
+    setShowTodoDialog(true);
   };
 
   const handleDeleteTodo = async (todoId) => {
@@ -758,18 +758,13 @@ const WeeklyAccountabilityMeetingPage = () => {
                     <span className="font-semibold">Weekly Check-in:</span> Team members report "Done" or "Not Done" for each to-do. Incomplete items can be moved to Issues if needed. High-performing teams typically complete 90% of their weekly to-dos.
                   </p>
                 </div>
-                <div className="space-y-4">
-                  {todos.map(todo => (
-                    <TodoCard 
-                      key={todo.id} 
-                      todo={todo} 
-                      onEdit={handleEditTodo}
-                      onDelete={handleDeleteTodo}
-                      onUpdate={handleTodoUpdate}
-                      onAddToIssues={handleTodoToIssue}
-                    />
-                  ))}
-                </div>
+                <TodosList
+                  todos={todos}
+                  onEdit={handleEditTodo}
+                  onDelete={handleDeleteTodo}
+                  onUpdate={handleTodoUpdate}
+                  showCompleted={false}
+                />
               </>
             )}
           </div>
