@@ -117,7 +117,8 @@ const ScorecardPage = () => {
         setWeeklyScores(response.weeklyScores || {});
         setUsers(response.teamMembers || []);
       }
-      console.log('Metrics set to:', metrics);
+      console.log('State before update - metrics:', metrics.length);
+      console.log('About to set metrics to:', response.metrics || response.data?.metrics || []);
     } catch (error) {
       console.error('Failed to fetch scorecard:', error);
       setError('Failed to load scorecard data');
@@ -425,6 +426,8 @@ const ScorecardPage = () => {
     }
   };
 
+  console.log('Render - loading:', loading, 'departmentLoading:', departmentLoading, 'metrics length:', metrics.length);
+  
   if (loading || departmentLoading || !selectedDepartment) {
     return (
       <div className="flex items-center justify-center min-h-screen">
