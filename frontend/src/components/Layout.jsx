@@ -118,8 +118,22 @@ const Layout = ({ children }) => {
       `}>
         <div className="flex items-center justify-between h-16 px-6 border-b">
           <Link to="/dashboard" className="flex items-center space-x-2">
-            <Target className="h-8 w-8 text-primary" />
-            <span className="text-xl font-bold">Forty-2</span>
+            {logoUrl ? (
+              <img 
+                key={logoKey}
+                src={`${logoUrl}?t=${logoKey}`} 
+                alt={user?.organizationName} 
+                className="h-10 w-auto max-w-[150px] object-contain"
+                onError={(e) => {
+                  e.target.style.display = 'none';
+                  e.target.nextSibling.style.display = 'flex';
+                }}
+              />
+            ) : null}
+            <div className="flex items-center space-x-2" style={{ display: logoUrl ? 'none' : 'flex' }}>
+              <Target className="h-8 w-8 text-primary" />
+              <span className="text-xl font-bold">Forty-2</span>
+            </div>
           </Link>
           <button
             onClick={() => setSidebarOpen(false)}
@@ -154,20 +168,9 @@ const Layout = ({ children }) => {
           </div>
         </nav>
 
-        {/* Organization info with logo */}
+        {/* Organization info */}
         <div className="mt-auto p-4 border-t bg-gray-50">
           <div className="flex items-center space-x-3">
-            {logoUrl && (
-              <img 
-                key={logoKey}
-                src={`${logoUrl}?t=${logoKey}`} 
-                alt={user?.organizationName} 
-                className="h-12 w-12 object-contain rounded"
-                onError={(e) => {
-                  e.target.style.display = 'none';
-                }}
-              />
-            )}
             <div className="flex-1">
               <div className="text-xs text-gray-500">Organization</div>
               <div className="text-sm font-medium text-gray-900 truncate">
