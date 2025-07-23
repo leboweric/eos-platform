@@ -88,7 +88,13 @@ export const getTodos = async (req, res) => {
       data: {
         todos: todosResult.rows.map(todo => ({
           ...todo,
-          teamName: todo.team_name
+          teamName: todo.team_name,
+          assigned_to: todo.assignee_id ? {
+            id: todo.assignee_id,
+            first_name: todo.assignee_first_name,
+            last_name: todo.assignee_last_name,
+            email: todo.assignee_email
+          } : null
         })),
         teamMembers: teamMembersResult.rows
       }
@@ -146,9 +152,18 @@ export const createTodo = async (req, res) => {
       [todoId]
     );
 
+    const todo = todoResult.rows[0];
     res.status(201).json({
       success: true,
-      data: todoResult.rows[0]
+      data: {
+        ...todo,
+        assigned_to: todo.assignee_id ? {
+          id: todo.assignee_id,
+          first_name: todo.assignee_first_name,
+          last_name: todo.assignee_last_name,
+          email: todo.assignee_email
+        } : null
+      }
     });
   } catch (error) {
     console.error('Error creating todo:', error);
@@ -256,9 +271,18 @@ export const updateTodo = async (req, res) => {
       [todoId]
     );
 
+    const todo = todoResult.rows[0];
     res.json({
       success: true,
-      data: todoResult.rows[0]
+      data: {
+        ...todo,
+        assigned_to: todo.assignee_id ? {
+          id: todo.assignee_id,
+          first_name: todo.assignee_first_name,
+          last_name: todo.assignee_last_name,
+          email: todo.assignee_email
+        } : null
+      }
     });
   } catch (error) {
     console.error('Error updating todo:', error);
