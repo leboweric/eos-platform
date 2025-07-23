@@ -165,6 +165,7 @@ const ScorecardPage = () => {
       // Prepare the metric data with owner name for the backend
       const metricData = {
         ...metricForm,
+        goal: metricForm.goal ? Math.round(parseFloat(metricForm.goal)).toString() : metricForm.goal,
         owner: metricForm.ownerName // Backend expects 'owner' field with the name
       };
       
@@ -360,10 +361,12 @@ const ScorecardPage = () => {
       case 'currency':
         return new Intl.NumberFormat('en-US', {
           style: 'currency',
-          currency: 'USD'
+          currency: 'USD',
+          minimumFractionDigits: 0,
+          maximumFractionDigits: 0
         }).format(numValue);
       case 'percentage':
-        return `${numValue}%`;
+        return `${Math.round(numValue)}%`;
       default:
         return Math.round(numValue).toString();
     }
