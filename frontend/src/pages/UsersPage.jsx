@@ -64,7 +64,8 @@ const UsersPage = () => {
     firstName: '', 
     lastName: '', 
     role: 'member',
-    sendWelcomeEmail: true
+    sendWelcomeEmail: true,
+    teamId: ''
   });
   const [inviteLoading, setInviteLoading] = useState(false);
   const [createLoading, setCreateLoading] = useState(false);
@@ -74,6 +75,7 @@ const UsersPage = () => {
   const [temporaryPassword, setTemporaryPassword] = useState(null);
   const [organizations, setOrganizations] = useState([]);
   const [selectedOrgId, setSelectedOrgId] = useState(null);
+  const [departments, setDepartments] = useState([]);
 
   const isAdmin = user?.role === 'admin' || user?.isConsultant;
   const isConsultant = user?.isConsultant;
@@ -81,6 +83,7 @@ const UsersPage = () => {
   useEffect(() => {
     fetchUsers();
     fetchInvitations();
+    fetchDepartments();
     if (isConsultant) {
       fetchOrganizations();
     }
@@ -91,6 +94,7 @@ const UsersPage = () => {
     if (selectedOrgId) {
       fetchUsers();
       fetchInvitations();
+      fetchDepartments();
     }
   }, [selectedOrgId]);
 
@@ -110,6 +114,24 @@ const UsersPage = () => {
       }
     } catch (error) {
       console.error('Failed to fetch organizations:', error);
+    }
+  };
+
+  const fetchDepartments = async () => {
+    try {
+      const orgId = selectedOrgId || user?.organizationId || user?.organization_id;
+      const response = await fetch(`${API_URL}/organizations/${orgId}/teams`, {
+        headers: {
+          Authorization: `Bearer ${localStorage.getItem('accessToken')}`,
+        },
+      });
+      if (response.ok) {
+        const data = await response.json();
+        console.log('Departments loaded:', data.data);
+        setDepartments(data.data || []);
+      }
+    } catch (error) {
+      console.error('Failed to fetch departments:', error);
     }
   };
 
@@ -448,6 +470,25 @@ const UsersPage = () => {
                           </SelectContent>
                         </Select>
                       </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="createDepartment">Department</Label>
+                        <Select
+                          value={createForm.teamId}
+                          onValueChange={(value) => setCreateForm({ ...createForm, teamId: value })}
+                        >
+                          <SelectTrigger>
+                            <SelectValue placeholder="Select a department" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {departments.map((dept) => (
+                              <SelectItem key={dept.id} value={dept.id}>
+                                {dept.name}
+                                {dept.is_leadership_team && ' (Leadership)'}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
                       <div className="flex items-center space-x-2">
                         <input
                           type="checkbox"
@@ -651,6 +692,7 @@ const UsersPage = () => {
                   <TableRow>
                     <TableHead>Name</TableHead>
                     <TableHead>Email</TableHead>
+                    <TableHead>Department(s)</TableHead>
                     <TableHead>Role</TableHead>
                     <TableHead>Joined</TableHead>
                     {isAdmin && <TableHead className="text-right">Actions</TableHead>}
@@ -663,6 +705,9 @@ const UsersPage = () => {
                         {user.first_name} {user.last_name}
                       </TableCell>
                       <TableCell>{user.email}</TableCell>
+                      <TableCell>
+                        {user.departments || <span className="text-gray-400 italic">No department</span>}
+                      </TableCell>
                       <TableCell>
                         <Badge variant={user.role === 'admin' ? 'default' : 'secondary'}>
                           {user.role}

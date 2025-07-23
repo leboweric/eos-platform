@@ -23,10 +23,21 @@ export const getOrganizationUsers = async (req, res) => {
     });
     
     const result = await query(
-      `SELECT id, email, first_name, last_name, role, created_at, last_login_at
-       FROM users 
-       WHERE organization_id = $1
-       ORDER BY created_at DESC`,
+      `SELECT 
+        u.id, 
+        u.email, 
+        u.first_name, 
+        u.last_name, 
+        u.role, 
+        u.created_at, 
+        u.last_login_at,
+        STRING_AGG(t.name, ', ' ORDER BY t.name) as departments
+       FROM users u
+       LEFT JOIN team_members tm ON u.id = tm.user_id
+       LEFT JOIN teams t ON tm.team_id = t.id
+       WHERE u.organization_id = $1
+       GROUP BY u.id, u.email, u.first_name, u.last_name, u.role, u.created_at, u.last_login_at
+       ORDER BY u.created_at DESC`,
       [organizationId]
     );
 
@@ -43,7 +54,7 @@ export const getOrganizationUsers = async (req, res) => {
 // Create user directly (for consultants)
 export const createUser = async (req, res) => {
   try {
-    const { email, firstName, lastName, role = 'member', sendWelcomeEmail = true } = req.body;
+    const { email, firstName, lastName, role = 'member', sendWelcomeEmail = true, teamId } = req.body;
     const organizationId = req.user.organizationId || req.user.organization_id;
     const createdBy = req.user.id;
 
@@ -76,6 +87,15 @@ export const createUser = async (req, res) => {
     );
 
     const newUser = userResult.rows[0];
+
+    // Add user to team if teamId provided
+    if (teamId) {
+      await query(
+        `INSERT INTO team_members (id, team_id, user_id, role)
+         VALUES ($1, $2, $3, $4)`,
+        [uuidv4(), teamId, userId, 'member']
+      );
+    }
 
     // Get organization details for email
     const orgResult = await query(
