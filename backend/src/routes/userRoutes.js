@@ -11,7 +11,8 @@ import {
   getPendingInvitations,
   cancelInvitation,
   getUserDepartments,
-  changePassword
+  changePassword,
+  updateUser
 } from '../controllers/userController.js';
 import {
   getUserSkills,
@@ -41,6 +42,15 @@ router.post('/create', createUser);
 
 // Cancel invitation (admin only)
 router.delete('/invitations/:invitationId', cancelInvitation);
+
+// Update user information (admin only)
+router.put('/:userId', [
+  param('userId').isUUID().withMessage('Invalid user ID'),
+  body('firstName').notEmpty().withMessage('First name is required'),
+  body('lastName').notEmpty().withMessage('Last name is required'),
+  body('role').isIn(['admin', 'member']).withMessage('Invalid role'),
+  body('teamId').optional({ nullable: true }).isUUID().withMessage('Invalid team ID')
+], validateRequest, updateUser);
 
 // Remove user from organization (admin only)
 router.delete('/:userId', removeUser);

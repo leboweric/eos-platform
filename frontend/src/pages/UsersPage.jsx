@@ -46,6 +46,7 @@ import {
   X,
   Loader2,
   Users,
+  Edit,
 } from 'lucide-react';
 import { format } from 'date-fns';
 
@@ -58,6 +59,8 @@ const UsersPage = () => {
   const [loading, setLoading] = useState(true);
   const [inviteDialogOpen, setInviteDialogOpen] = useState(false);
   const [createDialogOpen, setCreateDialogOpen] = useState(false);
+  const [editDialogOpen, setEditDialogOpen] = useState(false);
+  const [editingUser, setEditingUser] = useState(null);
   const [inviteForm, setInviteForm] = useState({ email: '', role: 'member' });
   const [createForm, setCreateForm] = useState({ 
     email: '', 
@@ -67,8 +70,15 @@ const UsersPage = () => {
     sendWelcomeEmail: true,
     teamId: ''
   });
+  const [editForm, setEditForm] = useState({
+    firstName: '',
+    lastName: '',
+    role: 'member',
+    teamId: ''
+  });
   const [inviteLoading, setInviteLoading] = useState(false);
   const [createLoading, setCreateLoading] = useState(false);
+  const [editLoading, setEditLoading] = useState(false);
   const [error, setError] = useState(null);
   const [successMessage, setSuccessMessage] = useState(null);
   const [copiedLink, setCopiedLink] = useState(false);
@@ -283,6 +293,54 @@ const UsersPage = () => {
       setError(error.message);
     } finally {
       setCreateLoading(false);
+    }
+  };
+
+  const handleEditUser = (user) => {
+    setEditingUser(user);
+    setEditForm({
+      firstName: user.first_name,
+      lastName: user.last_name,
+      role: user.role,
+      teamId: user.team_id || ''
+    });
+    setEditDialogOpen(true);
+  };
+
+  const handleUpdateUser = async (e) => {
+    e.preventDefault();
+    setEditLoading(true);
+    setError(null);
+
+    try {
+      const orgId = selectedOrgId || user?.organizationId;
+      const response = await fetch(`${API_URL}/organizations/${orgId}/users/${editingUser.id}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${localStorage.getItem('accessToken')}`,
+        },
+        body: JSON.stringify({
+          firstName: editForm.firstName,
+          lastName: editForm.lastName,
+          role: editForm.role,
+          teamId: editForm.teamId || null,
+        }),
+      });
+
+      const data = await response.json();
+
+      if (response.ok) {
+        setSuccessMessage('User updated successfully');
+        setEditDialogOpen(false);
+        fetchUsers();
+      } else {
+        setError(data.error || 'Failed to update user');
+      }
+    } catch (error) {
+      setError('Failed to update user. Please try again.');
+    } finally {
+      setEditLoading(false);
     }
   };
 
@@ -627,6 +685,98 @@ const UsersPage = () => {
         )}
       </div>
 
+      {/* Edit User Dialog */}
+      <Dialog open={editDialogOpen} onOpenChange={setEditDialogOpen}>
+        <DialogContent>
+          <form onSubmit={handleUpdateUser}>
+            <DialogHeader>
+              <DialogTitle>Edit User</DialogTitle>
+              <DialogDescription>
+                Update user information and department assignment
+              </DialogDescription>
+            </DialogHeader>
+            <div className="space-y-4 py-4">
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="editFirstName">First Name</Label>
+                  <Input
+                    id="editFirstName"
+                    value={editForm.firstName}
+                    onChange={(e) => setEditForm({ ...editForm, firstName: e.target.value })}
+                    required
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="editLastName">Last Name</Label>
+                  <Input
+                    id="editLastName"
+                    value={editForm.lastName}
+                    onChange={(e) => setEditForm({ ...editForm, lastName: e.target.value })}
+                    required
+                  />
+                </div>
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="editRole">Role</Label>
+                <Select
+                  value={editForm.role}
+                  onValueChange={(value) => setEditForm({ ...editForm, role: value })}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select a role" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="member">Member</SelectItem>
+                    <SelectItem value="admin">Administrator</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="editDepartment">Department</Label>
+                <Select
+                  value={editForm.teamId}
+                  onValueChange={(value) => setEditForm({ ...editForm, teamId: value })}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select a department" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="">No Department</SelectItem>
+                    {departments.map((dept) => (
+                      <SelectItem key={dept.id} value={dept.id}>
+                        {dept.name}
+                        {dept.is_leadership_team && ' (Leadership)'}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              {error && (
+                <Alert variant="destructive">
+                  <AlertCircle className="h-4 w-4" />
+                  <AlertDescription>{error}</AlertDescription>
+                </Alert>
+              )}
+            </div>
+            <DialogFooter>
+              <Button type="button" variant="outline" onClick={() => setEditDialogOpen(false)}>
+                Cancel
+              </Button>
+              <Button type="submit" disabled={editLoading}>
+                {editLoading ? (
+                  <>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    Updating...
+                  </>
+                ) : (
+                  'Update User'
+                )}
+              </Button>
+            </DialogFooter>
+          </form>
+        </DialogContent>
+      </Dialog>
+
       {/* Cost Summary Card */}
       <Card>
         <CardHeader>
@@ -718,14 +868,23 @@ const UsersPage = () => {
                       </TableCell>
                       {isAdmin && (
                         <TableCell className="text-right">
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => handleRemoveUser(user.id, user.email)}
-                            disabled={user.id === user.id} // Prevent removing yourself
-                          >
-                            <Trash2 className="h-4 w-4" />
-                          </Button>
+                          <div className="flex justify-end gap-2">
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => handleEditUser(user)}
+                            >
+                              <Edit className="h-4 w-4" />
+                            </Button>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => handleRemoveUser(user.id, user.email)}
+                              disabled={user.id === user.id} // Prevent removing yourself
+                            >
+                              <Trash2 className="h-4 w-4" />
+                            </Button>
+                          </div>
                         </TableCell>
                       )}
                     </TableRow>

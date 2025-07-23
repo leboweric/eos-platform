@@ -411,6 +411,80 @@ export const cancelInvitation = async (req, res) => {
   }
 };
 
+// Update user information
+export const updateUser = async (req, res) => {
+  try {
+    const { userId } = req.params;
+    const { firstName, lastName, role, teamId } = req.body;
+    const organizationId = req.params.orgId || req.user.organizationId || req.user.organization_id;
+
+    // Check if user can update (must be admin or consultant)
+    if (req.user.role !== 'admin' && !req.user.is_consultant) {
+      return res.status(403).json({ error: 'Only administrators can update users' });
+    }
+
+    // Check if user exists in organization
+    const userResult = await query(
+      'SELECT id FROM users WHERE id = $1 AND organization_id = $2',
+      [userId, organizationId]
+    );
+
+    if (userResult.rows.length === 0) {
+      return res.status(404).json({ error: 'User not found in organization' });
+    }
+
+    // Update user information
+    await query(
+      `UPDATE users 
+       SET first_name = $1, last_name = $2, role = $3, updated_at = NOW()
+       WHERE id = $4 AND organization_id = $5`,
+      [firstName, lastName, role, userId, organizationId]
+    );
+
+    // Handle team assignment
+    if (teamId !== undefined) {
+      // First, remove all existing team memberships for this user
+      await query(
+        'DELETE FROM team_members WHERE user_id = $1',
+        [userId]
+      );
+
+      // Then add new team membership if teamId is provided
+      if (teamId) {
+        await query(
+          `INSERT INTO team_members (id, team_id, user_id, role)
+           VALUES ($1, $2, $3, $4)`,
+          [uuidv4(), teamId, userId, 'member']
+        );
+      }
+    }
+
+    // Fetch updated user information
+    const updatedUserResult = await query(
+      `SELECT 
+        u.id, 
+        u.email, 
+        u.first_name, 
+        u.last_name, 
+        u.role,
+        u.updated_at,
+        tm.team_id
+       FROM users u
+       LEFT JOIN team_members tm ON u.id = tm.user_id
+       WHERE u.id = $1`,
+      [userId]
+    );
+
+    res.json({
+      success: true,
+      data: updatedUserResult.rows[0]
+    });
+  } catch (error) {
+    console.error('Update user error:', error);
+    res.status(500).json({ error: 'Failed to update user' });
+  }
+};
+
 // Get user's available departments based on their permissions
 export const getUserDepartments = async (req, res) => {
   try {
