@@ -1297,8 +1297,8 @@ const QuarterlyPrioritiesPage = () => {
       </div>
       )}
 
-      {/* Predictions Card - Only show for current priorities */}
-      {!showArchived && (
+      {/* Predictions Card - Only show for current priorities and Leadership Team */}
+      {!showArchived && isOnLeadershipTeam() && (
         <Card>
         <CardHeader>
           <div className="flex items-center justify-between">
