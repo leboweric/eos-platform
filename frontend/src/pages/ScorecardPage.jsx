@@ -493,11 +493,6 @@ const ScorecardPage = () => {
           </Alert>
         )}
 
-        <div style={{border: '5px solid red', padding: '20px'}}>
-          <h2>DEBUG: Metrics count = {metrics.length}</h2>
-          <pre>{JSON.stringify(metrics.map(m => ({id: m.id, name: m.name})), null, 2)}</pre>
-        </div>
-        
         <Card className="shadow-lg border-0">
           <CardHeader className="bg-gradient-to-r from-indigo-500 to-blue-500 text-white">
             <CardTitle className="flex items-center text-xl">
