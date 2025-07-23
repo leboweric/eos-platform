@@ -62,7 +62,20 @@ const Dashboard = () => {
       console.log('Dashboard: Fetching data with:', { orgId, teamId, user });
       
       // Get user's department ID for filtering
-      const userDepartmentId = user?.teamId || user?.team_id;
+      // For users in multiple teams, prioritize non-leadership teams
+      let userDepartmentId = null;
+      if (user?.teams && user.teams.length > 0) {
+        // First try to find a non-leadership team
+        const nonLeadershipTeam = user.teams.find(team => !team.is_leadership_team);
+        if (nonLeadershipTeam) {
+          userDepartmentId = nonLeadershipTeam.id;
+        } else {
+          // If only on leadership team, use the first team
+          userDepartmentId = user.teams[0].id;
+        }
+      }
+      
+      console.log('Dashboard: User department ID:', userDepartmentId, 'User teams:', user?.teams);
       
       // Fetch all data in parallel
       const [prioritiesResponse, todosResponse, issuesResponse] = await Promise.all([
@@ -71,6 +84,7 @@ const Dashboard = () => {
         issuesService.getIssues(null, false, userDepartmentId) // Filter by user's department
       ]);
       
+      console.log('Dashboard: Issues response:', issuesResponse);
       console.log('Dashboard: Priorities response:', prioritiesResponse);
       
       // Get user's priorities for the "Your Priorities" section
