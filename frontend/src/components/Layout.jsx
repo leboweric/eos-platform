@@ -63,9 +63,9 @@ const Layout = ({ children }) => {
     setLogoKey(Date.now());
   }, [location.pathname]);
 
-  const navigation = [
+  const baseNavigation = [
     { name: 'Dashboard', href: '/dashboard', icon: Home },
-    { name: '2-Page Plan', href: '/business-blueprint', icon: Target },
+    { name: '2-Page Plan', href: '/business-blueprint', icon: Target, requiresLeadership: true },
     { name: 'Organizational Chart', href: '/organizational-chart', icon: GitBranch },
     { name: 'Quarterly Priorities', href: '/quarterly-priorities', icon: CheckSquare },
     { name: 'Scorecard', href: '/scorecard', icon: BarChart3 },
@@ -77,6 +77,15 @@ const Layout = ({ children }) => {
     { name: 'Organization', href: '/organization-settings', icon: Settings },
     { name: 'Billing', href: '/billing', icon: CreditCard },
   ];
+
+  // Filter navigation based on user permissions
+  const navigation = baseNavigation.filter(item => {
+    // If item requires leadership and user is not on leadership team, hide it
+    if (item.requiresLeadership && !isOnLeadershipTeam()) {
+      return false;
+    }
+    return true;
+  });
 
   // Add Consultant Dashboard if user is consultant and not impersonating
   if (user?.isConsultant && !isImpersonating) {

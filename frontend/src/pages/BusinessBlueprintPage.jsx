@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useAuthStore } from '../stores/authStore';
-import { Link } from 'react-router-dom';
+import { Link, Navigate } from 'react-router-dom';
 import { businessBlueprintService } from '../services/businessBlueprintService';
 import { organizationService } from '../services/organizationService';
 import { getRevenueLabel, getRevenueLabelWithSuffix } from '../utils/revenueUtils';
@@ -31,13 +31,18 @@ import {
 } from 'lucide-react';
 
 const BusinessBlueprintPage = () => {
-  const { user } = useAuthStore();
+  const { user, isOnLeadershipTeam } = useAuthStore();
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState(null);
   const [success, setSuccess] = useState(null);
   const [activeTab, setActiveTab] = useState('vision');
   const [organization, setOrganization] = useState(null);
+
+  // Check if user is on leadership team
+  if (!isOnLeadershipTeam()) {
+    return <Navigate to="/dashboard" replace />;
+  }
   
   // 2-Page Plan data
   const [blueprintData, setBlueprintData] = useState({
