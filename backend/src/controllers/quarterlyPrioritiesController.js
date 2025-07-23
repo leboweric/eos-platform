@@ -1004,6 +1004,7 @@ export const getCurrentPriorities = async (req, res) => {
       AND (
         -- Filter by specific department
         CASE
+          WHEN $2::uuid = '47d53797-be5f-49c2-883a-326a401a17c1'::uuid THEN true  -- Leadership Team sees all
           WHEN $2::uuid IS NOT NULL THEN p.team_id = $2::uuid  -- Specific department requested
           ELSE true  -- No department filter
         END

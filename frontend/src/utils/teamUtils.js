@@ -1,6 +1,6 @@
 // Team utility functions
 
-export const LEADERSHIP_TEAM_ID = '00000000-0000-0000-0000-000000000000';
+export const LEADERSHIP_TEAM_ID = '47d53797-be5f-49c2-883a-326a401a17c1';
 
 /**
  * Get the team ID to use for API calls
