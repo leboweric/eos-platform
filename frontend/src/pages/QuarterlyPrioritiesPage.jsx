@@ -1,6 +1,8 @@
 import { useState, useEffect, Component } from 'react';
 import { useAuthStore } from '../stores/authStore';
 import { quarterlyPrioritiesService } from '../services/quarterlyPrioritiesService';
+import { organizationService } from '../services/organizationService';
+import { getRevenueLabel, getRevenueLabelWithSuffix } from '../utils/revenueUtils';
 import { useDepartment } from '../contexts/DepartmentContext';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -91,6 +93,7 @@ const QuarterlyPrioritiesPage = () => {
   const [showAddPriority, setShowAddPriority] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
+  const [organization, setOrganization] = useState(null);
   
   // State for priorities data with safe defaults
   const getDefaultPredictions = () => ({
@@ -136,6 +139,7 @@ const QuarterlyPrioritiesPage = () => {
     if (selectedDepartment) {
       fetchQuarterlyData();
     }
+    fetchOrganization();
   }, [selectedDepartment, showArchived]);
 
   const fetchQuarterlyData = async () => {
@@ -197,6 +201,15 @@ const QuarterlyPrioritiesPage = () => {
       setTeamMemberPriorities({});
     } finally {
       setLoading(false);
+    }
+  };
+
+  const fetchOrganization = async () => {
+    try {
+      const orgData = await organizationService.getOrganization();
+      setOrganization(orgData);
+    } catch (error) {
+      console.error('Failed to fetch organization:', error);
     }
   };
 
@@ -1299,7 +1312,7 @@ const QuarterlyPrioritiesPage = () => {
             </Button>
           </div>
           <CardDescription>
-            Revenue, profit and measurables forecasts for {getCurrentPeriodDisplay()}
+            {getRevenueLabel(organization)}, profit and measurables forecasts for {getCurrentPeriodDisplay()}
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -1307,7 +1320,7 @@ const QuarterlyPrioritiesPage = () => {
             <div>
               <div className="flex items-center space-x-2 mb-2">
                 <DollarSign className="h-5 w-5 text-green-600" />
-                <Label className="text-base font-semibold">Revenue</Label>
+                <Label className="text-base font-semibold">{getRevenueLabel(organization)}</Label>
               </div>
               {editingPredictions ? (
                 <div className="space-y-2">

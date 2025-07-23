@@ -7,8 +7,9 @@ import { Input } from '@/components/ui/input';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Loader2, Save, AlertCircle, Plus, Trash2 } from 'lucide-react';
+import { getRevenueLabelWithSuffix } from '@/utils/revenueUtils';
 
-const QuarterlyPrioritiesDialog = ({ open, onOpenChange, data, onSave }) => {
+const QuarterlyPrioritiesDialog = ({ open, onOpenChange, data, onSave, organization }) => {
   const [formData, setFormData] = useState({
     quarter: '',
     year: new Date().getFullYear(),
@@ -148,7 +149,7 @@ const QuarterlyPrioritiesDialog = ({ open, onOpenChange, data, onSave }) => {
 
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
-                <Label htmlFor="revenue">Quarterly Revenue Target</Label>
+                <Label htmlFor="revenue">Quarterly {getRevenueLabelWithSuffix(organization, 'Target')}</Label>
                 <Input
                   id="revenue"
                   value={formData.revenue}

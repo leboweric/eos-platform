@@ -2,6 +2,8 @@ import { useState, useEffect } from 'react';
 import { useAuthStore } from '../stores/authStore';
 import { Link } from 'react-router-dom';
 import { businessBlueprintService } from '../services/businessBlueprintService';
+import { organizationService } from '../services/organizationService';
+import { getRevenueLabel, getRevenueLabelWithSuffix } from '../utils/revenueUtils';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -35,6 +37,7 @@ const BusinessBlueprintPage = () => {
   const [error, setError] = useState(null);
   const [success, setSuccess] = useState(null);
   const [activeTab, setActiveTab] = useState('vision');
+  const [organization, setOrganization] = useState(null);
   
   // 2-Page Plan data
   const [blueprintData, setBlueprintData] = useState({
@@ -75,6 +78,7 @@ const BusinessBlueprintPage = () => {
 
   useEffect(() => {
     fetchBusinessBlueprint();
+    fetchOrganization();
   }, []);
 
   const fetchBusinessBlueprint = async () => {
@@ -133,6 +137,15 @@ const BusinessBlueprintPage = () => {
       setError('Failed to load business blueprint data');
     } finally {
       setLoading(false);
+    }
+  };
+
+  const fetchOrganization = async () => {
+    try {
+      const orgData = await organizationService.getOrganization();
+      setOrganization(orgData);
+    } catch (error) {
+      console.error('Failed to fetch organization:', error);
     }
   };
 
@@ -715,7 +728,7 @@ const BusinessBlueprintPage = () => {
                     )}
                     {blueprintData.threeYearPicture.revenue && (
                       <div>
-                        <p className="text-sm font-medium text-gray-500">Revenue Target</p>
+                        <p className="text-sm font-medium text-gray-500">{getRevenueLabelWithSuffix(organization, 'Target')}</p>
                         <p className="text-lg font-semibold">
                           ${Number(blueprintData.threeYearPicture.revenue) < 1 
                             ? `${(Number(blueprintData.threeYearPicture.revenue) * 1000).toFixed(0)}K`
@@ -813,7 +826,7 @@ const BusinessBlueprintPage = () => {
                   )}
                   {blueprintData.oneYearPlan.revenue && (
                     <div>
-                      <p className="text-sm font-medium text-gray-500">Revenue Target</p>
+                      <p className="text-sm font-medium text-gray-500">{getRevenueLabelWithSuffix(organization, 'Target')}</p>
                       <p className="text-lg font-semibold">
                         ${Number(blueprintData.oneYearPlan.revenue) < 1 
                           ? `${(Number(blueprintData.oneYearPlan.revenue) * 1000).toFixed(0)}K`
@@ -1014,6 +1027,7 @@ const BusinessBlueprintPage = () => {
         onOpenChange={setShowThreeYearDialog}
         data={blueprintData.threeYearPicture}
         onSave={handleSaveThreeYearPicture}
+        organization={organization}
       />
 
       {/* One Year Plan Dialog */}
@@ -1022,6 +1036,7 @@ const BusinessBlueprintPage = () => {
         onOpenChange={setShowOneYearDialog}
         data={blueprintData.oneYearPlan}
         onSave={handleSaveOneYearPlan}
+        organization={organization}
       />
 
       </div>

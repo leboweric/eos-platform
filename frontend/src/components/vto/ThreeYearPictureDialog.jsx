@@ -6,8 +6,9 @@ import { Textarea } from '@/components/ui/textarea';
 import { Input } from '@/components/ui/input';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Loader2, Save, AlertCircle, Plus, Trash2 } from 'lucide-react';
+import { getRevenueLabel, getRevenueLabelWithSuffix } from '../../utils/revenueUtils';
 
-const ThreeYearPictureDialog = ({ open, onOpenChange, data, onSave }) => {
+const ThreeYearPictureDialog = ({ open, onOpenChange, data, onSave, organization }) => {
   // Calculate default date without timezone conversion
   const getDefaultDate = () => {
     const date = new Date();
@@ -96,7 +97,7 @@ const ThreeYearPictureDialog = ({ open, onOpenChange, data, onSave }) => {
             )}
 
             <div className="space-y-2">
-              <Label htmlFor="revenue">Revenue Target (in millions)</Label>
+              <Label htmlFor="revenue">{getRevenueLabelWithSuffix(organization, 'Target')} (in millions)</Label>
               <div className="relative">
                 <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500">$</span>
                 <Input
