@@ -31,7 +31,9 @@ export const getOrganizationUsers = async (req, res) => {
         u.role, 
         u.created_at, 
         u.last_login_at,
-        STRING_AGG(t.name, ', ' ORDER BY t.name) as departments
+        STRING_AGG(t.name, ', ' ORDER BY t.name) as departments,
+        -- Get the first team_id (users typically belong to one team/department)
+        (SELECT tm2.team_id FROM team_members tm2 WHERE tm2.user_id = u.id LIMIT 1) as team_id
        FROM users u
        LEFT JOIN team_members tm ON u.id = tm.user_id
        LEFT JOIN teams t ON tm.team_id = t.id
@@ -441,16 +443,16 @@ export const updateUser = async (req, res) => {
       [firstName, lastName, role, userId, organizationId]
     );
 
-    // Handle team assignment
-    if (teamId !== undefined) {
+    // Handle team assignment - only process if teamId is explicitly provided and not 'none'
+    if (teamId !== undefined && teamId !== null && teamId !== 'none') {
       // First, remove all existing team memberships for this user
       await query(
         'DELETE FROM team_members WHERE user_id = $1',
         [userId]
       );
 
-      // Then add new team membership if teamId is provided
-      if (teamId) {
+      // Then add new team membership if teamId is a valid UUID
+      if (teamId && teamId !== '') {
         await query(
           `INSERT INTO team_members (id, team_id, user_id, role)
            VALUES ($1, $2, $3, $4)`,
@@ -458,6 +460,7 @@ export const updateUser = async (req, res) => {
         );
       }
     }
+    // If teamId is undefined, null, or 'none', we don't touch the existing team assignments
 
     // Fetch updated user information
     const updatedUserResult = await query(

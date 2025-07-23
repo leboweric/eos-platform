@@ -324,7 +324,8 @@ const UsersPage = () => {
           firstName: editForm.firstName,
           lastName: editForm.lastName,
           role: editForm.role,
-          teamId: editForm.teamId === 'none' ? null : editForm.teamId,
+          // Only send teamId if it's a valid selection (not 'none' or empty)
+          ...(editForm.teamId && editForm.teamId !== 'none' ? { teamId: editForm.teamId } : {}),
         }),
       });
 

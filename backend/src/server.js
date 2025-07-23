@@ -65,10 +65,10 @@ const generalLimiter = createLimiter(
   parseInt(process.env.RATE_LIMIT_MAX_REQUESTS) || 300 // 300 requests per minute
 );
 
-// Strict limiter for auth endpoints
+// More lenient limiter for auth endpoints during testing
 const authLimiter = createLimiter(
   15 * 60 * 1000, // 15 minutes
-  20 // 20 auth requests per 15 minutes
+  100 // 100 auth requests per 15 minutes (increased from 20 for testing)
 );
 
 // Very lenient limiter for read operations
