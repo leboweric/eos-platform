@@ -739,122 +739,261 @@ const BusinessBlueprintPage = () => {
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
-              <div>
-                <Label htmlFor="targetMarket">Target Market</Label>
-                <Textarea
-                  id="targetMarket"
-                  value={blueprintData.marketingStrategy.targetMarket}
-                  onChange={(e) => setBlueprintData(prev => ({
-                    ...prev,
-                    marketingStrategy: { ...prev.marketingStrategy, targetMarket: e.target.value }
-                  }))}
-                  placeholder="Describe your target market..."
-                />
-              </div>
-
-              <div>
-                <div className="flex items-center justify-between mb-2">
-                  <Label>Differentiators (3-5)</Label>
-                  {blueprintData.marketingStrategy.differentiators.length < 5 && (
+              {/* Display saved values or edit form */}
+              {(!editingMarketingStrategy && (
+                blueprintData.marketingStrategy.targetMarket || 
+                blueprintData.marketingStrategy.differentiators.some(d => d) ||
+                blueprintData.marketingStrategy.provenProcessExists ||
+                blueprintData.marketingStrategy.guaranteeExists
+              )) ? (
+                <>
+                  {/* Target Market Display */}
+                  {blueprintData.marketingStrategy.targetMarket && (
+                    <div className="flex items-start justify-between p-4 bg-gray-50 border border-gray-200 rounded-lg hover:shadow-md transition-shadow">
+                      <div className="flex-1">
+                        <h4 className="font-semibold text-gray-900">Target Market</h4>
+                        <p className="text-sm text-gray-600 mt-1">
+                          {blueprintData.marketingStrategy.targetMarket}
+                        </p>
+                      </div>
+                      <div className="flex space-x-2">
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => setEditingMarketingStrategy(true)}
+                        >
+                          <Edit className="h-4 w-4" />
+                        </Button>
+                      </div>
+                    </div>
+                  )}
+                  
+                  {/* Differentiators Display */}
+                  {blueprintData.marketingStrategy.differentiators.filter(d => d).length > 0 && (
+                    <div className="flex items-start justify-between p-4 bg-gray-50 border border-gray-200 rounded-lg hover:shadow-md transition-shadow">
+                      <div className="flex-1">
+                        <h4 className="font-semibold text-gray-900">Differentiators</h4>
+                        <ul className="text-sm text-gray-600 mt-1 space-y-1">
+                          {blueprintData.marketingStrategy.differentiators
+                            .filter(d => d)
+                            .map((diff, index) => (
+                              <li key={index} className="flex items-start">
+                                <span className="text-gray-400 mr-2">•</span>
+                                {diff}
+                              </li>
+                            ))}
+                        </ul>
+                      </div>
+                      <div className="flex space-x-2">
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => setEditingMarketingStrategy(true)}
+                        >
+                          <Edit className="h-4 w-4" />
+                        </Button>
+                      </div>
+                    </div>
+                  )}
+                  
+                  {/* Proven Process Display */}
+                  {blueprintData.marketingStrategy.provenProcessExists && (
+                    <div className="flex items-start justify-between p-4 bg-gray-50 border border-gray-200 rounded-lg hover:shadow-md transition-shadow">
+                      <div className="flex-1">
+                        <h4 className="font-semibold text-gray-900">Proven Process</h4>
+                        <p className="text-sm text-gray-600 mt-1">
+                          ✓ Yes, we have a proven process
+                        </p>
+                      </div>
+                      <div className="flex space-x-2">
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => setEditingMarketingStrategy(true)}
+                        >
+                          <Edit className="h-4 w-4" />
+                        </Button>
+                      </div>
+                    </div>
+                  )}
+                  
+                  {/* Guarantee Display */}
+                  {blueprintData.marketingStrategy.guaranteeExists && (
+                    <div className="flex items-start justify-between p-4 bg-gray-50 border border-gray-200 rounded-lg hover:shadow-md transition-shadow">
+                      <div className="flex-1">
+                        <h4 className="font-semibold text-gray-900">Guarantee</h4>
+                        <p className="text-sm text-gray-600 mt-1">
+                          {blueprintData.marketingStrategy.guaranteeDescription || '✓ Yes, we offer a guarantee'}
+                        </p>
+                      </div>
+                      <div className="flex space-x-2">
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => setEditingMarketingStrategy(true)}
+                        >
+                          <Edit className="h-4 w-4" />
+                        </Button>
+                      </div>
+                    </div>
+                  )}
+                  
+                  {/* Add button if nothing is filled */}
+                  {!blueprintData.marketingStrategy.targetMarket && 
+                   !blueprintData.marketingStrategy.differentiators.some(d => d) &&
+                   !blueprintData.marketingStrategy.provenProcessExists &&
+                   !blueprintData.marketingStrategy.guaranteeExists && (
                     <Button
-                      type="button"
-                      size="sm"
                       variant="outline"
-                      onClick={() => setBlueprintData(prev => ({
-                        ...prev,
-                        marketingStrategy: {
-                          ...prev.marketingStrategy,
-                          differentiators: [...prev.marketingStrategy.differentiators, '']
-                        }
-                      }))}
+                      onClick={() => setEditingMarketingStrategy(true)}
+                      className="w-full"
                     >
-                      <Plus className="h-4 w-4" />
+                      <Plus className="mr-2 h-4 w-4" />
+                      Add Marketing Strategy
                     </Button>
                   )}
-                </div>
-                <div className="space-y-2">
-                  {blueprintData.marketingStrategy.differentiators.map((diff, index) => (
-                    <div key={index} className="flex gap-2">
-                      <Input
-                        placeholder={`Differentiator ${index + 1}`}
-                        value={diff}
-                        onChange={(e) => setBlueprintData(prev => {
-                          const newDifferentiators = [...prev.marketingStrategy.differentiators];
-                          newDifferentiators[index] = e.target.value;
-                          return {
-                            ...prev,
-                            marketingStrategy: {
-                              ...prev.marketingStrategy,
-                              differentiators: newDifferentiators
-                            }
-                          };
-                        })}
-                      />
-                      {blueprintData.marketingStrategy.differentiators.length > 3 && (
+                </>
+              ) : (
+                /* Edit Form */
+                <>
+                  <div>
+                    <Label htmlFor="targetMarket">Target Market</Label>
+                    <Textarea
+                      id="targetMarket"
+                      value={blueprintData.marketingStrategy.targetMarket}
+                      onChange={(e) => setBlueprintData(prev => ({
+                        ...prev,
+                        marketingStrategy: { ...prev.marketingStrategy, targetMarket: e.target.value }
+                      }))}
+                      placeholder="Describe your target market..."
+                    />
+                  </div>
+
+                  <div>
+                    <div className="flex items-center justify-between mb-2">
+                      <Label>Differentiators (3-5)</Label>
+                      {blueprintData.marketingStrategy.differentiators.length < 5 && (
                         <Button
                           type="button"
                           size="sm"
-                          variant="ghost"
+                          variant="outline"
                           onClick={() => setBlueprintData(prev => ({
                             ...prev,
                             marketingStrategy: {
                               ...prev.marketingStrategy,
-                              differentiators: prev.marketingStrategy.differentiators.filter((_, i) => i !== index)
+                              differentiators: [...prev.marketingStrategy.differentiators, '']
                             }
                           }))}
                         >
-                          <Trash2 className="h-4 w-4" />
+                          <Plus className="h-4 w-4" />
                         </Button>
                       )}
                     </div>
-                  ))}
-                </div>
-              </div>
+                    <div className="space-y-2">
+                      {blueprintData.marketingStrategy.differentiators.map((diff, index) => (
+                        <div key={index} className="flex gap-2">
+                          <Input
+                            placeholder={`Differentiator ${index + 1}`}
+                            value={diff}
+                            onChange={(e) => setBlueprintData(prev => {
+                              const newDifferentiators = [...prev.marketingStrategy.differentiators];
+                              newDifferentiators[index] = e.target.value;
+                              return {
+                                ...prev,
+                                marketingStrategy: {
+                                  ...prev.marketingStrategy,
+                                  differentiators: newDifferentiators
+                                }
+                              };
+                            })}
+                          />
+                          {blueprintData.marketingStrategy.differentiators.length > 3 && (
+                            <Button
+                              type="button"
+                              size="sm"
+                              variant="ghost"
+                              onClick={() => setBlueprintData(prev => ({
+                                ...prev,
+                                marketingStrategy: {
+                                  ...prev.marketingStrategy,
+                                  differentiators: prev.marketingStrategy.differentiators.filter((_, i) => i !== index)
+                                }
+                              }))}
+                            >
+                              <Trash2 className="h-4 w-4" />
+                            </Button>
+                          )}
+                        </div>
+                      ))}
+                    </div>
+                  </div>
 
-              <div className="flex items-center justify-between">
-                <Label htmlFor="provenProcess">Proven Process</Label>
-                <Switch
-                  id="provenProcess"
-                  checked={blueprintData.marketingStrategy.provenProcessExists}
-                  onCheckedChange={(checked) => setBlueprintData(prev => ({
-                    ...prev,
-                    marketingStrategy: { ...prev.marketingStrategy, provenProcessExists: checked }
-                  }))}
-                />
-              </div>
+                  <div className="flex items-center justify-between">
+                    <Label htmlFor="provenProcess">Proven Process</Label>
+                    <Switch
+                      id="provenProcess"
+                      checked={blueprintData.marketingStrategy.provenProcessExists}
+                      onCheckedChange={(checked) => setBlueprintData(prev => ({
+                        ...prev,
+                        marketingStrategy: { ...prev.marketingStrategy, provenProcessExists: checked }
+                      }))}
+                    />
+                  </div>
 
-              <div className="space-y-2">
-                <div className="flex items-center justify-between">
-                  <Label htmlFor="guarantee">Guarantee</Label>
-                  <Switch
-                    id="guarantee"
-                    checked={blueprintData.marketingStrategy.guaranteeExists}
-                    onCheckedChange={(checked) => setBlueprintData(prev => ({
-                      ...prev,
-                      marketingStrategy: { ...prev.marketingStrategy, guaranteeExists: checked }
-                    }))}
-                  />
-                </div>
-                {blueprintData.marketingStrategy.guaranteeExists && (
-                  <Input
-                    placeholder="Describe your guarantee..."
-                    value={blueprintData.marketingStrategy.guaranteeDescription}
-                    onChange={(e) => setBlueprintData(prev => ({
-                      ...prev,
-                      marketingStrategy: { ...prev.marketingStrategy, guaranteeDescription: e.target.value }
-                    }))}
-                  />
-                )}
-              </div>
+                  <div className="space-y-2">
+                    <div className="flex items-center justify-between">
+                      <Label htmlFor="guarantee">Guarantee</Label>
+                      <Switch
+                        id="guarantee"
+                        checked={blueprintData.marketingStrategy.guaranteeExists}
+                        onCheckedChange={(checked) => setBlueprintData(prev => ({
+                          ...prev,
+                          marketingStrategy: { ...prev.marketingStrategy, guaranteeExists: checked }
+                        }))}
+                      />
+                    </div>
+                    {blueprintData.marketingStrategy.guaranteeExists && (
+                      <Input
+                        placeholder="Describe your guarantee..."
+                        value={blueprintData.marketingStrategy.guaranteeDescription}
+                        onChange={(e) => setBlueprintData(prev => ({
+                          ...prev,
+                          marketingStrategy: { ...prev.marketingStrategy, guaranteeDescription: e.target.value }
+                        }))}
+                      />
+                    )}
+                  </div>
 
-              <Button onClick={handleSaveMarketingStrategy} disabled={saving} className="bg-indigo-600 hover:bg-indigo-700 text-white">
-                {saving ? (
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                ) : (
-                  <Save className="mr-2 h-4 w-4" />
-                )}
-                Save Marketing Strategy
-              </Button>
+                  <div className="flex space-x-2">
+                    <Button 
+                      onClick={async () => {
+                        await handleSaveMarketingStrategy();
+                        setEditingMarketingStrategy(false);
+                      }} 
+                      disabled={saving} 
+                      className="bg-indigo-600 hover:bg-indigo-700 text-white flex-1"
+                    >
+                      {saving ? (
+                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                      ) : (
+                        <Save className="mr-2 h-4 w-4" />
+                      )}
+                      Save Marketing Strategy
+                    </Button>
+                    {(blueprintData.marketingStrategy.targetMarket || 
+                      blueprintData.marketingStrategy.differentiators.some(d => d) ||
+                      blueprintData.marketingStrategy.provenProcessExists ||
+                      blueprintData.marketingStrategy.guaranteeExists) && (
+                      <Button
+                        variant="outline"
+                        onClick={() => setEditingMarketingStrategy(false)}
+                      >
+                        Cancel
+                      </Button>
+                    )}
+                  </div>
+                </>
+              )}
             </CardContent>
           </Card>
           </div>
