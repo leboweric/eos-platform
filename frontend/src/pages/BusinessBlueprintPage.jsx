@@ -55,7 +55,8 @@ const BusinessBlueprintPage = () => {
       targetMarket: '',
       differentiators: ['', '', ''],
       provenProcessExists: false,
-      guaranteeExists: false
+      guaranteeExists: false,
+      guaranteeDescription: ''
     },
     threeYearPicture: null,
     oneYearPlan: null,
@@ -107,7 +108,8 @@ const BusinessBlueprintPage = () => {
             data.marketingStrategy?.differentiator_5 || ''
           ].filter((d, index) => index < 3 || d), // Keep first 3 always, then only non-empty ones
           provenProcessExists: data.marketingStrategy?.proven_process_exists || false,
-          guaranteeExists: data.marketingStrategy?.guarantee_exists || false
+          guaranteeExists: data.marketingStrategy?.guarantee_exists || false,
+          guaranteeDescription: data.marketingStrategy?.guarantee_description || ''
         },
         threeYearPicture: data.threeYearPicture ? {
           ...data.threeYearPicture,
@@ -240,7 +242,7 @@ const BusinessBlueprintPage = () => {
       setSaving(true);
       setError(null);
       // Convert array to individual fields for backend
-      const { targetMarket, differentiators, provenProcessExists, guaranteeExists } = blueprintData.marketingStrategy;
+      const { targetMarket, differentiators, provenProcessExists, guaranteeExists, guaranteeDescription } = blueprintData.marketingStrategy;
       const strategyData = {
         targetMarket,
         differentiator1: differentiators[0] || '',
@@ -250,7 +252,8 @@ const BusinessBlueprintPage = () => {
         differentiator4: differentiators[3] || '',
         differentiator5: differentiators[4] || '',
         provenProcessExists,
-        guaranteeExists
+        guaranteeExists,
+        guaranteeDescription
       };
       await businessBlueprintService.updateMarketingStrategy(strategyData);
       setSuccess('Marketing strategy updated successfully');
@@ -633,16 +636,28 @@ const BusinessBlueprintPage = () => {
                 />
               </div>
 
-              <div className="flex items-center justify-between">
-                <Label htmlFor="guarantee">Guarantee</Label>
-                <Switch
-                  id="guarantee"
-                  checked={blueprintData.marketingStrategy.guaranteeExists}
-                  onCheckedChange={(checked) => setBlueprintData(prev => ({
-                    ...prev,
-                    marketingStrategy: { ...prev.marketingStrategy, guaranteeExists: checked }
-                  }))}
-                />
+              <div className="space-y-2">
+                <div className="flex items-center justify-between">
+                  <Label htmlFor="guarantee">Guarantee</Label>
+                  <Switch
+                    id="guarantee"
+                    checked={blueprintData.marketingStrategy.guaranteeExists}
+                    onCheckedChange={(checked) => setBlueprintData(prev => ({
+                      ...prev,
+                      marketingStrategy: { ...prev.marketingStrategy, guaranteeExists: checked }
+                    }))}
+                  />
+                </div>
+                {blueprintData.marketingStrategy.guaranteeExists && (
+                  <Input
+                    placeholder="Describe your guarantee..."
+                    value={blueprintData.marketingStrategy.guaranteeDescription}
+                    onChange={(e) => setBlueprintData(prev => ({
+                      ...prev,
+                      marketingStrategy: { ...prev.marketingStrategy, guaranteeDescription: e.target.value }
+                    }))}
+                  />
+                )}
               </div>
 
               <Button onClick={handleSaveMarketingStrategy} disabled={saving} className="bg-indigo-600 hover:bg-indigo-700 text-white">

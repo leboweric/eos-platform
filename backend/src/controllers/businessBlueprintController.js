@@ -373,7 +373,8 @@ export const updateMarketingStrategy = async (req, res) => {
       differentiator4,
       differentiator5,
       provenProcessExists,
-      guaranteeExists
+      guaranteeExists,
+      guaranteeDescription
     } = req.body;
     const userId = req.user.id;
 
@@ -393,21 +394,21 @@ export const updateMarketingStrategy = async (req, res) => {
         `UPDATE marketing_strategies 
          SET target_market = $1, differentiator_1 = $2, differentiator_2 = $3,
              differentiator_3 = $4, differentiator_4 = $5, differentiator_5 = $6,
-             proven_process_exists = $7, guarantee_exists = $8,
+             proven_process_exists = $7, guarantee_exists = $8, guarantee_description = $9,
              updated_at = NOW()
-         WHERE vto_id = $9
+         WHERE vto_id = $10
          RETURNING *`,
-        [targetMarket, differentiator1, differentiator2, differentiator3, differentiator4, differentiator5, provenProcessExists, guaranteeExists, vtoId]
+        [targetMarket, differentiator1, differentiator2, differentiator3, differentiator4, differentiator5, provenProcessExists, guaranteeExists, guaranteeDescription, vtoId]
       );
     } else {
       // Create
       const newId = uuidv4();
       result = await query(
         `INSERT INTO marketing_strategies 
-         (id, vto_id, target_market, differentiator_1, differentiator_2, differentiator_3, differentiator_4, differentiator_5, proven_process_exists, guarantee_exists)
-         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
+         (id, vto_id, target_market, differentiator_1, differentiator_2, differentiator_3, differentiator_4, differentiator_5, proven_process_exists, guarantee_exists, guarantee_description)
+         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
          RETURNING *`,
-        [newId, vtoId, targetMarket, differentiator1, differentiator2, differentiator3, differentiator4, differentiator5, provenProcessExists, guaranteeExists]
+        [newId, vtoId, targetMarket, differentiator1, differentiator2, differentiator3, differentiator4, differentiator5, provenProcessExists, guaranteeExists, guaranteeDescription]
       );
     }
 
