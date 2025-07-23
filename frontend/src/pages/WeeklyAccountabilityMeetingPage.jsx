@@ -198,7 +198,9 @@ const WeeklyAccountabilityMeetingPage = () => {
   const fetchIssuesData = async () => {
     try {
       setLoading(true);
-      const response = await issuesService.getIssues();
+      // Use the teamId from URL params to filter issues by department
+      const effectiveTeamId = teamId || user?.teamId || '00000000-0000-0000-0000-000000000000';
+      const response = await issuesService.getIssues(null, false, effectiveTeamId);
       
       console.log('All issues from API:', response.data.issues);
       console.log('Issues breakdown:', response.data.issues.map(i => ({
@@ -290,10 +292,11 @@ const WeeklyAccountabilityMeetingPage = () => {
         await issuesService.updateIssue(editingIssue.id, issueData);
         setSuccess('Issue updated successfully');
       } else {
+        const effectiveTeamId = teamId || user?.teamId || '00000000-0000-0000-0000-000000000000';
         await issuesService.createIssue({
           ...issueData,
           timeline: 'short_term', // New issues in meetings are short-term
-          department_id: user?.teamId || '00000000-0000-0000-0000-000000000000'
+          department_id: effectiveTeamId
         });
         setSuccess('Issue created successfully');
       }
@@ -395,12 +398,13 @@ const WeeklyAccountabilityMeetingPage = () => {
         ? `${todo.assigned_to.first_name} ${todo.assigned_to.last_name}`
         : 'Unassigned';
 
+      const effectiveTeamId = teamId || user?.teamId || '00000000-0000-0000-0000-000000000000';
       const issueData = {
         title: todo.title,
         description: `This issue was created from an overdue to-do.\n\nOriginal due date: ${dueDate}\nAssigned to: ${assigneeName}\n\nDescription:\n${todo.description || 'No description provided'}`,
         timeline: 'short_term',
         ownerId: todo.assigned_to?.id || null,
-        department_id: user?.teamId || '00000000-0000-0000-0000-000000000000'
+        department_id: effectiveTeamId
       };
       
       await issuesService.createIssue(issueData);
@@ -670,7 +674,7 @@ Team Members Present: ${teamMembers.length}
                   readOnly={true}
                   isRTL={isRTL}
                   showTotal={showTotal}
-                  departmentId={user?.teamId || '00000000-0000-0000-0000-000000000000'}
+                  departmentId={teamId || user?.teamId || '00000000-0000-0000-0000-000000000000'}
                   onIssueCreated={(message) => {
                     setSuccess(message);
                     setTimeout(() => setSuccess(null), 3000);
