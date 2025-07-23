@@ -827,19 +827,6 @@ const BusinessBlueprintPage = () => {
                       <p className="text-lg font-semibold">{blueprintData.oneYearPlan.profit}%</p>
                     </div>
                   )}
-                  {blueprintData.oneYearPlan.goals && Array.isArray(blueprintData.oneYearPlan.goals) && blueprintData.oneYearPlan.goals.filter(goal => goal).length > 0 && (
-                    <div>
-                      <p className="text-sm font-medium text-gray-500 mb-2">Goals</p>
-                      <ol className="space-y-2">
-                        {blueprintData.oneYearPlan.goals.filter(goal => goal).map((goal, index) => (
-                          <li key={index} className="flex items-start">
-                            <span className="text-indigo-600 font-medium mr-2">{index + 1}.</span>
-                            <span className="text-gray-700">{goal}</span>
-                          </li>
-                        ))}
-                      </ol>
-                    </div>
-                  )}
                   {blueprintData.oneYearPlan.measurables && blueprintData.oneYearPlan.measurables.length > 0 && (
                     <div>
                       <p className="text-sm font-medium text-gray-500 mb-2">Key Measurables</p>
@@ -856,6 +843,19 @@ const BusinessBlueprintPage = () => {
                           </li>
                         ))}
                       </ul>
+                    </div>
+                  )}
+                  {blueprintData.oneYearPlan.goals && Array.isArray(blueprintData.oneYearPlan.goals) && blueprintData.oneYearPlan.goals.filter(goal => goal).length > 0 && (
+                    <div>
+                      <p className="text-sm font-medium text-gray-500 mb-2">Goals</p>
+                      <ol className="space-y-2">
+                        {blueprintData.oneYearPlan.goals.filter(goal => goal).map((goal, index) => (
+                          <li key={index} className="flex items-start">
+                            <span className="text-indigo-600 font-medium mr-2">{index + 1}.</span>
+                            <span className="text-gray-700">{goal}</span>
+                          </li>
+                        ))}
+                      </ol>
                     </div>
                   )}
                 </div>

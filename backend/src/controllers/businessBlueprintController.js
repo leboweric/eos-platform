@@ -713,6 +713,12 @@ export const updateOneYearPlan = async (req, res) => {
       });
     }
     
+    // Ensure the date is in YYYY-MM-DD format without timezone adjustments
+    // This prevents timezone conversion issues with DATE columns
+    if (targetDate.includes('T')) {
+      targetDate = targetDate.split('T')[0];
+    }
+    
     // Get or create VTO
     const vtoId = await getOrCreateVTO(orgId, teamId);
     
