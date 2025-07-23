@@ -1128,6 +1128,12 @@ export const getCurrentPriorities = async (req, res) => {
     });
     
     console.log(`Final counts - Company: ${companyPriorities.length}, Individual owners: ${Object.keys(teamMemberPriorities).length}`);
+    console.log('Company priorities:', companyPriorities.map(p => ({ id: p.id, title: p.title, is_company_priority: p.is_company_priority })));
+    console.log('Team member priorities:', Object.entries(teamMemberPriorities).map(([userId, data]) => ({ 
+      userId, 
+      email: data.member.email, 
+      count: data.priorities.length 
+    })));
     
     // Get predictions (latest/current predictions for the organization)
     let predictions = {};

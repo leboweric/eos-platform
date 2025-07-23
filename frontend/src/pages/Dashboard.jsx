@@ -59,12 +59,16 @@ const Dashboard = () => {
       const orgId = localStorage.getItem('impersonatedOrgId') || user?.organizationId || user?.organization_id;
       const teamId = getTeamId(user, 'leadership');
       
+      console.log('Dashboard: Fetching data with:', { orgId, teamId, user });
+      
       // Fetch all data in parallel
       const [prioritiesResponse, todosResponse, issuesResponse] = await Promise.all([
         quarterlyPrioritiesService.getCurrentPriorities(orgId, teamId),
         todosService.getTodos(null, null, true), // status=null, assignedTo=null, includeCompleted=true
         issuesService.getIssues()
       ]);
+      
+      console.log('Dashboard: Priorities response:', prioritiesResponse);
       
       // Process priorities - Company priorities for the progress card
       const companyPriorities = prioritiesResponse.companyPriorities || [];
