@@ -628,7 +628,8 @@ const QuarterlyPrioritiesPage = () => {
 
   // Calculate stats without "at-risk"
   const allPriorities = [
-    ...companyPriorities,
+    // Only include company priorities if user is on leadership team
+    ...(isOnLeadershipTeam() ? companyPriorities : []),
     ...Object.values(teamMemberPriorities).flatMap(memberData => memberData?.priorities || [])
   ];
   
@@ -1496,8 +1497,8 @@ const QuarterlyPrioritiesPage = () => {
                     <h2 className="text-2xl font-bold">{quarterKey}</h2>
                   </div>
                   
-                  {/* Company Priorities for this quarter */}
-                  {quarterData.companyPriorities.length > 0 && (
+                  {/* Company Priorities for this quarter - Only show for Leadership Team */}
+                  {isOnLeadershipTeam() && quarterData.companyPriorities.length > 0 && (
                     <div className="space-y-4">
                       <div className="flex items-center space-x-2">
                         <Building2 className="h-6 w-6 text-blue-600" />
@@ -1542,29 +1543,31 @@ const QuarterlyPrioritiesPage = () => {
         </div>
       ) : (
         <>
-          {/* Company Priorities */}
-          <div className="space-y-4">
-            <div 
-              className="flex items-center space-x-2 cursor-pointer hover:bg-gray-50 rounded-lg p-2 -m-2"
-              onClick={toggleCompanyPriorities}
-            >
-              {expandedSections.companyPriorities ? (
-                <ChevronDown className="h-5 w-5 text-gray-600" />
-              ) : (
-                <ChevronRight className="h-5 w-5 text-gray-600" />
-              )}
-              <Building2 className="h-6 w-6 text-blue-600" />
-              <h2 className="text-2xl font-bold">Company Priorities</h2>
-              <span className="text-sm text-gray-600 ml-2">({companyPriorities.length})</span>
-            </div>
-            {expandedSections.companyPriorities && (
-              <div className="space-y-4 ml-7">
-                {(companyPriorities || []).map(priority => (
-                  <PriorityCard key={priority.id} priority={priority} isCompany={true} />
-                ))}
+          {/* Company Priorities - Only show for Leadership Team */}
+          {isOnLeadershipTeam() && (
+            <div className="space-y-4">
+              <div 
+                className="flex items-center space-x-2 cursor-pointer hover:bg-gray-50 rounded-lg p-2 -m-2"
+                onClick={toggleCompanyPriorities}
+              >
+                {expandedSections.companyPriorities ? (
+                  <ChevronDown className="h-5 w-5 text-gray-600" />
+                ) : (
+                  <ChevronRight className="h-5 w-5 text-gray-600" />
+                )}
+                <Building2 className="h-6 w-6 text-blue-600" />
+                <h2 className="text-2xl font-bold">Company Priorities</h2>
+                <span className="text-sm text-gray-600 ml-2">({companyPriorities.length})</span>
               </div>
-            )}
-          </div>
+              {expandedSections.companyPriorities && (
+                <div className="space-y-4 ml-7">
+                  {(companyPriorities || []).map(priority => (
+                    <PriorityCard key={priority.id} priority={priority} isCompany={true} />
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
 
           {/* Team Member Priorities */}
           <div className="space-y-6">
