@@ -372,12 +372,27 @@ const ScorecardPage = () => {
     }
   };
 
-  const formatGoal = (goal, valueType) => {
+  const formatGoal = (goal, valueType, comparisonOperator) => {
     if (!goal && goal !== 0) return 'No goal';
+    
+    let formattedValue;
     if (valueType === 'number') {
-      return Math.round(parseFloat(goal)).toString();
+      formattedValue = Math.round(parseFloat(goal)).toString();
+    } else {
+      formattedValue = formatValue(goal, valueType);
     }
-    return formatValue(goal, valueType);
+    
+    // Add comparison operator
+    switch (comparisonOperator) {
+      case 'greater_equal':
+        return `≥ ${formattedValue}`;
+      case 'less_equal':
+        return `≤ ${formattedValue}`;
+      case 'equal':
+        return `= ${formattedValue}`;
+      default:
+        return `≥ ${formattedValue}`; // Default to >= if not specified
+    }
   };
 
   const isGoalMet = (score, goal, comparisonOperator) => {
@@ -534,7 +549,7 @@ const ScorecardPage = () => {
                             <BarChart3 className="h-4 w-4 text-blue-600" />
                           </Button>
                         </td>
-                        <td className="p-2 text-center font-semibold text-indigo-600 text-sm">{formatGoal(metric.goal, metric.value_type)}</td>
+                        <td className="p-2 text-center font-semibold text-indigo-600 text-sm">{formatGoal(metric.goal, metric.value_type, metric.comparison_operator)}</td>
                         
                         {/* Total and Average columns for RTL */}
                         {isRTL && (
