@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useAuthStore } from '../stores/authStore';
 import { todosService } from '../services/todosService';
+import { issuesService } from '../services/issuesService';
 import { useDepartment } from '../contexts/DepartmentContext';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -110,6 +111,39 @@ const TodosPage = () => {
     } catch (error) {
       console.error('Failed to delete todo:', error);
       setError('Failed to delete to-do');
+    }
+  };
+
+  const handleConvertToIssue = async (todo) => {
+    if (!window.confirm(`Convert "${todo.title}" to an issue? This will cancel the to-do.`)) {
+      return;
+    }
+
+    try {
+      // Format the due date for display
+      const dueDate = todo.due_date ? new Date(todo.due_date).toLocaleDateString() : 'Not set';
+      const assigneeName = todo.assigned_to 
+        ? `${todo.assigned_to.first_name} ${todo.assigned_to.last_name}`
+        : 'Unassigned';
+
+      const issueData = {
+        title: todo.title,
+        description: `This issue was created from an overdue to-do.\n\nOriginal due date: ${dueDate}\nAssigned to: ${assigneeName}\n\nDescription:\n${todo.description || 'No description provided'}`,
+        timeline: 'short_term',
+        ownerId: todo.assigned_to?.id || null,
+        department_id: selectedDepartment?.id
+      };
+      
+      await issuesService.createIssue(issueData);
+      
+      // Mark the todo as cancelled
+      await todosService.updateTodo(todo.id, { status: 'cancelled' });
+      
+      setSuccess(`To-do converted to issue successfully`);
+      await fetchTodos();
+    } catch (error) {
+      console.error('Failed to convert todo to issue:', error);
+      setError('Failed to convert to-do to issue');
     }
   };
 
@@ -224,6 +258,7 @@ const TodosPage = () => {
             onEdit={handleEditTodo}
             onDelete={handleDeleteTodo}
             onUpdate={fetchTodos}
+            onConvertToIssue={handleConvertToIssue}
             showCompleted={activeTab !== 'incomplete'}
           />
         )}

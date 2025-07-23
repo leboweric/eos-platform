@@ -26,6 +26,7 @@ const TodosList = ({
   onEdit, 
   onDelete,
   onUpdate,
+  onConvertToIssue,
   showCompleted = true 
 }) => {
   const handleToggleComplete = async (todo) => {
@@ -147,6 +148,15 @@ const TodosList = ({
                           <Edit className="mr-2 h-4 w-4" />
                           Edit
                         </DropdownMenuItem>
+                        {isOverdue(todo) && onConvertToIssue && (
+                          <DropdownMenuItem 
+                            onClick={() => onConvertToIssue(todo)}
+                            className="text-orange-600"
+                          >
+                            <AlertTriangle className="mr-2 h-4 w-4" />
+                            Convert to Issue
+                          </DropdownMenuItem>
+                        )}
                         <DropdownMenuItem 
                           onClick={() => onDelete(todo.id)}
                           className="text-red-600"

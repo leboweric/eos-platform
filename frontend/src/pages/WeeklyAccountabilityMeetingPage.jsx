@@ -360,24 +360,35 @@ const WeeklyAccountabilityMeetingPage = () => {
   };
 
   const handleTodoToIssue = async (todo) => {
+    if (!window.confirm(`Convert "${todo.title}" to an issue? This will cancel the to-do.`)) {
+      return;
+    }
+
     try {
+      // Format the due date for display
+      const dueDate = todo.due_date ? new Date(todo.due_date).toLocaleDateString() : 'Not set';
+      const assigneeName = todo.assigned_to 
+        ? `${todo.assigned_to.first_name} ${todo.assigned_to.last_name}`
+        : 'Unassigned';
+
       const issueData = {
         title: todo.title,
-        description: `Overdue To-Do: ${todo.description || 'No description'}`,
+        description: `This issue was created from an overdue to-do.\n\nOriginal due date: ${dueDate}\nAssigned to: ${assigneeName}\n\nDescription:\n${todo.description || 'No description provided'}`,
         timeline: 'short_term',
-        ownerId: todo.assignee_id || null,
+        ownerId: todo.assigned_to?.id || null,
         department_id: user?.teamId || '00000000-0000-0000-0000-000000000000'
       };
       
       await issuesService.createIssue(issueData);
-      setSuccess('Issue created from overdue To-Do');
       
-      // Optionally mark the todo as complete or cancelled
+      // Mark the todo as cancelled
       await todosService.updateTodo(todo.id, { status: 'cancelled' });
+      
+      setSuccess('To-do converted to issue successfully');
       await fetchTodosData();
     } catch (error) {
       console.error('Failed to create issue from todo:', error);
-      setError('Failed to create issue from To-Do');
+      setError('Failed to convert to-do to issue');
     }
   };
 
@@ -763,6 +774,7 @@ const WeeklyAccountabilityMeetingPage = () => {
                   onEdit={handleEditTodo}
                   onDelete={handleDeleteTodo}
                   onUpdate={handleTodoUpdate}
+                  onConvertToIssue={handleTodoToIssue}
                   showCompleted={false}
                 />
               </>
