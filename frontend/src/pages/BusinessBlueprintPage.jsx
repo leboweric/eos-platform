@@ -27,7 +27,11 @@ import {
   Users,
   TrendingUp,
   Calendar,
-  Edit
+  Edit,
+  DollarSign,
+  BarChart3,
+  Eye,
+  CheckCircle2
 } from 'lucide-react';
 
 const BusinessBlueprintPage = () => {
@@ -1022,77 +1026,114 @@ const BusinessBlueprintPage = () => {
               <CardContent className="space-y-4 pt-6">
                 {blueprintData.threeYearPicture ? (
                   <div className="space-y-4">
+                    {/* Target Date */}
                     {blueprintData.threeYearPicture.future_date && (
-                      <div>
-                        <p className="text-sm font-medium text-gray-500">Target Date</p>
-                        <p className="text-lg font-semibold">
-                          {(() => {
-                            // Parse date string manually to avoid timezone issues
-                            const [year, month, day] = blueprintData.threeYearPicture.future_date.split('T')[0].split('-');
-                            const date = new Date(year, month - 1, day);
-                            return date.toLocaleDateString('en-US', { 
-                              year: 'numeric', 
-                              month: 'long', 
-                              day: 'numeric' 
-                            });
-                          })()}
-                        </p>
+                      <div className="p-4 bg-gray-50 border border-gray-200 rounded-lg hover:shadow-md transition-shadow">
+                        <div className="flex items-start">
+                          <Calendar className="h-5 w-5 text-indigo-600 mr-3 mt-0.5" />
+                          <div className="flex-1">
+                            <h4 className="font-semibold text-gray-900">Target Date</h4>
+                            <p className="text-sm text-gray-600 mt-1">
+                              {(() => {
+                                // Parse date string manually to avoid timezone issues
+                                const [year, month, day] = blueprintData.threeYearPicture.future_date.split('T')[0].split('-');
+                                const date = new Date(year, month - 1, day);
+                                return date.toLocaleDateString('en-US', { 
+                                  year: 'numeric', 
+                                  month: 'long', 
+                                  day: 'numeric' 
+                                });
+                              })()}
+                            </p>
+                          </div>
+                        </div>
                       </div>
                     )}
-                    {blueprintData.threeYearPicture.revenue && (
-                      <div>
-                        <p className="text-sm font-medium text-gray-500">{getRevenueLabelWithSuffix(organization, 'Target')}</p>
-                        <p className="text-lg font-semibold">
-                          ${Number(blueprintData.threeYearPicture.revenue) < 1 
-                            ? `${(Number(blueprintData.threeYearPicture.revenue) * 1000).toFixed(0)}K`
-                            : `${Number(blueprintData.threeYearPicture.revenue).toFixed(0)}M`}
-                        </p>
+                    
+                    {/* Financial Goals */}
+                    {(blueprintData.threeYearPicture.revenue || blueprintData.threeYearPicture.profit) && (
+                      <div className="p-4 bg-gray-50 border border-gray-200 rounded-lg hover:shadow-md transition-shadow">
+                        <div className="flex items-start">
+                          <DollarSign className="h-5 w-5 text-indigo-600 mr-3 mt-0.5" />
+                          <div className="flex-1 space-y-3">
+                            <h4 className="font-semibold text-gray-900">Financial Goals</h4>
+                            {blueprintData.threeYearPicture.revenue && (
+                              <div>
+                                <p className="text-sm font-medium text-gray-700">
+                                  {getRevenueLabelWithSuffix(organization, 'Target')}
+                                </p>
+                                <p className="text-lg font-semibold text-gray-900">
+                                  ${Number(blueprintData.threeYearPicture.revenue) < 1 
+                                    ? `${(Number(blueprintData.threeYearPicture.revenue) * 1000).toFixed(0)}K`
+                                    : `${Number(blueprintData.threeYearPicture.revenue).toFixed(1)}M`}
+                                </p>
+                              </div>
+                            )}
+                            {blueprintData.threeYearPicture.profit && (
+                              <div>
+                                <p className="text-sm font-medium text-gray-700">Profit Target</p>
+                                <p className="text-lg font-semibold text-gray-900">
+                                  {blueprintData.threeYearPicture.profit}%
+                                </p>
+                              </div>
+                            )}
+                          </div>
+                        </div>
                       </div>
                     )}
-                    {blueprintData.threeYearPicture.profit && (
-                      <div>
-                        <p className="text-sm font-medium text-gray-500">Profit Target</p>
-                        <p className="text-lg font-semibold">{blueprintData.threeYearPicture.profit}%</p>
-                      </div>
-                    )}
+                    
+                    {/* Key Measurables */}
                     {blueprintData.threeYearPicture.measurables && blueprintData.threeYearPicture.measurables.length > 0 && (
-                      <div>
-                        <p className="text-sm font-medium text-gray-500 mb-2">Key Measurables</p>
-                        <ul className="space-y-2">
-                          {blueprintData.threeYearPicture.measurables.map((measurable, index) => (
-                            <li key={index} className="flex items-start">
-                              <span className="text-indigo-600 mr-2">•</span>
+                      <div className="space-y-2">
+                        <div className="flex items-center mb-2">
+                          <BarChart3 className="h-5 w-5 text-indigo-600 mr-2" />
+                          <h4 className="font-semibold text-gray-900">Key Measurables</h4>
+                        </div>
+                        {blueprintData.threeYearPicture.measurables.map((measurable, index) => (
+                          <div key={index} className="p-3 bg-gray-50 border border-gray-200 rounded-lg hover:shadow-md transition-shadow">
+                            <div className="flex items-start">
+                              <CheckCircle2 className="h-4 w-4 text-green-600 mr-2 mt-0.5 flex-shrink-0" />
                               <div className="flex-1">
-                                <p className="font-medium">{measurable.name}</p>
+                                <p className="font-medium text-gray-900">{measurable.name}</p>
                                 {measurable.target_value && (
-                                  <p className="text-sm text-gray-600">Target: {measurable.target_value}</p>
+                                  <p className="text-sm text-gray-600 mt-0.5">
+                                    Target: <span className="font-semibold">{measurable.target_value}</span>
+                                  </p>
                                 )}
                               </div>
-                            </li>
-                          ))}
-                        </ul>
+                            </div>
+                          </div>
+                        ))}
                       </div>
                     )}
-                    {blueprintData.threeYearPicture.lookLikeItems && blueprintData.threeYearPicture.lookLikeItems.length > 0 && (
-                      <div>
-                        <p className="text-sm font-medium text-gray-500 mb-2">What does it look like?</p>
-                        <ul className="space-y-1">
-                          {blueprintData.threeYearPicture.lookLikeItems.filter(item => item).map((item, index) => (
-                            <li key={index} className="flex items-start">
-                              <span className="text-indigo-600 mr-2">•</span>
-                              <span className="text-sm text-gray-700">{item}</span>
-                            </li>
-                          ))}
-                        </ul>
+                    
+                    {/* What Does It Look Like */}
+                    {blueprintData.threeYearPicture.lookLikeItems && blueprintData.threeYearPicture.lookLikeItems.filter(item => item).length > 0 && (
+                      <div className="space-y-2">
+                        <div className="flex items-center mb-2">
+                          <Eye className="h-5 w-5 text-indigo-600 mr-2" />
+                          <h4 className="font-semibold text-gray-900">What does it look like?</h4>
+                        </div>
+                        {blueprintData.threeYearPicture.lookLikeItems.filter(item => item).map((item, index) => (
+                          <div key={index} className="p-3 bg-gray-50 border border-gray-200 rounded-lg hover:shadow-md transition-shadow">
+                            <p className="text-sm text-gray-700">{item}</p>
+                          </div>
+                        ))}
                       </div>
                     )}
                   </div>
                 ) : (
-                  <div className="text-center py-8">
-                    <p className="text-gray-500 mb-4">No 3-Year Picture set yet</p>
+                  <div className="text-center py-12">
+                    <div className="mx-auto w-24 h-24 bg-gray-100 rounded-full flex items-center justify-center mb-4">
+                      <Eye className="h-12 w-12 text-gray-400" />
+                    </div>
+                    <h3 className="text-lg font-semibold text-gray-900 mb-2">Define Your 3-Year Vision</h3>
+                    <p className="text-gray-500 mb-6 max-w-sm mx-auto">
+                      Set clear targets and paint a picture of what success looks like in 3 years
+                    </p>
                     <Button 
-                      variant="outline"
                       onClick={() => setShowThreeYearDialog(true)}
+                      className="bg-indigo-600 hover:bg-indigo-700 text-white"
                     >
                       <Plus className="h-4 w-4 mr-2" />
                       Create 3-Year Picture
