@@ -371,6 +371,9 @@ const ScorecardPage = () => {
 
   const formatGoal = (goal, valueType) => {
     if (!goal && goal !== 0) return 'No goal';
+    if (valueType === 'number') {
+      return Math.round(parseFloat(goal)).toString();
+    }
     return formatValue(goal, valueType);
   };
 
@@ -571,7 +574,7 @@ const ScorecardPage = () => {
                                   <span className={`px-2 py-1 rounded ${
                                     avgGoalMet ? 'text-green-800' : 'text-red-800'
                                   }`}>
-                                    {formatValue(average, metric.value_type)}
+                                    {metric.value_type === 'number' ? Math.round(average) : formatValue(average, metric.value_type)}
                                   </span>
                                 );
                               })()}
@@ -630,7 +633,7 @@ const ScorecardPage = () => {
                                   <span className={`px-2 py-1 rounded ${
                                     avgGoalMet ? 'text-green-800' : 'text-red-800'
                                   }`}>
-                                    {formatValue(average, metric.value_type)}
+                                    {metric.value_type === 'number' ? Math.round(average) : formatValue(average, metric.value_type)}
                                   </span>
                                 );
                               })()}
