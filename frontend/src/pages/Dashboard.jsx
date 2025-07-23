@@ -313,25 +313,31 @@ const Dashboard = () => {
               {dashboardData.todos.length === 0 ? (
                 <p className="text-sm text-gray-500">No to-dos assigned to you</p>
               ) : (
-                dashboardData.todos.map((todo) => (
-                  <div key={todo.id} className="flex items-center space-x-4">
-                    <input
-                      type="checkbox"
-                      className="rounded border-gray-300 text-primary focus:ring-primary"
-                    />
-                    <div className="flex-1 min-w-0">
-                      <p className="text-sm font-medium text-gray-900">
-                        {todo.title}
-                      </p>
-                      <p className="text-sm text-gray-500">
-                        {todo.assignedTo?.name || todo.assigned_to?.first_name || 'You'} • Due {todo.due_date ? new Date(todo.due_date).toLocaleDateString() : 'No due date'}
-                      </p>
+                dashboardData.todos.map((todo) => {
+                  const isOverdue = todo.due_date && new Date(todo.due_date) < new Date(new Date().setHours(0, 0, 0, 0));
+                  return (
+                    <div key={todo.id} className="flex items-center space-x-4">
+                      <input
+                        type="checkbox"
+                        className="rounded border-gray-300 text-primary focus:ring-primary"
+                      />
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm font-medium text-gray-900">
+                          {todo.title}
+                        </p>
+                        <p className="text-sm text-gray-500">
+                          {todo.assignedTo?.name || todo.assigned_to?.first_name || 'You'} • 
+                          <span className={isOverdue ? 'text-red-600 font-medium' : ''}>
+                            Due {todo.due_date ? new Date(todo.due_date).toLocaleDateString() : 'No due date'}
+                          </span>
+                        </p>
+                      </div>
+                      <Badge variant={getPriorityColor(todo.priority)}>
+                        {todo.priority}
+                      </Badge>
                     </div>
-                    <Badge variant={getPriorityColor(todo.priority)}>
-                      {todo.priority}
-                    </Badge>
-                  </div>
-                ))
+                  );
+                })
               )}
             </div>
           </CardContent>
