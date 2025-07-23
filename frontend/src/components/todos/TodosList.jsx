@@ -93,17 +93,17 @@ const TodosList = ({
                   }`}
                 >
                   <div className="flex items-start gap-3">
-                    <div className={`p-1.5 rounded-full ${
+                    <div className={`p-1 rounded-full ${
                       todo.status === 'complete' 
-                        ? 'bg-green-50 border-green-300' 
+                        ? 'border-green-500' 
                         : isOverdue(todo)
-                        ? 'bg-red-100 border-red-300'
-                        : 'bg-indigo-50 border-indigo-300'
-                    } border`}>
+                        ? 'border-red-500'
+                        : 'border-indigo-500'
+                    } border-2`}>
                       <Checkbox
                         checked={todo.status === 'complete'}
                         onCheckedChange={() => handleToggleComplete(todo)}
-                        className="mt-0.5 rounded-full data-[state=checked]:bg-green-600 data-[state=checked]:border-green-600"
+                        className="mt-0 rounded-full data-[state=checked]:bg-green-600 data-[state=checked]:border-green-600"
                       />
                     </div>
                 
