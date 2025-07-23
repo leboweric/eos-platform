@@ -550,7 +550,6 @@ const ScorecardPage = () => {
                   </tr>
                 </thead>
                 <tbody>
-                  {console.log('About to render metrics table. Metrics:', metrics)}
                   {metrics.length === 0 ? (
                     <tr>
                       <td colSpan={weekLabels.length + (showTotal ? 7 : 6)} className="text-center p-8 text-gray-500">
@@ -558,7 +557,9 @@ const ScorecardPage = () => {
                       </td>
                     </tr>
                   ) : (
-                    metrics.map(metric => (
+                    metrics.map(metric => {
+                      console.log('Rendering metric:', metric.id, metric.name);
+                      return (
                       <tr key={metric.id} className="border-b hover:bg-gray-50">
                         <td className="p-2 text-center text-sm">{metric.ownerName || metric.owner}</td>
                         <td className="p-2 font-medium text-sm">{metric.name}</td>
@@ -725,7 +726,7 @@ const ScorecardPage = () => {
                               </div>
                         </td>
                       </tr>
-                    ))
+                    )})
                   )}
                 </tbody>
               </table>
