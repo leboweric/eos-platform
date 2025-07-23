@@ -5,6 +5,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Alert, AlertDescription } from '@/components/ui/alert';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { 
   Clock,
   Loader2,
@@ -78,6 +79,16 @@ const WeeklyAccountabilityMeetingPage = () => {
     return saved !== null ? saved === 'true' : true; // Default to true if not set
   });
 
+  // Meeting state
+  const [meetingStarted, setMeetingStarted] = useState(false);
+  const [meetingStartTime, setMeetingStartTime] = useState(null);
+  const [elapsedTime, setElapsedTime] = useState(0);
+  const [meetingRating, setMeetingRating] = useState(null);
+  
+  // Track initial state for summary
+  const [initialIssuesCount, setInitialIssuesCount] = useState(0);
+  const [initialTodosCount, setInitialTodosCount] = useState(0);
+
   const agendaItems = [
     { id: 'good-news', label: 'Good News', duration: 5, icon: Smile },
     { id: 'scorecard', label: 'Scorecard', duration: 5, icon: BarChart },
@@ -112,6 +123,19 @@ const WeeklyAccountabilityMeetingPage = () => {
       return () => clearTimeout(timer);
     }
   }, [success]);
+
+  // Timer effect for meeting duration
+  useEffect(() => {
+    let interval;
+    if (meetingStarted && meetingStartTime) {
+      interval = setInterval(() => {
+        const now = new Date();
+        const elapsed = Math.floor((now - meetingStartTime) / 1000); // in seconds
+        setElapsedTime(elapsed);
+      }, 1000);
+    }
+    return () => clearInterval(interval);
+  }, [meetingStarted, meetingStartTime]);
 
   const fetchScorecardData = async () => {
     try {
@@ -423,6 +447,103 @@ const WeeklyAccountabilityMeetingPage = () => {
       setError('Failed to save to-do');
       throw error; // Re-throw so TodoDialog can handle it
     }
+  };
+
+  const handleStartMeeting = () => {
+    if (window.confirm('Ready to start the meeting?')) {
+      setMeetingStarted(true);
+      setMeetingStartTime(new Date());
+      setActiveSection('good-news'); // Auto-advance to first agenda item
+      
+      // Capture initial counts for summary
+      setInitialIssuesCount(issues.filter(i => i.status === 'open').length);
+      setInitialTodosCount(todos.filter(t => t.status === 'incomplete').length);
+    }
+  };
+
+  const handleFinishMeeting = async () => {
+    if (!meetingRating) {
+      setError('Please rate the meeting before finishing');
+      return;
+    }
+
+    try {
+      // Calculate meeting metrics
+      const currentOpenIssues = issues.filter(i => i.status === 'open').length;
+      const currentIncompleteTodos = todos.filter(t => t.status === 'incomplete').length;
+      
+      const issuesResolved = Math.max(0, initialIssuesCount - currentOpenIssues);
+      const issuesAdded = Math.max(0, currentOpenIssues - initialIssuesCount);
+      const todosCompleted = Math.max(0, initialTodosCount - currentIncompleteTodos);
+      const todosAdded = Math.max(0, currentIncompleteTodos - initialTodosCount);
+      
+      const duration = formatTimer(elapsedTime);
+      const meetingDate = new Date().toLocaleDateString();
+      const meetingTime = new Date().toLocaleTimeString();
+
+      // Generate summary
+      const summary = {
+        date: meetingDate,
+        time: meetingTime,
+        duration: duration,
+        rating: meetingRating,
+        issuesResolved,
+        issuesAdded,
+        todosCompleted,
+        todosAdded,
+        teamMembers: teamMembers.length
+      };
+
+      // TODO: In the future, implement email sending through backend
+      // For now, show the summary
+      const summaryText = `
+Meeting Summary - ${meetingDate}
+
+Duration: ${duration}
+Rating: ${meetingRating}/10
+
+Issues:
+- Resolved: ${issuesResolved}
+- Added: ${issuesAdded}
+
+To-Dos:
+- Completed: ${todosCompleted}
+- Added: ${todosAdded}
+
+Team Members Present: ${teamMembers.length}
+`;
+
+      alert('Meeting Complete!\n' + summaryText);
+      
+      // Reset meeting state
+      setMeetingStarted(false);
+      setMeetingStartTime(null);
+      setElapsedTime(0);
+      setMeetingRating(null);
+      setActiveSection('good-news');
+      
+    } catch (error) {
+      console.error('Failed to finish meeting:', error);
+      setError('Failed to generate meeting summary');
+    }
+  };
+
+  const formatTimer = (seconds) => {
+    const hours = Math.floor(seconds / 3600);
+    const minutes = Math.floor((seconds % 3600) / 60);
+    const secs = seconds % 60;
+    
+    if (hours > 0) {
+      return `${hours}:${minutes.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+    }
+    return `${minutes}:${secs.toString().padStart(2, '0')}`;
+  };
+
+  const getTimerColor = () => {
+    const minutes = elapsedTime / 60;
+    if (minutes >= 85) return 'text-red-600';
+    if (minutes >= 80) return 'text-yellow-600';
+    return 'text-green-600';
   };
 
   const handleSectionChange = (sectionId) => {
@@ -874,10 +995,43 @@ const WeeklyAccountabilityMeetingPage = () => {
                     <li>Share any final thoughts</li>
                   </ul>
                 </div>
-                <div className="flex items-center justify-center gap-2 py-8">
-                  <CheckCircle className="h-8 w-8 text-green-600" />
-                  <span className="text-2xl font-semibold">Meeting Complete!</span>
-                </div>
+                
+                {meetingStarted && (
+                  <div className="space-y-6">
+                    <div className="flex items-center justify-center gap-4">
+                      <span className="text-lg font-medium">Rate this meeting:</span>
+                      <Select value={meetingRating?.toString()} onValueChange={(value) => setMeetingRating(parseInt(value))}>
+                        <SelectTrigger className="w-24">
+                          <SelectValue placeholder="Select" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map(num => (
+                            <SelectItem key={num} value={num.toString()}>
+                              {num}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    
+                    <div className="flex justify-center">
+                      <Button 
+                        onClick={handleFinishMeeting}
+                        className="bg-indigo-600 hover:bg-indigo-700 text-white"
+                        disabled={!meetingRating}
+                      >
+                        Finish Meeting & Send Summary
+                      </Button>
+                    </div>
+                  </div>
+                )}
+                
+                {!meetingStarted && (
+                  <div className="flex items-center justify-center gap-2 py-8">
+                    <CheckCircle className="h-8 w-8 text-green-600" />
+                    <span className="text-2xl font-semibold">Ready to conclude when meeting starts</span>
+                  </div>
+                )}
               </div>
             </CardContent>
           </Card>
@@ -894,8 +1048,10 @@ const WeeklyAccountabilityMeetingPage = () => {
         {/* Sidebar */}
         <div className="w-64 bg-white border-r border-gray-200 min-h-screen flex-shrink-0">
           <div className="p-6">
-            <h1 className="text-2xl font-bold text-gray-900 mb-2">Weekly Accountability Meeting</h1>
-            <p className="text-gray-600 text-sm">90 minutes total</p>
+            <div>
+              <h1 className="text-2xl font-bold text-gray-900 mb-2">Weekly Accountability Meeting</h1>
+              <p className="text-gray-600 text-sm">90 minutes total</p>
+            </div>
           </div>
           
           <nav className="px-4 pb-6">
@@ -934,6 +1090,23 @@ const WeeklyAccountabilityMeetingPage = () => {
         {/* Main Content */}
         <div className="flex-1 p-6 overflow-x-auto">
           <div className={activeSection === 'scorecard' || activeSection === 'priorities' || activeSection === 'issues' ? 'min-w-fit' : 'max-w-6xl mx-auto'}>
+            {/* Meeting Controls */}
+            <div className="flex justify-end mb-6">
+              {!meetingStarted ? (
+                <Button 
+                  onClick={handleStartMeeting}
+                  className="bg-green-600 hover:bg-green-700 text-white"
+                  size="lg"
+                >
+                  Start Meeting
+                </Button>
+              ) : (
+                <div className={`font-mono text-2xl font-bold ${getTimerColor()}`}>
+                  ⏱️ {formatTimer(elapsedTime)}
+                </div>
+              )}
+            </div>
+            
             {error && (
               <Alert className="mb-6 border-red-200 bg-red-50">
                 <AlertCircle className="h-4 w-4 text-red-600" />
