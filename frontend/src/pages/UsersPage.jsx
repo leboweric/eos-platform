@@ -74,7 +74,7 @@ const UsersPage = () => {
     firstName: '',
     lastName: '',
     role: 'member',
-    teamId: ''
+    teamId: 'none'
   });
   const [inviteLoading, setInviteLoading] = useState(false);
   const [createLoading, setCreateLoading] = useState(false);
@@ -302,7 +302,7 @@ const UsersPage = () => {
       firstName: user.first_name,
       lastName: user.last_name,
       role: user.role,
-      teamId: user.team_id || ''
+      teamId: user.team_id || 'none'
     });
     setEditDialogOpen(true);
   };
@@ -324,7 +324,7 @@ const UsersPage = () => {
           firstName: editForm.firstName,
           lastName: editForm.lastName,
           role: editForm.role,
-          teamId: editForm.teamId || null,
+          teamId: editForm.teamId === 'none' ? null : editForm.teamId,
         }),
       });
 
@@ -734,14 +734,14 @@ const UsersPage = () => {
               <div className="space-y-2">
                 <Label htmlFor="editDepartment">Department</Label>
                 <Select
-                  value={editForm.teamId}
-                  onValueChange={(value) => setEditForm({ ...editForm, teamId: value })}
+                  value={editForm.teamId || 'none'}
+                  onValueChange={(value) => setEditForm({ ...editForm, teamId: value === 'none' ? '' : value })}
                 >
                   <SelectTrigger>
                     <SelectValue placeholder="Select a department" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="">No Department</SelectItem>
+                    <SelectItem value="none">No Department</SelectItem>
                     {departments.map((dept) => (
                       <SelectItem key={dept.id} value={dept.id}>
                         {dept.name}
