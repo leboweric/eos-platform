@@ -259,7 +259,7 @@ export const getQuarterlyPriorities = async (req, res) => {
         predictions: formattedPredictions,
         companyPriorities,
         teamMemberPriorities,
-        teamMembers: await getTeamMembers(orgId)
+        teamMembers: await getTeamMembers(orgId, teamId, isLeadership)
       }
     });
   } catch (error) {
@@ -769,19 +769,49 @@ export const addPriorityUpdate = async (req, res) => {
   }
 };
 
-// Helper function to get team members
-async function getTeamMembers(orgId) {
-  console.log('Getting team members for org:', orgId);
-  const result = await query(
-    `SELECT 
-      u.id,
-      u.first_name || ' ' || u.last_name as name,
-      u.role
-     FROM users u
-     WHERE u.organization_id = $1
-     ORDER BY u.first_name, u.last_name`,
-    [orgId]
-  );
+// Helper function to get team members based on team context
+async function getTeamMembers(orgId, teamId = null, isLeadershipTeam = false) {
+  console.log('Getting team members for org:', orgId, 'teamId:', teamId, 'isLeadershipTeam:', isLeadershipTeam);
+  
+  let result;
+  
+  if (teamId && !isLeadershipTeam) {
+    // For specific departments, get only members of that team
+    result = await query(
+      `SELECT DISTINCT u.id, u.first_name || ' ' || u.last_name as name, u.email, u.role, u.first_name
+       FROM users u 
+       JOIN team_members tm ON tm.user_id = u.id
+       JOIN teams t ON tm.team_id = t.id
+       WHERE t.id = $1 AND u.role != 'consultant'
+       ORDER BY u.first_name`,
+      [teamId]
+    );
+  } else if (isLeadershipTeam) {
+    // For Leadership Team view, get only Leadership Team members
+    result = await query(
+      `SELECT DISTINCT u.id, u.first_name || ' ' || u.last_name as name, u.email, u.role, u.first_name
+       FROM users u 
+       JOIN team_members tm ON tm.user_id = u.id
+       JOIN teams t ON tm.team_id = t.id
+       WHERE t.organization_id = $1 
+         AND t.is_leadership_team = true 
+         AND u.role != 'consultant'
+       ORDER BY u.first_name`,
+      [orgId]
+    );
+  } else {
+    // Fallback: get all users from the organization
+    result = await query(
+      `SELECT 
+        u.id,
+        u.first_name || ' ' || u.last_name as name,
+        u.role
+       FROM users u
+       WHERE u.organization_id = $1
+       ORDER BY u.first_name, u.last_name`,
+      [orgId]
+    );
+  }
   
   console.log(`Found ${result.rows.length} team members`);
   return result.rows;
@@ -1004,7 +1034,7 @@ export const getCurrentPriorities = async (req, res) => {
       AND (
         -- Filter by specific department
         CASE
-          WHEN $2::uuid = '47d53797-be5f-49c2-883a-326a401a17c1'::uuid THEN true  -- Leadership Team sees all
+          WHEN $3 = true THEN true  -- Leadership Team sees all
           WHEN $2::uuid IS NOT NULL THEN p.team_id = $2::uuid  -- Specific department requested
           ELSE true  -- No department filter
         END
@@ -1016,7 +1046,18 @@ export const getCurrentPriorities = async (req, res) => {
     
     // Use teamId from URL params as the department filter
     const departmentFilter = teamId || null;
-    const prioritiesResult = await query(prioritiesQuery, [orgId, departmentFilter]);
+    
+    // Check if this is a Leadership Team view (will be used later for member filtering)
+    let isLeadershipTeamView = false;
+    if (departmentFilter) {
+      const teamCheckResult = await query(
+        `SELECT is_leadership_team FROM teams WHERE id = $1`,
+        [departmentFilter]
+      );
+      isLeadershipTeamView = teamCheckResult.rows.length > 0 && teamCheckResult.rows[0].is_leadership_team;
+    }
+    
+    const prioritiesResult = await query(prioritiesQuery, [orgId, departmentFilter, isLeadershipTeamView]);
     console.log(`Found ${prioritiesResult.rows.length} priorities:`, 
       prioritiesResult.rows.map(p => ({ 
         id: p.id, 
@@ -1167,14 +1208,44 @@ export const getCurrentPriorities = async (req, res) => {
       predictions = {};
     }
 
-    // Get team members list for the frontend
-    const teamMembersResult = await query(
-      `SELECT DISTINCT u.id, u.first_name || ' ' || u.last_name as name, u.email, u.role, u.first_name
-       FROM users u 
-       WHERE u.organization_id = $1 AND u.role != 'consultant'
-       ORDER BY u.first_name`,
-      [orgId]
-    );
+    // Get team members list for the frontend - filter by the specific team being viewed
+    let teamMembersResult;
+    
+    // Use the teamId from URL params (which is actually the department filter)
+    if (departmentFilter && !isLeadershipTeamView) {
+      // For specific departments, get only members of that team
+      teamMembersResult = await query(
+        `SELECT DISTINCT u.id, u.first_name || ' ' || u.last_name as name, u.email, u.role, u.first_name, t.name as department
+         FROM users u 
+         JOIN team_members tm ON tm.user_id = u.id
+         JOIN teams t ON tm.team_id = t.id
+         WHERE t.id = $1 AND u.role != 'consultant'
+         ORDER BY u.first_name`,
+        [departmentFilter]
+      );
+    } else if (departmentFilter && isLeadershipTeamView) {
+      // For Leadership Team view, get only Leadership Team members
+      teamMembersResult = await query(
+        `SELECT DISTINCT u.id, u.first_name || ' ' || u.last_name as name, u.email, u.role, u.first_name, 'Leadership Team' as department
+         FROM users u 
+         JOIN team_members tm ON tm.user_id = u.id
+         JOIN teams t ON tm.team_id = t.id
+         WHERE t.organization_id = $1 
+           AND t.is_leadership_team = true 
+           AND u.role != 'consultant'
+         ORDER BY u.first_name`,
+        [orgId]
+      );
+    } else {
+      // Fallback: get all users from the organization (original behavior)
+      teamMembersResult = await query(
+        `SELECT DISTINCT u.id, u.first_name || ' ' || u.last_name as name, u.email, u.role, u.first_name, 'All Teams' as department
+         FROM users u 
+         WHERE u.organization_id = $1 AND u.role != 'consultant'
+         ORDER BY u.first_name`,
+        [orgId]
+      );
+    }
 
     // Ensure data types are correct for frontend
     const responseData = {
