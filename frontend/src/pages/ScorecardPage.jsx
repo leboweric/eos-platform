@@ -550,6 +550,8 @@ const ScorecardPage = () => {
                   </tr>
                 </thead>
                 <tbody>
+                  {console.log('TBODY RENDER: metrics.length =', metrics.length, 'metrics =', metrics)}
+                  {console.log('TBODY RENDER: metrics.length === 0 is', metrics.length === 0)}
                   {metrics.length === 0 ? (
                     <tr>
                       <td colSpan={weekLabels.length + (showTotal ? 7 : 6)} className="text-center p-8 text-gray-500">
