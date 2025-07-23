@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { useAuthStore } from '../stores/authStore';
 import { scorecardService } from '../services/scorecardService';
 import { useDepartment } from '../contexts/DepartmentContext';
+import { LEADERSHIP_TEAM_ID } from '../utils/teamUtils';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -27,7 +28,7 @@ import MetricTrendChart from '../components/scorecard/MetricTrendChart';
 
 const ScorecardPage = () => {
   const { user } = useAuthStore();
-  const { selectedDepartment, loading: departmentLoading } = useDepartment();
+  const { selectedDepartment, isLeadershipMember, loading: departmentLoading } = useDepartment();
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState(null);
@@ -71,11 +72,12 @@ const ScorecardPage = () => {
     console.log('ScorecardPage useEffect - user:', user);
     console.log('ScorecardPage useEffect - organizationId:', user?.organizationId);
     console.log('ScorecardPage useEffect - selectedDepartment:', selectedDepartment);
+    console.log('ScorecardPage useEffect - isLeadershipMember:', isLeadershipMember);
     
-    if (user?.organizationId && selectedDepartment) {
+    if (user?.organizationId && (selectedDepartment || isLeadershipMember)) {
       fetchScorecard();
     }
-  }, [user?.organizationId, selectedDepartment]);
+  }, [user?.organizationId, selectedDepartment, isLeadershipMember]);
 
   const fetchScorecard = async () => {
     try {
@@ -83,10 +85,15 @@ const ScorecardPage = () => {
       setError(null);
       
       const orgId = localStorage.getItem('impersonatedOrgId') || user?.organizationId || user?.organization_id;
-      const teamId = selectedDepartment?.id;
+      
+      // Use Leadership Team ID if leadership member without department selected
+      let teamId = selectedDepartment?.id;
+      if (!teamId && isLeadershipMember) {
+        teamId = LEADERSHIP_TEAM_ID;
+      }
       
       if (!teamId) {
-        console.log('No department selected yet, skipping operation');
+        console.log('No department selected and not a leadership member, skipping operation');
         return;
       }
       const departmentId = selectedDepartment?.id;
