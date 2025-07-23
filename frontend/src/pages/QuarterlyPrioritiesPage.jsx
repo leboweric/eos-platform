@@ -692,6 +692,20 @@ const QuarterlyPrioritiesPage = () => {
                     Company Priority
                   </Badge>
                 )}
+                {(() => {
+                  const overdueMilestones = (priority.milestones || []).filter(
+                    m => !m.completed && getDaysUntilDue(m.dueDate) < 0
+                  );
+                  if (overdueMilestones.length > 0) {
+                    return (
+                      <Badge variant="outline" className="bg-red-50 text-red-700 border-red-200">
+                        <AlertCircle className="h-3 w-3 mr-1" />
+                        {overdueMilestones.length} Overdue
+                      </Badge>
+                    );
+                  }
+                  return null;
+                })()}
                 <Badge 
                   variant={getStatusBadgeVariant(isEditing ? editForm.status : priority.status)} 
                   className={`flex items-center space-x-1 ${
@@ -950,11 +964,23 @@ const QuarterlyPrioritiesPage = () => {
                       </>
                     ) : (
                       <>
+                        {!milestone.completed && getDaysUntilDue(milestone.dueDate) < 0 && (
+                          <AlertCircle className="h-4 w-4 text-red-600 flex-shrink-0" />
+                        )}
                         <span className={`text-sm flex-1 ${milestone.completed ? 'line-through text-gray-500' : ''}`}>
                           {milestone.title}
                         </span>
-                        <span className="text-xs text-gray-500">
+                        <span className={`text-xs ${
+                          !milestone.completed && getDaysUntilDue(milestone.dueDate) < 0 
+                            ? 'text-red-600 font-medium' 
+                            : !milestone.completed && getDaysUntilDue(milestone.dueDate) <= 3
+                            ? 'text-orange-600'
+                            : 'text-gray-500'
+                        }`}>
                           {formatDate(milestone.dueDate)}
+                          {!milestone.completed && getDaysUntilDue(milestone.dueDate) < 0 && (
+                            <span className="ml-1">(Overdue)</span>
+                          )}
                         </span>
                         <div className="opacity-0 group-hover:opacity-100 transition-opacity flex items-center space-x-1">
                           <Button
