@@ -17,7 +17,7 @@ import {
   User
 } from 'lucide-react';
 import TodoDialog from '../components/todos/TodoDialog';
-import TodoCard from '../components/todos/TodoCard';
+import TodosList from '../components/todos/TodosList';
 
 const TodosPage = () => {
   const { user } = useAuthStore();
@@ -195,39 +195,38 @@ const TodosPage = () => {
           </div>
         </div>
 
-        <div className="space-y-4">
-          {filteredTodos.length === 0 ? (
-            <Card>
-              <CardContent className="text-center py-12">
-                <p className="text-gray-500">
-                  {activeTab === 'incomplete' && 'No incomplete to-dos'}
-                  {activeTab === 'complete' && 'No completed to-dos'}
-                  {activeTab === 'all' && 'No to-dos yet'}
-                </p>
-                {activeTab !== 'complete' && (
-                  <Button 
-                    onClick={handleCreateTodo} 
-                    variant="outline" 
-                    className="mt-4"
-                  >
-                    <Plus className="mr-2 h-4 w-4" />
-                    Create your first to-do
-                  </Button>
-                )}
-              </CardContent>
-            </Card>
-          ) : (
-            filteredTodos.map(todo => (
-              <TodoCard
-                key={todo.id}
-                todo={todo}
-                onEdit={handleEditTodo}
-                onDelete={handleDeleteTodo}
-                onUpdate={fetchTodos}
-              />
-            ))
-          )}
-        </div>
+        {filteredTodos.length === 0 ? (
+          <Card>
+            <CardContent className="text-center py-12">
+              <ListTodo className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+              <h3 className="text-lg font-medium text-gray-900 mb-2">
+                {activeTab === 'incomplete' && 'No incomplete to-dos'}
+                {activeTab === 'complete' && 'No completed to-dos'}
+                {activeTab === 'all' && 'No to-dos yet'}
+              </h3>
+              <p className="text-gray-500 mb-6">
+                {activeTab === 'complete' ? 'Completed to-dos will appear here' : 'Create your first to-do to get started'}
+              </p>
+              {activeTab !== 'complete' && (
+                <Button 
+                  onClick={handleCreateTodo} 
+                  variant="outline"
+                >
+                  <Plus className="mr-2 h-4 w-4" />
+                  Create To-Do
+                </Button>
+              )}
+            </CardContent>
+          </Card>
+        ) : (
+          <TodosList
+            todos={filteredTodos}
+            onEdit={handleEditTodo}
+            onDelete={handleDeleteTodo}
+            onUpdate={fetchTodos}
+            showCompleted={activeTab !== 'incomplete'}
+          />
+        )}
 
         {/* Todo Dialog */}
         <TodoDialog
