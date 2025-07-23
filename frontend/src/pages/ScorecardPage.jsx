@@ -361,10 +361,6 @@ const ScorecardPage = () => {
     return { labels, weekDates };
   };
 
-  const { labels: weekLabelsOriginal, weekDates: weekDatesOriginal } = getWeekLabels();
-  const weekLabels = isRTL ? [...weekLabelsOriginal].reverse() : weekLabelsOriginal;
-  const weekDates = isRTL ? [...weekDatesOriginal].reverse() : weekDatesOriginal;
-
   // Helper functions for value formatting and goal achievement
   const formatValue = (value, valueType) => {
     if (!value && value !== 0) return '-';
@@ -427,6 +423,12 @@ const ScorecardPage = () => {
   };
 
   console.log('Render - loading:', loading, 'departmentLoading:', departmentLoading, 'metrics length:', metrics.length);
+  
+  // Calculate week labels
+  const { labels: weekLabelsOriginal, weekDates: weekDatesOriginal } = getWeekLabels();
+  const weekLabels = isRTL ? [...weekLabelsOriginal].reverse() : weekLabelsOriginal;
+  const weekDates = isRTL ? [...weekDatesOriginal].reverse() : weekDatesOriginal;
+  
   console.log('weekLabels:', weekLabels);
   console.log('weekDates:', weekDates);
   console.log('weeklyScores:', weeklyScores);
