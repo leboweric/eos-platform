@@ -12,7 +12,8 @@ import {
   updateDocument,
   deleteDocument,
   toggleFavorite,
-  getCategories
+  getCategories,
+  debugDocument
 } from '../controllers/documentsController.js';
 
 const router = express.Router({ mergeParams: true });
@@ -59,6 +60,9 @@ router.post('/', upload.single('file'), uploadDocument);
 
 // Download a document
 router.get('/:documentId/download', downloadDocument);
+
+// Debug document paths (temporary)
+router.get('/:documentId/debug', debugDocument);
 
 // Update document metadata
 router.put('/:documentId', updateDocument);

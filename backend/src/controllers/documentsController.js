@@ -247,10 +247,13 @@ export const downloadDocument = async (req, res) => {
     // Handle different path scenarios
     let absolutePath = filePath;
     
-    // In production (Railway), paths might be stored as absolute paths starting with /app
-    // In development, they might be relative paths or include the full local path
-    if (filePath.startsWith('/app/')) {
-      // Production path - strip /app and make it relative to backend directory
+    // In production (Railway), the app runs in /app directory
+    // and files are stored with absolute paths like /app/uploads/documents/...
+    if (process.cwd() === '/app' && filePath.startsWith('/app/')) {
+      // We're in production and have an absolute path - use it as is
+      absolutePath = filePath;
+    } else if (filePath.startsWith('/app/')) {
+      // We're in development but have a production path - strip /app and resolve
       const relativePath = filePath.substring(5); // Remove '/app/'
       absolutePath = path.join(__dirname, '../..', relativePath);
     } else if (!path.isAbsolute(filePath)) {
@@ -438,8 +441,11 @@ export const deleteDocument = async (req, res) => {
     // Handle different path scenarios (same logic as download)
     let absolutePath = filePath;
     
-    if (filePath.startsWith('/app/')) {
-      // Production path - strip /app and make it relative to backend directory
+    if (process.cwd() === '/app' && filePath.startsWith('/app/')) {
+      // We're in production and have an absolute path - use it as is
+      absolutePath = filePath;
+    } else if (filePath.startsWith('/app/')) {
+      // We're in development but have a production path - strip /app and resolve
       const relativePath = filePath.substring(5); // Remove '/app/'
       absolutePath = path.join(__dirname, '../..', relativePath);
     } else if (!path.isAbsolute(filePath)) {
