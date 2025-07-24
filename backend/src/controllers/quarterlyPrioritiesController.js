@@ -1387,7 +1387,8 @@ export const uploadPriorityAttachment = async (req, res) => {
 
     // Create attachment record
     const attachmentId = uuidv4();
-    const filePath = `/uploads/priorities/${attachmentId}_${file.originalname}`;
+    // Use the actual filename that multer created
+    const filePath = file.path.replace(/\\/g, '/'); // Normalize path separators
     
     const result = await query(
       `INSERT INTO priority_attachments 
@@ -1475,13 +1476,15 @@ export const downloadPriorityAttachment = async (req, res) => {
     }
 
     const attachment = result.rows[0];
-    const filePath = path.join(__dirname, '../..', attachment.file_path);
+    // The file_path in database is already the full path from multer
+    const filePath = attachment.file_path;
 
     // Check if file exists
     try {
       await fs.access(filePath);
     } catch (error) {
       console.error('File not found:', filePath);
+      console.error('Current directory:', process.cwd());
       return res.status(404).json({
         success: false,
         error: 'File not found on server'
@@ -1524,7 +1527,7 @@ export const deletePriorityAttachment = async (req, res) => {
     }
 
     // Delete the actual file from storage
-    const filePath = path.join(__dirname, '../..', result.rows[0].file_path);
+    const filePath = result.rows[0].file_path;
     try {
       await fs.unlink(filePath);
     } catch (error) {
