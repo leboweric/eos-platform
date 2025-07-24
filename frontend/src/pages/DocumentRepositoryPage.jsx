@@ -1,7 +1,10 @@
 import { useState, useEffect } from 'react';
 import { useAuthStore } from '../stores/authStore';
 import { documentsService } from '../services/documentsService';
+import { foldersService } from '../services/foldersService';
 import { departmentService } from '../services/departmentService';
+import FolderTree from '../components/documents/FolderTree';
+import CreateFolderDialog from '../components/documents/CreateFolderDialog';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -39,14 +42,17 @@ import {
 const DocumentRepositoryPage = () => {
   const { user } = useAuthStore();
   const [documents, setDocuments] = useState([]);
-  const [categories, setCategories] = useState([]);
+  const [folders, setFolders] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [searchTerm, setSearchTerm] = useState('');
-  const [selectedCategory, setSelectedCategory] = useState('all');
+  const [selectedFolder, setSelectedFolder] = useState(null);
   const [selectedDepartment, setSelectedDepartment] = useState('all');
   const [showFavorites, setShowFavorites] = useState(false);
   const [departments, setDepartments] = useState([]);
+  const [showCreateFolderDialog, setShowCreateFolderDialog] = useState(false);
+  const [parentFolderForCreate, setParentFolderForCreate] = useState(null);
+  const [renamingFolder, setRenamingFolder] = useState(null);
   
   // Upload dialog state
   const [showUploadDialog, setShowUploadDialog] = useState(false);
@@ -54,9 +60,9 @@ const DocumentRepositoryPage = () => {
   const [uploadForm, setUploadForm] = useState({
     title: '',
     description: '',
-    category: '',
     visibility: 'company',
     departmentId: '',
+    folderId: null,
     tags: []
   });
   const [tagInput, setTagInput] = useState('');
@@ -64,7 +70,7 @@ const DocumentRepositoryPage = () => {
 
   useEffect(() => {
     fetchData();
-  }, [selectedCategory, selectedDepartment, showFavorites, searchTerm]);
+  }, [selectedFolder, selectedDepartment, showFavorites, searchTerm]);
 
   const fetchData = async () => {
     try {
@@ -77,20 +83,20 @@ const DocumentRepositoryPage = () => {
 
       // Fetch documents with filters
       const filters = {
-        ...(selectedCategory !== 'all' && { category: selectedCategory }),
+        ...(selectedFolder !== null && { folderId: selectedFolder }),
         ...(selectedDepartment !== 'all' && { department: selectedDepartment }),
         ...(showFavorites && { favorites: 'true' }),
         ...(searchTerm && { search: searchTerm })
       };
       
-      const [docsData, categoriesData, departmentsData] = await Promise.all([
+      const [docsData, foldersData, departmentsData] = await Promise.all([
         documentsService.getDocuments(orgId, filters),
-        documentsService.getCategories(orgId),
+        foldersService.getFolders(orgId),
         departmentService.getDepartments()
       ]);
       
       setDocuments(docsData || []);
-      setCategories(categoriesData || []);
+      setFolders(foldersData || []);
       setDepartments(departmentsData?.data || []);
     } catch (err) {
       console.error('Failed to fetch documents:', err);
@@ -112,8 +118,8 @@ const DocumentRepositoryPage = () => {
   };
 
   const handleUpload = async () => {
-    if (!uploadFile || !uploadForm.title || !uploadForm.category) {
-      setError('Please provide a file, title, and category');
+    if (!uploadFile || !uploadForm.title) {
+      setError('Please provide a file and title');
       return;
     }
 
@@ -129,9 +135,9 @@ const DocumentRepositoryPage = () => {
       setUploadForm({
         title: '',
         description: '',
-        category: '',
         visibility: 'company',
         departmentId: '',
+        folderId: selectedFolder,
         tags: []
       });
       setTagInput('');
@@ -238,6 +244,48 @@ const DocumentRepositoryPage = () => {
     });
   };
 
+  const handleCreateFolder = async (folderData) => {
+    try {
+      const orgId = user?.organizationId;
+      await foldersService.createFolder(orgId, folderData);
+      await fetchData();
+      setShowCreateFolderDialog(false);
+    } catch (err) {
+      console.error('Failed to create folder:', err);
+      throw err;
+    }
+  };
+
+  const handleDeleteFolder = async (folder) => {
+    if (!window.confirm(`Are you sure you want to delete "${folder.name}"? This action cannot be undone.`)) {
+      return;
+    }
+
+    try {
+      const orgId = user?.organizationId;
+      await foldersService.deleteFolder(orgId, folder.id);
+      if (selectedFolder === folder.id) {
+        setSelectedFolder(null);
+      }
+      await fetchData();
+    } catch (err) {
+      console.error('Failed to delete folder:', err);
+      setError(err.response?.data?.error || 'Failed to delete folder');
+    }
+  };
+
+  const handleRenameFolder = async (folder, newName) => {
+    try {
+      const orgId = user?.organizationId;
+      await foldersService.updateFolder(orgId, folder.id, newName);
+      await fetchData();
+      setRenamingFolder(null);
+    } catch (err) {
+      console.error('Failed to rename folder:', err);
+      setError(err.response?.data?.error || 'Failed to rename folder');
+    }
+  };
+
   if (loading) {
     return (
       <div className="flex items-center justify-center min-h-screen">
@@ -309,36 +357,38 @@ const DocumentRepositoryPage = () => {
             </CardContent>
           </Card>
 
-          {/* Categories */}
+          {/* Folders */}
           <Card>
             <CardHeader className="pb-3">
-              <CardTitle className="text-sm">Categories</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-1">
-              <Button
-                variant={selectedCategory === 'all' ? "secondary" : "ghost"}
-                size="sm"
-                className="w-full justify-start"
-                onClick={() => setSelectedCategory('all')}
-              >
-                <Folder className="mr-2 h-4 w-4" />
-                All Categories
-              </Button>
-              {categories.map(cat => (
-                <Button
-                  key={cat.category}
-                  variant={selectedCategory === cat.category ? "secondary" : "ghost"}
-                  size="sm"
-                  className="w-full justify-start"
-                  onClick={() => setSelectedCategory(cat.category)}
+              <div className="flex items-center justify-between">
+                <CardTitle className="text-sm">Folders</CardTitle>
+                <Button 
+                  size="sm" 
+                  variant="ghost"
+                  onClick={() => {
+                    setParentFolderForCreate(null);
+                    setShowCreateFolderDialog(true);
+                  }}
                 >
-                  <Folder className="mr-2 h-4 w-4" />
-                  <span className="flex-1 text-left">{cat.display_name}</span>
-                  <Badge variant="outline" className="ml-2">
-                    {cat.count}
-                  </Badge>
+                  <Plus className="h-4 w-4" />
                 </Button>
-              ))}
+              </div>
+            </CardHeader>
+            <CardContent>
+              <FolderTree
+                folders={folders}
+                selectedFolder={selectedFolder}
+                onSelectFolder={setSelectedFolder}
+                onCreateFolder={(parentId) => {
+                  const parent = folders.find(f => f.id === parentId);
+                  setParentFolderForCreate(parent);
+                  setShowCreateFolderDialog(true);
+                }}
+                onRenameFolder={(folder) => setRenamingFolder(folder)}
+                onDeleteFolder={handleDeleteFolder}
+                isAdmin={user?.role === 'admin'}
+                userId={user?.id}
+              />
             </CardContent>
           </Card>
 
@@ -373,11 +423,11 @@ const DocumentRepositoryPage = () => {
                 <File className="h-12 w-12 text-gray-400 mx-auto mb-4" />
                 <h3 className="text-lg font-semibold mb-2">No documents found</h3>
                 <p className="text-gray-600 mb-4">
-                  {searchTerm || selectedCategory !== 'all' || showFavorites
+                  {searchTerm || selectedFolder !== null || showFavorites
                     ? 'Try adjusting your filters'
                     : 'Upload your first document to get started'}
                 </p>
-                {!searchTerm && selectedCategory === 'all' && !showFavorites && (
+                {!searchTerm && selectedFolder === null && !showFavorites && (
                   <Button onClick={() => setShowUploadDialog(true)}>
                     <Upload className="mr-2 h-4 w-4" />
                     Upload Document
@@ -427,6 +477,14 @@ const DocumentRepositoryPage = () => {
                               {tag}
                             </Badge>
                           ))}
+                        </div>
+                      )}
+                      
+                      {/* Folder info */}
+                      {doc.folder_name && (
+                        <div className="flex items-center text-xs text-gray-500">
+                          <Folder className="h-3 w-3 mr-1" />
+                          <span>{doc.folder_name}</span>
                         </div>
                       )}
                       
@@ -542,27 +600,15 @@ const DocumentRepositoryPage = () => {
               />
             </div>
 
-            {/* Category */}
-            <div>
-              <Label htmlFor="category">Category *</Label>
-              <Select
-                value={uploadForm.category}
-                onValueChange={(value) => setUploadForm({ ...uploadForm, category: value })}
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="Select a category" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="strategy">Strategy Documents</SelectItem>
-                  <SelectItem value="blueprints">Blueprints & Plans</SelectItem>
-                  <SelectItem value="policies">Policies & Procedures</SelectItem>
-                  <SelectItem value="templates">Templates & Forms</SelectItem>
-                  <SelectItem value="meeting_notes">Meeting Notes</SelectItem>
-                  <SelectItem value="reports">Reports & Analytics</SelectItem>
-                  <SelectItem value="training">Training Materials</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
+            {/* Current Folder */}
+            {selectedFolder && (
+              <Alert>
+                <Folder className="h-4 w-4" />
+                <AlertDescription>
+                  This document will be uploaded to: <strong>{folders.find(f => f.id === selectedFolder)?.name || 'Unknown Folder'}</strong>
+                </AlertDescription>
+              </Alert>
+            )}
 
             {/* Visibility */}
             <div>
@@ -657,7 +703,7 @@ const DocumentRepositoryPage = () => {
             <Button variant="outline" onClick={() => setShowUploadDialog(false)}>
               Cancel
             </Button>
-            <Button onClick={handleUpload} disabled={uploading || !uploadFile || !uploadForm.title || !uploadForm.category}>
+            <Button onClick={handleUpload} disabled={uploading || !uploadFile || !uploadForm.title}>
               {uploading ? (
                 <>
                   <Loader2 className="mr-2 h-4 w-4 animate-spin" />
@@ -673,6 +719,59 @@ const DocumentRepositoryPage = () => {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* Create Folder Dialog */}
+      <CreateFolderDialog
+        open={showCreateFolderDialog}
+        onClose={() => {
+          setShowCreateFolderDialog(false);
+          setParentFolderForCreate(null);
+        }}
+        onCreateFolder={handleCreateFolder}
+        parentFolder={parentFolderForCreate}
+        departments={departments}
+        isAdmin={user?.role === 'admin'}
+        userId={user?.id}
+      />
+
+      {/* Rename Folder Dialog */}
+      {renamingFolder && (
+        <Dialog open={!!renamingFolder} onOpenChange={() => setRenamingFolder(null)}>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>Rename Folder</DialogTitle>
+              <DialogDescription>
+                Enter a new name for "{renamingFolder.name}"
+              </DialogDescription>
+            </DialogHeader>
+            <div className="space-y-4 py-4">
+              <div>
+                <Label htmlFor="folder-name">Folder Name</Label>
+                <Input
+                  id="folder-name"
+                  defaultValue={renamingFolder.name}
+                  onKeyPress={(e) => {
+                    if (e.key === 'Enter') {
+                      handleRenameFolder(renamingFolder, e.target.value);
+                    }
+                  }}
+                />
+              </div>
+            </div>
+            <DialogFooter>
+              <Button variant="outline" onClick={() => setRenamingFolder(null)}>
+                Cancel
+              </Button>
+              <Button onClick={(e) => {
+                const input = e.target.closest('.space-y-4').querySelector('input');
+                handleRenameFolder(renamingFolder, input.value);
+              }}>
+                Rename
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+      )}
     </div>
   );
 };

@@ -9,6 +9,7 @@ export const documentsService = {
     if (filters.department) params.append('department', filters.department);
     if (filters.search) params.append('search', filters.search);
     if (filters.favorites) params.append('favorites', filters.favorites);
+    if (filters.folderId !== undefined) params.append('folderId', filters.folderId || 'root');
     
     const response = await axios.get(
       `/organizations/${orgId}/documents${params.toString() ? '?' + params.toString() : ''}`
@@ -17,11 +18,6 @@ export const documentsService = {
     return response.data.data;
   },
 
-  // Get categories with document counts
-  async getCategories(orgId) {
-    const response = await axios.get(`/organizations/${orgId}/documents/categories`);
-    return response.data.data;
-  },
 
   // Upload a new document
   async uploadDocument(orgId, documentData, file) {
@@ -29,7 +25,6 @@ export const documentsService = {
     formData.append('file', file);
     formData.append('title', documentData.title);
     formData.append('description', documentData.description || '');
-    formData.append('category', documentData.category);
     formData.append('visibility', documentData.visibility || 'company');
     
     if (documentData.departmentId) {
@@ -38,6 +33,10 @@ export const documentsService = {
     
     if (documentData.relatedPriorityId) {
       formData.append('relatedPriorityId', documentData.relatedPriorityId);
+    }
+    
+    if (documentData.folderId) {
+      formData.append('folderId', documentData.folderId);
     }
     
     if (documentData.tags && documentData.tags.length > 0) {
