@@ -43,10 +43,10 @@ EOS Platform is a web application for implementing the Entrepreneurial Operating
 - `id`: UUID primary key
 - `title`: Document title
 - `description`: Optional description
-- `category`: Document category (strategy, blueprints, policies, etc.)
+- `category`: Document category - LIMITED TO: 'strategy_plans', 'project_plans', 'sops'
 - `file_name`: Original filename
 - `file_path`: DEPRECATED - do not use
-- `file_content`: bytea column for storing actual file data (needs to be added)
+- `file_data`: bytea column for storing actual file data
 - `file_size`: Size in bytes
 - `mime_type`: MIME type of file
 - `visibility`: company, department, or private
@@ -54,6 +54,20 @@ EOS Platform is a web application for implementing the Entrepreneurial Operating
 - `department_id`: Optional foreign key to teams
 - `uploaded_by`: Foreign key to users
 - `related_priority_id`: Optional foreign key to priorities
+- `folder_id`: Optional foreign key to document_folders
+
+### Document Categories
+- `strategy_plans`: Strategy/Plans
+- `project_plans`: Project Plans  
+- `sops`: SOP's
+
+### Document Folders Table
+- `id`: UUID primary key
+- `name`: Folder name
+- `parent_folder_id`: Self-referencing foreign key for nested folders
+- `organization_id`: Foreign key to organizations
+- `created_by`: Foreign key to users
+- Only admins can create/update/delete folders
 
 ## Development Guidelines
 

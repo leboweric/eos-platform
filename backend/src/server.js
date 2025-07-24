@@ -25,6 +25,7 @@ import organizationalChartRoutes from './routes/organizationalChart.js';
 import skillsRoutes from './routes/skills.js';
 import feedbackRoutes from './routes/feedbackRoutes.js';
 import documentsRoutes from './routes/documents.js';
+import foldersRoutes from './routes/folders.js';
 
 // Import middleware
 import { errorHandler } from './middleware/errorHandler.js';
@@ -152,6 +153,7 @@ app.use('/api/v1/organizations/:orgId/organizational-charts', organizationalChar
 app.use('/api/v1/organizations/:orgId/skills', skillsRoutes);
 app.use('/api/v1/feedback', feedbackRoutes);
 app.use('/api/v1/organizations/:orgId/documents', documentsRoutes);
+app.use('/api/v1/organizations/:orgId/folders', foldersRoutes);
 
 // Webhook routes (must be before express.json() middleware for raw body)
 app.use('/webhooks', webhookRoutes);

@@ -12,7 +12,7 @@ export const getDocuments = async (req, res) => {
   try {
     const { orgId } = req.params;
     const userId = req.user.id;
-    const { category, department, search, favorites } = req.query;
+    const { category, department, search, favorites, folderId } = req.query;
     
     // Build query with filters
     // Exclude file_data from listings to avoid sending large binary data
@@ -80,6 +80,17 @@ export const getDocuments = async (req, res) => {
       queryText += ` AND df.user_id IS NOT NULL`;
     }
     
+    // Add folder filter
+    if (folderId) {
+      if (folderId === 'null' || folderId === 'root') {
+        queryText += ` AND d.folder_id IS NULL`;
+      } else {
+        queryText += ` AND d.folder_id = $${paramIndex}`;
+        params.push(folderId);
+        paramIndex++;
+      }
+    }
+    
     queryText += ` GROUP BY d.id, u.first_name, u.last_name, t.name, df.user_id
                    ORDER BY d.created_at DESC`;
     
@@ -104,7 +115,7 @@ export const uploadDocument = async (req, res) => {
     const { orgId } = req.params;
     const userId = req.user.id;
     const file = req.file;
-    const { title, description, category, departmentId, visibility, relatedPriorityId, tags } = req.body;
+    const { title, description, category, departmentId, visibility, relatedPriorityId, tags, folderId } = req.body;
     
     if (!file) {
       return res.status(400).json({
@@ -129,8 +140,8 @@ export const uploadDocument = async (req, res) => {
     const documentResult = await query(
       `INSERT INTO documents 
        (id, title, description, category, file_name, file_data, file_size, 
-        mime_type, visibility, organization_id, department_id, uploaded_by, related_priority_id)
-       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13)
+        mime_type, visibility, organization_id, department_id, uploaded_by, related_priority_id, folder_id)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14)
        RETURNING *`,
       [
         documentId,
@@ -145,7 +156,8 @@ export const uploadDocument = async (req, res) => {
         orgId,
         departmentId || null,
         userId,
-        relatedPriorityId || null
+        relatedPriorityId || null,
+        folderId || null
       ]
     );
     
@@ -612,13 +624,9 @@ export const getCategories = async (req, res) => {
     
     // Category display names
     const categoryNames = {
-      strategy: 'Strategy Documents',
-      blueprints: 'Blueprints & Plans',
-      policies: 'Policies & Procedures',
-      templates: 'Templates & Forms',
-      meeting_notes: 'Meeting Notes',
-      reports: 'Reports & Analytics',
-      training: 'Training Materials'
+      strategy_plans: 'Strategy/Plans',
+      project_plans: 'Project Plans',
+      sops: "SOP's"
     };
     
     const categories = result.rows.map(row => ({
