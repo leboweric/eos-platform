@@ -789,7 +789,7 @@ const BusinessBlueprintPage = () => {
                       </div>
                       {blueprintData.marketingStrategy.demographicProfile && (
                         <div className="p-3 bg-gray-50 border border-gray-200 rounded-lg hover:shadow-md transition-shadow">
-                          <h5 className="text-sm font-medium text-gray-700">Demographic</h5>
+                          <h5 className="text-sm font-bold text-gray-700">Demographic</h5>
                           <p className="text-sm text-gray-600 mt-1 whitespace-pre-wrap">
                             {blueprintData.marketingStrategy.demographicProfile}
                           </p>
@@ -797,7 +797,7 @@ const BusinessBlueprintPage = () => {
                       )}
                       {blueprintData.marketingStrategy.geographicProfile && (
                         <div className="p-3 bg-gray-50 border border-gray-200 rounded-lg hover:shadow-md transition-shadow">
-                          <h5 className="text-sm font-medium text-gray-700">Geographic</h5>
+                          <h5 className="text-sm font-bold text-gray-700">Geographic</h5>
                           <p className="text-sm text-gray-600 mt-1 whitespace-pre-wrap">
                             {blueprintData.marketingStrategy.geographicProfile}
                           </p>
@@ -805,7 +805,7 @@ const BusinessBlueprintPage = () => {
                       )}
                       {blueprintData.marketingStrategy.psychographicProfile && (
                         <div className="p-3 bg-gray-50 border border-gray-200 rounded-lg hover:shadow-md transition-shadow">
-                          <h5 className="text-sm font-medium text-gray-700">Psychographic</h5>
+                          <h5 className="text-sm font-bold text-gray-700">Psychographic</h5>
                           <p className="text-sm text-gray-600 mt-1 whitespace-pre-wrap">
                             {blueprintData.marketingStrategy.psychographicProfile}
                           </p>
