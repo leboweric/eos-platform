@@ -23,7 +23,11 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 
 // Create upload directory if it doesn't exist
-const uploadDir = path.join(__dirname, '..', '..', 'uploads', 'documents');
+// In production, use /app/uploads for Railway volume persistence
+const uploadDir = process.env.NODE_ENV === 'production' 
+  ? '/app/uploads/documents'
+  : path.join(__dirname, '..', '..', 'uploads', 'documents');
+  
 if (!fs.existsSync(uploadDir)) {
   fs.mkdirSync(uploadDir, { recursive: true });
 }

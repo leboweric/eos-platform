@@ -244,38 +244,6 @@ export const downloadDocument = async (req, res) => {
     // Check if file exists
     const filePath = document.file_path;
     
-    // DEBUG: Log file system information
-    console.log('=== DOCUMENT DOWNLOAD DEBUG ===');
-    console.log('Document ID:', documentId);
-    console.log('Stored file path:', filePath);
-    console.log('Current working directory:', process.cwd());
-    console.log('__dirname:', __dirname);
-    
-    // Check various possible locations
-    const possiblePaths = [
-      filePath,
-      path.join(process.cwd(), 'uploads/documents', path.basename(filePath)),
-      path.join(__dirname, '../../uploads/documents', path.basename(filePath)),
-      '/app/backend/uploads/documents/' + path.basename(filePath)
-    ];
-    
-    console.log('Checking paths:');
-    for (const p of possiblePaths) {
-      const exists = await fs.access(p).then(() => true).catch(() => false);
-      console.log(`  ${p}: ${exists ? 'EXISTS' : 'NOT FOUND'}`);
-    }
-    
-    // List uploads directory if it exists
-    try {
-      const uploadsDir = path.join(process.cwd(), 'uploads/documents');
-      const files = await fs.readdir(uploadsDir);
-      console.log('Files in uploads/documents:', files.slice(0, 5));
-    } catch (e) {
-      console.log('Could not list uploads/documents:', e.message);
-    }
-    
-    console.log('=== END DEBUG ===');
-    
     // Handle different path scenarios
     let absolutePath = filePath;
     
