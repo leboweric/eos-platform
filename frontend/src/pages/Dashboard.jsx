@@ -6,9 +6,13 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
 import { quarterlyPrioritiesService } from '../services/quarterlyPrioritiesService';
 import { todosService } from '../services/todosService';
 import { issuesService } from '../services/issuesService';
+import { organizationService } from '../services/organizationService';
+import { getRevenueLabel } from '../utils/revenueUtils';
 import {
   Target,
   CheckSquare,
@@ -22,7 +26,11 @@ import {
   Users,
   Plus,
   ArrowRight,
-  AlertCircle
+  AlertCircle,
+  DollarSign,
+  BarChart,
+  Edit,
+  X
 } from 'lucide-react';
 import { Link } from 'react-router-dom';
 
@@ -30,6 +38,13 @@ const Dashboard = () => {
   const { user, isOnLeadershipTeam } = useAuthStore();
   const navigate = useNavigate();
   const [loading, setLoading] = useState(true);
+  const [organization, setOrganization] = useState(null);
+  const [predictions, setPredictions] = useState({
+    revenue: { target: 0, current: 0 },
+    profit: { target: 0, current: 0 },
+    measurables: { onTrack: 0, total: 0 }
+  });
+  const [editingPredictions, setEditingPredictions] = useState(false);
   const [dashboardData, setDashboardData] = useState({
     priorities: [],
     todos: [],
@@ -78,11 +93,22 @@ const Dashboard = () => {
       console.log('Dashboard: User department ID:', userDepartmentId, 'User teams:', user?.teams);
       
       // Fetch all data in parallel
-      const [prioritiesResponse, todosResponse, issuesResponse] = await Promise.all([
+      const [prioritiesResponse, todosResponse, issuesResponse, orgResponse] = await Promise.all([
         quarterlyPrioritiesService.getCurrentPriorities(orgId, teamId),
         todosService.getTodos(null, null, true, userDepartmentId), // Filter by user's department
-        issuesService.getIssues(null, false, userDepartmentId) // Filter by user's department
+        issuesService.getIssues(null, false, userDepartmentId), // Filter by user's department
+        isOnLeadershipTeam() ? organizationService.getOrganization() : Promise.resolve(null)
       ]);
+      
+      // Set organization data if leadership team
+      if (orgResponse) {
+        setOrganization(orgResponse.data || orgResponse);
+      }
+      
+      // Set predictions if available
+      if (prioritiesResponse.predictions) {
+        setPredictions(prioritiesResponse.predictions);
+      }
       
       console.log('Dashboard: Issues response:', issuesResponse);
       console.log('Dashboard: Priorities response:', prioritiesResponse);
@@ -182,6 +208,54 @@ const Dashboard = () => {
     }
   };
 
+  const formatRevenue = (value) => {
+    if (!value || value === 0) return '$0';
+    
+    if (value >= 1000000) {
+      return `$${(value / 1000000).toFixed(1)}M`;
+    } else if (value >= 1000) {
+      return `$${(value / 1000).toFixed(0)}K`;
+    } else {
+      return `$${value.toFixed(0)}`;
+    }
+  };
+
+  const getCurrentPeriodDisplay = () => {
+    const now = new Date();
+    const currentYear = now.getFullYear();
+    const currentQuarter = Math.floor(now.getMonth() / 3) + 1;
+    return `Q${currentQuarter} ${currentYear}`;
+  };
+
+  const handleSavePredictions = async () => {
+    try {
+      const orgId = user?.organizationId;
+      const teamId = getTeamId(user, 'leadership');
+      
+      if (!orgId || !teamId) {
+        console.error('Missing orgId or teamId for predictions update');
+        return;
+      }
+      
+      const now = new Date();
+      const currentYear = now.getFullYear();
+      const currentQuarter = Math.floor(now.getMonth() / 3) + 1;
+      const quarter = `Q${currentQuarter}`;
+      
+      await quarterlyPrioritiesService.updatePredictions(orgId, teamId, {
+        quarter,
+        year: currentYear,
+        revenue: predictions.revenue,
+        profit: predictions.profit,
+        measurables: predictions.measurables
+      });
+      
+      setEditingPredictions(false);
+    } catch (err) {
+      console.error('Failed to save predictions:', err);
+    }
+  };
+
   if (loading) {
     return (
       <div className="flex items-center justify-center min-h-screen">
@@ -201,6 +275,188 @@ const Dashboard = () => {
           Here's what's happening today.
         </p>
       </div>
+
+      {/* Predictions Card - Only show for Leadership Team */}
+      {isOnLeadershipTeam() && (
+        <Card>
+          <CardHeader>
+            <div className="flex items-center justify-between">
+              <CardTitle>Quarterly Predictions</CardTitle>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => setEditingPredictions(!editingPredictions)}
+              >
+                {editingPredictions ? <X className="h-4 w-4" /> : <Edit className="h-4 w-4" />}
+              </Button>
+            </div>
+            <CardDescription>
+              {getRevenueLabel(organization)}, profit and measurables forecasts for {getCurrentPeriodDisplay()}
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="grid md:grid-cols-3 gap-6">
+              <div>
+                <div className="flex items-center space-x-2 mb-2">
+                  <DollarSign className="h-5 w-5 text-green-600" />
+                  <Label className="text-base font-semibold">{getRevenueLabel(organization)}</Label>
+                </div>
+                {editingPredictions ? (
+                  <div className="space-y-2">
+                    <div>
+                      <Label className="text-xs">Target</Label>
+                      <div className="flex items-center space-x-1">
+                        <span className="text-sm">$</span>
+                        <Input
+                          type="number"
+                          step="1000"
+                          value={predictions?.revenue?.target || 0}
+                          onChange={(e) => setPredictions({
+                            ...predictions,
+                            revenue: { ...predictions.revenue, target: parseFloat(e.target.value) || 0 }
+                          })}
+                          className="h-8"
+                          placeholder="635000"
+                        />
+                      </div>
+                      <p className="text-xs text-gray-500 mt-1">Enter full amount (e.g., 635000 for $635K)</p>
+                    </div>
+                    <div>
+                      <Label className="text-xs">Current</Label>
+                      <div className="flex items-center space-x-1">
+                        <span className="text-sm">$</span>
+                        <Input
+                          type="number"
+                          step="1000"
+                          value={predictions?.revenue?.current || 0}
+                          onChange={(e) => setPredictions({
+                            ...predictions,
+                            revenue: { ...predictions.revenue, current: parseFloat(e.target.value) || 0 }
+                          })}
+                          className="h-8"
+                          placeholder="450000"
+                        />
+                      </div>
+                    </div>
+                  </div>
+                ) : (
+                  <div>
+                    <p className="text-2xl font-bold">{formatRevenue(predictions?.revenue?.current || 0)}</p>
+                    <p className="text-sm text-gray-600">Target: {formatRevenue(predictions?.revenue?.target || 0)}</p>
+                    <Progress 
+                      value={predictions?.revenue?.target ? ((predictions?.revenue?.current || 0) / predictions.revenue.target) * 100 : 0} 
+                      className="mt-2"
+                    />
+                  </div>
+                )}
+              </div>
+
+              <div>
+                <div className="flex items-center space-x-2 mb-2">
+                  <BarChart className="h-5 w-5 text-blue-600" />
+                  <Label className="text-base font-semibold">Profit Margin</Label>
+                </div>
+                {editingPredictions ? (
+                  <div className="space-y-2">
+                    <div>
+                      <Label className="text-xs">Target (%)</Label>
+                      <div className="flex items-center space-x-1">
+                        <Input
+                          type="number"
+                          step="0.1"
+                          value={predictions?.profit?.target || 0}
+                          onChange={(e) => setPredictions({
+                            ...predictions,
+                            profit: { ...predictions.profit, target: parseFloat(e.target.value) || 0 }
+                          })}
+                          className="h-8"
+                        />
+                        <span className="text-sm">%</span>
+                      </div>
+                    </div>
+                    <div>
+                      <Label className="text-xs">Current (%)</Label>
+                      <div className="flex items-center space-x-1">
+                        <Input
+                          type="number"
+                          step="0.1"
+                          value={predictions?.profit?.current || 0}
+                          onChange={(e) => setPredictions({
+                            ...predictions,
+                            profit: { ...predictions.profit, current: parseFloat(e.target.value) || 0 }
+                          })}
+                          className="h-8"
+                        />
+                        <span className="text-sm">%</span>
+                      </div>
+                    </div>
+                  </div>
+                ) : (
+                  <div>
+                    <p className="text-2xl font-bold">{(predictions?.profit?.current || 0).toFixed(1)}%</p>
+                    <p className="text-sm text-gray-600">Target: {(predictions?.profit?.target || 0).toFixed(1)}%</p>
+                    <Progress 
+                      value={predictions?.profit?.target ? ((predictions?.profit?.current || 0) / predictions.profit.target) * 100 : 0} 
+                      className="mt-2"
+                    />
+                  </div>
+                )}
+              </div>
+
+              <div>
+                <div className="flex items-center space-x-2 mb-2">
+                  <Target className="h-5 w-5 text-purple-600" />
+                  <Label className="text-base font-semibold">Measurables</Label>
+                </div>
+                {editingPredictions ? (
+                  <div className="space-y-2">
+                    <div>
+                      <Label className="text-xs">On Track</Label>
+                      <Input
+                        type="number"
+                        value={predictions?.measurables?.onTrack || 0}
+                        onChange={(e) => setPredictions({
+                          ...predictions,
+                          measurables: { ...predictions.measurables, onTrack: parseInt(e.target.value) || 0 }
+                        })}
+                        className="h-8"
+                      />
+                    </div>
+                    <div>
+                      <Label className="text-xs">Total</Label>
+                      <Input
+                        type="number"
+                        value={predictions?.measurables?.total || 0}
+                        onChange={(e) => setPredictions({
+                          ...predictions,
+                          measurables: { ...predictions.measurables, total: parseInt(e.target.value) || 0 }
+                        })}
+                        className="h-8"
+                      />
+                    </div>
+                  </div>
+                ) : (
+                  <div>
+                    <p className="text-2xl font-bold">{predictions?.measurables?.onTrack || 0}/{predictions?.measurables?.total || 0}</p>
+                    <p className="text-sm text-gray-600">Measurables on track</p>
+                    <Progress 
+                      value={predictions?.measurables?.total ? ((predictions?.measurables?.onTrack || 0) / predictions.measurables.total) * 100 : 0} 
+                      className="mt-2"
+                    />
+                  </div>
+                )}
+              </div>
+            </div>
+            {editingPredictions && (
+              <div className="flex justify-end mt-4">
+                <Button onClick={handleSavePredictions} size="sm">
+                  Save Predictions
+                </Button>
+              </div>
+            )}
+          </CardContent>
+        </Card>
+      )}
 
       {/* Stats Grid */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
