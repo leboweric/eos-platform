@@ -7,12 +7,13 @@ import { Input } from '@/components/ui/input';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Loader2, Save, AlertCircle, Plus, Trash2 } from 'lucide-react';
 import { getRevenueLabel, getRevenueLabelWithSuffix } from '../../utils/revenueUtils';
+import { formatDateLocal } from '../../utils/dateUtils';
 
 const OneYearPlanDialog = ({ open, onOpenChange, data, onSave, organization }) => {
   const [formData, setFormData] = useState({
     revenue: '',
     profit: '',
-    targetDate: new Date(new Date().getFullYear() + 1, 11, 31).toISOString().split('T')[0], // Default to Dec 31, 1 year from now
+    targetDate: formatDateLocal(new Date(new Date().getFullYear() + 1, 11, 31)), // Default to Dec 31, 1 year from now
     goals: ['', '', ''], // Start with 3 goals
     measurables: []
   });

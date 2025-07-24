@@ -3,6 +3,7 @@ import { v4 as uuidv4 } from 'uuid';
 import path from 'path';
 import fs from 'fs';
 import { getUserTeamContext } from '../utils/teamUtils.js';
+import { getDateDaysFromNow } from '../utils/dateUtils.js';
 
 // @desc    Get all todos for an organization
 // @route   GET /api/v1/organizations/:orgId/todos
@@ -118,7 +119,7 @@ export const createTodo = async (req, res) => {
     const userId = req.user.id;
 
     // Calculate default due date (7 days from now) if not provided
-    const finalDueDate = dueDate || new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
+    const finalDueDate = dueDate || getDateDaysFromNow(7);
 
     const todoId = uuidv4();
     const result = await query(

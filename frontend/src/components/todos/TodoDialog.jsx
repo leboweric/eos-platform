@@ -9,6 +9,7 @@ import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Loader2, Save, AlertCircle, Calendar, User, Paperclip, X, Download } from 'lucide-react';
 import { todosService } from '../../services/todosService';
 import { useAuthStore } from '../../stores/authStore';
+import { getDateDaysFromNow } from '../../utils/dateUtils';
 
 const TodoDialog = ({ open, onOpenChange, todo, teamMembers, onSave }) => {
   const { user } = useAuthStore();
@@ -39,11 +40,9 @@ const TodoDialog = ({ open, onOpenChange, todo, teamMembers, onSave }) => {
       }
     } else {
       // Default due date to 7 days from now for new todos
-      const defaultDueDate = new Date();
-      defaultDueDate.setDate(defaultDueDate.getDate() + 7);
       setFormData(prev => ({
         ...prev,
-        dueDate: defaultDueDate.toISOString().split('T')[0]
+        dueDate: getDateDaysFromNow(7)
       }));
     }
   }, [todo]);
