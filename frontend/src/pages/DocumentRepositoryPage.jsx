@@ -53,6 +53,8 @@ const DocumentRepositoryPage = () => {
   const [showCreateFolderDialog, setShowCreateFolderDialog] = useState(false);
   const [parentFolderForCreate, setParentFolderForCreate] = useState(null);
   const [renamingFolder, setRenamingFolder] = useState(null);
+  const [isDragging, setIsDragging] = useState(false);
+  const [dragCounter, setDragCounter] = useState(0);
   
   // Upload dialog state
   const [showUploadDialog, setShowUploadDialog] = useState(false);
@@ -67,6 +69,7 @@ const DocumentRepositoryPage = () => {
   });
   const [tagInput, setTagInput] = useState('');
   const [uploading, setUploading] = useState(false);
+  const [uploadQueue, setUploadQueue] = useState([]);
 
   useEffect(() => {
     fetchData();
@@ -117,8 +120,8 @@ const DocumentRepositoryPage = () => {
     }
   };
 
-  const handleUpload = async () => {
-    if (!uploadFile || !uploadForm.title) {
+  const handleUpload = async (file = uploadFile, formData = uploadForm) => {
+    if (!file || !formData.title) {
       setError('Please provide a file and title');
       return;
     }
@@ -127,7 +130,7 @@ const DocumentRepositoryPage = () => {
       setUploading(true);
       const orgId = user?.organizationId;
       
-      await documentsService.uploadDocument(orgId, uploadForm, uploadFile);
+      await documentsService.uploadDocument(orgId, formData, file);
       
       // Reset form and refresh documents
       setShowUploadDialog(false);
@@ -149,6 +152,76 @@ const DocumentRepositoryPage = () => {
     } finally {
       setUploading(false);
     }
+  };
+
+  const handleDrop = async (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDragging(false);
+    setDragCounter(0);
+
+    const files = Array.from(e.dataTransfer.files);
+    if (files.length === 0) return;
+
+    // Handle single file - show upload dialog
+    if (files.length === 1) {
+      const file = files[0];
+      setUploadFile(file);
+      setUploadForm(prev => ({
+        ...prev,
+        title: file.name.replace(/\.[^/.]+$/, ''),
+        folderId: selectedFolder
+      }));
+      setShowUploadDialog(true);
+    } else {
+      // Handle multiple files - upload directly with default names
+      setUploading(true);
+      const orgId = user?.organizationId;
+      
+      for (const file of files) {
+        try {
+          const formData = {
+            title: file.name.replace(/\.[^/.]+$/, ''),
+            description: '',
+            visibility: 'company',
+            departmentId: '',
+            folderId: selectedFolder,
+            tags: []
+          };
+          
+          await documentsService.uploadDocument(orgId, formData, file);
+        } catch (err) {
+          console.error(`Failed to upload ${file.name}:`, err);
+          setError(`Failed to upload ${file.name}`);
+        }
+      }
+      
+      await fetchData();
+      setUploading(false);
+    }
+  };
+
+  const handleDragEnter = (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setDragCounter(prev => prev + 1);
+    if (e.dataTransfer.items && e.dataTransfer.items.length > 0) {
+      setIsDragging(true);
+    }
+  };
+
+  const handleDragLeave = (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setDragCounter(prev => prev - 1);
+    if (dragCounter - 1 === 0) {
+      setIsDragging(false);
+    }
+  };
+
+  const handleDragOver = (e) => {
+    e.preventDefault();
+    e.stopPropagation();
   };
 
   const handleDownload = async (doc) => {
@@ -295,7 +368,24 @@ const DocumentRepositoryPage = () => {
   }
 
   return (
-    <div className="space-y-6">
+    <div 
+      className="space-y-6"
+      onDrop={handleDrop}
+      onDragEnter={handleDragEnter}
+      onDragLeave={handleDragLeave}
+      onDragOver={handleDragOver}
+    >
+      {/* Drag overlay */}
+      {isDragging && (
+        <div className="fixed inset-0 z-50 bg-blue-500/20 backdrop-blur-sm flex items-center justify-center pointer-events-none">
+          <div className="bg-white rounded-lg shadow-xl p-8 text-center">
+            <Upload className="h-16 w-16 text-blue-600 mx-auto mb-4" />
+            <h3 className="text-xl font-semibold mb-2">Drop files to upload</h3>
+            <p className="text-gray-600">Release to upload your documents</p>
+          </div>
+        </div>
+      )}
+
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
@@ -304,9 +394,13 @@ const DocumentRepositoryPage = () => {
             Central storage for company documents, policies, and resources
           </p>
         </div>
-        <Button onClick={() => setShowUploadDialog(true)}>
+        <Button 
+          onClick={() => setShowUploadDialog(true)}
+          variant="outline"
+          size="sm"
+        >
           <Upload className="mr-2 h-4 w-4" />
-          Upload Document
+          Upload
         </Button>
       </div>
 
@@ -417,26 +511,77 @@ const DocumentRepositoryPage = () => {
 
         {/* Documents Grid */}
         <div className="flex-1">
+          {/* Upload progress */}
+          {uploading && (
+            <div className="mb-4">
+              <Alert>
+                <Loader2 className="h-4 w-4 animate-spin" />
+                <AlertDescription>
+                  Uploading documents...
+                </AlertDescription>
+              </Alert>
+            </div>
+          )}
           {documents.length === 0 ? (
-            <Card>
-              <CardContent className="text-center py-12">
-                <File className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-                <h3 className="text-lg font-semibold mb-2">No documents found</h3>
+            <Card className="border-2 border-dashed hover:border-gray-400 transition-colors">
+              <CardContent 
+                className="text-center py-16 cursor-pointer"
+                onClick={() => document.getElementById('file-input-hidden').click()}
+              >
+                <input
+                  id="file-input-hidden"
+                  type="file"
+                  multiple
+                  onChange={(e) => {
+                    const files = Array.from(e.target.files || []);
+                    if (files.length === 1) {
+                      setUploadFile(files[0]);
+                      setUploadForm(prev => ({
+                        ...prev,
+                        title: files[0].name.replace(/\.[^/.]+$/, ''),
+                        folderId: selectedFolder
+                      }));
+                      setShowUploadDialog(true);
+                    } else if (files.length > 1) {
+                      handleDrop({ 
+                        preventDefault: () => {}, 
+                        stopPropagation: () => {},
+                        dataTransfer: { files: e.target.files }
+                      });
+                    }
+                  }}
+                  className="hidden"
+                  accept=".pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.txt,.png,.jpg,.jpeg,.gif,.zip"
+                />
+                <Upload className="h-16 w-16 text-gray-400 mx-auto mb-4" />
+                <h3 className="text-xl font-semibold mb-2">
+                  {searchTerm || selectedFolder !== null || showFavorites
+                    ? 'No documents found'
+                    : 'Drop files here or click to upload'}
+                </h3>
                 <p className="text-gray-600 mb-4">
                   {searchTerm || selectedFolder !== null || showFavorites
                     ? 'Try adjusting your filters'
-                    : 'Upload your first document to get started'}
+                    : 'Drag and drop your documents or click to browse'}
                 </p>
-                {!searchTerm && selectedFolder === null && !showFavorites && (
-                  <Button onClick={() => setShowUploadDialog(true)}>
-                    <Upload className="mr-2 h-4 w-4" />
-                    Upload Document
-                  </Button>
-                )}
+                <p className="text-sm text-gray-500">
+                  Supports PDF, Word, Excel, PowerPoint, images, and more
+                </p>
               </CardContent>
             </Card>
           ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            <>
+              {/* Drop zone hint */}
+              <Card className="border-2 border-dashed border-gray-200 hover:border-gray-300 transition-colors mb-4">
+                <CardContent className="py-4">
+                  <div className="flex items-center justify-center space-x-3 text-gray-500">
+                    <Upload className="h-5 w-5" />
+                    <span className="text-sm">Drag and drop files anywhere to upload</span>
+                  </div>
+                </CardContent>
+              </Card>
+              
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
               {documents.map(doc => (
                 <Card key={doc.id} className="hover:shadow-lg transition-shadow">
                   <CardHeader className="pb-3">
@@ -531,7 +676,8 @@ const DocumentRepositoryPage = () => {
                   </CardContent>
                 </Card>
               ))}
-            </div>
+              </div>
+            </>
           )}
         </div>
       </div>
