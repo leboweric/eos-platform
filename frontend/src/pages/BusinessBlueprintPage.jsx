@@ -72,6 +72,9 @@ const BusinessBlueprintPage = () => {
     },
     marketingStrategy: {
       targetMarket: '',
+      demographicProfile: '',
+      geographicProfile: '',
+      psychographicProfile: '',
       differentiators: ['', '', ''],
       provenProcessExists: false,
       guaranteeExists: false,
@@ -125,6 +128,9 @@ const BusinessBlueprintPage = () => {
         },
         marketingStrategy: {
           targetMarket: data.marketingStrategy?.target_market || '',
+          demographicProfile: data.marketingStrategy?.demographic_profile || '',
+          geographicProfile: data.marketingStrategy?.geographic_profile || '',
+          psychographicProfile: data.marketingStrategy?.psychographic_profile || '',
           differentiators: [
             data.marketingStrategy?.differentiator_1 || '',
             data.marketingStrategy?.differentiator_2 || '',
@@ -276,9 +282,13 @@ const BusinessBlueprintPage = () => {
       setSaving(true);
       setError(null);
       // Convert array to individual fields for backend
-      const { targetMarket, differentiators, provenProcessExists, guaranteeExists, guaranteeDescription } = blueprintData.marketingStrategy;
+      const { targetMarket, demographicProfile, geographicProfile, psychographicProfile, 
+              differentiators, provenProcessExists, guaranteeExists, guaranteeDescription } = blueprintData.marketingStrategy;
       const strategyData = {
         targetMarket,
+        demographicProfile,
+        geographicProfile,
+        psychographicProfile,
         differentiator1: differentiators[0] || '',
         differentiator2: differentiators[1] || '',
         differentiator3: differentiators[2] || '',
@@ -753,21 +763,22 @@ const BusinessBlueprintPage = () => {
               {/* Display saved values or edit form */}
               {(!editingMarketingStrategy && (
                 blueprintData.marketingStrategy.targetMarket || 
+                blueprintData.marketingStrategy.demographicProfile ||
+                blueprintData.marketingStrategy.geographicProfile ||
+                blueprintData.marketingStrategy.psychographicProfile ||
                 blueprintData.marketingStrategy.differentiators.some(d => d) ||
                 blueprintData.marketingStrategy.provenProcessExists !== undefined ||
                 blueprintData.marketingStrategy.guaranteeExists !== undefined
               )) ? (
                 <>
                   {/* Target Market Display */}
-                  {blueprintData.marketingStrategy.targetMarket && (
-                    <div className="flex items-start justify-between p-4 bg-gray-50 border border-gray-200 rounded-lg hover:shadow-md transition-shadow">
-                      <div className="flex-1">
+                  {(blueprintData.marketingStrategy.demographicProfile || 
+                    blueprintData.marketingStrategy.geographicProfile || 
+                    blueprintData.marketingStrategy.psychographicProfile ||
+                    blueprintData.marketingStrategy.targetMarket) && (
+                    <div className="space-y-3">
+                      <div className="flex items-center justify-between">
                         <h4 className="font-semibold text-gray-900">Target Market</h4>
-                        <p className="text-sm text-gray-600 mt-1">
-                          {blueprintData.marketingStrategy.targetMarket}
-                        </p>
-                      </div>
-                      <div className="flex space-x-2">
                         <Button
                           variant="ghost"
                           size="sm"
@@ -776,6 +787,41 @@ const BusinessBlueprintPage = () => {
                           <Edit className="h-4 w-4" />
                         </Button>
                       </div>
+                      {blueprintData.marketingStrategy.demographicProfile && (
+                        <div className="p-3 bg-gray-50 border border-gray-200 rounded-lg hover:shadow-md transition-shadow">
+                          <h5 className="text-sm font-medium text-gray-700">Demographic</h5>
+                          <p className="text-sm text-gray-600 mt-1">
+                            {blueprintData.marketingStrategy.demographicProfile}
+                          </p>
+                        </div>
+                      )}
+                      {blueprintData.marketingStrategy.geographicProfile && (
+                        <div className="p-3 bg-gray-50 border border-gray-200 rounded-lg hover:shadow-md transition-shadow">
+                          <h5 className="text-sm font-medium text-gray-700">Geographic</h5>
+                          <p className="text-sm text-gray-600 mt-1">
+                            {blueprintData.marketingStrategy.geographicProfile}
+                          </p>
+                        </div>
+                      )}
+                      {blueprintData.marketingStrategy.psychographicProfile && (
+                        <div className="p-3 bg-gray-50 border border-gray-200 rounded-lg hover:shadow-md transition-shadow">
+                          <h5 className="text-sm font-medium text-gray-700">Psychographic</h5>
+                          <p className="text-sm text-gray-600 mt-1">
+                            {blueprintData.marketingStrategy.psychographicProfile}
+                          </p>
+                        </div>
+                      )}
+                      {/* Legacy target market display if only old field has data */}
+                      {blueprintData.marketingStrategy.targetMarket && 
+                       !blueprintData.marketingStrategy.demographicProfile && 
+                       !blueprintData.marketingStrategy.geographicProfile && 
+                       !blueprintData.marketingStrategy.psychographicProfile && (
+                        <div className="p-3 bg-gray-50 border border-gray-200 rounded-lg hover:shadow-md transition-shadow">
+                          <p className="text-sm text-gray-600">
+                            {blueprintData.marketingStrategy.targetMarket}
+                          </p>
+                        </div>
+                      )}
                     </div>
                   )}
                   
@@ -855,6 +901,9 @@ const BusinessBlueprintPage = () => {
                   
                   {/* Add button if nothing is filled */}
                   {!blueprintData.marketingStrategy.targetMarket && 
+                   !blueprintData.marketingStrategy.demographicProfile &&
+                   !blueprintData.marketingStrategy.geographicProfile &&
+                   !blueprintData.marketingStrategy.psychographicProfile &&
                    !blueprintData.marketingStrategy.differentiators.some(d => d) &&
                    blueprintData.marketingStrategy.provenProcessExists === undefined &&
                    blueprintData.marketingStrategy.guaranteeExists === undefined && (
@@ -871,17 +920,47 @@ const BusinessBlueprintPage = () => {
               ) : (
                 /* Edit Form */
                 <>
-                  <div>
-                    <Label htmlFor="targetMarket">Target Market</Label>
-                    <Textarea
-                      id="targetMarket"
-                      value={blueprintData.marketingStrategy.targetMarket}
-                      onChange={(e) => setBlueprintData(prev => ({
-                        ...prev,
-                        marketingStrategy: { ...prev.marketingStrategy, targetMarket: e.target.value }
-                      }))}
-                      placeholder="Describe your target market..."
-                    />
+                  <div className="space-y-4">
+                    <h4 className="font-semibold text-gray-900">Target Market</h4>
+                    <div>
+                      <Label htmlFor="demographicProfile">Demographic</Label>
+                      <Textarea
+                        id="demographicProfile"
+                        value={blueprintData.marketingStrategy.demographicProfile}
+                        onChange={(e) => setBlueprintData(prev => ({
+                          ...prev,
+                          marketingStrategy: { ...prev.marketingStrategy, demographicProfile: e.target.value }
+                        }))}
+                        placeholder="Age, income, education level, occupation, etc..."
+                        rows={2}
+                      />
+                    </div>
+                    <div>
+                      <Label htmlFor="geographicProfile">Geographic</Label>
+                      <Textarea
+                        id="geographicProfile"
+                        value={blueprintData.marketingStrategy.geographicProfile}
+                        onChange={(e) => setBlueprintData(prev => ({
+                          ...prev,
+                          marketingStrategy: { ...prev.marketingStrategy, geographicProfile: e.target.value }
+                        }))}
+                        placeholder="Location, region, urban/suburban/rural, climate, etc..."
+                        rows={2}
+                      />
+                    </div>
+                    <div>
+                      <Label htmlFor="psychographicProfile">Psychographic</Label>
+                      <Textarea
+                        id="psychographicProfile"
+                        value={blueprintData.marketingStrategy.psychographicProfile}
+                        onChange={(e) => setBlueprintData(prev => ({
+                          ...prev,
+                          marketingStrategy: { ...prev.marketingStrategy, psychographicProfile: e.target.value }
+                        }))}
+                        placeholder="Lifestyle, values, interests, attitudes, behaviors, etc..."
+                        rows={2}
+                      />
+                    </div>
                   </div>
 
                   <div>
@@ -996,6 +1075,9 @@ const BusinessBlueprintPage = () => {
                       Save Marketing Strategy
                     </Button>
                     {(blueprintData.marketingStrategy.targetMarket || 
+                      blueprintData.marketingStrategy.demographicProfile ||
+                      blueprintData.marketingStrategy.geographicProfile ||
+                      blueprintData.marketingStrategy.psychographicProfile ||
                       blueprintData.marketingStrategy.differentiators.some(d => d) ||
                       blueprintData.marketingStrategy.provenProcessExists !== undefined ||
                       blueprintData.marketingStrategy.guaranteeExists !== undefined) && (

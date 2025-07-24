@@ -367,6 +367,9 @@ export const updateMarketingStrategy = async (req, res) => {
     const { orgId, teamId } = req.params;
     const { 
       targetMarket, 
+      demographicProfile,
+      geographicProfile,
+      psychographicProfile,
       differentiator1, 
       differentiator2, 
       differentiator3,
@@ -392,23 +395,30 @@ export const updateMarketingStrategy = async (req, res) => {
       // Update
       result = await query(
         `UPDATE marketing_strategies 
-         SET target_market = $1, differentiator_1 = $2, differentiator_2 = $3,
-             differentiator_3 = $4, differentiator_4 = $5, differentiator_5 = $6,
-             proven_process_exists = $7, guarantee_exists = $8, guarantee_description = $9,
+         SET target_market = $1, demographic_profile = $2, geographic_profile = $3,
+             psychographic_profile = $4, differentiator_1 = $5, differentiator_2 = $6,
+             differentiator_3 = $7, differentiator_4 = $8, differentiator_5 = $9,
+             proven_process_exists = $10, guarantee_exists = $11, guarantee_description = $12,
              updated_at = NOW()
-         WHERE vto_id = $10
+         WHERE vto_id = $13
          RETURNING *`,
-        [targetMarket, differentiator1, differentiator2, differentiator3, differentiator4, differentiator5, provenProcessExists, guaranteeExists, guaranteeDescription, vtoId]
+        [targetMarket, demographicProfile, geographicProfile, psychographicProfile, 
+         differentiator1, differentiator2, differentiator3, differentiator4, differentiator5, 
+         provenProcessExists, guaranteeExists, guaranteeDescription, vtoId]
       );
     } else {
       // Create
       const newId = uuidv4();
       result = await query(
         `INSERT INTO marketing_strategies 
-         (id, vto_id, target_market, differentiator_1, differentiator_2, differentiator_3, differentiator_4, differentiator_5, proven_process_exists, guarantee_exists, guarantee_description)
-         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
+         (id, vto_id, target_market, demographic_profile, geographic_profile, psychographic_profile,
+          differentiator_1, differentiator_2, differentiator_3, differentiator_4, differentiator_5, 
+          proven_process_exists, guarantee_exists, guarantee_description)
+         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14)
          RETURNING *`,
-        [newId, vtoId, targetMarket, differentiator1, differentiator2, differentiator3, differentiator4, differentiator5, provenProcessExists, guaranteeExists, guaranteeDescription]
+        [newId, vtoId, targetMarket, demographicProfile, geographicProfile, psychographicProfile,
+         differentiator1, differentiator2, differentiator3, differentiator4, differentiator5, 
+         provenProcessExists, guaranteeExists, guaranteeDescription]
       );
     }
 
