@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useAuthStore } from '../stores/authStore';
 import { documentsService } from '../services/documentsService';
-import { organizationService } from '../services/organizationService';
+import { departmentService } from '../services/departmentService';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -83,15 +83,15 @@ const DocumentRepositoryPage = () => {
         ...(searchTerm && { search: searchTerm })
       };
       
-      const [docsData, categoriesData, teamsData] = await Promise.all([
+      const [docsData, categoriesData, departmentsData] = await Promise.all([
         documentsService.getDocuments(orgId, filters),
         documentsService.getCategories(orgId),
-        organizationService.getTeams()
+        departmentService.getDepartments()
       ]);
       
       setDocuments(docsData || []);
       setCategories(categoriesData || []);
-      setDepartments(teamsData?.teams || []);
+      setDepartments(departmentsData?.data || []);
     } catch (err) {
       console.error('Failed to fetch documents:', err);
       setError('Failed to load documents. Please try again.');
