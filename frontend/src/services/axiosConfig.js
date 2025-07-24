@@ -17,9 +17,17 @@ apiClient.interceptors.request.use(
       config.headers.Authorization = `Bearer ${token}`;
     }
     
+    // Debug FormData handling
+    console.log('=== AXIOS INTERCEPTOR DEBUG ===');
+    console.log('Request config:', config.url);
+    console.log('Data type:', config.data?.constructor?.name);
+    console.log('Is FormData?:', config.data instanceof FormData);
+    console.log('Headers before:', config.headers);
+    
     // Don't override Content-Type for FormData
     if (config.data instanceof FormData) {
       delete config.headers['Content-Type'];
+      console.log('Headers after removing Content-Type:', config.headers);
     }
     
     return config;

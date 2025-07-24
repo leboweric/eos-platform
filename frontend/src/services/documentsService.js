@@ -21,10 +21,31 @@ export const documentsService = {
 
   // Upload a new document
   async uploadDocument(orgId, documentData, file) {
-    console.log('Uploading document:', { documentData, file });
+    console.log('=== DOCUMENT UPLOAD DEBUG ===');
+    console.log('1. Input parameters:');
+    console.log('   - orgId:', orgId);
+    console.log('   - documentData:', documentData);
+    console.log('   - file:', file);
+    console.log('   - file type:', typeof file);
+    console.log('   - file constructor:', file?.constructor?.name);
+    console.log('   - file instanceof File:', file instanceof File);
+    console.log('   - file instanceof Blob:', file instanceof Blob);
+    
+    if (file) {
+      console.log('2. File details:');
+      console.log('   - name:', file.name);
+      console.log('   - size:', file.size);
+      console.log('   - type:', file.type);
+      console.log('   - lastModified:', file.lastModified);
+    }
     
     const formData = new FormData();
+    console.log('3. Appending file to FormData...');
     formData.append('file', file);
+    console.log('   - FormData created:', formData);
+    console.log('   - FormData.has("file"):', formData.has('file'));
+    console.log('   - FormData.get("file"):', formData.get('file'));
+    
     formData.append('title', documentData.title);
     formData.append('description', documentData.description || '');
     formData.append('visibility', documentData.visibility || 'company');
@@ -46,12 +67,27 @@ export const documentsService = {
       formData.append('tags', JSON.stringify(documentData.tags));
     }
     
-    const response = await axios.post(
-      `/organizations/${orgId}/documents`,
-      formData
-    );
+    console.log('4. Sending request...');
+    console.log('   - URL:', `/organizations/${orgId}/documents`);
+    console.log('   - FormData entries:');
+    for (let [key, value] of formData.entries()) {
+      console.log(`     - ${key}:`, value);
+    }
     
-    return response.data.data;
+    try {
+      const response = await axios.post(
+        `/organizations/${orgId}/documents`,
+        formData
+      );
+      console.log('5. Upload successful!');
+      return response.data.data;
+    } catch (error) {
+      console.log('5. Upload failed!');
+      console.log('   - Error:', error);
+      console.log('   - Response:', error.response);
+      console.log('   - Request headers:', error.config?.headers);
+      throw error;
+    }
   },
 
   // Update document metadata

@@ -112,9 +112,15 @@ export const uploadDocument = async (req, res) => {
     const file = req.file;
     const { title, description, departmentId, visibility, relatedPriorityId, folderId } = req.body;
     
-    // Debug logging
-    console.log('Upload request body:', req.body);
-    console.log('Upload file:', req.file ? { name: req.file.originalname, size: req.file.size } : 'No file');
+    // Enhanced debug logging
+    console.log('=== BACKEND UPLOAD DEBUG ===');
+    console.log('1. Request headers:', req.headers);
+    console.log('2. Content-Type:', req.get('content-type'));
+    console.log('3. Request body:', req.body);
+    console.log('4. Request file (req.file):', req.file);
+    console.log('5. Request files (req.files):', req.files);
+    console.log('6. Body keys:', Object.keys(req.body));
+    console.log('7. Is multipart?:', req.is('multipart/form-data'));
     
     // Parse tags from JSON string if provided
     let tags = [];
