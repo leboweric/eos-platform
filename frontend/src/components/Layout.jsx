@@ -35,7 +35,8 @@ import {
   CreditCard,
   ArrowLeft,
   Briefcase,
-  GitBranch
+  GitBranch,
+  FileText
 } from 'lucide-react';
 
 const Layout = ({ children }) => {
@@ -71,6 +72,7 @@ const Layout = ({ children }) => {
     { name: 'Issues', href: '/issues', icon: MessageSquare },
     { name: 'Meetings', href: '/meetings', icon: Calendar },
     { name: '2-Page Plan', href: '/business-blueprint', icon: Target, requiresLeadership: true },
+    { name: 'Document Repository', href: '/documents', icon: FileText },
     { name: 'Organizational Chart', href: '/organizational-chart', icon: GitBranch },
     { name: 'Departments', href: '/departments', icon: Building2, requiresAdmin: true },
     { name: 'Team', href: '/users', icon: Users, requiresAdmin: true },

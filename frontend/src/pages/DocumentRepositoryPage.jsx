@@ -1,0 +1,680 @@
+import { useState, useEffect } from 'react';
+import { useAuthStore } from '../stores/authStore';
+import { documentsService } from '../services/documentsService';
+import { organizationService } from '../services/organizationService';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Badge } from '@/components/ui/badge';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Alert, AlertDescription } from '@/components/ui/alert';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Textarea } from '@/components/ui/textarea';
+import {
+  Search,
+  Upload,
+  Download,
+  Star,
+  File,
+  Folder,
+  Filter,
+  Plus,
+  Trash2,
+  Edit,
+  Eye,
+  AlertCircle,
+  Loader2,
+  FileText,
+  FileSpreadsheet,
+  FileImage,
+  Presentation,
+  Archive,
+  Users,
+  Building2,
+  Lock
+} from 'lucide-react';
+
+const DocumentRepositoryPage = () => {
+  const { user } = useAuthStore();
+  const [documents, setDocuments] = useState([]);
+  const [categories, setCategories] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+  const [searchTerm, setSearchTerm] = useState('');
+  const [selectedCategory, setSelectedCategory] = useState('all');
+  const [selectedDepartment, setSelectedDepartment] = useState('all');
+  const [showFavorites, setShowFavorites] = useState(false);
+  const [departments, setDepartments] = useState([]);
+  
+  // Upload dialog state
+  const [showUploadDialog, setShowUploadDialog] = useState(false);
+  const [uploadFile, setUploadFile] = useState(null);
+  const [uploadForm, setUploadForm] = useState({
+    title: '',
+    description: '',
+    category: '',
+    visibility: 'company',
+    departmentId: '',
+    tags: []
+  });
+  const [tagInput, setTagInput] = useState('');
+  const [uploading, setUploading] = useState(false);
+
+  useEffect(() => {
+    fetchData();
+  }, [selectedCategory, selectedDepartment, showFavorites, searchTerm]);
+
+  const fetchData = async () => {
+    try {
+      setLoading(true);
+      const orgId = user?.organizationId;
+      
+      if (!orgId) {
+        throw new Error('No organization ID found');
+      }
+
+      // Fetch documents with filters
+      const filters = {
+        ...(selectedCategory !== 'all' && { category: selectedCategory }),
+        ...(selectedDepartment !== 'all' && { department: selectedDepartment }),
+        ...(showFavorites && { favorites: 'true' }),
+        ...(searchTerm && { search: searchTerm })
+      };
+      
+      const [docsData, categoriesData, teamsData] = await Promise.all([
+        documentsService.getDocuments(orgId, filters),
+        documentsService.getCategories(orgId),
+        organizationService.getTeams()
+      ]);
+      
+      setDocuments(docsData || []);
+      setCategories(categoriesData || []);
+      setDepartments(teamsData?.teams || []);
+    } catch (err) {
+      console.error('Failed to fetch documents:', err);
+      setError('Failed to load documents. Please try again.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleFileSelect = (event) => {
+    const file = event.target.files?.[0];
+    if (file) {
+      setUploadFile(file);
+      setUploadForm(prev => ({
+        ...prev,
+        title: prev.title || file.name.replace(/\.[^/.]+$/, '') // Use filename without extension as default title
+      }));
+    }
+  };
+
+  const handleUpload = async () => {
+    if (!uploadFile || !uploadForm.title || !uploadForm.category) {
+      setError('Please provide a file, title, and category');
+      return;
+    }
+
+    try {
+      setUploading(true);
+      const orgId = user?.organizationId;
+      
+      await documentsService.uploadDocument(orgId, uploadForm, uploadFile);
+      
+      // Reset form and refresh documents
+      setShowUploadDialog(false);
+      setUploadFile(null);
+      setUploadForm({
+        title: '',
+        description: '',
+        category: '',
+        visibility: 'company',
+        departmentId: '',
+        tags: []
+      });
+      setTagInput('');
+      
+      await fetchData();
+    } catch (err) {
+      console.error('Upload failed:', err);
+      setError('Failed to upload document');
+    } finally {
+      setUploading(false);
+    }
+  };
+
+  const handleDownload = async (doc) => {
+    try {
+      const orgId = user?.organizationId;
+      await documentsService.downloadDocument(orgId, doc.id, doc.file_name);
+    } catch (err) {
+      console.error('Download failed:', err);
+      setError('Failed to download document');
+    }
+  };
+
+  const handleToggleFavorite = async (doc) => {
+    try {
+      const orgId = user?.organizationId;
+      await documentsService.toggleFavorite(orgId, doc.id);
+      await fetchData();
+    } catch (err) {
+      console.error('Failed to toggle favorite:', err);
+    }
+  };
+
+  const handleDelete = async (doc) => {
+    if (!window.confirm(`Are you sure you want to delete "${doc.title}"?`)) {
+      return;
+    }
+
+    try {
+      const orgId = user?.organizationId;
+      await documentsService.deleteDocument(orgId, doc.id);
+      await fetchData();
+    } catch (err) {
+      console.error('Failed to delete document:', err);
+      setError('Failed to delete document');
+    }
+  };
+
+  const handleAddTag = () => {
+    if (tagInput.trim() && !uploadForm.tags.includes(tagInput.trim())) {
+      setUploadForm(prev => ({
+        ...prev,
+        tags: [...prev.tags, tagInput.trim()]
+      }));
+      setTagInput('');
+    }
+  };
+
+  const handleRemoveTag = (tag) => {
+    setUploadForm(prev => ({
+      ...prev,
+      tags: prev.tags.filter(t => t !== tag)
+    }));
+  };
+
+  const getFileIcon = (mimeType) => {
+    if (!mimeType) return <File className="h-8 w-8" />;
+    
+    if (mimeType.includes('pdf')) return <FileText className="h-8 w-8 text-red-600" />;
+    if (mimeType.includes('spreadsheet') || mimeType.includes('excel')) return <FileSpreadsheet className="h-8 w-8 text-green-600" />;
+    if (mimeType.includes('presentation') || mimeType.includes('powerpoint')) return <Presentation className="h-8 w-8 text-orange-600" />;
+    if (mimeType.includes('image')) return <FileImage className="h-8 w-8 text-blue-600" />;
+    if (mimeType.includes('zip') || mimeType.includes('archive')) return <Archive className="h-8 w-8 text-purple-600" />;
+    
+    return <File className="h-8 w-8 text-gray-600" />;
+  };
+
+  const getVisibilityIcon = (visibility) => {
+    switch (visibility) {
+      case 'company':
+        return <Building2 className="h-4 w-4" />;
+      case 'department':
+        return <Users className="h-4 w-4" />;
+      case 'private':
+        return <Lock className="h-4 w-4" />;
+      default:
+        return null;
+    }
+  };
+
+  const formatFileSize = (bytes) => {
+    if (!bytes) return 'Unknown size';
+    const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+    const i = Math.floor(Math.log(bytes) / Math.log(1024));
+    return `${(bytes / Math.pow(1024, i)).toFixed(1)} ${sizes[i]}`;
+  };
+
+  const formatDate = (dateString) => {
+    if (!dateString) return '';
+    return new Date(dateString).toLocaleDateString('en-US', {
+      month: 'short',
+      day: 'numeric',
+      year: 'numeric'
+    });
+  };
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <Loader2 className="h-8 w-8 animate-spin" />
+      </div>
+    );
+  }
+
+  return (
+    <div className="space-y-6">
+      {/* Header */}
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-3xl font-bold">Document Repository</h1>
+          <p className="text-gray-600 mt-1">
+            Central storage for company documents, policies, and resources
+          </p>
+        </div>
+        <Button onClick={() => setShowUploadDialog(true)}>
+          <Upload className="mr-2 h-4 w-4" />
+          Upload Document
+        </Button>
+      </div>
+
+      {/* Error Alert */}
+      {error && (
+        <Alert variant="destructive">
+          <AlertCircle className="h-4 w-4" />
+          <AlertDescription>{error}</AlertDescription>
+        </Alert>
+      )}
+
+      <div className="flex gap-6">
+        {/* Sidebar Filters */}
+        <div className="w-64 space-y-6">
+          {/* Search */}
+          <Card>
+            <CardHeader className="pb-3">
+              <CardTitle className="text-sm">Search</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="relative">
+                <Search className="absolute left-2 top-2.5 h-4 w-4 text-gray-400" />
+                <Input
+                  placeholder="Search documents..."
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  className="pl-8"
+                />
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Quick Filters */}
+          <Card>
+            <CardHeader className="pb-3">
+              <CardTitle className="text-sm">Quick Filters</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-2">
+              <Button
+                variant={showFavorites ? "default" : "outline"}
+                size="sm"
+                className="w-full justify-start"
+                onClick={() => setShowFavorites(!showFavorites)}
+              >
+                <Star className="mr-2 h-4 w-4" />
+                Favorites
+              </Button>
+            </CardContent>
+          </Card>
+
+          {/* Categories */}
+          <Card>
+            <CardHeader className="pb-3">
+              <CardTitle className="text-sm">Categories</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-1">
+              <Button
+                variant={selectedCategory === 'all' ? "secondary" : "ghost"}
+                size="sm"
+                className="w-full justify-start"
+                onClick={() => setSelectedCategory('all')}
+              >
+                <Folder className="mr-2 h-4 w-4" />
+                All Categories
+              </Button>
+              {categories.map(cat => (
+                <Button
+                  key={cat.category}
+                  variant={selectedCategory === cat.category ? "secondary" : "ghost"}
+                  size="sm"
+                  className="w-full justify-start"
+                  onClick={() => setSelectedCategory(cat.category)}
+                >
+                  <Folder className="mr-2 h-4 w-4" />
+                  <span className="flex-1 text-left">{cat.display_name}</span>
+                  <Badge variant="outline" className="ml-2">
+                    {cat.count}
+                  </Badge>
+                </Button>
+              ))}
+            </CardContent>
+          </Card>
+
+          {/* Departments */}
+          <Card>
+            <CardHeader className="pb-3">
+              <CardTitle className="text-sm">Departments</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-1">
+              <Select value={selectedDepartment} onValueChange={setSelectedDepartment}>
+                <SelectTrigger className="w-full">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Departments</SelectItem>
+                  {departments.map(dept => (
+                    <SelectItem key={dept.id} value={dept.id}>
+                      {dept.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </CardContent>
+          </Card>
+        </div>
+
+        {/* Documents Grid */}
+        <div className="flex-1">
+          {documents.length === 0 ? (
+            <Card>
+              <CardContent className="text-center py-12">
+                <File className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+                <h3 className="text-lg font-semibold mb-2">No documents found</h3>
+                <p className="text-gray-600 mb-4">
+                  {searchTerm || selectedCategory !== 'all' || showFavorites
+                    ? 'Try adjusting your filters'
+                    : 'Upload your first document to get started'}
+                </p>
+                {!searchTerm && selectedCategory === 'all' && !showFavorites && (
+                  <Button onClick={() => setShowUploadDialog(true)}>
+                    <Upload className="mr-2 h-4 w-4" />
+                    Upload Document
+                  </Button>
+                )}
+              </CardContent>
+            </Card>
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              {documents.map(doc => (
+                <Card key={doc.id} className="hover:shadow-lg transition-shadow">
+                  <CardHeader className="pb-3">
+                    <div className="flex items-start justify-between">
+                      <div className="flex items-center space-x-3">
+                        {getFileIcon(doc.mime_type)}
+                        <div className="min-w-0">
+                          <CardTitle className="text-base line-clamp-1">
+                            {doc.title}
+                          </CardTitle>
+                          <CardDescription className="text-xs">
+                            {formatFileSize(doc.file_size)} • {formatDate(doc.created_at)}
+                          </CardDescription>
+                        </div>
+                      </div>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => handleToggleFavorite(doc)}
+                      >
+                        <Star className={`h-4 w-4 ${doc.is_favorite ? 'fill-yellow-400 text-yellow-400' : ''}`} />
+                      </Button>
+                    </div>
+                  </CardHeader>
+                  <CardContent>
+                    {doc.description && (
+                      <p className="text-sm text-gray-600 mb-3 line-clamp-2">
+                        {doc.description}
+                      </p>
+                    )}
+                    
+                    <div className="space-y-2">
+                      {/* Tags */}
+                      {doc.tags && doc.tags.length > 0 && (
+                        <div className="flex flex-wrap gap-1">
+                          {doc.tags.map(tag => tag && (
+                            <Badge key={tag} variant="outline" className="text-xs">
+                              {tag}
+                            </Badge>
+                          ))}
+                        </div>
+                      )}
+                      
+                      {/* Metadata */}
+                      <div className="flex items-center justify-between text-xs text-gray-500">
+                        <div className="flex items-center space-x-2">
+                          {getVisibilityIcon(doc.visibility)}
+                          <span className="capitalize">{doc.visibility}</span>
+                          {doc.department_name && (
+                            <>
+                              <span>•</span>
+                              <span>{doc.department_name}</span>
+                            </>
+                          )}
+                        </div>
+                      </div>
+                      
+                      {/* Uploader */}
+                      <div className="text-xs text-gray-500">
+                        By {doc.uploader_name}
+                      </div>
+                      
+                      {/* Actions */}
+                      <div className="flex items-center space-x-1 pt-2">
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          className="flex-1"
+                          onClick={() => handleDownload(doc)}
+                        >
+                          <Download className="h-4 w-4" />
+                        </Button>
+                        {(doc.uploaded_by === user?.id || user?.role === 'admin') && (
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => handleDelete(doc)}
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
+                        )}
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+          )}
+        </div>
+      </div>
+
+      {/* Upload Dialog */}
+      <Dialog open={showUploadDialog} onOpenChange={setShowUploadDialog}>
+        <DialogContent className="sm:max-w-[600px]">
+          <DialogHeader>
+            <DialogTitle>Upload Document</DialogTitle>
+            <DialogDescription>
+              Add a new document to the repository
+            </DialogDescription>
+          </DialogHeader>
+          
+          <div className="space-y-4">
+            {/* File Input */}
+            <div>
+              <Label>File</Label>
+              <label className="block mt-1">
+                <input
+                  type="file"
+                  onChange={handleFileSelect}
+                  className="hidden"
+                  accept=".pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.txt,.png,.jpg,.jpeg,.gif,.zip"
+                />
+                <div className="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center cursor-pointer hover:border-gray-400 transition-colors">
+                  {uploadFile ? (
+                    <div className="flex items-center justify-center space-x-2">
+                      {getFileIcon(uploadFile.type)}
+                      <div>
+                        <p className="font-medium">{uploadFile.name}</p>
+                        <p className="text-sm text-gray-500">{formatFileSize(uploadFile.size)}</p>
+                      </div>
+                    </div>
+                  ) : (
+                    <>
+                      <Upload className="h-8 w-8 mx-auto mb-2 text-gray-400" />
+                      <p className="text-sm text-gray-600">Click to choose a file</p>
+                      <p className="text-xs text-gray-500 mt-1">Max size: 50MB</p>
+                    </>
+                  )}
+                </div>
+              </label>
+            </div>
+
+            {/* Title */}
+            <div>
+              <Label htmlFor="title">Title *</Label>
+              <Input
+                id="title"
+                value={uploadForm.title}
+                onChange={(e) => setUploadForm({ ...uploadForm, title: e.target.value })}
+                placeholder="Enter document title"
+              />
+            </div>
+
+            {/* Description */}
+            <div>
+              <Label htmlFor="description">Description</Label>
+              <Textarea
+                id="description"
+                value={uploadForm.description}
+                onChange={(e) => setUploadForm({ ...uploadForm, description: e.target.value })}
+                placeholder="Brief description of the document"
+                rows={3}
+              />
+            </div>
+
+            {/* Category */}
+            <div>
+              <Label htmlFor="category">Category *</Label>
+              <Select
+                value={uploadForm.category}
+                onValueChange={(value) => setUploadForm({ ...uploadForm, category: value })}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Select a category" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="strategy">Strategy Documents</SelectItem>
+                  <SelectItem value="blueprints">Blueprints & Plans</SelectItem>
+                  <SelectItem value="policies">Policies & Procedures</SelectItem>
+                  <SelectItem value="templates">Templates & Forms</SelectItem>
+                  <SelectItem value="meeting_notes">Meeting Notes</SelectItem>
+                  <SelectItem value="reports">Reports & Analytics</SelectItem>
+                  <SelectItem value="training">Training Materials</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
+            {/* Visibility */}
+            <div>
+              <Label htmlFor="visibility">Visibility</Label>
+              <Select
+                value={uploadForm.visibility}
+                onValueChange={(value) => setUploadForm({ ...uploadForm, visibility: value })}
+              >
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="company">
+                    <div className="flex items-center">
+                      <Building2 className="mr-2 h-4 w-4" />
+                      Company - All users can view
+                    </div>
+                  </SelectItem>
+                  <SelectItem value="department">
+                    <div className="flex items-center">
+                      <Users className="mr-2 h-4 w-4" />
+                      Department - Team members only
+                    </div>
+                  </SelectItem>
+                  <SelectItem value="private">
+                    <div className="flex items-center">
+                      <Lock className="mr-2 h-4 w-4" />
+                      Private - Only you can view
+                    </div>
+                  </SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
+            {/* Department (if visibility is department) */}
+            {uploadForm.visibility === 'department' && (
+              <div>
+                <Label htmlFor="department">Department</Label>
+                <Select
+                  value={uploadForm.departmentId}
+                  onValueChange={(value) => setUploadForm({ ...uploadForm, departmentId: value })}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select department" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {departments.map(dept => (
+                      <SelectItem key={dept.id} value={dept.id}>
+                        {dept.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            )}
+
+            {/* Tags */}
+            <div>
+              <Label>Tags</Label>
+              <div className="flex items-center space-x-2 mt-1">
+                <Input
+                  value={tagInput}
+                  onChange={(e) => setTagInput(e.target.value)}
+                  onKeyPress={(e) => e.key === 'Enter' && (e.preventDefault(), handleAddTag())}
+                  placeholder="Add tags..."
+                  className="flex-1"
+                />
+                <Button type="button" onClick={handleAddTag} size="sm">
+                  Add
+                </Button>
+              </div>
+              {uploadForm.tags.length > 0 && (
+                <div className="flex flex-wrap gap-2 mt-2">
+                  {uploadForm.tags.map(tag => (
+                    <Badge key={tag} variant="secondary">
+                      {tag}
+                      <button
+                        type="button"
+                        onClick={() => handleRemoveTag(tag)}
+                        className="ml-1 hover:text-red-600"
+                      >
+                        ×
+                      </button>
+                    </Badge>
+                  ))}
+                </div>
+              )}
+            </div>
+          </div>
+
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setShowUploadDialog(false)}>
+              Cancel
+            </Button>
+            <Button onClick={handleUpload} disabled={uploading || !uploadFile || !uploadForm.title || !uploadForm.category}>
+              {uploading ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Uploading...
+                </>
+              ) : (
+                <>
+                  <Upload className="mr-2 h-4 w-4" />
+                  Upload
+                </>
+              )}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+    </div>
+  );
+};
+
+export default DocumentRepositoryPage;

@@ -30,6 +30,7 @@ import UserSettings from './pages/UserSettings';
 import OrganizationalChartPage from './pages/OrganizationalChartPage';
 import WeeklyAccountabilityMeetingPage from './pages/WeeklyAccountabilityMeetingPage';
 import QuarterlyPlanningMeetingPage from './pages/QuarterlyPlanningMeetingPage';
+import DocumentRepositoryPage from './pages/DocumentRepositoryPage';
 
 // Department Components
 import DepartmentLayout from './components/DepartmentLayout';
@@ -99,6 +100,7 @@ function App() {
           <Route path="/organization-settings" element={user ? <Layout><OrganizationSettings /></Layout> : <Navigate to="/login" />} />
           <Route path="/user-settings" element={user ? <Layout><UserSettings /></Layout> : <Navigate to="/login" />} />
           <Route path="/organizational-chart" element={user ? <Layout><OrganizationalChartPage /></Layout> : <Navigate to="/login" />} />
+          <Route path="/documents" element={user ? <Layout><DocumentRepositoryPage /></Layout> : <Navigate to="/login" />} />
           
           {/* Legacy route redirects */}
           <Route path="/vto" element={<Navigate to="/business-blueprint" />} />
