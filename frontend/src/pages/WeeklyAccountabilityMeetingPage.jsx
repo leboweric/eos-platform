@@ -174,19 +174,39 @@ const WeeklyAccountabilityMeetingPage = () => {
       // Use the simplified current priorities endpoint
       const response = await quarterlyPrioritiesService.getCurrentPriorities(orgId, effectiveTeamId);
       
+      console.log('Weekly Meeting Priorities Response:', response);
+      
       // Extract data in the same format as the original page
-      const companyPriorities = response.companyPriorities || [];
-      const teamMemberPriorities = response.teamMemberPriorities || {};
+      const companyPriorities = response.companyPriorities || response.data?.companyPriorities || [];
+      const teamMemberPriorities = response.teamMemberPriorities || response.data?.teamMemberPriorities || {};
+      const teamMembers = response.teamMembers || response.data?.teamMembers || [];
+      
+      console.log('Team Members:', teamMembers);
+      console.log('Team Member Priorities before filtering:', Object.keys(teamMemberPriorities));
+      
+      // Extract team member IDs for filtering
+      const teamMemberIds = new Set(teamMembers.map(member => member.id));
+      
+      // Filter individual priorities to only include team members
+      const filteredTeamMemberPriorities = {};
+      Object.entries(teamMemberPriorities).forEach(([memberId, memberData]) => {
+        if (teamMemberIds.has(memberId)) {
+          filteredTeamMemberPriorities[memberId] = memberData;
+        }
+      });
+      
+      console.log('Team Member Priorities after filtering:', Object.keys(filteredTeamMemberPriorities));
       
       // Flatten the data structure to a simple array for easier handling
       const allPriorities = [
         ...companyPriorities.map(p => ({ ...p, priority_type: 'company' })),
-        ...Object.values(teamMemberPriorities).flatMap(memberData => 
+        ...Object.values(filteredTeamMemberPriorities).flatMap(memberData => 
           (memberData.priorities || []).map(p => ({ ...p, priority_type: 'individual' }))
         )
       ];
       
       setPriorities(allPriorities);
+      setTeamMembers(teamMembers);
       setLoading(false);
     } catch (error) {
       console.error('Failed to fetch priorities:', error);
