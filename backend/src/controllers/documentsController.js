@@ -244,12 +244,20 @@ export const downloadDocument = async (req, res) => {
     // Check if file exists
     const filePath = document.file_path;
     
-    // Check if it's an absolute path or relative path
+    // Handle different path scenarios
     let absolutePath = filePath;
-    if (!path.isAbsolute(filePath)) {
-      // If relative, resolve it relative to the project root
+    
+    // In production (Railway), paths might be stored as absolute paths starting with /app
+    // In development, they might be relative paths or include the full local path
+    if (filePath.startsWith('/app/')) {
+      // Production path - strip /app and make it relative to backend directory
+      const relativePath = filePath.substring(5); // Remove '/app/'
+      absolutePath = path.join(__dirname, '../..', relativePath);
+    } else if (!path.isAbsolute(filePath)) {
+      // Relative path - resolve it relative to the project root
       absolutePath = path.join(__dirname, '../..', filePath);
     }
+    // If it's already an absolute path (local development), use as is
     
     try {
       await fs.access(absolutePath);
@@ -257,10 +265,21 @@ export const downloadDocument = async (req, res) => {
       console.error('File not found:', absolutePath);
       console.error('Original path:', filePath);
       console.error('Current directory:', process.cwd());
-      return res.status(404).json({
-        success: false,
-        error: 'File not found on server'
-      });
+      console.error('__dirname:', __dirname);
+      
+      // Try one more time with just the filename in the uploads directory
+      const filename = path.basename(filePath);
+      const fallbackPath = path.join(__dirname, '../../uploads/documents', filename);
+      
+      try {
+        await fs.access(fallbackPath);
+        absolutePath = fallbackPath;
+      } catch (fallbackError) {
+        return res.status(404).json({
+          success: false,
+          error: 'File not found on server'
+        });
+      }
     }
     
     // Set headers for download
@@ -416,10 +435,15 @@ export const deleteDocument = async (req, res) => {
     // Delete the actual file
     const filePath = result.rows[0].file_path;
     
-    // Check if it's an absolute path or relative path
+    // Handle different path scenarios (same logic as download)
     let absolutePath = filePath;
-    if (!path.isAbsolute(filePath)) {
-      // If relative, resolve it relative to the project root
+    
+    if (filePath.startsWith('/app/')) {
+      // Production path - strip /app and make it relative to backend directory
+      const relativePath = filePath.substring(5); // Remove '/app/'
+      absolutePath = path.join(__dirname, '../..', relativePath);
+    } else if (!path.isAbsolute(filePath)) {
+      // Relative path - resolve it relative to the project root
       absolutePath = path.join(__dirname, '../..', filePath);
     }
     
@@ -428,7 +452,17 @@ export const deleteDocument = async (req, res) => {
     } catch (error) {
       console.error('Error deleting file:', error);
       console.error('Attempted path:', absolutePath);
-      // Continue even if file deletion fails
+      
+      // Try with just the filename in the uploads directory
+      const filename = path.basename(filePath);
+      const fallbackPath = path.join(__dirname, '../../uploads/documents', filename);
+      
+      try {
+        await fs.unlink(fallbackPath);
+      } catch (fallbackError) {
+        console.error('Error deleting file at fallback path:', fallbackError);
+        // Continue even if file deletion fails
+      }
     }
     
     res.json({
@@ -489,6 +523,75 @@ export const toggleFavorite = async (req, res) => {
 };
 
 // Get document categories with counts
+// Debug endpoint to check file paths
+export const debugDocument = async (req, res) => {
+  try {
+    const { orgId, documentId } = req.params;
+    
+    const result = await query(
+      `SELECT id, title, file_name, file_path, file_size 
+       FROM documents 
+       WHERE id = $1 AND organization_id = $2`,
+      [documentId, orgId]
+    );
+    
+    if (result.rows.length === 0) {
+      return res.status(404).json({
+        success: false,
+        error: 'Document not found in database'
+      });
+    }
+    
+    const document = result.rows[0];
+    const filePath = document.file_path;
+    
+    // Check different path possibilities
+    const pathChecks = {
+      stored_path: filePath,
+      is_absolute: path.isAbsolute(filePath),
+      resolved_path: !path.isAbsolute(filePath) ? path.join(__dirname, '../..', filePath) : filePath,
+      current_dir: process.cwd(),
+      dirname: __dirname,
+      uploads_dir_exists: false,
+      file_exists: false
+    };
+    
+    // Check if uploads directory exists
+    try {
+      const uploadsDir = path.join(__dirname, '../../uploads/documents');
+      await fs.access(uploadsDir);
+      pathChecks.uploads_dir_exists = true;
+      pathChecks.uploads_dir_path = uploadsDir;
+      
+      // List files in uploads directory
+      const files = await fs.readdir(uploadsDir);
+      pathChecks.files_in_uploads = files.slice(0, 5); // First 5 files
+    } catch (e) {
+      pathChecks.uploads_dir_error = e.message;
+    }
+    
+    // Check if the file exists at resolved path
+    try {
+      await fs.access(pathChecks.resolved_path);
+      pathChecks.file_exists = true;
+    } catch (e) {
+      pathChecks.file_error = e.message;
+    }
+    
+    res.json({
+      success: true,
+      document: document,
+      path_info: pathChecks
+    });
+  } catch (error) {
+    console.error('Debug error:', error);
+    res.status(500).json({
+      success: false,
+      error: error.message
+    });
+  }
+};
+
 export const getCategories = async (req, res) => {
   try {
     const { orgId } = req.params;
