@@ -1,7 +1,6 @@
 import { query } from '../config/database.js';
 import { v4 as uuidv4 } from 'uuid';
 import fs from 'fs/promises';
-import { createReadStream } from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
 
@@ -16,9 +15,12 @@ export const getDocuments = async (req, res) => {
     const { category, department, search, favorites } = req.query;
     
     // Build query with filters
+    // Exclude file_data from listings to avoid sending large binary data
     let queryText = `
       SELECT 
-        d.*,
+        d.id, d.title, d.description, d.category, d.file_name, d.file_size,
+        d.mime_type, d.visibility, d.organization_id, d.department_id,
+        d.uploaded_by, d.related_priority_id, d.created_at, d.updated_at,
         u.first_name || ' ' || u.last_name as uploader_name,
         t.name as department_name,
         CASE WHEN df.user_id IS NOT NULL THEN true ELSE false END as is_favorite,
@@ -118,13 +120,15 @@ export const uploadDocument = async (req, res) => {
       });
     }
     
-    // Create document record
+    // Read file data into buffer
+    const fileData = await fs.readFile(file.path);
+    
+    // Create document record with file data in PostgreSQL
     const documentId = uuidv4();
-    const filePath = file.path.replace(/\\/g, '/');
     
     const documentResult = await query(
       `INSERT INTO documents 
-       (id, title, description, category, file_name, file_path, file_size, 
+       (id, title, description, category, file_name, file_data, file_size, 
         mime_type, visibility, organization_id, department_id, uploaded_by, related_priority_id)
        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13)
        RETURNING *`,
@@ -134,7 +138,7 @@ export const uploadDocument = async (req, res) => {
         description,
         category,
         file.originalname,
-        filePath,
+        fileData,
         file.size,
         file.mimetype,
         visibility || 'company',
@@ -144,6 +148,9 @@ export const uploadDocument = async (req, res) => {
         relatedPriorityId || null
       ]
     );
+    
+    // Clean up temporary file
+    await fs.unlink(file.path);
     
     // Add tags if provided
     if (tags && Array.isArray(tags)) {
@@ -157,10 +164,12 @@ export const uploadDocument = async (req, res) => {
       }
     }
     
-    // Get the complete document with tags
+    // Get the complete document with tags (excluding file_data)
     const completeDocument = await query(
       `SELECT 
-        d.*,
+        d.id, d.title, d.description, d.category, d.file_name, d.file_size,
+        d.mime_type, d.visibility, d.organization_id, d.department_id,
+        d.uploaded_by, d.related_priority_id, d.created_at, d.updated_at,
         u.first_name || ' ' || u.last_name as uploader_name,
         t.name as department_name,
         ARRAY_AGG(dt.tag_name) FILTER (WHERE dt.tag_name IS NOT NULL) as tags
@@ -169,7 +178,7 @@ export const uploadDocument = async (req, res) => {
        LEFT JOIN teams t ON d.department_id = t.id
        LEFT JOIN document_tags dt ON d.id = dt.document_id
        WHERE d.id = $1
-       GROUP BY d.id, u.first_name, u.last_name, t.name`,
+       GROUP BY d.id, d.created_at, d.updated_at, u.first_name, u.last_name, t.name`,
       [documentId]
     );
     
@@ -241,58 +250,21 @@ export const downloadDocument = async (req, res) => {
       [documentId, userId]
     );
     
-    // Check if file exists
-    const filePath = document.file_path;
-    
-    // Handle different path scenarios
-    let absolutePath = filePath;
-    
-    // In production (Railway), the app runs in /app directory
-    // and files are stored with absolute paths like /app/uploads/documents/...
-    if (process.cwd() === '/app' && filePath.startsWith('/app/')) {
-      // We're in production and have an absolute path - use it as is
-      absolutePath = filePath;
-    } else if (filePath.startsWith('/app/')) {
-      // We're in development but have a production path - strip /app and resolve
-      const relativePath = filePath.substring(5); // Remove '/app/'
-      absolutePath = path.join(__dirname, '../..', relativePath);
-    } else if (!path.isAbsolute(filePath)) {
-      // Relative path - resolve it relative to the project root
-      absolutePath = path.join(__dirname, '../..', filePath);
-    }
-    // If it's already an absolute path (local development), use as is
-    
-    try {
-      await fs.access(absolutePath);
-    } catch (error) {
-      console.error('File not found:', absolutePath);
-      console.error('Original path:', filePath);
-      console.error('Current directory:', process.cwd());
-      console.error('__dirname:', __dirname);
-      
-      // Try one more time with just the filename in the uploads directory
-      const filename = path.basename(filePath);
-      const fallbackPath = path.join(__dirname, '../../uploads/documents', filename);
-      
-      try {
-        await fs.access(fallbackPath);
-        absolutePath = fallbackPath;
-      } catch (fallbackError) {
-        return res.status(404).json({
-          success: false,
-          error: 'File not found on server'
-        });
-      }
+    // Check if we have file data in PostgreSQL
+    if (!document.file_data) {
+      return res.status(404).json({
+        success: false,
+        error: 'File data not found in database'
+      });
     }
     
     // Set headers for download
     res.setHeader('Content-Type', document.mime_type || 'application/octet-stream');
     res.setHeader('Content-Disposition', `attachment; filename="${document.file_name}"`);
-    res.setHeader('Content-Length', document.file_size || 0);
+    res.setHeader('Content-Length', document.file_size || Buffer.byteLength(document.file_data));
     
-    // Stream the file
-    const fileStream = createReadStream(absolutePath);
-    fileStream.pipe(res);
+    // Send the file data from PostgreSQL
+    res.send(document.file_data);
   } catch (error) {
     console.error('Error downloading document:', error);
     res.status(500).json({
@@ -421,54 +393,18 @@ export const deleteDocument = async (req, res) => {
     }
     
     // Delete document record (cascade will handle related records)
+    // File data is stored in PostgreSQL, so it will be deleted automatically
     const result = await query(
       `DELETE FROM documents 
-       WHERE id = $1 AND organization_id = $2 
-       RETURNING file_path`,
+       WHERE id = $1 AND organization_id = $2`,
       [documentId, orgId]
     );
     
-    if (result.rows.length === 0) {
+    if (result.rowCount === 0) {
       return res.status(404).json({
         success: false,
         error: 'Document not found'
       });
-    }
-    
-    // Delete the actual file
-    const filePath = result.rows[0].file_path;
-    
-    // Handle different path scenarios (same logic as download)
-    let absolutePath = filePath;
-    
-    if (process.cwd() === '/app' && filePath.startsWith('/app/')) {
-      // We're in production and have an absolute path - use it as is
-      absolutePath = filePath;
-    } else if (filePath.startsWith('/app/')) {
-      // We're in development but have a production path - strip /app and resolve
-      const relativePath = filePath.substring(5); // Remove '/app/'
-      absolutePath = path.join(__dirname, '../..', relativePath);
-    } else if (!path.isAbsolute(filePath)) {
-      // Relative path - resolve it relative to the project root
-      absolutePath = path.join(__dirname, '../..', filePath);
-    }
-    
-    try {
-      await fs.unlink(absolutePath);
-    } catch (error) {
-      console.error('Error deleting file:', error);
-      console.error('Attempted path:', absolutePath);
-      
-      // Try with just the filename in the uploads directory
-      const filename = path.basename(filePath);
-      const fallbackPath = path.join(__dirname, '../../uploads/documents', filename);
-      
-      try {
-        await fs.unlink(fallbackPath);
-      } catch (fallbackError) {
-        console.error('Error deleting file at fallback path:', fallbackError);
-        // Continue even if file deletion fails
-      }
     }
     
     res.json({
