@@ -551,37 +551,81 @@ export const debugDocument = async (req, res) => {
     const document = result.rows[0];
     const filePath = document.file_path;
     
-    // Check different path possibilities
+    // Comprehensive path debugging
     const pathChecks = {
       stored_path: filePath,
       is_absolute: path.isAbsolute(filePath),
-      resolved_path: !path.isAbsolute(filePath) ? path.join(__dirname, '../..', filePath) : filePath,
       current_dir: process.cwd(),
       dirname: __dirname,
-      uploads_dir_exists: false,
-      file_exists: false
+      is_production: process.cwd() === '/app',
+      paths_tested: []
     };
     
-    // Check if uploads directory exists
-    try {
-      const uploadsDir = path.join(__dirname, '../../uploads/documents');
-      await fs.access(uploadsDir);
-      pathChecks.uploads_dir_exists = true;
-      pathChecks.uploads_dir_path = uploadsDir;
-      
-      // List files in uploads directory
-      const files = await fs.readdir(uploadsDir);
-      pathChecks.files_in_uploads = files.slice(0, 5); // First 5 files
-    } catch (e) {
-      pathChecks.uploads_dir_error = e.message;
+    // Test various path possibilities
+    const pathsToTest = [
+      { name: 'stored_path_as_is', path: filePath },
+      { name: 'relative_to_cwd', path: path.join(process.cwd(), filePath) },
+      { name: 'relative_to_dirname', path: path.join(__dirname, '../..', filePath) },
+      { name: 'just_filename_in_uploads', path: path.join(__dirname, '../../uploads/documents', path.basename(filePath)) },
+      { name: 'app_uploads_direct', path: '/app/uploads/documents/' + path.basename(filePath) },
+      { name: 'backend_uploads_from_root', path: '/app/backend/uploads/documents/' + path.basename(filePath) }
+    ];
+    
+    // If path starts with /app/, also test without it
+    if (filePath.startsWith('/app/')) {
+      const withoutApp = filePath.substring(5);
+      pathsToTest.push(
+        { name: 'without_app_prefix', path: withoutApp },
+        { name: 'without_app_relative_to_dirname', path: path.join(__dirname, '../..', withoutApp) }
+      );
     }
     
-    // Check if the file exists at resolved path
+    // Test each path
+    for (const testPath of pathsToTest) {
+      const exists = await fs.access(testPath.path).then(() => true).catch(() => false);
+      pathChecks.paths_tested.push({
+        ...testPath,
+        exists,
+        resolved: path.resolve(testPath.path)
+      });
+    }
+    
+    // List actual directories to see structure
     try {
-      await fs.access(pathChecks.resolved_path);
-      pathChecks.file_exists = true;
+      // List /app directory
+      const appFiles = await fs.readdir('/app').catch(() => []);
+      pathChecks.app_directory_contents = appFiles;
+      
+      // List backend directory if exists
+      const backendFiles = await fs.readdir('/app/backend').catch(() => []);
+      pathChecks.backend_directory_contents = backendFiles.slice(0, 10);
+      
+      // Check for uploads directory in various locations
+      const uploadsLocations = [
+        '/app/uploads',
+        '/app/backend/uploads',
+        '/app/uploads/documents',
+        '/app/backend/uploads/documents',
+        path.join(__dirname, '../../uploads'),
+        path.join(__dirname, '../../uploads/documents')
+      ];
+      
+      pathChecks.uploads_directories = {};
+      for (const loc of uploadsLocations) {
+        const exists = await fs.access(loc).then(() => true).catch(() => false);
+        if (exists) {
+          const files = await fs.readdir(loc).catch(() => []);
+          pathChecks.uploads_directories[loc] = {
+            exists: true,
+            file_count: files.length,
+            sample_files: files.slice(0, 3)
+          };
+        } else {
+          pathChecks.uploads_directories[loc] = { exists: false };
+        }
+      }
     } catch (e) {
-      pathChecks.file_error = e.message;
+      pathChecks.directory_scan_error = e.message;
     }
     
     res.json({
