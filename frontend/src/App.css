@@ -168,12 +168,26 @@
   /* Show both Vision and Execution content */
   [role="tabpanel"] {
     display: block !important;
+    opacity: 1 !important;
+    visibility: visible !important;
+    height: auto !important;
+    overflow: visible !important;
+  }
+  
+  /* Force Vision tab to break after */
+  [role="tabpanel"][data-state="inactive"]:first-of-type,
+  [role="tabpanel"]:first-of-type {
     page-break-after: always;
   }
   
-  /* Remove last page break */
-  [role="tabpanel"]:last-child {
-    page-break-after: avoid;
+  /* Ensure grid layouts work in print */
+  .grid,
+  .lg\\:grid-cols-3 {
+    display: block !important;
+  }
+  
+  .lg\\:col-span-2 {
+    width: 100% !important;
   }
   
   /* Hide edit buttons and dialogs */
@@ -187,9 +201,24 @@
     page-break-after: avoid;
   }
   
-  /* Keep content together */
+  /* Keep content together when possible */
   .space-y-6 > * {
     page-break-inside: avoid;
+  }
+  
+  /* Allow breaking inside cards if necessary to prevent cutoff */
+  .overflow-hidden {
+    overflow: visible !important;
+  }
+  
+  /* Ensure cards can break if needed */
+  [class*="Card"] {
+    page-break-inside: auto;
+  }
+  
+  /* But try to keep card headers with content */
+  [class*="CardHeader"] {
+    page-break-after: avoid;
   }
   
   /* Format cards for print */
@@ -240,5 +269,17 @@
     font-weight: bold;
     margin-bottom: 20pt;
     text-align: center;
+  }
+  
+  /* Fix for Vision tab grid layout */
+  .grid.grid-cols-1.lg\\:grid-cols-3 {
+    display: block !important;
+    columns: 1 !important;
+  }
+  
+  /* Ensure all content is visible */
+  * {
+    max-height: none !important;
+    height: auto !important;
   }
 }
