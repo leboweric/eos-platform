@@ -81,24 +81,36 @@ export const getScorecard = async (req, res) => {
     
     // Get all scores for these metrics
     const scoresQuery = `
-      SELECT metric_id, week_date, value
-      FROM scorecard_scores
-      WHERE metric_id IN (
+      SELECT ss.metric_id, ss.week_date, ss.value, sm.type
+      FROM scorecard_scores ss
+      JOIN scorecard_metrics sm ON ss.metric_id = sm.id
+      WHERE ss.metric_id IN (
         SELECT id FROM scorecard_metrics sm
         WHERE sm.organization_id = $1 ${teamFilter}
       )
     `;
     const scores = await db.query(scoresQuery, queryParams);
     
-    // Organize scores by metric and week
+    // Organize scores by metric and week/month
     const weeklyScores = {};
+    const monthlyScores = {};
+    
     scores.rows.forEach(score => {
-      if (!weeklyScores[score.metric_id]) {
-        weeklyScores[score.metric_id] = {};
-      }
       // Format date as YYYY-MM-DD
-      const weekDate = new Date(score.week_date).toISOString().split('T')[0];
-      weeklyScores[score.metric_id][weekDate] = score.value;
+      const scoreDate = new Date(score.week_date).toISOString().split('T')[0];
+      
+      // Determine if this is a monthly score based on metric type
+      if (score.type === 'monthly') {
+        if (!monthlyScores[score.metric_id]) {
+          monthlyScores[score.metric_id] = {};
+        }
+        monthlyScores[score.metric_id][scoreDate] = score.value;
+      } else {
+        if (!weeklyScores[score.metric_id]) {
+          weeklyScores[score.metric_id] = {};
+        }
+        weeklyScores[score.metric_id][scoreDate] = score.value;
+      }
     });
     
     // Get team members for the organization
@@ -112,6 +124,7 @@ export const getScorecard = async (req, res) => {
           teamName: metric.team_name
         })),
         weeklyScores,
+        monthlyScores,
         teamMembers
       }
     });
@@ -274,13 +287,13 @@ export const deleteMetric = async (req, res) => {
   }
 };
 
-// Update a weekly score
+// Update a weekly or monthly score
 export const updateScore = async (req, res) => {
   try {
-    const { metricId, week, value } = req.body;
+    const { metricId, week, value, scoreType = 'weekly' } = req.body;
     
-    // Convert week to proper date format
-    const weekDate = new Date(week).toISOString().split('T')[0];
+    // Convert week/month to proper date format
+    const scoreDate = new Date(week).toISOString().split('T')[0];
     
     // Upsert the score
     const query = `
@@ -291,7 +304,7 @@ export const updateScore = async (req, res) => {
       RETURNING metric_id, week_date, value
     `;
     
-    const result = await db.query(query, [metricId, weekDate, value || null]);
+    const result = await db.query(query, [metricId, scoreDate, value || null]);
     
     res.json({
       success: true,

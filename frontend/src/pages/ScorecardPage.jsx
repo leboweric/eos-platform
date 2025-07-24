@@ -10,6 +10,7 @@ import { Label } from '@/components/ui/label';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { 
   Plus,
   Trash2,
@@ -55,6 +56,8 @@ const ScorecardPage = () => {
     const saved = localStorage.getItem('scorecardShowTotal');
     return saved !== null ? saved === 'true' : true; // Default to true if not set
   });
+  const [activeTab, setActiveTab] = useState('weekly');
+  const [monthlyScores, setMonthlyScores] = useState({});
   
   // Form data for new/edit metric
   const [metricForm, setMetricForm] = useState({
@@ -110,11 +113,13 @@ const ScorecardPage = () => {
         console.log('Response has data wrapper:', response.data);
         setMetrics(response.data.metrics || []);
         setWeeklyScores(response.data.weeklyScores || {});
+        setMonthlyScores(response.data.monthlyScores || {});
         setUsers(response.data.teamMembers || []);
       } else if (response) {
         console.log('Response without data wrapper:', response);
         setMetrics(response.metrics || []);
         setWeeklyScores(response.weeklyScores || {});
+        setMonthlyScores(response.monthlyScores || {});
         setUsers(response.teamMembers || []);
       }
       console.log('State before update - metrics:', metrics.length);
@@ -281,7 +286,8 @@ const ScorecardPage = () => {
         teamId, 
         scoreDialogData.metricId, 
         scoreDialogData.weekDate, 
-        scoreInputValue || null
+        scoreInputValue || null,
+        scoreDialogData.scoreType || 'weekly'
       );
       
       setShowScoreDialog(false);
@@ -301,7 +307,7 @@ const ScorecardPage = () => {
     setScoreInputValue('');
   };
 
-  const handleScoreSave = async (metricId, week, value) => {
+  const handleScoreSave = async (metricId, period, value, scoreType = 'weekly') => {
     try {
       setSaving(true);
       setError(null);
@@ -318,15 +324,25 @@ const ScorecardPage = () => {
         throw new Error('No organization ID found');
       }
       
-      await scorecardService.updateScore(orgId, teamId, metricId, week, value);
+      await scorecardService.updateScore(orgId, teamId, metricId, period, value, scoreType);
       
-      setWeeklyScores(prev => ({
-        ...prev,
-        [metricId]: {
-          ...prev[metricId],
-          [week]: value
-        }
-      }));
+      if (scoreType === 'monthly') {
+        setMonthlyScores(prev => ({
+          ...prev,
+          [metricId]: {
+            ...prev[metricId],
+            [period]: value
+          }
+        }));
+      } else {
+        setWeeklyScores(prev => ({
+          ...prev,
+          [metricId]: {
+            ...prev[metricId],
+            [period]: value
+          }
+        }));
+      }
       
       setEditingScore(null);
       setSuccess('Score updated successfully');
@@ -370,9 +386,36 @@ const ScorecardPage = () => {
     return { labels, weekDates };
   };
 
+  // Format month label as "MMM YY"
+  const formatMonthLabel = (date) => {
+    const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+    const year = date.getFullYear().toString().slice(-2);
+    return `${months[date.getMonth()]} ${year}`;
+  };
+
+  // Get month labels for the past 12 months
+  const getMonthLabels = () => {
+    const labels = [];
+    const monthDates = [];
+    const today = new Date();
+    
+    for (let i = 11; i >= 0; i--) {
+      const monthDate = new Date(today.getFullYear(), today.getMonth() - i, 1);
+      labels.push(formatMonthLabel(monthDate));
+      // Store the month identifier as YYYY-MM-01 for consistent storage
+      monthDates.push(monthDate.toISOString().split('T')[0]);
+    }
+    
+    return { labels, monthDates };
+  };
+
   const { labels: weekLabelsOriginal, weekDates: weekDatesOriginal } = getWeekLabels();
   const weekLabels = isRTL ? [...weekLabelsOriginal].reverse() : weekLabelsOriginal;
   const weekDates = isRTL ? [...weekDatesOriginal].reverse() : weekDatesOriginal;
+  
+  const { labels: monthLabelsOriginal, monthDates: monthDatesOriginal } = getMonthLabels();
+  const monthLabels = isRTL ? [...monthLabelsOriginal].reverse() : monthLabelsOriginal;
+  const monthDates = isRTL ? [...monthDatesOriginal].reverse() : monthDatesOriginal;
 
   // Helper functions for value formatting and goal achievement
   const formatValue = (value, valueType) => {
@@ -502,19 +545,26 @@ const ScorecardPage = () => {
           </Alert>
         )}
 
-        <Card className="shadow-lg border-0">
-          <CardHeader className="bg-gradient-to-r from-indigo-500 to-blue-500 text-white">
-            <CardTitle className="flex items-center text-xl">
-              <Target className="mr-2 h-6 w-6" />
-              Weekly Scorecard
-            </CardTitle>
-            <CardDescription className="text-indigo-100">
-              Track performance over the past 10 weeks
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="p-0">
-            <div className="overflow-x-auto">
-              <table className="w-full table-fixed">
+        <Tabs value={activeTab} onValueChange={setActiveTab}>
+          <TabsList className="mb-4">
+            <TabsTrigger value="weekly">Weekly</TabsTrigger>
+            <TabsTrigger value="monthly">Monthly</TabsTrigger>
+          </TabsList>
+          
+          <TabsContent value="weekly">
+            <Card className="shadow-lg border-0">
+              <CardHeader className="bg-gradient-to-r from-indigo-500 to-blue-500 text-white">
+                <CardTitle className="flex items-center text-xl">
+                  <Target className="mr-2 h-6 w-6" />
+                  Weekly Scorecard
+                </CardTitle>
+                <CardDescription className="text-indigo-100">
+                  Track performance over the past 10 weeks
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="p-0">
+                <div className="overflow-x-auto">
+                  <table className="w-full table-fixed">
                 <thead className="bg-gray-50 border-b">
                   <tr>
                     <th className="text-center p-2 font-semibold text-gray-700 w-16">Owner</th>
@@ -739,6 +789,253 @@ const ScorecardPage = () => {
             </div>
           </CardContent>
         </Card>
+      </TabsContent>
+      
+      <TabsContent value="monthly">
+        <Card className="shadow-lg border-0">
+          <CardHeader className="bg-gradient-to-r from-indigo-500 to-blue-500 text-white">
+            <CardTitle className="flex items-center text-xl">
+              <Target className="mr-2 h-6 w-6" />
+              Monthly Scorecard
+            </CardTitle>
+            <CardDescription className="text-indigo-100">
+              Track performance over the past 12 months
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="p-0">
+            <div className="overflow-x-auto">
+              <table className="w-full table-fixed">
+                <thead className="bg-gray-50 border-b">
+                  <tr>
+                    <th className="text-center p-2 font-semibold text-gray-700 w-16">Owner</th>
+                    <th className="text-left p-2 font-semibold text-gray-700 w-48">Metric</th>
+                    <th className="text-center p-2 font-semibold text-gray-700 w-12">Chart</th>
+                    <th className="text-center p-2 font-semibold text-gray-700 w-20">Goal</th>
+                    {isRTL && (
+                      <>
+                        {showTotal && <th className="text-center p-2 font-semibold text-gray-700 w-20 bg-gray-100">Total</th>}
+                        <th className="text-center p-2 font-semibold text-gray-700 w-20 bg-gray-100">Average</th>
+                      </>
+                    )}
+                    {monthLabels.map((label, index) => {
+                      const originalIndex = isRTL ? monthLabels.length - 1 - index : index;
+                      const isCurrentMonth = originalIndex === monthLabelsOriginal.length - 1;
+                      return (
+                        <th key={monthDates[index]} className={`text-center p-2 font-semibold text-xs w-16 ${
+                          isCurrentMonth ? 'text-indigo-700 bg-indigo-50' : 'text-gray-700'
+                        }`}>
+                          <div className="flex flex-col items-center">
+                            <span className="text-xs font-normal text-gray-500 mb-1">
+                              {isCurrentMonth ? 'Current' : ''}
+                            </span>
+                            <span>{label}</span>
+                          </div>
+                        </th>
+                      );
+                    })}
+                    {!isRTL && (
+                      <>
+                        <th className="text-center p-2 font-semibold text-gray-700 w-20 bg-gray-100">Average</th>
+                        {showTotal && <th className="text-center p-2 font-semibold text-gray-700 w-20 bg-gray-100">Total</th>}
+                      </>
+                    )}
+                    <th className="text-center p-2 font-semibold text-gray-700 w-20">Actions</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {metrics.length === 0 ? (
+                    <tr>
+                      <td colSpan={monthLabels.length + (showTotal ? 7 : 6)} className="text-center p-8 text-gray-500">
+                        No metrics defined. Click "Add Metric" to get started.
+                      </td>
+                    </tr>
+                  ) : (
+                    metrics.map(metric => (
+                      <tr key={metric.id} className="border-b hover:bg-gray-50">
+                        <td className="p-2 text-center text-sm">{metric.ownerName || metric.owner}</td>
+                        <td className="p-2 font-medium text-sm">{metric.name}</td>
+                        <td className="p-2 text-center">
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className="h-8 w-8 p-0 hover:bg-blue-100"
+                            onClick={() => setChartModal({ isOpen: true, metric, metricId: metric.id })}
+                            title="View 3-month moving trend chart"
+                          >
+                            <BarChart3 className="h-4 w-4 text-blue-600" />
+                          </Button>
+                        </td>
+                        <td className="p-2 text-center font-semibold text-indigo-600 text-sm">{formatGoal(metric.goal, metric.value_type, metric.comparison_operator)}</td>
+                        
+                        {/* Total and Average columns for RTL */}
+                        {isRTL && (
+                          <>
+                            {/* Total column */}
+                            {showTotal && (
+                              <td className="p-2 text-center bg-gray-50 font-semibold text-sm">
+                              {(() => {
+                                const scores = monthDatesOriginal
+                                  .map(monthDate => monthlyScores[metric.id]?.[monthDate])
+                                  .filter(score => score !== undefined && score !== null && score !== '');
+                                
+                                if (scores.length === 0) return '-';
+                                
+                                const total = scores.reduce((sum, score) => sum + parseFloat(score), 0);
+                                
+                                return (
+                                  <span className="text-gray-700">
+                                    {formatValue(total, metric.value_type)}
+                                  </span>
+                                );
+                              })()}
+                              </td>
+                            )}
+                            {/* Average column */}
+                            <td className="p-2 text-center bg-gray-50 font-semibold text-sm">
+                              {(() => {
+                                const scores = monthDatesOriginal
+                                  .map(monthDate => monthlyScores[metric.id]?.[monthDate])
+                                  .filter(score => score !== undefined && score !== null && score !== '');
+                                
+                                if (scores.length === 0) return '-';
+                                
+                                const average = scores.reduce((sum, score) => sum + parseFloat(score), 0) / scores.length;
+                                const avgGoalMet = isGoalMet(average, metric.goal, metric.comparison_operator);
+                                
+                                return (
+                                  <span className={`px-2 py-1 rounded ${
+                                    avgGoalMet ? 'text-green-800' : 'text-red-800'
+                                  }`}>
+                                    {metric.value_type === 'number' ? Math.round(average) : formatValue(average, metric.value_type)}
+                                  </span>
+                                );
+                              })()}
+                            </td>
+                          </>
+                        )}
+                        
+                        {/* Month columns */}
+                        {monthDates.map((monthDate) => {
+                          const score = monthlyScores[metric.id]?.[monthDate];
+                          const goalMet = score && isGoalMet(score, metric.goal, metric.comparison_operator);
+                          
+                          return (
+                            <td key={monthDate} className="p-2 text-center group">
+                              <button
+                                className={`w-full h-8 rounded text-center font-medium transition-colors cursor-pointer relative group ${
+                                  score
+                                    ? goalMet
+                                      ? 'bg-green-100 text-green-800 hover:bg-green-200'
+                                      : 'bg-red-100 text-red-800 hover:bg-red-200'
+                                    : 'text-gray-400 hover:bg-gray-100'
+                                }`}
+                                onClick={() => {
+                                  const currentValue = monthlyScores[metric.id] && monthlyScores[metric.id][monthDate] 
+                                    ? Math.round(parseFloat(monthlyScores[metric.id][monthDate])) 
+                                    : '';
+                                  
+                                  setScoreDialogData({
+                                    metricId: metric.id,
+                                    weekDate: monthDate,
+                                    metricName: metric.name,
+                                    currentValue: currentValue,
+                                    scoreType: 'monthly'
+                                  });
+                                  setScoreInputValue(currentValue.toString());
+                                  setShowScoreDialog(true);
+                                }}
+                              >
+                                <div className="flex items-center justify-center gap-1">
+                                  {score ? (
+                                    <>
+                                      <span className="text-sm">{formatValue(score, metric.value_type)}</span>
+                                      <Edit className="h-3 w-3 opacity-0 group-hover:opacity-100 transition-opacity" />
+                                    </>
+                                  ) : (
+                                    <span className="text-sm">-</span>
+                                  )}
+                                </div>
+                              </button>
+                            </td>
+                          );
+                        })}
+                        {/* Average, Total and Actions columns for LTR */}
+                        {!isRTL && (
+                          <>
+                            {/* Average column */}
+                            <td className="p-2 text-center bg-gray-50 font-semibold text-sm">
+                              {(() => {
+                                const scores = monthDatesOriginal
+                                  .map(monthDate => monthlyScores[metric.id]?.[monthDate])
+                                  .filter(score => score !== undefined && score !== null && score !== '');
+                                
+                                if (scores.length === 0) return '-';
+                                
+                                const average = scores.reduce((sum, score) => sum + parseFloat(score), 0) / scores.length;
+                                const avgGoalMet = isGoalMet(average, metric.goal, metric.comparison_operator);
+                                
+                                return (
+                                  <span className={`px-2 py-1 rounded ${
+                                    avgGoalMet ? 'text-green-800' : 'text-red-800'
+                                  }`}>
+                                    {metric.value_type === 'number' ? Math.round(average) : formatValue(average, metric.value_type)}
+                                  </span>
+                                );
+                              })()}
+                            </td>
+                            {/* Total column */}
+                            {showTotal && (
+                              <td className="p-2 text-center bg-gray-50 font-semibold text-sm">
+                              {(() => {
+                                const scores = monthDatesOriginal
+                                  .map(monthDate => monthlyScores[metric.id]?.[monthDate])
+                                  .filter(score => score !== undefined && score !== null && score !== '');
+                                
+                                if (scores.length === 0) return '-';
+                                
+                                const total = scores.reduce((sum, score) => sum + parseFloat(score), 0);
+                                
+                                return (
+                                  <span className="text-gray-700">
+                                    {formatValue(total, metric.value_type)}
+                                  </span>
+                                );
+                              })()}
+                              </td>
+                            )}
+                          </>
+                        )}
+                        {/* Actions column - always on far right */}
+                        <td className="p-2 text-center">
+                          <div className="flex justify-center space-x-1">
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              className="h-6 w-6 p-0"
+                              onClick={() => handleEditMetric(metric)}
+                            >
+                              <Edit className="h-3 w-3" />
+                            </Button>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              className="h-6 w-6 p-0"
+                              onClick={() => handleDeleteMetric(metric.id)}
+                            >
+                              <Trash2 className="h-3 w-3" />
+                            </Button>
+                          </div>
+                        </td>
+                      </tr>
+                    ))
+                  )}
+                </tbody>
+              </table>
+            </div>
+          </CardContent>
+        </Card>
+      </TabsContent>
+    </Tabs>
 
         {/* Metric Dialog */}
         <Dialog open={showMetricDialog} onOpenChange={setShowMetricDialog}>
@@ -873,7 +1170,7 @@ const ScorecardPage = () => {
             <DialogHeader>
               <DialogTitle>Update Score</DialogTitle>
               <DialogDescription>
-                Enter the score for {scoreDialogData.metricName} for the week of {scoreDialogData.weekDate}
+                Enter the score for {scoreDialogData.metricName} for {scoreDialogData.scoreType === 'monthly' ? 'the month of' : 'the week of'} {scoreDialogData.weekDate}
               </DialogDescription>
             </DialogHeader>
             <div className="space-y-4">
