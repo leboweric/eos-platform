@@ -31,7 +31,14 @@ import {
   DollarSign,
   BarChart3,
   Eye,
-  CheckCircle2
+  CheckCircle2,
+  ArrowRight,
+  Flag,
+  User,
+  CheckSquare,
+  Clock,
+  Building2,
+  MessageSquare
 } from 'lucide-react';
 
 const BusinessBlueprintPage = () => {
@@ -1146,92 +1153,134 @@ const BusinessBlueprintPage = () => {
         </TabsContent>
 
         <TabsContent value="execution" className="space-y-6">
-          <Card>
-            <CardHeader>
+          <Card className="shadow-lg border-0 overflow-hidden">
+            <CardHeader className="bg-white border-b">
               <div className="flex items-center justify-between">
                 <div>
-                  <CardTitle>1-Year Plan</CardTitle>
-                  <CardDescription>Your goals for the next year</CardDescription>
+                  <CardTitle className="flex items-center text-xl text-gray-900">
+                    <Target className="mr-2 h-6 w-6 text-indigo-600" />
+                    1-Year Plan
+                  </CardTitle>
+                  <CardDescription className="text-gray-600">Your goals for the next year</CardDescription>
                 </div>
                 <Button 
                   variant="outline" 
                   size="sm"
                   onClick={() => setShowOneYearDialog(true)}
                 >
-                  <Edit className="h-4 w-4 mr-2" />
-                  Edit
+                  <Edit className="h-4 w-4" />
                 </Button>
               </div>
             </CardHeader>
-            <CardContent>
+            <CardContent className="space-y-4 pt-6">
               {blueprintData.oneYearPlan ? (
                 <div className="space-y-4">
+                  {/* Target Date */}
                   {blueprintData.oneYearPlan.future_date && (
-                    <div>
-                      <p className="text-sm font-medium text-gray-500">Target Date</p>
-                      <p className="text-lg font-semibold">
-                        {new Date(blueprintData.oneYearPlan.future_date).toLocaleDateString('en-US', { 
-                          year: 'numeric', 
-                          month: 'long', 
-                          day: 'numeric' 
-                        })}
-                      </p>
+                    <div className="p-4 bg-gray-50 border border-gray-200 rounded-lg hover:shadow-md transition-shadow">
+                      <div className="flex items-start">
+                        <Calendar className="h-5 w-5 text-indigo-600 mr-3 mt-0.5" />
+                        <div className="flex-1">
+                          <h4 className="font-semibold text-gray-900">Target Date</h4>
+                          <p className="text-sm text-gray-600 mt-1">
+                            {new Date(blueprintData.oneYearPlan.future_date).toLocaleDateString('en-US', { 
+                              year: 'numeric', 
+                              month: 'long', 
+                              day: 'numeric' 
+                            })}
+                          </p>
+                        </div>
+                      </div>
                     </div>
                   )}
-                  {blueprintData.oneYearPlan.revenue && (
-                    <div>
-                      <p className="text-sm font-medium text-gray-500">{getRevenueLabelWithSuffix(organization, 'Target')}</p>
-                      <p className="text-lg font-semibold">
-                        ${Number(blueprintData.oneYearPlan.revenue) < 1 
-                          ? `${(Number(blueprintData.oneYearPlan.revenue) * 1000).toFixed(0)}K`
-                          : `${Number(blueprintData.oneYearPlan.revenue).toFixed(0)}M`}
-                      </p>
+                  
+                  {/* Financial Goals */}
+                  {(blueprintData.oneYearPlan.revenue || blueprintData.oneYearPlan.profit) && (
+                    <div className="p-4 bg-gray-50 border border-gray-200 rounded-lg hover:shadow-md transition-shadow">
+                      <div className="flex items-start">
+                        <DollarSign className="h-5 w-5 text-indigo-600 mr-3 mt-0.5" />
+                        <div className="flex-1 space-y-3">
+                          <h4 className="font-semibold text-gray-900">Financial Goals</h4>
+                          {blueprintData.oneYearPlan.revenue && (
+                            <div>
+                              <p className="text-sm font-medium text-gray-700">
+                                {getRevenueLabelWithSuffix(organization, 'Target')}
+                              </p>
+                              <p className="text-lg font-semibold text-gray-900">
+                                ${Number(blueprintData.oneYearPlan.revenue) < 1 
+                                  ? `${(Number(blueprintData.oneYearPlan.revenue) * 1000).toFixed(0)}K`
+                                  : `${Number(blueprintData.oneYearPlan.revenue).toFixed(1)}M`}
+                              </p>
+                            </div>
+                          )}
+                          {blueprintData.oneYearPlan.profit && (
+                            <div>
+                              <p className="text-sm font-medium text-gray-700">Profit Target</p>
+                              <p className="text-lg font-semibold text-gray-900">
+                                {blueprintData.oneYearPlan.profit}%
+                              </p>
+                            </div>
+                          )}
+                        </div>
+                      </div>
                     </div>
                   )}
-                  {blueprintData.oneYearPlan.profit && (
-                    <div>
-                      <p className="text-sm font-medium text-gray-500">Profit Target</p>
-                      <p className="text-lg font-semibold">{blueprintData.oneYearPlan.profit}%</p>
-                    </div>
-                  )}
+                  
+                  {/* Key Measurables */}
                   {blueprintData.oneYearPlan.measurables && blueprintData.oneYearPlan.measurables.length > 0 && (
-                    <div>
-                      <p className="text-sm font-medium text-gray-500 mb-2">Key Measurables</p>
-                      <ul className="space-y-2">
-                        {blueprintData.oneYearPlan.measurables.map((measurable, index) => (
-                          <li key={index} className="flex items-start">
-                            <span className="text-indigo-600 mr-2">•</span>
+                    <div className="space-y-2">
+                      <div className="flex items-center mb-2">
+                        <BarChart3 className="h-5 w-5 text-indigo-600 mr-2" />
+                        <h4 className="font-semibold text-gray-900">Key Measurables</h4>
+                      </div>
+                      {blueprintData.oneYearPlan.measurables.map((measurable, index) => (
+                        <div key={index} className="p-3 bg-gray-50 border border-gray-200 rounded-lg hover:shadow-md transition-shadow">
+                          <div className="flex items-start">
+                            <CheckCircle2 className="h-4 w-4 text-green-600 mr-2 mt-0.5 flex-shrink-0" />
                             <div className="flex-1">
-                              <p className="font-medium">{measurable.name}</p>
+                              <p className="font-medium text-gray-900">{measurable.name}</p>
                               {measurable.target_value && (
-                                <p className="text-sm text-gray-600">Target: {measurable.target_value}</p>
+                                <p className="text-sm text-gray-600 mt-0.5">
+                                  Target: <span className="font-semibold">{measurable.target_value}</span>
+                                </p>
                               )}
                             </div>
-                          </li>
-                        ))}
-                      </ul>
+                          </div>
+                        </div>
+                      ))}
                     </div>
                   )}
+                  
+                  {/* Goals */}
                   {blueprintData.oneYearPlan.goals && Array.isArray(blueprintData.oneYearPlan.goals) && blueprintData.oneYearPlan.goals.filter(goal => goal).length > 0 && (
-                    <div>
-                      <p className="text-sm font-medium text-gray-500 mb-2">Goals</p>
-                      <ol className="space-y-2">
-                        {blueprintData.oneYearPlan.goals.filter(goal => goal).map((goal, index) => (
-                          <li key={index} className="flex items-start">
-                            <span className="text-indigo-600 font-medium mr-2">{index + 1}.</span>
-                            <span className="text-gray-700">{goal}</span>
-                          </li>
-                        ))}
-                      </ol>
+                    <div className="space-y-2">
+                      <div className="flex items-center mb-2">
+                        <Flag className="h-5 w-5 text-indigo-600 mr-2" />
+                        <h4 className="font-semibold text-gray-900">Goals</h4>
+                      </div>
+                      {blueprintData.oneYearPlan.goals.filter(goal => goal).map((goal, index) => (
+                        <div key={index} className="p-3 bg-gray-50 border border-gray-200 rounded-lg hover:shadow-md transition-shadow">
+                          <div className="flex items-start">
+                            <span className="text-indigo-600 font-semibold mr-2">{index + 1}.</span>
+                            <p className="text-sm text-gray-700">{goal}</p>
+                          </div>
+                        </div>
+                      ))}
                     </div>
                   )}
                 </div>
               ) : (
-                <div className="text-center py-8">
-                  <p className="text-gray-500 mb-4">No 1-Year Plan set yet</p>
+                <div className="text-center py-12">
+                  <div className="mx-auto w-24 h-24 bg-gray-100 rounded-full flex items-center justify-center mb-4">
+                    <Target className="h-12 w-12 text-gray-400" />
+                  </div>
+                  <h3 className="text-lg font-semibold text-gray-900 mb-2">Define Your 1-Year Goals</h3>
+                  <p className="text-gray-500 mb-6 max-w-sm mx-auto">
+                    Set specific, measurable targets for the year ahead
+                  </p>
                   <Button 
-                    variant="outline"
                     onClick={() => setShowOneYearDialog(true)}
+                    className="bg-indigo-600 hover:bg-indigo-700 text-white"
                   >
                     <Plus className="h-4 w-4 mr-2" />
                     Create 1-Year Plan
@@ -1241,124 +1290,233 @@ const BusinessBlueprintPage = () => {
             </CardContent>
           </Card>
 
-          <Card>
+          <Card className="shadow-lg border-0">
             <CardHeader>
               <div className="flex items-center justify-between">
                 <div>
-                  <CardTitle>Quarterly Priorities</CardTitle>
-                  <CardDescription>Summary of priorities for this quarter</CardDescription>
+                  <CardTitle className="text-2xl font-bold">Quarterly Priorities</CardTitle>
+                  <CardDescription className="text-gray-600 mt-1">Focus areas for this quarter</CardDescription>
                 </div>
               </div>
             </CardHeader>
             <CardContent>
               {blueprintData.quarterlyPriorities && blueprintData.quarterlyPriorities.priorities && blueprintData.quarterlyPriorities.priorities.length > 0 ? (
-                <div className="space-y-4">
-                  <div>
-                    <p className="text-sm font-medium text-gray-700 mb-2">
-                      {blueprintData.quarterlyPriorities.quarter} {blueprintData.quarterlyPriorities.year} Priorities
-                    </p>
-                    
-                    {/* Company Priorities */}
-                    {blueprintData.quarterlyPriorities.priorities.some(p => p.is_company_priority) && (
-                      <div className="mb-4">
-                        <h4 className="text-sm font-semibold text-gray-600 mb-2">Company Priorities</h4>
-                        <ol className="space-y-2">
-                          {blueprintData.quarterlyPriorities.priorities
-                            .filter(p => p.is_company_priority)
-                            .map((priority, index) => (
-                              <li key={priority.id} className="flex items-start">
-                                <span className="text-indigo-600 font-medium mr-2">{index + 1}.</span>
-                                <span className="text-gray-700">{priority.title || priority.text}</span>
-                              </li>
-                            ))}
-                        </ol>
+                <div className="space-y-6">
+                  {/* Quarter Header */}
+                  <div className="p-4 bg-gray-50 border border-gray-200 rounded-lg hover:shadow-md transition-shadow">
+                    <div className="flex items-start">
+                      <Calendar className="h-5 w-5 text-indigo-600 mr-3 mt-0.5" />
+                      <div className="flex-1">
+                        <h4 className="font-semibold text-gray-900">Current Quarter</h4>
+                        <p className="text-sm text-gray-600 mt-1">
+                          {blueprintData.quarterlyPriorities.quarter} {blueprintData.quarterlyPriorities.year}
+                        </p>
                       </div>
-                    )}
-                    
-                    {/* Individual Priorities */}
-                    {blueprintData.quarterlyPriorities.priorities.some(p => !p.is_company_priority) && (
-                      <div>
-                        <h4 className="text-sm font-semibold text-gray-600 mb-2">Individual Priorities</h4>
-                        <ol className="space-y-2">
-                          {blueprintData.quarterlyPriorities.priorities
-                            .filter(p => !p.is_company_priority)
-                            .map((priority, index) => (
-                              <li key={priority.id} className="flex items-start">
-                                <span className="text-indigo-600 font-medium mr-2">{index + 1}.</span>
-                                <div>
-                                  <span className="text-gray-700">{priority.title || priority.text}</span>
-                                  {priority.owner_name && (
-                                    <span className="text-xs text-gray-500 ml-2">({priority.owner_name})</span>
-                                  )}
-                                </div>
-                              </li>
-                            ))}
-                        </ol>
-                      </div>
-                    )}
+                    </div>
                   </div>
+                    
+                  {/* Company Priorities */}
+                  {blueprintData.quarterlyPriorities.priorities.some(p => p.is_company_priority) && (
+                    <div className="space-y-3">
+                      <div className="flex items-center">
+                        <Building2 className="h-5 w-5 text-indigo-600 mr-2" />
+                        <h4 className="font-semibold text-gray-900">Company Priorities</h4>
+                      </div>
+                      {blueprintData.quarterlyPriorities.priorities
+                        .filter(p => p.is_company_priority)
+                        .map((priority, index) => (
+                          <div key={priority.id} className="p-4 bg-gray-50 border border-gray-200 rounded-lg hover:shadow-md transition-shadow">
+                            <div className="flex items-start">
+                              <div className={`w-3 h-3 rounded-full mr-3 mt-1.5 flex-shrink-0 ${
+                                priority.status === 'complete' ? 'bg-green-500' :
+                                priority.status === 'on-track' ? 'bg-blue-500' :
+                                priority.status === 'off-track' ? 'bg-red-500' :
+                                'bg-gray-500'
+                              }`} />
+                              <div className="flex-1">
+                                <p className="font-medium text-gray-900">{priority.title || priority.text}</p>
+                                {priority.status && (
+                                  <div className="flex items-center mt-2 space-x-4">
+                                    <span className="text-xs text-gray-500 flex items-center">
+                                      <Clock className="h-3 w-3 mr-1" />
+                                      {priority.status.replace('-', ' ')}
+                                    </span>
+                                    {priority.progress !== undefined && (
+                                      <span className="text-xs text-gray-500">
+                                        {priority.progress}% complete
+                                      </span>
+                                    )}
+                                  </div>
+                                )}
+                              </div>
+                            </div>
+                          </div>
+                        ))}
+                    </div>
+                  )}
+                    
+                  {/* Individual Priorities */}
+                  {blueprintData.quarterlyPriorities.priorities.some(p => !p.is_company_priority) && (
+                    <div className="space-y-3">
+                      <div className="flex items-center">
+                        <Users className="h-5 w-5 text-indigo-600 mr-2" />
+                        <h4 className="font-semibold text-gray-900">Individual Priorities</h4>
+                      </div>
+                      {blueprintData.quarterlyPriorities.priorities
+                        .filter(p => !p.is_company_priority)
+                        .map((priority, index) => (
+                          <div key={priority.id} className="p-4 bg-gray-50 border border-gray-200 rounded-lg hover:shadow-md transition-shadow">
+                            <div className="flex items-start">
+                              <div className={`w-3 h-3 rounded-full mr-3 mt-1.5 flex-shrink-0 ${
+                                priority.status === 'complete' ? 'bg-green-500' :
+                                priority.status === 'on-track' ? 'bg-blue-500' :
+                                priority.status === 'off-track' ? 'bg-red-500' :
+                                'bg-gray-500'
+                              }`} />
+                              <div className="flex-1">
+                                <p className="font-medium text-gray-900">{priority.title || priority.text}</p>
+                                {priority.owner_name && (
+                                  <div className="flex items-center mt-2">
+                                    <User className="h-3 w-3 mr-1 text-gray-500" />
+                                    <span className="text-xs text-gray-600">{priority.owner_name}</span>
+                                  </div>
+                                )}
+                                {priority.status && (
+                                  <div className="flex items-center mt-1 space-x-4">
+                                    <span className="text-xs text-gray-500 flex items-center">
+                                      <Clock className="h-3 w-3 mr-1" />
+                                      {priority.status.replace('-', ' ')}
+                                    </span>
+                                    {priority.progress !== undefined && (
+                                      <span className="text-xs text-gray-500">
+                                        {priority.progress}% complete
+                                      </span>
+                                    )}
+                                  </div>
+                                )}
+                              </div>
+                            </div>
+                          </div>
+                        ))}
+                    </div>
+                  )}
+                  
                   <div className="pt-4 border-t">
                     <Link 
                       to="/quarterly-priorities" 
                       className="text-indigo-600 hover:text-indigo-700 text-sm font-medium inline-flex items-center"
                     >
-                      View full quarterly priorities page →
+                      View full quarterly priorities page
+                      <ArrowRight className="ml-1 h-4 w-4" />
                     </Link>
                   </div>
                 </div>
               ) : (
-                <div className="text-center py-8">
-                  <p className="text-gray-500 mb-4">No quarterly priorities set</p>
+                <div className="text-center py-12">
+                  <div className="mx-auto w-24 h-24 bg-gray-100 rounded-full flex items-center justify-center mb-4">
+                    <CheckSquare className="h-12 w-12 text-gray-400" />
+                  </div>
+                  <h3 className="text-lg font-semibold text-gray-900 mb-2">Set Your Quarterly Focus</h3>
+                  <p className="text-gray-500 mb-6 max-w-sm mx-auto">
+                    Define 3-7 priorities to accomplish this quarter
+                  </p>
                   <Link 
                     to="/quarterly-priorities" 
-                    className="text-indigo-600 hover:text-indigo-700 font-medium inline-flex items-center"
+                    className="inline-flex items-center justify-center px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white font-medium rounded-lg"
                   >
-                    Go to Quarterly Priorities →
+                    <Plus className="h-4 w-4 mr-2" />
+                    Go to Quarterly Priorities
                   </Link>
                 </div>
               )}
             </CardContent>
           </Card>
 
-          <Card>
+          <Card className="shadow-lg border-0">
             <CardHeader>
               <div className="flex items-center justify-between">
                 <div>
-                  <CardTitle>Issues</CardTitle>
-                  <CardDescription>Long term issues to address</CardDescription>
+                  <CardTitle className="text-2xl font-bold">Issues</CardTitle>
+                  <CardDescription className="text-gray-600 mt-1">Long term challenges to solve</CardDescription>
                 </div>
               </div>
             </CardHeader>
             <CardContent>
               {blueprintData.longTermIssues && blueprintData.longTermIssues.length > 0 ? (
-                <div className="space-y-4">
-                  <div>
-                    <ol className="space-y-2">
-                      {blueprintData.longTermIssues.map((issue, index) => (
-                        <li key={issue.id || index} className="flex items-start">
-                          <span className="text-indigo-600 font-medium mr-2">{index + 1}.</span>
-                          <span className="text-gray-700">{issue.title}</span>
-                        </li>
-                      ))}
-                    </ol>
+                <div className="space-y-6">
+                  {/* Issues Summary */}
+                  <div className="p-4 bg-gray-50 border border-gray-200 rounded-lg hover:shadow-md transition-shadow">
+                    <div className="flex items-start">
+                      <MessageSquare className="h-5 w-5 text-indigo-600 mr-3 mt-0.5" />
+                      <div className="flex-1">
+                        <h4 className="font-semibold text-gray-900">Long Term Issues</h4>
+                        <p className="text-sm text-gray-600 mt-1">
+                          {blueprintData.longTermIssues.length} issue{blueprintData.longTermIssues.length !== 1 ? 's' : ''} to address
+                        </p>
+                      </div>
+                    </div>
                   </div>
+                  
+                  {/* Issues List */}
+                  <div className="space-y-3">
+                    {blueprintData.longTermIssues.map((issue, index) => (
+                      <div key={issue.id || index} className="p-4 bg-gray-50 border border-gray-200 rounded-lg hover:shadow-md transition-shadow">
+                        <div className="flex items-start">
+                          <div className={`w-3 h-3 rounded-full mr-3 mt-1.5 flex-shrink-0 ${
+                            issue.priority === 'high' ? 'bg-red-500' :
+                            issue.priority === 'medium' ? 'bg-yellow-500' :
+                            issue.priority === 'low' ? 'bg-green-500' :
+                            'bg-gray-500'
+                          }`} />
+                          <div className="flex-1">
+                            <p className="font-medium text-gray-900">{issue.title}</p>
+                            {(issue.priority || issue.assigned_to_name) && (
+                              <div className="flex items-center mt-2 space-x-4">
+                                {issue.priority && (
+                                  <span className="text-xs text-gray-500 flex items-center">
+                                    <AlertCircle className="h-3 w-3 mr-1" />
+                                    {issue.priority} priority
+                                  </span>
+                                )}
+                                {issue.assigned_to_name && (
+                                  <span className="text-xs text-gray-500 flex items-center">
+                                    <User className="h-3 w-3 mr-1" />
+                                    {issue.assigned_to_name}
+                                  </span>
+                                )}
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                  
                   <div className="pt-4 border-t">
                     <Link 
                       to="/issues?timeline=long_term" 
                       className="text-indigo-600 hover:text-indigo-700 text-sm font-medium inline-flex items-center"
                     >
-                      View all long term issues →
+                      View all long term issues
+                      <ArrowRight className="ml-1 h-4 w-4" />
                     </Link>
                   </div>
                 </div>
               ) : (
-                <div className="text-center py-8">
-                  <p className="text-gray-500 mb-4">No long term issues</p>
+                <div className="text-center py-12">
+                  <div className="mx-auto w-24 h-24 bg-gray-100 rounded-full flex items-center justify-center mb-4">
+                    <MessageSquare className="h-12 w-12 text-gray-400" />
+                  </div>
+                  <h3 className="text-lg font-semibold text-gray-900 mb-2">Track Important Issues</h3>
+                  <p className="text-gray-500 mb-6 max-w-sm mx-auto">
+                    Log challenges that need to be solved over time
+                  </p>
                   <Link 
                     to="/issues" 
-                    className="text-indigo-600 hover:text-indigo-700 font-medium inline-flex items-center"
+                    className="inline-flex items-center justify-center px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white font-medium rounded-lg"
                   >
-                    Go to Issues →
+                    <Plus className="h-4 w-4 mr-2" />
+                    Go to Issues
                   </Link>
                 </div>
               )}
