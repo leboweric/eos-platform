@@ -48,12 +48,7 @@ export const documentsService = {
     
     const response = await axios.post(
       `/organizations/${orgId}/documents`,
-      formData,
-      {
-        headers: {
-          'Content-Type': 'multipart/form-data'
-        }
-      }
+      formData
     );
     
     return response.data.data;

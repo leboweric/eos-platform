@@ -181,7 +181,7 @@ const DocumentRepositoryPage = () => {
       
       for (const file of files) {
         try {
-          const formData = {
+          const documentData = {
             title: file.name.replace(/\.[^/.]+$/, ''),
             description: '',
             visibility: 'company',
@@ -190,7 +190,7 @@ const DocumentRepositoryPage = () => {
             tags: []
           };
           
-          await documentsService.uploadDocument(orgId, formData, file);
+          await documentsService.uploadDocument(orgId, documentData, file);
         } catch (err) {
           console.error(`Failed to upload ${file.name}:`, err);
           console.error('Error response:', err.response?.data);
