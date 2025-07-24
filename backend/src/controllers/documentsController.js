@@ -1,6 +1,7 @@
 import { query } from '../config/database.js';
 import { v4 as uuidv4 } from 'uuid';
 import fs from 'fs/promises';
+import { createReadStream } from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
 
@@ -242,22 +243,34 @@ export const downloadDocument = async (req, res) => {
     
     // Check if file exists
     const filePath = document.file_path;
+    
+    // Check if it's an absolute path or relative path
+    let absolutePath = filePath;
+    if (!path.isAbsolute(filePath)) {
+      // If relative, resolve it relative to the project root
+      absolutePath = path.join(__dirname, '../..', filePath);
+    }
+    
     try {
-      await fs.access(filePath);
+      await fs.access(absolutePath);
     } catch (error) {
-      console.error('File not found:', filePath);
+      console.error('File not found:', absolutePath);
+      console.error('Original path:', filePath);
+      console.error('Current directory:', process.cwd());
       return res.status(404).json({
         success: false,
         error: 'File not found on server'
       });
     }
     
-    // Set headers and stream file
+    // Set headers for download
     res.setHeader('Content-Type', document.mime_type || 'application/octet-stream');
     res.setHeader('Content-Disposition', `attachment; filename="${document.file_name}"`);
+    res.setHeader('Content-Length', document.file_size || 0);
     
-    const fileStream = await fs.readFile(filePath);
-    res.send(fileStream);
+    // Stream the file
+    const fileStream = createReadStream(absolutePath);
+    fileStream.pipe(res);
   } catch (error) {
     console.error('Error downloading document:', error);
     res.status(500).json({
@@ -402,10 +415,19 @@ export const deleteDocument = async (req, res) => {
     
     // Delete the actual file
     const filePath = result.rows[0].file_path;
+    
+    // Check if it's an absolute path or relative path
+    let absolutePath = filePath;
+    if (!path.isAbsolute(filePath)) {
+      // If relative, resolve it relative to the project root
+      absolutePath = path.join(__dirname, '../..', filePath);
+    }
+    
     try {
-      await fs.unlink(filePath);
+      await fs.unlink(absolutePath);
     } catch (error) {
       console.error('Error deleting file:', error);
+      console.error('Attempted path:', absolutePath);
       // Continue even if file deletion fails
     }
     
