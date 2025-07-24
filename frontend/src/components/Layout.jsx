@@ -65,12 +65,12 @@ const Layout = ({ children }) => {
 
   const baseNavigation = [
     { name: 'Dashboard', href: '/dashboard', icon: Home },
-    { name: '2-Page Plan', href: '/business-blueprint', icon: Target, requiresLeadership: true },
     { name: 'Quarterly Priorities', href: '/quarterly-priorities', icon: CheckSquare },
     { name: 'Scorecard', href: '/scorecard', icon: BarChart3 },
     { name: 'To-Dos', href: '/todos', icon: ClipboardList },
     { name: 'Issues', href: '/issues', icon: MessageSquare },
     { name: 'Meetings', href: '/meetings', icon: Calendar },
+    { name: '2-Page Plan', href: '/business-blueprint', icon: Target, requiresLeadership: true },
     { name: 'Organizational Chart', href: '/organizational-chart', icon: GitBranch },
     { name: 'Departments', href: '/departments', icon: Building2, requiresAdmin: true },
     { name: 'Team', href: '/users', icon: Users, requiresAdmin: true },
