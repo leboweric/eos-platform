@@ -5,22 +5,32 @@ import { v4 as uuidv4 } from 'uuid';
 export const getFolders = async (req, res) => {
   try {
     const { orgId } = req.params;
+    const userId = req.user.id;
     
     const result = await query(
       `WITH RECURSIVE folder_tree AS (
         -- Base case: top-level folders
         SELECT 
-          id, name, parent_folder_id, created_by, created_at,
+          f.id, f.name, f.parent_folder_id, f.created_by, f.created_at,
+          f.visibility, f.department_id, f.owner_id,
           0 as level,
-          ARRAY[name] as path
-        FROM document_folders
-        WHERE organization_id = $1 AND parent_folder_id IS NULL
+          ARRAY[f.name] as path
+        FROM document_folders f
+        LEFT JOIN team_members tm ON f.department_id = tm.team_id AND tm.user_id = $2
+        WHERE f.organization_id = $1 
+          AND f.parent_folder_id IS NULL
+          AND (
+            f.visibility = 'company' OR
+            (f.visibility = 'department' AND tm.user_id IS NOT NULL) OR
+            (f.visibility = 'personal' AND f.owner_id = $2)
+          )
         
         UNION ALL
         
         -- Recursive case: child folders
         SELECT 
           f.id, f.name, f.parent_folder_id, f.created_by, f.created_at,
+          f.visibility, f.department_id, f.owner_id,
           ft.level + 1,
           ft.path || f.name
         FROM document_folders f
@@ -29,14 +39,20 @@ export const getFolders = async (req, res) => {
       SELECT 
         ft.*,
         u.first_name || ' ' || u.last_name as created_by_name,
+        t.name as department_name,
+        o.first_name || ' ' || o.last_name as owner_name,
         COUNT(d.id) as document_count
       FROM folder_tree ft
       LEFT JOIN users u ON ft.created_by = u.id
+      LEFT JOIN teams t ON ft.department_id = t.id
+      LEFT JOIN users o ON ft.owner_id = o.id
       LEFT JOIN documents d ON d.folder_id = ft.id
       GROUP BY ft.id, ft.name, ft.parent_folder_id, ft.created_by, 
-               ft.created_at, ft.level, ft.path, u.first_name, u.last_name
-      ORDER BY ft.path`,
-      [orgId]
+               ft.created_at, ft.visibility, ft.department_id, ft.owner_id,
+               ft.level, ft.path, u.first_name, u.last_name, 
+               t.name, o.first_name, o.last_name
+      ORDER BY ft.visibility, ft.path`,
+      [orgId, userId]
     );
     
     res.json({
@@ -52,20 +68,13 @@ export const getFolders = async (req, res) => {
   }
 };
 
-// Create a new folder (admin only)
+// Create a new folder
 export const createFolder = async (req, res) => {
   try {
     const { orgId } = req.params;
-    const { name, parentFolderId } = req.body;
+    const { name, parentFolderId, visibility, departmentId } = req.body;
     const userId = req.user.id;
-    
-    // Check if user is admin
-    if (req.user.role !== 'admin') {
-      return res.status(403).json({
-        success: false,
-        error: 'Only admins can create folders'
-      });
-    }
+    const userRole = req.user.role;
     
     if (!name || !name.trim()) {
       return res.status(400).json({
@@ -74,13 +83,47 @@ export const createFolder = async (req, res) => {
       });
     }
     
+    if (!visibility) {
+      return res.status(400).json({
+        success: false,
+        error: 'Visibility is required (company, department, or personal)'
+      });
+    }
+    
+    // Check permissions based on visibility
+    if (visibility === 'company' || visibility === 'department') {
+      if (userRole !== 'admin') {
+        return res.status(403).json({
+          success: false,
+          error: 'Only admins can create company or department folders'
+        });
+      }
+      
+      if (visibility === 'department' && !departmentId) {
+        return res.status(400).json({
+          success: false,
+          error: 'Department ID is required for department folders'
+        });
+      }
+    }
+    
     const folderId = uuidv4();
     
     const result = await query(
-      `INSERT INTO document_folders (id, name, parent_folder_id, organization_id, created_by)
-       VALUES ($1, $2, $3, $4, $5)
+      `INSERT INTO document_folders 
+       (id, name, parent_folder_id, organization_id, created_by, visibility, department_id, owner_id)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
        RETURNING *`,
-      [folderId, name.trim(), parentFolderId || null, orgId, userId]
+      [
+        folderId, 
+        name.trim(), 
+        parentFolderId || null, 
+        orgId, 
+        userId,
+        visibility,
+        visibility === 'department' ? departmentId : null,
+        visibility === 'personal' ? userId : null
+      ]
     );
     
     res.json({
@@ -103,25 +146,51 @@ export const createFolder = async (req, res) => {
   }
 };
 
-// Update folder (admin only)
+// Update folder
 export const updateFolder = async (req, res) => {
   try {
     const { orgId, folderId } = req.params;
     const { name } = req.body;
-    
-    // Check if user is admin
-    if (req.user.role !== 'admin') {
-      return res.status(403).json({
-        success: false,
-        error: 'Only admins can update folders'
-      });
-    }
+    const userId = req.user.id;
+    const userRole = req.user.role;
     
     if (!name || !name.trim()) {
       return res.status(400).json({
         success: false,
         error: 'Folder name is required'
       });
+    }
+    
+    // Get folder details to check permissions
+    const folderCheck = await query(
+      `SELECT visibility, owner_id FROM document_folders WHERE id = $1 AND organization_id = $2`,
+      [folderId, orgId]
+    );
+    
+    if (folderCheck.rows.length === 0) {
+      return res.status(404).json({
+        success: false,
+        error: 'Folder not found'
+      });
+    }
+    
+    const folder = folderCheck.rows[0];
+    
+    // Check permissions
+    if (folder.visibility === 'company' || folder.visibility === 'department') {
+      if (userRole !== 'admin') {
+        return res.status(403).json({
+          success: false,
+          error: 'Only admins can update company or department folders'
+        });
+      }
+    } else if (folder.visibility === 'personal') {
+      if (folder.owner_id !== userId && userRole !== 'admin') {
+        return res.status(403).json({
+          success: false,
+          error: 'You can only update your own personal folders'
+        });
+      }
     }
     
     const result = await query(
@@ -131,13 +200,6 @@ export const updateFolder = async (req, res) => {
        RETURNING *`,
       [name.trim(), folderId, orgId]
     );
-    
-    if (result.rows.length === 0) {
-      return res.status(404).json({
-        success: false,
-        error: 'Folder not found'
-      });
-    }
     
     res.json({
       success: true,
@@ -159,17 +221,43 @@ export const updateFolder = async (req, res) => {
   }
 };
 
-// Delete folder (admin only)
+// Delete folder
 export const deleteFolder = async (req, res) => {
   try {
     const { orgId, folderId } = req.params;
+    const userId = req.user.id;
+    const userRole = req.user.role;
     
-    // Check if user is admin
-    if (req.user.role !== 'admin') {
-      return res.status(403).json({
+    // Get folder details to check permissions
+    const folderCheck = await query(
+      `SELECT visibility, owner_id FROM document_folders WHERE id = $1 AND organization_id = $2`,
+      [folderId, orgId]
+    );
+    
+    if (folderCheck.rows.length === 0) {
+      return res.status(404).json({
         success: false,
-        error: 'Only admins can delete folders'
+        error: 'Folder not found'
       });
+    }
+    
+    const folder = folderCheck.rows[0];
+    
+    // Check permissions
+    if (folder.visibility === 'company' || folder.visibility === 'department') {
+      if (userRole !== 'admin') {
+        return res.status(403).json({
+          success: false,
+          error: 'Only admins can delete company or department folders'
+        });
+      }
+    } else if (folder.visibility === 'personal') {
+      if (folder.owner_id !== userId && userRole !== 'admin') {
+        return res.status(403).json({
+          success: false,
+          error: 'You can only delete your own personal folders'
+        });
+      }
     }
     
     // Check if folder has documents
@@ -185,18 +273,24 @@ export const deleteFolder = async (req, res) => {
       });
     }
     
+    // Check if folder has subfolders
+    const subfolderCheck = await query(
+      `SELECT COUNT(*) as count FROM document_folders WHERE parent_folder_id = $1`,
+      [folderId]
+    );
+    
+    if (parseInt(subfolderCheck.rows[0].count) > 0) {
+      return res.status(400).json({
+        success: false,
+        error: 'Cannot delete folder that contains subfolders. Please delete the subfolders first.'
+      });
+    }
+    
     const result = await query(
       `DELETE FROM document_folders 
        WHERE id = $1 AND organization_id = $2`,
       [folderId, orgId]
     );
-    
-    if (result.rowCount === 0) {
-      return res.status(404).json({
-        success: false,
-        error: 'Folder not found'
-      });
-    }
     
     res.json({
       success: true,

@@ -12,7 +12,6 @@ import {
   updateDocument,
   deleteDocument,
   toggleFavorite,
-  getCategories,
   debugDocument
 } from '../controllers/documentsController.js';
 
@@ -55,9 +54,6 @@ router.use(authenticate);
 
 // Get all documents with filtering
 router.get('/', getDocuments);
-
-// Get categories with counts
-router.get('/categories', getCategories);
 
 // Upload a new document
 router.post('/', upload.single('file'), uploadDocument);

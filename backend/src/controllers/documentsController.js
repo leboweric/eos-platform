@@ -12,23 +12,25 @@ export const getDocuments = async (req, res) => {
   try {
     const { orgId } = req.params;
     const userId = req.user.id;
-    const { category, department, search, favorites, folderId } = req.query;
+    const { department, search, favorites, folderId } = req.query;
     
     // Build query with filters
     // Exclude file_data from listings to avoid sending large binary data
     let queryText = `
       SELECT 
-        d.id, d.title, d.description, d.category, d.file_name, d.file_size,
+        d.id, d.title, d.description, d.file_name, d.file_size,
         d.mime_type, d.visibility, d.organization_id, d.department_id,
-        d.uploaded_by, d.related_priority_id, d.created_at, d.updated_at,
+        d.uploaded_by, d.related_priority_id, d.created_at, d.updated_at, d.folder_id,
         u.first_name || ' ' || u.last_name as uploader_name,
         t.name as department_name,
+        f.name as folder_name,
         CASE WHEN df.user_id IS NOT NULL THEN true ELSE false END as is_favorite,
         COUNT(DISTINCT dt.id) as tag_count,
         ARRAY_AGG(DISTINCT dt.tag_name) FILTER (WHERE dt.tag_name IS NOT NULL) as tags
       FROM documents d
       LEFT JOIN users u ON d.uploaded_by = u.id
       LEFT JOIN teams t ON d.department_id = t.id
+      LEFT JOIN document_folders f ON d.folder_id = f.id
       LEFT JOIN document_favorites df ON d.id = df.document_id AND df.user_id = $2
       LEFT JOIN document_tags dt ON d.id = dt.document_id
       WHERE d.organization_id = $1
@@ -45,13 +47,6 @@ export const getDocuments = async (req, res) => {
       ))
       OR (d.visibility = 'private' AND d.uploaded_by = $2)
     )`;
-    
-    // Add category filter
-    if (category) {
-      queryText += ` AND d.category = $${paramIndex}`;
-      params.push(category);
-      paramIndex++;
-    }
     
     // Add department filter
     if (department) {
@@ -91,7 +86,7 @@ export const getDocuments = async (req, res) => {
       }
     }
     
-    queryText += ` GROUP BY d.id, u.first_name, u.last_name, t.name, df.user_id
+    queryText += ` GROUP BY d.id, u.first_name, u.last_name, t.name, f.name, df.user_id
                    ORDER BY d.created_at DESC`;
     
     const result = await query(queryText, params);
@@ -115,7 +110,7 @@ export const uploadDocument = async (req, res) => {
     const { orgId } = req.params;
     const userId = req.user.id;
     const file = req.file;
-    const { title, description, category, departmentId, visibility, relatedPriorityId, tags, folderId } = req.body;
+    const { title, description, departmentId, visibility, relatedPriorityId, tags, folderId } = req.body;
     
     if (!file) {
       return res.status(400).json({
@@ -124,10 +119,10 @@ export const uploadDocument = async (req, res) => {
       });
     }
     
-    if (!title || !category) {
+    if (!title) {
       return res.status(400).json({
         success: false,
-        error: 'Title and category are required'
+        error: 'Title is required'
       });
     }
     
@@ -139,15 +134,14 @@ export const uploadDocument = async (req, res) => {
     
     const documentResult = await query(
       `INSERT INTO documents 
-       (id, title, description, category, file_name, file_data, file_size, 
+       (id, title, description, file_name, file_data, file_size, 
         mime_type, visibility, organization_id, department_id, uploaded_by, related_priority_id, folder_id)
-       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13)
        RETURNING *`,
       [
         documentId,
         title,
         description,
-        category,
         file.originalname,
         fileData,
         file.size,
@@ -179,18 +173,20 @@ export const uploadDocument = async (req, res) => {
     // Get the complete document with tags (excluding file_data)
     const completeDocument = await query(
       `SELECT 
-        d.id, d.title, d.description, d.category, d.file_name, d.file_size,
+        d.id, d.title, d.description, d.file_name, d.file_size,
         d.mime_type, d.visibility, d.organization_id, d.department_id,
-        d.uploaded_by, d.related_priority_id, d.created_at, d.updated_at,
+        d.uploaded_by, d.related_priority_id, d.created_at, d.updated_at, d.folder_id,
         u.first_name || ' ' || u.last_name as uploader_name,
         t.name as department_name,
+        f.name as folder_name,
         ARRAY_AGG(dt.tag_name) FILTER (WHERE dt.tag_name IS NOT NULL) as tags
        FROM documents d
        LEFT JOIN users u ON d.uploaded_by = u.id
        LEFT JOIN teams t ON d.department_id = t.id
+       LEFT JOIN document_folders f ON d.folder_id = f.id
        LEFT JOIN document_tags dt ON d.id = dt.document_id
        WHERE d.id = $1
-       GROUP BY d.id, d.created_at, d.updated_at, u.first_name, u.last_name, t.name`,
+       GROUP BY d.id, d.created_at, d.updated_at, u.first_name, u.last_name, t.name, f.name`,
       [documentId]
     );
     
@@ -291,7 +287,7 @@ export const updateDocument = async (req, res) => {
   try {
     const { orgId, documentId } = req.params;
     const userId = req.user.id;
-    const { title, description, category, visibility, departmentId, tags } = req.body;
+    const { title, description, visibility, departmentId, tags, folderId } = req.body;
     
     // Check if user can update (must be uploader or admin)
     const accessCheck = await query(
@@ -322,13 +318,13 @@ export const updateDocument = async (req, res) => {
       `UPDATE documents 
        SET title = COALESCE($1, title),
            description = COALESCE($2, description),
-           category = COALESCE($3, category),
-           visibility = COALESCE($4, visibility),
-           department_id = COALESCE($5, department_id),
+           visibility = COALESCE($3, visibility),
+           department_id = COALESCE($4, department_id),
+           folder_id = COALESCE($5, folder_id),
            updated_at = NOW()
        WHERE id = $6 AND organization_id = $7
        RETURNING *`,
-      [title, description, category, visibility, departmentId, documentId, orgId]
+      [title, description, visibility, departmentId, folderId, documentId, orgId]
     );
     
     // Update tags if provided
@@ -476,7 +472,6 @@ export const toggleFavorite = async (req, res) => {
   }
 };
 
-// Get document categories with counts
 // Debug endpoint to check file paths
 export const debugDocument = async (req, res) => {
   try {
@@ -590,59 +585,3 @@ export const debugDocument = async (req, res) => {
   }
 };
 
-export const getCategories = async (req, res) => {
-  try {
-    const { orgId } = req.params;
-    const userId = req.user.id;
-    
-    const result = await query(
-      `SELECT 
-        category,
-        COUNT(*) as count
-       FROM documents d
-       WHERE d.organization_id = $1
-         AND (
-           d.visibility = 'company' 
-           OR (d.visibility = 'department' AND d.department_id IN (
-             SELECT team_id FROM team_members WHERE user_id = $2
-           ))
-           OR (d.visibility = 'private' AND d.uploaded_by = $2)
-         )
-       GROUP BY category
-       ORDER BY 
-         CASE category
-           WHEN 'strategy' THEN 1
-           WHEN 'blueprints' THEN 2
-           WHEN 'policies' THEN 3
-           WHEN 'templates' THEN 4
-           WHEN 'meeting_notes' THEN 5
-           WHEN 'reports' THEN 6
-           WHEN 'training' THEN 7
-         END`,
-      [orgId, userId]
-    );
-    
-    // Category display names
-    const categoryNames = {
-      strategy_plans: 'Strategy/Plans',
-      project_plans: 'Project Plans',
-      sops: "SOP's"
-    };
-    
-    const categories = result.rows.map(row => ({
-      ...row,
-      display_name: categoryNames[row.category] || row.category
-    }));
-    
-    res.json({
-      success: true,
-      data: categories
-    });
-  } catch (error) {
-    console.error('Error fetching categories:', error);
-    res.status(500).json({
-      success: false,
-      error: 'Failed to fetch categories'
-    });
-  }
-};

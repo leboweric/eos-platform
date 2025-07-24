@@ -43,7 +43,7 @@ EOS Platform is a web application for implementing the Entrepreneurial Operating
 - `id`: UUID primary key
 - `title`: Document title
 - `description`: Optional description
-- `category`: Document category - LIMITED TO: 'strategy_plans', 'project_plans', 'sops'
+- `category`: DEPRECATED - No longer used, documents are organized by folders
 - `file_name`: Original filename
 - `file_path`: DEPRECATED - do not use
 - `file_data`: bytea column for storing actual file data
@@ -54,12 +54,7 @@ EOS Platform is a web application for implementing the Entrepreneurial Operating
 - `department_id`: Optional foreign key to teams
 - `uploaded_by`: Foreign key to users
 - `related_priority_id`: Optional foreign key to priorities
-- `folder_id`: Optional foreign key to document_folders
-
-### Document Categories
-- `strategy_plans`: Strategy/Plans
-- `project_plans`: Project Plans  
-- `sops`: SOP's
+- `folder_id`: Foreign key to document_folders (how documents are organized)
 
 ### Document Folders Table
 - `id`: UUID primary key
@@ -67,7 +62,15 @@ EOS Platform is a web application for implementing the Entrepreneurial Operating
 - `parent_folder_id`: Self-referencing foreign key for nested folders
 - `organization_id`: Foreign key to organizations
 - `created_by`: Foreign key to users
-- Only admins can create/update/delete folders
+- `visibility`: Folder visibility level (company, department, personal)
+- `department_id`: Foreign key to teams (required when visibility = 'department')
+- `owner_id`: Foreign key to users (required when visibility = 'personal')
+
+### Folder Permissions
+- **Company folders**: Only admins can create/update/delete
+- **Department folders**: Only admins can create/update/delete
+- **Personal folders**: Users can create/update/delete their own folders
+- All users can view folders they have access to based on visibility
 
 ## Development Guidelines
 
