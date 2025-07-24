@@ -1,4 +1,5 @@
 import axios from './axiosConfig';
+import axiosRaw from 'axios';
 
 export const documentsService = {
   // Get all documents with optional filters
@@ -75,9 +76,19 @@ export const documentsService = {
     }
     
     try {
-      const response = await axios.post(
-        `/organizations/${orgId}/documents`,
-        formData
+      // Use raw axios to avoid any interceptors that might transform FormData
+      const token = localStorage.getItem('accessToken');
+      const baseURL = import.meta.env.VITE_API_URL || 'http://localhost:3001/api/v1';
+      
+      const response = await axiosRaw.post(
+        `${baseURL}/organizations/${orgId}/documents`,
+        formData,
+        {
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            // Let browser set Content-Type with boundary
+          }
+        }
       );
       console.log('5. Upload successful!');
       return response.data.data;
@@ -86,6 +97,14 @@ export const documentsService = {
       console.log('   - Error:', error);
       console.log('   - Response:', error.response);
       console.log('   - Request headers:', error.config?.headers);
+      
+      // Handle 401 like the interceptor does
+      if (error.response?.status === 401) {
+        localStorage.removeItem('accessToken');
+        localStorage.removeItem('refreshToken');
+        window.location.href = '/login';
+      }
+      
       throw error;
     }
   },
