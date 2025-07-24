@@ -147,5 +147,66 @@ export const quarterlyPrioritiesService = {
     );
     
     return response.data.data;
+  },
+
+  // Upload attachment for a priority
+  async uploadAttachment(orgId, teamId, priorityId, file) {
+    const formData = new FormData();
+    formData.append('file', file);
+    
+    const response = await axios.post(
+      `/organizations/${orgId}/teams/${teamId}/quarterly-priorities/priorities/${priorityId}/attachments`,
+      formData,
+      {
+        headers: {
+          'Content-Type': 'multipart/form-data'
+        }
+      }
+    );
+    
+    return response.data.data;
+  },
+
+  // Get attachments for a priority
+  async getAttachments(orgId, teamId, priorityId) {
+    const response = await axios.get(
+      `/organizations/${orgId}/teams/${teamId}/quarterly-priorities/priorities/${priorityId}/attachments`
+    );
+    
+    return response.data.data;
+  },
+
+  // Delete an attachment
+  async deleteAttachment(orgId, teamId, priorityId, attachmentId) {
+    const response = await axios.delete(
+      `/organizations/${orgId}/teams/${teamId}/quarterly-priorities/priorities/${priorityId}/attachments/${attachmentId}`
+    );
+    
+    return response.data;
+  },
+
+  // Download an attachment
+  async downloadAttachment(orgId, teamId, priorityId, attachmentId, fileName) {
+    try {
+      const response = await axios.get(
+        `/organizations/${orgId}/teams/${teamId}/quarterly-priorities/priorities/${priorityId}/attachments/${attachmentId}/download`,
+        {
+          responseType: 'blob'
+        }
+      );
+      
+      // Create a download link
+      const url = window.URL.createObjectURL(new Blob([response.data]));
+      const link = document.createElement('a');
+      link.href = url;
+      link.setAttribute('download', fileName);
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      window.URL.revokeObjectURL(url);
+    } catch (error) {
+      console.error('Download failed:', error);
+      throw error;
+    }
   }
 };

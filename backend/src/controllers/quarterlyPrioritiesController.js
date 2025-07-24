@@ -1,6 +1,12 @@
 import { query } from '../config/database.js';
 import { v4 as uuidv4 } from 'uuid';
 import { isUserOnLeadershipTeam } from './teamsController.js';
+import fs from 'fs/promises';
+import path from 'path';
+import { fileURLToPath } from 'url';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 // Check if a column exists in quarterly_priorities table
 async function checkColumn(columnName) {
@@ -1348,6 +1354,193 @@ export const cleanupTestPriorities = async (req, res) => {
       success: false,
       error: 'Failed to cleanup test priorities',
       details: process.env.NODE_ENV === 'development' ? error.message : undefined
+    });
+  }
+};
+
+// Attachment methods for priorities
+export const uploadPriorityAttachment = async (req, res) => {
+  try {
+    const { orgId, teamId, priorityId } = req.params;
+    const userId = req.user.id;
+    const file = req.file;
+
+    if (!file) {
+      return res.status(400).json({
+        success: false,
+        error: 'No file uploaded'
+      });
+    }
+
+    // Verify priority exists and belongs to organization
+    const priorityCheck = await query(
+      'SELECT id FROM quarterly_priorities WHERE id = $1 AND organization_id = $2',
+      [priorityId, orgId]
+    );
+
+    if (priorityCheck.rows.length === 0) {
+      return res.status(404).json({
+        success: false,
+        error: 'Priority not found'
+      });
+    }
+
+    // Create attachment record
+    const attachmentId = uuidv4();
+    const filePath = `/uploads/priorities/${attachmentId}_${file.originalname}`;
+    
+    const result = await query(
+      `INSERT INTO priority_attachments 
+       (id, priority_id, file_name, file_path, file_size, mime_type, uploaded_by)
+       VALUES ($1, $2, $3, $4, $5, $6, $7)
+       RETURNING *`,
+      [
+        attachmentId,
+        priorityId,
+        file.originalname,
+        filePath,
+        file.size,
+        file.mimetype,
+        userId
+      ]
+    );
+
+    res.json({
+      success: true,
+      data: result.rows[0]
+    });
+  } catch (error) {
+    console.error('Error uploading priority attachment:', error);
+    
+    // Clean up uploaded file if database insert failed
+    if (req.file && req.file.path) {
+      try {
+        await fs.unlink(req.file.path);
+      } catch (unlinkError) {
+        console.error('Error deleting uploaded file:', unlinkError);
+      }
+    }
+    
+    res.status(500).json({
+      success: false,
+      error: 'Failed to upload attachment'
+    });
+  }
+};
+
+export const getPriorityAttachments = async (req, res) => {
+  try {
+    const { orgId, teamId, priorityId } = req.params;
+
+    const result = await query(
+      `SELECT a.*, u.first_name, u.last_name, u.email
+       FROM priority_attachments a
+       LEFT JOIN users u ON a.uploaded_by = u.id
+       WHERE a.priority_id = $1
+       ORDER BY a.created_at DESC`,
+      [priorityId]
+    );
+
+    res.json({
+      success: true,
+      data: result.rows
+    });
+  } catch (error) {
+    console.error('Error fetching priority attachments:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Failed to fetch attachments'
+    });
+  }
+};
+
+export const downloadPriorityAttachment = async (req, res) => {
+  try {
+    const { orgId, teamId, priorityId, attachmentId } = req.params;
+
+    // Get attachment details
+    const result = await query(
+      `SELECT a.*, p.organization_id
+       FROM priority_attachments a
+       JOIN quarterly_priorities p ON a.priority_id = p.id
+       WHERE a.id = $1 AND a.priority_id = $2 AND p.organization_id = $3`,
+      [attachmentId, priorityId, orgId]
+    );
+
+    if (result.rows.length === 0) {
+      return res.status(404).json({
+        success: false,
+        error: 'Attachment not found'
+      });
+    }
+
+    const attachment = result.rows[0];
+    const filePath = path.join(__dirname, '../..', attachment.file_path);
+
+    // Check if file exists
+    try {
+      await fs.access(filePath);
+    } catch (error) {
+      console.error('File not found:', filePath);
+      return res.status(404).json({
+        success: false,
+        error: 'File not found on server'
+      });
+    }
+
+    // Set headers and stream file
+    res.setHeader('Content-Type', attachment.mime_type || 'application/octet-stream');
+    res.setHeader('Content-Disposition', `attachment; filename="${attachment.file_name}"`);
+    
+    const fileStream = await fs.readFile(filePath);
+    res.send(fileStream);
+  } catch (error) {
+    console.error('Error downloading priority attachment:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Failed to download attachment'
+    });
+  }
+};
+
+export const deletePriorityAttachment = async (req, res) => {
+  try {
+    const { orgId, teamId, priorityId, attachmentId } = req.params;
+    const userId = req.user.id;
+
+    // Delete the attachment record
+    const result = await query(
+      `DELETE FROM priority_attachments 
+       WHERE id = $1 AND priority_id = $2 
+       RETURNING file_path`,
+      [attachmentId, priorityId]
+    );
+
+    if (result.rows.length === 0) {
+      return res.status(404).json({
+        success: false,
+        error: 'Attachment not found'
+      });
+    }
+
+    // Delete the actual file from storage
+    const filePath = path.join(__dirname, '../..', result.rows[0].file_path);
+    try {
+      await fs.unlink(filePath);
+    } catch (error) {
+      console.error('Error deleting file:', error);
+      // Continue even if file deletion fails
+    }
+
+    res.json({
+      success: true,
+      message: 'Attachment deleted successfully'
+    });
+  } catch (error) {
+    console.error('Error deleting priority attachment:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Failed to delete attachment'
     });
   }
 };

@@ -39,7 +39,9 @@ import {
   ChevronDown,
   ChevronRight,
   Eye,
-  EyeOff
+  EyeOff,
+  Paperclip,
+  Download
 } from 'lucide-react';
 import { format, addMonths, startOfQuarter, endOfQuarter } from 'date-fns';
 
@@ -623,6 +625,105 @@ const QuarterlyPrioritiesPage = () => {
       ownerId: priority.owner?.id || '',
       isCompanyPriority: priority.isCompanyPriority ?? priority.is_company_priority ?? false
     });
+    
+    // Attachment states
+    const [attachments, setAttachments] = useState([]);
+    const [loadingAttachments, setLoadingAttachments] = useState(false);
+    const [uploadingFile, setUploadingFile] = useState(false);
+    const [attachmentError, setAttachmentError] = useState(null);
+
+    // Load attachments on mount
+    useEffect(() => {
+      if (priority.id && !isArchived) {
+        loadAttachments();
+      }
+    }, [priority.id]);
+
+    const loadAttachments = async () => {
+      try {
+        setLoadingAttachments(true);
+        const orgId = user?.organizationId;
+        const teamId = selectedDepartment?.id;
+        
+        if (orgId && teamId) {
+          const attachmentList = await quarterlyPrioritiesService.getAttachments(orgId, teamId, priority.id);
+          setAttachments(attachmentList || []);
+        }
+      } catch (error) {
+        console.error('Failed to load attachments:', error);
+        // Silently fail for now until migration runs
+        setAttachments([]);
+      } finally {
+        setLoadingAttachments(false);
+      }
+    };
+
+    const handleFileUpload = async (event) => {
+      const file = event.target.files?.[0];
+      if (!file) return;
+
+      try {
+        setUploadingFile(true);
+        setAttachmentError(null);
+        
+        const orgId = user?.organizationId;
+        const teamId = selectedDepartment?.id;
+        
+        if (!orgId || !teamId) {
+          throw new Error('Organization or team not found');
+        }
+
+        await quarterlyPrioritiesService.uploadAttachment(orgId, teamId, priority.id, file);
+        await loadAttachments(); // Reload attachments
+        
+        // Clear the file input
+        event.target.value = '';
+      } catch (error) {
+        console.error('Failed to upload file:', error);
+        setAttachmentError('Failed to upload attachment');
+      } finally {
+        setUploadingFile(false);
+      }
+    };
+
+    const handleDeleteAttachment = async (attachmentId) => {
+      if (!window.confirm('Are you sure you want to delete this attachment?')) {
+        return;
+      }
+
+      try {
+        const orgId = user?.organizationId;
+        const teamId = selectedDepartment?.id;
+        
+        if (orgId && teamId) {
+          await quarterlyPrioritiesService.deleteAttachment(orgId, teamId, priority.id, attachmentId);
+          await loadAttachments(); // Reload attachments
+        }
+      } catch (error) {
+        console.error('Failed to delete attachment:', error);
+        setAttachmentError('Failed to delete attachment');
+      }
+    };
+
+    const handleDownloadAttachment = async (attachment) => {
+      try {
+        const orgId = user?.organizationId;
+        const teamId = selectedDepartment?.id;
+        
+        if (orgId && teamId) {
+          await quarterlyPrioritiesService.downloadAttachment(
+            orgId, 
+            teamId, 
+            priority.id, 
+            attachment.id, 
+            attachment.file_name
+          );
+        }
+      } catch (error) {
+        console.error('Failed to download attachment:', error);
+        setAttachmentError('Failed to download attachment');
+      }
+    };
 
     const handleSave = () => {
       handleUpdatePriority(priority.id, editForm);
@@ -1052,6 +1153,97 @@ const QuarterlyPrioritiesPage = () => {
                 </div>
               )}
             </div>
+
+            {/* Attachments */}
+            {!isArchived && (
+              <div>
+                <div className="flex items-center justify-between mb-2">
+                  <Label className="text-sm text-gray-600">
+                    <Paperclip className="inline-block h-3 w-3 mr-1" />
+                    Attachments
+                  </Label>
+                  <label>
+                    <input
+                      type="file"
+                      onChange={handleFileUpload}
+                      className="hidden"
+                      disabled={uploadingFile}
+                    />
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="text-xs"
+                      disabled={uploadingFile}
+                      onClick={(e) => {
+                        e.preventDefault();
+                        e.currentTarget.parentElement.querySelector('input[type="file"]').click();
+                      }}
+                    >
+                      {uploadingFile ? (
+                        <>
+                          <Loader2 className="h-3 w-3 mr-1 animate-spin" />
+                          Uploading...
+                        </>
+                      ) : (
+                        <>
+                          <Plus className="h-3 w-3 mr-1" />
+                          Add File
+                        </>
+                      )}
+                    </Button>
+                  </label>
+                </div>
+                
+                {attachmentError && (
+                  <Alert variant="destructive" className="mb-2">
+                    <AlertCircle className="h-4 w-4" />
+                    <AlertDescription>{attachmentError}</AlertDescription>
+                  </Alert>
+                )}
+                
+                {loadingAttachments ? (
+                  <div className="flex items-center justify-center p-4">
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                  </div>
+                ) : attachments.length > 0 ? (
+                  <div className="space-y-2">
+                    {attachments.map((attachment) => (
+                      <div key={attachment.id} className="flex items-center justify-between p-2 bg-gray-50 rounded">
+                        <div className="flex items-center space-x-2 flex-1">
+                          <Paperclip className="h-4 w-4 text-gray-400" />
+                          <span className="text-sm truncate">{attachment.file_name}</span>
+                          <span className="text-xs text-gray-500">
+                            ({attachment.file_size ? `${(attachment.file_size / 1024).toFixed(1)} KB` : 'Unknown size'})
+                          </span>
+                        </div>
+                        <div className="flex items-center space-x-1">
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => handleDownloadAttachment(attachment)}
+                            title="Download"
+                          >
+                            <Download className="h-4 w-4" />
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => handleDeleteAttachment(attachment.id)}
+                            title="Delete"
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="bg-gray-50 p-3 rounded-lg text-center">
+                    <p className="text-sm text-gray-500 italic">No attachments</p>
+                  </div>
+                )}
+              </div>
+            )}
           </div>
         </CardContent>
 
