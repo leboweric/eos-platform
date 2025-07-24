@@ -38,7 +38,7 @@ export const getDocuments = async (req, res) => {
     queryText += ` AND (
       d.visibility = 'company' 
       OR (d.visibility = 'department' AND d.department_id IN (
-        SELECT team_id FROM user_teams WHERE user_id = $2
+        SELECT team_id FROM team_members WHERE user_id = $2
       ))
       OR (d.visibility = 'private' AND d.uploaded_by = $2)
     )`;
@@ -207,8 +207,8 @@ export const downloadDocument = async (req, res) => {
         CASE 
           WHEN d.visibility = 'company' THEN true
           WHEN d.visibility = 'department' AND EXISTS (
-            SELECT 1 FROM user_teams ut 
-            WHERE ut.user_id = $3 AND ut.team_id = d.department_id
+            SELECT 1 FROM team_members tm 
+            WHERE tm.user_id = $3 AND tm.team_id = d.department_id
           ) THEN true
           WHEN d.visibility = 'private' AND d.uploaded_by = $3 THEN true
           ELSE false
@@ -481,7 +481,7 @@ export const getCategories = async (req, res) => {
          AND (
            d.visibility = 'company' 
            OR (d.visibility = 'department' AND d.department_id IN (
-             SELECT team_id FROM user_teams WHERE user_id = $2
+             SELECT team_id FROM team_members WHERE user_id = $2
            ))
            OR (d.visibility = 'private' AND d.uploaded_by = $2)
          )
