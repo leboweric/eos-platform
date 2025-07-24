@@ -141,7 +141,7 @@ const ScorecardPage = () => {
       goal: '',
       ownerId: '',
       ownerName: '',
-      type: 'weekly',
+      type: activeTab === 'monthly' ? 'monthly' : 'weekly',
       valueType: 'number',
       comparisonOperator: 'greater_equal'
     });
@@ -606,14 +606,14 @@ const ScorecardPage = () => {
                 <tbody>
                   {console.log('TBODY RENDER: metrics.length =', metrics.length, 'metrics =', metrics)}
                   {console.log('TBODY RENDER: metrics.length === 0 is', metrics.length === 0)}
-                  {metrics.length === 0 ? (
+                  {metrics.filter(m => m.type === 'weekly').length === 0 ? (
                     <tr>
                       <td colSpan={weekLabels.length + (showTotal ? 7 : 6)} className="text-center p-8 text-gray-500">
-                        No metrics defined. Click "Add Metric" to get started.
+                        No weekly metrics defined. Click "Add Metric" and select Weekly frequency to get started.
                       </td>
                     </tr>
                   ) : (
-                    metrics.map(metric => {
+                    metrics.filter(m => m.type === 'weekly').map(metric => {
                       console.log('Rendering metric:', metric.id, metric.name);
                       return (
                       <tr key={metric.id} className="border-b hover:bg-gray-50">
@@ -843,14 +843,14 @@ const ScorecardPage = () => {
                   </tr>
                 </thead>
                 <tbody>
-                  {metrics.length === 0 ? (
+                  {metrics.filter(m => m.type === 'monthly').length === 0 ? (
                     <tr>
                       <td colSpan={monthLabels.length + (showTotal ? 7 : 6)} className="text-center p-8 text-gray-500">
-                        No metrics defined. Click "Add Metric" to get started.
+                        No monthly metrics defined. Click "Add Metric" and select Monthly frequency to get started.
                       </td>
                     </tr>
                   ) : (
-                    metrics.map(metric => (
+                    metrics.filter(m => m.type === 'monthly').map(metric => (
                       <tr key={metric.id} className="border-b hover:bg-gray-50">
                         <td className="p-2 text-center text-sm">{metric.ownerName || metric.owner}</td>
                         <td className="p-2 font-medium text-sm">{metric.name}</td>
@@ -1043,7 +1043,7 @@ const ScorecardPage = () => {
             <DialogHeader>
               <DialogTitle>{editingMetric ? 'Edit Metric' : 'Add New Metric'}</DialogTitle>
               <DialogDescription>
-                Define a measurable metric to track weekly performance
+                Define a measurable metric to track {metricForm.type === 'monthly' ? 'monthly' : 'weekly'} performance
               </DialogDescription>
             </DialogHeader>
             <div className="space-y-4">
@@ -1066,7 +1066,7 @@ const ScorecardPage = () => {
                 />
               </div>
               <div>
-                <Label htmlFor="metric-goal">Weekly Goal</Label>
+                <Label htmlFor="metric-goal">{metricForm.type === 'monthly' ? 'Monthly' : 'Weekly'} Goal</Label>
                 <Input
                   id="metric-goal"
                   type="number"
