@@ -165,17 +165,28 @@
     display: none !important;
   }
   
-  /* Show both Vision and Execution content */
-  [role="tabpanel"] {
+  /* Show both Vision and Execution content regardless of active state */
+  [data-slot="tabs-content"],
+  [role="tabpanel"],
+  [data-state="inactive"],
+  [data-state="active"] {
     display: block !important;
     opacity: 1 !important;
     visibility: visible !important;
     height: auto !important;
     overflow: visible !important;
+    position: static !important;
   }
   
-  /* Force Vision tab to break after */
-  [role="tabpanel"][data-state="inactive"]:first-of-type,
+  /* Override Radix UI's hidden state */
+  [data-state="inactive"][role="tabpanel"] {
+    display: block !important;
+    opacity: 1 !important;
+    visibility: visible !important;
+  }
+  
+  /* Force page break between Vision and Execution */
+  [data-slot="tabs-content"]:first-of-type,
   [role="tabpanel"]:first-of-type {
     page-break-after: always;
   }
@@ -252,8 +263,16 @@
     display: none !important;
   }
   
+  /* Force specific tab contents to show */
+  [role="tabpanel"][data-value="vision"],
+  [role="tabpanel"][data-value="execution"] {
+    display: block !important;
+    opacity: 1 !important;
+    visibility: visible !important;
+  }
+  
   /* Page titles for each section */
-  [role="tabpanel"]:first-child::before {
+  [role="tabpanel"][data-value="vision"]::before {
     content: "VISION";
     display: block;
     font-size: 24pt;
@@ -262,13 +281,18 @@
     text-align: center;
   }
   
-  [role="tabpanel"]:last-child::before {
+  [role="tabpanel"][data-value="execution"]::before {
     content: "EXECUTION";
     display: block;
     font-size: 24pt;
     font-weight: bold;
     margin-bottom: 20pt;
     text-align: center;
+  }
+  
+  /* Ensure vision content breaks to next page */
+  [role="tabpanel"][data-value="vision"] {
+    page-break-after: always;
   }
   
   /* Fix for Vision tab grid layout */
@@ -278,8 +302,27 @@
   }
   
   /* Ensure all content is visible */
-  * {
+  body * {
     max-height: none !important;
-    height: auto !important;
+    min-height: 0 !important;
   }
+  
+  /* Specific overrides for flex containers */
+  .flex-1 {
+    flex: none !important;
+  }
+  
+  /* Remove any transforms or fixed positioning */
+  [role="tabpanel"],
+  [data-slot="tabs-content"] {
+    transform: none !important;
+    position: relative !important;
+    top: auto !important;
+    left: auto !important;
+  }
+  
+  /* Debug: Add borders to see what's happening */
+  /* [role="tabpanel"] {
+    border: 2px solid red !important;
+  } */
 }
