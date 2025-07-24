@@ -118,3 +118,127 @@
     @apply bg-background text-foreground;
   }
 }
+
+/* Print styles for 2-Page Plan */
+@media print {
+  /* Reset page margins and size */
+  @page {
+    margin: 0.5in;
+    size: letter;
+  }
+  
+  /* Hide navigation, buttons, and other UI elements */
+  .print\\:hidden {
+    display: none !important;
+  }
+  
+  /* General print styling */
+  body {
+    background: white !important;
+    color: black !important;
+    font-size: 11pt !important;
+    line-height: 1.3 !important;
+  }
+  
+  /* Remove backgrounds and shadows from cards */
+  .shadow-lg,
+  .shadow-md,
+  .shadow-sm {
+    box-shadow: none !important;
+  }
+  
+  .bg-gradient-to-r,
+  .bg-gradient-to-br,
+  .bg-gray-50,
+  .bg-indigo-50,
+  .bg-blue-50 {
+    background: white !important;
+  }
+  
+  /* Ensure content fits on page */
+  .max-w-7xl {
+    max-width: 100% !important;
+  }
+  
+  /* Hide tabs navigation but show content */
+  [role="tablist"] {
+    display: none !important;
+  }
+  
+  /* Show both Vision and Execution content */
+  [role="tabpanel"] {
+    display: block !important;
+    page-break-after: always;
+  }
+  
+  /* Remove last page break */
+  [role="tabpanel"]:last-child {
+    page-break-after: avoid;
+  }
+  
+  /* Hide edit buttons and dialogs */
+  button {
+    display: none !important;
+  }
+  
+  /* Format headers for print */
+  h1, h2, h3, h4, h5, h6 {
+    color: black !important;
+    page-break-after: avoid;
+  }
+  
+  /* Keep content together */
+  .space-y-6 > * {
+    page-break-inside: avoid;
+  }
+  
+  /* Format cards for print */
+  .border-0 {
+    border: 1px solid #e5e7eb !important;
+  }
+  
+  /* Make text black for better printing */
+  .text-gray-600,
+  .text-gray-700,
+  .text-gray-800,
+  .text-gray-900,
+  .text-indigo-600,
+  .text-indigo-700,
+  .text-blue-600 {
+    color: black !important;
+  }
+  
+  /* Ensure descriptions are visible */
+  .text-gray-500 {
+    color: #6b7280 !important;
+  }
+  
+  /* Format specific sections */
+  .whitespace-pre-wrap {
+    white-space: pre-wrap !important;
+  }
+  
+  /* Hide success/error alerts */
+  [role="alert"] {
+    display: none !important;
+  }
+  
+  /* Page titles for each section */
+  [role="tabpanel"]:first-child::before {
+    content: "VISION";
+    display: block;
+    font-size: 24pt;
+    font-weight: bold;
+    margin-bottom: 20pt;
+    text-align: center;
+  }
+  
+  [role="tabpanel"]:last-child::before {
+    content: "EXECUTION";
+    display: block;
+    font-size: 24pt;
+    font-weight: bold;
+    margin-bottom: 20pt;
+    text-align: center;
+  }
+}

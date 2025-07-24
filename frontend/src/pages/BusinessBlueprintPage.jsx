@@ -38,7 +38,8 @@ import {
   CheckSquare,
   Clock,
   Building2,
-  MessageSquare
+  MessageSquare,
+  Printer
 } from 'lucide-react';
 
 const BusinessBlueprintPage = () => {
@@ -365,34 +366,42 @@ const BusinessBlueprintPage = () => {
     );
   }
 
+  const handlePrint = () => {
+    window.print();
+  };
+
   return (
     <div className="min-h-screen bg-gray-50">
       <div className="max-w-7xl mx-auto p-6 space-y-6">
-        <div className="flex items-center justify-between mb-8">
+        <div className="flex items-center justify-between mb-8 print:hidden">
           <div>
             <h1 className="text-4xl font-bold text-gray-900">
               2-Page Plan
             </h1>
             <p className="text-gray-600 mt-2 text-lg">Define your organization's vision and strategy for success</p>
           </div>
+          <Button onClick={handlePrint} variant="outline">
+            <Printer className="mr-2 h-4 w-4" />
+            Print 2-Page Plan
+          </Button>
         </div>
 
         {error && (
-          <Alert className="border-red-200 bg-red-50">
+          <Alert className="border-red-200 bg-red-50 print:hidden">
             <AlertCircle className="h-4 w-4 text-red-600" />
             <AlertDescription className="text-red-800">{error}</AlertDescription>
           </Alert>
         )}
 
         {success && (
-          <Alert className="border-green-200 bg-green-50">
+          <Alert className="border-green-200 bg-green-50 print:hidden">
             <AlertCircle className="h-4 w-4 text-green-600" />
             <AlertDescription className="text-green-800">{success}</AlertDescription>
           </Alert>
         )}
 
         <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-          <TabsList className="grid w-full grid-cols-2 h-14 bg-white shadow-sm">
+          <TabsList className="grid w-full grid-cols-2 h-14 bg-white shadow-sm print:hidden">
             <TabsTrigger value="vision" className="data-[state=active]:bg-indigo-600 data-[state=active]:text-white text-lg font-medium">
               <Target className="mr-2 h-5 w-5" />
               Vision
