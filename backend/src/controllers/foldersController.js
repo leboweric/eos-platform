@@ -14,7 +14,7 @@ export const getFolders = async (req, res) => {
           f.id, f.name, f.parent_folder_id, f.created_by, f.created_at,
           f.visibility, f.department_id, f.owner_id,
           0 as level,
-          ARRAY[f.name] as path
+          ARRAY[f.name]::varchar[] as path
         FROM document_folders f
         LEFT JOIN team_members tm ON f.department_id = tm.team_id AND tm.user_id = $2
         WHERE f.organization_id = $1 
@@ -32,7 +32,7 @@ export const getFolders = async (req, res) => {
           f.id, f.name, f.parent_folder_id, f.created_by, f.created_at,
           f.visibility, f.department_id, f.owner_id,
           ft.level + 1,
-          ft.path || f.name
+          ft.path || f.name::varchar
         FROM document_folders f
         INNER JOIN folder_tree ft ON f.parent_folder_id = ft.id
       )
