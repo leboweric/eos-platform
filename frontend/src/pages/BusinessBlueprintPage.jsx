@@ -754,8 +754,8 @@ const BusinessBlueprintPage = () => {
               {(!editingMarketingStrategy && (
                 blueprintData.marketingStrategy.targetMarket || 
                 blueprintData.marketingStrategy.differentiators.some(d => d) ||
-                blueprintData.marketingStrategy.provenProcessExists ||
-                blueprintData.marketingStrategy.guaranteeExists
+                blueprintData.marketingStrategy.provenProcessExists !== undefined ||
+                blueprintData.marketingStrategy.guaranteeExists !== undefined
               )) ? (
                 <>
                   {/* Target Market Display */}
@@ -808,12 +808,14 @@ const BusinessBlueprintPage = () => {
                   )}
                   
                   {/* Proven Process Display */}
-                  {blueprintData.marketingStrategy.provenProcessExists && (
+                  {(blueprintData.marketingStrategy.provenProcessExists !== undefined && blueprintData.marketingStrategy.provenProcessExists !== null) && (
                     <div className="flex items-start justify-between p-4 bg-gray-50 border border-gray-200 rounded-lg hover:shadow-md transition-shadow">
                       <div className="flex-1">
                         <h4 className="font-semibold text-gray-900">Proven Process</h4>
                         <p className="text-sm text-gray-600 mt-1">
-                          ✓ Yes, we have a proven process
+                          {blueprintData.marketingStrategy.provenProcessExists ? 
+                            '✓ Yes, we have a proven process' : 
+                            '✗ No, we don\'t have a proven process'}
                         </p>
                       </div>
                       <div className="flex space-x-2">
@@ -829,12 +831,14 @@ const BusinessBlueprintPage = () => {
                   )}
                   
                   {/* Guarantee Display */}
-                  {blueprintData.marketingStrategy.guaranteeExists && (
+                  {(blueprintData.marketingStrategy.guaranteeExists !== undefined && blueprintData.marketingStrategy.guaranteeExists !== null) && (
                     <div className="flex items-start justify-between p-4 bg-gray-50 border border-gray-200 rounded-lg hover:shadow-md transition-shadow">
                       <div className="flex-1">
                         <h4 className="font-semibold text-gray-900">Guarantee</h4>
                         <p className="text-sm text-gray-600 mt-1">
-                          {blueprintData.marketingStrategy.guaranteeDescription || '✓ Yes, we offer a guarantee'}
+                          {blueprintData.marketingStrategy.guaranteeExists ? 
+                            (blueprintData.marketingStrategy.guaranteeDescription || '✓ Yes, we have a guarantee') : 
+                            '✗ No, we don\'t have a guarantee'}
                         </p>
                       </div>
                       <div className="flex space-x-2">
@@ -852,8 +856,8 @@ const BusinessBlueprintPage = () => {
                   {/* Add button if nothing is filled */}
                   {!blueprintData.marketingStrategy.targetMarket && 
                    !blueprintData.marketingStrategy.differentiators.some(d => d) &&
-                   !blueprintData.marketingStrategy.provenProcessExists &&
-                   !blueprintData.marketingStrategy.guaranteeExists && (
+                   blueprintData.marketingStrategy.provenProcessExists === undefined &&
+                   blueprintData.marketingStrategy.guaranteeExists === undefined && (
                     <Button
                       variant="outline"
                       onClick={() => setEditingMarketingStrategy(true)}
@@ -993,8 +997,8 @@ const BusinessBlueprintPage = () => {
                     </Button>
                     {(blueprintData.marketingStrategy.targetMarket || 
                       blueprintData.marketingStrategy.differentiators.some(d => d) ||
-                      blueprintData.marketingStrategy.provenProcessExists ||
-                      blueprintData.marketingStrategy.guaranteeExists) && (
+                      blueprintData.marketingStrategy.provenProcessExists !== undefined ||
+                      blueprintData.marketingStrategy.guaranteeExists !== undefined) && (
                       <Button
                         variant="outline"
                         onClick={() => setEditingMarketingStrategy(false)}
@@ -1319,30 +1323,30 @@ const BusinessBlueprintPage = () => {
                   {blueprintData.quarterlyPriorities.priorities.some(p => p.is_company_priority) && (
                     <div className="space-y-3">
                       <div className="flex items-center">
-                        <Building2 className="h-5 w-5 text-indigo-600 mr-2" />
-                        <h4 className="font-semibold text-gray-900">Company Priorities</h4>
+                        <Building2 className="h-5 w-5 text-blue-600 mr-2" />
+                        <h4 className="font-semibold text-gray-900 text-lg">Company Priorities</h4>
                       </div>
                       {blueprintData.quarterlyPriorities.priorities
                         .filter(p => p.is_company_priority)
                         .map((priority, index) => (
-                          <div key={priority.id} className="p-4 bg-gray-50 border border-gray-200 rounded-lg hover:shadow-md transition-shadow">
+                          <div key={priority.id} className="p-4 bg-blue-50 border-2 border-blue-200 rounded-lg hover:shadow-lg transition-shadow">
                             <div className="flex items-start">
-                              <div className={`w-3 h-3 rounded-full mr-3 mt-1.5 flex-shrink-0 ${
-                                priority.status === 'complete' ? 'bg-green-500' :
-                                priority.status === 'on-track' ? 'bg-blue-500' :
-                                priority.status === 'off-track' ? 'bg-red-500' :
-                                'bg-gray-500'
+                              <div className={`w-4 h-4 rounded-full mr-3 mt-1 flex-shrink-0 ${
+                                priority.status === 'complete' ? 'bg-green-600' :
+                                priority.status === 'on-track' ? 'bg-blue-600' :
+                                priority.status === 'off-track' ? 'bg-red-600' :
+                                'bg-gray-600'
                               }`} />
                               <div className="flex-1">
-                                <p className="font-medium text-gray-900">{priority.title || priority.text}</p>
+                                <p className="font-semibold text-gray-900 text-base">{priority.title || priority.text}</p>
                                 {priority.status && (
                                   <div className="flex items-center mt-2 space-x-4">
-                                    <span className="text-xs text-gray-500 flex items-center">
+                                    <span className="text-xs text-gray-600 flex items-center font-medium">
                                       <Clock className="h-3 w-3 mr-1" />
                                       {priority.status.replace('-', ' ')}
                                     </span>
                                     {priority.progress !== undefined && (
-                                      <span className="text-xs text-gray-500">
+                                      <span className="text-xs text-gray-600 font-medium">
                                         {priority.progress}% complete
                                       </span>
                                     )}
