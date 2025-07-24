@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Test File Upload</title>
+</head>
+<body>
+    <h1>Test File Upload</h1>
+    
+    <h2>1. Simple Form Upload</h2>
+    <form id="simpleForm" enctype="multipart/form-data">
+        <input type="file" name="file" id="simpleFile" required>
+        <input type="text" name="title" placeholder="Title" required>
+        <button type="submit">Upload via Form</button>
+    </form>
+    <pre id="simpleResult"></pre>
+    
+    <h2>2. FormData Upload (like React)</h2>
+    <input type="file" id="formDataFile">
+    <input type="text" id="formDataTitle" placeholder="Title">
+    <button id="formDataBtn">Upload via FormData</button>
+    <pre id="formDataResult"></pre>
+    
+    <h2>3. Raw XMLHttpRequest</h2>
+    <input type="file" id="xhrFile">
+    <input type="text" id="xhrTitle" placeholder="Title">
+    <button id="xhrBtn">Upload via XHR</button>
+    <pre id="xhrResult"></pre>
+    
+    <script>
+        const API_URL = 'https://eos-platform-production.up.railway.app/api/v1';
+        const TOKEN = localStorage.getItem('accessToken');
+        const ORG_ID = '2eef2d6b-45ab-4d87-90ac-91d04c2395cb';
+        
+        // 1. Simple form submit
+        document.getElementById('simpleForm').onsubmit = async (e) => {
+            e.preventDefault();
+            const formData = new FormData(e.target);
+            
+            try {
+                const response = await fetch(`${API_URL}/organizations/${ORG_ID}/documents/test-upload`, {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': `Bearer ${TOKEN}`
+                    },
+                    body: formData
+                });
+                const result = await response.json();
+                document.getElementById('simpleResult').textContent = JSON.stringify(result, null, 2);
+            } catch (error) {
+                document.getElementById('simpleResult').textContent = 'Error: ' + error.message;
+            }
+        };
+        
+        // 2. FormData approach (like React)
+        document.getElementById('formDataBtn').onclick = async () => {
+            const file = document.getElementById('formDataFile').files[0];
+            const title = document.getElementById('formDataTitle').value;
+            
+            if (!file || !title) {
+                alert('Please select a file and enter a title');
+                return;
+            }
+            
+            const formData = new FormData();
+            formData.append('file', file);
+            formData.append('title', title);
+            
+            console.log('FormData file:', file);
+            console.log('FormData entries:');
+            for (let [key, value] of formData.entries()) {
+                console.log(`${key}:`, value);
+            }
+            
+            try {
+                const response = await fetch(`${API_URL}/organizations/${ORG_ID}/documents/test-upload`, {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': `Bearer ${TOKEN}`
+                    },
+                    body: formData
+                });
+                const result = await response.json();
+                document.getElementById('formDataResult').textContent = JSON.stringify(result, null, 2);
+            } catch (error) {
+                document.getElementById('formDataResult').textContent = 'Error: ' + error.message;
+            }
+        };
+        
+        // 3. Raw XMLHttpRequest
+        document.getElementById('xhrBtn').onclick = () => {
+            const file = document.getElementById('xhrFile').files[0];
+            const title = document.getElementById('xhrTitle').value;
+            
+            if (!file || !title) {
+                alert('Please select a file and enter a title');
+                return;
+            }
+            
+            const formData = new FormData();
+            formData.append('file', file);
+            formData.append('title', title);
+            
+            const xhr = new XMLHttpRequest();
+            xhr.open('POST', `${API_URL}/organizations/${ORG_ID}/documents/test-upload`);
+            xhr.setRequestHeader('Authorization', `Bearer ${TOKEN}`);
+            
+            xhr.onload = function() {
+                document.getElementById('xhrResult').textContent = xhr.responseText;
+            };
+            
+            xhr.onerror = function() {
+                document.getElementById('xhrResult').textContent = 'XHR Error';
+            };
+            
+            xhr.send(formData);
+        };
+    </script>
+</body>
+</html>

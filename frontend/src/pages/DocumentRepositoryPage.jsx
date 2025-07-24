@@ -851,7 +851,7 @@ const DocumentRepositoryPage = () => {
             <Button variant="outline" onClick={() => setShowUploadDialog(false)}>
               Cancel
             </Button>
-            <Button onClick={handleUpload} disabled={uploading || !uploadFile || !uploadForm.title}>
+            <Button onClick={() => handleUpload()} disabled={uploading || !uploadFile || !uploadForm.title}>
               {uploading ? (
                 <>
                   <Loader2 className="mr-2 h-4 w-4 animate-spin" />

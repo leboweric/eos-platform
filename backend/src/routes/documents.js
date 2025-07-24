@@ -46,6 +46,11 @@ const upload = multer({
   storage: storage,
   limits: {
     fileSize: 50 * 1024 * 1024 // 50MB limit for documents
+  },
+  fileFilter: (req, file, cb) => {
+    console.log('Multer fileFilter - file:', file);
+    console.log('Multer fileFilter - fieldname:', file.fieldname);
+    cb(null, true);
   }
 });
 
@@ -72,5 +77,21 @@ router.delete('/:documentId', deleteDocument);
 
 // Toggle favorite status
 router.post('/:documentId/favorite', toggleFavorite);
+
+// Test endpoint for debugging multipart
+router.post('/test-upload', upload.single('file'), (req, res) => {
+  console.log('TEST UPLOAD - Headers:', req.headers);
+  console.log('TEST UPLOAD - File:', req.file);
+  console.log('TEST UPLOAD - Body:', req.body);
+  console.log('TEST UPLOAD - Files:', req.files);
+  
+  res.json({
+    success: true,
+    hasFile: !!req.file,
+    fileName: req.file?.originalname,
+    fileSize: req.file?.size,
+    body: req.body
+  });
+});
 
 export default router;
