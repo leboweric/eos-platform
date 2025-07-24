@@ -148,7 +148,8 @@ const DocumentRepositoryPage = () => {
       await fetchData();
     } catch (err) {
       console.error('Upload failed:', err);
-      setError('Failed to upload document');
+      console.error('Error response:', err.response?.data);
+      setError(err.response?.data?.error || 'Failed to upload document');
     } finally {
       setUploading(false);
     }
@@ -192,7 +193,8 @@ const DocumentRepositoryPage = () => {
           await documentsService.uploadDocument(orgId, formData, file);
         } catch (err) {
           console.error(`Failed to upload ${file.name}:`, err);
-          setError(`Failed to upload ${file.name}`);
+          console.error('Error response:', err.response?.data);
+          setError(`Failed to upload ${file.name}: ${err.response?.data?.error || err.message}`);
         }
       }
       

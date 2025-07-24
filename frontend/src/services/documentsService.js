@@ -21,6 +21,8 @@ export const documentsService = {
 
   // Upload a new document
   async uploadDocument(orgId, documentData, file) {
+    console.log('Uploading document:', { documentData, file });
+    
     const formData = new FormData();
     formData.append('file', file);
     formData.append('title', documentData.title);
@@ -40,9 +42,8 @@ export const documentsService = {
     }
     
     if (documentData.tags && documentData.tags.length > 0) {
-      documentData.tags.forEach(tag => {
-        formData.append('tags[]', tag);
-      });
+      // Send tags as a JSON string to ensure proper array handling
+      formData.append('tags', JSON.stringify(documentData.tags));
     }
     
     const response = await axios.post(

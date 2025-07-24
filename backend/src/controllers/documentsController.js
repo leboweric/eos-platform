@@ -110,7 +110,22 @@ export const uploadDocument = async (req, res) => {
     const { orgId } = req.params;
     const userId = req.user.id;
     const file = req.file;
-    const { title, description, departmentId, visibility, relatedPriorityId, tags, folderId } = req.body;
+    const { title, description, departmentId, visibility, relatedPriorityId, folderId } = req.body;
+    
+    // Debug logging
+    console.log('Upload request body:', req.body);
+    console.log('Upload file:', req.file ? { name: req.file.originalname, size: req.file.size } : 'No file');
+    
+    // Parse tags from JSON string if provided
+    let tags = [];
+    if (req.body.tags) {
+      try {
+        tags = JSON.parse(req.body.tags);
+      } catch (e) {
+        // If parsing fails, treat as empty array
+        console.error('Failed to parse tags:', e);
+      }
+    }
     
     if (!file) {
       return res.status(400).json({
