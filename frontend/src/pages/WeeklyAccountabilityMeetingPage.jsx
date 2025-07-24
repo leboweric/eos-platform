@@ -32,6 +32,7 @@ import IssuesList from '../components/issues/IssuesList';
 import IssueDialog from '../components/issues/IssueDialog';
 import TodosList from '../components/todos/TodosList';
 import TodoDialog from '../components/todos/TodoDialog';
+import FloatingActionButtons from '../components/meetings/FloatingActionButtons';
 import { scorecardService } from '../services/scorecardService';
 import { quarterlyPrioritiesService } from '../services/quarterlyPrioritiesService';
 import { issuesService } from '../services/issuesService';
@@ -443,6 +444,11 @@ const WeeklyAccountabilityMeetingPage = () => {
   const handleAddTodo = () => {
     setEditingTodo(null);
     setShowTodoDialog(true);
+  };
+
+  const handleAddIssue = () => {
+    setEditingIssue(null);
+    setShowIssueDialog(true);
   };
 
   const handleSaveTodo = async (todoData) => {
@@ -1203,6 +1209,12 @@ Team Members Present: ${teamMembers.length}
         todo={editingTodo}
         onSave={handleSaveTodo}
         teamMembers={teamMembers}
+      />
+      
+      {/* Floating Action Buttons */}
+      <FloatingActionButtons 
+        onAddTodo={handleAddTodo}
+        onAddIssue={handleAddIssue}
       />
     </div>
   );
