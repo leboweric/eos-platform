@@ -1274,7 +1274,7 @@ Team Members Present: ${teamMembers.length}
             <p className="text-gray-600">Click the button below to open the 2-Page Plan in a new window.</p>
             <Button
               onClick={() => {
-                window.open('/business-blueprint', '_blank');
+                window.open('/business-blueprint?fromMeeting=true', '_blank');
                 setShowBusinessBlueprint(false);
               }}
               className="mt-4"
@@ -1295,7 +1295,7 @@ Team Members Present: ${teamMembers.length}
             <p className="text-gray-600">Click the button below to open the Organizational Chart in a new window.</p>
             <Button
               onClick={() => {
-                window.open('/organizational-chart?autoOpen=true', '_blank');
+                window.open('/organizational-chart?autoOpen=true&fromMeeting=true', '_blank');
                 setShowOrgChart(false);
               }}
               className="mt-4"

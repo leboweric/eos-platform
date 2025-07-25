@@ -46,6 +46,24 @@ const OrganizationalChartPage = () => {
       handleViewChart(charts[0]);
     }
   }, [charts]);
+  
+  // Hide sidebar if coming from meeting
+  useEffect(() => {
+    const urlParams = new URLSearchParams(window.location.search);
+    const fromMeeting = urlParams.get('fromMeeting') === 'true';
+    
+    if (fromMeeting) {
+      // Set a flag in sessionStorage to hide sidebar
+      sessionStorage.setItem('hideSidebarTemp', 'true');
+    }
+    
+    // Clean up when leaving the page
+    return () => {
+      if (fromMeeting) {
+        sessionStorage.removeItem('hideSidebarTemp');
+      }
+    };
+  }, []);
 
   const fetchCharts = async () => {
     try {

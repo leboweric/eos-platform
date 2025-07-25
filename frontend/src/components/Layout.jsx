@@ -45,6 +45,7 @@ const Layout = ({ children }) => {
   const [logoUrl, setLogoUrl] = useState(null);
   const [logoKey, setLogoKey] = useState(Date.now()); // Force refresh of logo
   const [meetingActive, setMeetingActive] = useState(false);
+  const [hideSidebar, setHideSidebar] = useState(false);
   const location = useLocation();
   const navigate = useNavigate();
   const { user, logout, isOnLeadershipTeam } = useAuthStore();
@@ -93,6 +94,8 @@ const Layout = ({ children }) => {
     setLogoKey(Date.now());
     // Also recheck meeting state on navigation
     setMeetingActive(sessionStorage.getItem('meetingActive') === 'true');
+    // Check for temporary sidebar hide flag
+    setHideSidebar(sessionStorage.getItem('hideSidebarTemp') === 'true');
   }, [location.pathname]);
 
   const baseNavigation = [
@@ -157,8 +160,9 @@ const Layout = ({ children }) => {
         />
       )}
 
-      {/* Sidebar */}
-      <div className={`
+      {/* Sidebar - Hidden when hideSidebar flag is set */}
+      {!hideSidebar && (
+        <div className={`
         fixed inset-y-0 left-0 z-50 w-64 bg-white shadow-lg transform transition-transform duration-300 ease-in-out lg:translate-x-0 lg:relative lg:inset-auto lg:flex lg:flex-col lg:min-h-screen
         ${sidebarOpen ? 'translate-x-0' : '-translate-x-full'}
       `}>
@@ -256,6 +260,7 @@ const Layout = ({ children }) => {
           </div>
         </div>
       </div>
+      )}
 
       {/* Main content */}
       <div className="flex-1 flex flex-col">
@@ -263,12 +268,14 @@ const Layout = ({ children }) => {
         <div className="sticky top-0 z-30 bg-white border-b px-4 py-3">
           <div className="flex items-center justify-between">
             <div className="flex items-center">
-              <button
-                onClick={() => setSidebarOpen(true)}
-                className="lg:hidden mr-3"
-              >
-                <Menu className="h-6 w-6" />
-              </button>
+              {!hideSidebar && (
+                <button
+                  onClick={() => setSidebarOpen(true)}
+                  className="lg:hidden mr-3"
+                >
+                  <Menu className="h-6 w-6" />
+                </button>
+              )}
               <h1 className="text-xl font-semibold text-gray-900">
                 {user?.organizationName && (
                   <span>{user.organizationName} </span>
