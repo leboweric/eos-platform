@@ -1121,20 +1121,29 @@ Team Members Present: ${teamMembers.length}
         <div className="flex-1 p-6 overflow-x-auto">
           <div className={activeSection === 'scorecard' || activeSection === 'priorities' || activeSection === 'issues' ? 'min-w-fit' : 'max-w-6xl mx-auto'}>
             {/* Meeting Controls */}
-            <div className="flex justify-end mb-6">
-              {!meetingStarted ? (
-                <Button 
-                  onClick={handleStartMeeting}
-                  className="bg-green-600 hover:bg-green-700 text-white"
-                  size="lg"
-                >
-                  Start Meeting
-                </Button>
-              ) : (
-                <div className={`font-mono text-2xl font-bold ${getTimerColor()}`}>
-                  ⏱️ {formatTimer(elapsedTime)}
-                </div>
-              )}
+            <div className="flex justify-between items-center mb-6">
+              {/* Start Meeting / Timer (left side) */}
+              <div>
+                {!meetingStarted ? (
+                  <Button 
+                    onClick={handleStartMeeting}
+                    className="bg-green-600 hover:bg-green-700 text-white"
+                    size="lg"
+                  >
+                    Start Meeting
+                  </Button>
+                ) : (
+                  <div className={`font-mono text-2xl font-bold ${getTimerColor()}`}>
+                    ⏱️ {formatTimer(elapsedTime)}
+                  </div>
+                )}
+              </div>
+              
+              {/* Action Buttons (right side) */}
+              <FloatingActionButtons 
+                onAddTodo={handleAddTodo}
+                onAddIssue={handleAddIssue}
+              />
             </div>
             
             {error && (
@@ -1209,12 +1218,6 @@ Team Members Present: ${teamMembers.length}
         todo={editingTodo}
         onSave={handleSaveTodo}
         teamMembers={teamMembers}
-      />
-      
-      {/* Floating Action Buttons */}
-      <FloatingActionButtons 
-        onAddTodo={handleAddTodo}
-        onAddIssue={handleAddIssue}
       />
     </div>
   );
