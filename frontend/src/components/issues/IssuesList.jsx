@@ -128,7 +128,9 @@ const IssuesList = ({
                 <TableCell className="font-medium" onClick={() => setSelectedIssue(issue)}>
                   <div className="flex items-center gap-3">
                     <div className="flex-1">
-                      <div className="text-gray-900 line-clamp-1">{issue.title}</div>
+                      <div className={`line-clamp-1 ${
+                        selectedIssues?.includes(issue.id) ? 'line-through text-gray-500' : 'text-gray-900'
+                      }`}>{issue.title}</div>
                       {issue.description && (
                         <div className="text-sm text-gray-500 line-clamp-1 mt-1">
                           {issue.description}
