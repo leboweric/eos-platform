@@ -39,11 +39,18 @@ import { issuesService } from '../services/issuesService';
 import { todosService } from '../services/todosService';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { FileText, GitBranch } from 'lucide-react';
+import { useMeetingState } from '../hooks/useMeetingState';
 
 const WeeklyAccountabilityMeetingPage = () => {
   const { user } = useAuthStore();
   const { teamId } = useParams();
   const navigate = useNavigate();
+  const { 
+    meetingState, 
+    startMeeting: startMeetingState, 
+    endMeeting: endMeetingState, 
+    updateMeetingState 
+  } = useMeetingState('weekly', teamId);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [activeSection, setActiveSection] = useState('good-news');
@@ -96,6 +103,30 @@ const WeeklyAccountabilityMeetingPage = () => {
   const [showBusinessBlueprint, setShowBusinessBlueprint] = useState(false);
   const [showOrgChart, setShowOrgChart] = useState(false);
 
+  // Restore meeting state on mount
+  useEffect(() => {
+    if (meetingState) {
+      setMeetingStarted(true);
+      setMeetingStartTime(new Date(meetingState.startTime));
+      setActiveSection(meetingState.activeSection || 'good-news');
+      
+      // Restore other saved state
+      if (meetingState.initialIssuesCount !== undefined) {
+        setInitialIssuesCount(meetingState.initialIssuesCount);
+      }
+      if (meetingState.initialTodosCount !== undefined) {
+        setInitialTodosCount(meetingState.initialTodosCount);
+      }
+    }
+  }, []);
+
+  // Update meeting state when section changes
+  useEffect(() => {
+    if (meetingStarted && meetingState) {
+      updateMeetingState({ activeSection });
+    }
+  }, [activeSection, meetingStarted, meetingState, updateMeetingState]);
+
   const agendaItems = [
     { id: 'good-news', label: 'Good News', duration: 5, icon: Smile },
     { id: 'scorecard', label: 'Scorecard', duration: 5, icon: BarChart },
@@ -143,6 +174,19 @@ const WeeklyAccountabilityMeetingPage = () => {
     }
     return () => clearInterval(interval);
   }, [meetingStarted, meetingStartTime]);
+
+  // Add navigation warning when meeting is active
+  useEffect(() => {
+    const handleBeforeUnload = (e) => {
+      if (meetingStarted) {
+        e.preventDefault();
+        e.returnValue = '';
+      }
+    };
+
+    window.addEventListener('beforeunload', handleBeforeUnload);
+    return () => window.removeEventListener('beforeunload', handleBeforeUnload);
+  }, [meetingStarted]);
 
   const fetchScorecardData = async () => {
     try {
@@ -487,13 +531,23 @@ const WeeklyAccountabilityMeetingPage = () => {
 
   const handleStartMeeting = () => {
     if (window.confirm('Ready to start the meeting?')) {
+      const startTime = new Date();
       setMeetingStarted(true);
-      setMeetingStartTime(new Date());
+      setMeetingStartTime(startTime);
       setActiveSection('good-news'); // Auto-advance to first agenda item
       
       // Capture initial counts for summary
-      setInitialIssuesCount(issues.filter(i => i.status === 'open').length);
-      setInitialTodosCount(todos.filter(t => t.status === 'incomplete').length);
+      const issuesCount = issues.filter(i => i.status === 'open').length;
+      const todosCount = todos.filter(t => t.status === 'incomplete').length;
+      setInitialIssuesCount(issuesCount);
+      setInitialTodosCount(todosCount);
+      
+      // Save meeting state
+      startMeetingState({
+        activeSection: 'good-news',
+        initialIssuesCount: issuesCount,
+        initialTodosCount: todosCount
+      });
     }
   };
 
@@ -550,6 +604,9 @@ Team Members Present: ${teamMembers.length}
 `;
 
       alert('Meeting Complete!\n' + summaryText);
+      
+      // Clear persisted meeting state
+      endMeetingState();
       
       // Reset meeting state
       setMeetingStarted(false);

@@ -9,6 +9,7 @@ import { Alert, AlertDescription } from '@/components/ui/alert';
 import { organizationService } from '../services/organizationService';
 import DepartmentSelector from './DepartmentSelector';
 import HelpWidget from './help/HelpWidget';
+import FloatingMeetingIndicator from './FloatingMeetingIndicator';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -295,6 +296,9 @@ const Layout = ({ children }) => {
       
       {/* Help Widget - appears on all pages */}
       <HelpWidget />
+      
+      {/* Floating Meeting Indicator - shows when meeting is active */}
+      <FloatingMeetingIndicator />
     </div>
   );
 };
