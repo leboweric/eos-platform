@@ -1196,7 +1196,7 @@ Team Members Present: ${teamMembers.length}
                           </div>
                           <div className="flex items-center justify-between">
                             <p className="text-sm text-gray-500">
-                              These messages will appear in other teams' Headlines section
+                              These messages can be sent to other teams' Headlines - Coming Soon
                             </p>
                             <Button 
                               onClick={() => {

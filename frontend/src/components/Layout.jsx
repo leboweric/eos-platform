@@ -288,12 +288,6 @@ const Layout = ({ children }) => {
               {/* Department Selector - Global placement */}
               <DepartmentSelector className="border-2 border-blue-500" />
               
-              {/* Leadership Team Badge */}
-              {isOnLeadershipTeam() && (
-                <Badge variant="default" className="bg-purple-600 hover:bg-purple-700">
-                  Leadership Team
-                </Badge>
-              )}
               
               {/* User menu */}
               <DropdownMenu>

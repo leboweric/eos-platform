@@ -55,12 +55,6 @@ const DepartmentSelector = ({ className = '' }) => {
         <div className="flex items-center gap-2 text-sm text-gray-600">
           <Building2 className="h-4 w-4" />
           <span className="font-medium">{selectedDepartment.name}</span>
-          {isLeadershipMember && (
-            <Badge variant="outline" className="bg-blue-50 text-blue-700 border-blue-200">
-              <Crown className="h-3 w-3 mr-1" />
-              Leadership Access
-            </Badge>
-          )}
         </div>
       </div>
     );
@@ -89,12 +83,6 @@ const DepartmentSelector = ({ className = '' }) => {
         </SelectContent>
       </Select>
       
-      {isLeadershipMember && (
-        <Badge variant="outline" className="bg-blue-50 text-blue-700 border-blue-200">
-          <Crown className="h-3 w-3 mr-1" />
-          Leadership Access
-        </Badge>
-      )}
     </div>
   );
 };
