@@ -1093,9 +1093,9 @@ Team Members Present: ${teamMembers.length}
 
   return (
     <div className="min-h-screen bg-gray-50">
-      <div className="flex">
+      <div className="flex relative">
         {/* Sidebar */}
-        <div className="w-64 bg-white border-r border-gray-200 min-h-screen flex-shrink-0 sticky top-0 h-screen overflow-y-auto">
+        <div className={`w-64 bg-white border-r border-gray-200 min-h-screen flex-shrink-0 sticky top-0 h-screen overflow-y-auto ${!meetingStarted ? 'pointer-events-none' : ''}`}>
           <div className="p-6">
             <div>
               <h1 className="text-2xl font-bold text-gray-900 mb-2">Weekly Accountability Meeting</h1>
@@ -1103,7 +1103,7 @@ Team Members Present: ${teamMembers.length}
             </div>
           </div>
           
-          <nav className="px-4 pb-6">
+          <nav className={`px-4 pb-6 ${!meetingStarted ? 'opacity-40' : ''}`}>
             {agendaItems.map((item, index) => {
               const Icon = item.icon;
               const isActive = activeSection === item.id;
@@ -1113,8 +1113,11 @@ Team Members Present: ${teamMembers.length}
                 <button
                   key={item.id}
                   onClick={() => handleSectionChange(item.id)}
+                  disabled={!meetingStarted}
                   className={`w-full text-left px-4 py-3 mb-2 rounded-lg transition-colors flex items-center justify-between group ${
-                    isActive 
+                    !meetingStarted
+                      ? 'bg-gray-50 text-gray-400 cursor-not-allowed'
+                      : isActive 
                       ? 'bg-indigo-50 text-indigo-700 border border-indigo-200' 
                       : isCompleted
                       ? 'bg-green-50 text-green-700 hover:bg-green-100'
@@ -1122,13 +1125,13 @@ Team Members Present: ${teamMembers.length}
                   }`}
                 >
                   <div className="flex items-center gap-3">
-                    <Icon className={`h-5 w-5 ${isActive ? 'text-indigo-600' : isCompleted ? 'text-green-600' : 'text-gray-400'}`} />
+                    <Icon className={`h-5 w-5 ${!meetingStarted ? 'text-gray-300' : isActive ? 'text-indigo-600' : isCompleted ? 'text-green-600' : 'text-gray-400'}`} />
                     <span className="font-medium">{item.label}</span>
                   </div>
                   <div className="flex items-center gap-2">
                     <span className="text-sm text-gray-500">{item.duration}m</span>
-                    {isActive && <ChevronRight className="h-4 w-4" />}
-                    {isCompleted && <CheckCircle className="h-4 w-4 text-green-600" />}
+                    {meetingStarted && isActive && <ChevronRight className="h-4 w-4" />}
+                    {meetingStarted && isCompleted && <CheckCircle className="h-4 w-4 text-green-600" />}
                   </div>
                 </button>
               );
@@ -1136,23 +1139,29 @@ Team Members Present: ${teamMembers.length}
           </nav>
           
           {/* Reference Tools Section */}
-          <div className="px-4 pb-4 border-t">
+          <div className={`px-4 pb-4 border-t ${!meetingStarted ? 'opacity-40' : ''}`}>
             <h3 className="text-sm font-semibold text-gray-500 uppercase tracking-wider mb-3 mt-4">
               Reference Tools
             </h3>
             <div className="space-y-2">
               <button
                 onClick={() => setShowBusinessBlueprint(true)}
-                className="w-full text-left px-4 py-2 rounded-lg hover:bg-gray-100 text-gray-700 flex items-center gap-3 transition-colors"
+                disabled={!meetingStarted}
+                className={`w-full text-left px-4 py-2 rounded-lg flex items-center gap-3 transition-colors ${
+                  !meetingStarted ? 'text-gray-400 cursor-not-allowed' : 'hover:bg-gray-100 text-gray-700'
+                }`}
               >
-                <FileText className="h-4 w-4 text-gray-400" />
+                <FileText className={`h-4 w-4 ${!meetingStarted ? 'text-gray-300' : 'text-gray-400'}`} />
                 <span className="text-sm font-medium">2-Page Plan</span>
               </button>
               <button
                 onClick={() => setShowOrgChart(true)}
-                className="w-full text-left px-4 py-2 rounded-lg hover:bg-gray-100 text-gray-700 flex items-center gap-3 transition-colors"
+                disabled={!meetingStarted}
+                className={`w-full text-left px-4 py-2 rounded-lg flex items-center gap-3 transition-colors ${
+                  !meetingStarted ? 'text-gray-400 cursor-not-allowed' : 'hover:bg-gray-100 text-gray-700'
+                }`}
               >
-                <GitBranch className="h-4 w-4 text-gray-400" />
+                <GitBranch className={`h-4 w-4 ${!meetingStarted ? 'text-gray-300' : 'text-gray-400'}`} />
                 <span className="text-sm font-medium">Org Chart</span>
               </button>
             </div>
@@ -1160,18 +1169,19 @@ Team Members Present: ${teamMembers.length}
         </div>
 
         {/* Main Content */}
-        <div className="flex-1 p-6 overflow-x-auto">
+        <div className="flex-1 p-6 overflow-x-auto relative">
           <div className={activeSection === 'scorecard' || activeSection === 'priorities' || activeSection === 'issues' ? 'min-w-fit' : 'max-w-6xl mx-auto'}>
             {/* Meeting Controls */}
             <div className="flex justify-between items-center mb-6">
-              {/* Start Meeting / Timer (left side) */}
+              {/* Timer and Start button (left side) */}
               <div>
                 {!meetingStarted ? (
                   <Button 
                     onClick={handleStartMeeting}
-                    className="bg-green-600 hover:bg-green-700 text-white"
+                    className="bg-green-600 hover:bg-green-700 text-white z-10 relative"
                     size="lg"
                   >
+                    <Clock className="mr-2 h-5 w-5" />
                     Start Meeting
                   </Button>
                 ) : (
@@ -1182,7 +1192,7 @@ Team Members Present: ${teamMembers.length}
               </div>
               
               {/* Action Buttons (right side) - hide on Good News and Conclude */}
-              {activeSection !== 'good-news' && activeSection !== 'conclude' && (
+              {meetingStarted && activeSection !== 'good-news' && activeSection !== 'conclude' && (
                 <FloatingActionButtons 
                   onAddTodo={handleAddTodo}
                   onAddIssue={handleAddIssue}
@@ -1190,50 +1200,64 @@ Team Members Present: ${teamMembers.length}
               )}
             </div>
             
-            {error && (
-              <Alert className="mb-6 border-red-200 bg-red-50">
-                <AlertCircle className="h-4 w-4 text-red-600" />
-                <AlertDescription className="text-red-800">{error}</AlertDescription>
-              </Alert>
-            )}
-
-            {success && (
-              <Alert className="mb-6 border-green-200 bg-green-50">
-                <CheckCircle className="h-4 w-4 text-green-600" />
-                <AlertDescription className="text-green-800">{success}</AlertDescription>
-              </Alert>
-            )}
-
-            {renderContent()}
-
-            {/* Navigation buttons */}
-            {(getPreviousSection() || getNextSection()) && (
-              <div className="mt-6 flex justify-between">
-                <div>
-                  {getPreviousSection() && (
-                    <Button 
-                      onClick={() => handleSectionChange(getPreviousSection())}
-                      variant="outline"
-                      className="border-gray-300 hover:bg-gray-50"
-                    >
-                      <ChevronLeft className="mr-2 h-4 w-4" />
-                      Back: {agendaItems.find(item => item.id === getPreviousSection())?.label}
-                    </Button>
-                  )}
-                </div>
-                <div>
-                  {getNextSection() && (
-                    <Button 
-                      onClick={() => handleSectionChange(getNextSection())}
-                      className="bg-indigo-600 hover:bg-indigo-700"
-                    >
-                      Next: {agendaItems.find(item => item.id === getNextSection())?.label}
-                      <ChevronRight className="ml-2 h-4 w-4" />
-                    </Button>
-                  )}
+            {/* Overlay message when meeting not started */}
+            {!meetingStarted && (
+              <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+                <div className="bg-white rounded-lg shadow-lg p-8 max-w-md text-center">
+                  <Clock className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+                  <h3 className="text-xl font-semibold text-gray-700 mb-2">Meeting Not Started</h3>
+                  <p className="text-gray-500">Click the "Start Meeting" button above to begin your Weekly Accountability Meeting</p>
                 </div>
               </div>
             )}
+            
+            {/* Main content area with gray overlay when not started */}
+            <div className={`${!meetingStarted ? 'opacity-20 pointer-events-none' : ''}`}>
+              {error && (
+                <Alert className="mb-6 border-red-200 bg-red-50">
+                  <AlertCircle className="h-4 w-4 text-red-600" />
+                  <AlertDescription className="text-red-800">{error}</AlertDescription>
+                </Alert>
+              )}
+
+              {success && (
+                <Alert className="mb-6 border-green-200 bg-green-50">
+                  <CheckCircle className="h-4 w-4 text-green-600" />
+                  <AlertDescription className="text-green-800">{success}</AlertDescription>
+                </Alert>
+              )}
+
+              {renderContent()}
+
+              {/* Navigation buttons */}
+              {(getPreviousSection() || getNextSection()) && (
+                <div className="mt-6 flex justify-between">
+                  <div>
+                    {getPreviousSection() && (
+                      <Button 
+                        onClick={() => handleSectionChange(getPreviousSection())}
+                        variant="outline"
+                        className="border-gray-300 hover:bg-gray-50"
+                      >
+                        <ChevronLeft className="mr-2 h-4 w-4" />
+                        Back: {agendaItems.find(item => item.id === getPreviousSection())?.label}
+                      </Button>
+                    )}
+                  </div>
+                  <div>
+                    {getNextSection() && (
+                      <Button 
+                        onClick={() => handleSectionChange(getNextSection())}
+                        className="bg-indigo-600 hover:bg-indigo-700"
+                      >
+                        Next: {agendaItems.find(item => item.id === getNextSection())?.label}
+                        <ChevronRight className="ml-2 h-4 w-4" />
+                      </Button>
+                    )}
+                  </div>
+                </div>
+              )}
+            </div>
           </div>
         </div>
       </div>
