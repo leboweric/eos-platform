@@ -17,17 +17,9 @@ apiClient.interceptors.request.use(
       config.headers.Authorization = `Bearer ${token}`;
     }
     
-    // Debug FormData handling
-    console.log('=== AXIOS INTERCEPTOR DEBUG ===');
-    console.log('Request config:', config.url);
-    console.log('Data type:', config.data?.constructor?.name);
-    console.log('Is FormData?:', config.data instanceof FormData);
-    console.log('Headers before:', config.headers);
-    
     // Don't override Content-Type for FormData
     if (config.data instanceof FormData) {
       delete config.headers['Content-Type'];
-      console.log('Headers after removing Content-Type:', config.headers);
     }
     
     return config;
@@ -35,16 +27,48 @@ apiClient.interceptors.request.use(
   (error) => Promise.reject(error)
 );
 
-// Handle responses
+// Handle responses with token refresh
 apiClient.interceptors.response.use(
   (response) => response,
-  (error) => {
-    // Simple 401 handling - don't redirect on auth endpoints
-    if (error.response?.status === 401 && !error.config.url?.includes('/auth/')) {
-      localStorage.removeItem('accessToken');
-      localStorage.removeItem('refreshToken');
-      window.location.href = '/login';
+  async (error) => {
+    const originalRequest = error.config;
+    
+    // Handle 401 errors (token expired)
+    if (
+      error.response?.status === 401 && 
+      !originalRequest._retry && 
+      !originalRequest.url?.includes('/auth/')
+    ) {
+      originalRequest._retry = true;
+      
+      try {
+        const refreshToken = localStorage.getItem('refreshToken');
+        if (refreshToken) {
+          // Try to refresh the token
+          const response = await axios.post(
+            `${apiClient.defaults.baseURL}/auth/refresh`,
+            { refreshToken }
+          );
+          
+          const { accessToken, refreshToken: newRefreshToken } = response.data.data;
+          localStorage.setItem('accessToken', accessToken);
+          localStorage.setItem('refreshToken', newRefreshToken);
+          
+          // Retry the original request with new token
+          originalRequest.headers.Authorization = `Bearer ${accessToken}`;
+          return apiClient(originalRequest);
+        }
+      } catch (refreshError) {
+        console.error('Token refresh failed:', refreshError);
+        // Refresh failed, redirect to login
+        localStorage.removeItem('accessToken');
+        localStorage.removeItem('refreshToken');
+        if (!window.location.pathname.match(/^\/(login|register|consultant-register|$)/)) {
+          window.location.href = '/login';
+        }
+      }
     }
+    
     return Promise.reject(error);
   }
 );

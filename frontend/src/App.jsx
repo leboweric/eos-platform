@@ -39,6 +39,7 @@ import DepartmentScorecardPage from './pages/department/DepartmentScorecardPage'
 import DepartmentMeetingsPage from './pages/department/DepartmentMeetingsPage';
 import DepartmentTodosPage from './pages/department/DepartmentTodosPage';
 import DepartmentIssuesPage from './pages/department/DepartmentIssuesPage';
+import { initTokenRefresh } from './utils/tokenRefresh';
 
 import './App.css';
 
@@ -47,7 +48,11 @@ function App() {
 
   useEffect(() => {
     checkAuth();
-  }, [checkAuth]);
+    // Initialize automatic token refresh
+    if (user) {
+      initTokenRefresh();
+    }
+  }, [checkAuth, user]);
 
   if (isLoading) {
     return (
