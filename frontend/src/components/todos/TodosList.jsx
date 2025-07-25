@@ -96,25 +96,36 @@ const TodosList = ({
                   }`}
                 >
                   <div className="flex items-start gap-3">
-                    {/* Checkbox that shows completion status and allows selection */}
-                    <div className="flex items-center">
-                      <Checkbox
-                        checked={todo.status === 'complete'}
-                        onCheckedChange={(checked) => {
-                          if (onSelectionChange) {
-                            // For selection mode (in meeting)
+                    {/* Selection checkbox */}
+                    {onSelectionChange && (
+                      <div className="flex items-center">
+                        <Checkbox
+                          checked={selectedTodos?.includes(todo.id) || false}
+                          onCheckedChange={(checked) => {
                             if (checked) {
                               onSelectionChange([...(selectedTodos || []), todo.id]);
                             } else {
                               onSelectionChange((selectedTodos || []).filter(id => id !== todo.id));
                             }
-                          } else {
-                            // For direct completion (outside meeting)
-                            handleToggleComplete(todo);
-                          }
-                        }}
-                        className="data-[state=checked]:bg-green-600 data-[state=checked]:border-green-600"
-                      />
+                          }}
+                          className="data-[state=checked]:bg-green-600 data-[state=checked]:border-green-600"
+                        />
+                      </div>
+                    )}
+                    
+                    {/* Status indicator */}
+                    <div className={`p-1 rounded ${
+                      todo.status === 'complete' 
+                        ? 'bg-green-100' 
+                        : isOverdue(todo)
+                        ? 'bg-red-100'
+                        : 'bg-white'
+                    }`}>
+                      {todo.status === 'complete' ? (
+                        <CheckSquare className="h-5 w-5 text-green-600" />
+                      ) : (
+                        <Square className="h-5 w-5 text-gray-400" />
+                      )}
                     </div>
                 
                     <div className="flex-1 min-w-0">
