@@ -165,10 +165,17 @@ const WeeklyAccountabilityMeetingPage = () => {
       console.log('Scorecard response:', response);
       
       // The response structure from the API has metrics and weeklyScores
-      const metrics = response.metrics || response.data?.metrics || [];
+      const allMetrics = response.metrics || response.data?.metrics || [];
       const scores = response.weeklyScores || response.data?.weeklyScores || {};
       
-      setScorecardMetrics(metrics);
+      // Filter to only show weekly metrics in the Weekly Accountability Meeting
+      const weeklyMetrics = allMetrics.filter(metric => 
+        !metric.type || metric.type === 'weekly'
+      );
+      
+      console.log('Filtered weekly metrics:', weeklyMetrics.length, 'out of', allMetrics.length, 'total metrics');
+      
+      setScorecardMetrics(weeklyMetrics);
       setWeeklyScores(scores);
       setLoading(false);
     } catch (error) {
