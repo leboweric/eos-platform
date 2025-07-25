@@ -8,7 +8,6 @@ import {
   Calendar,
   User,
   Edit,
-  Trash2,
   MoreVertical,
   AlertTriangle
 } from 'lucide-react';
@@ -153,22 +152,15 @@ const TodosList = ({
                           <Edit className="mr-2 h-4 w-4" />
                           Edit
                         </DropdownMenuItem>
-                        {isOverdue(todo) && onConvertToIssue && (
+                        {onConvertToIssue && (
                           <DropdownMenuItem 
                             onClick={() => onConvertToIssue(todo)}
-                            className="text-orange-600"
+                            className="text-blue-600"
                           >
                             <AlertTriangle className="mr-2 h-4 w-4" />
-                            Convert to Issue
+                            Create Issue
                           </DropdownMenuItem>
                         )}
-                        <DropdownMenuItem 
-                          onClick={() => onDelete(todo.id)}
-                          className="text-red-600"
-                        >
-                          <Trash2 className="mr-2 h-4 w-4" />
-                          Delete
-                        </DropdownMenuItem>
                       </DropdownMenuContent>
                         </DropdownMenu>
                       </div>

@@ -128,7 +128,7 @@ const TodosPage = () => {
 
       const issueData = {
         title: todo.title,
-        description: `This issue was created from an overdue to-do.\n\nOriginal due date: ${dueDate}\nAssigned to: ${assigneeName}\n\nDescription:\n${todo.description || 'No description provided'}`,
+        description: `This issue was created from a to-do.\n\nOriginal due date: ${dueDate}\nAssigned to: ${assigneeName}\n\nDescription:\n${todo.description || 'No description provided'}`,
         timeline: 'short_term',
         ownerId: todo.assigned_to?.id || null,
         department_id: selectedDepartment?.id
