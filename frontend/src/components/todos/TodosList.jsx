@@ -87,10 +87,10 @@ const TodosList = ({
               {ownerTodos.map((todo) => (
                 <div
                   key={todo.id}
-                  className={`p-4 hover:bg-gray-50 transition-colors ${
+                  className={`p-4 hover:bg-green-50 transition-colors ${
                     todo.status === 'complete' ? 'opacity-75' : ''
                   } ${
-                    isOverdue(todo) ? 'bg-red-50' : ''
+                    isOverdue(todo) ? 'bg-red-50 hover:bg-red-100' : ''
                   }`}
                 >
                   <div className="flex items-start gap-3">
