@@ -112,21 +112,6 @@ const TodosList = ({
                         />
                       </div>
                     )}
-                    
-                    {/* Status indicator */}
-                    <div className={`p-1 rounded ${
-                      todo.status === 'complete' 
-                        ? 'bg-green-100' 
-                        : isOverdue(todo)
-                        ? 'bg-red-100'
-                        : 'bg-white'
-                    }`}>
-                      {todo.status === 'complete' ? (
-                        <CheckSquare className="h-5 w-5 text-green-600" />
-                      ) : (
-                        <Square className="h-5 w-5 text-gray-400" />
-                      )}
-                    </div>
                 
                     <div className="flex-1 min-w-0">
                       <div className="flex items-start justify-between gap-4">
