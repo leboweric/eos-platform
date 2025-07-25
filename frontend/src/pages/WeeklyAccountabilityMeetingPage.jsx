@@ -96,6 +96,14 @@ const WeeklyAccountabilityMeetingPage = () => {
   const [showBusinessBlueprint, setShowBusinessBlueprint] = useState(false);
   const [showOrgChart, setShowOrgChart] = useState(false);
 
+  // Clear stale meeting flag on mount if no meeting is active
+  useEffect(() => {
+    // If we're on the meeting page but no meeting is started, clear the flag
+    if (!meetingStarted) {
+      sessionStorage.removeItem('meetingActive');
+    }
+  }, []);
+
   const agendaItems = [
     { id: 'good-news', label: 'Good News', duration: 5, icon: Smile },
     { id: 'scorecard', label: 'Scorecard', duration: 5, icon: BarChart },
