@@ -63,7 +63,9 @@ const Layout = ({ children }) => {
   // Check for active meeting
   useEffect(() => {
     const checkMeeting = () => {
-      setMeetingActive(sessionStorage.getItem('meetingActive') === 'true');
+      const isActive = sessionStorage.getItem('meetingActive') === 'true';
+      console.log('Layout checking meeting state:', isActive);
+      setMeetingActive(isActive);
     };
     
     // Check initially
@@ -71,6 +73,7 @@ const Layout = ({ children }) => {
     
     // Listen for custom meeting state change events
     const handleMeetingStateChange = () => {
+      console.log('Layout received meetingStateChanged event');
       checkMeeting();
     };
     window.addEventListener('meetingStateChanged', handleMeetingStateChange);
@@ -205,6 +208,7 @@ const Layout = ({ children }) => {
               const isActive = location.pathname === item.href;
               const isMeetingPage = location.pathname.includes('/meetings/weekly-accountability');
               const isDisabled = meetingActive && !isMeetingPage && !isActive;
+              console.log(`Nav item ${item.name}: meetingActive=${meetingActive}, isDisabled=${isDisabled}`);
               
               if (isDisabled) {
                 return (

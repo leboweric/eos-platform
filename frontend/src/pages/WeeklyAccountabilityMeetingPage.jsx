@@ -501,9 +501,11 @@ const WeeklyAccountabilityMeetingPage = () => {
       
       // Set meeting active flag for navigation
       sessionStorage.setItem('meetingActive', 'true');
+      console.log('Meeting started - sessionStorage set to:', sessionStorage.getItem('meetingActive'));
       
       // Dispatch custom event to immediately update Layout
       window.dispatchEvent(new Event('meetingStateChanged'));
+      console.log('Dispatched meetingStateChanged event');
       
       // Capture initial counts for summary
       setInitialIssuesCount(issues.filter(i => i.status === 'open').length);
