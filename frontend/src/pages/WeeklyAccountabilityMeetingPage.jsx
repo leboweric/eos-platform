@@ -56,6 +56,7 @@ const WeeklyAccountabilityMeetingPage = () => {
   const [issues, setIssues] = useState([]);
   const [selectedIssueIds, setSelectedIssueIds] = useState([]);
   const [todos, setTodos] = useState([]);
+  const [selectedTodoIds, setSelectedTodoIds] = useState([]);
   const [teamMembers, setTeamMembers] = useState([]);
   const [goodNews, setGoodNews] = useState([]);
   const [headlines, setHeadlines] = useState([]);
@@ -408,6 +409,28 @@ const WeeklyAccountabilityMeetingPage = () => {
 
   const handleTodoUpdate = async () => {
     await fetchTodosData();
+  };
+  
+  const handleArchiveSelectedTodos = async () => {
+    if (selectedTodoIds.length === 0) {
+      setError('Please select to-dos to archive');
+      return;
+    }
+    
+    if (!confirm(`Are you sure you want to mark ${selectedTodoIds.length} selected to-do(s) as complete?`)) return;
+    
+    try {
+      // Mark each selected todo as complete
+      await Promise.all(selectedTodoIds.map(id => 
+        todosService.updateTodo(id, { status: 'complete' })
+      ));
+      setSelectedTodoIds([]);
+      await fetchTodosData();
+      setSuccess(`${selectedTodoIds.length} to-do(s) marked as complete`);
+    } catch (error) {
+      console.error('Failed to complete selected todos:', error);
+      setError('Failed to complete selected to-dos');
+    }
   };
 
   const handleEditTodo = (todo) => {
@@ -933,11 +956,27 @@ Team Members Present: ${teamMembers.length}
           <div className="space-y-4">
             <Card>
               <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <ListTodo className="h-5 w-5" />
-                  To-Do List Review
-                </CardTitle>
-                <CardDescription>Review action items from last week (5 minutes)</CardDescription>
+                <div className="flex items-center justify-between">
+                  <div>
+                    <CardTitle className="flex items-center gap-2">
+                      <ListTodo className="h-5 w-5" />
+                      To-Do List Review
+                    </CardTitle>
+                    <CardDescription>Review action items from last week (5 minutes)</CardDescription>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    {selectedTodoIds.length > 0 && (
+                      <Button 
+                        onClick={handleArchiveSelectedTodos}
+                        variant="outline"
+                        className="text-green-600"
+                      >
+                        <CheckSquare className="mr-2 h-4 w-4" />
+                        Mark Complete ({selectedTodoIds.length})
+                      </Button>
+                    )}
+                  </div>
+                </div>
               </CardHeader>
             </Card>
             {todos.length === 0 ? (
@@ -960,6 +999,8 @@ Team Members Present: ${teamMembers.length}
                   onUpdate={handleTodoUpdate}
                   onConvertToIssue={handleTodoToIssue}
                   showCompleted={false}
+                  selectedTodos={selectedTodoIds}
+                  onSelectionChange={setSelectedTodoIds}
                 />
               </>
             )}
