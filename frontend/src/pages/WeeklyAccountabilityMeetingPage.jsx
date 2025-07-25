@@ -1132,11 +1132,13 @@ Team Members Present: ${teamMembers.length}
                 )}
               </div>
               
-              {/* Action Buttons (right side) */}
-              <FloatingActionButtons 
-                onAddTodo={handleAddTodo}
-                onAddIssue={handleAddIssue}
-              />
+              {/* Action Buttons (right side) - hide on Good News and Conclude */}
+              {activeSection !== 'good-news' && activeSection !== 'conclude' && (
+                <FloatingActionButtons 
+                  onAddTodo={handleAddTodo}
+                  onAddIssue={handleAddIssue}
+                />
+              )}
             </div>
             
             {error && (
