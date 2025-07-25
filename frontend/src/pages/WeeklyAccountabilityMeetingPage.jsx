@@ -37,6 +37,8 @@ import { scorecardService } from '../services/scorecardService';
 import { quarterlyPrioritiesService } from '../services/quarterlyPrioritiesService';
 import { issuesService } from '../services/issuesService';
 import { todosService } from '../services/todosService';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { FileText, GitBranch } from 'lucide-react';
 
 const WeeklyAccountabilityMeetingPage = () => {
   const { user } = useAuthStore();
@@ -89,6 +91,10 @@ const WeeklyAccountabilityMeetingPage = () => {
   // Track initial state for summary
   const [initialIssuesCount, setInitialIssuesCount] = useState(0);
   const [initialTodosCount, setInitialTodosCount] = useState(0);
+  
+  // Reference tools dialogs
+  const [showBusinessBlueprint, setShowBusinessBlueprint] = useState(false);
+  const [showOrgChart, setShowOrgChart] = useState(false);
 
   const agendaItems = [
     { id: 'good-news', label: 'Good News', duration: 5, icon: Smile },
@@ -1108,6 +1114,29 @@ Team Members Present: ${teamMembers.length}
               );
             })}
           </nav>
+          
+          {/* Reference Tools Section */}
+          <div className="px-4 pb-4 border-t">
+            <h3 className="text-sm font-semibold text-gray-500 uppercase tracking-wider mb-3 mt-4">
+              Reference Tools
+            </h3>
+            <div className="space-y-2">
+              <button
+                onClick={() => setShowBusinessBlueprint(true)}
+                className="w-full text-left px-4 py-2 rounded-lg hover:bg-gray-100 text-gray-700 flex items-center gap-3 transition-colors"
+              >
+                <FileText className="h-4 w-4 text-gray-400" />
+                <span className="text-sm font-medium">2-Page Plan</span>
+              </button>
+              <button
+                onClick={() => setShowOrgChart(true)}
+                className="w-full text-left px-4 py-2 rounded-lg hover:bg-gray-100 text-gray-700 flex items-center gap-3 transition-colors"
+              >
+                <GitBranch className="h-4 w-4 text-gray-400" />
+                <span className="text-sm font-medium">Org Chart</span>
+              </button>
+            </div>
+          </div>
         </div>
 
         {/* Main Content */}
@@ -1214,6 +1243,48 @@ Team Members Present: ${teamMembers.length}
         onSave={handleSaveTodo}
         teamMembers={teamMembers}
       />
+      
+      {/* Business Blueprint Dialog */}
+      <Dialog open={showBusinessBlueprint} onOpenChange={setShowBusinessBlueprint}>
+        <DialogContent className="max-w-6xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>2-Page Plan</DialogTitle>
+          </DialogHeader>
+          <div className="p-4">
+            <p className="text-gray-600">Click the button below to open the 2-Page Plan in a new window.</p>
+            <Button
+              onClick={() => {
+                window.open('/business-blueprint', '_blank');
+                setShowBusinessBlueprint(false);
+              }}
+              className="mt-4"
+            >
+              Open 2-Page Plan
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+      
+      {/* Org Chart Dialog */}
+      <Dialog open={showOrgChart} onOpenChange={setShowOrgChart}>
+        <DialogContent className="max-w-6xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Organizational Chart</DialogTitle>
+          </DialogHeader>
+          <div className="p-4">
+            <p className="text-gray-600">Click the button below to open the Organizational Chart in a new window.</p>
+            <Button
+              onClick={() => {
+                window.open('/organizational-chart', '_blank');
+                setShowOrgChart(false);
+              }}
+              className="mt-4"
+            >
+              Open Organizational Chart
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
