@@ -58,6 +58,7 @@ const WeeklyAccountabilityMeetingPage = () => {
   const [todos, setTodos] = useState([]);
   const [selectedTodoIds, setSelectedTodoIds] = useState([]);
   const [teamMembers, setTeamMembers] = useState([]);
+  const [todaysTodos, setTodaysTodos] = useState([]);
   const [goodNews, setGoodNews] = useState([]);
   const [headlines, setHeadlines] = useState([]);
   
@@ -124,6 +125,8 @@ const WeeklyAccountabilityMeetingPage = () => {
       fetchIssuesData();
     } else if (activeSection === 'todo-list') {
       fetchTodosData();
+    } else if (activeSection === 'conclude' && meetingStarted) {
+      fetchTodaysTodos();
     } else {
       // For non-data sections, ensure loading is false
       setLoading(false);
@@ -409,6 +412,31 @@ const WeeklyAccountabilityMeetingPage = () => {
 
   const handleTodoUpdate = async () => {
     await fetchTodosData();
+  };
+  
+  const fetchTodaysTodos = async () => {
+    try {
+      setLoading(true);
+      const response = await todosService.getTodos('all', null, false, teamId);
+      
+      // Filter to only show todos created today
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+      
+      const todaysTodosList = (response.data.todos || []).filter(todo => {
+        if (!todo.created_at) return false;
+        const createdDate = new Date(todo.created_at);
+        createdDate.setHours(0, 0, 0, 0);
+        return createdDate.getTime() === today.getTime();
+      });
+      
+      setTodaysTodos(todaysTodosList);
+      setLoading(false);
+    } catch (error) {
+      console.error('Failed to fetch today\'s todos:', error);
+      setError('Failed to load today\'s todos');
+      setLoading(false);
+    }
   };
   
   const handleArchiveSelectedTodos = async () => {
@@ -1095,6 +1123,31 @@ Team Members Present: ${teamMembers.length}
                 
                 {meetingStarted && (
                   <div className="space-y-6">
+                    {/* New To-Dos created today */}
+                    {todaysTodos.length > 0 && (
+                      <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                        <h4 className="font-semibold text-blue-900 mb-3 flex items-center gap-2">
+                          <ListTodo className="h-5 w-5" />
+                          New To-Dos Created Today ({todaysTodos.length})
+                        </h4>
+                        <ul className="space-y-2">
+                          {todaysTodos.map(todo => (
+                            <li key={todo.id} className="flex items-start gap-2">
+                              <CheckSquare className="h-4 w-4 text-blue-600 mt-0.5 flex-shrink-0" />
+                              <div className="flex-1">
+                                <span className="font-medium text-gray-900">{todo.title}</span>
+                                {todo.assigned_to && (
+                                  <span className="text-gray-600 text-sm ml-2">
+                                    - {todo.assigned_to.first_name} {todo.assigned_to.last_name}
+                                  </span>
+                                )}
+                              </div>
+                            </li>
+                          ))}
+                        </ul>
+                      </div>
+                    )}
+                    
                     <div className="flex items-center justify-center gap-4">
                       <span className="text-lg font-medium">Rate this meeting:</span>
                       <Select value={meetingRating?.toString()} onValueChange={(value) => setMeetingRating(parseInt(value))}>
