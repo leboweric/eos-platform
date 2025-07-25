@@ -1150,7 +1150,7 @@ Team Members Present: ${teamMembers.length}
                       <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
                         <h4 className="font-semibold text-blue-900 mb-3 flex items-center gap-2">
                           <ListTodo className="h-5 w-5" />
-                          New To-Dos Created Today ({todaysTodos.length})
+                          Recap To Dos ({todaysTodos.length})
                         </h4>
                         <ul className="space-y-2">
                           {todaysTodos.map(todo => (
