@@ -1295,7 +1295,7 @@ Team Members Present: ${teamMembers.length}
             <p className="text-gray-600">Click the button below to open the Organizational Chart in a new window.</p>
             <Button
               onClick={() => {
-                window.open('/organizational-chart', '_blank');
+                window.open('/organizational-chart?autoOpen=true', '_blank');
                 setShowOrgChart(false);
               }}
               className="mt-4"

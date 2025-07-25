@@ -34,6 +34,18 @@ const OrganizationalChartPage = () => {
   useEffect(() => {
     fetchCharts();
   }, []);
+  
+  // Auto-open first chart if coming from meeting
+  useEffect(() => {
+    // Check if we came from a meeting (via query parameter or referrer)
+    const urlParams = new URLSearchParams(window.location.search);
+    const autoOpen = urlParams.get('autoOpen') === 'true';
+    
+    if (autoOpen && charts.length > 0 && !selectedChart) {
+      // Automatically view the first chart
+      handleViewChart(charts[0]);
+    }
+  }, [charts]);
 
   const fetchCharts = async () => {
     try {
