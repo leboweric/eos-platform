@@ -291,25 +291,25 @@ const ScorecardTable = ({ metrics, weeklyScores, readOnly = false, onIssueCreate
                     {weekDates.map((weekDate, index) => {
                       const score = weeklyScores[metric.id]?.[weekDate];
                       const goalMet = score && isGoalMet(score, metric.goal, metric.comparison_operator);
-                      // Current week is always the last in original order
+                      // Previous week is the second to last in original order
                       const originalIndex = isRTL ? weekDates.length - 1 - index : index;
-                      const isCurrentWeek = originalIndex === weekDatesOriginal.length - 1;
-                      const showCreateIssue = isCurrentWeek && score && !goalMet;
+                      const isPreviousWeek = originalIndex === weekDatesOriginal.length - 2;
+                      const showCreateIssue = isPreviousWeek && score && !goalMet;
                       
-                      // Debug current week detection
+                      // Debug previous week detection
                       if (metric === metrics[0]) {
                         console.log('Scorecard week debug:', {
                           metricName: metric.name,
                           weekDate,
                           index,
                           originalIndex,
-                          isCurrentWeek,
+                          isPreviousWeek,
                           isRTL,
                           weekDatesLength: weekDates.length,
                           score,
                           goalMet,
                           showCreateIssue,
-                          lastWeekIndex: weekDatesOriginal.length - 1
+                          previousWeekIndex: weekDatesOriginal.length - 2
                         });
                       }
                       
