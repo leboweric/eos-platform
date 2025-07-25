@@ -39,13 +39,32 @@ const TodoDialog = ({ open, onOpenChange, todo, teamMembers, onSave }) => {
         loadAttachments(todo.id);
       }
     } else {
-      // Default due date to 7 days from now for new todos
-      setFormData(prev => ({
-        ...prev,
+      // Clear all fields and set default due date for new todos
+      setFormData({
+        title: '',
+        description: '',
+        assignedToId: '',
         dueDate: getDateDaysFromNow(7)
-      }));
+      });
+      setExistingAttachments([]);
     }
+    setFiles([]);
   }, [todo]);
+
+  // Clear form when dialog opens without a todo
+  useEffect(() => {
+    if (open && !todo) {
+      setFormData({
+        title: '',
+        description: '',
+        assignedToId: '',
+        dueDate: getDateDaysFromNow(7)
+      });
+      setFiles([]);
+      setExistingAttachments([]);
+      setError(null);
+    }
+  }, [open, todo]);
 
   const loadAttachments = async (todoId) => {
     try {

@@ -63,6 +63,22 @@ const IssueDialog = ({ open, onClose, onSave, issue, teamMembers, timeline }) =>
     setNewAttachments([]);
   }, [issue]);
 
+  // Clear form when dialog opens without an issue
+  useEffect(() => {
+    if (open && !issue) {
+      setFormData({
+        title: '',
+        description: '',
+        ownerId: '',
+        ownerName: '',
+        status: 'open'
+      });
+      setNewAttachments([]);
+      setExistingAttachments([]);
+      setError(null);
+    }
+  }, [open, issue]);
+
   const fetchAttachments = async (issueId) => {
     try {
       const attachments = await issuesService.getAttachments(issueId);
