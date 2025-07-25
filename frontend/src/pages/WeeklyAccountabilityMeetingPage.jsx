@@ -491,6 +491,9 @@ const WeeklyAccountabilityMeetingPage = () => {
       setMeetingStartTime(new Date());
       setActiveSection('good-news'); // Auto-advance to first agenda item
       
+      // Set meeting active flag for navigation
+      sessionStorage.setItem('meetingActive', 'true');
+      
       // Capture initial counts for summary
       setInitialIssuesCount(issues.filter(i => i.status === 'open').length);
       setInitialTodosCount(todos.filter(t => t.status === 'incomplete').length);
@@ -550,6 +553,9 @@ Team Members Present: ${teamMembers.length}
 `;
 
       alert('Meeting Complete!\n' + summaryText);
+      
+      // Clear meeting active flag
+      sessionStorage.removeItem('meetingActive');
       
       // Reset meeting state
       setMeetingStarted(false);

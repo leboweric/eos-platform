@@ -44,6 +44,7 @@ const Layout = ({ children }) => {
   const [isImpersonating, setIsImpersonating] = useState(false);
   const [logoUrl, setLogoUrl] = useState(null);
   const [logoKey, setLogoKey] = useState(Date.now()); // Force refresh of logo
+  const [meetingActive, setMeetingActive] = useState(false);
   const location = useLocation();
   const navigate = useNavigate();
   const { user, logout, isOnLeadershipTeam } = useAuthStore();
@@ -58,6 +59,20 @@ const Layout = ({ children }) => {
       setLogoUrl(organizationService.getLogoUrl(orgId));
     }
   }, [user]);
+  
+  // Check for active meeting
+  useEffect(() => {
+    const checkMeeting = () => {
+      setMeetingActive(sessionStorage.getItem('meetingActive') === 'true');
+    };
+    
+    // Check initially
+    checkMeeting();
+    
+    // Check periodically for changes
+    const interval = setInterval(checkMeeting, 1000);
+    return () => clearInterval(interval);
+  }, []);
   
   // Refresh logo when returning to this page
   useEffect(() => {
@@ -158,26 +173,57 @@ const Layout = ({ children }) => {
           </button>
         </div>
 
+        {meetingActive && (
+          <div className="mx-3 mt-4 p-3 bg-yellow-50 border border-yellow-200 rounded-lg">
+            <p className="text-sm font-medium text-yellow-800">
+              Meeting in Progress
+            </p>
+            <p className="text-xs text-yellow-600 mt-1">
+              Navigation is limited during meetings
+            </p>
+          </div>
+        )}
+        
         <nav className="mt-6 px-3">
           <div className="space-y-1">
             {navigation.map((item) => {
               const isActive = location.pathname === item.href;
+              const isMeetingPage = location.pathname.includes('/meetings/weekly-accountability');
+              
               return (
-                <Link
-                  key={item.name}
-                  to={item.href}
-                  className={`
-                    flex items-center px-3 py-2 text-sm font-medium rounded-md transition-colors
-                    ${isActive
-                      ? 'bg-primary text-white'
-                      : 'text-gray-700 hover:bg-gray-100 hover:text-gray-900'
-                    }
-                  `}
-                  onClick={() => setSidebarOpen(false)}
-                >
-                  <item.icon className="mr-3 h-5 w-5" />
-                  {item.name}
-                </Link>
+                <div key={item.name} className="relative">
+                  <Link
+                    to={item.href}
+                    className={`
+                      flex items-center px-3 py-2 text-sm font-medium rounded-md transition-colors
+                      ${isActive
+                        ? 'bg-primary text-white'
+                        : meetingActive && !isMeetingPage
+                        ? 'text-gray-400 hover:bg-gray-50 hover:text-gray-400 cursor-not-allowed opacity-50'
+                        : 'text-gray-700 hover:bg-gray-100 hover:text-gray-900'
+                      }
+                    `}
+                    onClick={(e) => {
+                      if (meetingActive && !isMeetingPage && !isActive) {
+                        e.preventDefault();
+                        alert('Please finish the current meeting before navigating away.');
+                      } else {
+                        setSidebarOpen(false);
+                      }
+                    }}
+                    title={meetingActive && !isMeetingPage ? 'Meeting in progress' : ''}
+                  >
+                    <item.icon className="mr-3 h-5 w-5" />
+                    {item.name}
+                  </Link>
+                  {meetingActive && !isMeetingPage && (
+                    <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+                      <div className="bg-yellow-100 text-yellow-800 text-xs px-2 py-1 rounded-full opacity-0 hover:opacity-100 transition-opacity">
+                        Meeting in progress
+                      </div>
+                    </div>
+                  )}
+                </div>
               );
             })}
           </div>
