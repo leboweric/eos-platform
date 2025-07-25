@@ -1069,7 +1069,7 @@ Team Members Present: ${teamMembers.length}
     <div className="min-h-screen bg-gray-50">
       <div className="flex">
         {/* Sidebar */}
-        <div className="w-64 bg-white border-r border-gray-200 min-h-screen flex-shrink-0">
+        <div className="w-64 bg-white border-r border-gray-200 min-h-screen flex-shrink-0 sticky top-0 h-screen overflow-y-auto">
           <div className="p-6">
             <div>
               <h1 className="text-2xl font-bold text-gray-900 mb-2">Weekly Accountability Meeting</h1>
