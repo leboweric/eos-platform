@@ -947,13 +947,6 @@ Team Members Present: ${teamMembers.length}
                     <CardDescription>Review and solve short-term issues (60 minutes)</CardDescription>
                   </div>
                   <div className="flex items-center gap-2">
-                    <Button 
-                      onClick={handleAddTodo}
-                      className="bg-green-600 hover:bg-green-700 text-white"
-                    >
-                      <Plus className="mr-2 h-4 w-4" />
-                      New To-Do
-                    </Button>
                     {selectedIssueIds.length > 0 && (
                       <Button 
                         onClick={handleArchiveSelected}
