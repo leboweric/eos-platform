@@ -27,9 +27,7 @@ const TodosList = ({
   onDelete,
   onUpdate,
   onConvertToIssue,
-  showCompleted = true,
-  selectedTodos,
-  onSelectionChange
+  showCompleted = true 
 }) => {
   const handleToggleComplete = async (todo) => {
     try {
@@ -96,36 +94,18 @@ const TodosList = ({
                   }`}
                 >
                   <div className="flex items-start gap-3">
-                    {/* Selection checkbox */}
-                    {onSelectionChange && (
-                      <div className="flex items-center">
-                        <Checkbox
-                          checked={selectedTodos?.includes(todo.id) || false}
-                          onCheckedChange={(checked) => {
-                            if (checked) {
-                              onSelectionChange([...(selectedTodos || []), todo.id]);
-                            } else {
-                              onSelectionChange((selectedTodos || []).filter(id => id !== todo.id));
-                            }
-                          }}
-                          className="data-[state=checked]:bg-green-600 data-[state=checked]:border-green-600"
-                        />
-                      </div>
-                    )}
-                    
-                    {/* Status indicator */}
-                    <div className={`p-1 rounded ${
+                    <div className={`p-1 rounded-full ${
                       todo.status === 'complete' 
-                        ? 'bg-green-100' 
+                        ? 'border-green-500' 
                         : isOverdue(todo)
-                        ? 'bg-red-100'
-                        : 'bg-white'
-                    }`}>
-                      {todo.status === 'complete' ? (
-                        <CheckSquare className="h-5 w-5 text-green-600" />
-                      ) : (
-                        <Square className="h-5 w-5 text-gray-400" />
-                      )}
+                        ? 'border-red-500'
+                        : 'border-indigo-500'
+                    } border-2`}>
+                      <Checkbox
+                        checked={todo.status === 'complete'}
+                        onCheckedChange={() => handleToggleComplete(todo)}
+                        className="mt-0 rounded-full data-[state=checked]:bg-green-600 data-[state=checked]:border-green-600"
+                      />
                     </div>
                 
                     <div className="flex-1 min-w-0">
