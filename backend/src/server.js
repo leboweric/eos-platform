@@ -50,27 +50,39 @@ const PORT = process.env.PORT || 3001;
 app.set('trust proxy', true);
 
 // Different rate limits for different endpoints
-const createLimiter = (windowMs, max) => rateLimit({
+const createLimiter = (windowMs, max, skipAuth = false) => rateLimit({
   windowMs,
   max,
   message: 'Too many requests from this IP, please try again later.',
   standardHeaders: true,
   legacyHeaders: false,
   keyGenerator: (req) => {
-    return req.headers['x-forwarded-for']?.split(',')[0] || req.ip;
-  }
+    // Use a combination of IP and user ID for authenticated users
+    const ip = req.headers['x-forwarded-for']?.split(',')[0] || req.ip;
+    const authHeader = req.headers.authorization;
+    if (authHeader && authHeader.startsWith('Bearer ')) {
+      // For authenticated users, use IP + a portion of token to allow more requests
+      return `${ip}:auth`;
+    }
+    return ip;
+  },
+  skip: skipAuth ? (req) => {
+    // Skip rate limiting for authenticated users if skipAuth is true
+    const authHeader = req.headers.authorization;
+    return authHeader && authHeader.startsWith('Bearer ');
+  } : undefined
 });
 
 // General API limiter - much more lenient for normal usage
 const generalLimiter = createLimiter(
   parseInt(process.env.RATE_LIMIT_WINDOW_MS) || 1 * 60 * 1000, // 1 minute
-  parseInt(process.env.RATE_LIMIT_MAX_REQUESTS) || 300 // 300 requests per minute
+  parseInt(process.env.RATE_LIMIT_MAX_REQUESTS) || 1000 // 1000 requests per minute (increased from 300)
 );
 
-// More lenient limiter for auth endpoints during testing
+// More lenient limiter for auth endpoints
 const authLimiter = createLimiter(
-  15 * 60 * 1000, // 15 minutes
-  100 // 100 auth requests per 15 minutes (increased from 20 for testing)
+  5 * 60 * 1000, // 5 minutes (reduced from 15)
+  500 // 500 auth requests per 5 minutes (greatly increased for token refresh)
 );
 
 // Very lenient limiter for read operations

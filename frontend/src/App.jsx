@@ -48,11 +48,14 @@ function App() {
 
   useEffect(() => {
     checkAuth();
-    // Initialize automatic token refresh
+  }, [checkAuth]);
+  
+  useEffect(() => {
+    // Initialize automatic token refresh when user logs in
     if (user) {
       initTokenRefresh();
     }
-  }, [checkAuth, user]);
+  }, [user]);
 
   if (isLoading) {
     return (
