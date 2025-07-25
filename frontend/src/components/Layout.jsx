@@ -69,17 +69,20 @@ const Layout = ({ children }) => {
     // Check initially
     checkMeeting();
     
-    // Check more frequently for immediate updates
-    const interval = setInterval(checkMeeting, 100); // Check every 100ms instead of 1000ms
+    // Listen for custom meeting state change events
+    const handleMeetingStateChange = () => {
+      checkMeeting();
+    };
+    window.addEventListener('meetingStateChanged', handleMeetingStateChange);
     
-    // Also check on storage events for immediate updates
+    // Also check on storage events for cross-tab updates
     const handleStorageChange = () => {
       checkMeeting();
     };
     window.addEventListener('storage', handleStorageChange);
     
     return () => {
-      clearInterval(interval);
+      window.removeEventListener('meetingStateChanged', handleMeetingStateChange);
       window.removeEventListener('storage', handleStorageChange);
     };
   }, []);

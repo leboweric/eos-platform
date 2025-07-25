@@ -502,6 +502,9 @@ const WeeklyAccountabilityMeetingPage = () => {
       // Set meeting active flag for navigation
       sessionStorage.setItem('meetingActive', 'true');
       
+      // Dispatch custom event to immediately update Layout
+      window.dispatchEvent(new Event('meetingStateChanged'));
+      
       // Capture initial counts for summary
       setInitialIssuesCount(issues.filter(i => i.status === 'open').length);
       setInitialTodosCount(todos.filter(t => t.status === 'incomplete').length);
@@ -564,6 +567,9 @@ Team Members Present: ${teamMembers.length}
       
       // Clear meeting active flag
       sessionStorage.removeItem('meetingActive');
+      
+      // Dispatch custom event to immediately update Layout
+      window.dispatchEvent(new Event('meetingStateChanged'));
       
       // Reset meeting state
       setMeetingStarted(false);
