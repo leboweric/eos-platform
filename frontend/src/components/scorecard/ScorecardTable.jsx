@@ -314,39 +314,38 @@ const ScorecardTable = ({ metrics, weeklyScores, readOnly = false, onIssueCreate
                       return (
                         <td key={weekDate} className="p-2 text-center group relative">
                           {score !== undefined && score !== null && score !== '' ? (
-                            <div className="relative">
+                            <div className="relative inline-block">
                               <span className={`inline-block px-2 py-1 rounded text-sm ${
                                 goalMet 
                                   ? 'bg-green-100 text-green-800' 
                                   : showCreateIssue 
-                                    ? 'bg-red-100 text-red-800 cursor-pointer hover:bg-red-200 transition-colors' 
+                                    ? 'bg-red-100 text-red-800 cursor-pointer hover:bg-red-200 transition-colors border-2 border-transparent hover:border-red-300' 
                                     : 'bg-red-100 text-red-800'
                               }`}>
                                 {formatValue(score, metric.value_type)}
+                                {showCreateIssue && (
+                                  <Plus className="inline-block h-3 w-3 ml-1 opacity-50" />
+                                )}
                               </span>
                               {showCreateIssue && (
-                                <div className="absolute -top-1 -right-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                                  <Button
-                                    size="sm"
-                                    variant="default"
-                                    className="h-7 px-2 bg-red-600 hover:bg-red-700 text-white text-xs flex items-center gap-1 shadow-lg"
-                                    onClick={(e) => {
-                                      e.stopPropagation();
-                                      handleCreateIssue(metric, score);
-                                    }}
-                                    disabled={creatingIssue[metric.id]}
-                                    title="Create issue for off-track metric"
-                                  >
-                                    {creatingIssue[metric.id] ? (
-                                      <Loader2 className="h-3 w-3 animate-spin" />
-                                    ) : (
-                                      <>
-                                        <Plus className="h-3 w-3" />
-                                        <span>Issue</span>
-                                      </>
-                                    )}
-                                  </Button>
-                                </div>
+                                <button
+                                  className="absolute -top-2 -right-2 opacity-0 group-hover:opacity-100 transition-all duration-200 h-8 px-2 bg-red-600 hover:bg-red-700 text-white text-xs flex items-center gap-1 shadow-lg rounded transform hover:scale-105"
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    handleCreateIssue(metric, score);
+                                  }}
+                                  disabled={creatingIssue[metric.id]}
+                                  title="Create issue for off-track metric"
+                                >
+                                  {creatingIssue[metric.id] ? (
+                                    <Loader2 className="h-3 w-3 animate-spin" />
+                                  ) : (
+                                    <>
+                                      <Plus className="h-3 w-3" />
+                                      <span className="font-semibold">Issue</span>
+                                    </>
+                                  )}
+                                </button>
                               )}
                             </div>
                           ) : (

@@ -427,7 +427,8 @@ const WeeklyAccountabilityMeetingPage = () => {
       console.log('Fetching today\'s todos:', {
         todayStart: todayStart.toISOString(),
         todayEnd: todayEnd.toISOString(),
-        allTodos: response.data.todos?.length || 0
+        allTodos: response.data.todos?.length || 0,
+        allTodosData: response.data.todos
       });
       
       const todaysTodosList = (response.data.todos || []).filter(todo => {
