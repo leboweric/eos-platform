@@ -421,15 +421,31 @@ const WeeklyAccountabilityMeetingPage = () => {
       
       // Filter to only show todos created today
       const today = new Date();
-      today.setHours(0, 0, 0, 0);
+      const todayStart = new Date(today.getFullYear(), today.getMonth(), today.getDate());
+      const todayEnd = new Date(today.getFullYear(), today.getMonth(), today.getDate() + 1);
+      
+      console.log('Fetching today\'s todos:', {
+        todayStart: todayStart.toISOString(),
+        todayEnd: todayEnd.toISOString(),
+        allTodos: response.data.todos?.length || 0
+      });
       
       const todaysTodosList = (response.data.todos || []).filter(todo => {
         if (!todo.created_at) return false;
         const createdDate = new Date(todo.created_at);
-        createdDate.setHours(0, 0, 0, 0);
-        return createdDate.getTime() === today.getTime();
+        const isToday = createdDate >= todayStart && createdDate < todayEnd;
+        
+        console.log('Todo date check:', {
+          title: todo.title,
+          created_at: todo.created_at,
+          createdDate: createdDate.toISOString(),
+          isToday
+        });
+        
+        return isToday;
       });
       
+      console.log('Today\'s todos found:', todaysTodosList.length);
       setTodaysTodos(todaysTodosList);
       setLoading(false);
     } catch (error) {
@@ -541,6 +557,11 @@ const WeeklyAccountabilityMeetingPage = () => {
       // Refresh todos if we're on the todo section
       if (activeSection === 'todo-list') {
         await fetchTodosData();
+      }
+      
+      // Also refresh today's todos for the conclude section
+      if (meetingStarted) {
+        await fetchTodaysTodos();
       }
       
       return savedTodo;
