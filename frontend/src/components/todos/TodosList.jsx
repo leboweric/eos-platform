@@ -144,6 +144,22 @@ const TodosList = ({
                           <Edit className="mr-2 h-4 w-4" />
                           Edit
                         </DropdownMenuItem>
+                        <DropdownMenuItem 
+                          onClick={() => handleToggleComplete(todo)}
+                          className={todo.status === 'complete' ? 'text-orange-600' : 'text-green-600'}
+                        >
+                          {todo.status === 'complete' ? (
+                            <>
+                              <Square className="mr-2 h-4 w-4" />
+                              Mark Incomplete
+                            </>
+                          ) : (
+                            <>
+                              <CheckSquare className="mr-2 h-4 w-4" />
+                              Mark Complete
+                            </>
+                          )}
+                        </DropdownMenuItem>
                         {onConvertToIssue && (
                           <DropdownMenuItem 
                             onClick={() => onConvertToIssue(todo)}
