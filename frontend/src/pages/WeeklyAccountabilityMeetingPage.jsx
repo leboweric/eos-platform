@@ -23,7 +23,10 @@ import {
   ArrowLeftRight,
   ChevronDown,
   Archive,
-  Plus
+  Plus,
+  MessageSquare,
+  Send,
+  Star
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import ScorecardTable from '../components/scorecard/ScorecardTable';
@@ -89,6 +92,7 @@ const WeeklyAccountabilityMeetingPage = () => {
   const [meetingStartTime, setMeetingStartTime] = useState(null);
   const [elapsedTime, setElapsedTime] = useState(0);
   const [meetingRating, setMeetingRating] = useState(null);
+  const [cascadingMessage, setCascadingMessage] = useState('');
   
   // Track initial state for summary
   const [initialIssuesCount, setInitialIssuesCount] = useState(0);
@@ -1136,10 +1140,9 @@ Team Members Present: ${teamMembers.length}
                 <div className="bg-green-50 p-4 rounded-lg">
                   <h4 className="font-medium mb-2">Meeting Wrap-up:</h4>
                   <ul className="list-disc list-inside text-sm space-y-1">
-                    <li>Recap key decisions and action items</li>
-                    <li>Confirm next steps and ownership</li>
-                    <li>Rate the meeting (1-10)</li>
-                    <li>Share any final thoughts</li>
+                    <li>Recap To Dos</li>
+                    <li>Document Cascading Messages</li>
+                    <li>Send Cascading Messages to another Team(s) - coming soon</li>
                   </ul>
                 </div>
                 
@@ -1170,6 +1173,49 @@ Team Members Present: ${teamMembers.length}
                       </div>
                     )}
                     
+                    {/* Cascading Messages */}
+                    <Card>
+                      <CardHeader>
+                        <CardTitle className="flex items-center gap-2">
+                          <MessageSquare className="h-5 w-5" />
+                          Cascading Messages
+                        </CardTitle>
+                        <CardDescription>
+                          Document key decisions from this meeting to share with other teams
+                        </CardDescription>
+                      </CardHeader>
+                      <CardContent>
+                        <div className="space-y-4">
+                          <div>
+                            <textarea
+                              placeholder="Enter key decisions or messages to cascade to other teams..."
+                              className="w-full min-h-[120px] p-3 border border-gray-300 rounded-md focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+                              value={cascadingMessage}
+                              onChange={(e) => setCascadingMessage(e.target.value)}
+                            />
+                          </div>
+                          <div className="flex items-center justify-between">
+                            <p className="text-sm text-gray-500">
+                              These messages will appear in other teams' Headlines section
+                            </p>
+                            <Button 
+                              onClick={() => {
+                                // TODO: Implement saving cascading messages
+                                setSuccess('Cascading message saved');
+                                setTimeout(() => setSuccess(null), 3000);
+                              }}
+                              disabled={!cascadingMessage.trim()}
+                              className="bg-indigo-600 hover:bg-indigo-700"
+                            >
+                              <Send className="mr-2 h-4 w-4" />
+                              Save Message
+                            </Button>
+                          </div>
+                        </div>
+                      </CardContent>
+                    </Card>
+
+                    {/* Rate this meeting */}
                     <div className="flex items-center justify-center gap-4">
                       <span className="text-lg font-medium">Rate this meeting:</span>
                       <Select value={meetingRating?.toString()} onValueChange={(value) => setMeetingRating(parseInt(value))}>
