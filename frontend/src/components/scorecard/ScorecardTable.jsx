@@ -312,37 +312,41 @@ const ScorecardTable = ({ metrics, weeklyScores, readOnly = false, onIssueCreate
                       }
                       
                       return (
-                        <td key={weekDate} className="p-2 text-center group">
+                        <td key={weekDate} className="p-2 text-center group relative">
                           {score !== undefined && score !== null && score !== '' ? (
-                            <div className="flex items-center justify-center gap-1">
+                            <div className="relative">
                               <span className={`inline-block px-2 py-1 rounded text-sm ${
                                 goalMet 
                                   ? 'bg-green-100 text-green-800' 
-                                  : 'bg-red-100 text-red-800'
+                                  : showCreateIssue 
+                                    ? 'bg-red-100 text-red-800 cursor-pointer hover:bg-red-200 transition-colors' 
+                                    : 'bg-red-100 text-red-800'
                               }`}>
                                 {formatValue(score, metric.value_type)}
                               </span>
                               {showCreateIssue && (
-                                <Button
-                                  size="sm"
-                                  variant="ghost"
-                                  className="ml-1 h-6 px-2 hover:bg-red-50 text-xs flex items-center gap-1"
-                                  onClick={(e) => {
-                                    e.stopPropagation();
-                                    handleCreateIssue(metric, score);
-                                  }}
-                                  disabled={creatingIssue[metric.id]}
-                                  title="Create issue for off-track metric"
-                                >
-                                  {creatingIssue[metric.id] ? (
-                                    <Loader2 className="h-3 w-3 animate-spin" />
-                                  ) : (
-                                    <>
-                                      <AlertTriangle className="h-3 w-3 text-red-600" />
-                                      <span className="hidden lg:inline">Issue</span>
-                                    </>
-                                  )}
-                                </Button>
+                                <div className="absolute -top-1 -right-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                                  <Button
+                                    size="sm"
+                                    variant="default"
+                                    className="h-7 px-2 bg-red-600 hover:bg-red-700 text-white text-xs flex items-center gap-1 shadow-lg"
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      handleCreateIssue(metric, score);
+                                    }}
+                                    disabled={creatingIssue[metric.id]}
+                                    title="Create issue for off-track metric"
+                                  >
+                                    {creatingIssue[metric.id] ? (
+                                      <Loader2 className="h-3 w-3 animate-spin" />
+                                    ) : (
+                                      <>
+                                        <Plus className="h-3 w-3" />
+                                        <span>Issue</span>
+                                      </>
+                                    )}
+                                  </Button>
+                                </div>
                               )}
                             </div>
                           ) : (
