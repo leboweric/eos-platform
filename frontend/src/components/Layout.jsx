@@ -69,14 +69,26 @@ const Layout = ({ children }) => {
     // Check initially
     checkMeeting();
     
-    // Check periodically for changes
-    const interval = setInterval(checkMeeting, 1000);
-    return () => clearInterval(interval);
+    // Check more frequently for immediate updates
+    const interval = setInterval(checkMeeting, 100); // Check every 100ms instead of 1000ms
+    
+    // Also check on storage events for immediate updates
+    const handleStorageChange = () => {
+      checkMeeting();
+    };
+    window.addEventListener('storage', handleStorageChange);
+    
+    return () => {
+      clearInterval(interval);
+      window.removeEventListener('storage', handleStorageChange);
+    };
   }, []);
   
   // Refresh logo when returning to this page
   useEffect(() => {
     setLogoKey(Date.now());
+    // Also recheck meeting state on navigation
+    setMeetingActive(sessionStorage.getItem('meetingActive') === 'true');
   }, [location.pathname]);
 
   const baseNavigation = [
