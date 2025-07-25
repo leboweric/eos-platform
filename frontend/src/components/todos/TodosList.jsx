@@ -117,7 +117,7 @@ const TodosList = ({
                       <div className="flex items-start justify-between gap-4">
                         <div className="flex-1">
                           <h3 className={`font-medium ${
-                            todo.status === 'complete' ? 'line-through text-gray-500' : 'text-gray-900'
+                            todo.status === 'complete' || selectedTodos?.includes(todo.id) ? 'line-through text-gray-500' : 'text-gray-900'
                           }`}>
                             {todo.title}
                           </h3>
