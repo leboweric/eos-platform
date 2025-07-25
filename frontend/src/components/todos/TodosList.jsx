@@ -19,6 +19,7 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { format } from 'date-fns';
 import { todosService } from '../../services/todosService';
+import { useSelectedTodos } from '../../contexts/SelectedTodosContext';
 
 const TodosList = ({ 
   todos, 
@@ -26,10 +27,9 @@ const TodosList = ({
   onDelete,
   onUpdate,
   onConvertToIssue,
-  showCompleted = true,
-  selectedTodos,
-  onSelectionChange
+  showCompleted = true
 }) => {
+  const { selectedTodoIds, toggleTodo, isSelected } = useSelectedTodos();
   const handleToggleComplete = async (todo) => {
     try {
       const newStatus = todo.status === 'complete' ? 'incomplete' : 'complete';
@@ -95,28 +95,20 @@ const TodosList = ({
                   }`}
                 >
                   <div className="flex items-start gap-3">
-                    {/* Selection checkbox */}
-                    {onSelectionChange && (
-                      <div className="flex items-center">
-                        <Checkbox
-                          checked={selectedTodos?.includes(todo.id) || false}
-                          onCheckedChange={(checked) => {
-                            if (checked) {
-                              onSelectionChange([...(selectedTodos || []), todo.id]);
-                            } else {
-                              onSelectionChange((selectedTodos || []).filter(id => id !== todo.id));
-                            }
-                          }}
-                          className="data-[state=checked]:bg-green-600 data-[state=checked]:border-green-600"
-                        />
-                      </div>
-                    )}
+                    {/* Selection checkbox - always show */}
+                    <div className="flex items-center">
+                      <Checkbox
+                        checked={isSelected(todo.id)}
+                        onCheckedChange={() => toggleTodo(todo.id)}
+                        className="data-[state=checked]:bg-green-600 data-[state=checked]:border-green-600"
+                      />
+                    </div>
                 
                     <div className="flex-1 min-w-0">
                       <div className="flex items-start justify-between gap-4">
                         <div className="flex-1">
                           <h3 className={`font-medium ${
-                            todo.status === 'complete' || selectedTodos?.includes(todo.id) ? 'line-through text-gray-500' : 'text-gray-900'
+                            todo.status === 'complete' || isSelected(todo.id) ? 'line-through text-gray-500' : 'text-gray-900'
                           }`}>
                             {todo.title}
                           </h3>

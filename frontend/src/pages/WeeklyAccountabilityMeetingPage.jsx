@@ -42,6 +42,7 @@ import { issuesService } from '../services/issuesService';
 import { todosService } from '../services/todosService';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { FileText, GitBranch } from 'lucide-react';
+import { useSelectedTodos } from '../contexts/SelectedTodosContext';
 
 const WeeklyAccountabilityMeetingPage = () => {
   const { user } = useAuthStore();
@@ -59,7 +60,7 @@ const WeeklyAccountabilityMeetingPage = () => {
   const [issues, setIssues] = useState([]);
   const [selectedIssueIds, setSelectedIssueIds] = useState([]);
   const [todos, setTodos] = useState([]);
-  const [selectedTodoIds, setSelectedTodoIds] = useState([]);
+  const { selectedTodoIds } = useSelectedTodos();
   const [teamMembers, setTeamMembers] = useState([]);
   const [todaysTodos, setTodaysTodos] = useState([]);
   const [goodNews, setGoodNews] = useState([]);
@@ -1053,8 +1054,6 @@ Team Members Present: ${teamMembers.length}
                   onUpdate={handleTodoUpdate}
                   onConvertToIssue={handleTodoToIssue}
                   showCompleted={false}
-                  selectedTodos={selectedTodoIds}
-                  onSelectionChange={setSelectedTodoIds}
                 />
               </>
             )}

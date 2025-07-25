@@ -3,6 +3,7 @@ import { useAuthStore } from './stores/authStore';
 import { useEffect } from 'react';
 import { TeamProvider } from './contexts/TeamContext';
 import { DepartmentProvider } from './contexts/DepartmentContext';
+import { SelectedTodosProvider } from './contexts/SelectedTodosContext';
 
 // Components
 import Layout from './components/Layout';
@@ -69,7 +70,8 @@ function App() {
     <Router>
       <TeamProvider>
         <DepartmentProvider>
-          <div className="min-h-screen bg-background">
+          <SelectedTodosProvider>
+            <div className="min-h-screen bg-background">
           <Routes>
           {/* Public routes */}
           <Route path="/" element={!user ? <LandingPage /> : <Navigate to="/dashboard" />} />
@@ -118,6 +120,7 @@ function App() {
           <Route path="*" element={<Navigate to={user ? "/dashboard" : "/"} />} />
         </Routes>
           </div>
+          </SelectedTodosProvider>
         </DepartmentProvider>
       </TeamProvider>
     </Router>
