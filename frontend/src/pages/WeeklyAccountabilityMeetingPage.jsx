@@ -127,7 +127,7 @@ const WeeklyAccountabilityMeetingPage = () => {
       // For non-data sections, ensure loading is false
       setLoading(false);
     }
-  }, [activeSection, teamId]);
+  }, [activeSection, teamId, meetingStarted]); // Re-fetch when meeting starts to include completed todos
 
   // Auto-clear success messages after 3 seconds
   useEffect(() => {
@@ -395,8 +395,32 @@ const WeeklyAccountabilityMeetingPage = () => {
   const fetchTodosData = async () => {
     try {
       setLoading(true);
-      const response = await todosService.getTodos('incomplete', null, false, teamId);
-      setTodos(response.data.todos || []);
+      // During a meeting, fetch all todos (including completed ones from this week)
+      // Otherwise, only fetch incomplete todos
+      const status = meetingStarted ? 'all' : 'incomplete';
+      const response = await todosService.getTodos(status, null, false, teamId);
+      
+      // If meeting is active, filter to show only this week's todos
+      let todosList = response.data.todos || [];
+      if (meetingStarted) {
+        const oneWeekAgo = new Date();
+        oneWeekAgo.setDate(oneWeekAgo.getDate() - 7);
+        
+        todosList = todosList.filter(todo => {
+          // Show all incomplete todos
+          if (todo.status === 'incomplete') return true;
+          
+          // For completed todos, only show if completed within the last week
+          if (todo.completed_at) {
+            const completedDate = new Date(todo.completed_at);
+            return completedDate >= oneWeekAgo;
+          }
+          
+          return false;
+        });
+      }
+      
+      setTodos(todosList);
       setTeamMembers(response.data.teamMembers || []);
       setLoading(false);
     } catch (error) {
@@ -950,7 +974,7 @@ Team Members Present: ${teamMembers.length}
               <>
                 <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
                   <p className="text-blue-800 text-center">
-                    <span className="font-semibold">Weekly Check-in:</span> Team members report "Done" or "Not Done" for each to-do. Incomplete items can be moved to Issues if needed. High-performing teams typically complete 90% of their weekly to-dos.
+                    <span className="font-semibold">Weekly Check-in:</span> Team members report "Done" or "Not Done" for each to-do. Completed items show with a green checkmark and strikethrough. Incomplete items can be moved to Issues if needed. High-performing teams typically complete 90% of their weekly to-dos.
                   </p>
                 </div>
                 <TodosList
