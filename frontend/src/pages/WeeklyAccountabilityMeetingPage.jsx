@@ -417,7 +417,7 @@ const WeeklyAccountabilityMeetingPage = () => {
   const fetchTodaysTodos = async () => {
     try {
       setLoading(true);
-      const response = await todosService.getTodos('all', null, true, teamId);
+      const response = await todosService.getTodos(null, null, true, teamId);
       
       // Filter to only show todos created today
       const today = new Date();

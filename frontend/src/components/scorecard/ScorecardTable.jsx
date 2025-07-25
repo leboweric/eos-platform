@@ -297,8 +297,9 @@ const ScorecardTable = ({ metrics, weeklyScores, readOnly = false, onIssueCreate
                       const showCreateIssue = isCurrentWeek && score && !goalMet;
                       
                       // Debug current week detection
-                      if (index === 0 && metric === metrics[0]) {
-                        console.log('Week detection debug:', {
+                      if (metric === metrics[0]) {
+                        console.log('Scorecard week debug:', {
+                          metricName: metric.name,
                           weekDate,
                           index,
                           originalIndex,
@@ -307,7 +308,8 @@ const ScorecardTable = ({ metrics, weeklyScores, readOnly = false, onIssueCreate
                           weekDatesLength: weekDates.length,
                           score,
                           goalMet,
-                          showCreateIssue
+                          showCreateIssue,
+                          lastWeekIndex: weekDatesOriginal.length - 1
                         });
                       }
                       
