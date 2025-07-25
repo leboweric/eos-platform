@@ -14,6 +14,7 @@ import { issuesService } from '../services/issuesService';
 import { organizationService } from '../services/organizationService';
 import { getRevenueLabel } from '../utils/revenueUtils';
 import TodosList from '../components/todos/TodosList';
+import TodoDialog from '../components/todos/TodoDialog';
 import { useSelectedTodos } from '../contexts/SelectedTodosContext';
 import {
   Target,
@@ -41,6 +42,8 @@ const Dashboard = () => {
   const navigate = useNavigate();
   const [loading, setLoading] = useState(true);
   const [organization, setOrganization] = useState(null);
+  const [showTodoDialog, setShowTodoDialog] = useState(false);
+  const [editingTodo, setEditingTodo] = useState(null);
   const [predictions, setPredictions] = useState({
     revenue: { target: 0, current: 0 },
     profit: { target: 0, current: 0 },
@@ -51,6 +54,7 @@ const Dashboard = () => {
     priorities: [],
     todos: [],
     issues: [],
+    teamMembers: [],
     stats: {
       prioritiesCompleted: 0,
       totalPriorities: 0,
@@ -167,6 +171,7 @@ const Dashboard = () => {
         priorities: userPriorities.slice(0, 5), // Show first 5
         todos: userTodos.slice(0, 5), // Show first 5
         issues: shortTermIssues,
+        teamMembers: todosResponse.data.teamMembers || [],
         stats: {
           prioritiesCompleted: completedPriorities,
           totalPriorities: totalPriorities,
@@ -572,8 +577,11 @@ const Dashboard = () => {
             ) : (
               <TodosList
                 todos={dashboardData.todos}
-                onEdit={() => {}} // Dashboard is read-only
-                onDelete={() => {}} // Dashboard is read-only
+                onEdit={(todo) => {
+                  setEditingTodo(todo);
+                  setShowTodoDialog(true);
+                }}
+                onDelete={() => {}} // Keep delete disabled on dashboard
                 onUpdate={fetchDashboardData}
                 showCompleted={false}
               />
@@ -611,6 +619,24 @@ const Dashboard = () => {
           </CardContent>
         </Card>
       </div>
+
+      {/* Todo Dialog */}
+      <TodoDialog
+        open={showTodoDialog}
+        onOpenChange={setShowTodoDialog}
+        todo={editingTodo}
+        teamMembers={dashboardData.teamMembers || []}
+        onSave={async (todoData) => {
+          try {
+            await todosService.updateTodo(editingTodo.id, todoData);
+            await fetchDashboardData();
+            setShowTodoDialog(false);
+            setEditingTodo(null);
+          } catch (error) {
+            console.error('Failed to update todo:', error);
+          }
+        }}
+      />
     </div>
   );
 };
