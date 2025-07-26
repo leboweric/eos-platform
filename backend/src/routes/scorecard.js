@@ -31,6 +31,7 @@ router.get('/', getScorecard);
 // Metrics CRUD
 router.post('/metrics', createMetric);
 router.put('/metrics/reorder', updateMetricOrder);
+router.put('/metrics/move-to-group', moveMetricToGroup);
 router.put('/metrics/:metricId', updateMetric);
 router.delete('/metrics/:metricId', deleteMetric);
 router.get('/metrics/:metricId/history', getMetricHistory);
@@ -48,6 +49,5 @@ router.post('/groups', createGroup);
 router.put('/groups/reorder', updateGroupOrder);
 router.put('/groups/:groupId', updateGroup);
 router.delete('/groups/:groupId', deleteGroup);
-router.put('/metrics/move-to-group', moveMetricToGroup);
 
 export default router;
