@@ -42,31 +42,59 @@ export const concludeMeeting = async (req, res) => {
     console.log('Getting team members for teamId:', teamId);
     
     let attendeeEmails = [];
+    let teamMembersCount = 0;
     
     // Check if this is the leadership team
     if (teamId === '00000000-0000-0000-0000-000000000000') {
-      // For leadership team, get all users with is_leadership_member = true
+      // For leadership team, get all users in the organization
+      // In most cases, leadership meetings should include all organization members
+      // You can adjust this query based on your specific needs
       const leadershipResult = await db.query(
         `SELECT DISTINCT u.email, u.first_name, u.last_name 
          FROM users u
          WHERE u.organization_id = $1 
-         AND u.is_leadership_member = true
-         AND u.email IS NOT NULL`,
+         AND u.email IS NOT NULL
+         AND u.email != ''`,
         [organizationId]
       );
       attendeeEmails = leadershipResult.rows.map(row => row.email);
+      console.log('Leadership team query result:', leadershipResult.rows);
       console.log('Leadership team emails:', attendeeEmails);
     } else {
-      // For other teams, get team members
-      const teamMembersResult = await db.query(
-        `SELECT DISTINCT u.email, u.first_name, u.last_name 
-         FROM team_members tm
-         JOIN users u ON tm.user_id = u.id
-         WHERE tm.team_id = $1
-         AND u.email IS NOT NULL`,
+      // For other teams, first check if team_members table has entries
+      const teamCheckResult = await db.query(
+        `SELECT COUNT(*) as count FROM team_members WHERE team_id = $1`,
         [teamId]
       );
-      attendeeEmails = teamMembersResult.rows.map(row => row.email);
+      console.log('Team members count:', teamCheckResult.rows[0].count);
+      teamMembersCount = parseInt(teamCheckResult.rows[0].count);
+      
+      // If no team_members entries, try getting users by team_id directly
+      if (teamMembersCount === 0) {
+        const directTeamResult = await db.query(
+          `SELECT DISTINCT u.email, u.first_name, u.last_name 
+           FROM users u
+           WHERE u.team_id = $1
+           AND u.email IS NOT NULL
+           AND u.email != ''`,
+          [teamId]
+        );
+        attendeeEmails = directTeamResult.rows.map(row => row.email);
+        console.log('Direct team query result:', directTeamResult.rows);
+      } else {
+        // Use team_members table
+        const teamMembersResult = await db.query(
+          `SELECT DISTINCT u.email, u.first_name, u.last_name 
+           FROM team_members tm
+           JOIN users u ON tm.user_id = u.id
+           WHERE tm.team_id = $1
+           AND u.email IS NOT NULL
+           AND u.email != ''`,
+          [teamId]
+        );
+        attendeeEmails = teamMembersResult.rows.map(row => row.email);
+        console.log('Team members query result:', teamMembersResult.rows);
+      }
       console.log('Team member emails:', attendeeEmails);
     }
 
@@ -95,32 +123,48 @@ export const concludeMeeting = async (req, res) => {
       return `${secs}s`;
     };
 
-    // Get team member names for the email
+    // Get team member names for the email - reuse the emails we found
     let attendeeNames = [];
     if (teamId === '00000000-0000-0000-0000-000000000000') {
-      const leadershipNamesResult = await db.query(
+      // For leadership team, get all user names
+      const namesResult = await db.query(
         `SELECT DISTINCT u.first_name, u.last_name 
          FROM users u
          WHERE u.organization_id = $1 
-         AND u.is_leadership_member = true
+         AND u.email IS NOT NULL
+         AND u.email != ''
          ORDER BY u.first_name, u.last_name`,
         [organizationId]
       );
-      attendeeNames = leadershipNamesResult.rows.map(row => 
+      attendeeNames = namesResult.rows.map(row => 
         `${row.first_name || ''} ${row.last_name || ''}`.trim()
       );
     } else {
-      const teamNamesResult = await db.query(
-        `SELECT DISTINCT u.first_name, u.last_name 
-         FROM team_members tm
-         JOIN users u ON tm.user_id = u.id
-         WHERE tm.team_id = $1
-         ORDER BY u.first_name, u.last_name`,
-        [teamId]
-      );
-      attendeeNames = teamNamesResult.rows.map(row => 
-        `${row.first_name || ''} ${row.last_name || ''}`.trim()
-      );
+      // Match the logic used for emails above
+      if (teamMembersCount === 0) {
+        const namesResult = await db.query(
+          `SELECT DISTINCT u.first_name, u.last_name 
+           FROM users u
+           WHERE u.team_id = $1
+           ORDER BY u.first_name, u.last_name`,
+          [teamId]
+        );
+        attendeeNames = namesResult.rows.map(row => 
+          `${row.first_name || ''} ${row.last_name || ''}`.trim()
+        );
+      } else {
+        const namesResult = await db.query(
+          `SELECT DISTINCT u.first_name, u.last_name 
+           FROM team_members tm
+           JOIN users u ON tm.user_id = u.id
+           WHERE tm.team_id = $1
+           ORDER BY u.first_name, u.last_name`,
+          [teamId]
+        );
+        attendeeNames = namesResult.rows.map(row => 
+          `${row.first_name || ''} ${row.last_name || ''}`.trim()
+        );
+      }
     }
 
     // Format todos
