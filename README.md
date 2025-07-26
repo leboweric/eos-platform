@@ -1,4 +1,6 @@
 # Strategic Execution Platform - Version 1.0
+<!-- Railway deployment reset: 2025-01-26 11:10 PM -->
+<!-- Force deployment without scorecard groups -->
 
 A comprehensive strategic execution management platform built with Next.js, Node.js, and PostgreSQL. This platform provides all the tools needed to implement and manage proven business strategies for organizations and their teams.
 
