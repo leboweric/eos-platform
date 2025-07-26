@@ -585,7 +585,7 @@ const ScorecardPage = () => {
       <div className="max-w-full mx-auto p-6 space-y-6">
         <div className="flex items-center justify-between mb-8">
           <div>
-            <h1 className="text-4xl font-bold bg-gradient-to-r from-red-600 to-pink-600 bg-clip-text text-transparent">
+            <h1 className="text-4xl font-bold bg-gradient-to-r from-indigo-600 to-blue-600 bg-clip-text text-transparent">
               {selectedDepartment?.name || ''} Scorecard
             </h1>
             <p className="text-gray-600 mt-2 text-lg">Track your key metrics and measurables</p>
