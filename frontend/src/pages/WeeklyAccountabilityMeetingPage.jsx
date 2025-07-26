@@ -651,7 +651,7 @@ const WeeklyAccountabilityMeetingPage = () => {
           added: addedTodos
         },
         issues: issues.filter(i => i.updated_during_meeting || i.created_during_meeting),
-        notes: cascadingMessages.join('\n')
+        notes: cascadingMessage || ''
       };
 
       // Send meeting summary email
