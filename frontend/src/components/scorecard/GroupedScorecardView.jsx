@@ -32,6 +32,8 @@ const GroupedScorecardView = ({
   showTotal,
   weekOptions,
   monthOptions,
+  weekOptionsOriginal,
+  monthOptionsOriginal,
   selectedWeeks,
   selectedMonths
 }) => {
@@ -266,7 +268,7 @@ const GroupedScorecardView = ({
               <span className={`px-2 py-1 rounded ${
                 avgGoalMet ? 'text-green-800' : 'text-red-800'
               }`}>
-                {Math.ceil(average)}
+                {metric.value_type === 'number' ? Math.round(average) : formatValue(average, metric.value_type)}
               </span>
             );
           })()}
@@ -277,8 +279,10 @@ const GroupedScorecardView = ({
           const actual = parseFloat(value) || 0;
           const isOnTrack = actual >= goal;
           
-          // The last period in the list is always the current period
-          const isCurrentPeriod = periodIndex === periods.length - 1;
+          // Check if this is the current period based on original order
+          const originalOptions = isWeekly ? weekOptionsOriginal : monthOptionsOriginal;
+          const currentValue = originalOptions && originalOptions.length > 0 ? originalOptions[originalOptions.length - 1].value : null;
+          const isCurrentPeriod = currentValue && period.value === currentValue;
           
           return (
             <td key={period.value} className={`p-2 text-center w-20 ${isCurrentPeriod ? 'bg-indigo-50' : ''}`}>
@@ -347,8 +351,10 @@ const GroupedScorecardView = ({
             const currentYear = now.getFullYear().toString().slice(-2);
             const currentMonthLabel = `${currentMonth} ${currentYear}`;
             
-            // For both weekly and monthly views, the last item is the current period
-            const isCurrentPeriod = index === labels.length - 1
+            // Check if this is the current period based on original order
+            const originalOptions = isWeekly ? weekOptionsOriginal : monthOptionsOriginal;
+            const currentValue = originalOptions && originalOptions.length > 0 ? originalOptions[originalOptions.length - 1].value : null;
+            const isCurrentPeriod = currentValue && option.value === currentValue
             
             return (
               <th key={option.value} className={`text-center p-2 font-semibold text-xs w-20 ${

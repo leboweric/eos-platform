@@ -711,7 +711,9 @@ const ScorecardPage = () => {
                 onRefresh={fetchScorecard}
                 showTotal={showTotal}
                 weekOptions={weekOptions}
+                weekOptionsOriginal={weekDatesOriginal.map((date, index) => ({ value: date, label: weekLabelsOriginal[index] }))}
                 monthOptions={[]}
+                monthOptionsOriginal={[]}
                 selectedWeeks={weekDates.map(date => ({ value: date, label: date }))}
                 selectedMonths={[]}
               />
@@ -989,7 +991,9 @@ const ScorecardPage = () => {
                 onRefresh={fetchScorecard}
                 showTotal={showTotal}
                 weekOptions={[]}
+                weekOptionsOriginal={[]}
                 monthOptions={monthOptions}
+                monthOptionsOriginal={monthDatesOriginal.map((date, index) => ({ value: date, label: monthLabelsOriginal[index] }))}
                 selectedWeeks={[]}
                 selectedMonths={monthOptions}
               />
