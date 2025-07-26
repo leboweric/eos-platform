@@ -1,15 +1,24 @@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Target, AlertTriangle, Plus, BarChart3, Loader2 } from 'lucide-react';
-import { useState } from 'react';
+import { Target, AlertTriangle, Plus, BarChart3, Loader2, GripVertical } from 'lucide-react';
+import { useState, useEffect } from 'react';
 import { issuesService } from '../../services/issuesService';
 import { useAuthStore } from '../../stores/authStore';
+import { scorecardService } from '../../services/scorecardService';
 import MetricTrendChart from './MetricTrendChart';
 
-const ScorecardTable = ({ metrics, weeklyScores, readOnly = false, onIssueCreated, isRTL = false, showTotal = true, departmentId }) => {
+const ScorecardTable = ({ metrics, weeklyScores, readOnly = false, onIssueCreated, isRTL = false, showTotal = true, departmentId, onMetricsReorder }) => {
   const { user } = useAuthStore();
   const [creatingIssue, setCreatingIssue] = useState({});
   const [chartModal, setChartModal] = useState({ isOpen: false, metric: null, metricId: null });
+  const [draggedItem, setDraggedItem] = useState(null);
+  const [dragOverItem, setDragOverItem] = useState(null);
+  const [orderedMetrics, setOrderedMetrics] = useState(metrics);
+  const [isSaving, setIsSaving] = useState(false);
+  
+  useEffect(() => {
+    setOrderedMetrics(metrics);
+  }, [metrics]);
   // Get week start date for a given date (Monday)
   const getWeekStartDate = (date) => {
     const d = new Date(date);
@@ -157,23 +166,111 @@ const ScorecardTable = ({ metrics, weeklyScores, readOnly = false, onIssueCreate
     }
   };
 
+  const handleDragStart = (e, index) => {
+    setDraggedItem(index);
+    e.dataTransfer.effectAllowed = 'move';
+    e.currentTarget.style.opacity = '0.5';
+  };
+
+  const handleDragEnd = (e) => {
+    e.currentTarget.style.opacity = '';
+    setDraggedItem(null);
+    setDragOverItem(null);
+  };
+
+  const handleDragOver = (e) => {
+    e.preventDefault();
+    e.dataTransfer.dropEffect = 'move';
+  };
+
+  const handleDragEnter = (e, index) => {
+    if (draggedItem !== index) {
+      setDragOverItem(index);
+    }
+  };
+
+  const handleDragLeave = () => {
+    setDragOverItem(null);
+  };
+
+  const handleDrop = async (e, dropIndex) => {
+    e.preventDefault();
+    setDragOverItem(null);
+
+    if (draggedItem === null || draggedItem === dropIndex) {
+      return;
+    }
+
+    const draggedMetric = orderedMetrics[draggedItem];
+    const newMetrics = [...orderedMetrics];
+    
+    // Remove dragged item
+    newMetrics.splice(draggedItem, 1);
+    
+    // Insert at new position
+    newMetrics.splice(dropIndex, 0, draggedMetric);
+    
+    // Update local state
+    setOrderedMetrics(newMetrics);
+    
+    // Save new order to backend
+    try {
+      setIsSaving(true);
+      
+      // Create array with new display_order values
+      const metricsWithOrder = newMetrics.map((metric, index) => ({
+        id: metric.id,
+        display_order: index
+      }));
+      
+      await scorecardService.updateMetricOrder(
+        user.organizationId,
+        newMetrics[0].team_id || newMetrics[0].teamId,
+        metricsWithOrder
+      );
+      
+      // Call parent callback if provided
+      if (onMetricsReorder) {
+        onMetricsReorder(newMetrics);
+      }
+    } catch (error) {
+      console.error('Failed to save metric order:', error);
+      // Revert on error
+      setOrderedMetrics(metrics);
+      alert('Failed to save new order. Please try again.');
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
   return (
     <>
     <Card className="shadow-lg border-0">
       <CardHeader className="bg-gradient-to-r from-indigo-500 to-blue-500 text-white">
-        <CardTitle className="flex items-center text-xl">
-          <Target className="mr-2 h-6 w-6" />
-          Weekly Scorecard
-        </CardTitle>
-        <CardDescription className="text-indigo-100">
-          Track performance over the past 10 weeks
-        </CardDescription>
+        <div className="flex items-center justify-between">
+          <div>
+            <CardTitle className="flex items-center text-xl">
+              <Target className="mr-2 h-6 w-6" />
+              Weekly Scorecard
+            </CardTitle>
+            <CardDescription className="text-indigo-100">
+              Track performance over the past 10 weeks
+            </CardDescription>
+          </div>
+          {isSaving && (
+            <div className="flex items-center gap-2 text-white">
+              <Loader2 className="h-4 w-4 animate-spin" />
+              <span className="text-sm">Saving order...</span>
+            </div>
+          )}
+        </div>
       </CardHeader>
       <CardContent className="p-0">
         <div className="overflow-x-auto">
           <table className="w-full table-fixed">
             <thead className="bg-gray-50 border-b">
               <tr>
+                {!readOnly && <th className="text-center p-2 font-semibold text-gray-700 w-8"></th>}
                 <th className="text-center p-2 font-semibold text-gray-700 w-16">Owner</th>
                 <th className="text-left p-2 font-semibold text-gray-700 w-48">Metric</th>
                 <th className="text-center p-2 font-semibold text-gray-700 w-12">Chart</th>
@@ -213,13 +310,30 @@ const ScorecardTable = ({ metrics, weeklyScores, readOnly = false, onIssueCreate
             <tbody>
               {metrics.length === 0 ? (
                 <tr>
-                  <td colSpan={weekLabels.length + (showTotal ? 7 : 6) + (readOnly ? 0 : 1)} className="text-center p-8 text-gray-500">
+                  <td colSpan={weekLabels.length + (showTotal ? 7 : 6) + (readOnly ? 0 : 2)} className="text-center p-8 text-gray-500">
                     No metrics defined. {!readOnly && 'Click "Add Metric" to get started.'}
                   </td>
                 </tr>
               ) : (
-                metrics.map(metric => (
-                  <tr key={metric.id} className="border-b hover:bg-gray-50">
+                orderedMetrics.map((metric, index) => (
+                  <tr 
+                    key={metric.id} 
+                    className={`border-b hover:bg-gray-50 ${!readOnly ? 'cursor-move' : ''} ${
+                      dragOverItem === index ? 'bg-blue-50' : ''
+                    }`}
+                    draggable={!readOnly}
+                    onDragStart={(e) => !readOnly && handleDragStart(e, index)}
+                    onDragEnd={handleDragEnd}
+                    onDragOver={handleDragOver}
+                    onDragEnter={(e) => !readOnly && handleDragEnter(e, index)}
+                    onDragLeave={handleDragLeave}
+                    onDrop={(e) => !readOnly && handleDrop(e, index)}
+                  >
+                    {!readOnly && (
+                      <td className="p-2 text-center">
+                        <GripVertical className="h-4 w-4 text-gray-400" />
+                      </td>
+                    )}
                     <td className="p-2 text-center text-sm">{metric.ownerName || metric.owner || '-'}</td>
                     <td className="p-2 font-medium text-sm">{metric.name}</td>
                     <td className="p-2 text-center">

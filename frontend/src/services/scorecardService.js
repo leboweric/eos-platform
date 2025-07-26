@@ -11,6 +11,29 @@ const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3001/api/v1';
  * - published_by: ID of user who published
  */
 export const scorecardService = {
+  // Update metric order
+  updateMetricOrder: async (orgId, teamId, metrics) => {
+    const token = localStorage.getItem('accessToken');
+    const response = await fetch(
+      `${API_URL}/organizations/${orgId}/teams/${teamId}/scorecard/metrics/reorder`,
+      {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({ metrics }),
+      }
+    );
+    
+    if (!response.ok) {
+      throw new Error('Failed to update metric order');
+    }
+    
+    const data = await response.json();
+    return data;
+  },
+  
   // Get complete scorecard with metrics and scores
   getScorecard: async (orgId, teamId, departmentId = null) => {
     const token = localStorage.getItem('accessToken');

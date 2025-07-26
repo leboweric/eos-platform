@@ -74,7 +74,7 @@ export const getScorecard = async (req, res) => {
       FROM scorecard_metrics sm
       LEFT JOIN teams t ON sm.team_id = t.id
       WHERE sm.organization_id = $1 ${teamFilter}
-      ORDER BY sm.created_at ASC
+      ORDER BY sm.display_order ASC, sm.created_at ASC
     `;
     const queryParams = teamId ? [orgId, teamId] : [orgId];
     const metrics = await db.query(metricsQuery, queryParams);
@@ -148,10 +148,17 @@ export const createMetric = async (req, res) => {
     const hasComparisonOperator = await checkColumn('scorecard_metrics', 'comparison_operator');
     const hasDescription = await checkColumn('scorecard_metrics', 'description');
     
+    // Get the max display_order for this org/team
+    const maxOrderResult = await db.query(
+      'SELECT COALESCE(MAX(display_order), -1) as max_order FROM scorecard_metrics WHERE organization_id = $1 AND team_id = $2',
+      [orgId, teamId]
+    );
+    const nextOrder = maxOrderResult.rows[0].max_order + 1;
+    
     // Build insert query based on available columns
-    let columns = ['organization_id', 'team_id', 'name', 'goal', 'owner', 'type'];
-    let values = [orgId, teamId, name, goal, owner, type];
-    let placeholders = ['$1', '$2', '$3', '$4', '$5', '$6'];
+    let columns = ['organization_id', 'team_id', 'name', 'goal', 'owner', 'type', 'display_order'];
+    let values = [orgId, teamId, name, goal, owner, type, nextOrder];
+    let placeholders = ['$1', '$2', '$3', '$4', '$5', '$6', '$7'];
     
     if (hasValueType) {
       columns.push('value_type');
@@ -489,6 +496,52 @@ export const findScorecardData = async (req, res) => {
     res.status(500).json({
       success: false,
       message: 'Failed to find scorecard data'
+    });
+  }
+};
+
+// Update metric order
+export const updateMetricOrder = async (req, res) => {
+  try {
+    const { orgId, teamId } = req.params;
+    const { metrics } = req.body; // Array of { id, display_order }
+    
+    console.log('Updating metric order:', { orgId, teamId, metricsCount: metrics?.length });
+    
+    if (!metrics || !Array.isArray(metrics)) {
+      return res.status(400).json({
+        success: false,
+        message: 'Metrics array is required'
+      });
+    }
+    
+    // Start a transaction
+    await db.query('BEGIN');
+    
+    try {
+      // Update each metric's display_order
+      for (const metric of metrics) {
+        await db.query(
+          'UPDATE scorecard_metrics SET display_order = $1 WHERE id = $2 AND organization_id = $3',
+          [metric.display_order, metric.id, orgId]
+        );
+      }
+      
+      await db.query('COMMIT');
+      
+      res.json({
+        success: true,
+        message: 'Metric order updated successfully'
+      });
+    } catch (error) {
+      await db.query('ROLLBACK');
+      throw error;
+    }
+  } catch (error) {
+    console.error('Error updating metric order:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Failed to update metric order'
     });
   }
 };

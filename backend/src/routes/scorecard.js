@@ -8,7 +8,8 @@ import {
   updateScore,
   findScorecardData,
   getMetricHistory,
-  checkDuplicateScorecard
+  checkDuplicateScorecard,
+  updateMetricOrder
 } from '../controllers/scorecardController.js';
 
 const router = express.Router({ mergeParams: true });
@@ -21,6 +22,7 @@ router.get('/', getScorecard);
 
 // Metrics CRUD
 router.post('/metrics', createMetric);
+router.put('/metrics/reorder', updateMetricOrder);
 router.put('/metrics/:metricId', updateMetric);
 router.delete('/metrics/:metricId', deleteMetric);
 router.get('/metrics/:metricId/history', getMetricHistory);
