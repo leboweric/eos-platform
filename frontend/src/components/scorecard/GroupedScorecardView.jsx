@@ -266,7 +266,7 @@ const GroupedScorecardView = ({
               <span className={`px-2 py-1 rounded ${
                 avgGoalMet ? 'text-green-800' : 'text-red-800'
               }`}>
-                {formatValue(average, metric.value_type)}
+                {Math.ceil(average)}
               </span>
             );
           })()}
@@ -277,16 +277,8 @@ const GroupedScorecardView = ({
           const actual = parseFloat(value) || 0;
           const isOnTrack = actual >= goal;
           
-          // Check if this is the current period
-          const now = new Date();
-          const currentMonth = now.toLocaleString('default', { month: 'short' }).toUpperCase();
-          const currentYear = now.getFullYear().toString().slice(-2);
-          const currentMonthLabel = `${currentMonth} ${currentYear}`;
-          
-          const labels = isWeekly ? weekOptions : monthOptions;
-          const isCurrentPeriod = isWeekly 
-            ? period.value === weekOptions[weekOptions.length - 1]?.value
-            : labels[periodIndex]?.label === currentMonthLabel;
+          // The last period in the list is always the current period
+          const isCurrentPeriod = periodIndex === periods.length - 1;
           
           return (
             <td key={period.value} className={`p-2 text-center w-20 ${isCurrentPeriod ? 'bg-indigo-50' : ''}`}>
@@ -302,7 +294,7 @@ const GroupedScorecardView = ({
         })}
         {showTotal && (
           <td className="p-2 text-center font-semibold w-20 bg-gray-50">
-            {formatValue(Object.values(scores).reduce((sum, val) => sum + (parseFloat(val) || 0), 0), metric.value_type)}
+            {Math.round(Object.values(scores).reduce((sum, val) => sum + (parseFloat(val) || 0), 0))}
           </td>
         )}
         <td className="text-center p-2 w-12">
@@ -355,11 +347,8 @@ const GroupedScorecardView = ({
             const currentYear = now.getFullYear().toString().slice(-2);
             const currentMonthLabel = `${currentMonth} ${currentYear}`;
             
-            // For weekly view, last week is current
-            // For monthly view, match the current month label
-            const isCurrentPeriod = isWeekly 
-              ? periods[index] && periods[index].value === weekOptions[weekOptions.length - 1]?.value
-              : option.label === currentMonthLabel
+            // For both weekly and monthly views, the last item is the current period
+            const isCurrentPeriod = index === labels.length - 1
             
             return (
               <th key={option.value} className={`text-center p-2 font-semibold text-xs w-20 ${
