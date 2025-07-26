@@ -23,7 +23,8 @@ import {
   Save,
   X,
   ArrowLeftRight,
-  BarChart3
+  BarChart3,
+  GripVertical
 } from 'lucide-react';
 import MetricTrendChart from '../components/scorecard/MetricTrendChart';
 
@@ -46,6 +47,11 @@ const ScorecardPage = () => {
   const [scoreInputValue, setScoreInputValue] = useState('');
   const [users, setUsers] = useState([]);
   const [chartModal, setChartModal] = useState({ isOpen: false, metric: null, metricId: null });
+  
+  // Drag and drop state
+  const [draggedItem, setDraggedItem] = useState(null);
+  const [dragOverItem, setDragOverItem] = useState(null);
+  const [isSavingOrder, setIsSavingOrder] = useState(false);
   const [isRTL, setIsRTL] = useState(() => {
     // Load RTL preference from localStorage
     const saved = localStorage.getItem('scorecardRTL');
@@ -353,6 +359,89 @@ const ScorecardPage = () => {
     }
   };
 
+  // Drag and drop handlers
+  const handleDragStart = (e, type, index) => {
+    setDraggedItem({ type, index });
+    e.dataTransfer.effectAllowed = 'move';
+    e.currentTarget.style.opacity = '0.5';
+  };
+
+  const handleDragEnd = (e) => {
+    e.currentTarget.style.opacity = '';
+    setDraggedItem(null);
+    setDragOverItem(null);
+  };
+
+  const handleDragOver = (e) => {
+    e.preventDefault();
+    e.dataTransfer.dropEffect = 'move';
+  };
+
+  const handleDragEnter = (e, type, index) => {
+    if (draggedItem && draggedItem.type === type && draggedItem.index !== index) {
+      setDragOverItem({ type, index });
+    }
+  };
+
+  const handleDragLeave = () => {
+    setDragOverItem(null);
+  };
+
+  const handleDrop = async (e, type, dropIndex) => {
+    e.preventDefault();
+    setDragOverItem(null);
+
+    if (!draggedItem || draggedItem.type !== type || draggedItem.index === dropIndex) {
+      return;
+    }
+
+    const filteredMetrics = metrics.filter(m => m.type === type);
+    const draggedMetric = filteredMetrics[draggedItem.index];
+    
+    // Create new metrics array with updated order
+    const newFilteredMetrics = [...filteredMetrics];
+    newFilteredMetrics.splice(draggedItem.index, 1);
+    newFilteredMetrics.splice(dropIndex, 0, draggedMetric);
+    
+    // Update the full metrics array
+    const otherMetrics = metrics.filter(m => m.type !== type);
+    const newMetrics = [...otherMetrics, ...newFilteredMetrics].sort((a, b) => {
+      if (a.type !== b.type) {
+        return a.type === 'weekly' ? -1 : 1;
+      }
+      return 0;
+    });
+    
+    setMetrics(newMetrics);
+    
+    // Save new order to backend
+    try {
+      setIsSavingOrder(true);
+      setSuccess('Saving new order...');
+      
+      // Create array with new display_order values for this type
+      const metricsWithOrder = newFilteredMetrics.map((metric, index) => ({
+        id: metric.id,
+        display_order: index
+      }));
+      
+      await scorecardService.updateMetricOrder(
+        user.organizationId,
+        selectedDepartment?.id || user.teamId,
+        metricsWithOrder
+      );
+      
+      setSuccess('Order saved successfully');
+    } catch (error) {
+      console.error('Failed to save metric order:', error);
+      setError('Failed to save new order');
+      // Revert on error
+      fetchScorecardData();
+    } finally {
+      setIsSavingOrder(false);
+    }
+  };
+
   // Get week start date for a given date
   const getWeekStartDate = (date) => {
     const d = new Date(date);
@@ -567,6 +656,7 @@ const ScorecardPage = () => {
                   <table className="w-full table-fixed">
                 <thead className="bg-gray-50 border-b">
                   <tr>
+                    <th className="text-center p-2 font-semibold text-gray-700 w-8"></th>
                     <th className="text-center p-2 font-semibold text-gray-700 w-16">Owner</th>
                     <th className="text-left p-2 font-semibold text-gray-700 w-48">Metric</th>
                     <th className="text-center p-2 font-semibold text-gray-700 w-12">Chart</th>
@@ -608,15 +698,30 @@ const ScorecardPage = () => {
                   {console.log('TBODY RENDER: metrics.length === 0 is', metrics.length === 0)}
                   {metrics.filter(m => m.type === 'weekly').length === 0 ? (
                     <tr>
-                      <td colSpan={weekLabels.length + (showTotal ? 7 : 6)} className="text-center p-8 text-gray-500">
+                      <td colSpan={weekLabels.length + (showTotal ? 8 : 7)} className="text-center p-8 text-gray-500">
                         No weekly metrics defined. Click "Add Metric" and select Weekly frequency to get started.
                       </td>
                     </tr>
                   ) : (
-                    metrics.filter(m => m.type === 'weekly').map(metric => {
+                    metrics.filter(m => m.type === 'weekly').map((metric, index) => {
                       console.log('Rendering metric:', metric.id, metric.name);
+                      const isBeingDragged = draggedItem?.type === 'weekly' && draggedItem?.index === index;
+                      const isDragOver = dragOverItem?.type === 'weekly' && dragOverItem?.index === index;
                       return (
-                      <tr key={metric.id} className="border-b hover:bg-gray-50">
+                      <tr 
+                        key={metric.id} 
+                        className={`border-b hover:bg-gray-50 cursor-move ${isDragOver ? 'bg-blue-50' : ''}`}
+                        draggable
+                        onDragStart={(e) => handleDragStart(e, 'weekly', index)}
+                        onDragEnd={handleDragEnd}
+                        onDragOver={handleDragOver}
+                        onDragEnter={(e) => handleDragEnter(e, 'weekly', index)}
+                        onDragLeave={handleDragLeave}
+                        onDrop={(e) => handleDrop(e, 'weekly', index)}
+                      >
+                        <td className="p-2 text-center">
+                          <GripVertical className="h-4 w-4 text-gray-400" />
+                        </td>
                         <td className="p-2 text-center text-sm">{metric.ownerName || metric.owner}</td>
                         <td className="p-2 font-medium text-sm">{metric.name}</td>
                         <td className="p-2 text-center">
@@ -807,6 +912,7 @@ const ScorecardPage = () => {
               <table className="w-full table-fixed">
                 <thead className="bg-gray-50 border-b">
                   <tr>
+                    <th className="text-center p-2 font-semibold text-gray-700 w-8"></th>
                     <th className="text-center p-2 font-semibold text-gray-700 w-16">Owner</th>
                     <th className="text-left p-2 font-semibold text-gray-700 w-48">Metric</th>
                     <th className="text-center p-2 font-semibold text-gray-700 w-12">Chart</th>
@@ -845,13 +951,28 @@ const ScorecardPage = () => {
                 <tbody>
                   {metrics.filter(m => m.type === 'monthly').length === 0 ? (
                     <tr>
-                      <td colSpan={monthLabels.length + (showTotal ? 7 : 6)} className="text-center p-8 text-gray-500">
+                      <td colSpan={monthLabels.length + (showTotal ? 8 : 7)} className="text-center p-8 text-gray-500">
                         No monthly metrics defined. Click "Add Metric" and select Monthly frequency to get started.
                       </td>
                     </tr>
                   ) : (
-                    metrics.filter(m => m.type === 'monthly').map(metric => (
-                      <tr key={metric.id} className="border-b hover:bg-gray-50">
+                    metrics.filter(m => m.type === 'monthly').map((metric, index) => {
+                      const isDragOver = dragOverItem?.type === 'monthly' && dragOverItem?.index === index;
+                      return (
+                      <tr 
+                        key={metric.id} 
+                        className={`border-b hover:bg-gray-50 cursor-move ${isDragOver ? 'bg-blue-50' : ''}`}
+                        draggable
+                        onDragStart={(e) => handleDragStart(e, 'monthly', index)}
+                        onDragEnd={handleDragEnd}
+                        onDragOver={handleDragOver}
+                        onDragEnter={(e) => handleDragEnter(e, 'monthly', index)}
+                        onDragLeave={handleDragLeave}
+                        onDrop={(e) => handleDrop(e, 'monthly', index)}
+                      >
+                        <td className="p-2 text-center">
+                          <GripVertical className="h-4 w-4 text-gray-400" />
+                        </td>
                         <td className="p-2 text-center text-sm">{metric.ownerName || metric.owner}</td>
                         <td className="p-2 font-medium text-sm">{metric.name}</td>
                         <td className="p-2 text-center">
@@ -1027,7 +1148,8 @@ const ScorecardPage = () => {
                           </div>
                         </td>
                       </tr>
-                    ))
+                    );
+                    })
                   )}
                 </tbody>
               </table>
