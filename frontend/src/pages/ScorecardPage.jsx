@@ -517,6 +517,17 @@ const ScorecardPage = () => {
   const { labels: monthLabelsOriginal, monthDates: monthDatesOriginal } = getMonthLabels();
   const monthLabels = isRTL ? [...monthLabelsOriginal].reverse() : monthLabelsOriginal;
   const monthDates = isRTL ? [...monthDatesOriginal].reverse() : monthDatesOriginal;
+  
+  // Create options for GroupedScorecardView
+  const weekOptions = weekDates.map((date, index) => ({
+    value: date,
+    label: weekLabels[index]
+  }));
+  
+  const monthOptions = monthDates.map((date, index) => ({
+    value: date,
+    label: monthLabels[index]
+  }));
 
   // Helper functions for value formatting and goal achievement
   const formatValue = (value, valueType) => {
