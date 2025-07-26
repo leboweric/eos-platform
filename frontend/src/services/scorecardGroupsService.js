@@ -2,16 +2,18 @@ const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3001/api/v1';
 
 export const scorecardGroupsService = {
   // Get all groups for a team
-  getGroups: async (orgId, teamId) => {
+  getGroups: async (orgId, teamId, type = null) => {
     const token = localStorage.getItem('accessToken');
-    const response = await fetch(
-      `${API_URL}/organizations/${orgId}/teams/${teamId}/scorecard/groups`,
-      {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      }
-    );
+    const url = new URL(`${API_URL}/organizations/${orgId}/teams/${teamId}/scorecard/groups`);
+    if (type) {
+      url.searchParams.append('type', type);
+    }
+    
+    const response = await fetch(url.toString(), {
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    });
     
     if (!response.ok) {
       throw new Error('Failed to fetch groups');

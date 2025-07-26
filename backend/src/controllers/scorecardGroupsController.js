@@ -4,13 +4,21 @@ import db from '../config/database.js';
 export const getGroups = async (req, res) => {
   try {
     const { orgId, teamId } = req.params;
+    const { type } = req.query; // weekly, monthly, or both
     
-    const result = await db.query(
-      `SELECT * FROM scorecard_groups 
-       WHERE organization_id = $1 AND team_id = $2 
-       ORDER BY display_order ASC, created_at ASC`,
-      [orgId, teamId]
-    );
+    let query = `SELECT * FROM scorecard_groups 
+                 WHERE organization_id = $1 AND team_id = $2`;
+    const params = [orgId, teamId];
+    
+    // Filter by type if specified
+    if (type && type !== 'both') {
+      query += ` AND (type = $3 OR type = 'both')`;
+      params.push(type);
+    }
+    
+    query += ` ORDER BY display_order ASC, created_at ASC`;
+    
+    const result = await db.query(query, params);
     
     res.json({
       success: true,
@@ -29,7 +37,7 @@ export const getGroups = async (req, res) => {
 export const createGroup = async (req, res) => {
   try {
     const { orgId, teamId } = req.params;
-    const { name, description, color = '#3B82F6' } = req.body;
+    const { name, description, color = '#3B82F6', type = 'both' } = req.body;
     
     // Get the max display_order for this org/team
     const maxOrderResult = await db.query(
@@ -39,10 +47,10 @@ export const createGroup = async (req, res) => {
     const nextOrder = maxOrderResult.rows[0].max_order + 1;
     
     const result = await db.query(
-      `INSERT INTO scorecard_groups (organization_id, team_id, name, description, color, display_order)
-       VALUES ($1, $2, $3, $4, $5, $6)
+      `INSERT INTO scorecard_groups (organization_id, team_id, name, description, color, display_order, type)
+       VALUES ($1, $2, $3, $4, $5, $6, $7)
        RETURNING *`,
-      [orgId, teamId, name, description, color, nextOrder]
+      [orgId, teamId, name, description, color, nextOrder, type]
     );
     
     res.json({

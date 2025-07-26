@@ -703,6 +703,7 @@ const ScorecardPage = () => {
                 teamMembers={users}
                 orgId={user?.organizationId}
                 teamId={selectedDepartment?.id || LEADERSHIP_TEAM_ID}
+                type="weekly"
                 onMetricUpdate={handleEditMetric}
                 onScoreUpdate={(metric, period, value) => handleScoreEdit(metric, period)}
                 onMetricDelete={handleDeleteMetric}
@@ -980,6 +981,7 @@ const ScorecardPage = () => {
                 teamMembers={users}
                 orgId={user?.organizationId}
                 teamId={selectedDepartment?.id || LEADERSHIP_TEAM_ID}
+                type="monthly"
                 onMetricUpdate={handleEditMetric}
                 onScoreUpdate={(metric, period, value) => handleScoreEdit(metric, period)}
                 onMetricDelete={handleDeleteMetric}

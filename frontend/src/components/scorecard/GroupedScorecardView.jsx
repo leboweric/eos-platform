@@ -23,6 +23,7 @@ const GroupedScorecardView = ({
   teamMembers,
   orgId,
   teamId,
+  type, // 'weekly' or 'monthly'
   onMetricUpdate,
   onScoreUpdate,
   onMetricDelete,
@@ -46,7 +47,7 @@ const GroupedScorecardView = ({
 
   useEffect(() => {
     loadGroups();
-  }, [orgId, teamId]);
+  }, [orgId, teamId, type]);
 
   useEffect(() => {
     organizeMetricsByGroup();
@@ -54,7 +55,7 @@ const GroupedScorecardView = ({
 
   const loadGroups = async () => {
     try {
-      const fetchedGroups = await scorecardGroupsService.getGroups(orgId, teamId);
+      const fetchedGroups = await scorecardGroupsService.getGroups(orgId, teamId, type);
       setGroups(fetchedGroups);
       
       // Initialize expanded state for each group
@@ -79,7 +80,8 @@ const GroupedScorecardView = ({
     try {
       const newGroup = await scorecardGroupsService.createGroup(orgId, teamId, {
         name: newGroupName,
-        color: newGroupColor
+        color: newGroupColor,
+        type: type || 'both'
       });
       setGroups([...groups, newGroup]);
       setNewGroupName('');
@@ -395,9 +397,11 @@ const GroupedScorecardView = ({
       <Dialog open={groupDialog.isOpen} onOpenChange={(open) => !open && setGroupDialog({ isOpen: false, group: null })}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>{groupDialog.group ? 'Edit Group' : 'Create New Group'}</DialogTitle>
+            <DialogTitle>{groupDialog.group ? 'Edit Group' : `Create New ${type === 'monthly' ? 'Monthly' : 'Weekly'} Group`}</DialogTitle>
             <DialogDescription>
-              {groupDialog.group ? 'Update the group details' : 'Create a new group to organize your metrics'}
+              {groupDialog.group 
+                ? 'Update the group details' 
+                : `Create a new group to organize your ${type === 'monthly' ? 'monthly' : 'weekly'} metrics. This group will only appear in the ${type === 'monthly' ? 'Monthly' : 'Weekly'} view.`}
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-4">
