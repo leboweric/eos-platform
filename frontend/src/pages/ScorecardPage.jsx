@@ -24,9 +24,21 @@ import {
   X,
   ArrowLeftRight,
   BarChart3,
-  GripVertical
+  GripVertical,
+  ChevronDown,
+  ChevronRight,
+  MoreVertical,
+  Palette
 } from 'lucide-react';
 import MetricTrendChart from '../components/scorecard/MetricTrendChart';
+import GroupDialog from '../components/scorecard/GroupDialog';
+import GroupedScorecardView from '../components/scorecard/GroupedScorecardView';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
 
 const ScorecardPage = () => {
   const { user } = useAuthStore();
@@ -38,6 +50,7 @@ const ScorecardPage = () => {
   
   // Scorecard data
   const [metrics, setMetrics] = useState([]);
+  const [groups, setGroups] = useState([]);
   const [weeklyScores, setWeeklyScores] = useState({});
   const [editingMetric, setEditingMetric] = useState(null);
   const [showMetricDialog, setShowMetricDialog] = useState(false);
@@ -47,6 +60,11 @@ const ScorecardPage = () => {
   const [scoreInputValue, setScoreInputValue] = useState('');
   const [users, setUsers] = useState([]);
   const [chartModal, setChartModal] = useState({ isOpen: false, metric: null, metricId: null });
+  
+  // Group management
+  const [showGroupDialog, setShowGroupDialog] = useState(false);
+  const [editingGroup, setEditingGroup] = useState(null);
+  const [expandedGroups, setExpandedGroups] = useState({});
   
   // Drag and drop state
   const [draggedItem, setDraggedItem] = useState(null);
@@ -72,6 +90,7 @@ const ScorecardPage = () => {
     goal: '',
     ownerId: '',
     ownerName: '',
+    groupId: '',
     type: 'weekly', // weekly, monthly, quarterly
     valueType: 'number', // number, currency, percentage
     comparisonOperator: 'greater_equal' // greater_equal, less_equal, equal
@@ -118,6 +137,7 @@ const ScorecardPage = () => {
       if (response && response.data) {
         console.log('Response has data wrapper:', response.data);
         setMetrics(response.data.metrics || []);
+        setGroups(response.data.groups || []);
         setWeeklyScores(response.data.weeklyScores || {});
         setMonthlyScores(response.data.monthlyScores || {});
         setUsers(response.data.teamMembers || []);
@@ -139,7 +159,7 @@ const ScorecardPage = () => {
   };
 
 
-  const handleAddMetric = () => {
+  const handleAddMetric = (groupId = null) => {
     setEditingMetric(null);
     setMetricForm({
       name: '',
@@ -147,6 +167,7 @@ const ScorecardPage = () => {
       goal: '',
       ownerId: '',
       ownerName: '',
+      groupId: groupId || '',
       type: activeTab === 'monthly' ? 'monthly' : 'weekly',
       valueType: 'number',
       comparisonOperator: 'greater_equal'
@@ -163,6 +184,7 @@ const ScorecardPage = () => {
       goal: metric.goal,
       ownerId: metric.ownerId || '',
       ownerName: metric.owner || metric.ownerName || '',
+      groupId: metric.group_id || '',
       type: metric.type || 'weekly',
       valueType: metric.value_type || 'number',
       comparisonOperator: metric.comparison_operator || 'greater_equal'
@@ -195,7 +217,8 @@ const ScorecardPage = () => {
         owner: metricForm.ownerName, // Backend expects 'owner' field with the name
         type: metricForm.type,
         valueType: metricForm.valueType,
-        comparisonOperator: metricForm.comparisonOperator
+        comparisonOperator: metricForm.comparisonOperator,
+        groupId: metricForm.groupId || null
       };
       
       console.log('Saving metric with data:', metricData);
@@ -526,6 +549,88 @@ const ScorecardPage = () => {
     }
   };
 
+  // Group management functions
+  const handleSaveGroup = async (groupData) => {
+    try {
+      setSaving(true);
+      setError(null);
+      
+      const orgId = localStorage.getItem('impersonatedOrgId') || user?.organizationId || user?.organization_id;
+      const teamId = selectedDepartment?.id || (isLeadershipMember ? LEADERSHIP_TEAM_ID : null);
+      
+      if (!orgId || !teamId) {
+        throw new Error('No organization or team ID found');
+      }
+      
+      if (editingGroup) {
+        await scorecardService.updateGroup(orgId, teamId, editingGroup.id, groupData);
+        setSuccess('Group updated successfully');
+      } else {
+        await scorecardService.createGroup(orgId, teamId, groupData);
+        setSuccess('Group created successfully');
+      }
+      
+      setShowGroupDialog(false);
+      setEditingGroup(null);
+      await fetchScorecard();
+    } catch (error) {
+      console.error('Failed to save group:', error);
+      setError('Failed to save group');
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const handleDeleteGroup = async (groupId) => {
+    if (!confirm('Are you sure you want to delete this group? All metrics in this group will become ungrouped.')) return;
+    
+    try {
+      setSaving(true);
+      setError(null);
+      
+      const orgId = localStorage.getItem('impersonatedOrgId') || user?.organizationId || user?.organization_id;
+      const teamId = selectedDepartment?.id || (isLeadershipMember ? LEADERSHIP_TEAM_ID : null);
+      
+      if (!orgId || !teamId) {
+        throw new Error('No organization or team ID found');
+      }
+      
+      await scorecardService.deleteGroup(orgId, teamId, groupId);
+      setSuccess('Group deleted successfully');
+      await fetchScorecard();
+    } catch (error) {
+      console.error('Failed to delete group:', error);
+      setError(error.message || 'Failed to delete group');
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const toggleGroupExpanded = (groupId) => {
+    setExpandedGroups(prev => ({
+      ...prev,
+      [groupId]: !prev[groupId]
+    }));
+  };
+
+  const handleEditGroup = (group) => {
+    setEditingGroup(group);
+    setShowGroupDialog(true);
+  };
+
+  const handleChartClick = (metric) => {
+    setChartModal({ isOpen: true, metric, metricId: metric.id });
+  };
+
+  // Get metrics by group
+  const getMetricsByGroup = (groupId, type = null) => {
+    return metrics.filter(m => {
+      const matchesGroup = groupId ? m.group_id === groupId : !m.group_id;
+      const matchesType = type ? m.type === type : true;
+      return matchesGroup && matchesType;
+    });
+  };
+
   const formatGoal = (goal, valueType, comparisonOperator) => {
     if (!goal && goal !== 0) return 'No goal';
     
@@ -613,6 +718,13 @@ const ScorecardPage = () => {
             >
               <ArrowLeftRight className="h-4 w-4" />
             </Button>
+            <Button onClick={() => {
+              setEditingGroup(null);
+              setShowGroupDialog(true);
+            }} className="bg-gray-600 hover:bg-gray-700 text-white">
+              <Plus className="mr-2 h-4 w-4" />
+              Add Group
+            </Button>
             <Button onClick={handleAddMetric} className="bg-indigo-600 hover:bg-indigo-700 text-white">
               <Plus className="mr-2 h-4 w-4" />
               Add Metric
@@ -641,521 +753,69 @@ const ScorecardPage = () => {
           </TabsList>
           
           <TabsContent value="weekly">
-            <Card className="shadow-lg border-0">
-              <CardHeader className="bg-gradient-to-r from-indigo-500 to-blue-500 text-white">
-                <CardTitle className="flex items-center text-xl">
-                  <Target className="mr-2 h-6 w-6" />
-                  Weekly Scorecard
-                </CardTitle>
-                <CardDescription className="text-indigo-100">
-                  Track performance over the past 10 weeks
-                </CardDescription>
-              </CardHeader>
-              <CardContent className="p-0">
-                <div className="overflow-x-auto">
-                  <table className="w-full table-fixed">
-                <thead className="bg-gray-50 border-b">
-                  <tr>
-                    <th className="text-center p-2 font-semibold text-gray-700 w-8"></th>
-                    <th className="text-center p-2 font-semibold text-gray-700 w-16">Owner</th>
-                    <th className="text-left p-2 font-semibold text-gray-700 w-48">Metric</th>
-                    <th className="text-center p-2 font-semibold text-gray-700 w-12">Chart</th>
-                    <th className="text-center p-2 font-semibold text-gray-700 w-20">Goal</th>
-                    {isRTL && (
-                      <>
-                        {showTotal && <th className="text-center p-2 font-semibold text-gray-700 w-20 bg-gray-100">Total</th>}
-                        <th className="text-center p-2 font-semibold text-gray-700 w-20 bg-gray-100">Average</th>
-                      </>
-                    )}
-                    {weekLabels.map((label, index) => {
-                      // Current week is always the last in original order (most recent date)
-                      const originalIndex = isRTL ? weekLabels.length - 1 - index : index;
-                      const isCurrentWeek = originalIndex === weekLabelsOriginal.length - 1;
-                      return (
-                        <th key={weekDates[index]} className={`text-center p-2 font-semibold text-xs w-16 ${
-                          isCurrentWeek ? 'text-indigo-700 bg-indigo-50' : 'text-gray-700'
-                        }`}>
-                          <div className="flex flex-col items-center">
-                            <span className="text-xs font-normal text-gray-500 mb-1">
-                              {isCurrentWeek ? 'Current' : ''}
-                            </span>
-                            <span>{label}</span>
-                          </div>
-                        </th>
-                      );
-                    })}
-                    {!isRTL && (
-                      <>
-                        <th className="text-center p-2 font-semibold text-gray-700 w-20 bg-gray-100">Average</th>
-                        {showTotal && <th className="text-center p-2 font-semibold text-gray-700 w-20 bg-gray-100">Total</th>}
-                      </>
-                    )}
-                    <th className="text-center p-2 font-semibold text-gray-700 w-20">Actions</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {console.log('TBODY RENDER: metrics.length =', metrics.length, 'metrics =', metrics)}
-                  {console.log('TBODY RENDER: metrics.length === 0 is', metrics.length === 0)}
-                  {metrics.filter(m => m.type === 'weekly').length === 0 ? (
-                    <tr>
-                      <td colSpan={weekLabels.length + (showTotal ? 8 : 7)} className="text-center p-8 text-gray-500">
-                        No weekly metrics defined. Click "Add Metric" and select Weekly frequency to get started.
-                      </td>
-                    </tr>
-                  ) : (
-                    metrics.filter(m => m.type === 'weekly').map((metric, index) => {
-                      console.log('Rendering metric:', metric.id, metric.name);
-                      const isBeingDragged = draggedItem?.type === 'weekly' && draggedItem?.index === index;
-                      const isDragOver = dragOverItem?.type === 'weekly' && dragOverItem?.index === index;
-                      return (
-                      <tr 
-                        key={metric.id} 
-                        className={`border-b hover:bg-gray-50 cursor-move ${isDragOver ? 'bg-blue-50' : ''}`}
-                        draggable
-                        onDragStart={(e) => handleDragStart(e, 'weekly', index)}
-                        onDragEnd={handleDragEnd}
-                        onDragOver={handleDragOver}
-                        onDragEnter={(e) => handleDragEnter(e, 'weekly', index)}
-                        onDragLeave={handleDragLeave}
-                        onDrop={(e) => handleDrop(e, 'weekly', index)}
-                      >
-                        <td className="p-2 text-center">
-                          <GripVertical className="h-4 w-4 text-gray-400" />
-                        </td>
-                        <td className="p-2 text-center text-sm">{metric.ownerName || metric.owner}</td>
-                        <td className="p-2 font-medium text-sm">{metric.name}</td>
-                        <td className="p-2 text-center">
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            className="h-8 w-8 p-0 hover:bg-blue-100"
-                            onClick={() => setChartModal({ isOpen: true, metric, metricId: metric.id })}
-                            title="View 3-week moving trend chart"
-                          >
-                            <BarChart3 className="h-4 w-4 text-blue-600" />
-                          </Button>
-                        </td>
-                        <td className="p-2 text-center font-semibold text-indigo-600 text-sm">{formatGoal(metric.goal, metric.value_type, metric.comparison_operator)}</td>
-                        
-                        {/* Total and Average columns for RTL */}
-                        {isRTL && (
-                          <>
-                            {/* Total column */}
-                            {showTotal && (
-                              <td className="p-2 text-center bg-gray-50 font-semibold text-sm">
-                              {(() => {
-                                // Always use original order for calculations
-                                const scores = weekDatesOriginal
-                                  .map(weekDate => weeklyScores[metric.id]?.[weekDate])
-                                  .filter(score => score !== undefined && score !== null && score !== '');
-                                
-                                if (scores.length === 0) return '-';
-                                
-                                const total = scores.reduce((sum, score) => sum + parseFloat(score), 0);
-                                
-                                return (
-                                  <span className="text-gray-700">
-                                    {formatValue(total, metric.value_type)}
-                                  </span>
-                                );
-                              })()}
-                              </td>
-                            )}
-                            {/* Average column */}
-                            <td className="p-2 text-center bg-gray-50 font-semibold text-sm">
-                              {(() => {
-                                // Always use original order for calculations
-                                const scores = weekDatesOriginal
-                                  .map(weekDate => weeklyScores[metric.id]?.[weekDate])
-                                  .filter(score => score !== undefined && score !== null && score !== '');
-                                
-                                if (scores.length === 0) return '-';
-                                
-                                const average = scores.reduce((sum, score) => sum + parseFloat(score), 0) / scores.length;
-                                const avgGoalMet = isGoalMet(average, metric.goal, metric.comparison_operator);
-                                
-                                return (
-                                  <span className={`px-2 py-1 rounded ${
-                                    avgGoalMet ? 'text-green-800' : 'text-red-800'
-                                  }`}>
-                                    {metric.value_type === 'number' ? Math.round(average) : formatValue(average, metric.value_type)}
-                                  </span>
-                                );
-                              })()}
-                            </td>
-                          </>
-                        )}
-                        
-                        {/* Week columns */}
-                        {weekDates.map((weekDate, index) => {
-                          const score = weeklyScores[metric.id]?.[weekDate];
-                          const goalMet = score && isGoalMet(score, metric.goal, metric.comparison_operator);
-                          
-                          return (
-                            <td key={weekDate} className="p-2 text-center group">
-                              <button
-                                className={`w-full h-8 rounded text-center font-medium transition-colors cursor-pointer relative group ${
-                                  score
-                                    ? goalMet
-                                      ? 'bg-green-100 text-green-800 hover:bg-green-200'
-                                      : 'bg-red-100 text-red-800 hover:bg-red-200'
-                                    : 'text-gray-400 hover:bg-gray-100'
-                                }`}
-                                onClick={() => handleScoreEdit(metric, weekDate)}
-                              >
-                                <div className="flex items-center justify-center gap-1">
-                                  {score ? (
-                                    <>
-                                      <span className="text-sm">{formatValue(score, metric.value_type)}</span>
-                                      <Edit className="h-3 w-3 opacity-0 group-hover:opacity-100 transition-opacity" />
-                                    </>
-                                  ) : (
-                                    <span className="text-sm">-</span>
-                                  )}
-                                </div>
-                              </button>
-                            </td>
-                          );
-                        })}
-                        {/* Average, Total and Actions columns for LTR */}
-                        {!isRTL && (
-                          <>
-                            {/* Average column */}
-                            <td className="p-2 text-center bg-gray-50 font-semibold text-sm">
-                              {(() => {
-                                // Always use original order for calculations
-                                const scores = weekDatesOriginal
-                                  .map(weekDate => weeklyScores[metric.id]?.[weekDate])
-                                  .filter(score => score !== undefined && score !== null && score !== '');
-                                
-                                if (scores.length === 0) return '-';
-                                
-                                const average = scores.reduce((sum, score) => sum + parseFloat(score), 0) / scores.length;
-                                const avgGoalMet = isGoalMet(average, metric.goal, metric.comparison_operator);
-                                
-                                return (
-                                  <span className={`px-2 py-1 rounded ${
-                                    avgGoalMet ? 'text-green-800' : 'text-red-800'
-                                  }`}>
-                                    {metric.value_type === 'number' ? Math.round(average) : formatValue(average, metric.value_type)}
-                                  </span>
-                                );
-                              })()}
-                            </td>
-                            {/* Total column */}
-                            {showTotal && (
-                              <td className="p-2 text-center bg-gray-50 font-semibold text-sm">
-                              {(() => {
-                                // Always use original order for calculations
-                                const scores = weekDatesOriginal
-                                  .map(weekDate => weeklyScores[metric.id]?.[weekDate])
-                                  .filter(score => score !== undefined && score !== null && score !== '');
-                                
-                                if (scores.length === 0) return '-';
-                                
-                                const total = scores.reduce((sum, score) => sum + parseFloat(score), 0);
-                                
-                                return (
-                                  <span className="text-gray-700">
-                                    {formatValue(total, metric.value_type)}
-                                  </span>
-                                );
-                              })()}
-                              </td>
-                            )}
-                          </>
-                        )}
-                        {/* Actions column - always on far right */}
-                        <td className="p-2 text-center">
-                              <div className="flex justify-center space-x-1">
-                                <Button
-                                  variant="ghost"
-                                  size="sm"
-                                  className="h-6 w-6 p-0"
-                                  onClick={() => handleEditMetric(metric)}
-                                >
-                                  <Edit className="h-3 w-3" />
-                                </Button>
-                                <Button
-                                  variant="ghost"
-                                  size="sm"
-                                  className="h-6 w-6 p-0"
-                                  onClick={() => handleDeleteMetric(metric.id)}
-                                >
-                                  <Trash2 className="h-3 w-3" />
-                                </Button>
-                              </div>
-                        </td>
-                      </tr>
-                    )})
-                  )}
-                </tbody>
-              </table>
-            </div>
-          </CardContent>
-        </Card>
-      </TabsContent>
+            <GroupedScorecardView
+              groups={groups}
+              metrics={metrics}
+              scores={weeklyScores}
+              type="weekly"
+              weekDates={weekDates}
+              weekLabels={weekLabels}
+              isRTL={isRTL}
+              showTotal={showTotal}
+              expandedGroups={expandedGroups}
+              onToggleGroup={toggleGroupExpanded}
+              onAddMetric={handleAddMetric}
+              onEditMetric={handleEditMetric}
+              onDeleteMetric={handleDeleteMetric}
+              onEditGroup={handleEditGroup}
+              onDeleteGroup={handleDeleteGroup}
+              onScoreEdit={handleScoreEdit}
+              onChartClick={handleChartClick}
+              formatValue={formatValue}
+              formatGoal={formatGoal}
+              isGoalMet={isGoalMet}
+              getMetricsByGroup={getMetricsByGroup}
+            />
+          </TabsContent>
       
       <TabsContent value="monthly">
-        <Card className="shadow-lg border-0">
-          <CardHeader className="bg-gradient-to-r from-indigo-500 to-blue-500 text-white">
-            <CardTitle className="flex items-center text-xl">
-              <Target className="mr-2 h-6 w-6" />
-              Monthly Scorecard
-            </CardTitle>
-            <CardDescription className="text-indigo-100">
-              Track performance over the past 12 months
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="p-0">
-            <div className="overflow-x-auto">
-              <table className="w-full table-fixed">
-                <thead className="bg-gray-50 border-b">
-                  <tr>
-                    <th className="text-center p-2 font-semibold text-gray-700 w-8"></th>
-                    <th className="text-center p-2 font-semibold text-gray-700 w-16">Owner</th>
-                    <th className="text-left p-2 font-semibold text-gray-700 w-48">Metric</th>
-                    <th className="text-center p-2 font-semibold text-gray-700 w-12">Chart</th>
-                    <th className="text-center p-2 font-semibold text-gray-700 w-20">Goal</th>
-                    {isRTL && (
-                      <>
-                        {showTotal && <th className="text-center p-2 font-semibold text-gray-700 w-20 bg-gray-100">Total</th>}
-                        <th className="text-center p-2 font-semibold text-gray-700 w-20 bg-gray-100">Average</th>
-                      </>
-                    )}
-                    {monthLabels.map((label, index) => {
-                      const originalIndex = isRTL ? monthLabels.length - 1 - index : index;
-                      const isCurrentMonth = originalIndex === monthLabelsOriginal.length - 1;
-                      return (
-                        <th key={monthDates[index]} className={`text-center p-2 font-semibold text-xs w-16 ${
-                          isCurrentMonth ? 'text-indigo-700 bg-indigo-50' : 'text-gray-700'
-                        }`}>
-                          <div className="flex flex-col items-center">
-                            <span className="text-xs font-normal text-gray-500 mb-1">
-                              {isCurrentMonth ? 'Current' : ''}
-                            </span>
-                            <span>{label}</span>
-                          </div>
-                        </th>
-                      );
-                    })}
-                    {!isRTL && (
-                      <>
-                        <th className="text-center p-2 font-semibold text-gray-700 w-20 bg-gray-100">Average</th>
-                        {showTotal && <th className="text-center p-2 font-semibold text-gray-700 w-20 bg-gray-100">Total</th>}
-                      </>
-                    )}
-                    <th className="text-center p-2 font-semibold text-gray-700 w-20">Actions</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {metrics.filter(m => m.type === 'monthly').length === 0 ? (
-                    <tr>
-                      <td colSpan={monthLabels.length + (showTotal ? 8 : 7)} className="text-center p-8 text-gray-500">
-                        No monthly metrics defined. Click "Add Metric" and select Monthly frequency to get started.
-                      </td>
-                    </tr>
-                  ) : (
-                    metrics.filter(m => m.type === 'monthly').map((metric, index) => {
-                      const isDragOver = dragOverItem?.type === 'monthly' && dragOverItem?.index === index;
-                      return (
-                      <tr 
-                        key={metric.id} 
-                        className={`border-b hover:bg-gray-50 cursor-move ${isDragOver ? 'bg-blue-50' : ''}`}
-                        draggable
-                        onDragStart={(e) => handleDragStart(e, 'monthly', index)}
-                        onDragEnd={handleDragEnd}
-                        onDragOver={handleDragOver}
-                        onDragEnter={(e) => handleDragEnter(e, 'monthly', index)}
-                        onDragLeave={handleDragLeave}
-                        onDrop={(e) => handleDrop(e, 'monthly', index)}
-                      >
-                        <td className="p-2 text-center">
-                          <GripVertical className="h-4 w-4 text-gray-400" />
-                        </td>
-                        <td className="p-2 text-center text-sm">{metric.ownerName || metric.owner}</td>
-                        <td className="p-2 font-medium text-sm">{metric.name}</td>
-                        <td className="p-2 text-center">
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            className="h-8 w-8 p-0 hover:bg-blue-100"
-                            onClick={() => setChartModal({ isOpen: true, metric, metricId: metric.id })}
-                            title="View 3-month moving trend chart"
-                          >
-                            <BarChart3 className="h-4 w-4 text-blue-600" />
-                          </Button>
-                        </td>
-                        <td className="p-2 text-center font-semibold text-indigo-600 text-sm">{formatGoal(metric.goal, metric.value_type, metric.comparison_operator)}</td>
-                        
-                        {/* Total and Average columns for RTL */}
-                        {isRTL && (
-                          <>
-                            {/* Total column */}
-                            {showTotal && (
-                              <td className="p-2 text-center bg-gray-50 font-semibold text-sm">
-                              {(() => {
-                                const scores = monthDatesOriginal
-                                  .map(monthDate => monthlyScores[metric.id]?.[monthDate])
-                                  .filter(score => score !== undefined && score !== null && score !== '');
-                                
-                                if (scores.length === 0) return '-';
-                                
-                                const total = scores.reduce((sum, score) => sum + parseFloat(score), 0);
-                                
-                                return (
-                                  <span className="text-gray-700">
-                                    {formatValue(total, metric.value_type)}
-                                  </span>
-                                );
-                              })()}
-                              </td>
-                            )}
-                            {/* Average column */}
-                            <td className="p-2 text-center bg-gray-50 font-semibold text-sm">
-                              {(() => {
-                                const scores = monthDatesOriginal
-                                  .map(monthDate => monthlyScores[metric.id]?.[monthDate])
-                                  .filter(score => score !== undefined && score !== null && score !== '');
-                                
-                                if (scores.length === 0) return '-';
-                                
-                                const average = scores.reduce((sum, score) => sum + parseFloat(score), 0) / scores.length;
-                                const avgGoalMet = isGoalMet(average, metric.goal, metric.comparison_operator);
-                                
-                                return (
-                                  <span className={`px-2 py-1 rounded ${
-                                    avgGoalMet ? 'text-green-800' : 'text-red-800'
-                                  }`}>
-                                    {metric.value_type === 'number' ? Math.round(average) : formatValue(average, metric.value_type)}
-                                  </span>
-                                );
-                              })()}
-                            </td>
-                          </>
-                        )}
-                        
-                        {/* Month columns */}
-                        {monthDates.map((monthDate) => {
-                          const score = monthlyScores[metric.id]?.[monthDate];
-                          const goalMet = score && isGoalMet(score, metric.goal, metric.comparison_operator);
-                          
-                          return (
-                            <td key={monthDate} className="p-2 text-center group">
-                              <button
-                                className={`w-full h-8 rounded text-center font-medium transition-colors cursor-pointer relative group ${
-                                  score
-                                    ? goalMet
-                                      ? 'bg-green-100 text-green-800 hover:bg-green-200'
-                                      : 'bg-red-100 text-red-800 hover:bg-red-200'
-                                    : 'text-gray-400 hover:bg-gray-100'
-                                }`}
-                                onClick={() => {
-                                  const currentValue = monthlyScores[metric.id] && monthlyScores[metric.id][monthDate] 
-                                    ? Math.round(parseFloat(monthlyScores[metric.id][monthDate])) 
-                                    : '';
-                                  
-                                  setScoreDialogData({
-                                    metricId: metric.id,
-                                    weekDate: monthDate,
-                                    metricName: metric.name,
-                                    currentValue: currentValue,
-                                    scoreType: 'monthly'
-                                  });
-                                  setScoreInputValue(currentValue.toString());
-                                  setShowScoreDialog(true);
-                                }}
-                              >
-                                <div className="flex items-center justify-center gap-1">
-                                  {score ? (
-                                    <>
-                                      <span className="text-sm">{formatValue(score, metric.value_type)}</span>
-                                      <Edit className="h-3 w-3 opacity-0 group-hover:opacity-100 transition-opacity" />
-                                    </>
-                                  ) : (
-                                    <span className="text-sm">-</span>
-                                  )}
-                                </div>
-                              </button>
-                            </td>
-                          );
-                        })}
-                        {/* Average, Total and Actions columns for LTR */}
-                        {!isRTL && (
-                          <>
-                            {/* Average column */}
-                            <td className="p-2 text-center bg-gray-50 font-semibold text-sm">
-                              {(() => {
-                                const scores = monthDatesOriginal
-                                  .map(monthDate => monthlyScores[metric.id]?.[monthDate])
-                                  .filter(score => score !== undefined && score !== null && score !== '');
-                                
-                                if (scores.length === 0) return '-';
-                                
-                                const average = scores.reduce((sum, score) => sum + parseFloat(score), 0) / scores.length;
-                                const avgGoalMet = isGoalMet(average, metric.goal, metric.comparison_operator);
-                                
-                                return (
-                                  <span className={`px-2 py-1 rounded ${
-                                    avgGoalMet ? 'text-green-800' : 'text-red-800'
-                                  }`}>
-                                    {metric.value_type === 'number' ? Math.round(average) : formatValue(average, metric.value_type)}
-                                  </span>
-                                );
-                              })()}
-                            </td>
-                            {/* Total column */}
-                            {showTotal && (
-                              <td className="p-2 text-center bg-gray-50 font-semibold text-sm">
-                              {(() => {
-                                const scores = monthDatesOriginal
-                                  .map(monthDate => monthlyScores[metric.id]?.[monthDate])
-                                  .filter(score => score !== undefined && score !== null && score !== '');
-                                
-                                if (scores.length === 0) return '-';
-                                
-                                const total = scores.reduce((sum, score) => sum + parseFloat(score), 0);
-                                
-                                return (
-                                  <span className="text-gray-700">
-                                    {formatValue(total, metric.value_type)}
-                                  </span>
-                                );
-                              })()}
-                              </td>
-                            )}
-                          </>
-                        )}
-                        {/* Actions column - always on far right */}
-                        <td className="p-2 text-center">
-                          <div className="flex justify-center space-x-1">
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              className="h-6 w-6 p-0"
-                              onClick={() => handleEditMetric(metric)}
-                            >
-                              <Edit className="h-3 w-3" />
-                            </Button>
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              className="h-6 w-6 p-0"
-                              onClick={() => handleDeleteMetric(metric.id)}
-                            >
-                              <Trash2 className="h-3 w-3" />
-                            </Button>
-                          </div>
-                        </td>
-                      </tr>
-                    );
-                    })
-                  )}
-                </tbody>
-              </table>
-            </div>
-          </CardContent>
-        </Card>
+        <GroupedScorecardView
+          groups={groups}
+          metrics={metrics}
+          scores={monthlyScores}
+          type="monthly"
+          weekDates={monthDates}
+          weekLabels={monthLabels}
+          isRTL={isRTL}
+          showTotal={showTotal}
+          expandedGroups={expandedGroups}
+          onToggleGroup={toggleGroupExpanded}
+          onAddMetric={handleAddMetric}
+          onEditMetric={handleEditMetric}
+          onDeleteMetric={handleDeleteMetric}
+          onEditGroup={handleEditGroup}
+          onDeleteGroup={handleDeleteGroup}
+          onScoreEdit={(metric, date) => {
+            const currentValue = monthlyScores[metric.id] && monthlyScores[metric.id][date] 
+              ? Math.round(parseFloat(monthlyScores[metric.id][date])) 
+              : '';
+            
+            setScoreDialogData({
+              metricId: metric.id,
+              weekDate: date,
+              metricName: metric.name,
+              currentValue: currentValue,
+              scoreType: 'monthly'
+            });
+            setScoreInputValue(currentValue.toString());
+            setShowScoreDialog(true);
+          }}
+          onChartClick={handleChartClick}
+          formatValue={formatValue}
+          formatGoal={formatGoal}
+          isGoalMet={isGoalMet}
+          getMetricsByGroup={getMetricsByGroup}
+        />
       </TabsContent>
     </Tabs>
 
@@ -1271,6 +931,25 @@ const ScorecardPage = () => {
                   </SelectContent>
                 </Select>
               </div>
+              <div>
+                <Label htmlFor="metric-group">Group (Optional)</Label>
+                <Select
+                  value={metricForm.groupId || ''}
+                  onValueChange={(value) => setMetricForm(prev => ({ ...prev, groupId: value }))}
+                >
+                  <SelectTrigger id="metric-group">
+                    <SelectValue placeholder="No group" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="">No group</SelectItem>
+                    {groups.map(group => (
+                      <SelectItem key={group.id} value={group.id}>
+                        {group.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
             </div>
             <DialogFooter>
               <Button variant="outline" onClick={() => setShowMetricDialog(false)}>
@@ -1332,6 +1011,15 @@ const ScorecardPage = () => {
         metricId={chartModal.metricId}
         orgId={user?.organizationId}
         teamId={selectedDepartment?.id}
+      />
+      
+      {/* Group Dialog */}
+      <GroupDialog
+        open={showGroupDialog}
+        onOpenChange={setShowGroupDialog}
+        group={editingGroup}
+        onSave={handleSaveGroup}
+        loading={saving}
       />
     </div>
   );
