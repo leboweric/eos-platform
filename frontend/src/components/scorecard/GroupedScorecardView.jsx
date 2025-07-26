@@ -54,7 +54,7 @@ const GroupedScorecardView = ({
       case 'percentage':
         return `${Math.round(value)}%`;
       case 'currency':
-        return `$${parseFloat(value).toLocaleString()}`;
+        return `$${Math.round(value).toLocaleString()}`;
       case 'decimal':
         return parseFloat(value).toFixed(2);
       default:
