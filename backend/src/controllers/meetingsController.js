@@ -18,8 +18,9 @@ export const concludeMeeting = async (req, res) => {
 
     const userId = req.user.id;
     const organizationId = req.user.organization_id || req.user.organizationId;
+    const teamId = req.params.teamId;
 
-    console.log('Concluding meeting:', { meetingType, duration, rating, organizationId });
+    console.log('Concluding meeting:', { meetingType, duration, rating, organizationId, teamId });
 
     // Get organization details
     const orgResult = await db.query(
@@ -38,7 +39,6 @@ export const concludeMeeting = async (req, res) => {
     const userName = `${user?.first_name || ''} ${user?.last_name || ''}`.trim();
 
     // Get team members' emails
-    const teamId = req.params.teamId;
     console.log('Getting team members for teamId:', teamId);
     
     let attendeeEmails = [];
