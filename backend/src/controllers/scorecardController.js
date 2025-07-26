@@ -64,9 +64,8 @@ export const getScorecard = async (req, res) => {
     if (hasComparisonOperator) {
       selectColumns += ', sm.comparison_operator';
     }
-    if (hasDescription) {
-      selectColumns += ', sm.description';
-    }
+    // Always include description - the column should exist from migration 028
+    selectColumns += ', sm.description';
     if (hasGroupId) {
       selectColumns += ', sm.group_id, sm.display_order';
     }
@@ -177,7 +176,8 @@ export const createMetric = async (req, res) => {
       values.push(comparisonOperator);
       placeholders.push(`$${values.length}`);
     }
-    if (hasDescription && description !== undefined) {
+    // Always include description
+    if (description !== undefined) {
       columns.push('description');
       values.push(description);
       placeholders.push(`$${values.length}`);
@@ -234,7 +234,8 @@ export const updateMetric = async (req, res) => {
       values.push(comparisonOperator);
       setClauses.push(`comparison_operator = $${values.length}`);
     }
-    if (hasDescription && description !== undefined) {
+    // Always include description
+    if (description !== undefined) {
       values.push(description);
       setClauses.push(`description = $${values.length}`);
     }
