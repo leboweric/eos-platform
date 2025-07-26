@@ -62,6 +62,38 @@ const GroupedScorecardView = ({
     }
   };
 
+  // Format goal with comparison operator
+  const formatGoal = (goal, valueType, comparisonOperator) => {
+    const formattedValue = formatValue(goal, valueType);
+    
+    switch (comparisonOperator) {
+      case 'greater_equal':
+        return `≥ ${formattedValue}`;
+      case 'less_equal':
+        return `≤ ${formattedValue}`;
+      case 'equal':
+        return `= ${formattedValue}`;
+      default:
+        return `≥ ${formattedValue}`; // Default to >= if not specified
+    }
+  };
+
+  // Check if goal is met based on comparison operator
+  const isGoalMet = (actual, goal, comparisonOperator) => {
+    const actualVal = parseFloat(actual) || 0;
+    const goalVal = parseFloat(goal) || 0;
+    
+    switch (comparisonOperator) {
+      case 'less_equal':
+        return actualVal <= goalVal;
+      case 'equal':
+        return actualVal === goalVal;
+      case 'greater_equal':
+      default:
+        return actualVal >= goalVal;
+    }
+  };
+
   useEffect(() => {
     loadGroups();
   }, [orgId, teamId, type]);
@@ -255,14 +287,14 @@ const GroupedScorecardView = ({
             <BarChart3 className="h-4 w-4 text-blue-600" />
           </Button>
         </td>
-        <td className="text-center p-2 w-20">{formatValue(metric.goal, metric.value_type)}</td>
+        <td className="text-center p-2 w-20 font-semibold text-indigo-600 text-sm">{formatGoal(metric.goal, metric.value_type, metric.comparison_operator)}</td>
         {/* Average column */}
         <td className="p-2 text-center bg-gray-50 font-semibold text-sm w-20">
           {(() => {
             const scoreValues = Object.values(scores).filter(v => v !== '' && v !== null && v !== undefined);
             if (scoreValues.length === 0) return '-';
             const average = scoreValues.reduce((sum, val) => sum + parseFloat(val), 0) / scoreValues.length;
-            const avgGoalMet = average >= parseFloat(metric.goal);
+            const avgGoalMet = isGoalMet(average, metric.goal, metric.comparison_operator);
             
             return (
               <span className={`px-2 py-1 rounded ${
@@ -277,7 +309,7 @@ const GroupedScorecardView = ({
           const value = scores[period.value] || '';
           const goal = parseFloat(metric.goal) || 0;
           const actual = parseFloat(value) || 0;
-          const isOnTrack = actual >= goal;
+          const isOnTrack = isGoalMet(actual, metric.goal, metric.comparison_operator);
           
           // Check if this is the current period based on original order
           const originalOptions = isWeekly ? weekOptionsOriginal : monthOptionsOriginal;
