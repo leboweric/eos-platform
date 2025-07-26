@@ -53,6 +53,9 @@ export const getScorecard = async (req, res) => {
     const hasComparisonOperator = await checkColumn('scorecard_metrics', 'comparison_operator');
     const hasDescription = await checkColumn('scorecard_metrics', 'description');
     
+    // Check if group_id exists
+    const hasGroupId = await checkColumn('scorecard_metrics', 'group_id');
+    
     // Build query based on available columns
     let selectColumns = 'sm.id, sm.name, sm.goal, sm.owner, sm.type, sm.created_at, sm.updated_at, sm.team_id, t.name as team_name';
     if (hasValueType) {
@@ -63,6 +66,9 @@ export const getScorecard = async (req, res) => {
     }
     if (hasDescription) {
       selectColumns += ', sm.description';
+    }
+    if (hasGroupId) {
+      selectColumns += ', sm.group_id, sm.display_order';
     }
     
     // Filter by specific team ID from request

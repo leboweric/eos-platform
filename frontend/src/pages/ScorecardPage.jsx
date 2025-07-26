@@ -27,6 +27,7 @@ import {
   GripVertical
 } from 'lucide-react';
 import MetricTrendChart from '../components/scorecard/MetricTrendChart';
+import GroupedScorecardView from '../components/scorecard/GroupedScorecardView';
 
 const ScorecardPage = () => {
   const { user } = useAuthStore();
@@ -47,6 +48,9 @@ const ScorecardPage = () => {
   const [scoreInputValue, setScoreInputValue] = useState('');
   const [users, setUsers] = useState([]);
   const [chartModal, setChartModal] = useState({ isOpen: false, metric: null, metricId: null });
+  const [useGroupsView, setUseGroupsView] = useState(() => {
+    return localStorage.getItem('scorecardUseGroups') === 'true';
+  });
   
   // Drag and drop state
   const [draggedItem, setDraggedItem] = useState(null);
@@ -152,6 +156,10 @@ const ScorecardPage = () => {
       comparisonOperator: 'greater_equal'
     });
     setShowMetricDialog(true);
+  };
+
+  const handleChartOpen = (metric) => {
+    setChartModal({ isOpen: true, metric: metric, metricId: metric.id });
   };
 
   const handleEditMetric = (metric) => {
@@ -613,6 +621,17 @@ const ScorecardPage = () => {
             >
               <ArrowLeftRight className="h-4 w-4" />
             </Button>
+            <Button 
+              onClick={() => {
+                const newValue = !useGroupsView;
+                setUseGroupsView(newValue);
+                localStorage.setItem('scorecardUseGroups', newValue.toString());
+              }} 
+              variant="outline"
+              title={useGroupsView ? "Switch to table view" : "Switch to groups view"}
+            >
+              {useGroupsView ? "Table View" : "Groups View"}
+            </Button>
             <Button onClick={handleAddMetric} className="bg-indigo-600 hover:bg-indigo-700 text-white">
               <Plus className="mr-2 h-4 w-4" />
               Add Metric
@@ -641,6 +660,25 @@ const ScorecardPage = () => {
           </TabsList>
           
           <TabsContent value="weekly">
+            {useGroupsView ? (
+              <GroupedScorecardView
+                metrics={weeklyMetrics}
+                weeklyScores={weeklyScores}
+                monthlyScores={monthlyScores}
+                teamMembers={users}
+                orgId={user?.organization_id}
+                teamId={selectedDepartment?.id || LEADERSHIP_TEAM_ID}
+                onMetricUpdate={handleEditMetric}
+                onScoreUpdate={(metric, period, value) => handleScoreEdit(metric, period)}
+                onMetricDelete={handleDeleteMetric}
+                onChartOpen={handleChartOpen}
+                showTotal={showTotal}
+                weekOptions={weekOptions}
+                monthOptions={[]}
+                selectedWeeks={weekDates.map(date => ({ value: date, label: date }))}
+                selectedMonths={[]}
+              />
+            ) : (
             <Card className="shadow-lg border-0">
               <CardHeader className="bg-gradient-to-r from-indigo-500 to-blue-500 text-white">
                 <CardTitle className="flex items-center text-xl">
@@ -894,9 +932,29 @@ const ScorecardPage = () => {
             </div>
           </CardContent>
         </Card>
+            )}
       </TabsContent>
       
       <TabsContent value="monthly">
+        {useGroupsView ? (
+              <GroupedScorecardView
+                metrics={monthlyMetrics}
+                weeklyScores={weeklyScores}
+                monthlyScores={monthlyScores}
+                teamMembers={users}
+                orgId={user?.organization_id}
+                teamId={selectedDepartment?.id || LEADERSHIP_TEAM_ID}
+                onMetricUpdate={handleEditMetric}
+                onScoreUpdate={(metric, period, value) => handleScoreEdit(metric, period)}
+                onMetricDelete={handleDeleteMetric}
+                onChartOpen={handleChartOpen}
+                showTotal={showTotal}
+                weekOptions={[]}
+                monthOptions={monthOptions}
+                selectedWeeks={[]}
+                selectedMonths={monthOptions}
+              />
+            ) : (
         <Card className="shadow-lg border-0">
           <CardHeader className="bg-gradient-to-r from-indigo-500 to-blue-500 text-white">
             <CardTitle className="flex items-center text-xl">
@@ -1156,6 +1214,7 @@ const ScorecardPage = () => {
             </div>
           </CardContent>
         </Card>
+            )}
       </TabsContent>
     </Tabs>
 

@@ -1,0 +1,358 @@
+import { useState, useEffect } from 'react';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { 
+  ChevronDown, 
+  ChevronRight, 
+  Plus, 
+  Edit, 
+  Trash2, 
+  GripVertical,
+  BarChart3 
+} from 'lucide-react';
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Label } from '@/components/ui/label';
+import { scorecardGroupsService } from '../../services/scorecardGroupsService';
+import { scorecardService } from '../../services/scorecardService';
+
+const GroupedScorecardView = ({ 
+  metrics, 
+  weeklyScores, 
+  monthlyScores,
+  teamMembers,
+  orgId,
+  teamId,
+  onMetricUpdate,
+  onScoreUpdate,
+  onMetricDelete,
+  onChartOpen,
+  showTotal,
+  weekOptions,
+  monthOptions,
+  selectedWeeks,
+  selectedMonths
+}) => {
+  const [groups, setGroups] = useState([]);
+  const [ungroupedMetrics, setUngroupedMetrics] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [groupDialog, setGroupDialog] = useState({ isOpen: false, group: null });
+  const [newGroupName, setNewGroupName] = useState('');
+  const [newGroupColor, setNewGroupColor] = useState('#3B82F6');
+  const [expandedGroups, setExpandedGroups] = useState({});
+
+  useEffect(() => {
+    loadGroups();
+  }, [orgId, teamId]);
+
+  useEffect(() => {
+    organizeMetricsByGroup();
+  }, [metrics, groups]);
+
+  const loadGroups = async () => {
+    try {
+      const fetchedGroups = await scorecardGroupsService.getGroups(orgId, teamId);
+      setGroups(fetchedGroups);
+      
+      // Initialize expanded state for each group
+      const expanded = {};
+      fetchedGroups.forEach(group => {
+        expanded[group.id] = group.is_expanded !== false;
+      });
+      setExpandedGroups(expanded);
+    } catch (error) {
+      console.error('Failed to load groups:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const organizeMetricsByGroup = () => {
+    const ungrouped = metrics.filter(metric => !metric.group_id);
+    setUngroupedMetrics(ungrouped);
+  };
+
+  const handleCreateGroup = async () => {
+    try {
+      const newGroup = await scorecardGroupsService.createGroup(orgId, teamId, {
+        name: newGroupName,
+        color: newGroupColor
+      });
+      setGroups([...groups, newGroup]);
+      setNewGroupName('');
+      setNewGroupColor('#3B82F6');
+      setGroupDialog({ isOpen: false, group: null });
+    } catch (error) {
+      console.error('Failed to create group:', error);
+    }
+  };
+
+  const handleUpdateGroup = async (groupId, updates) => {
+    try {
+      const updatedGroup = await scorecardGroupsService.updateGroup(orgId, teamId, groupId, updates);
+      setGroups(groups.map(g => g.id === groupId ? updatedGroup : g));
+    } catch (error) {
+      console.error('Failed to update group:', error);
+    }
+  };
+
+  const handleDeleteGroup = async (groupId) => {
+    if (!confirm('Are you sure you want to delete this group? Metrics will be moved to ungrouped.')) {
+      return;
+    }
+    
+    try {
+      await scorecardGroupsService.deleteGroup(orgId, teamId, groupId);
+      setGroups(groups.filter(g => g.id !== groupId));
+      // Reload metrics to reflect ungrouping
+      window.location.reload();
+    } catch (error) {
+      console.error('Failed to delete group:', error);
+    }
+  };
+
+  const handleMoveMetricToGroup = async (metricId, groupId) => {
+    try {
+      await scorecardGroupsService.moveMetricToGroup(orgId, teamId, metricId, groupId);
+      // Reload to reflect changes
+      window.location.reload();
+    } catch (error) {
+      console.error('Failed to move metric:', error);
+    }
+  };
+
+  const toggleGroupExpanded = async (groupId) => {
+    const newExpanded = !expandedGroups[groupId];
+    setExpandedGroups({ ...expandedGroups, [groupId]: newExpanded });
+    
+    // Update in backend
+    try {
+      await scorecardGroupsService.updateGroup(orgId, teamId, groupId, {
+        is_expanded: newExpanded
+      });
+    } catch (error) {
+      console.error('Failed to update group expanded state:', error);
+    }
+  };
+
+  const renderMetricRow = (metric, index) => {
+    const isWeekly = metric.type === 'weekly';
+    const scores = isWeekly ? weeklyScores[metric.id] || {} : monthlyScores[metric.id] || {};
+    const periods = isWeekly ? selectedWeeks : selectedMonths;
+    
+    return (
+      <tr key={metric.id} className="border-b hover:bg-gray-50">
+        <td className="p-2">
+          <GripVertical className="h-4 w-4 text-gray-400 cursor-move" />
+        </td>
+        <td className="p-2 font-medium">{metric.name}</td>
+        <td className="p-2 text-center">{metric.goal}</td>
+        <td className="p-2">
+          {teamMembers.find(m => m.id === metric.owner)?.name || 'Unassigned'}
+        </td>
+        {periods.map((period) => {
+          const value = scores[period.value] || '';
+          const goal = parseFloat(metric.goal) || 0;
+          const actual = parseFloat(value) || 0;
+          const isOnTrack = actual >= goal;
+          
+          return (
+            <td key={period.value} className="p-2 text-center">
+              <button
+                onClick={() => onScoreUpdate(metric, period.value, value)}
+                className={`w-full px-2 py-1 rounded text-sm font-medium transition-colors
+                  ${value ? (isOnTrack ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800') : 'bg-gray-100 text-gray-600 hover:bg-gray-200'}`}
+              >
+                {value || '-'}
+              </button>
+            </td>
+          );
+        })}
+        {showTotal && (
+          <td className="p-2 text-center font-semibold">
+            {Object.values(scores).reduce((sum, val) => sum + (parseFloat(val) || 0), 0).toFixed(1)}
+          </td>
+        )}
+        <td className="p-2">
+          <div className="flex gap-1">
+            <Button
+              onClick={() => onChartOpen(metric)}
+              size="sm"
+              variant="ghost"
+              className="h-8 w-8 p-0 hover:bg-blue-100"
+            >
+              <BarChart3 className="h-4 w-4 text-blue-600" />
+            </Button>
+            <Button
+              onClick={() => onMetricUpdate(metric)}
+              size="sm"
+              variant="ghost"
+              className="h-8 w-8 p-0"
+            >
+              <Edit className="h-4 w-4" />
+            </Button>
+            <Button
+              onClick={() => onMetricDelete(metric.id)}
+              size="sm"
+              variant="ghost"
+              className="h-8 w-8 p-0 hover:bg-red-100"
+            >
+              <Trash2 className="h-4 w-4 text-red-600" />
+            </Button>
+          </div>
+        </td>
+      </tr>
+    );
+  };
+
+  if (loading) {
+    return <div>Loading groups...</div>;
+  }
+
+  return (
+    <div className="space-y-6">
+      {/* Groups */}
+      {groups.map((group, groupIndex) => {
+        const groupMetrics = metrics.filter(m => m.group_id === group.id);
+        const isExpanded = expandedGroups[group.id];
+        
+        return (
+          <Card key={group.id} className="overflow-hidden">
+            <CardHeader 
+              className="cursor-pointer"
+              style={{ backgroundColor: group.color + '20', borderLeft: `4px solid ${group.color}` }}
+              onClick={() => toggleGroupExpanded(group.id)}
+            >
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  {isExpanded ? <ChevronDown className="h-5 w-5" /> : <ChevronRight className="h-5 w-5" />}
+                  <CardTitle className="text-lg">{group.name}</CardTitle>
+                  <span className="text-sm text-gray-600">({groupMetrics.length} metrics)</span>
+                </div>
+                <div className="flex gap-2">
+                  <Button
+                    size="sm"
+                    variant="ghost"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setGroupDialog({ isOpen: true, group });
+                      setNewGroupName(group.name);
+                      setNewGroupColor(group.color);
+                    }}
+                  >
+                    <Edit className="h-4 w-4" />
+                  </Button>
+                  <Button
+                    size="sm"
+                    variant="ghost"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleDeleteGroup(group.id);
+                    }}
+                  >
+                    <Trash2 className="h-4 w-4" />
+                  </Button>
+                </div>
+              </div>
+            </CardHeader>
+            
+            {isExpanded && (
+              <CardContent className="p-0">
+                {groupMetrics.length > 0 ? (
+                  <table className="w-full">
+                    <tbody>
+                      {groupMetrics.map((metric, index) => renderMetricRow(metric, index))}
+                    </tbody>
+                  </table>
+                ) : (
+                  <div className="p-4 text-center text-gray-500">
+                    No metrics in this group. Drag metrics here to add them.
+                  </div>
+                )}
+              </CardContent>
+            )}
+          </Card>
+        );
+      })}
+
+      {/* Ungrouped Metrics */}
+      {ungroupedMetrics.length > 0 && (
+        <Card>
+          <CardHeader className="bg-gray-50">
+            <CardTitle className="text-lg">Ungrouped Metrics</CardTitle>
+          </CardHeader>
+          <CardContent className="p-0">
+            <table className="w-full">
+              <tbody>
+                {ungroupedMetrics.map((metric, index) => renderMetricRow(metric, index))}
+              </tbody>
+            </table>
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Add Group Button */}
+      <Button
+        onClick={() => setGroupDialog({ isOpen: true, group: null })}
+        variant="outline"
+        className="w-full"
+      >
+        <Plus className="h-4 w-4 mr-2" />
+        Add Group
+      </Button>
+
+      {/* Group Dialog */}
+      <Dialog open={groupDialog.isOpen} onOpenChange={(open) => !open && setGroupDialog({ isOpen: false, group: null })}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>{groupDialog.group ? 'Edit Group' : 'Create New Group'}</DialogTitle>
+            <DialogDescription>
+              {groupDialog.group ? 'Update the group details' : 'Create a new group to organize your metrics'}
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div>
+              <Label htmlFor="group-name">Group Name</Label>
+              <Input
+                id="group-name"
+                value={newGroupName}
+                onChange={(e) => setNewGroupName(e.target.value)}
+                placeholder="e.g., Financial Metrics"
+              />
+            </div>
+            <div>
+              <Label htmlFor="group-color">Color</Label>
+              <div className="flex gap-2">
+                <Input
+                  id="group-color"
+                  type="color"
+                  value={newGroupColor}
+                  onChange={(e) => setNewGroupColor(e.target.value)}
+                  className="w-20"
+                />
+                <Input
+                  value={newGroupColor}
+                  onChange={(e) => setNewGroupColor(e.target.value)}
+                  placeholder="#3B82F6"
+                />
+              </div>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setGroupDialog({ isOpen: false, group: null })}>
+              Cancel
+            </Button>
+            <Button onClick={groupDialog.group ? () => {
+              handleUpdateGroup(groupDialog.group.id, { name: newGroupName, color: newGroupColor });
+              setGroupDialog({ isOpen: false, group: null });
+            } : handleCreateGroup}>
+              {groupDialog.group ? 'Update' : 'Create'}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+    </div>
+  );
+};
+
+export default GroupedScorecardView;

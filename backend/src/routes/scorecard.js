@@ -11,6 +11,14 @@ import {
   checkDuplicateScorecard,
   updateMetricOrder
 } from '../controllers/scorecardController.js';
+import {
+  getGroups,
+  createGroup,
+  updateGroup,
+  deleteGroup,
+  updateGroupOrder,
+  moveMetricToGroup
+} from '../controllers/scorecardGroupsController.js';
 
 const router = express.Router({ mergeParams: true });
 
@@ -33,5 +41,13 @@ router.put('/scores', updateScore);
 // Diagnostic endpoint (for debugging)
 router.get('/find', findScorecardData);
 router.get('/check-duplicates', checkDuplicateScorecard);
+
+// Groups management
+router.get('/groups', getGroups);
+router.post('/groups', createGroup);
+router.put('/groups/reorder', updateGroupOrder);
+router.put('/groups/:groupId', updateGroup);
+router.delete('/groups/:groupId', deleteGroup);
+router.put('/metrics/move-to-group', moveMetricToGroup);
 
 export default router;
