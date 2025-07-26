@@ -40,6 +40,8 @@ const GroupedScorecardView = ({
   const [newGroupName, setNewGroupName] = useState('');
   const [newGroupColor, setNewGroupColor] = useState('#3B82F6');
   const [expandedGroups, setExpandedGroups] = useState({});
+  const [draggedMetric, setDraggedMetric] = useState(null);
+  const [dragOverGroup, setDragOverGroup] = useState(null);
 
   useEffect(() => {
     loadGroups();
@@ -135,13 +137,67 @@ const GroupedScorecardView = ({
     }
   };
 
+  // Drag and drop handlers
+  const handleDragStart = (e, metric) => {
+    setDraggedMetric(metric);
+    e.dataTransfer.effectAllowed = 'move';
+  };
+
+  const handleDragOver = (e) => {
+    e.preventDefault();
+    e.dataTransfer.dropEffect = 'move';
+  };
+
+  const handleDragEnter = (e, groupId) => {
+    e.preventDefault();
+    setDragOverGroup(groupId);
+  };
+
+  const handleDragLeave = (e) => {
+    e.preventDefault();
+    if (e.currentTarget.contains(e.relatedTarget)) return;
+    setDragOverGroup(null);
+  };
+
+  const handleDrop = async (e, groupId) => {
+    e.preventDefault();
+    setDragOverGroup(null);
+    
+    if (!draggedMetric) return;
+    
+    // Skip if dropping in the same group
+    if (draggedMetric.group_id === groupId) {
+      setDraggedMetric(null);
+      return;
+    }
+    
+    try {
+      await handleMoveMetricToGroup(draggedMetric.id, groupId);
+    } catch (error) {
+      console.error('Failed to move metric:', error);
+    }
+    
+    setDraggedMetric(null);
+  };
+
+  const handleDragEnd = () => {
+    setDraggedMetric(null);
+    setDragOverGroup(null);
+  };
+
   const renderMetricRow = (metric, index) => {
     const isWeekly = metric.type === 'weekly';
     const scores = isWeekly ? weeklyScores[metric.id] || {} : monthlyScores[metric.id] || {};
     const periods = isWeekly ? selectedWeeks : selectedMonths;
     
     return (
-      <tr key={metric.id} className="border-b hover:bg-gray-50">
+      <tr 
+        key={metric.id} 
+        className="border-b hover:bg-gray-50 cursor-move"
+        draggable
+        onDragStart={(e) => handleDragStart(e, metric)}
+        onDragEnd={handleDragEnd}
+      >
         <td className="p-2">
           <GripVertical className="h-4 w-4 text-gray-400 cursor-move" />
         </td>
@@ -217,7 +273,14 @@ const GroupedScorecardView = ({
         const isExpanded = expandedGroups[group.id];
         
         return (
-          <Card key={group.id} className="overflow-hidden">
+          <Card 
+            key={group.id} 
+            className={`overflow-hidden transition-all ${dragOverGroup === group.id ? 'ring-2 ring-blue-500' : ''}`}
+            onDragOver={handleDragOver}
+            onDragEnter={(e) => handleDragEnter(e, group.id)}
+            onDragLeave={handleDragLeave}
+            onDrop={(e) => handleDrop(e, group.id)}
+          >
             <CardHeader 
               className="cursor-pointer"
               style={{ backgroundColor: group.color + '20', borderLeft: `4px solid ${group.color}` }}
@@ -277,7 +340,13 @@ const GroupedScorecardView = ({
 
       {/* Ungrouped Metrics */}
       {ungroupedMetrics.length > 0 && (
-        <Card>
+        <Card
+          className={`transition-all ${dragOverGroup === null ? 'ring-2 ring-blue-500' : ''}`}
+          onDragOver={handleDragOver}
+          onDragEnter={(e) => handleDragEnter(e, null)}
+          onDragLeave={handleDragLeave}
+          onDrop={(e) => handleDrop(e, null)}
+        >
           <CardHeader className="bg-gray-50">
             <CardTitle className="text-lg">Ungrouped Metrics</CardTitle>
           </CardHeader>
