@@ -273,6 +273,9 @@ const templates = {
       
       Here's a summary of your ${data.meetingType} held on ${data.meetingDate}:
       
+      Duration: ${data.duration}
+      Rating: ${data.rating}/10
+      
       ${data.attendees && data.attendees.length > 0 ? `Attendees:\n${data.attendees.map(a => `- ${a}`).join('\n')}\n\n` : ''}
       ${data.completedItems && data.completedItems.length > 0 ? `Completed Items:\n${data.completedItems.map(i => `- ✅ ${i}`).join('\n')}\n\n` : ''}
       ${data.newTodos && data.newTodos.length > 0 ? `New To-Dos:\n${data.newTodos.map(t => `- ${t.title} - Assigned to: ${t.assignee}, Due: ${t.dueDate}`).join('\n')}\n\n` : ''}

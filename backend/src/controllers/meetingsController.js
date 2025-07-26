@@ -37,26 +37,37 @@ export const concludeMeeting = async (req, res) => {
     const userEmail = user?.email;
     const userName = `${user?.first_name || ''} ${user?.last_name || ''}`.trim();
 
-    // Get emails of all attendees
-    const attendeeEmails = [];
-    if (attendees && attendees.length > 0) {
-      const attendeeIds = attendees.map(a => a.id).filter(id => id);
-      if (attendeeIds.length > 0) {
-        const attendeesResult = await db.query(
-          'SELECT email, first_name, last_name FROM users WHERE id = ANY($1::uuid[])',
-          [attendeeIds]
-        );
-        attendeesResult.rows.forEach(row => {
-          if (row.email) {
-            attendeeEmails.push(row.email);
-          }
-        });
-      }
-    }
-
-    // Always include the user who concluded the meeting
-    if (userEmail && !attendeeEmails.includes(userEmail)) {
-      attendeeEmails.push(userEmail);
+    // Get team members' emails
+    const teamId = req.params.teamId;
+    console.log('Getting team members for teamId:', teamId);
+    
+    let attendeeEmails = [];
+    
+    // Check if this is the leadership team
+    if (teamId === '00000000-0000-0000-0000-000000000000') {
+      // For leadership team, get all users with is_leadership_member = true
+      const leadershipResult = await db.query(
+        `SELECT DISTINCT u.email, u.first_name, u.last_name 
+         FROM users u
+         WHERE u.organization_id = $1 
+         AND u.is_leadership_member = true
+         AND u.email IS NOT NULL`,
+        [organizationId]
+      );
+      attendeeEmails = leadershipResult.rows.map(row => row.email);
+      console.log('Leadership team emails:', attendeeEmails);
+    } else {
+      // For other teams, get team members
+      const teamMembersResult = await db.query(
+        `SELECT DISTINCT u.email, u.first_name, u.last_name 
+         FROM team_members tm
+         JOIN users u ON tm.user_id = u.id
+         WHERE tm.team_id = $1
+         AND u.email IS NOT NULL`,
+        [teamId]
+      );
+      attendeeEmails = teamMembersResult.rows.map(row => row.email);
+      console.log('Team member emails:', attendeeEmails);
     }
 
     console.log('Sending meeting summary to:', attendeeEmails);
@@ -84,8 +95,33 @@ export const concludeMeeting = async (req, res) => {
       return `${secs}s`;
     };
 
-    // Format attendees
-    const attendeeNames = attendees?.map(a => a.name || a.first_name || 'Unknown').filter(Boolean) || [];
+    // Get team member names for the email
+    let attendeeNames = [];
+    if (teamId === '00000000-0000-0000-0000-000000000000') {
+      const leadershipNamesResult = await db.query(
+        `SELECT DISTINCT u.first_name, u.last_name 
+         FROM users u
+         WHERE u.organization_id = $1 
+         AND u.is_leadership_member = true
+         ORDER BY u.first_name, u.last_name`,
+        [organizationId]
+      );
+      attendeeNames = leadershipNamesResult.rows.map(row => 
+        `${row.first_name || ''} ${row.last_name || ''}`.trim()
+      );
+    } else {
+      const teamNamesResult = await db.query(
+        `SELECT DISTINCT u.first_name, u.last_name 
+         FROM team_members tm
+         JOIN users u ON tm.user_id = u.id
+         WHERE tm.team_id = $1
+         ORDER BY u.first_name, u.last_name`,
+        [teamId]
+      );
+      attendeeNames = teamNamesResult.rows.map(row => 
+        `${row.first_name || ''} ${row.last_name || ''}`.trim()
+      );
+    }
 
     // Format todos
     const formattedNewTodos = (todos?.added || []).map(todo => ({
@@ -123,17 +159,33 @@ export const concludeMeeting = async (req, res) => {
     // Send email to all attendees
     if (attendeeEmails.length > 0) {
       try {
-        await emailService.sendEmail({
+        console.log('Attempting to send email with data:', {
+          to: attendeeEmails,
+          subject: `${meetingType || 'Meeting'} Summary - ${organizationName}`,
+          template: 'meetingSummary'
+        });
+        
+        const emailResult = await emailService.sendEmail({
           to: attendeeEmails,
           subject: `${meetingType || 'Meeting'} Summary - ${organizationName}`,
           template: 'meetingSummary',
           data: emailData
         });
-        console.log('Meeting summary email sent successfully');
+        
+        console.log('Meeting summary email sent successfully:', emailResult);
       } catch (emailError) {
         console.error('Failed to send meeting summary email:', emailError);
-        // Don't fail the whole request if email fails
+        console.error('Email error details:', emailError.message, emailError.stack);
+        // Return error info to frontend
+        return res.status(500).json({
+          success: false,
+          message: 'Meeting concluded but email failed to send',
+          error: emailError.message,
+          emailsSent: 0
+        });
       }
+    } else {
+      console.warn('No email addresses found for team members');
     }
 
     res.json({
