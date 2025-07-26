@@ -656,7 +656,10 @@ const WeeklyAccountabilityMeetingPage = () => {
 
       // Send meeting summary email
       try {
-        await meetingsService.concludeMeeting(meetingData);
+        const orgId = localStorage.getItem('impersonatedOrgId') || user?.organizationId || user?.organization_id;
+        const effectiveTeamId = teamId || user?.teamId || '00000000-0000-0000-0000-000000000000';
+        
+        await meetingsService.concludeMeeting(orgId, effectiveTeamId, meetingData);
         setSuccess('Meeting complete! Summary email sent to all attendees.');
       } catch (emailError) {
         console.error('Failed to send meeting summary email:', emailError);
