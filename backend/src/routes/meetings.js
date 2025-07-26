@@ -2,7 +2,7 @@ import express from 'express';
 import { authenticate } from '../middleware/auth.js';
 import { concludeMeeting } from '../controllers/meetingsController.js';
 
-const router = express.Router();
+const router = express.Router({ mergeParams: true });
 
 // Conclude a meeting and send summary
 router.post('/conclude', authenticate, concludeMeeting);
