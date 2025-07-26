@@ -27,6 +27,7 @@ const GroupedScorecardView = ({
   onScoreUpdate,
   onMetricDelete,
   onChartOpen,
+  onRefresh,
   showTotal,
   weekOptions,
   monthOptions,
@@ -115,11 +116,25 @@ const GroupedScorecardView = ({
 
   const handleMoveMetricToGroup = async (metricId, groupId) => {
     try {
-      await scorecardGroupsService.moveMetricToGroup(orgId, teamId, metricId, groupId);
-      // Reload to reflect changes
-      window.location.reload();
+      console.log('Moving metric', metricId, 'to group', groupId);
+      const response = await scorecardGroupsService.moveMetricToGroup(orgId, teamId, metricId, groupId);
+      console.log('Move response:', response);
+      
+      // Update metrics immediately by modifying the group_id
+      const updatedMetrics = metrics.map(m => 
+        m.id === metricId ? { ...m, group_id: groupId } : m
+      );
+      
+      // Refresh the parent component to get updated metrics
+      if (onRefresh) {
+        await onRefresh();
+      } else {
+        // Fallback: reload the page
+        window.location.reload();
+      }
     } catch (error) {
       console.error('Failed to move metric:', error);
+      alert('Failed to move metric. Please try again.');
     }
   };
 
@@ -161,12 +176,18 @@ const GroupedScorecardView = ({
 
   const handleDrop = async (e, groupId) => {
     e.preventDefault();
+    e.stopPropagation();
+    console.log('Drop event - groupId:', groupId, 'draggedMetric:', draggedMetric);
     setDragOverGroup(null);
     
-    if (!draggedMetric) return;
+    if (!draggedMetric) {
+      console.log('No dragged metric found');
+      return;
+    }
     
     // Skip if dropping in the same group
     if (draggedMetric.group_id === groupId) {
+      console.log('Metric already in this group');
       setDraggedMetric(null);
       return;
     }

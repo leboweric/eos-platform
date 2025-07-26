@@ -707,6 +707,7 @@ const ScorecardPage = () => {
                 onScoreUpdate={(metric, period, value) => handleScoreEdit(metric, period)}
                 onMetricDelete={handleDeleteMetric}
                 onChartOpen={handleChartOpen}
+                onRefresh={fetchScorecard}
                 showTotal={showTotal}
                 weekOptions={weekOptions}
                 monthOptions={[]}
@@ -983,6 +984,7 @@ const ScorecardPage = () => {
                 onScoreUpdate={(metric, period, value) => handleScoreEdit(metric, period)}
                 onMetricDelete={handleDeleteMetric}
                 onChartOpen={handleChartOpen}
+                onRefresh={fetchScorecard}
                 showTotal={showTotal}
                 weekOptions={[]}
                 monthOptions={monthOptions}
