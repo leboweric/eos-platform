@@ -186,6 +186,7 @@ const ScorecardPage = () => {
 
   const handleEditMetric = (metric) => {
     console.log('Editing metric:', metric);
+    console.log('Metric description:', metric.description);
     setEditingMetric(metric);
     setMetricForm({
       name: metric.name,
@@ -235,6 +236,7 @@ const ScorecardPage = () => {
       if (editingMetric) {
         const updatedMetric = await scorecardService.updateMetric(orgId, teamId, editingMetric.id, metricData);
         console.log('Updated metric received:', updatedMetric);
+        console.log('Updated metric description:', updatedMetric.description);
         setMetrics(prev => prev.map(m => m.id === updatedMetric.id ? {...updatedMetric, ownerId: metricForm.ownerId, ownerName: metricForm.ownerName} : m));
         setSuccess('Metric updated successfully');
       } else {
@@ -253,7 +255,8 @@ const ScorecardPage = () => {
         ownerName: '',
         type: 'weekly',
         valueType: 'number',
-        comparisonOperator: 'greater_equal'
+        comparisonOperator: 'greater_equal',
+        groupId: 'none'
       });
     } catch {
       setError('Failed to save metric');

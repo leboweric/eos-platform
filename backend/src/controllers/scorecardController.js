@@ -214,6 +214,7 @@ export const updateMetric = async (req, res) => {
   try {
     const { orgId, teamId, metricId } = req.params;
     const { name, goal, owner, type, valueType, comparisonOperator, description, groupId } = req.body;
+    console.log('Updating metric with data:', { name, goal, owner, type, valueType, comparisonOperator, description, groupId });
     
     // Check if new columns exist
     const hasValueType = await checkColumn('scorecard_metrics', 'value_type');
@@ -260,6 +261,9 @@ export const updateMetric = async (req, res) => {
         message: 'Metric not found'
       });
     }
+    
+    console.log('Updated metric result:', result.rows[0]);
+    console.log('Updated metric description from DB:', result.rows[0].description);
     
     res.json({
       success: true,
