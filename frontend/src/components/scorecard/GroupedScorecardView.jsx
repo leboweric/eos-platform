@@ -221,12 +221,12 @@ const GroupedScorecardView = ({
         onDragStart={(e) => handleDragStart(e, metric)}
         onDragEnd={handleDragEnd}
       >
-        <td className="p-2">
+        <td className="p-2 w-8">
           <GripVertical className="h-4 w-4 text-gray-400 cursor-move" />
         </td>
-        <td className="p-2 font-medium">{metric.name}</td>
-        <td className="p-2 text-center">{metric.goal}</td>
-        <td className="p-2">
+        <td className="p-2 font-medium w-48">{metric.name}</td>
+        <td className="p-2 text-center w-20">{metric.goal}</td>
+        <td className="p-2 text-center w-32">
           {teamMembers.find(m => m.id === metric.owner)?.name || 'Unassigned'}
         </td>
         {periods.map((period) => {
@@ -236,7 +236,7 @@ const GroupedScorecardView = ({
           const isOnTrack = actual >= goal;
           
           return (
-            <td key={period.value} className="p-2 text-center">
+            <td key={period.value} className="p-2 text-center w-20">
               <button
                 onClick={() => onScoreUpdate(metric, period.value, value)}
                 className={`w-full px-2 py-1 rounded text-sm font-medium transition-colors
@@ -248,11 +248,11 @@ const GroupedScorecardView = ({
           );
         })}
         {showTotal && (
-          <td className="p-2 text-center font-semibold">
+          <td className="p-2 text-center font-semibold w-20 bg-gray-50">
             {Object.values(scores).reduce((sum, val) => sum + (parseFloat(val) || 0), 0).toFixed(1)}
           </td>
         )}
-        <td className="p-2">
+        <td className="p-2 w-24">
           <div className="flex gap-1">
             <Button
               onClick={() => onChartOpen(metric)}
@@ -288,8 +288,55 @@ const GroupedScorecardView = ({
     return <div>Loading groups...</div>;
   }
 
+  // Helper to render column headers
+  const renderHeaders = () => {
+    const isWeekly = type === 'weekly';
+    const periods = isWeekly ? selectedWeeks : selectedMonths;
+    const labels = isWeekly ? weekOptions : monthOptions;
+    
+    return (
+      <Card className="mb-4">
+        <div className="overflow-x-auto">
+          <table className="w-full table-fixed">
+            <thead className="bg-gray-50 border-b">
+              <tr>
+                <th className="w-8"></th>
+                <th className="text-left p-2 font-semibold text-gray-700 w-48">Metric</th>
+                <th className="text-center p-2 font-semibold text-gray-700 w-20">Goal</th>
+                <th className="text-center p-2 font-semibold text-gray-700 w-32">Owner</th>
+                {labels.map((option, index) => {
+                  const isCurrentPeriod = isWeekly 
+                    ? index === labels.length - 1  // Last week is current
+                    : index === labels.length - 1; // Last month is current
+                  
+                  return (
+                    <th key={option.value} className={`text-center p-2 font-semibold text-xs w-20 ${
+                      isCurrentPeriod ? 'text-indigo-700 bg-indigo-50' : 'text-gray-700'
+                    }`}>
+                      <div className="flex flex-col items-center">
+                        <span className="text-xs font-normal text-gray-500 mb-1">
+                          {isCurrentPeriod ? 'Current' : ''}
+                        </span>
+                        <span>{option.label}</span>
+                      </div>
+                    </th>
+                  );
+                })}
+                {showTotal && <th className="text-center p-2 font-semibold text-gray-700 w-20 bg-gray-100">Total</th>}
+                <th className="text-center p-2 font-semibold text-gray-700 w-24">Actions</th>
+              </tr>
+            </thead>
+          </table>
+        </div>
+      </Card>
+    );
+  };
+
   return (
     <div className="space-y-6">
+      {/* Column Headers */}
+      {renderHeaders()}
+      
       {/* Groups */}
       {groups.map((group, groupIndex) => {
         const groupMetrics = metrics.filter(m => m.group_id === group.id);
