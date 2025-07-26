@@ -221,14 +221,24 @@ const GroupedScorecardView = ({
         onDragStart={(e) => handleDragStart(e, metric)}
         onDragEnd={handleDragEnd}
       >
-        <td className="p-2 w-8">
-          <GripVertical className="h-4 w-4 text-gray-400 cursor-move" />
+        <td className="text-center p-2 w-8">
+          <GripVertical className="h-4 w-4 text-gray-400 cursor-move mx-auto" />
         </td>
-        <td className="p-2 font-medium w-48">{metric.name}</td>
-        <td className="p-2 text-center w-20">{metric.goal}</td>
-        <td className="p-2 text-center w-32">
+        <td className="text-center p-2 w-16 text-sm">
           {teamMembers.find(m => m.id === metric.owner)?.name || 'Unassigned'}
         </td>
+        <td className="text-left p-2 font-medium w-48">{metric.name}</td>
+        <td className="text-center p-2 w-12">
+          <Button
+            onClick={() => onChartOpen(metric)}
+            size="sm"
+            variant="ghost"
+            className="h-8 w-8 p-0 hover:bg-blue-100 mx-auto"
+          >
+            <BarChart3 className="h-4 w-4 text-blue-600" />
+          </Button>
+        </td>
+        <td className="text-center p-2 w-20">{metric.goal}</td>
         {periods.map((period) => {
           const value = scores[period.value] || '';
           const goal = parseFloat(metric.goal) || 0;
@@ -247,36 +257,45 @@ const GroupedScorecardView = ({
             </td>
           );
         })}
+        {/* Average column */}
+        <td className="p-2 text-center bg-gray-50 font-semibold text-sm w-20">
+          {(() => {
+            const scoreValues = Object.values(scores).filter(v => v !== '' && v !== null && v !== undefined);
+            if (scoreValues.length === 0) return '-';
+            const average = scoreValues.reduce((sum, val) => sum + parseFloat(val), 0) / scoreValues.length;
+            const avgGoalMet = average >= parseFloat(metric.goal);
+            
+            return (
+              <span className={`px-2 py-1 rounded ${
+                avgGoalMet ? 'text-green-800' : 'text-red-800'
+              }`}>
+                {metric.value_type === 'number' ? Math.round(average) : average.toFixed(1)}
+              </span>
+            );
+          })()}
+        </td>
         {showTotal && (
           <td className="p-2 text-center font-semibold w-20 bg-gray-50">
             {Object.values(scores).reduce((sum, val) => sum + (parseFloat(val) || 0), 0).toFixed(1)}
           </td>
         )}
-        <td className="p-2 w-24">
-          <div className="flex gap-1">
+        <td className="text-center p-2 w-12">
+          <div className="flex justify-center space-x-1">
             <Button
-              onClick={() => onChartOpen(metric)}
-              size="sm"
               variant="ghost"
-              className="h-8 w-8 p-0 hover:bg-blue-100"
-            >
-              <BarChart3 className="h-4 w-4 text-blue-600" />
-            </Button>
-            <Button
+              size="sm"
+              className="h-6 w-6 p-0"
               onClick={() => onMetricUpdate(metric)}
-              size="sm"
-              variant="ghost"
-              className="h-8 w-8 p-0"
             >
-              <Edit className="h-4 w-4" />
+              <Edit className="h-3 w-3" />
             </Button>
             <Button
-              onClick={() => onMetricDelete(metric.id)}
-              size="sm"
               variant="ghost"
-              className="h-8 w-8 p-0 hover:bg-red-100"
+              size="sm"
+              className="h-6 w-6 p-0"
+              onClick={() => onMetricDelete(metric.id)}
             >
-              <Trash2 className="h-4 w-4 text-red-600" />
+              <Trash2 className="h-3 w-3 text-red-600" />
             </Button>
           </div>
         </td>
@@ -295,48 +314,41 @@ const GroupedScorecardView = ({
     const labels = isWeekly ? weekOptions : monthOptions;
     
     return (
-      <Card className="mb-4">
-        <div className="overflow-x-auto">
-          <table className="w-full table-fixed">
-            <thead className="bg-gray-50 border-b">
-              <tr>
-                <th className="w-8"></th>
-                <th className="text-left p-2 font-semibold text-gray-700 w-48">Metric</th>
-                <th className="text-center p-2 font-semibold text-gray-700 w-20">Goal</th>
-                <th className="text-center p-2 font-semibold text-gray-700 w-32">Owner</th>
-                {labels.map((option, index) => {
-                  const isCurrentPeriod = isWeekly 
-                    ? index === labels.length - 1  // Last week is current
-                    : index === labels.length - 1; // Last month is current
-                  
-                  return (
-                    <th key={option.value} className={`text-center p-2 font-semibold text-xs w-20 ${
-                      isCurrentPeriod ? 'text-indigo-700 bg-indigo-50' : 'text-gray-700'
-                    }`}>
-                      <div className="flex flex-col items-center">
-                        <span className="text-xs font-normal text-gray-500 mb-1">
-                          {isCurrentPeriod ? 'Current' : ''}
-                        </span>
-                        <span>{option.label}</span>
-                      </div>
-                    </th>
-                  );
-                })}
-                {showTotal && <th className="text-center p-2 font-semibold text-gray-700 w-20 bg-gray-100">Total</th>}
-                <th className="text-center p-2 font-semibold text-gray-700 w-24">Actions</th>
-              </tr>
-            </thead>
-          </table>
-        </div>
-      </Card>
+      <thead className="bg-gray-50 border-b">
+        <tr>
+          <th className="text-center p-2 font-semibold text-gray-700 w-8"></th>
+          <th className="text-center p-2 font-semibold text-gray-700 w-16">Owner</th>
+          <th className="text-left p-2 font-semibold text-gray-700 w-48">Metric</th>
+          <th className="text-center p-2 font-semibold text-gray-700 w-12">Chart</th>
+          <th className="text-center p-2 font-semibold text-gray-700 w-20">Goal</th>
+          {labels.map((option, index) => {
+            const isCurrentPeriod = isWeekly 
+              ? index === labels.length - 1  // Last week is current
+              : index === labels.length - 1; // Last month is current
+            
+            return (
+              <th key={option.value} className={`text-center p-2 font-semibold text-xs w-20 ${
+                isCurrentPeriod ? 'text-indigo-700 bg-indigo-50' : 'text-gray-700'
+              }`}>
+                <div className="flex flex-col items-center">
+                  <span className="text-xs font-normal text-gray-500 mb-1">
+                    {isCurrentPeriod ? 'Current' : ''}
+                  </span>
+                  <span>{option.label}</span>
+                </div>
+              </th>
+            );
+          })}
+          <th className="text-center p-2 font-semibold text-gray-700 w-20 bg-gray-100">Average</th>
+          {showTotal && <th className="text-center p-2 font-semibold text-gray-700 w-20 bg-gray-100">Total</th>}
+          <th className="text-center p-2 font-semibold text-gray-700 w-12">Actions</th>
+        </tr>
+      </thead>
     );
   };
 
   return (
     <div className="space-y-6">
-      {/* Column Headers */}
-      {renderHeaders()}
-      
       {/* Groups */}
       {groups.map((group, groupIndex) => {
         const groupMetrics = metrics.filter(m => m.group_id === group.id);
@@ -392,11 +404,14 @@ const GroupedScorecardView = ({
             {isExpanded && (
               <CardContent className="p-0">
                 {groupMetrics.length > 0 ? (
-                  <table className="w-full">
-                    <tbody>
-                      {groupMetrics.map((metric, index) => renderMetricRow(metric, index))}
-                    </tbody>
-                  </table>
+                  <div className="overflow-x-auto">
+                    <table className="w-full table-fixed">
+                      {renderHeaders()}
+                      <tbody>
+                        {groupMetrics.map((metric, index) => renderMetricRow(metric, index))}
+                      </tbody>
+                    </table>
+                  </div>
                 ) : (
                   <div className="p-4 text-center text-gray-500">
                     No metrics in this group. Drag metrics here to add them.
@@ -421,11 +436,14 @@ const GroupedScorecardView = ({
             <CardTitle className="text-lg">Ungrouped Metrics</CardTitle>
           </CardHeader>
           <CardContent className="p-0">
-            <table className="w-full">
-              <tbody>
-                {ungroupedMetrics.map((metric, index) => renderMetricRow(metric, index))}
-              </tbody>
-            </table>
+            <div className="overflow-x-auto">
+              <table className="w-full table-fixed">
+                {renderHeaders()}
+                <tbody>
+                  {ungroupedMetrics.map((metric, index) => renderMetricRow(metric, index))}
+                </tbody>
+              </table>
+            </div>
           </CardContent>
         </Card>
       )}
