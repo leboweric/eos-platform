@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useAuthStore } from '../stores/authStore';
 import { scorecardService } from '../services/scorecardService';
+import { scorecardGroupsService } from '../services/scorecardGroupsService';
 import { useDepartment } from '../contexts/DepartmentContext';
 import { LEADERSHIP_TEAM_ID } from '../utils/teamUtils';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -51,6 +52,7 @@ const ScorecardPage = () => {
   const [useGroupsView, setUseGroupsView] = useState(() => {
     return localStorage.getItem('scorecardUseGroups') === 'true';
   });
+  const [groups, setGroups] = useState([]);
   
   // Drag and drop state
   const [draggedItem, setDraggedItem] = useState(null);
@@ -82,7 +84,8 @@ const ScorecardPage = () => {
     ownerName: '',
     type: 'weekly', // weekly, monthly, quarterly
     valueType: 'number', // number, currency, percentage
-    comparisonOperator: 'greater_equal' // greater_equal, less_equal, equal
+    comparisonOperator: 'greater_equal', // greater_equal, less_equal, equal
+    groupId: '' // scorecard group
   });
 
   useEffect(() => {
@@ -93,6 +96,7 @@ const ScorecardPage = () => {
     
     if (user?.organizationId && (selectedDepartment || isLeadershipMember)) {
       fetchScorecard();
+      fetchGroups();
     }
   }, [user?.organizationId, selectedDepartment, isLeadershipMember]);
 
@@ -146,6 +150,19 @@ const ScorecardPage = () => {
     }
   };
 
+  const fetchGroups = async () => {
+    try {
+      const orgId = localStorage.getItem('impersonatedOrgId') || user?.organizationId || user?.organization_id;
+      const teamId = selectedDepartment?.id || LEADERSHIP_TEAM_ID;
+      
+      if (!orgId || !teamId) return;
+      
+      const fetchedGroups = await scorecardGroupsService.getGroups(orgId, teamId);
+      setGroups(fetchedGroups || []);
+    } catch (error) {
+      console.error('Failed to fetch groups:', error);
+    }
+  };
 
   const handleAddMetric = () => {
     setEditingMetric(null);
@@ -157,7 +174,8 @@ const ScorecardPage = () => {
       ownerName: '',
       type: activeTab === 'monthly' ? 'monthly' : 'weekly',
       valueType: 'number',
-      comparisonOperator: 'greater_equal'
+      comparisonOperator: 'greater_equal',
+      groupId: ''
     });
     setShowMetricDialog(true);
   };
@@ -177,7 +195,8 @@ const ScorecardPage = () => {
       ownerName: metric.owner || metric.ownerName || '',
       type: metric.type || 'weekly',
       valueType: metric.value_type || 'number',
-      comparisonOperator: metric.comparison_operator || 'greater_equal'
+      comparisonOperator: metric.comparison_operator || 'greater_equal',
+      groupId: metric.group_id || ''
     });
     setShowMetricDialog(true);
   };
@@ -207,7 +226,8 @@ const ScorecardPage = () => {
         owner: metricForm.ownerName, // Backend expects 'owner' field with the name
         type: metricForm.type,
         valueType: metricForm.valueType,
-        comparisonOperator: metricForm.comparisonOperator
+        comparisonOperator: metricForm.comparisonOperator,
+        groupId: metricForm.groupId || null
       };
       
       console.log('Saving metric with data:', metricData);
@@ -1342,6 +1362,25 @@ const ScorecardPage = () => {
                     <SelectItem value="weekly">Weekly</SelectItem>
                     <SelectItem value="monthly">Monthly</SelectItem>
                     <SelectItem value="quarterly">Quarterly</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div>
+                <Label htmlFor="metric-group">Group (Optional)</Label>
+                <Select
+                  value={metricForm.groupId}
+                  onValueChange={(value) => setMetricForm(prev => ({ ...prev, groupId: value }))}
+                >
+                  <SelectTrigger id="metric-group">
+                    <SelectValue placeholder="No group" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="">No group</SelectItem>
+                    {groups.map(group => (
+                      <SelectItem key={group.id} value={group.id}>
+                        {group.name}
+                      </SelectItem>
+                    ))}
                   </SelectContent>
                 </Select>
               </div>

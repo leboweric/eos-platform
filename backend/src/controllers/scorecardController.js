@@ -147,12 +147,13 @@ export const getScorecard = async (req, res) => {
 export const createMetric = async (req, res) => {
   try {
     const { orgId, teamId } = req.params;
-    const { name, goal, owner, type = 'weekly', valueType = 'number', comparisonOperator = 'greater_equal', description } = req.body;
+    const { name, goal, owner, type = 'weekly', valueType = 'number', comparisonOperator = 'greater_equal', description, groupId } = req.body;
     
     // Check if new columns exist
     const hasValueType = await checkColumn('scorecard_metrics', 'value_type');
     const hasComparisonOperator = await checkColumn('scorecard_metrics', 'comparison_operator');
     const hasDescription = await checkColumn('scorecard_metrics', 'description');
+    const hasGroupId = await checkColumn('scorecard_metrics', 'group_id');
     
     // Get the max display_order for this org/team
     const maxOrderResult = await db.query(
@@ -181,6 +182,11 @@ export const createMetric = async (req, res) => {
       values.push(description);
       placeholders.push(`$${values.length}`);
     }
+    if (hasGroupId && groupId !== undefined) {
+      columns.push('group_id');
+      values.push(groupId);
+      placeholders.push(`$${values.length}`);
+    }
     
     const query = `
       INSERT INTO scorecard_metrics (${columns.join(', ')})
@@ -207,12 +213,13 @@ export const createMetric = async (req, res) => {
 export const updateMetric = async (req, res) => {
   try {
     const { orgId, teamId, metricId } = req.params;
-    const { name, goal, owner, type, valueType, comparisonOperator, description } = req.body;
+    const { name, goal, owner, type, valueType, comparisonOperator, description, groupId } = req.body;
     
     // Check if new columns exist
     const hasValueType = await checkColumn('scorecard_metrics', 'value_type');
     const hasComparisonOperator = await checkColumn('scorecard_metrics', 'comparison_operator');
     const hasDescription = await checkColumn('scorecard_metrics', 'description');
+    const hasGroupId = await checkColumn('scorecard_metrics', 'group_id');
     
     // Build update query based on available columns
     let setClauses = ['name = $1', 'goal = $2', 'owner = $3', 'type = $4'];
@@ -229,6 +236,10 @@ export const updateMetric = async (req, res) => {
     if (hasDescription && description !== undefined) {
       values.push(description);
       setClauses.push(`description = $${values.length}`);
+    }
+    if (hasGroupId && groupId !== undefined) {
+      values.push(groupId);
+      setClauses.push(`group_id = $${values.length}`);
     }
     
     // Add the WHERE clause parameters
