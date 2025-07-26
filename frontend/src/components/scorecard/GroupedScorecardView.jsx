@@ -46,6 +46,8 @@ const GroupedScorecardView = ({
   const [expandedGroups, setExpandedGroups] = useState({});
   const [draggedMetric, setDraggedMetric] = useState(null);
   const [dragOverGroup, setDragOverGroup] = useState(null);
+  const [draggedGroup, setDraggedGroup] = useState(null);
+  const [dragOverGroupIndex, setDragOverGroupIndex] = useState(null);
 
   // Format value based on type
   const formatValue = (value, valueType) => {
@@ -255,6 +257,55 @@ const GroupedScorecardView = ({
   const handleDragEnd = () => {
     setDraggedMetric(null);
     setDragOverGroup(null);
+    setDraggedGroup(null);
+    setDragOverGroupIndex(null);
+  };
+
+  // Group drag handlers
+  const handleGroupDragStart = (e, group, index) => {
+    setDraggedGroup({ group, index });
+    e.dataTransfer.effectAllowed = 'move';
+  };
+
+  const handleGroupDragOver = (e, index) => {
+    e.preventDefault();
+    e.dataTransfer.dropEffect = 'move';
+    setDragOverGroupIndex(index);
+  };
+
+  const handleGroupDrop = async (e, dropIndex) => {
+    e.preventDefault();
+    e.stopPropagation();
+    
+    if (!draggedGroup || draggedGroup.index === dropIndex) {
+      setDraggedGroup(null);
+      setDragOverGroupIndex(null);
+      return;
+    }
+
+    // Reorder groups locally
+    const newGroups = [...groups];
+    const [movedGroup] = newGroups.splice(draggedGroup.index, 1);
+    newGroups.splice(dropIndex, 0, movedGroup);
+
+    // Update display orders
+    const updatedGroups = newGroups.map((group, index) => ({
+      id: group.id,
+      display_order: index
+    }));
+
+    setGroups(newGroups);
+    
+    try {
+      await scorecardGroupsService.updateGroupOrder(orgId, teamId, updatedGroups);
+    } catch (error) {
+      console.error('Failed to update group order:', error);
+      // Revert on error
+      await loadGroups();
+    }
+
+    setDraggedGroup(null);
+    setDragOverGroupIndex(null);
   };
 
   const renderMetricRow = (metric, index) => {
@@ -418,11 +469,27 @@ const GroupedScorecardView = ({
         return (
           <Card 
             key={group.id} 
-            className={`overflow-hidden transition-all ${dragOverGroup === group.id ? 'ring-2 ring-blue-500' : ''}`}
-            onDragOver={handleDragOver}
+            className={`overflow-hidden transition-all ${
+              dragOverGroup === group.id ? 'ring-2 ring-blue-500' : ''
+            } ${
+              dragOverGroupIndex === groupIndex ? 'border-t-4 border-t-blue-500' : ''
+            }`}
+            draggable
+            onDragStart={(e) => handleGroupDragStart(e, group, groupIndex)}
+            onDragOver={(e) => {
+              handleDragOver(e);
+              handleGroupDragOver(e, groupIndex);
+            }}
             onDragEnter={(e) => handleDragEnter(e, group.id)}
             onDragLeave={handleDragLeave}
-            onDrop={(e) => handleDrop(e, group.id)}
+            onDrop={(e) => {
+              if (draggedGroup) {
+                handleGroupDrop(e, groupIndex);
+              } else {
+                handleDrop(e, group.id);
+              }
+            }}
+            onDragEnd={handleDragEnd}
           >
             <CardHeader 
               className="cursor-pointer"
@@ -431,6 +498,7 @@ const GroupedScorecardView = ({
             >
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
+                  <GripVertical className="h-5 w-5 text-gray-400 cursor-move" />
                   {isExpanded ? <ChevronDown className="h-5 w-5" /> : <ChevronRight className="h-5 w-5" />}
                   <CardTitle className="text-lg">{group.name}</CardTitle>
                   <span className="text-sm text-gray-600">({groupMetrics.length} metrics)</span>
