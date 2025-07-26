@@ -239,6 +239,23 @@ const GroupedScorecardView = ({
           </Button>
         </td>
         <td className="text-center p-2 w-20">{metric.goal}</td>
+        {/* Average column */}
+        <td className="p-2 text-center bg-gray-50 font-semibold text-sm w-20">
+          {(() => {
+            const scoreValues = Object.values(scores).filter(v => v !== '' && v !== null && v !== undefined);
+            if (scoreValues.length === 0) return '-';
+            const average = scoreValues.reduce((sum, val) => sum + parseFloat(val), 0) / scoreValues.length;
+            const avgGoalMet = average >= parseFloat(metric.goal);
+            
+            return (
+              <span className={`px-2 py-1 rounded ${
+                avgGoalMet ? 'text-green-800' : 'text-red-800'
+              }`}>
+                {metric.value_type === 'number' ? Math.round(average) : average.toFixed(1)}
+              </span>
+            );
+          })()}
+        </td>
         {periods.map((period) => {
           const value = scores[period.value] || '';
           const goal = parseFloat(metric.goal) || 0;
@@ -257,23 +274,6 @@ const GroupedScorecardView = ({
             </td>
           );
         })}
-        {/* Average column */}
-        <td className="p-2 text-center bg-gray-50 font-semibold text-sm w-20">
-          {(() => {
-            const scoreValues = Object.values(scores).filter(v => v !== '' && v !== null && v !== undefined);
-            if (scoreValues.length === 0) return '-';
-            const average = scoreValues.reduce((sum, val) => sum + parseFloat(val), 0) / scoreValues.length;
-            const avgGoalMet = average >= parseFloat(metric.goal);
-            
-            return (
-              <span className={`px-2 py-1 rounded ${
-                avgGoalMet ? 'text-green-800' : 'text-red-800'
-              }`}>
-                {metric.value_type === 'number' ? Math.round(average) : average.toFixed(1)}
-              </span>
-            );
-          })()}
-        </td>
         {showTotal && (
           <td className="p-2 text-center font-semibold w-20 bg-gray-50">
             {Object.values(scores).reduce((sum, val) => sum + (parseFloat(val) || 0), 0).toFixed(1)}
@@ -321,10 +321,17 @@ const GroupedScorecardView = ({
           <th className="text-left p-2 font-semibold text-gray-700 w-48">Metric</th>
           <th className="text-center p-2 font-semibold text-gray-700 w-12">Chart</th>
           <th className="text-center p-2 font-semibold text-gray-700 w-20">Goal</th>
+          <th className="text-center p-2 font-semibold text-gray-700 w-20 bg-gray-100">Average</th>
           {labels.map((option, index) => {
+            // Get current date
+            const now = new Date();
+            const currentMonth = now.toLocaleString('default', { month: 'short' }).toUpperCase();
+            const currentYear = now.getFullYear().toString().slice(-2);
+            const currentMonthLabel = `${currentMonth} ${currentYear}`;
+            
             const isCurrentPeriod = isWeekly 
-              ? index === labels.length - 1  // Last week is current
-              : index === labels.length - 1; // Last month is current
+              ? index === labels.length - 1  // Last week is current for weekly view
+              : option.label === currentMonthLabel; // Match current month for monthly view
             
             return (
               <th key={option.value} className={`text-center p-2 font-semibold text-xs w-20 ${
@@ -339,7 +346,6 @@ const GroupedScorecardView = ({
               </th>
             );
           })}
-          <th className="text-center p-2 font-semibold text-gray-700 w-20 bg-gray-100">Average</th>
           {showTotal && <th className="text-center p-2 font-semibold text-gray-700 w-20 bg-gray-100">Total</th>}
           <th className="text-center p-2 font-semibold text-gray-700 w-12">Actions</th>
         </tr>
