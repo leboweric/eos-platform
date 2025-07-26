@@ -85,7 +85,7 @@ const ScorecardPage = () => {
     type: 'weekly', // weekly, monthly, quarterly
     valueType: 'number', // number, currency, percentage
     comparisonOperator: 'greater_equal', // greater_equal, less_equal, equal
-    groupId: '' // scorecard group
+    groupId: 'none' // scorecard group
   });
 
   useEffect(() => {
@@ -175,7 +175,7 @@ const ScorecardPage = () => {
       type: activeTab === 'monthly' ? 'monthly' : 'weekly',
       valueType: 'number',
       comparisonOperator: 'greater_equal',
-      groupId: ''
+      groupId: 'none'
     });
     setShowMetricDialog(true);
   };
@@ -196,7 +196,7 @@ const ScorecardPage = () => {
       type: metric.type || 'weekly',
       valueType: metric.value_type || 'number',
       comparisonOperator: metric.comparison_operator || 'greater_equal',
-      groupId: metric.group_id || ''
+      groupId: metric.group_id || 'none'
     });
     setShowMetricDialog(true);
   };
@@ -227,7 +227,7 @@ const ScorecardPage = () => {
         type: metricForm.type,
         valueType: metricForm.valueType,
         comparisonOperator: metricForm.comparisonOperator,
-        groupId: metricForm.groupId || null
+        groupId: metricForm.groupId === 'none' ? null : metricForm.groupId
       };
       
       console.log('Saving metric with data:', metricData);
@@ -1368,14 +1368,14 @@ const ScorecardPage = () => {
               <div>
                 <Label htmlFor="metric-group">Group (Optional)</Label>
                 <Select
-                  value={metricForm.groupId}
-                  onValueChange={(value) => setMetricForm(prev => ({ ...prev, groupId: value }))}
+                  value={metricForm.groupId || 'none'}
+                  onValueChange={(value) => setMetricForm(prev => ({ ...prev, groupId: value === 'none' ? '' : value }))}
                 >
                   <SelectTrigger id="metric-group">
                     <SelectValue placeholder="No group" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="">No group</SelectItem>
+                    <SelectItem value="none">No group</SelectItem>
                     {groups.map(group => (
                       <SelectItem key={group.id} value={group.id}>
                         {group.name}
