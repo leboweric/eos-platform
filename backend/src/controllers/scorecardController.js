@@ -54,7 +54,7 @@ export const getScorecard = async (req, res) => {
     const hasDescription = await checkColumn('scorecard_metrics', 'description');
     
     // Build query based on available columns
-    let selectColumns = 'sm.id, sm.name, sm.goal, sm.owner, sm.type, sm.created_at, sm.updated_at, sm.team_id, t.name as team_name';
+    let selectColumns = 'sm.id, sm.name, sm.goal, sm.owner, sm.type, sm.created_at, sm.updated_at, sm.team_id, sm.group_id, t.name as team_name';
     if (hasValueType) {
       selectColumns += ', sm.value_type';
     }
@@ -116,6 +116,15 @@ export const getScorecard = async (req, res) => {
     // Get team members for the organization
     const teamMembers = await getTeamMembers(orgId);
     
+    // Get groups for the team
+    const groupsQuery = `
+      SELECT id, name, description, color, display_order, is_expanded
+      FROM scorecard_groups
+      WHERE organization_id = $1 ${teamFilter}
+      ORDER BY display_order ASC
+    `;
+    const groups = await db.query(groupsQuery, queryParams);
+    
     res.json({
       success: true,
       data: {
@@ -125,7 +134,8 @@ export const getScorecard = async (req, res) => {
         })),
         weeklyScores,
         monthlyScores,
-        teamMembers
+        teamMembers,
+        groups: groups.rows
       }
     });
   } catch (error) {
@@ -141,7 +151,7 @@ export const getScorecard = async (req, res) => {
 export const createMetric = async (req, res) => {
   try {
     const { orgId, teamId } = req.params;
-    const { name, goal, owner, type = 'weekly', valueType = 'number', comparisonOperator = 'greater_equal', description } = req.body;
+    const { name, goal, owner, type = 'weekly', valueType = 'number', comparisonOperator = 'greater_equal', description, groupId } = req.body;
     
     // Check if new columns exist
     const hasValueType = await checkColumn('scorecard_metrics', 'value_type');
@@ -159,6 +169,12 @@ export const createMetric = async (req, res) => {
     let columns = ['organization_id', 'team_id', 'name', 'goal', 'owner', 'type', 'display_order'];
     let values = [orgId, teamId, name, goal, owner, type, nextOrder];
     let placeholders = ['$1', '$2', '$3', '$4', '$5', '$6', '$7'];
+    
+    if (groupId) {
+      columns.push('group_id');
+      values.push(groupId);
+      placeholders.push(`$${values.length}`);
+    }
     
     if (hasValueType) {
       columns.push('value_type');
@@ -542,6 +558,188 @@ export const updateMetricOrder = async (req, res) => {
     res.status(500).json({
       success: false,
       message: 'Failed to update metric order'
+    });
+  }
+};
+
+// Create a new group
+export const createGroup = async (req, res) => {
+  try {
+    const { orgId, teamId } = req.params;
+    const { name, description, color } = req.body;
+    
+    // Get the max display_order
+    const maxOrderResult = await db.query(
+      'SELECT COALESCE(MAX(display_order), -1) as max_order FROM scorecard_groups WHERE organization_id = $1 AND team_id = $2',
+      [orgId, teamId]
+    );
+    const nextOrder = maxOrderResult.rows[0].max_order + 1;
+    
+    const result = await db.query(
+      `INSERT INTO scorecard_groups (organization_id, team_id, name, description, color, display_order)
+       VALUES ($1, $2, $3, $4, $5, $6)
+       RETURNING *`,
+      [orgId, teamId, name, description, color || '#3B82F6', nextOrder]
+    );
+    
+    res.json({
+      success: true,
+      data: result.rows[0]
+    });
+  } catch (error) {
+    console.error('Error creating group:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Failed to create group'
+    });
+  }
+};
+
+// Update a group
+export const updateGroup = async (req, res) => {
+  try {
+    const { orgId, groupId } = req.params;
+    const { name, description, color, is_expanded } = req.body;
+    
+    const updates = [];
+    const values = [];
+    let paramCount = 1;
+    
+    if (name !== undefined) {
+      updates.push(`name = $${paramCount++}`);
+      values.push(name);
+    }
+    if (description !== undefined) {
+      updates.push(`description = $${paramCount++}`);
+      values.push(description);
+    }
+    if (color !== undefined) {
+      updates.push(`color = $${paramCount++}`);
+      values.push(color);
+    }
+    if (is_expanded !== undefined) {
+      updates.push(`is_expanded = $${paramCount++}`);
+      values.push(is_expanded);
+    }
+    
+    if (updates.length === 0) {
+      return res.status(400).json({
+        success: false,
+        message: 'No updates provided'
+      });
+    }
+    
+    values.push(groupId, orgId);
+    
+    const result = await db.query(
+      `UPDATE scorecard_groups 
+       SET ${updates.join(', ')}, updated_at = CURRENT_TIMESTAMP
+       WHERE id = $${paramCount} AND organization_id = $${paramCount + 1}
+       RETURNING *`,
+      values
+    );
+    
+    if (result.rows.length === 0) {
+      return res.status(404).json({
+        success: false,
+        message: 'Group not found'
+      });
+    }
+    
+    res.json({
+      success: true,
+      data: result.rows[0]
+    });
+  } catch (error) {
+    console.error('Error updating group:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Failed to update group'
+    });
+  }
+};
+
+// Delete a group
+export const deleteGroup = async (req, res) => {
+  try {
+    const { orgId, groupId } = req.params;
+    
+    // Check if group has metrics
+    const metricsCheck = await db.query(
+      'SELECT COUNT(*) as count FROM scorecard_metrics WHERE group_id = $1',
+      [groupId]
+    );
+    
+    if (parseInt(metricsCheck.rows[0].count) > 0) {
+      return res.status(400).json({
+        success: false,
+        message: 'Cannot delete group with metrics. Please move or delete metrics first.'
+      });
+    }
+    
+    const result = await db.query(
+      'DELETE FROM scorecard_groups WHERE id = $1 AND organization_id = $2 RETURNING *',
+      [groupId, orgId]
+    );
+    
+    if (result.rows.length === 0) {
+      return res.status(404).json({
+        success: false,
+        message: 'Group not found'
+      });
+    }
+    
+    res.json({
+      success: true,
+      message: 'Group deleted successfully'
+    });
+  } catch (error) {
+    console.error('Error deleting group:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Failed to delete group'
+    });
+  }
+};
+
+// Update group order
+export const updateGroupOrder = async (req, res) => {
+  try {
+    const { orgId, teamId } = req.params;
+    const { groups } = req.body; // Array of { id, display_order }
+    
+    if (!groups || !Array.isArray(groups)) {
+      return res.status(400).json({
+        success: false,
+        message: 'Groups array is required'
+      });
+    }
+    
+    await db.query('BEGIN');
+    
+    try {
+      for (const group of groups) {
+        await db.query(
+          'UPDATE scorecard_groups SET display_order = $1 WHERE id = $2 AND organization_id = $3',
+          [group.display_order, group.id, orgId]
+        );
+      }
+      
+      await db.query('COMMIT');
+      
+      res.json({
+        success: true,
+        message: 'Group order updated successfully'
+      });
+    } catch (error) {
+      await db.query('ROLLBACK');
+      throw error;
+    }
+  } catch (error) {
+    console.error('Error updating group order:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Failed to update group order'
     });
   }
 };

@@ -11,6 +11,91 @@ const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3001/api/v1';
  * - published_by: ID of user who published
  */
 export const scorecardService = {
+  // Group management
+  createGroup: async (orgId, teamId, group) => {
+    const token = localStorage.getItem('accessToken');
+    const response = await fetch(
+      `${API_URL}/organizations/${orgId}/teams/${teamId}/scorecard/groups`,
+      {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify(group),
+      }
+    );
+    
+    if (!response.ok) {
+      throw new Error('Failed to create group');
+    }
+    
+    const data = await response.json();
+    return data.data;
+  },
+
+  updateGroup: async (orgId, teamId, groupId, updates) => {
+    const token = localStorage.getItem('accessToken');
+    const response = await fetch(
+      `${API_URL}/organizations/${orgId}/teams/${teamId}/scorecard/groups/${groupId}`,
+      {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify(updates),
+      }
+    );
+    
+    if (!response.ok) {
+      throw new Error('Failed to update group');
+    }
+    
+    const data = await response.json();
+    return data.data;
+  },
+
+  deleteGroup: async (orgId, teamId, groupId) => {
+    const token = localStorage.getItem('accessToken');
+    const response = await fetch(
+      `${API_URL}/organizations/${orgId}/teams/${teamId}/scorecard/groups/${groupId}`,
+      {
+        method: 'DELETE',
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      }
+    );
+    
+    if (!response.ok) {
+      const error = await response.json();
+      throw new Error(error.message || 'Failed to delete group');
+    }
+    
+    return response.json();
+  },
+
+  updateGroupOrder: async (orgId, teamId, groups) => {
+    const token = localStorage.getItem('accessToken');
+    const response = await fetch(
+      `${API_URL}/organizations/${orgId}/teams/${teamId}/scorecard/groups/reorder`,
+      {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({ groups }),
+      }
+    );
+    
+    if (!response.ok) {
+      throw new Error('Failed to update group order');
+    }
+    
+    return response.json();
+  },
   // Update metric order
   updateMetricOrder: async (orgId, teamId, metrics) => {
     const token = localStorage.getItem('accessToken');
