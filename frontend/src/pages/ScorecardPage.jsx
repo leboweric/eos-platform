@@ -55,6 +55,10 @@ const ScorecardPage = () => {
   // Drag and drop state
   const [draggedItem, setDraggedItem] = useState(null);
   const [dragOverItem, setDragOverItem] = useState(null);
+  
+  // Filter metrics by type
+  const weeklyMetrics = metrics.filter(m => m.type === 'weekly');
+  const monthlyMetrics = metrics.filter(m => m.type === 'monthly');
   const [isSavingOrder, setIsSavingOrder] = useState(false);
   const [isRTL, setIsRTL] = useState(() => {
     // Load RTL preference from localStorage
