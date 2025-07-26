@@ -211,6 +211,17 @@ const templates = {
         <p>Hi Team,</p>
         <p>Here's a summary of your ${data.meetingType} held on ${data.meetingDate}:</p>
         
+        <div style="background-color: #f8f9fa; padding: 15px; border-radius: 8px; margin: 20px 0;">
+          <p style="margin: 5px 0;"><strong>Duration:</strong> ${data.duration}</p>
+          <p style="margin: 5px 0;"><strong>Meeting Rating:</strong> ${data.rating}/10</p>
+          ${data.metrics && Object.keys(data.metrics).length > 0 ? `
+            <p style="margin: 5px 0;"><strong>Issues Resolved:</strong> ${data.metrics.issuesResolved || 0}</p>
+            <p style="margin: 5px 0;"><strong>Issues Added:</strong> ${data.metrics.issuesAdded || 0}</p>
+            <p style="margin: 5px 0;"><strong>To-Dos Completed:</strong> ${data.metrics.todosCompleted || 0}</p>
+            <p style="margin: 5px 0;"><strong>To-Dos Added:</strong> ${data.metrics.todosAdded || 0}</p>
+          ` : ''}
+        </div>
+        
         ${data.attendees && data.attendees.length > 0 ? `
           <h3 style="color: #333; margin-top: 30px;">Attendees</h3>
           <ul style="color: #666;">

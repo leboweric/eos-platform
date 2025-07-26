@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useParams } from 'react-router-dom';
 import { useAuthStore } from '../stores/authStore';
+import { meetingsService } from '../services/meetingsService';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -629,26 +630,38 @@ const WeeklyAccountabilityMeetingPage = () => {
         teamMembers: teamMembers.length
       };
 
-      // TODO: In the future, implement email sending through backend
-      // For now, show the summary
-      const summaryText = `
-Meeting Summary - ${meetingDate}
+      // Prepare data for email
+      const completedTodos = todos.filter(t => t.status === 'completed');
+      const addedTodos = todos.filter(t => t.created_during_meeting);
+      
+      const meetingData = {
+        meetingType: 'Weekly Accountability Meeting',
+        duration: elapsedTime,
+        rating: meetingRating,
+        summary: `Issues resolved: ${issuesResolved}, Issues added: ${issuesAdded}, Todos completed: ${todosCompleted}, Todos added: ${todosAdded}`,
+        attendees: teamMembers,
+        metrics: {
+          issuesResolved,
+          issuesAdded,
+          todosCompleted,
+          todosAdded
+        },
+        todos: {
+          completed: completedTodos,
+          added: addedTodos
+        },
+        issues: issues.filter(i => i.updated_during_meeting || i.created_during_meeting),
+        notes: cascadingMessages.join('\n')
+      };
 
-Duration: ${duration}
-Rating: ${meetingRating}/10
-
-Issues:
-- Resolved: ${issuesResolved}
-- Added: ${issuesAdded}
-
-To-Dos:
-- Completed: ${todosCompleted}
-- Added: ${todosAdded}
-
-Team Members Present: ${teamMembers.length}
-`;
-
-      alert('Meeting Complete!\n' + summaryText);
+      // Send meeting summary email
+      try {
+        await meetingsService.concludeMeeting(meetingData);
+        setSuccess('Meeting complete! Summary email sent to all attendees.');
+      } catch (emailError) {
+        console.error('Failed to send meeting summary email:', emailError);
+        setError('Meeting complete, but failed to send summary email.');
+      }
       
       // Clear meeting active flag
       sessionStorage.removeItem('meetingActive');
