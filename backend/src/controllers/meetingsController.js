@@ -241,14 +241,12 @@ export const concludeMeeting = async (req, res) => {
           template: 'meetingSummary'
         });
         
-        const emailResult = await emailService.sendEmail({
-          to: attendeeEmails,
-          subject: `${meetingType || 'Meeting'} Summary - ${organizationName}`,
-          template: 'meetingSummary',
-          data: emailData
-        });
+        // Send to each email address
+        for (const email of attendeeEmails) {
+          await emailService.sendEmail(email, 'meetingSummary', emailData);
+        }
         
-        console.log('Meeting summary email sent successfully:', emailResult);
+        console.log('Meeting summary emails sent successfully to:', attendeeEmails);
       } catch (emailError) {
         console.error('Failed to send meeting summary email:', emailError);
         console.error('Email error details:', emailError.message, emailError.stack);
