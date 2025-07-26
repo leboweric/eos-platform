@@ -45,6 +45,21 @@ const GroupedScorecardView = ({
   const [draggedMetric, setDraggedMetric] = useState(null);
   const [dragOverGroup, setDragOverGroup] = useState(null);
 
+  // Format value based on type
+  const formatValue = (value, valueType) => {
+    if (value === null || value === undefined || value === '') return '-';
+    switch (valueType) {
+      case 'percentage':
+        return `${Math.round(value)}%`;
+      case 'currency':
+        return `$${parseFloat(value).toLocaleString()}`;
+      case 'decimal':
+        return parseFloat(value).toFixed(2);
+      default:
+        return Math.round(value);
+    }
+  };
+
   useEffect(() => {
     loadGroups();
   }, [orgId, teamId, type]);
@@ -225,7 +240,7 @@ const GroupedScorecardView = ({
           <GripVertical className="h-4 w-4 text-gray-400 cursor-move mx-auto" />
         </td>
         <td className="text-center p-2 w-16 text-sm">
-          {teamMembers.find(m => m.id === metric.owner)?.name || 'Unassigned'}
+          {metric.ownerName || metric.owner || teamMembers.find(m => m.id === metric.owner)?.name || '-'}
         </td>
         <td className="text-left p-2 font-medium w-48">{metric.name}</td>
         <td className="text-center p-2 w-12">
@@ -238,7 +253,7 @@ const GroupedScorecardView = ({
             <BarChart3 className="h-4 w-4 text-blue-600" />
           </Button>
         </td>
-        <td className="text-center p-2 w-20">{metric.goal}</td>
+        <td className="text-center p-2 w-20">{formatValue(metric.goal, metric.value_type)}</td>
         {/* Average column */}
         <td className="p-2 text-center bg-gray-50 font-semibold text-sm w-20">
           {(() => {
@@ -251,32 +266,43 @@ const GroupedScorecardView = ({
               <span className={`px-2 py-1 rounded ${
                 avgGoalMet ? 'text-green-800' : 'text-red-800'
               }`}>
-                {metric.value_type === 'number' ? Math.round(average) : average.toFixed(1)}
+                {formatValue(average, metric.value_type)}
               </span>
             );
           })()}
         </td>
-        {periods.map((period) => {
+        {periods.map((period, periodIndex) => {
           const value = scores[period.value] || '';
           const goal = parseFloat(metric.goal) || 0;
           const actual = parseFloat(value) || 0;
           const isOnTrack = actual >= goal;
           
+          // Check if this is the current period
+          const now = new Date();
+          const currentMonth = now.toLocaleString('default', { month: 'short' }).toUpperCase();
+          const currentYear = now.getFullYear().toString().slice(-2);
+          const currentMonthLabel = `${currentMonth} ${currentYear}`;
+          
+          const labels = isWeekly ? weekOptions : monthOptions;
+          const isCurrentPeriod = isWeekly 
+            ? period.value === weekOptions[weekOptions.length - 1]?.value
+            : labels[periodIndex]?.label === currentMonthLabel;
+          
           return (
-            <td key={period.value} className="p-2 text-center w-20">
+            <td key={period.value} className={`p-2 text-center w-20 ${isCurrentPeriod ? 'bg-indigo-50' : ''}`}>
               <button
                 onClick={() => onScoreUpdate(metric, period.value, value)}
                 className={`w-full px-2 py-1 rounded text-sm font-medium transition-colors
-                  ${value ? (isOnTrack ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800') : 'bg-gray-100 text-gray-600 hover:bg-gray-200'}`}
+                  ${value ? (isOnTrack ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800') : (isCurrentPeriod ? 'bg-indigo-100 text-indigo-600 hover:bg-indigo-200' : 'bg-gray-100 text-gray-600 hover:bg-gray-200')}`}
               >
-                {value || '-'}
+                {value ? formatValue(value, metric.value_type) : '-'}
               </button>
             </td>
           );
         })}
         {showTotal && (
           <td className="p-2 text-center font-semibold w-20 bg-gray-50">
-            {Object.values(scores).reduce((sum, val) => sum + (parseFloat(val) || 0), 0).toFixed(1)}
+            {formatValue(Object.values(scores).reduce((sum, val) => sum + (parseFloat(val) || 0), 0), metric.value_type)}
           </td>
         )}
         <td className="text-center p-2 w-12">
@@ -329,9 +355,11 @@ const GroupedScorecardView = ({
             const currentYear = now.getFullYear().toString().slice(-2);
             const currentMonthLabel = `${currentMonth} ${currentYear}`;
             
+            // For weekly view, last week is current
+            // For monthly view, match the current month label
             const isCurrentPeriod = isWeekly 
-              ? index === labels.length - 1  // Last week is current for weekly view
-              : option.label === currentMonthLabel; // Match current month for monthly view
+              ? periods[index] && periods[index].value === weekOptions[weekOptions.length - 1]?.value
+              : option.label === currentMonthLabel
             
             return (
               <th key={option.value} className={`text-center p-2 font-semibold text-xs w-20 ${
