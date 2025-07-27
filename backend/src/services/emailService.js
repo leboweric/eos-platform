@@ -3,12 +3,12 @@ import sgMail from '@sendgrid/mail';
 // Email templates
 const templates = {
   invitation: (data) => ({
-    subject: `You're invited to join ${data.organizationName} on Forty-2`,
+    subject: `You're invited to join ${data.organizationName} on AXP`,
     html: `
       <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
         <h2>You're invited to join ${data.organizationName}</h2>
         <p>Hi there,</p>
-        <p>${data.invitedByName} has invited you to join ${data.organizationName} on Forty-2 as a ${data.role}.</p>
+        <p>${data.invitedByName} has invited you to join ${data.organizationName} on AXP as a ${data.role}.</p>
         <p>Click the button below to accept your invitation and create your account:</p>
         <div style="text-align: center; margin: 30px 0;">
           <a href="${data.invitationLink}" style="background-color: #4F46E5; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; display: inline-block;">
@@ -21,7 +21,7 @@ const templates = {
       </div>
     `,
     text: `
-      You're invited to join ${data.organizationName} on Forty-2
+      You're invited to join ${data.organizationName} on AXP
       
       ${data.invitedByName} has invited you to join ${data.organizationName} as a ${data.role}.
       
@@ -32,12 +32,12 @@ const templates = {
   }),
 
   passwordReset: (data) => ({
-    subject: 'Reset Your Password - Forty-2',
+    subject: 'Reset Your Password - AXP',
     html: `
       <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
         <h2>Reset Your Password</h2>
         <p>Hi ${data.firstName},</p>
-        <p>We received a request to reset your password for your Forty-2 account.</p>
+        <p>We received a request to reset your password for your AXP account.</p>
         <p>Click the button below to reset your password:</p>
         <div style="text-align: center; margin: 30px 0;">
           <a href="${data.resetLink}" style="background-color: #4F46E5; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; display: inline-block;">
@@ -55,7 +55,7 @@ const templates = {
       
       Hi ${data.firstName},
       
-      We received a request to reset your password for your Forty-2 account.
+      We received a request to reset your password for your AXP account.
       
       Reset your password here: ${data.resetLink}
       
@@ -66,7 +66,7 @@ const templates = {
   }),
 
   trialReminder: (data) => ({
-    subject: `Your Forty-2 trial ends in ${data.daysRemaining} days`,
+    subject: `Your AXP trial ends in ${data.daysRemaining} days`,
     html: `
       <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
         <h2>Your trial is ending soon</h2>
@@ -123,12 +123,12 @@ const templates = {
   }),
 
   clientWelcome: (data) => ({
-    subject: `Welcome to Forty-2 - ${data.organizationName}`,
+    subject: `Welcome to AXP - ${data.organizationName}`,
     html: `
       <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
-        <h2>Welcome to Forty-2!</h2>
+        <h2>Welcome to AXP!</h2>
         <p>Hi ${data.firstName},</p>
-        <p>Your Strategy Consultant, ${data.consultantName}, has created an account for ${data.organizationName} on Forty-2.</p>
+        <p>Your Strategy Consultant, ${data.consultantName}, has created an account for ${data.organizationName} on AXP.</p>
         <p>Here are your login credentials:</p>
         <div style="background-color: #f5f5f5; padding: 20px; border-radius: 8px; margin: 20px 0;">
           <p><strong>Email:</strong> ${data.email}</p>
@@ -137,19 +137,19 @@ const templates = {
         <p style="color: #DC2626;"><strong>Important:</strong> Please change your password after your first login.</p>
         <div style="text-align: center; margin: 30px 0;">
           <a href="${data.loginUrl}" style="background-color: #4F46E5; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; display: inline-block;">
-            Log In to Forty-2
+            Log In to AXP
           </a>
         </div>
-        <p>Forty-2 will help you implement proven business strategies in your organization.</p>
+        <p>AXP will help you implement proven business strategies in your organization.</p>
         <p>If you have any questions, please contact your Strategy Consultant.</p>
       </div>
     `,
     text: `
-      Welcome to Forty-2!
+      Welcome to AXP!
       
       Hi ${data.firstName},
       
-      Your Strategy Consultant, ${data.consultantName}, has created an account for ${data.organizationName} on Forty-2.
+      Your Strategy Consultant, ${data.consultantName}, has created an account for ${data.organizationName} on AXP.
       
       Your login credentials:
       Email: ${data.email}
@@ -159,7 +159,7 @@ const templates = {
       
       Log in here: ${data.loginUrl}
       
-      Forty-2 will help you implement proven business strategies in your organization.
+      AXP will help you implement proven business strategies in your organization.
     `
   }),
 
@@ -167,7 +167,7 @@ const templates = {
     subject: `Your account has been created - ${data.organizationName}`,
     html: `
       <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
-        <h2>Welcome to Forty-2!</h2>
+        <h2>Welcome to AXP!</h2>
         <p>Hi ${data.firstName},</p>
         <p>${data.createdByName} has created an account for you to access ${data.organizationName}'s business management system.</p>
         <p>Here are your login credentials:</p>
@@ -185,7 +185,7 @@ const templates = {
       </div>
     `,
     text: `
-      Welcome to Forty-2!
+      Welcome to AXP!
       
       Hi ${data.firstName},
       
@@ -262,7 +262,7 @@ const templates = {
         </div>
         
         <p style="color: #666; font-size: 14px; margin-top: 30px;">
-          This summary was automatically generated by Forty-2.
+          This summary was automatically generated by AXP.
         </p>
       </div>
     `,
@@ -284,7 +284,7 @@ const templates = {
       
       View full meeting details: ${data.meetingLink}
       
-      This summary was automatically generated by Forty-2.
+      This summary was automatically generated by AXP.
     `
   })
 };

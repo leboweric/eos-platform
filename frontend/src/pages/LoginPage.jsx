@@ -48,7 +48,7 @@ const LoginPage = () => {
         <div className="text-center mb-8">
           <Link to="/" className="inline-flex items-center space-x-2">
             <Target className="h-8 w-8 text-primary" />
-            <span className="text-2xl font-bold">Forty-2</span>
+            <span className="text-2xl font-bold">AXP</span>
           </Link>
         </div>
 
@@ -56,7 +56,7 @@ const LoginPage = () => {
           <CardHeader className="text-center">
             <CardTitle className="text-2xl">Welcome Back</CardTitle>
             <CardDescription>
-              Sign in to your Forty-2 account
+              Sign in to your AXP account
             </CardDescription>
             {/* TODO: Update this check for more generic consultant verification */}
             {emailValue.toLowerCase().endsWith('@eosworldwide.com') && (

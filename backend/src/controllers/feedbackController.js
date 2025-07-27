@@ -48,7 +48,7 @@ export const submitFeedback = async (req, res) => {
       
       <hr>
       <p style="color: #666; font-size: 12px;">
-        Submitted via Forty-2 Platform on ${new Date().toLocaleString()}
+        Submitted via AXP Platform on ${new Date().toLocaleString()}
       </p>
     `;
     

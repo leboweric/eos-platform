@@ -85,7 +85,7 @@ const EOSIRegisterPage = () => {
         <div className="text-center mb-8">
           <Link to="/" className="inline-flex items-center space-x-2 text-gray-600 hover:text-gray-900 mb-4">
             <Target className="h-8 w-8 text-primary" />
-            <span className="text-2xl font-bold">Forty-2</span>
+            <span className="text-2xl font-bold">AXP</span>
           </Link>
           <h1 className="text-3xl font-bold text-gray-900 flex items-center justify-center gap-2">
             <Briefcase className="h-8 w-8 text-primary" />

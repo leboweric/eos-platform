@@ -182,7 +182,7 @@ const Layout = ({ children }) => {
             ) : null}
             <div className="flex items-center space-x-2" style={{ display: logoUrl ? 'none' : 'flex' }}>
               <Target className="h-8 w-8 text-primary" />
-              <span className="text-xl font-bold">Forty-2</span>
+              <span className="text-xl font-bold">AXP</span>
             </div>
           </Link>
           <button
@@ -280,7 +280,7 @@ const Layout = ({ children }) => {
                 {user?.organizationName && (
                   <span>{user.organizationName} </span>
                 )}
-                {navigation.find(item => item.href === location.pathname)?.name || 'Forty-2'}
+                {navigation.find(item => item.href === location.pathname)?.name || 'AXP'}
               </h1>
             </div>
 

@@ -14,7 +14,7 @@ async function sendTestEmail() {
   const msg = {
     to: 'eric@profitbuildernetwork.com',
     from: 'noreply@42vibes.com',
-    subject: 'Test Email from Forty-2',
+    subject: 'Test Email from AXP',
     text: 'This is a test email to verify SendGrid is working correctly.',
     html: '<strong>This is a test email to verify SendGrid is working correctly.</strong>',
   };

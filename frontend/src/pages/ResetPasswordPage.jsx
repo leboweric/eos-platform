@@ -79,7 +79,7 @@ const ResetPasswordPage = () => {
         <div className="text-center mb-8">
           <Link to="/" className="inline-flex items-center space-x-2">
             <Target className="h-8 w-8 text-primary" />
-            <span className="text-2xl font-bold">Forty-2</span>
+            <span className="text-2xl font-bold">AXP</span>
           </Link>
         </div>
 
