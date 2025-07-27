@@ -52,7 +52,7 @@ const ForgotPasswordPage = () => {
             <img 
               src="/AXP_logo_upper_left.png" 
               alt="AXP" 
-              className="h-12 w-auto"
+              className="h-20 w-auto"
             />
           </Link>
         </div>

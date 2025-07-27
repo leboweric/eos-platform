@@ -87,7 +87,7 @@ const EOSIRegisterPage = () => {
             <img 
               src="/AXP_logo_upper_left.png" 
               alt="AXP" 
-              className="h-12 w-auto"
+              className="h-20 w-auto"
             />
           </Link>
           <h1 className="text-3xl font-bold text-gray-900 flex items-center justify-center gap-2">

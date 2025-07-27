@@ -76,7 +76,7 @@ const LandingPage = () => {
             <img 
               src="/AXP_logo_upper_left.png" 
               alt="AXP" 
-              className="h-10 w-auto"
+              className="h-14 w-auto"
             />
           </div>
           <div className="flex items-center space-x-4">
