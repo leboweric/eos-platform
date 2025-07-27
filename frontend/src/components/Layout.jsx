@@ -291,7 +291,7 @@ const Layout = ({ children }) => {
               <img 
                 src="/AXP_logo_upper_left.png" 
                 alt="AXP" 
-                className="h-10 w-auto"
+                className="h-20 w-auto"
               />
             </div>
 
