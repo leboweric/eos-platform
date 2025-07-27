@@ -54,9 +54,12 @@ const RegisterPage = () => {
       <div className="w-full max-w-md">
         {/* Logo */}
         <div className="text-center mb-8">
-          <Link to="/" className="inline-flex items-center space-x-2">
-            <Target className="h-8 w-8 text-primary" />
-            <span className="text-2xl font-bold">AXP</span>
+          <Link to="/" className="inline-flex items-center justify-center">
+            <img 
+              src="/AXP_logo_upper_left.png" 
+              alt="AXP" 
+              className="h-12 w-auto"
+            />
           </Link>
         </div>
 
@@ -215,17 +218,11 @@ const RegisterPage = () => {
               </Button>
             </form>
 
-            <div className="mt-6 text-center space-y-2">
+            <div className="mt-6 text-center">
               <p className="text-sm text-gray-600">
                 Already have an account?{' '}
                 <Link to="/login" className="text-primary hover:underline font-medium">
                   Sign in
-                </Link>
-              </p>
-              <p className="text-sm text-gray-600">
-                Strategy Consultant?{' '}
-                <Link to="/consultant-register" className="text-primary hover:underline font-medium">
-                  Create Consultant account
                 </Link>
               </p>
             </div>

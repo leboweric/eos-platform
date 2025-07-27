@@ -77,9 +77,12 @@ const ResetPasswordPage = () => {
       <div className="w-full max-w-md">
         {/* Logo */}
         <div className="text-center mb-8">
-          <Link to="/" className="inline-flex items-center space-x-2">
-            <Target className="h-8 w-8 text-primary" />
-            <span className="text-2xl font-bold">AXP</span>
+          <Link to="/" className="inline-flex items-center justify-center">
+            <img 
+              src="/AXP_logo_upper_left.png" 
+              alt="AXP" 
+              className="h-12 w-auto"
+            />
           </Link>
         </div>
 

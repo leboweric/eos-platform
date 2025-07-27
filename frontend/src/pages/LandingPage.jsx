@@ -72,9 +72,12 @@ const LandingPage = () => {
       {/* Header */}
       <header className="border-b bg-white/95 backdrop-blur supports-[backdrop-filter]:bg-white/60">
         <div className="container mx-auto px-4 py-4 flex items-center justify-between">
-          <div className="flex items-center space-x-2">
-            <Target className="h-8 w-8 text-primary" />
-            <span className="text-2xl font-bold">AXP</span>
+          <div className="flex items-center">
+            <img 
+              src="/AXP_logo_upper_left.png" 
+              alt="AXP" 
+              className="h-10 w-auto"
+            />
           </div>
           <div className="flex items-center space-x-4">
             <Link to="/login">
@@ -249,9 +252,12 @@ const LandingPage = () => {
         <div className="container mx-auto max-w-6xl">
           <div className="grid md:grid-cols-4 gap-8">
             <div>
-              <div className="flex items-center space-x-2 mb-4">
-                <Target className="h-6 w-6" />
-                <span className="text-lg font-bold">AXP</span>
+              <div className="flex items-center mb-4">
+                <img 
+                  src="/AXP_logo_upper_left.png" 
+                  alt="AXP" 
+                  className="h-8 w-auto"
+                />
               </div>
               <p className="text-gray-400">
                 The most advanced platform for strategic implementation and management.
