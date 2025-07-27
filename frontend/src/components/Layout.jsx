@@ -269,7 +269,7 @@ const Layout = ({ children }) => {
         {/* Top bar */}
         <div className="sticky top-0 z-30 bg-white border-b px-4 py-3">
           <div className="flex items-center justify-between">
-            <div className="flex items-center">
+            <div className="flex items-center flex-1">
               {!hideSidebar && (
                 <button
                   onClick={() => setSidebarOpen(true)}
@@ -284,6 +284,15 @@ const Layout = ({ children }) => {
                 )}
                 {navigation.find(item => item.href === location.pathname)?.name || 'AXP'}
               </h1>
+            </div>
+
+            {/* Center Logo */}
+            <div className="absolute left-1/2 transform -translate-x-1/2">
+              <img 
+                src="/AXP_logo_upper_left.png" 
+                alt="AXP" 
+                className="h-10 w-auto"
+              />
             </div>
 
             <div className="flex items-center space-x-4">
