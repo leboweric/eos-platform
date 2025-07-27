@@ -267,7 +267,7 @@ const Layout = ({ children }) => {
       {/* Main content */}
       <div className="flex-1 flex flex-col">
         {/* Top bar */}
-        <div className="sticky top-0 z-30 bg-white border-b px-4 py-3">
+        <div className="sticky top-0 z-30 bg-white border-b px-4 py-6">
           <div className="flex items-center justify-between">
             <div className="flex items-center flex-1">
               {!hideSidebar && (
