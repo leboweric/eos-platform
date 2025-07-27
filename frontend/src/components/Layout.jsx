@@ -250,15 +250,15 @@ const Layout = ({ children }) => {
           </div>
         </nav>
 
-        {/* AXP Branding */}
+        {/* Organization info */}
         <div className="mt-auto p-4 border-t bg-gray-50">
-          <div className="flex items-center justify-center">
-            <img 
-              src="/AXP_logo_upper_left.png" 
-              alt="Powered by AXP" 
-              className="h-12 w-auto opacity-70 hover:opacity-100 transition-opacity"
-              title="Powered by AXP - Accountability and Execution Platform"
-            />
+          <div className="flex items-center space-x-3">
+            <div className="flex-1">
+              <div className="text-xs text-gray-500">Organization</div>
+              <div className="text-sm font-medium text-gray-900 truncate">
+                {user?.organizationName || 'Loading...'}
+              </div>
+            </div>
           </div>
         </div>
       </div>
