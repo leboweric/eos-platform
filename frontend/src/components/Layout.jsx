@@ -256,7 +256,7 @@ const Layout = ({ children }) => {
             <img 
               src="/AXP_logo_upper_left.png" 
               alt="Powered by AXP" 
-              className="h-8 w-auto opacity-70 hover:opacity-100 transition-opacity"
+              className="h-12 w-auto opacity-70 hover:opacity-100 transition-opacity"
               title="Powered by AXP - Accountability and Execution Platform"
             />
           </div>
