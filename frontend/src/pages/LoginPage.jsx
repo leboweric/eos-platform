@@ -139,17 +139,11 @@ const LoginPage = () => {
               </Button>
             </form>
 
-            <div className="mt-6 text-center space-y-2">
+            <div className="mt-6 text-center">
               <p className="text-sm text-gray-600">
                 Don't have an account?{' '}
                 <Link to="/register" className="text-primary hover:underline font-medium">
                   Sign up
-                </Link>
-              </p>
-              <p className="text-sm text-gray-600">
-                Strategy Consultant?{' '}
-                <Link to="/consultant-register" className="text-primary hover:underline font-medium">
-                  Create Consultant account
                 </Link>
               </p>
             </div>
