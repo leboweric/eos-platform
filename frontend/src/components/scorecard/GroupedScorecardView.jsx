@@ -48,6 +48,8 @@ const GroupedScorecardView = ({
   const [dragOverGroup, setDragOverGroup] = useState(null);
   const [draggedGroup, setDraggedGroup] = useState(null);
   const [dragOverGroupIndex, setDragOverGroupIndex] = useState(null);
+  const [draggedMetricIndex, setDraggedMetricIndex] = useState(null);
+  const [dragOverMetricIndex, setDragOverMetricIndex] = useState(null);
 
   // Format value based on type
   const formatValue = (value, valueType) => {
@@ -206,8 +208,9 @@ const GroupedScorecardView = ({
   };
 
   // Drag and drop handlers
-  const handleDragStart = (e, metric) => {
+  const handleDragStart = (e, metric, index) => {
     setDraggedMetric(metric);
+    setDraggedMetricIndex(index);
     e.dataTransfer.effectAllowed = 'move';
   };
 
@@ -259,6 +262,64 @@ const GroupedScorecardView = ({
     setDragOverGroup(null);
     setDraggedGroup(null);
     setDragOverGroupIndex(null);
+    setDraggedMetricIndex(null);
+    setDragOverMetricIndex(null);
+  };
+
+  // Metric drag handlers for reordering within groups
+  const handleMetricDragEnter = (e, index) => {
+    e.preventDefault();
+    if (draggedMetricIndex !== index) {
+      setDragOverMetricIndex(index);
+    }
+  };
+
+  const handleMetricDragLeave = (e) => {
+    e.preventDefault();
+    if (e.currentTarget.contains(e.relatedTarget)) return;
+    setDragOverMetricIndex(null);
+  };
+
+  const handleMetricDrop = async (e, dropIndex, groupId) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setDragOverMetricIndex(null);
+
+    if (draggedMetricIndex === null || draggedMetricIndex === dropIndex || !draggedMetric) {
+      return;
+    }
+
+    // Only handle reordering within the same group
+    if (draggedMetric.group_id === groupId) {
+      try {
+        // Get metrics for this group (or ungrouped)
+        const groupMetrics = metrics.filter(m => m.group_id === groupId);
+        
+        // Create new order array
+        const newOrder = [...groupMetrics];
+        const [movedMetric] = newOrder.splice(draggedMetricIndex, 1);
+        newOrder.splice(dropIndex, 0, movedMetric);
+
+        // Update display order for all metrics in the group
+        const updates = newOrder.map((metric, index) => ({
+          id: metric.id,
+          display_order: index
+        }));
+
+        await scorecardService.updateMetricOrder(orgId, teamId, updates);
+        
+        // Refresh to get updated order
+        if (onRefresh) {
+          await onRefresh();
+        }
+      } catch (error) {
+        console.error('Failed to reorder metrics:', error);
+        alert('Failed to reorder metrics. Please try again.');
+      }
+    }
+    
+    setDraggedMetric(null);
+    setDraggedMetricIndex(null);
   };
 
   // Group drag handlers
@@ -308,7 +369,7 @@ const GroupedScorecardView = ({
     setDragOverGroupIndex(null);
   };
 
-  const renderMetricRow = (metric, index) => {
+  const renderMetricRow = (metric, index, groupId) => {
     const isWeekly = metric.type === 'weekly';
     const scores = isWeekly ? weeklyScores[metric.id] || {} : monthlyScores[metric.id] || {};
     const periods = isWeekly ? selectedWeeks : selectedMonths;
@@ -316,10 +377,16 @@ const GroupedScorecardView = ({
     return (
       <tr 
         key={metric.id} 
-        className="border-b hover:bg-gray-50 cursor-move"
+        className={`border-b hover:bg-gray-50 cursor-move ${
+          dragOverMetricIndex === index && draggedMetric?.group_id === groupId ? 'bg-blue-50' : ''
+        }`}
         draggable
-        onDragStart={(e) => handleDragStart(e, metric)}
+        onDragStart={(e) => handleDragStart(e, metric, index)}
         onDragEnd={handleDragEnd}
+        onDragOver={handleDragOver}
+        onDragEnter={(e) => handleMetricDragEnter(e, index)}
+        onDragLeave={handleMetricDragLeave}
+        onDrop={(e) => handleMetricDrop(e, index, groupId)}
       >
         <td className="text-center p-2 w-8">
           <GripVertical className="h-4 w-4 text-gray-400 cursor-move mx-auto" />
@@ -537,7 +604,7 @@ const GroupedScorecardView = ({
                     <table className="w-full table-fixed">
                       {renderHeaders()}
                       <tbody>
-                        {groupMetrics.map((metric, index) => renderMetricRow(metric, index))}
+                        {groupMetrics.map((metric, index) => renderMetricRow(metric, index, group.id))}
                       </tbody>
                     </table>
                   </div>
@@ -569,7 +636,7 @@ const GroupedScorecardView = ({
               <table className="w-full table-fixed">
                 {renderHeaders()}
                 <tbody>
-                  {ungroupedMetrics.map((metric, index) => renderMetricRow(metric, index))}
+                  {ungroupedMetrics.map((metric, index) => renderMetricRow(metric, index, null))}
                 </tbody>
               </table>
             </div>

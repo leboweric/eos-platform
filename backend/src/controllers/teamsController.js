@@ -120,12 +120,16 @@ export const createTeam = async (req, res) => {
       RETURNING *
     `;
 
+    // Automatically set is_leadership_team to true if name contains "Leadership Team"
+    const isLeadershipTeam = is_leadership_team || 
+      (name && (name === 'Leadership Team' || name.toLowerCase().includes('leadership team')));
+    
     const result = await db.query(query, [
       orgId,
       name,
       description,
       department_id,
-      is_leadership_team || false
+      isLeadershipTeam
     ]);
 
     res.status(201).json({
