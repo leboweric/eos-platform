@@ -4,8 +4,6 @@ import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Badge } from '@/components/ui/badge';
 import { 
-  Square,
-  CheckSquare,
   Calendar,
   User,
   Edit,
@@ -54,17 +52,6 @@ const TodosList = ({
     return new Date(year, month - 1, day); // month is 0-indexed in JS
   };
   
-  const handleToggleComplete = async (todo) => {
-    try {
-      const newStatus = todo.status === 'complete' ? 'incomplete' : 'complete';
-      await todosService.updateTodo(todo.id, {
-        status: newStatus
-      });
-      onUpdate();
-    } catch (error) {
-      console.error('Failed to toggle todo:', error);
-    }
-  };
 
   const handleMakeItAnIssue = async (todo) => {
     try {
@@ -260,33 +247,8 @@ const TodosList = ({
                       <DropdownMenuContent align="end">
                         <DropdownMenuItem onClick={() => onEdit(todo)}>
                           <Edit className="mr-2 h-4 w-4" />
-                          Edit
+                          Update
                         </DropdownMenuItem>
-                        <DropdownMenuItem 
-                          onClick={() => handleToggleComplete(todo)}
-                          className={todo.status === 'complete' ? 'text-orange-600' : 'text-green-600'}
-                        >
-                          {todo.status === 'complete' ? (
-                            <>
-                              <Square className="mr-2 h-4 w-4" />
-                              Mark Incomplete
-                            </>
-                          ) : (
-                            <>
-                              <CheckSquare className="mr-2 h-4 w-4" />
-                              Mark Complete
-                            </>
-                          )}
-                        </DropdownMenuItem>
-                        {onConvertToIssue && (
-                          <DropdownMenuItem 
-                            onClick={() => onConvertToIssue(todo)}
-                            className="text-blue-600"
-                          >
-                            <AlertTriangle className="mr-2 h-4 w-4" />
-                            Create Issue
-                          </DropdownMenuItem>
-                        )}
                       </DropdownMenuContent>
                         </DropdownMenu>
                       </div>
