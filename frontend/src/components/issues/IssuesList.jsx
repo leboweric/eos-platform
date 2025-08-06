@@ -107,7 +107,7 @@ const IssuesList = ({
                   <div className="flex items-center gap-3">
                     <div className="flex-1">
                       <div className={`line-clamp-1 ${
-                        issue.status === 'closed' ? 'line-through text-gray-500' : 'text-gray-900'
+                        issue.status === 'closed' ? 'text-gray-500' : 'text-gray-900'
                       }`}>{issue.title}</div>
                     </div>
                     <div className="flex items-center gap-2 text-gray-400">
