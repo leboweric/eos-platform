@@ -40,7 +40,6 @@ const IssuesPage = () => {
   // Dialog states
   const [showIssueDialog, setShowIssueDialog] = useState(false);
   const [editingIssue, setEditingIssue] = useState(null);
-  const [selectedIssueIds, setSelectedIssueIds] = useState([]);
 
   useEffect(() => {
     fetchIssues();
@@ -142,25 +141,6 @@ const IssuesPage = () => {
     }
   };
 
-  const handleArchiveSelected = async () => {
-    if (selectedIssueIds.length === 0) {
-      setError('Please select issues to archive');
-      return;
-    }
-    
-    if (!confirm(`Are you sure you want to archive ${selectedIssueIds.length} selected issue(s)?`)) return;
-    
-    try {
-      // Archive each selected issue
-      await Promise.all(selectedIssueIds.map(id => issuesService.archiveIssue(id)));
-      setSuccess(`${selectedIssueIds.length} issue(s) archived successfully`);
-      setSelectedIssueIds([]);
-      await fetchIssues();
-    } catch (error) {
-      console.error('Failed to archive selected issues:', error);
-      setError('Failed to archive selected issues');
-    }
-  };
 
   const handleArchive = async (issueId) => {
     try {
@@ -228,16 +208,6 @@ const IssuesPage = () => {
             <p className="text-gray-600 mt-2 text-lg">Track and resolve organizational issues</p>
           </div>
           <div className="flex gap-2">
-            {activeTab !== 'archived' && selectedIssueIds.length > 0 && (
-              <Button 
-                onClick={handleArchiveSelected} 
-                variant="outline"
-                className="text-gray-600"
-              >
-                <Archive className="mr-2 h-4 w-4" />
-                Archive Selected ({selectedIssueIds.length})
-              </Button>
-            )}
             {activeTab !== 'archived' && (
               <Button onClick={handleCreateIssue} className="bg-indigo-600 hover:bg-indigo-700 text-white">
                 <Plus className="mr-2 h-4 w-4" />
@@ -261,10 +231,7 @@ const IssuesPage = () => {
           </Alert>
         )}
 
-        <Tabs value={activeTab} onValueChange={(value) => {
-          setActiveTab(value);
-          setSelectedIssueIds([]);
-        }} className="space-y-6">
+        <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
           <TabsList className="grid w-full grid-cols-3 h-14 bg-white shadow-sm">
             <TabsTrigger value="short_term" className="data-[state=active]:bg-indigo-600 data-[state=active]:text-white text-lg font-medium">
               <Calendar className="mr-2 h-5 w-5" />
@@ -318,8 +285,6 @@ const IssuesPage = () => {
                   getStatusColor={getStatusColor}
                   getStatusIcon={getStatusIcon}
                   showVoting={false} // Will be enabled during Weekly Accountability Meetings
-                  selectedIssues={selectedIssueIds}
-                  onSelectionChange={setSelectedIssueIds}
                 />
               )
             )}

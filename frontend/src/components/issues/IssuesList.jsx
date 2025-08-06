@@ -1,36 +1,24 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
 import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu';
-import {
   Dialog,
   DialogContent,
   DialogHeader,
   DialogTitle,
-  DialogDescription,
 } from '@/components/ui/dialog';
 import { 
-  MoreVertical,
   Edit,
   User,
   Calendar,
   Paperclip,
-  CheckCircle,
-  AlertTriangle,
   ArrowRight,
   ThumbsUp,
   Clock,
   MessageSquare,
-  Archive,
-  Check
+  Archive
 } from 'lucide-react';
 
 const IssuesList = ({ 
@@ -43,9 +31,7 @@ const IssuesList = ({
   getStatusColor, 
   getStatusIcon, 
   readOnly = false, 
-  showVoting = false,
-  selectedIssues,
-  onSelectionChange
+  showVoting = false
 }) => {
   const [selectedIssue, setSelectedIssue] = useState(null);
 
@@ -58,10 +44,6 @@ const IssuesList = ({
     });
   };
 
-  const statusOptions = [
-    { value: 'open', label: 'Open', icon: <AlertTriangle className="h-4 w-4" /> },
-    { value: 'closed', label: 'Closed', icon: <CheckCircle className="h-4 w-4" /> }
-  ];
 
   return (
     <>
@@ -98,13 +80,9 @@ const IssuesList = ({
                 >
                   <div className="flex items-center justify-center">
                     <Checkbox
-                      checked={selectedIssues?.includes(issue.id) || false}
+                      checked={issue.status === 'closed'}
                       onCheckedChange={(checked) => {
-                        if (checked) {
-                          onSelectionChange([...(selectedIssues || []), issue.id]);
-                        } else {
-                          onSelectionChange((selectedIssues || []).filter(id => id !== issue.id));
-                        }
+                        onStatusChange(issue.id, checked ? 'closed' : 'open');
                       }}
                       className="data-[state=checked]:bg-green-600 data-[state=checked]:border-green-600"
                     />
@@ -129,7 +107,7 @@ const IssuesList = ({
                   <div className="flex items-center gap-3">
                     <div className="flex-1">
                       <div className={`line-clamp-1 ${
-                        selectedIssues?.includes(issue.id) ? 'line-through text-gray-500' : 'text-gray-900'
+                        issue.status === 'closed' ? 'line-through text-gray-500' : 'text-gray-900'
                       }`}>{issue.title}</div>
                       {issue.description && (
                         <div className="text-sm text-gray-500 line-clamp-1 mt-1">
