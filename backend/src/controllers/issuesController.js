@@ -58,6 +58,7 @@ export const getIssues = async (req, res) => {
         i.created_at,
         i.updated_at,
         i.archived,
+        i.archived_at,
         i.vote_count,
         creator.first_name || ' ' || creator.last_name as created_by_name,
         owner.first_name || ' ' || owner.last_name as owner_name,
@@ -553,7 +554,9 @@ export const archiveClosedIssues = async (req, res) => {
     
     let query = `
       UPDATE issues 
-      SET archived = TRUE, updated_at = CURRENT_TIMESTAMP
+      SET archived = TRUE, 
+          archived_at = CURRENT_TIMESTAMP,
+          updated_at = CURRENT_TIMESTAMP
       WHERE organization_id = $1 
       AND status = 'closed' 
       AND archived = FALSE
