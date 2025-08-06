@@ -859,7 +859,16 @@ const QuarterlyPrioritiesPage = () => {
                 </CardDescription>
               )}
             </div>
-            <div className="flex space-x-2">
+            <div className="flex space-x-1">
+              {/* Show/Hide Details Button - moved to header */}
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => setIsExpanded(!isExpanded)}
+                title={isExpanded ? "Hide Details" : "Show Details"}
+              >
+                {isExpanded ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
+              </Button>
               {isEditing ? (
                 <>
                   <Button variant="ghost" size="sm" onClick={handleSave}>
@@ -913,30 +922,41 @@ const QuarterlyPrioritiesPage = () => {
             </div>
           </div>
         </CardHeader>
-        <CardContent>
-          {/* Show/Hide Details Button */}
-          <div className="flex justify-center mb-3">
-            <Button
-              variant="ghost"
-              size="sm"
-              className="text-gray-500 hover:text-gray-700"
-              onClick={() => setIsExpanded(!isExpanded)}
-            >
-              {isExpanded ? (
-                <>
-                  <ChevronUp className="h-4 w-4 mr-1" />
-                  Hide Details
-                </>
-              ) : (
-                <>
-                  <ChevronDown className="h-4 w-4 mr-1" />
-                  Show Details
-                </>
-              )}
-            </Button>
-          </div>
-          
-          {isExpanded && (
+        {/* Compact view when collapsed */}
+        {!isExpanded && (
+          <CardContent className="pt-2 pb-3">
+            <div className="flex items-center justify-between text-sm">
+              <div className="flex items-center gap-4">
+                {/* Owner */}
+                <div className="flex items-center gap-1 text-gray-600">
+                  <User className="h-3.5 w-3.5" />
+                  <span>{priority.owner?.name || 'Unassigned'}</span>
+                </div>
+                {/* Due Date */}
+                <div className="flex items-center gap-1 text-gray-600">
+                  <Calendar className="h-3.5 w-3.5" />
+                  <span>{formatDate(priority.dueDate)}</span>
+                </div>
+                {/* Progress */}
+                {priority.progress > 0 && (
+                  <div className="flex items-center gap-2">
+                    <Progress value={priority.progress} className="w-16 h-2" />
+                    <span className="text-xs text-gray-600">{priority.progress}%</span>
+                  </div>
+                )}
+              </div>
+              {/* Status Badge */}
+              <Badge className={`${statusColors[priority.status]} border`}>
+                {statusIcons[priority.status]}
+                <span className="ml-1 capitalize">{priority.status?.replace('-', ' ')}</span>
+              </Badge>
+            </div>
+          </CardContent>
+        )}
+        {/* Detailed view when expanded */}
+        {isExpanded && (
+        <CardContent className="pt-4">
+          {/* Removed Show/Hide Details Button - now in header */}
           <div className="space-y-4">
             {/* Progress and Details */}
             <div className="grid md:grid-cols-4 gap-4">
@@ -1360,8 +1380,8 @@ const QuarterlyPrioritiesPage = () => {
               </div>
             )}
           </div>
-          )}
         </CardContent>
+        )}
 
         {/* Add Update Dialog */}
         <Dialog open={showUpdateDialog} onOpenChange={setShowUpdateDialog}>
