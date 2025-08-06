@@ -92,19 +92,17 @@ const TodosList = ({
       setConvertingToIssue(prev => ({ ...prev, [todo.id]: false }));
       setIssueCreatedSuccess(prev => ({ ...prev, [todo.id]: true }));
       
-      // Call onUpdate to refresh the parent if provided
-      if (onUpdate) {
-        onUpdate();
-      }
+      // Don't call onUpdate - this prevents the card from collapsing
+      // The issue has been created successfully, no need to refresh the entire list
       
-      // Reset success state after 3 seconds
+      // Reset success state after 5 seconds to give user time to see it
       setTimeout(() => {
         setIssueCreatedSuccess(prev => {
           const newState = { ...prev };
           delete newState[todo.id];
           return newState;
         });
-      }, 3000);
+      }, 5000);
     } catch (error) {
       console.error('Failed to convert to issue:', error);
       setConvertingToIssue(prev => ({ ...prev, [todo.id]: false }));
