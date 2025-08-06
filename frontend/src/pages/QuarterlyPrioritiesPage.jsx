@@ -1584,11 +1584,11 @@ const QuarterlyPrioritiesPage = () => {
                     <Avatar className="h-8 w-8">
                       <AvatarFallback>{getUserInitials(member.name)}</AvatarFallback>
                     </Avatar>
-                    <div className="flex-1">
+                    <div>
                       <h3 className="text-lg font-semibold">{member.name}</h3>
                       <p className="text-sm text-gray-600">{member.role} • {member.department}</p>
                     </div>
-                    <span className="text-sm text-gray-600">({memberPriorities.length})</span>
+                    <span className="text-sm text-gray-600 ml-2">({memberPriorities.length})</span>
                   </div>
                   {expandedSections.individualPriorities[member.id] && (
                     <div className="space-y-4 ml-11">
