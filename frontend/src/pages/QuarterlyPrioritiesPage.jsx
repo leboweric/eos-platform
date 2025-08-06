@@ -852,9 +852,10 @@ const QuarterlyPrioritiesPage = () => {
                 <Badge 
                   variant={getStatusBadgeVariant(isEditing ? editForm.status : priority.status)} 
                   className={`flex items-center space-x-1 ${
-                    (isEditing ? editForm.status : priority.status) === 'on-track' ? 'bg-green-100 text-green-800 border-green-300' :
+                    (isEditing ? editForm.status : priority.status) === 'on-track' ? 'bg-blue-100 text-blue-800 border-blue-300' :
                     (isEditing ? editForm.status : priority.status) === 'off-track' ? 'bg-red-100 text-red-800 border-red-300' :
-                    (isEditing ? editForm.status : priority.status) === 'complete' ? 'bg-gray-100 text-gray-800 border-gray-300' : ''
+                    (isEditing ? editForm.status : priority.status) === 'at-risk' ? 'bg-yellow-100 text-yellow-800 border-yellow-300' :
+                    (isEditing ? editForm.status : priority.status) === 'complete' ? 'bg-green-100 text-green-800 border-green-300' : ''
                   }`}
                 >
                   {getStatusIcon(isEditing ? editForm.status : priority.status)}

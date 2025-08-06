@@ -44,10 +44,10 @@ const PriorityCard = ({ priority, readOnly = false, onIssueCreated, onStatusChan
   const [editingStatus, setEditingStatus] = useState(false);
   const [isExpanded, setIsExpanded] = useState(false);
   const statusColors = {
-    'on-track': 'bg-green-100 text-green-700 border-green-200',
+    'on-track': 'bg-blue-100 text-blue-700 border-blue-200',
     'off-track': 'bg-red-100 text-red-700 border-red-200',
     'at-risk': 'bg-yellow-100 text-yellow-700 border-yellow-200',
-    'complete': 'bg-blue-100 text-blue-700 border-blue-200'
+    'complete': 'bg-green-100 text-green-700 border-green-200'
   };
 
   const statusIcons = {
