@@ -937,37 +937,6 @@ const QuarterlyPrioritiesPage = () => {
             </div>
           </div>
         </CardHeader>
-        {/* Compact view when collapsed */}
-        {!isExpanded && (
-          <CardContent className="pt-2 pb-3">
-            <div className="flex items-center justify-between text-sm">
-              <div className="flex items-center gap-4">
-                {/* Owner */}
-                <div className="flex items-center gap-1 text-gray-600">
-                  <User className="h-3.5 w-3.5" />
-                  <span>{priority.owner?.name || 'Unassigned'}</span>
-                </div>
-                {/* Due Date */}
-                <div className="flex items-center gap-1 text-gray-600">
-                  <Calendar className="h-3.5 w-3.5" />
-                  <span>{formatDate(priority.dueDate)}</span>
-                </div>
-                {/* Progress */}
-                {priority.progress > 0 && (
-                  <div className="flex items-center gap-2">
-                    <Progress value={priority.progress} className="w-16 h-2" />
-                    <span className="text-xs text-gray-600">{priority.progress}%</span>
-                  </div>
-                )}
-              </div>
-              {/* Status Badge */}
-              <Badge className={`${statusColors[priority.status]} border`}>
-                {statusIcons[priority.status]}
-                <span className="ml-1 capitalize">{priority.status?.replace('-', ' ')}</span>
-              </Badge>
-            </div>
-          </CardContent>
-        )}
         {/* Detailed view when expanded */}
         {isExpanded && (
         <CardContent className="pt-4">
