@@ -1529,6 +1529,16 @@ const QuarterlyPrioritiesPage = () => {
               <div>
                 <p className="text-sm text-gray-600">Total Priorities</p>
                 <p className="text-2xl font-bold">{stats.total}</p>
+                <p className={`text-sm font-medium ${
+                  stats.total > 0 && (stats.completed / stats.total) >= 0.8 
+                    ? 'text-green-600' 
+                    : 'text-red-600'
+                }`}>
+                  {stats.total > 0 
+                    ? `${Math.round((stats.completed / stats.total) * 100)}% Complete`
+                    : '0% Complete'
+                  }
+                </p>
               </div>
               <CheckSquare className="h-8 w-8 text-gray-400" />
             </div>
