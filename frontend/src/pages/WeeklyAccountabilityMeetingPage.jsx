@@ -97,8 +97,8 @@ const WeeklyAccountabilityMeetingPage = () => {
   const [cascadingMessage, setCascadingMessage] = useState('');
   
   // Track initial state for summary
-  const [initialIssuesCount, setInitialIssuesCount] = useState(0);
-  const [initialTodosCount, setInitialTodosCount] = useState(0);
+  const [initialIssues, setInitialIssues] = useState([]);
+  const [initialTodos, setInitialTodos] = useState([]);
   
   // Reference tools dialogs
   const [showBusinessBlueprint, setShowBusinessBlueprint] = useState(false);
@@ -591,9 +591,9 @@ const WeeklyAccountabilityMeetingPage = () => {
       // Dispatch custom event to immediately update Layout
       window.dispatchEvent(new Event('meetingStateChanged'));
       
-      // Capture initial counts for summary
-      setInitialIssuesCount(issues.filter(i => i.status === 'open').length);
-      setInitialTodosCount(todos.filter(t => t.status === 'incomplete').length);
+      // Capture initial state for summary
+      setInitialIssues(issues.map(i => ({ id: i.id, status: i.status })));
+      setInitialTodos(todos.map(t => ({ id: t.id, status: t.status })));
     }
   };
 
@@ -605,13 +605,27 @@ const WeeklyAccountabilityMeetingPage = () => {
 
     try {
       // Calculate meeting metrics
-      const currentOpenIssues = issues.filter(i => i.status === 'open').length;
-      const currentIncompleteTodos = todos.filter(t => t.status === 'incomplete').length;
+      // Issues resolved = issues that were open at start and are now closed
+      const issuesResolved = initialIssues.filter(initial => {
+        const current = issues.find(i => i.id === initial.id);
+        return initial.status === 'open' && current && current.status === 'closed';
+      }).length;
       
-      const issuesResolved = Math.max(0, initialIssuesCount - currentOpenIssues);
-      const issuesAdded = Math.max(0, currentOpenIssues - initialIssuesCount);
-      const todosCompleted = Math.max(0, initialTodosCount - currentIncompleteTodos);
-      const todosAdded = Math.max(0, currentIncompleteTodos - initialTodosCount);
+      // Issues added = issues that didn't exist at start of meeting
+      const issuesAdded = issues.filter(i => 
+        !initialIssues.find(initial => initial.id === i.id)
+      ).length;
+      
+      // Todos completed = todos that were incomplete at start and are now completed
+      const todosCompleted = initialTodos.filter(initial => {
+        const current = todos.find(t => t.id === initial.id);
+        return initial.status === 'incomplete' && current && current.status === 'completed';
+      }).length;
+      
+      // Todos added = todos that didn't exist at start of meeting
+      const todosAdded = todos.filter(t => 
+        !initialTodos.find(initial => initial.id === t.id)
+      ).length;
       
       const duration = formatTimer(elapsedTime);
       const meetingDate = new Date().toLocaleDateString();
@@ -631,8 +645,16 @@ const WeeklyAccountabilityMeetingPage = () => {
       };
 
       // Prepare data for email
-      const completedTodos = todos.filter(t => t.status === 'completed');
-      const addedTodos = todos.filter(t => t.created_during_meeting);
+      // Get todos that were completed during the meeting
+      const completedTodos = todos.filter(t => {
+        const initial = initialTodos.find(initial => initial.id === t.id);
+        return initial && initial.status === 'incomplete' && t.status === 'completed';
+      });
+      
+      // Get todos that were added during the meeting
+      const addedTodos = todos.filter(t => 
+        !initialTodos.find(initial => initial.id === t.id)
+      );
       
       const meetingData = {
         meetingType: 'Weekly Accountability Meeting',
@@ -650,7 +672,9 @@ const WeeklyAccountabilityMeetingPage = () => {
           completed: completedTodos,
           added: addedTodos
         },
-        issues: issues.filter(i => i.updated_during_meeting || i.created_during_meeting),
+        issues: issues.filter(i => 
+          !initialIssues.find(initial => initial.id === i.id)
+        ),
         notes: cascadingMessage || ''
       };
 
