@@ -57,11 +57,6 @@ const ArchivedIssuesList = ({ issues, onUnarchive, getStatusColor, getStatusIcon
                   <div className="flex items-center gap-3">
                     <div className="flex-1">
                       <div className="text-gray-700 line-clamp-1">{issue.title}</div>
-                      {issue.description && (
-                        <div className="text-sm text-gray-400 line-clamp-1 mt-1">
-                          {issue.description}
-                        </div>
-                      )}
                     </div>
                     <div className="flex items-center gap-2 text-gray-400">
                       <Archive className="h-4 w-4" />

@@ -109,11 +109,6 @@ const IssuesList = ({
                       <div className={`line-clamp-1 ${
                         issue.status === 'closed' ? 'line-through text-gray-500' : 'text-gray-900'
                       }`}>{issue.title}</div>
-                      {issue.description && (
-                        <div className="text-sm text-gray-500 line-clamp-1 mt-1">
-                          {issue.description}
-                        </div>
-                      )}
                     </div>
                     <div className="flex items-center gap-2 text-gray-400">
                       {issue.attachment_count > 0 && (
