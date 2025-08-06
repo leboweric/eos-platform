@@ -24,6 +24,7 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { format } from 'date-fns';
 import { todosService } from '../../services/todosService';
+import { issuesService } from '../../services/issuesService';
 import { useSelectedTodos } from '../../contexts/SelectedTodosContext';
 
 const TodosList = ({ 
@@ -45,6 +46,14 @@ const TodosList = ({
       [ownerName]: !prev[ownerName]
     }));
   };
+  
+  // Parse date string as local date, not UTC
+  const parseDateAsLocal = (dateStr) => {
+    if (!dateStr) return null;
+    const [year, month, day] = dateStr.split('-').map(num => parseInt(num));
+    return new Date(year, month - 1, day); // month is 0-indexed in JS
+  };
+  
   const handleToggleComplete = async (todo) => {
     try {
       const newStatus = todo.status === 'complete' ? 'incomplete' : 'complete';
@@ -61,13 +70,32 @@ const TodosList = ({
     try {
       setConvertingToIssue(prev => ({ ...prev, [todo.id]: true }));
       
-      // Call the parent's convert to issue handler
-      if (onConvertToIssue) {
-        await onConvertToIssue(todo);
-      }
+      // Format the due date for display
+      const dueDate = todo.due_date ? format(parseDateAsLocal(todo.due_date), 'MMM d, yyyy') : 'Not set';
+      const assigneeName = todo.assigned_to 
+        ? `${todo.assigned_to.first_name} ${todo.assigned_to.last_name}`
+        : 'Unassigned';
+      
+      // Create the issue directly without confirmation
+      const issueData = {
+        title: todo.title,
+        description: `This issue was created from an overdue to-do.\n\nOriginal due date: ${dueDate} (OVERDUE)\nAssigned to: ${assigneeName}\n\nDescription:\n${todo.description || 'No description provided'}`,
+        timeline: 'short_term',
+        ownerId: todo.assigned_to?.id || null
+      };
+      
+      await issuesService.createIssue(issueData);
+      
+      // Don't cancel the todo - just create the issue
+      // This allows the todo to remain active while also being tracked as an issue
       
       setConvertingToIssue(prev => ({ ...prev, [todo.id]: false }));
       setIssueCreatedSuccess(prev => ({ ...prev, [todo.id]: true }));
+      
+      // Call onUpdate to refresh the parent if provided
+      if (onUpdate) {
+        onUpdate();
+      }
       
       // Reset success state after 3 seconds
       setTimeout(() => {
@@ -81,13 +109,6 @@ const TodosList = ({
       console.error('Failed to convert to issue:', error);
       setConvertingToIssue(prev => ({ ...prev, [todo.id]: false }));
     }
-  };
-
-  // Parse date string as local date, not UTC
-  const parseDateAsLocal = (dateStr) => {
-    if (!dateStr) return null;
-    const [year, month, day] = dateStr.split('-').map(num => parseInt(num));
-    return new Date(year, month - 1, day); // month is 0-indexed in JS
   };
   
   const isOverdue = (todo) => {
