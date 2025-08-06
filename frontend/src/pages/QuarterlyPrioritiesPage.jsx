@@ -38,7 +38,6 @@ import {
   Users,
   Loader2,
   Archive,
-  ChevronDown,
   ChevronRight,
   Eye,
   EyeOff,
