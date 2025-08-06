@@ -517,7 +517,9 @@ export const archiveIssue = async (req, res) => {
     
     const result = await db.query(
       `UPDATE issues 
-       SET archived = TRUE, updated_at = CURRENT_TIMESTAMP
+       SET archived = TRUE, 
+           archived_at = CURRENT_TIMESTAMP,
+           updated_at = CURRENT_TIMESTAMP
        WHERE id = $1 AND organization_id = $2
        RETURNING *`,
       [issueId, orgId]
@@ -589,7 +591,10 @@ export const unarchiveIssue = async (req, res) => {
     
     const result = await db.query(
       `UPDATE issues 
-       SET archived = FALSE, status = 'open', updated_at = CURRENT_TIMESTAMP
+       SET archived = FALSE, 
+           archived_at = NULL,
+           status = 'open', 
+           updated_at = CURRENT_TIMESTAMP
        WHERE id = $1 AND organization_id = $2
        RETURNING *`,
       [issueId, orgId]
