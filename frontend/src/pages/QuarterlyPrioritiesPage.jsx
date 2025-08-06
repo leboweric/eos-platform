@@ -97,6 +97,7 @@ const QuarterlyPrioritiesPage = () => {
   const [showAddPriority, setShowAddPriority] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
+  const [success, setSuccess] = useState(null);
   const [organization, setOrganization] = useState(null);
   
   // State for priorities data
@@ -771,7 +772,7 @@ const QuarterlyPrioritiesPage = () => {
         
         await issuesService.createIssue(issueData);
         
-        setSuccess(`Issue created for ${priority.title}`);
+        // Just update local state - don't call parent's setSuccess
         setCreatingIssue(false);
         setIssueCreatedSuccess(true);
         
@@ -782,7 +783,7 @@ const QuarterlyPrioritiesPage = () => {
       } catch (error) {
         console.error('Failed to create issue:', error);
         setCreatingIssue(false);
-        setError('Failed to create issue. Please try again.');
+        alert('Failed to create issue. Please try again.');
       }
     };
 
