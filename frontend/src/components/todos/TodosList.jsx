@@ -12,7 +12,9 @@ import {
   MoreVertical,
   AlertTriangle,
   ChevronDown,
-  ChevronUp
+  ChevronUp,
+  CheckCircle,
+  Loader2
 } from 'lucide-react';
 import {
   DropdownMenu,
@@ -34,6 +36,8 @@ const TodosList = ({
 }) => {
   const { selectedTodoIds, toggleTodo, isSelected } = useSelectedTodos();
   const [expandedOwners, setExpandedOwners] = useState({});
+  const [convertingToIssue, setConvertingToIssue] = useState({});
+  const [issueCreatedSuccess, setIssueCreatedSuccess] = useState({});
   
   const toggleOwnerExpanded = (ownerName) => {
     setExpandedOwners(prev => ({
@@ -50,6 +54,32 @@ const TodosList = ({
       onUpdate();
     } catch (error) {
       console.error('Failed to toggle todo:', error);
+    }
+  };
+
+  const handleMakeItAnIssue = async (todo) => {
+    try {
+      setConvertingToIssue(prev => ({ ...prev, [todo.id]: true }));
+      
+      // Call the parent's convert to issue handler
+      if (onConvertToIssue) {
+        await onConvertToIssue(todo);
+      }
+      
+      setConvertingToIssue(prev => ({ ...prev, [todo.id]: false }));
+      setIssueCreatedSuccess(prev => ({ ...prev, [todo.id]: true }));
+      
+      // Reset success state after 3 seconds
+      setTimeout(() => {
+        setIssueCreatedSuccess(prev => {
+          const newState = { ...prev };
+          delete newState[todo.id];
+          return newState;
+        });
+      }, 3000);
+    } catch (error) {
+      console.error('Failed to convert to issue:', error);
+      setConvertingToIssue(prev => ({ ...prev, [todo.id]: false }));
     }
   };
 
@@ -161,7 +191,42 @@ const TodosList = ({
                                 {isOverdue(todo) && <AlertTriangle className="h-4 w-4" />}
                                 <Calendar className="h-4 w-4" />
                                 <span>{format(parseDateAsLocal(todo.due_date), 'MMM d, yyyy')}</span>
-                                {isOverdue(todo) && <span className="ml-1">(Overdue)</span>}
+                                {isOverdue(todo) && (
+                                  <>
+                                    <span className="ml-1">(Overdue)</span>
+                                    <Button
+                                      size="sm"
+                                      variant={issueCreatedSuccess[todo.id] ? "default" : "outline"}
+                                      className={issueCreatedSuccess[todo.id]
+                                        ? "h-6 px-2 ml-2 bg-green-600 hover:bg-green-700 text-white"
+                                        : "h-6 px-2 ml-2 text-orange-600 border-orange-300 hover:bg-orange-50"
+                                      }
+                                      onClick={(e) => {
+                                        e.stopPropagation();
+                                        handleMakeItAnIssue(todo);
+                                      }}
+                                      disabled={convertingToIssue[todo.id] || issueCreatedSuccess[todo.id]}
+                                      title="Convert this overdue todo to an issue"
+                                    >
+                                      {convertingToIssue[todo.id] ? (
+                                        <>
+                                          <Loader2 className="h-3 w-3 mr-1 animate-spin" />
+                                          <span className="text-xs">Creating...</span>
+                                        </>
+                                      ) : issueCreatedSuccess[todo.id] ? (
+                                        <>
+                                          <CheckCircle className="h-3 w-3 mr-1" />
+                                          <span className="text-xs">Issue Created!</span>
+                                        </>
+                                      ) : (
+                                        <>
+                                          <AlertTriangle className="h-3 w-3 mr-1" />
+                                          <span className="text-xs">Make it an Issue</span>
+                                        </>
+                                      )}
+                                    </Button>
+                                  </>
+                                )}
                               </div>
                             )}
                           </div>
