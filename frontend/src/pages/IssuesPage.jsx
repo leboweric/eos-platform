@@ -108,11 +108,28 @@ const IssuesPage = () => {
 
   const handleStatusChange = async (issueId, newStatus) => {
     try {
+      // Optimistically update the local state first for instant feedback
+      setShortTermIssues(prev => 
+        prev.map(issue => 
+          issue.id === issueId ? { ...issue, status: newStatus } : issue
+        )
+      );
+      setLongTermIssues(prev => 
+        prev.map(issue => 
+          issue.id === issueId ? { ...issue, status: newStatus } : issue
+        )
+      );
+      
+      // Then update the backend
       await issuesService.updateIssue(issueId, { status: newStatus });
-      await fetchIssues();
+      
+      // Don't refetch - the optimistic update handles it
+      // Only refetch on error (see catch block)
     } catch (error) {
       console.error('Failed to update issue status:', error);
       setError('Failed to update issue status');
+      // Revert on error by refetching
+      await fetchIssues();
     }
   };
 
@@ -129,15 +146,34 @@ const IssuesPage = () => {
 
   const handleVote = async (issueId, shouldVote) => {
     try {
+      // Optimistically update the local state for instant feedback
+      const updateVote = (issue) => {
+        if (issue.id === issueId) {
+          return {
+            ...issue,
+            user_has_voted: shouldVote,
+            vote_count: shouldVote 
+              ? (issue.vote_count || 0) + 1 
+              : Math.max(0, (issue.vote_count || 0) - 1)
+          };
+        }
+        return issue;
+      };
+      
+      setShortTermIssues(prev => prev.map(updateVote));
+      setLongTermIssues(prev => prev.map(updateVote));
+      
+      // Then update the backend
       if (shouldVote) {
         await issuesService.voteForIssue(issueId);
       } else {
         await issuesService.unvoteForIssue(issueId);
       }
-      await fetchIssues();
     } catch (error) {
       console.error('Failed to vote:', error);
       setError('Failed to update vote');
+      // Revert on error
+      await fetchIssues();
     }
   };
 

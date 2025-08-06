@@ -335,6 +335,31 @@ const WeeklyAccountabilityMeetingPage = () => {
     }
   };
 
+  const handleArchiveClosedIssues = async () => {
+    try {
+      // Get all closed issues
+      const closedIssues = issues.filter(issue => issue.status === 'closed');
+      
+      if (closedIssues.length === 0) {
+        setError('No closed issues to archive. Check the boxes next to issues you want to archive.');
+        return;
+      }
+      
+      if (!window.confirm(`Archive ${closedIssues.length} closed issue${closedIssues.length > 1 ? 's' : ''}?`)) {
+        return;
+      }
+      
+      // Archive all closed issues
+      await Promise.all(closedIssues.map(issue => issuesService.archiveIssue(issue.id)));
+      
+      setSuccess(`${closedIssues.length} issue${closedIssues.length > 1 ? 's' : ''} archived successfully`);
+      await fetchIssuesData();
+    } catch (error) {
+      console.error('Failed to archive closed issues:', error);
+      setError('Failed to archive closed issues');
+    }
+  };
+
   const handleEditIssue = (issue) => {
     setEditingIssue(issue);
     setShowIssueDialog(true);
@@ -1272,6 +1297,7 @@ const WeeklyAccountabilityMeetingPage = () => {
         );
 
       case 'issues':
+        const closedIssuesCount = issues.filter(issue => issue.status === 'closed').length;
         return (
           <div className="space-y-4">
             <Card>
@@ -1285,14 +1311,14 @@ const WeeklyAccountabilityMeetingPage = () => {
                     <CardDescription>Review and solve short-term issues (60 minutes)</CardDescription>
                   </div>
                   <div className="flex items-center gap-2">
-                    {selectedIssueIds.length > 0 && (
+                    {closedIssuesCount > 0 && (
                       <Button 
-                        onClick={handleArchiveSelected}
+                        onClick={handleArchiveClosedIssues}
                         variant="outline"
                         className="text-gray-600"
                       >
                         <Archive className="mr-2 h-4 w-4" />
-                        Archive Selected ({selectedIssueIds.length})
+                        Archive Closed Issues ({closedIssuesCount})
                       </Button>
                     )}
                   </div>
