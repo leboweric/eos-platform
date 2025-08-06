@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { useAuth } from '../contexts/AuthContext';
+import { useAuthStore } from '../stores/authStore';
 import { aiRockAssistantService } from '../services/aiRockAssistantService';
 import { quarterlyPrioritiesService } from '../services/quarterlyPrioritiesService';
 import { teamsService } from '../services/teamsService';
@@ -34,7 +34,7 @@ import { format, addMonths } from 'date-fns';
 const SmartRockAssistant = () => {
   const { orgId } = useParams();
   const navigate = useNavigate();
-  const { user } = useAuth();
+  const user = useAuthStore((state) => state.user);
   
   // Step tracking
   const [currentStep, setCurrentStep] = useState(1);

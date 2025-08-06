@@ -1,4 +1,4 @@
-import api from './api';
+import api from './axiosConfig';
 
 const AI_BASE_URL = '/ai/rock-assistant';
 
