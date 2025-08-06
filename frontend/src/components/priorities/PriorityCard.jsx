@@ -39,6 +39,7 @@ import { useAuthStore } from '../../stores/authStore';
 const PriorityCard = ({ priority, readOnly = false, onIssueCreated, onStatusChange }) => {
   const { user, isOnLeadershipTeam } = useAuthStore();
   const [creatingIssue, setCreatingIssue] = useState(false);
+  const [issueCreatedSuccess, setIssueCreatedSuccess] = useState(false);
   const [updatingStatus, setUpdatingStatus] = useState(false);
   const [editingStatus, setEditingStatus] = useState(false);
   const [isExpanded, setIsExpanded] = useState(false);
@@ -122,6 +123,12 @@ const PriorityCard = ({ priority, readOnly = false, onIssueCreated, onStatusChan
       }
       
       setCreatingIssue(false);
+      setIssueCreatedSuccess(true);
+      
+      // Reset success state after 3 seconds
+      setTimeout(() => {
+        setIssueCreatedSuccess(false);
+      }, 3000);
     } catch (error) {
       console.error('Failed to create issue:', error);
       setCreatingIssue(false);
@@ -250,50 +257,61 @@ const PriorityCard = ({ priority, readOnly = false, onIssueCreated, onStatusChan
                 </div>
               )}
             </div>
-            
-            <div className="flex items-center gap-2">
-              {showCreateIssue && (
-                <Button
-                  size="sm"
-                  variant="outline"
-                  className="h-8 px-2"
-                  onClick={handleCreateIssue}
-                  disabled={creatingIssue}
-                  title="Create an issue to discuss this priority"
-                >
-                  {creatingIssue ? (
-                    <span className="animate-spin">⏳</span>
-                  ) : (
-                    <>
-                      <AlertTriangle className="h-4 w-4 mr-1" />
-                      <span className="text-xs">Make an Issue</span>
-                    </>
-                  )}
-                </Button>
-              )}
-            </div>
           </div>
         )}
         
-        <div className="flex justify-center">
-          <Button
-            variant="ghost"
-            size="sm"
-            className="text-gray-500 hover:text-gray-700"
-            onClick={() => setIsExpanded(!isExpanded)}
-          >
-            {isExpanded ? (
-              <>
-                <ChevronUp className="h-4 w-4 mr-1" />
-                Hide Details
-              </>
-            ) : (
-              <>
-                <ChevronDown className="h-4 w-4 mr-1" />
-                Show Details
-              </>
-            )}
-          </Button>
+        <div className="flex items-center justify-between gap-2">
+          {showCreateIssue && (
+            <Button
+              size="sm"
+              variant={issueCreatedSuccess ? "default" : "outline"}
+              className={issueCreatedSuccess 
+                ? "h-8 px-3 bg-green-600 hover:bg-green-700 text-white" 
+                : "h-8 px-3 text-orange-600 border-orange-300 hover:bg-orange-50"
+              }
+              onClick={handleCreateIssue}
+              disabled={creatingIssue || issueCreatedSuccess}
+              title="Create an issue to discuss this priority"
+            >
+              {creatingIssue ? (
+                <>
+                  <span className="animate-spin mr-1">⏳</span>
+                  <span className="text-xs">Creating...</span>
+                </>
+              ) : issueCreatedSuccess ? (
+                <>
+                  <CheckCircle className="h-4 w-4 mr-1" />
+                  <span className="text-xs">Issue Created!</span>
+                </>
+              ) : (
+                <>
+                  <AlertTriangle className="h-4 w-4 mr-1" />
+                  <span className="text-xs">Make an Issue</span>
+                </>
+              )}
+            </Button>
+          )}
+          
+          <div className="flex-1 flex justify-center">
+            <Button
+              variant="ghost"
+              size="sm"
+              className="text-gray-500 hover:text-gray-700"
+              onClick={() => setIsExpanded(!isExpanded)}
+            >
+              {isExpanded ? (
+                <>
+                  <ChevronUp className="h-4 w-4 mr-1" />
+                  Hide Details
+                </>
+              ) : (
+                <>
+                  <ChevronDown className="h-4 w-4 mr-1" />
+                  Show Details
+                </>
+              )}
+            </Button>
+          </div>
         </div>
       </CardContent>
     </Card>

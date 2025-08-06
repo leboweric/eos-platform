@@ -92,6 +92,7 @@ const FullPriorityCard = ({
   
   // Issue creation state
   const [creatingIssue, setCreatingIssue] = useState(false);
+  const [issueCreatedSuccess, setIssueCreatedSuccess] = useState(false);
 
   // Load attachments on mount
   useEffect(() => {
@@ -239,6 +240,12 @@ const FullPriorityCard = ({
       }
       
       setCreatingIssue(false);
+      setIssueCreatedSuccess(true);
+      
+      // Reset success state after 3 seconds
+      setTimeout(() => {
+        setIssueCreatedSuccess(false);
+      }, 3000);
     } catch (error) {
       console.error('Failed to create issue:', error);
       setCreatingIssue(false);
@@ -735,19 +742,32 @@ const FullPriorityCard = ({
                   <Label className="text-sm text-gray-600">Latest Update</Label>
                   <div className="flex gap-2">
                     <Button
-                      variant="outline"
+                      variant={issueCreatedSuccess ? "default" : "outline"}
                       size="sm"
                       onClick={handleCreateIssue}
-                      disabled={creatingIssue || isArchived}
-                      className="text-xs"
+                      disabled={creatingIssue || isArchived || issueCreatedSuccess}
+                      className={issueCreatedSuccess 
+                        ? "text-xs bg-green-600 hover:bg-green-700 text-white" 
+                        : "text-xs text-orange-600 border-orange-300 hover:bg-orange-50"
+                      }
                       title="Create an issue to discuss this priority"
                     >
                       {creatingIssue ? (
-                        <Loader2 className="h-3 w-3 mr-1 animate-spin" />
+                        <>
+                          <Loader2 className="h-3 w-3 mr-1 animate-spin" />
+                          Creating...
+                        </>
+                      ) : issueCreatedSuccess ? (
+                        <>
+                          <CheckCircle className="h-3 w-3 mr-1" />
+                          Issue Created!
+                        </>
                       ) : (
-                        <AlertTriangle className="h-3 w-3 mr-1" />
+                        <>
+                          <AlertTriangle className="h-3 w-3 mr-1" />
+                          Make an Issue
+                        </>
                       )}
-                      Make an Issue
                     </Button>
                     <Button
                       variant="ghost"
