@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
@@ -9,7 +10,9 @@ import {
   User,
   Edit,
   MoreVertical,
-  AlertTriangle
+  AlertTriangle,
+  ChevronDown,
+  ChevronUp
 } from 'lucide-react';
 import {
   DropdownMenu,
@@ -30,6 +33,14 @@ const TodosList = ({
   showCompleted = true
 }) => {
   const { selectedTodoIds, toggleTodo, isSelected } = useSelectedTodos();
+  const [expandedOwners, setExpandedOwners] = useState({});
+  
+  const toggleOwnerExpanded = (ownerName) => {
+    setExpandedOwners(prev => ({
+      ...prev,
+      [ownerName]: !prev[ownerName]
+    }));
+  };
   const handleToggleComplete = async (todo) => {
     try {
       const newStatus = todo.status === 'complete' ? 'incomplete' : 'complete';
@@ -75,17 +86,40 @@ const TodosList = ({
 
   return (
     <div className="space-y-4">
-      {Object.entries(todosByOwner).map(([ownerName, ownerTodos]) => (
-        <Card key={ownerName} className="shadow-sm">
-          <CardHeader className="py-3 px-4 bg-gray-50">
-            <CardTitle className="text-sm font-medium flex items-center gap-2">
-              <User className="h-4 w-4" />
-              {ownerName} ({ownerTodos.length})
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="p-0">
-            <div className="divide-y divide-gray-100">
-              {ownerTodos.map((todo) => (
+      {Object.entries(todosByOwner).map(([ownerName, ownerTodos]) => {
+        const isExpanded = expandedOwners[ownerName] || false;
+        return (
+          <Card key={ownerName} className="shadow-sm">
+            <CardHeader className="py-3 px-4 bg-gray-50">
+              <div className="flex items-center justify-between">
+                <CardTitle className="text-sm font-medium flex items-center gap-2">
+                  <User className="h-4 w-4" />
+                  {ownerName} ({ownerTodos.length})
+                </CardTitle>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="text-gray-500 hover:text-gray-700"
+                  onClick={() => toggleOwnerExpanded(ownerName)}
+                >
+                  {isExpanded ? (
+                    <>
+                      <ChevronUp className="h-4 w-4 mr-1" />
+                      Hide Details
+                    </>
+                  ) : (
+                    <>
+                      <ChevronDown className="h-4 w-4 mr-1" />
+                      Show Details
+                    </>
+                  )}
+                </Button>
+              </div>
+            </CardHeader>
+            {isExpanded && (
+              <CardContent className="p-0">
+                <div className="divide-y divide-gray-100">
+                  {ownerTodos.map((todo) => (
                 <div
                   key={todo.id}
                   className={`p-4 hover:bg-green-50 transition-colors ${
@@ -175,11 +209,13 @@ const TodosList = ({
                     </div>
                   </div>
                 </div>
-              ))}
-            </div>
-          </CardContent>
-        </Card>
-      ))}
+                  ))}
+                </div>
+              </CardContent>
+            )}
+          </Card>
+        );
+      })}
     </div>
   );
 };
