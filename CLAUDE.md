@@ -139,3 +139,62 @@ EOS Platform is a web application for implementing the Entrepreneurial Operating
 - `DELETE /api/v1/organizations/:orgId/teams/:teamId/scorecard/groups/:groupId`
 - `PUT /api/v1/organizations/:orgId/teams/:teamId/scorecard/metrics/:metricId/move-to-group`
 - `PUT /api/v1/organizations/:orgId/teams/:teamId/scorecard/groups/reorder`
+
+## SMART Rock Assistant Feature (August 2025)
+
+### Overview
+AI-powered assistant to help create SMART (Specific, Measurable, Achievable, Relevant, Time-bound) Rocks/Priorities. This is a completely separate, additive feature that doesn't modify existing Rock functionality.
+
+### Architecture
+- **OpenAI Integration**: Uses GPT-4 for Rock analysis and suggestions
+- **New Database Table**: `rock_suggestions` stores AI-generated improvements
+- **Separate UI**: New SmartRockAssistant page accessible via menu
+- **Optional Enhancement**: "Get AI Help" button added to existing RockDialog
+- **API Namespace**: All AI endpoints under `/api/v1/ai/`
+
+### Implementation Status
+- **Phase 1**: Backend OpenAI service setup
+- **Phase 2**: SMART analysis and scoring
+- **Phase 3**: Frontend assistant page
+- **Phase 4**: Advanced features (milestone generation, alignment checking)
+
+### Key Features
+1. **SMART Scoring**: Analyzes Rocks against SMART criteria (0-100% score)
+2. **Improvement Suggestions**: Specific recommendations for each SMART criterion
+3. **Milestone Generation**: AI-generated milestones based on Rock duration
+4. **Alignment Checking**: Ensures Department Rocks align with Company Rocks
+5. **Real-time Assistance**: Suggestions as user types in the wizard
+
+### Database Schema Addition
+```sql
+CREATE TABLE rock_suggestions (
+  id UUID PRIMARY KEY,
+  priority_id UUID REFERENCES quarterly_priorities(id),
+  suggestion_type VARCHAR(50), -- 'smart_improvement', 'milestone', 'alignment'
+  original_text TEXT,
+  suggested_text TEXT,
+  reasoning TEXT,
+  applied BOOLEAN DEFAULT false,
+  created_at TIMESTAMP
+);
+```
+
+### API Endpoints
+- `POST /api/v1/ai/rock-assistant/analyze` - Analyze Rock for SMART criteria
+- `POST /api/v1/ai/rock-assistant/suggest-milestones` - Generate milestone suggestions
+- `POST /api/v1/ai/rock-assistant/check-alignment` - Check alignment with Company Rocks
+
+### Environment Variables
+- `OPENAI_API_KEY` - Required for AI features
+
+### Security
+- API key stored in environment variables only
+- Rate limiting on AI endpoints
+- User authentication required
+- Audit trail of suggestions
+
+### Important Notes
+- This feature is completely opt-in
+- Existing Rock creation/editing remains unchanged
+- AI suggestions are stored for learning/improvement
+- No modification to existing quarterly_priorities table structure

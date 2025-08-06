@@ -32,6 +32,7 @@ import OrganizationalChartPage from './pages/OrganizationalChartPage';
 import WeeklyAccountabilityMeetingPage from './pages/WeeklyAccountabilityMeetingPage';
 import QuarterlyPlanningMeetingPage from './pages/QuarterlyPlanningMeetingPage';
 import DocumentRepositoryPage from './pages/DocumentRepositoryPage';
+import SmartRockAssistant from './pages/SmartRockAssistant';
 
 // Department Components
 import DepartmentLayout from './components/DepartmentLayout';
@@ -86,6 +87,7 @@ function App() {
           <Route path="/dashboard" element={user ? <Layout><Dashboard /></Layout> : <Navigate to="/login" />} />
           <Route path="/business-blueprint" element={user ? <Layout><BusinessBlueprintPage /></Layout> : <Navigate to="/login" />} />
           <Route path="/quarterly-priorities" element={user ? <Layout><QuarterlyPrioritiesPage /></Layout> : <Navigate to="/login" />} />
+          <Route path="/organizations/:orgId/smart-rock-assistant" element={user ? <Layout><SmartRockAssistant /></Layout> : <Navigate to="/login" />} />
           <Route path="/scorecard" element={user ? <Layout><ScorecardPage /></Layout> : <Navigate to="/login" />} />
           <Route path="/meetings" element={user ? <Layout><MeetingsPage /></Layout> : <Navigate to="/login" />} />
           <Route path="/meetings/weekly-accountability/:teamId" element={user ? <Layout><WeeklyAccountabilityMeetingPage /></Layout> : <Navigate to="/login" />} />

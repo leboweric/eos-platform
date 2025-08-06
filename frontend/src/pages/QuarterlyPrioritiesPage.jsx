@@ -1,4 +1,5 @@
 import { useState, useEffect, Component } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useAuthStore } from '../stores/authStore';
 import { quarterlyPrioritiesService } from '../services/quarterlyPrioritiesService';
 import { organizationService } from '../services/organizationService';
@@ -43,7 +44,8 @@ import {
   Eye,
   EyeOff,
   Paperclip,
-  Download
+  Download,
+  Brain
 } from 'lucide-react';
 import { format, addMonths, startOfQuarter, endOfQuarter } from 'date-fns';
 
@@ -91,6 +93,7 @@ class ErrorBoundary extends Component {
 }
 
 const QuarterlyPrioritiesPage = () => {
+  const navigate = useNavigate();
   const { user, isOnLeadershipTeam } = useAuthStore();
   const { selectedDepartment, loading: departmentLoading } = useDepartment();
   const [showArchived, setShowArchived] = useState(false);
@@ -1480,17 +1483,26 @@ const QuarterlyPrioritiesPage = () => {
             {showArchived ? 'View Current' : 'View Archive'}
           </Button>
           {!showArchived && (
-            <Button onClick={() => {
-              // Set default owner to current user when opening dialog
-              setPriorityForm({
-                ...priorityForm,
-                ownerId: user?.id || ''
-              });
-              setShowAddPriority(true);
-            }}>
-              <Plus className="mr-2 h-4 w-4" />
-              Add Priority
-            </Button>
+            <>
+              <Button 
+                variant="outline"
+                onClick={() => navigate(`/organizations/${organization?.id || localStorage.getItem('organizationId')}/smart-rock-assistant`)}
+              >
+                <Brain className="mr-2 h-4 w-4" />
+                SMART Assistant
+              </Button>
+              <Button onClick={() => {
+                // Set default owner to current user when opening dialog
+                setPriorityForm({
+                  ...priorityForm,
+                  ownerId: user?.id || ''
+                });
+                setShowAddPriority(true);
+              }}>
+                <Plus className="mr-2 h-4 w-4" />
+                Add Priority
+              </Button>
+            </>
           )}
         </div>
       </div>
