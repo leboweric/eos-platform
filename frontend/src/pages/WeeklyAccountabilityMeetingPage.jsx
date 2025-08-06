@@ -31,7 +31,7 @@ import {
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import ScorecardTable from '../components/scorecard/ScorecardTable';
-import PriorityCard from '../components/priorities/PriorityCard';
+import FullPriorityCard from '../components/priorities/FullPriorityCard';
 import IssuesList from '../components/issues/IssuesList';
 import IssueDialog from '../components/issues/IssueDialog';
 import TodosList from '../components/todos/TodosList';
@@ -579,6 +579,172 @@ const WeeklyAccountabilityMeetingPage = () => {
     }
   };
 
+  // Priority handlers for FullPriorityCard
+  const handleUpdatePriority = async (priorityId, updates) => {
+    try {
+      const orgId = localStorage.getItem('impersonatedOrgId') || user?.organizationId || user?.organization_id;
+      const teamId = user?.teamId || '00000000-0000-0000-0000-000000000000';
+      
+      await quarterlyPrioritiesService.updatePriority(orgId, teamId, priorityId, updates);
+      
+      // Update local state
+      setPriorities(prev => 
+        prev.map(p => 
+          p.id === priorityId ? { ...p, ...updates } : p
+        )
+      );
+      
+      setSuccess('Priority updated successfully');
+      setTimeout(() => setSuccess(null), 3000);
+    } catch (error) {
+      console.error('Failed to update priority:', error);
+      setError('Failed to update priority');
+    }
+  };
+
+  const handlePriorityStatusChange = async (priorityId, newStatus) => {
+    await handleUpdatePriority(priorityId, { status: newStatus });
+  };
+
+  const handleUpdateMilestone = async (priorityId, milestoneId, completed) => {
+    try {
+      const orgId = localStorage.getItem('impersonatedOrgId') || user?.organizationId || user?.organization_id;
+      const teamId = user?.teamId || '00000000-0000-0000-0000-000000000000';
+      
+      await quarterlyPrioritiesService.updateMilestone(orgId, teamId, priorityId, milestoneId, { completed });
+      
+      // Update local state
+      setPriorities(prev => 
+        prev.map(p => {
+          if (p.id === priorityId) {
+            return {
+              ...p,
+              milestones: p.milestones.map(m => 
+                m.id === milestoneId ? { ...m, completed } : m
+              )
+            };
+          }
+          return p;
+        })
+      );
+      
+      setSuccess('Milestone updated');
+      setTimeout(() => setSuccess(null), 3000);
+    } catch (error) {
+      console.error('Failed to update milestone:', error);
+      setError('Failed to update milestone');
+    }
+  };
+
+  const handleCreateMilestone = async (priorityId, milestoneData) => {
+    try {
+      const orgId = localStorage.getItem('impersonatedOrgId') || user?.organizationId || user?.organization_id;
+      const teamId = user?.teamId || '00000000-0000-0000-0000-000000000000';
+      
+      const newMilestone = await quarterlyPrioritiesService.createMilestone(orgId, teamId, priorityId, milestoneData);
+      
+      // Update local state
+      setPriorities(prev => 
+        prev.map(p => {
+          if (p.id === priorityId) {
+            return {
+              ...p,
+              milestones: [...(p.milestones || []), newMilestone]
+            };
+          }
+          return p;
+        })
+      );
+      
+      setSuccess('Milestone added');
+      setTimeout(() => setSuccess(null), 3000);
+    } catch (error) {
+      console.error('Failed to create milestone:', error);
+      setError('Failed to create milestone');
+    }
+  };
+
+  const handleEditMilestone = async (priorityId, milestoneId, updates) => {
+    try {
+      const orgId = localStorage.getItem('impersonatedOrgId') || user?.organizationId || user?.organization_id;
+      const teamId = user?.teamId || '00000000-0000-0000-0000-000000000000';
+      
+      await quarterlyPrioritiesService.updateMilestone(orgId, teamId, priorityId, milestoneId, updates);
+      
+      // Update local state
+      setPriorities(prev => 
+        prev.map(p => {
+          if (p.id === priorityId) {
+            return {
+              ...p,
+              milestones: p.milestones.map(m => 
+                m.id === milestoneId ? { ...m, ...updates } : m
+              )
+            };
+          }
+          return p;
+        })
+      );
+      
+      setSuccess('Milestone updated');
+      setTimeout(() => setSuccess(null), 3000);
+    } catch (error) {
+      console.error('Failed to edit milestone:', error);
+      setError('Failed to edit milestone');
+    }
+  };
+
+  const handleDeleteMilestone = async (priorityId, milestoneId) => {
+    try {
+      const orgId = localStorage.getItem('impersonatedOrgId') || user?.organizationId || user?.organization_id;
+      const teamId = user?.teamId || '00000000-0000-0000-0000-000000000000';
+      
+      await quarterlyPrioritiesService.deleteMilestone(orgId, teamId, priorityId, milestoneId);
+      
+      // Update local state
+      setPriorities(prev => 
+        prev.map(p => {
+          if (p.id === priorityId) {
+            return {
+              ...p,
+              milestones: p.milestones.filter(m => m.id !== milestoneId)
+            };
+          }
+          return p;
+        })
+      );
+      
+      setSuccess('Milestone deleted');
+      setTimeout(() => setSuccess(null), 3000);
+    } catch (error) {
+      console.error('Failed to delete milestone:', error);
+      setError('Failed to delete milestone');
+    }
+  };
+
+  const handleAddPriorityUpdate = async (priorityId, updateText, statusChange = null) => {
+    try {
+      const orgId = localStorage.getItem('impersonatedOrgId') || user?.organizationId || user?.organization_id;
+      const teamId = user?.teamId || '00000000-0000-0000-0000-000000000000';
+      
+      await quarterlyPrioritiesService.addUpdate(orgId, teamId, priorityId, { text: updateText, statusChange });
+      
+      // If there's a status change, update the priority
+      if (statusChange) {
+        await handlePriorityStatusChange(priorityId, statusChange);
+      }
+      
+      setSuccess('Update added');
+      setTimeout(() => setSuccess(null), 3000);
+      
+      // Refresh priorities to get the latest update
+      await fetchPrioritiesData();
+    } catch (error) {
+      console.error('Failed to add update:', error);
+      setError('Failed to add update');
+    }
+  };
+
   const handleStartMeeting = () => {
     if (window.confirm('Ready to start the meeting?')) {
       setMeetingStarted(true);
@@ -918,23 +1084,19 @@ const WeeklyAccountabilityMeetingPage = () => {
                       {expandedSections.companyPriorities && (
                         <div className="space-y-4 ml-7 mt-4">
                           {companyPriorities.map(priority => (
-                            <PriorityCard 
+                            <FullPriorityCard 
                               key={priority.id} 
                               priority={priority} 
-                              readOnly={false}
-                              onIssueCreated={(message) => {
-                                setSuccess(message);
-                                setTimeout(() => setSuccess(null), 3000);
-                              }}
-                              onStatusChange={(priorityId, newStatus) => {
-                                setPriorities(prev => 
-                                  prev.map(p => 
-                                    p.id === priorityId ? { ...p, status: newStatus } : p
-                                  )
-                                );
-                                setSuccess(`Priority status updated to ${newStatus}`);
-                                setTimeout(() => setSuccess(null), 3000);
-                              }}
+                              isCompany={true}
+                              isArchived={false}
+                              teamMembers={teamMembers}
+                              onUpdate={handleUpdatePriority}
+                              onStatusChange={handlePriorityStatusChange}
+                              onMilestoneUpdate={handleUpdateMilestone}
+                              onMilestoneCreate={handleCreateMilestone}
+                              onMilestoneEdit={handleEditMilestone}
+                              onMilestoneDelete={handleDeleteMilestone}
+                              onAddUpdate={handleAddPriorityUpdate}
                             />
                           ))}
                         </div>
@@ -984,23 +1146,19 @@ const WeeklyAccountabilityMeetingPage = () => {
                             {isExpanded && (
                               <div className="space-y-4 ml-7 mt-4">
                                 {ownerPriorities.map(priority => (
-                                  <PriorityCard 
+                                  <FullPriorityCard 
                                     key={priority.id} 
                                     priority={priority} 
-                                    readOnly={false}
-                                    onIssueCreated={(message) => {
-                                      setSuccess(message);
-                                      setTimeout(() => setSuccess(null), 3000);
-                                    }}
-                                    onStatusChange={(priorityId, newStatus) => {
-                                      setPriorities(prev => 
-                                        prev.map(p => 
-                                          p.id === priorityId ? { ...p, status: newStatus } : p
-                                        )
-                                      );
-                                      setSuccess(`Priority status updated to ${newStatus}`);
-                                      setTimeout(() => setSuccess(null), 3000);
-                                    }}
+                                    isCompany={false}
+                                    isArchived={false}
+                                    teamMembers={teamMembers}
+                                    onUpdate={handleUpdatePriority}
+                                    onStatusChange={handlePriorityStatusChange}
+                                    onMilestoneUpdate={handleUpdateMilestone}
+                                    onMilestoneCreate={handleCreateMilestone}
+                                    onMilestoneEdit={handleEditMilestone}
+                                    onMilestoneDelete={handleDeleteMilestone}
+                                    onAddUpdate={handleAddPriorityUpdate}
                                   />
                                 ))}
                               </div>
