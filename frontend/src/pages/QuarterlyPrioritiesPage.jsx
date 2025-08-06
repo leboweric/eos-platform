@@ -2,6 +2,7 @@ import { useState, useEffect, Component } from 'react';
 import { useAuthStore } from '../stores/authStore';
 import { quarterlyPrioritiesService } from '../services/quarterlyPrioritiesService';
 import { organizationService } from '../services/organizationService';
+import { issuesService } from '../services/issuesService';
 import { getRevenueLabel, getRevenueLabelWithSuffix } from '../utils/revenueUtils';
 import { useDepartment } from '../contexts/DepartmentContext';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -633,6 +634,10 @@ const QuarterlyPrioritiesPage = () => {
     const [loadingAttachments, setLoadingAttachments] = useState(false);
     const [uploadingFile, setUploadingFile] = useState(false);
     const [attachmentError, setAttachmentError] = useState(null);
+    
+    // Issue creation states
+    const [creatingIssue, setCreatingIssue] = useState(false);
+    const [issueCreatedSuccess, setIssueCreatedSuccess] = useState(false);
 
     // Load attachments on mount
     useEffect(() => {
@@ -737,6 +742,48 @@ const QuarterlyPrioritiesPage = () => {
       setUpdateText('');
       setUpdateStatusChange(null);
       setShowUpdateDialog(false);
+    };
+    
+    const handleCreateIssue = async () => {
+      try {
+        setCreatingIssue(true);
+        
+        const ownerName = priority.owner?.name || 
+          (priority.owner?.firstName && priority.owner?.lastName 
+            ? `${priority.owner.firstName} ${priority.owner.lastName}`
+            : 'Unassigned');
+        
+        // Add status to title if off-track or at-risk
+        const statusSuffix = (priority.status === 'off-track' || priority.status === 'at-risk') 
+          ? ` - ${priority.status.replace('-', ' ').toUpperCase()}` 
+          : '';
+        
+        const dueDate = priority.dueDate || priority.due_date;
+        const formattedDueDate = dueDate ? format(new Date(dueDate), 'MMM dd, yyyy') : 'Not set';
+          
+        const issueData = {
+          title: `${priority.title}${statusSuffix}`,
+          description: `Priority "${priority.title}" needs discussion. Status: ${priority.status || 'on-track'}. Due: ${formattedDueDate}. Owner: ${ownerName}`,
+          timeline: 'short_term',
+          ownerId: priority.owner?.id || user?.id,
+          department_id: selectedDepartment?.id
+        };
+        
+        await issuesService.createIssue(issueData);
+        
+        setSuccess(`Issue created for ${priority.title}`);
+        setCreatingIssue(false);
+        setIssueCreatedSuccess(true);
+        
+        // Reset success state after 3 seconds
+        setTimeout(() => {
+          setIssueCreatedSuccess(false);
+        }, 3000);
+      } catch (error) {
+        console.error('Failed to create issue:', error);
+        setCreatingIssue(false);
+        setError('Failed to create issue. Please try again.');
+      }
     };
 
     try {
@@ -863,26 +910,59 @@ const QuarterlyPrioritiesPage = () => {
           </div>
         </CardHeader>
         <CardContent>
-          {/* Show/Hide Details Button */}
-          <div className="flex justify-center mb-3">
-            <Button
-              variant="ghost"
-              size="sm"
-              className="text-gray-500 hover:text-gray-700"
-              onClick={() => setIsExpanded(!isExpanded)}
-            >
-              {isExpanded ? (
-                <>
-                  <ChevronUp className="h-4 w-4 mr-1" />
-                  Hide Details
-                </>
-              ) : (
-                <>
-                  <ChevronDown className="h-4 w-4 mr-1" />
-                  Show Details
-                </>
-              )}
-            </Button>
+          {/* Action Buttons */}
+          <div className="flex items-center justify-between gap-2 mb-3">
+            {!isArchived && (
+              <Button
+                size="sm"
+                variant={issueCreatedSuccess ? "default" : "outline"}
+                className={issueCreatedSuccess 
+                  ? "h-8 px-3 bg-green-600 hover:bg-green-700 text-white" 
+                  : "h-8 px-3 text-orange-600 border-orange-300 hover:bg-orange-50"
+                }
+                onClick={handleCreateIssue}
+                disabled={creatingIssue || issueCreatedSuccess}
+                title="Create an issue to discuss this priority"
+              >
+                {creatingIssue ? (
+                  <>
+                    <Loader2 className="h-4 w-4 mr-1 animate-spin" />
+                    <span className="text-xs">Creating...</span>
+                  </>
+                ) : issueCreatedSuccess ? (
+                  <>
+                    <CheckCircle className="h-4 w-4 mr-1" />
+                    <span className="text-xs">Issue Created!</span>
+                  </>
+                ) : (
+                  <>
+                    <AlertTriangle className="h-4 w-4 mr-1" />
+                    <span className="text-xs">Make an Issue</span>
+                  </>
+                )}
+              </Button>
+            )}
+            
+            <div className="flex-1 flex justify-center">
+              <Button
+                variant="ghost"
+                size="sm"
+                className="text-gray-500 hover:text-gray-700"
+                onClick={() => setIsExpanded(!isExpanded)}
+              >
+                {isExpanded ? (
+                  <>
+                    <ChevronUp className="h-4 w-4 mr-1" />
+                    Hide Details
+                  </>
+                ) : (
+                  <>
+                    <ChevronDown className="h-4 w-4 mr-1" />
+                    Show Details
+                  </>
+                )}
+              </Button>
+            </div>
           </div>
           
           {isExpanded && (
