@@ -34,6 +34,7 @@ import {
 } from 'lucide-react';
 import { format } from 'date-fns';
 import { quarterlyPrioritiesService } from '../../services/quarterlyPrioritiesService';
+import { issuesService } from '../../services/issuesService';
 import { useAuthStore } from '../../stores/authStore';
 
 const FullPriorityCard = ({ 
@@ -88,6 +89,9 @@ const FullPriorityCard = ({
   const [loadingAttachments, setLoadingAttachments] = useState(false);
   const [uploadingFile, setUploadingFile] = useState(false);
   const [attachmentError, setAttachmentError] = useState(null);
+  
+  // Issue creation state
+  const [creatingIssue, setCreatingIssue] = useState(false);
 
   // Load attachments on mount
   useEffect(() => {
@@ -200,6 +204,45 @@ const FullPriorityCard = ({
       setShowUpdateDialog(false);
     } catch (error) {
       console.error('Failed to add update:', error);
+    }
+  };
+
+  const handleCreateIssue = async () => {
+    try {
+      setCreatingIssue(true);
+      
+      const ownerName = priority.owner?.name || 
+        (priority.owner?.firstName && priority.owner?.lastName 
+          ? `${priority.owner.firstName} ${priority.owner.lastName}`
+          : 'Unassigned');
+      
+      // Add status to title if off-track or at-risk
+      const statusSuffix = (priority.status === 'off-track' || priority.status === 'at-risk') 
+        ? ` - ${priority.status.replace('-', ' ').toUpperCase()}` 
+        : '';
+      
+      const dueDate = priority.dueDate || priority.due_date;
+      const formattedDueDate = dueDate ? format(new Date(dueDate), 'MMM dd, yyyy') : 'Not set';
+        
+      const issueData = {
+        title: `${priority.title}${statusSuffix}`,
+        description: `Priority "${priority.title}" needs discussion. Status: ${priority.status || 'on-track'}. Due: ${formattedDueDate}. Owner: ${ownerName}`,
+        timeline: 'short_term',
+        ownerId: priority.owner?.id || user?.id
+      };
+      
+      await issuesService.createIssue(issueData);
+      
+      // Show success message if available
+      if (window.showSuccessMessage) {
+        window.showSuccessMessage(`Issue created for ${priority.title}`);
+      }
+      
+      setCreatingIssue(false);
+    } catch (error) {
+      console.error('Failed to create issue:', error);
+      setCreatingIssue(false);
+      alert('Failed to create issue. Please try again.');
     }
   };
 
@@ -690,19 +733,36 @@ const FullPriorityCard = ({
               <div>
                 <div className="flex items-center justify-between mb-2">
                   <Label className="text-sm text-gray-600">Latest Update</Label>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => {
-                      setUpdateText('');
-                      setUpdateStatusChange(null);
-                      setShowUpdateDialog(true);
-                    }}
-                    className="text-xs"
-                  >
-                    <Plus className="h-3 w-3 mr-1" />
-                    Add Update
-                  </Button>
+                  <div className="flex gap-2">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={handleCreateIssue}
+                      disabled={creatingIssue || isArchived}
+                      className="text-xs"
+                      title="Create an issue to discuss this priority"
+                    >
+                      {creatingIssue ? (
+                        <Loader2 className="h-3 w-3 mr-1 animate-spin" />
+                      ) : (
+                        <AlertTriangle className="h-3 w-3 mr-1" />
+                      )}
+                      Make an Issue
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => {
+                        setUpdateText('');
+                        setUpdateStatusChange(null);
+                        setShowUpdateDialog(true);
+                      }}
+                      className="text-xs"
+                    >
+                      <Plus className="h-3 w-3 mr-1" />
+                      Add Update
+                    </Button>
+                  </div>
                 </div>
                 {priority.latestUpdate ? (
                   <div className="bg-gray-50 p-3 rounded-lg">

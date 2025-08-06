@@ -102,10 +102,15 @@ const PriorityCard = ({ priority, readOnly = false, onIssueCreated, onStatusChan
       const ownerName = priority.owner_first_name && priority.owner_last_name 
         ? `${priority.owner_first_name} ${priority.owner_last_name}`
         : priority.owner?.name || 'Unassigned';
+      
+      // Add status to title if off-track or at-risk
+      const statusSuffix = (priority.status === 'off-track' || priority.status === 'at-risk') 
+        ? ` - ${priority.status.replace('-', ' ').toUpperCase()}` 
+        : '';
         
       const issueData = {
-        title: `${priority.title} - Off Track`,
-        description: `Priority "${priority.title}" is off track. Due: ${formatDate(priority.due_date)}${daysLeft !== null ? ` (${daysLeft} days)` : ''}. Owner: ${ownerName}`,
+        title: `${priority.title}${statusSuffix}`,
+        description: `Priority "${priority.title}" needs discussion. Status: ${priority.status || 'on-track'}. Due: ${formatDate(priority.due_date)}${daysLeft !== null ? ` (${daysLeft} days)` : ''}. Owner: ${ownerName}`,
         timeline: 'short_term',
         ownerId: priority.owner_id || priority.owner?.id || user?.id
       };
@@ -152,8 +157,8 @@ const PriorityCard = ({ priority, readOnly = false, onIssueCreated, onStatusChan
   };
 
 
-  const isOffTrack = priority.status === 'off-track' || priority.status === 'at-risk';
-  const showCreateIssue = !readOnly && isOffTrack && priority.status !== 'complete';
+  // Always show the Make an Issue button unless in read-only mode
+  const showCreateIssue = !readOnly;
 
   return (
     <Card className={priority.status === 'off-track' ? 'border-red-200' : ''}>
@@ -250,18 +255,18 @@ const PriorityCard = ({ priority, readOnly = false, onIssueCreated, onStatusChan
               {showCreateIssue && (
                 <Button
                   size="sm"
-                  variant="ghost"
-                  className="h-8 px-2 hover:bg-red-50"
+                  variant="outline"
+                  className="h-8 px-2"
                   onClick={handleCreateIssue}
                   disabled={creatingIssue}
-                  title="Create issue for off-track priority"
+                  title="Create an issue to discuss this priority"
                 >
                   {creatingIssue ? (
                     <span className="animate-spin">⏳</span>
                   ) : (
                     <>
-                      <AlertTriangle className="h-4 w-4 text-red-600 mr-1" />
-                      <span className="text-xs">Create Issue</span>
+                      <AlertTriangle className="h-4 w-4 mr-1" />
+                      <span className="text-xs">Make an Issue</span>
                     </>
                   )}
                 </Button>
