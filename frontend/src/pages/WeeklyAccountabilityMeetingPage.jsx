@@ -1256,16 +1256,15 @@ const WeeklyAccountabilityMeetingPage = () => {
                     <CardDescription>Review action items from last week (5 minutes)</CardDescription>
                   </div>
                   <div className="flex items-center gap-2">
-                    {selectedTodoIds.length > 0 && (
-                      <Button 
-                        onClick={handleArchiveSelectedTodos}
-                        variant="outline"
-                        className="text-green-600"
-                      >
-                        <CheckSquare className="mr-2 h-4 w-4" />
-                        Mark Complete ({selectedTodoIds.length})
-                      </Button>
-                    )}
+                    <Button 
+                      onClick={handleArchiveSelectedTodos}
+                      variant="outline"
+                      className="text-green-600"
+                      disabled={selectedTodoIds.length === 0}
+                    >
+                      <CheckSquare className="mr-2 h-4 w-4" />
+                      Mark Complete ({selectedTodoIds.length})
+                    </Button>
                   </div>
                 </div>
               </CardHeader>

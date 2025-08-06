@@ -19,10 +19,12 @@ import {
 } from 'lucide-react';
 import TodoDialog from '../components/todos/TodoDialog';
 import TodosList from '../components/todos/TodosList';
+import { useSelectedTodos } from '../contexts/SelectedTodosContext';
 
 const TodosPage = () => {
   const { user } = useAuthStore();
   const { selectedDepartment } = useDepartment();
+  const { selectedTodoIds, setSelectedTodoIds } = useSelectedTodos();
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [success, setSuccess] = useState(null);
@@ -147,6 +149,30 @@ const TodosPage = () => {
     }
   };
 
+  const handleMarkComplete = async () => {
+    if (selectedTodoIds.length === 0) {
+      setError('Please select to-dos to mark as complete');
+      return;
+    }
+    
+    if (!window.confirm(`Mark ${selectedTodoIds.length} selected to-do(s) as complete?`)) {
+      return;
+    }
+    
+    try {
+      // Mark each selected todo as complete
+      await Promise.all(selectedTodoIds.map(id => 
+        todosService.updateTodo(id, { status: 'complete' })
+      ));
+      setSelectedTodoIds([]);
+      await fetchTodos();
+      setSuccess(`${selectedTodoIds.length} to-do(s) marked as complete`);
+    } catch (error) {
+      console.error('Failed to complete selected todos:', error);
+      setError('Failed to mark to-dos as complete');
+    }
+  };
+
   const getFilteredTodos = () => {
     if (activeTab === 'all') return todos;
     return todos.filter(todo => todo.status === activeTab);
@@ -172,10 +198,21 @@ const TodosPage = () => {
             <h1 className="text-4xl font-bold text-gray-900">To-Dos{selectedDepartment ? ` - ${selectedDepartment.name}` : ''}</h1>
             <p className="text-gray-600 mt-2 text-lg">Manage your tasks and action items</p>
           </div>
-          <Button onClick={handleCreateTodo} className="bg-indigo-600 hover:bg-indigo-700">
-            <Plus className="mr-2 h-4 w-4" />
-            New To-Do
-          </Button>
+          <div className="flex gap-2">
+            <Button 
+              onClick={handleMarkComplete}
+              variant="outline"
+              className="text-green-600 hover:text-green-700 border-green-300"
+              disabled={selectedTodoIds.length === 0}
+            >
+              <CheckSquare className="mr-2 h-4 w-4" />
+              Mark Complete ({selectedTodoIds.length})
+            </Button>
+            <Button onClick={handleCreateTodo} className="bg-indigo-600 hover:bg-indigo-700">
+              <Plus className="mr-2 h-4 w-4" />
+              New To-Do
+            </Button>
+          </div>
         </div>
 
         {error && (
