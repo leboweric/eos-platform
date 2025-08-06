@@ -249,7 +249,6 @@ const IssuesPage = () => {
 
   const currentIssues = activeTab === 'short_term' ? shortTermIssues : activeTab === 'long_term' ? longTermIssues : archivedIssues;
   const closedIssuesCount = currentIssues.filter(issue => issue.status === 'closed').length;
-  const hasClosedIssues = activeTab !== 'archived' && closedIssuesCount > 0;
 
   if (loading) {
     return (
@@ -272,16 +271,15 @@ const IssuesPage = () => {
           <div className="flex gap-2">
             {activeTab !== 'archived' && (
               <>
-                {hasClosedIssues && (
-                  <Button 
-                    onClick={handleArchiveSelected} 
-                    variant="outline"
-                    className="text-gray-600 hover:text-gray-800 border-gray-300"
-                  >
-                    <Archive className="mr-2 h-4 w-4" />
-                    Archive Closed Issues ({closedIssuesCount})
-                  </Button>
-                )}
+                <Button 
+                  onClick={handleArchiveSelected} 
+                  variant="outline"
+                  className="text-gray-600 hover:text-gray-800 border-gray-300"
+                  disabled={closedIssuesCount === 0}
+                >
+                  <Archive className="mr-2 h-4 w-4" />
+                  Archive Closed Issues ({closedIssuesCount})
+                </Button>
                 <Button onClick={handleCreateIssue} className="bg-indigo-600 hover:bg-indigo-700 text-white">
                   <Plus className="mr-2 h-4 w-4" />
                   Add Issue
