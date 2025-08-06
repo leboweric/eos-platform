@@ -3,28 +3,15 @@ import dotenv from 'dotenv';
 
 dotenv.config();
 
-// Initialize OpenAI client only if API key is available
-let openai = null;
-if (process.env.OPENAI_API_KEY) {
-  openai = new OpenAI({
-    apiKey: process.env.OPENAI_API_KEY,
-  });
-} else {
-  console.warn('OpenAI API key not configured. AI features will be disabled.');
-}
+const openai = new OpenAI({
+  apiKey: process.env.OPENAI_API_KEY,
+});
 
 /**
  * Analyze a Rock/Priority for SMART criteria
  * Returns score, improvements, and suggested rewrite
  */
 export const analyzeRockSMART = async (title, description = '') => {
-  if (!openai) {
-    return {
-      success: false,
-      error: 'OpenAI service not configured'
-    };
-  }
-  
   try {
     const prompt = `You are an expert in the Entrepreneurial Operating System (EOS) and SMART goal setting. Analyze this quarterly priority (Rock) and provide detailed feedback.
 
@@ -102,13 +89,6 @@ Respond in JSON format:
  * Generate milestone suggestions for a Rock
  */
 export const generateMilestones = async (title, description, dueDate, startDate = new Date()) => {
-  if (!openai) {
-    return {
-      success: false,
-      error: 'OpenAI service not configured'
-    };
-  }
-  
   try {
     const prompt = `You are an expert in project management and the EOS system. Generate quarterly milestones for this Rock.
 
@@ -170,13 +150,6 @@ Respond in JSON format:
  * Check alignment between a Department Rock and Company Rocks
  */
 export const checkRockAlignment = async (departmentRock, companyRocks) => {
-  if (!openai) {
-    return {
-      success: false,
-      error: 'OpenAI service not configured'
-    };
-  }
-  
   try {
     const companyRocksList = companyRocks.map((rock, index) => 
       `${index + 1}. ${rock.title}${rock.description ? ': ' + rock.description : ''}`
@@ -241,13 +214,6 @@ Respond in JSON format:
  * Generate a complete SMART Rock from a rough idea
  */
 export const generateSmartRock = async (roughIdea, context = {}) => {
-  if (!openai) {
-    return {
-      success: false,
-      error: 'OpenAI service not configured'
-    };
-  }
-  
   try {
     const { quarter, year, teamName, ownerName } = context;
     
@@ -317,7 +283,7 @@ Respond in JSON format:
  * Validate if OpenAI service is configured properly
  */
 export const validateConfiguration = async () => {
-  if (!process.env.OPENAI_API_KEY || !openai) {
+  if (!process.env.OPENAI_API_KEY) {
     return {
       configured: false,
       error: 'OpenAI API key not configured'
