@@ -28,6 +28,8 @@ import {
   Clock,
   Edit,
   Trash2,
+  ChevronDown,
+  ChevronUp,
   Building2,
   DollarSign,
   BarChart,
@@ -602,6 +604,7 @@ const QuarterlyPrioritiesPage = () => {
       return null;
     }
     
+    const [isExpanded, setIsExpanded] = useState(false);
     const [isEditing, setIsEditing] = useState(false);
     const [showUpdateDialog, setShowUpdateDialog] = useState(false);
     const [updateText, setUpdateText] = useState('');
@@ -854,6 +857,29 @@ const QuarterlyPrioritiesPage = () => {
           </div>
         </CardHeader>
         <CardContent>
+          {/* Show/Hide Details Button */}
+          <div className="flex justify-center mb-3">
+            <Button
+              variant="ghost"
+              size="sm"
+              className="text-gray-500 hover:text-gray-700"
+              onClick={() => setIsExpanded(!isExpanded)}
+            >
+              {isExpanded ? (
+                <>
+                  <ChevronUp className="h-4 w-4 mr-1" />
+                  Hide Details
+                </>
+              ) : (
+                <>
+                  <ChevronDown className="h-4 w-4 mr-1" />
+                  Show Details
+                </>
+              )}
+            </Button>
+          </div>
+          
+          {isExpanded && (
           <div className="space-y-4">
             {/* Progress and Details */}
             <div className="grid md:grid-cols-4 gap-4">
@@ -1245,6 +1271,7 @@ const QuarterlyPrioritiesPage = () => {
               </div>
             )}
           </div>
+          )}
         </CardContent>
 
         {/* Add Update Dialog */}
