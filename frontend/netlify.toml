@@ -2,7 +2,7 @@
 
 [build]
   publish = "dist"
-  command = "npm run build"
+  command = "pnpm run build"
 
 # SPA redirect rule - all routes serve index.html
 [[redirects]]
