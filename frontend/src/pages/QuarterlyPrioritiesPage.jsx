@@ -910,59 +910,26 @@ const QuarterlyPrioritiesPage = () => {
           </div>
         </CardHeader>
         <CardContent>
-          {/* Action Buttons */}
-          <div className="flex items-center justify-between gap-2 mb-3">
-            {!isArchived && (
-              <Button
-                size="sm"
-                variant={issueCreatedSuccess ? "default" : "outline"}
-                className={issueCreatedSuccess 
-                  ? "h-8 px-3 bg-green-600 hover:bg-green-700 text-white" 
-                  : "h-8 px-3 text-orange-600 border-orange-300 hover:bg-orange-50"
-                }
-                onClick={handleCreateIssue}
-                disabled={creatingIssue || issueCreatedSuccess}
-                title="Create an issue to discuss this priority"
-              >
-                {creatingIssue ? (
-                  <>
-                    <Loader2 className="h-4 w-4 mr-1 animate-spin" />
-                    <span className="text-xs">Creating...</span>
-                  </>
-                ) : issueCreatedSuccess ? (
-                  <>
-                    <CheckCircle className="h-4 w-4 mr-1" />
-                    <span className="text-xs">Issue Created!</span>
-                  </>
-                ) : (
-                  <>
-                    <AlertTriangle className="h-4 w-4 mr-1" />
-                    <span className="text-xs">Make an Issue</span>
-                  </>
-                )}
-              </Button>
-            )}
-            
-            <div className="flex-1 flex justify-center">
-              <Button
-                variant="ghost"
-                size="sm"
-                className="text-gray-500 hover:text-gray-700"
-                onClick={() => setIsExpanded(!isExpanded)}
-              >
-                {isExpanded ? (
-                  <>
-                    <ChevronUp className="h-4 w-4 mr-1" />
-                    Hide Details
-                  </>
-                ) : (
-                  <>
-                    <ChevronDown className="h-4 w-4 mr-1" />
-                    Show Details
-                  </>
-                )}
-              </Button>
-            </div>
+          {/* Show/Hide Details Button */}
+          <div className="flex justify-center mb-3">
+            <Button
+              variant="ghost"
+              size="sm"
+              className="text-gray-500 hover:text-gray-700"
+              onClick={() => setIsExpanded(!isExpanded)}
+            >
+              {isExpanded ? (
+                <>
+                  <ChevronUp className="h-4 w-4 mr-1" />
+                  Hide Details
+                </>
+              ) : (
+                <>
+                  <ChevronDown className="h-4 w-4 mr-1" />
+                  Show Details
+                </>
+              )}
+            </Button>
           </div>
           
           {isExpanded && (
@@ -1237,19 +1204,51 @@ const QuarterlyPrioritiesPage = () => {
             <div>
               <div className="flex items-center justify-between mb-2">
                 <Label className="text-sm text-gray-600">Latest Update</Label>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => {
-                    setUpdateText('');
-                    setUpdateStatusChange(null);
-                    setShowUpdateDialog(true);
-                  }}
-                  className="text-xs"
-                >
-                  <Plus className="h-3 w-3 mr-1" />
-                  Add Update
-                </Button>
+                <div className="flex gap-2">
+                  {!isArchived && (
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={handleCreateIssue}
+                      disabled={creatingIssue || issueCreatedSuccess}
+                      className={issueCreatedSuccess 
+                        ? "text-xs bg-green-600 hover:bg-green-700 text-white" 
+                        : "text-xs text-orange-600 border-orange-300 hover:bg-orange-50"
+                      }
+                      title="Create an issue to discuss this priority"
+                    >
+                      {creatingIssue ? (
+                        <>
+                          <Loader2 className="h-3 w-3 mr-1 animate-spin" />
+                          Creating...
+                        </>
+                      ) : issueCreatedSuccess ? (
+                        <>
+                          <CheckCircle className="h-3 w-3 mr-1" />
+                          Issue Created!
+                        </>
+                      ) : (
+                        <>
+                          <AlertTriangle className="h-3 w-3 mr-1" />
+                          Make an Issue
+                        </>
+                      )}
+                    </Button>
+                  )}
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => {
+                      setUpdateText('');
+                      setUpdateStatusChange(null);
+                      setShowUpdateDialog(true);
+                    }}
+                    className="text-xs"
+                  >
+                    <Plus className="h-3 w-3 mr-1" />
+                    Add Update
+                  </Button>
+                </div>
               </div>
               {priority.latestUpdate ? (
                 <div className="bg-gray-50 p-3 rounded-lg">

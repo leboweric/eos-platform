@@ -237,81 +237,81 @@ const PriorityCard = ({ priority, readOnly = false, onIssueCreated, onStatusChan
       
       <CardContent>
         {isExpanded && (
-          <div className="flex items-center justify-between mb-3">
-            <div className="flex items-center gap-4 text-sm text-gray-600">
-              {priority.owner_first_name && (
-                <div className="flex items-center gap-1">
-                  <User className="h-4 w-4" />
-                  <span>{priority.owner_first_name} {priority.owner_last_name}</span>
-                </div>
-              )}
-              {priority.due_date && (
-                <div className="flex items-center gap-1">
-                  <Calendar className="h-4 w-4" />
-                  <span>
-                    {new Date(priority.due_date).toLocaleDateString('en-US', { 
-                      month: 'short', 
-                      day: 'numeric' 
-                    })}
-                  </span>
-                </div>
+          <div className="space-y-3">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-4 text-sm text-gray-600">
+                {priority.owner_first_name && (
+                  <div className="flex items-center gap-1">
+                    <User className="h-4 w-4" />
+                    <span>{priority.owner_first_name} {priority.owner_last_name}</span>
+                  </div>
+                )}
+                {priority.due_date && (
+                  <div className="flex items-center gap-1">
+                    <Calendar className="h-4 w-4" />
+                    <span>
+                      {new Date(priority.due_date).toLocaleDateString('en-US', { 
+                        month: 'short', 
+                        day: 'numeric' 
+                      })}
+                    </span>
+                  </div>
+                )}
+              </div>
+              
+              {showCreateIssue && (
+                <Button
+                  size="sm"
+                  variant={issueCreatedSuccess ? "default" : "outline"}
+                  className={issueCreatedSuccess 
+                    ? "h-8 px-3 bg-green-600 hover:bg-green-700 text-white" 
+                    : "h-8 px-3 text-orange-600 border-orange-300 hover:bg-orange-50"
+                  }
+                  onClick={handleCreateIssue}
+                  disabled={creatingIssue || issueCreatedSuccess}
+                  title="Create an issue to discuss this priority"
+                >
+                  {creatingIssue ? (
+                    <>
+                      <span className="animate-spin mr-1">⏳</span>
+                      <span className="text-xs">Creating...</span>
+                    </>
+                  ) : issueCreatedSuccess ? (
+                    <>
+                      <CheckCircle className="h-4 w-4 mr-1" />
+                      <span className="text-xs">Issue Created!</span>
+                    </>
+                  ) : (
+                    <>
+                      <AlertTriangle className="h-4 w-4 mr-1" />
+                      <span className="text-xs">Make an Issue</span>
+                    </>
+                  )}
+                </Button>
               )}
             </div>
           </div>
         )}
         
-        <div className="flex items-center justify-between gap-2">
-          {showCreateIssue && (
-            <Button
-              size="sm"
-              variant={issueCreatedSuccess ? "default" : "outline"}
-              className={issueCreatedSuccess 
-                ? "h-8 px-3 bg-green-600 hover:bg-green-700 text-white" 
-                : "h-8 px-3 text-orange-600 border-orange-300 hover:bg-orange-50"
-              }
-              onClick={handleCreateIssue}
-              disabled={creatingIssue || issueCreatedSuccess}
-              title="Create an issue to discuss this priority"
-            >
-              {creatingIssue ? (
-                <>
-                  <span className="animate-spin mr-1">⏳</span>
-                  <span className="text-xs">Creating...</span>
-                </>
-              ) : issueCreatedSuccess ? (
-                <>
-                  <CheckCircle className="h-4 w-4 mr-1" />
-                  <span className="text-xs">Issue Created!</span>
-                </>
-              ) : (
-                <>
-                  <AlertTriangle className="h-4 w-4 mr-1" />
-                  <span className="text-xs">Make an Issue</span>
-                </>
-              )}
-            </Button>
-          )}
-          
-          <div className="flex-1 flex justify-center">
-            <Button
-              variant="ghost"
-              size="sm"
-              className="text-gray-500 hover:text-gray-700"
-              onClick={() => setIsExpanded(!isExpanded)}
-            >
-              {isExpanded ? (
-                <>
-                  <ChevronUp className="h-4 w-4 mr-1" />
-                  Hide Details
-                </>
-              ) : (
-                <>
-                  <ChevronDown className="h-4 w-4 mr-1" />
-                  Show Details
-                </>
-              )}
-            </Button>
-          </div>
+        <div className="flex justify-center">
+          <Button
+            variant="ghost"
+            size="sm"
+            className="text-gray-500 hover:text-gray-700"
+            onClick={() => setIsExpanded(!isExpanded)}
+          >
+            {isExpanded ? (
+              <>
+                <ChevronUp className="h-4 w-4 mr-1" />
+                Hide Details
+              </>
+            ) : (
+              <>
+                <ChevronDown className="h-4 w-4 mr-1" />
+                Show Details
+              </>
+            )}
+          </Button>
         </div>
       </CardContent>
     </Card>
