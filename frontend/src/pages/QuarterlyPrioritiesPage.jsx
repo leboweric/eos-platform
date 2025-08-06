@@ -754,7 +754,14 @@ const QuarterlyPrioritiesPage = () => {
                     className="flex-1 font-semibold"
                   />
                 ) : (
-                  <CardTitle className="text-lg">{priority.title}</CardTitle>
+                  <CardTitle className="text-lg">
+                    {priority.title}
+                    {isCompany && priority.owner && (
+                      <span className="text-sm font-normal text-gray-600 ml-2">
+                        ({priority.owner.name})
+                      </span>
+                    )}
+                  </CardTitle>
                 )}
                 {isCompany && (
                   <Badge variant="outline" className="bg-blue-50">

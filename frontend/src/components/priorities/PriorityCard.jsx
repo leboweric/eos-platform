@@ -162,7 +162,14 @@ const PriorityCard = ({ priority, readOnly = false, onIssueCreated, onStatusChan
           <div className="flex-1">
             <div className="flex items-center gap-2">
               <div className={`w-3 h-3 rounded-full ${getStatusColor(priority.status)}`} />
-              <h3 className="font-medium">{priority.title}</h3>
+              <h3 className="font-medium">
+                {priority.title}
+                {priority.isFromLeadership && priority.owner && (
+                  <span className="text-sm font-normal text-gray-600 ml-2">
+                    ({priority.owner.name || `${priority.owner_first_name} ${priority.owner_last_name}`})
+                  </span>
+                )}
+              </h3>
               {priority.teamName && (
                 <Badge variant={priority.isFromLeadership ? "default" : "secondary"} className="text-xs">
                   {priority.teamName}
