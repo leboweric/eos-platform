@@ -601,6 +601,21 @@ const QuarterlyPrioritiesPage = () => {
     offTrack: allPriorities.filter(p => p.status === 'off-track').length
   };
 
+  // Status colors and icons for priority cards
+  const statusColors = {
+    'on-track': 'bg-green-100 text-green-700 border-green-200',
+    'off-track': 'bg-red-100 text-red-700 border-red-200',
+    'at-risk': 'bg-yellow-100 text-yellow-700 border-yellow-200',
+    'complete': 'bg-blue-100 text-blue-700 border-blue-200'
+  };
+
+  const statusIcons = {
+    'on-track': <Target className="h-4 w-4" />,
+    'off-track': <AlertTriangle className="h-4 w-4" />,
+    'at-risk': <AlertTriangle className="h-4 w-4" />,
+    'complete': <CheckCircle className="h-4 w-4" />
+  };
+
   const PriorityCard = ({ priority, isCompany = false, isArchived = false }) => {
     // Validate priority data
     if (!priority || !priority.owner) {
