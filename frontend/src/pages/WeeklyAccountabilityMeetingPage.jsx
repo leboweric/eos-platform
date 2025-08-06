@@ -263,7 +263,9 @@ const WeeklyAccountabilityMeetingPage = () => {
         willShow: i.status === 'open' && i.timeline === 'short_term'
       })));
       
-      const filteredIssues = response.data.issues.filter(i => i.status === 'open' && i.timeline === 'short_term');
+      // Include both open and closed issues for the meeting view
+      // Users should be able to check/uncheck issues without them disappearing
+      const filteredIssues = response.data.issues.filter(i => i.timeline === 'short_term');
       console.log('Filtered short-term issues:', filteredIssues);
       
       // Sort issues by vote count (highest first), then by creation date
@@ -364,12 +366,23 @@ const WeeklyAccountabilityMeetingPage = () => {
 
   const handleIssueStatusChange = async (issueId, newStatus) => {
     try {
+      // Optimistically update the local state first for instant feedback
+      setIssues(prev => 
+        prev.map(issue => 
+          issue.id === issueId ? { ...issue, status: newStatus } : issue
+        )
+      );
+      
+      // Then update the backend
       await issuesService.updateIssue(issueId, { status: newStatus });
-      await fetchIssuesData(); // Refresh the issues list
-      setSuccess(`Issue ${newStatus === 'closed' ? 'closed' : 'reopened'} successfully`);
+      
+      // Don't show success message for simple checkbox toggles
+      // setSuccess(`Issue ${newStatus === 'closed' ? 'closed' : 'reopened'} successfully`);
     } catch (error) {
       console.error('Failed to update issue status:', error);
       setError('Failed to update issue status');
+      // Revert on error
+      await fetchIssuesData();
     }
   };
 
