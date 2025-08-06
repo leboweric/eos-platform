@@ -1311,16 +1311,15 @@ const WeeklyAccountabilityMeetingPage = () => {
                     <CardDescription>Review and solve short-term issues (60 minutes)</CardDescription>
                   </div>
                   <div className="flex items-center gap-2">
-                    {closedIssuesCount > 0 && (
-                      <Button 
-                        onClick={handleArchiveClosedIssues}
-                        variant="outline"
-                        className="text-gray-600"
-                      >
-                        <Archive className="mr-2 h-4 w-4" />
-                        Archive Closed Issues ({closedIssuesCount})
-                      </Button>
-                    )}
+                    <Button 
+                      onClick={handleArchiveClosedIssues}
+                      variant="outline"
+                      className="text-gray-600"
+                      disabled={closedIssuesCount === 0}
+                    >
+                      <Archive className="mr-2 h-4 w-4" />
+                      Archive Closed Issues ({closedIssuesCount})
+                    </Button>
                   </div>
                 </div>
               </CardHeader>
