@@ -153,6 +153,31 @@ const IssuesPage = () => {
     }
   };
 
+  const handleArchiveSelected = async () => {
+    try {
+      // Get all closed issues from the current tab
+      const closedIssues = currentIssues.filter(issue => issue.status === 'closed');
+      
+      if (closedIssues.length === 0) {
+        setError('No closed issues to archive. Check the boxes next to issues you want to archive.');
+        return;
+      }
+      
+      if (!window.confirm(`Archive ${closedIssues.length} closed issue${closedIssues.length > 1 ? 's' : ''}?`)) {
+        return;
+      }
+      
+      // Archive all closed issues
+      await Promise.all(closedIssues.map(issue => issuesService.archiveIssue(issue.id)));
+      
+      setSuccess(`${closedIssues.length} issue${closedIssues.length > 1 ? 's' : ''} archived successfully`);
+      await fetchIssues();
+    } catch (error) {
+      console.error('Failed to archive issues:', error);
+      setError('Failed to archive issues');
+    }
+  };
+
   const handleUnarchive = async (issueId) => {
     try {
       await issuesService.unarchiveIssue(issueId);
@@ -186,6 +211,10 @@ const IssuesPage = () => {
     }
   };
 
+  const currentIssues = activeTab === 'short_term' ? shortTermIssues : activeTab === 'long_term' ? longTermIssues : archivedIssues;
+  const closedIssuesCount = currentIssues.filter(issue => issue.status === 'closed').length;
+  const hasClosedIssues = activeTab !== 'archived' && closedIssuesCount > 0;
+
   if (loading) {
     return (
       <div className="flex items-center justify-center min-h-screen">
@@ -193,9 +222,6 @@ const IssuesPage = () => {
       </div>
     );
   }
-
-  const currentIssues = activeTab === 'short_term' ? shortTermIssues : activeTab === 'long_term' ? longTermIssues : archivedIssues;
-  const hasClosedIssues = activeTab !== 'archived' && currentIssues.some(issue => issue.status === 'closed');
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -209,10 +235,22 @@ const IssuesPage = () => {
           </div>
           <div className="flex gap-2">
             {activeTab !== 'archived' && (
-              <Button onClick={handleCreateIssue} className="bg-indigo-600 hover:bg-indigo-700 text-white">
-                <Plus className="mr-2 h-4 w-4" />
-                Add Issue
-              </Button>
+              <>
+                {hasClosedIssues && (
+                  <Button 
+                    onClick={handleArchiveSelected} 
+                    variant="outline"
+                    className="text-gray-600 hover:text-gray-800 border-gray-300"
+                  >
+                    <Archive className="mr-2 h-4 w-4" />
+                    Archive Closed Issues ({closedIssuesCount})
+                  </Button>
+                )}
+                <Button onClick={handleCreateIssue} className="bg-indigo-600 hover:bg-indigo-700 text-white">
+                  <Plus className="mr-2 h-4 w-4" />
+                  Add Issue
+                </Button>
+              </>
             )}
           </div>
         </div>
