@@ -378,7 +378,7 @@ const GroupedScorecardView = ({
       <tr 
         key={metric.id} 
         className={`border-b hover:bg-gray-50 cursor-move ${
-          dragOverMetricIndex === index && draggedMetric?.group_id === groupId ? 'bg-gray-50' : ''
+          dragOverMetricIndex === index && draggedMetric?.group_id === groupId ? 'bg-blue-50' : ''
         }`}
         draggable
         onDragStart={(e) => handleDragStart(e, metric, index)}
@@ -400,14 +400,14 @@ const GroupedScorecardView = ({
             onClick={() => onChartOpen(metric)}
             size="sm"
             variant="ghost"
-            className="h-8 w-8 p-0 hover:bg-gray-100 mx-auto"
+            className="h-8 w-8 p-0 hover:bg-blue-100 mx-auto"
           >
-            <BarChart3 className="h-4 w-4 text-gray-600" />
+            <BarChart3 className="h-4 w-4 text-blue-600" />
           </Button>
         </td>
-        <td className="text-center p-2 w-20 font-semibold text-gray-700 text-sm">{formatGoal(metric.goal, metric.value_type, metric.comparison_operator)}</td>
+        <td className="text-center p-2 w-20 font-semibold text-indigo-600 text-sm">{formatGoal(metric.goal, metric.value_type, metric.comparison_operator)}</td>
         {/* Average column */}
-        <td className="p-2 text-center bg-white border-l border-gray-200 font-semibold text-sm w-20">
+        <td className="p-2 text-center bg-gray-50 font-semibold text-sm w-20">
           {(() => {
             const scoreValues = Object.values(scores).filter(v => v !== '' && v !== null && v !== undefined);
             if (scoreValues.length === 0) return '-';
@@ -435,11 +435,11 @@ const GroupedScorecardView = ({
           const isCurrentPeriod = currentValue && period.value === currentValue;
           
           return (
-            <td key={period.value} className={`p-2 text-center w-20 ${isCurrentPeriod ? 'bg-gray-50 border-2 border-gray-300' : ''}`}>
+            <td key={period.value} className={`p-2 text-center w-20 ${isCurrentPeriod ? 'bg-indigo-50' : ''}`}>
               <button
                 onClick={() => onScoreUpdate(metric, period.value, value)}
                 className={`w-full px-2 py-1 rounded text-sm font-medium transition-colors
-                  ${value ? (isOnTrack ? 'bg-green-50 text-green-700 border border-green-200' : 'bg-red-50 text-red-700 border border-red-200') : (isCurrentPeriod ? 'bg-gray-100 text-gray-700 hover:bg-gray-200' : 'bg-white border border-gray-200 text-gray-600 hover:bg-gray-50')}`}
+                  ${value ? (isOnTrack ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800') : (isCurrentPeriod ? 'bg-indigo-100 text-indigo-600 hover:bg-indigo-200' : 'bg-gray-100 text-gray-600 hover:bg-gray-200')}`}
               >
                 {value ? formatValue(value, metric.value_type) : '-'}
               </button>
@@ -447,7 +447,7 @@ const GroupedScorecardView = ({
           );
         })}
         {showTotal && (
-          <td className="p-2 text-center font-semibold w-20 bg-white border-l border-gray-200">
+          <td className="p-2 text-center font-semibold w-20 bg-gray-50">
             {Math.round(Object.values(scores).reduce((sum, val) => sum + (parseFloat(val) || 0), 0))}
           </td>
         )}
@@ -486,14 +486,14 @@ const GroupedScorecardView = ({
     const labels = isWeekly ? weekOptions : monthOptions;
     
     return (
-      <thead className="bg-white border-b border-gray-200">
+      <thead className="bg-gray-50 border-b">
         <tr>
           <th className="text-center p-2 font-semibold text-gray-700 w-8"></th>
           <th className="text-center p-2 font-semibold text-gray-700 w-16">Owner</th>
           <th className="text-left p-2 font-semibold text-gray-700 w-48">Metric</th>
           <th className="text-center p-2 font-semibold text-gray-700 w-12">Chart</th>
           <th className="text-center p-2 font-semibold text-gray-700 w-20">Goal</th>
-          <th className="text-center p-2 font-semibold text-gray-700 w-20 border-l border-gray-200">Average</th>
+          <th className="text-center p-2 font-semibold text-gray-700 w-20 bg-gray-100">Average</th>
           {labels.map((option, index) => {
             // Get current date
             const now = new Date();
@@ -508,7 +508,7 @@ const GroupedScorecardView = ({
             
             return (
               <th key={option.value} className={`text-center p-2 font-semibold text-xs w-20 ${
-                isCurrentPeriod ? 'text-gray-900 bg-gray-50 border-2 border-gray-300' : 'text-gray-700'
+                isCurrentPeriod ? 'text-indigo-700 bg-indigo-50' : 'text-gray-700'
               }`}>
                 <div className="flex flex-col items-center">
                   <span className="text-xs font-normal text-gray-500 mb-1">
@@ -519,7 +519,7 @@ const GroupedScorecardView = ({
               </th>
             );
           })}
-          {showTotal && <th className="text-center p-2 font-semibold text-gray-700 w-20 border-l border-gray-200">Total</th>}
+          {showTotal && <th className="text-center p-2 font-semibold text-gray-700 w-20 bg-gray-100">Total</th>}
           <th className="text-center p-2 font-semibold text-gray-700 w-12">Actions</th>
         </tr>
       </thead>
@@ -536,10 +536,10 @@ const GroupedScorecardView = ({
         return (
           <Card 
             key={group.id} 
-            className={`overflow-hidden transition-all bg-white border border-gray-200 ${
-              dragOverGroup === group.id ? 'ring-2 ring-gray-400' : ''
+            className={`overflow-hidden transition-all ${
+              dragOverGroup === group.id ? 'ring-2 ring-blue-500' : ''
             } ${
-              dragOverGroupIndex === groupIndex ? 'border-t-4 border-t-gray-400' : ''
+              dragOverGroupIndex === groupIndex ? 'border-t-4 border-t-blue-500' : ''
             }`}
             draggable
             onDragStart={(e) => handleGroupDragStart(e, group, groupIndex)}
@@ -559,8 +559,8 @@ const GroupedScorecardView = ({
             onDragEnd={handleDragEnd}
           >
             <CardHeader 
-              className="cursor-pointer bg-white border-b border-gray-200"
-              style={{ borderLeft: `4px solid ${group.color}` }}
+              className="cursor-pointer"
+              style={{ backgroundColor: group.color + '20', borderLeft: `4px solid ${group.color}` }}
               onClick={() => toggleGroupExpanded(group.id)}
             >
               <div className="flex items-center justify-between">
@@ -622,13 +622,13 @@ const GroupedScorecardView = ({
       {/* Ungrouped Metrics */}
       {ungroupedMetrics.length > 0 && (
         <Card
-          className={`transition-all bg-white border border-gray-200 ${dragOverGroup === null ? 'ring-2 ring-gray-400' : ''}`}
+          className={`transition-all ${dragOverGroup === null ? 'ring-2 ring-blue-500' : ''}`}
           onDragOver={handleDragOver}
           onDragEnter={(e) => handleDragEnter(e, null)}
           onDragLeave={handleDragLeave}
           onDrop={(e) => handleDrop(e, null)}
         >
-          <CardHeader className="bg-white border-b border-gray-200">
+          <CardHeader className="bg-gray-50">
             <CardTitle className="text-lg">Ungrouped Metrics</CardTitle>
           </CardHeader>
           <CardContent className="p-0">
@@ -694,10 +694,10 @@ const GroupedScorecardView = ({
             </div>
           </div>
           <DialogFooter>
-            <Button variant="outline" className="border-gray-300 hover:bg-gray-50" onClick={() => setGroupDialog({ isOpen: false, group: null })}>
+            <Button variant="outline" onClick={() => setGroupDialog({ isOpen: false, group: null })}>
               Cancel
             </Button>
-            <Button className="bg-gray-900 hover:bg-gray-800 text-white" onClick={groupDialog.group ? () => {
+            <Button onClick={groupDialog.group ? () => {
               handleUpdateGroup(groupDialog.group.id, { name: newGroupName, color: newGroupColor });
               setGroupDialog({ isOpen: false, group: null });
             } : handleCreateGroup}>
