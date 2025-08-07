@@ -93,6 +93,8 @@ class ErrorBoundary extends Component {
 }
 
 const QuarterlyPrioritiesPage = () => {
+  console.log('====== QUARTERLY PRIORITIES PAGE LOADED - VERSION 2.0 ======');
+  
   const navigate = useNavigate();
   const { user, isOnLeadershipTeam } = useAuthStore();
   const { selectedDepartment, loading: departmentLoading } = useDepartment();
