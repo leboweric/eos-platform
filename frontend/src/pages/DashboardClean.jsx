@@ -94,14 +94,27 @@ const DashboardClean = () => {
         setPredictions(prioritiesResponse.predictions);
       }
       
-      // Get user's priorities
+      // Get user's priorities (including company priorities they own)
       const userPriorities = [];
       if (prioritiesResponse.companyPriorities) {
-        userPriorities.push(...prioritiesResponse.companyPriorities.filter(p => p.owner?.id === user.id));
+        // Include company priorities owned by the user
+        const userCompanyPriorities = prioritiesResponse.companyPriorities.filter(p => {
+          // Check both owner.id and owner_id for compatibility
+          const ownerId = p.owner?.id || p.owner_id;
+          return ownerId === user.id;
+        });
+        console.log('Dashboard Priorities Debug:', {
+          companyPriorities: prioritiesResponse.companyPriorities.length,
+          userCompanyPriorities: userCompanyPriorities.length,
+          userId: user.id,
+          sampleCompanyPriority: prioritiesResponse.companyPriorities[0]
+        });
+        userPriorities.push(...userCompanyPriorities);
       }
       if (prioritiesResponse.teamMemberPriorities?.[user.id]) {
         userPriorities.push(...prioritiesResponse.teamMemberPriorities[user.id].priorities);
       }
+      console.log('Total user priorities:', userPriorities.length);
       
       // Calculate priorities stats
       let completedPriorities, totalPriorities, prioritiesProgress;
