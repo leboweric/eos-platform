@@ -18,19 +18,13 @@ import {
   ArrowRight,
   Plus,
   Target,
-  ClipboardList,
-  Calendar,
-  TrendingUp,
-  CheckCircle
+  TrendingUp
 } from 'lucide-react';
 import { Link } from 'react-router-dom';
 
 // Import redesigned components
-import WelcomeHero from '../components/dashboard/WelcomeHero';
 import EnhancedKPICards from '../components/dashboard/EnhancedKPICards';
 import TodaysFocus from '../components/dashboard/TodaysFocus';
-import SmartInsights from '../components/dashboard/SmartInsights';
-import ContextualQuickActions from '../components/dashboard/ContextualQuickActions';
 
 // Import original components for backward compatibility
 import TodosList from '../components/todos/TodosList';
