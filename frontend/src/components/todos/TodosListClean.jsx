@@ -1,0 +1,266 @@
+import { useState } from 'react';
+import { Checkbox } from '@/components/ui/checkbox';
+import { Button } from '@/components/ui/button';
+import { 
+  Calendar,
+  MoreVertical,
+  AlertCircle,
+  Edit,
+  Trash2,
+  CheckCircle,
+  Loader2
+} from 'lucide-react';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
+import { format } from 'date-fns';
+import { todosService } from '../../services/todosService';
+import { issuesService } from '../../services/issuesService';
+import { useSelectedTodos } from '../../contexts/SelectedTodosContext';
+
+const TodosListClean = ({ 
+  todos, 
+  onEdit, 
+  onDelete,
+  onUpdate,
+  onConvertToIssue,
+  showCompleted = true
+}) => {
+  const { selectedTodoIds, toggleTodo, isSelected } = useSelectedTodos();
+  const [convertingToIssue, setConvertingToIssue] = useState({});
+  const [issueCreatedSuccess, setIssueCreatedSuccess] = useState({});
+  
+  // Parse date string as local date, not UTC
+  const parseDateAsLocal = (dateStr) => {
+    if (!dateStr) return null;
+    const [year, month, day] = dateStr.split('-').map(num => parseInt(num));
+    return new Date(year, month - 1, day); // month is 0-indexed in JS
+  };
+  
+  const handleMakeItAnIssue = async (todo) => {
+    try {
+      setConvertingToIssue(prev => ({ ...prev, [todo.id]: true }));
+      
+      const dueDate = todo.due_date ? format(parseDateAsLocal(todo.due_date), 'MMM d, yyyy') : 'Not set';
+      const assigneeName = todo.assigned_to 
+        ? `${todo.assigned_to.first_name} ${todo.assigned_to.last_name}`
+        : 'Unassigned';
+      
+      const issueData = {
+        title: todo.title,
+        description: `This issue was created from an overdue to-do.\n\nOriginal due date: ${dueDate} (OVERDUE)\nAssigned to: ${assigneeName}\n\nDescription:\n${todo.description || 'No description provided'}`,
+        timeline: 'short_term',
+        ownerId: todo.assigned_to?.id || null
+      };
+      
+      await issuesService.createIssue(issueData);
+      
+      setConvertingToIssue(prev => ({ ...prev, [todo.id]: false }));
+      setIssueCreatedSuccess(prev => ({ ...prev, [todo.id]: true }));
+      
+      setTimeout(() => {
+        setIssueCreatedSuccess(prev => {
+          const newState = { ...prev };
+          delete newState[todo.id];
+          return newState;
+        });
+      }, 5000);
+    } catch (error) {
+      console.error('Failed to convert to issue:', error);
+      setConvertingToIssue(prev => ({ ...prev, [todo.id]: false }));
+    }
+  };
+  
+  const isOverdue = (todo) => {
+    const dueDate = parseDateAsLocal(todo.due_date);
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    return dueDate && dueDate < today && todo.status !== 'complete';
+  };
+
+  const getDaysUntilDue = (todo) => {
+    if (!todo.due_date) return null;
+    const dueDate = parseDateAsLocal(todo.due_date);
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const diffTime = dueDate - today;
+    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+    return diffDays;
+  };
+
+  const formatDueDate = (todo) => {
+    if (!todo.due_date) return null;
+    const days = getDaysUntilDue(todo);
+    
+    if (days === 0) return 'Due today';
+    if (days === 1) return 'Due tomorrow';
+    if (days === -1) return '1 day overdue';
+    if (days < -1) return `${Math.abs(days)} days overdue`;
+    if (days > 1 && days <= 7) return `Due in ${days} days`;
+    
+    return format(parseDateAsLocal(todo.due_date), 'MMM d');
+  };
+
+  if (todos.length === 0) {
+    return null;
+  }
+
+  return (
+    <div className="space-y-3">
+      {todos.map((todo) => {
+        const daysUntilDue = getDaysUntilDue(todo);
+        const overdue = isOverdue(todo);
+        
+        return (
+          <div
+            key={todo.id}
+            className={`
+              group relative bg-white rounded-lg border transition-all duration-200
+              ${isSelected(todo.id) ? 'border-gray-400 shadow-sm' : 'border-gray-200 hover:border-gray-300 hover:shadow-sm'}
+              ${todo.status === 'complete' ? 'opacity-60' : ''}
+            `}
+          >
+            {/* Overdue indicator - subtle left border */}
+            {overdue && (
+              <div className="absolute left-0 top-0 bottom-0 w-1 bg-red-500 rounded-l-lg" />
+            )}
+            
+            <div className="p-4 pl-6">
+              <div className="flex items-start gap-4">
+                {/* Checkbox */}
+                <div className="pt-0.5">
+                  <Checkbox
+                    checked={isSelected(todo.id)}
+                    onCheckedChange={() => toggleTodo(todo.id)}
+                    className="h-5 w-5 rounded border-gray-300 data-[state=checked]:bg-gray-900 data-[state=checked]:border-gray-900"
+                  />
+                </div>
+                
+                {/* Main content */}
+                <div className="flex-1 min-w-0">
+                  {/* Title */}
+                  <h3 className={`
+                    text-base font-medium leading-tight
+                    ${todo.status === 'complete' ? 'text-gray-400 line-through' : 'text-gray-900'}
+                  `}>
+                    {todo.title}
+                  </h3>
+                  
+                  {/* Description - only show if exists */}
+                  {todo.description && (
+                    <p className="mt-1.5 text-sm text-gray-600 whitespace-pre-wrap">
+                      {todo.description}
+                    </p>
+                  )}
+                  
+                  {/* Metadata - clean single line */}
+                  <div className="mt-2 flex items-center gap-3 text-sm">
+                    {/* Due date */}
+                    {todo.due_date && (
+                      <span className={`
+                        flex items-center gap-1.5
+                        ${overdue ? 'text-red-600 font-medium' : 
+                          daysUntilDue === 0 ? 'text-orange-600 font-medium' :
+                          daysUntilDue === 1 ? 'text-yellow-600' :
+                          'text-gray-500'}
+                      `}>
+                        {overdue && <AlertCircle className="h-3.5 w-3.5" />}
+                        <Calendar className="h-3.5 w-3.5" />
+                        {formatDueDate(todo)}
+                      </span>
+                    )}
+                    
+                    {/* Separator */}
+                    {todo.due_date && todo.assigned_to && (
+                      <span className="text-gray-300">•</span>
+                    )}
+                    
+                    {/* Assignee */}
+                    {todo.assigned_to && (
+                      <span className="text-gray-500">
+                        {todo.assigned_to.first_name} {todo.assigned_to.last_name}
+                      </span>
+                    )}
+                    
+                    {/* Make it an Issue button - only for overdue */}
+                    {overdue && !issueCreatedSuccess[todo.id] && (
+                      <>
+                        <span className="text-gray-300">•</span>
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleMakeItAnIssue(todo);
+                          }}
+                          disabled={convertingToIssue[todo.id]}
+                          className="text-red-600 hover:text-red-700 font-medium text-sm"
+                        >
+                          {convertingToIssue[todo.id] ? (
+                            <span className="flex items-center gap-1">
+                              <Loader2 className="h-3 w-3 animate-spin" />
+                              Creating issue...
+                            </span>
+                          ) : (
+                            'Convert to issue'
+                          )}
+                        </button>
+                      </>
+                    )}
+                    
+                    {/* Success message */}
+                    {issueCreatedSuccess[todo.id] && (
+                      <>
+                        <span className="text-gray-300">•</span>
+                        <span className="text-green-600 font-medium text-sm flex items-center gap-1">
+                          <CheckCircle className="h-3.5 w-3.5" />
+                          Issue created
+                        </span>
+                      </>
+                    )}
+                  </div>
+                </div>
+                
+                {/* Actions menu - visible on hover */}
+                <div className="opacity-0 group-hover:opacity-100 transition-opacity">
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <Button 
+                        variant="ghost" 
+                        size="sm" 
+                        className="h-8 w-8 p-0 hover:bg-gray-100"
+                      >
+                        <MoreVertical className="h-4 w-4 text-gray-500" />
+                      </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="end" className="w-48">
+                      <DropdownMenuItem 
+                        onClick={() => onEdit(todo)}
+                        className="cursor-pointer"
+                      >
+                        <Edit className="mr-2 h-4 w-4" />
+                        Edit
+                      </DropdownMenuItem>
+                      {onDelete && (
+                        <DropdownMenuItem 
+                          onClick={() => onDelete(todo.id)}
+                          className="cursor-pointer text-red-600 focus:text-red-600"
+                        >
+                          <Trash2 className="mr-2 h-4 w-4" />
+                          Delete
+                        </DropdownMenuItem>
+                      )}
+                    </DropdownMenuContent>
+                  </DropdownMenu>
+                </div>
+              </div>
+            </div>
+          </div>
+        );
+      })}
+    </div>
+  );
+};
+
+export default TodosListClean;

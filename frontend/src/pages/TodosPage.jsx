@@ -18,7 +18,7 @@ import {
   User
 } from 'lucide-react';
 import TodoDialog from '../components/todos/TodoDialog';
-import TodosList from '../components/todos/TodosList';
+import TodosList from '../components/todos/TodosListClean';
 import { useSelectedTodos } from '../contexts/SelectedTodosContext';
 
 const TodosPage = () => {
@@ -191,24 +191,25 @@ const TodosPage = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <div className="max-w-7xl mx-auto p-6 space-y-6">
+    <div className="min-h-screen bg-white">
+      <div className="max-w-6xl mx-auto px-8 py-8">
+        {/* Clean Header */}
         <div className="flex items-center justify-between mb-8">
           <div>
-            <h1 className="text-4xl font-bold text-gray-900">To-Dos{selectedDepartment ? ` - ${selectedDepartment.name}` : ''}</h1>
-            <p className="text-gray-600 mt-2 text-lg">Manage your tasks and action items</p>
+            <h1 className="text-2xl font-semibold text-gray-900">To-Dos{selectedDepartment ? ` - ${selectedDepartment.name}` : ''}</h1>
           </div>
-          <div className="flex gap-2">
-            <Button 
-              onClick={handleMarkComplete}
-              variant="outline"
-              className="text-green-600 hover:text-green-700 border-green-300"
-              disabled={selectedTodoIds.length === 0}
-            >
-              <CheckSquare className="mr-2 h-4 w-4" />
-              Mark Complete ({selectedTodoIds.length})
-            </Button>
-            <Button onClick={handleCreateTodo} className="bg-indigo-600 hover:bg-indigo-700">
+          <div className="flex items-center gap-3">
+            {selectedTodoIds.length > 0 && (
+              <Button 
+                onClick={handleMarkComplete}
+                variant="ghost"
+                className="text-gray-600 hover:text-gray-900"
+              >
+                <CheckSquare className="mr-2 h-4 w-4" />
+                Mark Complete ({selectedTodoIds.length})
+              </Button>
+            )}
+            <Button onClick={handleCreateTodo} className="bg-gray-900 hover:bg-gray-800 text-white">
               <Plus className="mr-2 h-4 w-4" />
               New To-Do
             </Button>
@@ -216,79 +217,86 @@ const TodosPage = () => {
         </div>
 
         {error && (
-          <Alert className="border-red-200 bg-red-50">
+          <Alert className="border-red-200 bg-red-50 mb-6">
             <AlertCircle className="h-4 w-4 text-red-600" />
             <AlertDescription className="text-red-800">{error}</AlertDescription>
           </Alert>
         )}
 
         {success && (
-          <Alert className="border-green-200 bg-green-50">
-            <AlertCircle className="h-4 w-4 text-green-600" />
+          <Alert className="border-green-200 bg-green-50 mb-6">
+            <CheckSquare className="h-4 w-4 text-green-600" />
             <AlertDescription className="text-green-800">{success}</AlertDescription>
           </Alert>
         )}
 
-        <div className="flex items-center justify-between mb-4">
-          <Tabs value={activeTab} onValueChange={setActiveTab}>
-            <TabsList>
-              <TabsTrigger value="incomplete" className="flex items-center gap-2">
-                <Square className="h-4 w-4" />
-                Incomplete ({incompleteTodosCount})
+        {/* Clean Filters Bar */}
+        <div className="flex items-center justify-between mb-8 pb-6 border-b border-gray-100">
+          <Tabs value={activeTab} onValueChange={setActiveTab} className="border-0">
+            <TabsList className="bg-transparent border-0 p-0 h-auto">
+              <TabsTrigger 
+                value="incomplete" 
+                className="data-[state=active]:bg-transparent data-[state=active]:shadow-none data-[state=active]:border-b-2 data-[state=active]:border-gray-900 rounded-none pb-3 px-4 font-medium"
+              >
+                Incomplete
+                <span className="ml-2 text-sm text-gray-500">({incompleteTodosCount})</span>
               </TabsTrigger>
-              <TabsTrigger value="complete" className="flex items-center gap-2">
-                <CheckSquare className="h-4 w-4" />
-                Complete ({completeTodosCount})
+              <TabsTrigger 
+                value="complete" 
+                className="data-[state=active]:bg-transparent data-[state=active]:shadow-none data-[state=active]:border-b-2 data-[state=active]:border-gray-900 rounded-none pb-3 px-4 font-medium"
+              >
+                Complete
+                <span className="ml-2 text-sm text-gray-500">({completeTodosCount})</span>
               </TabsTrigger>
-              <TabsTrigger value="all" className="flex items-center gap-2">
-                <ListTodo className="h-4 w-4" />
-                All ({todos.length})
+              <TabsTrigger 
+                value="all" 
+                className="data-[state=active]:bg-transparent data-[state=active]:shadow-none data-[state=active]:border-b-2 data-[state=active]:border-gray-900 rounded-none pb-3 px-4 font-medium"
+              >
+                All
+                <span className="ml-2 text-sm text-gray-500">({todos.length})</span>
               </TabsTrigger>
             </TabsList>
           </Tabs>
 
-          <div className="flex items-center gap-2">
-            <User className="h-4 w-4 text-gray-500" />
-            <Select value={filterAssignee} onValueChange={setFilterAssignee}>
-              <SelectTrigger className="w-[200px]">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">All Team Members</SelectItem>
-                <SelectItem value="me">Assigned to Me</SelectItem>
-                {teamMembers.map(member => (
-                  <SelectItem key={member.id} value={member.id}>
-                    {member.first_name} {member.last_name}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
+          <Select value={filterAssignee} onValueChange={setFilterAssignee}>
+            <SelectTrigger className="w-[200px] border-gray-200 focus:border-gray-400">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All Team Members</SelectItem>
+              <SelectItem value="me">Assigned to Me</SelectItem>
+              {teamMembers.map(member => (
+                <SelectItem key={member.id} value={member.id}>
+                  {member.first_name} {member.last_name}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
         </div>
 
+        {/* Main Content */}
         {filteredTodos.length === 0 ? (
-          <Card>
-            <CardContent className="text-center py-12">
-              <ListTodo className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-              <h3 className="text-lg font-medium text-gray-900 mb-2">
-                {activeTab === 'incomplete' && 'No incomplete to-dos'}
-                {activeTab === 'complete' && 'No completed to-dos'}
-                {activeTab === 'all' && 'No to-dos yet'}
-              </h3>
-              <p className="text-gray-500 mb-6">
-                {activeTab === 'complete' ? 'Completed to-dos will appear here' : 'Create your first to-do to get started'}
-              </p>
-              {activeTab !== 'complete' && (
-                <Button 
-                  onClick={handleCreateTodo} 
-                  variant="outline"
-                >
-                  <Plus className="mr-2 h-4 w-4" />
-                  Create To-Do
-                </Button>
-              )}
-            </CardContent>
-          </Card>
+          <div className="text-center py-16">
+            <ListTodo className="h-12 w-12 text-gray-300 mx-auto mb-4" />
+            <h3 className="text-lg font-medium text-gray-900 mb-2">
+              {activeTab === 'incomplete' && 'No incomplete to-dos'}
+              {activeTab === 'complete' && 'No completed to-dos'}
+              {activeTab === 'all' && 'No to-dos yet'}
+            </h3>
+            <p className="text-gray-500 mb-6">
+              {activeTab === 'complete' ? 'Completed to-dos will appear here' : 'Create your first to-do to get started'}
+            </p>
+            {activeTab !== 'complete' && (
+              <Button 
+                onClick={handleCreateTodo} 
+                variant="outline"
+                className="border-gray-300"
+              >
+                <Plus className="mr-2 h-4 w-4" />
+                Create To-Do
+              </Button>
+            )}
+          </div>
         ) : (
           <TodosList
             todos={filteredTodos}
