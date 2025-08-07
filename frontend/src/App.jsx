@@ -88,11 +88,11 @@ function App() {
           <Route path="/accept-invitation" element={<AcceptInvitationPage />} />
           
           {/* Protected routes */}
-          <Route path="/dashboard" element={user ? <Layout><Dashboard /></Layout> : <Navigate to="/login" />} />
-          <Route path="/dashboard-redesigned" element={user ? <Layout><DashboardRedesigned /></Layout> : <Navigate to="/login" />} />
+          <Route path="/dashboard" element={user ? <Layout><DashboardRedesigned /></Layout> : <Navigate to="/login" />} />
+          <Route path="/dashboard-original" element={user ? <Layout><Dashboard /></Layout> : <Navigate to="/login" />} />
           <Route path="/business-blueprint" element={user ? <Layout><BusinessBlueprintPage /></Layout> : <Navigate to="/login" />} />
-          <Route path="/quarterly-priorities" element={user ? <Layout><QuarterlyPrioritiesPage /></Layout> : <Navigate to="/login" />} />
-          <Route path="/quarterly-priorities-redesigned" element={user ? <Layout><QuarterlyPrioritiesPageRedesigned /></Layout> : <Navigate to="/login" />} />
+          <Route path="/quarterly-priorities" element={user ? <Layout><QuarterlyPrioritiesPageRedesigned /></Layout> : <Navigate to="/login" />} />
+          <Route path="/quarterly-priorities-original" element={user ? <Layout><QuarterlyPrioritiesPage /></Layout> : <Navigate to="/login" />} />
           <Route path="/comparison" element={<ComparisonPage />} />
           <Route path="/dashboard-comparison" element={<DashboardComparison />} />
           <Route path="/organizations/:orgId/smart-rock-assistant" element={user ? <Layout><SmartRockAssistant /></Layout> : <Navigate to="/login" />} />
