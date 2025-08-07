@@ -1527,7 +1527,7 @@ const QuarterlyPrioritiesPage = () => {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-bold">{selectedDepartment.name} Quarterly Priorities</h1>
+          <h1 className="text-3xl font-bold text-red-600">{selectedDepartment.name} Quarterly Priorities</h1>
           {showArchived && (
             <p className="text-gray-600 mt-2">
               Viewing archived priorities from previous quarters
