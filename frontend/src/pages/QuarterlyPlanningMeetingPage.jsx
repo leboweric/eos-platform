@@ -222,6 +222,16 @@ const QuarterlyPlanningMeetingPage = () => {
             </div>
           );
         }
+        
+        // Check if this is a Leadership team meeting
+        const effectiveTeamId = teamId || user?.teamId || '00000000-0000-0000-0000-000000000000';
+        const isLeadershipTeam = effectiveTeamId === '00000000-0000-0000-0000-000000000000';
+        
+        // Filter priorities based on team type
+        const filteredPriorities = isLeadershipTeam 
+          ? priorities.filter(p => p.priority_type === 'company')
+          : priorities.filter(p => p.priority_type !== 'company');
+        
         return (
           <div className="space-y-4">
             <Card>
@@ -233,7 +243,7 @@ const QuarterlyPlanningMeetingPage = () => {
                 <CardDescription>Check progress on last quarter's priorities (30 minutes)</CardDescription>
               </CardHeader>
             </Card>
-            {priorities.length === 0 ? (
+            {filteredPriorities.length === 0 ? (
               <Card>
                 <CardContent className="text-center py-8">
                   <p className="text-gray-500">No priorities found for this quarter.</p>
@@ -253,59 +263,55 @@ const QuarterlyPlanningMeetingPage = () => {
                     <span className="font-semibold">Status Check:</span> Review what was accomplished, what wasn't, and why. Be honest about successes and failures.
                   </p>
                 </div>
-                {/* Company Priorities Section */}
-                {(() => {
-                  const companyPriorities = priorities.filter(p => p.priority_type === 'company');
-                  return companyPriorities.length > 0 && (
-                    <div>
-                      <div 
-                        className="flex items-center justify-between p-4 bg-gray-50 rounded-lg cursor-pointer hover:bg-gray-100 transition-colors"
-                        onClick={toggleCompanyPriorities}
-                      >
-                        <div className="flex items-center gap-3">
-                          {expandedSections.companyPriorities ? (
-                            <ChevronDown className="h-5 w-5 text-gray-600" />
-                          ) : (
-                            <ChevronRight className="h-5 w-5 text-gray-600" />
-                          )}
-                          <Target className="h-5 w-5 text-blue-600" />
-                          <h3 className="text-lg font-semibold">
-                            Company Priorities ({companyPriorities.length})
-                          </h3>
-                        </div>
+                {/* Show priorities based on team type */}
+                {isLeadershipTeam ? (
+                  // Leadership Team - Show Company Priorities only
+                  <div>
+                    <div 
+                      className="flex items-center justify-between p-4 bg-gray-50 rounded-lg cursor-pointer hover:bg-gray-100 transition-colors"
+                      onClick={toggleCompanyPriorities}
+                    >
+                      <div className="flex items-center gap-3">
+                        {expandedSections.companyPriorities ? (
+                          <ChevronDown className="h-5 w-5 text-gray-600" />
+                        ) : (
+                          <ChevronRight className="h-5 w-5 text-gray-600" />
+                        )}
+                        <Target className="h-5 w-5 text-blue-600" />
+                        <h3 className="text-lg font-semibold">
+                          Leadership Team Priorities ({filteredPriorities.length})
+                        </h3>
                       </div>
-                      {expandedSections.companyPriorities && (
-                        <div className="space-y-4 ml-7 mt-4">
-                          {companyPriorities.map(priority => (
-                            <PriorityCard 
-                              key={priority.id} 
-                              priority={priority} 
-                              readOnly={false}
-                              onIssueCreated={(message) => {
-                                setSuccess(message);
-                                setTimeout(() => setSuccess(null), 3000);
-                              }}
-                              onStatusChange={(priorityId, newStatus) => {
-                                setPriorities(prev => 
-                                  prev.map(p => 
-                                    p.id === priorityId ? { ...p, status: newStatus } : p
-                                  )
-                                );
-                                setSuccess(`Priority status updated to ${newStatus}`);
-                                setTimeout(() => setSuccess(null), 3000);
-                              }}
-                            />
-                          ))}
-                        </div>
-                      )}
                     </div>
-                  );
-                })()}
-                
-                {/* Individual Priorities Section */}
-                {(() => {
-                  const individualPriorities = priorities.filter(p => p.priority_type !== 'company');
-                  const groupedByOwner = individualPriorities.reduce((acc, priority) => {
+                    {expandedSections.companyPriorities && (
+                      <div className="space-y-4 ml-7 mt-4">
+                        {filteredPriorities.map(priority => (
+                          <PriorityCard 
+                            key={priority.id} 
+                            priority={priority} 
+                            readOnly={false}
+                            onIssueCreated={(message) => {
+                              setSuccess(message);
+                              setTimeout(() => setSuccess(null), 3000);
+                            }}
+                            onStatusChange={(priorityId, newStatus) => {
+                              setPriorities(prev => 
+                                prev.map(p => 
+                                  p.id === priorityId ? { ...p, status: newStatus } : p
+                                )
+                              );
+                              setSuccess(`Priority status updated to ${newStatus}`);
+                              setTimeout(() => setSuccess(null), 3000);
+                            }}
+                          />
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                ) : (
+                  // Department Team - Show Department Priorities only
+                  (() => {
+                    const groupedByOwner = filteredPriorities.reduce((acc, priority) => {
                     const ownerId = priority.owner?.id || 'unassigned';
                     if (!acc[ownerId]) {
                       acc[ownerId] = [];
@@ -367,9 +373,10 @@ const QuarterlyPlanningMeetingPage = () => {
                           </div>
                         );
                       })}
-                    </div>
-                  );
-                })()}
+                      </div>
+                    );
+                  })()
+                )}
               </div>
             )}
           </div>
