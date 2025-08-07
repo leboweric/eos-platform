@@ -16,7 +16,7 @@ import {
   Calendar, 
   Zap,
   ArrowRight,
-  Skip
+  ChevronRight
 } from 'lucide-react';
 
 const BulkUpdateModal = ({ 
@@ -300,7 +300,7 @@ const BulkUpdateModal = ({
                             onClick={handleSkip}
                             className="text-gray-500"
                           >
-                            <Skip className="h-3 w-3 mr-1" />
+                            <ChevronRight className="h-3 w-3 mr-1" />
                             Skip
                           </Button>
                         </div>
