@@ -31,7 +31,7 @@ import {
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import ScorecardTable from '../components/scorecard/ScorecardTableClean';
-import FullPriorityCard from '../components/priorities/FullPriorityCard';
+import PriorityCard from '../components/priorities/PriorityCardClean';
 import IssuesList from '../components/issues/IssuesListClean';
 import IssueDialog from '../components/issues/IssueDialog';
 import TodosList from '../components/todos/TodosListClean';
@@ -617,7 +617,7 @@ const WeeklyAccountabilityMeetingPage = () => {
     }
   };
 
-  // Priority handlers for FullPriorityCard
+  // Priority handlers for PriorityCard
   const handleUpdatePriority = async (priorityId, updates) => {
     try {
       const orgId = localStorage.getItem('impersonatedOrgId') || user?.organizationId || user?.organization_id;
@@ -1122,7 +1122,7 @@ const WeeklyAccountabilityMeetingPage = () => {
                       {expandedSections.companyPriorities && (
                         <div className="space-y-4 ml-7 mt-4">
                           {companyPriorities.map(priority => (
-                            <FullPriorityCard 
+                            <PriorityCard 
                               key={priority.id} 
                               priority={priority} 
                               isCompany={true}
@@ -1184,7 +1184,7 @@ const WeeklyAccountabilityMeetingPage = () => {
                             {isExpanded && (
                               <div className="space-y-4 ml-7 mt-4">
                                 {ownerPriorities.map(priority => (
-                                  <FullPriorityCard 
+                                  <PriorityCard 
                                     key={priority.id} 
                                     priority={priority} 
                                     isCompany={false}
