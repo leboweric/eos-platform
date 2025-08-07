@@ -32,9 +32,9 @@ import {
 import { useNavigate } from 'react-router-dom';
 import ScorecardTable from '../components/scorecard/ScorecardTable';
 import FullPriorityCard from '../components/priorities/FullPriorityCard';
-import IssuesList from '../components/issues/IssuesList';
+import IssuesList from '../components/issues/IssuesListClean';
 import IssueDialog from '../components/issues/IssueDialog';
-import TodosList from '../components/todos/TodosList';
+import TodosList from '../components/todos/TodosListClean';
 import TodoDialog from '../components/todos/TodoDialog';
 import FloatingActionButtons from '../components/meetings/FloatingActionButtons';
 import { scorecardService } from '../services/scorecardService';
