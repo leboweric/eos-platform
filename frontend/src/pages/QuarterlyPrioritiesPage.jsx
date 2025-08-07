@@ -869,9 +869,9 @@ const QuarterlyPrioritiesPage = () => {
                 </Badge>
               </div>
               {/* Display milestones underneath title */}
-              {!isEditing && priority.milestones && priority.milestones.length > 0 && (
+              {!isEditing && (priority.milestones || priority.Milestones) && (priority.milestones || priority.Milestones).length > 0 && (
                 <div className="mt-2 mb-3 space-y-1">
-                  {priority.milestones.slice(0, 3).map((milestone) => (
+                  {(priority.milestones || priority.Milestones).slice(0, 3).map((milestone) => (
                     <div key={milestone.id} className="flex items-center space-x-2 text-sm text-gray-600">
                       {milestone.completed ? (
                         <CheckCircle className="h-3 w-3 text-green-500 flex-shrink-0" />
@@ -900,9 +900,9 @@ const QuarterlyPrioritiesPage = () => {
                       )}
                     </div>
                   ))}
-                  {priority.milestones.length > 3 && (
+                  {(priority.milestones || priority.Milestones).length > 3 && (
                     <div className="text-xs text-gray-500 italic ml-5">
-                      +{priority.milestones.length - 3} more milestone{priority.milestones.length - 3 > 1 ? 's' : ''}
+                      +{(priority.milestones || priority.Milestones).length - 3} more milestone{(priority.milestones || priority.Milestones).length - 3 > 1 ? 's' : ''}
                     </div>
                   )}
                 </div>
