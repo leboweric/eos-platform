@@ -93,6 +93,8 @@ class ErrorBoundary extends Component {
 }
 
 const QuarterlyPrioritiesPage = () => {
+  console.log('%c[QUARTERLY PRIORITIES PAGE LOADED]', 'background: green; color: white; font-size: 20px; font-weight: bold;');
+  
   const navigate = useNavigate();
   const { user, isOnLeadershipTeam } = useAuthStore();
   const { selectedDepartment, loading: departmentLoading } = useDepartment();
