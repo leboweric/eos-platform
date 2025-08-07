@@ -24,7 +24,8 @@ import ScorecardPage from './pages/ScorecardPage';
 import ScorecardPageRedesigned from './pages/ScorecardPageRedesigned';
 import MeetingsPage from './pages/MeetingsPage';
 import TodosPage from './pages/TodosPage';
-import IssuesPage from './pages/IssuesPage';
+import IssuesPage from './pages/IssuesPageClean';
+import IssuesPageOriginal from './pages/IssuesPageOriginal';
 import LandingPage from './pages/LandingPage';
 import DepartmentsPage from './pages/DepartmentsPage';
 import AccountabilityChart from './pages/AccountabilityChart';
@@ -108,6 +109,7 @@ function App() {
           <Route path="/meetings/quarterly-planning/:teamId" element={user ? <Layout><QuarterlyPlanningMeetingPage /></Layout> : <Navigate to="/login" />} />
           <Route path="/todos" element={user ? <Layout><TodosPage /></Layout> : <Navigate to="/login" />} />
           <Route path="/issues" element={user ? <Layout><IssuesPage /></Layout> : <Navigate to="/login" />} />
+          <Route path="/issues-original" element={user ? <Layout><IssuesPageOriginal /></Layout> : <Navigate to="/login" />} />
           <Route path="/departments" element={user ? <Layout><DepartmentsPage /></Layout> : <Navigate to="/login" />} />
           
           {/* Department-specific routes */}
