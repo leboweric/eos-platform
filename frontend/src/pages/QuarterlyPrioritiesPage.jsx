@@ -1524,6 +1524,11 @@ const QuarterlyPrioritiesPage = () => {
 
   return (
     <div className="space-y-6">
+      {/* DEPLOYMENT TEST BANNER */}
+      <div className="bg-red-600 text-white p-4 text-center text-2xl font-bold">
+        🚨 DEPLOYMENT TEST - THIS SHOULD BE VISIBLE - VERSION 3.0 🚨
+      </div>
+      
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
