@@ -592,23 +592,30 @@ const QuarterlyPrioritiesPageClean = () => {
     });
   };
 
-  // Calculate stats without "at-risk"
-  // Get individual priorities (excluding company priorities that might be duplicated)
-  const individualPriorities = Object.values(teamMemberPriorities).flatMap(memberData => 
-    (memberData?.priorities || []).filter(p => !p.is_company_priority)
+  // Calculate stats - should reflect what's currently being displayed
+  // The teamMemberPriorities should already be filtered by the selected team from the API
+  const currentTeamIndividualPriorities = Object.values(teamMemberPriorities).flatMap(memberData => 
+    memberData?.priorities || []
   );
   
+  // Stats should match what's displayed on the page:
+  // - Company priorities (if user can see them)
+  // - Individual priorities for the CURRENT team only
+  const visibleCompanyPriorities = isOnLeadershipTeam() ? companyPriorities : [];
+  
   const allPriorities = [
-    // Only include company priorities if user is on leadership team
-    ...(isOnLeadershipTeam() ? companyPriorities : []),
-    ...individualPriorities
+    ...visibleCompanyPriorities,
+    ...currentTeamIndividualPriorities
   ];
   
   console.log('Stats Debug:', {
-    companyPriorities: companyPriorities.length,
-    individualPriorities: individualPriorities.length,
+    selectedTeam: selectedDepartment?.name,
+    selectedTeamId: selectedDepartment?.id,
+    isLeadershipTeam: isOnLeadershipTeam(),
+    companyPrioritiesCount: visibleCompanyPriorities.length,
+    individualPrioritiesCount: currentTeamIndividualPriorities.length,
     totalCalculated: allPriorities.length,
-    teamMemberPrioritiesRaw: Object.values(teamMemberPriorities).flatMap(memberData => memberData?.priorities || []).length
+    rawTeamMemberData: teamMemberPriorities
   });
   
   const stats = {
