@@ -14,7 +14,8 @@ import ResetPasswordPage from './pages/ResetPasswordPage';
 import Dashboard from './pages/Dashboard';
 import DashboardRedesigned from './pages/DashboardRedesigned';
 import BusinessBlueprintPage from './pages/BusinessBlueprintPage';
-import QuarterlyPrioritiesPage from './pages/QuarterlyPrioritiesPage';
+import QuarterlyPrioritiesPage from './pages/QuarterlyPrioritiesPageClean';
+import QuarterlyPrioritiesPageOriginal from './pages/QuarterlyPrioritiesPageOriginal';
 import QuarterlyPrioritiesPageRedesigned from './pages/QuarterlyPrioritiesPageRedesigned';
 import ComparisonPage from './pages/ComparisonPage';
 import DashboardComparison from './pages/DashboardComparison';
@@ -93,8 +94,9 @@ function App() {
           <Route path="/dashboard" element={user ? <Layout><DashboardRedesigned /></Layout> : <Navigate to="/login" />} />
           <Route path="/dashboard-original" element={user ? <Layout><Dashboard /></Layout> : <Navigate to="/login" />} />
           <Route path="/business-blueprint" element={user ? <Layout><BusinessBlueprintPage /></Layout> : <Navigate to="/login" />} />
-          <Route path="/quarterly-priorities" element={user ? <Layout><QuarterlyPrioritiesPageRedesigned /></Layout> : <Navigate to="/login" />} />
-          <Route path="/quarterly-priorities-original" element={user ? <Layout><QuarterlyPrioritiesPage /></Layout> : <Navigate to="/login" />} />
+          <Route path="/quarterly-priorities" element={user ? <Layout><QuarterlyPrioritiesPage /></Layout> : <Navigate to="/login" />} />
+          <Route path="/quarterly-priorities-original" element={user ? <Layout><QuarterlyPrioritiesPageOriginal /></Layout> : <Navigate to="/login" />} />
+          <Route path="/quarterly-priorities-redesigned" element={user ? <Layout><QuarterlyPrioritiesPageRedesigned /></Layout> : <Navigate to="/login" />} />
           <Route path="/comparison" element={<ComparisonPage />} />
           <Route path="/dashboard-comparison" element={<DashboardComparison />} />
           <Route path="/scorecard-comparison" element={<ScorecardComparison />} />
