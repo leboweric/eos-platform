@@ -170,6 +170,19 @@ const QuarterlyPrioritiesPage = () => {
         // Use the selected department's ID as the teamId for the API call
         const data = await quarterlyPrioritiesService.getCurrentPriorities(orgId, teamId);
         
+        // Debug: Log what we're receiving for the selected team
+        console.log(`[Stats Debug] Selected Department: ${selectedDepartment?.name} (${teamId})`);
+        console.log(`[Stats Debug] Company Priorities Count: ${data.companyPriorities?.length || 0}`);
+        console.log(`[Stats Debug] Individual Priorities Count: ${Object.values(data.teamMemberPriorities || {}).reduce((sum, member) => sum + (member.priorities?.length || 0), 0)}`);
+        if (data.companyPriorities?.length > 0) {
+          console.log('[Stats Debug] Company priorities team IDs:', data.companyPriorities.map(p => ({
+            title: p.title,
+            team_id: p.team_id,
+            teamId: p.teamId,
+            is_company_priority: p.is_company_priority,
+            isCompanyPriority: p.isCompanyPriority
+          })));
+        }
         
         setCompanyPriorities(data.companyPriorities || []);
         setTeamMemberPriorities(data.teamMemberPriorities || {});
@@ -581,17 +594,29 @@ const QuarterlyPrioritiesPage = () => {
     });
   };
 
-  // Calculate stats without "at-risk" - filtered by selected team
+  // Calculate stats - properly segregated by team
   const isLeadershipTeamSelected = selectedDepartment?.id === '00000000-0000-0000-0000-000000000000';
   
-  // Only count priorities that belong to the selected team
+  // Count priorities based on the selected team ONLY
   let allPriorities = [];
   if (isLeadershipTeamSelected) {
-    // For Leadership team, only show company priorities
-    allPriorities = companyPriorities;
+    // For Leadership team, count both company priorities AND individual priorities from Leadership team members
+    // Company priorities are those marked as company-wide
+    const leadershipCompanyPriorities = companyPriorities.filter(p => 
+      p.team_id === '00000000-0000-0000-0000-000000000000' || 
+      p.teamId === '00000000-0000-0000-0000-000000000000' ||
+      p.is_company_priority === true ||
+      p.isCompanyPriority === true
+    );
+    const leadershipIndividualPriorities = Object.values(teamMemberPriorities).flatMap(memberData => 
+      memberData?.priorities || []
+    );
+    allPriorities = [...leadershipCompanyPriorities, ...leadershipIndividualPriorities];
   } else {
-    // For department teams, only show individual priorities (not company priorities)
-    allPriorities = Object.values(teamMemberPriorities).flatMap(memberData => memberData?.priorities || []);
+    // For department teams, only count their team's individual priorities
+    allPriorities = Object.values(teamMemberPriorities).flatMap(memberData => 
+      memberData?.priorities || []
+    );
   }
   
   const stats = {
