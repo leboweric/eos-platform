@@ -152,7 +152,7 @@ const DashboardClean = () => {
       );
       
       setDashboardData({
-        priorities: userPriorities.slice(0, 5),
+        priorities: userPriorities, // Show all user priorities, not just 5
         todos: userTodos.slice(0, 5),
         issues: shortTermIssues,
         teamMembers: todosResponse.data.teamMembers || [],
