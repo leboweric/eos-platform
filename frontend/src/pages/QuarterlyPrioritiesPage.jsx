@@ -93,8 +93,6 @@ class ErrorBoundary extends Component {
 }
 
 const QuarterlyPrioritiesPage = () => {
-  console.log('%c[QUARTERLY PRIORITIES PAGE LOADED]', 'background: green; color: white; font-size: 20px; font-weight: bold;');
-  
   const navigate = useNavigate();
   const { user, isOnLeadershipTeam } = useAuthStore();
   const { selectedDepartment, loading: departmentLoading } = useDepartment();
@@ -172,34 +170,6 @@ const QuarterlyPrioritiesPage = () => {
         // Use the selected department's ID as the teamId for the API call
         const data = await quarterlyPrioritiesService.getCurrentPriorities(orgId, teamId);
         
-        // Log the received priorities to check if description is present
-        console.log('[fetchQuarterlyData] Company priorities:', data.companyPriorities);
-        if (data.companyPriorities && data.companyPriorities.length > 0) {
-          console.log('[fetchQuarterlyData] First priority description:', data.companyPriorities[0].description);
-          console.log('[fetchQuarterlyData] First priority FULL:', data.companyPriorities[0]);
-        }
-        
-        // Debug all priorities for milestones - Make this VERY visible
-        console.log('%c[MILESTONE DEBUG] Checking all priorities for milestones:', 'background: yellow; color: black; font-size: 14px; font-weight: bold;');
-        
-        // Store in window for debugging
-        window.DEBUG_PRIORITIES = data;
-        
-        const allPriorities = [
-          ...(data.companyPriorities || []), 
-          ...Object.values(data.teamMemberPriorities || {}).flatMap(member => member.priorities || [])
-        ];
-        allPriorities.forEach(p => {
-          if (p.title && p.title.includes('Adam')) {
-            console.log('%c🔍 Found Adam priority:', 'background: red; color: white; font-size: 16px; font-weight: bold;', {
-              title: p.title,
-              hasMilestones: !!p.milestones,
-              milestoneCount: p.milestones ? p.milestones.length : 0,
-              milestones: p.milestones,
-              fullPriority: p
-            });
-          }
-        });
         
         setCompanyPriorities(data.companyPriorities || []);
         setTeamMemberPriorities(data.teamMemberPriorities || {});
@@ -653,16 +623,6 @@ const QuarterlyPrioritiesPage = () => {
       return null;
     }
     
-    // Debug milestone data
-    console.log('[DEBUG PriorityCard]', {
-      title: priority.title,
-      milestones: priority.milestones,
-      Milestones: priority.Milestones,
-      hasMilestones: !!(priority.milestones || priority.Milestones),
-      milestoneCount: (priority.milestones || priority.Milestones || []).length,
-      fullPriority: priority
-    });
-    
     const [isExpanded, setIsExpanded] = useState(false);
     const [isEditing, setIsEditing] = useState(false);
     const [showUpdateDialog, setShowUpdateDialog] = useState(false);
@@ -902,16 +862,11 @@ const QuarterlyPrioritiesPage = () => {
                   <span className="capitalize">{(isEditing ? editForm.status : priority.status).replace('-', ' ')}</span>
                 </Badge>
               </div>
-              {/* Display milestones underneath title */}
-              {console.log('[DEBUG Milestone Render]', {
-                isEditing,
-                hasMilestones: !!(priority.milestones || priority.Milestones),
-                milestoneLength: (priority.milestones || priority.Milestones || []).length,
-                shouldRender: !isEditing && (priority.milestones || priority.Milestones) && (priority.milestones || priority.Milestones).length > 0
-              })}
-              {!isEditing && (priority.milestones || priority.Milestones) && (priority.milestones || priority.Milestones).length > 0 && (
-                <div className="mt-2 mb-3 space-y-1">
-                  {(priority.milestones || priority.Milestones).slice(0, 3).map((milestone) => (
+              
+              {/* Display milestones underneath title - moved outside flex container */}
+              {!isEditing && !isExpanded && priority.milestones && priority.milestones.length > 0 && (
+                <div className="ml-6 mt-1 mb-2 space-y-1">
+                  {priority.milestones.slice(0, 3).map((milestone) => (
                     <div key={milestone.id} className="flex items-center space-x-2 text-sm text-gray-600">
                       {milestone.completed ? (
                         <CheckCircle className="h-3 w-3 text-green-500 flex-shrink-0" />
@@ -940,9 +895,9 @@ const QuarterlyPrioritiesPage = () => {
                       )}
                     </div>
                   ))}
-                  {(priority.milestones || priority.Milestones).length > 3 && (
+                  {priority.milestones.length > 3 && (
                     <div className="text-xs text-gray-500 italic ml-5">
-                      +{(priority.milestones || priority.Milestones).length - 3} more milestone{(priority.milestones || priority.Milestones).length - 3 > 1 ? 's' : ''}
+                      +{priority.milestones.length - 3} more milestone{priority.milestones.length - 3 > 1 ? 's' : ''}
                     </div>
                   )}
                 </div>
