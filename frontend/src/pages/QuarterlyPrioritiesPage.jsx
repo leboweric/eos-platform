@@ -623,6 +623,11 @@ const QuarterlyPrioritiesPage = () => {
       return null;
     }
     
+    // Simple debug for milestones
+    if (priority.title && priority.title.includes('Adam')) {
+      console.log('Adam priority milestones:', priority.milestones);
+    }
+    
     const [isExpanded, setIsExpanded] = useState(false);
     const [isEditing, setIsEditing] = useState(false);
     const [showUpdateDialog, setShowUpdateDialog] = useState(false);
@@ -863,9 +868,10 @@ const QuarterlyPrioritiesPage = () => {
                 </Badge>
               </div>
               
-              {/* Display milestones underneath title - moved outside flex container */}
-              {!isEditing && !isExpanded && priority.milestones && priority.milestones.length > 0 && (
-                <div className="ml-6 mt-1 mb-2 space-y-1">
+              {/* Display milestones underneath title - always visible when not editing */}
+              {!isEditing && priority.milestones && priority.milestones.length > 0 && !isExpanded && (
+                <div className="mt-2 ml-6 space-y-1 bg-gray-50 p-2 rounded">
+                  <div className="text-xs font-semibold text-gray-500 mb-1">Milestones:</div>
                   {priority.milestones.slice(0, 3).map((milestone) => (
                     <div key={milestone.id} className="flex items-center space-x-2 text-sm text-gray-600">
                       {milestone.completed ? (
