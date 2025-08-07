@@ -174,8 +174,30 @@ const QuarterlyPrioritiesPage = () => {
         console.log('[fetchQuarterlyData] Company priorities:', data.companyPriorities);
         if (data.companyPriorities && data.companyPriorities.length > 0) {
           console.log('[fetchQuarterlyData] First priority description:', data.companyPriorities[0].description);
+          console.log('[fetchQuarterlyData] First priority FULL:', data.companyPriorities[0]);
         }
         
+        // Debug all priorities for milestones - Make this VERY visible
+        console.log('%c[MILESTONE DEBUG] Checking all priorities for milestones:', 'background: yellow; color: black; font-size: 14px; font-weight: bold;');
+        
+        // Store in window for debugging
+        window.DEBUG_PRIORITIES = data;
+        
+        const allPriorities = [
+          ...(data.companyPriorities || []), 
+          ...Object.values(data.teamMemberPriorities || {}).flatMap(member => member.priorities || [])
+        ];
+        allPriorities.forEach(p => {
+          if (p.title && p.title.includes('Adam')) {
+            console.log('%c🔍 Found Adam priority:', 'background: red; color: white; font-size: 16px; font-weight: bold;', {
+              title: p.title,
+              hasMilestones: !!p.milestones,
+              milestoneCount: p.milestones ? p.milestones.length : 0,
+              milestones: p.milestones,
+              fullPriority: p
+            });
+          }
+        });
         
         setCompanyPriorities(data.companyPriorities || []);
         setTeamMemberPriorities(data.teamMemberPriorities || {});
@@ -629,6 +651,16 @@ const QuarterlyPrioritiesPage = () => {
       return null;
     }
     
+    // Debug milestone data
+    console.log('[DEBUG PriorityCard]', {
+      title: priority.title,
+      milestones: priority.milestones,
+      Milestones: priority.Milestones,
+      hasMilestones: !!(priority.milestones || priority.Milestones),
+      milestoneCount: (priority.milestones || priority.Milestones || []).length,
+      fullPriority: priority
+    });
+    
     const [isExpanded, setIsExpanded] = useState(false);
     const [isEditing, setIsEditing] = useState(false);
     const [showUpdateDialog, setShowUpdateDialog] = useState(false);
@@ -869,6 +901,12 @@ const QuarterlyPrioritiesPage = () => {
                 </Badge>
               </div>
               {/* Display milestones underneath title */}
+              {console.log('[DEBUG Milestone Render]', {
+                isEditing,
+                hasMilestones: !!(priority.milestones || priority.Milestones),
+                milestoneLength: (priority.milestones || priority.Milestones || []).length,
+                shouldRender: !isEditing && (priority.milestones || priority.Milestones) && (priority.milestones || priority.Milestones).length > 0
+              })}
               {!isEditing && (priority.milestones || priority.Milestones) && (priority.milestones || priority.Milestones).length > 0 && (
                 <div className="mt-2 mb-3 space-y-1">
                   {(priority.milestones || priority.Milestones).slice(0, 3).map((milestone) => (
