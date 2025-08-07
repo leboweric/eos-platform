@@ -14,6 +14,8 @@ import ResetPasswordPage from './pages/ResetPasswordPage';
 import Dashboard from './pages/Dashboard';
 import BusinessBlueprintPage from './pages/BusinessBlueprintPage';
 import QuarterlyPrioritiesPage from './pages/QuarterlyPrioritiesPage';
+import QuarterlyPrioritiesPageRedesigned from './pages/QuarterlyPrioritiesPageRedesigned';
+import ComparisonPage from './pages/ComparisonPage';
 import ScorecardPage from './pages/ScorecardPage';
 import MeetingsPage from './pages/MeetingsPage';
 import TodosPage from './pages/TodosPage';
@@ -87,6 +89,8 @@ function App() {
           <Route path="/dashboard" element={user ? <Layout><Dashboard /></Layout> : <Navigate to="/login" />} />
           <Route path="/business-blueprint" element={user ? <Layout><BusinessBlueprintPage /></Layout> : <Navigate to="/login" />} />
           <Route path="/quarterly-priorities" element={user ? <Layout><QuarterlyPrioritiesPage /></Layout> : <Navigate to="/login" />} />
+          <Route path="/quarterly-priorities-redesigned" element={user ? <Layout><QuarterlyPrioritiesPageRedesigned /></Layout> : <Navigate to="/login" />} />
+          <Route path="/comparison" element={<ComparisonPage />} />
           <Route path="/organizations/:orgId/smart-rock-assistant" element={user ? <Layout><SmartRockAssistant /></Layout> : <Navigate to="/login" />} />
           <Route path="/scorecard" element={user ? <Layout><ScorecardPage /></Layout> : <Navigate to="/login" />} />
           <Route path="/meetings" element={user ? <Layout><MeetingsPage /></Layout> : <Navigate to="/login" />} />
