@@ -11,7 +11,8 @@ import LoginPage from './pages/LoginPage';
 import RegisterPage from './pages/RegisterPage';
 import ForgotPasswordPage from './pages/ForgotPasswordPage';
 import ResetPasswordPage from './pages/ResetPasswordPage';
-import Dashboard from './pages/Dashboard';
+import Dashboard from './pages/DashboardClean';
+import DashboardOriginal from './pages/DashboardOriginal';
 import DashboardRedesigned from './pages/DashboardRedesigned';
 import BusinessBlueprintPage from './pages/BusinessBlueprintPage';
 import QuarterlyPrioritiesPage from './pages/QuarterlyPrioritiesPageClean';
@@ -92,8 +93,9 @@ function App() {
           <Route path="/accept-invitation" element={<AcceptInvitationPage />} />
           
           {/* Protected routes */}
-          <Route path="/dashboard" element={user ? <Layout><DashboardRedesigned /></Layout> : <Navigate to="/login" />} />
-          <Route path="/dashboard-original" element={user ? <Layout><Dashboard /></Layout> : <Navigate to="/login" />} />
+          <Route path="/dashboard" element={user ? <Layout><Dashboard /></Layout> : <Navigate to="/login" />} />
+          <Route path="/dashboard-redesigned" element={user ? <Layout><DashboardRedesigned /></Layout> : <Navigate to="/login" />} />
+          <Route path="/dashboard-original" element={user ? <Layout><DashboardOriginal /></Layout> : <Navigate to="/login" />} />
           <Route path="/business-blueprint" element={user ? <Layout><BusinessBlueprintPage /></Layout> : <Navigate to="/login" />} />
           <Route path="/quarterly-priorities" element={user ? <Layout><QuarterlyPrioritiesPage /></Layout> : <Navigate to="/login" />} />
           <Route path="/quarterly-priorities-original" element={user ? <Layout><QuarterlyPrioritiesPageOriginal /></Layout> : <Navigate to="/login" />} />
