@@ -1038,12 +1038,8 @@ export const getCurrentPriorities = async (req, res) => {
       WHERE p.organization_id = $1 
       AND p.deleted_at IS NULL
       AND (
-        -- Filter by specific department
-        CASE
-          WHEN $3 = true THEN true  -- Leadership Team sees all
-          WHEN $2::uuid IS NOT NULL THEN p.team_id = $2::uuid  -- Specific department requested
-          ELSE true  -- No department filter
-        END
+        -- Filter by specific department - ALWAYS filter by the selected team
+        p.team_id = $2::uuid
       )
       ORDER BY p.created_at ASC
     `;
