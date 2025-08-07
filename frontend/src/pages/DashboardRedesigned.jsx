@@ -236,24 +236,6 @@ const DashboardRedesigned = () => {
     }
   };
 
-  const quickActions = [
-    {
-      label: 'Add Priority',
-      icon: Target,
-      link: '/quarterly-priorities'
-    },
-    {
-      label: 'Add Todo',
-      icon: Plus,
-      link: '/todos'
-    },
-    {
-      label: 'View Calendar',
-      icon: Calendar,
-      link: '/meetings'
-    }
-  ];
-
   // Loading state with skeletons
   if (loading) {
     return (
