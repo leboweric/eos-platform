@@ -99,8 +99,9 @@ const BusinessBlueprintPage = () => {
   const [editingCoreFocus, setEditingCoreFocus] = useState(false);
   const [editingBHAG, setEditingBHAG] = useState(false);
   
-  // State for tracking checked items in 3-Year Picture
+  // State for tracking checked items in 3-Year Picture and 1-Year Plan
   const [lookLikeCheckedItems, setLookLikeCheckedItems] = useState({});
+  const [oneYearGoalsCheckedItems, setOneYearGoalsCheckedItems] = useState({});
   const [editingMarketingStrategy, setEditingMarketingStrategy] = useState(false);
 
   useEffect(() => {
@@ -108,12 +109,24 @@ const BusinessBlueprintPage = () => {
     fetchOrganization();
     // Load saved checkbox states from localStorage
     const orgId = localStorage.getItem('impersonatedOrgId') || user?.organizationId || user?.organization_id;
-    const savedCheckedState = localStorage.getItem(`lookLikeChecked_${orgId}`);
-    if (savedCheckedState) {
+    
+    // Load 3-Year Picture checked items
+    const savedLookLikeState = localStorage.getItem(`lookLikeChecked_${orgId}`);
+    if (savedLookLikeState) {
       try {
-        setLookLikeCheckedItems(JSON.parse(savedCheckedState));
+        setLookLikeCheckedItems(JSON.parse(savedLookLikeState));
       } catch (error) {
-        console.error('Failed to load checked state:', error);
+        console.error('Failed to load lookLike checked state:', error);
+      }
+    }
+    
+    // Load 1-Year Plan goals checked items
+    const savedGoalsState = localStorage.getItem(`oneYearGoalsChecked_${orgId}`);
+    if (savedGoalsState) {
+      try {
+        setOneYearGoalsCheckedItems(JSON.parse(savedGoalsState));
+      } catch (error) {
+        console.error('Failed to load goals checked state:', error);
       }
     }
   }, []);
@@ -376,6 +389,21 @@ const BusinessBlueprintPage = () => {
     };
     const orgId = localStorage.getItem('impersonatedOrgId') || user?.organizationId || user?.organization_id;
     localStorage.setItem(`lookLikeChecked_${orgId}`, JSON.stringify(newCheckedState));
+  };
+  
+  // Handler for toggling 1-Year Plan goal checkboxes
+  const handleToggleOneYearGoal = (index) => {
+    setOneYearGoalsCheckedItems(prev => ({
+      ...prev,
+      [index]: !prev[index]
+    }));
+    // Store the checked state in localStorage for persistence
+    const newCheckedState = {
+      ...oneYearGoalsCheckedItems,
+      [index]: !oneYearGoalsCheckedItems[index]
+    };
+    const orgId = localStorage.getItem('impersonatedOrgId') || user?.organizationId || user?.organization_id;
+    localStorage.setItem(`oneYearGoalsChecked_${orgId}`, JSON.stringify(newCheckedState));
   };
 
   // One Year Plan handler
@@ -1405,14 +1433,31 @@ const BusinessBlueprintPage = () => {
                         <Flag className="h-5 w-5 text-indigo-600 mr-2" />
                         <h4 className="font-semibold text-gray-900">Goals</h4>
                       </div>
-                      {blueprintData.oneYearPlan.goals.filter(goal => goal).map((goal, index) => (
-                        <div key={index} className="p-3 bg-gray-50 border border-gray-200 rounded-lg hover:shadow-md transition-shadow">
-                          <div className="flex items-start">
-                            <span className="text-indigo-600 font-semibold mr-2">{index + 1}.</span>
-                            <p className="text-sm text-gray-700">{goal}</p>
+                      {blueprintData.oneYearPlan.goals.filter(goal => goal).map((goal, originalIndex) => {
+                        // Get the actual index from the original array
+                        const actualIndex = blueprintData.oneYearPlan.goals.indexOf(goal);
+                        return (
+                          <div 
+                            key={actualIndex} 
+                            className="p-3 bg-gray-50 border border-gray-200 rounded-lg hover:shadow-md transition-shadow flex items-start gap-3"
+                          >
+                            <input
+                              type="checkbox"
+                              checked={oneYearGoalsCheckedItems[actualIndex] || false}
+                              onChange={() => handleToggleOneYearGoal(actualIndex)}
+                              className="mt-0.5 h-4 w-4 text-indigo-600 border-gray-300 rounded focus:ring-indigo-500"
+                            />
+                            <div className="flex items-start flex-1">
+                              <span className={`text-indigo-600 font-semibold mr-2 ${oneYearGoalsCheckedItems[actualIndex] ? 'line-through opacity-60' : ''}`}>
+                                {originalIndex + 1}.
+                              </span>
+                              <p className={`text-sm text-gray-700 ${oneYearGoalsCheckedItems[actualIndex] ? 'line-through opacity-60' : ''}`}>
+                                {goal}
+                              </p>
+                            </div>
                           </div>
-                        </div>
-                      ))}
+                        );
+                      })}
                     </div>
                   )}
                 </div>
