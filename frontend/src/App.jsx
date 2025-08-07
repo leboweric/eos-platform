@@ -40,6 +40,7 @@ import OrganizationSettings from './pages/OrganizationSettings';
 import UserSettings from './pages/UserSettings';
 import OrganizationalChartPage from './pages/OrganizationalChartPage';
 import WeeklyAccountabilityMeetingPage from './pages/WeeklyAccountabilityMeetingPage';
+import WeeklyAccountabilityMeetingPageOriginal from './pages/WeeklyAccountabilityMeetingPageOriginal';
 import QuarterlyPlanningMeetingPage from './pages/QuarterlyPlanningMeetingPage';
 import DocumentRepositoryPage from './pages/DocumentRepositoryPage';
 import SmartRockAssistant from './pages/SmartRockAssistant';
@@ -110,6 +111,7 @@ function App() {
           <Route path="/scorecard-redesigned" element={user ? <Layout><ScorecardPageRedesigned /></Layout> : <Navigate to="/login" />} />
           <Route path="/meetings" element={user ? <Layout><MeetingsPage /></Layout> : <Navigate to="/login" />} />
           <Route path="/meetings/weekly-accountability/:teamId" element={user ? <Layout><WeeklyAccountabilityMeetingPage /></Layout> : <Navigate to="/login" />} />
+          <Route path="/meetings/weekly-accountability-original/:teamId" element={user ? <Layout><WeeklyAccountabilityMeetingPageOriginal /></Layout> : <Navigate to="/login" />} />
           <Route path="/meetings/quarterly-planning/:teamId" element={user ? <Layout><QuarterlyPlanningMeetingPage /></Layout> : <Navigate to="/login" />} />
           <Route path="/todos" element={user ? <Layout><TodosPage /></Layout> : <Navigate to="/login" />} />
           <Route path="/issues" element={user ? <Layout><IssuesPage /></Layout> : <Navigate to="/login" />} />

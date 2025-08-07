@@ -928,7 +928,7 @@ const WeeklyAccountabilityMeetingPage = () => {
     const minutes = elapsedTime / 60;
     if (minutes >= 85) return 'text-red-600';
     if (minutes >= 80) return 'text-yellow-600';
-    return 'text-gray-600';
+    return 'text-green-600';
   };
 
   const handleSectionChange = (sectionId) => {
@@ -978,8 +978,8 @@ const WeeklyAccountabilityMeetingPage = () => {
                   Take turns sharing good news from your personal and professional lives. 
                   This helps build team connection and starts the meeting on a positive note.
                 </p>
-                <div className="border border-gray-200 p-4 rounded-lg bg-white">
-                  <h4 className="font-medium mb-2 text-gray-900">Tips for Good News:</h4>
+                <div className="bg-blue-50 p-4 rounded-lg">
+                  <h4 className="font-medium mb-2">Tips for Good News:</h4>
                   <ul className="list-disc list-inside text-sm space-y-1">
                     <li>Keep it brief - aim for 30-60 seconds per person</li>
                     <li>Share both personal and professional wins</li>
@@ -1017,8 +1017,8 @@ const WeeklyAccountabilityMeetingPage = () => {
               </Card>
             ) : (
               <>
-                <div className="border border-gray-200 bg-white rounded-lg p-4 mb-4">
-                  <p className="text-gray-700 text-center">
+                <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-4">
+                  <p className="text-blue-800 text-center">
                     <span className="font-semibold">Quick Status Update:</span> Metric owners report "on-track" or "off-track" status. Any off-track metrics can be added to the Issues List for collaborative problem-solving.
                   </p>
                 </div>
@@ -1093,8 +1093,8 @@ const WeeklyAccountabilityMeetingPage = () => {
               </Card>
             ) : (
               <div className="space-y-6">
-                <div className="border border-gray-200 bg-white rounded-lg p-4">
-                  <p className="text-gray-700 text-center">
+                <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                  <p className="text-blue-800 text-center">
                     <span className="font-semibold">Status Check:</span> Priority owners share quick updates on progress. Off-track priorities can be converted to issues for team discussion and resolution.
                   </p>
                 </div>
@@ -1227,7 +1227,7 @@ const WeeklyAccountabilityMeetingPage = () => {
                 <p className="text-gray-600">
                   Share important updates that the team needs to know about. Keep headlines brief and factual.
                 </p>
-                <div className="border border-gray-200 p-4 rounded-lg bg-white">
+                <div className="bg-blue-50 p-4 rounded-lg">
                   <h4 className="font-medium mb-2">Examples of Headlines:</h4>
                   <ul className="list-disc list-inside text-sm space-y-1">
                     <li>Customer feedback or complaints</li>
@@ -1259,7 +1259,7 @@ const WeeklyAccountabilityMeetingPage = () => {
                     <Button 
                       onClick={handleArchiveSelectedTodos}
                       variant="outline"
-                      className="text-gray-600"
+                      className="text-green-600"
                       disabled={selectedTodoIds.length === 0}
                     >
                       <CheckSquare className="mr-2 h-4 w-4" />
@@ -1277,8 +1277,8 @@ const WeeklyAccountabilityMeetingPage = () => {
               </Card>
             ) : (
               <>
-                <div className="border border-gray-200 bg-white rounded-lg p-4">
-                  <p className="text-gray-700 text-center">
+                <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                  <p className="text-blue-800 text-center">
                     <span className="font-semibold">Weekly Check-in:</span> Team members report "Done" or "Not Done" for each to-do. Incomplete items can be moved to Issues if needed. High-performing teams typically complete 90% of their weekly to-dos.
                   </p>
                 </div>
@@ -1339,8 +1339,8 @@ const WeeklyAccountabilityMeetingPage = () => {
                 onVote={handleVote}
                 getStatusColor={(status) => {
                   switch (status) {
-                    case 'open': return 'text-yellow-700 font-medium';
-                    case 'closed': return 'text-green-700 font-medium';
+                    case 'open': return 'bg-yellow-100 text-yellow-800';
+                    case 'closed': return 'bg-green-100 text-green-800';
                     default: return 'bg-gray-100 text-gray-800';
                   }
                 }}
@@ -1371,7 +1371,7 @@ const WeeklyAccountabilityMeetingPage = () => {
             </CardHeader>
             <CardContent>
               <div className="space-y-4">
-                <div className="bg-white border border-gray-200 p-4 rounded-lg">
+                <div className="bg-green-50 p-4 rounded-lg">
                   <h4 className="font-medium mb-2">Meeting Wrap-up:</h4>
                   <ul className="list-disc list-inside text-sm space-y-1">
                     <li>Recap To Dos</li>
@@ -1384,7 +1384,7 @@ const WeeklyAccountabilityMeetingPage = () => {
                   <div className="space-y-6">
                     {/* New To-Dos created today */}
                     {todaysTodos.length > 0 && (
-                      <div className="border border-gray-200 bg-white rounded-lg p-4">
+                      <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
                         <h4 className="font-semibold text-blue-900 mb-3 flex items-center gap-2">
                           <ListTodo className="h-5 w-5" />
                           Recap To Dos ({todaysTodos.length})
@@ -1439,7 +1439,7 @@ const WeeklyAccountabilityMeetingPage = () => {
                                 setTimeout(() => setSuccess(null), 3000);
                               }}
                               disabled={!cascadingMessage.trim()}
-                              className="bg-gray-900 hover:bg-gray-800"
+                              className="bg-indigo-600 hover:bg-indigo-700"
                             >
                               <Send className="mr-2 h-4 w-4" />
                               Save Message
@@ -1469,7 +1469,7 @@ const WeeklyAccountabilityMeetingPage = () => {
                     <div className="flex justify-center">
                       <Button 
                         onClick={handleFinishMeeting}
-                        className="bg-gray-900 hover:bg-gray-800 text-white"
+                        className="bg-indigo-600 hover:bg-indigo-700 text-white"
                         disabled={!meetingRating}
                       >
                         Finish Meeting & Send Summary
@@ -1480,7 +1480,7 @@ const WeeklyAccountabilityMeetingPage = () => {
                 
                 {!meetingStarted && (
                   <div className="flex items-center justify-center gap-2 py-8">
-                    <CheckCircle className="h-8 w-8 text-gray-600" />
+                    <CheckCircle className="h-8 w-8 text-green-600" />
                     <span className="text-2xl font-semibold">Ready to conclude when meeting starts</span>
                   </div>
                 )}
@@ -1521,20 +1521,20 @@ const WeeklyAccountabilityMeetingPage = () => {
                     !meetingStarted
                       ? 'bg-gray-50 text-gray-400 cursor-not-allowed'
                       : isActive 
-                      ? 'bg-gray-50 text-gray-900 border-l-2 border-gray-900' 
+                      ? 'bg-indigo-50 text-indigo-700 border border-indigo-200' 
                       : isCompleted
-                      ? 'bg-white border border-gray-200 text-gray-600 hover:bg-gray-50'
+                      ? 'bg-green-50 text-green-700 hover:bg-green-100'
                       : 'hover:bg-gray-100 text-gray-700'
                   }`}
                 >
                   <div className="flex items-center gap-3">
-                    <Icon className={`h-5 w-5 ${!meetingStarted ? 'text-gray-300' : isActive ? 'text-gray-900' : isCompleted ? 'text-gray-600' : 'text-gray-400'}`} />
+                    <Icon className={`h-5 w-5 ${!meetingStarted ? 'text-gray-300' : isActive ? 'text-indigo-600' : isCompleted ? 'text-green-600' : 'text-gray-400'}`} />
                     <span className="font-medium">{item.label}</span>
                   </div>
                   <div className="flex items-center gap-2">
                     <span className="text-sm text-gray-500">{item.duration}m</span>
                     {meetingStarted && isActive && <ChevronRight className="h-4 w-4" />}
-                    {meetingStarted && isCompleted && <CheckCircle className="h-4 w-4 text-gray-600" />}
+                    {meetingStarted && isCompleted && <CheckCircle className="h-4 w-4 text-green-600" />}
                   </div>
                 </button>
               );
@@ -1581,7 +1581,7 @@ const WeeklyAccountabilityMeetingPage = () => {
                 {!meetingStarted ? (
                   <Button 
                     onClick={handleStartMeeting}
-                    className="bg-gray-900 hover:bg-gray-800 text-white z-10 relative"
+                    className="bg-green-600 hover:bg-green-700 text-white z-10 relative"
                     size="lg"
                   >
                     <Clock className="mr-2 h-5 w-5" />
@@ -1617,16 +1617,16 @@ const WeeklyAccountabilityMeetingPage = () => {
             {/* Main content area with gray overlay when not started */}
             <div className={`${!meetingStarted ? 'opacity-20 pointer-events-none' : ''}`}>
               {error && (
-                <Alert className="mb-6 border-red-200 bg-white">
+                <Alert className="mb-6 border-red-200 bg-red-50">
                   <AlertCircle className="h-4 w-4 text-red-600" />
-                  <AlertDescription className="text-red-700">{error}</AlertDescription>
+                  <AlertDescription className="text-red-800">{error}</AlertDescription>
                 </Alert>
               )}
 
               {success && (
-                <Alert className="mb-6 border-green-200 bg-white border border-gray-200">
-                  <CheckCircle className="h-4 w-4 text-gray-600" />
-                  <AlertDescription className="text-green-700">{success}</AlertDescription>
+                <Alert className="mb-6 border-green-200 bg-green-50">
+                  <CheckCircle className="h-4 w-4 text-green-600" />
+                  <AlertDescription className="text-green-800">{success}</AlertDescription>
                 </Alert>
               )}
 
@@ -1651,7 +1651,7 @@ const WeeklyAccountabilityMeetingPage = () => {
                     {getNextSection() && (
                       <Button 
                         onClick={() => handleSectionChange(getNextSection())}
-                        className="bg-gray-900 hover:bg-gray-800"
+                        className="bg-indigo-600 hover:bg-indigo-700"
                       >
                         Next: {agendaItems.find(item => item.id === getNextSection())?.label}
                         <ChevronRight className="ml-2 h-4 w-4" />
