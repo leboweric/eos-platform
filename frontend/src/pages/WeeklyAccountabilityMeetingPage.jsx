@@ -30,7 +30,7 @@ import {
   Star
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
-import ScorecardTable from '../components/scorecard/ScorecardTable';
+import ScorecardTable from '../components/scorecard/ScorecardTableClean';
 import FullPriorityCard from '../components/priorities/FullPriorityCard';
 import IssuesList from '../components/issues/IssuesListClean';
 import IssueDialog from '../components/issues/IssueDialog';
