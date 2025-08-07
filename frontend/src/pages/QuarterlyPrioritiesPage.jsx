@@ -587,12 +587,18 @@ const QuarterlyPrioritiesPage = () => {
     });
   };
 
-  // Calculate stats without "at-risk"
-  const allPriorities = [
-    // Only include company priorities if user is on leadership team
-    ...(isOnLeadershipTeam() ? companyPriorities : []),
-    ...Object.values(teamMemberPriorities).flatMap(memberData => memberData?.priorities || [])
-  ];
+  // Calculate stats without "at-risk" - filtered by selected team
+  const isLeadershipTeamSelected = selectedDepartment?.id === '00000000-0000-0000-0000-000000000000';
+  
+  // Only count priorities that belong to the selected team
+  let allPriorities = [];
+  if (isLeadershipTeamSelected) {
+    // For Leadership team, only show company priorities
+    allPriorities = companyPriorities;
+  } else {
+    // For department teams, only show individual priorities (not company priorities)
+    allPriorities = Object.values(teamMemberPriorities).flatMap(memberData => memberData?.priorities || []);
+  }
   
   const stats = {
     total: allPriorities.length,
