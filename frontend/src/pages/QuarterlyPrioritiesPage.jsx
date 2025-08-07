@@ -868,6 +868,46 @@ const QuarterlyPrioritiesPage = () => {
                   <span className="capitalize">{(isEditing ? editForm.status : priority.status).replace('-', ' ')}</span>
                 </Badge>
               </div>
+              {/* Display milestones underneath title */}
+              {!isEditing && priority.milestones && priority.milestones.length > 0 && (
+                <div className="mt-2 mb-3 space-y-1">
+                  {priority.milestones.slice(0, 3).map((milestone) => (
+                    <div key={milestone.id} className="flex items-center space-x-2 text-sm text-gray-600">
+                      {milestone.completed ? (
+                        <CheckCircle className="h-3 w-3 text-green-500 flex-shrink-0" />
+                      ) : (
+                        <div className={`h-3 w-3 rounded-full border-2 flex-shrink-0 ${
+                          getDaysUntilDue(milestone.dueDate) < 0 
+                            ? 'border-red-500' 
+                            : getDaysUntilDue(milestone.dueDate) <= 3 
+                            ? 'border-orange-500' 
+                            : 'border-gray-400'
+                        }`} />
+                      )}
+                      <span className={`${milestone.completed ? 'line-through text-gray-400' : ''}`}>
+                        {milestone.title}
+                      </span>
+                      {!milestone.completed && milestone.dueDate && (
+                        <span className={`text-xs ${
+                          getDaysUntilDue(milestone.dueDate) < 0 
+                            ? 'text-red-600' 
+                            : getDaysUntilDue(milestone.dueDate) <= 3 
+                            ? 'text-orange-600' 
+                            : 'text-gray-500'
+                        }`}>
+                          ({formatDate(milestone.dueDate)})
+                        </span>
+                      )}
+                    </div>
+                  ))}
+                  {priority.milestones.length > 3 && (
+                    <div className="text-xs text-gray-500 italic ml-5">
+                      +{priority.milestones.length - 3} more milestone{priority.milestones.length - 3 > 1 ? 's' : ''}
+                    </div>
+                  )}
+                </div>
+              )}
+              
               {isEditing ? (
                 <Textarea
                   value={editForm.description}
