@@ -98,11 +98,24 @@ const BusinessBlueprintPage = () => {
   // State for editing Core Focus
   const [editingCoreFocus, setEditingCoreFocus] = useState(false);
   const [editingBHAG, setEditingBHAG] = useState(false);
+  
+  // State for tracking checked items in 3-Year Picture
+  const [lookLikeCheckedItems, setLookLikeCheckedItems] = useState({});
   const [editingMarketingStrategy, setEditingMarketingStrategy] = useState(false);
 
   useEffect(() => {
     fetchBusinessBlueprint();
     fetchOrganization();
+    // Load saved checkbox states from localStorage
+    const orgId = localStorage.getItem('impersonatedOrgId') || user?.organizationId || user?.organization_id;
+    const savedCheckedState = localStorage.getItem(`lookLikeChecked_${orgId}`);
+    if (savedCheckedState) {
+      try {
+        setLookLikeCheckedItems(JSON.parse(savedCheckedState));
+      } catch (error) {
+        console.error('Failed to load checked state:', error);
+      }
+    }
   }, []);
   
   // Hide sidebar if coming from meeting
@@ -348,6 +361,21 @@ const BusinessBlueprintPage = () => {
     } finally {
       setSaving(false);
     }
+  };
+  
+  // Handler for toggling lookLike item checkboxes
+  const handleToggleLookLikeItem = (index) => {
+    setLookLikeCheckedItems(prev => ({
+      ...prev,
+      [index]: !prev[index]
+    }));
+    // Store the checked state in localStorage for persistence
+    const newCheckedState = {
+      ...lookLikeCheckedItems,
+      [index]: !lookLikeCheckedItems[index]
+    };
+    const orgId = localStorage.getItem('impersonatedOrgId') || user?.organizationId || user?.organization_id;
+    localStorage.setItem(`lookLikeChecked_${orgId}`, JSON.stringify(newCheckedState));
   };
 
   // One Year Plan handler
@@ -1225,11 +1253,26 @@ const BusinessBlueprintPage = () => {
                           <Eye className="h-5 w-5 text-indigo-600 mr-2" />
                           <h4 className="font-semibold text-gray-900">What does it look like?</h4>
                         </div>
-                        {blueprintData.threeYearPicture.lookLikeItems.filter(item => item).map((item, index) => (
-                          <div key={index} className="p-3 bg-gray-50 border border-gray-200 rounded-lg hover:shadow-md transition-shadow">
-                            <p className="text-sm text-gray-700">{item}</p>
-                          </div>
-                        ))}
+                        {blueprintData.threeYearPicture.lookLikeItems.filter(item => item).map((item, originalIndex) => {
+                          // Get the actual index from the original array
+                          const actualIndex = blueprintData.threeYearPicture.lookLikeItems.indexOf(item);
+                          return (
+                            <div 
+                              key={actualIndex} 
+                              className="p-3 bg-gray-50 border border-gray-200 rounded-lg hover:shadow-md transition-shadow flex items-start gap-3"
+                            >
+                              <input
+                                type="checkbox"
+                                checked={lookLikeCheckedItems[actualIndex] || false}
+                                onChange={() => handleToggleLookLikeItem(actualIndex)}
+                                className="mt-0.5 h-4 w-4 text-indigo-600 border-gray-300 rounded focus:ring-indigo-500"
+                              />
+                              <p className={`text-sm text-gray-700 ${lookLikeCheckedItems[actualIndex] ? 'line-through opacity-60' : ''}`}>
+                                {item}
+                              </p>
+                            </div>
+                          );
+                        })}
                       </div>
                     )}
                   </div>
