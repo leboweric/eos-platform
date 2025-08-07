@@ -27,7 +27,9 @@ import {
   Plus,
   MessageSquare,
   Send,
-  Star
+  Star,
+  Building2,
+  Users
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import ScorecardTable from '../components/scorecard/ScorecardTableClean';
@@ -1113,7 +1115,7 @@ const WeeklyAccountabilityMeetingPage = () => {
                           ) : (
                             <ChevronRight className="h-5 w-5 text-gray-600" />
                           )}
-                          <Target className="h-5 w-5 text-blue-600" />
+                          <Building2 className="h-5 w-5 text-gray-600" />
                           <h3 className="text-lg font-semibold">
                             Company Priorities ({companyPriorities.length})
                           </h3>
@@ -1157,8 +1159,8 @@ const WeeklyAccountabilityMeetingPage = () => {
                   
                   return Object.keys(groupedByOwner).length > 0 && (
                     <div className="space-y-4">
-                      <div className="flex items-center gap-3 p-4 bg-gray-50 rounded-lg">
-                        <Target className="h-5 w-5 text-purple-600" />
+                      <div className="flex items-center gap-3 p-4 bg-white border border-gray-200 rounded-lg">
+                        <Users className="h-5 w-5 text-gray-600" />
                         <h3 className="text-lg font-semibold">
                           Individual Priorities ({individualPriorities.length})
                         </h3>
