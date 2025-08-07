@@ -593,11 +593,23 @@ const QuarterlyPrioritiesPageClean = () => {
   };
 
   // Calculate stats without "at-risk"
+  // Get individual priorities (excluding company priorities that might be duplicated)
+  const individualPriorities = Object.values(teamMemberPriorities).flatMap(memberData => 
+    (memberData?.priorities || []).filter(p => !p.is_company_priority)
+  );
+  
   const allPriorities = [
     // Only include company priorities if user is on leadership team
     ...(isOnLeadershipTeam() ? companyPriorities : []),
-    ...Object.values(teamMemberPriorities).flatMap(memberData => memberData?.priorities || [])
+    ...individualPriorities
   ];
+  
+  console.log('Stats Debug:', {
+    companyPriorities: companyPriorities.length,
+    individualPriorities: individualPriorities.length,
+    totalCalculated: allPriorities.length,
+    teamMemberPrioritiesRaw: Object.values(teamMemberPriorities).flatMap(memberData => memberData?.priorities || []).length
+  });
   
   const stats = {
     total: allPriorities.length,
