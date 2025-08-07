@@ -13,7 +13,7 @@ const FloatingActionButtons = ({ onAddTodo, onAddIssue, className = '' }) => {
           {/* Add Issue Button */}
           <Button
             onClick={onAddIssue}
-            className="h-10 px-4 bg-red-500 hover:bg-red-600 text-white rounded-full shadow-md hover:shadow-lg transition-all flex items-center gap-2 whitespace-nowrap"
+            className="h-10 px-4 bg-gray-200 hover:bg-gray-300 text-gray-700 rounded-full shadow-md hover:shadow-lg transition-all flex items-center gap-2 whitespace-nowrap"
             title="Add a new issue"
           >
             <AlertCircle className="h-4 w-4" />
@@ -23,7 +23,7 @@ const FloatingActionButtons = ({ onAddTodo, onAddIssue, className = '' }) => {
           {/* Add To-Do Button */}
           <Button
             onClick={onAddTodo}
-            className="h-10 px-4 bg-green-500 hover:bg-green-600 text-white rounded-full shadow-md hover:shadow-lg transition-all flex items-center gap-2 whitespace-nowrap"
+            className="h-10 px-4 bg-gray-200 hover:bg-gray-300 text-gray-700 rounded-full shadow-md hover:shadow-lg transition-all flex items-center gap-2 whitespace-nowrap"
             title="Add a new to-do"
           >
             <CheckSquare className="h-4 w-4" />
@@ -35,7 +35,7 @@ const FloatingActionButtons = ({ onAddTodo, onAddIssue, className = '' }) => {
       {/* Toggle button */}
       <Button
         onClick={() => setIsExpanded(!isExpanded)}
-        className={`h-10 w-10 rounded-full shadow-md hover:shadow-lg transition-all duration-300 bg-blue-600 hover:bg-blue-700 text-white ${
+        className={`h-10 w-10 rounded-full shadow-md hover:shadow-lg transition-all duration-300 bg-gray-400 hover:bg-gray-500 text-white ${
           !isExpanded ? 'hover:scale-110' : ''
         }`}
         title={isExpanded ? 'Hide quick actions' : 'Show quick actions'}
