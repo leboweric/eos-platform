@@ -593,15 +593,30 @@ const QuarterlyPrioritiesPageClean = () => {
   };
 
   // Calculate stats - should reflect what's currently being displayed
-  // The teamMemberPriorities should already be filtered by the selected team from the API
-  const currentTeamIndividualPriorities = Object.values(teamMemberPriorities).flatMap(memberData => 
-    memberData?.priorities || []
-  );
+  // Filter to only count priorities for the selected team
+  const currentTeamIndividualPriorities = Object.values(teamMemberPriorities).flatMap(memberData => {
+    const priorities = memberData?.priorities || [];
+    // Filter by team_id to ensure we only count the selected team's priorities
+    return priorities.filter(p => {
+      // If viewing Leadership Team (id: 00000000-0000-0000-0000-000000000000)
+      if (selectedDepartment?.id === '00000000-0000-0000-0000-000000000000') {
+        // Count priorities that belong to Leadership Team
+        return p.team_id === '00000000-0000-0000-0000-000000000000' || 
+               p.team_id === null || // Legacy priorities without team_id
+               p.is_from_leadership === true;
+      } else if (selectedDepartment?.id) {
+        // For other teams, only count their specific priorities
+        return p.team_id === selectedDepartment.id;
+      }
+      return true; // Fallback if no department selected
+    });
+  });
   
   // Stats should match what's displayed on the page:
-  // - Company priorities (if user can see them)
-  // - Individual priorities for the CURRENT team only
-  const visibleCompanyPriorities = isOnLeadershipTeam() ? companyPriorities : [];
+  // - Company priorities (if user can see them AND viewing Leadership Team)
+  const visibleCompanyPriorities = (isOnLeadershipTeam() && selectedDepartment?.id === '00000000-0000-0000-0000-000000000000') 
+    ? companyPriorities 
+    : [];
   
   const allPriorities = [
     ...visibleCompanyPriorities,
@@ -615,7 +630,7 @@ const QuarterlyPrioritiesPageClean = () => {
     companyPrioritiesCount: visibleCompanyPriorities.length,
     individualPrioritiesCount: currentTeamIndividualPriorities.length,
     totalCalculated: allPriorities.length,
-    rawTeamMemberData: teamMemberPriorities
+    allIndividualBeforeFilter: Object.values(teamMemberPriorities).flatMap(m => m?.priorities || []).length
   });
   
   const stats = {
