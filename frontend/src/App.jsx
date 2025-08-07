@@ -18,7 +18,9 @@ import QuarterlyPrioritiesPage from './pages/QuarterlyPrioritiesPage';
 import QuarterlyPrioritiesPageRedesigned from './pages/QuarterlyPrioritiesPageRedesigned';
 import ComparisonPage from './pages/ComparisonPage';
 import DashboardComparison from './pages/DashboardComparison';
+import ScorecardComparison from './pages/ScorecardComparison';
 import ScorecardPage from './pages/ScorecardPage';
+import ScorecardPageRedesigned from './pages/ScorecardPageRedesigned';
 import MeetingsPage from './pages/MeetingsPage';
 import TodosPage from './pages/TodosPage';
 import IssuesPage from './pages/IssuesPage';
@@ -95,8 +97,10 @@ function App() {
           <Route path="/quarterly-priorities-original" element={user ? <Layout><QuarterlyPrioritiesPage /></Layout> : <Navigate to="/login" />} />
           <Route path="/comparison" element={<ComparisonPage />} />
           <Route path="/dashboard-comparison" element={<DashboardComparison />} />
+          <Route path="/scorecard-comparison" element={<ScorecardComparison />} />
           <Route path="/organizations/:orgId/smart-rock-assistant" element={user ? <Layout><SmartRockAssistant /></Layout> : <Navigate to="/login" />} />
-          <Route path="/scorecard" element={user ? <Layout><ScorecardPage /></Layout> : <Navigate to="/login" />} />
+          <Route path="/scorecard" element={user ? <Layout><ScorecardPageRedesigned /></Layout> : <Navigate to="/login" />} />
+          <Route path="/scorecard-original" element={user ? <Layout><ScorecardPage /></Layout> : <Navigate to="/login" />} />
           <Route path="/meetings" element={user ? <Layout><MeetingsPage /></Layout> : <Navigate to="/login" />} />
           <Route path="/meetings/weekly-accountability/:teamId" element={user ? <Layout><WeeklyAccountabilityMeetingPage /></Layout> : <Navigate to="/login" />} />
           <Route path="/meetings/quarterly-planning/:teamId" element={user ? <Layout><QuarterlyPlanningMeetingPage /></Layout> : <Navigate to="/login" />} />
