@@ -844,9 +844,44 @@ const QuarterlyPrioritiesPageClean = () => {
                       className="flex-1 text-lg font-semibold border-0 p-0 focus:ring-0 shadow-none"
                     />
                   ) : (
-                    <h3 className="text-lg font-semibold text-gray-900 truncate flex-1">
-                      {priority.title}
-                    </h3>
+                    <div className="flex-1">
+                      <h3 className="text-lg font-semibold text-gray-900 truncate">
+                        {priority.title}
+                      </h3>
+                      {/* Milestones at a glance */}
+                      {priority.milestones && priority.milestones.length > 0 && (
+                        <div className="mt-2 space-y-1">
+                          {priority.milestones.slice(0, 3).map((milestone) => (
+                            <div key={milestone.id} className="flex items-center gap-2 text-sm">
+                              <div className={`w-1.5 h-1.5 rounded-full flex-shrink-0 ${
+                                milestone.completed 
+                                  ? 'bg-green-500' 
+                                  : getDaysUntilDue(milestone.dueDate || milestone.due_date) < 0
+                                  ? 'bg-red-500'
+                                  : 'bg-gray-400'
+                              }`} />
+                              <span className={`truncate ${
+                                milestone.completed 
+                                  ? 'text-gray-500 line-through' 
+                                  : 'text-gray-700'
+                              }`}>
+                                {milestone.title}
+                              </span>
+                              {milestone.dueDate && (
+                                <span className="text-xs text-gray-500 flex-shrink-0">
+                                  {format(new Date(milestone.dueDate), 'MMM d')}
+                                </span>
+                              )}
+                            </div>
+                          ))}
+                          {priority.milestones.length > 3 && (
+                            <span className="text-xs text-gray-500 pl-3.5">
+                              +{priority.milestones.length - 3} more
+                            </span>
+                          )}
+                        </div>
+                      )}
+                    </div>
                   )}
                   
                   {isCompany && (
