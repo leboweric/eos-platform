@@ -43,6 +43,11 @@ const LoginPage = () => {
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 to-indigo-100 px-4">
+      {/* Deployment Version Indicator */}
+      <div className="fixed top-0 left-0 right-0 bg-yellow-500 text-black text-center py-2 z-50">
+        <strong>DEPLOYMENT VERSION: 2025-08-07-1430</strong> - If you see this, deployment is working!
+      </div>
+      
       <div className="w-full max-w-md">
         {/* Logo */}
         <div className="text-center mb-8">
