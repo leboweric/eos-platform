@@ -384,7 +384,7 @@ const BusinessBlueprintPage = () => {
   }
 
   return (
-    <div className="min-h-screen bg-white">
+    <div className="min-h-screen bg-gray-50">
       <div className="max-w-7xl mx-auto p-6 space-y-6">
         <div className="flex items-center justify-between mb-8">
           <div>
@@ -396,26 +396,26 @@ const BusinessBlueprintPage = () => {
         </div>
 
         {error && (
-          <Alert className="border-red-200 bg-white">
+          <Alert className="border-red-200 bg-red-50">
             <AlertCircle className="h-4 w-4 text-red-600" />
-            <AlertDescription className="text-red-700">{error}</AlertDescription>
+            <AlertDescription className="text-red-800">{error}</AlertDescription>
           </Alert>
         )}
 
         {success && (
-          <Alert className="border-green-200 bg-white">
+          <Alert className="border-green-200 bg-green-50">
             <AlertCircle className="h-4 w-4 text-green-600" />
-            <AlertDescription className="text-green-700">{success}</AlertDescription>
+            <AlertDescription className="text-green-800">{success}</AlertDescription>
           </Alert>
         )}
 
         <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-          <TabsList className="grid w-full grid-cols-2 h-14 bg-gray-100">
-            <TabsTrigger value="vision" className="data-[state=active]:bg-gray-900 data-[state=active]:text-white text-lg font-medium">
+          <TabsList className="grid w-full grid-cols-2 h-14 bg-white shadow-sm">
+            <TabsTrigger value="vision" className="data-[state=active]:bg-indigo-600 data-[state=active]:text-white text-lg font-medium">
               <Target className="mr-2 h-5 w-5" />
               Vision
             </TabsTrigger>
-            <TabsTrigger value="execution" className="data-[state=active]:bg-gray-900 data-[state=active]:text-white text-lg font-medium">
+            <TabsTrigger value="execution" className="data-[state=active]:bg-indigo-600 data-[state=active]:text-white text-lg font-medium">
               <TrendingUp className="mr-2 h-5 w-5" />
               Execution
             </TabsTrigger>
@@ -425,10 +425,10 @@ const BusinessBlueprintPage = () => {
           {/* Left Column - Core Values, Hedgehog, BHAG, Marketing Strategy */}
           <div className="lg:col-span-2 space-y-6">
             {/* Core Values */}
-            <Card className="border border-gray-200 overflow-hidden bg-white">
-            <CardHeader className="bg-white border-b border-gray-200">
+            <Card className="shadow-lg border-0 overflow-hidden">
+            <CardHeader className="bg-white border-b">
               <CardTitle className="flex items-center text-xl text-gray-900">
-                <Users className="mr-2 h-5 w-5 text-gray-600" />
+                <Users className="mr-2 h-6 w-6 text-indigo-600" />
                 Core Values
               </CardTitle>
               <CardDescription className="text-gray-600">
@@ -437,7 +437,7 @@ const BusinessBlueprintPage = () => {
             </CardHeader>
             <CardContent className="space-y-4">
               {blueprintData.coreValues.map((value) => (
-                <div key={value.id} className="flex items-start justify-between p-4 bg-white border border-gray-200 rounded-lg transition-all">
+                <div key={value.id} className="flex items-start justify-between p-4 bg-gray-50 border border-gray-200 rounded-lg hover:shadow-md transition-shadow">
                   <div className="flex-1">
                     <h4 className="font-semibold text-gray-900">{value.value}</h4>
                     {value.description && (
@@ -464,7 +464,7 @@ const BusinessBlueprintPage = () => {
               ))}
 
               <div className="pt-4 border-t">
-                <Button onClick={handleAddCoreValue} disabled={saving} className="bg-gray-900 hover:bg-gray-800 text-white">
+                <Button onClick={handleAddCoreValue} disabled={saving} className="bg-indigo-600 hover:bg-indigo-700 text-white">
                   <Plus className="mr-2 h-4 w-4" />
                   Add Core Value
                 </Button>
@@ -473,10 +473,10 @@ const BusinessBlueprintPage = () => {
           </Card>
 
           {/* Core Focus (Hedgehog) */}
-          <Card className="border border-gray-200 overflow-hidden">
+          <Card className="shadow-lg border-0 overflow-hidden">
             <CardHeader className="bg-white border-b">
               <CardTitle className="flex items-center text-xl text-gray-900">
-                <Target className="mr-2 h-5 w-5 text-gray-600" />
+                <Target className="mr-2 h-6 w-6 text-indigo-600" />
                 Hedgehog
               </CardTitle>
               <CardDescription className="text-gray-600">
@@ -489,7 +489,7 @@ const BusinessBlueprintPage = () => {
                 <>
                   {/* Purpose/Cause/Passion Display */}
                   {blueprintData.coreFocus[blueprintData.coreFocus.hedgehogType] && (
-                    <div className="flex items-start justify-between p-4 bg-white border border-gray-200 rounded-lg hover:shadow-sm transition-shadow">
+                    <div className="flex items-start justify-between p-4 bg-gray-50 border border-gray-200 rounded-lg hover:shadow-md transition-shadow">
                       <div className="flex-1">
                         <h4 className="font-semibold text-gray-900">
                           {blueprintData.coreFocus.hedgehogType.charAt(0).toUpperCase() + blueprintData.coreFocus.hedgehogType.slice(1)}
@@ -512,7 +512,7 @@ const BusinessBlueprintPage = () => {
                   
                   {/* Niche Display */}
                   {blueprintData.coreFocus.niche && (
-                    <div className="flex items-start justify-between p-4 bg-white border border-gray-200 rounded-lg hover:shadow-sm transition-shadow">
+                    <div className="flex items-start justify-between p-4 bg-gray-50 border border-gray-200 rounded-lg hover:shadow-md transition-shadow">
                       <div className="flex-1">
                         <h4 className="font-semibold text-gray-900">Niche</h4>
                         <p className="text-sm text-gray-600 mt-1">
@@ -612,7 +612,7 @@ const BusinessBlueprintPage = () => {
                         setEditingCoreFocus(false);
                       }} 
                       disabled={saving} 
-                      className="bg-gray-900 hover:bg-gray-800 text-white flex-1"
+                      className="bg-indigo-600 hover:bg-indigo-700 text-white flex-1"
                     >
                       {saving ? (
                         <Loader2 className="mr-2 h-4 w-4 animate-spin" />
@@ -636,10 +636,10 @@ const BusinessBlueprintPage = () => {
           </Card>
 
           {/* BHAG (Big Hairy Audacious Goal) */}
-          <Card className="border border-gray-200 overflow-hidden">
+          <Card className="shadow-lg border-0 overflow-hidden">
             <CardHeader className="bg-white border-b">
               <CardTitle className="flex items-center text-xl text-gray-900">
-                <TrendingUp className="mr-2 h-5 w-5 text-gray-600" />
+                <TrendingUp className="mr-2 h-6 w-6 text-indigo-600" />
                 Big Hairy Audacious Goal (BHAG)
               </CardTitle>
               <CardDescription className="text-gray-600">
@@ -652,7 +652,7 @@ const BusinessBlueprintPage = () => {
                 <>
                   {/* Year Display */}
                   {blueprintData.bhag.year && (
-                    <div className="flex items-start justify-between p-4 bg-white border border-gray-200 rounded-lg hover:shadow-sm transition-shadow">
+                    <div className="flex items-start justify-between p-4 bg-gray-50 border border-gray-200 rounded-lg hover:shadow-md transition-shadow">
                       <div className="flex-1">
                         <h4 className="font-semibold text-gray-900">Target Year</h4>
                         <p className="text-sm text-gray-600 mt-1">
@@ -673,7 +673,7 @@ const BusinessBlueprintPage = () => {
                   
                   {/* Description Display */}
                   {blueprintData.bhag.description && (
-                    <div className="flex items-start justify-between p-4 bg-white border border-gray-200 rounded-lg hover:shadow-sm transition-shadow">
+                    <div className="flex items-start justify-between p-4 bg-gray-50 border border-gray-200 rounded-lg hover:shadow-md transition-shadow">
                       <div className="flex-1">
                         <h4 className="font-semibold text-gray-900">BHAG Description</h4>
                         <p className="text-sm text-gray-600 mt-1">
@@ -743,7 +743,7 @@ const BusinessBlueprintPage = () => {
                         setEditingBHAG(false);
                       }} 
                       disabled={saving} 
-                      className="bg-gray-900 hover:bg-gray-800 text-white flex-1"
+                      className="bg-indigo-600 hover:bg-indigo-700 text-white flex-1"
                     >
                       {saving ? (
                         <Loader2 className="mr-2 h-4 w-4 animate-spin" />
@@ -767,10 +767,10 @@ const BusinessBlueprintPage = () => {
           </Card>
 
           {/* Marketing Strategy */}
-          <Card className="border border-gray-200 overflow-hidden">
+          <Card className="shadow-lg border-0 overflow-hidden">
             <CardHeader className="bg-white border-b">
               <CardTitle className="flex items-center text-xl text-gray-900">
-                <Lightbulb className="mr-2 h-5 w-5 text-gray-600" />
+                <Lightbulb className="mr-2 h-6 w-6 text-indigo-600" />
                 Marketing Strategy
               </CardTitle>
               <CardDescription className="text-gray-600">
@@ -806,7 +806,7 @@ const BusinessBlueprintPage = () => {
                         </Button>
                       </div>
                       {blueprintData.marketingStrategy.demographicProfile && (
-                        <div className="p-3 bg-white border border-gray-200 rounded-lg hover:shadow-sm transition-shadow">
+                        <div className="p-3 bg-gray-50 border border-gray-200 rounded-lg hover:shadow-md transition-shadow">
                           <h5 className="text-sm font-bold text-gray-700">Demographic</h5>
                           <p className="text-sm text-gray-600 mt-1 whitespace-pre-wrap">
                             {blueprintData.marketingStrategy.demographicProfile}
@@ -814,7 +814,7 @@ const BusinessBlueprintPage = () => {
                         </div>
                       )}
                       {blueprintData.marketingStrategy.geographicProfile && (
-                        <div className="p-3 bg-white border border-gray-200 rounded-lg hover:shadow-sm transition-shadow">
+                        <div className="p-3 bg-gray-50 border border-gray-200 rounded-lg hover:shadow-md transition-shadow">
                           <h5 className="text-sm font-bold text-gray-700">Geographic</h5>
                           <p className="text-sm text-gray-600 mt-1 whitespace-pre-wrap">
                             {blueprintData.marketingStrategy.geographicProfile}
@@ -822,7 +822,7 @@ const BusinessBlueprintPage = () => {
                         </div>
                       )}
                       {blueprintData.marketingStrategy.psychographicProfile && (
-                        <div className="p-3 bg-white border border-gray-200 rounded-lg hover:shadow-sm transition-shadow">
+                        <div className="p-3 bg-gray-50 border border-gray-200 rounded-lg hover:shadow-md transition-shadow">
                           <h5 className="text-sm font-bold text-gray-700">Psychographic</h5>
                           <p className="text-sm text-gray-600 mt-1 whitespace-pre-wrap">
                             {blueprintData.marketingStrategy.psychographicProfile}
@@ -834,7 +834,7 @@ const BusinessBlueprintPage = () => {
                        !blueprintData.marketingStrategy.demographicProfile && 
                        !blueprintData.marketingStrategy.geographicProfile && 
                        !blueprintData.marketingStrategy.psychographicProfile && (
-                        <div className="p-3 bg-white border border-gray-200 rounded-lg hover:shadow-sm transition-shadow">
+                        <div className="p-3 bg-gray-50 border border-gray-200 rounded-lg hover:shadow-md transition-shadow">
                           <p className="text-sm text-gray-600 whitespace-pre-wrap">
                             {blueprintData.marketingStrategy.targetMarket}
                           </p>
@@ -845,7 +845,7 @@ const BusinessBlueprintPage = () => {
                   
                   {/* Differentiators Display */}
                   {blueprintData.marketingStrategy.differentiators.filter(d => d).length > 0 && (
-                    <div className="flex items-start justify-between p-4 bg-white border border-gray-200 rounded-lg hover:shadow-sm transition-shadow">
+                    <div className="flex items-start justify-between p-4 bg-gray-50 border border-gray-200 rounded-lg hover:shadow-md transition-shadow">
                       <div className="flex-1">
                         <h4 className="font-semibold text-gray-900">Differentiators</h4>
                         <ul className="text-sm text-gray-600 mt-1 space-y-1">
@@ -873,7 +873,7 @@ const BusinessBlueprintPage = () => {
                   
                   {/* Proven Process Display */}
                   {(blueprintData.marketingStrategy.provenProcessExists !== undefined && blueprintData.marketingStrategy.provenProcessExists !== null) && (
-                    <div className="flex items-start justify-between p-4 bg-white border border-gray-200 rounded-lg hover:shadow-sm transition-shadow">
+                    <div className="flex items-start justify-between p-4 bg-gray-50 border border-gray-200 rounded-lg hover:shadow-md transition-shadow">
                       <div className="flex-1">
                         <h4 className="font-semibold text-gray-900">Proven Process</h4>
                         <p className="text-sm text-gray-600 mt-1">
@@ -896,7 +896,7 @@ const BusinessBlueprintPage = () => {
                   
                   {/* Guarantee Display */}
                   {(blueprintData.marketingStrategy.guaranteeExists !== undefined && blueprintData.marketingStrategy.guaranteeExists !== null) && (
-                    <div className="flex items-start justify-between p-4 bg-white border border-gray-200 rounded-lg hover:shadow-sm transition-shadow">
+                    <div className="flex items-start justify-between p-4 bg-gray-50 border border-gray-200 rounded-lg hover:shadow-md transition-shadow">
                       <div className="flex-1">
                         <h4 className="font-semibold text-gray-900">Guarantee</h4>
                         <p className="text-sm text-gray-600 mt-1 whitespace-pre-wrap">
@@ -1083,7 +1083,7 @@ const BusinessBlueprintPage = () => {
                         setEditingMarketingStrategy(false);
                       }} 
                       disabled={saving} 
-                      className="bg-gray-900 hover:bg-gray-800 text-white flex-1"
+                      className="bg-indigo-600 hover:bg-indigo-700 text-white flex-1"
                     >
                       {saving ? (
                         <Loader2 className="mr-2 h-4 w-4 animate-spin" />
@@ -1115,12 +1115,12 @@ const BusinessBlueprintPage = () => {
 
           {/* Right Column - 3-Year Picture */}
           <div className="lg:col-span-1">
-            <Card className="border border-gray-200 overflow-hidden h-full">
+            <Card className="shadow-lg border-0 overflow-hidden h-full">
               <CardHeader className="bg-white border-b">
                 <div className="flex items-center justify-between">
                   <div>
                     <CardTitle className="flex items-center text-xl text-gray-900">
-                      <Calendar className="mr-2 h-5 w-5 text-gray-600" />
+                      <Calendar className="mr-2 h-6 w-6 text-indigo-600" />
                       3-Year Picture
                     </CardTitle>
                     <CardDescription className="text-gray-600">Your organization's 3-year vision</CardDescription>
@@ -1139,9 +1139,9 @@ const BusinessBlueprintPage = () => {
                   <div className="space-y-4">
                     {/* Target Date */}
                     {blueprintData.threeYearPicture.future_date && (
-                      <div className="p-4 bg-white border border-gray-200 rounded-lg hover:shadow-sm transition-shadow">
+                      <div className="p-4 bg-gray-50 border border-gray-200 rounded-lg hover:shadow-md transition-shadow">
                         <div className="flex items-start">
-                          <Calendar className="h-5 w-5 text-gray-900 mr-3 mt-0.5" />
+                          <Calendar className="h-5 w-5 text-indigo-600 mr-3 mt-0.5" />
                           <div className="flex-1">
                             <h4 className="font-semibold text-gray-900">Target Date</h4>
                             <p className="text-sm text-gray-600 mt-1">
@@ -1163,9 +1163,9 @@ const BusinessBlueprintPage = () => {
                     
                     {/* Financial Goals */}
                     {(blueprintData.threeYearPicture.revenue || blueprintData.threeYearPicture.profit) && (
-                      <div className="p-4 bg-white border border-gray-200 rounded-lg hover:shadow-sm transition-shadow">
+                      <div className="p-4 bg-gray-50 border border-gray-200 rounded-lg hover:shadow-md transition-shadow">
                         <div className="flex items-start">
-                          <DollarSign className="h-5 w-5 text-gray-900 mr-3 mt-0.5" />
+                          <DollarSign className="h-5 w-5 text-indigo-600 mr-3 mt-0.5" />
                           <div className="flex-1 space-y-3">
                             <h4 className="font-semibold text-gray-900">Financial Goals</h4>
                             {blueprintData.threeYearPicture.revenue && (
@@ -1197,11 +1197,11 @@ const BusinessBlueprintPage = () => {
                     {blueprintData.threeYearPicture.measurables && blueprintData.threeYearPicture.measurables.length > 0 && (
                       <div className="space-y-2">
                         <div className="flex items-center mb-2">
-                          <BarChart3 className="h-5 w-5 text-gray-900 mr-2" />
+                          <BarChart3 className="h-5 w-5 text-indigo-600 mr-2" />
                           <h4 className="font-semibold text-gray-900">Key Measurables</h4>
                         </div>
                         {blueprintData.threeYearPicture.measurables.map((measurable, index) => (
-                          <div key={index} className="p-3 bg-white border border-gray-200 rounded-lg hover:shadow-sm transition-shadow">
+                          <div key={index} className="p-3 bg-gray-50 border border-gray-200 rounded-lg hover:shadow-md transition-shadow">
                             <div className="flex items-start">
                               <CheckCircle2 className="h-4 w-4 text-green-600 mr-2 mt-0.5 flex-shrink-0" />
                               <div className="flex-1">
@@ -1222,11 +1222,11 @@ const BusinessBlueprintPage = () => {
                     {blueprintData.threeYearPicture.lookLikeItems && blueprintData.threeYearPicture.lookLikeItems.filter(item => item).length > 0 && (
                       <div className="space-y-2">
                         <div className="flex items-center mb-2">
-                          <Eye className="h-5 w-5 text-gray-900 mr-2" />
+                          <Eye className="h-5 w-5 text-indigo-600 mr-2" />
                           <h4 className="font-semibold text-gray-900">What does it look like?</h4>
                         </div>
                         {blueprintData.threeYearPicture.lookLikeItems.filter(item => item).map((item, index) => (
-                          <div key={index} className="p-3 bg-white border border-gray-200 rounded-lg hover:shadow-sm transition-shadow">
+                          <div key={index} className="p-3 bg-gray-50 border border-gray-200 rounded-lg hover:shadow-md transition-shadow">
                             <p className="text-sm text-gray-700">{item}</p>
                           </div>
                         ))}
@@ -1244,7 +1244,7 @@ const BusinessBlueprintPage = () => {
                     </p>
                     <Button 
                       onClick={() => setShowThreeYearDialog(true)}
-                      className="bg-gray-900 hover:bg-gray-800 text-white"
+                      className="bg-indigo-600 hover:bg-indigo-700 text-white"
                     >
                       <Plus className="h-4 w-4 mr-2" />
                       Create 3-Year Picture
@@ -1257,12 +1257,12 @@ const BusinessBlueprintPage = () => {
         </TabsContent>
 
         <TabsContent value="execution" className="space-y-6">
-          <Card className="border border-gray-200 overflow-hidden">
+          <Card className="shadow-lg border-0 overflow-hidden">
             <CardHeader className="bg-white border-b">
               <div className="flex items-center justify-between">
                 <div>
                   <CardTitle className="flex items-center text-xl text-gray-900">
-                    <Target className="mr-2 h-5 w-5 text-gray-600" />
+                    <Target className="mr-2 h-6 w-6 text-indigo-600" />
                     1-Year Plan
                   </CardTitle>
                   <CardDescription className="text-gray-600">Your goals for the next year</CardDescription>
@@ -1281,9 +1281,9 @@ const BusinessBlueprintPage = () => {
                 <div className="space-y-4">
                   {/* Target Date */}
                   {blueprintData.oneYearPlan.future_date && (
-                    <div className="p-4 bg-white border border-gray-200 rounded-lg hover:shadow-sm transition-shadow">
+                    <div className="p-4 bg-gray-50 border border-gray-200 rounded-lg hover:shadow-md transition-shadow">
                       <div className="flex items-start">
-                        <Calendar className="h-5 w-5 text-gray-900 mr-3 mt-0.5" />
+                        <Calendar className="h-5 w-5 text-indigo-600 mr-3 mt-0.5" />
                         <div className="flex-1">
                           <h4 className="font-semibold text-gray-900">Target Date</h4>
                           <p className="text-sm text-gray-600 mt-1">
@@ -1300,9 +1300,9 @@ const BusinessBlueprintPage = () => {
                   
                   {/* Financial Goals */}
                   {(blueprintData.oneYearPlan.revenue || blueprintData.oneYearPlan.profit) && (
-                    <div className="p-4 bg-white border border-gray-200 rounded-lg hover:shadow-sm transition-shadow">
+                    <div className="p-4 bg-gray-50 border border-gray-200 rounded-lg hover:shadow-md transition-shadow">
                       <div className="flex items-start">
-                        <DollarSign className="h-5 w-5 text-gray-900 mr-3 mt-0.5" />
+                        <DollarSign className="h-5 w-5 text-indigo-600 mr-3 mt-0.5" />
                         <div className="flex-1 space-y-3">
                           <h4 className="font-semibold text-gray-900">Financial Goals</h4>
                           {blueprintData.oneYearPlan.revenue && (
@@ -1334,11 +1334,11 @@ const BusinessBlueprintPage = () => {
                   {blueprintData.oneYearPlan.measurables && blueprintData.oneYearPlan.measurables.length > 0 && (
                     <div className="space-y-2">
                       <div className="flex items-center mb-2">
-                        <BarChart3 className="h-5 w-5 text-gray-900 mr-2" />
+                        <BarChart3 className="h-5 w-5 text-indigo-600 mr-2" />
                         <h4 className="font-semibold text-gray-900">Key Measurables</h4>
                       </div>
                       {blueprintData.oneYearPlan.measurables.map((measurable, index) => (
-                        <div key={index} className="p-3 bg-white border border-gray-200 rounded-lg hover:shadow-sm transition-shadow">
+                        <div key={index} className="p-3 bg-gray-50 border border-gray-200 rounded-lg hover:shadow-md transition-shadow">
                           <div className="flex items-start">
                             <CheckCircle2 className="h-4 w-4 text-green-600 mr-2 mt-0.5 flex-shrink-0" />
                             <div className="flex-1">
@@ -1359,13 +1359,13 @@ const BusinessBlueprintPage = () => {
                   {blueprintData.oneYearPlan.goals && Array.isArray(blueprintData.oneYearPlan.goals) && blueprintData.oneYearPlan.goals.filter(goal => goal).length > 0 && (
                     <div className="space-y-2">
                       <div className="flex items-center mb-2">
-                        <Flag className="h-5 w-5 text-gray-900 mr-2" />
+                        <Flag className="h-5 w-5 text-indigo-600 mr-2" />
                         <h4 className="font-semibold text-gray-900">Goals</h4>
                       </div>
                       {blueprintData.oneYearPlan.goals.filter(goal => goal).map((goal, index) => (
-                        <div key={index} className="p-3 bg-white border border-gray-200 rounded-lg hover:shadow-sm transition-shadow">
+                        <div key={index} className="p-3 bg-gray-50 border border-gray-200 rounded-lg hover:shadow-md transition-shadow">
                           <div className="flex items-start">
-                            <span className="text-gray-900 font-semibold mr-2">{index + 1}.</span>
+                            <span className="text-indigo-600 font-semibold mr-2">{index + 1}.</span>
                             <p className="text-sm text-gray-700">{goal}</p>
                           </div>
                         </div>
@@ -1384,7 +1384,7 @@ const BusinessBlueprintPage = () => {
                   </p>
                   <Button 
                     onClick={() => setShowOneYearDialog(true)}
-                    className="bg-gray-900 hover:bg-gray-800 text-white"
+                    className="bg-indigo-600 hover:bg-indigo-700 text-white"
                   >
                     <Plus className="h-4 w-4 mr-2" />
                     Create 1-Year Plan
@@ -1394,7 +1394,7 @@ const BusinessBlueprintPage = () => {
             </CardContent>
           </Card>
 
-          <Card className="border border-gray-200">
+          <Card className="shadow-lg border-0">
             <CardHeader>
               <div className="flex items-center justify-between">
                 <div>
@@ -1407,9 +1407,9 @@ const BusinessBlueprintPage = () => {
               {blueprintData.quarterlyPriorities && blueprintData.quarterlyPriorities.priorities && blueprintData.quarterlyPriorities.priorities.length > 0 ? (
                 <div className="space-y-6">
                   {/* Quarter Header */}
-                  <div className="p-4 bg-white border border-gray-200 rounded-lg hover:shadow-sm transition-shadow">
+                  <div className="p-4 bg-gray-50 border border-gray-200 rounded-lg hover:shadow-md transition-shadow">
                     <div className="flex items-start">
-                      <Calendar className="h-5 w-5 text-gray-900 mr-3 mt-0.5" />
+                      <Calendar className="h-5 w-5 text-indigo-600 mr-3 mt-0.5" />
                       <div className="flex-1">
                         <h4 className="font-semibold text-gray-900">Current Quarter</h4>
                         <p className="text-sm text-gray-600 mt-1">
@@ -1429,13 +1429,13 @@ const BusinessBlueprintPage = () => {
                       {blueprintData.quarterlyPriorities.priorities
                         .filter(p => p.is_company_priority)
                         .map((priority, index) => (
-                          <div key={priority.id} className="p-4 bg-white border border-gray-200 rounded-lg transition-all">
+                          <div key={priority.id} className="p-4 bg-blue-50 border-2 border-blue-200 rounded-lg hover:shadow-lg transition-shadow">
                             <div className="flex items-start">
                               <div className={`w-4 h-4 rounded-full mr-3 mt-1 flex-shrink-0 ${
-                                priority.status === 'complete' ? 'bg-green-500' :
-                                priority.status === 'on-track' ? 'bg-blue-500' :
-                                priority.status === 'off-track' ? 'bg-red-500' :
-                                'bg-gray-400'
+                                priority.status === 'complete' ? 'bg-green-600' :
+                                priority.status === 'on-track' ? 'bg-blue-600' :
+                                priority.status === 'off-track' ? 'bg-red-600' :
+                                'bg-gray-600'
                               }`} />
                               <div className="flex-1">
                                 <p className="font-semibold text-gray-900 text-base">{priority.title || priority.text}</p>
@@ -1463,19 +1463,19 @@ const BusinessBlueprintPage = () => {
                   {blueprintData.quarterlyPriorities.priorities.some(p => !p.is_company_priority) && (
                     <div className="space-y-3">
                       <div className="flex items-center">
-                        <Users className="h-5 w-5 text-gray-600 mr-2" />
+                        <Users className="h-5 w-5 text-indigo-600 mr-2" />
                         <h4 className="font-semibold text-gray-900">Individual Priorities</h4>
                       </div>
                       {blueprintData.quarterlyPriorities.priorities
                         .filter(p => !p.is_company_priority)
                         .map((priority, index) => (
-                          <div key={priority.id} className="p-4 bg-white border border-gray-200 rounded-lg transition-all">
+                          <div key={priority.id} className="p-4 bg-gray-50 border border-gray-200 rounded-lg hover:shadow-md transition-shadow">
                             <div className="flex items-start">
                               <div className={`w-3 h-3 rounded-full mr-3 mt-1.5 flex-shrink-0 ${
-                                priority.status === 'complete' ? 'bg-white0' :
-                                priority.status === 'on-track' ? 'bg-white0' :
-                                priority.status === 'off-track' ? 'bg-white0' :
-                                'bg-white0'
+                                priority.status === 'complete' ? 'bg-green-500' :
+                                priority.status === 'on-track' ? 'bg-blue-500' :
+                                priority.status === 'off-track' ? 'bg-red-500' :
+                                'bg-gray-500'
                               }`} />
                               <div className="flex-1">
                                 <p className="font-medium text-gray-900">{priority.title || priority.text}</p>
@@ -1508,7 +1508,7 @@ const BusinessBlueprintPage = () => {
                   <div className="pt-4 border-t">
                     <Link 
                       to="/quarterly-priorities" 
-                      className="text-gray-900 hover:text-indigo-700 text-sm font-medium inline-flex items-center"
+                      className="text-indigo-600 hover:text-indigo-700 text-sm font-medium inline-flex items-center"
                     >
                       View full quarterly priorities page
                       <ArrowRight className="ml-1 h-4 w-4" />
@@ -1526,7 +1526,7 @@ const BusinessBlueprintPage = () => {
                   </p>
                   <Link 
                     to="/quarterly-priorities" 
-                    className="inline-flex items-center justify-center px-4 py-2 bg-gray-900 hover:bg-gray-800 text-white font-medium rounded-lg"
+                    className="inline-flex items-center justify-center px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white font-medium rounded-lg"
                   >
                     <Plus className="h-4 w-4 mr-2" />
                     Go to Quarterly Priorities
@@ -1536,7 +1536,7 @@ const BusinessBlueprintPage = () => {
             </CardContent>
           </Card>
 
-          <Card className="border border-gray-200">
+          <Card className="shadow-lg border-0">
             <CardHeader>
               <div className="flex items-center justify-between">
                 <div>
@@ -1549,9 +1549,9 @@ const BusinessBlueprintPage = () => {
               {blueprintData.longTermIssues && blueprintData.longTermIssues.length > 0 ? (
                 <div className="space-y-6">
                   {/* Issues Summary */}
-                  <div className="p-4 bg-white border border-gray-200 rounded-lg hover:shadow-sm transition-shadow">
+                  <div className="p-4 bg-gray-50 border border-gray-200 rounded-lg hover:shadow-md transition-shadow">
                     <div className="flex items-start">
-                      <MessageSquare className="h-5 w-5 text-gray-900 mr-3 mt-0.5" />
+                      <MessageSquare className="h-5 w-5 text-indigo-600 mr-3 mt-0.5" />
                       <div className="flex-1">
                         <h4 className="font-semibold text-gray-900">Long Term Issues</h4>
                         <p className="text-sm text-gray-600 mt-1">
@@ -1564,13 +1564,13 @@ const BusinessBlueprintPage = () => {
                   {/* Issues List */}
                   <div className="space-y-3">
                     {blueprintData.longTermIssues.map((issue, index) => (
-                      <div key={issue.id || index} className="p-4 bg-white border border-gray-200 rounded-lg hover:shadow-sm transition-shadow">
+                      <div key={issue.id || index} className="p-4 bg-gray-50 border border-gray-200 rounded-lg hover:shadow-md transition-shadow">
                         <div className="flex items-start">
                           <div className={`w-3 h-3 rounded-full mr-3 mt-1.5 flex-shrink-0 ${
-                            issue.priority === 'high' ? 'bg-white0' :
-                            issue.priority === 'medium' ? 'bg-yellow-600' :
-                            issue.priority === 'low' ? 'bg-white0' :
-                            'bg-white0'
+                            issue.priority === 'high' ? 'bg-red-500' :
+                            issue.priority === 'medium' ? 'bg-yellow-500' :
+                            issue.priority === 'low' ? 'bg-green-500' :
+                            'bg-gray-500'
                           }`} />
                           <div className="flex-1">
                             <p className="font-medium text-gray-900">{issue.title}</p>
@@ -1599,7 +1599,7 @@ const BusinessBlueprintPage = () => {
                   <div className="pt-4 border-t">
                     <Link 
                       to="/issues?timeline=long_term" 
-                      className="text-gray-900 hover:text-indigo-700 text-sm font-medium inline-flex items-center"
+                      className="text-indigo-600 hover:text-indigo-700 text-sm font-medium inline-flex items-center"
                     >
                       View all long term issues
                       <ArrowRight className="ml-1 h-4 w-4" />
@@ -1617,7 +1617,7 @@ const BusinessBlueprintPage = () => {
                   </p>
                   <Link 
                     to="/issues" 
-                    className="inline-flex items-center justify-center px-4 py-2 bg-gray-900 hover:bg-gray-800 text-white font-medium rounded-lg"
+                    className="inline-flex items-center justify-center px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white font-medium rounded-lg"
                   >
                     <Plus className="h-4 w-4 mr-2" />
                     Go to Issues
