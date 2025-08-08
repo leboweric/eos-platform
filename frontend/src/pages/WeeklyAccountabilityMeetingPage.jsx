@@ -1205,7 +1205,7 @@ const WeeklyAccountabilityMeetingPage = () => {
                   </p>
                 </div>
                 <div className="flex justify-end gap-2 mb-4">
-                  <Button onClick={handleAddTodo} className="bg-green-600 hover:bg-green-700">
+                  <Button onClick={handleAddTodo} className="bg-indigo-600 hover:bg-indigo-700">
                     <Plus className="mr-2 h-4 w-4" />
                     Add To Do
                   </Button>
