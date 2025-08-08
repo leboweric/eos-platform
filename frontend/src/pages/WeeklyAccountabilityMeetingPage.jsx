@@ -400,7 +400,11 @@ const WeeklyAccountabilityMeetingPage = () => {
   const fetchHeadlines = async () => {
     try {
       const effectiveTeamId = teamId || user?.teamId || '00000000-0000-0000-0000-000000000000';
-      const response = await headlinesService.getHeadlines(effectiveTeamId);
+      console.log('Fetching headlines with teamId:', effectiveTeamId);
+      
+      // Don't filter by team if using leadership team ID or if headlines have no team_id
+      const response = await headlinesService.getHeadlines(null); // Pass null to get all org headlines
+      console.log('Headlines response:', response);
       
       // Group headlines by type
       const grouped = { customer: [], employee: [] };
@@ -412,6 +416,7 @@ const WeeklyAccountabilityMeetingPage = () => {
         }
       });
       
+      console.log('Grouped headlines:', grouped);
       setHeadlines(grouped);
     } catch (error) {
       console.error('Failed to fetch headlines:', error);

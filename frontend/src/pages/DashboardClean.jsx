@@ -775,10 +775,11 @@ const DashboardClean = () => {
                   <Button
                     onClick={async () => {
                       try {
+                        // For now, don't set teamId so headlines are organization-wide
                         await headlinesService.createHeadline({
                           type: headlineType,
-                          text: headlineText,
-                          teamId: user?.teamId || null
+                          text: headlineText
+                          // teamId is intentionally omitted for org-wide visibility
                         });
                         setShowHeadlineDialog(false);
                         setHeadlineText('');
