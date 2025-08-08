@@ -6,7 +6,7 @@ import { organizationService } from '../services/organizationService';
 import { issuesService } from '../services/issuesService';
 import { getRevenueLabel, getRevenueLabelWithSuffix } from '../utils/revenueUtils';
 import { useDepartment } from '../contexts/DepartmentContext';
-import PriorityCardClean from '../components/priorities/PriorityCardClean';
+import FullPriorityCard from '../components/priorities/FullPriorityCard';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -1848,7 +1848,7 @@ const QuarterlyPrioritiesPageClean = () => {
                       </div>
                       <div className="space-y-4">
                         {quarterData.companyPriorities.map(priority => (
-                          <PriorityCardClean key={priority.id} priority={priority} isCompany={true} isArchived={true} />
+                          <FullPriorityCard key={priority.id} priority={priority} isCompany={true} isArchived={true} />
                         ))}
                       </div>
                     </div>
@@ -1872,7 +1872,7 @@ const QuarterlyPrioritiesPageClean = () => {
                               <h4 className="text-lg font-semibold text-gray-900">{firstPriority.owner.name}</h4>
                             </div>
                             {priorities.map(priority => (
-                              <PriorityCardClean key={priority.id} priority={priority} isArchived={true} />
+                              <FullPriorityCard key={priority.id} priority={priority} isArchived={true} />
                             ))}
                           </div>
                         );
@@ -1907,10 +1907,12 @@ const QuarterlyPrioritiesPageClean = () => {
                 <div className="space-y-4 ml-8">
                   {(companyPriorities || []).map(priority => (
                     <div key={priority.id} className="group">
-                      <PriorityCardClean 
+                      <FullPriorityCard 
                         priority={priority} 
                         isCompany={true}
                         onStatusChange={handlePriorityStatusChange}
+                        teamMembers={teamMembers}
+                        onUpdate={fetchQuarterlyData}
                       />
                     </div>
                   ))}
@@ -1955,9 +1957,11 @@ const QuarterlyPrioritiesPageClean = () => {
                     <div className="space-y-4 ml-16">
                       {memberPriorities.map(priority => (
                         <div key={priority.id} className="group">
-                          <PriorityCardClean 
+                          <FullPriorityCard 
                             priority={priority}
                             onStatusChange={handlePriorityStatusChange}
+                            teamMembers={teamMembers}
+                            onUpdate={fetchQuarterlyData}
                           />
                         </div>
                       ))}
