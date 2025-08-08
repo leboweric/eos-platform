@@ -18,7 +18,8 @@ import {
   ThumbsUp,
   Clock,
   MessageSquare,
-  Archive
+  Archive,
+  Users
 } from 'lucide-react';
 
 const IssuesList = ({ 
@@ -27,7 +28,8 @@ const IssuesList = ({
   onStatusChange, 
   onTimelineChange, 
   onArchive,
-  onVote, 
+  onVote,
+  onMoveToTeam,
   getStatusColor, 
   getStatusIcon, 
   readOnly = false, 
@@ -239,6 +241,19 @@ const IssuesList = ({
                         <Archive className="mr-2 h-4 w-4" />
                         Archive
                       </Button>
+                      {onMoveToTeam && (
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => {
+                            onMoveToTeam(selectedIssue);
+                            setSelectedIssue(null);
+                          }}
+                        >
+                          <Users className="mr-2 h-4 w-4" />
+                          Move to Team
+                        </Button>
+                      )}
                     </div>
                     <div className="flex gap-2">
                       <Button

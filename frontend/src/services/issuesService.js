@@ -199,5 +199,16 @@ export const issuesService = {
       `/organizations/${orgId}/issues/votes`
     );
     return response.data.data.votedIssueIds;
+  },
+
+  // Move issue to another team
+  moveIssueToTeam: async (issueId, newTeamId, reason = '') => {
+    const orgId = getOrgId();
+    
+    const response = await axios.post(
+      `/organizations/${orgId}/issues/${issueId}/move-team`,
+      { newTeamId, reason }
+    );
+    return response.data;
   }
 };

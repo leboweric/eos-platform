@@ -22,6 +22,7 @@ import {
 import IssueDialog from '../components/issues/IssueDialog';
 import IssuesList from '../components/issues/IssuesList';
 import ArchivedIssuesList from '../components/issues/ArchivedIssuesList';
+import { MoveIssueDialog } from '../components/issues/MoveIssueDialog';
 
 const IssuesPage = () => {
   const { user } = useAuthStore();
@@ -40,6 +41,8 @@ const IssuesPage = () => {
   // Dialog states
   const [showIssueDialog, setShowIssueDialog] = useState(false);
   const [editingIssue, setEditingIssue] = useState(null);
+  const [showMoveDialog, setShowMoveDialog] = useState(false);
+  const [movingIssue, setMovingIssue] = useState(null);
 
   useEffect(() => {
     fetchIssues();
@@ -225,6 +228,18 @@ const IssuesPage = () => {
     }
   };
 
+  const handleMoveToTeam = (issue) => {
+    setMovingIssue(issue);
+    setShowMoveDialog(true);
+  };
+
+  const handleMoveSuccess = async (message) => {
+    setSuccess(message);
+    setShowMoveDialog(false);
+    setMovingIssue(null);
+    await fetchIssues();
+  };
+
   const getStatusColor = (status) => {
     switch (status) {
       case 'open':
@@ -354,6 +369,7 @@ const IssuesPage = () => {
                   onTimelineChange={handleTimelineChange}
                   onArchive={handleArchive}
                   onVote={handleVote}
+                  onMoveToTeam={handleMoveToTeam}
                   getStatusColor={getStatusColor}
                   getStatusIcon={getStatusIcon}
                   showVoting={false} // Will be enabled during Weekly Accountability Meetings
@@ -374,6 +390,17 @@ const IssuesPage = () => {
           issue={editingIssue}
           teamMembers={teamMembers}
           timeline={activeTab}
+        />
+
+        {/* Move Issue Dialog */}
+        <MoveIssueDialog
+          isOpen={showMoveDialog}
+          onClose={() => {
+            setShowMoveDialog(false);
+            setMovingIssue(null);
+          }}
+          issue={movingIssue}
+          onSuccess={handleMoveSuccess}
         />
       </div>
     </div>

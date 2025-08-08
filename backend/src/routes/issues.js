@@ -16,7 +16,8 @@ import {
   unarchiveIssue,
   voteForIssue,
   unvoteForIssue,
-  getUserVotes
+  getUserVotes,
+  moveIssueToTeam
 } from '../controllers/issuesController.js';
 
 const router = express.Router({ mergeParams: true });
@@ -43,6 +44,9 @@ router.route('/:issueId/archive')
 
 router.route('/:issueId/unarchive')
   .post(unarchiveIssue);
+
+router.route('/:issueId/move-team')
+  .post(moveIssueToTeam);
 
 // Voting routes
 router.route('/votes')

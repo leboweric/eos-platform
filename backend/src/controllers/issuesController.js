@@ -304,6 +304,75 @@ export const updateIssue = async (req, res) => {
   }
 };
 
+// Move an issue to a different team
+export const moveIssueToTeam = async (req, res) => {
+  try {
+    const { orgId, issueId } = req.params;
+    const { newTeamId, reason } = req.body;
+    const userId = req.user.id;
+    
+    // Verify the issue exists and belongs to this organization
+    const issueCheck = await db.query(
+      'SELECT * FROM issues WHERE id = $1 AND organization_id = $2',
+      [issueId, orgId]
+    );
+    
+    if (issueCheck.rows.length === 0) {
+      return res.status(404).json({
+        success: false,
+        message: 'Issue not found'
+      });
+    }
+    
+    const issue = issueCheck.rows[0];
+    const oldTeamId = issue.team_id;
+    
+    // Get old and new team names for logging
+    const teamsResult = await db.query(
+      'SELECT id, name FROM teams WHERE id = ANY($1::uuid[]) AND organization_id = $2',
+      [[oldTeamId, newTeamId], orgId]
+    );
+    
+    const teams = teamsResult.rows.reduce((acc, team) => {
+      acc[team.id] = team.name;
+      return acc;
+    }, {});
+    
+    // Update the issue's team
+    const updateResult = await db.query(
+      `UPDATE issues 
+       SET team_id = $1, 
+           updated_at = CURRENT_TIMESTAMP
+       WHERE id = $2 AND organization_id = $3
+       RETURNING *`,
+      [newTeamId, issueId, orgId]
+    );
+    
+    // Add a note to the issue's description about the transfer
+    const transferNote = `\n\n---\n[Transferred from ${teams[oldTeamId] || 'Unknown Team'} to ${teams[newTeamId] || 'Unknown Team'} by user on ${new Date().toLocaleDateString()}]`;
+    const transferReason = reason ? `\nReason: ${reason}` : '';
+    
+    await db.query(
+      `UPDATE issues 
+       SET description = description || $1
+       WHERE id = $2`,
+      [transferNote + transferReason, issueId]
+    );
+    
+    res.json({
+      success: true,
+      data: updateResult.rows[0],
+      message: `Issue moved to ${teams[newTeamId] || 'new team'}`
+    });
+  } catch (error) {
+    console.error('Error moving issue:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Failed to move issue'
+    });
+  }
+};
+
 // Delete an issue
 export const deleteIssue = async (req, res) => {
   try {

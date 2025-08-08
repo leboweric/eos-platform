@@ -17,7 +17,8 @@ import {
   CheckCircle,
   AlertTriangle,
   ArrowRight,
-  ThumbsUp
+  ThumbsUp,
+  Users
 } from 'lucide-react';
 
 /**
@@ -41,12 +42,13 @@ import {
  * @param {Function} props.onStatusChange - Status change handler
  * @param {Function} props.onTimelineChange - Timeline change handler
  * @param {Function} props.onVote - Vote handler
+ * @param {Function} props.onMoveToTeam - Move to team handler
  * @param {Function} props.getStatusColor - Get status color function
  * @param {Function} props.getStatusIcon - Get status icon function
  * @param {boolean} props.readOnly - Whether in read-only mode
  * @param {boolean} props.showVoting - Whether to show voting interface
  */
-const IssueCard = ({ issue, onEdit, onStatusChange, onTimelineChange, onVote, getStatusColor, getStatusIcon, readOnly = false, showVoting = false }) => {
+const IssueCard = ({ issue, onEdit, onStatusChange, onTimelineChange, onVote, onMoveToTeam, getStatusColor, getStatusIcon, readOnly = false, showVoting = false }) => {
   const formatDate = (dateString) => {
     const date = new Date(dateString);
     return date.toLocaleDateString('en-US', { 
@@ -164,6 +166,16 @@ const IssueCard = ({ issue, onEdit, onStatusChange, onTimelineChange, onVote, ge
                         <ArrowRight className="mr-2 h-4 w-4" />
                         Move to {issue.timeline === 'short_term' ? 'Long Term' : 'Short Term'}
                       </DropdownMenuItem>
+                      
+                      {onMoveToTeam && (
+                        <>
+                          <DropdownMenuSeparator />
+                          <DropdownMenuItem onClick={() => onMoveToTeam(issue)}>
+                            <Users className="mr-2 h-4 w-4" />
+                            Move to Team
+                          </DropdownMenuItem>
+                        </>
+                      )}
                     </DropdownMenuContent>
                   </DropdownMenu>
                 )}
