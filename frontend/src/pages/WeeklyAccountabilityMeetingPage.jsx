@@ -1185,7 +1185,6 @@ const WeeklyAccountabilityMeetingPage = () => {
               <Button
                 onClick={handleStartMeeting}
                 className="bg-indigo-600 hover:bg-indigo-700"
-                size="lg"
               >
                 <Clock className="h-4 w-4 mr-2" />
                 Start Meeting
@@ -1211,7 +1210,7 @@ const WeeklyAccountabilityMeetingPage = () => {
 
         {/* Tabs Navigation */}
         <Tabs value={activeSection} onValueChange={handleSectionChange} className="space-y-6">
-          <TabsList className="grid grid-cols-4 lg:grid-cols-7 gap-2 h-auto p-1 bg-white shadow-sm">
+          <TabsList className="grid grid-cols-3 md:grid-cols-4 lg:grid-cols-7 gap-2 h-auto p-1 bg-white shadow-sm">
             {agendaItems.map((item) => {
               const Icon = item.icon;
               const currentIndex = agendaItems.findIndex(i => i.id === activeSection);
