@@ -4,7 +4,8 @@ import { Button } from '@/components/ui/button';
 import { 
   Edit,
   BarChart3,
-  TrendingUp
+  GripVertical,
+  Trash2
 } from 'lucide-react';
 
 const ScorecardTableClean = ({ 
@@ -16,7 +17,9 @@ const ScorecardTableClean = ({
   departmentId,
   onIssueCreated,
   onScoreEdit,
-  onChartOpen
+  onChartOpen,
+  onMetricUpdate,
+  onMetricDelete
 }) => {
   // Get week start date for a given date
   const getWeekStartDate = (date) => {
@@ -114,85 +117,46 @@ const ScorecardTableClean = ({
   };
 
   return (
-    <Card className="overflow-hidden bg-white shadow-sm border border-gray-200">
-      <CardHeader className="bg-gradient-to-r from-blue-50 to-indigo-50 py-4 px-6">
-        <div className="flex items-center justify-between">
-          <CardTitle className="flex items-center gap-2 text-xl font-semibold text-gray-900">
-            <TrendingUp className="h-5 w-5 text-indigo-600" />
-            Scorecard Metrics
-          </CardTitle>
-          <div className="text-sm text-gray-600">
-            {metrics.length} {metrics.length === 1 ? 'metric' : 'metrics'}
-          </div>
-        </div>
+    <Card className="transition-all bg-white border border-gray-200">
+      <CardHeader className="bg-white border-b border-gray-200">
+        <CardTitle className="text-lg">All Metrics</CardTitle>
       </CardHeader>
       <CardContent className="p-0">
         <div className="overflow-x-auto">
-          <table className="w-full">
+          <table className="w-full table-fixed">
             <thead className="bg-white border-b border-gray-200">
               <tr>
-                <th className="sticky left-0 z-10 bg-white text-left px-4 py-3 font-semibold text-gray-700 text-sm min-w-[200px] border-r border-gray-200">
-                  Metric
-                </th>
-                <th className="text-center px-3 py-3 font-semibold text-gray-700 text-sm w-24 border-r border-gray-200">
-                  Owner
-                </th>
-                <th className="text-center px-3 py-3 font-semibold text-gray-700 text-sm w-24 border-r border-gray-200">
-                  Goal
-                </th>
+                <th className="text-center p-2 font-semibold text-gray-700 w-8"></th>
+                <th className="text-center p-2 font-semibold text-gray-700 w-16">Owner</th>
+                <th className="text-left p-2 font-semibold text-gray-700 w-48">Metric</th>
+                <th className="text-center p-2 font-semibold text-gray-700 w-12">Chart</th>
+                <th className="text-center p-2 font-semibold text-gray-700 w-20">Goal</th>
                 
-                {/* Total and Average columns for RTL */}
-                {isRTL && (
-                  <>
-                    {showTotal && (
-                      <th className="text-center px-3 py-3 font-semibold text-gray-700 text-sm w-20 bg-gray-50 border-r border-gray-200">
-                        Total
-                      </th>
-                    )}
-                    <th className="text-center px-3 py-3 font-semibold text-gray-700 text-sm w-20 bg-blue-50 border-r border-gray-200">
-                      Average
-                    </th>
-                  </>
-                )}
+                <th className="text-center p-2 font-semibold text-gray-700 w-20 border-l border-gray-200">Average</th>
                 
                 {/* Week columns */}
                 {weekLabels.map((label, index) => {
                   const originalIndex = isRTL ? weekLabelsOriginal.length - 1 - index : index;
                   const isCurrentWeek = originalIndex === weekLabelsOriginal.length - 1;
                   return (
-                    <th key={weekDates[index]} className={`text-center px-2 py-3 font-medium text-xs w-20 ${
-                      isCurrentWeek 
-                        ? 'bg-indigo-50 text-indigo-900 border-x-2 border-indigo-200' 
-                        : 'text-gray-600 border-r border-gray-100'
+                    <th key={weekDates[index]} className={`text-center p-2 font-semibold text-xs w-20 ${
+                      isCurrentWeek ? 'text-gray-900 bg-gray-50 border-2 border-gray-300' : 'text-gray-700'
                     }`}>
                       <div className="flex flex-col items-center">
-                        {isCurrentWeek && (
-                          <span className="text-[10px] font-semibold text-indigo-600 mb-1 uppercase tracking-wider">Current</span>
-                        )}
-                        <span className="font-medium">{label}</span>
+                        <span className="text-xs font-normal text-gray-500 mb-1">
+                          {isCurrentWeek ? 'Current' : ''}
+                        </span>
+                        <span>{label}</span>
                       </div>
                     </th>
                   );
                 })}
                 
-                {/* Average and Total columns for LTR */}
-                {!isRTL && (
-                  <>
-                    <th className="text-center px-3 py-3 font-semibold text-gray-700 text-sm w-20 bg-blue-50 border-l border-gray-200">
-                      Average
-                    </th>
-                    {showTotal && (
-                      <th className="text-center px-3 py-3 font-semibold text-gray-700 text-sm w-20 bg-gray-50 border-l border-gray-200">
-                        Total
-                      </th>
-                    )}
-                  </>
-                )}
-                
-                {!readOnly && <th className="w-24 border-l border-gray-200"></th>}
+                {showTotal && <th className="text-center p-2 font-semibold text-gray-700 w-20 border-l border-gray-200">Total</th>}
+                <th className="text-center p-2 font-semibold text-gray-700 w-12">Actions</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-gray-100">
+            <tbody>
               {metrics.map((metric, metricIndex) => {
                 const scores = weekDatesOriginal
                   .map(weekDate => weeklyScores[metric.id]?.[weekDate])
@@ -207,60 +171,38 @@ const ScorecardTableClean = ({
                 const avgGoalMet = average !== null && isGoalMet(average, metric.goal, metric.comparison_operator);
                 
                 return (
-                  <tr key={metric.id} className={`hover:bg-gray-50 group transition-colors ${
-                    metricIndex % 2 === 0 ? 'bg-white' : 'bg-gray-50/30'
-                  }`}>
-                    {/* Metric name column - sticky */}
-                    <td className="sticky left-0 z-10 bg-inherit px-4 py-3 border-r border-gray-200">
-                      <div className="font-medium text-gray-900 text-sm">{metric.name}</div>
-                      {metric.description && (
-                        <div className="text-xs text-gray-500 mt-0.5">{metric.description}</div>
+                  <tr key={metric.id} className="border-b hover:bg-gray-50">
+                    <td className="text-center p-2 w-8">
+                      <GripVertical className="h-4 w-4 text-gray-400 cursor-move mx-auto" />
+                    </td>
+                    <td className="text-center p-2 w-16 text-sm">
+                      {metric.ownerName || metric.owner || '-'}
+                    </td>
+                    <td className="text-left p-2 font-medium w-48">{metric.name}</td>
+                    <td className="text-center p-2 w-12">
+                      <Button
+                        onClick={() => onChartOpen && onChartOpen(metric)}
+                        size="sm"
+                        variant="ghost"
+                        className="h-8 w-8 p-0 hover:bg-gray-100 mx-auto"
+                      >
+                        <BarChart3 className="h-4 w-4 text-gray-600" />
+                      </Button>
+                    </td>
+                    <td className="text-center p-2 w-20 font-semibold text-gray-700 text-sm">{formatGoal(metric.goal, metric.value_type, metric.comparison_operator)}</td>
+                    
+                    {/* Average column */}
+                    <td className="p-2 text-center bg-white border-l border-gray-200 font-semibold text-sm w-20">
+                      {average !== null ? (
+                        <span className={`px-2 py-1 rounded ${
+                          avgGoalMet ? 'text-green-800' : 'text-red-800'
+                        }`}>
+                          {metric.value_type === 'number' ? Math.round(average) : formatValue(average, metric.value_type)}
+                        </span>
+                      ) : (
+                        <span className="text-gray-400">-</span>
                       )}
                     </td>
-                    
-                    {/* Owner column */}
-                    <td className="px-3 py-3 text-center border-r border-gray-200">
-                      <div className="inline-flex items-center justify-center px-2 py-1 rounded-full bg-gray-100 text-xs font-medium text-gray-700">
-                        {metric.ownerName || metric.owner || '-'}
-                      </div>
-                    </td>
-                    
-                    {/* Goal column */}
-                    <td className="px-3 py-3 text-center border-r border-gray-200">
-                      <span className="inline-flex items-center justify-center px-2 py-1 rounded-md bg-indigo-50 text-xs font-semibold text-indigo-700">
-                        {formatGoal(metric.goal, metric.value_type, metric.comparison_operator)}
-                      </span>
-                    </td>
-                    
-                    {/* Total and Average columns for RTL */}
-                    {isRTL && (
-                      <>
-                        {showTotal && (
-                          <td className="px-3 py-3 text-center bg-gray-50 border-r border-gray-200">
-                            {total !== null ? (
-                              <span className="font-semibold text-sm text-gray-700">
-                                {formatValue(total, metric.value_type)}
-                              </span>
-                            ) : (
-                              <span className="text-gray-400">-</span>
-                            )}
-                          </td>
-                        )}
-                        <td className="px-3 py-3 text-center bg-blue-50 border-r border-gray-200">
-                          {average !== null ? (
-                            <span className={`inline-flex items-center justify-center px-2 py-1 rounded-md text-xs font-semibold ${
-                              avgGoalMet 
-                                ? 'bg-green-100 text-green-700' 
-                                : 'bg-red-100 text-red-700'
-                            }`}>
-                              {metric.value_type === 'number' ? Math.round(average) : formatValue(average, metric.value_type)}
-                            </span>
-                          ) : (
-                            <span className="text-gray-400">-</span>
-                          )}
-                        </td>
-                      </>
-                    )}
                     
                     {/* Week columns */}
                     {weekDates.map((weekDate, index) => {
@@ -270,99 +212,43 @@ const ScorecardTableClean = ({
                       const isCurrentWeek = originalIndex === weekLabelsOriginal.length - 1;
                       
                       return (
-                        <td key={weekDate} className={`px-2 py-3 text-center ${
-                          isCurrentWeek 
-                            ? 'bg-indigo-50/50 border-x-2 border-indigo-100' 
-                            : 'border-r border-gray-100'
-                        }`}>
-                          {readOnly ? (
-                            score ? (
-                              <span className={`inline-flex items-center justify-center px-2 py-1 rounded-md text-xs font-semibold ${
-                                goalMet
-                                  ? 'bg-green-100 text-green-700'
-                                  : 'bg-red-100 text-red-700'
-                              }`}>
-                                {formatValue(score, metric.value_type)}
-                              </span>
-                            ) : (
-                              <span className="text-gray-400">-</span>
-                            )
-                          ) : (
-                            <button
-                              onClick={() => onScoreEdit && onScoreEdit(metric, weekDate)}
-                              className={`w-full py-1 px-2 rounded-md text-xs font-semibold transition-all ${
-                                score
-                                  ? goalMet
-                                    ? 'bg-green-100 text-green-700 hover:bg-green-200 hover:shadow-sm'
-                                    : 'bg-red-100 text-red-700 hover:bg-red-200 hover:shadow-sm'
-                                  : 'text-gray-400 hover:bg-gray-100 hover:text-gray-600'
-                              }`}
-                            >
-                              {score ? formatValue(score, metric.value_type) : '-'}
-                            </button>
-                          )}
+                        <td key={weekDate} className={`p-2 text-center w-20 ${isCurrentWeek ? 'bg-gray-50 border-2 border-gray-300' : ''}`}>
+                          <button
+                            onClick={() => onScoreEdit && onScoreEdit(metric, weekDate)}
+                            className={`w-full px-2 py-1 rounded text-sm font-medium transition-colors
+                              ${score ? (goalMet ? 'bg-green-50 text-green-700 border border-green-200' : 'bg-red-50 text-red-700 border border-red-200') : (isCurrentWeek ? 'bg-gray-100 text-gray-700 hover:bg-gray-200' : 'bg-white border border-gray-200 text-gray-600 hover:bg-gray-50')}`}
+                          >
+                            {score ? formatValue(score, metric.value_type) : '-'}
+                          </button>
                         </td>
                       );
                     })}
                     
-                    {/* Average and Total columns for LTR */}
-                    {!isRTL && (
-                      <>
-                        <td className="px-3 py-3 text-center bg-blue-50 border-l border-gray-200">
-                          {average !== null ? (
-                            <span className={`inline-flex items-center justify-center px-2 py-1 rounded-md text-xs font-semibold ${
-                              avgGoalMet 
-                                ? 'bg-green-100 text-green-700' 
-                                : 'bg-red-100 text-red-700'
-                            }`}>
-                              {metric.value_type === 'number' ? Math.round(average) : formatValue(average, metric.value_type)}
-                            </span>
-                          ) : (
-                            <span className="text-gray-400">-</span>
-                          )}
-                        </td>
-                        {showTotal && (
-                          <td className="px-3 py-3 text-center bg-gray-50 border-l border-gray-200">
-                            {total !== null ? (
-                              <span className="font-semibold text-sm text-gray-700">
-                                {formatValue(total, metric.value_type)}
-                              </span>
-                            ) : (
-                              <span className="text-gray-400">-</span>
-                            )}
-                          </td>
-                        )}
-                      </>
-                    )}
-                    
-                    {/* Actions */}
-                    {!readOnly && (
-                      <td className="px-3 py-3 border-l border-gray-200">
-                        <div className="flex items-center justify-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                          {onChartOpen && (
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              onClick={() => onChartOpen(metric)}
-                              className="h-8 w-8 p-0 hover:bg-indigo-50"
-                            >
-                              <BarChart3 className="h-4 w-4 text-indigo-600" />
-                            </Button>
-                          )}
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => {
-                              // Handle edit action
-                              console.log('Edit metric:', metric);
-                            }}
-                            className="h-8 w-8 p-0 hover:bg-gray-100"
-                          >
-                            <Edit className="h-4 w-4 text-gray-600" />
-                          </Button>
-                        </div>
+                    {showTotal && (
+                      <td className="p-2 text-center font-semibold w-20 bg-white border-l border-gray-200">
+                        {Math.round(Object.values(weeklyScores[metric.id] || {}).reduce((sum, val) => sum + (parseFloat(val) || 0), 0))}
                       </td>
                     )}
+                    <td className="text-center p-2 w-12">
+                      <div className="flex justify-center space-x-1">
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          className="h-6 w-6 p-0"
+                          onClick={() => onMetricUpdate && onMetricUpdate(metric)}
+                        >
+                          <Edit className="h-3 w-3" />
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          className="h-6 w-6 p-0"
+                          onClick={() => onMetricDelete && onMetricDelete(metric.id)}
+                        >
+                          <Trash2 className="h-3 w-3 text-red-600" />
+                        </Button>
+                      </div>
+                    </td>
                   </tr>
                 );
               })}

@@ -472,6 +472,8 @@ const ScorecardPageClean = () => {
                 onIssueCreated={null}
                 onScoreEdit={(metric, weekDate) => handleScoreEdit(metric, weekDate, 'weekly')}
                 onChartOpen={handleChartOpen}
+                onMetricUpdate={handleEditMetric}
+                onMetricDelete={handleDeleteMetric}
               />
             )}
           </TabsContent>
@@ -510,6 +512,8 @@ const ScorecardPageClean = () => {
                 onIssueCreated={null}
                 onScoreEdit={(metric, monthDate) => handleScoreEdit(metric, monthDate, 'monthly')}
                 onChartOpen={handleChartOpen}
+                onMetricUpdate={handleEditMetric}
+                onMetricDelete={handleDeleteMetric}
               />
             )}
           </TabsContent>
