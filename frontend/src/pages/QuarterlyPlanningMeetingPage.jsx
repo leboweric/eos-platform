@@ -71,7 +71,7 @@ const QuarterlyPlanningMeetingPage = () => {
     { id: '2-page-plan', label: '2-Page Plan', duration: 60, icon: ClipboardList, description: 'Review strategic plan' },
     { id: 'learning', label: 'Learning', duration: 60, icon: MessageSquare, description: 'Share insights & learnings' },
     { id: 'quarterly-priorities', label: 'Quarterly Priorities', duration: 120, icon: ListChecks, description: 'Set new priorities' },
-    { id: 'issues', label: 'Issues', duration: 180, icon: AlertTriangle, description: 'Address challenges' },
+    { id: 'issues', label: 'Issues', duration: 60, icon: AlertTriangle, description: 'IDS - Identify, Discuss, Solve' },
     { id: 'next-steps', label: 'Next Steps', duration: 7, icon: ClipboardList, description: 'Action items' },
     { id: 'conclude', label: 'Conclude', duration: 8, icon: CheckSquare, description: 'Wrap up & rate' }
   ];
@@ -924,54 +924,35 @@ const QuarterlyPlanningMeetingPage = () => {
         return (
           <div className="space-y-4">
             <Card className="border-0 shadow-sm">
-              <CardHeader className="bg-gradient-to-r from-orange-50 to-red-50 rounded-t-lg">
+              <CardHeader className="bg-gradient-to-r from-red-50 to-pink-50 rounded-t-lg">
                 <div className="flex items-center justify-between">
                   <div>
                     <CardTitle className="flex items-center gap-2 text-xl">
-                      <AlertTriangle className="h-5 w-5 text-orange-600" />
-                      Strategic Issues
+                      <AlertTriangle className="h-5 w-5 text-red-600" />
+                      IDS (Issues)
                     </CardTitle>
-                    <CardDescription className="mt-1">Identify and discuss strategic issues for the quarter</CardDescription>
+                    <CardDescription className="mt-1">Identify, Discuss, and Solve issues</CardDescription>
                   </div>
                   <div className="flex items-center gap-3">
                     <Button
                       onClick={() => setShowIssueDialog(true)}
                       size="sm"
-                      className="bg-orange-600 hover:bg-orange-700"
+                      className="bg-red-600 hover:bg-red-700"
                     >
                       <Plus className="h-4 w-4 mr-1" />
                       Add Issue
                     </Button>
                     <div className="text-sm text-gray-500 bg-white px-3 py-1 rounded-full">
-                      30 minutes
+                      60 minutes
                     </div>
                   </div>
                 </div>
               </CardHeader>
               <CardContent className="pt-6">
-                <div className="mb-6 p-4 bg-gradient-to-r from-blue-50 to-indigo-50 rounded-xl border border-blue-100">
-                  <h4 className="font-semibold text-gray-900 mb-2">Focus on Strategic Issues</h4>
-                  <p className="text-sm text-gray-600 mb-3">
-                    Discuss issues that could impact the quarter ahead. Tactical issues should be handled in weekly meetings.
+                <div className="bg-amber-50 border border-amber-200 rounded-lg p-4 mb-6">
+                  <p className="text-amber-800 text-center">
+                    <span className="font-semibold">Quick voting:</span> Everyone votes on the most important issues. Then discuss and solve the top-voted issues using IDS.
                   </p>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-2 text-sm text-gray-700">
-                    <div className="flex items-start gap-2">
-                      <CheckCircle className="h-4 w-4 text-green-500 mt-0.5" />
-                      <span>Market changes or competitive threats</span>
-                    </div>
-                    <div className="flex items-start gap-2">
-                      <CheckCircle className="h-4 w-4 text-green-500 mt-0.5" />
-                      <span>Resource constraints or capacity</span>
-                    </div>
-                    <div className="flex items-start gap-2">
-                      <CheckCircle className="h-4 w-4 text-green-500 mt-0.5" />
-                      <span>Major process improvements</span>
-                    </div>
-                    <div className="flex items-start gap-2">
-                      <CheckCircle className="h-4 w-4 text-green-500 mt-0.5" />
-                      <span>Team structure or role changes</span>
-                    </div>
-                  </div>
                 </div>
               </CardContent>
             </Card>
