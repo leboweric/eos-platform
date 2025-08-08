@@ -25,7 +25,8 @@ import {
   Archive,
   MoreVertical,
   AlertCircle,
-  CheckCircle
+  CheckCircle,
+  Users
 } from 'lucide-react';
 
 const IssuesListClean = ({ 
@@ -34,7 +35,8 @@ const IssuesListClean = ({
   onStatusChange, 
   onTimelineChange, 
   onArchive,
-  onVote, 
+  onVote,
+  onMoveToTeam,
   getStatusColor, 
   getStatusIcon, 
   readOnly = false, 
@@ -229,6 +231,18 @@ const IssuesListClean = ({
                             >
                               <Archive className="mr-2 h-4 w-4" />
                               Archive
+                            </DropdownMenuItem>
+                          )}
+                          {onMoveToTeam && (
+                            <DropdownMenuItem 
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                onMoveToTeam(issue);
+                              }}
+                              className="cursor-pointer"
+                            >
+                              <Users className="mr-2 h-4 w-4" />
+                              Move to Team
                             </DropdownMenuItem>
                           )}
                         </DropdownMenuContent>

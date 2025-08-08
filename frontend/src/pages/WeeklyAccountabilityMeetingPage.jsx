@@ -36,6 +36,7 @@ import ScorecardTable from '../components/scorecard/ScorecardTableClean';
 import PriorityCard from '../components/priorities/PriorityCardClean';
 import IssuesList from '../components/issues/IssuesListClean';
 import IssueDialog from '../components/issues/IssueDialog';
+import { MoveIssueDialog } from '../components/issues/MoveIssueDialog';
 import TodosList from '../components/todos/TodosListClean';
 import TodoDialog from '../components/todos/TodoDialog';
 import MetricTrendChart from '../components/scorecard/MetricTrendChart';
@@ -75,6 +76,8 @@ const WeeklyAccountabilityMeetingPage = () => {
   // Dialog states
   const [showIssueDialog, setShowIssueDialog] = useState(false);
   const [editingIssue, setEditingIssue] = useState(null);
+  const [showMoveDialog, setShowMoveDialog] = useState(false);
+  const [movingIssue, setMovingIssue] = useState(null);
   const [showTodoDialog, setShowTodoDialog] = useState(false);
   const [editingTodo, setEditingTodo] = useState(null);
   const [chartModal, setChartModal] = useState({ isOpen: false, metric: null, metricId: null });
@@ -564,6 +567,18 @@ const WeeklyAccountabilityMeetingPage = () => {
       console.error('Failed to archive issue:', error);
       setError('Failed to archive issue');
     }
+  };
+
+  const handleMoveToTeam = (issue) => {
+    setMovingIssue(issue);
+    setShowMoveDialog(true);
+  };
+
+  const handleMoveSuccess = async (message) => {
+    setSuccess(message);
+    setShowMoveDialog(false);
+    setMovingIssue(null);
+    await fetchIssuesData();
   };
 
   const handleSaveTodo = async (todoData) => {
@@ -1438,6 +1453,7 @@ const WeeklyAccountabilityMeetingPage = () => {
                     onTimelineChange={handleTimelineChange}
                     onArchive={handleArchive}
                     onVote={handleVote}
+                    onMoveToTeam={handleMoveToTeam}
                     getStatusColor={(status) => {
                       switch (status) {
                         case 'open':
@@ -1670,6 +1686,17 @@ const WeeklyAccountabilityMeetingPage = () => {
         issue={editingIssue}
         onSave={handleSaveIssue}
         teamMembers={teamMembers || []}
+      />
+
+      {/* Move Issue Dialog */}
+      <MoveIssueDialog
+        isOpen={showMoveDialog}
+        onClose={() => {
+          setShowMoveDialog(false);
+          setMovingIssue(null);
+        }}
+        issue={movingIssue}
+        onSuccess={handleMoveSuccess}
       />
       
       {/* Todo Dialog */}
