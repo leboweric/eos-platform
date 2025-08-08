@@ -489,6 +489,86 @@ const QuarterlyPlanningMeetingPage = () => {
                     <span className="font-semibold">Status Check:</span> Review what was accomplished, what wasn't, and why. Be honest about successes and failures.
                   </p>
                 </div>
+                
+                {/* Action Buttons */}
+                <div className="flex gap-3 justify-center">
+                  {priorities.filter(p => p.status === 'complete').length > 0 && (
+                    <Button
+                      onClick={async () => {
+                        try {
+                          const orgId = localStorage.getItem('impersonatedOrgId') || user?.organizationId || user?.organization_id;
+                          const effectiveTeamId = teamId || user?.teamId || '00000000-0000-0000-0000-000000000000';
+                          
+                          // Archive completed priorities
+                          const completedPriorities = priorities.filter(p => p.status === 'complete');
+                          for (const priority of completedPriorities) {
+                            await quarterlyPrioritiesService.archivePriority(orgId, effectiveTeamId, priority.id);
+                          }
+                          
+                          setSuccess(`${completedPriorities.length} completed priorities archived`);
+                          fetchPrioritiesData(); // Refresh the list
+                        } catch (error) {
+                          console.error('Failed to archive priorities:', error);
+                          setError('Failed to archive completed priorities');
+                        }
+                      }}
+                      variant="outline"
+                      className="text-gray-600 hover:text-gray-900"
+                    >
+                      <Archive className="mr-2 h-4 w-4" />
+                      Archive Complete Priorities ({priorities.filter(p => p.status === 'complete').length})
+                    </Button>
+                  )}
+                  
+                  {priorities.filter(p => p.status !== 'complete').length > 0 && (
+                    <Button
+                      onClick={async () => {
+                        try {
+                          const orgId = localStorage.getItem('impersonatedOrgId') || user?.organizationId || user?.organization_id;
+                          const effectiveTeamId = teamId || user?.teamId || '00000000-0000-0000-0000-000000000000';
+                          
+                          // Add incomplete priorities to issues list
+                          const incompletePriorities = priorities.filter(p => p.status !== 'complete');
+                          let issuesCreated = 0;
+                          
+                          for (const priority of incompletePriorities) {
+                            try {
+                              await issuesService.createIssue({
+                                title: `Incomplete Priority: ${priority.title || priority.name}`,
+                                description: `This priority was not completed last quarter and needs attention.\n\nOriginal Description: ${priority.description || 'No description'}\nOwner: ${priority.owner?.name || 'Unassigned'}\nStatus: ${priority.status || 'incomplete'}`,
+                                timeline: 'short_term',
+                                ownerId: priority.owner?.id || priority.owner_id || null,
+                                department_id: effectiveTeamId,
+                                status: 'open',
+                                priority_level: 'high',
+                                related_priority_id: priority.id
+                              });
+                              issuesCreated++;
+                            } catch (error) {
+                              // Skip if duplicate or other error
+                              console.log(`Could not create issue for priority: ${priority.title}`, error);
+                            }
+                          }
+                          
+                          if (issuesCreated > 0) {
+                            setSuccess(`${issuesCreated} issue(s) created from incomplete priorities`);
+                          } else {
+                            setError('Issues may already exist for these priorities');
+                          }
+                        } catch (error) {
+                          console.error('Failed to create issues:', error);
+                          setError('Failed to create issues from incomplete priorities');
+                        }
+                      }}
+                      variant="outline"
+                      className="text-gray-600 hover:text-gray-900"
+                    >
+                      <AlertTriangle className="mr-2 h-4 w-4" />
+                      Add Incomplete Priorities to Issues List ({priorities.filter(p => p.status !== 'complete').length})
+                    </Button>
+                  )}
+                </div>
+                
                 {/* Company Priorities Section */}
                 {(() => {
                   const companyPriorities = priorities.filter(p => p.priority_type === 'company');
