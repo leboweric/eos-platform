@@ -191,19 +191,39 @@ export const quarterlyPrioritiesService = {
       const response = await axios.get(
         `/organizations/${orgId}/teams/${teamId}/quarterly-priorities/priorities/${priorityId}/attachments/${attachmentId}/download`,
         {
-          responseType: 'blob'
+          responseType: 'blob',
+          // Ensure binary data is handled correctly
+          headers: {
+            'Accept': 'application/octet-stream'
+          }
         }
       );
       
+      console.log('Download response:', {
+        status: response.status,
+        contentType: response.headers['content-type'],
+        dataSize: response.data.size,
+        dataType: response.data.type
+      });
+      
+      // Create blob with the correct MIME type from response headers
+      const contentType = response.headers['content-type'] || 'application/octet-stream';
+      const blob = new Blob([response.data], { type: contentType });
+      
       // Create a download link
-      const url = window.URL.createObjectURL(new Blob([response.data]));
+      const url = window.URL.createObjectURL(blob);
       const link = document.createElement('a');
       link.href = url;
-      link.setAttribute('download', fileName);
+      link.download = fileName || 'download';
+      link.style.display = 'none';
       document.body.appendChild(link);
       link.click();
-      link.remove();
-      window.URL.revokeObjectURL(url);
+      
+      // Clean up
+      setTimeout(() => {
+        document.body.removeChild(link);
+        window.URL.revokeObjectURL(url);
+      }, 100);
     } catch (error) {
       console.error('Download failed:', error);
       throw error;

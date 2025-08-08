@@ -1617,16 +1617,13 @@ export const downloadPriorityAttachment = async (req, res) => {
   try {
     const { orgId, teamId, priorityId, attachmentId } = req.params;
 
-    console.log('Download request for attachment:', { attachmentId, priorityId, orgId });
-
-    // Get attachment details including file data - ensure bytea is returned as Buffer
+    // Get attachment details - use encode() to reliably get hex data
     const result = await query(
       `SELECT 
         a.file_name, 
-        a.file_data,
         a.mime_type, 
         a.file_size,
-        encode(a.file_data, 'hex') as file_data_hex,
+        encode(a.file_data, 'base64') as file_data_base64,
         p.organization_id
        FROM priority_attachments a
        JOIN quarterly_priorities p ON a.priority_id = p.id
@@ -1643,8 +1640,8 @@ export const downloadPriorityAttachment = async (req, res) => {
 
     const attachment = result.rows[0];
 
-    // Check if we have file data in some form
-    if (!attachment.file_data && !attachment.file_data_hex) {
+    // Check if we have file data
+    if (!attachment.file_data_base64) {
       console.error('No file data found for attachment:', attachmentId);
       return res.status(404).json({
         success: false,
@@ -1652,57 +1649,19 @@ export const downloadPriorityAttachment = async (req, res) => {
       });
     }
 
-    // Debug logging
-    console.log('File name:', attachment.file_name);
-    console.log('MIME type:', attachment.mime_type);
-    console.log('File size from DB:', attachment.file_size);
-    console.log('Has file_data:', !!attachment.file_data);
-    console.log('Has file_data_hex:', !!attachment.file_data_hex);
-    if (attachment.file_data) {
-      console.log('file_data type:', typeof attachment.file_data);
-      console.log('Is Buffer?', Buffer.isBuffer(attachment.file_data));
-    }
+    // Convert base64 to Buffer
+    const fileBuffer = Buffer.from(attachment.file_data_base64, 'base64');
     
-    // Convert to Buffer - prefer the hex encoded version for reliability
-    let fileBuffer;
-    if (attachment.file_data_hex) {
-      // Use the explicitly hex-encoded data from PostgreSQL
-      fileBuffer = Buffer.from(attachment.file_data_hex, 'hex');
-      console.log('Using hex encoded data, buffer length:', fileBuffer.length);
-    } else if (Buffer.isBuffer(attachment.file_data)) {
-      // If pg returned a Buffer, use it directly
-      fileBuffer = attachment.file_data;
-      console.log('Using Buffer directly, length:', fileBuffer.length);
-    } else if (typeof attachment.file_data === 'string') {
-      // Handle string data
-      if (attachment.file_data.startsWith('\\x')) {
-        // PostgreSQL hex format
-        const hexString = attachment.file_data.substring(2);
-        fileBuffer = Buffer.from(hexString, 'hex');
-        console.log('Converted from \\x hex string, length:', fileBuffer.length);
-      } else {
-        // Try as regular hex string
-        fileBuffer = Buffer.from(attachment.file_data, 'hex');
-        console.log('Converted from hex string, length:', fileBuffer.length);
-      }
-    } else {
-      // Fallback
-      fileBuffer = Buffer.from(attachment.file_data);
-      console.log('Fallback conversion, length:', fileBuffer.length);
-    }
-
-    // Verify buffer size matches expected
-    if (attachment.file_size && fileBuffer.length !== attachment.file_size) {
-      console.warn(`Buffer size mismatch! Expected: ${attachment.file_size}, Got: ${fileBuffer.length}`);
-    }
+    console.log(`Sending file: ${attachment.file_name} (${fileBuffer.length} bytes, type: ${attachment.mime_type})`);
 
     // Set proper headers for binary download
     res.setHeader('Content-Type', attachment.mime_type || 'application/octet-stream');
     res.setHeader('Content-Disposition', `attachment; filename="${attachment.file_name}"`);
-    res.setHeader('Content-Length', fileBuffer.length);
+    res.setHeader('Content-Length', fileBuffer.length.toString());
+    res.setHeader('Cache-Control', 'no-cache');
     
     // Send the binary data
-    res.status(200).end(fileBuffer, 'binary');
+    res.send(fileBuffer);
   } catch (error) {
     console.error('Error downloading priority attachment:', error);
     res.status(500).json({
