@@ -1,5 +1,5 @@
 import express from 'express';
-import { authenticateToken } from '../middleware/auth.js';
+import { authenticate } from '../middleware/auth.js';
 import {
   createCascadingMessage,
   getCascadingMessages,
@@ -10,7 +10,7 @@ import {
 const router = express.Router({ mergeParams: true });
 
 // All routes require authentication
-router.use(authenticateToken);
+router.use(authenticate);
 
 // Create a cascading message
 router.post('/', createCascadingMessage);
