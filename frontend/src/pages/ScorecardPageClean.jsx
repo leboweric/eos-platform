@@ -409,17 +409,15 @@ const ScorecardPageClean = () => {
                   >
                     {viewMode === 'table' ? 'Groups View' : 'Table View'}
                   </button>
-                  {viewMode === 'table' && (
-                    <button
-                      onClick={() => {
-                        setIsRTL(!isRTL);
-                        setShowOptions(false);
-                      }}
-                      className="w-full text-left px-4 py-2 hover:bg-gray-50 text-sm border-t border-gray-100"
-                    >
-                      {isRTL ? 'Left to Right' : 'Right to Left'}
-                    </button>
-                  )}
+                  <button
+                    onClick={() => {
+                      setIsRTL(!isRTL);
+                      setShowOptions(false);
+                    }}
+                    className="w-full text-left px-4 py-2 hover:bg-gray-50 text-sm border-t border-gray-100"
+                  >
+                    {isRTL ? 'Left to Right' : 'Right to Left'}
+                  </button>
                 </div>
               )}
             </div>
@@ -460,6 +458,7 @@ const ScorecardPageClean = () => {
                 orgId={user?.organizationId}
                 teamId={selectedDepartment?.id || LEADERSHIP_TEAM_ID}
                 type="weekly"
+                isRTL={isRTL}
                 onMetricUpdate={handleEditMetric}
                 onScoreUpdate={(metric, period) => handleScoreEdit(metric, period, 'weekly')}
                 onMetricDelete={handleDeleteMetric}
@@ -502,6 +501,7 @@ const ScorecardPageClean = () => {
                 orgId={user?.organizationId}
                 teamId={selectedDepartment?.id || LEADERSHIP_TEAM_ID}
                 type="monthly"
+                isRTL={isRTL}
                 onMetricUpdate={handleEditMetric}
                 onScoreUpdate={(metric, period) => handleScoreEdit(metric, period, 'monthly')}
                 onMetricDelete={handleDeleteMetric}

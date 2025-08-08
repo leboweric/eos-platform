@@ -24,6 +24,7 @@ const GroupedScorecardView = ({
   orgId,
   teamId,
   type, // 'weekly' or 'monthly'
+  isRTL = false,
   onMetricUpdate,
   onScoreUpdate,
   onMetricDelete,
@@ -372,7 +373,8 @@ const GroupedScorecardView = ({
   const renderMetricRow = (metric, index, groupId) => {
     const isWeekly = metric.type === 'weekly';
     const scores = isWeekly ? weeklyScores[metric.id] || {} : monthlyScores[metric.id] || {};
-    const periods = isWeekly ? selectedWeeks : selectedMonths;
+    const periodsOriginal = isWeekly ? selectedWeeks : selectedMonths;
+    const periods = isRTL ? [...periodsOriginal].reverse() : periodsOriginal;
     
     return (
       <tr 
@@ -483,7 +485,8 @@ const GroupedScorecardView = ({
   const renderHeaders = () => {
     const isWeekly = type === 'weekly';
     const periods = isWeekly ? selectedWeeks : selectedMonths;
-    const labels = isWeekly ? weekOptions : monthOptions;
+    const labelsOriginal = isWeekly ? weekOptions : monthOptions;
+    const labels = isRTL ? [...labelsOriginal].reverse() : labelsOriginal;
     
     return (
       <thead className="bg-white border-b border-gray-200">
