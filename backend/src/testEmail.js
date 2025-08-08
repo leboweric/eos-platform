@@ -14,7 +14,7 @@ async function testSendGridEmail() {
   }
   
   console.log('✅ SendGrid API key found');
-  console.log(`📧 FROM email: ${process.env.SENDGRID_FROM_EMAIL || 'noreply@42vibes.com'}`);
+  console.log(`📧 FROM email: ${process.env.SENDGRID_FROM_EMAIL || 'noreply@axp.com'}`);
   
   // Test email address - you should change this to your email
   const testEmail = 'eric@profitbuildernetwork.com';
@@ -25,7 +25,7 @@ async function testSendGridEmail() {
     // Send a password reset email as a test
     await sendEmail(testEmail, 'passwordReset', {
       firstName: 'Test User',
-      resetLink: 'https://42vibes.com/reset-password?token=test-token-123'
+      resetLink: 'https://axp.com/reset-password?token=test-token-123'
     });
     
     console.log('\n✅ Email sent successfully!');
