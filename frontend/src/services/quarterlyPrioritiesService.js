@@ -185,45 +185,25 @@ export const quarterlyPrioritiesService = {
     return response.data;
   },
 
-  // Download an attachment
+  // Download an attachment - matching Issues implementation which works
   async downloadAttachment(orgId, teamId, priorityId, attachmentId, fileName) {
     try {
       const response = await axios.get(
         `/organizations/${orgId}/teams/${teamId}/quarterly-priorities/priorities/${priorityId}/attachments/${attachmentId}/download`,
         {
-          responseType: 'blob',
-          // Ensure binary data is handled correctly
-          headers: {
-            'Accept': 'application/octet-stream'
-          }
+          responseType: 'blob'
         }
       );
       
-      console.log('Download response:', {
-        status: response.status,
-        contentType: response.headers['content-type'],
-        dataSize: response.data.size,
-        dataType: response.data.type
-      });
-      
-      // Create blob with the correct MIME type from response headers
-      const contentType = response.headers['content-type'] || 'application/octet-stream';
-      const blob = new Blob([response.data], { type: contentType });
-      
-      // Create a download link
-      const url = window.URL.createObjectURL(blob);
-      const link = document.createElement('a');
-      link.href = url;
-      link.download = fileName || 'download';
-      link.style.display = 'none';
-      document.body.appendChild(link);
-      link.click();
-      
-      // Clean up
-      setTimeout(() => {
-        document.body.removeChild(link);
-        window.URL.revokeObjectURL(url);
-      }, 100);
+      // Create a download link directly from the blob - matching Issues
+      const url = window.URL.createObjectURL(response.data);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = fileName;
+      document.body.appendChild(a);
+      a.click();
+      window.URL.revokeObjectURL(url);
+      document.body.removeChild(a);
     } catch (error) {
       console.error('Download failed:', error);
       throw error;

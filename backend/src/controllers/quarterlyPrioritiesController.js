@@ -1617,14 +1617,12 @@ export const downloadPriorityAttachment = async (req, res) => {
   try {
     const { orgId, teamId, priorityId, attachmentId } = req.params;
 
-    // Get attachment details - use encode() to reliably get hex data
+    // Get attachment details - same approach as Issues which works
     const result = await query(
       `SELECT 
-        a.file_name, 
-        a.mime_type, 
-        a.file_size,
-        encode(a.file_data, 'base64') as file_data_base64,
-        p.organization_id
+        a.file_name,
+        a.file_data,
+        a.mime_type
        FROM priority_attachments a
        JOIN quarterly_priorities p ON a.priority_id = p.id
        WHERE a.id = $1 AND a.priority_id = $2 AND p.organization_id = $3`,
@@ -1638,10 +1636,10 @@ export const downloadPriorityAttachment = async (req, res) => {
       });
     }
 
-    const attachment = result.rows[0];
+    const { file_name, file_data, mime_type } = result.rows[0];
 
     // Check if we have file data
-    if (!attachment.file_data_base64) {
+    if (!file_data) {
       console.error('No file data found for attachment:', attachmentId);
       return res.status(404).json({
         success: false,
@@ -1649,19 +1647,13 @@ export const downloadPriorityAttachment = async (req, res) => {
       });
     }
 
-    // Convert base64 to Buffer
-    const fileBuffer = Buffer.from(attachment.file_data_base64, 'base64');
+    // Set headers for file download - exactly like Issues
+    res.setHeader('Content-Type', mime_type || 'application/octet-stream');
+    res.setHeader('Content-Disposition', `attachment; filename="${file_name}"`);
+    res.setHeader('Content-Length', file_data.length);
     
-    console.log(`Sending file: ${attachment.file_name} (${fileBuffer.length} bytes, type: ${attachment.mime_type})`);
-
-    // Set proper headers for binary download
-    res.setHeader('Content-Type', attachment.mime_type || 'application/octet-stream');
-    res.setHeader('Content-Disposition', `attachment; filename="${attachment.file_name}"`);
-    res.setHeader('Content-Length', fileBuffer.length.toString());
-    res.setHeader('Cache-Control', 'no-cache');
-    
-    // Send the binary data
-    res.send(fileBuffer);
+    // Send the file data - exactly like Issues
+    res.send(file_data);
   } catch (error) {
     console.error('Error downloading priority attachment:', error);
     res.status(500).json({
