@@ -493,35 +493,39 @@ const PriorityCardClean = ({
                 
                 <div className="space-y-2">
                   {priority.updates?.slice(0, 3).map((update, index) => (
-                    <div key={update.id || index} className="group p-2 bg-gray-50 rounded-lg relative">
-                      <p className="text-sm text-gray-700 pr-16">{update.text}</p>
-                      <div className="text-xs text-gray-500 mt-1">
-                        {update.createdBy} • {formatDate(update.createdAt)}
-                      </div>
-                      {(onDeleteUpdate || onEditUpdate) && (
-                        <div className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity flex gap-1">
-                          {onEditUpdate && (
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              onClick={() => onEditUpdate(priority.id, update.id, update.text)}
-                              className="h-6 w-6 p-0 hover:bg-blue-100"
-                            >
-                              <Edit2 className="h-3 w-3 text-blue-600" />
-                            </Button>
-                          )}
-                          {onDeleteUpdate && (
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              onClick={() => onDeleteUpdate(priority.id, update.id)}
-                              className="h-6 w-6 p-0 hover:bg-red-100"
-                            >
-                              <Trash2 className="h-3 w-3 text-red-600" />
-                            </Button>
-                          )}
+                    <div key={update.id || index} className="group p-2 bg-gray-50 rounded-lg">
+                      <div className="flex items-start gap-2">
+                        <div className="flex-1">
+                          <p className="text-sm text-gray-700">{update.text}</p>
+                          <div className="text-xs text-gray-500 mt-1">
+                            {update.createdBy} • {formatDate(update.createdAt)}
+                          </div>
                         </div>
-                      )}
+                        {(onDeleteUpdate || onEditUpdate) && (
+                          <div className="opacity-0 group-hover:opacity-100 transition-opacity flex gap-1">
+                            {onEditUpdate && (
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => onEditUpdate(priority.id, update.id, update.text)}
+                                className="h-6 w-6 p-0 hover:bg-blue-100"
+                              >
+                                <Edit2 className="h-3 w-3 text-blue-600" />
+                              </Button>
+                            )}
+                            {onDeleteUpdate && (
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => onDeleteUpdate(priority.id, update.id)}
+                                className="h-6 w-6 p-0 hover:bg-red-100"
+                              >
+                                <Trash2 className="h-3 w-3 text-red-600" />
+                              </Button>
+                            )}
+                          </div>
+                        )}
+                      </div>
                     </div>
                   ))}
                   
