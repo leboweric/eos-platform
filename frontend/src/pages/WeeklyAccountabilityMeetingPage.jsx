@@ -112,9 +112,9 @@ const WeeklyAccountabilityMeetingPage = () => {
     { id: 'good-news', label: 'Good News', icon: Smile, duration: 5 },
     { id: 'scorecard', label: 'Scorecard', icon: BarChart, duration: 5 },
     { id: 'priorities', label: 'Priorities', icon: Target, duration: 5 },
-    { id: 'headlines', label: 'Headlines', icon: Newspaper, duration: 60 },
+    { id: 'headlines', label: 'Headlines', icon: Newspaper, duration: 5 },
     { id: 'todo-list', label: 'To-do List', icon: ListTodo, duration: 5 },
-    { id: 'issues', label: 'Issues', icon: AlertTriangle, duration: 10 },
+    { id: 'issues', label: 'Issues', icon: AlertTriangle, duration: 60 },
     { id: 'conclude', label: 'Conclude', icon: CheckSquare, duration: 5 }
   ];
 
@@ -1077,7 +1077,7 @@ const WeeklyAccountabilityMeetingPage = () => {
                   <CardDescription className="mt-1">Share important updates</CardDescription>
                 </div>
                 <div className="text-sm text-gray-500 bg-white px-3 py-1 rounded-full">
-                  60 minutes
+                  5 minutes
                 </div>
               </div>
             </CardHeader>
@@ -1194,7 +1194,7 @@ const WeeklyAccountabilityMeetingPage = () => {
                     <CardDescription className="mt-1">Identify, Discuss, and Solve issues</CardDescription>
                   </div>
                   <div className="text-sm text-gray-500 bg-white px-3 py-1 rounded-full">
-                    10 minutes
+                    60 minutes
                   </div>
                 </div>
               </CardHeader>
