@@ -577,11 +577,14 @@ const QuarterlyPrioritiesPageClean = () => {
       setTeamMemberPriorities(prev => {
         const updated = { ...prev };
         Object.keys(updated).forEach(memberId => {
-          // Ensure the value is an array before calling map
-          if (Array.isArray(updated[memberId])) {
-            updated[memberId] = updated[memberId].map(p => 
-              p.id === priorityId ? { ...p, status: newStatus } : p
-            );
+          // Handle the nested structure: memberData.priorities
+          if (updated[memberId] && updated[memberId].priorities && Array.isArray(updated[memberId].priorities)) {
+            updated[memberId] = {
+              ...updated[memberId],
+              priorities: updated[memberId].priorities.map(p => 
+                p.id === priorityId ? { ...p, status: newStatus } : p
+              )
+            };
           }
         });
         return updated;
@@ -598,11 +601,14 @@ const QuarterlyPrioritiesPageClean = () => {
           }
           if (updated[quarter] && updated[quarter].teamMemberPriorities) {
             Object.keys(updated[quarter].teamMemberPriorities).forEach(memberId => {
-              if (Array.isArray(updated[quarter].teamMemberPriorities[memberId])) {
-                updated[quarter].teamMemberPriorities[memberId] = 
-                  updated[quarter].teamMemberPriorities[memberId].map(p =>
+              const memberData = updated[quarter].teamMemberPriorities[memberId];
+              if (memberData && memberData.priorities && Array.isArray(memberData.priorities)) {
+                updated[quarter].teamMemberPriorities[memberId] = {
+                  ...memberData,
+                  priorities: memberData.priorities.map(p =>
                     p.id === priorityId ? { ...p, status: newStatus } : p
-                  );
+                  )
+                };
               }
             });
           }
