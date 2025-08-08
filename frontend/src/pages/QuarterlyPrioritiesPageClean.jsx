@@ -557,18 +557,21 @@ const QuarterlyPrioritiesPageClean = () => {
       
       // Update local state for company priorities
       setCompanyPriorities(prev => 
-        prev.map(p => 
+        Array.isArray(prev) ? prev.map(p => 
           p.id === priorityId ? { ...p, status: newStatus } : p
-        )
+        ) : []
       );
       
       // Update local state for team member priorities
       setTeamMemberPriorities(prev => {
         const updated = { ...prev };
         Object.keys(updated).forEach(memberId => {
-          updated[memberId] = updated[memberId].map(p => 
-            p.id === priorityId ? { ...p, status: newStatus } : p
-          );
+          // Ensure the value is an array before calling map
+          if (Array.isArray(updated[memberId])) {
+            updated[memberId] = updated[memberId].map(p => 
+              p.id === priorityId ? { ...p, status: newStatus } : p
+            );
+          }
         });
         return updated;
       });
@@ -577,17 +580,19 @@ const QuarterlyPrioritiesPageClean = () => {
       setArchivedPriorities(prev => {
         const updated = { ...prev };
         Object.keys(updated).forEach(quarter => {
-          if (updated[quarter].companyPriorities) {
+          if (updated[quarter] && updated[quarter].companyPriorities && Array.isArray(updated[quarter].companyPriorities)) {
             updated[quarter].companyPriorities = updated[quarter].companyPriorities.map(p =>
               p.id === priorityId ? { ...p, status: newStatus } : p
             );
           }
-          if (updated[quarter].teamMemberPriorities) {
+          if (updated[quarter] && updated[quarter].teamMemberPriorities) {
             Object.keys(updated[quarter].teamMemberPriorities).forEach(memberId => {
-              updated[quarter].teamMemberPriorities[memberId] = 
-                updated[quarter].teamMemberPriorities[memberId].map(p =>
-                  p.id === priorityId ? { ...p, status: newStatus } : p
-                );
+              if (Array.isArray(updated[quarter].teamMemberPriorities[memberId])) {
+                updated[quarter].teamMemberPriorities[memberId] = 
+                  updated[quarter].teamMemberPriorities[memberId].map(p =>
+                    p.id === priorityId ? { ...p, status: newStatus } : p
+                  );
+              }
             });
           }
         });
@@ -596,8 +601,12 @@ const QuarterlyPrioritiesPageClean = () => {
       
       // If the priority is marked as off-track, create an issue
       if (newStatus === 'off-track') {
-        const priority = [...companyPriorities, ...Object.values(teamMemberPriorities).flat()]
-          .find(p => p.id === priorityId);
+        // Safely collect all priorities
+        const allPriorities = [
+          ...(Array.isArray(companyPriorities) ? companyPriorities : []),
+          ...Object.values(teamMemberPriorities).filter(Array.isArray).flat()
+        ];
+        const priority = allPriorities.find(p => p.id === priorityId);
         
         if (priority) {
           const issueData = {
