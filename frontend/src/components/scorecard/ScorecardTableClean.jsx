@@ -163,6 +163,12 @@ const ScorecardTableClean = ({
                 <th className={meetingMode ? "w-8" : "w-6"}></th>
                 <th className={'text-center font-medium text-gray-600 ' + (meetingMode ? 'px-2 py-2 text-sm' : 'px-1 text-[10px]')}>Goal</th>
                 
+                {showAverage ? (
+                  <th className={'text-center font-medium text-gray-700 ' + (meetingMode ? 'px-2 py-2 text-sm bg-gray-100' : 'px-1 text-[10px] border-l border-gray-200')}>
+                    13w Avg
+                  </th>
+                ) : null}
+                
                 {/* Week columns */}
                 {periodLabels.map((label, index) => {
                   const originalIndex = isRTL ? periodLabelsOriginal.length - 1 - index : index;
@@ -177,12 +183,6 @@ const ScorecardTableClean = ({
                     </th>
                   );
                 })}
-                
-                {showAverage ? (
-                  <th className={'text-center font-medium text-gray-700 ' + (meetingMode ? 'px-2 py-2 text-sm bg-gray-100' : 'px-1 text-[10px] border-l border-gray-200')}>
-                    Avg
-                  </th>
-                ) : null}
                 {showTotal && (
                   <th className={'text-center font-semibold text-gray-700 ' + (meetingMode ? 'px-2 py-2 text-sm bg-gray-100' : 'p-1 text-xs border-l border-gray-200')}>
                     Total
@@ -262,6 +262,29 @@ const ScorecardTableClean = ({
                     <td className={'text-center font-medium text-gray-700 ' + (meetingMode ? 'px-2 py-2 text-sm' : 'px-1 text-[10px]')}>
                       {formatGoal(metric.goal, metric.value_type, metric.comparison_operator)}
                     </td>
+                    
+                    {/* Average column */}
+                    {showAverage ? (
+                      <td className={'text-center ' + (meetingMode ? 'px-2 py-2 bg-gray-50' : 'px-1 bg-white border-l border-gray-200')}>
+                        {average !== null ? (
+                          meetingMode ? (
+                            <div className={'inline-block px-2 py-0.5 rounded-full text-xs font-medium ' + 
+                              (avgGoalMet ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800')
+                            }>
+                              {metric.value_type === 'number' ? Math.round(average) : formatValue(average, metric.value_type)}
+                            </div>
+                          ) : (
+                            <span className={'text-[10px] px-0.5 rounded ' + 
+                              (avgGoalMet ? 'text-green-700' : 'text-red-700')
+                            }>
+                              {metric.value_type === 'number' ? Math.round(average) : formatValue(average, metric.value_type)}
+                            </span>
+                          )
+                        ) : (
+                          <span className={'text-gray-400 ' + (meetingMode ? 'text-xs' : 'text-[10px]')}>-</span>
+                        )}
+                      </td>
+                    ) : null}
                     
                     {/* Period columns */}
                     {periodDates.map((periodDate, index) => {

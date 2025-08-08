@@ -47,6 +47,7 @@ const ScorecardPageClean = () => {
   const [groups, setGroups] = useState([]);
   const [viewMode, setViewMode] = useState('table'); // 'table' or 'groups'
   const [showOptions, setShowOptions] = useState(false);
+  const [isRTL, setIsRTL] = useState(false); // Add RTL state
   
   // Filter metrics by type
   const weeklyMetrics = metrics.filter(m => m.type === 'weekly');
@@ -408,6 +409,17 @@ const ScorecardPageClean = () => {
                   >
                     {viewMode === 'table' ? 'Groups View' : 'Table View'}
                   </button>
+                  {viewMode === 'table' && (
+                    <button
+                      onClick={() => {
+                        setIsRTL(!isRTL);
+                        setShowOptions(false);
+                      }}
+                      className="w-full text-left px-4 py-2 hover:bg-gray-50 text-sm border-t border-gray-100"
+                    >
+                      {isRTL ? 'Left to Right' : 'Right to Left'}
+                    </button>
+                  )}
                 </div>
               )}
             </div>
@@ -468,7 +480,7 @@ const ScorecardPageClean = () => {
                 monthlyScores={monthlyScores}
                 type="weekly"
                 readOnly={false}
-                isRTL={false}
+                isRTL={isRTL}
                 showTotal={false}
                 departmentId={selectedDepartment?.id || LEADERSHIP_TEAM_ID}
                 onIssueCreated={null}
@@ -510,7 +522,7 @@ const ScorecardPageClean = () => {
                 monthlyScores={monthlyScores}
                 type="monthly"
                 readOnly={false}
-                isRTL={false}
+                isRTL={isRTL}
                 showTotal={false}
                 departmentId={selectedDepartment?.id || LEADERSHIP_TEAM_ID}
                 onIssueCreated={null}

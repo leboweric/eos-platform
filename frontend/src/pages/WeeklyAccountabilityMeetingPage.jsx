@@ -859,6 +859,18 @@ const WeeklyAccountabilityMeetingPage = () => {
                   />
                   <span className="text-sm text-gray-600">Show Total</span>
                 </label>
+                <label className="flex items-center gap-2 cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={isRTL}
+                    onChange={(e) => {
+                      setIsRTL(e.target.checked);
+                      localStorage.setItem('scorecardRTL', e.target.checked.toString());
+                    }}
+                    className="rounded border-gray-300 text-indigo-600 focus:ring-indigo-500"
+                  />
+                  <span className="text-sm text-gray-600">Right to Left</span>
+                </label>
               </div>
             )}
             
@@ -882,7 +894,7 @@ const WeeklyAccountabilityMeetingPage = () => {
                 monthlyScores={{}}
                 type="weekly"
                 readOnly={true}
-                isRTL={false}
+                isRTL={isRTL}
                 showTotal={showScorecardTotal}
                 showAverage={showScorecardAverage}
                 departmentId={teamId || user?.teamId || '00000000-0000-0000-0000-000000000000'}
