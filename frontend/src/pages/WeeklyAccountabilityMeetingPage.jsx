@@ -245,7 +245,16 @@ const WeeklyAccountabilityMeetingPage = () => {
       const effectiveTeamId = teamId || user?.teamId || '00000000-0000-0000-0000-000000000000';
       
       const response = await issuesService.getIssues('short_term', false, effectiveTeamId);
-      setIssues(response.data.issues || []);
+      // Sort issues by vote count (highest first), then by created date (newest first)
+      const sortedIssues = (response.data.issues || []).sort((a, b) => {
+        // First sort by vote count (descending)
+        if (b.vote_count !== a.vote_count) {
+          return (b.vote_count || 0) - (a.vote_count || 0);
+        }
+        // Then by created date (newest first)
+        return new Date(b.created_at) - new Date(a.created_at);
+      });
+      setIssues(sortedIssues);
       setTeamMembers(response.data.teamMembers || []);
     } catch (error) {
       console.error('Failed to fetch issues:', error);
@@ -434,7 +443,17 @@ const WeeklyAccountabilityMeetingPage = () => {
         return issue;
       };
       
-      setIssues(prev => prev.map(updateVote));
+      // Update and sort issues by vote count
+      setIssues(prev => {
+        const updated = prev.map(updateVote);
+        // Sort by vote count (highest first), then by created date (newest first)
+        return updated.sort((a, b) => {
+          if (b.vote_count !== a.vote_count) {
+            return (b.vote_count || 0) - (a.vote_count || 0);
+          }
+          return new Date(b.created_at) - new Date(a.created_at);
+        });
+      });
       
       if (shouldVote) {
         await issuesService.voteForIssue(issueId);
