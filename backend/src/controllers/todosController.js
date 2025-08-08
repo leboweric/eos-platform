@@ -24,12 +24,10 @@ export const getTodos = async (req, res) => {
     let paramIndex = 2;
 
     // Filter by archived status - by default, exclude archived
-    // NOTE: Check if archived column exists (for backwards compatibility)
     const includeArchived = req.query.includeArchived === 'true';
-    // Temporarily disabled until migration is run
-    // if (!includeArchived) {
-    //   conditions.push(`(t.archived = false OR t.archived IS NULL)`);
-    // }
+    if (!includeArchived) {
+      conditions.push(`(t.archived = false OR t.archived IS NULL)`);
+    }
 
     // Filter by status
     if (status) {
