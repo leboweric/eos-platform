@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useParams } from 'react-router-dom';
 import { useAuthStore } from '../stores/authStore';
+import { format } from 'date-fns';
 import { meetingsService } from '../services/meetingsService';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -726,6 +727,50 @@ const WeeklyAccountabilityMeetingPage = () => {
     }
   };
 
+  const handleCreateDiscussionIssue = async (priority) => {
+    try {
+      const orgId = localStorage.getItem('impersonatedOrgId') || user?.organizationId || user?.organization_id;
+      const effectiveTeamId = teamId || user?.teamId || '00000000-0000-0000-0000-000000000000';
+      
+      // Ensure we have a valid title
+      const priorityTitle = priority.title || priority.name || 'Untitled Priority';
+      const ownerName = priority.owner?.name || 'Unassigned';
+      const dueDate = priority.dueDate ? format(new Date(priority.dueDate), 'MMM dd, yyyy') : 'Not set';
+      
+      // Create discussion issue
+      const issueData = {
+        title: `Discussion: ${priorityTitle}`,
+        description: `Priority "${priorityTitle}" has been dropped down for discussion.\n\nStatus: ${priority.status || 'on-track'}\nOwner: ${ownerName}\nDue Date: ${dueDate}\n\nDescription: ${priority.description || 'No description provided'}`,
+        timeline: 'short_term',
+        department_id: effectiveTeamId,
+        teamId: effectiveTeamId,
+        ownerId: priority.owner?.id || priority.owner_id || priority.ownerId || user?.id,
+        status: 'open',
+        priority_level: 'medium',
+        related_priority_id: priority.id
+      };
+      
+      await issuesService.createIssue(issueData);
+      
+      // Show success message with visual feedback
+      setSuccess(
+        <div className="flex items-center gap-2">
+          <CheckCircle className="h-4 w-4" />
+          <span>Discussion issue created and added to Issues List</span>
+        </div>
+      );
+      
+      // Refresh issues data
+      await fetchIssuesData();
+      
+      // Clear success message after 5 seconds
+      setTimeout(() => setSuccess(null), 5000);
+    } catch (error) {
+      console.error('Failed to create discussion issue:', error);
+      setError('Failed to create discussion issue');
+    }
+  };
+
   const handleCreateMilestone = async (priorityId, milestoneData) => {
     try {
       const orgId = localStorage.getItem('impersonatedOrgId') || user?.organizationId || user?.organization_id;
@@ -1155,6 +1200,7 @@ const WeeklyAccountabilityMeetingPage = () => {
                               }}
                               onStatusChange={handlePriorityStatusChange}
                               onToggleMilestone={handleUpdateMilestone}
+                              onCreateDiscussionIssue={handleCreateDiscussionIssue}
                             />
                           ))}
                         </div>
@@ -1220,6 +1266,7 @@ const WeeklyAccountabilityMeetingPage = () => {
                                     }}
                                     onStatusChange={handlePriorityStatusChange}
                                     onToggleMilestone={handleUpdateMilestone}
+                                    onCreateDiscussionIssue={handleCreateDiscussionIssue}
                                   />
                                 ))}
                               </div>

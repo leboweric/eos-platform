@@ -49,6 +49,7 @@ const PriorityCardClean = ({
   onUploadAttachment,
   onDownloadAttachment,
   onDeleteAttachment,
+  onCreateDiscussionIssue,
   teamMembers = [],
   readOnly = false
 }) => {
@@ -394,6 +395,17 @@ const PriorityCardClean = ({
                   >
                     <MessageSquare className="h-3 w-3 mr-1" />
                     Add Update
+                  </Button>
+                )}
+                {onCreateDiscussionIssue && priority.status !== 'off-track' && (
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => onCreateDiscussionIssue(priority)}
+                    className="h-7 text-xs border-orange-300 text-orange-600 hover:bg-orange-50"
+                  >
+                    <AlertTriangle className="h-3 w-3 mr-1" />
+                    Drop Down for Discussion
                   </Button>
                 )}
               </div>
