@@ -6,6 +6,7 @@ import { organizationService } from '../services/organizationService';
 import { issuesService } from '../services/issuesService';
 import { getRevenueLabel, getRevenueLabelWithSuffix } from '../utils/revenueUtils';
 import { useDepartment } from '../contexts/DepartmentContext';
+import PriorityCardClean from '../components/priorities/PriorityCardClean';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -547,6 +548,81 @@ const QuarterlyPrioritiesPageClean = () => {
     }
   };
 
+  const handlePriorityStatusChange = async (priorityId, newStatus) => {
+    try {
+      const orgId = localStorage.getItem('impersonatedOrgId') || user?.organizationId || user?.organization_id;
+      const teamId = selectedDepartment?.id || user?.teamId || '00000000-0000-0000-0000-000000000000';
+      
+      await quarterlyPrioritiesService.updatePriority(orgId, teamId, priorityId, { status: newStatus });
+      
+      // Update local state for company priorities
+      setCompanyPriorities(prev => 
+        prev.map(p => 
+          p.id === priorityId ? { ...p, status: newStatus } : p
+        )
+      );
+      
+      // Update local state for team member priorities
+      setTeamMemberPriorities(prev => {
+        const updated = { ...prev };
+        Object.keys(updated).forEach(memberId => {
+          updated[memberId] = updated[memberId].map(p => 
+            p.id === priorityId ? { ...p, status: newStatus } : p
+          );
+        });
+        return updated;
+      });
+      
+      // Update archived priorities if needed
+      setArchivedPriorities(prev => {
+        const updated = { ...prev };
+        Object.keys(updated).forEach(quarter => {
+          if (updated[quarter].companyPriorities) {
+            updated[quarter].companyPriorities = updated[quarter].companyPriorities.map(p =>
+              p.id === priorityId ? { ...p, status: newStatus } : p
+            );
+          }
+          if (updated[quarter].teamMemberPriorities) {
+            Object.keys(updated[quarter].teamMemberPriorities).forEach(memberId => {
+              updated[quarter].teamMemberPriorities[memberId] = 
+                updated[quarter].teamMemberPriorities[memberId].map(p =>
+                  p.id === priorityId ? { ...p, status: newStatus } : p
+                );
+            });
+          }
+        });
+        return updated;
+      });
+      
+      // If the priority is marked as off-track, create an issue
+      if (newStatus === 'off-track') {
+        const priority = [...companyPriorities, ...Object.values(teamMemberPriorities).flat()]
+          .find(p => p.id === priorityId);
+        
+        if (priority) {
+          const issueData = {
+            title: `Off-Track Priority: ${priority.title}`,
+            description: `Priority "${priority.title}" is off-track and needs attention.\n\nOriginal priority: ${priority.description || 'No description'}`,
+            timeline: 'short_term',
+            team_id: teamId,
+            created_by: user?.id,
+            status: 'open',
+            priority_level: 'high',
+            related_priority_id: priorityId
+          };
+          
+          await issuesService.createIssue(orgId, teamId, issueData);
+          setSuccess('Issue created for off-track priority');
+        }
+      }
+      
+      setSuccess('Priority status updated');
+    } catch (error) {
+      console.error('Failed to update priority status:', error);
+      setError('Failed to update priority status');
+    }
+  };
+
   // Get current period for display
   const getCurrentPeriodDisplay = () => {
     const now = new Date();
@@ -922,10 +998,31 @@ const QuarterlyPrioritiesPageClean = () => {
                     <span>{formatDate(priority.dueDate)}</span>
                   </div>
 
-                  <div className="flex items-center gap-2">
-                    <div className={`w-1.5 h-1.5 rounded-full ${getStatusDotColor(isEditing ? editForm.status : priority.status)}`} />
-                    <span className="capitalize">{(isEditing ? editForm.status : priority.status).replace('-', ' ')}</span>
-                  </div>
+                  {!isArchived && !isEditing ? (
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => {
+                        const currentStatus = priority.status || 'on-track';
+                        const newStatus = currentStatus === 'on-track' ? 'off-track' : 'on-track';
+                        handlePriorityStatusChange(priority.id, newStatus);
+                      }}
+                      className={`flex items-center gap-2 ${
+                        priority.status === 'off-track' ? 'border-red-300 bg-red-50 hover:bg-red-100' :
+                        'border-green-300 bg-green-50 hover:bg-green-100'
+                      }`}
+                    >
+                      <div className={`w-2 h-2 rounded-full ${getStatusDotColor(priority.status)}`} />
+                      <span className="capitalize font-medium">
+                        {(priority.status || 'on-track').replace('-', ' ')}
+                      </span>
+                    </Button>
+                  ) : (
+                    <div className="flex items-center gap-2">
+                      <div className={`w-1.5 h-1.5 rounded-full ${getStatusDotColor(isEditing ? editForm.status : priority.status)}`} />
+                      <span className="capitalize">{(isEditing ? editForm.status : priority.status).replace('-', ' ')}</span>
+                    </div>
+                  )}
                 </div>
 
                 {isEditing ? (
