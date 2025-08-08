@@ -242,7 +242,7 @@ export const archiveHeadlines = async (req, res) => {
     let params = [orgId];
 
     if (teamId) {
-      conditions.push('team_id = $2');
+      conditions.push('(team_id = $2 OR team_id IS NULL)');
       params.push(teamId);
     }
 
