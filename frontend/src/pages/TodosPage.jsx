@@ -43,6 +43,76 @@ const TodosPage = () => {
     fetchTodos();
   }, [activeTab, filterAssignee, selectedDepartment]);
 
+  // Helper function to check if a todo is overdue
+  const isOverdue = (todo) => {
+    if (!todo.due_date || todo.status === 'complete' || todo.status === 'cancelled') {
+      return false;
+    }
+    const dueDate = new Date(todo.due_date);
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    dueDate.setHours(0, 0, 0, 0);
+    return dueDate < today;
+  };
+
+  // Automatically create issues for overdue todos
+  const createIssuesForOverdueTodos = async (todos) => {
+    try {
+      // Get todos that are overdue and don't already have issues created
+      const overdueTodos = todos.filter(todo => 
+        isOverdue(todo) && 
+        !todo.issue_created && // Assuming we track if issue was created
+        todo.status !== 'complete' &&
+        todo.status !== 'cancelled'
+      );
+
+      if (overdueTodos.length === 0) return;
+
+      let issuesCreated = 0;
+      
+      for (const todo of overdueTodos) {
+        try {
+          const dueDate = new Date(todo.due_date).toLocaleDateString();
+          const assigneeName = todo.assigned_to 
+            ? `${todo.assigned_to.first_name} ${todo.assigned_to.last_name}`
+            : 'Unassigned';
+          
+          // Calculate how many days overdue
+          const today = new Date();
+          today.setHours(0, 0, 0, 0);
+          const dueDateObj = new Date(todo.due_date);
+          dueDateObj.setHours(0, 0, 0, 0);
+          const daysOverdue = Math.floor((today - dueDateObj) / (1000 * 60 * 60 * 24));
+
+          const issueData = {
+            title: `Overdue: ${todo.title}`,
+            description: `This to-do is ${daysOverdue} day${daysOverdue > 1 ? 's' : ''} overdue and needs immediate attention.\n\nOriginal due date: ${dueDate}\nAssigned to: ${assigneeName}\n\nDescription:\n${todo.description || 'No description provided'}`,
+            timeline: 'short_term',
+            ownerId: todo.assigned_to?.id || null,
+            department_id: selectedDepartment?.id || todo.team_id,
+            priority_level: 'high', // High priority since it's overdue
+            related_todo_id: todo.id // Track which todo this came from
+          };
+          
+          await issuesService.createIssue(issueData);
+          
+          // Mark todo as having an issue created (you may need to add this field to your backend)
+          await todosService.updateTodo(todo.id, { issue_created: true });
+          
+          issuesCreated++;
+        } catch (error) {
+          console.error(`Failed to create issue for overdue todo: ${todo.title}`, error);
+        }
+      }
+      
+      if (issuesCreated > 0) {
+        setSuccess(`${issuesCreated} issue${issuesCreated > 1 ? 's' : ''} created for overdue to-dos`);
+      }
+    } catch (error) {
+      console.error('Failed to create issues for overdue todos:', error);
+    }
+  };
+
   const fetchTodos = async () => {
     try {
       setLoading(true);
@@ -58,8 +128,12 @@ const TodosPage = () => {
         selectedDepartment?.id // Filter by selected department
       );
       
-      setTodos(response.data.todos || []);
+      const fetchedTodos = response.data.todos || [];
+      setTodos(fetchedTodos);
       setTeamMembers(response.data.teamMembers || []);
+      
+      // Automatically create issues for overdue todos
+      await createIssuesForOverdueTodos(fetchedTodos);
     } catch (error) {
       console.error('Failed to fetch todos:', error);
       setError('Failed to load to-dos');

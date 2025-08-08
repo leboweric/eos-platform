@@ -239,6 +239,13 @@ export const updateTodo = async (req, res) => {
       }
     }
 
+    // Add support for issue_created field
+    if (req.body.issue_created !== undefined) {
+      updates.push(`issue_created = $${paramIndex}`);
+      values.push(req.body.issue_created);
+      paramIndex++;
+    }
+
     updates.push(`updated_at = NOW()`);
 
     // Add the where clause parameters
