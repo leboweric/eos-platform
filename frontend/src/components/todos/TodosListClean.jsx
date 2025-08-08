@@ -7,8 +7,7 @@ import {
   AlertCircle,
   Edit,
   Trash2,
-  CheckCircle,
-  Loader2
+  CheckCircle
 } from 'lucide-react';
 import {
   DropdownMenu,
@@ -18,7 +17,6 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { format } from 'date-fns';
 import { todosService } from '../../services/todosService';
-import { issuesService } from '../../services/issuesService';
 import { useSelectedTodos } from '../../contexts/SelectedTodosContext';
 
 const TodosListClean = ({ 
@@ -26,12 +24,11 @@ const TodosListClean = ({
   onEdit, 
   onDelete,
   onUpdate,
+  onStatusChange,
   onConvertToIssue,
   showCompleted = true
 }) => {
   const { selectedTodoIds, toggleTodo, isSelected } = useSelectedTodos();
-  const [convertingToIssue, setConvertingToIssue] = useState({});
-  const [issueCreatedSuccess, setIssueCreatedSuccess] = useState({});
   
   // Parse date string as local date, not UTC
   const parseDateAsLocal = (dateStr) => {
@@ -40,45 +37,12 @@ const TodosListClean = ({
     return new Date(year, month - 1, day); // month is 0-indexed in JS
   };
   
-  const handleMakeItAnIssue = async (todo) => {
-    try {
-      setConvertingToIssue(prev => ({ ...prev, [todo.id]: true }));
-      
-      const dueDate = todo.due_date ? format(parseDateAsLocal(todo.due_date), 'MMM d, yyyy') : 'Not set';
-      const assigneeName = todo.assigned_to 
-        ? `${todo.assigned_to.first_name} ${todo.assigned_to.last_name}`
-        : 'Unassigned';
-      
-      const issueData = {
-        title: todo.title,
-        description: `This issue was created from an overdue to-do.\n\nOriginal due date: ${dueDate} (OVERDUE)\nAssigned to: ${assigneeName}\n\nDescription:\n${todo.description || 'No description provided'}`,
-        timeline: 'short_term',
-        ownerId: todo.assigned_to?.id || null
-      };
-      
-      await issuesService.createIssue(issueData);
-      
-      setConvertingToIssue(prev => ({ ...prev, [todo.id]: false }));
-      setIssueCreatedSuccess(prev => ({ ...prev, [todo.id]: true }));
-      
-      setTimeout(() => {
-        setIssueCreatedSuccess(prev => {
-          const newState = { ...prev };
-          delete newState[todo.id];
-          return newState;
-        });
-      }, 5000);
-    } catch (error) {
-      console.error('Failed to convert to issue:', error);
-      setConvertingToIssue(prev => ({ ...prev, [todo.id]: false }));
-    }
-  };
   
   const isOverdue = (todo) => {
     const dueDate = parseDateAsLocal(todo.due_date);
     const today = new Date();
     today.setHours(0, 0, 0, 0);
-    return dueDate && dueDate < today && todo.status !== 'complete';
+    return dueDate && dueDate < today && !todo.completed;
   };
 
   const getDaysUntilDue = (todo) => {
@@ -119,8 +83,7 @@ const TodosListClean = ({
             key={todo.id}
             className={`
               group relative bg-white rounded-lg border transition-all duration-200
-              ${isSelected(todo.id) ? 'border-gray-400 shadow-sm' : 'border-gray-200 hover:border-gray-300 hover:shadow-sm'}
-              ${todo.status === 'complete' ? 'opacity-60' : ''}
+              ${todo.completed ? 'border-gray-400 shadow-sm opacity-60' : 'border-gray-200 hover:border-gray-300 hover:shadow-sm'}
             `}
           >
             {/* Status indicator - subtle left border */}
@@ -135,8 +98,17 @@ const TodosListClean = ({
                 {/* Checkbox */}
                 <div className="pt-0.5">
                   <Checkbox
-                    checked={isSelected(todo.id)}
-                    onCheckedChange={() => toggleTodo(todo.id)}
+                    checked={todo.completed || false}
+                    onCheckedChange={(checked) => {
+                      if (onStatusChange) {
+                        onStatusChange(todo.id, checked);
+                      } else if (onUpdate) {
+                        // Fallback to onUpdate if onStatusChange not provided
+                        todosService.updateTodo(todo.id, { completed: checked }).then(() => {
+                          onUpdate();
+                        });
+                      }
+                    }}
                     className="h-5 w-5 rounded border-gray-300 data-[state=checked]:bg-gray-900 data-[state=checked]:border-gray-900"
                   />
                 </div>
@@ -146,14 +118,16 @@ const TodosListClean = ({
                   {/* Title */}
                   <h3 className={`
                     text-base font-medium leading-tight
-                    ${todo.status === 'complete' ? 'text-gray-400 line-through' : 'text-gray-900'}
+                    ${todo.completed ? 'text-gray-400 line-through' : 'text-gray-900'}
                   `}>
                     {todo.title}
                   </h3>
                   
                   {/* Description - only show if exists */}
                   {todo.description && (
-                    <p className="mt-1.5 text-sm text-gray-600 whitespace-pre-wrap">
+                    <p className={`mt-1.5 text-sm whitespace-pre-wrap ${
+                      todo.completed ? 'text-gray-400 line-through' : 'text-gray-600'
+                    }`}>
                       {todo.description}
                     </p>
                   )}
@@ -187,37 +161,23 @@ const TodosListClean = ({
                       </span>
                     )}
                     
-                    {/* Make it an Issue button - only for overdue */}
-                    {overdue && !issueCreatedSuccess[todo.id] && (
+                    {/* Show message for overdue todos */}
+                    {overdue && (
                       <>
                         <span className="text-gray-300">•</span>
-                        <button
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            handleMakeItAnIssue(todo);
-                          }}
-                          disabled={convertingToIssue[todo.id]}
-                          className="text-red-600 hover:text-red-700 font-medium text-sm"
-                        >
-                          {convertingToIssue[todo.id] ? (
-                            <span className="flex items-center gap-1">
-                              <Loader2 className="h-3 w-3 animate-spin" />
-                              Creating issue...
-                            </span>
-                          ) : (
-                            'Convert to issue'
-                          )}
-                        </button>
+                        <span className="text-orange-600 font-medium text-sm">
+                          Already in Issues List
+                        </span>
                       </>
                     )}
                     
-                    {/* Success message */}
-                    {issueCreatedSuccess[todo.id] && (
+                    {/* Show closed badge if completed */}
+                    {todo.completed && (
                       <>
                         <span className="text-gray-300">•</span>
-                        <span className="text-green-600 font-medium text-sm flex items-center gap-1">
+                        <span className="flex items-center gap-1 text-green-600 text-sm font-medium">
                           <CheckCircle className="h-3.5 w-3.5" />
-                          Issue created
+                          Closed
                         </span>
                       </>
                     )}

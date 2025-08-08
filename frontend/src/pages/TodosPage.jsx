@@ -190,6 +190,16 @@ const TodosPage = () => {
     }
   };
 
+  const handleStatusChange = async (todoId, completed) => {
+    try {
+      await todosService.updateTodo(todoId, { completed });
+      await fetchTodos();
+    } catch (error) {
+      console.error('Failed to update todo status:', error);
+      setError('Failed to update to-do status');
+    }
+  };
+
   const handleConvertToIssue = async (todo) => {
     if (!window.confirm(`Convert "${todo.title}" to an issue? This will cancel the to-do.`)) {
       return;
@@ -377,6 +387,7 @@ const TodosPage = () => {
             onEdit={handleEditTodo}
             onDelete={handleDeleteTodo}
             onUpdate={fetchTodos}
+            onStatusChange={handleStatusChange}
             onConvertToIssue={handleConvertToIssue}
             showCompleted={activeTab !== 'incomplete'}
           />
