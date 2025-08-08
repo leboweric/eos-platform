@@ -7,6 +7,19 @@ const getOrgId = () => {
 };
 
 export const teamsService = {
+  // Get all teams for the organization
+  getTeams: async () => {
+    const orgId = getOrgId();
+    
+    try {
+      const response = await axios.get(`/organizations/${orgId}/teams`);
+      return response.data;
+    } catch (error) {
+      console.error('Failed to fetch teams:', error);
+      throw error;
+    }
+  },
+
   // Get user's teams
   getUserTeams: async () => {
     const orgId = getOrgId();
