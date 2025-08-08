@@ -276,16 +276,16 @@ const WeeklyAccountabilityMeetingPage = () => {
   // Automatically create issues for overdue todos
   const createIssuesForOverdueTodos = async (todos, effectiveTeamId) => {
     try {
-      // Get todos that are overdue and don't already have issues created
+      // Get todos that are overdue
       const overdueTodos = todos.filter(todo => 
         isOverdue(todo) && 
-        !todo.issue_created && 
         todo.status !== 'complete' &&
         todo.status !== 'cancelled'
       );
 
       if (overdueTodos.length === 0) return;
 
+      let issuesCreated = false;
       for (const todo of overdueTodos) {
         try {
           const dueDate = new Date(todo.due_date).toLocaleDateString();
@@ -311,16 +311,21 @@ const WeeklyAccountabilityMeetingPage = () => {
           };
           
           await issuesService.createIssue(issueData);
-          
-          // Mark todo as having an issue created
-          await todosService.updateTodo(todo.id, { issue_created: true });
+          issuesCreated = true;
         } catch (error) {
-          console.error(`Failed to create issue for overdue todo: ${todo.title}`, error);
+          // If it's a duplicate error (unique constraint violation), that's okay - just skip
+          if (error.response?.status === 409 || error.response?.data?.message?.includes('duplicate') || error.response?.data?.message?.includes('unique')) {
+            console.log(`Issue already exists for todo: ${todo.title}`);
+          } else {
+            console.error(`Failed to create issue for overdue todo: ${todo.title}`, error);
+          }
         }
       }
       
-      // Refresh issues list after creating new ones
-      await fetchIssues();
+      // Refresh issues list if new ones were created
+      if (issuesCreated) {
+        await fetchIssues();
+      }
     } catch (error) {
       console.error('Failed to create issues for overdue todos:', error);
     }

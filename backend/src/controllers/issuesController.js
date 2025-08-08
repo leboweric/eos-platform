@@ -155,7 +155,7 @@ async function checkTimelineColumn() {
 export const createIssue = async (req, res) => {
   try {
     const { orgId } = req.params;
-    const { title, description, ownerId, timeline, teamId } = req.body;
+    const { title, description, ownerId, timeline, teamId, related_todo_id, priority_level } = req.body;
     const createdById = req.user.id;
     
     // Check if timeline column exists
@@ -189,7 +189,21 @@ export const createIssue = async (req, res) => {
     if (hasTimelineColumn) {
       columns.push('timeline');
       values.push(timeline || 'short_term');
-      placeholders.push('$8');
+      placeholders.push(`$${values.length}`);
+    }
+    
+    // Add related_todo_id if provided
+    if (related_todo_id) {
+      columns.push('related_todo_id');
+      values.push(related_todo_id);
+      placeholders.push(`$${values.length}`);
+    }
+    
+    // Add priority_level if provided
+    if (priority_level) {
+      columns.push('priority_level');
+      values.push(priority_level);
+      placeholders.push(`$${values.length}`);
     }
     
     const result = await db.query(
@@ -205,6 +219,15 @@ export const createIssue = async (req, res) => {
     });
   } catch (error) {
     console.error('Error creating issue:', error);
+    
+    // Check for unique constraint violation on related_todo_id
+    if (error.code === '23505' && error.constraint === 'unique_todo_issue') {
+      return res.status(409).json({
+        success: false,
+        message: 'An issue already exists for this todo'
+      });
+    }
+    
     res.status(500).json({
       success: false,
       message: 'Failed to create issue'

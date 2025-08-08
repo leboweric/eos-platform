@@ -58,10 +58,9 @@ const TodosPage = () => {
   // Automatically create issues for overdue todos
   const createIssuesForOverdueTodos = async (todos) => {
     try {
-      // Get todos that are overdue and don't already have issues created
+      // Get todos that are overdue
       const overdueTodos = todos.filter(todo => 
         isOverdue(todo) && 
-        !todo.issue_created && // Assuming we track if issue was created
         todo.status !== 'complete' &&
         todo.status !== 'cancelled'
       );
@@ -95,13 +94,14 @@ const TodosPage = () => {
           };
           
           await issuesService.createIssue(issueData);
-          
-          // Mark todo as having an issue created (you may need to add this field to your backend)
-          await todosService.updateTodo(todo.id, { issue_created: true });
-          
           issuesCreated++;
         } catch (error) {
-          console.error(`Failed to create issue for overdue todo: ${todo.title}`, error);
+          // If it's a duplicate error (unique constraint violation), that's okay - just skip
+          if (error.response?.status === 409 || error.response?.data?.message?.includes('duplicate') || error.response?.data?.message?.includes('unique')) {
+            console.log(`Issue already exists for todo: ${todo.title}`);
+          } else {
+            console.error(`Failed to create issue for overdue todo: ${todo.title}`, error);
+          }
         }
       }
       
