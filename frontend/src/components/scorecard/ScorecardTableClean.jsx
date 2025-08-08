@@ -194,16 +194,40 @@ const ScorecardTableClean = ({
             </thead>
             <tbody>
               {metrics.map((metric, metricIndex) => {
-                // Use periodDates (visible dates) instead of periodDatesOriginal for calculations
-                const metricScores = periodDates
+                // Calculate average based on last 13 weeks of data
+                const getLast13WeeksScores = () => {
+                  const thirteenWeekDates = [];
+                  const today = new Date();
+                  
+                  // Generate dates for the last 13 weeks
+                  for (let i = 12; i >= 0; i--) {
+                    const weekStart = new Date(today);
+                    weekStart.setDate(today.getDate() - (i * 7));
+                    const mondayOfWeek = getWeekStartDate(weekStart);
+                    thirteenWeekDates.push(mondayOfWeek.toISOString().split('T')[0]);
+                  }
+                  
+                  return thirteenWeekDates
+                    .map(date => scores[metric.id]?.[date])
+                    .filter(score => score !== undefined && score !== null && score !== '');
+                };
+                
+                const averageScores = type === 'weekly' ? getLast13WeeksScores() : 
+                  // For monthly, use visible periods for average
+                  periodDates
+                    .map(periodDate => scores[metric.id]?.[periodDate])
+                    .filter(score => score !== undefined && score !== null && score !== '');
+                
+                const average = averageScores.length > 0 
+                  ? averageScores.reduce((sum, score) => sum + parseFloat(score), 0) / averageScores.length 
+                  : null;
+                
+                // For total, still use only visible periods
+                const visibleScores = periodDates
                   .map(periodDate => scores[metric.id]?.[periodDate])
                   .filter(score => score !== undefined && score !== null && score !== '');
-                
-                const average = metricScores.length > 0 
-                  ? metricScores.reduce((sum, score) => sum + parseFloat(score), 0) / metricScores.length 
-                  : null;
-                const total = metricScores.length > 0
-                  ? metricScores.reduce((sum, score) => sum + parseFloat(score), 0)
+                const total = visibleScores.length > 0
+                  ? visibleScores.reduce((sum, score) => sum + parseFloat(score), 0)
                   : null;
                 const avgGoalMet = average !== null && isGoalMet(average, metric.goal, metric.comparison_operator);
                 
