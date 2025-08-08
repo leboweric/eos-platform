@@ -268,23 +268,29 @@ const ScorecardTableClean = ({
                       const originalIndex = isRTL ? periodLabelsOriginal.length - 1 - index : index;
                       const isCurrentPeriod = originalIndex === periodLabelsOriginal.length - 1;
                       
-                      const cellClassName = meetingMode 
-                        ? `text-center px-2 py-2 ${isCurrentPeriod ? 'bg-blue-50' : ''}`
-                        : `text-center px-1 ${isCurrentPeriod ? 'bg-gray-50 border-2 border-gray-300' : ''}`;
+                      let cellClassName = 'text-center ';
+                      if (meetingMode) {
+                        cellClassName += 'px-2 py-2';
+                        if (isCurrentPeriod) cellClassName += ' bg-blue-50';
+                      } else {
+                        cellClassName += 'px-1';
+                        if (isCurrentPeriod) cellClassName += ' bg-gray-50 border-2 border-gray-300';
+                      }
                       
                       return (
                         <td key={periodDate} className={cellClassName}>
                           {meetingMode ? (
-                            <div className={`inline-block px-2 py-0.5 rounded-full text-xs font-medium ${
-                              score ? (goalMet ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800') : 'text-gray-400'
-                            }`}>
+                            <div className={'inline-block px-2 py-0.5 rounded-full text-xs font-medium ' + 
+                              (score ? (goalMet ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800') : 'text-gray-400')
+                            }>
                               {score ? formatValue(score, metric.value_type) : '-'}
                             </div>
                           ) : (
                             <button
                               onClick={() => onScoreEdit && onScoreEdit(metric, periodDate)}
-                              className={`w-full px-0.5 py-0.5 rounded text-[10px] font-medium transition-colors
-                                ${score ? (goalMet ? 'bg-green-50 text-green-700 border border-green-200' : 'bg-red-50 text-red-700 border border-red-200') : (isCurrentPeriod ? 'bg-gray-100 text-gray-700 hover:bg-gray-200' : 'bg-white border border-gray-200 text-gray-600 hover:bg-gray-50')}`}
+                              className={'w-full px-0.5 py-0.5 rounded text-[10px] font-medium transition-colors ' +
+                                (score ? (goalMet ? 'bg-green-50 text-green-700 border border-green-200' : 'bg-red-50 text-red-700 border border-red-200') : (isCurrentPeriod ? 'bg-gray-100 text-gray-700 hover:bg-gray-200' : 'bg-white border border-gray-200 text-gray-600 hover:bg-gray-50'))
+                              }
                             >
                               {score ? formatValue(score, metric.value_type) : '-'}
                             </button>
