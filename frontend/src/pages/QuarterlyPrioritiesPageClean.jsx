@@ -548,6 +548,62 @@ const QuarterlyPrioritiesPageClean = () => {
     }
   };
 
+  const handleUploadAttachment = async (priorityId, file) => {
+    try {
+      const orgId = localStorage.getItem('impersonatedOrgId') || user?.organizationId || user?.organization_id;
+      const teamId = selectedDepartment?.id || user?.teamId || '00000000-0000-0000-0000-000000000000';
+      
+      if (!orgId || !teamId) {
+        throw new Error('Organization or team not found');
+      }
+      
+      await quarterlyPrioritiesService.uploadAttachment(orgId, teamId, priorityId, file);
+      await fetchQuarterlyData();
+      setSuccess('Attachment uploaded successfully');
+    } catch (error) {
+      console.error('Failed to upload attachment:', error);
+      setError('Failed to upload attachment');
+    }
+  };
+
+  const handleDownloadAttachment = async (priorityId, attachmentId) => {
+    try {
+      const orgId = localStorage.getItem('impersonatedOrgId') || user?.organizationId || user?.organization_id;
+      const teamId = selectedDepartment?.id || user?.teamId || '00000000-0000-0000-0000-000000000000';
+      
+      if (!orgId || !teamId) {
+        throw new Error('Organization or team not found');
+      }
+      
+      await quarterlyPrioritiesService.downloadAttachment(orgId, teamId, priorityId, attachmentId);
+    } catch (error) {
+      console.error('Failed to download attachment:', error);
+      setError('Failed to download attachment');
+    }
+  };
+
+  const handleDeleteAttachment = async (priorityId, attachmentId) => {
+    if (!window.confirm('Are you sure you want to delete this attachment?')) {
+      return;
+    }
+    
+    try {
+      const orgId = localStorage.getItem('impersonatedOrgId') || user?.organizationId || user?.organization_id;
+      const teamId = selectedDepartment?.id || user?.teamId || '00000000-0000-0000-0000-000000000000';
+      
+      if (!orgId || !teamId) {
+        throw new Error('Organization or team not found');
+      }
+      
+      await quarterlyPrioritiesService.deleteAttachment(orgId, teamId, priorityId, attachmentId);
+      await fetchQuarterlyData();
+      setSuccess('Attachment deleted successfully');
+    } catch (error) {
+      console.error('Failed to delete attachment:', error);
+      setError('Failed to delete attachment');
+    }
+  };
+
   const handlePriorityStatusChange = async (priorityId, newStatus) => {
     try {
       const orgId = localStorage.getItem('impersonatedOrgId') || user?.organizationId || user?.organization_id;
@@ -1911,6 +1967,16 @@ const QuarterlyPrioritiesPageClean = () => {
                         priority={priority} 
                         isCompany={true}
                         onStatusChange={handlePriorityStatusChange}
+                        onUpdate={handleUpdatePriority}
+                        onArchive={handleArchivePriority}
+                        onAddMilestone={handleCreateMilestone}
+                        onToggleMilestone={handleUpdateMilestone}
+                        onDeleteMilestone={handleDeleteMilestone}
+                        onAddUpdate={handleAddUpdate}
+                        onUploadAttachment={handleUploadAttachment}
+                        onDownloadAttachment={handleDownloadAttachment}
+                        onDeleteAttachment={handleDeleteAttachment}
+                        teamMembers={teamMembers}
                       />
                     </div>
                   ))}
@@ -1958,6 +2024,13 @@ const QuarterlyPrioritiesPageClean = () => {
                           <PriorityCardClean 
                             priority={priority}
                             onStatusChange={handlePriorityStatusChange}
+                            onUpdate={handleUpdatePriority}
+                            onArchive={handleArchivePriority}
+                            onAddMilestone={handleCreateMilestone}
+                            onToggleMilestone={handleUpdateMilestone}
+                            onDeleteMilestone={handleDeleteMilestone}
+                            onAddUpdate={handleAddUpdate}
+                            teamMembers={teamMembers}
                           />
                         </div>
                       ))}

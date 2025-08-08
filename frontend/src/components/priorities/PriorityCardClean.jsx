@@ -24,7 +24,10 @@ import {
   AlertTriangle,
   Clock,
   AlertCircle,
-  Target
+  Target,
+  Paperclip,
+  Download,
+  Upload
 } from 'lucide-react';
 import { format } from 'date-fns';
 
@@ -40,6 +43,9 @@ const PriorityCardClean = ({
   onToggleMilestone,
   onAddUpdate,
   onStatusChange,
+  onUploadAttachment,
+  onDownloadAttachment,
+  onDeleteAttachment,
   teamMembers = [],
   readOnly = false
 }) => {
@@ -347,6 +353,55 @@ const PriorityCardClean = ({
               <Progress value={priority.progress || 0} className="h-2" />
             </div>
 
+            {/* Quick Action Buttons */}
+            {!isArchived && !readOnly && (
+              <div className="flex gap-2 flex-wrap">
+                {!priority.milestones?.length && !showAddMilestone && onAddMilestone && (
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setShowAddMilestone(true)}
+                    className="h-7 text-xs"
+                  >
+                    <Target className="h-3 w-3 mr-1" />
+                    Add Milestone
+                  </Button>
+                )}
+                {!priority.updates?.length && !showAddUpdate && onAddUpdate && (
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setShowAddUpdate(true)}
+                    className="h-7 text-xs"
+                  >
+                    <MessageSquare className="h-3 w-3 mr-1" />
+                    Add Update
+                  </Button>
+                )}
+                {!priority.attachments?.length && onUploadAttachment && (
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => {
+                      const input = document.createElement('input');
+                      input.type = 'file';
+                      input.onchange = (e) => {
+                        const file = e.target.files[0];
+                        if (file) {
+                          onUploadAttachment(priority.id, file);
+                        }
+                      };
+                      input.click();
+                    }}
+                    className="h-7 text-xs"
+                  >
+                    <Paperclip className="h-3 w-3 mr-1" />
+                    Add Attachment
+                  </Button>
+                )}
+              </div>
+            )}
+
             {/* Milestones Section */}
             {(priority.milestones?.length > 0 || showAddMilestone) && (
               <div className="space-y-3">
@@ -496,6 +551,75 @@ const PriorityCardClean = ({
                       </div>
                     </div>
                   )}
+                </div>
+              </div>
+            )}
+
+            {/* Attachments Section */}
+            {(priority.attachments?.length > 0 || onUploadAttachment) && (
+              <div className="space-y-3">
+                <div className="flex items-center justify-between">
+                  <h4 className="text-sm font-medium text-gray-700 flex items-center gap-2">
+                    <Paperclip className="h-4 w-4" />
+                    Attachments
+                  </h4>
+                  {onUploadAttachment && (
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => {
+                        const input = document.createElement('input');
+                        input.type = 'file';
+                        input.onchange = (e) => {
+                          const file = e.target.files[0];
+                          if (file) {
+                            onUploadAttachment(priority.id, file);
+                          }
+                        };
+                        input.click();
+                      }}
+                      className="h-7 px-2 text-xs"
+                    >
+                      <Upload className="h-3 w-3 mr-1" />
+                      Upload
+                    </Button>
+                  )}
+                </div>
+                
+                <div className="space-y-2">
+                  {priority.attachments?.map((attachment, index) => (
+                    <div key={attachment.id || index} className="flex items-center gap-3 p-2 rounded-lg hover:bg-gray-50 group">
+                      <Paperclip className="h-4 w-4 text-gray-400" />
+                      <div className="flex-1">
+                        <span className="text-sm text-gray-700">{attachment.fileName}</span>
+                        <span className="text-xs text-gray-500 ml-2">
+                          {attachment.fileSize ? `(${Math.round(attachment.fileSize / 1024)}KB)` : ''}
+                        </span>
+                      </div>
+                      <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                        {onDownloadAttachment && (
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => onDownloadAttachment(priority.id, attachment.id)}
+                            className="h-6 w-6 p-0"
+                          >
+                            <Download className="h-3 w-3 text-blue-600" />
+                          </Button>
+                        )}
+                        {onDeleteAttachment && (
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => onDeleteAttachment(priority.id, attachment.id)}
+                            className="h-6 w-6 p-0"
+                          >
+                            <Trash2 className="h-3 w-3 text-red-600" />
+                          </Button>
+                        )}
+                      </div>
+                    </div>
+                  ))}
                 </div>
               </div>
             )}
