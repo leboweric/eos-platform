@@ -586,16 +586,30 @@ const DashboardClean = () => {
           teamMembers={dashboardData.teamMembers || []}
           onSave={async (todoData) => {
             try {
+              // Add organization_id and team_id if not present
+              const orgId = localStorage.getItem('impersonatedOrgId') || user?.organizationId || user?.organization_id;
+              const teamId = user?.teamId || '00000000-0000-0000-0000-000000000000';
+              
+              const todoDataWithOrgInfo = {
+                ...todoData,
+                organization_id: orgId,
+                team_id: teamId,
+                department_id: teamId
+              };
+              
               if (editingTodo) {
-                await todosService.updateTodo(editingTodo.id, todoData);
+                await todosService.updateTodo(editingTodo.id, todoDataWithOrgInfo);
               } else {
-                await todosService.createTodo(todoData);
+                await todosService.createTodo(todoDataWithOrgInfo);
               }
               await fetchDashboardData();
               setShowTodoDialog(false);
               setEditingTodo(null);
+              return true; // Indicate success
             } catch (error) {
               console.error('Failed to save todo:', error);
+              // Don't close the dialog on error
+              throw error; // Re-throw to let TodoDialog handle it
             }
           }}
         />
