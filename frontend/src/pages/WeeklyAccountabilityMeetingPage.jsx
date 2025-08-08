@@ -251,8 +251,13 @@ const WeeklyAccountabilityMeetingPage = () => {
     try {
       const effectiveTeamId = teamId || user?.teamId || '00000000-0000-0000-0000-000000000000';
       
-      const response = await todosService.getTodos(effectiveTeamId);
-      setTodos(response.todos || []);
+      const response = await todosService.getTodos(
+        null, // status filter
+        null, // assignee filter
+        false, // include completed
+        effectiveTeamId // department filter
+      );
+      setTodos(response.data?.todos || []);
     } catch (error) {
       console.error('Failed to fetch todos:', error);
     }
@@ -707,23 +712,25 @@ const WeeklyAccountabilityMeetingPage = () => {
 
       case 'scorecard':
         return (
-          <div className="space-y-4 w-full">
-            {scorecardMetrics.length === 0 ? (
-              <Card className="border-0 shadow-sm">
-                <CardHeader className="bg-gradient-to-r from-green-50 to-emerald-50 rounded-t-lg">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <CardTitle className="flex items-center gap-2 text-xl">
-                        <BarChart className="h-5 w-5 text-emerald-600" />
-                        Scorecard Review
-                      </CardTitle>
-                      <CardDescription className="mt-1">Review weekly metrics</CardDescription>
-                    </div>
-                    <div className="text-sm text-gray-500 bg-white px-3 py-1 rounded-full">
-                      5 minutes
-                    </div>
+          <div className="space-y-4">
+            <Card className="border-0 shadow-sm">
+              <CardHeader className="bg-gradient-to-r from-green-50 to-emerald-50 rounded-t-lg">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <CardTitle className="flex items-center gap-2 text-xl">
+                      <BarChart className="h-5 w-5 text-emerald-600" />
+                      Scorecard Review
+                    </CardTitle>
+                    <CardDescription className="mt-1">Quick Status Update: Metric owners report "on-track" or "off-track" status</CardDescription>
                   </div>
-                </CardHeader>
+                  <div className="text-sm text-gray-500 bg-white px-3 py-1 rounded-full">
+                    5 minutes
+                  </div>
+                </div>
+              </CardHeader>
+            </Card>
+            {scorecardMetrics.length === 0 ? (
+              <Card>
                 <CardContent className="text-center py-8">
                   <p className="text-gray-500">No scorecard metrics found. Set up your scorecard to track key metrics.</p>
                   <Button 
@@ -736,71 +743,21 @@ const WeeklyAccountabilityMeetingPage = () => {
                 </CardContent>
               </Card>
             ) : (
-              <>
-                <Card className="border-0 shadow-sm">
-                  <CardHeader className="bg-gradient-to-r from-green-50 to-emerald-50 rounded-t-lg">
-                    <div className="flex items-center justify-between">
-                      <div>
-                        <CardTitle className="flex items-center gap-2 text-xl">
-                          <BarChart className="h-5 w-5 text-emerald-600" />
-                          Scorecard Review
-                        </CardTitle>
-                        <CardDescription className="mt-1">Quick Status Update: Metric owners report "on-track" or "off-track" status</CardDescription>
-                      </div>
-                      <div className="text-sm text-gray-500 bg-white px-3 py-1 rounded-full">
-                        5 minutes
-                      </div>
-                    </div>
-                  </CardHeader>
-                  <CardContent className="pt-6">
-                    <div className="flex justify-end gap-2 mb-4">
-                      <Button 
-                        onClick={() => {
-                          const newValue = !showTotal;
-                          setShowTotal(newValue);
-                          localStorage.setItem('scorecardShowTotal', newValue.toString());
-                        }} 
-                        variant="outline"
-                        size="sm"
-                        title={showTotal ? "Hide total column" : "Show total column"}
-                      >
-                        {showTotal ? "Hide Total" : "Show Total"}
-                      </Button>
-                      <Button 
-                        onClick={() => {
-                          const newValue = !isRTL;
-                          setIsRTL(newValue);
-                          localStorage.setItem('scorecardRTL', newValue.toString());
-                        }} 
-                        variant="outline"
-                        size="sm"
-                        title={isRTL ? "Switch to left-to-right" : "Switch to right-to-left"}
-                      >
-                        <ArrowLeftRight className="h-4 w-4 mr-2" />
-                        {isRTL ? "Switch to LTR" : "Switch to RTL"}
-                      </Button>
-                    </div>
-                    <ScorecardTable 
-                      metrics={scorecardMetrics} 
-                      weeklyScores={weeklyScores}
-                      monthlyScores={{}}
-                      type="weekly"
-                      readOnly={false}
-                      isRTL={isRTL}
-                      showTotal={showTotal}
-                      departmentId={teamId || user?.teamId || '00000000-0000-0000-0000-000000000000'}
-                      onIssueCreated={(message) => {
-                        setSuccess(message);
-                        setTimeout(() => setSuccess(null), 3000);
-                      }}
-                      onScoreEdit={() => {}}
-                      onChartOpen={() => {}}
-                      onMetricUpdate={() => {}}
-                      onMetricDelete={() => {}}
-                    />
-                  </CardContent>
-                </Card>
-              </>
+              <ScorecardTable 
+                metrics={scorecardMetrics} 
+                weeklyScores={weeklyScores}
+                monthlyScores={{}}
+                type="weekly"
+                readOnly={false}
+                isRTL={false}
+                showTotal={false}
+                departmentId={teamId || user?.teamId || '00000000-0000-0000-0000-000000000000'}
+                onIssueCreated={null}
+                onScoreEdit={() => {}}
+                onChartOpen={() => {}}
+                onMetricUpdate={() => {}}
+                onMetricDelete={() => {}}
+              />
             )}
           </div>
         );
@@ -808,20 +765,13 @@ const WeeklyAccountabilityMeetingPage = () => {
       case 'priorities':
         return (
           <div className="space-y-4">
-            <Card className="border-0 shadow-sm">
-              <CardHeader className="bg-gradient-to-r from-purple-50 to-pink-50 rounded-t-lg">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <CardTitle className="flex items-center gap-2 text-xl">
-                      <Target className="h-5 w-5 text-purple-600" />
-                      Quarterly Priorities Review
-                    </CardTitle>
-                    <CardDescription className="mt-1">Check progress on quarterly priorities</CardDescription>
-                  </div>
-                  <div className="text-sm text-gray-500 bg-white px-3 py-1 rounded-full">
-                    5 minutes
-                  </div>
-                </div>
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Target className="h-5 w-5" />
+                  Quarterly Priorities Review
+                </CardTitle>
+                <CardDescription>Check progress on quarterly priorities (5 minutes)</CardDescription>
               </CardHeader>
             </Card>
             {priorities.length === 0 ? (
@@ -839,73 +789,137 @@ const WeeklyAccountabilityMeetingPage = () => {
               </Card>
             ) : (
               <div className="space-y-6">
-                <div className="border border-gray-200 bg-white rounded-lg p-4">
-                  <p className="text-gray-700 text-center">
+                <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                  <p className="text-blue-800 text-center">
                     <span className="font-semibold">Quick Status Check:</span> Each priority owner reports "on-track" or "off-track" status
                   </p>
                 </div>
-                {/* Group priorities by type */}
-                {priorities.filter(p => p.priority_type === 'company').length > 0 && (
-                  <div className="space-y-4">
-                    <h3 className="text-lg font-semibold text-gray-900">Company Priorities</h3>
-                    {priorities.filter(p => p.priority_type === 'company').map(priority => (
-                      <PriorityCard 
-                        key={priority.id} 
-                        priority={priority} 
-                        readOnly={false}
-                        onIssueCreated={(message) => {
-                          setSuccess(message);
-                          setTimeout(() => setSuccess(null), 3000);
-                        }}
-                        onEdit={() => {}}
-                        onStatusChange={handlePriorityStatusChange}
-                        onUpdateMilestone={handleUpdateMilestone}
-                        onCreateMilestone={handleCreateMilestone}
-                        onEditMilestone={handleEditMilestone}
-                        onDeleteMilestone={handleDeleteMilestone}
-                        onDelete={() => {}}
-                        onUpdate={handleUpdatePriority}
-                        expanded={expandedSections.companyPriorities}
-                        onToggleExpanded={() => setExpandedSections(prev => ({ 
+                {/* Company Priorities Section */}
+                {(() => {
+                  const companyPriorities = priorities.filter(p => p.priority_type === 'company');
+                  return companyPriorities.length > 0 && (
+                    <div>
+                      <div 
+                        className="flex items-center justify-between p-4 bg-gray-50 rounded-lg cursor-pointer hover:bg-gray-100 transition-colors"
+                        onClick={() => setExpandedSections(prev => ({ 
                           ...prev, 
                           companyPriorities: !prev.companyPriorities 
                         }))}
-                      />
-                    ))}
-                  </div>
-                )}
-                {priorities.filter(p => p.priority_type === 'individual').length > 0 && (
-                  <div className="space-y-4">
-                    <h3 className="text-lg font-semibold text-gray-900">Individual Priorities</h3>
-                    {priorities.filter(p => p.priority_type === 'individual').map(priority => (
-                      <PriorityCard 
-                        key={priority.id} 
-                        priority={priority} 
-                        readOnly={false}
-                        onIssueCreated={(message) => {
-                          setSuccess(message);
-                          setTimeout(() => setSuccess(null), 3000);
-                        }}
-                        onEdit={() => {}}
-                        onStatusChange={handlePriorityStatusChange}
-                        onUpdateMilestone={handleUpdateMilestone}
-                        onCreateMilestone={handleCreateMilestone}
-                        onEditMilestone={handleEditMilestone}
-                        onDeleteMilestone={handleDeleteMilestone}
-                        onDelete={() => {}}
-                        onUpdate={handleUpdatePriority}
-                        expanded={expandedSections.individualPriorities[priority.id]}
-                        onToggleExpanded={() => setExpandedSections(prev => ({ 
-                          ...prev, 
-                          individualPriorities: {
-                            ...prev.individualPriorities,
-                            [priority.id]: !prev.individualPriorities[priority.id]
-                          }
-                        }))}
-                      />
-                    ))}
-                  </div>
-                )}
+                      >
+                        <div className="flex items-center gap-3">
+                          {expandedSections.companyPriorities ? (
+                            <ChevronDown className="h-5 w-5 text-gray-600" />
+                          ) : (
+                            <ChevronRight className="h-5 w-5 text-gray-600" />
+                          )}
+                          <Building2 className="h-5 w-5 text-blue-600" />
+                          <h3 className="text-lg font-semibold">
+                            Company Priorities ({companyPriorities.length})
+                          </h3>
+                        </div>
+                      </div>
+                      {expandedSections.companyPriorities && (
+                        <div className="space-y-4 ml-7 mt-4">
+                          {companyPriorities.map(priority => (
+                            <PriorityCard 
+                              key={priority.id} 
+                              priority={priority} 
+                              readOnly={false}
+                              onIssueCreated={(message) => {
+                                setSuccess(message);
+                                setTimeout(() => setSuccess(null), 3000);
+                              }}
+                              onStatusChange={(priorityId, newStatus) => {
+                                setPriorities(prev => 
+                                  prev.map(p => 
+                                    p.id === priorityId ? { ...p, status: newStatus } : p
+                                  )
+                                );
+                                setSuccess(`Priority status updated to ${newStatus}`);
+                                setTimeout(() => setSuccess(null), 3000);
+                              }}
+                            />
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  );
+                })()}
+                
+                {/* Individual Priorities Section */}
+                {(() => {
+                  const individualPriorities = priorities.filter(p => p.priority_type !== 'company');
+                  const groupedByOwner = individualPriorities.reduce((acc, priority) => {
+                    const ownerId = priority.owner?.id || 'unassigned';
+                    if (!acc[ownerId]) {
+                      acc[ownerId] = [];
+                    }
+                    acc[ownerId].push(priority);
+                    return acc;
+                  }, {});
+                  
+                  return Object.keys(groupedByOwner).length > 0 && (
+                    <div className="space-y-4">
+                      <div className="flex items-center gap-3 p-4 bg-white border border-gray-200 rounded-lg">
+                        <Users className="h-5 w-5 text-purple-600" />
+                        <h3 className="text-lg font-semibold">
+                          Individual Priorities ({individualPriorities.length})
+                        </h3>
+                      </div>
+                      {Object.entries(groupedByOwner).map(([ownerId, ownerPriorities]) => {
+                        const owner = ownerPriorities[0]?.owner;
+                        const isExpanded = expandedSections.individualPriorities[ownerId];
+                        return (
+                          <div key={ownerId} className="ml-7">
+                            <div 
+                              className="flex items-center gap-3 p-3 bg-white border rounded-lg cursor-pointer hover:bg-gray-50 transition-colors"
+                              onClick={() => setExpandedSections(prev => ({ 
+                                ...prev, 
+                                individualPriorities: {
+                                  ...prev.individualPriorities,
+                                  [ownerId]: !prev.individualPriorities[ownerId]
+                                }
+                              }))}
+                            >
+                              {isExpanded ? (
+                                <ChevronDown className="h-4 w-4 text-gray-600" />
+                              ) : (
+                                <ChevronRight className="h-4 w-4 text-gray-600" />
+                              )}
+                              <h4 className="text-md font-medium">
+                                {owner?.name || 'Unassigned'} ({ownerPriorities.length})
+                              </h4>
+                            </div>
+                            {isExpanded && (
+                              <div className="space-y-4 ml-7 mt-4">
+                                {ownerPriorities.map(priority => (
+                                  <PriorityCard 
+                                    key={priority.id} 
+                                    priority={priority} 
+                                    readOnly={false}
+                                    onIssueCreated={(message) => {
+                                      setSuccess(message);
+                                      setTimeout(() => setSuccess(null), 3000);
+                                    }}
+                                    onStatusChange={(priorityId, newStatus) => {
+                                      setPriorities(prev => 
+                                        prev.map(p => 
+                                          p.id === priorityId ? { ...p, status: newStatus } : p
+                                        )
+                                      );
+                                      setSuccess(`Priority status updated to ${newStatus}`);
+                                      setTimeout(() => setSuccess(null), 3000);
+                                    }}
+                                  />
+                                ))}
+                              </div>
+                            )}
+                          </div>
+                        );
+                      })}
+                    </div>
+                  );
+                })()}
               </div>
             )}
           </div>
