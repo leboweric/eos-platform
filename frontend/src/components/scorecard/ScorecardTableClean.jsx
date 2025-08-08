@@ -23,7 +23,8 @@ const ScorecardTableClean = ({
   onMetricUpdate,
   onMetricDelete,
   noWrapper = false, // Add prop to disable Card wrapper
-  maxPeriods = 10 // Control how many weeks/months to show
+  maxPeriods = 10, // Control how many weeks/months to show
+  meetingMode = false // New prop for meeting display mode
 }) => {
   // Get week start date for a given date
   const getWeekStartDate = (date) => {
@@ -148,34 +149,37 @@ const ScorecardTableClean = ({
 
   const tableContent = (
     <div className={noWrapper ? "w-full" : "overflow-x-auto"}>
-      <table className="w-full table-auto">
-            <thead className="bg-white border-b border-gray-200">
+      <table className="w-full">
+            <thead className={meetingMode ? "bg-gray-50" : "bg-white border-b border-gray-200"}>
               <tr>
-                <th className="w-4"></th>
-                <th className="text-center px-1 text-[10px] font-medium text-gray-600">Owner</th>
-                <th className="text-left px-1 text-xs font-medium text-gray-700">Metric</th>
-                <th className="w-6"></th>
-                <th className="text-center px-1 text-[10px] font-medium text-gray-600">Goal</th>
-                
-                <th className="text-center px-1 text-[10px] font-medium text-gray-600 border-l border-gray-200">Avg</th>
+                {!meetingMode && <th className="w-4"></th>}
+                <th className={`text-left ${meetingMode ? 'px-3 py-2 text-sm' : 'px-1 text-[10px]'} font-medium text-gray-700`}>
+                  {meetingMode ? 'Metric / Owner' : 'Owner'}
+                </th>
+                {!meetingMode && <th className="text-left px-1 text-xs font-medium text-gray-700">Metric</th>}
+                {!meetingMode && <th className="w-6"></th>}
+                <th className={`text-center ${meetingMode ? 'px-2 py-2 text-sm' : 'px-1 text-[10px]'} font-medium text-gray-600`}>Goal</th>
                 
                 {/* Week columns */}
                 {periodLabels.map((label, index) => {
                   const originalIndex = isRTL ? periodLabelsOriginal.length - 1 - index : index;
                   const isCurrentPeriod = originalIndex === periodLabelsOriginal.length - 1;
                   return (
-                    <th key={periodDates[index]} className={`text-center px-1 ${
-                      isCurrentPeriod ? 'bg-gray-50 border-2 border-gray-300' : ''
+                    <th key={periodDates[index]} className={`text-center ${meetingMode ? 'px-2 py-2' : 'px-1'} ${
+                      isCurrentPeriod ? (meetingMode ? 'bg-blue-50 font-semibold' : 'bg-gray-50 border-2 border-gray-300') : ''
                     }`}>
                       <div className="flex flex-col items-center">
-                        <span className="text-[10px] font-medium text-gray-600">{label}</span>
+                        <span className={`${meetingMode ? 'text-xs' : 'text-[10px]'} font-medium text-gray-600`}>{label}</span>
                       </div>
                     </th>
                   );
                 })}
                 
-                {showTotal && <th className="text-center p-1 font-semibold text-gray-700 text-xs border-l border-gray-200">Total</th>}
-                <th className="text-center p-1 font-semibold text-gray-700 text-xs">Actions</th>
+                <th className={`text-center ${meetingMode ? 'px-2 py-2 text-sm bg-gray-100' : 'px-1 text-[10px] border-l border-gray-200'} font-medium text-gray-700`}>
+                  {meetingMode ? 'Status' : 'Avg'}
+                </th>
+                {!meetingMode && showTotal && <th className="text-center p-1 font-semibold text-gray-700 text-xs border-l border-gray-200">Total</th>}
+                {!meetingMode && <th className="text-center p-1 font-semibold text-gray-700 text-xs">Actions</th>}
               </tr>
             </thead>
             <tbody>
@@ -193,36 +197,57 @@ const ScorecardTableClean = ({
                 const avgGoalMet = average !== null && isGoalMet(average, metric.goal, metric.comparison_operator);
                 
                 return (
-                  <tr key={metric.id} className="border-b hover:bg-gray-50">
-                    <td className="w-4">
-                      <GripVertical className="h-3 w-3 text-gray-400 cursor-move mx-auto" />
-                    </td>
-                    <td className="text-center px-1 text-[10px]">
-                      {metric.ownerName || metric.owner || '-'}
-                    </td>
-                    <td className="text-left px-1 text-xs font-medium">{metric.name}</td>
-                    <td className="w-6">
-                      <Button
-                        onClick={() => onChartOpen && onChartOpen(metric)}
-                        size="sm"
-                        variant="ghost"
-                        className="h-5 w-5 p-0 hover:bg-gray-100"
-                      >
-                        <BarChart3 className="h-3 w-3 text-gray-600" />
-                      </Button>
-                    </td>
-                    <td className="text-center px-1 text-[10px] font-medium text-gray-700">{formatGoal(metric.goal, metric.value_type, metric.comparison_operator)}</td>
-                    
-                    {/* Average column */}
-                    <td className="px-1 text-center bg-white border-l border-gray-200">
-                      {average !== null ? (
-                        <span className={`text-[10px] px-0.5 rounded ${
-                          avgGoalMet ? 'text-green-700' : 'text-red-700'
-                        }`}>
-                          {metric.value_type === 'number' ? Math.round(average) : formatValue(average, metric.value_type)}
-                        </span>
+                  <tr key={metric.id} className={`border-b ${meetingMode ? 'hover:bg-blue-50/30' : 'hover:bg-gray-50'}`}>
+                    {!meetingMode && (
+                      <td className="w-4">
+                        <GripVertical className="h-3 w-3 text-gray-400 cursor-move mx-auto" />
+                      </td>
+                    )}
+                    <td className={`${meetingMode ? 'px-3 py-2' : 'text-center px-1 text-[10px]'}`}>
+                      {meetingMode ? (
+                        <div className="text-left">
+                          <div className="text-sm font-medium text-gray-900">{metric.name}</div>
+                          <div className="text-xs text-gray-500">{metric.ownerName || metric.owner || 'Unassigned'}</div>
+                        </div>
                       ) : (
-                        <span className="text-[10px] text-gray-400">-</span>
+                        metric.ownerName || metric.owner || '-'
+                      )}
+                    </td>
+                    {!meetingMode && <td className="text-left px-1 text-xs font-medium">{metric.name}</td>}
+                    {!meetingMode && (
+                      <td className="w-6">
+                        <Button
+                          onClick={() => onChartOpen && onChartOpen(metric)}
+                          size="sm"
+                          variant="ghost"
+                          className="h-5 w-5 p-0 hover:bg-gray-100"
+                        >
+                          <BarChart3 className="h-3 w-3 text-gray-600" />
+                        </Button>
+                      </td>
+                    )}
+                    <td className={`text-center ${meetingMode ? 'px-2 py-2 text-sm' : 'px-1 text-[10px]'} font-medium text-gray-700`}>
+                      {formatGoal(metric.goal, metric.value_type, metric.comparison_operator)}
+                    </td>
+                    
+                    {/* Status/Average column */}
+                    <td className={`text-center ${meetingMode ? 'px-2 py-2 bg-gray-50' : 'px-1 bg-white border-l border-gray-200'}`}>
+                      {meetingMode ? (
+                        <div className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-semibold ${
+                          avgGoalMet ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
+                        }`}>
+                          {avgGoalMet ? 'On Track' : 'Off Track'}
+                        </div>
+                      ) : (
+                        average !== null ? (
+                          <span className={`text-[10px] px-0.5 rounded ${
+                            avgGoalMet ? 'text-green-700' : 'text-red-700'
+                          }`}>
+                            {metric.value_type === 'number' ? Math.round(average) : formatValue(average, metric.value_type)}
+                          </span>
+                        ) : (
+                          <span className="text-[10px] text-gray-400">-</span>
+                        )
                       )}
                     </td>
                     
@@ -234,43 +259,55 @@ const ScorecardTableClean = ({
                       const isCurrentPeriod = originalIndex === periodLabelsOriginal.length - 1;
                       
                       return (
-                        <td key={periodDate} className={`px-1 text-center ${isCurrentPeriod ? 'bg-gray-50 border-2 border-gray-300' : ''}`}>
-                          <button
-                            onClick={() => onScoreEdit && onScoreEdit(metric, periodDate)}
-                            className={`w-full px-0.5 py-0.5 rounded text-[10px] font-medium transition-colors
-                              ${score ? (goalMet ? 'bg-green-50 text-green-700 border border-green-200' : 'bg-red-50 text-red-700 border border-red-200') : (isCurrentPeriod ? 'bg-gray-100 text-gray-700 hover:bg-gray-200' : 'bg-white border border-gray-200 text-gray-600 hover:bg-gray-50')}`}
-                          >
-                            {score ? formatValue(score, metric.value_type) : '-'}
-                          </button>
+                        <td key={periodDate} className={`text-center ${meetingMode ? 'px-2 py-2' : 'px-1'} ${
+                          isCurrentPeriod ? (meetingMode ? 'bg-blue-50' : 'bg-gray-50 border-2 border-gray-300') : ''
+                        }`}>
+                          {meetingMode ? (
+                            <div className={`inline-block px-2 py-0.5 rounded-full text-xs font-medium ${
+                              score ? (goalMet ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800') : 'text-gray-400'
+                            }`}>
+                              {score ? formatValue(score, metric.value_type) : '-'}
+                            </div>
+                          ) : (
+                            <button
+                              onClick={() => onScoreEdit && onScoreEdit(metric, periodDate)}
+                              className={`w-full px-0.5 py-0.5 rounded text-[10px] font-medium transition-colors
+                                ${score ? (goalMet ? 'bg-green-50 text-green-700 border border-green-200' : 'bg-red-50 text-red-700 border border-red-200') : (isCurrentPeriod ? 'bg-gray-100 text-gray-700 hover:bg-gray-200' : 'bg-white border border-gray-200 text-gray-600 hover:bg-gray-50')}`}
+                            >
+                              {score ? formatValue(score, metric.value_type) : '-'}
+                            </button>
+                          )}
                         </td>
                       );
                     })}
                     
-                    {showTotal && (
+                    {!meetingMode && showTotal && (
                       <td className="px-1 text-center text-[10px] font-medium bg-white border-l border-gray-200">
                         {Math.round(Object.values(scores[metric.id] || {}).reduce((sum, val) => sum + (parseFloat(val) || 0), 0))}
                       </td>
                     )}
-                    <td className="px-1 text-center">
-                      <div className="flex justify-center gap-0.5">
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          className="h-5 w-5 p-0"
-                          onClick={() => onMetricUpdate && onMetricUpdate(metric)}
-                        >
-                          <Edit className="h-3 w-3" />
-                        </Button>
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          className="h-5 w-5 p-0"
-                          onClick={() => onMetricDelete && onMetricDelete(metric.id)}
-                        >
-                          <Trash2 className="h-3 w-3 text-red-600" />
-                        </Button>
-                      </div>
-                    </td>
+                    {!meetingMode && (
+                      <td className="px-1 text-center">
+                        <div className="flex justify-center gap-0.5">
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className="h-5 w-5 p-0"
+                            onClick={() => onMetricUpdate && onMetricUpdate(metric)}
+                          >
+                            <Edit className="h-3 w-3" />
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className="h-5 w-5 p-0"
+                            onClick={() => onMetricDelete && onMetricDelete(metric.id)}
+                          >
+                            <Trash2 className="h-3 w-3 text-red-600" />
+                          </Button>
+                        </div>
+                      </td>
+                    )}
                   </tr>
                 );
               })}

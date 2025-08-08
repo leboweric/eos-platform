@@ -792,17 +792,18 @@ const WeeklyAccountabilityMeetingPage = () => {
                 weeklyScores={weeklyScores}
                 monthlyScores={{}}
                 type="weekly"
-                readOnly={false}
+                readOnly={true}
                 isRTL={false}
                 showTotal={false}
                 departmentId={teamId || user?.teamId || '00000000-0000-0000-0000-000000000000'}
                 onIssueCreated={null}
-                onScoreEdit={() => {}}
-                onChartOpen={() => {}}
-                onMetricUpdate={() => {}}
-                onMetricDelete={() => {}}
+                onScoreEdit={null}
+                onChartOpen={null}
+                onMetricUpdate={null}
+                onMetricDelete={null}
                 noWrapper={true}
                 maxPeriods={4}
+                meetingMode={true}
               />
             )}
           </div>
