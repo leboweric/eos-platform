@@ -6,6 +6,7 @@ import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Progress } from '@/components/ui/progress';
+import { Checkbox } from '@/components/ui/checkbox';
 import { 
   Calendar,
   ChevronDown,
@@ -158,7 +159,18 @@ const PriorityCardClean = ({
           <div className="flex items-start justify-between">
             <div className="flex-1 min-w-0">
               <div className="flex items-center gap-3 mb-3">
-                <div className={`w-2 h-2 rounded-full flex-shrink-0 ${getStatusDotColor(isEditing ? editForm.status : priority.status)}`} />
+                {onStatusChange && !readOnly && !isEditing && (
+                  <Checkbox
+                    checked={priority.status === 'complete'}
+                    onCheckedChange={(checked) => {
+                      onStatusChange(priority.id, checked ? 'complete' : 'on-track');
+                    }}
+                    className="flex-shrink-0"
+                  />
+                )}
+                {!onStatusChange || readOnly || isEditing ? (
+                  <div className={`w-2 h-2 rounded-full flex-shrink-0 ${getStatusDotColor(isEditing ? editForm.status : priority.status)}`} />
+                ) : null}
                 {isEditing ? (
                   <Input
                     value={editForm.title}
@@ -166,7 +178,7 @@ const PriorityCardClean = ({
                     className="flex-1 text-lg font-semibold border-0 p-0 focus:ring-0 shadow-none"
                   />
                 ) : (
-                  <h3 className="text-lg font-semibold text-gray-900 truncate flex-1">
+                  <h3 className={`text-lg font-semibold text-gray-900 truncate flex-1 ${priority.status === 'complete' ? 'line-through text-gray-500' : ''}`}>
                     {priority.title}
                   </h3>
                 )}
@@ -209,7 +221,7 @@ const PriorityCardClean = ({
                   <span>{formatDate(priority.dueDate)}</span>
                 </div>
 
-                {onStatusChange && !isEditing ? (
+                {onStatusChange && !isEditing && priority.status !== 'complete' ? (
                   <Button
                     variant="outline"
                     size="sm"
