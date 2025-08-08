@@ -1644,13 +1644,24 @@ export const downloadPriorityAttachment = async (req, res) => {
       });
     }
 
+    // Convert bytea to Buffer if needed
+    let fileBuffer;
+    if (Buffer.isBuffer(attachment.file_data)) {
+      fileBuffer = attachment.file_data;
+    } else if (typeof attachment.file_data === 'string') {
+      // If it's a hex string from PostgreSQL
+      fileBuffer = Buffer.from(attachment.file_data, 'hex');
+    } else {
+      fileBuffer = Buffer.from(attachment.file_data);
+    }
+
     // Set headers and send file data
     res.setHeader('Content-Type', attachment.mime_type || 'application/octet-stream');
     res.setHeader('Content-Disposition', `attachment; filename="${attachment.file_name}"`);
-    res.setHeader('Content-Length', attachment.file_data.length);
+    res.setHeader('Content-Length', fileBuffer.length);
     
-    // Send the binary data
-    res.send(attachment.file_data);
+    // Send the binary data as Buffer
+    res.end(fileBuffer);
   } catch (error) {
     console.error('Error downloading priority attachment:', error);
     res.status(500).json({

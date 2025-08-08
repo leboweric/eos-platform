@@ -405,7 +405,7 @@ const PriorityCardClean = ({
             {/* Milestones Section */}
             {(priority.milestones?.length > 0 || showAddMilestone) && (
               <div className="space-y-3">
-                <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
                   <h4 className="text-sm font-medium text-gray-700 flex items-center gap-2">
                     <Target className="h-4 w-4" />
                     Milestones
@@ -493,7 +493,7 @@ const PriorityCardClean = ({
             {/* Updates Section */}
             {(priority.updates?.length > 0 || showAddUpdate) && (
               <div className="space-y-3">
-                <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
                   <h4 className="text-sm font-medium text-gray-700 flex items-center gap-2">
                     <MessageSquare className="h-4 w-4" />
                     Updates
@@ -558,7 +558,7 @@ const PriorityCardClean = ({
             {/* Attachments Section */}
             {(priority.attachments?.length > 0 || onUploadAttachment) && (
               <div className="space-y-3">
-                <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
                   <h4 className="text-sm font-medium text-gray-700 flex items-center gap-2">
                     <Paperclip className="h-4 w-4" />
                     Attachments
