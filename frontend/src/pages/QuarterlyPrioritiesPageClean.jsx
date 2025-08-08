@@ -612,11 +612,24 @@ const QuarterlyPrioritiesPageClean = () => {
       
       // If the priority is marked as off-track, create an issue
       if (newStatus === 'off-track') {
-        // Safely collect all priorities
-        const allPriorities = [
-          ...(Array.isArray(companyPriorities) ? companyPriorities : []),
-          ...Object.values(teamMemberPriorities).filter(Array.isArray).flat()
-        ];
+        // Safely collect all priorities - handle both company and individual priorities
+        const allCompanyPriorities = Array.isArray(companyPriorities) ? companyPriorities : [];
+        
+        // Extract individual priorities from teamMemberPriorities structure
+        const allIndividualPriorities = [];
+        Object.values(teamMemberPriorities).forEach(memberData => {
+          if (memberData && memberData.priorities && Array.isArray(memberData.priorities)) {
+            allIndividualPriorities.push(...memberData.priorities);
+          }
+        });
+        
+        const allPriorities = [...allCompanyPriorities, ...allIndividualPriorities];
+        
+        console.log('Looking for priority with ID:', priorityId);
+        console.log('Company priorities:', allCompanyPriorities.length);
+        console.log('Individual priorities:', allIndividualPriorities.length);
+        console.log('Total priorities to search:', allPriorities.length);
+        
         const priority = allPriorities.find(p => p.id === priorityId);
         
         if (priority) {
