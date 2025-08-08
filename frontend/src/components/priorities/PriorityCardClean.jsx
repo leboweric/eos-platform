@@ -38,7 +38,9 @@ const PriorityCardClean = ({
   onDeleteMilestone,
   onToggleMilestone,
   onAddUpdate,
-  teamMembers = []
+  onStatusChange,
+  teamMembers = [],
+  readOnly = false
 }) => {
   const [isExpanded, setIsExpanded] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
@@ -207,10 +209,34 @@ const PriorityCardClean = ({
                   <span>{formatDate(priority.dueDate)}</span>
                 </div>
 
-                <div className="flex items-center gap-2">
-                  <div className={`w-1.5 h-1.5 rounded-full ${getStatusDotColor(isEditing ? editForm.status : priority.status)}`} />
-                  <span className="capitalize">{(isEditing ? editForm.status : priority.status).replace('-', ' ')}</span>
-                </div>
+                {onStatusChange && !isEditing ? (
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => {
+                      const currentStatus = priority.status || 'on-track';
+                      const newStatus = currentStatus === 'on-track' ? 'off-track' : 
+                                       currentStatus === 'off-track' ? 'at-risk' :
+                                       'on-track';
+                      onStatusChange(priority.id, newStatus);
+                    }}
+                    className={`flex items-center gap-2 ${
+                      priority.status === 'off-track' ? 'border-red-300 bg-red-50 hover:bg-red-100' :
+                      priority.status === 'at-risk' ? 'border-yellow-300 bg-yellow-50 hover:bg-yellow-100' :
+                      'border-green-300 bg-green-50 hover:bg-green-100'
+                    }`}
+                  >
+                    <div className={`w-2 h-2 rounded-full ${getStatusDotColor(priority.status)}`} />
+                    <span className="capitalize font-medium">
+                      {(priority.status || 'on-track').replace('-', ' ')}
+                    </span>
+                  </Button>
+                ) : (
+                  <div className="flex items-center gap-2">
+                    <div className={`w-1.5 h-1.5 rounded-full ${getStatusDotColor(isEditing ? editForm.status : priority.status)}`} />
+                    <span className="capitalize">{(isEditing ? editForm.status : priority.status).replace('-', ' ')}</span>
+                  </div>
+                )}
               </div>
 
               {isEditing ? (

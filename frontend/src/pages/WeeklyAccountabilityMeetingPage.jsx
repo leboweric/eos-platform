@@ -456,7 +456,50 @@ const WeeklyAccountabilityMeetingPage = () => {
   };
 
   const handlePriorityStatusChange = async (priorityId, newStatus) => {
+    // First update the priority status
     await handleUpdatePriority(priorityId, { status: newStatus });
+    
+    // If the priority is marked as off-track, create an issue
+    if (newStatus === 'off-track' || newStatus === 'at-risk') {
+      const priority = priorities.find(p => p.id === priorityId);
+      if (priority) {
+        try {
+          const orgId = localStorage.getItem('impersonatedOrgId') || user?.organizationId || user?.organization_id;
+          const effectiveTeamId = teamId || user?.teamId || '00000000-0000-0000-0000-000000000000';
+          
+          // Create issue from off-track priority
+          const issueData = {
+            title: `Off-Track Priority: ${priority.title}`,
+            description: `Priority "${priority.title}" is off-track and needs attention.\n\nOriginal priority: ${priority.description || 'No description'}`,
+            timeline: 'short_term',
+            team_id: effectiveTeamId,
+            created_by: user?.id,
+            status: 'open',
+            priority_level: 'high',
+            related_priority_id: priorityId
+          };
+          
+          await issuesService.createIssue(issueData);
+          
+          // Show success message with visual feedback
+          setSuccess(
+            <div className="flex items-center gap-2">
+              <CheckCircle className="h-4 w-4" />
+              <span>Issue created for off-track priority and added to Issues List</span>
+            </div>
+          );
+          
+          // Refresh issues data
+          await fetchIssuesData();
+          
+          // Clear success message after 5 seconds (longer for this important action)
+          setTimeout(() => setSuccess(null), 5000);
+        } catch (error) {
+          console.error('Failed to create issue for off-track priority:', error);
+          setError('Failed to create issue for off-track priority');
+        }
+      }
+    }
   };
 
   const handleUpdateMilestone = async (priorityId, milestoneId, completed) => {
