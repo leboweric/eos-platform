@@ -411,9 +411,22 @@ const QuarterlyPlanningMeetingPage = () => {
           <div className="space-y-4">
             <Card>
               <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <Calendar className="h-5 w-5" />
-                  Review Prior Quarter
+                <CardTitle className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <Calendar className="h-5 w-5" />
+                    Review Prior Quarter
+                  </div>
+                  {priorities.length > 0 && (
+                    <div className="text-sm font-normal">
+                      <span className="text-2xl font-semibold text-gray-900">
+                        {Math.round((priorities.filter(p => p.status === 'complete').length / priorities.length) * 100)}%
+                      </span>
+                      <span className="text-gray-500 ml-2">Complete</span>
+                      <span className="text-gray-400 ml-2">
+                        ({priorities.filter(p => p.status === 'complete').length}/{priorities.length})
+                      </span>
+                    </div>
+                  )}
                 </CardTitle>
                 <CardDescription>Check progress on last quarter's priorities (30 minutes)</CardDescription>
               </CardHeader>
