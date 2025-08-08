@@ -104,7 +104,9 @@ const TodosListClean = ({
                         onStatusChange(todo.id, checked);
                       } else if (onUpdate) {
                         // Fallback to onUpdate if onStatusChange not provided
-                        todosService.updateTodo(todo.id, { completed: checked }).then(() => {
+                        todosService.updateTodo(todo.id, { 
+                          status: checked ? 'complete' : 'incomplete' 
+                        }).then(() => {
                           onUpdate();
                         });
                       }

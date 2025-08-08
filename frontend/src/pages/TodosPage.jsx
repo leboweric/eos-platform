@@ -192,7 +192,9 @@ const TodosPage = () => {
 
   const handleStatusChange = async (todoId, completed) => {
     try {
-      await todosService.updateTodo(todoId, { completed });
+      await todosService.updateTodo(todoId, { 
+        status: completed ? 'complete' : 'incomplete' 
+      });
       await fetchTodos();
     } catch (error) {
       console.error('Failed to update todo status:', error);

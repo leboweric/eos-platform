@@ -1405,7 +1405,9 @@ const WeeklyAccountabilityMeetingPage = () => {
                     }}
                     onStatusChange={async (todoId, completed) => {
                       try {
-                        await todosService.updateTodo(todoId, { completed });
+                        await todosService.updateTodo(todoId, { 
+                          status: completed ? 'complete' : 'incomplete' 
+                        });
                         await fetchTodosData();
                       } catch (error) {
                         console.error('Failed to update todo:', error);

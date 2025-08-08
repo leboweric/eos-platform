@@ -127,6 +127,11 @@ const TodosList = ({
                         onCheckedChange={(checked) => {
                           if (onStatusChange) {
                             onStatusChange(todo.id, checked);
+                          } else {
+                            // Fallback if no handler provided
+                            todosService.updateTodo(todo.id, { 
+                              status: checked ? 'complete' : 'incomplete' 
+                            });
                           }
                         }}
                         className="data-[state=checked]:bg-green-600 data-[state=checked]:border-green-600"
