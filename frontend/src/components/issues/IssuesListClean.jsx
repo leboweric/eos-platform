@@ -345,7 +345,8 @@ const IssuesListClean = ({
                     <Button
                       onClick={() => {
                         onEdit(selectedIssue);
-                        setSelectedIssue(null);
+                        // Keep modal open briefly to ensure edit dialog opens
+                        setTimeout(() => setSelectedIssue(null), 100);
                       }}
                     >
                       <Edit className="mr-2 h-4 w-4" />

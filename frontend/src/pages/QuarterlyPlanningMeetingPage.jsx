@@ -33,6 +33,8 @@ import { issuesService } from '../services/issuesService';
 import { organizationService } from '../services/organizationService';
 import IssuesList from '../components/issues/IssuesListClean';
 import IssueDialog from '../components/issues/IssueDialog';
+import TodoDialog from '../components/todos/TodoDialog';
+import { todosService } from '../services/todosService';
 import TwoPagePlanView from '../components/vto/TwoPagePlanView';
 
 const QuarterlyPlanningMeetingPage = () => {
@@ -54,9 +56,12 @@ const QuarterlyPlanningMeetingPage = () => {
   const [meetingRating, setMeetingRating] = useState(null);
   const [cascadingMessage, setCascadingMessage] = useState('');
   
-  // Dialog states for issues
+  // Dialog states for issues and todos
   const [showIssueDialog, setShowIssueDialog] = useState(false);
   const [editingIssue, setEditingIssue] = useState(null);
+  const [showTodoDialog, setShowTodoDialog] = useState(false);
+  const [editingTodo, setEditingTodo] = useState(null);
+  const [teamMembers, setTeamMembers] = useState([]);
   
   // Collapsible sections state
   const [expandedSections, setExpandedSections] = useState({
@@ -141,6 +146,7 @@ const QuarterlyPlanningMeetingPage = () => {
       fetchPrioritiesData();
     } else if (activeSection === 'issues') {
       fetchIssuesData();
+      fetchTeamMembers();
     } else if (activeSection === '2-page-plan') {
       fetchVtoData();
     } else {
@@ -296,6 +302,21 @@ const QuarterlyPlanningMeetingPage = () => {
       setError('Failed to load issues');
       setLoading(false);
     }
+  };
+
+  const fetchTeamMembers = async () => {
+    try {
+      const effectiveTeamId = teamId || user?.teamId || '00000000-0000-0000-0000-000000000000';
+      const response = await todosService.getTodos(null, null, true, effectiveTeamId);
+      setTeamMembers(response.data.teamMembers || []);
+    } catch (error) {
+      console.error('Failed to fetch team members:', error);
+    }
+  };
+
+  const handleAddTodo = () => {
+    setEditingTodo(null);
+    setShowTodoDialog(true);
   };
 
   const handleVote = async (issueId, shouldVote) => {
@@ -933,27 +954,58 @@ const QuarterlyPlanningMeetingPage = () => {
                     </CardTitle>
                     <CardDescription className="mt-1">Identify, Discuss, and Solve issues</CardDescription>
                   </div>
-                  <div className="flex items-center gap-3">
-                    <Button
-                      onClick={() => setShowIssueDialog(true)}
-                      size="sm"
-                      className="bg-red-600 hover:bg-red-700"
-                    >
-                      <Plus className="h-4 w-4 mr-1" />
-                      Add Issue
-                    </Button>
-                    <div className="text-sm text-gray-500 bg-white px-3 py-1 rounded-full">
-                      60 minutes
-                    </div>
+                  <div className="text-sm text-gray-500 bg-white px-3 py-1 rounded-full">
+                    60 minutes
                   </div>
                 </div>
               </CardHeader>
               <CardContent className="pt-6">
-                <div className="bg-amber-50 border border-amber-200 rounded-lg p-4 mb-6">
-                  <p className="text-amber-800 text-center">
+                <div className="border border-gray-200 bg-white rounded-lg p-4 mb-4">
+                  <p className="text-gray-700 text-center">
                     <span className="font-semibold">Quick voting:</span> Everyone votes on the most important issues. Then discuss and solve the top-voted issues using IDS.
                   </p>
                 </div>
+                <div className="flex justify-between items-center mb-4">
+                  <div>
+                    {(() => {
+                      const closedIssuesCount = issues.filter(issue => issue.status === 'closed').length;
+                      return closedIssuesCount > 0 && (
+                        <Button 
+                          onClick={async () => {
+                            try {
+                              await issuesService.archiveClosedIssues();
+                              setSuccess(`${closedIssuesCount} closed issue${closedIssuesCount > 1 ? 's' : ''} archived`);
+                              await fetchIssuesData();
+                            } catch (error) {
+                              console.error('Failed to archive closed issues:', error);
+                              setError('Failed to archive closed issues');
+                            }
+                          }}
+                          variant="outline"
+                          className="text-gray-600 hover:text-gray-900"
+                        >
+                          <Archive className="mr-2 h-4 w-4" />
+                          Archive Solved ({closedIssuesCount})
+                        </Button>
+                      );
+                    })()}
+                  </div>
+                  <div className="flex gap-2">
+                    <Button onClick={handleAddTodo} className="bg-indigo-600 hover:bg-indigo-700">
+                      <Plus className="mr-2 h-4 w-4" />
+                      Add To Do
+                    </Button>
+                    <Button onClick={() => setShowIssueDialog(true)} className="bg-indigo-600 hover:bg-indigo-700">
+                      <Plus className="mr-2 h-4 w-4" />
+                      Add Issue
+                    </Button>
+                  </div>
+                </div>
+                {issues.length === 0 ? (
+                  <div className="text-center py-8">
+                    <p className="text-gray-500">No issues found.</p>
+                  </div>
+                ) : null}
               </CardContent>
             </Card>
             
@@ -1008,7 +1060,7 @@ const QuarterlyPlanningMeetingPage = () => {
             
             {/* Issue Dialog */}
             <IssueDialog
-              isOpen={showIssueDialog}
+              open={showIssueDialog}
               onClose={() => {
                 setShowIssueDialog(false);
                 setEditingIssue(null);
@@ -1034,6 +1086,39 @@ const QuarterlyPlanningMeetingPage = () => {
                 }
               }}
               issue={editingIssue}
+              teamMembers={teamMembers || []}
+            />
+            
+            {/* Todo Dialog */}
+            <TodoDialog
+              open={showTodoDialog}
+              onOpenChange={setShowTodoDialog}
+              todo={editingTodo}
+              teamMembers={teamMembers || []}
+              onSave={async (todoData) => {
+                try {
+                  const effectiveTeamId = teamId || user?.teamId || '00000000-0000-0000-0000-000000000000';
+                  const todoDataWithOrgInfo = {
+                    ...todoData,
+                    organization_id: user?.organizationId || user?.organization_id,
+                    team_id: effectiveTeamId,
+                    department_id: effectiveTeamId
+                  };
+                  
+                  if (editingTodo) {
+                    await todosService.updateTodo(editingTodo.id, todoDataWithOrgInfo);
+                  } else {
+                    await todosService.createTodo(todoDataWithOrgInfo);
+                  }
+                  setShowTodoDialog(false);
+                  setEditingTodo(null);
+                  setSuccess('To-do saved successfully');
+                  return true;
+                } catch (error) {
+                  console.error('Failed to save todo:', error);
+                  throw error;
+                }
+              }}
             />
           </div>
         );
