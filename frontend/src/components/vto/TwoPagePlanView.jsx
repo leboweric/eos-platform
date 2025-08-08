@@ -126,7 +126,7 @@ const TwoPagePlanView = () => {
             </CardTitle>
           </CardHeader>
           <CardContent className="pt-4">
-            {blueprintData.coreValues.length > 0 ? (
+            {blueprintData.coreValues && blueprintData.coreValues.length > 0 ? (
               <ul className="space-y-2">
                 {blueprintData.coreValues.map((value, index) => (
                   <li key={index} className="bg-gray-50 p-3 rounded-lg">
@@ -203,7 +203,7 @@ const TwoPagePlanView = () => {
               </div>
               <div>
                 <h4 className="font-semibold text-sm text-gray-700">Differentiators</h4>
-                {blueprintData.marketingStrategy.differentiators.filter(d => d).length > 0 ? (
+                {blueprintData.marketingStrategy.differentiators && blueprintData.marketingStrategy.differentiators.filter(d => d).length > 0 ? (
                   <ul className="list-disc list-inside text-gray-600 space-y-1">
                     {blueprintData.marketingStrategy.differentiators
                       .filter(d => d)
@@ -245,7 +245,7 @@ const TwoPagePlanView = () => {
                   <div>
                     <h4 className="font-semibold text-sm text-gray-700">Key Measurables</h4>
                     <ul className="list-disc list-inside text-gray-600 space-y-1">
-                      {blueprintData.threeYearPicture.measurables.map((m, index) => (
+                      {(blueprintData.threeYearPicture.measurables || []).map((m, index) => (
                         <li key={m.id || index}>
                           {typeof m === 'string' ? m : `${m.name || m.metric_name || ''}: ${m.value || m.target_value || ''}`}
                         </li>
@@ -283,7 +283,7 @@ const TwoPagePlanView = () => {
                   <div>
                     <h4 className="font-semibold text-sm text-gray-700">Goals</h4>
                     <ul className="list-disc list-inside text-gray-600 space-y-1">
-                      {blueprintData.oneYearPlan.goals.map((goal, index) => (
+                      {(blueprintData.oneYearPlan.goals || []).map((goal, index) => (
                         <li key={goal.id || index}>
                           {typeof goal === 'string' ? goal : (goal.goal_text || goal.text || '')}
                         </li>
