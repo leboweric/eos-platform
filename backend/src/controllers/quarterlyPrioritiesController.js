@@ -182,6 +182,7 @@ export const getQuarterlyPriorities = async (req, res) => {
       // Get all updates for each priority
       const updatesResult = await query(
         `SELECT 
+          pu.id,
           priority_id,
           update_text,
           pu.created_at,
@@ -199,6 +200,7 @@ export const getQuarterlyPriorities = async (req, res) => {
           updates[update.priority_id] = [];
         }
         updates[update.priority_id].push({
+          id: update.id,
           text: update.update_text,
           createdAt: update.created_at,
           createdBy: update.author_name
@@ -997,6 +999,7 @@ export const getArchivedPriorities = async (req, res) => {
       // Get all updates for each priority
       const updatesResult = await query(
         `SELECT 
+          pu.id,
           priority_id,
           update_text,
           pu.created_at,
@@ -1014,6 +1017,7 @@ export const getArchivedPriorities = async (req, res) => {
           updates[update.priority_id] = [];
         }
         updates[update.priority_id].push({
+          id: update.id,
           text: update.update_text,
           createdAt: update.created_at,
           createdBy: update.author_name

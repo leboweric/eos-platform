@@ -641,6 +641,7 @@ const QuarterlyPrioritiesPageClean = () => {
       
       // Update local state instead of refetching
       const newUpdate = {
+        id: result?.id || Date.now().toString(), // Generate a temporary ID if backend doesn't return one
         text: updateText,
         createdAt: new Date().toISOString(),
         createdBy: user?.firstName && user?.lastName ? `${user.firstName} ${user.lastName}` : user?.email || 'Unknown'
