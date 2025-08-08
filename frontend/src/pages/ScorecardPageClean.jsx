@@ -45,9 +45,17 @@ const ScorecardPageClean = () => {
   const [users, setUsers] = useState([]);
   const [chartModal, setChartModal] = useState({ isOpen: false, metric: null, metricId: null });
   const [groups, setGroups] = useState([]);
-  const [viewMode, setViewMode] = useState('table'); // 'table' or 'groups'
+  const [viewMode, setViewMode] = useState(() => {
+    // Load view mode preference from localStorage
+    const savedViewMode = localStorage.getItem('scorecardViewMode');
+    return savedViewMode || 'table';
+  }); // 'table' or 'groups'
   const [showOptions, setShowOptions] = useState(false);
-  const [isRTL, setIsRTL] = useState(false); // Add RTL state
+  const [isRTL, setIsRTL] = useState(() => {
+    // Load RTL preference from localStorage
+    const savedRTL = localStorage.getItem('scorecardRTL');
+    return savedRTL === 'true';
+  }); // Add RTL state
   
   // Filter metrics by type
   const weeklyMetrics = metrics.filter(m => m.type === 'weekly');
@@ -402,7 +410,9 @@ const ScorecardPageClean = () => {
                 <div className="absolute right-0 mt-2 w-48 bg-white border border-gray-200 rounded-lg shadow-sm z-10">
                   <button
                     onClick={() => {
-                      setViewMode(viewMode === 'table' ? 'groups' : 'table');
+                      const newViewMode = viewMode === 'table' ? 'groups' : 'table';
+                      setViewMode(newViewMode);
+                      localStorage.setItem('scorecardViewMode', newViewMode);
                       setShowOptions(false);
                     }}
                     className="w-full text-left px-4 py-2 hover:bg-gray-50 text-sm"
@@ -411,7 +421,9 @@ const ScorecardPageClean = () => {
                   </button>
                   <button
                     onClick={() => {
-                      setIsRTL(!isRTL);
+                      const newRTL = !isRTL;
+                      setIsRTL(newRTL);
+                      localStorage.setItem('scorecardRTL', newRTL.toString());
                       setShowOptions(false);
                     }}
                     className="w-full text-left px-4 py-2 hover:bg-gray-50 text-sm border-t border-gray-100"
