@@ -11,6 +11,8 @@ import {
 const ScorecardTableClean = ({ 
   metrics = [], 
   weeklyScores = {}, 
+  monthlyScores = {},
+  type = 'weekly', // 'weekly' or 'monthly'
   readOnly = false,
   isRTL = false,
   showTotal = true,
@@ -53,9 +55,33 @@ const ScorecardTableClean = ({
     return { labels, weekDates };
   };
 
-  const { labels: weekLabelsOriginal, weekDates: weekDatesOriginal } = getWeekLabels();
-  const weekLabels = isRTL ? [...weekLabelsOriginal].reverse() : weekLabelsOriginal;
-  const weekDates = isRTL ? [...weekDatesOriginal].reverse() : weekDatesOriginal;
+  // Get month labels for the past 12 months
+  const getMonthLabels = () => {
+    const labels = [];
+    const monthDates = [];
+    const today = new Date();
+    
+    for (let i = 11; i >= 0; i--) {
+      const date = new Date(today.getFullYear(), today.getMonth() - i, 1);
+      const monthLabel = date.toLocaleString('default', { month: 'short' }).toUpperCase();
+      const yearLabel = date.getFullYear().toString().slice(-2);
+      labels.push(`${monthLabel} ${yearLabel}`);
+      monthDates.push(date.toISOString().split('T')[0]);
+    }
+    
+    return { labels, monthDates };
+  };
+
+  const isWeekly = type === 'weekly';
+  const { labels: weekLabelsOriginal, weekDates: weekDatesOriginal } = isWeekly ? getWeekLabels() : { labels: [], weekDates: [] };
+  const { labels: monthLabelsOriginal, monthDates: monthDatesOriginal } = !isWeekly ? getMonthLabels() : { labels: [], monthDates: [] };
+  
+  const periodLabelsOriginal = isWeekly ? weekLabelsOriginal : monthLabelsOriginal;
+  const periodDatesOriginal = isWeekly ? weekDatesOriginal : monthDatesOriginal;
+  const periodLabels = isRTL ? [...periodLabelsOriginal].reverse() : periodLabelsOriginal;
+  const periodDates = isRTL ? [...periodDatesOriginal].reverse() : periodDatesOriginal;
+  
+  const scores = isWeekly ? weeklyScores : monthlyScores;
 
   // Helper functions for value formatting and goal achievement
   const formatValue = (value, valueType) => {
@@ -135,16 +161,16 @@ const ScorecardTableClean = ({
                 <th className="text-center p-2 font-semibold text-gray-700 w-20 border-l border-gray-200">Average</th>
                 
                 {/* Week columns */}
-                {weekLabels.map((label, index) => {
-                  const originalIndex = isRTL ? weekLabelsOriginal.length - 1 - index : index;
-                  const isCurrentWeek = originalIndex === weekLabelsOriginal.length - 1;
+                {periodLabels.map((label, index) => {
+                  const originalIndex = isRTL ? periodLabelsOriginal.length - 1 - index : index;
+                  const isCurrentPeriod = originalIndex === periodLabelsOriginal.length - 1;
                   return (
-                    <th key={weekDates[index]} className={`text-center p-2 font-semibold text-xs w-20 ${
-                      isCurrentWeek ? 'text-gray-900 bg-gray-50 border-2 border-gray-300' : 'text-gray-700'
+                    <th key={periodDates[index]} className={`text-center p-2 font-semibold text-xs w-20 ${
+                      isCurrentPeriod ? 'text-gray-900 bg-gray-50 border-2 border-gray-300' : 'text-gray-700'
                     }`}>
                       <div className="flex flex-col items-center">
                         <span className="text-xs font-normal text-gray-500 mb-1">
-                          {isCurrentWeek ? 'Current' : ''}
+                          {isCurrentPeriod ? 'Current' : ''}
                         </span>
                         <span>{label}</span>
                       </div>
@@ -158,15 +184,15 @@ const ScorecardTableClean = ({
             </thead>
             <tbody>
               {metrics.map((metric, metricIndex) => {
-                const scores = weekDatesOriginal
-                  .map(weekDate => weeklyScores[metric.id]?.[weekDate])
+                const metricScores = periodDatesOriginal
+                  .map(periodDate => scores[metric.id]?.[periodDate])
                   .filter(score => score !== undefined && score !== null && score !== '');
                 
-                const average = scores.length > 0 
-                  ? scores.reduce((sum, score) => sum + parseFloat(score), 0) / scores.length 
+                const average = metricScores.length > 0 
+                  ? metricScores.reduce((sum, score) => sum + parseFloat(score), 0) / metricScores.length 
                   : null;
-                const total = scores.length > 0
-                  ? scores.reduce((sum, score) => sum + parseFloat(score), 0)
+                const total = metricScores.length > 0
+                  ? metricScores.reduce((sum, score) => sum + parseFloat(score), 0)
                   : null;
                 const avgGoalMet = average !== null && isGoalMet(average, metric.goal, metric.comparison_operator);
                 
@@ -204,19 +230,19 @@ const ScorecardTableClean = ({
                       )}
                     </td>
                     
-                    {/* Week columns */}
-                    {weekDates.map((weekDate, index) => {
-                      const score = weeklyScores[metric.id]?.[weekDate];
+                    {/* Period columns */}
+                    {periodDates.map((periodDate, index) => {
+                      const score = scores[metric.id]?.[periodDate];
                       const goalMet = score && isGoalMet(score, metric.goal, metric.comparison_operator);
-                      const originalIndex = isRTL ? weekLabelsOriginal.length - 1 - index : index;
-                      const isCurrentWeek = originalIndex === weekLabelsOriginal.length - 1;
+                      const originalIndex = isRTL ? periodLabelsOriginal.length - 1 - index : index;
+                      const isCurrentPeriod = originalIndex === periodLabelsOriginal.length - 1;
                       
                       return (
-                        <td key={weekDate} className={`p-2 text-center w-20 ${isCurrentWeek ? 'bg-gray-50 border-2 border-gray-300' : ''}`}>
+                        <td key={periodDate} className={`p-2 text-center w-20 ${isCurrentPeriod ? 'bg-gray-50 border-2 border-gray-300' : ''}`}>
                           <button
-                            onClick={() => onScoreEdit && onScoreEdit(metric, weekDate)}
+                            onClick={() => onScoreEdit && onScoreEdit(metric, periodDate)}
                             className={`w-full px-2 py-1 rounded text-sm font-medium transition-colors
-                              ${score ? (goalMet ? 'bg-green-50 text-green-700 border border-green-200' : 'bg-red-50 text-red-700 border border-red-200') : (isCurrentWeek ? 'bg-gray-100 text-gray-700 hover:bg-gray-200' : 'bg-white border border-gray-200 text-gray-600 hover:bg-gray-50')}`}
+                              ${score ? (goalMet ? 'bg-green-50 text-green-700 border border-green-200' : 'bg-red-50 text-red-700 border border-red-200') : (isCurrentPeriod ? 'bg-gray-100 text-gray-700 hover:bg-gray-200' : 'bg-white border border-gray-200 text-gray-600 hover:bg-gray-50')}`}
                           >
                             {score ? formatValue(score, metric.value_type) : '-'}
                           </button>
@@ -226,7 +252,7 @@ const ScorecardTableClean = ({
                     
                     {showTotal && (
                       <td className="p-2 text-center font-semibold w-20 bg-white border-l border-gray-200">
-                        {Math.round(Object.values(weeklyScores[metric.id] || {}).reduce((sum, val) => sum + (parseFloat(val) || 0), 0))}
+                        {Math.round(Object.values(scores[metric.id] || {}).reduce((sum, val) => sum + (parseFloat(val) || 0), 0))}
                       </td>
                     )}
                     <td className="text-center p-2 w-12">

@@ -465,6 +465,8 @@ const ScorecardPageClean = () => {
               <ScorecardTableClean
                 metrics={weeklyMetrics}
                 weeklyScores={weeklyScores}
+                monthlyScores={monthlyScores}
+                type="weekly"
                 readOnly={false}
                 isRTL={false}
                 showTotal={false}
@@ -504,7 +506,9 @@ const ScorecardPageClean = () => {
             ) : (
               <ScorecardTableClean
                 metrics={monthlyMetrics}
-                weeklyScores={monthlyScores}
+                weeklyScores={weeklyScores}
+                monthlyScores={monthlyScores}
+                type="monthly"
                 readOnly={false}
                 isRTL={false}
                 showTotal={false}
