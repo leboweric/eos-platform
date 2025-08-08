@@ -659,13 +659,20 @@ const WeeklyAccountabilityMeetingPage = () => {
     switch (activeSection) {
       case 'good-news':
         return (
-          <Card>
-            <CardHeader className="bg-gradient-to-r from-blue-50 to-indigo-50 border-b">
-              <CardTitle className="flex items-center gap-2 text-2xl">
-                <Smile className="h-6 w-6 text-indigo-600" />
-                Good News
-              </CardTitle>
-              <CardDescription>Share personal and professional wins (5 minutes)</CardDescription>
+          <Card className="border-0 shadow-sm">
+            <CardHeader className="bg-gradient-to-r from-blue-50 to-indigo-50 rounded-t-lg">
+              <div className="flex items-center justify-between">
+                <div>
+                  <CardTitle className="flex items-center gap-2 text-xl">
+                    <Smile className="h-5 w-5 text-indigo-600" />
+                    Good News
+                  </CardTitle>
+                  <CardDescription className="mt-1">Share personal and professional wins</CardDescription>
+                </div>
+                <div className="text-sm text-gray-500 bg-white px-3 py-1 rounded-full">
+                  5 minutes
+                </div>
+              </div>
             </CardHeader>
             <CardContent className="pt-6">
               <div className="space-y-4">
@@ -691,13 +698,20 @@ const WeeklyAccountabilityMeetingPage = () => {
         return (
           <div className="space-y-4 w-full">
             {scorecardMetrics.length === 0 ? (
-              <Card>
-                <CardHeader className="bg-gradient-to-r from-green-50 to-emerald-50 border-b">
-                  <CardTitle className="flex items-center gap-2 text-2xl">
-                    <BarChart className="h-6 w-6 text-emerald-600" />
-                    Scorecard Review
-                  </CardTitle>
-                  <CardDescription>Review weekly metrics (5 minutes)</CardDescription>
+              <Card className="border-0 shadow-sm">
+                <CardHeader className="bg-gradient-to-r from-green-50 to-emerald-50 rounded-t-lg">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <CardTitle className="flex items-center gap-2 text-xl">
+                        <BarChart className="h-5 w-5 text-emerald-600" />
+                        Scorecard Review
+                      </CardTitle>
+                      <CardDescription className="mt-1">Review weekly metrics</CardDescription>
+                    </div>
+                    <div className="text-sm text-gray-500 bg-white px-3 py-1 rounded-full">
+                      5 minutes
+                    </div>
+                  </div>
                 </CardHeader>
                 <CardContent className="text-center py-8">
                   <p className="text-gray-500">No scorecard metrics found. Set up your scorecard to track key metrics.</p>
@@ -712,15 +726,20 @@ const WeeklyAccountabilityMeetingPage = () => {
               </Card>
             ) : (
               <>
-                <Card>
-                  <CardHeader className="bg-gradient-to-r from-green-50 to-emerald-50 border-b">
-                    <CardTitle className="flex items-center gap-2 text-2xl">
-                      <BarChart className="h-6 w-6 text-emerald-600" />
-                      Scorecard Review
-                    </CardTitle>
-                    <CardDescription>
-                      Quick Status Update: Metric owners report "on-track" or "off-track" status
-                    </CardDescription>
+                <Card className="border-0 shadow-sm">
+                  <CardHeader className="bg-gradient-to-r from-green-50 to-emerald-50 rounded-t-lg">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <CardTitle className="flex items-center gap-2 text-xl">
+                          <BarChart className="h-5 w-5 text-emerald-600" />
+                          Scorecard Review
+                        </CardTitle>
+                        <CardDescription className="mt-1">Quick Status Update: Metric owners report "on-track" or "off-track" status</CardDescription>
+                      </div>
+                      <div className="text-sm text-gray-500 bg-white px-3 py-1 rounded-full">
+                        5 minutes
+                      </div>
+                    </div>
                   </CardHeader>
                   <CardContent className="pt-6">
                     <div className="flex justify-end gap-2 mb-4">
@@ -772,13 +791,20 @@ const WeeklyAccountabilityMeetingPage = () => {
       case 'priorities':
         return (
           <div className="space-y-4">
-            <Card>
-              <CardHeader className="bg-gradient-to-r from-purple-50 to-pink-50 border-b">
-                <CardTitle className="flex items-center gap-2 text-2xl">
-                  <Target className="h-6 w-6 text-purple-600" />
-                  Quarterly Priorities Review
-                </CardTitle>
-                <CardDescription>Check progress on quarterly priorities (5 minutes)</CardDescription>
+            <Card className="border-0 shadow-sm">
+              <CardHeader className="bg-gradient-to-r from-purple-50 to-pink-50 rounded-t-lg">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <CardTitle className="flex items-center gap-2 text-xl">
+                      <Target className="h-5 w-5 text-purple-600" />
+                      Quarterly Priorities Review
+                    </CardTitle>
+                    <CardDescription className="mt-1">Check progress on quarterly priorities</CardDescription>
+                  </div>
+                  <div className="text-sm text-gray-500 bg-white px-3 py-1 rounded-full">
+                    5 minutes
+                  </div>
+                </div>
               </CardHeader>
             </Card>
             {priorities.length === 0 ? (
@@ -870,13 +896,20 @@ const WeeklyAccountabilityMeetingPage = () => {
 
       case 'headlines':
         return (
-          <Card>
-            <CardHeader className="bg-gradient-to-r from-orange-50 to-amber-50 border-b">
-              <CardTitle className="flex items-center gap-2 text-2xl">
-                <Newspaper className="h-6 w-6 text-orange-600" />
-                Customer & Employee Headlines
-              </CardTitle>
-              <CardDescription>Share important updates (60 minutes)</CardDescription>
+          <Card className="border-0 shadow-sm">
+            <CardHeader className="bg-gradient-to-r from-orange-50 to-amber-50 rounded-t-lg">
+              <div className="flex items-center justify-between">
+                <div>
+                  <CardTitle className="flex items-center gap-2 text-xl">
+                    <Newspaper className="h-5 w-5 text-orange-600" />
+                    Customer & Employee Headlines
+                  </CardTitle>
+                  <CardDescription className="mt-1">Share important updates</CardDescription>
+                </div>
+                <div className="text-sm text-gray-500 bg-white px-3 py-1 rounded-full">
+                  60 minutes
+                </div>
+              </div>
             </CardHeader>
             <CardContent className="pt-6">
               <div className="space-y-4">
@@ -917,13 +950,20 @@ const WeeklyAccountabilityMeetingPage = () => {
       case 'todo-list':
         return (
           <div className="space-y-4">
-            <Card>
-              <CardHeader className="bg-gradient-to-r from-cyan-50 to-blue-50 border-b">
-                <CardTitle className="flex items-center gap-2 text-2xl">
-                  <ListTodo className="h-6 w-6 text-cyan-600" />
-                  To-do List Review
-                </CardTitle>
-                <CardDescription>Review action items (5 minutes)</CardDescription>
+            <Card className="border-0 shadow-sm">
+              <CardHeader className="bg-gradient-to-r from-cyan-50 to-blue-50 rounded-t-lg">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <CardTitle className="flex items-center gap-2 text-xl">
+                      <ListTodo className="h-5 w-5 text-cyan-600" />
+                      To-do List Review
+                    </CardTitle>
+                    <CardDescription className="mt-1">Review action items</CardDescription>
+                  </div>
+                  <div className="text-sm text-gray-500 bg-white px-3 py-1 rounded-full">
+                    5 minutes
+                  </div>
+                </div>
               </CardHeader>
               <CardContent className="pt-6">
                 <div className="flex justify-end mb-4">
@@ -973,13 +1013,20 @@ const WeeklyAccountabilityMeetingPage = () => {
       case 'issues':
         return (
           <div className="space-y-4">
-            <Card>
-              <CardHeader className="bg-gradient-to-r from-red-50 to-pink-50 border-b">
-                <CardTitle className="flex items-center gap-2 text-2xl">
-                  <AlertTriangle className="h-6 w-6 text-red-600" />
-                  IDS (Issues)
-                </CardTitle>
-                <CardDescription>Identify, Discuss, and Solve issues (10 minutes)</CardDescription>
+            <Card className="border-0 shadow-sm">
+              <CardHeader className="bg-gradient-to-r from-red-50 to-pink-50 rounded-t-lg">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <CardTitle className="flex items-center gap-2 text-xl">
+                      <AlertTriangle className="h-5 w-5 text-red-600" />
+                      IDS (Issues)
+                    </CardTitle>
+                    <CardDescription className="mt-1">Identify, Discuss, and Solve issues</CardDescription>
+                  </div>
+                  <div className="text-sm text-gray-500 bg-white px-3 py-1 rounded-full">
+                    10 minutes
+                  </div>
+                </div>
               </CardHeader>
               <CardContent className="pt-6">
                 <div className="border border-gray-200 bg-white rounded-lg p-4 mb-4">
@@ -1027,13 +1074,20 @@ const WeeklyAccountabilityMeetingPage = () => {
 
       case 'conclude':
         return (
-          <Card>
-            <CardHeader className="bg-gradient-to-r from-green-50 to-teal-50 border-b">
-              <CardTitle className="flex items-center gap-2 text-2xl">
-                <CheckSquare className="h-6 w-6 text-green-600" />
-                Conclude Meeting
-              </CardTitle>
-              <CardDescription>Wrap up and cascade messages (5 minutes)</CardDescription>
+          <Card className="border-0 shadow-sm">
+            <CardHeader className="bg-gradient-to-r from-green-50 to-teal-50 rounded-t-lg">
+              <div className="flex items-center justify-between">
+                <div>
+                  <CardTitle className="flex items-center gap-2 text-xl">
+                    <CheckSquare className="h-5 w-5 text-green-600" />
+                    Conclude Meeting
+                  </CardTitle>
+                  <CardDescription className="mt-1">Wrap up and cascade messages</CardDescription>
+                </div>
+                <div className="text-sm text-gray-500 bg-white px-3 py-1 rounded-full">
+                  5 minutes
+                </div>
+              </div>
             </CardHeader>
             <CardContent className="pt-6">
               <div className="space-y-6">
@@ -1162,31 +1216,31 @@ const WeeklyAccountabilityMeetingPage = () => {
               const Icon = item.icon;
               const currentIndex = agendaItems.findIndex(i => i.id === activeSection);
               const itemIndex = agendaItems.findIndex(i => i.id === item.id);
-              const isCompleted = meetingStarted && itemIndex < currentIndex;
+              const isCompleted = itemIndex < currentIndex;
               
               return (
                 <TabsTrigger
                   key={item.id}
                   value={item.id}
-                  disabled={!meetingStarted}
-                  className="flex flex-col items-center gap-1 py-3 px-2 data-[state=active]:bg-indigo-50 data-[state=active]:text-indigo-700 disabled:opacity-40"
+                  className="flex flex-col items-center gap-1 py-3 px-2 data-[state=active]:bg-indigo-50 data-[state=active]:text-indigo-700"
                 >
                   <Icon className={`h-5 w-5 ${
                     isCompleted ? 'text-green-600' : ''
                   }`} />
                   <span className="text-xs font-medium">{item.label}</span>
                   <span className="text-xs text-gray-500">{item.duration}m</span>
+                  {isCompleted && (
+                    <CheckCircle className="h-3 w-3 text-green-600" />
+                  )}
                 </TabsTrigger>
               );
             })}
           </TabsList>
 
           {/* Tab Content */}
-          {agendaItems.map((item) => (
-            <TabsContent key={item.id} value={item.id} className="mt-6">
-              {renderContent()}
-            </TabsContent>
-          ))}
+          <div className="bg-white rounded-lg shadow-sm">
+            {renderContent()}
+          </div>
         </Tabs>
 
         {/* Floating Action Buttons */}
