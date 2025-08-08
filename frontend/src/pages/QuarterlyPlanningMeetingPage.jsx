@@ -323,7 +323,7 @@ const QuarterlyPlanningMeetingPage = () => {
       if (shouldVote) {
         await issuesService.voteForIssue(issueId);
       } else {
-        await issuesService.removeVoteForIssue(issueId);
+        await issuesService.unvoteForIssue(issueId);
       }
     } catch (error) {
       console.error('Failed to update vote:', error);

@@ -101,6 +101,13 @@ const IssuesListClean = ({
                   <div className="flex-1 min-w-0">
                     {/* Title with trending indicator */}
                     <div className="flex items-start gap-2">
+                      {/* Issue Number */}
+                      <span className={`
+                        text-sm font-semibold min-w-[2rem]
+                        ${isTopIssue ? 'text-blue-600' : 'text-gray-500'}
+                      `}>
+                        #{index + 1}
+                      </span>
                       {isTopIssue && (
                         <span className="text-blue-600 text-sm" title="Most voted issue">🔥</span>
                       )}
