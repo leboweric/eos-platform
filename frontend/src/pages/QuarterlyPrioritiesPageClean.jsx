@@ -1945,12 +1945,11 @@ const QuarterlyPrioritiesPageClean = () => {
                       <AvatarFallback className="bg-gray-100">{getUserInitials(member.name)}</AvatarFallback>
                     </Avatar>
                     <div className="flex-1">
-                      <h3 className="text-lg font-semibold text-gray-900">{member.name}</h3>
+                      <h3 className="text-lg font-semibold text-gray-900">
+                        {member.name} ({memberPriorities.length})
+                      </h3>
                       <p className="text-sm text-gray-600">{member.role} • {member.department}</p>
                     </div>
-                    <span className="text-sm font-medium text-gray-500 bg-gray-100 px-2 py-1 rounded-full">
-                      {memberPriorities.length}
-                    </span>
                   </div>
                   {expandedSections.individualPriorities[member.id] && (
                     <div className="space-y-4 ml-16">
