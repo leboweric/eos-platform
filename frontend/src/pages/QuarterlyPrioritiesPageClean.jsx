@@ -577,7 +577,7 @@ const QuarterlyPrioritiesPageClean = () => {
       });
       
       // Update archived priorities if needed
-      setArchivedPriorities(prev => {
+      setArchivedQuarters(prev => {
         const updated = { ...prev };
         Object.keys(updated).forEach(quarter => {
           if (updated[quarter] && updated[quarter].companyPriorities && Array.isArray(updated[quarter].companyPriorities)) {
