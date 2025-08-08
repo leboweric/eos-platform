@@ -13,6 +13,7 @@ import { organizationService } from '../services/organizationService';
 import { getRevenueLabel } from '../utils/revenueUtils';
 import TodosList from '../components/todos/TodosListClean';
 import TodoDialog from '../components/todos/TodoDialog';
+import IssueDialog from '../components/issues/IssueDialog';
 import { useSelectedTodos } from '../contexts/SelectedTodosContext';
 import {
   AlertCircle,
@@ -34,6 +35,11 @@ const DashboardClean = () => {
   const [organization, setOrganization] = useState(null);
   const [showTodoDialog, setShowTodoDialog] = useState(false);
   const [editingTodo, setEditingTodo] = useState(null);
+  const [showIssueDialog, setShowIssueDialog] = useState(false);
+  const [editingIssue, setEditingIssue] = useState(null);
+  const [showHeadlineDialog, setShowHeadlineDialog] = useState(false);
+  const [headlineText, setHeadlineText] = useState('');
+  const [headlineType, setHeadlineType] = useState('customer');
   const [predictions, setPredictions] = useState({
     revenue: { target: 0, current: 0 },
     profit: { target: 0, current: 0 },
@@ -623,26 +629,39 @@ const DashboardClean = () => {
         <div className="mt-12 pt-8 border-t border-gray-100">
           <h3 className="text-sm font-medium text-gray-500 mb-4">Quick Links</h3>
           <div className="flex gap-4">
-            <Link to="/quarterly-priorities">
-              <Button variant="outline" size="sm" className="text-gray-600">
-                Quarterly Priorities
-              </Button>
-            </Link>
-            <Link to="/todos">
-              <Button variant="outline" size="sm" className="text-gray-600">
-                All To-Dos
-              </Button>
-            </Link>
-            <Link to="/issues">
-              <Button variant="outline" size="sm" className="text-gray-600">
-                Issues List
-              </Button>
-            </Link>
-            <Link to="/scorecard">
-              <Button variant="outline" size="sm" className="text-gray-600">
-                Scorecard
-              </Button>
-            </Link>
+            <Button 
+              variant="outline" 
+              size="sm" 
+              className="text-gray-600"
+              onClick={() => {
+                setEditingIssue(null);
+                setShowIssueDialog(true);
+              }}
+            >
+              <Plus className="mr-2 h-4 w-4" />
+              Add Issue
+            </Button>
+            <Button 
+              variant="outline" 
+              size="sm" 
+              className="text-gray-600"
+              onClick={() => {
+                setEditingTodo(null);
+                setShowTodoDialog(true);
+              }}
+            >
+              <Plus className="mr-2 h-4 w-4" />
+              Add To Do
+            </Button>
+            <Button 
+              variant="outline" 
+              size="sm" 
+              className="text-gray-600"
+              onClick={() => setShowHeadlineDialog(true)}
+            >
+              <Plus className="mr-2 h-4 w-4" />
+              Add Headline
+            </Button>
           </div>
         </div>
 
@@ -681,6 +700,104 @@ const DashboardClean = () => {
             }
           }}
         />
+
+        {/* Issue Dialog */}
+        <IssueDialog
+          open={showIssueDialog}
+          onOpenChange={setShowIssueDialog}
+          issue={editingIssue}
+          teamMembers={dashboardData.teamMembers || []}
+          onSave={async (issueData) => {
+            try {
+              const orgId = localStorage.getItem('impersonatedOrgId') || user?.organizationId || user?.organization_id;
+              const teamId = user?.teamId || '00000000-0000-0000-0000-000000000000';
+              
+              const issueDataWithOrgInfo = {
+                ...issueData,
+                organization_id: orgId,
+                department_id: teamId
+              };
+              
+              if (editingIssue) {
+                await issuesService.updateIssue(editingIssue.id, issueDataWithOrgInfo);
+              } else {
+                await issuesService.createIssue(issueDataWithOrgInfo);
+              }
+              await fetchDashboardData();
+              setShowIssueDialog(false);
+              setEditingIssue(null);
+              return true;
+            } catch (error) {
+              console.error('Failed to save issue:', error);
+              throw error;
+            }
+          }}
+        />
+
+        {/* Simple Headline Dialog */}
+        {showHeadlineDialog && (
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+            <div className="bg-white rounded-lg p-6 w-full max-w-md">
+              <h2 className="text-lg font-semibold mb-4">Add Headline</h2>
+              <div className="space-y-4">
+                <div>
+                  <Label>Headline Type</Label>
+                  <select
+                    className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
+                    value={headlineType}
+                    onChange={(e) => setHeadlineType(e.target.value)}
+                  >
+                    <option value="customer">Customer Headline</option>
+                    <option value="employee">Employee Headline</option>
+                  </select>
+                </div>
+                <div>
+                  <Label>Headline Text</Label>
+                  <textarea
+                    className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
+                    rows={3}
+                    value={headlineText}
+                    onChange={(e) => setHeadlineText(e.target.value)}
+                    placeholder={headlineType === 'customer' ? 'Enter customer headline...' : 'Enter employee headline...'}
+                  />
+                </div>
+                <div className="flex justify-end gap-2">
+                  <Button
+                    variant="outline"
+                    onClick={() => {
+                      setShowHeadlineDialog(false);
+                      setHeadlineText('');
+                    }}
+                  >
+                    Cancel
+                  </Button>
+                  <Button
+                    onClick={async () => {
+                      // For now, we'll store this in session storage
+                      // In a future update, this should be saved to the database
+                      const headlines = JSON.parse(sessionStorage.getItem('meetingHeadlines') || '{}');
+                      if (!headlines[headlineType]) {
+                        headlines[headlineType] = [];
+                      }
+                      headlines[headlineType].push({
+                        text: headlineText,
+                        createdAt: new Date().toISOString(),
+                        createdBy: user?.firstName + ' ' + user?.lastName
+                      });
+                      sessionStorage.setItem('meetingHeadlines', JSON.stringify(headlines));
+                      setShowHeadlineDialog(false);
+                      setHeadlineText('');
+                      alert('Headline added! It will appear in your next Weekly Accountability Meeting.');
+                    }}
+                    disabled={!headlineText.trim()}
+                  >
+                    Add Headline
+                  </Button>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );
