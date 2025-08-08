@@ -189,6 +189,52 @@ const QuarterlyPlanningMeetingPage = () => {
     }
   };
 
+  const handlePriorityStatusChange = async (priorityId, newStatus) => {
+    try {
+      const orgId = localStorage.getItem('impersonatedOrgId') || user?.organizationId || user?.organization_id;
+      const effectiveTeamId = teamId || user?.teamId || '00000000-0000-0000-0000-000000000000';
+      
+      // Update in database
+      await quarterlyPrioritiesService.updatePriority(orgId, effectiveTeamId, priorityId, { status: newStatus });
+      
+      // Update local state
+      setPriorities(prev => 
+        prev.map(p => 
+          p.id === priorityId ? { ...p, status: newStatus } : p
+        )
+      );
+      
+      // If marked as off-track, create an issue
+      if (newStatus === 'off-track') {
+        const priority = priorities.find(p => p.id === priorityId);
+        if (priority) {
+          try {
+            await issuesService.createIssue({
+              title: `Off-Track Priority: ${priority.title}`,
+              description: `Priority "${priority.title}" is off-track and needs attention.\n\nOwner: ${priority.owner?.name || 'Unassigned'}\n\nDescription: ${priority.description || 'No description provided'}`,
+              timeline: 'short_term',
+              ownerId: priority.owner?.id || null,
+              department_id: effectiveTeamId
+            });
+            
+            setSuccess('Priority marked off-track and issue created');
+            await fetchIssuesData();
+          } catch (error) {
+            console.error('Failed to create issue for off-track priority:', error);
+          }
+        }
+      } else {
+        setSuccess(`Priority status updated to ${newStatus.replace('-', ' ')}`);
+      }
+      
+      setTimeout(() => setSuccess(null), 3000);
+    } catch (error) {
+      console.error('Failed to update priority status:', error);
+      setError('Failed to update priority status');
+      setTimeout(() => setError(null), 3000);
+    }
+  };
+
   const fetchIssuesData = async () => {
     try {
       setLoading(true);
@@ -419,15 +465,7 @@ const QuarterlyPlanningMeetingPage = () => {
                               setSuccess(message);
                               setTimeout(() => setSuccess(null), 3000);
                             }}
-                            onStatusChange={(priorityId, newStatus) => {
-                              setPriorities(prev => 
-                                prev.map(p => 
-                                  p.id === priorityId ? { ...p, status: newStatus } : p
-                                )
-                              );
-                              setSuccess(`Priority status updated to ${newStatus}`);
-                              setTimeout(() => setSuccess(null), 3000);
-                            }}
+                            onStatusChange={handlePriorityStatusChange}
                           />
                         ))}
                       </div>
@@ -485,15 +523,7 @@ const QuarterlyPlanningMeetingPage = () => {
                                       setSuccess(message);
                                       setTimeout(() => setSuccess(null), 3000);
                                     }}
-                                    onStatusChange={(priorityId, newStatus) => {
-                                      setPriorities(prev => 
-                                        prev.map(p => 
-                                          p.id === priorityId ? { ...p, status: newStatus } : p
-                                        )
-                                      );
-                                      setSuccess(`Priority status updated to ${newStatus}`);
-                                      setTimeout(() => setSuccess(null), 3000);
-                                    }}
+                                    onStatusChange={handlePriorityStatusChange}
                                   />
                                 ))}
                               </div>
@@ -632,15 +662,7 @@ const QuarterlyPlanningMeetingPage = () => {
                                 setSuccess(message);
                                 setTimeout(() => setSuccess(null), 3000);
                               }}
-                              onStatusChange={(priorityId, newStatus) => {
-                                setPriorities(prev => 
-                                  prev.map(p => 
-                                    p.id === priorityId ? { ...p, status: newStatus } : p
-                                  )
-                                );
-                                setSuccess(`Priority status updated to ${newStatus}`);
-                                setTimeout(() => setSuccess(null), 3000);
-                              }}
+                              onStatusChange={handlePriorityStatusChange}
                             />
                           ))}
                         </div>
@@ -698,15 +720,7 @@ const QuarterlyPlanningMeetingPage = () => {
                                       setSuccess(message);
                                       setTimeout(() => setSuccess(null), 3000);
                                     }}
-                                    onStatusChange={(priorityId, newStatus) => {
-                                      setPriorities(prev => 
-                                        prev.map(p => 
-                                          p.id === priorityId ? { ...p, status: newStatus } : p
-                                        )
-                                      );
-                                      setSuccess(`Priority status updated to ${newStatus}`);
-                                      setTimeout(() => setSuccess(null), 3000);
-                                    }}
+                                    onStatusChange={handlePriorityStatusChange}
                                   />
                                 ))}
                               </div>

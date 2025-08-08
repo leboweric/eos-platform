@@ -978,44 +978,7 @@ const WeeklyAccountabilityMeetingPage = () => {
                                 setSuccess(message);
                                 setTimeout(() => setSuccess(null), 3000);
                               }}
-                              onStatusChange={async (priorityId, newStatus) => {
-                                setPriorities(prev => 
-                                  prev.map(p => 
-                                    p.id === priorityId ? { ...p, status: newStatus } : p
-                                  )
-                                );
-                                
-                                // Automatically create an issue if marked as off-track
-                                if (newStatus === 'off-track') {
-                                  try {
-                                    const effectiveTeamId = teamId || user?.teamId || '00000000-0000-0000-0000-000000000000';
-                                    await issuesService.createIssue({
-                                      title: `Off-Track Priority: ${priority.title}`,
-                                      description: `Priority "${priority.title}" is off-track and needs attention.\n\nOwner: ${priority.owner?.name || 'Unassigned'}\n\nDescription: ${priority.description || 'No description provided'}`,
-                                      timeline: 'short_term',
-                                      ownerId: priority.owner?.id || null,
-                                      department_id: effectiveTeamId
-                                    });
-                                    
-                                    setSuccess(
-                                      <div className="flex items-center gap-2">
-                                        <CheckCircle className="h-4 w-4" />
-                                        <span>Priority marked off-track and issue created</span>
-                                      </div>
-                                    );
-                                    await fetchIssuesData();
-                                  } catch (error) {
-                                    console.error('Failed to create issue for off-track priority:', error);
-                                    setError('Failed to create issue for off-track priority');
-                                  }
-                                } else {
-                                  setSuccess(`Priority status updated to ${newStatus}`);
-                                }
-                                setTimeout(() => {
-                                  setSuccess(null);
-                                  setError(null);
-                                }, 3000);
-                              }}
+                              onStatusChange={handlePriorityStatusChange}
                             />
                           ))}
                         </div>
@@ -1079,44 +1042,7 @@ const WeeklyAccountabilityMeetingPage = () => {
                                       setSuccess(message);
                                       setTimeout(() => setSuccess(null), 3000);
                                     }}
-                                    onStatusChange={async (priorityId, newStatus) => {
-                                      setPriorities(prev => 
-                                        prev.map(p => 
-                                          p.id === priorityId ? { ...p, status: newStatus } : p
-                                        )
-                                      );
-                                      
-                                      // Automatically create an issue if marked as off-track
-                                      if (newStatus === 'off-track') {
-                                        try {
-                                          const effectiveTeamId = teamId || user?.teamId || '00000000-0000-0000-0000-000000000000';
-                                          await issuesService.createIssue({
-                                            title: `Off-Track Priority: ${priority.title}`,
-                                            description: `Priority "${priority.title}" is off-track and needs attention.\n\nOwner: ${priority.owner?.name || 'Unassigned'}\n\nDescription: ${priority.description || 'No description provided'}`,
-                                            timeline: 'short_term',
-                                            ownerId: priority.owner?.id || null,
-                                            department_id: effectiveTeamId
-                                          });
-                                          
-                                          setSuccess(
-                                            <div className="flex items-center gap-2">
-                                              <CheckCircle className="h-4 w-4" />
-                                              <span>Priority marked off-track and issue created</span>
-                                            </div>
-                                          );
-                                          await fetchIssuesData();
-                                        } catch (error) {
-                                          console.error('Failed to create issue for off-track priority:', error);
-                                          setError('Failed to create issue for off-track priority');
-                                        }
-                                      } else {
-                                        setSuccess(`Priority status updated to ${newStatus}`);
-                                      }
-                                      setTimeout(() => {
-                                        setSuccess(null);
-                                        setError(null);
-                                      }, 3000);
-                                    }}
+                                    onStatusChange={handlePriorityStatusChange}
                                   />
                                 ))}
                               </div>
