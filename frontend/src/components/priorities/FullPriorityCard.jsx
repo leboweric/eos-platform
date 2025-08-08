@@ -6,6 +6,7 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
+import { Checkbox } from '@/components/ui/checkbox';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
@@ -349,6 +350,15 @@ const FullPriorityCard = ({
         <div className="flex items-start justify-between">
           <div className="flex-1">
             <div className="flex items-center space-x-3 mb-2">
+              {!isArchived && onStatusChange && !isEditing && (
+                <Checkbox
+                  checked={priority.status === 'complete'}
+                  onCheckedChange={(checked) => {
+                    onStatusChange(priority.id, checked ? 'complete' : 'on-track');
+                  }}
+                  className="flex-shrink-0"
+                />
+              )}
               <div className={`w-3 h-3 rounded-full ${getStatusColor(isEditing ? editForm.status : priority.status)}`} />
               {isEditing ? (
                 <Input
@@ -357,7 +367,7 @@ const FullPriorityCard = ({
                   className="flex-1 font-semibold"
                 />
               ) : (
-                <CardTitle className="text-lg">
+                <CardTitle className={`text-lg ${priority.status === 'complete' ? 'line-through text-gray-500' : ''}`}>
                   {priority.title}
                   {isCompany && priority.owner && (
                     <span className="text-sm font-normal text-gray-600 ml-2">
