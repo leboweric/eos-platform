@@ -815,13 +815,18 @@ export const addPriorityUpdate = async (req, res) => {
     const { orgId, teamId, priorityId } = req.params;
     const { updateText, statusChange } = req.body;
     
+    const newId = uuidv4();
+    console.log('Creating update with ID:', newId, 'for priority:', priorityId);
+    
     const result = await query(
       `INSERT INTO priority_updates 
        (id, priority_id, update_text, status_change, created_by)
        VALUES ($1, $2, $3, $4, $5)
        RETURNING *`,
-      [uuidv4(), priorityId, updateText, statusChange, req.user.id]
+      [newId, priorityId, updateText, statusChange, req.user.id]
     );
+    
+    console.log('Created update:', result.rows[0]);
     
     // If status changed, update the priority
     if (statusChange) {
@@ -840,6 +845,100 @@ export const addPriorityUpdate = async (req, res) => {
   } catch (error) {
     console.error('Add priority update error:', error);
     res.status(500).json({ error: 'Failed to add update' });
+  }
+};
+
+// Delete priority update
+export const deletePriorityUpdate = async (req, res) => {
+  try {
+    const { orgId, teamId, priorityId, updateId } = req.params;
+    
+    console.log('=== DELETE PRIORITY UPDATE REQUEST ===');
+    console.log('Params:', { orgId, teamId, priorityId, updateId });
+    console.log('User:', req.user?.id);
+    
+    // First check if the update exists
+    const checkResult = await query(
+      `SELECT id, priority_id, update_text, created_by FROM priority_updates WHERE id = $1`,
+      [updateId]
+    );
+    
+    console.log('Found updates with this ID:', checkResult.rows);
+    
+    if (checkResult.rows.length === 0) {
+      console.log('ERROR: Update not found with ID:', updateId);
+      return res.status(404).json({ 
+        error: 'Update not found',
+        updateId: updateId
+      });
+    }
+    
+    // Check if priority_id matches
+    if (checkResult.rows[0].priority_id !== priorityId) {
+      console.log('ERROR: Priority ID mismatch:', {
+        expected: priorityId,
+        actual: checkResult.rows[0].priority_id
+      });
+      return res.status(400).json({ 
+        error: 'Priority ID mismatch',
+        expected: priorityId,
+        actual: checkResult.rows[0].priority_id
+      });
+    }
+    
+    // Delete the update
+    const result = await query(
+      `DELETE FROM priority_updates 
+       WHERE id = $1
+       RETURNING id`,
+      [updateId]
+    );
+    
+    console.log('Delete result:', result.rows);
+    
+    if (result.rows.length === 0) {
+      return res.status(404).json({ 
+        error: 'Failed to delete update' 
+      });
+    }
+    
+    res.json({
+      success: true,
+      message: 'Update deleted successfully'
+    });
+  } catch (error) {
+    console.error('Delete priority update error:', error);
+    res.status(500).json({ error: 'Failed to delete update' });
+  }
+};
+
+// Edit priority update
+export const editPriorityUpdate = async (req, res) => {
+  try {
+    const { orgId, teamId, priorityId, updateId } = req.params;
+    const { updateText } = req.body;
+    
+    const result = await query(
+      `UPDATE priority_updates 
+       SET update_text = $1
+       WHERE id = $2 AND priority_id = $3
+       RETURNING *`,
+      [updateText, updateId, priorityId]
+    );
+    
+    if (result.rows.length === 0) {
+      return res.status(404).json({ 
+        error: 'Update not found or you do not have permission to edit it' 
+      });
+    }
+    
+    res.json({
+      success: true,
+      data: result.rows[0]
+    });
+  } catch (error) {
+    console.error('Edit priority update error:', error);
+    res.status(500).json({ error: 'Failed to edit update' });
   }
 };
 

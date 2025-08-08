@@ -170,6 +170,26 @@ const QuarterlyPrioritiesPageClean = () => {
         // Use the selected department's ID as the teamId for the API call
         const data = await quarterlyPrioritiesService.getCurrentPriorities(orgId, teamId);
         
+        // Debug: Check if updates have IDs
+        const allPriorities = [...(data.companyPriorities || [])];
+        Object.values(data.teamMemberPriorities || {}).forEach(member => {
+          if (member.priorities) {
+            allPriorities.push(...member.priorities);
+          }
+        });
+        
+        allPriorities.forEach(priority => {
+          if (priority.updates && priority.updates.length > 0) {
+            console.log(`Priority ${priority.id} has ${priority.updates.length} updates:`, 
+              priority.updates.map(u => ({ 
+                id: u.id, 
+                hasId: !!u.id,
+                text: u.text?.substring(0, 30) 
+              }))
+            );
+          }
+        });
+        
         setCompanyPriorities(data.companyPriorities || []);
         setTeamMemberPriorities(data.teamMemberPriorities || {});
         setTeamMembers(data.teamMembers || []);
@@ -551,11 +571,26 @@ const QuarterlyPrioritiesPageClean = () => {
 
   const handleDeleteUpdate = async (priorityId, updateId) => {
     try {
+      console.log('Attempting to delete update:', { priorityId, updateId });
+      
       if (!window.confirm('Are you sure you want to delete this update?')) {
         return;
       }
       
-      // For now, just remove from local state since backend doesn't have delete endpoint yet
+      const orgId = user?.organizationId;
+      const teamId = selectedDepartment?.id;
+      
+      console.log('Delete params:', { orgId, teamId, priorityId, updateId });
+      
+      if (!orgId || !teamId) {
+        throw new Error('Organization or department not found');
+      }
+      
+      // Call backend to delete the update
+      await quarterlyPrioritiesService.deletePriorityUpdate(orgId, teamId, priorityId, updateId);
+      console.log('Update deleted successfully from backend');
+      
+      // Update local state to reflect the deletion
       const removeUpdate = (updates) => 
         updates?.filter(u => u.id !== updateId) || [];
       
@@ -584,7 +619,8 @@ const QuarterlyPrioritiesPageClean = () => {
       setSuccess('Update deleted successfully');
     } catch (err) {
       console.error('Failed to delete update:', err);
-      setError('Failed to delete update');
+      console.error('Error details:', err.response?.data || err.message);
+      setError(`Failed to delete update: ${err.response?.data?.error || err.message}`);
     }
   };
 
@@ -595,7 +631,17 @@ const QuarterlyPrioritiesPageClean = () => {
         return;
       }
       
-      // For now, just update local state since backend doesn't have edit endpoint yet
+      const orgId = user?.organizationId;
+      const teamId = selectedDepartment?.id;
+      
+      if (!orgId || !teamId) {
+        throw new Error('Organization or department not found');
+      }
+      
+      // Call backend to edit the update
+      await quarterlyPrioritiesService.editPriorityUpdate(orgId, teamId, priorityId, updateId, editText);
+      
+      // Update local state to reflect the edit
       const editUpdate = (updates) => 
         updates?.map(u => u.id === updateId ? { ...u, text: editText } : u) || [];
       
@@ -639,11 +685,19 @@ const QuarterlyPrioritiesPageClean = () => {
       
       const result = await quarterlyPrioritiesService.addPriorityUpdate(orgId, teamId, priorityId, updateText, statusChange);
       
+      console.log('Update creation result:', result);
+      
+      // Ensure we have a valid result object
+      if (!result || !result.id) {
+        console.error('Invalid update response - missing ID:', result);
+        throw new Error('Failed to create update - no ID returned');
+      }
+      
       // Update local state instead of refetching
       const newUpdate = {
-        id: result?.id || Date.now().toString(), // Generate a temporary ID if backend doesn't return one
-        text: updateText,
-        createdAt: new Date().toISOString(),
+        id: result.id, // Use the actual ID from the response
+        text: result.update_text || updateText,
+        createdAt: result.created_at || new Date().toISOString(),
         createdBy: user?.firstName && user?.lastName ? `${user.firstName} ${user.lastName}` : user?.email || 'Unknown'
       };
       
@@ -1548,26 +1602,29 @@ const QuarterlyPrioritiesPageClean = () => {
                   )}
                 </div>
 
-                <div>
-                  <Label className="text-sm font-medium text-gray-600 mb-2 block">Progress</Label>
-                  <div className="flex items-center gap-3">
-                    {isEditing ? (
-                      <Input
-                        type="number"
-                        min="0"
-                        max="100"
-                        value={editForm.progress}
-                        onChange={(e) => setEditForm({ ...editForm, progress: parseInt(e.target.value) || 0 })}
-                        className="w-20 h-9"
-                      />
-                    ) : (
-                      <>
-                        <Progress value={priority.progress} className="flex-1 h-2" />
-                        <span className="text-sm font-medium text-gray-900 w-10">{priority.progress}%</span>
-                      </>
-                    )}
+                {/* Only show progress if milestones exist */}
+                {(priority.milestones && priority.milestones.length > 0) && (
+                  <div>
+                    <Label className="text-sm font-medium text-gray-600 mb-2 block">Progress</Label>
+                    <div className="flex items-center gap-3">
+                      {isEditing ? (
+                        <Input
+                          type="number"
+                          min="0"
+                          max="100"
+                          value={editForm.progress}
+                          onChange={(e) => setEditForm({ ...editForm, progress: parseInt(e.target.value) || 0 })}
+                          className="w-20 h-9"
+                        />
+                      ) : (
+                        <>
+                          <Progress value={priority.progress} className="flex-1 h-2" />
+                          <span className="text-sm font-medium text-gray-900 w-10">{priority.progress}%</span>
+                        </>
+                      )}
+                    </div>
                   </div>
-                </div>
+                )}
               </div>
 
               {/* Company/Individual Priority Toggle (only in edit mode) */}

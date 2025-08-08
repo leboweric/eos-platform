@@ -19,6 +19,8 @@ import {
   updateMilestone,
   deleteMilestone,
   addPriorityUpdate,
+  deletePriorityUpdate,
+  editPriorityUpdate,
   cleanupTestPriorities,
   uploadPriorityAttachment,
   getPriorityAttachments,
@@ -70,6 +72,8 @@ router.delete('/priorities/:priorityId/milestones/:milestoneId', deleteMilestone
 
 // Priority updates
 router.post('/priorities/:priorityId/updates', addPriorityUpdate);
+router.put('/priorities/:priorityId/updates/:updateId', editPriorityUpdate);
+router.delete('/priorities/:priorityId/updates/:updateId', deletePriorityUpdate);
 
 // Priority attachments
 router.post('/priorities/:priorityId/attachments', upload.single('file'), uploadPriorityAttachment);

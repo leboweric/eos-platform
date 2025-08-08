@@ -146,7 +146,33 @@ export const quarterlyPrioritiesService = {
       { updateText, statusChange }
     );
     
+    console.log('Add update response:', response.data);
     return response.data.data;
+  },
+
+  // Edit priority update
+  async editPriorityUpdate(orgId, teamId, priorityId, updateId, updateText) {
+    const response = await axios.put(
+      `/organizations/${orgId}/teams/${teamId}/quarterly-priorities/priorities/${priorityId}/updates/${updateId}`,
+      { updateText }
+    );
+    
+    return response.data.data;
+  },
+
+  // Delete priority update
+  async deletePriorityUpdate(orgId, teamId, priorityId, updateId) {
+    try {
+      console.log('Deleting update with params:', { orgId, teamId, priorityId, updateId });
+      const response = await axios.delete(
+        `/organizations/${orgId}/teams/${teamId}/quarterly-priorities/priorities/${priorityId}/updates/${updateId}`
+      );
+      console.log('Delete response:', response.data);
+      return response.data;
+    } catch (error) {
+      console.error('Delete update error:', error.response?.data || error.message);
+      throw error;
+    }
   },
 
   // Upload attachment for a priority

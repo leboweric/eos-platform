@@ -347,14 +347,16 @@ const PriorityCardClean = ({
 
         {isExpanded && (
           <CardContent className="pt-0 space-y-4 border-t">
-            {/* Progress Section */}
-            <div className="space-y-2">
-              <div className="flex items-center justify-between">
-                <span className="text-sm font-medium text-gray-700">Progress</span>
-                <span className="text-sm text-gray-600">{priority.progress || 0}%</span>
+            {/* Progress Section - Only show if milestones exist */}
+            {priority.milestones && priority.milestones.length > 0 && (
+              <div className="space-y-2">
+                <div className="flex items-center justify-between">
+                  <span className="text-sm font-medium text-gray-700">Progress</span>
+                  <span className="text-sm text-gray-600">{priority.progress || 0}%</span>
+                </div>
+                <Progress value={priority.progress || 0} className="h-2" />
               </div>
-              <Progress value={priority.progress || 0} className="h-2" />
-            </div>
+            )}
 
             {/* Quick Action Buttons */}
             {!isArchived && !readOnly && (
@@ -492,42 +494,54 @@ const PriorityCardClean = ({
                 </div>
                 
                 <div className="space-y-2">
-                  {priority.updates?.slice(0, 3).map((update, index) => (
-                    <div key={update.id || index} className="group p-2 bg-gray-50 rounded-lg">
-                      <div className="flex items-start gap-2">
-                        <div className="flex-1">
-                          <p className="text-sm text-gray-700">{update.text}</p>
-                          <div className="text-xs text-gray-500 mt-1">
-                            {update.createdBy} • {formatDate(update.createdAt)}
+                  {priority.updates?.slice(0, 3).map((update, index) => {
+                    // Debug log to check update structure
+                    if (!update.id) {
+                      console.warn('Update missing ID:', update);
+                    }
+                    return (
+                      <div key={update.id || index} className="group p-2 bg-gray-50 rounded-lg">
+                        <div className="flex items-start gap-2">
+                          <div className="flex-1">
+                            <p className="text-sm text-gray-700">{update.text}</p>
+                            <div className="text-xs text-gray-500 mt-1">
+                              {update.createdBy} • {formatDate(update.createdAt)}
+                            </div>
                           </div>
+                          {(onDeleteUpdate || onEditUpdate) && (
+                            <div className="opacity-0 group-hover:opacity-100 transition-opacity flex gap-1">
+                              {onEditUpdate && (
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
+                                  onClick={() => {
+                                    console.log('Edit update clicked:', { priorityId: priority.id, updateId: update.id, text: update.text });
+                                    onEditUpdate(priority.id, update.id, update.text);
+                                  }}
+                                  className="h-6 w-6 p-0 hover:bg-blue-100"
+                                >
+                                  <Edit2 className="h-3 w-3 text-blue-600" />
+                                </Button>
+                              )}
+                              {onDeleteUpdate && (
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
+                                  onClick={() => {
+                                    console.log('Delete update clicked:', { priorityId: priority.id, updateId: update.id });
+                                    onDeleteUpdate(priority.id, update.id);
+                                  }}
+                                  className="h-6 w-6 p-0 hover:bg-red-100"
+                                >
+                                  <Trash2 className="h-3 w-3 text-red-600" />
+                                </Button>
+                              )}
+                            </div>
+                          )}
                         </div>
-                        {(onDeleteUpdate || onEditUpdate) && (
-                          <div className="opacity-0 group-hover:opacity-100 transition-opacity flex gap-1">
-                            {onEditUpdate && (
-                              <Button
-                                variant="ghost"
-                                size="sm"
-                                onClick={() => onEditUpdate(priority.id, update.id, update.text)}
-                                className="h-6 w-6 p-0 hover:bg-blue-100"
-                              >
-                                <Edit2 className="h-3 w-3 text-blue-600" />
-                              </Button>
-                            )}
-                            {onDeleteUpdate && (
-                              <Button
-                                variant="ghost"
-                                size="sm"
-                                onClick={() => onDeleteUpdate(priority.id, update.id)}
-                                className="h-6 w-6 p-0 hover:bg-red-100"
-                              >
-                                <Trash2 className="h-3 w-3 text-red-600" />
-                              </Button>
-                            )}
-                          </div>
-                        )}
                       </div>
-                    </div>
-                  ))}
+                    );
+                  })}
                   
                   {showAddUpdate && (
                     <div className="space-y-2">
