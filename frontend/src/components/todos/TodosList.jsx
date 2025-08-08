@@ -28,6 +28,7 @@ const TodosList = ({
   onEdit, 
   onDelete,
   onUpdate,
+  onStatusChange,
   onConvertToIssue,
   showCompleted = true
 }) => {
@@ -54,7 +55,7 @@ const TodosList = ({
     const dueDate = parseDateAsLocal(todo.due_date);
     const today = new Date();
     today.setHours(0, 0, 0, 0); // Reset time to start of day for accurate comparison
-    return dueDate && dueDate < today && todo.status !== 'complete';
+    return dueDate && dueDate < today && !todo.completed;
   };
 
   if (todos.length === 0) {
@@ -113,17 +114,21 @@ const TodosList = ({
                 <div
                   key={todo.id}
                   className={`p-4 hover:bg-green-50 transition-colors ${
-                    todo.status === 'complete' || isSelected(todo.id) ? 'opacity-60' : ''
+                    todo.completed ? 'opacity-60' : ''
                   } ${
-                    isOverdue(todo) && !isSelected(todo.id) ? 'bg-red-50 hover:bg-red-100' : ''
+                    isOverdue(todo) && !todo.completed ? 'bg-red-50 hover:bg-red-100' : ''
                   }`}
                 >
                   <div className="flex items-start gap-3">
-                    {/* Selection checkbox - always show */}
+                    {/* Completion checkbox */}
                     <div className="flex items-center">
                       <Checkbox
-                        checked={isSelected(todo.id)}
-                        onCheckedChange={() => toggleTodo(todo.id)}
+                        checked={todo.completed || false}
+                        onCheckedChange={(checked) => {
+                          if (onStatusChange) {
+                            onStatusChange(todo.id, checked);
+                          }
+                        }}
                         className="data-[state=checked]:bg-green-600 data-[state=checked]:border-green-600"
                       />
                     </div>
@@ -132,14 +137,14 @@ const TodosList = ({
                       <div className="flex items-start justify-between gap-4">
                         <div className="flex-1">
                           <h3 className={`font-medium ${
-                            todo.status === 'complete' || isSelected(todo.id) ? 'text-gray-400 line-through' : 'text-gray-900'
+                            todo.completed ? 'text-gray-400 line-through' : 'text-gray-900'
                           }`}>
                             {todo.title}
                           </h3>
                       
                       {todo.description && (
                         <p className={`text-sm mt-1 whitespace-pre-wrap ${
-                          todo.status === 'complete' || isSelected(todo.id) ? 'text-gray-400 line-through' : 'text-gray-600'
+                          todo.completed ? 'text-gray-400 line-through' : 'text-gray-600'
                         }`}>
                           {todo.description}
                         </p>
@@ -164,8 +169,8 @@ const TodosList = ({
                               </div>
                             )}
                             
-                            {/* Show closed badge if selected/completed */}
-                            {(todo.status === 'complete' || isSelected(todo.id)) && (
+                            {/* Show closed badge if completed */}
+                            {todo.completed && (
                               <div className="flex items-center gap-1 text-green-600 text-sm font-medium">
                                 <CheckCircle className="h-3.5 w-3.5" />
                                 Closed
