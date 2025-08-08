@@ -1377,7 +1377,7 @@ const WeeklyAccountabilityMeetingPage = () => {
           <div className="flex items-center justify-between mb-6">
             <div>
               <h1 className="text-3xl font-bold text-gray-900">Weekly Accountability Meeting</h1>
-              <p className="text-gray-600 mt-2">90 minutes - Keep your team aligned and moving forward</p>
+              <p className="text-gray-600 mt-2">90 minutes - Solve the issues that will prevent your team from completing your Priorities</p>
             </div>
             {meetingStarted && (
               <div className="flex items-center gap-4">
