@@ -502,14 +502,14 @@ const PriorityCardClean = ({
                     return (
                       <div key={update.id || index} className="group p-2 bg-gray-50 rounded-lg">
                         <div className="flex items-start gap-2">
-                          <div className="flex-1">
+                          <div>
                             <p className="text-sm text-gray-700">{update.text}</p>
                             <div className="text-xs text-gray-500 mt-1">
                               {update.createdBy} • {formatDate(update.createdAt)}
                             </div>
                           </div>
                           {(onDeleteUpdate || onEditUpdate) && (
-                            <div className="opacity-0 group-hover:opacity-100 transition-opacity flex gap-1">
+                            <div className="opacity-0 group-hover:opacity-100 transition-opacity flex gap-1 ml-2">
                               {onEditUpdate && (
                                 <Button
                                   variant="ghost"
