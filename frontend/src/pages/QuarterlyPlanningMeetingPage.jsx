@@ -285,12 +285,50 @@ const QuarterlyPlanningMeetingPage = () => {
       const effectiveTeamId = teamId || user?.teamId || '00000000-0000-0000-0000-000000000000';
       
       const response = await issuesService.getIssues(null, false, effectiveTeamId);
-      setIssues(response.data.issues || []);
+      // Sort issues by vote count (highest first)
+      const sortedIssues = (response.data.issues || []).sort((a, b) => 
+        (b.vote_count || 0) - (a.vote_count || 0)
+      );
+      setIssues(sortedIssues);
       setLoading(false);
     } catch (error) {
       console.error('Failed to fetch issues:', error);
       setError('Failed to load issues');
       setLoading(false);
+    }
+  };
+
+  const handleVote = async (issueId, shouldVote) => {
+    try {
+      const updateVote = (issue) => {
+        if (issue.id === issueId) {
+          return {
+            ...issue,
+            user_has_voted: shouldVote,
+            vote_count: shouldVote 
+              ? (issue.vote_count || 0) + 1 
+              : Math.max(0, (issue.vote_count || 0) - 1)
+          };
+        }
+        return issue;
+      };
+      
+      // Update and sort issues by vote count
+      setIssues(prevIssues => {
+        const updated = prevIssues.map(updateVote);
+        return updated.sort((a, b) => (b.vote_count || 0) - (a.vote_count || 0));
+      });
+      
+      // Make API call to toggle vote
+      if (shouldVote) {
+        await issuesService.voteForIssue(issueId);
+      } else {
+        await issuesService.removeVoteForIssue(issueId);
+      }
+    } catch (error) {
+      console.error('Failed to update vote:', error);
+      // Revert on error
+      await fetchIssuesData();
     }
   };
 
@@ -970,7 +1008,7 @@ const QuarterlyPlanningMeetingPage = () => {
                     console.error('Failed to archive:', error);
                   }
                 }}
-                onVote={async () => {}}
+                onVote={handleVote}
                 getStatusColor={(status) => {
                   switch (status) {
                     case 'open':
@@ -983,7 +1021,7 @@ const QuarterlyPlanningMeetingPage = () => {
                 }}
                 getStatusIcon={(status) => null}
                 readOnly={false}
-                showVoting={false}
+                showVoting={true}
               />
             </div>
             
