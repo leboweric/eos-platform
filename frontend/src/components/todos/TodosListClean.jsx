@@ -118,8 +118,7 @@ const TodosListClean = ({
           <div
             key={todo.id}
             className={`
-              group relative rounded-lg border transition-all duration-200
-              ${overdue ? 'bg-red-50/50' : 'bg-green-50/30'}
+              group relative bg-white rounded-lg border transition-all duration-200
               ${isSelected(todo.id) ? 'border-gray-400 shadow-sm' : 'border-gray-200 hover:border-gray-300 hover:shadow-sm'}
               ${todo.status === 'complete' ? 'opacity-60' : ''}
             `}
