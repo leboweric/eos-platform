@@ -414,12 +414,28 @@ export const updatePriority = async (req, res) => {
     const { orgId, teamId, priorityId } = req.params;
     const { title, description, status, progress, dueDate, ownerId, isCompanyPriority } = req.body;
     
+    console.log('Update priority request:', { orgId, teamId, priorityId, body: req.body });
+    
+    // Validate required parameters
+    if (!priorityId || !orgId) {
+      return res.status(400).json({ 
+        error: 'Missing required parameters',
+        details: { priorityId, orgId, teamId }
+      });
+    }
+    
     // Convert empty string to null for date field, and handle undefined
     const parsedDueDate = (dueDate === '' || dueDate === undefined) ? null : dueDate;
     
-    
     // Check if progress column exists
-    const hasProgress = await checkProgressColumn();
+    let hasProgress = false;
+    try {
+      hasProgress = await checkProgressColumn();
+    } catch (dbError) {
+      console.error('Error checking progress column:', dbError);
+      // Continue without progress column if check fails
+      hasProgress = false;
+    }
     
     let query_text;
     let query_params;
@@ -502,7 +518,18 @@ export const updatePriority = async (req, res) => {
     });
   } catch (error) {
     console.error('Update priority error:', error);
-    res.status(500).json({ error: 'Failed to update priority' });
+    console.error('Error details:', {
+      message: error.message,
+      stack: error.stack,
+      params: req.params,
+      body: req.body
+    });
+    res.status(500).json({ 
+      error: 'Failed to update priority',
+      details: error.message,
+      params: req.params,
+      body: req.body
+    });
   }
 };
 

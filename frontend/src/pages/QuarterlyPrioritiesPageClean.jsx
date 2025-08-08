@@ -553,6 +553,17 @@ const QuarterlyPrioritiesPageClean = () => {
       const orgId = localStorage.getItem('impersonatedOrgId') || user?.organizationId || user?.organization_id;
       const teamId = selectedDepartment?.id || user?.teamId || '00000000-0000-0000-0000-000000000000';
       
+      // Log for debugging
+      console.log('Updating priority status:', { priorityId, newStatus, orgId, teamId });
+      
+      if (!orgId) {
+        throw new Error('Organization ID not found');
+      }
+      
+      if (!priorityId) {
+        throw new Error('Priority ID not provided');
+      }
+      
       await quarterlyPrioritiesService.updatePriority(orgId, teamId, priorityId, { status: newStatus });
       
       // Update local state for company priorities
