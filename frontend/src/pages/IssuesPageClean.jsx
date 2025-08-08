@@ -289,7 +289,15 @@ const IssuesPageClean = () => {
   };
 
   const currentIssues = activeTab === 'short_term' ? shortTermIssues : activeTab === 'long_term' ? longTermIssues : archivedIssues;
-  const closedIssuesCount = currentIssues.filter(issue => issue.status === 'closed').length;
+  
+  // Debug logging
+  console.log('[IssuesPageClean] activeTab:', activeTab);
+  console.log('[IssuesPageClean] shortTermIssues:', shortTermIssues);
+  console.log('[IssuesPageClean] longTermIssues:', longTermIssues);
+  console.log('[IssuesPageClean] archivedIssues:', archivedIssues);
+  console.log('[IssuesPageClean] currentIssues:', currentIssues);
+  
+  const closedIssuesCount = (currentIssues || []).filter(issue => issue.status === 'closed').length;
 
   if (loading) {
     return (

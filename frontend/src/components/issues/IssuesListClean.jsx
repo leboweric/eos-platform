@@ -41,6 +41,11 @@ const IssuesListClean = ({
   showVoting = false
 }) => {
   const [selectedIssue, setSelectedIssue] = useState(null);
+  
+  // Debug logging
+  console.log('[IssuesListClean] Rendering with issues:', issues);
+  console.log('[IssuesListClean] Issues type:', typeof issues);
+  console.log('[IssuesListClean] Issues is array:', Array.isArray(issues));
 
   const formatDate = (dateString) => {
     const date = new Date(dateString);

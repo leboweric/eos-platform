@@ -241,7 +241,7 @@ const IssueDialog = ({ open, onClose, onSave, issue, teamMembers, timeline }) =>
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="no-owner">No owner</SelectItem>
-                  {teamMembers.map(member => (
+                  {(teamMembers || []).map(member => (
                     <SelectItem key={member.id} value={member.id}>
                       {member.first_name} {member.last_name}
                     </SelectItem>
@@ -296,7 +296,7 @@ const IssueDialog = ({ open, onClose, onSave, issue, teamMembers, timeline }) =>
                 {issue && existingAttachments.length > 0 && (
                   <div className="space-y-1">
                     <p className="text-sm font-medium text-gray-700">Current attachments:</p>
-                    {existingAttachments.map((attachment) => (
+                    {(existingAttachments || []).map((attachment) => (
                       <div key={attachment.id} className="flex items-center justify-between p-2 bg-blue-50 rounded">
                         <div className="flex items-center gap-2">
                           <Paperclip className="h-4 w-4 text-blue-600" />
@@ -332,7 +332,7 @@ const IssueDialog = ({ open, onClose, onSave, issue, teamMembers, timeline }) =>
                 {newAttachments.length > 0 && (
                   <div className="space-y-1">
                     <p className="text-sm font-medium text-gray-700">Files to upload:</p>
-                    {newAttachments.map((file, index) => (
+                    {(newAttachments || []).map((file, index) => (
                       <div key={index} className="flex items-center justify-between p-2 bg-green-50 rounded">
                         <div className="flex items-center gap-2">
                           <Paperclip className="h-4 w-4 text-green-600" />
