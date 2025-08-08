@@ -315,7 +315,7 @@ const IssuesPageClean = () => {
                 className="text-gray-600 hover:text-gray-900"
               >
                 <Archive className="mr-2 h-4 w-4" />
-                Archive Closed ({closedIssuesCount})
+                Archive Solved ({closedIssuesCount})
               </Button>
             )}
             {activeTab !== 'archived' && (
