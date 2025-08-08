@@ -1618,8 +1618,8 @@ const QuarterlyPrioritiesPageClean = () => {
                         />
                       ) : (
                         <>
-                          <Progress value={priority.progress} className="flex-1 h-2" />
-                          <span className="text-sm font-medium text-gray-900 w-10">{priority.progress}%</span>
+                          <Progress value={priority.progress} className="h-2 max-w-[200px]" />
+                          <span className="text-sm font-medium text-gray-900">{priority.progress}%</span>
                         </>
                       )}
                     </div>

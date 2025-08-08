@@ -350,11 +350,11 @@ const PriorityCardClean = ({
             {/* Progress Section - Only show if milestones exist */}
             {priority.milestones && priority.milestones.length > 0 && (
               <div className="space-y-2">
-                <div className="flex items-center justify-between">
-                  <span className="text-sm font-medium text-gray-700">Progress</span>
+                <span className="text-sm font-medium text-gray-700">Progress</span>
+                <div className="flex items-center gap-3">
+                  <Progress value={priority.progress || 0} className="h-2 max-w-[200px]" />
                   <span className="text-sm text-gray-600">{priority.progress || 0}%</span>
                 </div>
-                <Progress value={priority.progress || 0} className="h-2" />
               </div>
             )}
 
