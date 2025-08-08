@@ -275,19 +275,20 @@ const TodosPage = () => {
     if (activeTab === 'all') return todos;
     if (activeTab === 'active') {
       // Show all non-archived todos (both done and not done)
-      return todos.filter(todo => !todo.archived);
+      // Handle missing archived field for backwards compatibility
+      return todos.filter(todo => todo.archived !== true);
     }
     if (activeTab === 'archived') {
       // Show only archived todos
-      return todos.filter(todo => todo.archived);
+      return todos.filter(todo => todo.archived === true);
     }
     return todos;
   };
 
   const filteredTodos = getFilteredTodos();
-  const activeTodosCount = todos.filter(t => !t.archived).length;
-  const archivedTodosCount = todos.filter(t => t.archived).length;
-  const doneTodosCount = todos.filter(t => t.status === 'complete' && !t.archived).length;
+  const activeTodosCount = todos.filter(t => t.archived !== true).length;
+  const archivedTodosCount = todos.filter(t => t.archived === true).length;
+  const doneTodosCount = todos.filter(t => t.status === 'complete' && t.archived !== true).length;
 
   if (loading) {
     return (

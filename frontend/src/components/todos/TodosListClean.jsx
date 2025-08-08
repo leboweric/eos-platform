@@ -83,7 +83,7 @@ const TodosListClean = ({
             key={todo.id}
             className={`
               group relative bg-white rounded-lg border transition-all duration-200
-              ${todo.status === 'complete' ? 'border-gray-400 shadow-sm opacity-60' : 'border-gray-200 hover:border-gray-300 hover:shadow-sm'}
+              ${todo.status === 'complete' && !todo.archived ? 'border-gray-400 shadow-sm opacity-60' : 'border-gray-200 hover:border-gray-300 hover:shadow-sm'}
             `}
           >
             {/* Status indicator - subtle left border */}
