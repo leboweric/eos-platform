@@ -11,6 +11,7 @@ import {
   createTodo,
   updateTodo,
   deleteTodo,
+  archiveDoneTodos,
   uploadTodoAttachment,
   getTodoAttachments,
   deleteTodoAttachment,
@@ -80,6 +81,9 @@ router.put('/:todoId', [
 router.delete('/:todoId', [
   param('todoId').isUUID()
 ], deleteTodo);
+
+// Archive done todos
+router.put('/archive-done', archiveDoneTodos);
 
 // Upload attachment for a todo
 router.post('/:todoId/attachments', [

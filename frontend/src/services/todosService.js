@@ -75,6 +75,14 @@ export const todosService = {
     await axios.delete(`/organizations/${orgId}/todos/${todoId}`);
   },
 
+  // Archive done todos
+  archiveDoneTodos: async () => {
+    const orgId = getOrgId();
+    
+    const response = await axios.put(`/organizations/${orgId}/todos/archive-done`);
+    return response.data;
+  },
+
   // Upload attachment
   uploadAttachment: async (todoId, file) => {
     const orgId = getOrgId();

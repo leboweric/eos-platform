@@ -23,13 +23,20 @@ export const getTodos = async (req, res) => {
     let params = [orgId];
     let paramIndex = 2;
 
+    // Filter by archived status - by default, exclude archived
+    const includeArchived = req.query.includeArchived === 'true';
+    if (!includeArchived) {
+      conditions.push(`(t.archived = false OR t.archived IS NULL)`);
+    }
+
     // Filter by status
     if (status) {
       conditions.push(`t.status = $${paramIndex}`);
       params.push(status);
       paramIndex++;
     } else if (!includeCompleted || includeCompleted === 'false') {
-      conditions.push(`t.status = 'incomplete'`);
+      // Don't filter by status anymore - show both complete and incomplete
+      // conditions.push(`t.status = 'incomplete'`);
     }
 
     // Filter by assigned to
@@ -518,11 +525,44 @@ export const deleteTodoAttachment = async (req, res) => {
   }
 };
 
+// @desc    Archive done todos
+// @route   PUT /api/v1/organizations/:orgId/todos/archive-done
+// @access  Private
+export const archiveDoneTodos = async (req, res) => {
+  try {
+    const { orgId } = req.params;
+    const userId = req.user.id;
+
+    // Archive all completed todos for the organization
+    const result = await query(
+      `UPDATE todos 
+       SET archived = true, updated_at = NOW()
+       WHERE organization_id = $1 AND status = 'complete' AND (archived = false OR archived IS NULL)
+       RETURNING id`,
+      [orgId]
+    );
+
+    res.json({
+      success: true,
+      data: {
+        archivedCount: result.rows.length
+      }
+    });
+  } catch (error) {
+    console.error('Error archiving done todos:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Failed to archive done todos'
+    });
+  }
+};
+
 export default {
   getTodos,
   createTodo,
   updateTodo,
   deleteTodo,
+  archiveDoneTodos,
   uploadTodoAttachment,
   getTodoAttachments,
   downloadTodoAttachment,

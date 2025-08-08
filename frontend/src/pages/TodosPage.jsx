@@ -15,7 +15,8 @@ import {
   CheckSquare,
   Square,
   ListTodo,
-  User
+  User,
+  Archive
 } from 'lucide-react';
 import TodoDialog from '../components/todos/TodoDialog';
 import TodosList from '../components/todos/TodosListClean';
@@ -28,7 +29,7 @@ const TodosPage = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [success, setSuccess] = useState(null);
-  const [activeTab, setActiveTab] = useState('incomplete');
+  const [activeTab, setActiveTab] = useState('active');
   const [filterAssignee, setFilterAssignee] = useState('all');
   
   // Todos data
@@ -235,6 +236,17 @@ const TodosPage = () => {
     }
   };
 
+  const handleArchiveDone = async () => {
+    try {
+      const result = await todosService.archiveDoneTodos();
+      setSuccess(`${result.data.archivedCount} done to-do(s) archived`);
+      await fetchTodos();
+    } catch (error) {
+      console.error('Failed to archive done todos:', error);
+      setError('Failed to archive done to-dos');
+    }
+  };
+
   const handleMarkComplete = async () => {
     if (selectedTodoIds.length === 0) {
       setError('Please select to-dos to mark as done');
@@ -261,12 +273,21 @@ const TodosPage = () => {
 
   const getFilteredTodos = () => {
     if (activeTab === 'all') return todos;
-    return todos.filter(todo => todo.status === activeTab);
+    if (activeTab === 'active') {
+      // Show all non-archived todos (both done and not done)
+      return todos.filter(todo => !todo.archived);
+    }
+    if (activeTab === 'archived') {
+      // Show only archived todos
+      return todos.filter(todo => todo.archived);
+    }
+    return todos;
   };
 
   const filteredTodos = getFilteredTodos();
-  const notDoneTodosCount = todos.filter(t => t.status === 'incomplete').length;
-  const doneTodosCount = todos.filter(t => t.status === 'complete').length;
+  const activeTodosCount = todos.filter(t => !t.archived).length;
+  const archivedTodosCount = todos.filter(t => t.archived).length;
+  const doneTodosCount = todos.filter(t => t.status === 'complete' && !t.archived).length;
 
   if (loading) {
     return (
@@ -285,6 +306,16 @@ const TodosPage = () => {
             <h1 className="text-2xl font-semibold text-gray-900">To-Dos{selectedDepartment ? ` - ${selectedDepartment.name}` : ''}</h1>
           </div>
           <div className="flex items-center gap-3">
+            {doneTodosCount > 0 && activeTab === 'active' && (
+              <Button 
+                onClick={handleArchiveDone}
+                variant="ghost"
+                className="text-gray-600 hover:text-gray-900"
+              >
+                <Archive className="mr-2 h-4 w-4" />
+                Archive Done ({doneTodosCount})
+              </Button>
+            )}
             {selectedTodoIds.length > 0 && (
               <Button 
                 onClick={handleMarkComplete}
@@ -321,18 +352,18 @@ const TodosPage = () => {
           <Tabs value={activeTab} onValueChange={setActiveTab} className="border-0">
             <TabsList className="bg-transparent border-0 p-0 h-auto">
               <TabsTrigger 
-                value="incomplete" 
+                value="active" 
                 className="data-[state=active]:bg-transparent data-[state=active]:shadow-none data-[state=active]:border-b-2 data-[state=active]:border-gray-900 rounded-none pb-3 px-4 font-medium"
               >
-                Not Done
-                <span className="ml-2 text-sm text-gray-500">({notDoneTodosCount})</span>
+                Active
+                <span className="ml-2 text-sm text-gray-500">({activeTodosCount})</span>
               </TabsTrigger>
               <TabsTrigger 
-                value="complete" 
+                value="archived" 
                 className="data-[state=active]:bg-transparent data-[state=active]:shadow-none data-[state=active]:border-b-2 data-[state=active]:border-gray-900 rounded-none pb-3 px-4 font-medium"
               >
-                Done
-                <span className="ml-2 text-sm text-gray-500">({doneTodosCount})</span>
+                Archived
+                <span className="ml-2 text-sm text-gray-500">({archivedTodosCount})</span>
               </TabsTrigger>
               <TabsTrigger 
                 value="all" 
@@ -365,14 +396,14 @@ const TodosPage = () => {
           <div className="text-center py-16">
             <ListTodo className="h-12 w-12 text-gray-300 mx-auto mb-4" />
             <h3 className="text-lg font-medium text-gray-900 mb-2">
-              {activeTab === 'incomplete' && 'No to-dos not done'}
-              {activeTab === 'complete' && 'No done to-dos'}
+              {activeTab === 'active' && 'No active to-dos'}
+              {activeTab === 'archived' && 'No archived to-dos'}
               {activeTab === 'all' && 'No to-dos yet'}
             </h3>
             <p className="text-gray-500 mb-6">
-              {activeTab === 'complete' ? 'Done to-dos will appear here' : 'Create your first to-do to get started'}
+              {activeTab === 'archived' ? 'Archived to-dos will appear here' : 'Create your first to-do to get started'}
             </p>
-            {activeTab !== 'complete' && (
+            {activeTab !== 'archived' && (
               <Button 
                 onClick={handleCreateTodo} 
                 variant="outline"
@@ -391,7 +422,7 @@ const TodosPage = () => {
             onUpdate={fetchTodos}
             onStatusChange={handleStatusChange}
             onConvertToIssue={handleConvertToIssue}
-            showCompleted={activeTab !== 'incomplete'}
+            showCompleted={true}
           />
         )}
 
