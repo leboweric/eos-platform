@@ -65,7 +65,7 @@ const QuarterlyPlanningMeetingPage = () => {
   });
 
   const agendaItems = [
-    { id: 'objectives', label: 'Objectives', duration: 5, icon: Target, description: 'Review meeting goals' },
+    { id: 'objectives', label: 'Objectives', duration: null, icon: Target, description: 'Review meeting goals' },
     { id: 'check-in', label: 'Check In', duration: 15, icon: CheckSquare, description: 'Team connection' },
     { id: 'review-prior', label: 'Review Prior Quarter', duration: 30, icon: Calendar, description: 'Check progress' },
     { id: '2-page-plan', label: '2-Page Plan', duration: 60, icon: ClipboardList, description: 'Review strategic plan' },
@@ -1058,7 +1058,7 @@ const QuarterlyPlanningMeetingPage = () => {
                     isCompleted ? 'text-green-600' : ''
                   }`} />
                   <span className="text-xs font-medium">{item.label}</span>
-                  <span className="text-xs text-gray-500">{item.duration}m</span>
+                  {item.duration && <span className="text-xs text-gray-500">{item.duration}m</span>}
                   {isCompleted && (
                     <CheckCircle className="h-3 w-3 text-green-600" />
                   )}
