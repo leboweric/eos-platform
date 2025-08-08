@@ -38,6 +38,7 @@ import IssuesList from '../components/issues/IssuesListClean';
 import IssueDialog from '../components/issues/IssueDialog';
 import TodosList from '../components/todos/TodosListClean';
 import TodoDialog from '../components/todos/TodoDialog';
+import MetricTrendChart from '../components/scorecard/MetricTrendChart';
 import FloatingActionButtons from '../components/meetings/FloatingActionButtons';
 import { scorecardService } from '../services/scorecardService';
 import { quarterlyPrioritiesService } from '../services/quarterlyPrioritiesService';
@@ -74,6 +75,7 @@ const WeeklyAccountabilityMeetingPage = () => {
   const [editingIssue, setEditingIssue] = useState(null);
   const [showTodoDialog, setShowTodoDialog] = useState(false);
   const [editingTodo, setEditingTodo] = useState(null);
+  const [chartModal, setChartModal] = useState({ isOpen: false, metric: null, metricId: null });
   
   // Collapsible sections state
   const [expandedSections, setExpandedSections] = useState({
@@ -798,7 +800,7 @@ const WeeklyAccountabilityMeetingPage = () => {
                 departmentId={teamId || user?.teamId || '00000000-0000-0000-0000-000000000000'}
                 onIssueCreated={null}
                 onScoreEdit={null}
-                onChartOpen={null}
+                onChartOpen={(metric) => setChartModal({ isOpen: true, metric: metric, metricId: metric.id })}
                 onMetricUpdate={null}
                 onMetricDelete={null}
                 noWrapper={true}
@@ -1403,6 +1405,16 @@ const WeeklyAccountabilityMeetingPage = () => {
         todo={editingTodo}
         onSave={handleSaveTodo}
         teamMembers={teamMembers || []}
+      />
+      
+      {/* Metric Trend Chart Modal */}
+      <MetricTrendChart
+        isOpen={chartModal.isOpen}
+        onClose={() => setChartModal({ isOpen: false, metric: null, metricId: null })}
+        metric={chartModal.metric}
+        metricId={chartModal.metricId}
+        orgId={user?.organizationId}
+        teamId={teamId || user?.teamId || '00000000-0000-0000-0000-000000000000'}
       />
     </div>
   );

@@ -157,7 +157,7 @@ const ScorecardTableClean = ({
                   {meetingMode ? 'Metric / Owner' : 'Owner'}
                 </th>
                 {!meetingMode && <th className="text-left px-1 text-xs font-medium text-gray-700">Metric</th>}
-                {!meetingMode && <th className="w-6"></th>}
+                <th className={meetingMode ? "w-8" : "w-6"}></th>
                 <th className={`text-center ${meetingMode ? 'px-2 py-2 text-sm' : 'px-1 text-[10px]'} font-medium text-gray-600`}>Goal</th>
                 
                 {/* Week columns */}
@@ -175,9 +175,11 @@ const ScorecardTableClean = ({
                   );
                 })}
                 
-                <th className={`text-center ${meetingMode ? 'px-2 py-2 text-sm bg-gray-100' : 'px-1 text-[10px] border-l border-gray-200'} font-medium text-gray-700`}>
-                  {meetingMode ? 'Status' : 'Avg'}
-                </th>
+                {!meetingMode && (
+                  <th className="text-center px-1 text-[10px] border-l border-gray-200 font-medium text-gray-700">
+                    Avg
+                  </th>
+                )}
                 {!meetingMode && showTotal && <th className="text-center p-1 font-semibold text-gray-700 text-xs border-l border-gray-200">Total</th>}
                 {!meetingMode && <th className="text-center p-1 font-semibold text-gray-700 text-xs">Actions</th>}
               </tr>
@@ -214,32 +216,24 @@ const ScorecardTableClean = ({
                       )}
                     </td>
                     {!meetingMode && <td className="text-left px-1 text-xs font-medium">{metric.name}</td>}
-                    {!meetingMode && (
-                      <td className="w-6">
-                        <Button
-                          onClick={() => onChartOpen && onChartOpen(metric)}
-                          size="sm"
-                          variant="ghost"
-                          className="h-5 w-5 p-0 hover:bg-gray-100"
-                        >
-                          <BarChart3 className="h-3 w-3 text-gray-600" />
-                        </Button>
-                      </td>
-                    )}
+                    <td className={meetingMode ? "w-8" : "w-6"}>
+                      <Button
+                        onClick={() => onChartOpen && onChartOpen(metric)}
+                        size="sm"
+                        variant="ghost"
+                        className={meetingMode ? "h-6 w-6 p-0 hover:bg-gray-100" : "h-5 w-5 p-0 hover:bg-gray-100"}
+                      >
+                        <BarChart3 className={meetingMode ? "h-4 w-4 text-gray-600" : "h-3 w-3 text-gray-600"} />
+                      </Button>
+                    </td>
                     <td className={`text-center ${meetingMode ? 'px-2 py-2 text-sm' : 'px-1 text-[10px]'} font-medium text-gray-700`}>
                       {formatGoal(metric.goal, metric.value_type, metric.comparison_operator)}
                     </td>
                     
-                    {/* Status/Average column */}
-                    <td className={`text-center ${meetingMode ? 'px-2 py-2 bg-gray-50' : 'px-1 bg-white border-l border-gray-200'}`}>
-                      {meetingMode ? (
-                        <div className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-semibold ${
-                          avgGoalMet ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
-                        }`}>
-                          {avgGoalMet ? 'On Track' : 'Off Track'}
-                        </div>
-                      ) : (
-                        average !== null ? (
+                    {/* Average column - only show when not in meeting mode */}
+                    {!meetingMode && (
+                      <td className="px-1 text-center bg-white border-l border-gray-200">
+                        {average !== null ? (
                           <span className={`text-[10px] px-0.5 rounded ${
                             avgGoalMet ? 'text-green-700' : 'text-red-700'
                           }`}>
@@ -247,9 +241,9 @@ const ScorecardTableClean = ({
                           </span>
                         ) : (
                           <span className="text-[10px] text-gray-400">-</span>
-                        )
-                      )}
-                    </td>
+                        )}
+                      </td>
+                    )}
                     
                     {/* Period columns */}
                     {periodDates.map((periodDate, index) => {
