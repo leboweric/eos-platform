@@ -5,7 +5,8 @@ import {
   Edit,
   BarChart3,
   GripVertical,
-  Trash2
+  Trash2,
+  AlertCircle
 } from 'lucide-react';
 
 const ScorecardTableClean = ({ 
@@ -23,6 +24,7 @@ const ScorecardTableClean = ({
   onChartOpen,
   onMetricUpdate,
   onMetricDelete,
+  onAddIssue, // New prop for adding metric issues
   noWrapper = false, // Add prop to disable Card wrapper
   maxPeriods = 10, // Control how many weeks/months to show
   meetingMode = false // New prop for meeting display mode
@@ -187,6 +189,7 @@ const ScorecardTableClean = ({
                   </th>
                 )}
                 {!meetingMode && <th className="text-center p-1 font-semibold text-gray-700 text-xs">Actions</th>}
+                {meetingMode && onAddIssue && <th className="text-center px-2 py-2 text-sm font-medium text-gray-700">Action</th>}
               </tr>
             </thead>
             <tbody>
@@ -319,6 +322,22 @@ const ScorecardTableClean = ({
                             <Trash2 className="h-3 w-3 text-red-600" />
                           </Button>
                         </div>
+                      </td>
+                    )}
+                    {meetingMode && onAddIssue && (
+                      <td className="px-2 py-2 text-center">
+                        <Button
+                          onClick={() => {
+                            const isOffTrack = average !== null && !isGoalMet(average, metric.goal, metric.comparison_operator);
+                            onAddIssue(metric, isOffTrack);
+                          }}
+                          size="sm"
+                          variant="outline"
+                          className="h-7 px-2 text-xs border-gray-300 hover:bg-gray-50 hover:border-gray-400"
+                        >
+                          <AlertCircle className="h-3 w-3 mr-1" />
+                          Add Issue
+                        </Button>
                       </td>
                     )}
                   </tr>

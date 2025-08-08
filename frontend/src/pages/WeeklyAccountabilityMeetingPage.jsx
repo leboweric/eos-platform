@@ -39,7 +39,6 @@ import IssueDialog from '../components/issues/IssueDialog';
 import TodosList from '../components/todos/TodosListClean';
 import TodoDialog from '../components/todos/TodoDialog';
 import MetricTrendChart from '../components/scorecard/MetricTrendChart';
-import FloatingActionButtons from '../components/meetings/FloatingActionButtons';
 import { scorecardService } from '../services/scorecardService';
 import { quarterlyPrioritiesService } from '../services/quarterlyPrioritiesService';
 import { issuesService } from '../services/issuesService';
@@ -297,6 +296,65 @@ const WeeklyAccountabilityMeetingPage = () => {
   const handleAddIssue = () => {
     setEditingIssue(null);
     setShowIssueDialog(true);
+  };
+  
+  const handleAddIssueFromMetric = async (metric, isOffTrack) => {
+    try {
+      const effectiveTeamId = teamId || user?.teamId || '00000000-0000-0000-0000-000000000000';
+      const status = isOffTrack ? 'Off Track' : 'Needs Attention';
+      
+      await issuesService.createIssue({
+        title: `${status}: ${metric.name}`,
+        description: `Metric "${metric.name}" is ${status.toLowerCase()} and requires attention.\n\nGoal: ${formatGoal(metric.goal, metric.value_type, metric.comparison_operator)}\nOwner: ${metric.ownerName || metric.owner || 'Unassigned'}\n\nData Source: ${metric.description || 'No data source specified'}`,
+        timeline: 'short_term',
+        ownerId: metric.ownerId || null,
+        department_id: effectiveTeamId
+      });
+      
+      setSuccess(
+        <div className="flex items-center gap-2">
+          <CheckCircle className="h-4 w-4" />
+          <span>Issue created for metric "{metric.name}"</span>
+        </div>
+      );
+      
+      await fetchIssuesData();
+      
+      setTimeout(() => setSuccess(null), 3000);
+    } catch (error) {
+      console.error('Failed to create issue from metric:', error);
+      setError('Failed to create issue from metric');
+    }
+  };
+  
+  // Helper function for formatting goal
+  const formatGoal = (goal, valueType, comparisonOperator) => {
+    if (!goal && goal !== 0) return 'No goal';
+    
+    let formattedValue;
+    if (valueType === 'currency') {
+      formattedValue = new Intl.NumberFormat('en-US', {
+        style: 'currency',
+        currency: 'USD',
+        minimumFractionDigits: 0,
+        maximumFractionDigits: 0
+      }).format(parseFloat(goal));
+    } else if (valueType === 'percentage') {
+      formattedValue = `${Math.round(parseFloat(goal))}%`;
+    } else {
+      formattedValue = Math.round(parseFloat(goal)).toString();
+    }
+    
+    switch (comparisonOperator) {
+      case 'greater_equal':
+        return `≥ ${formattedValue}`;
+      case 'less_equal':
+        return `≤ ${formattedValue}`;
+      case 'equal':
+        return `= ${formattedValue}`;
+      default:
+        return `≥ ${formattedValue}`;
+    }
   };
 
   const handleAddTodo = () => {
@@ -828,7 +886,7 @@ const WeeklyAccountabilityMeetingPage = () => {
                 showTotal={showScorecardTotal}
                 showAverage={showScorecardAverage}
                 departmentId={teamId || user?.teamId || '00000000-0000-0000-0000-000000000000'}
-                onIssueCreated={null}
+                onAddIssue={handleAddIssueFromMetric}
                 onScoreEdit={null}
                 onChartOpen={(metric) => setChartModal({ isOpen: true, metric: metric, metricId: metric.id })}
                 onMetricUpdate={null}
@@ -1402,13 +1460,6 @@ const WeeklyAccountabilityMeetingPage = () => {
           </div>
         </Tabs>
 
-        {/* Floating Action Buttons */}
-        {meetingStarted && activeSection !== 'good-news' && activeSection !== 'conclude' && (
-          <FloatingActionButtons 
-            onAddTodo={handleAddTodo}
-            onAddIssue={handleAddIssue}
-          />
-        )}
       </div>
       
       {/* Issue Edit Dialog */}
