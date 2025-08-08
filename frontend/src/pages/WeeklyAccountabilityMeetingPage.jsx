@@ -1204,7 +1204,11 @@ const WeeklyAccountabilityMeetingPage = () => {
                     <span className="font-semibold">Quick voting:</span> Everyone votes on the most important issues. Then discuss and solve the top-voted issues using IDS.
                   </p>
                 </div>
-                <div className="flex justify-end mb-4">
+                <div className="flex justify-end gap-2 mb-4">
+                  <Button onClick={handleAddTodo} className="bg-green-600 hover:bg-green-700">
+                    <Plus className="mr-2 h-4 w-4" />
+                    Add To Do
+                  </Button>
                   <Button onClick={handleAddIssue} className="bg-indigo-600 hover:bg-indigo-700">
                     <Plus className="mr-2 h-4 w-4" />
                     Add Issue
