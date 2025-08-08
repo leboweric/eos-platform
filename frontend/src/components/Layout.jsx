@@ -44,7 +44,6 @@ const Layout = ({ children }) => {
   const [isImpersonating, setIsImpersonating] = useState(false);
   const [logoUrl, setLogoUrl] = useState(null);
   const [logoKey, setLogoKey] = useState(Date.now()); // Force refresh of logo
-  const [meetingActive, setMeetingActive] = useState(false);
   const [hideSidebar, setHideSidebar] = useState(false);
   const location = useLocation();
   const navigate = useNavigate();
@@ -61,39 +60,9 @@ const Layout = ({ children }) => {
     }
   }, [user]);
   
-  // Check for active meeting
-  useEffect(() => {
-    const checkMeeting = () => {
-      const isActive = sessionStorage.getItem('meetingActive') === 'true';
-      setMeetingActive(isActive);
-    };
-    
-    // Check initially
-    checkMeeting();
-    
-    // Listen for custom meeting state change events
-    const handleMeetingStateChange = () => {
-      checkMeeting();
-    };
-    window.addEventListener('meetingStateChanged', handleMeetingStateChange);
-    
-    // Also check on storage events for cross-tab updates
-    const handleStorageChange = () => {
-      checkMeeting();
-    };
-    window.addEventListener('storage', handleStorageChange);
-    
-    return () => {
-      window.removeEventListener('meetingStateChanged', handleMeetingStateChange);
-      window.removeEventListener('storage', handleStorageChange);
-    };
-  }, []);
-  
   // Refresh logo when returning to this page
   useEffect(() => {
     setLogoKey(Date.now());
-    // Also recheck meeting state on navigation
-    setMeetingActive(sessionStorage.getItem('meetingActive') === 'true');
     // Check for temporary sidebar hide flag
     setHideSidebar(sessionStorage.getItem('hideSidebarTemp') === 'true');
   }, [location.pathname]);
@@ -195,54 +164,10 @@ const Layout = ({ children }) => {
           </button>
         </div>
 
-        {meetingActive && (
-          <div className="mx-3 mt-4 p-3 bg-yellow-50 border border-yellow-200 rounded-lg">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm font-medium text-yellow-800">
-                  Meeting in Progress
-                </p>
-                <p className="text-xs text-yellow-600 mt-1">
-                  Navigation is limited during meetings
-                </p>
-              </div>
-              <button
-                onClick={() => {
-                  sessionStorage.removeItem('meetingActive');
-                  sessionStorage.removeItem('meetingStartTime');
-                  window.dispatchEvent(new Event('meetingStateChanged'));
-                  setMeetingActive(false);
-                }}
-                className="text-xs text-yellow-700 hover:text-yellow-900 underline"
-              >
-                End
-              </button>
-            </div>
-          </div>
-        )}
-        
         <nav className="mt-6 px-3">
           <div className="space-y-1">
             {navigation.map((item) => {
               const isActive = location.pathname === item.href;
-              const isMeetingPage = item.href.includes('/meetings/weekly-accountability');
-              const isDisabled = meetingActive && !isMeetingPage;
-              
-              if (isDisabled) {
-                return (
-                  <div
-                    key={item.name}
-                    className="flex items-center px-3 py-2 text-sm font-medium rounded-md transition-colors text-gray-400 bg-gray-50 cursor-not-allowed opacity-50"
-                    onClick={() => {
-                      alert('Please finish the current meeting before navigating away.');
-                    }}
-                    title="Meeting in progress"
-                  >
-                    <item.icon className="mr-3 h-5 w-5" />
-                    {item.name}
-                  </div>
-                );
-              }
               
               return (
                 <Link
