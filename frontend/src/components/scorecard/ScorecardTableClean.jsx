@@ -156,35 +156,35 @@ const ScorecardTableClean = ({
             <thead className={meetingMode ? "bg-gray-50" : "bg-white border-b border-gray-200"}>
               <tr>
                 {!meetingMode && <th className="w-4"></th>}
-                <th className={`text-left ${meetingMode ? 'px-3 py-2 text-sm' : 'px-1 text-[10px]'} font-medium text-gray-700`}>
+                <th className={'text-left font-medium text-gray-700 ' + (meetingMode ? 'px-3 py-2 text-sm' : 'px-1 text-[10px]')}>
                   {meetingMode ? 'Metric / Owner' : 'Owner'}
                 </th>
                 {!meetingMode && <th className="text-left px-1 text-xs font-medium text-gray-700">Metric</th>}
                 <th className={meetingMode ? "w-8" : "w-6"}></th>
-                <th className={`text-center ${meetingMode ? 'px-2 py-2 text-sm' : 'px-1 text-[10px]'} font-medium text-gray-600`}>Goal</th>
+                <th className={'text-center font-medium text-gray-600 ' + (meetingMode ? 'px-2 py-2 text-sm' : 'px-1 text-[10px]')}>Goal</th>
                 
                 {/* Week columns */}
                 {periodLabels.map((label, index) => {
                   const originalIndex = isRTL ? periodLabelsOriginal.length - 1 - index : index;
                   const isCurrentPeriod = originalIndex === periodLabelsOriginal.length - 1;
                   return (
-                    <th key={periodDates[index]} className={`text-center ${meetingMode ? 'px-2 py-2' : 'px-1'} ${
-                      isCurrentPeriod ? (meetingMode ? 'bg-blue-50 font-semibold' : 'bg-gray-50 border-2 border-gray-300') : ''
-                    }`}>
+                    <th key={periodDates[index]} className={'text-center ' + (meetingMode ? 'px-2 py-2' : 'px-1') + ' ' + 
+                      (isCurrentPeriod ? (meetingMode ? 'bg-blue-50 font-semibold' : 'bg-gray-50 border-2 border-gray-300') : '')
+                    }>
                       <div className="flex flex-col items-center">
-                        <span className={`${meetingMode ? 'text-xs' : 'text-[10px]'} font-medium text-gray-600`}>{label}</span>
+                        <span className={'font-medium text-gray-600 ' + (meetingMode ? 'text-xs' : 'text-[10px]')}>{label}</span>
                       </div>
                     </th>
                   );
                 })}
                 
                 {(showAverage && !meetingMode) || (showAverage && meetingMode) ? (
-                  <th className={`text-center ${meetingMode ? 'px-2 py-2 text-sm bg-gray-100' : 'px-1 text-[10px] border-l border-gray-200'} font-medium text-gray-700`}>
+                  <th className={'text-center font-medium text-gray-700 ' + (meetingMode ? 'px-2 py-2 text-sm bg-gray-100' : 'px-1 text-[10px] border-l border-gray-200')}>
                     Avg
                   </th>
                 ) : null}
                 {showTotal && (
-                  <th className={`text-center ${meetingMode ? 'px-2 py-2 text-sm bg-gray-100' : 'p-1 text-xs border-l border-gray-200'} font-semibold text-gray-700`}>
+                  <th className={'text-center font-semibold text-gray-700 ' + (meetingMode ? 'px-2 py-2 text-sm bg-gray-100' : 'p-1 text-xs border-l border-gray-200')}>
                     Total
                   </th>
                 )}
@@ -207,13 +207,13 @@ const ScorecardTableClean = ({
                 const avgGoalMet = average !== null && isGoalMet(average, metric.goal, metric.comparison_operator);
                 
                 return (
-                  <tr key={metric.id} className={`border-b ${meetingMode ? 'hover:bg-blue-50/30' : 'hover:bg-gray-50'}`}>
+                  <tr key={metric.id} className={'border-b ' + (meetingMode ? 'hover:bg-blue-50/30' : 'hover:bg-gray-50')}>
                     {!meetingMode && (
                       <td className="w-4">
                         <GripVertical className="h-3 w-3 text-gray-400 cursor-move mx-auto" />
                       </td>
                     )}
-                    <td className={`${meetingMode ? 'px-3 py-2' : 'text-center px-1 text-[10px]'}`}>
+                    <td className={meetingMode ? 'px-3 py-2' : 'text-center px-1 text-[10px]'}>
                       {meetingMode ? (
                         <div className="text-left">
                           <div className="text-sm font-medium text-gray-900">{metric.name}</div>
@@ -234,29 +234,29 @@ const ScorecardTableClean = ({
                         <BarChart3 className={meetingMode ? "h-4 w-4 text-gray-600" : "h-3 w-3 text-gray-600"} />
                       </Button>
                     </td>
-                    <td className={`text-center ${meetingMode ? 'px-2 py-2 text-sm' : 'px-1 text-[10px]'} font-medium text-gray-700`}>
+                    <td className={'text-center font-medium text-gray-700 ' + (meetingMode ? 'px-2 py-2 text-sm' : 'px-1 text-[10px]')}>
                       {formatGoal(metric.goal, metric.value_type, metric.comparison_operator)}
                     </td>
                     
                     {/* Average column */}
                     {(showAverage && !meetingMode) || (showAverage && meetingMode) ? (
-                      <td className={`text-center ${meetingMode ? 'px-2 py-2 bg-gray-50' : 'px-1 bg-white border-l border-gray-200'}`}>
+                      <td className={'text-center ' + (meetingMode ? 'px-2 py-2 bg-gray-50' : 'px-1 bg-white border-l border-gray-200')}>
                         {average !== null ? (
                           meetingMode ? (
-                            <div className={`inline-block px-2 py-0.5 rounded-full text-xs font-medium ${
-                              avgGoalMet ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
-                            }`}>
+                            <div className={'inline-block px-2 py-0.5 rounded-full text-xs font-medium ' + 
+                              (avgGoalMet ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800')
+                            }>
                               {metric.value_type === 'number' ? Math.round(average) : formatValue(average, metric.value_type)}
                             </div>
                           ) : (
-                            <span className={`text-[10px] px-0.5 rounded ${
-                              avgGoalMet ? 'text-green-700' : 'text-red-700'
-                            }`}>
+                            <span className={'text-[10px] px-0.5 rounded ' + 
+                              (avgGoalMet ? 'text-green-700' : 'text-red-700')
+                            }>
                               {metric.value_type === 'number' ? Math.round(average) : formatValue(average, metric.value_type)}
                             </span>
                           )
                         ) : (
-                          <span className={`${meetingMode ? 'text-xs' : 'text-[10px]'} text-gray-400">-</span>
+                          <span className={'text-gray-400 ' + (meetingMode ? 'text-xs' : 'text-[10px]')}>-</span>
                         )}
                       </td>
                     ) : null}
@@ -300,7 +300,7 @@ const ScorecardTableClean = ({
                     })}
                     
                     {showTotal && (
-                      <td className={`text-center ${meetingMode ? 'px-2 py-2 bg-gray-50' : 'px-1 text-[10px] border-l border-gray-200'} font-medium`}>
+                      <td className={'text-center font-medium ' + (meetingMode ? 'px-2 py-2 bg-gray-50' : 'px-1 text-[10px] border-l border-gray-200')}>
                         {meetingMode ? (
                           <div className="text-sm font-semibold text-gray-700">
                             {Math.round(Object.values(scores[metric.id] || {}).reduce((sum, val) => sum + (parseFloat(val) || 0), 0))}
