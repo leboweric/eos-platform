@@ -197,10 +197,19 @@ const TodosPage = () => {
       await todosService.updateTodo(todoId, { 
         status: completed ? 'complete' : 'incomplete' 
       });
-      await fetchTodos();
+      // Update local state instead of refetching to avoid flashing
+      setTodos(prevTodos => 
+        prevTodos.map(todo => 
+          todo.id === todoId 
+            ? { ...todo, status: completed ? 'complete' : 'incomplete' }
+            : todo
+        )
+      );
     } catch (error) {
       console.error('Failed to update todo status:', error);
       setError('Failed to update to-do status');
+      // Refetch on error to ensure consistency
+      await fetchTodos();
     }
   };
 

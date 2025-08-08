@@ -1386,7 +1386,31 @@ const WeeklyAccountabilityMeetingPage = () => {
                 </div>
               </CardHeader>
               <CardContent className="pt-6">
-                <div className="flex justify-end mb-4">
+                <div className="flex justify-between mb-4">
+                  <div>
+                    {(() => {
+                      const doneTodosCount = todos.filter(t => t.status === 'complete' && !t.archived).length;
+                      return doneTodosCount > 0 && (
+                        <Button 
+                          onClick={async () => {
+                            try {
+                              const result = await todosService.archiveDoneTodos();
+                              setSuccess(`${result.data.archivedCount} done to-do(s) archived`);
+                              await fetchTodosData();
+                            } catch (error) {
+                              console.error('Failed to archive done todos:', error);
+                              setError('Failed to archive done to-dos');
+                            }
+                          }}
+                          variant="outline"
+                          className="text-gray-600 hover:text-gray-900"
+                        >
+                          <Archive className="mr-2 h-4 w-4" />
+                          Archive Done ({doneTodosCount})
+                        </Button>
+                      );
+                    })()}
+                  </div>
                   <Button onClick={handleAddTodo} className="bg-indigo-600 hover:bg-indigo-700">
                     <Plus className="mr-2 h-4 w-4" />
                     Add To-do
