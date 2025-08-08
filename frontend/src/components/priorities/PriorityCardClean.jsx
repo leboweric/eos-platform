@@ -255,6 +255,19 @@ const PriorityCardClean = ({
                     <span className="capitalize">{(isEditing ? editForm.status : priority.status).replace('-', ' ')}</span>
                   </div>
                 )}
+                
+                {/* Milestone indicator */}
+                {priority.milestones && priority.milestones.length > 0 && (
+                  <div className="flex items-center gap-1.5 text-xs">
+                    <Target className="h-3.5 w-3.5 text-gray-400" />
+                    <span className="text-gray-600">
+                      {priority.milestones.filter(m => m.completed).length}/{priority.milestones.length}
+                    </span>
+                    {priority.progress > 0 && (
+                      <span className="text-gray-500">({priority.progress}%)</span>
+                    )}
+                  </div>
+                )}
               </div>
 
               {isEditing ? (
