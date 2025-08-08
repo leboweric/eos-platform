@@ -67,6 +67,9 @@ router.post('/', [
   body('teamId').optional().isUUID()
 ], createTodo);
 
+// Archive done todos - MUST come before /:todoId routes
+router.put('/archive-done', archiveDoneTodos);
+
 // Update a todo
 router.put('/:todoId', [
   param('todoId').isUUID(),
@@ -81,9 +84,6 @@ router.put('/:todoId', [
 router.delete('/:todoId', [
   param('todoId').isUUID()
 ], deleteTodo);
-
-// Archive done todos
-router.put('/archive-done', archiveDoneTodos);
 
 // Upload attachment for a todo
 router.post('/:todoId/attachments', [
