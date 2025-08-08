@@ -66,7 +66,7 @@ const TeamSelector = ({ onTeamChange }) => {
           </SelectItem>
           
           {/* Show other teams */}
-          {user.teams.filter(t => !t.is_leadership_team).map(team => (
+          {(user.teams || []).filter(t => !t.is_leadership_team).map(team => (
             <SelectItem key={team.id} value={team.id}>
               <div className="flex items-center space-x-2">
                 <Building2 className="h-4 w-4 text-gray-600" />

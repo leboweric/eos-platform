@@ -44,7 +44,7 @@ const ArchivedIssuesList = ({ issues, onUnarchive, getStatusColor, getStatusIcon
             </TableRow>
           </TableHeader>
           <TableBody>
-            {issues.map((issue, index) => (
+            {(issues || []).map((issue, index) => (
               <TableRow 
                 key={issue.id} 
                 className="cursor-pointer hover:bg-green-50"

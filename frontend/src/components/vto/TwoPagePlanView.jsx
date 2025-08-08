@@ -128,7 +128,7 @@ const TwoPagePlanView = () => {
           <CardContent className="pt-4">
             {blueprintData.coreValues && blueprintData.coreValues.length > 0 ? (
               <ul className="space-y-2">
-                {blueprintData.coreValues.map((value, index) => (
+                {(blueprintData.coreValues || []).map((value, index) => (
                   <li key={index} className="bg-gray-50 p-3 rounded-lg">
                     <h4 className="font-semibold">{value.value}</h4>
                     {value.description && (
@@ -205,7 +205,7 @@ const TwoPagePlanView = () => {
                 <h4 className="font-semibold text-sm text-gray-700">Differentiators</h4>
                 {blueprintData.marketingStrategy.differentiators && blueprintData.marketingStrategy.differentiators.filter(d => d).length > 0 ? (
                   <ul className="list-disc list-inside text-gray-600 space-y-1">
-                    {blueprintData.marketingStrategy.differentiators
+                    {(blueprintData.marketingStrategy.differentiators || [])
                       .filter(d => d)
                       .map((diff, index) => (
                         <li key={index}>{diff}</li>
@@ -241,7 +241,7 @@ const TwoPagePlanView = () => {
                   <h4 className="font-semibold text-sm text-gray-700">Profit</h4>
                   <p className="text-gray-600">{blueprintData.threeYearPicture.profit || 'Not set'}</p>
                 </div>
-                {blueprintData.threeYearPicture.measurables?.length > 0 && (
+                {blueprintData.threeYearPicture?.measurables?.length > 0 && (
                   <div>
                     <h4 className="font-semibold text-sm text-gray-700">Key Measurables</h4>
                     <ul className="list-disc list-inside text-gray-600 space-y-1">
@@ -279,7 +279,7 @@ const TwoPagePlanView = () => {
                   <h4 className="font-semibold text-sm text-gray-700">Profit</h4>
                   <p className="text-gray-600">{blueprintData.oneYearPlan.profit || 'Not set'}</p>
                 </div>
-                {blueprintData.oneYearPlan.goals?.length > 0 && (
+                {blueprintData.oneYearPlan?.goals?.length > 0 && (
                   <div>
                     <h4 className="font-semibold text-sm text-gray-700">Goals</h4>
                     <ul className="list-disc list-inside text-gray-600 space-y-1">
