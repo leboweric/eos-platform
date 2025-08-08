@@ -381,8 +381,31 @@ const QuarterlyPrioritiesPageClean = () => {
       
       await quarterlyPrioritiesService.updateMilestone(orgId, teamId, priorityId, milestoneId, { completed });
       
-      // Refresh data to get updated progress
-      await fetchQuarterlyData();
+      // Update local state instead of refetching
+      const updateMilestones = (milestones) => 
+        milestones?.map(m => m.id === milestoneId ? { ...m, completed } : m) || [];
+      
+      // Update company priorities
+      setCompanyPriorities(prev => prev.map(p => 
+        p.id === priorityId 
+          ? { ...p, milestones: updateMilestones(p.milestones) }
+          : p
+      ));
+      
+      // Update team member priorities
+      setTeamMemberPriorities(prev => {
+        const updated = { ...prev };
+        Object.keys(updated).forEach(memberId => {
+          if (updated[memberId]?.priorities) {
+            updated[memberId].priorities = updated[memberId].priorities.map(p =>
+              p.id === priorityId 
+                ? { ...p, milestones: updateMilestones(p.milestones) }
+                : p
+            );
+          }
+        });
+        return updated;
+      });
     } catch (err) {
       console.error('Failed to update milestone:', err);
       if (err.status === 404) {
@@ -404,10 +427,39 @@ const QuarterlyPrioritiesPageClean = () => {
         throw new Error('Organization or department not found');
       }
       
-      await quarterlyPrioritiesService.createMilestone(orgId, teamId, priorityId, milestoneData);
+      const result = await quarterlyPrioritiesService.createMilestone(orgId, teamId, priorityId, milestoneData);
       
-      // Refresh data
-      await fetchQuarterlyData();
+      // Update local state instead of refetching
+      const newMilestone = {
+        id: result?.id || Date.now().toString(),
+        title: milestoneData.title,
+        dueDate: milestoneData.dueDate,
+        completed: false
+      };
+      
+      // Update company priorities
+      setCompanyPriorities(prev => prev.map(p => 
+        p.id === priorityId 
+          ? { ...p, milestones: [...(p.milestones || []), newMilestone] }
+          : p
+      ));
+      
+      // Update team member priorities
+      setTeamMemberPriorities(prev => {
+        const updated = { ...prev };
+        Object.keys(updated).forEach(memberId => {
+          if (updated[memberId]?.priorities) {
+            updated[memberId].priorities = updated[memberId].priorities.map(p =>
+              p.id === priorityId 
+                ? { ...p, milestones: [...(p.milestones || []), newMilestone] }
+                : p
+            );
+          }
+        });
+        return updated;
+      });
+      
+      setSuccess('Milestone added successfully');
     } catch (err) {
       console.error('Failed to create milestone:', err);
       setError('Failed to create milestone');
@@ -450,15 +502,40 @@ const QuarterlyPrioritiesPageClean = () => {
       
       await quarterlyPrioritiesService.deleteMilestone(orgId, teamId, priorityId, milestoneId);
       
-      // Refresh data
-      await fetchQuarterlyData();
+      // Update local state instead of refetching
+      const removeMilestone = (milestones) => 
+        milestones?.filter(m => m.id !== milestoneId) || [];
+      
+      // Update company priorities
+      setCompanyPriorities(prev => prev.map(p => 
+        p.id === priorityId 
+          ? { ...p, milestones: removeMilestone(p.milestones) }
+          : p
+      ));
+      
+      // Update team member priorities
+      setTeamMemberPriorities(prev => {
+        const updated = { ...prev };
+        Object.keys(updated).forEach(memberId => {
+          if (updated[memberId]?.priorities) {
+            updated[memberId].priorities = updated[memberId].priorities.map(p =>
+              p.id === priorityId 
+                ? { ...p, milestones: removeMilestone(p.milestones) }
+                : p
+            );
+          }
+        });
+        return updated;
+      });
+      
+      setSuccess('Milestone deleted successfully');
     } catch (err) {
       console.error('Failed to delete milestone:', err);
       // For delete, we don't show error for 404 since the milestone is already gone
       if (err.message && !err.message.includes('not found')) {
         setError('Failed to delete milestone');
       } else {
-        // Still refresh to ensure UI is in sync
+        // Still refresh to ensure UI is in sync if not found
         await fetchQuarterlyData();
       }
     }
@@ -473,10 +550,38 @@ const QuarterlyPrioritiesPageClean = () => {
         throw new Error('Organization or department not found');
       }
       
-      await quarterlyPrioritiesService.addPriorityUpdate(orgId, teamId, priorityId, updateText, statusChange);
+      const result = await quarterlyPrioritiesService.addPriorityUpdate(orgId, teamId, priorityId, updateText, statusChange);
       
-      // Refresh data to show new update
-      await fetchQuarterlyData();
+      // Update local state instead of refetching
+      const newUpdate = {
+        text: updateText,
+        createdAt: new Date().toISOString(),
+        createdBy: user?.firstName && user?.lastName ? `${user.firstName} ${user.lastName}` : user?.email || 'Unknown'
+      };
+      
+      // Update company priorities
+      setCompanyPriorities(prev => prev.map(p => 
+        p.id === priorityId 
+          ? { ...p, updates: [newUpdate, ...(p.updates || [])], status: statusChange || p.status }
+          : p
+      ));
+      
+      // Update team member priorities
+      setTeamMemberPriorities(prev => {
+        const updated = { ...prev };
+        Object.keys(updated).forEach(memberId => {
+          if (updated[memberId]?.priorities) {
+            updated[memberId].priorities = updated[memberId].priorities.map(p =>
+              p.id === priorityId 
+                ? { ...p, updates: [newUpdate, ...(p.updates || [])], status: statusChange || p.status }
+                : p
+            );
+          }
+        });
+        return updated;
+      });
+      
+      setSuccess('Update added successfully');
     } catch (err) {
       console.error('Failed to add update:', err);
       setError('Failed to add update');
@@ -557,8 +662,40 @@ const QuarterlyPrioritiesPageClean = () => {
         throw new Error('Organization or team not found');
       }
       
-      await quarterlyPrioritiesService.uploadAttachment(orgId, teamId, priorityId, file);
-      await fetchQuarterlyData();
+      const result = await quarterlyPrioritiesService.uploadAttachment(orgId, teamId, priorityId, file);
+      
+      // Update local state instead of refetching
+      const newAttachment = {
+        id: result?.id || Date.now().toString(),
+        fileName: file.name,
+        fileSize: file.size,
+        mimeType: file.type,
+        uploadedBy: user?.firstName && user?.lastName ? `${user.firstName} ${user.lastName}` : user?.email || 'Unknown',
+        createdAt: new Date().toISOString()
+      };
+      
+      // Update company priorities
+      setCompanyPriorities(prev => prev.map(p => 
+        p.id === priorityId 
+          ? { ...p, attachments: [...(p.attachments || []), newAttachment] }
+          : p
+      ));
+      
+      // Update team member priorities
+      setTeamMemberPriorities(prev => {
+        const updated = { ...prev };
+        Object.keys(updated).forEach(memberId => {
+          if (updated[memberId]?.priorities) {
+            updated[memberId].priorities = updated[memberId].priorities.map(p =>
+              p.id === priorityId 
+                ? { ...p, attachments: [...(p.attachments || []), newAttachment] }
+                : p
+            );
+          }
+        });
+        return updated;
+      });
+      
       setSuccess('Attachment uploaded successfully');
     } catch (error) {
       console.error('Failed to upload attachment:', error);
@@ -596,7 +733,33 @@ const QuarterlyPrioritiesPageClean = () => {
       }
       
       await quarterlyPrioritiesService.deleteAttachment(orgId, teamId, priorityId, attachmentId);
-      await fetchQuarterlyData();
+      
+      // Update local state instead of refetching
+      const removeAttachment = (attachments) => 
+        attachments?.filter(a => a.id !== attachmentId) || [];
+      
+      // Update company priorities
+      setCompanyPriorities(prev => prev.map(p => 
+        p.id === priorityId 
+          ? { ...p, attachments: removeAttachment(p.attachments) }
+          : p
+      ));
+      
+      // Update team member priorities
+      setTeamMemberPriorities(prev => {
+        const updated = { ...prev };
+        Object.keys(updated).forEach(memberId => {
+          if (updated[memberId]?.priorities) {
+            updated[memberId].priorities = updated[memberId].priorities.map(p =>
+              p.id === priorityId 
+                ? { ...p, attachments: removeAttachment(p.attachments) }
+                : p
+            );
+          }
+        });
+        return updated;
+      });
+      
       setSuccess('Attachment deleted successfully');
     } catch (error) {
       console.error('Failed to delete attachment:', error);
