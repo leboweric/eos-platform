@@ -24,6 +24,7 @@ import {
 } from 'lucide-react';
 import MetricTrendChart from '../components/scorecard/MetricTrendChart';
 import GroupedScorecardView from '../components/scorecard/GroupedScorecardView';
+import ScorecardTableClean from '../components/scorecard/ScorecardTableClean';
 
 const ScorecardPageClean = () => {
   const { user } = useAuthStore();
@@ -361,65 +362,6 @@ const ScorecardPageClean = () => {
   const { labels: weekLabels, weekDates } = getWeekLabels();
   const { labels: monthLabels, monthDates } = getMonthLabels();
 
-  // Helper functions for value formatting and goal achievement
-  const formatValue = (value, valueType) => {
-    if (!value && value !== 0) return '-';
-    
-    const numValue = parseFloat(value);
-    switch (valueType) {
-      case 'currency':
-        return new Intl.NumberFormat('en-US', {
-          style: 'currency',
-          currency: 'USD',
-          minimumFractionDigits: 0,
-          maximumFractionDigits: 0
-        }).format(numValue);
-      case 'percentage':
-        return `${Math.round(numValue)}%`;
-      default:
-        return Math.round(numValue).toString();
-    }
-  };
-
-  const formatGoal = (goal, valueType, comparisonOperator) => {
-    if (!goal && goal !== 0) return 'No goal';
-    
-    let formattedValue;
-    if (valueType === 'number') {
-      formattedValue = Math.round(parseFloat(goal)).toString();
-    } else {
-      formattedValue = formatValue(goal, valueType);
-    }
-    
-    switch (comparisonOperator) {
-      case 'greater_equal':
-        return `≥ ${formattedValue}`;
-      case 'less_equal':
-        return `≤ ${formattedValue}`;
-      case 'equal':
-        return `= ${formattedValue}`;
-      default:
-        return `≥ ${formattedValue}`;
-    }
-  };
-
-  const isGoalMet = (score, goal, comparisonOperator) => {
-    if (!score || !goal) return false;
-    
-    const scoreVal = parseFloat(score);
-    const goalVal = parseFloat(goal);
-    
-    switch (comparisonOperator) {
-      case 'greater_equal':
-        return scoreVal >= goalVal;
-      case 'less_equal':
-        return scoreVal <= goalVal;
-      case 'equal':
-        return Math.abs(scoreVal - goalVal) < 0.01;
-      default:
-        return scoreVal >= goalVal;
-    }
-  };
 
   if (loading || departmentLoading || !selectedDepartment) {
     return (
@@ -520,135 +462,17 @@ const ScorecardPageClean = () => {
                 selectedMonths={[]}
               />
             ) : (
-              <div className="bg-white border border-gray-200 rounded-lg overflow-hidden">
-                <div className="overflow-x-auto">
-                  <table className="w-full">
-                    <thead className="bg-gray-50 border-b border-gray-200">
-                      <tr>
-                        <th className="text-left px-4 py-3 font-medium text-gray-700 w-48">Metric</th>
-                        <th className="text-center px-2 py-3 font-medium text-gray-700 w-24">Owner</th>
-                        <th className="text-center px-2 py-3 font-medium text-gray-700 w-20">Goal</th>
-                        {weekLabels.map((label, index) => {
-                          const isCurrentWeek = index === weekLabels.length - 1;
-                          return (
-                            <th key={weekDates[index]} className={`text-center px-2 py-3 font-medium text-xs w-16 ${
-                              isCurrentWeek ? 'text-gray-900 bg-gray-100' : 'text-gray-600'
-                            }`}>
-                              <div className="flex flex-col items-center">
-                                {isCurrentWeek && (
-                                  <span className="text-xs font-normal text-gray-500 mb-1">Current</span>
-                                )}
-                                <span>{label}</span>
-                              </div>
-                            </th>
-                          );
-                        })}
-                        <th className="text-center px-2 py-3 font-medium text-gray-700 w-20">Average</th>
-                        <th className="w-20"></th>
-                      </tr>
-                    </thead>
-                    <tbody className="divide-y divide-gray-100">
-                      {weeklyMetrics.length === 0 ? (
-                        <tr>
-                          <td colSpan={weekLabels.length + 5} className="text-center py-12 text-gray-500">
-                            No weekly metrics defined. Click "Add Metric" to get started.
-                          </td>
-                        </tr>
-                      ) : (
-                        weeklyMetrics.map((metric) => {
-                          const scores = weekDates
-                            .map(weekDate => weeklyScores[metric.id]?.[weekDate])
-                            .filter(score => score !== undefined && score !== null && score !== '');
-                          
-                          const average = scores.length > 0 
-                            ? scores.reduce((sum, score) => sum + parseFloat(score), 0) / scores.length 
-                            : null;
-                          const avgGoalMet = average !== null && isGoalMet(average, metric.goal, metric.comparison_operator);
-                          
-                          return (
-                            <tr key={metric.id} className="hover:bg-gray-50 group">
-                              <td className="px-4 py-3">
-                                <div className="font-medium text-gray-900">{metric.name}</div>
-                                {metric.description && (
-                                  <div className="text-xs text-gray-500 mt-1">{metric.description}</div>
-                                )}
-                              </td>
-                              <td className="px-2 py-3 text-center text-sm text-gray-600">
-                                {metric.ownerName || metric.owner}
-                              </td>
-                              <td className="px-2 py-3 text-center">
-                                <span className="text-sm font-medium text-gray-900">
-                                  {formatGoal(metric.goal, metric.value_type, metric.comparison_operator)}
-                                </span>
-                              </td>
-                              {weekDates.map((weekDate) => {
-                                const score = weeklyScores[metric.id]?.[weekDate];
-                                const goalMet = score && isGoalMet(score, metric.goal, metric.comparison_operator);
-                                
-                                return (
-                                  <td key={weekDate} className="px-2 py-3 text-center">
-                                    <button
-                                      onClick={() => handleScoreEdit(metric, weekDate, 'weekly')}
-                                      className={`w-full py-1 px-2 rounded text-sm font-medium transition-colors ${
-                                        score
-                                          ? goalMet
-                                            ? 'text-green-700 hover:bg-green-50'
-                                            : 'text-red-700 hover:bg-red-50'
-                                          : 'text-gray-400 hover:bg-gray-100'
-                                      }`}
-                                    >
-                                      {score ? formatValue(score, metric.value_type) : '-'}
-                                    </button>
-                                  </td>
-                                );
-                              })}
-                              <td className="px-2 py-3 text-center">
-                                {average !== null ? (
-                                  <span className={`font-medium text-sm ${
-                                    avgGoalMet ? 'text-green-700' : 'text-red-700'
-                                  }`}>
-                                    {metric.value_type === 'number' ? Math.round(average) : formatValue(average, metric.value_type)}
-                                  </span>
-                                ) : (
-                                  <span className="text-gray-400">-</span>
-                                )}
-                              </td>
-                              <td className="px-2 py-3">
-                                <div className="flex items-center justify-end gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                                  <Button
-                                    variant="ghost"
-                                    size="sm"
-                                    className="h-8 w-8 p-0 hover:bg-gray-100"
-                                    onClick={() => handleChartOpen(metric)}
-                                  >
-                                    <BarChart3 className="h-4 w-4 text-gray-600" />
-                                  </Button>
-                                  <Button
-                                    variant="ghost"
-                                    size="sm"
-                                    className="h-8 w-8 p-0 hover:bg-gray-100"
-                                    onClick={() => handleEditMetric(metric)}
-                                  >
-                                    <Edit className="h-4 w-4 text-gray-600" />
-                                  </Button>
-                                  <Button
-                                    variant="ghost"
-                                    size="sm"
-                                    className="h-8 w-8 p-0 hover:bg-gray-100"
-                                    onClick={() => handleDeleteMetric(metric.id)}
-                                  >
-                                    <Trash2 className="h-4 w-4 text-gray-600" />
-                                  </Button>
-                                </div>
-                              </td>
-                            </tr>
-                          );
-                        })
-                      )}
-                    </tbody>
-                  </table>
-                </div>
-              </div>
+              <ScorecardTableClean
+                metrics={weeklyMetrics}
+                weeklyScores={weeklyScores}
+                readOnly={false}
+                isRTL={false}
+                showTotal={false}
+                departmentId={selectedDepartment?.id || LEADERSHIP_TEAM_ID}
+                onIssueCreated={null}
+                onScoreEdit={(metric, weekDate) => handleScoreEdit(metric, weekDate, 'weekly')}
+                onChartOpen={handleChartOpen}
+              />
             )}
           </TabsContent>
           
@@ -676,135 +500,17 @@ const ScorecardPageClean = () => {
                 selectedMonths={monthDates.map(date => ({ value: date, label: date }))}
               />
             ) : (
-              <div className="bg-white border border-gray-200 rounded-lg overflow-hidden">
-                <div className="overflow-x-auto">
-                  <table className="w-full">
-                    <thead className="bg-gray-50 border-b border-gray-200">
-                      <tr>
-                        <th className="text-left px-4 py-3 font-medium text-gray-700 w-48">Metric</th>
-                        <th className="text-center px-2 py-3 font-medium text-gray-700 w-24">Owner</th>
-                        <th className="text-center px-2 py-3 font-medium text-gray-700 w-20">Goal</th>
-                        {monthLabels.map((label, index) => {
-                          const isCurrentMonth = index === monthLabels.length - 1;
-                          return (
-                            <th key={monthDates[index]} className={`text-center px-2 py-3 font-medium text-xs w-16 ${
-                              isCurrentMonth ? 'text-gray-900 bg-gray-100' : 'text-gray-600'
-                            }`}>
-                              <div className="flex flex-col items-center">
-                                {isCurrentMonth && (
-                                  <span className="text-xs font-normal text-gray-500 mb-1">Current</span>
-                                )}
-                                <span>{label}</span>
-                              </div>
-                            </th>
-                          );
-                        })}
-                        <th className="text-center px-2 py-3 font-medium text-gray-700 w-20">Average</th>
-                        <th className="w-20"></th>
-                      </tr>
-                    </thead>
-                    <tbody className="divide-y divide-gray-100">
-                      {monthlyMetrics.length === 0 ? (
-                        <tr>
-                          <td colSpan={monthLabels.length + 5} className="text-center py-12 text-gray-500">
-                            No monthly metrics defined. Click "Add Metric" to get started.
-                          </td>
-                        </tr>
-                      ) : (
-                        monthlyMetrics.map((metric) => {
-                          const scores = monthDates
-                            .map(monthDate => monthlyScores[metric.id]?.[monthDate])
-                            .filter(score => score !== undefined && score !== null && score !== '');
-                          
-                          const average = scores.length > 0 
-                            ? scores.reduce((sum, score) => sum + parseFloat(score), 0) / scores.length 
-                            : null;
-                          const avgGoalMet = average !== null && isGoalMet(average, metric.goal, metric.comparison_operator);
-                          
-                          return (
-                            <tr key={metric.id} className="hover:bg-gray-50 group">
-                              <td className="px-4 py-3">
-                                <div className="font-medium text-gray-900">{metric.name}</div>
-                                {metric.description && (
-                                  <div className="text-xs text-gray-500 mt-1">{metric.description}</div>
-                                )}
-                              </td>
-                              <td className="px-2 py-3 text-center text-sm text-gray-600">
-                                {metric.ownerName || metric.owner}
-                              </td>
-                              <td className="px-2 py-3 text-center">
-                                <span className="text-sm font-medium text-gray-900">
-                                  {formatGoal(metric.goal, metric.value_type, metric.comparison_operator)}
-                                </span>
-                              </td>
-                              {monthDates.map((monthDate) => {
-                                const score = monthlyScores[metric.id]?.[monthDate];
-                                const goalMet = score && isGoalMet(score, metric.goal, metric.comparison_operator);
-                                
-                                return (
-                                  <td key={monthDate} className="px-2 py-3 text-center">
-                                    <button
-                                      onClick={() => handleScoreEdit(metric, monthDate, 'monthly')}
-                                      className={`w-full py-1 px-2 rounded text-sm font-medium transition-colors ${
-                                        score
-                                          ? goalMet
-                                            ? 'text-green-700 hover:bg-green-50'
-                                            : 'text-red-700 hover:bg-red-50'
-                                          : 'text-gray-400 hover:bg-gray-100'
-                                      }`}
-                                    >
-                                      {score ? formatValue(score, metric.value_type) : '-'}
-                                    </button>
-                                  </td>
-                                );
-                              })}
-                              <td className="px-2 py-3 text-center">
-                                {average !== null ? (
-                                  <span className={`font-medium text-sm ${
-                                    avgGoalMet ? 'text-green-700' : 'text-red-700'
-                                  }`}>
-                                    {metric.value_type === 'number' ? Math.round(average) : formatValue(average, metric.value_type)}
-                                  </span>
-                                ) : (
-                                  <span className="text-gray-400">-</span>
-                                )}
-                              </td>
-                              <td className="px-2 py-3">
-                                <div className="flex items-center justify-end gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                                  <Button
-                                    variant="ghost"
-                                    size="sm"
-                                    className="h-8 w-8 p-0 hover:bg-gray-100"
-                                    onClick={() => handleChartOpen(metric)}
-                                  >
-                                    <BarChart3 className="h-4 w-4 text-gray-600" />
-                                  </Button>
-                                  <Button
-                                    variant="ghost"
-                                    size="sm"
-                                    className="h-8 w-8 p-0 hover:bg-gray-100"
-                                    onClick={() => handleEditMetric(metric)}
-                                  >
-                                    <Edit className="h-4 w-4 text-gray-600" />
-                                  </Button>
-                                  <Button
-                                    variant="ghost"
-                                    size="sm"
-                                    className="h-8 w-8 p-0 hover:bg-gray-100"
-                                    onClick={() => handleDeleteMetric(metric.id)}
-                                  >
-                                    <Trash2 className="h-4 w-4 text-gray-600" />
-                                  </Button>
-                                </div>
-                              </td>
-                            </tr>
-                          );
-                        })
-                      )}
-                    </tbody>
-                  </table>
-                </div>
-              </div>
+              <ScorecardTableClean
+                metrics={monthlyMetrics}
+                weeklyScores={monthlyScores}
+                readOnly={false}
+                isRTL={false}
+                showTotal={false}
+                departmentId={selectedDepartment?.id || LEADERSHIP_TEAM_ID}
+                onIssueCreated={null}
+                onScoreEdit={(metric, monthDate) => handleScoreEdit(metric, monthDate, 'monthly')}
+                onChartOpen={handleChartOpen}
+              />
             )}
           </TabsContent>
         </Tabs>
