@@ -1,9 +1,14 @@
 import axios from './axiosConfig';
+import { useAuthStore } from '../stores/authStore';
 
 const getOrgId = () => {
-  const authState = JSON.parse(localStorage.getItem('auth-store') || '{}');
-  const user = authState?.state?.user;
-  return localStorage.getItem('impersonatedOrgId') || user?.organizationId || user?.organization_id;
+  // Get user from Zustand store
+  const user = useAuthStore.getState().user;
+  
+  // Check for impersonated org ID first, then user's organization ID
+  const orgId = localStorage.getItem('impersonatedOrgId') || user?.organizationId || user?.organization_id;
+  
+  return orgId;
 };
 
 export const teamsService = {
