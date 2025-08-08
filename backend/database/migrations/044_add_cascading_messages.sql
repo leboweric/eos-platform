@@ -6,13 +6,13 @@ CREATE TABLE IF NOT EXISTS cascading_messages (
     message TEXT NOT NULL,
     created_by UUID NOT NULL REFERENCES users(id),
     created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
-    meeting_date DATE NOT NULL DEFAULT CURRENT_DATE,
-    
-    -- Index for performance
-    INDEX idx_cascading_messages_org (organization_id),
-    INDEX idx_cascading_messages_from_team (from_team_id),
-    INDEX idx_cascading_messages_meeting_date (meeting_date)
+    meeting_date DATE NOT NULL DEFAULT CURRENT_DATE
 );
+
+-- Create indexes for cascading_messages
+CREATE INDEX IF NOT EXISTS idx_cascading_messages_org ON cascading_messages (organization_id);
+CREATE INDEX IF NOT EXISTS idx_cascading_messages_from_team ON cascading_messages (from_team_id);
+CREATE INDEX IF NOT EXISTS idx_cascading_messages_meeting_date ON cascading_messages (meeting_date);
 
 -- Create cascading_message_recipients table to track which teams receive each message
 CREATE TABLE IF NOT EXISTS cascading_message_recipients (
@@ -24,13 +24,13 @@ CREATE TABLE IF NOT EXISTS cascading_message_recipients (
     read_by UUID REFERENCES users(id),
     
     -- Ensure a message is only sent once to each team
-    UNIQUE(message_id, to_team_id),
-    
-    -- Index for performance
-    INDEX idx_cascade_recipients_message (message_id),
-    INDEX idx_cascade_recipients_team (to_team_id),
-    INDEX idx_cascade_recipients_unread (to_team_id, is_read) WHERE is_read = FALSE
+    UNIQUE(message_id, to_team_id)
 );
+
+-- Create indexes for cascading_message_recipients
+CREATE INDEX IF NOT EXISTS idx_cascade_recipients_message ON cascading_message_recipients (message_id);
+CREATE INDEX IF NOT EXISTS idx_cascade_recipients_team ON cascading_message_recipients (to_team_id);
+CREATE INDEX IF NOT EXISTS idx_cascade_recipients_unread ON cascading_message_recipients (to_team_id, is_read) WHERE is_read = FALSE;
 
 -- Add comments
 COMMENT ON TABLE cascading_messages IS 'Stores messages that cascade from one team to others during weekly meetings';
