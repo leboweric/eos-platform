@@ -1412,21 +1412,36 @@ export const uploadPriorityAttachment = async (req, res) => {
       });
     }
 
-    // Create attachment record
+    // Create attachment record with file data stored in database
     const attachmentId = uuidv4();
-    // Use the actual filename that multer created
-    const filePath = file.path.replace(/\\/g, '/'); // Normalize path separators
+    
+    // Read file data into buffer if file is on disk
+    let fileBuffer;
+    if (file.buffer) {
+      // Memory storage - file is already in buffer
+      fileBuffer = file.buffer;
+    } else if (file.path) {
+      // Disk storage - read file from disk
+      const fs = await import('fs/promises');
+      fileBuffer = await fs.readFile(file.path);
+      // Clean up the file from disk after reading
+      try {
+        await fs.unlink(file.path);
+      } catch (unlinkError) {
+        console.error('Error deleting uploaded file:', unlinkError);
+      }
+    }
     
     const result = await query(
       `INSERT INTO priority_attachments 
-       (id, priority_id, file_name, file_path, file_size, mime_type, uploaded_by)
+       (id, priority_id, file_name, file_data, file_size, mime_type, uploaded_by)
        VALUES ($1, $2, $3, $4, $5, $6, $7)
-       RETURNING *`,
+       RETURNING id, priority_id, file_name, file_size, mime_type, uploaded_by, created_at`,
       [
         attachmentId,
         priorityId,
         file.originalname,
-        filePath,
+        fileBuffer,
         file.size,
         file.mimetype,
         userId
@@ -1440,9 +1455,10 @@ export const uploadPriorityAttachment = async (req, res) => {
   } catch (error) {
     console.error('Error uploading priority attachment:', error);
     
-    // Clean up uploaded file if database insert failed
+    // Clean up uploaded file if database insert failed and file exists
     if (req.file && req.file.path) {
       try {
+        const fs = await import('fs/promises');
         await fs.unlink(req.file.path);
       } catch (unlinkError) {
         console.error('Error deleting uploaded file:', unlinkError);
@@ -1486,9 +1502,9 @@ export const downloadPriorityAttachment = async (req, res) => {
   try {
     const { orgId, teamId, priorityId, attachmentId } = req.params;
 
-    // Get attachment details
+    // Get attachment details including file data
     const result = await query(
-      `SELECT a.*, p.organization_id
+      `SELECT a.file_name, a.file_data, a.mime_type, a.file_size, p.organization_id
        FROM priority_attachments a
        JOIN quarterly_priorities p ON a.priority_id = p.id
        WHERE a.id = $1 AND a.priority_id = $2 AND p.organization_id = $3`,
@@ -1503,27 +1519,23 @@ export const downloadPriorityAttachment = async (req, res) => {
     }
 
     const attachment = result.rows[0];
-    // The file_path in database is already the full path from multer
-    const filePath = attachment.file_path;
 
-    // Check if file exists
-    try {
-      await fs.access(filePath);
-    } catch (error) {
-      console.error('File not found:', filePath);
-      console.error('Current directory:', process.cwd());
+    // Check if file_data exists
+    if (!attachment.file_data) {
+      console.error('No file data found for attachment:', attachmentId);
       return res.status(404).json({
         success: false,
-        error: 'File not found on server'
+        error: 'File data not found'
       });
     }
 
-    // Set headers and stream file
+    // Set headers and send file data
     res.setHeader('Content-Type', attachment.mime_type || 'application/octet-stream');
     res.setHeader('Content-Disposition', `attachment; filename="${attachment.file_name}"`);
+    res.setHeader('Content-Length', attachment.file_data.length);
     
-    const fileStream = await fs.readFile(filePath);
-    res.send(fileStream);
+    // Send the binary data
+    res.send(attachment.file_data);
   } catch (error) {
     console.error('Error downloading priority attachment:', error);
     res.status(500).json({

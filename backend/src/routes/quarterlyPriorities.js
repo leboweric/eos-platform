@@ -32,22 +32,8 @@ const router = express.Router({ mergeParams: true });
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 
-// Create upload directory if it doesn't exist
-const uploadDir = path.join(__dirname, '..', '..', 'uploads', 'priorities');
-if (!fs.existsSync(uploadDir)) {
-  fs.mkdirSync(uploadDir, { recursive: true });
-}
-
-// Configure multer for file uploads
-const storage = multer.diskStorage({
-  destination: function (req, file, cb) {
-    cb(null, uploadDir)
-  },
-  filename: function (req, file, cb) {
-    const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
-    cb(null, file.fieldname + '-' + uniqueSuffix + path.extname(file.originalname));
-  }
-});
+// Configure multer for memory storage (files stored in buffer)
+const storage = multer.memoryStorage();
 
 const upload = multer({ 
   storage: storage,
