@@ -268,8 +268,12 @@ const ScorecardTableClean = ({
                       const originalIndex = isRTL ? periodLabelsOriginal.length - 1 - index : index;
                       const isCurrentPeriod = originalIndex === periodLabelsOriginal.length - 1;
                       
+                      const cellClassName = meetingMode 
+                        ? `text-center px-2 py-2 ${isCurrentPeriod ? 'bg-blue-50' : ''}`
+                        : `text-center px-1 ${isCurrentPeriod ? 'bg-gray-50 border-2 border-gray-300' : ''}`;
+                      
                       return (
-                        <td key={periodDate} className={`text-center ${meetingMode ? 'px-2 py-2' : 'px-1'} ${isCurrentPeriod ? (meetingMode ? 'bg-blue-50' : 'bg-gray-50 border-2 border-gray-300') : ''}`}>
+                        <td key={periodDate} className={cellClassName}>
                           {meetingMode ? (
                             <div className={`inline-block px-2 py-0.5 rounded-full text-xs font-medium ${
                               score ? (goalMet ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800') : 'text-gray-400'
