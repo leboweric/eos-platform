@@ -704,7 +704,7 @@ const DashboardClean = () => {
         {/* Issue Dialog */}
         <IssueDialog
           open={showIssueDialog}
-          onOpenChange={setShowIssueDialog}
+          onClose={() => setShowIssueDialog(false)}
           issue={editingIssue}
           teamMembers={dashboardData.teamMembers || []}
           onSave={async (issueData) => {
