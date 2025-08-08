@@ -1907,7 +1907,11 @@ const QuarterlyPrioritiesPageClean = () => {
                 <div className="space-y-4 ml-8">
                   {(companyPriorities || []).map(priority => (
                     <div key={priority.id} className="group">
-                      <PriorityCard priority={priority} isCompany={true} />
+                      <PriorityCard 
+                        priority={priority} 
+                        isCompany={true}
+                        onStatusChange={handlePriorityStatusChange}
+                      />
                     </div>
                   ))}
                 </div>
@@ -1952,7 +1956,10 @@ const QuarterlyPrioritiesPageClean = () => {
                     <div className="space-y-4 ml-16">
                       {memberPriorities.map(priority => (
                         <div key={priority.id} className="group">
-                          <PriorityCard priority={priority} />
+                          <PriorityCard 
+                            priority={priority}
+                            onStatusChange={handlePriorityStatusChange}
+                          />
                         </div>
                       ))}
                     </div>
