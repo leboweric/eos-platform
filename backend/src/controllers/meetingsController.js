@@ -229,7 +229,7 @@ export const concludeMeeting = async (req, res) => {
       newTodos: formattedNewTodos,
       issues: formattedIssues,
       notes: notes || '',
-      meetingLink: `${process.env.FRONTEND_URL || 'https://42vibes.com'}/meetings/weekly-accountability`
+      meetingLink: `${process.env.FRONTEND_URL || 'https://axp.com'}/meetings/weekly-accountability`
     };
 
     // Send email to all attendees

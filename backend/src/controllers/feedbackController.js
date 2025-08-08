@@ -70,7 +70,7 @@ export const submitFeedback = async (req, res) => {
     // Send email to admin
     await sgMail.default.send({
       to: 'leboweric@gmail.com',
-      from: process.env.SENDGRID_FROM_EMAIL || 'noreply@42vibes.com',
+      from: process.env.SENDGRID_FROM_EMAIL || 'noreply@axp.com',
       replyTo: user.email,
       subject: emailSubject,
       html: emailHtml
@@ -103,7 +103,7 @@ export const submitFeedback = async (req, res) => {
     
     await sgMail.default.send({
       to: user.email,
-      from: process.env.SENDGRID_FROM_EMAIL || 'noreply@42vibes.com',
+      from: process.env.SENDGRID_FROM_EMAIL || 'noreply@axp.com',
       subject: `Confirmation: ${emailSubject}`,
       html: confirmationHtml
     });

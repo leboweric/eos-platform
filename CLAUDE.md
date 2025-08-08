@@ -24,7 +24,7 @@ EOS Platform is a web application for implementing the Entrepreneurial Operating
 - This ensures documents persist across deployments
 
 ### Important URLs
-- Production: https://42vibes.com
+- Production: https://axp.com
 - API: https://eos-platform-production.up.railway.app/api/v1
 
 ### Common Commands

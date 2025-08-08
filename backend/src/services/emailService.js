@@ -310,7 +310,7 @@ export const sendEmail = async (to, templateName, data) => {
     
     const msg = {
       to,
-      from: process.env.SENDGRID_FROM_EMAIL || 'noreply@42vibes.com',
+      from: process.env.SENDGRID_FROM_EMAIL || 'noreply@axp.com',
       subject: emailContent.subject,
       text: emailContent.text,
       html: emailContent.html
