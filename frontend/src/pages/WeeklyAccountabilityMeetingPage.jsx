@@ -1154,6 +1154,7 @@ const WeeklyAccountabilityMeetingPage = () => {
                                 setTimeout(() => setSuccess(null), 3000);
                               }}
                               onStatusChange={handlePriorityStatusChange}
+                              onToggleMilestone={handleUpdateMilestone}
                             />
                           ))}
                         </div>
@@ -1218,6 +1219,7 @@ const WeeklyAccountabilityMeetingPage = () => {
                                       setTimeout(() => setSuccess(null), 3000);
                                     }}
                                     onStatusChange={handlePriorityStatusChange}
+                                    onToggleMilestone={handleUpdateMilestone}
                                   />
                                 ))}
                               </div>
