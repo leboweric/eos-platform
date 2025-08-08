@@ -66,13 +66,14 @@ const QuarterlyPlanningMeetingPage = () => {
 
   const agendaItems = [
     { id: 'objectives', label: 'Objectives', duration: 5, icon: Target, description: 'Review meeting goals' },
-    { id: 'check-in', label: 'Check In', duration: 10, icon: CheckSquare, description: 'Team connection' },
+    { id: 'check-in', label: 'Check In', duration: 15, icon: CheckSquare, description: 'Team connection' },
     { id: 'review-prior', label: 'Review Prior Quarter', duration: 30, icon: Calendar, description: 'Check progress' },
-    { id: '2-page-plan', label: '2-Page Plan', duration: 30, icon: ClipboardList, description: 'Review strategic plan' },
-    { id: 'quarterly-priorities', label: 'Quarterly Priorities', duration: 60, icon: ListChecks, description: 'Set new priorities' },
-    { id: 'issues', label: 'Issues', duration: 30, icon: AlertTriangle, description: 'Address challenges' },
-    { id: 'next-steps', label: 'Next Steps', duration: 15, icon: ClipboardList, description: 'Action items' },
-    { id: 'conclude', label: 'Conclude', duration: 10, icon: CheckSquare, description: 'Wrap up & rate' }
+    { id: '2-page-plan', label: '2-Page Plan', duration: 60, icon: ClipboardList, description: 'Review strategic plan' },
+    { id: 'learning', label: 'Learning', duration: 60, icon: MessageSquare, description: 'Share insights & learnings' },
+    { id: 'quarterly-priorities', label: 'Quarterly Priorities', duration: 120, icon: ListChecks, description: 'Set new priorities' },
+    { id: 'issues', label: 'Issues', duration: 180, icon: AlertTriangle, description: 'Address challenges' },
+    { id: 'next-steps', label: 'Next Steps', duration: 7, icon: ClipboardList, description: 'Action items' },
+    { id: 'conclude', label: 'Conclude', duration: 8, icon: CheckSquare, description: 'Wrap up & rate' }
   ];
 
   // Timer effect
