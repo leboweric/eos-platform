@@ -237,11 +237,11 @@ const TodosPage = () => {
 
   const handleMarkComplete = async () => {
     if (selectedTodoIds.length === 0) {
-      setError('Please select to-dos to mark as complete');
+      setError('Please select to-dos to mark as done');
       return;
     }
     
-    if (!window.confirm(`Mark ${selectedTodoIds.length} selected to-do(s) as complete?`)) {
+    if (!window.confirm(`Mark ${selectedTodoIds.length} selected to-do(s) as done?`)) {
       return;
     }
     
@@ -252,10 +252,10 @@ const TodosPage = () => {
       ));
       setSelectedTodoIds([]);
       await fetchTodos();
-      setSuccess(`${selectedTodoIds.length} to-do(s) marked as complete`);
+      setSuccess(`${selectedTodoIds.length} to-do(s) marked as done`);
     } catch (error) {
       console.error('Failed to complete selected todos:', error);
-      setError('Failed to mark to-dos as complete');
+      setError('Failed to mark to-dos as done');
     }
   };
 
@@ -265,8 +265,8 @@ const TodosPage = () => {
   };
 
   const filteredTodos = getFilteredTodos();
-  const incompleteTodosCount = todos.filter(t => t.status === 'incomplete').length;
-  const completeTodosCount = todos.filter(t => t.status === 'complete').length;
+  const notDoneTodosCount = todos.filter(t => t.status === 'incomplete').length;
+  const doneTodosCount = todos.filter(t => t.status === 'complete').length;
 
   if (loading) {
     return (
@@ -292,7 +292,7 @@ const TodosPage = () => {
                 className="text-gray-600 hover:text-gray-900"
               >
                 <CheckSquare className="mr-2 h-4 w-4" />
-                Mark Complete ({selectedTodoIds.length})
+                Mark Done ({selectedTodoIds.length})
               </Button>
             )}
             <Button onClick={handleCreateTodo} className="bg-gray-900 hover:bg-gray-800 text-white">
@@ -324,15 +324,15 @@ const TodosPage = () => {
                 value="incomplete" 
                 className="data-[state=active]:bg-transparent data-[state=active]:shadow-none data-[state=active]:border-b-2 data-[state=active]:border-gray-900 rounded-none pb-3 px-4 font-medium"
               >
-                Incomplete
-                <span className="ml-2 text-sm text-gray-500">({incompleteTodosCount})</span>
+                Not Done
+                <span className="ml-2 text-sm text-gray-500">({notDoneTodosCount})</span>
               </TabsTrigger>
               <TabsTrigger 
                 value="complete" 
                 className="data-[state=active]:bg-transparent data-[state=active]:shadow-none data-[state=active]:border-b-2 data-[state=active]:border-gray-900 rounded-none pb-3 px-4 font-medium"
               >
-                Complete
-                <span className="ml-2 text-sm text-gray-500">({completeTodosCount})</span>
+                Done
+                <span className="ml-2 text-sm text-gray-500">({doneTodosCount})</span>
               </TabsTrigger>
               <TabsTrigger 
                 value="all" 
@@ -365,12 +365,12 @@ const TodosPage = () => {
           <div className="text-center py-16">
             <ListTodo className="h-12 w-12 text-gray-300 mx-auto mb-4" />
             <h3 className="text-lg font-medium text-gray-900 mb-2">
-              {activeTab === 'incomplete' && 'No incomplete to-dos'}
-              {activeTab === 'complete' && 'No completed to-dos'}
+              {activeTab === 'incomplete' && 'No to-dos not done'}
+              {activeTab === 'complete' && 'No done to-dos'}
               {activeTab === 'all' && 'No to-dos yet'}
             </h3>
             <p className="text-gray-500 mb-6">
-              {activeTab === 'complete' ? 'Completed to-dos will appear here' : 'Create your first to-do to get started'}
+              {activeTab === 'complete' ? 'Done to-dos will appear here' : 'Create your first to-do to get started'}
             </p>
             {activeTab !== 'complete' && (
               <Button 
