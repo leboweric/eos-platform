@@ -191,10 +191,21 @@ const WeeklyAccountabilityMeetingPage = () => {
     try {
       const orgId = localStorage.getItem('impersonatedOrgId') || user?.organizationId || user?.organization_id;
       const effectiveTeamId = teamId || user?.teamId || '00000000-0000-0000-0000-000000000000';
+      const departmentId = teamId || user?.teamId;
       
-      const response = await scorecardService.getScorecardByDepartment(orgId, effectiveTeamId);
-      setScorecardMetrics(response.metrics || []);
-      setWeeklyScores(response.scores || {});
+      const response = await scorecardService.getScorecard(orgId, effectiveTeamId, departmentId);
+      
+      if (response && response.data) {
+        // Filter to only show weekly metrics
+        const weeklyMetrics = (response.data.metrics || []).filter(m => m.type === 'weekly');
+        setScorecardMetrics(weeklyMetrics);
+        setWeeklyScores(response.data.weeklyScores || {});
+      } else if (response) {
+        // Filter to only show weekly metrics
+        const weeklyMetrics = (response.metrics || []).filter(m => m.type === 'weekly');
+        setScorecardMetrics(weeklyMetrics);
+        setWeeklyScores(response.weeklyScores || {});
+      }
     } catch (error) {
       console.error('Failed to fetch scorecard:', error);
     }
@@ -205,7 +216,7 @@ const WeeklyAccountabilityMeetingPage = () => {
       const orgId = localStorage.getItem('impersonatedOrgId') || user?.organizationId || user?.organization_id;
       const effectiveTeamId = teamId || user?.teamId || '00000000-0000-0000-0000-000000000000';
       
-      const response = await quarterlyPrioritiesService.getQuarterlyPriorities(orgId, effectiveTeamId);
+      const response = await quarterlyPrioritiesService.getCurrentPriorities(orgId, effectiveTeamId);
       
       // Extract and flatten priorities
       const companyPriorities = response.companyPriorities || [];
@@ -771,8 +782,10 @@ const WeeklyAccountabilityMeetingPage = () => {
                     </div>
                     <ScorecardTable 
                       metrics={scorecardMetrics} 
-                      weeklyScores={weeklyScores} 
-                      readOnly={true}
+                      weeklyScores={weeklyScores}
+                      monthlyScores={{}}
+                      type="weekly"
+                      readOnly={false}
                       isRTL={isRTL}
                       showTotal={showTotal}
                       departmentId={teamId || user?.teamId || '00000000-0000-0000-0000-000000000000'}
@@ -780,6 +793,10 @@ const WeeklyAccountabilityMeetingPage = () => {
                         setSuccess(message);
                         setTimeout(() => setSuccess(null), 3000);
                       }}
+                      onScoreEdit={() => {}}
+                      onChartOpen={() => {}}
+                      onMetricUpdate={() => {}}
+                      onMetricDelete={() => {}}
                     />
                   </CardContent>
                 </Card>
