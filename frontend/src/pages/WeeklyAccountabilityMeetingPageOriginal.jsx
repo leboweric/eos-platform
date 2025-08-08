@@ -982,9 +982,7 @@ const WeeklyAccountabilityMeetingPage = () => {
                   <h4 className="font-medium mb-2">Tips for Good News:</h4>
                   <ul className="list-disc list-inside text-sm space-y-1">
                     <li>Keep it brief - aim for 30-60 seconds per person</li>
-                    <li>Share both personal and professional wins</li>
-                    <li>Celebrate team members' achievements</li>
-                    <li>Be authentic and genuine</li>
+                    <li>Share good personal news and good business news</li>
                   </ul>
                 </div>
               </div>
