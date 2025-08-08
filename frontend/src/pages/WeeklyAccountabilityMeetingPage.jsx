@@ -532,17 +532,23 @@ const WeeklyAccountabilityMeetingPage = () => {
           const orgId = localStorage.getItem('impersonatedOrgId') || user?.organizationId || user?.organization_id;
           const effectiveTeamId = teamId || user?.teamId || '00000000-0000-0000-0000-000000000000';
           
+          // Ensure we have a valid title
+          const priorityTitle = priority.title || priority.name || 'Untitled Priority';
+          
           // Create issue from off-track priority
           const issueData = {
-            title: `Off-Track Priority: ${priority.title}`,
-            description: `Priority "${priority.title}" is off-track and needs attention.\n\nOriginal priority: ${priority.description || 'No description'}`,
+            title: `Off-Track Priority: ${priorityTitle}`,
+            description: `Priority "${priorityTitle}" is off-track and needs attention.\n\nOriginal priority: ${priority.description || 'No description'}`,
             timeline: 'short_term',
-            team_id: effectiveTeamId,
-            created_by: user?.id,
+            department_id: effectiveTeamId, // issuesService expects department_id
+            teamId: effectiveTeamId, // Add teamId as well for compatibility
+            ownerId: priority.owner_id || priority.ownerId || user?.id, // Backend expects ownerId
             status: 'open',
             priority_level: 'high',
             related_priority_id: priorityId
           };
+          
+          console.log('Creating issue with data:', issueData);
           
           await issuesService.createIssue(issueData);
           

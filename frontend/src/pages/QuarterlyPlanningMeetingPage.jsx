@@ -209,12 +209,16 @@ const QuarterlyPlanningMeetingPage = () => {
         const priority = priorities.find(p => p.id === priorityId);
         if (priority) {
           try {
+            // Ensure we have a valid title
+            const priorityTitle = priority.title || priority.name || 'Untitled Priority';
+            
             await issuesService.createIssue({
-              title: `Off-Track Priority: ${priority.title}`,
-              description: `Priority "${priority.title}" is off-track and needs attention.\n\nOwner: ${priority.owner?.name || 'Unassigned'}\n\nDescription: ${priority.description || 'No description provided'}`,
+              title: `Off-Track Priority: ${priorityTitle}`,
+              description: `Priority "${priorityTitle}" is off-track and needs attention.\n\nOwner: ${priority.owner?.name || 'Unassigned'}\n\nDescription: ${priority.description || 'No description provided'}`,
               timeline: 'short_term',
-              ownerId: priority.owner?.id || null,
-              department_id: effectiveTeamId
+              ownerId: priority.owner?.id || priority.owner_id || priority.ownerId || user?.id, // Backend expects ownerId
+              department_id: effectiveTeamId,
+              teamId: effectiveTeamId // Add teamId as well for compatibility
             });
             
             setSuccess('Priority marked off-track and issue created');

@@ -620,19 +620,29 @@ const QuarterlyPrioritiesPageClean = () => {
         const priority = allPriorities.find(p => p.id === priorityId);
         
         if (priority) {
+          // Ensure we have a valid title
+          const priorityTitle = priority.title || priority.name || 'Untitled Priority';
+          
+          // Note: issuesService.createIssue expects a single issueData parameter
+          // and gets orgId from localStorage internally
           const issueData = {
-            title: `Off-Track Priority: ${priority.title}`,
-            description: `Priority "${priority.title}" is off-track and needs attention.\n\nOriginal priority: ${priority.description || 'No description'}`,
+            title: `Off-Track Priority: ${priorityTitle}`,
+            description: `Priority "${priorityTitle}" is off-track and needs attention.\n\nOriginal priority: ${priority.description || 'No description'}`,
             timeline: 'short_term',
-            team_id: teamId,
-            created_by: user?.id,
+            department_id: teamId, // issuesService expects department_id
+            teamId: teamId, // Add teamId as well for compatibility
+            ownerId: priority.owner_id || priority.ownerId || user?.id, // Backend expects ownerId
             status: 'open',
             priority_level: 'high',
             related_priority_id: priorityId
           };
           
-          await issuesService.createIssue(orgId, teamId, issueData);
+          console.log('Creating issue with data:', issueData);
+          
+          await issuesService.createIssue(issueData);
           setSuccess('Issue created for off-track priority');
+        } else {
+          console.warn('Could not find priority with ID:', priorityId);
         }
       }
       
