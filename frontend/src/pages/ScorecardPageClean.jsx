@@ -134,6 +134,15 @@ const ScorecardPageClean = () => {
       
       const fetchedGroups = await scorecardGroupsService.getGroups(orgId, teamId);
       setGroups(fetchedGroups || []);
+      
+      // If groups exist and no saved preference, default to groups view
+      if (fetchedGroups && fetchedGroups.length > 0) {
+        const savedViewMode = localStorage.getItem('scorecardViewMode');
+        if (!savedViewMode) {
+          setViewMode('groups');
+          localStorage.setItem('scorecardViewMode', 'groups');
+        }
+      }
     } catch (error) {
       console.error('Failed to fetch groups:', error);
     }
