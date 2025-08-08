@@ -176,6 +176,7 @@ export const getQuarterlyPriorities = async (req, res) => {
     // Get latest updates for each priority
     const priorityIds = prioritiesResult.rows.map(p => p.id);
     let updates = {};
+    let attachments = {};
     
     if (priorityIds.length > 0) {
       const updatesResult = await query(
@@ -198,6 +199,38 @@ export const getQuarterlyPriorities = async (req, res) => {
           author: update.author_name
         };
       });
+      
+      // Get attachments for each priority
+      const attachmentsResult = await query(
+        `SELECT 
+          pa.id,
+          pa.priority_id,
+          pa.file_name,
+          pa.file_size,
+          pa.mime_type,
+          pa.created_at,
+          u.first_name || ' ' || u.last_name as uploaded_by_name
+         FROM priority_attachments pa
+         JOIN users u ON pa.uploaded_by = u.id
+         WHERE pa.priority_id = ANY($1)
+         ORDER BY pa.created_at DESC`,
+        [priorityIds]
+      );
+      
+      // Group attachments by priority_id
+      attachmentsResult.rows.forEach(attachment => {
+        if (!attachments[attachment.priority_id]) {
+          attachments[attachment.priority_id] = [];
+        }
+        attachments[attachment.priority_id].push({
+          id: attachment.id,
+          fileName: attachment.file_name,
+          fileSize: attachment.file_size,
+          mimeType: attachment.mime_type,
+          uploadedBy: attachment.uploaded_by_name,
+          createdAt: attachment.created_at
+        });
+      });
     }
     
     // Format response
@@ -216,6 +249,7 @@ export const getQuarterlyPriorities = async (req, res) => {
       isCompanyPriority: p.is_company_priority || false,
       milestones: p.milestones || [],
       latestUpdate: updates[p.id] || null,
+      attachments: attachments[p.id] || [],
       // Removed publishing fields for Ninety.io model
       teamName: p.team_name || 'Unknown Team',
       isFromLeadership: p.team_id === '00000000-0000-0000-0000-000000000000'
@@ -975,6 +1009,38 @@ export const getArchivedPriorities = async (req, res) => {
           author: update.author_name
         };
       });
+      
+      // Get attachments for each priority
+      const attachmentsResult = await query(
+        `SELECT 
+          pa.id,
+          pa.priority_id,
+          pa.file_name,
+          pa.file_size,
+          pa.mime_type,
+          pa.created_at,
+          u.first_name || ' ' || u.last_name as uploaded_by_name
+         FROM priority_attachments pa
+         JOIN users u ON pa.uploaded_by = u.id
+         WHERE pa.priority_id = ANY($1)
+         ORDER BY pa.created_at DESC`,
+        [priorityIds]
+      );
+      
+      // Group attachments by priority_id
+      attachmentsResult.rows.forEach(attachment => {
+        if (!attachments[attachment.priority_id]) {
+          attachments[attachment.priority_id] = [];
+        }
+        attachments[attachment.priority_id].push({
+          id: attachment.id,
+          fileName: attachment.file_name,
+          fileSize: attachment.file_size,
+          mimeType: attachment.mime_type,
+          uploadedBy: attachment.uploaded_by_name,
+          createdAt: attachment.created_at
+        });
+      });
     }
     
     // Format response
@@ -1105,6 +1171,7 @@ export const getCurrentPriorities = async (req, res) => {
     const priorityIds = prioritiesResult.rows.map(p => p.id);
     let milestonesByPriority = {};
     let updatesByPriority = {};
+    let attachmentsByPriority = {};
     
     if (priorityIds.length > 0) {
       const milestonesResult = await query(
@@ -1140,6 +1207,38 @@ export const getCurrentPriorities = async (req, res) => {
           author: update.author_name
         };
       });
+      
+      // Get attachments for each priority
+      const attachmentsResult = await query(
+        `SELECT 
+          pa.id,
+          pa.priority_id,
+          pa.file_name,
+          pa.file_size,
+          pa.mime_type,
+          pa.created_at,
+          u.first_name || ' ' || u.last_name as uploaded_by_name
+         FROM priority_attachments pa
+         JOIN users u ON pa.uploaded_by = u.id
+         WHERE pa.priority_id = ANY($1)
+         ORDER BY pa.created_at DESC`,
+        [priorityIds]
+      );
+      
+      // Group attachments by priority_id
+      attachmentsResult.rows.forEach(attachment => {
+        if (!attachmentsByPriority[attachment.priority_id]) {
+          attachmentsByPriority[attachment.priority_id] = [];
+        }
+        attachmentsByPriority[attachment.priority_id].push({
+          id: attachment.id,
+          fileName: attachment.file_name,
+          fileSize: attachment.file_size,
+          mimeType: attachment.mime_type,
+          uploadedBy: attachment.uploaded_by_name,
+          createdAt: attachment.created_at
+        });
+      });
     }
     
     // Separate company and individual priorities
@@ -1173,6 +1272,7 @@ export const getCurrentPriorities = async (req, res) => {
         owner_first_name: priority.owner_first_name,
         owner_last_name: priority.owner_last_name,
         latestUpdate: updatesByPriority[priority.id] || null,
+        attachments: attachmentsByPriority[priority.id] || [],
         isCompanyPriority: priority.is_company_priority || false,
         teamName: priority.team_name,
         isFromLeadership: priority.team_id === '00000000-0000-0000-0000-000000000000'
