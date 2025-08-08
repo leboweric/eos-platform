@@ -164,7 +164,7 @@ const IssuesListClean = ({
                           <span className="text-gray-300">•</span>
                           <span className="flex items-center gap-1 text-green-600 text-sm font-medium">
                             <CheckCircle className="h-3.5 w-3.5" />
-                            Closed
+                            Solved
                           </span>
                         </>
                       )}

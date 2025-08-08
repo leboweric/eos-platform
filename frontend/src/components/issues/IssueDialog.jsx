@@ -262,7 +262,7 @@ const IssueDialog = ({ open, onClose, onSave, issue, teamMembers, timeline }) =>
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="open">Open</SelectItem>
-                    <SelectItem value="closed">Closed</SelectItem>
+                    <SelectItem value="closed">Solved</SelectItem>
                   </SelectContent>
                 </Select>
               </div>

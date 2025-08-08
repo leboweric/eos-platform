@@ -60,7 +60,7 @@ const IssueCard = ({ issue, onEdit, onStatusChange, onTimelineChange, onVote, on
 
   const statusOptions = [
     { value: 'open', label: 'Open', icon: <AlertTriangle className="h-4 w-4" /> },
-    { value: 'closed', label: 'Closed', icon: <CheckCircle className="h-4 w-4" /> }
+    { value: 'closed', label: 'Solved', icon: <CheckCircle className="h-4 w-4" /> }
   ];
 
   return (
