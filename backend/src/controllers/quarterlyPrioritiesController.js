@@ -179,8 +179,9 @@ export const getQuarterlyPriorities = async (req, res) => {
     let attachments = {};
     
     if (priorityIds.length > 0) {
+      // Get all updates for each priority
       const updatesResult = await query(
-        `SELECT DISTINCT ON (priority_id) 
+        `SELECT 
           priority_id,
           update_text,
           pu.created_at,
@@ -192,12 +193,16 @@ export const getQuarterlyPriorities = async (req, res) => {
         [priorityIds]
       );
       
+      // Group updates by priority_id
       updatesResult.rows.forEach(update => {
-        updates[update.priority_id] = {
+        if (!updates[update.priority_id]) {
+          updates[update.priority_id] = [];
+        }
+        updates[update.priority_id].push({
           text: update.update_text,
-          date: update.created_at,
-          author: update.author_name
-        };
+          createdAt: update.created_at,
+          createdBy: update.author_name
+        });
       });
       
       // Get attachments for each priority
@@ -248,7 +253,7 @@ export const getQuarterlyPriorities = async (req, res) => {
       progress: p.progress,
       isCompanyPriority: p.is_company_priority || false,
       milestones: p.milestones || [],
-      latestUpdate: updates[p.id] || null,
+      updates: updates[p.id] || [],
       attachments: attachments[p.id] || [],
       // Removed publishing fields for Ninety.io model
       teamName: p.team_name || 'Unknown Team',
@@ -989,8 +994,9 @@ export const getArchivedPriorities = async (req, res) => {
     let updates = {};
     
     if (priorityIds.length > 0) {
+      // Get all updates for each priority
       const updatesResult = await query(
-        `SELECT DISTINCT ON (priority_id) 
+        `SELECT 
           priority_id,
           update_text,
           pu.created_at,
@@ -1002,12 +1008,16 @@ export const getArchivedPriorities = async (req, res) => {
         [priorityIds]
       );
       
+      // Group updates by priority_id
       updatesResult.rows.forEach(update => {
-        updates[update.priority_id] = {
+        if (!updates[update.priority_id]) {
+          updates[update.priority_id] = [];
+        }
+        updates[update.priority_id].push({
           text: update.update_text,
-          date: update.created_at,
-          author: update.author_name
-        };
+          createdAt: update.created_at,
+          createdBy: update.author_name
+        });
       });
       
       // Get attachments for each priority
@@ -1057,7 +1067,8 @@ export const getArchivedPriorities = async (req, res) => {
       status: p.status,
       progress: p.progress,
       milestones: p.milestones || [],
-      latestUpdate: updates[p.id] || null,
+      updates: updates[p.id] || [],
+      attachments: attachments[p.id] || [],
       quarter: p.quarter,
       year: p.year,
       archivedAt: p.deleted_at
@@ -1186,9 +1197,9 @@ export const getCurrentPriorities = async (req, res) => {
         milestonesByPriority[milestone.priority_id].push(milestone);
       });
       
-      // Get latest update for each priority
+      // Get all updates for each priority
       const updatesResult = await query(
-        `SELECT DISTINCT ON (priority_id) 
+        `SELECT 
           priority_id,
           update_text,
           pu.created_at,
@@ -1200,12 +1211,16 @@ export const getCurrentPriorities = async (req, res) => {
         [priorityIds]
       );
       
+      // Group updates by priority_id
       updatesResult.rows.forEach(update => {
-        updatesByPriority[update.priority_id] = {
+        if (!updatesByPriority[update.priority_id]) {
+          updatesByPriority[update.priority_id] = [];
+        }
+        updatesByPriority[update.priority_id].push({
           text: update.update_text,
-          date: update.created_at,
-          author: update.author_name
-        };
+          createdAt: update.created_at,
+          createdBy: update.author_name
+        });
       });
       
       // Get attachments for each priority
@@ -1271,7 +1286,7 @@ export const getCurrentPriorities = async (req, res) => {
         dueDate: priority.due_date,
         owner_first_name: priority.owner_first_name,
         owner_last_name: priority.owner_last_name,
-        latestUpdate: updatesByPriority[priority.id] || null,
+        updates: updatesByPriority[priority.id] || [],
         attachments: attachmentsByPriority[priority.id] || [],
         isCompanyPriority: priority.is_company_priority || false,
         teamName: priority.team_name,
