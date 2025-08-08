@@ -1344,15 +1344,6 @@ const WeeklyAccountabilityMeetingPage = () => {
                     </span>
                   </div>
                 </div>
-                {activeSection === 'conclude' && (
-                  <Button
-                    onClick={concludeMeeting}
-                    className="bg-green-600 hover:bg-green-700"
-                  >
-                    <Send className="h-4 w-4 mr-2" />
-                    Conclude Meeting
-                  </Button>
-                )}
               </div>
             )}
             {/* Meeting auto-starts - no start button needed */}
