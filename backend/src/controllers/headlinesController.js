@@ -20,9 +20,9 @@ export const getHeadlines = async (req, res) => {
       conditions.push('(h.archived = false OR h.archived IS NULL)');
     }
 
-    // Filter by team if provided
+    // Filter by team if provided - also include NULL team_id for backwards compatibility
     if (teamId) {
-      conditions.push(`h.team_id = $${paramIndex}`);
+      conditions.push(`(h.team_id = $${paramIndex} OR h.team_id IS NULL)`);
       params.push(teamId);
       paramIndex++;
     }

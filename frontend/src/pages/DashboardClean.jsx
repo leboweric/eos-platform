@@ -775,15 +775,17 @@ const DashboardClean = () => {
                   <Button
                     onClick={async () => {
                       try {
-                        // For now, don't set teamId so headlines are organization-wide
+                        // Get the user's team ID - use leadership team if not set
+                        const teamId = user?.teamId || '00000000-0000-0000-0000-000000000000';
+                        
                         await headlinesService.createHeadline({
                           type: headlineType,
-                          text: headlineText
-                          // teamId is intentionally omitted for org-wide visibility
+                          text: headlineText,
+                          teamId: teamId
                         });
                         setShowHeadlineDialog(false);
                         setHeadlineText('');
-                        alert('Headline added! It will appear in your next Weekly Accountability Meeting.');
+                        alert('Headline added! It will appear in your team\'s Weekly Accountability Meeting.');
                       } catch (error) {
                         console.error('Failed to create headline:', error);
                         alert('Failed to add headline. Please try again.');

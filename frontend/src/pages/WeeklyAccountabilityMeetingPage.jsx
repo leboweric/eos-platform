@@ -400,10 +400,10 @@ const WeeklyAccountabilityMeetingPage = () => {
   const fetchHeadlines = async () => {
     try {
       const effectiveTeamId = teamId || user?.teamId || '00000000-0000-0000-0000-000000000000';
-      console.log('Fetching headlines with teamId:', effectiveTeamId);
+      console.log('Fetching headlines for teamId:', effectiveTeamId);
       
-      // Don't filter by team if using leadership team ID or if headlines have no team_id
-      const response = await headlinesService.getHeadlines(null); // Pass null to get all org headlines
+      // Fetch headlines for this team
+      const response = await headlinesService.getHeadlines(effectiveTeamId);
       console.log('Headlines response:', response);
       
       // Group headlines by type
