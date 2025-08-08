@@ -1303,6 +1303,7 @@ export const getCurrentPriorities = async (req, res) => {
       // Get all updates for each priority
       const updatesResult = await query(
         `SELECT 
+          pu.id,
           priority_id,
           update_text,
           pu.created_at,
@@ -1315,11 +1316,24 @@ export const getCurrentPriorities = async (req, res) => {
       );
       
       // Group updates by priority_id
+      console.log('Updates found:', updatesResult.rows.length);
+      if (updatesResult.rows.length > 0) {
+        console.log('Sample update:', { 
+          id: updatesResult.rows[0].id,
+          hasId: !!updatesResult.rows[0].id,
+          priority_id: updatesResult.rows[0].priority_id
+        });
+      }
+      
       updatesResult.rows.forEach(update => {
+        if (!update.id) {
+          console.error('WARNING: Update missing ID in getCurrentPriorities!', update);
+        }
         if (!updatesByPriority[update.priority_id]) {
           updatesByPriority[update.priority_id] = [];
         }
         updatesByPriority[update.priority_id].push({
+          id: update.id,
           text: update.update_text,
           createdAt: update.created_at,
           createdBy: update.author_name
