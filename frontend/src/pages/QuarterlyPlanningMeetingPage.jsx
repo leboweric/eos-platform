@@ -798,21 +798,6 @@ const QuarterlyPlanningMeetingPage = () => {
             </CardContent>
           </Card>
         );
-                        >
-                          {i + 1}
-                        </Button>
-                      ))}
-                    </div>
-                  </div>
-                </div>
-                <div className="flex items-center justify-center gap-2 py-8">
-                  <CheckCircle className="h-8 w-8 text-green-600" />
-                  <span className="text-2xl font-semibold">Meeting Complete!</span>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        );
 
       default:
         return null;
