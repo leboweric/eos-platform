@@ -99,6 +99,10 @@ const WeeklyAccountabilityMeetingPage = () => {
   const [elapsedTime, setElapsedTime] = useState(0);
   const [meetingRating, setMeetingRating] = useState(null);
   const [cascadingMessage, setCascadingMessage] = useState('');
+  
+  // Scorecard display options
+  const [showScorecardAverage, setShowScorecardAverage] = useState(false);
+  const [showScorecardTotal, setShowScorecardTotal] = useState(false);
 
   // Reference dialogs
   const [showBusinessBlueprint, setShowBusinessBlueprint] = useState(false);
@@ -775,6 +779,31 @@ const WeeklyAccountabilityMeetingPage = () => {
                 </div>
               </CardHeader>
             </Card>
+            {/* Scorecard Options */}
+            {scorecardMetrics.length > 0 && (
+              <div className="flex items-center gap-4 px-4 py-2 bg-white rounded-lg border border-gray-200">
+                <span className="text-sm font-medium text-gray-700">Display Options:</span>
+                <label className="flex items-center gap-2 cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={showScorecardAverage}
+                    onChange={(e) => setShowScorecardAverage(e.target.checked)}
+                    className="rounded border-gray-300 text-indigo-600 focus:ring-indigo-500"
+                  />
+                  <span className="text-sm text-gray-600">Show Average</span>
+                </label>
+                <label className="flex items-center gap-2 cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={showScorecardTotal}
+                    onChange={(e) => setShowScorecardTotal(e.target.checked)}
+                    className="rounded border-gray-300 text-indigo-600 focus:ring-indigo-500"
+                  />
+                  <span className="text-sm text-gray-600">Show Total</span>
+                </label>
+              </div>
+            )}
+            
             {scorecardMetrics.length === 0 ? (
               <Card>
                 <CardContent className="text-center py-8">
@@ -796,7 +825,8 @@ const WeeklyAccountabilityMeetingPage = () => {
                 type="weekly"
                 readOnly={true}
                 isRTL={false}
-                showTotal={false}
+                showTotal={showScorecardTotal}
+                showAverage={showScorecardAverage}
                 departmentId={teamId || user?.teamId || '00000000-0000-0000-0000-000000000000'}
                 onIssueCreated={null}
                 onScoreEdit={null}

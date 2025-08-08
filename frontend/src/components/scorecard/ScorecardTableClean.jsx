@@ -16,6 +16,7 @@ const ScorecardTableClean = ({
   readOnly = false,
   isRTL = false,
   showTotal = true,
+  showAverage = true, // New prop to control average column
   departmentId,
   onIssueCreated,
   onScoreEdit,
@@ -175,12 +176,16 @@ const ScorecardTableClean = ({
                   );
                 })}
                 
-                {!meetingMode && (
-                  <th className="text-center px-1 text-[10px] border-l border-gray-200 font-medium text-gray-700">
+                {(showAverage && !meetingMode) || (showAverage && meetingMode) ? (
+                  <th className={`text-center ${meetingMode ? 'px-2 py-2 text-sm bg-gray-100' : 'px-1 text-[10px] border-l border-gray-200'} font-medium text-gray-700`}>
                     Avg
                   </th>
+                ) : null}
+                {showTotal && (
+                  <th className={`text-center ${meetingMode ? 'px-2 py-2 text-sm bg-gray-100' : 'p-1 text-xs border-l border-gray-200'} font-semibold text-gray-700`}>
+                    Total
+                  </th>
                 )}
-                {!meetingMode && showTotal && <th className="text-center p-1 font-semibold text-gray-700 text-xs border-l border-gray-200">Total</th>}
                 {!meetingMode && <th className="text-center p-1 font-semibold text-gray-700 text-xs">Actions</th>}
               </tr>
             </thead>
@@ -230,20 +235,28 @@ const ScorecardTableClean = ({
                       {formatGoal(metric.goal, metric.value_type, metric.comparison_operator)}
                     </td>
                     
-                    {/* Average column - only show when not in meeting mode */}
-                    {!meetingMode && (
-                      <td className="px-1 text-center bg-white border-l border-gray-200">
+                    {/* Average column */}
+                    {(showAverage && !meetingMode) || (showAverage && meetingMode) ? (
+                      <td className={`text-center ${meetingMode ? 'px-2 py-2 bg-gray-50' : 'px-1 bg-white border-l border-gray-200'}`}>
                         {average !== null ? (
-                          <span className={`text-[10px] px-0.5 rounded ${
-                            avgGoalMet ? 'text-green-700' : 'text-red-700'
-                          }`}>
-                            {metric.value_type === 'number' ? Math.round(average) : formatValue(average, metric.value_type)}
-                          </span>
+                          meetingMode ? (
+                            <div className={`inline-block px-2 py-0.5 rounded-full text-xs font-medium ${
+                              avgGoalMet ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
+                            }`}>
+                              {metric.value_type === 'number' ? Math.round(average) : formatValue(average, metric.value_type)}
+                            </div>
+                          ) : (
+                            <span className={`text-[10px] px-0.5 rounded ${
+                              avgGoalMet ? 'text-green-700' : 'text-red-700'
+                            }`}>
+                              {metric.value_type === 'number' ? Math.round(average) : formatValue(average, metric.value_type)}
+                            </span>
+                          )
                         ) : (
-                          <span className="text-[10px] text-gray-400">-</span>
+                          <span className={`${meetingMode ? 'text-xs' : 'text-[10px]'} text-gray-400">-</span>
                         )}
                       </td>
-                    )}
+                    ) : null}
                     
                     {/* Period columns */}
                     {periodDates.map((periodDate, index) => {
@@ -275,9 +288,15 @@ const ScorecardTableClean = ({
                       );
                     })}
                     
-                    {!meetingMode && showTotal && (
-                      <td className="px-1 text-center text-[10px] font-medium bg-white border-l border-gray-200">
-                        {Math.round(Object.values(scores[metric.id] || {}).reduce((sum, val) => sum + (parseFloat(val) || 0), 0))}
+                    {showTotal && (
+                      <td className={`text-center ${meetingMode ? 'px-2 py-2 bg-gray-50' : 'px-1 text-[10px] border-l border-gray-200'} font-medium`}>
+                        {meetingMode ? (
+                          <div className="text-sm font-semibold text-gray-700">
+                            {Math.round(Object.values(scores[metric.id] || {}).reduce((sum, val) => sum + (parseFloat(val) || 0), 0))}
+                          </div>
+                        ) : (
+                          Math.round(Object.values(scores[metric.id] || {}).reduce((sum, val) => sum + (parseFloat(val) || 0), 0))
+                        )}
                       </td>
                     )}
                     {!meetingMode && (
