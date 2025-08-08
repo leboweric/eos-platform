@@ -197,12 +197,27 @@ const Layout = ({ children }) => {
 
         {meetingActive && (
           <div className="mx-3 mt-4 p-3 bg-yellow-50 border border-yellow-200 rounded-lg">
-            <p className="text-sm font-medium text-yellow-800">
-              Meeting in Progress
-            </p>
-            <p className="text-xs text-yellow-600 mt-1">
-              Navigation is limited during meetings
-            </p>
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm font-medium text-yellow-800">
+                  Meeting in Progress
+                </p>
+                <p className="text-xs text-yellow-600 mt-1">
+                  Navigation is limited during meetings
+                </p>
+              </div>
+              <button
+                onClick={() => {
+                  sessionStorage.removeItem('meetingActive');
+                  sessionStorage.removeItem('meetingStartTime');
+                  window.dispatchEvent(new Event('meetingStateChanged'));
+                  setMeetingActive(false);
+                }}
+                className="text-xs text-yellow-700 hover:text-yellow-900 underline"
+              >
+                End
+              </button>
+            </div>
           </div>
         )}
         
