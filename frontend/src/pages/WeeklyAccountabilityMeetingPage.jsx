@@ -46,6 +46,8 @@ import { todosService } from '../services/todosService';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { FileText, GitBranch } from 'lucide-react';
 import { useSelectedTodos } from '../contexts/SelectedTodosContext';
+import { cascadingMessagesService } from '../services/cascadingMessagesService';
+import { Checkbox } from '@/components/ui/checkbox';
 
 const WeeklyAccountabilityMeetingPage = () => {
   const { user } = useAuthStore();
@@ -68,6 +70,7 @@ const WeeklyAccountabilityMeetingPage = () => {
   const [todaysTodos, setTodaysTodos] = useState([]);
   const [goodNews, setGoodNews] = useState([]);
   const [headlines, setHeadlines] = useState([]);
+  const [cascadedMessages, setCascadedMessages] = useState([]);
   
   // Dialog states
   const [showIssueDialog, setShowIssueDialog] = useState(false);
@@ -98,6 +101,9 @@ const WeeklyAccountabilityMeetingPage = () => {
   const [elapsedTime, setElapsedTime] = useState(0);
   const [meetingRating, setMeetingRating] = useState(null);
   const [cascadingMessage, setCascadingMessage] = useState('');
+  const [availableTeams, setAvailableTeams] = useState([]);
+  const [selectedTeams, setSelectedTeams] = useState([]);
+  const [cascadeToAll, setCascadeToAll] = useState(false);
   
   // Scorecard display options
   const [showScorecardAverage, setShowScorecardAverage] = useState(false);
@@ -375,6 +381,15 @@ const WeeklyAccountabilityMeetingPage = () => {
     // Fetch today's todos for the conclude section
     fetchTodaysTodos();
   }, []);
+
+  // Fetch data based on active section
+  useEffect(() => {
+    if (activeSection === 'conclude') {
+      fetchAvailableTeams();
+    } else if (activeSection === 'headlines') {
+      fetchCascadedMessages();
+    }
+  }, [activeSection]);
 
   const handleAddIssue = () => {
     setEditingIssue(null);
@@ -792,6 +807,30 @@ const WeeklyAccountabilityMeetingPage = () => {
     });
   };
 
+  const fetchAvailableTeams = async () => {
+    try {
+      const orgId = localStorage.getItem('impersonatedOrgId') || user?.organizationId || user?.organization_id;
+      const effectiveTeamId = teamId || user?.teamId || '00000000-0000-0000-0000-000000000000';
+      
+      const response = await cascadingMessagesService.getAvailableTeams(orgId, effectiveTeamId);
+      setAvailableTeams(response.data || []);
+    } catch (error) {
+      console.error('Failed to fetch available teams:', error);
+    }
+  };
+
+  const fetchCascadedMessages = async () => {
+    try {
+      const orgId = localStorage.getItem('impersonatedOrgId') || user?.organizationId || user?.organization_id;
+      const effectiveTeamId = teamId || user?.teamId || '00000000-0000-0000-0000-000000000000';
+      
+      const response = await cascadingMessagesService.getCascadingMessages(orgId, effectiveTeamId);
+      setCascadedMessages(response.data || []);
+    } catch (error) {
+      console.error('Failed to fetch cascaded messages:', error);
+    }
+  };
+
   const concludeMeeting = async () => {
     try {
       const orgId = localStorage.getItem('impersonatedOrgId') || user?.organizationId || user?.organization_id;
@@ -799,6 +838,15 @@ const WeeklyAccountabilityMeetingPage = () => {
       
       // Calculate meeting duration in minutes
       const durationMinutes = Math.floor(elapsedTime / 60);
+      
+      // Send cascading message if provided
+      if (cascadingMessage.trim()) {
+        await cascadingMessagesService.createCascadingMessage(orgId, effectiveTeamId, {
+          message: cascadingMessage,
+          recipientTeamIds: cascadeToAll ? null : selectedTeams,
+          allTeams: cascadeToAll
+        });
+      }
       
       // Send meeting summary
       await meetingsService.concludeMeeting(orgId, effectiveTeamId, {
@@ -1192,6 +1240,38 @@ const WeeklyAccountabilityMeetingPage = () => {
                 <p className="text-gray-600">
                   Share critical information about customers and employees that the team needs to know.
                 </p>
+                
+                {/* Cascaded Messages Section */}
+                {cascadedMessages.length > 0 && (
+                  <div className="border border-blue-200 bg-blue-50 p-4 rounded-lg">
+                    <h4 className="font-medium mb-3 text-gray-900 flex items-center gap-2">
+                      <MessageSquare className="h-4 w-4 text-blue-600" />
+                      Cascaded Messages from Other Teams
+                    </h4>
+                    <div className="space-y-3">
+                      {cascadedMessages.map((message) => (
+                        <div key={message.id} className="bg-white p-3 rounded-lg border border-blue-100">
+                          <div className="flex items-start justify-between mb-2">
+                            <div className="flex items-center gap-2">
+                              <span className="text-sm font-semibold text-gray-900">
+                                From: {message.from_team_name}
+                              </span>
+                              <span className="text-xs text-gray-500">
+                                {new Date(message.created_at).toLocaleDateString()}
+                              </span>
+                            </div>
+                            {!message.is_read && (
+                              <span className="text-xs bg-blue-100 text-blue-700 px-2 py-1 rounded-full">New</span>
+                            )}
+                          </div>
+                          <p className="text-sm text-gray-700 whitespace-pre-wrap">{message.message}</p>
+                          <p className="text-xs text-gray-500 mt-2">Sent by: {message.created_by_name}</p>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+                
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div className="border border-gray-200 p-4 rounded-lg bg-white">
                     <h4 className="font-medium mb-2 text-gray-900 flex items-center gap-2">
@@ -1406,12 +1486,59 @@ const WeeklyAccountabilityMeetingPage = () => {
                     What key information needs to be communicated to other teams?
                   </p>
                   <textarea
-                    className="w-full p-3 border border-gray-300 rounded-lg resize-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+                    className="w-full p-3 border border-gray-300 rounded-lg resize-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 mb-4"
                     rows={3}
                     placeholder="Enter any messages to cascade to other teams..."
                     value={cascadingMessage}
                     onChange={(e) => setCascadingMessage(e.target.value)}
                   />
+                  
+                  {cascadingMessage.trim() && (
+                    <div className="space-y-3">
+                      <div className="flex items-center gap-2">
+                        <Checkbox
+                          id="cascade-all"
+                          checked={cascadeToAll}
+                          onCheckedChange={(checked) => {
+                            setCascadeToAll(checked);
+                            if (checked) setSelectedTeams([]);
+                          }}
+                        />
+                        <label htmlFor="cascade-all" className="text-sm font-medium text-gray-700">
+                          Send to all teams
+                        </label>
+                      </div>
+                      
+                      {!cascadeToAll && availableTeams.length > 0 && (
+                        <div>
+                          <p className="text-sm text-gray-600 mb-2">Or select specific teams:</p>
+                          <div className="space-y-2 max-h-32 overflow-y-auto border border-gray-200 rounded-lg p-2">
+                            {availableTeams.map(team => (
+                              <div key={team.id} className="flex items-center gap-2">
+                                <Checkbox
+                                  id={`team-${team.id}`}
+                                  checked={selectedTeams.includes(team.id)}
+                                  onCheckedChange={(checked) => {
+                                    if (checked) {
+                                      setSelectedTeams([...selectedTeams, team.id]);
+                                    } else {
+                                      setSelectedTeams(selectedTeams.filter(id => id !== team.id));
+                                    }
+                                  }}
+                                />
+                                <label htmlFor={`team-${team.id}`} className="text-sm text-gray-700">
+                                  {team.name}
+                                  {team.is_leadership_team && (
+                                    <span className="ml-2 text-xs text-blue-600">(Leadership)</span>
+                                  )}
+                                </label>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  )}
                 </div>
 
                 <div className="border border-gray-200 p-4 rounded-lg bg-white">
