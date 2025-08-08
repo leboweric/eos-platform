@@ -757,6 +757,7 @@ const WeeklyAccountabilityMeetingPage = () => {
                 onChartOpen={() => {}}
                 onMetricUpdate={() => {}}
                 onMetricDelete={() => {}}
+                noWrapper={true}
               />
             )}
           </div>

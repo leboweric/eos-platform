@@ -21,7 +21,8 @@ const ScorecardTableClean = ({
   onScoreEdit,
   onChartOpen,
   onMetricUpdate,
-  onMetricDelete
+  onMetricDelete,
+  noWrapper = false // Add prop to disable Card wrapper
 }) => {
   // Get week start date for a given date
   const getWeekStartDate = (date) => {
@@ -142,14 +143,9 @@ const ScorecardTableClean = ({
     }
   };
 
-  return (
-    <Card className="transition-all bg-white border border-gray-200">
-      <CardHeader className="bg-white border-b border-gray-200">
-        <CardTitle className="text-lg">All Metrics</CardTitle>
-      </CardHeader>
-      <CardContent className="p-0">
-        <div className="overflow-x-auto">
-          <table className="w-full table-fixed">
+  const tableContent = (
+    <div className="overflow-x-auto">
+      <table className="w-full table-fixed">
             <thead className="bg-white border-b border-gray-200">
               <tr>
                 <th className="text-center p-2 font-semibold text-gray-700 w-8"></th>
@@ -281,6 +277,19 @@ const ScorecardTableClean = ({
             </tbody>
           </table>
         </div>
+  );
+
+  if (noWrapper) {
+    return tableContent;
+  }
+
+  return (
+    <Card className="transition-all bg-white border border-gray-200">
+      <CardHeader className="bg-white border-b border-gray-200">
+        <CardTitle className="text-lg">All Metrics</CardTitle>
+      </CardHeader>
+      <CardContent className="p-0">
+        {tableContent}
       </CardContent>
     </Card>
   );
