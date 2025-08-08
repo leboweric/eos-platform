@@ -63,7 +63,7 @@ const IssuesListClean = ({
   return (
     <>
       <div className="space-y-3">
-        {issues.map((issue, index) => {
+        {(issues || []).map((issue, index) => {
           const hasVotes = (issue.vote_count || 0) > 0;
           const isTopIssue = index === 0 && hasVotes && showVoting;
           

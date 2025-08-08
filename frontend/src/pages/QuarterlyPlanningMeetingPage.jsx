@@ -173,8 +173,8 @@ const QuarterlyPlanningMeetingPage = () => {
       
       // Flatten the data structure to a simple array for easier handling
       const allPriorities = [
-        ...companyPriorities.map(p => ({ ...p, priority_type: 'company' })),
-        ...Object.values(teamMemberPriorities).flatMap(memberData => 
+        ...(companyPriorities || []).map(p => ({ ...p, priority_type: 'company' })),
+        ...Object.values(teamMemberPriorities || {}).flatMap(memberData => 
           (memberData.priorities || []).map(p => ({ ...p, priority_type: 'individual' }))
         )
       ];
@@ -409,7 +409,7 @@ const QuarterlyPlanningMeetingPage = () => {
                       </div>
                       {expandedSections.companyPriorities && (
                         <div className="space-y-4 ml-7 mt-4">
-                          {companyPriorities.map(priority => (
+                          {(companyPriorities || []).map(priority => (
                           <PriorityCard 
                             key={priority.id} 
                             priority={priority} 
@@ -622,7 +622,7 @@ const QuarterlyPlanningMeetingPage = () => {
                       </div>
                       {expandedSections.companyPriorities && (
                         <div className="space-y-4 ml-7 mt-4">
-                          {companyPriorities.map(priority => (
+                          {(companyPriorities || []).map(priority => (
                             <PriorityCard 
                               key={priority.id} 
                               priority={priority} 
@@ -787,10 +787,49 @@ const QuarterlyPlanningMeetingPage = () => {
             {/* Embedded Issues List */}
             <div className="bg-white rounded-lg shadow-sm p-6">
               <IssuesList 
-                issues={issues}
-                onUpdate={fetchIssuesData}
-                showCompleted={false}
-                embedded={true}
+                issues={issues || []}
+                onEdit={(issue) => {
+                  setEditingIssue(issue);
+                  setShowIssueDialog(true);
+                }}
+                onStatusChange={async (issueId, newStatus) => {
+                  try {
+                    await issuesService.updateIssue(issueId, { status: newStatus });
+                    await fetchIssuesData();
+                  } catch (error) {
+                    console.error('Failed to update status:', error);
+                  }
+                }}
+                onTimelineChange={async (issueId, newTimeline) => {
+                  try {
+                    await issuesService.updateIssue(issueId, { timeline: newTimeline });
+                    await fetchIssuesData();
+                  } catch (error) {
+                    console.error('Failed to update timeline:', error);
+                  }
+                }}
+                onArchive={async (issueId) => {
+                  try {
+                    await issuesService.archiveIssue(issueId);
+                    await fetchIssuesData();
+                  } catch (error) {
+                    console.error('Failed to archive:', error);
+                  }
+                }}
+                onVote={async () => {}}
+                getStatusColor={(status) => {
+                  switch (status) {
+                    case 'open':
+                      return 'bg-yellow-100 text-yellow-800';
+                    case 'closed':
+                      return 'bg-gray-100 text-gray-800';
+                    default:
+                      return 'bg-gray-100 text-gray-800';
+                  }
+                }}
+                getStatusIcon={(status) => null}
+                readOnly={false}
+                showVoting={false}
               />
             </div>
             
