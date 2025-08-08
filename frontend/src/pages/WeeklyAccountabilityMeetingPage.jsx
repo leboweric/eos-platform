@@ -45,6 +45,7 @@ import { scorecardService } from '../services/scorecardService';
 import { quarterlyPrioritiesService } from '../services/quarterlyPrioritiesService';
 import { issuesService } from '../services/issuesService';
 import { todosService } from '../services/todosService';
+import { headlinesService } from '../services/headlinesService';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { FileText, GitBranch } from 'lucide-react';
 import { useSelectedTodos } from '../contexts/SelectedTodosContext';
@@ -71,7 +72,7 @@ const WeeklyAccountabilityMeetingPage = () => {
   const [teamMembers, setTeamMembers] = useState([]);
   const [todaysTodos, setTodaysTodos] = useState([]);
   const [goodNews, setGoodNews] = useState([]);
-  const [headlines, setHeadlines] = useState([]);
+  const [headlines, setHeadlines] = useState({ customer: [], employee: [] });
   const [cascadedMessages, setCascadedMessages] = useState([]);
   
   // Dialog states
@@ -392,8 +393,30 @@ const WeeklyAccountabilityMeetingPage = () => {
       fetchAvailableTeams();
     } else if (activeSection === 'headlines') {
       fetchCascadedMessages();
+      fetchHeadlines();
     }
   }, [activeSection]);
+
+  const fetchHeadlines = async () => {
+    try {
+      const effectiveTeamId = teamId || user?.teamId || '00000000-0000-0000-0000-000000000000';
+      const response = await headlinesService.getHeadlines(effectiveTeamId);
+      
+      // Group headlines by type
+      const grouped = { customer: [], employee: [] };
+      response.data.forEach(headline => {
+        if (headline.type === 'customer') {
+          grouped.customer.push(headline);
+        } else if (headline.type === 'employee') {
+          grouped.employee.push(headline);
+        }
+      });
+      
+      setHeadlines(grouped);
+    } catch (error) {
+      console.error('Failed to fetch headlines:', error);
+    }
+  };
 
   const handleAddIssue = () => {
     setEditingIssue(null);
@@ -1340,94 +1363,75 @@ const WeeklyAccountabilityMeetingPage = () => {
                       <Users className="h-4 w-4" />
                       Customer Headlines
                     </h4>
-                    {(() => {
-                      const headlines = JSON.parse(sessionStorage.getItem('meetingHeadlines') || '{}');
-                      const customerHeadlines = headlines.customer || [];
-                      
-                      if (customerHeadlines.length > 0) {
-                        return (
-                          <ul className="list-disc list-inside text-sm space-y-2">
-                            {customerHeadlines.map((headline, index) => (
-                              <li key={index} className="text-gray-700">
-                                {headline.text}
-                                <span className="text-xs text-gray-500 ml-2">
-                                  - {headline.createdBy}
-                                </span>
-                              </li>
-                            ))}
-                          </ul>
-                        );
-                      } else {
-                        return (
-                          <ul className="list-disc list-inside text-sm space-y-1 text-gray-500">
-                            <li>Major customer wins or losses</li>
-                            <li>Important customer feedback</li>
-                            <li>Market changes affecting customers</li>
-                            <li>Competitive developments</li>
-                          </ul>
-                        );
-                      }
-                    })()}
+                    {headlines.customer.length > 0 ? (
+                      <ul className="list-disc list-inside text-sm space-y-2">
+                        {headlines.customer.map((headline) => (
+                          <li key={headline.id} className="text-gray-700">
+                            {headline.text}
+                            <span className="text-xs text-gray-500 ml-2">
+                              - {headline.createdBy}
+                            </span>
+                          </li>
+                        ))}
+                      </ul>
+                    ) : (
+                      <ul className="list-disc list-inside text-sm space-y-1 text-gray-500">
+                        <li>Major customer wins or losses</li>
+                        <li>Important customer feedback</li>
+                        <li>Market changes affecting customers</li>
+                        <li>Competitive developments</li>
+                      </ul>
+                    )}
                   </div>
                   <div className="border border-gray-200 p-4 rounded-lg bg-white">
                     <h4 className="font-medium mb-2 text-gray-900 flex items-center gap-2">
                       <Building2 className="h-4 w-4" />
                       Employee Headlines
                     </h4>
-                    {(() => {
-                      const headlines = JSON.parse(sessionStorage.getItem('meetingHeadlines') || '{}');
-                      const employeeHeadlines = headlines.employee || [];
-                      
-                      if (employeeHeadlines.length > 0) {
-                        return (
-                          <ul className="list-disc list-inside text-sm space-y-2">
-                            {employeeHeadlines.map((headline, index) => (
-                              <li key={index} className="text-gray-700">
-                                {headline.text}
-                                <span className="text-xs text-gray-500 ml-2">
-                                  - {headline.createdBy}
-                                </span>
-                              </li>
-                            ))}
-                          </ul>
-                        );
-                      } else {
-                        return (
-                          <ul className="list-disc list-inside text-sm space-y-1 text-gray-500">
-                            <li>Team member updates</li>
-                            <li>Hiring or departures</li>
-                            <li>Important HR announcements</li>
-                            <li>Team achievements to celebrate</li>
-                          </ul>
-                        );
-                      }
-                    })()}
+                    {headlines.employee.length > 0 ? (
+                      <ul className="list-disc list-inside text-sm space-y-2">
+                        {headlines.employee.map((headline) => (
+                          <li key={headline.id} className="text-gray-700">
+                            {headline.text}
+                            <span className="text-xs text-gray-500 ml-2">
+                              - {headline.createdBy}
+                            </span>
+                          </li>
+                        ))}
+                      </ul>
+                    ) : (
+                      <ul className="list-disc list-inside text-sm space-y-1 text-gray-500">
+                        <li>Team member updates</li>
+                        <li>Hiring or departures</li>
+                        <li>Important HR announcements</li>
+                        <li>Team achievements to celebrate</li>
+                      </ul>
+                    )}
                   </div>
                 </div>
                 
-                {/* Clear Headlines Button - shown only when there are headlines */}
-                {(() => {
-                  const headlines = JSON.parse(sessionStorage.getItem('meetingHeadlines') || '{}');
-                  const hasHeadlines = (headlines.customer?.length > 0) || (headlines.employee?.length > 0);
-                  
-                  if (hasHeadlines) {
-                    return (
-                      <div className="mt-4 text-center">
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => {
-                            sessionStorage.removeItem('meetingHeadlines');
-                            window.location.reload(); // Simple refresh to update the view
-                          }}
-                        >
-                          Clear All Headlines
-                        </Button>
-                      </div>
-                    );
-                  }
-                  return null;
-                })()}
+                {/* Archive Headlines Button - shown only when there are headlines */}
+                {(headlines.customer.length > 0 || headlines.employee.length > 0) && (
+                  <div className="mt-4 text-center">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={async () => {
+                        try {
+                          const effectiveTeamId = teamId || user?.teamId || '00000000-0000-0000-0000-000000000000';
+                          await headlinesService.archiveHeadlines(effectiveTeamId);
+                          setSuccess('Headlines archived');
+                          await fetchHeadlines(); // Refresh the headlines
+                        } catch (error) {
+                          console.error('Failed to archive headlines:', error);
+                          setError('Failed to archive headlines');
+                        }
+                      }}
+                    >
+                      Archive All Headlines
+                    </Button>
+                  </div>
+                )}
               </div>
             </CardContent>
           </Card>

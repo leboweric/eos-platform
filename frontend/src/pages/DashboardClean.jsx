@@ -14,6 +14,7 @@ import { getRevenueLabel } from '../utils/revenueUtils';
 import TodosList from '../components/todos/TodosListClean';
 import TodoDialog from '../components/todos/TodoDialog';
 import IssueDialog from '../components/issues/IssueDialog';
+import { headlinesService } from '../services/headlinesService';
 import { useSelectedTodos } from '../contexts/SelectedTodosContext';
 import {
   AlertCircle,
@@ -773,21 +774,19 @@ const DashboardClean = () => {
                   </Button>
                   <Button
                     onClick={async () => {
-                      // For now, we'll store this in session storage
-                      // In a future update, this should be saved to the database
-                      const headlines = JSON.parse(sessionStorage.getItem('meetingHeadlines') || '{}');
-                      if (!headlines[headlineType]) {
-                        headlines[headlineType] = [];
+                      try {
+                        await headlinesService.createHeadline({
+                          type: headlineType,
+                          text: headlineText,
+                          teamId: user?.teamId || null
+                        });
+                        setShowHeadlineDialog(false);
+                        setHeadlineText('');
+                        alert('Headline added! It will appear in your next Weekly Accountability Meeting.');
+                      } catch (error) {
+                        console.error('Failed to create headline:', error);
+                        alert('Failed to add headline. Please try again.');
                       }
-                      headlines[headlineType].push({
-                        text: headlineText,
-                        createdAt: new Date().toISOString(),
-                        createdBy: user?.firstName + ' ' + user?.lastName
-                      });
-                      sessionStorage.setItem('meetingHeadlines', JSON.stringify(headlines));
-                      setShowHeadlineDialog(false);
-                      setHeadlineText('');
-                      alert('Headline added! It will appear in your next Weekly Accountability Meeting.');
                     }}
                     disabled={!headlineText.trim()}
                   >
