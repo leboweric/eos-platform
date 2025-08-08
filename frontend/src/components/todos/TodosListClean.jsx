@@ -118,14 +118,17 @@ const TodosListClean = ({
           <div
             key={todo.id}
             className={`
-              group relative bg-white rounded-lg border transition-all duration-200
+              group relative rounded-lg border transition-all duration-200
+              ${overdue ? 'bg-red-50/50' : 'bg-green-50/30'}
               ${isSelected(todo.id) ? 'border-gray-400 shadow-sm' : 'border-gray-200 hover:border-gray-300 hover:shadow-sm'}
               ${todo.status === 'complete' ? 'opacity-60' : ''}
             `}
           >
-            {/* Overdue indicator - subtle left border */}
-            {overdue && (
+            {/* Status indicator - subtle left border */}
+            {overdue ? (
               <div className="absolute left-0 top-0 bottom-0 w-1 bg-red-500 rounded-l-lg" />
+            ) : (
+              <div className="absolute left-0 top-0 bottom-0 w-1 bg-green-500 rounded-l-lg" />
             )}
             
             <div className="p-4 pl-6">
