@@ -14,6 +14,7 @@ import { getRevenueLabel } from '../utils/revenueUtils';
 import TodosList from '../components/todos/TodosListClean';
 import TodoDialog from '../components/todos/TodoDialog';
 import IssueDialog from '../components/issues/IssueDialog';
+import HeadlineDialog from '../components/headlines/HeadlineDialog';
 import { headlinesService } from '../services/headlinesService';
 import { useSelectedTodos } from '../contexts/SelectedTodosContext';
 import {
@@ -39,8 +40,6 @@ const DashboardClean = () => {
   const [showIssueDialog, setShowIssueDialog] = useState(false);
   const [editingIssue, setEditingIssue] = useState(null);
   const [showHeadlineDialog, setShowHeadlineDialog] = useState(false);
-  const [headlineText, setHeadlineText] = useState('');
-  const [headlineType, setHeadlineType] = useState('customer');
   const [predictions, setPredictions] = useState({
     revenue: { target: 0, current: 0 },
     profit: { target: 0, current: 0 },
@@ -735,71 +734,19 @@ const DashboardClean = () => {
           }}
         />
 
-        {/* Simple Headline Dialog */}
-        {showHeadlineDialog && (
-          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-            <div className="bg-white rounded-lg p-6 w-full max-w-md">
-              <h2 className="text-lg font-semibold mb-4">Add Headline</h2>
-              <div className="space-y-4">
-                <div>
-                  <Label>Headline Type</Label>
-                  <select
-                    className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
-                    value={headlineType}
-                    onChange={(e) => setHeadlineType(e.target.value)}
-                  >
-                    <option value="customer">Customer Headline</option>
-                    <option value="employee">Employee Headline</option>
-                  </select>
-                </div>
-                <div>
-                  <Label>Headline Text</Label>
-                  <textarea
-                    className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
-                    rows={3}
-                    value={headlineText}
-                    onChange={(e) => setHeadlineText(e.target.value)}
-                    placeholder={headlineType === 'customer' ? 'Enter customer headline...' : 'Enter employee headline...'}
-                  />
-                </div>
-                <div className="flex justify-end gap-2">
-                  <Button
-                    variant="outline"
-                    onClick={() => {
-                      setShowHeadlineDialog(false);
-                      setHeadlineText('');
-                    }}
-                  >
-                    Cancel
-                  </Button>
-                  <Button
-                    onClick={async () => {
-                      try {
-                        // Get the user's team ID - use leadership team if not set
-                        const teamId = user?.teamId || '00000000-0000-0000-0000-000000000000';
-                        
-                        await headlinesService.createHeadline({
-                          type: headlineType,
-                          text: headlineText,
-                          teamId: teamId
-                        });
-                        setShowHeadlineDialog(false);
-                        setHeadlineText('');
-                        alert('Headline added! It will appear in your team\'s Weekly Accountability Meeting.');
-                      } catch (error) {
-                        console.error('Failed to create headline:', error);
-                        alert('Failed to add headline. Please try again.');
-                      }
-                    }}
-                    disabled={!headlineText.trim()}
-                  >
-                    Add Headline
-                  </Button>
-                </div>
-              </div>
-            </div>
-          </div>
-        )}
+        {/* Headline Dialog */}
+        <HeadlineDialog
+          open={showHeadlineDialog}
+          onOpenChange={setShowHeadlineDialog}
+          onSave={async (headlineData) => {
+            const teamId = user?.teamId || '00000000-0000-0000-0000-000000000000';
+            await headlinesService.createHeadline({
+              ...headlineData,
+              teamId: teamId
+            });
+            // Success is handled in the dialog component
+          }}
+        />
       </div>
     </div>
   );
