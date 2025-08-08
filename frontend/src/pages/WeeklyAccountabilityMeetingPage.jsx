@@ -1223,15 +1223,41 @@ const WeeklyAccountabilityMeetingPage = () => {
                     <span className="font-semibold">Quick voting:</span> Everyone votes on the most important issues. Then discuss and solve the top-voted issues using IDS.
                   </p>
                 </div>
-                <div className="flex justify-end gap-2 mb-4">
-                  <Button onClick={handleAddTodo} className="bg-indigo-600 hover:bg-indigo-700">
-                    <Plus className="mr-2 h-4 w-4" />
-                    Add To Do
-                  </Button>
-                  <Button onClick={handleAddIssue} className="bg-indigo-600 hover:bg-indigo-700">
-                    <Plus className="mr-2 h-4 w-4" />
-                    Add Issue
-                  </Button>
+                <div className="flex justify-between items-center mb-4">
+                  <div>
+                    {(() => {
+                      const closedIssuesCount = issues.filter(issue => issue.status === 'closed').length;
+                      return closedIssuesCount > 0 && (
+                        <Button 
+                          onClick={async () => {
+                            try {
+                              await issuesService.archiveClosedIssues('short_term');
+                              setSuccess(`${closedIssuesCount} closed issue${closedIssuesCount > 1 ? 's' : ''} archived`);
+                              await fetchIssuesData();
+                            } catch (error) {
+                              console.error('Failed to archive closed issues:', error);
+                              setError('Failed to archive closed issues');
+                            }
+                          }}
+                          variant="outline"
+                          className="text-gray-600 hover:text-gray-900"
+                        >
+                          <Archive className="mr-2 h-4 w-4" />
+                          Archive Closed ({closedIssuesCount})
+                        </Button>
+                      );
+                    })()}
+                  </div>
+                  <div className="flex gap-2">
+                    <Button onClick={handleAddTodo} className="bg-indigo-600 hover:bg-indigo-700">
+                      <Plus className="mr-2 h-4 w-4" />
+                      Add To Do
+                    </Button>
+                    <Button onClick={handleAddIssue} className="bg-indigo-600 hover:bg-indigo-700">
+                      <Plus className="mr-2 h-4 w-4" />
+                      Add Issue
+                    </Button>
+                  </div>
                 </div>
                 {issues.length === 0 ? (
                   <div className="text-center py-8">
