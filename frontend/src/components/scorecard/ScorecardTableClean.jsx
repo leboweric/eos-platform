@@ -194,7 +194,8 @@ const ScorecardTableClean = ({
             </thead>
             <tbody>
               {metrics.map((metric, metricIndex) => {
-                const metricScores = periodDatesOriginal
+                // Use periodDates (visible dates) instead of periodDatesOriginal for calculations
+                const metricScores = periodDates
                   .map(periodDate => scores[metric.id]?.[periodDate])
                   .filter(score => score !== undefined && score !== null && score !== '');
                 
