@@ -381,27 +381,35 @@ const QuarterlyPrioritiesPageClean = () => {
       
       await quarterlyPrioritiesService.updateMilestone(orgId, teamId, priorityId, milestoneId, { completed });
       
-      // Update local state instead of refetching
-      const updateMilestones = (milestones) => 
-        milestones?.map(m => m.id === milestoneId ? { ...m, completed } : m) || [];
+      // Update local state and recalculate progress
+      const updatePriorityWithProgress = (p) => {
+        if (p.id !== priorityId) return p;
+        
+        const updatedMilestones = p.milestones?.map(m => 
+          m.id === milestoneId ? { ...m, completed } : m
+        ) || [];
+        
+        // Calculate new progress based on completed milestones
+        const completedCount = updatedMilestones.filter(m => m.completed).length;
+        const totalCount = updatedMilestones.length;
+        const newProgress = totalCount > 0 ? Math.round((completedCount / totalCount) * 100) : 0;
+        
+        return { 
+          ...p, 
+          milestones: updatedMilestones,
+          progress: newProgress
+        };
+      };
       
       // Update company priorities
-      setCompanyPriorities(prev => prev.map(p => 
-        p.id === priorityId 
-          ? { ...p, milestones: updateMilestones(p.milestones) }
-          : p
-      ));
+      setCompanyPriorities(prev => prev.map(updatePriorityWithProgress));
       
       // Update team member priorities
       setTeamMemberPriorities(prev => {
         const updated = { ...prev };
         Object.keys(updated).forEach(memberId => {
           if (updated[memberId]?.priorities) {
-            updated[memberId].priorities = updated[memberId].priorities.map(p =>
-              p.id === priorityId 
-                ? { ...p, milestones: updateMilestones(p.milestones) }
-                : p
-            );
+            updated[memberId].priorities = updated[memberId].priorities.map(updatePriorityWithProgress);
           }
         });
         return updated;
@@ -538,6 +546,85 @@ const QuarterlyPrioritiesPageClean = () => {
         // Still refresh to ensure UI is in sync if not found
         await fetchQuarterlyData();
       }
+    }
+  };
+
+  const handleDeleteUpdate = async (priorityId, updateId) => {
+    try {
+      if (!window.confirm('Are you sure you want to delete this update?')) {
+        return;
+      }
+      
+      // For now, just remove from local state since backend doesn't have delete endpoint yet
+      const removeUpdate = (updates) => 
+        updates?.filter(u => u.id !== updateId) || [];
+      
+      // Update company priorities
+      setCompanyPriorities(prev => prev.map(p => 
+        p.id === priorityId 
+          ? { ...p, updates: removeUpdate(p.updates) }
+          : p
+      ));
+      
+      // Update team member priorities
+      setTeamMemberPriorities(prev => {
+        const updated = { ...prev };
+        Object.keys(updated).forEach(memberId => {
+          if (updated[memberId]?.priorities) {
+            updated[memberId].priorities = updated[memberId].priorities.map(p =>
+              p.id === priorityId 
+                ? { ...p, updates: removeUpdate(p.updates) }
+                : p
+            );
+          }
+        });
+        return updated;
+      });
+      
+      setSuccess('Update deleted successfully');
+    } catch (err) {
+      console.error('Failed to delete update:', err);
+      setError('Failed to delete update');
+    }
+  };
+
+  const handleEditUpdate = async (priorityId, updateId, newText) => {
+    try {
+      const editText = window.prompt('Edit update:', newText);
+      if (!editText || editText === newText) {
+        return;
+      }
+      
+      // For now, just update local state since backend doesn't have edit endpoint yet
+      const editUpdate = (updates) => 
+        updates?.map(u => u.id === updateId ? { ...u, text: editText } : u) || [];
+      
+      // Update company priorities
+      setCompanyPriorities(prev => prev.map(p => 
+        p.id === priorityId 
+          ? { ...p, updates: editUpdate(p.updates) }
+          : p
+      ));
+      
+      // Update team member priorities
+      setTeamMemberPriorities(prev => {
+        const updated = { ...prev };
+        Object.keys(updated).forEach(memberId => {
+          if (updated[memberId]?.priorities) {
+            updated[memberId].priorities = updated[memberId].priorities.map(p =>
+              p.id === priorityId 
+                ? { ...p, updates: editUpdate(p.updates) }
+                : p
+            );
+          }
+        });
+        return updated;
+      });
+      
+      setSuccess('Update edited successfully');
+    } catch (err) {
+      console.error('Failed to edit update:', err);
+      setError('Failed to edit update');
     }
   };
 
@@ -2136,6 +2223,8 @@ const QuarterlyPrioritiesPageClean = () => {
                         onToggleMilestone={handleUpdateMilestone}
                         onDeleteMilestone={handleDeleteMilestone}
                         onAddUpdate={handleAddUpdate}
+                        onEditUpdate={handleEditUpdate}
+                        onDeleteUpdate={handleDeleteUpdate}
                         onUploadAttachment={handleUploadAttachment}
                         onDownloadAttachment={handleDownloadAttachment}
                         onDeleteAttachment={handleDeleteAttachment}
@@ -2193,6 +2282,11 @@ const QuarterlyPrioritiesPageClean = () => {
                             onToggleMilestone={handleUpdateMilestone}
                             onDeleteMilestone={handleDeleteMilestone}
                             onAddUpdate={handleAddUpdate}
+                            onEditUpdate={handleEditUpdate}
+                            onDeleteUpdate={handleDeleteUpdate}
+                            onUploadAttachment={handleUploadAttachment}
+                            onDownloadAttachment={handleDownloadAttachment}
+                            onDeleteAttachment={handleDeleteAttachment}
                             teamMembers={teamMembers}
                           />
                         </div>

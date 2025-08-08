@@ -27,7 +27,8 @@ import {
   Target,
   Paperclip,
   Download,
-  Upload
+  Upload,
+  Edit2
 } from 'lucide-react';
 import { format } from 'date-fns';
 
@@ -42,6 +43,8 @@ const PriorityCardClean = ({
   onDeleteMilestone,
   onToggleMilestone,
   onAddUpdate,
+  onEditUpdate,
+  onDeleteUpdate,
   onStatusChange,
   onUploadAttachment,
   onDownloadAttachment,
@@ -378,27 +381,6 @@ const PriorityCardClean = ({
                     Add Update
                   </Button>
                 )}
-                {!priority.attachments?.length && onUploadAttachment && (
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => {
-                      const input = document.createElement('input');
-                      input.type = 'file';
-                      input.onchange = (e) => {
-                        const file = e.target.files[0];
-                        if (file) {
-                          onUploadAttachment(priority.id, file);
-                        }
-                      };
-                      input.click();
-                    }}
-                    className="h-7 text-xs"
-                  >
-                    <Paperclip className="h-3 w-3 mr-1" />
-                    Add Attachment
-                  </Button>
-                )}
               </div>
             )}
 
@@ -513,11 +495,35 @@ const PriorityCardClean = ({
                 
                 <div className="space-y-2">
                   {priority.updates?.slice(0, 3).map((update, index) => (
-                    <div key={update.id || index} className="p-2 bg-gray-50 rounded-lg">
-                      <p className="text-sm text-gray-700">{update.text}</p>
+                    <div key={update.id || index} className="group p-2 bg-gray-50 rounded-lg relative">
+                      <p className="text-sm text-gray-700 pr-16">{update.text}</p>
                       <div className="text-xs text-gray-500 mt-1">
                         {update.createdBy} • {formatDate(update.createdAt)}
                       </div>
+                      {(onDeleteUpdate || onEditUpdate) && (
+                        <div className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity flex gap-1">
+                          {onEditUpdate && (
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => onEditUpdate(priority.id, update.id, update.text)}
+                              className="h-6 w-6 p-0 hover:bg-blue-100"
+                            >
+                              <Edit2 className="h-3 w-3 text-blue-600" />
+                            </Button>
+                          )}
+                          {onDeleteUpdate && (
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => onDeleteUpdate(priority.id, update.id)}
+                              className="h-6 w-6 p-0 hover:bg-red-100"
+                            >
+                              <Trash2 className="h-3 w-3 text-red-600" />
+                            </Button>
+                          )}
+                        </div>
+                      )}
                     </div>
                   ))}
                   
