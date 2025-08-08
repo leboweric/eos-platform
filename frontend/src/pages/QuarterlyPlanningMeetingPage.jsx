@@ -22,7 +22,12 @@ import {
   Users
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
-import PriorityCard from '../components/priorities/PriorityCard';
+import PriorityCard from '../components/priorities/PriorityCardClean';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { meetingsService } from '../services/meetingsService';
+import { FileText, GitBranch, Smile, BarChart, Newspaper, ListTodo, ArrowLeftRight, Archive, Plus, MessageSquare, Send, Star } from 'lucide-react';
 import { quarterlyPrioritiesService } from '../services/quarterlyPrioritiesService';
 
 const QuarterlyPlanningMeetingPage = () => {
@@ -36,6 +41,11 @@ const QuarterlyPlanningMeetingPage = () => {
   
   // Meeting data
   const [priorities, setPriorities] = useState([]);
+  const [meetingStarted, setMeetingStarted] = useState(false);
+  const [meetingStartTime, setMeetingStartTime] = useState(null);
+  const [elapsedTime, setElapsedTime] = useState(0);
+  const [meetingRating, setMeetingRating] = useState(null);
+  const [cascadingMessage, setCascadingMessage] = useState('');
   
   // Collapsible sections state
   const [expandedSections, setExpandedSections] = useState({
@@ -44,15 +54,74 @@ const QuarterlyPlanningMeetingPage = () => {
   });
 
   const agendaItems = [
-    { id: 'objectives', label: 'Objectives', duration: 5, icon: Target },
-    { id: 'check-in', label: 'Check In', duration: 10, icon: CheckSquare },
-    { id: 'review-prior', label: 'Review Prior Quarter', duration: 30, icon: Calendar },
-    { id: '2-page-plan', label: '2-Page Plan', duration: 30, icon: ClipboardList },
-    { id: 'quarterly-priorities', label: 'Quarterly Priorities', duration: 60, icon: ListChecks },
-    { id: 'issues', label: 'Issues', duration: 30, icon: AlertTriangle },
-    { id: 'next-steps', label: 'Next Steps', duration: 15, icon: ClipboardList },
-    { id: 'conclude', label: 'Conclude', duration: 10, icon: CheckSquare }
+    { id: 'objectives', label: 'Objectives', duration: 5, icon: Target, description: 'Review meeting goals' },
+    { id: 'check-in', label: 'Check In', duration: 10, icon: CheckSquare, description: 'Team connection' },
+    { id: 'review-prior', label: 'Review Prior Quarter', duration: 30, icon: Calendar, description: 'Check progress' },
+    { id: '2-page-plan', label: '2-Page Plan', duration: 30, icon: ClipboardList, description: 'Review strategic plan' },
+    { id: 'quarterly-priorities', label: 'Quarterly Priorities', duration: 60, icon: ListChecks, description: 'Set new priorities' },
+    { id: 'issues', label: 'Issues', duration: 30, icon: AlertTriangle, description: 'Address challenges' },
+    { id: 'next-steps', label: 'Next Steps', duration: 15, icon: ClipboardList, description: 'Action items' },
+    { id: 'conclude', label: 'Conclude', duration: 10, icon: CheckSquare, description: 'Wrap up & rate' }
   ];
+
+  // Timer effect
+  useEffect(() => {
+    let interval;
+    if (meetingStarted && meetingStartTime) {
+      interval = setInterval(() => {
+        const elapsed = Math.floor((Date.now() - meetingStartTime) / 1000);
+        setElapsedTime(elapsed);
+      }, 1000);
+    }
+    return () => clearInterval(interval);
+  }, [meetingStarted, meetingStartTime]);
+
+  const startMeeting = () => {
+    setMeetingStarted(true);
+    setMeetingStartTime(Date.now());
+  };
+
+  const formatTime = (seconds) => {
+    const hours = Math.floor(seconds / 3600);
+    const minutes = Math.floor((seconds % 3600) / 60);
+    const secs = seconds % 60;
+    if (hours > 0) {
+      return `${hours}:${minutes.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+    }
+    return `${minutes}:${secs.toString().padStart(2, '0')}`;
+  };
+
+  const concludeMeeting = async () => {
+    if (!meetingRating) {
+      setError('Please rate the meeting before concluding');
+      return;
+    }
+    
+    try {
+      const orgId = localStorage.getItem('impersonatedOrgId') || user?.organizationId || user?.organization_id;
+      const effectiveTeamId = teamId || user?.teamId || '00000000-0000-0000-0000-000000000000';
+      const duration = Math.floor((Date.now() - meetingStartTime) / 60000); // in minutes
+      
+      await meetingsService.concludeMeeting(orgId, effectiveTeamId, {
+        meetingType: 'quarterly_planning',
+        duration,
+        rating: meetingRating,
+        cascadingMessage,
+        summary: {
+          priorities: priorities.length,
+          completed: priorities.filter(p => p.status === 'complete').length
+        }
+      });
+      
+      setSuccess('Meeting concluded and summary sent to team!');
+      setTimeout(() => {
+        navigate('/quarterly-priorities');
+      }, 2000);
+    } catch (error) {
+      console.error('Failed to conclude meeting:', error);
+      setError('Failed to conclude meeting');
+    }
+  };
 
   useEffect(() => {
     if (activeSection === 'review-prior' || activeSection === 'quarterly-priorities') {
@@ -155,27 +224,43 @@ const QuarterlyPlanningMeetingPage = () => {
     switch (activeSection) {
       case 'objectives':
         return (
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Target className="h-5 w-5" />
-                Meeting Objectives
-              </CardTitle>
-              <CardDescription>Review meeting goals and expected outcomes (5 minutes)</CardDescription>
+          <Card className="border-0 shadow-sm">
+            <CardHeader className="bg-gradient-to-r from-blue-50 to-indigo-50 rounded-t-lg">
+              <div className="flex items-center justify-between">
+                <div>
+                  <CardTitle className="flex items-center gap-2 text-xl">
+                    <Target className="h-5 w-5 text-blue-600" />
+                    Meeting Objectives
+                  </CardTitle>
+                  <CardDescription className="mt-1">Review meeting goals and expected outcomes</CardDescription>
+                </div>
+                <div className="text-sm text-gray-500 bg-white px-3 py-1 rounded-full">
+                  5 minutes
+                </div>
+              </div>
             </CardHeader>
-            <CardContent>
-              <div className="space-y-4">
-                <p className="text-gray-600">
+            <CardContent className="pt-6">
+              <div className="space-y-6">
+                <p className="text-gray-700 leading-relaxed">
                   This quarterly planning meeting is designed to help your team transition effectively 
                   from one quarter to the next.
                 </p>
-                <div className="bg-blue-50 p-4 rounded-lg">
-                  <h4 className="font-medium mb-2">Meeting Goals:</h4>
-                  <ul className="list-disc list-inside text-lg space-y-2">
-                    <li>Clear Vision, All on Same Page</li>
-                    <li>Clear Plan for Next Quarter</li>
-                    <li>Resolve All Key Issues</li>
-                  </ul>
+                <div className="bg-gradient-to-r from-blue-50 to-indigo-50 p-6 rounded-xl border border-blue-100">
+                  <h4 className="font-semibold text-lg mb-4 text-gray-900">Meeting Goals:</h4>
+                  <div className="space-y-3">
+                    <div className="flex items-start gap-3">
+                      <CheckCircle className="h-5 w-5 text-green-500 mt-0.5" />
+                      <span className="text-gray-700">Clear Vision, All on Same Page</span>
+                    </div>
+                    <div className="flex items-start gap-3">
+                      <CheckCircle className="h-5 w-5 text-green-500 mt-0.5" />
+                      <span className="text-gray-700">Clear Plan for Next Quarter</span>
+                    </div>
+                    <div className="flex items-start gap-3">
+                      <CheckCircle className="h-5 w-5 text-green-500 mt-0.5" />
+                      <span className="text-gray-700">Resolve All Key Issues</span>
+                    </div>
+                  </div>
                 </div>
               </div>
             </CardContent>
@@ -663,35 +748,56 @@ const QuarterlyPlanningMeetingPage = () => {
 
       case 'conclude':
         return (
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <CheckSquare className="h-5 w-5" />
-                Meeting Conclusion
-              </CardTitle>
-              <CardDescription>Wrap up and rate the meeting (10 minutes)</CardDescription>
+          <Card className="border-0 shadow-sm">
+            <CardHeader className="bg-gradient-to-r from-green-50 to-emerald-50 rounded-t-lg">
+              <div className="flex items-center justify-between">
+                <div>
+                  <CardTitle className="flex items-center gap-2 text-xl">
+                    <CheckSquare className="h-5 w-5 text-green-600" />
+                    Meeting Conclusion
+                  </CardTitle>
+                  <CardDescription className="mt-1">Wrap up and capture key takeaways</CardDescription>
+                </div>
+                <div className="text-sm text-gray-500 bg-white px-3 py-1 rounded-full">
+                  10 minutes
+                </div>
+              </div>
             </CardHeader>
-            <CardContent>
+            <CardContent className="pt-6">
               <div className="space-y-6">
-                <div className="space-y-4">
-                  <div className="border-l-4 border-blue-500 pl-4">
-                    <h4 className="font-medium">1. Feedback?</h4>
-                    <p className="text-sm text-gray-600">(Where's your head? How are you feeling?)</p>
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  <div className="bg-gradient-to-br from-blue-50 to-indigo-50 p-4 rounded-xl border border-blue-100">
+                    <h4 className="font-semibold text-gray-900 mb-2 flex items-center gap-2">
+                      <MessageSquare className="h-4 w-4 text-blue-600" />
+                      Feedback
+                    </h4>
+                    <p className="text-sm text-gray-600">Where's your head? How are you feeling?</p>
                   </div>
-                  <div className="border-l-4 border-blue-500 pl-4">
-                    <h4 className="font-medium">2. Expectations?</h4>
-                    <p className="text-sm text-gray-600">(Were they met? Y/N)</p>
+                  <div className="bg-gradient-to-br from-green-50 to-emerald-50 p-4 rounded-xl border border-green-100">
+                    <h4 className="font-semibold text-gray-900 mb-2 flex items-center gap-2">
+                      <Target className="h-4 w-4 text-green-600" />
+                      Expectations
+                    </h4>
+                    <p className="text-sm text-gray-600">Were your expectations met?</p>
                   </div>
-                  <div className="border-l-4 border-blue-500 pl-4">
-                    <h4 className="font-medium">3. Session Rating</h4>
-                    <p className="text-sm text-gray-600 mb-3">On a scale of 1-10, how effective was this meeting?</p>
-                    <div className="flex gap-2">
-                      {[...Array(10)].map((_, i) => (
-                        <Button
-                          key={i + 1}
-                          variant="outline"
-                          size="sm"
-                          className="w-10 h-10"
+                  <div className="bg-gradient-to-br from-purple-50 to-pink-50 p-4 rounded-xl border border-purple-100">
+                    <h4 className="font-semibold text-gray-900 mb-2 flex items-center gap-2">
+                      <Star className="h-4 w-4 text-purple-600" />
+                      Session Rating
+                    </h4>
+                    <p className="text-sm text-gray-600">Rate effectiveness (1-10)</p>
+                  </div>
+                </div>
+                
+                <div className="text-center py-8 border-t border-gray-100">
+                  <CheckCircle className="h-12 w-12 text-green-500 mx-auto mb-4" />
+                  <h3 className="text-2xl font-bold text-gray-900 mb-2">Great Planning Session!</h3>
+                  <p className="text-gray-600">Your quarterly priorities are set and the team is aligned.</p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        );
                         >
                           {i + 1}
                         </Button>
@@ -714,97 +820,135 @@ const QuarterlyPlanningMeetingPage = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <div className="flex">
-        {/* Sidebar */}
-        <div className="w-64 bg-white border-r border-gray-200 min-h-screen flex-shrink-0">
-          <div className="p-6">
-            <h1 className="text-2xl font-bold text-gray-900 mb-2">Quarterly Planning Meeting</h1>
-            <p className="text-gray-600 text-sm">2.5 hours total</p>
-          </div>
-          
-          <nav className="px-4 pb-6">
-            {agendaItems.map((item, index) => {
-              const Icon = item.icon;
-              const isActive = activeSection === item.id;
-              const isCompleted = agendaItems.findIndex(i => i.id === activeSection) > index;
-              
-              return (
-                <button
-                  key={item.id}
-                  onClick={() => handleSectionChange(item.id)}
-                  className={`w-full text-left px-4 py-3 mb-2 rounded-lg transition-colors flex items-center justify-between group ${
-                    isActive 
-                      ? 'bg-indigo-50 text-indigo-700 border border-indigo-200' 
-                      : isCompleted
-                      ? 'bg-green-50 text-green-700 hover:bg-green-100'
-                      : 'hover:bg-gray-100 text-gray-700'
-                  }`}
-                >
-                  <div className="flex items-center gap-3">
-                    <Icon className={`h-5 w-5 ${isActive ? 'text-indigo-600' : isCompleted ? 'text-green-600' : 'text-gray-400'}`} />
-                    <span className="font-medium">{item.label}</span>
-                  </div>
+    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100">
+      <div className="max-w-7xl mx-auto p-6">
+        {/* Header */}
+        <div className="mb-8">
+          <div className="flex items-center justify-between mb-6">
+            <div>
+              <h1 className="text-3xl font-bold text-gray-900">Quarterly Planning Meeting</h1>
+              <p className="text-gray-600 mt-2">Plan and align for the upcoming quarter</p>
+            </div>
+            {meetingStarted && (
+              <div className="flex items-center gap-4">
+                <div className="bg-white px-4 py-2 rounded-lg shadow-sm border border-gray-200">
                   <div className="flex items-center gap-2">
-                    <span className="text-sm text-gray-500">{item.duration}m</span>
-                    {isActive && <ChevronRight className="h-4 w-4" />}
-                    {isCompleted && <CheckCircle className="h-4 w-4 text-green-600" />}
+                    <Clock className="h-4 w-4 text-gray-500" />
+                    <span className="text-lg font-mono font-semibold text-gray-900">
+                      {formatTime(elapsedTime)}
+                    </span>
                   </div>
-                </button>
-              );
-            })}
-          </nav>
-        </div>
-
-        {/* Main Content */}
-        <div className="flex-1 p-6 overflow-x-auto">
-          <div className={activeSection === 'review-prior' || activeSection === 'quarterly-priorities' ? 'min-w-fit' : 'max-w-6xl mx-auto'}>
-            {error && (
-              <Alert className="mb-6 border-red-200 bg-red-50">
-                <AlertCircle className="h-4 w-4 text-red-600" />
-                <AlertDescription className="text-red-800">{error}</AlertDescription>
-              </Alert>
-            )}
-
-            {success && (
-              <Alert className="mb-6 border-green-200 bg-green-50">
-                <CheckCircle className="h-4 w-4 text-green-600" />
-                <AlertDescription className="text-green-800">{success}</AlertDescription>
-              </Alert>
-            )}
-
-            {renderContent()}
-
-            {/* Navigation buttons */}
-            {(getPreviousSection() || getNextSection()) && (
-              <div className="mt-6 flex justify-between">
-                <div>
-                  {getPreviousSection() && (
-                    <Button 
-                      onClick={() => handleSectionChange(getPreviousSection())}
-                      variant="outline"
-                      className="border-gray-300 hover:bg-gray-50"
-                    >
-                      <ChevronLeft className="mr-2 h-4 w-4" />
-                      Back: {agendaItems.find(item => item.id === getPreviousSection())?.label}
-                    </Button>
-                  )}
                 </div>
-                <div>
-                  {getNextSection() && (
-                    <Button 
-                      onClick={() => handleSectionChange(getNextSection())}
-                      className="bg-indigo-600 hover:bg-indigo-700"
-                    >
-                      Next: {agendaItems.find(item => item.id === getNextSection())?.label}
-                      <ChevronRight className="ml-2 h-4 w-4" />
-                    </Button>
-                  )}
-                </div>
+                {activeSection === 'conclude' && (
+                  <Button
+                    onClick={concludeMeeting}
+                    className="bg-green-600 hover:bg-green-700"
+                  >
+                    <Send className="h-4 w-4 mr-2" />
+                    Conclude Meeting
+                  </Button>
+                )}
               </div>
             )}
+            {!meetingStarted && (
+              <Button
+                onClick={startMeeting}
+                className="bg-indigo-600 hover:bg-indigo-700"
+              >
+                <Clock className="h-4 w-4 mr-2" />
+                Start Meeting
+              </Button>
+            )}
           </div>
+
+          {/* Alerts */}
+          {error && (
+            <Alert className="mb-4 border-red-200 bg-red-50">
+              <AlertCircle className="h-4 w-4 text-red-600" />
+              <AlertDescription className="text-red-800">{error}</AlertDescription>
+            </Alert>
+          )}
+
+          {success && (
+            <Alert className="mb-4 border-green-200 bg-green-50">
+              <CheckCircle className="h-4 w-4 text-green-600" />
+              <AlertDescription className="text-green-800">{success}</AlertDescription>
+            </Alert>
+          )}
         </div>
+
+        {/* Tabs Navigation */}
+        <Tabs value={activeSection} onValueChange={handleSectionChange} className="space-y-6">
+          <TabsList className="grid grid-cols-4 lg:grid-cols-8 gap-2 h-auto p-1 bg-white shadow-sm">
+            {agendaItems.map((item) => {
+              const Icon = item.icon;
+              const currentIndex = agendaItems.findIndex(i => i.id === activeSection);
+              const itemIndex = agendaItems.findIndex(i => i.id === item.id);
+              const isCompleted = itemIndex < currentIndex;
+              
+              return (
+                <TabsTrigger
+                  key={item.id}
+                  value={item.id}
+                  className="flex flex-col items-center gap-1 py-3 px-2 data-[state=active]:bg-indigo-50 data-[state=active]:text-indigo-700"
+                >
+                  <Icon className={`h-5 w-5 ${
+                    isCompleted ? 'text-green-600' : ''
+                  }`} />
+                  <span className="text-xs font-medium">{item.label}</span>
+                  <span className="text-xs text-gray-500">{item.duration}m</span>
+                  {isCompleted && (
+                    <CheckCircle className="h-3 w-3 text-green-600" />
+                  )}
+                </TabsTrigger>
+              );
+            })}
+          </TabsList>
+
+          {/* Tab Content */}
+          <div className="bg-white rounded-lg shadow-sm">
+            {renderContent()}
+          </div>
+        </Tabs>
+
+        {/* Meeting Rating Dialog for Conclude */}
+        {activeSection === 'conclude' && (
+          <div className="mt-6 bg-white rounded-lg shadow-sm p-6">
+            <h3 className="text-lg font-semibold mb-4">Rate This Meeting</h3>
+            <div className="flex gap-2 mb-4">
+              {[...Array(10)].map((_, i) => (
+                <Button
+                  key={i + 1}
+                  variant={meetingRating === i + 1 ? 'default' : 'outline'}
+                  size="sm"
+                  onClick={() => setMeetingRating(i + 1)}
+                  className={`w-10 h-10 ${
+                    meetingRating === i + 1 
+                      ? 'bg-indigo-600 hover:bg-indigo-700' 
+                      : ''
+                  }`}
+                >
+                  {i + 1}
+                </Button>
+              ))}
+            </div>
+            
+            <div className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Cascading Message (Optional)
+                </label>
+                <textarea
+                  value={cascadingMessage}
+                  onChange={(e) => setCascadingMessage(e.target.value)}
+                  placeholder="Key messages to cascade to your teams..."
+                  className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+                  rows={3}
+                />
+              </div>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );
