@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, Component } from 'react';
 import { useAuthStore } from '../stores/authStore';
 import { issuesService } from '../services/issuesService';
 import { useDepartment } from '../contexts/DepartmentContext';
@@ -16,6 +16,49 @@ import {
 import IssueDialog from '../components/issues/IssueDialog';
 import IssuesListClean from '../components/issues/IssuesListClean';
 import ArchivedIssuesList from '../components/issues/ArchivedIssuesList';
+
+// Error Boundary Component
+class IssuesErrorBoundary extends Component {
+  constructor(props) {
+    super(props);
+    this.state = { hasError: false, error: null };
+  }
+
+  static getDerivedStateFromError(error) {
+    return { hasError: true, error };
+  }
+
+  componentDidCatch(error, errorInfo) {
+    console.error('Issues Page Error:', error, errorInfo);
+  }
+
+  render() {
+    if (this.state.hasError) {
+      return (
+        <div className="p-6">
+          <Alert className="border-red-200 bg-red-50">
+            <AlertCircle className="h-4 w-4 text-red-600" />
+            <AlertDescription>
+              <div className="space-y-2">
+                <p>An error occurred loading the issues page.</p>
+                <p className="text-sm">Error: {this.state.error?.message}</p>
+                <Button 
+                  onClick={() => window.location.reload()} 
+                  size="sm"
+                  variant="outline"
+                >
+                  Refresh Page
+                </Button>
+              </div>
+            </AlertDescription>
+          </Alert>
+        </div>
+      );
+    }
+
+    return this.props.children;
+  }
+}
 
 const IssuesPageClean = () => {
   const { user } = useAuthStore();
@@ -51,9 +94,16 @@ const IssuesPageClean = () => {
         issuesService.getIssues(null, true, selectedDepartment?.id) // Get all archived issues
       ]);
       
-      setShortTermIssues(shortTermResponse.data.issues || []);
-      setLongTermIssues(longTermResponse.data.issues || []);
-      setArchivedIssues(archivedResponse.data.issues || []);
+      // Ensure we have valid arrays and log for debugging
+      const shortTerm = Array.isArray(shortTermResponse?.data?.issues) ? shortTermResponse.data.issues : [];
+      const longTerm = Array.isArray(longTermResponse?.data?.issues) ? longTermResponse.data.issues : [];
+      const archived = Array.isArray(archivedResponse?.data?.issues) ? archivedResponse.data.issues : [];
+      
+      console.log('Issues loaded:', { shortTerm: shortTerm.length, longTerm: longTerm.length, archived: archived.length });
+      
+      setShortTermIssues(shortTerm);
+      setLongTermIssues(longTerm);
+      setArchivedIssues(archived);
       
       // Team members come from either response (they're the same)
       setTeamMembers(shortTermResponse.data.teamMembers || []);
@@ -377,4 +427,11 @@ const IssuesPageClean = () => {
   );
 };
 
-export default IssuesPageClean;
+// Wrap with error boundary
+const IssuesPageWithErrorBoundary = () => (
+  <IssuesErrorBoundary>
+    <IssuesPageClean />
+  </IssuesErrorBoundary>
+);
+
+export default IssuesPageWithErrorBoundary;
