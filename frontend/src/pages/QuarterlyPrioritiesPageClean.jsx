@@ -1848,7 +1848,7 @@ const QuarterlyPrioritiesPageClean = () => {
                       </div>
                       <div className="space-y-4">
                         {quarterData.companyPriorities.map(priority => (
-                          <PriorityCard key={priority.id} priority={priority} isCompany={true} isArchived={true} />
+                          <PriorityCardCleanClean key={priority.id} priority={priority} isCompany={true} isArchived={true} />
                         ))}
                       </div>
                     </div>
@@ -1872,7 +1872,7 @@ const QuarterlyPrioritiesPageClean = () => {
                               <h4 className="text-lg font-semibold text-gray-900">{firstPriority.owner.name}</h4>
                             </div>
                             {priorities.map(priority => (
-                              <PriorityCard key={priority.id} priority={priority} isArchived={true} />
+                              <PriorityCardCleanClean key={priority.id} priority={priority} isArchived={true} />
                             ))}
                           </div>
                         );
@@ -1907,7 +1907,7 @@ const QuarterlyPrioritiesPageClean = () => {
                 <div className="space-y-4 ml-8">
                   {(companyPriorities || []).map(priority => (
                     <div key={priority.id} className="group">
-                      <PriorityCard 
+                      <PriorityCardClean 
                         priority={priority} 
                         isCompany={true}
                         onStatusChange={handlePriorityStatusChange}
@@ -1956,7 +1956,7 @@ const QuarterlyPrioritiesPageClean = () => {
                     <div className="space-y-4 ml-16">
                       {memberPriorities.map(priority => (
                         <div key={priority.id} className="group">
-                          <PriorityCard 
+                          <PriorityCardCleanClean 
                             priority={priority}
                             onStatusChange={handlePriorityStatusChange}
                           />
