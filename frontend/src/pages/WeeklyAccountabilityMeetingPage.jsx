@@ -274,7 +274,8 @@ const WeeklyAccountabilityMeetingPage = () => {
     }
   };
 
-  const handleStartMeeting = async () => {
+  // Auto-start meeting on component mount
+  useEffect(() => {
     const now = Date.now();
     setMeetingStartTime(now);
     setMeetingStarted(true);
@@ -284,8 +285,8 @@ const WeeklyAccountabilityMeetingPage = () => {
     window.dispatchEvent(new Event('meetingStateChanged'));
     
     // Fetch today's todos for the conclude section
-    await fetchTodaysTodos();
-  };
+    fetchTodaysTodos();
+  }, []);
 
   const handleAddIssue = () => {
     setEditingIssue(null);
@@ -1315,15 +1316,7 @@ const WeeklyAccountabilityMeetingPage = () => {
                 )}
               </div>
             )}
-            {!meetingStarted && (
-              <Button
-                onClick={handleStartMeeting}
-                className="bg-indigo-600 hover:bg-indigo-700"
-              >
-                <Clock className="h-4 w-4 mr-2" />
-                Start Meeting
-              </Button>
-            )}
+            {/* Meeting auto-starts - no start button needed */}
           </div>
 
           {/* Alerts */}

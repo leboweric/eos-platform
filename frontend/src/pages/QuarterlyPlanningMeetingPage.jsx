@@ -87,10 +87,11 @@ const QuarterlyPlanningMeetingPage = () => {
     return () => clearInterval(interval);
   }, [meetingStarted, meetingStartTime]);
 
-  const startMeeting = () => {
+  // Auto-start meeting on component mount
+  useEffect(() => {
     setMeetingStarted(true);
     setMeetingStartTime(Date.now());
-  };
+  }, []);
 
   const formatTime = (seconds) => {
     const hours = Math.floor(seconds / 3600);
@@ -1000,15 +1001,7 @@ const QuarterlyPlanningMeetingPage = () => {
                 )}
               </div>
             )}
-            {!meetingStarted && (
-              <Button
-                onClick={startMeeting}
-                className="bg-indigo-600 hover:bg-indigo-700"
-              >
-                <Clock className="h-4 w-4 mr-2" />
-                Start Meeting
-              </Button>
-            )}
+            {/* Meeting auto-starts - no start button needed */}
           </div>
 
           {/* Alerts */}
