@@ -29,6 +29,11 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/u
 import { meetingsService } from '../services/meetingsService';
 import { FileText, GitBranch, Smile, BarChart, Newspaper, ListTodo, ArrowLeftRight, Archive, Plus, MessageSquare, Send, Star } from 'lucide-react';
 import { quarterlyPrioritiesService } from '../services/quarterlyPrioritiesService';
+import { issuesService } from '../services/issuesService';
+import { organizationService } from '../services/organizationService';
+import IssuesList from '../components/issues/IssuesListClean';
+import IssueDialog from '../components/issues/IssueDialog';
+import TwoPagePlanView from '../components/vto/TwoPagePlanView';
 
 const QuarterlyPlanningMeetingPage = () => {
   const { user } = useAuthStore();
@@ -41,11 +46,17 @@ const QuarterlyPlanningMeetingPage = () => {
   
   // Meeting data
   const [priorities, setPriorities] = useState([]);
+  const [issues, setIssues] = useState([]);
+  const [vtoData, setVtoData] = useState(null);
   const [meetingStarted, setMeetingStarted] = useState(false);
   const [meetingStartTime, setMeetingStartTime] = useState(null);
   const [elapsedTime, setElapsedTime] = useState(0);
   const [meetingRating, setMeetingRating] = useState(null);
   const [cascadingMessage, setCascadingMessage] = useState('');
+  
+  // Dialog states for issues
+  const [showIssueDialog, setShowIssueDialog] = useState(false);
+  const [editingIssue, setEditingIssue] = useState(null);
   
   // Collapsible sections state
   const [expandedSections, setExpandedSections] = useState({
@@ -126,6 +137,10 @@ const QuarterlyPlanningMeetingPage = () => {
   useEffect(() => {
     if (activeSection === 'review-prior' || activeSection === 'quarterly-priorities') {
       fetchPrioritiesData();
+    } else if (activeSection === 'issues') {
+      fetchIssuesData();
+    } else if (activeSection === '2-page-plan') {
+      fetchVtoData();
     } else {
       // For non-data sections, ensure loading is false
       setLoading(false);
@@ -169,6 +184,37 @@ const QuarterlyPlanningMeetingPage = () => {
     } catch (error) {
       console.error('Failed to fetch priorities:', error);
       setError('Failed to load priorities');
+      setLoading(false);
+    }
+  };
+
+  const fetchIssuesData = async () => {
+    try {
+      setLoading(true);
+      setError(null);
+      const effectiveTeamId = teamId || user?.teamId || '00000000-0000-0000-0000-000000000000';
+      
+      const response = await issuesService.getIssues(null, false, effectiveTeamId);
+      setIssues(response.data.issues || []);
+      setLoading(false);
+    } catch (error) {
+      console.error('Failed to fetch issues:', error);
+      setError('Failed to load issues');
+      setLoading(false);
+    }
+  };
+
+  const fetchVtoData = async () => {
+    try {
+      setLoading(true);
+      setError(null);
+      
+      const response = await organizationService.getOrganization();
+      setVtoData(response.data || response);
+      setLoading(false);
+    } catch (error) {
+      console.error('Failed to fetch VTO data:', error);
+      setError('Failed to load 2-Page Plan');
       setLoading(false);
     }
   };
@@ -463,41 +509,55 @@ const QuarterlyPlanningMeetingPage = () => {
         );
 
       case '2-page-plan':
+        if (loading) {
+          return (
+            <div className="flex items-center justify-center h-96">
+              <Loader2 className="h-8 w-8 animate-spin" />
+            </div>
+          );
+        }
         return (
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <ClipboardList className="h-5 w-5" />
-                2-Page Plan
-              </CardTitle>
-              <CardDescription>Review and update your strategic 2-Page Plan (30 minutes)</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-4">
-                <p className="text-gray-600">
-                  Review your 2-Page Plan to ensure alignment between your long-term vision and quarterly execution.
-                </p>
-                <div className="bg-blue-50 p-4 rounded-lg">
-                  <h4 className="font-medium mb-2">Key Areas to Review:</h4>
-                  <ul className="list-disc list-inside text-sm space-y-1">
-                    <li>Vision/Traction Organizer (V/TO)</li>
-                    <li>Core Values and Core Focus</li>
-                    <li>10-Year Target and 3-Year Picture</li>
-                    <li>1-Year Plan alignment with quarterly priorities</li>
-                    <li>Marketing Strategy and proven process</li>
-                  </ul>
+          <div className="space-y-4">
+            <Card className="border-0 shadow-sm">
+              <CardHeader className="bg-gradient-to-r from-indigo-50 to-purple-50 rounded-t-lg">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <CardTitle className="flex items-center gap-2 text-xl">
+                      <ClipboardList className="h-5 w-5 text-indigo-600" />
+                      2-Page Plan (V/TO)
+                    </CardTitle>
+                    <CardDescription className="mt-1">Review and align your strategic vision</CardDescription>
+                  </div>
+                  <div className="text-sm text-gray-500 bg-white px-3 py-1 rounded-full">
+                    30 minutes
+                  </div>
                 </div>
-                <div className="text-center py-8">
-                  <Button 
-                    variant="outline" 
-                    onClick={() => navigate('/business-blueprint')}
-                  >
-                    View Business Blueprint
-                  </Button>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
+              </CardHeader>
+            </Card>
+            
+            {/* Embedded VTO */}
+            <div className="bg-white rounded-lg shadow-sm">
+              {vtoData ? (
+                <TwoPagePlanView 
+                  organization={vtoData}
+                  isEmbedded={true}
+                />
+              ) : (
+                <Card>
+                  <CardContent className="text-center py-8">
+                    <p className="text-gray-500">No 2-Page Plan data available.</p>
+                    <Button 
+                      variant="outline" 
+                      className="mt-4"
+                      onClick={() => navigate('/business-blueprint')}
+                    >
+                      Create Business Blueprint
+                    </Button>
+                  </CardContent>
+                </Card>
+              )}
+            </div>
+          </div>
         );
 
       case 'quarterly-priorities':
@@ -662,42 +722,108 @@ const QuarterlyPlanningMeetingPage = () => {
         );
 
       case 'issues':
+        if (loading) {
+          return (
+            <div className="flex items-center justify-center h-96">
+              <Loader2 className="h-8 w-8 animate-spin" />
+            </div>
+          );
+        }
         return (
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <AlertTriangle className="h-5 w-5" />
-                Strategic Issues
-              </CardTitle>
-              <CardDescription>Identify and discuss strategic issues for the quarter (30 minutes)</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-4">
-                <p className="text-gray-600">
-                  Focus on strategic issues that could impact the quarter ahead. 
-                  Tactical issues should be handled in weekly meetings.
-                </p>
-                <div className="bg-blue-50 p-4 rounded-lg">
-                  <h4 className="font-medium mb-2">Strategic Issue Examples:</h4>
-                  <ul className="list-disc list-inside text-sm space-y-1">
-                    <li>Market changes or competitive threats</li>
-                    <li>Resource constraints or capacity issues</li>
-                    <li>Major process improvements needed</li>
-                    <li>Team structure or role changes</li>
-                    <li>Technology or system upgrades</li>
-                  </ul>
+          <div className="space-y-4">
+            <Card className="border-0 shadow-sm">
+              <CardHeader className="bg-gradient-to-r from-orange-50 to-red-50 rounded-t-lg">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <CardTitle className="flex items-center gap-2 text-xl">
+                      <AlertTriangle className="h-5 w-5 text-orange-600" />
+                      Strategic Issues
+                    </CardTitle>
+                    <CardDescription className="mt-1">Identify and discuss strategic issues for the quarter</CardDescription>
+                  </div>
+                  <div className="flex items-center gap-3">
+                    <Button
+                      onClick={() => setShowIssueDialog(true)}
+                      size="sm"
+                      className="bg-orange-600 hover:bg-orange-700"
+                    >
+                      <Plus className="h-4 w-4 mr-1" />
+                      Add Issue
+                    </Button>
+                    <div className="text-sm text-gray-500 bg-white px-3 py-1 rounded-full">
+                      30 minutes
+                    </div>
+                  </div>
                 </div>
-                <div className="text-center py-8">
-                  <Button 
-                    variant="outline" 
-                    onClick={() => navigate('/issues')}
-                  >
-                    View Issues List
-                  </Button>
+              </CardHeader>
+              <CardContent className="pt-6">
+                <div className="mb-6 p-4 bg-gradient-to-r from-blue-50 to-indigo-50 rounded-xl border border-blue-100">
+                  <h4 className="font-semibold text-gray-900 mb-2">Focus on Strategic Issues</h4>
+                  <p className="text-sm text-gray-600 mb-3">
+                    Discuss issues that could impact the quarter ahead. Tactical issues should be handled in weekly meetings.
+                  </p>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-2 text-sm text-gray-700">
+                    <div className="flex items-start gap-2">
+                      <CheckCircle className="h-4 w-4 text-green-500 mt-0.5" />
+                      <span>Market changes or competitive threats</span>
+                    </div>
+                    <div className="flex items-start gap-2">
+                      <CheckCircle className="h-4 w-4 text-green-500 mt-0.5" />
+                      <span>Resource constraints or capacity</span>
+                    </div>
+                    <div className="flex items-start gap-2">
+                      <CheckCircle className="h-4 w-4 text-green-500 mt-0.5" />
+                      <span>Major process improvements</span>
+                    </div>
+                    <div className="flex items-start gap-2">
+                      <CheckCircle className="h-4 w-4 text-green-500 mt-0.5" />
+                      <span>Team structure or role changes</span>
+                    </div>
+                  </div>
                 </div>
-              </div>
-            </CardContent>
-          </Card>
+              </CardContent>
+            </Card>
+            
+            {/* Embedded Issues List */}
+            <div className="bg-white rounded-lg shadow-sm p-6">
+              <IssuesList 
+                issues={issues}
+                onUpdate={fetchIssuesData}
+                showCompleted={false}
+                embedded={true}
+              />
+            </div>
+            
+            {/* Issue Dialog */}
+            <IssueDialog
+              isOpen={showIssueDialog}
+              onClose={() => {
+                setShowIssueDialog(false);
+                setEditingIssue(null);
+              }}
+              onSave={async (issueData) => {
+                try {
+                  const effectiveTeamId = teamId || user?.teamId || '00000000-0000-0000-0000-000000000000';
+                  if (editingIssue) {
+                    await issuesService.updateIssue(editingIssue.id, issueData);
+                  } else {
+                    await issuesService.createIssue({
+                      ...issueData,
+                      team_id: effectiveTeamId
+                    });
+                  }
+                  await fetchIssuesData();
+                  setShowIssueDialog(false);
+                  setEditingIssue(null);
+                  setSuccess('Issue saved successfully');
+                } catch (error) {
+                  console.error('Failed to save issue:', error);
+                  setError('Failed to save issue');
+                }
+              }}
+              issue={editingIssue}
+            />
+          </div>
         );
 
       case 'next-steps':
