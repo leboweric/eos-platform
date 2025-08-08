@@ -97,51 +97,55 @@ const WeeklyAccountabilityMeetingPage = () => {
   const [elapsedTime, setElapsedTime] = useState(0);
   const [meetingRating, setMeetingRating] = useState(null);
   const [cascadingMessage, setCascadingMessage] = useState('');
-  
-  // Track initial state for summary
-  const [initialIssues, setInitialIssues] = useState([]);
-  const [initialTodos, setInitialTodos] = useState([]);
-  
-  // Reference tools dialogs
+
+  // Reference dialogs
   const [showBusinessBlueprint, setShowBusinessBlueprint] = useState(false);
   const [showOrgChart, setShowOrgChart] = useState(false);
 
-  // Clear stale meeting flag on mount if no meeting is active
-  useEffect(() => {
-    // If we're on the meeting page but no meeting is started, clear the flag
-    if (!meetingStarted) {
-      sessionStorage.removeItem('meetingActive');
-    }
-  }, []);
-
+  // Meeting agenda items
   const agendaItems = [
-    { id: 'good-news', label: 'Good News', duration: 5, icon: Smile },
-    { id: 'scorecard', label: 'Scorecard', duration: 5, icon: BarChart },
-    { id: 'priorities', label: 'Priorities', duration: 5, icon: Target },
-    { id: 'headlines', label: 'Headlines', duration: 5, icon: Newspaper },
-    { id: 'todo-list', label: 'To Do List', duration: 5, icon: ListTodo },
-    { id: 'issues', label: 'Issues', duration: 60, icon: AlertTriangle },
-    { id: 'conclude', label: 'Conclude', duration: 5, icon: CheckSquare }
+    { id: 'good-news', label: 'Good News', icon: Smile, duration: 5 },
+    { id: 'scorecard', label: 'Scorecard', icon: BarChart, duration: 5 },
+    { id: 'priorities', label: 'Priorities', icon: Target, duration: 5 },
+    { id: 'headlines', label: 'Headlines', icon: Newspaper, duration: 60 },
+    { id: 'todo-list', label: 'To-do List', icon: ListTodo, duration: 5 },
+    { id: 'issues', label: 'Issues', icon: AlertTriangle, duration: 10 },
+    { id: 'conclude', label: 'Conclude', icon: CheckSquare, duration: 5 }
   ];
 
   useEffect(() => {
-    if (activeSection === 'scorecard') {
-      fetchScorecardData();
-    } else if (activeSection === 'priorities') {
-      fetchPrioritiesData();
-    } else if (activeSection === 'issues') {
-      fetchIssuesData();
-    } else if (activeSection === 'todo-list') {
-      fetchTodosData();
-    } else if (activeSection === 'conclude' && meetingStarted) {
-      fetchTodaysTodos();
-    } else {
-      // For non-data sections, ensure loading is false
-      setLoading(false);
-    }
-  }, [activeSection, teamId]);
+    loadInitialData();
+  }, [teamId]);
 
-  // Auto-clear success messages after 3 seconds
+  useEffect(() => {
+    const isActive = sessionStorage.getItem('meetingActive');
+    const startTime = sessionStorage.getItem('meetingStartTime');
+    
+    if (isActive === 'true' && startTime) {
+      setMeetingStarted(true);
+      setMeetingStartTime(parseInt(startTime));
+      
+      // Calculate elapsed time
+      const now = Date.now();
+      const elapsed = Math.floor((now - parseInt(startTime)) / 1000);
+      setElapsedTime(elapsed);
+    }
+  }, []);
+
+  // Store meeting state in sessionStorage
+  useEffect(() => {
+    if (meetingStarted) {
+      sessionStorage.setItem('meetingActive', 'true');
+      if (meetingStartTime) {
+        sessionStorage.setItem('meetingStartTime', meetingStartTime.toString());
+      }
+    } else {
+      sessionStorage.removeItem('meetingActive');
+      sessionStorage.removeItem('meetingStartTime');
+    }
+  }, [meetingStarted, meetingStartTime]);
+
+  // Clear success messages after 3 seconds
   useEffect(() => {
     if (success) {
       const timer = setTimeout(() => {
@@ -153,230 +157,140 @@ const WeeklyAccountabilityMeetingPage = () => {
 
   // Timer effect for meeting duration
   useEffect(() => {
-    let interval;
+    let timer;
     if (meetingStarted && meetingStartTime) {
-      interval = setInterval(() => {
-        const now = new Date();
-        const elapsed = Math.floor((now - meetingStartTime) / 1000); // in seconds
+      timer = setInterval(() => {
+        const now = Date.now();
+        const elapsed = Math.floor((now - meetingStartTime) / 1000);
         setElapsedTime(elapsed);
       }, 1000);
     }
-    return () => clearInterval(interval);
+    return () => {
+      if (timer) clearInterval(timer);
+    };
   }, [meetingStarted, meetingStartTime]);
+
+  const loadInitialData = async () => {
+    try {
+      setLoading(true);
+      await Promise.all([
+        fetchScorecardData(),
+        fetchPrioritiesData(),
+        fetchIssuesData(),
+        fetchTodosData()
+      ]);
+    } catch (error) {
+      console.error('Failed to load initial data:', error);
+      setError('Failed to load meeting data');
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const fetchScorecardData = async () => {
     try {
-      setLoading(true);
-      setError(null);
       const orgId = localStorage.getItem('impersonatedOrgId') || user?.organizationId || user?.organization_id;
-      // Use the same default as ScorecardPage if teamId is not provided
       const effectiveTeamId = teamId || user?.teamId || '00000000-0000-0000-0000-000000000000';
-      console.log('Fetching scorecard with:', { orgId, teamId: effectiveTeamId });
       
-      const response = await scorecardService.getScorecard(orgId, effectiveTeamId);
-      console.log('Scorecard response:', response);
-      
-      // The response structure from the API has metrics and weeklyScores
-      const allMetrics = response.metrics || response.data?.metrics || [];
-      const scores = response.weeklyScores || response.data?.weeklyScores || {};
-      
-      // Filter to only show weekly metrics in the Weekly Accountability Meeting
-      const weeklyMetrics = allMetrics.filter(metric => 
-        !metric.type || metric.type === 'weekly'
-      );
-      
-      console.log('Filtered weekly metrics:', weeklyMetrics.length, 'out of', allMetrics.length, 'total metrics');
-      
-      setScorecardMetrics(weeklyMetrics);
-      setWeeklyScores(scores);
-      setLoading(false);
+      const response = await scorecardService.getScorecardByDepartment(orgId, effectiveTeamId);
+      setScorecardMetrics(response.metrics || []);
+      setWeeklyScores(response.scores || {});
     } catch (error) {
       console.error('Failed to fetch scorecard:', error);
-      setError('Failed to load scorecard data');
-      setLoading(false);
     }
   };
 
   const fetchPrioritiesData = async () => {
     try {
-      setLoading(true);
-      setError(null);
       const orgId = localStorage.getItem('impersonatedOrgId') || user?.organizationId || user?.organization_id;
-      // Use the same default as ScorecardPage if teamId is not provided
       const effectiveTeamId = teamId || user?.teamId || '00000000-0000-0000-0000-000000000000';
       
-      // Use the simplified current priorities endpoint
-      const response = await quarterlyPrioritiesService.getCurrentPriorities(orgId, effectiveTeamId);
+      const response = await quarterlyPrioritiesService.getQuarterlyPriorities(orgId, effectiveTeamId);
       
-      console.log('Weekly Meeting Priorities Response:', response);
+      // Extract and flatten priorities
+      const companyPriorities = response.companyPriorities || [];
+      const teamMemberPriorities = response.teamMemberPriorities || {};
       
-      // Extract data in the same format as the original page
-      const companyPriorities = response.companyPriorities || response.data?.companyPriorities || [];
-      const teamMemberPriorities = response.teamMemberPriorities || response.data?.teamMemberPriorities || {};
-      const teamMembers = response.teamMembers || response.data?.teamMembers || [];
-      
-      console.log('Team Members:', teamMembers);
-      console.log('Team Member Priorities before filtering:', Object.keys(teamMemberPriorities));
-      
-      // Extract team member IDs for filtering
-      const teamMemberIds = new Set(teamMembers.map(member => member.id));
-      
-      // Filter individual priorities to only include team members
-      const filteredTeamMemberPriorities = {};
-      Object.entries(teamMemberPriorities).forEach(([memberId, memberData]) => {
-        if (teamMemberIds.has(memberId)) {
-          filteredTeamMemberPriorities[memberId] = memberData;
-        }
-      });
-      
-      console.log('Team Member Priorities after filtering:', Object.keys(filteredTeamMemberPriorities));
-      
-      // Flatten the data structure to a simple array for easier handling
       const allPriorities = [
         ...companyPriorities.map(p => ({ ...p, priority_type: 'company' })),
-        ...Object.values(filteredTeamMemberPriorities).flatMap(memberData => 
+        ...Object.values(teamMemberPriorities).flatMap(memberData => 
           (memberData.priorities || []).map(p => ({ ...p, priority_type: 'individual' }))
         )
       ];
       
       setPriorities(allPriorities);
-      setTeamMembers(teamMembers);
-      setLoading(false);
     } catch (error) {
       console.error('Failed to fetch priorities:', error);
-      setError('Failed to load priorities');
-      setLoading(false);
     }
   };
 
   const fetchIssuesData = async () => {
     try {
-      setLoading(true);
-      // Use the teamId from URL params to filter issues by department
       const effectiveTeamId = teamId || user?.teamId || '00000000-0000-0000-0000-000000000000';
-      const response = await issuesService.getIssues(null, false, effectiveTeamId);
       
-      console.log('All issues from API:', response.data.issues);
-      console.log('Issues breakdown:', response.data.issues.map(i => ({
-        id: i.id,
-        title: i.title,
-        status: i.status,
-        timeline: i.timeline,
-        willShow: i.status === 'open' && i.timeline === 'short_term'
-      })));
-      
-      // Include both open and closed issues for the meeting view
-      // Users should be able to check/uncheck issues without them disappearing
-      const filteredIssues = response.data.issues.filter(i => i.timeline === 'short_term');
-      console.log('Filtered short-term issues:', filteredIssues);
-      
-      // Sort issues by vote count (highest first), then by creation date
-      const sortedIssues = filteredIssues.sort((a, b) => {
-        const aVotes = a.vote_count || 0;
-        const bVotes = b.vote_count || 0;
-        
-        // If vote counts are different, sort by votes (highest first)
-        if (aVotes !== bVotes) {
-          return bVotes - aVotes;
-        }
-        
-        // If vote counts are the same, sort by creation date (newest first)
-        return new Date(b.created_at) - new Date(a.created_at);
-      });
-      
-      setIssues(sortedIssues);
+      const response = await issuesService.getIssues('short_term', false, effectiveTeamId);
+      setIssues(response.data.issues || []);
       setTeamMembers(response.data.teamMembers || []);
-      setLoading(false);
     } catch (error) {
       console.error('Failed to fetch issues:', error);
-      setError('Failed to load issues');
-      setLoading(false);
     }
   };
 
-  const handleVote = async (issueId, shouldVote) => {
+  const fetchTodosData = async () => {
     try {
-      if (shouldVote) {
-        await issuesService.voteForIssue(issueId);
-      } else {
-        await issuesService.unvoteForIssue(issueId);
-      }
-      await fetchIssuesData();
+      const effectiveTeamId = teamId || user?.teamId || '00000000-0000-0000-0000-000000000000';
+      
+      const response = await todosService.getTodos(effectiveTeamId);
+      setTodos(response.todos || []);
     } catch (error) {
-      console.error('Failed to vote:', error);
-      setError('Failed to update vote');
+      console.error('Failed to fetch todos:', error);
     }
   };
 
-  const handleArchive = async (issueId) => {
+  const fetchTodaysTodos = async () => {
     try {
-      await issuesService.archiveIssue(issueId);
-      await fetchIssuesData();
+      const effectiveTeamId = teamId || user?.teamId || '00000000-0000-0000-0000-000000000000';
+      
+      const response = await todosService.getTodaysTodos(effectiveTeamId);
+      setTodaysTodos(response.todos || []);
     } catch (error) {
-      console.error('Failed to archive issue:', error);
-      setError('Failed to archive issue');
+      console.error('Failed to fetch today\'s todos:', error);
     }
   };
 
-  const handleArchiveSelected = async () => {
-    if (selectedIssueIds.length === 0) {
-      setError('Please select issues to archive');
-      return;
-    }
+  const handleStartMeeting = async () => {
+    const now = Date.now();
+    setMeetingStartTime(now);
+    setMeetingStarted(true);
+    setElapsedTime(0);
     
-    if (!confirm(`Are you sure you want to archive ${selectedIssueIds.length} selected issue(s)?`)) return;
+    // Dispatch custom event to immediately update Layout
+    window.dispatchEvent(new Event('meetingStateChanged'));
     
-    try {
-      // Archive each selected issue
-      await Promise.all(selectedIssueIds.map(id => issuesService.archiveIssue(id)));
-      setSelectedIssueIds([]);
-      await fetchIssuesData();
-    } catch (error) {
-      console.error('Failed to archive selected issues:', error);
-      setError('Failed to archive selected issues');
-    }
+    // Fetch today's todos for the conclude section
+    await fetchTodaysTodos();
   };
 
-  const handleArchiveClosedIssues = async () => {
-    try {
-      // Get all closed issues
-      const closedIssues = issues.filter(issue => issue.status === 'closed');
-      
-      if (closedIssues.length === 0) {
-        setError('No closed issues to archive. Check the boxes next to issues you want to archive.');
-        return;
-      }
-      
-      if (!window.confirm(`Archive ${closedIssues.length} closed issue${closedIssues.length > 1 ? 's' : ''}?`)) {
-        return;
-      }
-      
-      // Archive all closed issues
-      await Promise.all(closedIssues.map(issue => issuesService.archiveIssue(issue.id)));
-      
-      setSuccess(`${closedIssues.length} issue${closedIssues.length > 1 ? 's' : ''} archived successfully`);
-      await fetchIssuesData();
-    } catch (error) {
-      console.error('Failed to archive closed issues:', error);
-      setError('Failed to archive closed issues');
-    }
-  };
-
-  const handleEditIssue = (issue) => {
-    setEditingIssue(issue);
+  const handleAddIssue = () => {
+    setEditingIssue(null);
     setShowIssueDialog(true);
+  };
+
+  const handleAddTodo = () => {
+    setEditingTodo(null);
+    setShowTodoDialog(true);
   };
 
   const handleSaveIssue = async (issueData) => {
     try {
+      const effectiveTeamId = teamId || user?.teamId || '00000000-0000-0000-0000-000000000000';
       if (editingIssue) {
         await issuesService.updateIssue(editingIssue.id, issueData);
         setSuccess('Issue updated successfully');
       } else {
-        const effectiveTeamId = teamId || user?.teamId || '00000000-0000-0000-0000-000000000000';
         await issuesService.createIssue({
           ...issueData,
-          timeline: 'short_term', // New issues in meetings are short-term
+          timeline: 'short_term',
           department_id: effectiveTeamId
         });
         setSuccess('Issue created successfully');
@@ -385,218 +299,101 @@ const WeeklyAccountabilityMeetingPage = () => {
       await fetchIssuesData();
       setShowIssueDialog(false);
       setEditingIssue(null);
+      return issueData;
     } catch (error) {
       console.error('Failed to save issue:', error);
       setError('Failed to save issue');
+      throw error;
     }
   };
 
-  const handleIssueStatusChange = async (issueId, newStatus) => {
+  const handleEditIssue = (issue) => {
+    setEditingIssue(issue);
+    setShowIssueDialog(true);
+  };
+
+  const handleStatusChange = async (issueId, newStatus) => {
     try {
-      // Optimistically update the local state first for instant feedback
       setIssues(prev => 
         prev.map(issue => 
           issue.id === issueId ? { ...issue, status: newStatus } : issue
         )
       );
       
-      // Then update the backend
       await issuesService.updateIssue(issueId, { status: newStatus });
-      
-      // Don't show success message for simple checkbox toggles
-      // setSuccess(`Issue ${newStatus === 'closed' ? 'closed' : 'reopened'} successfully`);
     } catch (error) {
       console.error('Failed to update issue status:', error);
-      setError('Failed to update issue status');
-      // Revert on error
       await fetchIssuesData();
     }
   };
 
-  const handleIssueTimelineChange = async (issueId, newTimeline) => {
+  const handleTimelineChange = async (issueId, newTimeline) => {
     try {
       await issuesService.updateIssue(issueId, { timeline: newTimeline });
-      await fetchIssuesData(); // Refresh the issues list
-      setSuccess(`Issue moved to ${newTimeline.replace('_', ' ')} successfully`);
+      setSuccess(`Issue moved to ${newTimeline === 'short_term' ? 'Short Term' : 'Long Term'}`);
+      await fetchIssuesData();
     } catch (error) {
       console.error('Failed to update issue timeline:', error);
-      setError('Failed to update issue timeline');
+      setError('Failed to move issue');
     }
   };
 
-  // Toggle functions for collapsible sections
-  const toggleCompanyPriorities = () => {
-    setExpandedSections(prev => ({
-      ...prev,
-      companyPriorities: !prev.companyPriorities
-    }));
-  };
-
-  const toggleIndividualPriorities = (memberId) => {
-    setExpandedSections(prev => ({
-      ...prev,
-      individualPriorities: {
-        ...prev.individualPriorities,
-        [memberId]: !prev.individualPriorities[memberId]
-      }
-    }));
-  };
-
-  const fetchTodosData = async () => {
+  const handleVote = async (issueId, shouldVote) => {
     try {
-      setLoading(true);
-      const response = await todosService.getTodos('incomplete', null, false, teamId);
-      setTodos(response.data.todos || []);
-      setTeamMembers(response.data.teamMembers || []);
-      setLoading(false);
-    } catch (error) {
-      console.error('Failed to fetch todos:', error);
-      setError('Failed to load todos');
-      setLoading(false);
-    }
-  };
-
-  const handleTodoUpdate = async () => {
-    await fetchTodosData();
-  };
-  
-  const fetchTodaysTodos = async () => {
-    try {
-      setLoading(true);
-      const response = await todosService.getTodos(null, null, true, teamId);
-      
-      // Filter to only show todos created today
-      const today = new Date();
-      const todayStart = new Date(today.getFullYear(), today.getMonth(), today.getDate());
-      const todayEnd = new Date(today.getFullYear(), today.getMonth(), today.getDate() + 1);
-      
-      console.log('Fetching today\'s todos:', {
-        todayStart: todayStart.toISOString(),
-        todayEnd: todayEnd.toISOString(),
-        allTodos: response.data.todos?.length || 0,
-        allTodosData: response.data.todos
-      });
-      
-      const todaysTodosList = (response.data.todos || []).filter(todo => {
-        if (!todo.created_at) return false;
-        const createdDate = new Date(todo.created_at);
-        const isToday = createdDate >= todayStart && createdDate < todayEnd;
-        
-        console.log('Todo date check:', {
-          title: todo.title,
-          created_at: todo.created_at,
-          createdDate: createdDate.toISOString(),
-          isToday
-        });
-        
-        return isToday;
-      });
-      
-      console.log('Today\'s todos found:', todaysTodosList.length);
-      setTodaysTodos(todaysTodosList);
-      setLoading(false);
-    } catch (error) {
-      console.error('Failed to fetch today\'s todos:', error);
-      setError('Failed to load today\'s todos');
-      setLoading(false);
-    }
-  };
-  
-  const handleArchiveSelectedTodos = async () => {
-    if (selectedTodoIds.length === 0) {
-      setError('Please select to-dos to archive');
-      return;
-    }
-    
-    if (!confirm(`Are you sure you want to mark ${selectedTodoIds.length} selected to-do(s) as complete?`)) return;
-    
-    try {
-      // Mark each selected todo as complete
-      await Promise.all(selectedTodoIds.map(id => 
-        todosService.updateTodo(id, { status: 'complete' })
-      ));
-      setSelectedTodoIds([]);
-      await fetchTodosData();
-      setSuccess(`${selectedTodoIds.length} to-do(s) marked as complete`);
-    } catch (error) {
-      console.error('Failed to complete selected todos:', error);
-      setError('Failed to complete selected to-dos');
-    }
-  };
-
-  const handleEditTodo = (todo) => {
-    setEditingTodo(todo);
-    setShowTodoDialog(true);
-  };
-
-  const handleDeleteTodo = async (todoId) => {
-    if (!confirm('Are you sure you want to delete this to-do?')) return;
-    
-    try {
-      await todosService.deleteTodo(todoId);
-      setSuccess('To-do deleted successfully');
-      await fetchTodosData();
-    } catch (error) {
-      console.error('Failed to delete todo:', error);
-      setError('Failed to delete to-do');
-    }
-  };
-
-  const handleTodoToIssue = async (todo) => {
-    if (!window.confirm(`Convert "${todo.title}" to an issue? This will cancel the to-do.`)) {
-      return;
-    }
-
-    try {
-      // Format the due date for display
-      const dueDate = todo.due_date ? new Date(todo.due_date).toLocaleDateString() : 'Not set';
-      const assigneeName = todo.assigned_to 
-        ? `${todo.assigned_to.first_name} ${todo.assigned_to.last_name}`
-        : 'Unassigned';
-
-      const effectiveTeamId = teamId || user?.teamId || '00000000-0000-0000-0000-000000000000';
-      const issueData = {
-        title: todo.title,
-        description: `This issue was created from an overdue to-do.\n\nOriginal due date: ${dueDate}\nAssigned to: ${assigneeName}\n\nDescription:\n${todo.description || 'No description provided'}`,
-        timeline: 'short_term',
-        ownerId: todo.assigned_to?.id || null,
-        department_id: effectiveTeamId
+      const updateVote = (issue) => {
+        if (issue.id === issueId) {
+          return {
+            ...issue,
+            user_has_voted: shouldVote,
+            vote_count: shouldVote 
+              ? (issue.vote_count || 0) + 1 
+              : Math.max(0, (issue.vote_count || 0) - 1)
+          };
+        }
+        return issue;
       };
       
-      await issuesService.createIssue(issueData);
+      setIssues(prev => prev.map(updateVote));
       
-      // Mark the todo as cancelled
-      await todosService.updateTodo(todo.id, { status: 'cancelled' });
-      
-      setSuccess('To-do converted to issue successfully');
-      await fetchTodosData();
+      if (shouldVote) {
+        await issuesService.voteForIssue(issueId);
+      } else {
+        await issuesService.unvoteForIssue(issueId);
+      }
     } catch (error) {
-      console.error('Failed to create issue from todo:', error);
-      setError('Failed to convert to-do to issue');
+      console.error('Failed to vote:', error);
+      await fetchIssuesData();
     }
   };
 
-  const handleAddTodo = () => {
-    setEditingTodo(null);
-    setShowTodoDialog(true);
-  };
-
-  const handleAddIssue = () => {
-    setEditingIssue(null);
-    setShowIssueDialog(true);
+  const handleArchive = async (issueId) => {
+    try {
+      await issuesService.archiveIssue(issueId);
+      setSuccess('Issue archived successfully');
+      await fetchIssuesData();
+    } catch (error) {
+      console.error('Failed to archive issue:', error);
+      setError('Failed to archive issue');
+    }
   };
 
   const handleSaveTodo = async (todoData) => {
     try {
-      let savedTodo;
+      const orgId = localStorage.getItem('impersonatedOrgId') || user?.organizationId || user?.organization_id;
+      const effectiveTeamId = teamId || user?.teamId || '00000000-0000-0000-0000-000000000000';
       
+      let savedTodo;
       if (editingTodo) {
-        savedTodo = await todosService.updateTodo(editingTodo.id, todoData);
+        savedTodo = await todosService.updateTodo(editingTodo.id, {
+          ...todoData,
+          team_id: effectiveTeamId
+        });
         setSuccess('To-do updated successfully');
       } else {
         savedTodo = await todosService.createTodo({
           ...todoData,
-          department_id: teamId
+          organization_id: orgId,
+          team_id: effectiveTeamId
         });
         setSuccess('To-do created successfully');
       }
@@ -762,141 +559,37 @@ const WeeklyAccountabilityMeetingPage = () => {
     }
   };
 
-  const handleAddPriorityUpdate = async (priorityId, updateText, statusChange = null) => {
+  const handleIssueCheckboxChange = (issueId, checked) => {
+    setSelectedIssueIds(prev => {
+      if (checked) {
+        return [...prev, issueId];
+      } else {
+        return prev.filter(id => id !== issueId);
+      }
+    });
+  };
+
+  const concludeMeeting = async () => {
     try {
       const orgId = localStorage.getItem('impersonatedOrgId') || user?.organizationId || user?.organization_id;
-      const teamId = user?.teamId || '00000000-0000-0000-0000-000000000000';
+      const effectiveTeamId = teamId || user?.teamId || '00000000-0000-0000-0000-000000000000';
       
-      await quarterlyPrioritiesService.addUpdate(orgId, teamId, priorityId, { text: updateText, statusChange });
+      // Calculate meeting duration in minutes
+      const durationMinutes = Math.floor(elapsedTime / 60);
       
-      // If there's a status change, update the priority
-      if (statusChange) {
-        await handlePriorityStatusChange(priorityId, statusChange);
-      }
-      
-      setSuccess('Update added');
-      setTimeout(() => setSuccess(null), 3000);
-      
-      // Refresh priorities to get the latest update
-      await fetchPrioritiesData();
-    } catch (error) {
-      console.error('Failed to add update:', error);
-      setError('Failed to add update');
-    }
-  };
-
-  const handleStartMeeting = () => {
-    if (window.confirm('Ready to start the meeting?')) {
-      setMeetingStarted(true);
-      setMeetingStartTime(new Date());
-      setActiveSection('good-news'); // Auto-advance to first agenda item
-      
-      // Set meeting active flag for navigation
-      sessionStorage.setItem('meetingActive', 'true');
-      
-      // Dispatch custom event to immediately update Layout
-      window.dispatchEvent(new Event('meetingStateChanged'));
-      
-      // Capture initial state for summary
-      setInitialIssues(issues.map(i => ({ id: i.id, status: i.status })));
-      setInitialTodos(todos.map(t => ({ id: t.id, status: t.status })));
-    }
-  };
-
-  const handleFinishMeeting = async () => {
-    if (!meetingRating) {
-      setError('Please rate the meeting before finishing');
-      return;
-    }
-
-    try {
-      // Calculate meeting metrics
-      // Issues resolved = issues that were open at start and are now closed
-      const issuesResolved = initialIssues.filter(initial => {
-        const current = issues.find(i => i.id === initial.id);
-        return initial.status === 'open' && current && current.status === 'closed';
-      }).length;
-      
-      // Issues added = issues that didn't exist at start of meeting
-      const issuesAdded = issues.filter(i => 
-        !initialIssues.find(initial => initial.id === i.id)
-      ).length;
-      
-      // Todos completed = todos that were incomplete at start and are now completed
-      const todosCompleted = initialTodos.filter(initial => {
-        const current = todos.find(t => t.id === initial.id);
-        return initial.status === 'incomplete' && current && current.status === 'completed';
-      }).length;
-      
-      // Todos added = todos that didn't exist at start of meeting
-      const todosAdded = todos.filter(t => 
-        !initialTodos.find(initial => initial.id === t.id)
-      ).length;
-      
-      const duration = formatTimer(elapsedTime);
-      const meetingDate = new Date().toLocaleDateString();
-      const meetingTime = new Date().toLocaleTimeString();
-
-      // Generate summary
-      const summary = {
-        date: meetingDate,
-        time: meetingTime,
-        duration: duration,
-        rating: meetingRating,
-        issuesResolved,
-        issuesAdded,
-        todosCompleted,
-        todosAdded,
-        teamMembers: teamMembers.length
-      };
-
-      // Prepare data for email
-      // Get todos that were completed during the meeting
-      const completedTodos = todos.filter(t => {
-        const initial = initialTodos.find(initial => initial.id === t.id);
-        return initial && initial.status === 'incomplete' && t.status === 'completed';
+      // Send meeting summary
+      await meetingsService.concludeMeeting(orgId, effectiveTeamId, {
+        meetingType: 'weekly',
+        duration: durationMinutes,
+        rating: meetingRating || 8,
+        cascadingMessage: cascadingMessage,
+        issuesDiscussed: selectedIssueIds.length,
+        todosAssigned: selectedTodoIds.length
       });
       
-      // Get todos that were added during the meeting
-      const addedTodos = todos.filter(t => 
-        !initialTodos.find(initial => initial.id === t.id)
-      );
+      setSuccess('Meeting concluded and summary sent!');
       
-      const meetingData = {
-        meetingType: 'Weekly Accountability Meeting',
-        duration: elapsedTime,
-        rating: meetingRating,
-        summary: `Issues resolved: ${issuesResolved}, Issues added: ${issuesAdded}, Todos completed: ${todosCompleted}, Todos added: ${todosAdded}`,
-        attendees: teamMembers,
-        metrics: {
-          issuesResolved,
-          issuesAdded,
-          todosCompleted,
-          todosAdded
-        },
-        todos: {
-          completed: completedTodos,
-          added: addedTodos
-        },
-        issues: issues.filter(i => 
-          !initialIssues.find(initial => initial.id === i.id)
-        ),
-        notes: cascadingMessage || ''
-      };
-
-      // Send meeting summary email
-      try {
-        const orgId = localStorage.getItem('impersonatedOrgId') || user?.organizationId || user?.organization_id;
-        const effectiveTeamId = teamId || user?.teamId || '00000000-0000-0000-0000-000000000000';
-        
-        await meetingsService.concludeMeeting(orgId, effectiveTeamId, meetingData);
-        setSuccess('Meeting complete! Summary email sent to all attendees.');
-      } catch (emailError) {
-        console.error('Failed to send meeting summary email:', emailError);
-        setError('Meeting complete, but failed to send summary email.');
-      }
-      
-      // Clear meeting active flag
+      // Clear sessionStorage
       sessionStorage.removeItem('meetingActive');
       
       // Dispatch custom event to immediately update Layout
@@ -967,14 +660,14 @@ const WeeklyAccountabilityMeetingPage = () => {
       case 'good-news':
         return (
           <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Smile className="h-5 w-5" />
+            <CardHeader className="bg-gradient-to-r from-blue-50 to-indigo-50 border-b">
+              <CardTitle className="flex items-center gap-2 text-2xl">
+                <Smile className="h-6 w-6 text-indigo-600" />
                 Good News
               </CardTitle>
               <CardDescription>Share personal and professional wins (5 minutes)</CardDescription>
             </CardHeader>
-            <CardContent>
+            <CardContent className="pt-6">
               <div className="space-y-4">
                 <p className="text-gray-600">
                   Take turns sharing good news from your personal and professional lives. 
@@ -999,9 +692,9 @@ const WeeklyAccountabilityMeetingPage = () => {
           <div className="space-y-4 w-full">
             {scorecardMetrics.length === 0 ? (
               <Card>
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2">
-                    <BarChart className="h-5 w-5" />
+                <CardHeader className="bg-gradient-to-r from-green-50 to-emerald-50 border-b">
+                  <CardTitle className="flex items-center gap-2 text-2xl">
+                    <BarChart className="h-6 w-6 text-emerald-600" />
                     Scorecard Review
                   </CardTitle>
                   <CardDescription>Review weekly metrics (5 minutes)</CardDescription>
@@ -1019,50 +712,58 @@ const WeeklyAccountabilityMeetingPage = () => {
               </Card>
             ) : (
               <>
-                <div className="border border-gray-200 bg-white rounded-lg p-4 mb-4">
-                  <p className="text-gray-700 text-center">
-                    <span className="font-semibold">Quick Status Update:</span> Metric owners report "on-track" or "off-track" status. Any off-track metrics can be added to the Issues List for collaborative problem-solving.
-                  </p>
-                </div>
-                <div className="flex justify-end gap-2">
-                  <Button 
-                    onClick={() => {
-                      const newValue = !showTotal;
-                      setShowTotal(newValue);
-                      localStorage.setItem('scorecardShowTotal', newValue.toString());
-                    }} 
-                    variant="outline"
-                    size="sm"
-                    title={showTotal ? "Hide total column" : "Show total column"}
-                  >
-                    {showTotal ? "Hide Total" : "Show Total"}
-                  </Button>
-                  <Button 
-                    onClick={() => {
-                      const newValue = !isRTL;
-                      setIsRTL(newValue);
-                      localStorage.setItem('scorecardRTL', newValue.toString());
-                    }} 
-                    variant="outline"
-                    size="sm"
-                    title={isRTL ? "Switch to left-to-right" : "Switch to right-to-left"}
-                  >
-                    <ArrowLeftRight className="h-4 w-4 mr-2" />
-                    {isRTL ? "Switch to LTR" : "Switch to RTL"}
-                  </Button>
-                </div>
-                <ScorecardTable 
-                  metrics={scorecardMetrics} 
-                  weeklyScores={weeklyScores} 
-                  readOnly={true}
-                  isRTL={isRTL}
-                  showTotal={showTotal}
-                  departmentId={teamId || user?.teamId || '00000000-0000-0000-0000-000000000000'}
-                  onIssueCreated={(message) => {
-                    setSuccess(message);
-                    setTimeout(() => setSuccess(null), 3000);
-                  }}
-                />
+                <Card>
+                  <CardHeader className="bg-gradient-to-r from-green-50 to-emerald-50 border-b">
+                    <CardTitle className="flex items-center gap-2 text-2xl">
+                      <BarChart className="h-6 w-6 text-emerald-600" />
+                      Scorecard Review
+                    </CardTitle>
+                    <CardDescription>
+                      Quick Status Update: Metric owners report "on-track" or "off-track" status
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent className="pt-6">
+                    <div className="flex justify-end gap-2 mb-4">
+                      <Button 
+                        onClick={() => {
+                          const newValue = !showTotal;
+                          setShowTotal(newValue);
+                          localStorage.setItem('scorecardShowTotal', newValue.toString());
+                        }} 
+                        variant="outline"
+                        size="sm"
+                        title={showTotal ? "Hide total column" : "Show total column"}
+                      >
+                        {showTotal ? "Hide Total" : "Show Total"}
+                      </Button>
+                      <Button 
+                        onClick={() => {
+                          const newValue = !isRTL;
+                          setIsRTL(newValue);
+                          localStorage.setItem('scorecardRTL', newValue.toString());
+                        }} 
+                        variant="outline"
+                        size="sm"
+                        title={isRTL ? "Switch to left-to-right" : "Switch to right-to-left"}
+                      >
+                        <ArrowLeftRight className="h-4 w-4 mr-2" />
+                        {isRTL ? "Switch to LTR" : "Switch to RTL"}
+                      </Button>
+                    </div>
+                    <ScorecardTable 
+                      metrics={scorecardMetrics} 
+                      weeklyScores={weeklyScores} 
+                      readOnly={true}
+                      isRTL={isRTL}
+                      showTotal={showTotal}
+                      departmentId={teamId || user?.teamId || '00000000-0000-0000-0000-000000000000'}
+                      onIssueCreated={(message) => {
+                        setSuccess(message);
+                        setTimeout(() => setSuccess(null), 3000);
+                      }}
+                    />
+                  </CardContent>
+                </Card>
               </>
             )}
           </div>
@@ -1072,9 +773,9 @@ const WeeklyAccountabilityMeetingPage = () => {
         return (
           <div className="space-y-4">
             <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <Target className="h-5 w-5" />
+              <CardHeader className="bg-gradient-to-r from-purple-50 to-pink-50 border-b">
+                <CardTitle className="flex items-center gap-2 text-2xl">
+                  <Target className="h-6 w-6 text-purple-600" />
                   Quarterly Priorities Review
                 </CardTitle>
                 <CardDescription>Check progress on quarterly priorities (5 minutes)</CardDescription>
@@ -1097,118 +798,71 @@ const WeeklyAccountabilityMeetingPage = () => {
               <div className="space-y-6">
                 <div className="border border-gray-200 bg-white rounded-lg p-4">
                   <p className="text-gray-700 text-center">
-                    <span className="font-semibold">Status Check:</span> Priority owners share quick updates on progress. Off-track priorities can be converted to issues for team discussion and resolution.
+                    <span className="font-semibold">Quick Status Check:</span> Each priority owner reports "on-track" or "off-track" status
                   </p>
                 </div>
-                {/* Company Priorities Section */}
-                {(() => {
-                  const companyPriorities = priorities.filter(p => p.priority_type === 'company');
-                  return companyPriorities.length > 0 && (
-                    <div>
-                      <div 
-                        className="flex items-center justify-between p-4 bg-gray-50 rounded-lg cursor-pointer hover:bg-gray-100 transition-colors"
-                        onClick={toggleCompanyPriorities}
-                      >
-                        <div className="flex items-center gap-3">
-                          {expandedSections.companyPriorities ? (
-                            <ChevronDown className="h-5 w-5 text-gray-600" />
-                          ) : (
-                            <ChevronRight className="h-5 w-5 text-gray-600" />
-                          )}
-                          <Building2 className="h-5 w-5 text-blue-600" />
-                          <h3 className="text-lg font-semibold">
-                            Company Priorities ({companyPriorities.length})
-                          </h3>
-                        </div>
-                      </div>
-                      {expandedSections.companyPriorities && (
-                        <div className="space-y-4 ml-7 mt-4">
-                          {companyPriorities.map(priority => (
-                            <PriorityCard 
-                              key={priority.id} 
-                              priority={priority} 
-                              isCompany={true}
-                              isArchived={false}
-                              teamMembers={teamMembers}
-                              onUpdate={handleUpdatePriority}
-                              onStatusChange={handlePriorityStatusChange}
-                              onMilestoneUpdate={handleUpdateMilestone}
-                              onMilestoneCreate={handleCreateMilestone}
-                              onMilestoneEdit={handleEditMilestone}
-                              onMilestoneDelete={handleDeleteMilestone}
-                              onAddUpdate={handleAddPriorityUpdate}
-                            />
-                          ))}
-                        </div>
-                      )}
-                    </div>
-                  );
-                })()}
-                
-                {/* Individual Priorities Section */}
-                {(() => {
-                  const individualPriorities = priorities.filter(p => p.priority_type !== 'company');
-                  const groupedByOwner = individualPriorities.reduce((acc, priority) => {
-                    const ownerId = priority.owner?.id || 'unassigned';
-                    if (!acc[ownerId]) {
-                      acc[ownerId] = [];
-                    }
-                    acc[ownerId].push(priority);
-                    return acc;
-                  }, {});
-                  
-                  return Object.keys(groupedByOwner).length > 0 && (
-                    <div className="space-y-4">
-                      <div className="flex items-center gap-3 p-4 bg-white border border-gray-200 rounded-lg">
-                        <Users className="h-5 w-5 text-purple-600" />
-                        <h3 className="text-lg font-semibold">
-                          Individual Priorities ({individualPriorities.length})
-                        </h3>
-                      </div>
-                      {Object.entries(groupedByOwner).map(([ownerId, ownerPriorities]) => {
-                        const owner = ownerPriorities[0]?.owner;
-                        const isExpanded = expandedSections.individualPriorities[ownerId];
-                        return (
-                          <div key={ownerId} className="ml-7">
-                            <div 
-                              className="flex items-center gap-3 p-3 bg-white border rounded-lg cursor-pointer hover:bg-gray-50 transition-colors"
-                              onClick={() => toggleIndividualPriorities(ownerId)}
-                            >
-                              {isExpanded ? (
-                                <ChevronDown className="h-4 w-4 text-gray-600" />
-                              ) : (
-                                <ChevronRight className="h-4 w-4 text-gray-600" />
-                              )}
-                              <h4 className="text-md font-medium">
-                                {owner?.name || 'Unassigned'} ({ownerPriorities.length})
-                              </h4>
-                            </div>
-                            {isExpanded && (
-                              <div className="space-y-4 ml-7 mt-4">
-                                {ownerPriorities.map(priority => (
-                                  <PriorityCard 
-                                    key={priority.id} 
-                                    priority={priority} 
-                                    isCompany={false}
-                                    isArchived={false}
-                                    teamMembers={teamMembers}
-                                    onUpdate={handleUpdatePriority}
-                                    onStatusChange={handlePriorityStatusChange}
-                                    onMilestoneUpdate={handleUpdateMilestone}
-                                    onMilestoneCreate={handleCreateMilestone}
-                                    onMilestoneEdit={handleEditMilestone}
-                                    onMilestoneDelete={handleDeleteMilestone}
-                                    onAddUpdate={handleAddPriorityUpdate}
-                                  />
-                                ))}
-                              </div>
-                            )}
-                          </div>
-                        );
-                      })}
-                    </div>
-                  );
-                })()}
+                {/* Group priorities by type */}
+                {priorities.filter(p => p.priority_type === 'company').length > 0 && (
+                  <div className="space-y-4">
+                    <h3 className="text-lg font-semibold text-gray-900">Company Priorities</h3>
+                    {priorities.filter(p => p.priority_type === 'company').map(priority => (
+                      <PriorityCard 
+                        key={priority.id} 
+                        priority={priority} 
+                        readOnly={false}
+                        onIssueCreated={(message) => {
+                          setSuccess(message);
+                          setTimeout(() => setSuccess(null), 3000);
+                        }}
+                        onEdit={() => {}}
+                        onStatusChange={handlePriorityStatusChange}
+                        onUpdateMilestone={handleUpdateMilestone}
+                        onCreateMilestone={handleCreateMilestone}
+                        onEditMilestone={handleEditMilestone}
+                        onDeleteMilestone={handleDeleteMilestone}
+                        onDelete={() => {}}
+                        onUpdate={handleUpdatePriority}
+                        expanded={expandedSections.companyPriorities}
+                        onToggleExpanded={() => setExpandedSections(prev => ({ 
+                          ...prev, 
+                          companyPriorities: !prev.companyPriorities 
+                        }))}
+                      />
+                    ))}
+                  </div>
+                )}
+                {priorities.filter(p => p.priority_type === 'individual').length > 0 && (
+                  <div className="space-y-4">
+                    <h3 className="text-lg font-semibold text-gray-900">Individual Priorities</h3>
+                    {priorities.filter(p => p.priority_type === 'individual').map(priority => (
+                      <PriorityCard 
+                        key={priority.id} 
+                        priority={priority} 
+                        readOnly={false}
+                        onIssueCreated={(message) => {
+                          setSuccess(message);
+                          setTimeout(() => setSuccess(null), 3000);
+                        }}
+                        onEdit={() => {}}
+                        onStatusChange={handlePriorityStatusChange}
+                        onUpdateMilestone={handleUpdateMilestone}
+                        onCreateMilestone={handleCreateMilestone}
+                        onEditMilestone={handleEditMilestone}
+                        onDeleteMilestone={handleDeleteMilestone}
+                        onDelete={() => {}}
+                        onUpdate={handleUpdatePriority}
+                        expanded={expandedSections.individualPriorities[priority.id]}
+                        onToggleExpanded={() => setExpandedSections(prev => ({ 
+                          ...prev, 
+                          individualPriorities: {
+                            ...prev.individualPriorities,
+                            [priority.id]: !prev.individualPriorities[priority.id]
+                          }
+                        }))}
+                      />
+                    ))}
+                  </div>
+                )}
               </div>
             )}
           </div>
@@ -1217,27 +871,43 @@ const WeeklyAccountabilityMeetingPage = () => {
       case 'headlines':
         return (
           <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Newspaper className="h-5 w-5" />
-                Headlines
+            <CardHeader className="bg-gradient-to-r from-orange-50 to-amber-50 border-b">
+              <CardTitle className="flex items-center gap-2 text-2xl">
+                <Newspaper className="h-6 w-6 text-orange-600" />
+                Customer & Employee Headlines
               </CardTitle>
-              <CardDescription>Share important updates and information (5 minutes)</CardDescription>
+              <CardDescription>Share important updates (60 minutes)</CardDescription>
             </CardHeader>
-            <CardContent>
+            <CardContent className="pt-6">
               <div className="space-y-4">
                 <p className="text-gray-600">
-                  Share important updates that the team needs to know about. Keep headlines brief and factual.
+                  Share critical information about customers and employees that the team needs to know.
                 </p>
-                <div className="border border-gray-200 p-4 rounded-lg bg-white">
-                  <h4 className="font-medium mb-2">Examples of Headlines:</h4>
-                  <ul className="list-disc list-inside text-sm space-y-1">
-                    <li>Customer feedback or complaints</li>
-                    <li>Important deadlines or events</li>
-                    <li>Personnel changes or updates</li>
-                    <li>Market or competitive information</li>
-                    <li>Process or system changes</li>
-                  </ul>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="border border-gray-200 p-4 rounded-lg bg-white">
+                    <h4 className="font-medium mb-2 text-gray-900 flex items-center gap-2">
+                      <Users className="h-4 w-4" />
+                      Customer Headlines
+                    </h4>
+                    <ul className="list-disc list-inside text-sm space-y-1">
+                      <li>Major customer wins or losses</li>
+                      <li>Important customer feedback</li>
+                      <li>Market changes affecting customers</li>
+                      <li>Competitive developments</li>
+                    </ul>
+                  </div>
+                  <div className="border border-gray-200 p-4 rounded-lg bg-white">
+                    <h4 className="font-medium mb-2 text-gray-900 flex items-center gap-2">
+                      <Building2 className="h-4 w-4" />
+                      Employee Headlines
+                    </h4>
+                    <ul className="list-disc list-inside text-sm space-y-1">
+                      <li>Team member updates</li>
+                      <li>Hiring or departures</li>
+                      <li>Important HR announcements</li>
+                      <li>Team achievements to celebrate</li>
+                    </ul>
+                  </div>
                 </div>
               </div>
             </CardContent>
@@ -1248,244 +918,174 @@ const WeeklyAccountabilityMeetingPage = () => {
         return (
           <div className="space-y-4">
             <Card>
-              <CardHeader>
-                <div className="flex items-center justify-between">
-                  <div>
-                    <CardTitle className="flex items-center gap-2">
-                      <ListTodo className="h-5 w-5" />
-                      To-Do List Review
-                    </CardTitle>
-                    <CardDescription>Review action items from last week (5 minutes)</CardDescription>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <Button 
-                      onClick={handleArchiveSelectedTodos}
-                      variant="outline"
-                      className="text-gray-600"
-                      disabled={selectedTodoIds.length === 0}
-                    >
-                      <CheckSquare className="mr-2 h-4 w-4" />
-                      Mark Complete ({selectedTodoIds.length})
-                    </Button>
-                  </div>
-                </div>
+              <CardHeader className="bg-gradient-to-r from-cyan-50 to-blue-50 border-b">
+                <CardTitle className="flex items-center gap-2 text-2xl">
+                  <ListTodo className="h-6 w-6 text-cyan-600" />
+                  To-do List Review
+                </CardTitle>
+                <CardDescription>Review action items (5 minutes)</CardDescription>
               </CardHeader>
-            </Card>
-            {todos.length === 0 ? (
-              <Card>
-                <CardContent className="text-center py-8">
-                  <p className="text-gray-500">No incomplete to-dos found</p>
-                </CardContent>
-              </Card>
-            ) : (
-              <>
-                <div className="border border-gray-200 bg-white rounded-lg p-4">
-                  <p className="text-gray-700 text-center">
-                    <span className="font-semibold">Weekly Check-in:</span> Team members report "Done" or "Not Done" for each to-do. Incomplete items can be moved to Issues if needed. High-performing teams typically complete 90% of their weekly to-dos.
-                  </p>
+              <CardContent className="pt-6">
+                <div className="flex justify-end mb-4">
+                  <Button onClick={handleAddTodo} className="bg-indigo-600 hover:bg-indigo-700">
+                    <Plus className="mr-2 h-4 w-4" />
+                    Add To-do
+                  </Button>
                 </div>
-                <TodosList
-                  todos={todos}
-                  onEdit={handleEditTodo}
-                  onDelete={handleDeleteTodo}
-                  onUpdate={handleTodoUpdate}
-                  onConvertToIssue={handleTodoToIssue}
-                  showCompleted={false}
-                />
-              </>
-            )}
+                {todos.length === 0 ? (
+                  <div className="text-center py-8">
+                    <p className="text-gray-500">No to-dos found for this week.</p>
+                  </div>
+                ) : (
+                  <TodosList 
+                    todos={todos}
+                    onEdit={(todo) => {
+                      setEditingTodo(todo);
+                      setShowTodoDialog(true);
+                    }}
+                    onStatusChange={async (todoId, completed) => {
+                      try {
+                        await todosService.updateTodo(todoId, { completed });
+                        await fetchTodosData();
+                      } catch (error) {
+                        console.error('Failed to update todo:', error);
+                      }
+                    }}
+                    onDelete={async (todoId) => {
+                      try {
+                        await todosService.deleteTodo(todoId);
+                        await fetchTodosData();
+                        setSuccess('To-do deleted');
+                      } catch (error) {
+                        console.error('Failed to delete todo:', error);
+                        setError('Failed to delete to-do');
+                      }
+                    }}
+                    readOnly={false}
+                    showCheckboxes={true}
+                  />
+                )}
+              </CardContent>
+            </Card>
           </div>
         );
 
       case 'issues':
-        const closedIssuesCount = issues.filter(issue => issue.status === 'closed').length;
         return (
           <div className="space-y-4">
             <Card>
-              <CardHeader>
-                <div className="flex items-center justify-between">
-                  <div>
-                    <CardTitle className="flex items-center gap-2">
-                      <AlertTriangle className="h-5 w-5" />
-                      Issues Discussion
-                    </CardTitle>
-                    <CardDescription>Review and solve short-term issues (60 minutes)</CardDescription>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <Button 
-                      onClick={handleArchiveClosedIssues}
-                      variant="outline"
-                      className="text-gray-600"
-                      disabled={closedIssuesCount === 0}
-                    >
-                      <Archive className="mr-2 h-4 w-4" />
-                      Archive Closed Issues ({closedIssuesCount})
-                    </Button>
-                  </div>
-                </div>
+              <CardHeader className="bg-gradient-to-r from-red-50 to-pink-50 border-b">
+                <CardTitle className="flex items-center gap-2 text-2xl">
+                  <AlertTriangle className="h-6 w-6 text-red-600" />
+                  IDS (Issues)
+                </CardTitle>
+                <CardDescription>Identify, Discuss, and Solve issues (10 minutes)</CardDescription>
               </CardHeader>
+              <CardContent className="pt-6">
+                <div className="border border-gray-200 bg-white rounded-lg p-4 mb-4">
+                  <p className="text-gray-700 text-center">
+                    <span className="font-semibold">Quick voting:</span> Everyone votes on the most important issues. Then discuss and solve the top-voted issues using IDS.
+                  </p>
+                </div>
+                <div className="flex justify-end mb-4">
+                  <Button onClick={handleAddIssue} className="bg-indigo-600 hover:bg-indigo-700">
+                    <Plus className="mr-2 h-4 w-4" />
+                    Add Issue
+                  </Button>
+                </div>
+                {issues.length === 0 ? (
+                  <div className="text-center py-8">
+                    <p className="text-gray-500">No issues found.</p>
+                  </div>
+                ) : (
+                  <IssuesList
+                    issues={issues || []}
+                    onEdit={handleEditIssue}
+                    onStatusChange={handleStatusChange}
+                    onTimelineChange={handleTimelineChange}
+                    onArchive={handleArchive}
+                    onVote={handleVote}
+                    getStatusColor={(status) => {
+                      switch (status) {
+                        case 'open':
+                          return 'bg-yellow-100 text-yellow-800';
+                        case 'closed':
+                          return 'bg-gray-100 text-gray-800';
+                        default:
+                          return 'bg-gray-100 text-gray-800';
+                      }
+                    }}
+                    getStatusIcon={(status) => null}
+                    readOnly={false}
+                    showVoting={true}
+                  />
+                )}
+              </CardContent>
             </Card>
-            {issues.length === 0 ? (
-              <Card>
-                <CardContent className="text-center py-8">
-                  <p className="text-gray-500">No open issues found</p>
-                </CardContent>
-              </Card>
-            ) : (
-              <IssuesList
-                issues={issues}
-                onEdit={handleEditIssue}
-                onStatusChange={handleIssueStatusChange}
-                onTimelineChange={handleIssueTimelineChange}
-                onArchive={handleArchive}
-                onVote={handleVote}
-                getStatusColor={(status) => {
-                  switch (status) {
-                    case 'open': return 'text-yellow-700 font-medium';
-                    case 'closed': return 'text-green-700 font-medium';
-                    default: return 'bg-gray-100 text-gray-800';
-                  }
-                }}
-                getStatusIcon={(status) => {
-                  switch (status) {
-                    case 'open': return <AlertTriangle className="h-4 w-4" />;
-                    case 'closed': return <CheckCircle className="h-4 w-4" />;
-                    default: return null;
-                  }
-                }}
-                showVoting={true}
-                selectedIssues={selectedIssueIds}
-                onSelectionChange={setSelectedIssueIds}
-              />
-            )}
           </div>
         );
 
       case 'conclude':
         return (
           <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <CheckSquare className="h-5 w-5" />
-                Conclude
+            <CardHeader className="bg-gradient-to-r from-green-50 to-teal-50 border-b">
+              <CardTitle className="flex items-center gap-2 text-2xl">
+                <CheckSquare className="h-6 w-6 text-green-600" />
+                Conclude Meeting
               </CardTitle>
-              <CardDescription>Wrap up and rate the meeting (5 minutes)</CardDescription>
+              <CardDescription>Wrap up and cascade messages (5 minutes)</CardDescription>
             </CardHeader>
-            <CardContent>
-              <div className="space-y-4">
-                <div className="bg-white border border-gray-200 p-4 rounded-lg">
-                  <h4 className="font-medium mb-2">Meeting Wrap-up:</h4>
-                  <ul className="list-disc list-inside text-sm space-y-1">
-                    <li>Recap To Dos</li>
-                    <li>Document Cascading Messages</li>
-                    <li>Send Cascading Messages to another Team(s) - coming soon</li>
-                  </ul>
+            <CardContent className="pt-6">
+              <div className="space-y-6">
+                <div className="border border-gray-200 p-4 rounded-lg bg-white">
+                  <h4 className="font-medium mb-2 text-gray-900 flex items-center gap-2">
+                    <MessageSquare className="h-4 w-4" />
+                    Cascading Messages
+                  </h4>
+                  <p className="text-sm text-gray-600 mb-3">
+                    What key information needs to be communicated to other teams?
+                  </p>
+                  <textarea
+                    className="w-full p-3 border border-gray-300 rounded-lg resize-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+                    rows={3}
+                    placeholder="Enter any messages to cascade to other teams..."
+                    value={cascadingMessage}
+                    onChange={(e) => setCascadingMessage(e.target.value)}
+                  />
                 </div>
-                
-                {meetingStarted && (
-                  <div className="space-y-6">
-                    {/* New To-Dos created today */}
-                    {todaysTodos.length > 0 && (
-                      <div className="border border-gray-200 bg-white rounded-lg p-4">
-                        <h4 className="font-semibold text-blue-900 mb-3 flex items-center gap-2">
-                          <ListTodo className="h-5 w-5" />
-                          Recap To Dos ({todaysTodos.length})
-                        </h4>
-                        <ul className="space-y-2">
-                          {todaysTodos.map(todo => (
-                            <li key={todo.id} className="flex items-start gap-2">
-                              <CheckSquare className="h-4 w-4 text-blue-600 mt-0.5 flex-shrink-0" />
-                              <div className="flex-1">
-                                <span className="font-medium text-gray-900">{todo.title}</span>
-                                {todo.assigned_to && (
-                                  <span className="text-gray-600 text-sm ml-2">
-                                    - {todo.assigned_to.first_name} {todo.assigned_to.last_name}
-                                  </span>
-                                )}
-                              </div>
-                            </li>
-                          ))}
-                        </ul>
-                      </div>
-                    )}
-                    
-                    {/* Cascading Messages */}
-                    <Card>
-                      <CardHeader>
-                        <CardTitle className="flex items-center gap-2">
-                          <MessageSquare className="h-5 w-5" />
-                          Cascading Messages
-                        </CardTitle>
-                        <CardDescription>
-                          Document key decisions from this meeting to share with other teams
-                        </CardDescription>
-                      </CardHeader>
-                      <CardContent>
-                        <div className="space-y-4">
-                          <div>
-                            <textarea
-                              placeholder="Enter key decisions or messages to cascade to other teams..."
-                              className="w-full min-h-[120px] p-3 border border-gray-300 rounded-md focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
-                              value={cascadingMessage}
-                              onChange={(e) => setCascadingMessage(e.target.value)}
-                            />
-                          </div>
-                          <div className="flex items-center justify-between">
-                            <p className="text-sm text-gray-500">
-                              These messages can be sent to other teams' Headlines - Coming Soon
-                            </p>
-                            <Button 
-                              onClick={() => {
-                                // TODO: Implement saving cascading messages
-                                setSuccess('Cascading message saved');
-                                setTimeout(() => setSuccess(null), 3000);
-                              }}
-                              disabled={!cascadingMessage.trim()}
-                              className="bg-gray-900 hover:bg-gray-800"
-                            >
-                              <Send className="mr-2 h-4 w-4" />
-                              Save Message
-                            </Button>
-                          </div>
-                        </div>
-                      </CardContent>
-                    </Card>
 
-                    {/* Rate this meeting */}
-                    <div className="flex items-center justify-center gap-4">
-                      <span className="text-lg font-medium">Rate this meeting:</span>
-                      <Select value={meetingRating?.toString()} onValueChange={(value) => setMeetingRating(parseInt(value))}>
-                        <SelectTrigger className="w-24">
-                          <SelectValue placeholder="Select" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map(num => (
-                            <SelectItem key={num} value={num.toString()}>
-                              {num}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                    </div>
-                    
-                    <div className="flex justify-center">
-                      <Button 
-                        onClick={handleFinishMeeting}
-                        className="bg-gray-900 hover:bg-gray-800 text-white"
-                        disabled={!meetingRating}
-                      >
-                        Finish Meeting & Send Summary
-                      </Button>
-                    </div>
-                  </div>
-                )}
-                
-                {!meetingStarted && (
-                  <div className="flex items-center justify-center gap-2 py-8">
-                    <CheckCircle className="h-8 w-8 text-gray-600" />
-                    <span className="text-2xl font-semibold">Ready to conclude when meeting starts</span>
-                  </div>
-                )}
+                <div className="border border-gray-200 p-4 rounded-lg bg-white">
+                  <h4 className="font-medium mb-2 text-gray-900 flex items-center gap-2">
+                    <Star className="h-4 w-4" />
+                    Meeting Rating
+                  </h4>
+                  <p className="text-sm text-gray-600 mb-3">
+                    Rate this meeting's effectiveness (1-10)
+                  </p>
+                  <Select value={meetingRating?.toString()} onValueChange={(value) => setMeetingRating(parseInt(value))}>
+                    <SelectTrigger className="w-32">
+                      <SelectValue placeholder="Select" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {[...Array(10)].map((_, i) => (
+                        <SelectItem key={i + 1} value={(i + 1).toString()}>
+                          {i + 1}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div className="text-center pt-4">
+                  <Button
+                    onClick={concludeMeeting}
+                    size="lg"
+                    className="bg-green-600 hover:bg-green-700"
+                  >
+                    <Send className="mr-2 h-5 w-5" />
+                    Conclude Meeting & Send Summary
+                  </Button>
+                </div>
               </div>
             </CardContent>
           </Card>
@@ -1497,174 +1097,105 @@ const WeeklyAccountabilityMeetingPage = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <div className="flex relative">
-        {/* Sidebar */}
-        <div className={`w-64 bg-white border-r border-gray-200 min-h-screen flex-shrink-0 sticky top-0 h-screen overflow-y-auto ${!meetingStarted ? 'pointer-events-none' : ''}`}>
-          <div className="p-6">
+    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100">
+      <div className="max-w-7xl mx-auto p-6">
+        {/* Header */}
+        <div className="mb-8">
+          <div className="flex items-center justify-between mb-6">
             <div>
-              <h1 className="text-2xl font-bold text-gray-900 mb-2">Weekly Accountability Meeting</h1>
-              <p className="text-gray-600 text-sm">90 minutes total</p>
+              <h1 className="text-3xl font-bold text-gray-900">Weekly Accountability Meeting</h1>
+              <p className="text-gray-600 mt-2">90 minutes - Keep your team aligned and moving forward</p>
             </div>
-          </div>
-          
-          <nav className={`px-4 pb-6 ${!meetingStarted ? 'opacity-40' : ''}`}>
-            {agendaItems.map((item, index) => {
-              const Icon = item.icon;
-              const isActive = activeSection === item.id;
-              const isCompleted = agendaItems.findIndex(i => i.id === activeSection) > index;
-              
-              return (
-                <button
-                  key={item.id}
-                  onClick={() => handleSectionChange(item.id)}
-                  disabled={!meetingStarted}
-                  className={`w-full text-left px-4 py-3 mb-2 rounded-lg transition-colors flex items-center justify-between group ${
-                    !meetingStarted
-                      ? 'bg-gray-50 text-gray-400 cursor-not-allowed'
-                      : isActive 
-                      ? 'bg-gray-50 text-gray-900 border-l-2 border-gray-900' 
-                      : isCompleted
-                      ? 'bg-white border border-gray-200 text-gray-600 hover:bg-gray-50'
-                      : 'hover:bg-gray-100 text-gray-700'
-                  }`}
-                >
-                  <div className="flex items-center gap-3">
-                    <Icon className={`h-5 w-5 ${!meetingStarted ? 'text-gray-300' : isActive ? 'text-gray-900' : isCompleted ? 'text-gray-600' : 'text-gray-400'}`} />
-                    <span className="font-medium">{item.label}</span>
-                  </div>
+            {meetingStarted && (
+              <div className="flex items-center gap-4">
+                <div className="bg-white px-4 py-2 rounded-lg shadow-sm border border-gray-200">
                   <div className="flex items-center gap-2">
-                    <span className="text-sm text-gray-500">{item.duration}m</span>
-                    {meetingStarted && isActive && <ChevronRight className="h-4 w-4" />}
-                    {meetingStarted && isCompleted && <CheckCircle className="h-4 w-4 text-gray-600" />}
+                    <Clock className="h-4 w-4 text-gray-500" />
+                    <span className={`text-lg font-mono font-semibold ${getTimerColor()}`}>
+                      {formatTimer(elapsedTime)}
+                    </span>
                   </div>
-                </button>
-              );
-            })}
-          </nav>
-          
-          {/* Reference Tools Section */}
-          <div className={`px-4 pb-4 border-t ${!meetingStarted ? 'opacity-40' : ''}`}>
-            <h3 className="text-sm font-semibold text-gray-500 uppercase tracking-wider mb-3 mt-4">
-              Reference Tools
-            </h3>
-            <div className="space-y-2">
-              <button
-                onClick={() => setShowBusinessBlueprint(true)}
-                disabled={!meetingStarted}
-                className={`w-full text-left px-4 py-2 rounded-lg flex items-center gap-3 transition-colors ${
-                  !meetingStarted ? 'text-gray-400 cursor-not-allowed' : 'hover:bg-gray-100 text-gray-700'
-                }`}
-              >
-                <FileText className={`h-4 w-4 ${!meetingStarted ? 'text-gray-300' : 'text-gray-400'}`} />
-                <span className="text-sm font-medium">2-Page Plan</span>
-              </button>
-              <button
-                onClick={() => setShowOrgChart(true)}
-                disabled={!meetingStarted}
-                className={`w-full text-left px-4 py-2 rounded-lg flex items-center gap-3 transition-colors ${
-                  !meetingStarted ? 'text-gray-400 cursor-not-allowed' : 'hover:bg-gray-100 text-gray-700'
-                }`}
-              >
-                <GitBranch className={`h-4 w-4 ${!meetingStarted ? 'text-gray-300' : 'text-gray-400'}`} />
-                <span className="text-sm font-medium">Org Chart</span>
-              </button>
-            </div>
-          </div>
-        </div>
-
-        {/* Main Content */}
-        <div className="flex-1 p-6 overflow-x-auto relative">
-          <div className={activeSection === 'scorecard' || activeSection === 'priorities' || activeSection === 'issues' ? 'min-w-fit' : 'max-w-6xl mx-auto'}>
-            {/* Meeting Controls */}
-            <div className="flex justify-between items-center mb-6">
-              {/* Timer and Start button (left side) */}
-              <div>
-                {!meetingStarted ? (
-                  <Button 
-                    onClick={handleStartMeeting}
-                    className="bg-gray-900 hover:bg-gray-800 text-white z-10 relative"
-                    size="lg"
+                </div>
+                {activeSection === 'conclude' && (
+                  <Button
+                    onClick={concludeMeeting}
+                    className="bg-green-600 hover:bg-green-700"
                   >
-                    <Clock className="mr-2 h-5 w-5" />
-                    Start Meeting
+                    <Send className="h-4 w-4 mr-2" />
+                    Conclude Meeting
                   </Button>
-                ) : (
-                  <div className={`font-mono text-2xl font-bold ${getTimerColor()}`}>
-                    ⏱️ {formatTimer(elapsedTime)}
-                  </div>
                 )}
               </div>
-              
-              {/* Action Buttons (right side) - hide on Good News and Conclude */}
-              {meetingStarted && activeSection !== 'good-news' && activeSection !== 'conclude' && (
-                <FloatingActionButtons 
-                  onAddTodo={handleAddTodo}
-                  onAddIssue={handleAddIssue}
-                />
-              )}
-            </div>
-            
-            {/* Overlay message when meeting not started */}
-            {!meetingStarted && (
-              <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-                <div className="bg-white rounded-lg shadow-lg p-8 max-w-md text-center">
-                  <Clock className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-                  <h3 className="text-xl font-semibold text-gray-700 mb-2">Meeting Not Started</h3>
-                  <p className="text-gray-500">Click the "Start Meeting" button above to begin your Weekly Accountability Meeting</p>
-                </div>
-              </div>
             )}
-            
-            {/* Main content area with gray overlay when not started */}
-            <div className={`${!meetingStarted ? 'opacity-20 pointer-events-none' : ''}`}>
-              {error && (
-                <Alert className="mb-6 border-red-200 bg-white">
-                  <AlertCircle className="h-4 w-4 text-red-600" />
-                  <AlertDescription className="text-red-700">{error}</AlertDescription>
-                </Alert>
-              )}
-
-              {success && (
-                <Alert className="mb-6 border-green-200 bg-white border border-gray-200">
-                  <CheckCircle className="h-4 w-4 text-gray-600" />
-                  <AlertDescription className="text-green-700">{success}</AlertDescription>
-                </Alert>
-              )}
-
-              {renderContent()}
-
-              {/* Navigation buttons */}
-              {(getPreviousSection() || getNextSection()) && (
-                <div className="mt-6 flex justify-between">
-                  <div>
-                    {getPreviousSection() && (
-                      <Button 
-                        onClick={() => handleSectionChange(getPreviousSection())}
-                        variant="outline"
-                        className="border-gray-300 hover:bg-gray-50"
-                      >
-                        <ChevronLeft className="mr-2 h-4 w-4" />
-                        Back: {agendaItems.find(item => item.id === getPreviousSection())?.label}
-                      </Button>
-                    )}
-                  </div>
-                  <div>
-                    {getNextSection() && (
-                      <Button 
-                        onClick={() => handleSectionChange(getNextSection())}
-                        className="bg-gray-900 hover:bg-gray-800"
-                      >
-                        Next: {agendaItems.find(item => item.id === getNextSection())?.label}
-                        <ChevronRight className="ml-2 h-4 w-4" />
-                      </Button>
-                    )}
-                  </div>
-                </div>
-              )}
-            </div>
+            {!meetingStarted && (
+              <Button
+                onClick={handleStartMeeting}
+                className="bg-indigo-600 hover:bg-indigo-700"
+                size="lg"
+              >
+                <Clock className="h-4 w-4 mr-2" />
+                Start Meeting
+              </Button>
+            )}
           </div>
+
+          {/* Alerts */}
+          {error && (
+            <Alert className="mb-4 border-red-200 bg-red-50">
+              <AlertCircle className="h-4 w-4 text-red-600" />
+              <AlertDescription className="text-red-800">{error}</AlertDescription>
+            </Alert>
+          )}
+
+          {success && (
+            <Alert className="mb-4 border-green-200 bg-green-50">
+              <CheckCircle className="h-4 w-4 text-green-600" />
+              <AlertDescription className="text-green-800">{success}</AlertDescription>
+            </Alert>
+          )}
         </div>
+
+        {/* Tabs Navigation */}
+        <Tabs value={activeSection} onValueChange={handleSectionChange} className="space-y-6">
+          <TabsList className="grid grid-cols-4 lg:grid-cols-7 gap-2 h-auto p-1 bg-white shadow-sm">
+            {agendaItems.map((item) => {
+              const Icon = item.icon;
+              const currentIndex = agendaItems.findIndex(i => i.id === activeSection);
+              const itemIndex = agendaItems.findIndex(i => i.id === item.id);
+              const isCompleted = meetingStarted && itemIndex < currentIndex;
+              
+              return (
+                <TabsTrigger
+                  key={item.id}
+                  value={item.id}
+                  disabled={!meetingStarted}
+                  className="flex flex-col items-center gap-1 py-3 px-2 data-[state=active]:bg-indigo-50 data-[state=active]:text-indigo-700 disabled:opacity-40"
+                >
+                  <Icon className={`h-5 w-5 ${
+                    isCompleted ? 'text-green-600' : ''
+                  }`} />
+                  <span className="text-xs font-medium">{item.label}</span>
+                  <span className="text-xs text-gray-500">{item.duration}m</span>
+                </TabsTrigger>
+              );
+            })}
+          </TabsList>
+
+          {/* Tab Content */}
+          {agendaItems.map((item) => (
+            <TabsContent key={item.id} value={item.id} className="mt-6">
+              {renderContent()}
+            </TabsContent>
+          ))}
+        </Tabs>
+
+        {/* Floating Action Buttons */}
+        {meetingStarted && activeSection !== 'good-news' && activeSection !== 'conclude' && (
+          <FloatingActionButtons 
+            onAddTodo={handleAddTodo}
+            onAddIssue={handleAddIssue}
+          />
+        )}
       </div>
       
       {/* Issue Edit Dialog */}
@@ -1676,7 +1207,7 @@ const WeeklyAccountabilityMeetingPage = () => {
         }}
         issue={editingIssue}
         onSave={handleSaveIssue}
-        teamMembers={teamMembers}
+        teamMembers={teamMembers || []}
       />
       
       {/* Todo Dialog */}
@@ -1690,50 +1221,8 @@ const WeeklyAccountabilityMeetingPage = () => {
         }}
         todo={editingTodo}
         onSave={handleSaveTodo}
-        teamMembers={teamMembers}
+        teamMembers={teamMembers || []}
       />
-      
-      {/* Business Blueprint Dialog */}
-      <Dialog open={showBusinessBlueprint} onOpenChange={setShowBusinessBlueprint}>
-        <DialogContent className="max-w-6xl max-h-[90vh] overflow-y-auto">
-          <DialogHeader>
-            <DialogTitle>2-Page Plan</DialogTitle>
-          </DialogHeader>
-          <div className="p-4">
-            <p className="text-gray-600">Click the button below to open the 2-Page Plan in a new window.</p>
-            <Button
-              onClick={() => {
-                window.open('/business-blueprint?fromMeeting=true', '_blank');
-                setShowBusinessBlueprint(false);
-              }}
-              className="mt-4"
-            >
-              Open 2-Page Plan
-            </Button>
-          </div>
-        </DialogContent>
-      </Dialog>
-      
-      {/* Org Chart Dialog */}
-      <Dialog open={showOrgChart} onOpenChange={setShowOrgChart}>
-        <DialogContent className="max-w-6xl max-h-[90vh] overflow-y-auto">
-          <DialogHeader>
-            <DialogTitle>Organizational Chart</DialogTitle>
-          </DialogHeader>
-          <div className="p-4">
-            <p className="text-gray-600">Click the button below to open the Organizational Chart in a new window.</p>
-            <Button
-              onClick={() => {
-                window.open('/organizational-chart?autoOpen=true&fromMeeting=true', '_blank');
-                setShowOrgChart(false);
-              }}
-              className="mt-4"
-            >
-              Open Organizational Chart
-            </Button>
-          </div>
-        </DialogContent>
-      </Dialog>
     </div>
   );
 };
