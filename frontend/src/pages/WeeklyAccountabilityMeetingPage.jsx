@@ -746,7 +746,7 @@ const WeeklyAccountabilityMeetingPage = () => {
         teamId: effectiveTeamId,
         ownerId: priority.owner?.id || priority.owner_id || priority.ownerId || user?.id,
         status: 'open',
-        priority_level: 'medium',
+        priority_level: 'normal',
         related_priority_id: priority.id
       };
       
