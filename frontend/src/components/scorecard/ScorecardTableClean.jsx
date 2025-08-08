@@ -178,7 +178,7 @@ const ScorecardTableClean = ({
                   );
                 })}
                 
-                {(showAverage && !meetingMode) || (showAverage && meetingMode) ? (
+                {showAverage ? (
                   <th className={'text-center font-medium text-gray-700 ' + (meetingMode ? 'px-2 py-2 text-sm bg-gray-100' : 'px-1 text-[10px] border-l border-gray-200')}>
                     Avg
                   </th>
@@ -239,7 +239,7 @@ const ScorecardTableClean = ({
                     </td>
                     
                     {/* Average column */}
-                    {(showAverage && !meetingMode) || (showAverage && meetingMode) ? (
+                    {showAverage ? (
                       <td className={'text-center ' + (meetingMode ? 'px-2 py-2 bg-gray-50' : 'px-1 bg-white border-l border-gray-200')}>
                         {average !== null ? (
                           meetingMode ? (
@@ -301,13 +301,18 @@ const ScorecardTableClean = ({
                     
                     {showTotal && (
                       <td className={'text-center font-medium ' + (meetingMode ? 'px-2 py-2 bg-gray-50' : 'px-1 text-[10px] border-l border-gray-200')}>
-                        {meetingMode ? (
-                          <div className="text-sm font-semibold text-gray-700">
-                            {Math.round(Object.values(scores[metric.id] || {}).reduce((sum, val) => sum + (parseFloat(val) || 0), 0))}
-                          </div>
-                        ) : (
-                          Math.round(Object.values(scores[metric.id] || {}).reduce((sum, val) => sum + (parseFloat(val) || 0), 0))
-                        )}
+                        {(() => {
+                          const totalValue = Object.values(scores[metric.id] || {}).reduce((sum, val) => sum + (parseFloat(val) || 0), 0);
+                          const formattedTotal = totalValue !== 0 ? formatValue(totalValue, metric.value_type) : '-';
+                          
+                          return meetingMode ? (
+                            <div className="text-sm font-semibold text-gray-700">
+                              {formattedTotal}
+                            </div>
+                          ) : (
+                            formattedTotal
+                          );
+                        })()}
                       </td>
                     )}
                     {!meetingMode && (
