@@ -407,27 +407,25 @@ const PriorityCardClean = ({
                 
                 <div className="space-y-2">
                   {priority.milestones?.map((milestone, index) => (
-                    <div key={milestone.id || index} className="flex items-center gap-3 p-2 rounded-lg hover:bg-gray-50">
+                    <div key={milestone.id || index} className="group flex items-center gap-3 p-2 rounded-lg hover:bg-gray-50">
                       <input
                         type="checkbox"
                         checked={milestone.completed}
                         onChange={() => onToggleMilestone && onToggleMilestone(priority.id, milestone.id, !milestone.completed)}
                         className="h-4 w-4 text-blue-600 rounded border-gray-300"
                       />
-                      <div className="flex-1">
-                        <span className={`text-sm ${milestone.completed ? 'line-through text-gray-400' : 'text-gray-700'}`}>
-                          {milestone.title}
-                        </span>
-                        <span className="text-xs text-gray-500 ml-2">
-                          {formatDate(milestone.dueDate)}
-                        </span>
-                      </div>
+                      <span className={`text-sm ${milestone.completed ? 'line-through text-gray-400' : 'text-gray-700'}`}>
+                        {milestone.title}
+                      </span>
+                      <span className="text-xs text-gray-500">
+                        {formatDate(milestone.dueDate)}
+                      </span>
                       {onDeleteMilestone && (
                         <Button
                           variant="ghost"
                           size="sm"
                           onClick={() => onDeleteMilestone(priority.id, milestone.id)}
-                          className="h-6 w-6 p-0 opacity-0 group-hover:opacity-100"
+                          className="h-6 w-6 p-0 opacity-0 group-hover:opacity-100 ml-2"
                         >
                           <Trash2 className="h-3 w-3 text-red-600" />
                         </Button>
@@ -594,36 +592,32 @@ const PriorityCardClean = ({
                 
                 <div className="space-y-2">
                   {priority.attachments?.map((attachment, index) => (
-                    <div key={attachment.id || index} className="flex items-center gap-3 p-2 rounded-lg hover:bg-gray-50 group">
+                    <div key={attachment.id || index} className="group flex items-center gap-2 p-2 rounded-lg hover:bg-gray-50">
                       <Paperclip className="h-4 w-4 text-gray-400" />
-                      <div className="flex-1">
-                        <span className="text-sm text-gray-700">{attachment.fileName}</span>
-                        <span className="text-xs text-gray-500 ml-2">
-                          {attachment.fileSize ? `(${Math.round(attachment.fileSize / 1024)}KB)` : ''}
-                        </span>
-                      </div>
-                      <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                        {onDownloadAttachment && (
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => onDownloadAttachment(priority.id, attachment.id)}
-                            className="h-6 w-6 p-0"
-                          >
-                            <Download className="h-3 w-3 text-blue-600" />
-                          </Button>
-                        )}
-                        {onDeleteAttachment && (
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => onDeleteAttachment(priority.id, attachment.id)}
-                            className="h-6 w-6 p-0"
-                          >
-                            <Trash2 className="h-3 w-3 text-red-600" />
-                          </Button>
-                        )}
-                      </div>
+                      <span className="text-sm text-gray-700">{attachment.fileName}</span>
+                      <span className="text-xs text-gray-500">
+                        {attachment.fileSize ? `(${Math.round(attachment.fileSize / 1024)}KB)` : ''}
+                      </span>
+                      {onDownloadAttachment && (
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => onDownloadAttachment(priority.id, attachment.id)}
+                          className="h-6 w-6 p-0 opacity-0 group-hover:opacity-100 ml-2"
+                        >
+                          <Download className="h-3 w-3 text-blue-600" />
+                        </Button>
+                      )}
+                      {onDeleteAttachment && (
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => onDeleteAttachment(priority.id, attachment.id)}
+                          className="h-6 w-6 p-0 opacity-0 group-hover:opacity-100"
+                        >
+                          <Trash2 className="h-3 w-3 text-red-600" />
+                        </Button>
+                      )}
                     </div>
                   ))}
                 </div>
