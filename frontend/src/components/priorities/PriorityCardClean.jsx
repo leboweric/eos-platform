@@ -215,14 +215,11 @@ const PriorityCardClean = ({
                     size="sm"
                     onClick={() => {
                       const currentStatus = priority.status || 'on-track';
-                      const newStatus = currentStatus === 'on-track' ? 'off-track' : 
-                                       currentStatus === 'off-track' ? 'at-risk' :
-                                       'on-track';
+                      const newStatus = currentStatus === 'on-track' ? 'off-track' : 'on-track';
                       onStatusChange(priority.id, newStatus);
                     }}
                     className={`flex items-center gap-2 ${
                       priority.status === 'off-track' ? 'border-red-300 bg-red-50 hover:bg-red-100' :
-                      priority.status === 'at-risk' ? 'border-yellow-300 bg-yellow-50 hover:bg-yellow-100' :
                       'border-green-300 bg-green-50 hover:bg-green-100'
                     }`}
                   >

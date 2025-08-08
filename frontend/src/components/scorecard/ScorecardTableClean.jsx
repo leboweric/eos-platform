@@ -22,7 +22,8 @@ const ScorecardTableClean = ({
   onChartOpen,
   onMetricUpdate,
   onMetricDelete,
-  noWrapper = false // Add prop to disable Card wrapper
+  noWrapper = false, // Add prop to disable Card wrapper
+  maxPeriods = 10 // Control how many weeks/months to show
 }) => {
   // Get week start date for a given date
   const getWeekStartDate = (date) => {
@@ -38,13 +39,14 @@ const ScorecardTableClean = ({
     return `${months[date.getMonth()]} ${date.getDate()}`;
   };
 
-  // Get week labels for the past 10 weeks
+  // Get week labels for the past N weeks
   const getWeekLabels = () => {
     const labels = [];
     const weekDates = [];
     const today = new Date();
+    const weeksToShow = Math.min(maxPeriods, 10); // Cap at 10 weeks max
     
-    for (let i = 9; i >= 0; i--) {
+    for (let i = weeksToShow - 1; i >= 0; i--) {
       const weekStart = new Date(today);
       weekStart.setDate(today.getDate() - (i * 7));
       const mondayOfWeek = getWeekStartDate(weekStart);
@@ -56,13 +58,14 @@ const ScorecardTableClean = ({
     return { labels, weekDates };
   };
 
-  // Get month labels for the past 12 months
+  // Get month labels for the past N months
   const getMonthLabels = () => {
     const labels = [];
     const monthDates = [];
     const today = new Date();
+    const monthsToShow = Math.min(maxPeriods, 12); // Cap at 12 months max
     
-    for (let i = 11; i >= 0; i--) {
+    for (let i = monthsToShow - 1; i >= 0; i--) {
       const date = new Date(today.getFullYear(), today.getMonth() - i, 1);
       const monthLabel = date.toLocaleString('default', { month: 'short' }).toUpperCase();
       const yearLabel = date.getFullYear().toString().slice(-2);
@@ -144,38 +147,35 @@ const ScorecardTableClean = ({
   };
 
   const tableContent = (
-    <div className="overflow-x-auto">
-      <table className="w-full table-fixed">
+    <div className={noWrapper ? "w-full" : "overflow-x-auto"}>
+      <table className="w-full table-auto">
             <thead className="bg-white border-b border-gray-200">
               <tr>
-                <th className="text-center p-2 font-semibold text-gray-700 w-8"></th>
-                <th className="text-center p-2 font-semibold text-gray-700 w-16">Owner</th>
-                <th className="text-left p-2 font-semibold text-gray-700 w-48">Metric</th>
-                <th className="text-center p-2 font-semibold text-gray-700 w-12">Chart</th>
-                <th className="text-center p-2 font-semibold text-gray-700 w-20">Goal</th>
+                <th className="w-4"></th>
+                <th className="text-center px-1 text-[10px] font-medium text-gray-600">Owner</th>
+                <th className="text-left px-1 text-xs font-medium text-gray-700">Metric</th>
+                <th className="w-6"></th>
+                <th className="text-center px-1 text-[10px] font-medium text-gray-600">Goal</th>
                 
-                <th className="text-center p-2 font-semibold text-gray-700 w-20 border-l border-gray-200">Average</th>
+                <th className="text-center px-1 text-[10px] font-medium text-gray-600 border-l border-gray-200">Avg</th>
                 
                 {/* Week columns */}
                 {periodLabels.map((label, index) => {
                   const originalIndex = isRTL ? periodLabelsOriginal.length - 1 - index : index;
                   const isCurrentPeriod = originalIndex === periodLabelsOriginal.length - 1;
                   return (
-                    <th key={periodDates[index]} className={`text-center p-2 font-semibold text-xs w-20 ${
-                      isCurrentPeriod ? 'text-gray-900 bg-gray-50 border-2 border-gray-300' : 'text-gray-700'
+                    <th key={periodDates[index]} className={`text-center px-1 ${
+                      isCurrentPeriod ? 'bg-gray-50 border-2 border-gray-300' : ''
                     }`}>
                       <div className="flex flex-col items-center">
-                        <span className="text-xs font-normal text-gray-500 mb-1">
-                          {isCurrentPeriod ? 'Current' : ''}
-                        </span>
-                        <span>{label}</span>
+                        <span className="text-[10px] font-medium text-gray-600">{label}</span>
                       </div>
                     </th>
                   );
                 })}
                 
-                {showTotal && <th className="text-center p-2 font-semibold text-gray-700 w-20 border-l border-gray-200">Total</th>}
-                <th className="text-center p-2 font-semibold text-gray-700 w-12">Actions</th>
+                {showTotal && <th className="text-center p-1 font-semibold text-gray-700 text-xs border-l border-gray-200">Total</th>}
+                <th className="text-center p-1 font-semibold text-gray-700 text-xs">Actions</th>
               </tr>
             </thead>
             <tbody>
@@ -194,35 +194,35 @@ const ScorecardTableClean = ({
                 
                 return (
                   <tr key={metric.id} className="border-b hover:bg-gray-50">
-                    <td className="text-center p-2 w-8">
-                      <GripVertical className="h-4 w-4 text-gray-400 cursor-move mx-auto" />
+                    <td className="w-4">
+                      <GripVertical className="h-3 w-3 text-gray-400 cursor-move mx-auto" />
                     </td>
-                    <td className="text-center p-2 w-16 text-sm">
+                    <td className="text-center px-1 text-[10px]">
                       {metric.ownerName || metric.owner || '-'}
                     </td>
-                    <td className="text-left p-2 font-medium w-48">{metric.name}</td>
-                    <td className="text-center p-2 w-12">
+                    <td className="text-left px-1 text-xs font-medium">{metric.name}</td>
+                    <td className="w-6">
                       <Button
                         onClick={() => onChartOpen && onChartOpen(metric)}
                         size="sm"
                         variant="ghost"
-                        className="h-8 w-8 p-0 hover:bg-gray-100 mx-auto"
+                        className="h-5 w-5 p-0 hover:bg-gray-100"
                       >
-                        <BarChart3 className="h-4 w-4 text-gray-600" />
+                        <BarChart3 className="h-3 w-3 text-gray-600" />
                       </Button>
                     </td>
-                    <td className="text-center p-2 w-20 font-semibold text-gray-700 text-sm">{formatGoal(metric.goal, metric.value_type, metric.comparison_operator)}</td>
+                    <td className="text-center px-1 text-[10px] font-medium text-gray-700">{formatGoal(metric.goal, metric.value_type, metric.comparison_operator)}</td>
                     
                     {/* Average column */}
-                    <td className="p-2 text-center bg-white border-l border-gray-200 font-semibold text-sm w-20">
+                    <td className="px-1 text-center bg-white border-l border-gray-200">
                       {average !== null ? (
-                        <span className={`px-2 py-1 rounded ${
-                          avgGoalMet ? 'text-green-800' : 'text-red-800'
+                        <span className={`text-[10px] px-0.5 rounded ${
+                          avgGoalMet ? 'text-green-700' : 'text-red-700'
                         }`}>
                           {metric.value_type === 'number' ? Math.round(average) : formatValue(average, metric.value_type)}
                         </span>
                       ) : (
-                        <span className="text-gray-400">-</span>
+                        <span className="text-[10px] text-gray-400">-</span>
                       )}
                     </td>
                     
@@ -234,10 +234,10 @@ const ScorecardTableClean = ({
                       const isCurrentPeriod = originalIndex === periodLabelsOriginal.length - 1;
                       
                       return (
-                        <td key={periodDate} className={`p-2 text-center w-20 ${isCurrentPeriod ? 'bg-gray-50 border-2 border-gray-300' : ''}`}>
+                        <td key={periodDate} className={`px-1 text-center ${isCurrentPeriod ? 'bg-gray-50 border-2 border-gray-300' : ''}`}>
                           <button
                             onClick={() => onScoreEdit && onScoreEdit(metric, periodDate)}
-                            className={`w-full px-2 py-1 rounded text-sm font-medium transition-colors
+                            className={`w-full px-0.5 py-0.5 rounded text-[10px] font-medium transition-colors
                               ${score ? (goalMet ? 'bg-green-50 text-green-700 border border-green-200' : 'bg-red-50 text-red-700 border border-red-200') : (isCurrentPeriod ? 'bg-gray-100 text-gray-700 hover:bg-gray-200' : 'bg-white border border-gray-200 text-gray-600 hover:bg-gray-50')}`}
                           >
                             {score ? formatValue(score, metric.value_type) : '-'}
@@ -247,16 +247,16 @@ const ScorecardTableClean = ({
                     })}
                     
                     {showTotal && (
-                      <td className="p-2 text-center font-semibold w-20 bg-white border-l border-gray-200">
+                      <td className="px-1 text-center text-[10px] font-medium bg-white border-l border-gray-200">
                         {Math.round(Object.values(scores[metric.id] || {}).reduce((sum, val) => sum + (parseFloat(val) || 0), 0))}
                       </td>
                     )}
-                    <td className="text-center p-2 w-12">
-                      <div className="flex justify-center space-x-1">
+                    <td className="px-1 text-center">
+                      <div className="flex justify-center gap-0.5">
                         <Button
                           variant="ghost"
                           size="sm"
-                          className="h-6 w-6 p-0"
+                          className="h-5 w-5 p-0"
                           onClick={() => onMetricUpdate && onMetricUpdate(metric)}
                         >
                           <Edit className="h-3 w-3" />
@@ -264,7 +264,7 @@ const ScorecardTableClean = ({
                         <Button
                           variant="ghost"
                           size="sm"
-                          className="h-6 w-6 p-0"
+                          className="h-5 w-5 p-0"
                           onClick={() => onMetricDelete && onMetricDelete(metric.id)}
                         >
                           <Trash2 className="h-3 w-3 text-red-600" />
