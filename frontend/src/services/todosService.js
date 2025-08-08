@@ -21,7 +21,7 @@ const getTeamId = () => {
  */
 export const todosService = {
   // Get all todos
-  getTodos: async (status = null, assignedTo = null, includeCompleted = false, departmentId = null) => {
+  getTodos: async (status = null, assignedTo = null, includeCompleted = false, departmentId = null, includeArchived = false) => {
     const orgId = getOrgId();
     
     const params = {};
@@ -29,6 +29,7 @@ export const todosService = {
     if (assignedTo) params.assignedTo = assignedTo;
     if (includeCompleted) params.includeCompleted = 'true';
     if (departmentId) params.department_id = departmentId;
+    if (includeArchived) params.includeArchived = 'true';
     
     const response = await axios.get(
       `/organizations/${orgId}/todos`,

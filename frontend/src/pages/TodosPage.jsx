@@ -126,7 +126,8 @@ const TodosPage = () => {
         null, // Always fetch all todos for accurate counts
         assignedTo,
         true, // Include completed
-        selectedDepartment?.id // Filter by selected department
+        selectedDepartment?.id, // Filter by selected department
+        true // Include archived to show in the archived tab
       );
       
       const fetchedTodos = response.data.todos || [];
