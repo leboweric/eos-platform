@@ -42,7 +42,7 @@ const TodosListClean = ({
     const dueDate = parseDateAsLocal(todo.due_date);
     const today = new Date();
     today.setHours(0, 0, 0, 0);
-    return dueDate && dueDate < today && !todo.completed;
+    return dueDate && dueDate < today && todo.status !== 'complete';
   };
 
   const getDaysUntilDue = (todo) => {
@@ -83,7 +83,7 @@ const TodosListClean = ({
             key={todo.id}
             className={`
               group relative bg-white rounded-lg border transition-all duration-200
-              ${todo.completed ? 'border-gray-400 shadow-sm opacity-60' : 'border-gray-200 hover:border-gray-300 hover:shadow-sm'}
+              ${todo.status === 'complete' ? 'border-gray-400 shadow-sm opacity-60' : 'border-gray-200 hover:border-gray-300 hover:shadow-sm'}
             `}
           >
             {/* Status indicator - subtle left border */}
@@ -98,7 +98,7 @@ const TodosListClean = ({
                 {/* Checkbox */}
                 <div className="pt-0.5">
                   <Checkbox
-                    checked={todo.completed || false}
+                    checked={todo.status === 'complete'}
                     onCheckedChange={(checked) => {
                       if (onStatusChange) {
                         onStatusChange(todo.id, checked);
@@ -120,7 +120,7 @@ const TodosListClean = ({
                   {/* Title */}
                   <h3 className={`
                     text-base font-medium leading-tight
-                    ${todo.completed ? 'text-gray-400 line-through' : 'text-gray-900'}
+                    ${todo.status === 'complete' ? 'text-gray-400 line-through' : 'text-gray-900'}
                   `}>
                     {todo.title}
                   </h3>
@@ -128,7 +128,7 @@ const TodosListClean = ({
                   {/* Description - only show if exists */}
                   {todo.description && (
                     <p className={`mt-1.5 text-sm whitespace-pre-wrap ${
-                      todo.completed ? 'text-gray-400 line-through' : 'text-gray-600'
+                      todo.status === 'complete' ? 'text-gray-400 line-through' : 'text-gray-600'
                     }`}>
                       {todo.description}
                     </p>
@@ -174,7 +174,7 @@ const TodosListClean = ({
                     )}
                     
                     {/* Show closed badge if completed */}
-                    {todo.completed && (
+                    {todo.status === 'complete' && (
                       <>
                         <span className="text-gray-300">•</span>
                         <span className="flex items-center gap-1 text-green-600 text-sm font-medium">

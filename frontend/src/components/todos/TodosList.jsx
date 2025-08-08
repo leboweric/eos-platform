@@ -55,7 +55,7 @@ const TodosList = ({
     const dueDate = parseDateAsLocal(todo.due_date);
     const today = new Date();
     today.setHours(0, 0, 0, 0); // Reset time to start of day for accurate comparison
-    return dueDate && dueDate < today && !todo.completed;
+    return dueDate && dueDate < today && todo.status !== 'complete';
   };
 
   if (todos.length === 0) {
@@ -114,16 +114,16 @@ const TodosList = ({
                 <div
                   key={todo.id}
                   className={`p-4 hover:bg-green-50 transition-colors ${
-                    todo.completed ? 'opacity-60' : ''
+                    todo.status === 'complete' ? 'opacity-60' : ''
                   } ${
-                    isOverdue(todo) && !todo.completed ? 'bg-red-50 hover:bg-red-100' : ''
+                    isOverdue(todo) && todo.status !== 'complete' ? 'bg-red-50 hover:bg-red-100' : ''
                   }`}
                 >
                   <div className="flex items-start gap-3">
                     {/* Completion checkbox */}
                     <div className="flex items-center">
                       <Checkbox
-                        checked={todo.completed || false}
+                        checked={todo.status === 'complete'}
                         onCheckedChange={(checked) => {
                           if (onStatusChange) {
                             onStatusChange(todo.id, checked);
@@ -142,14 +142,14 @@ const TodosList = ({
                       <div className="flex items-start justify-between gap-4">
                         <div className="flex-1">
                           <h3 className={`font-medium ${
-                            todo.completed ? 'text-gray-400 line-through' : 'text-gray-900'
+                            todo.status === 'complete' ? 'text-gray-400 line-through' : 'text-gray-900'
                           }`}>
                             {todo.title}
                           </h3>
                       
                       {todo.description && (
                         <p className={`text-sm mt-1 whitespace-pre-wrap ${
-                          todo.completed ? 'text-gray-400 line-through' : 'text-gray-600'
+                          todo.status === 'complete' ? 'text-gray-400 line-through' : 'text-gray-600'
                         }`}>
                           {todo.description}
                         </p>
@@ -175,7 +175,7 @@ const TodosList = ({
                             )}
                             
                             {/* Show closed badge if completed */}
-                            {todo.completed && (
+                            {todo.status === 'complete' && (
                               <div className="flex items-center gap-1 text-green-600 text-sm font-medium">
                                 <CheckCircle className="h-3.5 w-3.5" />
                                 Closed
