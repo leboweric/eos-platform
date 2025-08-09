@@ -831,3 +831,131 @@ export const getUserVotes = async (req, res) => {
     });
   }
 };
+
+// Get all updates for an issue
+export const getIssueUpdates = async (req, res) => {
+  try {
+    const { issueId } = req.params;
+    
+    const result = await db.query(
+      `SELECT 
+        iu.id,
+        iu.update_text,
+        iu.created_at,
+        iu.created_by,
+        u.first_name || ' ' || u.last_name as created_by_name
+       FROM issue_updates iu
+       JOIN users u ON iu.created_by = u.id
+       WHERE iu.issue_id = $1
+       ORDER BY iu.created_at DESC`,
+      [issueId]
+    );
+    
+    res.json({
+      success: true,
+      data: result.rows
+    });
+  } catch (error) {
+    console.error('Error fetching issue updates:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Failed to fetch issue updates'
+    });
+  }
+};
+
+// Add an update to an issue
+export const addIssueUpdate = async (req, res) => {
+  try {
+    const { issueId } = req.params;
+    const { update_text } = req.body;
+    const userId = req.user.id;
+    
+    if (!update_text || !update_text.trim()) {
+      return res.status(400).json({
+        success: false,
+        message: 'Update text is required'
+      });
+    }
+    
+    const result = await db.query(
+      `INSERT INTO issue_updates (issue_id, update_text, created_by)
+       VALUES ($1, $2, $3)
+       RETURNING id, update_text, created_at`,
+      [issueId, update_text.trim(), userId]
+    );
+    
+    // Get the created update with user info
+    const updateWithUser = await db.query(
+      `SELECT 
+        iu.id,
+        iu.update_text,
+        iu.created_at,
+        iu.created_by,
+        u.first_name || ' ' || u.last_name as created_by_name
+       FROM issue_updates iu
+       JOIN users u ON iu.created_by = u.id
+       WHERE iu.id = $1`,
+      [result.rows[0].id]
+    );
+    
+    res.json({
+      success: true,
+      message: 'Update added successfully',
+      data: updateWithUser.rows[0]
+    });
+  } catch (error) {
+    console.error('Error adding issue update:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Failed to add issue update'
+    });
+  }
+};
+
+// Delete an issue update
+export const deleteIssueUpdate = async (req, res) => {
+  try {
+    const { issueId, updateId } = req.params;
+    const userId = req.user.id;
+    
+    // Check if user owns the update or is an admin
+    const updateCheck = await db.query(
+      `SELECT created_by FROM issue_updates WHERE id = $1 AND issue_id = $2`,
+      [updateId, issueId]
+    );
+    
+    if (updateCheck.rows.length === 0) {
+      return res.status(404).json({
+        success: false,
+        message: 'Update not found'
+      });
+    }
+    
+    const isOwner = updateCheck.rows[0].created_by === userId;
+    const isAdmin = req.user.role === 'admin';
+    
+    if (!isOwner && !isAdmin) {
+      return res.status(403).json({
+        success: false,
+        message: 'You can only delete your own updates'
+      });
+    }
+    
+    await db.query(
+      `DELETE FROM issue_updates WHERE id = $1 AND issue_id = $2`,
+      [updateId, issueId]
+    );
+    
+    res.json({
+      success: true,
+      message: 'Update deleted successfully'
+    });
+  } catch (error) {
+    console.error('Error deleting issue update:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Failed to delete issue update'
+    });
+  }
+};

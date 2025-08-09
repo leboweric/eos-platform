@@ -17,7 +17,10 @@ import {
   voteForIssue,
   unvoteForIssue,
   getUserVotes,
-  moveIssueToTeam
+  moveIssueToTeam,
+  getIssueUpdates,
+  addIssueUpdate,
+  deleteIssueUpdate
 } from '../controllers/issuesController.js';
 
 const router = express.Router({ mergeParams: true });
@@ -55,6 +58,14 @@ router.route('/votes')
 router.route('/:issueId/vote')
   .post(voteForIssue)
   .delete(unvoteForIssue);
+
+// Update routes
+router.route('/:issueId/updates')
+  .get(getIssueUpdates)
+  .post(addIssueUpdate);
+
+router.route('/:issueId/updates/:updateId')
+  .delete(deleteIssueUpdate);
 
 // Attachment routes
 router.route('/:issueId/attachments')

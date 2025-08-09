@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Button } from '@/components/ui/button';
 import {
@@ -26,8 +26,13 @@ import {
   MoreVertical,
   AlertCircle,
   CheckCircle,
-  Users
+  Users,
+  MessageSquare,
+  Trash2,
+  Plus
 } from 'lucide-react';
+import { Textarea } from '@/components/ui/textarea';
+import { issuesService } from '../../services/issuesService';
 
 const IssuesListClean = ({ 
   issues, 
@@ -43,6 +48,62 @@ const IssuesListClean = ({
   showVoting = false
 }) => {
   const [selectedIssue, setSelectedIssue] = useState(null);
+  const [issueUpdates, setIssueUpdates] = useState([]);
+  const [showAddUpdate, setShowAddUpdate] = useState(false);
+  const [updateText, setUpdateText] = useState('');
+  const [loadingUpdates, setLoadingUpdates] = useState(false);
+  const [savingUpdate, setSavingUpdate] = useState(false);
+
+  // Fetch updates when an issue is selected
+  useEffect(() => {
+    if (selectedIssue) {
+      fetchIssueUpdates(selectedIssue.id);
+    } else {
+      setIssueUpdates([]);
+      setShowAddUpdate(false);
+      setUpdateText('');
+    }
+  }, [selectedIssue]);
+
+  const fetchIssueUpdates = async (issueId) => {
+    try {
+      setLoadingUpdates(true);
+      const response = await issuesService.getIssueUpdates(issueId);
+      setIssueUpdates(response.data || []);
+    } catch (error) {
+      console.error('Failed to fetch issue updates:', error);
+      setIssueUpdates([]);
+    } finally {
+      setLoadingUpdates(false);
+    }
+  };
+
+  const handleAddUpdate = async () => {
+    if (!updateText.trim() || !selectedIssue) return;
+    
+    try {
+      setSavingUpdate(true);
+      const response = await issuesService.addIssueUpdate(selectedIssue.id, updateText);
+      setIssueUpdates([response.data, ...issueUpdates]);
+      setUpdateText('');
+      setShowAddUpdate(false);
+    } catch (error) {
+      console.error('Failed to add update:', error);
+    } finally {
+      setSavingUpdate(false);
+    }
+  };
+
+  const handleDeleteUpdate = async (updateId) => {
+    if (!selectedIssue || !confirm('Are you sure you want to delete this update?')) return;
+    
+    try {
+      await issuesService.deleteIssueUpdate(selectedIssue.id, updateId);
+      setIssueUpdates(issueUpdates.filter(u => u.id !== updateId));
+    } catch (error) {
+      console.error('Failed to delete update:', error);
+    }
+  };
 
   const formatDate = (dateString) => {
     const date = new Date(dateString);
@@ -331,6 +392,101 @@ const IssuesListClean = ({
                       )}
                     </div>
                   </div>
+                </div>
+
+                {/* Updates Section */}
+                <div className="space-y-3 pt-4 border-t">
+                  <div className="flex items-center justify-between">
+                    <h4 className="text-sm font-medium text-gray-700 flex items-center gap-2">
+                      <MessageSquare className="h-4 w-4" />
+                      Updates ({issueUpdates.length})
+                    </h4>
+                    {!readOnly && !showAddUpdate && (
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => setShowAddUpdate(true)}
+                      >
+                        <Plus className="h-3 w-3 mr-1" />
+                        Add Update
+                      </Button>
+                    )}
+                  </div>
+
+                  {/* Updates List */}
+                  {loadingUpdates ? (
+                    <div className="text-sm text-gray-500">Loading updates...</div>
+                  ) : (
+                    <>
+                      {issueUpdates.length > 0 && (
+                        <div className="space-y-2 max-h-48 overflow-y-auto">
+                          {issueUpdates.map(update => (
+                            <div key={update.id} className="group bg-gray-50 rounded-lg p-3">
+                              <div className="flex items-start justify-between">
+                                <div className="flex-1">
+                                  <p className="text-sm text-gray-800 whitespace-pre-wrap">{update.update_text}</p>
+                                  <div className="flex items-center gap-2 mt-1">
+                                    <span className="text-xs text-gray-500">
+                                      {update.created_by_name} • {formatDate(update.created_at)}
+                                    </span>
+                                  </div>
+                                </div>
+                                {!readOnly && (
+                                  <Button
+                                    variant="ghost"
+                                    size="sm"
+                                    onClick={() => handleDeleteUpdate(update.id)}
+                                    className="opacity-0 group-hover:opacity-100 transition-opacity h-6 w-6 p-0"
+                                  >
+                                    <Trash2 className="h-3 w-3 text-red-500" />
+                                  </Button>
+                                )}
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+
+                      {/* Add Update Form */}
+                      {showAddUpdate && (
+                        <div className="space-y-2">
+                          <Textarea
+                            value={updateText}
+                            onChange={(e) => setUpdateText(e.target.value)}
+                            placeholder="Add an update..."
+                            className="text-sm"
+                            rows={3}
+                          />
+                          <div className="flex gap-2">
+                            <Button
+                              size="sm"
+                              onClick={handleAddUpdate}
+                              disabled={!updateText.trim() || savingUpdate}
+                              className="bg-gray-900 hover:bg-gray-800"
+                            >
+                              {savingUpdate ? 'Saving...' : 'Add Update'}
+                            </Button>
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => {
+                                setShowAddUpdate(false);
+                                setUpdateText('');
+                              }}
+                            >
+                              Cancel
+                            </Button>
+                          </div>
+                        </div>
+                      )}
+
+                      {issueUpdates.length === 0 && !showAddUpdate && (
+                        <p className="text-sm text-gray-500 text-center py-2">
+                          No updates yet
+                        </p>
+                      )}
+                    </>
+                  )}
                 </div>
 
                 {/* Action Buttons */}

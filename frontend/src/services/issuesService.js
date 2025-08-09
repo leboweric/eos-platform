@@ -210,5 +210,36 @@ export const issuesService = {
       { newTeamId, reason }
     );
     return response.data;
+  },
+
+  // Get all updates for an issue
+  getIssueUpdates: async (issueId) => {
+    const orgId = getOrgId();
+    
+    const response = await axios.get(
+      `/organizations/${orgId}/issues/${issueId}/updates`
+    );
+    return response.data;
+  },
+
+  // Add an update to an issue
+  addIssueUpdate: async (issueId, updateText) => {
+    const orgId = getOrgId();
+    
+    const response = await axios.post(
+      `/organizations/${orgId}/issues/${issueId}/updates`,
+      { update_text: updateText }
+    );
+    return response.data;
+  },
+
+  // Delete an issue update
+  deleteIssueUpdate: async (issueId, updateId) => {
+    const orgId = getOrgId();
+    
+    const response = await axios.delete(
+      `/organizations/${orgId}/issues/${issueId}/updates/${updateId}`
+    );
+    return response.data;
   }
 };
