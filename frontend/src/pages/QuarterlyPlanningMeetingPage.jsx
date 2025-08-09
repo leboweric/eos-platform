@@ -168,18 +168,6 @@ const QuarterlyPlanningMeetingPage = () => {
     }
   }, [activeSection, teamId]);
 
-  // Debug showIssueDialog state changes
-  useEffect(() => {
-    console.log('=== showIssueDialog STATE CHANGED ===', showIssueDialog);
-    if (showIssueDialog) {
-      console.log('Dialog should be opening now!');
-      console.log('Current state:', {
-        editingIssue,
-        teamMembersCount: teamMembers?.length || 0,
-        activeSection
-      });
-    }
-  }, [showIssueDialog]);
 
   // Auto-clear success messages after 3 seconds
   useEffect(() => {
@@ -849,26 +837,8 @@ const QuarterlyPlanningMeetingPage = () => {
                     <CardDescription className="mt-1">Review and align your strategic vision</CardDescription>
                   </div>
                   <Button onClick={() => {
-                    console.log('=== 2-PAGE PLAN ADD ISSUE CLICKED ===');
-                    console.log('1. Before state changes:');
-                    console.log('   - showIssueDialog:', showIssueDialog);
-                    console.log('   - editingIssue:', editingIssue);
-                    console.log('   - teamMembers:', teamMembers?.length || 0, 'members');
-                    console.log('   - activeSection:', activeSection);
-                    
                     setEditingIssue(null);
                     setShowIssueDialog(true);
-                    
-                    console.log('2. State changes called');
-                    console.log('   - setEditingIssue(null) called');
-                    console.log('   - setShowIssueDialog(true) called');
-                    
-                    // Check state after a brief delay
-                    setTimeout(() => {
-                      console.log('3. After state changes (100ms delay):');
-                      console.log('   - showIssueDialog should be true:', showIssueDialog);
-                      console.log('   - editingIssue should be null:', editingIssue);
-                    }, 100);
                   }} className="bg-indigo-600 hover:bg-indigo-700">
                     <Plus className="mr-2 h-4 w-4" />
                     Add Issue
@@ -1221,47 +1191,6 @@ const QuarterlyPlanningMeetingPage = () => {
                 showVoting={true}
               />
             </div>
-            
-            {/* Issue Dialog */}
-            {console.log('=== ISSUE DIALOG RENDER CHECK ===', {
-              showIssueDialog,
-              editingIssue,
-              teamMembersCount: teamMembers?.length || 0,
-              activeSection
-            })}
-            <IssueDialog
-              open={showIssueDialog}
-              onClose={() => {
-                console.log('IssueDialog onClose called');
-                setShowIssueDialog(false);
-                setEditingIssue(null);
-              }}
-              onSave={async (issueData) => {
-                try {
-                  const effectiveTeamId = teamId || user?.teamId || '00000000-0000-0000-0000-000000000000';
-                  if (editingIssue) {
-                    await issuesService.updateIssue(editingIssue.id, issueData);
-                  } else {
-                    await issuesService.createIssue({
-                      ...issueData,
-                      team_id: effectiveTeamId
-                    });
-                  }
-                  // Only refresh issues data if we're on the issues section
-                  if (activeSection === 'issues') {
-                    await fetchIssuesData();
-                  }
-                  setShowIssueDialog(false);
-                  setEditingIssue(null);
-                  setSuccess('Issue saved successfully');
-                } catch (error) {
-                  console.error('Failed to save issue:', error);
-                  setError('Failed to save issue');
-                }
-              }}
-              issue={editingIssue}
-              teamMembers={teamMembers || []}
-            />
             
             {/* Add Priority Dialog */}
             <Dialog open={showAddPriority} onOpenChange={setShowAddPriority}>
@@ -1675,6 +1604,40 @@ const QuarterlyPlanningMeetingPage = () => {
           </DialogContent>
         </Dialog>
 
+        {/* Issue Dialog - Shared across all sections */}
+        <IssueDialog
+          open={showIssueDialog}
+          onClose={() => {
+            setShowIssueDialog(false);
+            setEditingIssue(null);
+          }}
+          onSave={async (issueData) => {
+            try {
+              const effectiveTeamId = teamId || user?.teamId || '00000000-0000-0000-0000-000000000000';
+              if (editingIssue) {
+                await issuesService.updateIssue(editingIssue.id, issueData);
+              } else {
+                await issuesService.createIssue({
+                  ...issueData,
+                  team_id: effectiveTeamId
+                });
+              }
+              // Only refresh issues data if we're on the issues section
+              if (activeSection === 'issues') {
+                await fetchIssuesData();
+              }
+              setShowIssueDialog(false);
+              setEditingIssue(null);
+              setSuccess('Issue saved successfully');
+            } catch (error) {
+              console.error('Failed to save issue:', error);
+              setError('Failed to save issue');
+            }
+          }}
+          issue={editingIssue}
+          teamMembers={teamMembers || []}
+        />
+
         {/* Todo Dialog */}
         <TodoDialog
           open={showTodoDialog}
@@ -1701,7 +1664,6 @@ const QuarterlyPlanningMeetingPage = () => {
               setSuccess('To-do saved successfully');
               
               // Refresh todos after save
-              const orgId = localStorage.getItem('impersonatedOrgId') || user?.organizationId || user?.organization_id;
               const response = await todosService.getTodos({ status: 'pending' });
               setTodos(response.data || []);
               
