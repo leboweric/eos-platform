@@ -357,7 +357,7 @@ const TwoPagePlanView = ({ hideIssuesAndPriorities = false }) => {
             {blueprintData.oneYearPlan ? (
               <div className="space-y-3">
                 <div>
-                  <h4 className="font-semibold text-sm text-gray-700">Revenue</h4>
+                  <h4 className="font-semibold text-sm text-gray-700">Revenue Target</h4>
                   <p className="text-gray-600">
                     {(blueprintData.oneYearPlan.revenue_target || blueprintData.oneYearPlan.revenue) ? (
                       `$${Number(blueprintData.oneYearPlan.revenue_target || blueprintData.oneYearPlan.revenue) < 1 
@@ -367,12 +367,10 @@ const TwoPagePlanView = ({ hideIssuesAndPriorities = false }) => {
                   </p>
                 </div>
                 <div>
-                  <h4 className="font-semibold text-sm text-gray-700">Profit</h4>
+                  <h4 className="font-semibold text-sm text-gray-700">Profit Target</h4>
                   <p className="text-gray-600">
-                    {(blueprintData.oneYearPlan.profit_target || blueprintData.oneYearPlan.profit) ? (
-                      `$${Number(blueprintData.oneYearPlan.profit_target || blueprintData.oneYearPlan.profit) < 1 
-                        ? `${(Number(blueprintData.oneYearPlan.profit_target || blueprintData.oneYearPlan.profit) * 1000).toFixed(0)}K`
-                        : `${Number(blueprintData.oneYearPlan.profit_target || blueprintData.oneYearPlan.profit).toFixed(1)}M`}`
+                    {(blueprintData.oneYearPlan.profit_percentage || blueprintData.oneYearPlan.profit_target) ? (
+                      `${Number(blueprintData.oneYearPlan.profit_percentage || blueprintData.oneYearPlan.profit_target).toFixed(2)}%`
                     ) : 'Not set'}
                   </p>
                 </div>
