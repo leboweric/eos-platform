@@ -170,12 +170,12 @@ const TwoPagePlanView = () => {
           </CardContent>
         </Card>
 
-        {/* BHAG */}
+        {/* Long Range Plan */}
         <Card className="shadow-lg border-0 overflow-hidden">
           <CardHeader className="bg-white border-b">
             <CardTitle className="flex items-center text-xl text-gray-900">
               <TrendingUp className="mr-2 h-6 w-6 text-indigo-600" />
-              {blueprintData.bhag.year}-Year Target
+              Long Range Plan
             </CardTitle>
           </CardHeader>
           <CardContent className="pt-4">
@@ -222,12 +222,12 @@ const TwoPagePlanView = () => {
 
       {/* Right Column - Page 2 */}
       <div className="space-y-6">
-        {/* Long Range Plan */}
+        {/* 3-Year Picture */}
         <Card className="shadow-lg border-0 overflow-hidden">
           <CardHeader className="bg-white border-b">
             <CardTitle className="flex items-center text-xl text-gray-900">
               <Calendar className="mr-2 h-6 w-6 text-indigo-600" />
-              Long Range Plan
+              3-Year Picture
             </CardTitle>
           </CardHeader>
           <CardContent className="pt-4">

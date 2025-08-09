@@ -312,9 +312,9 @@ const BusinessBlueprintPage = () => {
       setSaving(true);
       setError(null);
       await businessBlueprintService.updateBHAG(blueprintData.bhag);
-      setSuccess('BHAG updated successfully');
+      setSuccess('Long Range Plan updated successfully');
     } catch (error) {
-      setError('Failed to update BHAG');
+      setError('Failed to update Long Range Plan');
     } finally {
       setSaving(false);
     }
@@ -363,13 +363,13 @@ const BusinessBlueprintPage = () => {
         ...prev,
         threeYearPicture: savedData || data
       }));
-      setSuccess('Long Range Plan updated successfully');
+      setSuccess('3-Year Picture updated successfully');
       // Refresh the business blueprint data to ensure everything is in sync
       setTimeout(() => {
         fetchBusinessBlueprint();
       }, 500);
     } catch (error) {
-      setError('Failed to update Long Range Plan');
+      setError('Failed to update 3-Year Picture');
       throw error;
     } finally {
       setSaving(false);
@@ -478,7 +478,7 @@ const BusinessBlueprintPage = () => {
           </TabsList>
 
         <TabsContent value="vision" className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          {/* Left Column - Core Values, Focus, BHAG, Marketing Strategy */}
+          {/* Left Column - Core Values, Focus, Long Range Plan, Marketing Strategy */}
           <div className="lg:col-span-2 space-y-6">
             {/* Core Values */}
             <Card className="shadow-lg border-0 overflow-hidden">
@@ -691,15 +691,15 @@ const BusinessBlueprintPage = () => {
             </CardContent>
           </Card>
 
-          {/* BHAG (Big Hairy Audacious Goal) */}
+          {/* Long Range Plan */}
           <Card className="shadow-lg border-0 overflow-hidden">
             <CardHeader className="bg-white border-b">
               <CardTitle className="flex items-center text-xl text-gray-900">
                 <TrendingUp className="mr-2 h-6 w-6 text-indigo-600" />
-                Big Hairy Audacious Goal (BHAG)
+                Long Range Plan
               </CardTitle>
               <CardDescription className="text-gray-600">
-                Your Long Range Vision
+                Your 10+ year vision
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
@@ -731,7 +731,7 @@ const BusinessBlueprintPage = () => {
                   {blueprintData.bhag.description && (
                     <div className="flex items-start justify-between p-4 bg-gray-50 border border-gray-200 rounded-lg hover:shadow-md transition-shadow">
                       <div className="flex-1">
-                        <h4 className="font-semibold text-gray-900">BHAG Description</h4>
+                        <h4 className="font-semibold text-gray-900">Vision Description</h4>
                         <p className="text-sm text-gray-600 mt-1">
                           {blueprintData.bhag.description}
                         </p>
@@ -757,8 +757,8 @@ const BusinessBlueprintPage = () => {
                     >
                       <Plus className="mr-2 h-4 w-4" />
                       {!blueprintData.bhag.year && !blueprintData.bhag.description 
-                        ? 'Add BHAG' 
-                        : 'Complete BHAG'}
+                        ? 'Add Long Range Plan' 
+                        : 'Complete Long Range Plan'}
                     </Button>
                   )}
                 </>
@@ -780,7 +780,7 @@ const BusinessBlueprintPage = () => {
                   </div>
 
                   <div>
-                    <Label htmlFor="bhagDescription">BHAG Description</Label>
+                    <Label htmlFor="bhagDescription">Vision Description</Label>
                     <Textarea
                       id="bhagDescription"
                       value={blueprintData.bhag.description}
@@ -788,7 +788,7 @@ const BusinessBlueprintPage = () => {
                         ...prev,
                         bhag: { ...prev.bhag, description: e.target.value }
                       }))}
-                      placeholder="Describe your Big Hairy Audacious Goal..."
+                      placeholder="Describe your long range vision..."
                     />
                   </div>
 
@@ -806,7 +806,7 @@ const BusinessBlueprintPage = () => {
                       ) : (
                         <Save className="mr-2 h-4 w-4" />
                       )}
-                      Save BHAG
+                      Save Long Range Plan
                     </Button>
                     {(blueprintData.bhag.year || blueprintData.bhag.description) && (
                       <Button
@@ -1177,9 +1177,9 @@ const BusinessBlueprintPage = () => {
                   <div>
                     <CardTitle className="flex items-center text-xl text-gray-900">
                       <Calendar className="mr-2 h-6 w-6 text-indigo-600" />
-                      Long Range Plan
+                      3-Year Picture
                     </CardTitle>
-                    <CardDescription className="text-gray-600">Your organization's long range vision</CardDescription>
+                    <CardDescription className="text-gray-600">Your organization's 3-year vision</CardDescription>
                   </div>
                   <Button 
                     variant="outline" 
@@ -1318,7 +1318,7 @@ const BusinessBlueprintPage = () => {
                       className="bg-indigo-600 hover:bg-indigo-700 text-white"
                     >
                       <Plus className="h-4 w-4 mr-2" />
-                      Create Long Range Plan
+                      Create 3-Year Picture
                     </Button>
                   </div>
                 )}
