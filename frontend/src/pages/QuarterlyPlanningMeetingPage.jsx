@@ -1203,7 +1203,10 @@ const QuarterlyPlanningMeetingPage = () => {
                       team_id: effectiveTeamId
                     });
                   }
-                  await fetchIssuesData();
+                  // Only refresh issues data if we're on the issues section
+                  if (activeSection === 'issues') {
+                    await fetchIssuesData();
+                  }
                   setShowIssueDialog(false);
                   setEditingIssue(null);
                   setSuccess('Issue saved successfully');
