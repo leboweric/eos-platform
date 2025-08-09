@@ -76,7 +76,7 @@ const QuarterlyPlanningMeetingPage = () => {
     { id: '2-page-plan', label: '2-Page Plan', duration: 60, icon: ClipboardList, description: 'Review strategic plan' },
     { id: 'learning', label: 'Learning', duration: 60, icon: MessageSquare, description: 'Share insights & learnings' },
     { id: 'quarterly-priorities', label: 'Quarterly Priorities', duration: 120, icon: ListChecks, description: 'Set new priorities' },
-    { id: 'issues', label: 'Issues', duration: 60, icon: AlertTriangle, description: 'IDS - Identify, Discuss, Solve' },
+    { id: 'issues', label: 'Issues', duration: 180, icon: AlertTriangle, description: 'IDS - Identify, Discuss, Solve' },
     { id: 'next-steps', label: 'Next Steps', duration: 7, icon: ClipboardList, description: 'Action items' },
     { id: 'conclude', label: 'Conclude', duration: 8, icon: CheckSquare, description: 'Wrap up & rate' }
   ];
@@ -955,7 +955,7 @@ const QuarterlyPlanningMeetingPage = () => {
                     <CardDescription className="mt-1">Identify, Discuss, and Solve issues</CardDescription>
                   </div>
                   <div className="text-sm text-gray-500 bg-white px-3 py-1 rounded-full">
-                    60 minutes
+                    180 minutes
                   </div>
                 </div>
               </CardHeader>
