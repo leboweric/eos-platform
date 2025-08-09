@@ -835,12 +835,8 @@ const QuarterlyPlanningMeetingPage = () => {
                     </CardTitle>
                     <CardDescription className="mt-1">Review and align your strategic vision</CardDescription>
                   </div>
-                  <Button
-                    onClick={() => setShowIssueDialog(true)}
-                    className="bg-blue-600 hover:bg-blue-700 text-white"
-                    size="sm"
-                  >
-                    <Plus className="h-4 w-4 mr-1" />
+                  <Button onClick={() => setShowIssueDialog(true)} className="bg-indigo-600 hover:bg-indigo-700">
+                    <Plus className="mr-2 h-4 w-4" />
                     Add Issue
                   </Button>
                 </div>
