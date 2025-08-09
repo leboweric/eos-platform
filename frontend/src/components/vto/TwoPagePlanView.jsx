@@ -55,6 +55,7 @@ const TwoPagePlanView = ({ hideIssuesAndPriorities = false }) => {
       const data = await businessBlueprintService.getBusinessBlueprint();
       console.log('Blueprint data:', data);  // Debug log to see the data structure
       console.log('3-Year Picture data:', data.threeYearPicture);  // Debug the 3-year data specifically
+      console.log('Marketing Strategy data:', data.marketingStrategy);  // Debug marketing strategy specifically
       
       // Transform API data to component state
       setBlueprintData({
@@ -72,7 +73,10 @@ const TwoPagePlanView = ({ hideIssuesAndPriorities = false }) => {
           runningTotal: data.tenYearTarget?.running_total_description || ''
         },
         marketingStrategy: {
-          targetMarket: data.marketingStrategy?.target_market || '',
+          targetMarket: data.marketingStrategy?.target_market || 
+                       data.marketingStrategy?.demographic_profile || 
+                       data.marketingStrategy?.geographic_profile || 
+                       data.marketingStrategy?.psychographic_profile || '',
           differentiators: [
             data.marketingStrategy?.differentiator_1 || '',
             data.marketingStrategy?.differentiator_2 || '',
@@ -217,7 +221,7 @@ const TwoPagePlanView = ({ hideIssuesAndPriorities = false }) => {
               <div>
                 <h4 className="font-semibold text-sm text-gray-700">Target Market</h4>
                 <p className="text-gray-600 whitespace-pre-wrap">
-                  {blueprintData.marketingStrategy.targetMarket || 'Not defined'}
+                  {blueprintData.marketingStrategy?.targetMarket || 'Not defined'}
                 </p>
               </div>
               <div>
