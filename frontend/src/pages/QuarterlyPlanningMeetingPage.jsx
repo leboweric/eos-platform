@@ -241,7 +241,6 @@ const QuarterlyPlanningMeetingPage = () => {
             });
             
             setSuccess('Priority marked off-track and issue created');
-            await fetchIssuesData();
           } catch (error) {
             console.error('Failed to create issue for off-track priority:', error);
           }
