@@ -73,10 +73,10 @@ const TwoPagePlanView = ({ hideIssuesAndPriorities = false }) => {
           runningTotal: data.tenYearTarget?.running_total_description || ''
         },
         marketingStrategy: {
-          targetMarket: data.marketingStrategy?.target_market || 
-                       data.marketingStrategy?.demographic_profile || 
-                       data.marketingStrategy?.geographic_profile || 
-                       data.marketingStrategy?.psychographic_profile || '',
+          targetMarket: data.marketingStrategy?.target_market || '',
+          demographicProfile: data.marketingStrategy?.demographic_profile || '',
+          geographicProfile: data.marketingStrategy?.geographic_profile || '',
+          psychographicProfile: data.marketingStrategy?.psychographic_profile || '',
           differentiators: [
             data.marketingStrategy?.differentiator_1 || '',
             data.marketingStrategy?.differentiator_2 || '',
@@ -85,7 +85,10 @@ const TwoPagePlanView = ({ hideIssuesAndPriorities = false }) => {
             data.marketingStrategy?.differentiator_5 || ''
           ].filter(d => d),
           provenProcessExists: data.marketingStrategy?.proven_process_exists || false,
-          guaranteeExists: data.marketingStrategy?.guarantee_exists || false
+          provenProcess: data.marketingStrategy?.proven_process || '',
+          guaranteeExists: data.marketingStrategy?.guarantee_exists || false,
+          guarantee: data.marketingStrategy?.guarantee || '',
+          guaranteeDescription: data.marketingStrategy?.guarantee_description || ''
         },
         threeYearPicture: data.threeYearPicture,
         oneYearPlan: data.oneYearPlan,
@@ -220,9 +223,34 @@ const TwoPagePlanView = ({ hideIssuesAndPriorities = false }) => {
             <div className="space-y-3">
               <div>
                 <h4 className="font-semibold text-sm text-gray-700">Target Market</h4>
-                <p className="text-gray-600 whitespace-pre-wrap">
-                  {blueprintData.marketingStrategy?.targetMarket || 'Not defined'}
-                </p>
+                {(blueprintData.marketingStrategy?.demographicProfile || 
+                  blueprintData.marketingStrategy?.geographicProfile || 
+                  blueprintData.marketingStrategy?.psychographicProfile) ? (
+                  <div className="space-y-2 ml-4">
+                    {blueprintData.marketingStrategy?.demographicProfile && (
+                      <div>
+                        <h5 className="font-medium text-xs text-gray-600 mb-1">Demographic</h5>
+                        <p className="text-gray-600 whitespace-pre-wrap">{blueprintData.marketingStrategy.demographicProfile}</p>
+                      </div>
+                    )}
+                    {blueprintData.marketingStrategy?.geographicProfile && (
+                      <div>
+                        <h5 className="font-medium text-xs text-gray-600 mb-1">Geographic</h5>
+                        <p className="text-gray-600 whitespace-pre-wrap">{blueprintData.marketingStrategy.geographicProfile}</p>
+                      </div>
+                    )}
+                    {blueprintData.marketingStrategy?.psychographicProfile && (
+                      <div>
+                        <h5 className="font-medium text-xs text-gray-600 mb-1">Psychographic</h5>
+                        <p className="text-gray-600 whitespace-pre-wrap">{blueprintData.marketingStrategy.psychographicProfile}</p>
+                      </div>
+                    )}
+                  </div>
+                ) : (
+                  <p className="text-gray-600 whitespace-pre-wrap">
+                    {blueprintData.marketingStrategy?.targetMarket || 'Not defined'}
+                  </p>
+                )}
               </div>
               <div>
                 <h4 className="font-semibold text-sm text-gray-700">Differentiators</h4>
@@ -241,16 +269,30 @@ const TwoPagePlanView = ({ hideIssuesAndPriorities = false }) => {
                   <p className="text-gray-500">No differentiators defined</p>
                 )}
               </div>
-              {blueprintData.marketingStrategy.provenProcessExists && (
-                <div className="flex items-center gap-2">
-                  <span className="text-green-600">✓</span>
-                  <span className="text-sm text-gray-600">Yes, we have a proven process</span>
+              {(blueprintData.marketingStrategy.provenProcessExists || blueprintData.marketingStrategy.provenProcess) && (
+                <div>
+                  <h4 className="font-semibold text-sm text-gray-700">Proven Process</h4>
+                  <div className="flex items-center gap-2">
+                    <span className="text-green-600">✓</span>
+                    <span className="text-sm text-gray-600">
+                      {blueprintData.marketingStrategy.provenProcess || 'Yes, we have a proven process'}
+                    </span>
+                  </div>
                 </div>
               )}
-              {blueprintData.marketingStrategy.guaranteeExists && (
-                <div className="flex items-center gap-2">
-                  <span className="text-green-600">✓</span>
-                  <span className="text-sm text-gray-600">We offer a guarantee</span>
+              {(blueprintData.marketingStrategy.guaranteeExists || blueprintData.marketingStrategy.guarantee || blueprintData.marketingStrategy.guaranteeDescription) && (
+                <div>
+                  <h4 className="font-semibold text-sm text-gray-700">Guarantee</h4>
+                  {blueprintData.marketingStrategy.guaranteeDescription || blueprintData.marketingStrategy.guarantee ? (
+                    <p className="text-gray-600">
+                      {blueprintData.marketingStrategy.guaranteeDescription || blueprintData.marketingStrategy.guarantee}
+                    </p>
+                  ) : (
+                    <div className="flex items-center gap-2">
+                      <span className="text-green-600">✓</span>
+                      <span className="text-sm text-gray-600">We offer a guarantee</span>
+                    </div>
+                  )}
                 </div>
               )}
             </div>
