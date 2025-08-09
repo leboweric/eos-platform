@@ -26,6 +26,12 @@ import {
 import { issuesService } from '../../services/issuesService';
 
 const IssueDialog = ({ open, onClose, onSave, issue, teamMembers, timeline }) => {
+  console.log('=== INSIDE ISSUE DIALOG COMPONENT ===', {
+    open,
+    issue,
+    teamMembersCount: teamMembers?.length || 0,
+    timeline
+  });
   const [formData, setFormData] = useState({
     title: '',
     description: '',

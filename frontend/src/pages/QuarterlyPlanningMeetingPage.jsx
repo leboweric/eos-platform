@@ -168,6 +168,19 @@ const QuarterlyPlanningMeetingPage = () => {
     }
   }, [activeSection, teamId]);
 
+  // Debug showIssueDialog state changes
+  useEffect(() => {
+    console.log('=== showIssueDialog STATE CHANGED ===', showIssueDialog);
+    if (showIssueDialog) {
+      console.log('Dialog should be opening now!');
+      console.log('Current state:', {
+        editingIssue,
+        teamMembersCount: teamMembers?.length || 0,
+        activeSection
+      });
+    }
+  }, [showIssueDialog]);
+
   // Auto-clear success messages after 3 seconds
   useEffect(() => {
     if (success) {
@@ -836,8 +849,26 @@ const QuarterlyPlanningMeetingPage = () => {
                     <CardDescription className="mt-1">Review and align your strategic vision</CardDescription>
                   </div>
                   <Button onClick={() => {
+                    console.log('=== 2-PAGE PLAN ADD ISSUE CLICKED ===');
+                    console.log('1. Before state changes:');
+                    console.log('   - showIssueDialog:', showIssueDialog);
+                    console.log('   - editingIssue:', editingIssue);
+                    console.log('   - teamMembers:', teamMembers?.length || 0, 'members');
+                    console.log('   - activeSection:', activeSection);
+                    
                     setEditingIssue(null);
                     setShowIssueDialog(true);
+                    
+                    console.log('2. State changes called');
+                    console.log('   - setEditingIssue(null) called');
+                    console.log('   - setShowIssueDialog(true) called');
+                    
+                    // Check state after a brief delay
+                    setTimeout(() => {
+                      console.log('3. After state changes (100ms delay):');
+                      console.log('   - showIssueDialog should be true:', showIssueDialog);
+                      console.log('   - editingIssue should be null:', editingIssue);
+                    }, 100);
                   }} className="bg-indigo-600 hover:bg-indigo-700">
                     <Plus className="mr-2 h-4 w-4" />
                     Add Issue
@@ -1192,9 +1223,16 @@ const QuarterlyPlanningMeetingPage = () => {
             </div>
             
             {/* Issue Dialog */}
+            {console.log('=== ISSUE DIALOG RENDER CHECK ===', {
+              showIssueDialog,
+              editingIssue,
+              teamMembersCount: teamMembers?.length || 0,
+              activeSection
+            })}
             <IssueDialog
               open={showIssueDialog}
               onClose={() => {
+                console.log('IssueDialog onClose called');
                 setShowIssueDialog(false);
                 setEditingIssue(null);
               }}
