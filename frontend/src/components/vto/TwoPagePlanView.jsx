@@ -265,10 +265,20 @@ const TwoPagePlanView = ({ hideIssuesAndPriorities = false }) => {
           <CardContent className="pt-4">
             {blueprintData.threeYearPicture ? (
               <div className="space-y-3">
-                {blueprintData.threeYearPicture.targetDate && (
+                {blueprintData.threeYearPicture.future_date && (
                   <div>
                     <h4 className="font-semibold text-sm text-gray-700">Target Date</h4>
-                    <p className="text-gray-600">{blueprintData.threeYearPicture.targetDate}</p>
+                    <p className="text-gray-600">
+                      {(() => {
+                        const [year, month, day] = blueprintData.threeYearPicture.future_date.split('T')[0].split('-');
+                        const date = new Date(year, month - 1, day);
+                        return date.toLocaleDateString('en-US', { 
+                          year: 'numeric', 
+                          month: 'long', 
+                          day: 'numeric' 
+                        });
+                      })()}
+                    </p>
                   </div>
                 )}
                 <div>
@@ -279,10 +289,14 @@ const TwoPagePlanView = ({ hideIssuesAndPriorities = false }) => {
                   <h4 className="font-semibold text-sm text-gray-700">Profit Target</h4>
                   <p className="text-gray-600">{blueprintData.threeYearPicture.profit || 'Not set'}</p>
                 </div>
-                {blueprintData.threeYearPicture?.description && (
+                {blueprintData.threeYearPicture?.lookLikeItems && blueprintData.threeYearPicture.lookLikeItems.filter(item => item).length > 0 && (
                   <div>
                     <h4 className="font-semibold text-sm text-gray-700">What does it look like?</h4>
-                    <p className="text-gray-600 whitespace-pre-wrap">{blueprintData.threeYearPicture.description}</p>
+                    <ul className="list-disc list-inside text-gray-600 space-y-1">
+                      {blueprintData.threeYearPicture.lookLikeItems.filter(item => item).map((item, index) => (
+                        <li key={index}>{item}</li>
+                      ))}
+                    </ul>
                   </div>
                 )}
                 {blueprintData.threeYearPicture?.measurables?.length > 0 && (
