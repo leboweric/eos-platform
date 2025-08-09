@@ -601,7 +601,7 @@ const QuarterlyPlanningMeetingPage = () => {
                     </div>
                   )}
                 </CardTitle>
-                <CardDescription>Check progress on last quarter's priorities (30 minutes)</CardDescription>
+                <CardDescription>Check progress on last quarter's priorities</CardDescription>
               </CardHeader>
             </Card>
             {priorities.length === 0 ? (
@@ -832,19 +832,14 @@ const QuarterlyPlanningMeetingPage = () => {
                     </CardTitle>
                     <CardDescription className="mt-1">Review and align your strategic vision</CardDescription>
                   </div>
-                  <div className="flex items-center gap-3">
-                    <Button
-                      onClick={() => setShowIssueDialog(true)}
-                      className="bg-blue-600 hover:bg-blue-700 text-white"
-                      size="sm"
-                    >
-                      <Plus className="h-4 w-4 mr-1" />
-                      Add Issue
-                    </Button>
-                    <div className="text-sm text-gray-500 bg-white px-3 py-1 rounded-full">
-                      30 minutes
-                    </div>
-                  </div>
+                  <Button
+                    onClick={() => setShowIssueDialog(true)}
+                    className="bg-blue-600 hover:bg-blue-700 text-white"
+                    size="sm"
+                  >
+                    <Plus className="h-4 w-4 mr-1" />
+                    Add Issue
+                  </Button>
                 </div>
               </CardHeader>
             </Card>
@@ -1193,7 +1188,7 @@ const QuarterlyPlanningMeetingPage = () => {
             
             {/* Issue Dialog */}
             <IssueDialog
-              open={showIssueDialog}
+              isOpen={showIssueDialog}
               onClose={() => {
                 setShowIssueDialog(false);
                 setEditingIssue(null);
