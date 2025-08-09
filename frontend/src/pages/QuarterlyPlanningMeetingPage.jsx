@@ -246,10 +246,13 @@ const QuarterlyPlanningMeetingPage = () => {
           }
         }
       } else {
-        setSuccess(`Priority status updated to ${newStatus.replace('-', ' ')}`);
+        // Status updated silently - no need for success message that causes screen jumping
       }
       
-      setTimeout(() => setSuccess(null), 3000);
+      // Only set timeout if we actually showed a success message
+      if (newStatus === 'off-track') {
+        setTimeout(() => setSuccess(null), 3000);
+      }
     } catch (error) {
       console.error('Failed to update priority status:', error);
       
