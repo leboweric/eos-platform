@@ -562,7 +562,7 @@ const TwoPagePlanView = ({ hideIssuesAndPriorities = false }) => {
     {/* Issue Dialog */}
     {showIssueDialog && (
       <IssueDialog
-        isOpen={showIssueDialog}
+        open={showIssueDialog}
         onClose={() => setShowIssueDialog(false)}
         onSubmit={async (issueData) => {
           // The IssueDialog will handle the submission

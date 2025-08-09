@@ -159,6 +159,7 @@ const QuarterlyPlanningMeetingPage = () => {
       fetchTeamMembers();
     } else if (activeSection === '2-page-plan') {
       fetchVtoData();
+      fetchTeamMembers(); // Need team members for Add Issue dialog
     } else if (activeSection === 'next-steps') {
       fetchTodosData();
     } else {
