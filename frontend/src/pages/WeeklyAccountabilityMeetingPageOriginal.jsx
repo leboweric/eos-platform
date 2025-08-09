@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { useParams } from 'react-router-dom';
 import { useAuthStore } from '../stores/authStore';
 import { meetingsService } from '../services/meetingsService';
+import { scorecardPreferencesService } from '../services/userPreferencesService';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -78,16 +79,29 @@ const WeeklyAccountabilityMeetingPage = () => {
     companyPriorities: false,
     individualPriorities: {}
   });
-  const [isRTL, setIsRTL] = useState(() => {
-    // Load RTL preference from localStorage
-    const saved = localStorage.getItem('scorecardRTL');
-    return saved === 'true';
-  });
-  const [showTotal, setShowTotal] = useState(() => {
-    // Load showTotal preference from localStorage
-    const saved = localStorage.getItem('scorecardShowTotal');
-    return saved !== null ? saved === 'true' : true; // Default to true if not set
-  });
+  const [isRTL, setIsRTL] = useState(false);
+  const [showTotal, setShowTotal] = useState(true);
+  const [preferencesLoaded, setPreferencesLoaded] = useState(false);
+  
+  // Load scorecard preferences from database
+  useEffect(() => {
+    const loadPreferences = async () => {
+      try {
+        const prefs = await scorecardPreferencesService.getPreferences();
+        setIsRTL(prefs.rtl);
+        setShowTotal(prefs.showTotal);
+      } catch (error) {
+        console.error('Failed to load scorecard preferences:', error);
+        // Use defaults on error
+      } finally {
+        setPreferencesLoaded(true);
+      }
+    };
+    
+    if (user) {
+      loadPreferences();
+    }
+  }, [user]);
 
   // Meeting state
   const [meetingStarted, setMeetingStarted] = useState(false);
@@ -1022,10 +1036,14 @@ const WeeklyAccountabilityMeetingPage = () => {
                 </div>
                 <div className="flex justify-end gap-2">
                   <Button 
-                    onClick={() => {
+                    onClick={async () => {
                       const newValue = !showTotal;
                       setShowTotal(newValue);
-                      localStorage.setItem('scorecardShowTotal', newValue.toString());
+                      try {
+                        await scorecardPreferencesService.setShowTotal(newValue);
+                      } catch (error) {
+                        console.error('Failed to save preference:', error);
+                      }
                     }} 
                     variant="outline"
                     size="sm"
@@ -1034,10 +1052,14 @@ const WeeklyAccountabilityMeetingPage = () => {
                     {showTotal ? "Hide Total" : "Show Total"}
                   </Button>
                   <Button 
-                    onClick={() => {
+                    onClick={async () => {
                       const newValue = !isRTL;
                       setIsRTL(newValue);
-                      localStorage.setItem('scorecardRTL', newValue.toString());
+                      try {
+                        await scorecardPreferencesService.setRTL(newValue);
+                      } catch (error) {
+                        console.error('Failed to save preference:', error);
+                      }
                     }} 
                     variant="outline"
                     size="sm"

@@ -107,28 +107,6 @@ const BusinessBlueprintPage = () => {
   useEffect(() => {
     fetchBusinessBlueprint();
     fetchOrganization();
-    // Load saved checkbox states from localStorage
-    const orgId = localStorage.getItem('impersonatedOrgId') || user?.organizationId || user?.organization_id;
-    
-    // Load 3-Year Picture checked items
-    const savedLookLikeState = localStorage.getItem(`lookLikeChecked_${orgId}`);
-    if (savedLookLikeState) {
-      try {
-        setLookLikeCheckedItems(JSON.parse(savedLookLikeState));
-      } catch (error) {
-        console.error('Failed to load lookLike checked state:', error);
-      }
-    }
-    
-    // Load 1-Year Plan goals checked items
-    const savedGoalsState = localStorage.getItem(`oneYearGoalsChecked_${orgId}`);
-    if (savedGoalsState) {
-      try {
-        setOneYearGoalsCheckedItems(JSON.parse(savedGoalsState));
-      } catch (error) {
-        console.error('Failed to load goals checked state:', error);
-      }
-    }
   }, []);
   
   // Hide sidebar if coming from meeting
@@ -154,6 +132,21 @@ const BusinessBlueprintPage = () => {
       setLoading(true);
       setError(null);
       const data = await businessBlueprintService.getBusinessBlueprint();
+      
+      // Set completion states from database
+      if (data.threeYearPicture?.what_does_it_look_like_completions) {
+        setLookLikeCheckedItems(data.threeYearPicture.what_does_it_look_like_completions);
+      }
+      
+      if (data.oneYearPlan?.goals) {
+        const goalsCompletionState = {};
+        data.oneYearPlan.goals.forEach((goal, index) => {
+          if (goal.is_completed) {
+            goalsCompletionState[index] = true;
+          }
+        });
+        setOneYearGoalsCheckedItems(goalsCompletionState);
+      }
       
       // Transform API data to component state
       setBlueprintData({
@@ -191,14 +184,15 @@ const BusinessBlueprintPage = () => {
           revenue: data.threeYearPicture.revenue_target || '',
           profit: data.threeYearPicture.profit_target || '',
           lookLikeItems: data.threeYearPicture.what_does_it_look_like ? 
-            JSON.parse(data.threeYearPicture.what_does_it_look_like) : []
+            JSON.parse(data.threeYearPicture.what_does_it_look_like) : [],
+          completions: data.threeYearPicture.what_does_it_look_like_completions || {}
         } : null,
         oneYearPlan: data.oneYearPlan ? {
           ...data.oneYearPlan,
           revenue: data.oneYearPlan.revenue_target || '',
           profit: data.oneYearPlan.profit_percentage || '',
           goals: data.oneYearPlan.goals && Array.isArray(data.oneYearPlan.goals) ? 
-            data.oneYearPlan.goals.map(g => g.goal_text) : ['', '', '']
+            data.oneYearPlan.goals : []
         } : null,
         quarterlyPriorities: data.quarterlyPriorities,
         longTermIssues: data.longTermIssues || []
@@ -377,33 +371,36 @@ const BusinessBlueprintPage = () => {
   };
   
   // Handler for toggling lookLike item checkboxes
-  const handleToggleLookLikeItem = (index) => {
-    setLookLikeCheckedItems(prev => ({
-      ...prev,
-      [index]: !prev[index]
-    }));
-    // Store the checked state in localStorage for persistence
-    const newCheckedState = {
-      ...lookLikeCheckedItems,
-      [index]: !lookLikeCheckedItems[index]
-    };
-    const orgId = localStorage.getItem('impersonatedOrgId') || user?.organizationId || user?.organization_id;
-    localStorage.setItem(`lookLikeChecked_${orgId}`, JSON.stringify(newCheckedState));
+  const handleToggleLookLikeItem = async (index) => {
+    try {
+      const result = await businessBlueprintService.toggleThreeYearItem(index);
+      setLookLikeCheckedItems(prev => ({
+        ...prev,
+        [index]: !prev[index]
+      }));
+    } catch (error) {
+      console.error('Failed to toggle item:', error);
+      setError('Failed to update item completion status');
+    }
   };
   
   // Handler for toggling 1-Year Plan goal checkboxes
-  const handleToggleOneYearGoal = (index) => {
-    setOneYearGoalsCheckedItems(prev => ({
-      ...prev,
-      [index]: !prev[index]
-    }));
-    // Store the checked state in localStorage for persistence
-    const newCheckedState = {
-      ...oneYearGoalsCheckedItems,
-      [index]: !oneYearGoalsCheckedItems[index]
-    };
-    const orgId = localStorage.getItem('impersonatedOrgId') || user?.organizationId || user?.organization_id;
-    localStorage.setItem(`oneYearGoalsChecked_${orgId}`, JSON.stringify(newCheckedState));
+  const handleToggleOneYearGoal = async (goalId, index) => {
+    try {
+      if (!goalId) {
+        console.error('Goal ID not provided');
+        return;
+      }
+      
+      const result = await businessBlueprintService.toggleOneYearGoal(goalId);
+      setOneYearGoalsCheckedItems(prev => ({
+        ...prev,
+        [index]: result.is_completed
+      }));
+    } catch (error) {
+      console.error('Failed to toggle goal:', error);
+      setError('Failed to update goal completion status');
+    }
   };
 
   // One Year Plan handler
@@ -1433,26 +1430,24 @@ const BusinessBlueprintPage = () => {
                         <Flag className="h-5 w-5 text-indigo-600 mr-2" />
                         <h4 className="font-semibold text-gray-900">Goals</h4>
                       </div>
-                      {blueprintData.oneYearPlan.goals.filter(goal => goal).map((goal, originalIndex) => {
-                        // Get the actual index from the original array
-                        const actualIndex = blueprintData.oneYearPlan.goals.indexOf(goal);
+                      {blueprintData.oneYearPlan.goals.filter(goal => goal && goal.goal_text).map((goal, index) => {
                         return (
                           <div 
-                            key={actualIndex} 
+                            key={goal.id || index} 
                             className="p-3 bg-gray-50 border border-gray-200 rounded-lg hover:shadow-md transition-shadow flex items-start gap-3"
                           >
                             <input
                               type="checkbox"
-                              checked={oneYearGoalsCheckedItems[actualIndex] || false}
-                              onChange={() => handleToggleOneYearGoal(actualIndex)}
+                              checked={oneYearGoalsCheckedItems[index] || false}
+                              onChange={() => handleToggleOneYearGoal(goal.id, index)}
                               className="mt-0.5 h-4 w-4 text-indigo-600 border-gray-300 rounded focus:ring-indigo-500"
                             />
                             <div className="flex items-start flex-1">
-                              <span className={`text-indigo-600 font-semibold mr-2 ${oneYearGoalsCheckedItems[actualIndex] ? 'line-through opacity-60' : ''}`}>
-                                {originalIndex + 1}.
+                              <span className={`text-indigo-600 font-semibold mr-2 ${oneYearGoalsCheckedItems[index] ? 'line-through opacity-60' : ''}`}>
+                                {index + 1}.
                               </span>
-                              <p className={`text-sm text-gray-700 ${oneYearGoalsCheckedItems[actualIndex] ? 'line-through opacity-60' : ''}`}>
-                                {goal}
+                              <p className={`text-sm text-gray-700 ${oneYearGoalsCheckedItems[index] ? 'line-through opacity-60' : ''}`}>
+                                {goal.goal_text}
                               </p>
                             </div>
                           </div>

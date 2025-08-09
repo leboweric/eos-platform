@@ -71,5 +71,17 @@ export const businessBlueprintService = {
   updateQuarterlyPriorities: async (priorities) => {
     const response = await axios.put(buildUrl('/quarterly-priorities'), priorities);
     return response.data.data;
+  },
+
+  // Toggle completion status of a 1-year goal
+  toggleOneYearGoal: async (goalId) => {
+    const response = await axios.put(buildUrl(`/one-year-goals/${goalId}/toggle`));
+    return response.data;
+  },
+
+  // Toggle completion status of a 3-year picture item
+  toggleThreeYearItem: async (itemIndex) => {
+    const response = await axios.put(buildUrl('/three-year-items/toggle'), { itemIndex });
+    return response.data;
   }
 };

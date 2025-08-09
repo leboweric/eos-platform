@@ -3,6 +3,7 @@ import { useAuthStore } from '../../stores/authStore';
 import { businessBlueprintService } from '../../services/businessBlueprintService';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Checkbox } from '@/components/ui/checkbox';
+import { Button } from '@/components/ui/button';
 import { 
   Target, 
   Lightbulb,
@@ -10,8 +11,10 @@ import {
   TrendingUp,
   Calendar,
   Loader2,
-  AlertCircle
+  AlertCircle,
+  Plus
 } from 'lucide-react';
+import IssueDialog from '../issues/IssueDialog';
 
 const TwoPagePlanView = ({ hideIssuesAndPriorities = false }) => {
   const { user } = useAuthStore();
@@ -21,6 +24,9 @@ const TwoPagePlanView = ({ hideIssuesAndPriorities = false }) => {
   // State for tracking checked items in 3-Year Picture and 1-Year Plan
   const [lookLikeCheckedItems, setLookLikeCheckedItems] = useState({});
   const [oneYearGoalsCheckedItems, setOneYearGoalsCheckedItems] = useState({});
+  
+  // State for Issue Dialog
+  const [showIssueDialog, setShowIssueDialog] = useState(false);
   
   // 2-Page Plan data
   const [blueprintData, setBlueprintData] = useState({
@@ -51,68 +57,39 @@ const TwoPagePlanView = ({ hideIssuesAndPriorities = false }) => {
 
   useEffect(() => {
     fetchBusinessBlueprint();
-    
-    // Load checked states from localStorage
-    const orgId = user?.organization_id;
-    if (orgId) {
-      // Load 3-Year Picture checked items
-      const savedLookLikeState = localStorage.getItem(`lookLikeChecked_${orgId}`);
-      if (savedLookLikeState) {
-        try {
-          setLookLikeCheckedItems(JSON.parse(savedLookLikeState));
-        } catch (error) {
-          console.error('Failed to load lookLike checked state:', error);
-        }
-      }
-      
-      // Load 1-Year Plan goals checked items
-      const savedGoalsState = localStorage.getItem(`oneYearGoalsChecked_${orgId}`);
-      if (savedGoalsState) {
-        try {
-          setOneYearGoalsCheckedItems(JSON.parse(savedGoalsState));
-        } catch (error) {
-          console.error('Failed to load goals checked state:', error);
-        }
-      }
-    }
-  }, [user]);
+  }, []);
   
   // Handler for toggling 3-Year Picture items
-  const toggleLookLikeItem = (index) => {
-    const orgId = user?.organization_id;
-    if (!orgId) return;
-    
-    setLookLikeCheckedItems(prev => ({
-      ...prev,
-      [index]: !prev[index]
-    }));
-    
-    // Store the checked state in localStorage for persistence
-    const newCheckedState = {
-      ...lookLikeCheckedItems,
-      [index]: !lookLikeCheckedItems[index]
-    };
-    
-    localStorage.setItem(`lookLikeChecked_${orgId}`, JSON.stringify(newCheckedState));
+  const toggleLookLikeItem = async (index) => {
+    try {
+      await businessBlueprintService.toggleThreeYearItem(index);
+      setLookLikeCheckedItems(prev => ({
+        ...prev,
+        [index]: !prev[index]
+      }));
+    } catch (error) {
+      console.error('Failed to toggle item:', error);
+      setError('Failed to update item completion status');
+    }
   };
   
   // Handler for toggling 1-Year Plan goals
-  const toggleGoalItem = (index) => {
-    const orgId = user?.organization_id;
-    if (!orgId) return;
-    
-    setOneYearGoalsCheckedItems(prev => ({
-      ...prev,
-      [index]: !prev[index]
-    }));
-    
-    // Store the checked state in localStorage for persistence
-    const newCheckedState = {
-      ...oneYearGoalsCheckedItems,
-      [index]: !oneYearGoalsCheckedItems[index]
-    };
-    
-    localStorage.setItem(`oneYearGoalsChecked_${orgId}`, JSON.stringify(newCheckedState));
+  const toggleGoalItem = async (goalId, index) => {
+    try {
+      if (!goalId) {
+        console.error('Goal ID not provided');
+        return;
+      }
+      
+      const result = await businessBlueprintService.toggleOneYearGoal(goalId);
+      setOneYearGoalsCheckedItems(prev => ({
+        ...prev,
+        [index]: result.is_completed
+      }));
+    } catch (error) {
+      console.error('Failed to toggle goal:', error);
+      setError('Failed to update goal completion status');
+    }
   };
 
   const fetchBusinessBlueprint = async () => {
@@ -120,9 +97,20 @@ const TwoPagePlanView = ({ hideIssuesAndPriorities = false }) => {
       setLoading(true);
       setError(null);
       const data = await businessBlueprintService.getBusinessBlueprint();
-      console.log('Blueprint data:', data);  // Debug log to see the data structure
-      console.log('3-Year Picture data:', data.threeYearPicture);  // Debug the 3-year data specifically
-      console.log('Marketing Strategy data:', data.marketingStrategy);  // Debug marketing strategy specifically
+      // Set completion states from database
+      if (data.threeYearPicture?.what_does_it_look_like_completions) {
+        setLookLikeCheckedItems(data.threeYearPicture.what_does_it_look_like_completions);
+      }
+      
+      if (data.oneYearPlan?.goals) {
+        const goalsCompletionState = {};
+        data.oneYearPlan.goals.forEach((goal, index) => {
+          if (goal.is_completed) {
+            goalsCompletionState[index] = true;
+          }
+        });
+        setOneYearGoalsCheckedItems(goalsCompletionState);
+      }
       
       // Transform API data to component state
       setBlueprintData({
@@ -190,6 +178,7 @@ const TwoPagePlanView = ({ hideIssuesAndPriorities = false }) => {
   }
 
   return (
+    <>
     <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
       {/* Left Column - Page 1 */}
       <div className="space-y-6">
@@ -500,11 +489,12 @@ const TwoPagePlanView = ({ hideIssuesAndPriorities = false }) => {
                       {(blueprintData.oneYearPlan.goals || []).map((goal, index) => {
                         const isChecked = oneYearGoalsCheckedItems[index] || false;
                         const goalText = typeof goal === 'string' ? goal : (goal.goal_text || goal.text || '');
+                        const goalId = typeof goal === 'object' ? goal.id : null;
                         return (
                           <li key={goal.id || index} className="flex items-start gap-2">
                             <Checkbox
                               checked={isChecked}
-                              onCheckedChange={() => toggleGoalItem(index)}
+                              onCheckedChange={() => toggleGoalItem(goalId, index)}
                               className="mt-0.5"
                             />
                             <span className={`text-gray-600 ${isChecked ? 'line-through opacity-60' : ''}`}>
@@ -543,9 +533,19 @@ const TwoPagePlanView = ({ hideIssuesAndPriorities = false }) => {
             {/* Issues List Summary */}
             <Card className="shadow-lg border-0 overflow-hidden">
               <CardHeader className="bg-white border-b">
-                <CardTitle className="flex items-center text-xl text-gray-900">
-                  <AlertCircle className="mr-2 h-6 w-6 text-indigo-600" />
-                  Issues List
+                <CardTitle className="flex items-center justify-between text-xl text-gray-900">
+                  <div className="flex items-center">
+                    <AlertCircle className="mr-2 h-6 w-6 text-indigo-600" />
+                    Issues List
+                  </div>
+                  <Button
+                    size="sm"
+                    onClick={() => setShowIssueDialog(true)}
+                    className="bg-indigo-600 hover:bg-indigo-700"
+                  >
+                    <Plus className="h-4 w-4 mr-1" />
+                    Add Issue
+                  </Button>
                 </CardTitle>
               </CardHeader>
               <CardContent className="pt-4">
@@ -558,6 +558,20 @@ const TwoPagePlanView = ({ hideIssuesAndPriorities = false }) => {
         )}
       </div>
     </div>
+
+    {/* Issue Dialog */}
+    {showIssueDialog && (
+      <IssueDialog
+        isOpen={showIssueDialog}
+        onClose={() => setShowIssueDialog(false)}
+        onSubmit={async (issueData) => {
+          // The IssueDialog will handle the submission
+          setShowIssueDialog(false);
+        }}
+        teamId="00000000-0000-0000-0000-000000000000"
+      />
+    )}
+    </>
   );
 };
 

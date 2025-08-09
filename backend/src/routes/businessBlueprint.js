@@ -9,7 +9,9 @@ import {
   updateTenYearTarget,
   updateMarketingStrategy,
   updateThreeYearPicture,
-  updateOneYearPlan
+  updateOneYearPlan,
+  toggleOneYearGoalCompletion,
+  toggleThreeYearItemCompletion
 } from '../controllers/businessBlueprintController.js';
 
 const router = express.Router({ mergeParams: true });
@@ -69,5 +71,11 @@ router.put('/one-year-plan', [
   body('goals').optional().isArray(),
   body('measurables').optional()
 ], updateOneYearPlan);
+
+// Toggle 1-year goal completion
+router.put('/one-year-goals/:goalId/toggle', toggleOneYearGoalCompletion);
+
+// Toggle 3-year picture item completion
+router.put('/three-year-items/toggle', toggleThreeYearItemCompletion);
 
 export default router;

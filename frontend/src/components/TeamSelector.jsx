@@ -1,29 +1,23 @@
-import { useState, useEffect } from 'react';
+import { useEffect } from 'react';
 import { useAuthStore } from '../stores/authStore';
+import { useTeam } from '../contexts/TeamContext';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Building2, Users, Shield } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 
 const TeamSelector = ({ onTeamChange }) => {
   const { user } = useAuthStore();
-  const [selectedTeamId, setSelectedTeamId] = useState(null);
+  const { selectedTeamId, selectTeam, getSelectedTeam } = useTeam();
 
   useEffect(() => {
-    // Initialize with Leadership Team or first available team
-    if (user?.teams?.length > 0) {
-      const leadershipTeam = user.teams.find(t => t.is_leadership_team);
-      const defaultTeam = leadershipTeam || user.teams[0];
-      setSelectedTeamId(defaultTeam?.id || '00000000-0000-0000-0000-000000000000');
-      if (onTeamChange) {
-        onTeamChange(defaultTeam?.id || '00000000-0000-0000-0000-000000000000');
-      }
+    // Notify parent component of team changes
+    if (onTeamChange && selectedTeamId) {
+      onTeamChange(selectedTeamId);
     }
-  }, [user?.teams]);
+  }, [selectedTeamId, onTeamChange]);
 
-  const handleTeamChange = (teamId) => {
-    setSelectedTeamId(teamId);
-    // Store selected team in localStorage for persistence
-    localStorage.setItem('selectedTeamId', teamId);
+  const handleTeamChange = async (teamId) => {
+    await selectTeam(teamId);
     if (onTeamChange) {
       onTeamChange(teamId);
     }
@@ -34,7 +28,7 @@ const TeamSelector = ({ onTeamChange }) => {
     return null;
   }
 
-  const currentTeam = user.teams.find(t => t.id === selectedTeamId);
+  const currentTeam = getSelectedTeam() || user.teams.find(t => t.id === selectedTeamId);
 
   return (
     <div className="flex items-center space-x-2">

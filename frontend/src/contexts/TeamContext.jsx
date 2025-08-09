@@ -1,5 +1,6 @@
 import { createContext, useContext, useState, useEffect } from 'react';
 import { useAuthStore } from '../stores/authStore';
+import { teamSelectionService } from '../services/userPreferencesService';
 
 const TeamContext = createContext();
 
@@ -12,19 +13,42 @@ export const useTeam = () => {
 };
 
 export const TeamProvider = ({ children }) => {
-  const { user } = useAuthStore();
-  const [selectedTeamId, setSelectedTeamId] = useState(() => {
-    // Check localStorage first
-    const stored = localStorage.getItem('selectedTeamId');
-    if (stored) return stored;
-    
-    // Default to Leadership Team
-    return '00000000-0000-0000-0000-000000000000';
-  });
+  const { user, isAuthenticated } = useAuthStore();
+  const [selectedTeamId, setSelectedTeamId] = useState('00000000-0000-0000-0000-000000000000');
+  const [isLoading, setIsLoading] = useState(true);
+
+  // Load team selection from database
+  useEffect(() => {
+    const loadTeamSelection = async () => {
+      if (!isAuthenticated) {
+        setSelectedTeamId('00000000-0000-0000-0000-000000000000');
+        setIsLoading(false);
+        return;
+      }
+
+      try {
+        const savedTeamId = await teamSelectionService.getSelectedTeam();
+        if (savedTeamId) {
+          setSelectedTeamId(savedTeamId);
+        } else {
+          // Default to Leadership Team
+          setSelectedTeamId('00000000-0000-0000-0000-000000000000');
+        }
+      } catch (error) {
+        console.error('Failed to load team selection:', error);
+        // Use default on error
+        setSelectedTeamId('00000000-0000-0000-0000-000000000000');
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    loadTeamSelection();
+  }, [isAuthenticated]);
 
   useEffect(() => {
     // If user has teams, ensure selected team is valid
-    if (user?.teams?.length > 0) {
+    if (user?.teams?.length > 0 && !isLoading) {
       const teamIds = user.teams.map(t => t.id);
       
       // If current selection is not in user's teams and not the default Leadership Team ID
@@ -33,14 +57,28 @@ export const TeamProvider = ({ children }) => {
         const leadershipTeam = user.teams.find(t => t.is_leadership_team);
         const newTeamId = leadershipTeam?.id || '00000000-0000-0000-0000-000000000000';
         setSelectedTeamId(newTeamId);
-        localStorage.setItem('selectedTeamId', newTeamId);
+        
+        // Save to database
+        if (isAuthenticated) {
+          teamSelectionService.setSelectedTeam(newTeamId).catch(error => {
+            console.error('Failed to save team selection:', error);
+          });
+        }
       }
     }
-  }, [user?.teams]);
+  }, [user?.teams, selectedTeamId, isLoading, isAuthenticated]);
 
-  const selectTeam = (teamId) => {
+  const selectTeam = async (teamId) => {
     setSelectedTeamId(teamId);
-    localStorage.setItem('selectedTeamId', teamId);
+    
+    // Save to database
+    if (isAuthenticated) {
+      try {
+        await teamSelectionService.setSelectedTeam(teamId);
+      } catch (error) {
+        console.error('Failed to save team selection:', error);
+      }
+    }
   };
 
   const getSelectedTeam = () => {
@@ -58,6 +96,7 @@ export const TeamProvider = ({ children }) => {
     selectTeam,
     getSelectedTeam,
     isLeadershipTeamSelected,
+    isLoading
   };
 
   return <TeamContext.Provider value={value}>{children}</TeamContext.Provider>;

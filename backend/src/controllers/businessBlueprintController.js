@@ -763,17 +763,32 @@ export const updateOneYearPlan = async (req, res) => {
     
     // Handle goals
     if (goals && Array.isArray(goals)) {
+      // Get existing goals to preserve completion status
+      const existingGoals = await query(
+        'SELECT goal_text, is_completed FROM one_year_goals WHERE one_year_plan_id = $1',
+        [planId]
+      );
+      
+      // Create a map of existing goals to their completion status
+      const completionMap = {};
+      existingGoals.rows.forEach(goal => {
+        completionMap[goal.goal_text] = goal.is_completed;
+      });
+      
       // Delete existing goals
       await query('DELETE FROM one_year_goals WHERE one_year_plan_id = $1', [planId]);
       
-      // Insert new goals
+      // Insert new goals preserving completion status where text matches
       for (let i = 0; i < goals.length; i++) {
         const goal = goals[i];
         if (goal && goal.trim()) {
+          const goalText = goal.trim();
+          const isCompleted = completionMap[goalText] || false;
+          
           await query(
-            `INSERT INTO one_year_goals (id, one_year_plan_id, goal_text, sort_order)
-             VALUES ($1, $2, $3, $4)`,
-            [uuidv4(), planId, goal.trim(), i]
+            `INSERT INTO one_year_goals (id, one_year_plan_id, goal_text, sort_order, is_completed)
+             VALUES ($1, $2, $3, $4, $5)`,
+            [uuidv4(), planId, goalText, i, isCompleted]
           );
         }
       }
@@ -815,6 +830,81 @@ export const updateOneYearPlan = async (req, res) => {
   }
 };
 
+// Toggle completion status of a 1-year goal  
+export const toggleOneYearGoalCompletion = async (req, res) => {
+  const { goalId } = req.params;
+  
+  try {
+    const result = await query(
+      `UPDATE one_year_goals 
+       SET is_completed = NOT is_completed,
+           updated_at = NOW()
+       WHERE id = $1
+       RETURNING id, is_completed`,
+      [goalId]
+    );
+    
+    if (result.rows.length === 0) {
+      return res.status(404).json({ error: 'Goal not found' });
+    }
+    
+    res.json(result.rows[0]);
+  } catch (error) {
+    console.error('Error toggling goal completion:', error);
+    res.status(500).json({ error: 'Failed to toggle goal completion' });
+  }
+};
+
+// Toggle completion status of a 3-year picture "what does it look like" item
+export const toggleThreeYearItemCompletion = async (req, res) => {
+  const { orgId, teamId } = req.params;
+  const { itemIndex } = req.body;
+  
+  try {
+    // Get the current VTO - organization level
+    const vtoResult = await query(
+      'SELECT id FROM business_blueprints WHERE organization_id = $1 AND team_id IS NULL',
+      [orgId]
+    );
+    
+    if (vtoResult.rows.length === 0) {
+      return res.status(404).json({ error: 'No VTO found' });
+    }
+    
+    const vtoId = vtoResult.rows[0].id;
+    
+    // Get the three year picture
+    const pictureResult = await query(
+      'SELECT id, what_does_it_look_like_completions FROM three_year_pictures WHERE vto_id = $1',
+      [vtoId]
+    );
+    
+    if (pictureResult.rows.length === 0) {
+      return res.status(404).json({ error: 'Three year picture not found' });
+    }
+    
+    const pictureId = pictureResult.rows[0].id;
+    const completions = pictureResult.rows[0].what_does_it_look_like_completions || {};
+    
+    // Toggle the completion status
+    completions[itemIndex] = !completions[itemIndex];
+    
+    // Update the completions
+    await query(
+      `UPDATE three_year_pictures 
+       SET what_does_it_look_like_completions = $1,
+           updated_at = NOW()
+       WHERE id = $2`,
+      [JSON.stringify(completions), pictureId]
+    );
+    
+    res.json({ itemIndex, isCompleted: completions[itemIndex] });
+  } catch (error) {
+    console.error('Error toggling three year item completion:', error);
+    res.status(500).json({ error: 'Failed to toggle item completion' });
+  }
+};
+
 export default {
   getVTO,
   getDepartmentBusinessBlueprint,
@@ -824,5 +914,7 @@ export default {
   updateTenYearTarget,
   updateMarketingStrategy,
   updateThreeYearPicture,
-  updateOneYearPlan
+  updateOneYearPlan,
+  toggleOneYearGoalCompletion,
+  toggleThreeYearItemCompletion
 };
