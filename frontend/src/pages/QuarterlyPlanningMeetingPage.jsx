@@ -30,7 +30,7 @@ import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { meetingsService } from '../services/meetingsService';
-import { FileText, GitBranch, Smile, BarChart, Newspaper, ListTodo, ArrowLeftRight, Archive, Plus, MessageSquare, Send, Star } from 'lucide-react';
+import { FileText, GitBranch, Smile, BarChart, Newspaper, ListTodo, ArrowLeftRight, Archive, Plus, MessageSquare, Send, Star, User } from 'lucide-react';
 import { quarterlyPrioritiesService } from '../services/quarterlyPrioritiesService';
 import { issuesService } from '../services/issuesService';
 import { organizationService } from '../services/organizationService';
