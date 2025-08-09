@@ -417,8 +417,9 @@ const QuarterlyPlanningMeetingPage = () => {
       setLoading(true);
       setError(null);
       
-      const response = await organizationService.getOrganization();
-      setVtoData(response.data || response);
+      // Just set a flag to show the TwoPagePlanView component
+      // The component will fetch its own data
+      setVtoData(true);
       setLoading(false);
     } catch (error) {
       console.error('Failed to fetch VTO data:', error);
@@ -825,21 +826,11 @@ const QuarterlyPlanningMeetingPage = () => {
             {/* Embedded VTO */}
             <div className="bg-white rounded-lg shadow-sm">
               {vtoData ? (
-                <TwoPagePlanView 
-                  organization={vtoData}
-                  isEmbedded={true}
-                />
+                <TwoPagePlanView />
               ) : (
                 <Card>
                   <CardContent className="text-center py-8">
-                    <p className="text-gray-500">No 2-Page Plan data available.</p>
-                    <Button 
-                      variant="outline" 
-                      className="mt-4"
-                      onClick={() => navigate('/business-blueprint')}
-                    >
-                      Create Business Blueprint
-                    </Button>
+                    <p className="text-gray-500">Loading 2-Page Plan data...</p>
                   </CardContent>
                 </Card>
               )}
