@@ -27,6 +27,7 @@ const TodosPage = () => {
   const { selectedDepartment } = useDepartment();
   const { selectedTodoIds, setSelectedTodoIds } = useSelectedTodos();
   const [loading, setLoading] = useState(true);
+  const [initialLoad, setInitialLoad] = useState(true);
   const [error, setError] = useState(null);
   const [success, setSuccess] = useState(null);
   const [activeTab, setActiveTab] = useState('not-done');
@@ -42,7 +43,7 @@ const TodosPage = () => {
 
   useEffect(() => {
     fetchTodos();
-  }, [activeTab, filterAssignee, selectedDepartment]);
+  }, [filterAssignee, selectedDepartment]);
 
   // Helper function to check if a todo is overdue
   const isOverdue = (todo) => {
@@ -116,7 +117,10 @@ const TodosPage = () => {
 
   const fetchTodos = async () => {
     try {
-      setLoading(true);
+      // Only show loading spinner on initial load
+      if (initialLoad) {
+        setLoading(true);
+      }
       setError(null);
       
       const assignedTo = filterAssignee === 'me' ? user.id : 
@@ -141,6 +145,7 @@ const TodosPage = () => {
       setError('Failed to load to-dos');
     } finally {
       setLoading(false);
+      setInitialLoad(false);
     }
   };
 
@@ -394,39 +399,41 @@ const TodosPage = () => {
           </Select>
         </div>
 
-        {/* Main Content */}
-        {filteredTodos.length === 0 ? (
-          <div className="text-center py-16">
-            <ListTodo className="h-12 w-12 text-gray-300 mx-auto mb-4" />
-            <h3 className="text-lg font-medium text-gray-900 mb-2">
-              {activeTab === 'not-done' && 'No to-dos not done'}
-              {activeTab === 'done' && 'No done to-dos'}
-            </h3>
-            <p className="text-gray-500 mb-6">
-              {activeTab === 'done' ? 'Done to-dos will appear here' : 'Create your first to-do to get started'}
-            </p>
-            {activeTab !== 'done' && (
-              <Button 
-                onClick={handleCreateTodo} 
-                variant="outline"
-                className="border-gray-300"
-              >
-                <Plus className="mr-2 h-4 w-4" />
-                Create To-Do
-              </Button>
-            )}
-          </div>
-        ) : (
-          <TodosList
-            todos={filteredTodos}
-            onEdit={handleEditTodo}
-            onDelete={handleDeleteTodo}
-            onUpdate={fetchTodos}
-            onStatusChange={handleStatusChange}
-            onConvertToIssue={handleConvertToIssue}
-            showCompleted={true}
-          />
-        )}
+        {/* Main Content with smooth transition */}
+        <div className="transition-opacity duration-200 ease-in-out">
+          {filteredTodos.length === 0 ? (
+            <div className="text-center py-16">
+              <ListTodo className="h-12 w-12 text-gray-300 mx-auto mb-4" />
+              <h3 className="text-lg font-medium text-gray-900 mb-2">
+                {activeTab === 'not-done' && 'No to-dos not done'}
+                {activeTab === 'done' && 'No done to-dos'}
+              </h3>
+              <p className="text-gray-500 mb-6">
+                {activeTab === 'done' ? 'Done to-dos will appear here' : 'Create your first to-do to get started'}
+              </p>
+              {activeTab !== 'done' && (
+                <Button 
+                  onClick={handleCreateTodo} 
+                  variant="outline"
+                  className="border-gray-300"
+                >
+                  <Plus className="mr-2 h-4 w-4" />
+                  Create To-Do
+                </Button>
+              )}
+            </div>
+          ) : (
+            <TodosList
+              todos={filteredTodos}
+              onEdit={handleEditTodo}
+              onDelete={handleDeleteTodo}
+              onUpdate={fetchTodos}
+              onStatusChange={handleStatusChange}
+              onConvertToIssue={handleConvertToIssue}
+              showCompleted={true}
+            />
+          )}
+        </div>
 
         {/* Todo Dialog */}
         <TodoDialog
