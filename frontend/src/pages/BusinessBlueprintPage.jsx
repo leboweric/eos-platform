@@ -298,9 +298,9 @@ const BusinessBlueprintPage = () => {
         niche,
         hedgehogType
       });
-      setSuccess('Hedgehog updated successfully');
+      setSuccess('Focus updated successfully');
     } catch (error) {
-      setError('Failed to update Hedgehog');
+      setError('Failed to update Focus');
     } finally {
       setSaving(false);
     }
@@ -363,13 +363,13 @@ const BusinessBlueprintPage = () => {
         ...prev,
         threeYearPicture: savedData || data
       }));
-      setSuccess('3-Year Picture updated successfully');
+      setSuccess('Long Range Plan updated successfully');
       // Refresh the business blueprint data to ensure everything is in sync
       setTimeout(() => {
         fetchBusinessBlueprint();
       }, 500);
     } catch (error) {
-      setError('Failed to update 3-Year Picture');
+      setError('Failed to update Long Range Plan');
       throw error;
     } finally {
       setSaving(false);
@@ -478,7 +478,7 @@ const BusinessBlueprintPage = () => {
           </TabsList>
 
         <TabsContent value="vision" className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          {/* Left Column - Core Values, Hedgehog, BHAG, Marketing Strategy */}
+          {/* Left Column - Core Values, Focus, BHAG, Marketing Strategy */}
           <div className="lg:col-span-2 space-y-6">
             {/* Core Values */}
             <Card className="shadow-lg border-0 overflow-hidden">
@@ -528,12 +528,12 @@ const BusinessBlueprintPage = () => {
             </CardContent>
           </Card>
 
-          {/* Core Focus (Hedgehog) */}
+          {/* Core Focus */}
           <Card className="shadow-lg border-0 overflow-hidden">
             <CardHeader className="bg-white border-b">
               <CardTitle className="flex items-center text-xl text-gray-900">
                 <Target className="mr-2 h-6 w-6 text-indigo-600" />
-                Hedgehog
+                Focus
               </CardTitle>
               <CardDescription className="text-gray-600">
                 Your sweet spot
@@ -605,7 +605,7 @@ const BusinessBlueprintPage = () => {
                 /* Edit Form */
                 <>
                   <div>
-                    <Label>Select your Hedgehog type</Label>
+                    <Label>Select your Focus type</Label>
                     <RadioGroup
                       value={blueprintData.coreFocus.hedgehogType}
                       onValueChange={(value) => setBlueprintData(prev => ({
@@ -675,7 +675,7 @@ const BusinessBlueprintPage = () => {
                       ) : (
                         <Save className="mr-2 h-4 w-4" />
                       )}
-                      Save Hedgehog
+                      Save Focus
                     </Button>
                     {(blueprintData.coreFocus[blueprintData.coreFocus.hedgehogType] || blueprintData.coreFocus.niche) && (
                       <Button
@@ -1177,9 +1177,9 @@ const BusinessBlueprintPage = () => {
                   <div>
                     <CardTitle className="flex items-center text-xl text-gray-900">
                       <Calendar className="mr-2 h-6 w-6 text-indigo-600" />
-                      3-Year Picture
+                      Long Range Plan
                     </CardTitle>
-                    <CardDescription className="text-gray-600">Your organization's 3-year vision</CardDescription>
+                    <CardDescription className="text-gray-600">Your organization's long range vision</CardDescription>
                   </div>
                   <Button 
                     variant="outline" 
@@ -1318,7 +1318,7 @@ const BusinessBlueprintPage = () => {
                       className="bg-indigo-600 hover:bg-indigo-700 text-white"
                     >
                       <Plus className="h-4 w-4 mr-2" />
-                      Create 3-Year Picture
+                      Create Long Range Plan
                     </Button>
                   </div>
                 )}
