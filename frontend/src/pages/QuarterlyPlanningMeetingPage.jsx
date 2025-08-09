@@ -1187,7 +1187,7 @@ const QuarterlyPlanningMeetingPage = () => {
             
             {/* Issue Dialog */}
             <IssueDialog
-              isOpen={showIssueDialog}
+              open={showIssueDialog}
               onClose={() => {
                 setShowIssueDialog(false);
                 setEditingIssue(null);
