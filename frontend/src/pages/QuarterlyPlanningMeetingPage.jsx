@@ -38,7 +38,7 @@ import IssuesList from '../components/issues/IssuesListClean';
 import IssueDialog from '../components/issues/IssueDialog';
 import TodoDialog from '../components/todos/TodoDialog';
 import { todosService } from '../services/todosService';
-import TwoPagePlanSimplified from '../components/vto/TwoPagePlanSimplified';
+import TwoPagePlanView from '../components/vto/TwoPagePlanView';
 
 const QuarterlyPlanningMeetingPage = () => {
   const { user } = useAuthStore();
@@ -823,10 +823,10 @@ const QuarterlyPlanningMeetingPage = () => {
               </CardHeader>
             </Card>
             
-            {/* Embedded VTO - Simplified version without Issues and Quarterly Priorities */}
+            {/* Embedded VTO - Without Issues and Quarterly Priorities sections */}
             <div className="bg-white rounded-lg shadow-sm">
               {vtoData ? (
-                <TwoPagePlanSimplified />
+                <TwoPagePlanView hideIssuesAndPriorities={true} />
               ) : (
                 <Card>
                   <CardContent className="text-center py-8">

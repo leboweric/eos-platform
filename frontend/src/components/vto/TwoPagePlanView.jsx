@@ -12,7 +12,7 @@ import {
   AlertCircle
 } from 'lucide-react';
 
-const TwoPagePlanView = () => {
+const TwoPagePlanView = ({ hideIssuesAndPriorities = false }) => {
   const { user } = useAuthStore();
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -298,35 +298,39 @@ const TwoPagePlanView = () => {
           </CardContent>
         </Card>
 
-        {/* Quarterly Priorities Summary */}
-        <Card className="shadow-lg border-0 overflow-hidden">
-          <CardHeader className="bg-white border-b">
-            <CardTitle className="flex items-center text-xl text-gray-900">
-              <Target className="mr-2 h-6 w-6 text-indigo-600" />
-              Quarterly Priorities
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="pt-4">
-            <p className="text-gray-600">
-              Review and set priorities in the Quarterly Priorities section
-            </p>
-          </CardContent>
-        </Card>
+        {!hideIssuesAndPriorities && (
+          <>
+            {/* Quarterly Priorities Summary */}
+            <Card className="shadow-lg border-0 overflow-hidden">
+              <CardHeader className="bg-white border-b">
+                <CardTitle className="flex items-center text-xl text-gray-900">
+                  <Target className="mr-2 h-6 w-6 text-indigo-600" />
+                  Quarterly Priorities
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="pt-4">
+                <p className="text-gray-600">
+                  Review and set priorities in the Quarterly Priorities section
+                </p>
+              </CardContent>
+            </Card>
 
-        {/* Issues List Summary */}
-        <Card className="shadow-lg border-0 overflow-hidden">
-          <CardHeader className="bg-white border-b">
-            <CardTitle className="flex items-center text-xl text-gray-900">
-              <AlertCircle className="mr-2 h-6 w-6 text-indigo-600" />
-              Issues List
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="pt-4">
-            <p className="text-gray-600">
-              Track and resolve issues in the Issues section
-            </p>
-          </CardContent>
-        </Card>
+            {/* Issues List Summary */}
+            <Card className="shadow-lg border-0 overflow-hidden">
+              <CardHeader className="bg-white border-b">
+                <CardTitle className="flex items-center text-xl text-gray-900">
+                  <AlertCircle className="mr-2 h-6 w-6 text-indigo-600" />
+                  Issues List
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="pt-4">
+                <p className="text-gray-600">
+                  Track and resolve issues in the Issues section
+                </p>
+              </CardContent>
+            </Card>
+          </>
+        )}
       </div>
     </div>
   );
