@@ -209,19 +209,19 @@ const QuarterlyPlanningMeetingPage = () => {
   };
 
   const handlePriorityStatusChange = async (priorityId, newStatus) => {
+    // Update local state immediately (optimistic update)
+    setPriorities(prev => 
+      prev.map(p => 
+        p.id === priorityId ? { ...p, status: newStatus } : p
+      )
+    );
+    
     try {
       const orgId = localStorage.getItem('impersonatedOrgId') || user?.organizationId || user?.organization_id;
       const effectiveTeamId = teamId || user?.teamId || '00000000-0000-0000-0000-000000000000';
       
       // Update in database
       await quarterlyPrioritiesService.updatePriority(orgId, effectiveTeamId, priorityId, { status: newStatus });
-      
-      // Update local state
-      setPriorities(prev => 
-        prev.map(p => 
-          p.id === priorityId ? { ...p, status: newStatus } : p
-        )
-      );
       
       // If marked as off-track, create an issue
       if (newStatus === 'off-track') {
@@ -253,6 +253,18 @@ const QuarterlyPlanningMeetingPage = () => {
       setTimeout(() => setSuccess(null), 3000);
     } catch (error) {
       console.error('Failed to update priority status:', error);
+      
+      // Revert the optimistic update on error
+      const priority = priorities.find(p => p.id === priorityId);
+      if (priority) {
+        const previousStatus = newStatus === 'complete' ? 'on-track' : priority.status;
+        setPriorities(prev => 
+          prev.map(p => 
+            p.id === priorityId ? { ...p, status: previousStatus } : p
+          )
+        );
+      }
+      
       setError('Failed to update priority status');
       setTimeout(() => setError(null), 3000);
     }
@@ -575,7 +587,11 @@ const QuarterlyPlanningMeetingPage = () => {
                   </div>
                   {priorities.length > 0 && (
                     <div className="text-sm font-normal">
-                      <span className="text-2xl font-semibold text-gray-900">
+                      <span className={`text-2xl font-semibold ${
+                        Math.round((priorities.filter(p => p.status === 'complete').length / priorities.length) * 100) >= 85
+                          ? 'text-green-600'
+                          : 'text-red-600'
+                      }`}>
                         {Math.round((priorities.filter(p => p.status === 'complete').length / priorities.length) * 100)}%
                       </span>
                       <span className="text-gray-500 ml-2">Complete</span>
@@ -816,8 +832,18 @@ const QuarterlyPlanningMeetingPage = () => {
                     </CardTitle>
                     <CardDescription className="mt-1">Review and align your strategic vision</CardDescription>
                   </div>
-                  <div className="text-sm text-gray-500 bg-white px-3 py-1 rounded-full">
-                    30 minutes
+                  <div className="flex items-center gap-3">
+                    <Button
+                      onClick={() => setShowIssueDialog(true)}
+                      className="bg-blue-600 hover:bg-blue-700 text-white"
+                      size="sm"
+                    >
+                      <Plus className="h-4 w-4 mr-1" />
+                      Add Issue
+                    </Button>
+                    <div className="text-sm text-gray-500 bg-white px-3 py-1 rounded-full">
+                      30 minutes
+                    </div>
                   </div>
                 </div>
               </CardHeader>
