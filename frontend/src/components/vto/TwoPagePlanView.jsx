@@ -286,29 +286,42 @@ const TwoPagePlanView = ({ hideIssuesAndPriorities = false }) => {
                 <div>
                   <h4 className="font-semibold text-sm text-gray-700">Revenue Target</h4>
                   <p className="text-gray-600">
-                    {blueprintData.threeYearPicture.revenue ? (
-                      `$${Number(blueprintData.threeYearPicture.revenue) < 1 
-                        ? `${(Number(blueprintData.threeYearPicture.revenue) * 1000).toFixed(0)}K`
-                        : `${Number(blueprintData.threeYearPicture.revenue).toFixed(1)}M`}`
+                    {(blueprintData.threeYearPicture.revenue_target || blueprintData.threeYearPicture.revenue) ? (
+                      `$${Number(blueprintData.threeYearPicture.revenue_target || blueprintData.threeYearPicture.revenue) < 1 
+                        ? `${(Number(blueprintData.threeYearPicture.revenue_target || blueprintData.threeYearPicture.revenue) * 1000).toFixed(0)}K`
+                        : `${Number(blueprintData.threeYearPicture.revenue_target || blueprintData.threeYearPicture.revenue).toFixed(1)}M`}`
                     ) : 'Not set'}
                   </p>
                 </div>
                 <div>
                   <h4 className="font-semibold text-sm text-gray-700">Profit Target</h4>
                   <p className="text-gray-600">
-                    {blueprintData.threeYearPicture.profit ? `${blueprintData.threeYearPicture.profit}%` : 'Not set'}
+                    {(blueprintData.threeYearPicture.profit_target || blueprintData.threeYearPicture.profit) ? 
+                      `$${Number(blueprintData.threeYearPicture.profit_target || blueprintData.threeYearPicture.profit) < 1 
+                        ? `${(Number(blueprintData.threeYearPicture.profit_target || blueprintData.threeYearPicture.profit) * 1000).toFixed(0)}K`
+                        : `${Number(blueprintData.threeYearPicture.profit_target || blueprintData.threeYearPicture.profit).toFixed(1)}M`}` 
+                      : 'Not set'}
                   </p>
                 </div>
-                {blueprintData.threeYearPicture?.lookLikeItems && blueprintData.threeYearPicture.lookLikeItems.filter(item => item).length > 0 && (
-                  <div>
-                    <h4 className="font-semibold text-sm text-gray-700">What does it look like?</h4>
-                    <ul className="list-disc list-inside text-gray-600 space-y-1">
-                      {blueprintData.threeYearPicture.lookLikeItems.filter(item => item).map((item, index) => (
-                        <li key={index}>{item}</li>
-                      ))}
-                    </ul>
-                  </div>
-                )}
+                {(() => {
+                  const lookLikeData = blueprintData.threeYearPicture?.lookLikeItems || 
+                    (blueprintData.threeYearPicture?.what_does_it_look_like && 
+                     typeof blueprintData.threeYearPicture.what_does_it_look_like === 'string' 
+                       ? JSON.parse(blueprintData.threeYearPicture.what_does_it_look_like)
+                       : blueprintData.threeYearPicture?.what_does_it_look_like) || [];
+                  const filteredItems = Array.isArray(lookLikeData) ? lookLikeData.filter(item => item) : [];
+                  
+                  return filteredItems.length > 0 && (
+                    <div>
+                      <h4 className="font-semibold text-sm text-gray-700">What does it look like?</h4>
+                      <ul className="list-disc list-inside text-gray-600 space-y-1">
+                        {filteredItems.map((item, index) => (
+                          <li key={index}>{item}</li>
+                        ))}
+                      </ul>
+                    </div>
+                  );
+                })()}
                 {blueprintData.threeYearPicture?.measurables?.length > 0 && (
                   <div>
                     <h4 className="font-semibold text-sm text-gray-700">Key Measurables</h4>
