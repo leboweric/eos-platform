@@ -664,8 +664,7 @@ const WeeklyAccountabilityMeetingPage = () => {
         )
       );
       
-      setSuccess('Priority updated successfully');
-      setTimeout(() => setSuccess(null), 3000);
+      // Priority updated silently - no success message to avoid screen jumping
     } catch (error) {
       console.error('Failed to update priority:', error);
       setError('Failed to update priority');
