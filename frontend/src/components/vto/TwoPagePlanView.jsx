@@ -17,6 +17,10 @@ const TwoPagePlanView = ({ hideIssuesAndPriorities = false }) => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   
+  // State for tracking checked items in 3-Year Picture and 1-Year Plan
+  const [lookLikeCheckedItems, setLookLikeCheckedItems] = useState({});
+  const [oneYearGoalsCheckedItems, setOneYearGoalsCheckedItems] = useState({});
+  
   // 2-Page Plan data
   const [blueprintData, setBlueprintData] = useState({
     coreValues: [],
@@ -46,7 +50,31 @@ const TwoPagePlanView = ({ hideIssuesAndPriorities = false }) => {
 
   useEffect(() => {
     fetchBusinessBlueprint();
-  }, []);
+    
+    // Load checked states from localStorage
+    const orgId = user?.organization_id;
+    if (orgId) {
+      // Load 3-Year Picture checked items
+      const savedLookLikeState = localStorage.getItem(`lookLikeChecked_${orgId}`);
+      if (savedLookLikeState) {
+        try {
+          setLookLikeCheckedItems(JSON.parse(savedLookLikeState));
+        } catch (error) {
+          console.error('Failed to load lookLike checked state:', error);
+        }
+      }
+      
+      // Load 1-Year Plan goals checked items
+      const savedGoalsState = localStorage.getItem(`oneYearGoalsChecked_${orgId}`);
+      if (savedGoalsState) {
+        try {
+          setOneYearGoalsCheckedItems(JSON.parse(savedGoalsState));
+        } catch (error) {
+          console.error('Failed to load goals checked state:', error);
+        }
+      }
+    }
+  }, [user]);
 
   const fetchBusinessBlueprint = async () => {
     try {
@@ -359,9 +387,15 @@ const TwoPagePlanView = ({ hideIssuesAndPriorities = false }) => {
                     <div>
                       <h4 className="font-semibold text-sm text-gray-700">What does it look like?</h4>
                       <ul className="list-disc pl-5 text-gray-600 space-y-1">
-                        {filteredItems.map((item, index) => (
-                          <li key={index}>{item}</li>
-                        ))}
+                        {filteredItems.map((item, index) => {
+                          const isChecked = lookLikeCheckedItems[index] || false;
+                          return (
+                            <li key={index} className={`flex items-start ${isChecked ? 'line-through opacity-60' : ''}`}>
+                              {isChecked && <span className="text-green-600 mr-1">✓</span>}
+                              <span>{item}</span>
+                            </li>
+                          );
+                        })}
                       </ul>
                     </div>
                   );
@@ -418,11 +452,16 @@ const TwoPagePlanView = ({ hideIssuesAndPriorities = false }) => {
                   <div>
                     <h4 className="font-semibold text-sm text-gray-700">Goals</h4>
                     <ul className="list-disc pl-5 text-gray-600 space-y-1">
-                      {(blueprintData.oneYearPlan.goals || []).map((goal, index) => (
-                        <li key={goal.id || index}>
-                          {typeof goal === 'string' ? goal : (goal.goal_text || goal.text || '')}
-                        </li>
-                      ))}
+                      {(blueprintData.oneYearPlan.goals || []).map((goal, index) => {
+                        const isChecked = oneYearGoalsCheckedItems[index] || false;
+                        const goalText = typeof goal === 'string' ? goal : (goal.goal_text || goal.text || '');
+                        return (
+                          <li key={goal.id || index} className={`flex items-start ${isChecked ? 'line-through opacity-60' : ''}`}>
+                            {isChecked && <span className="text-green-600 mr-1">✓</span>}
+                            <span>{goalText}</span>
+                          </li>
+                        );
+                      })}
                     </ul>
                   </div>
                 )}
