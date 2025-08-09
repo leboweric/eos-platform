@@ -53,6 +53,8 @@ const TwoPagePlanView = ({ hideIssuesAndPriorities = false }) => {
       setLoading(true);
       setError(null);
       const data = await businessBlueprintService.getBusinessBlueprint();
+      console.log('Blueprint data:', data);  // Debug log to see the data structure
+      console.log('3-Year Picture data:', data.threeYearPicture);  // Debug the 3-year data specifically
       
       // Transform API data to component state
       setBlueprintData({
@@ -283,11 +285,19 @@ const TwoPagePlanView = ({ hideIssuesAndPriorities = false }) => {
                 )}
                 <div>
                   <h4 className="font-semibold text-sm text-gray-700">Revenue Target</h4>
-                  <p className="text-gray-600">{blueprintData.threeYearPicture.revenue || 'Not set'}</p>
+                  <p className="text-gray-600">
+                    {blueprintData.threeYearPicture.revenue ? (
+                      `$${Number(blueprintData.threeYearPicture.revenue) < 1 
+                        ? `${(Number(blueprintData.threeYearPicture.revenue) * 1000).toFixed(0)}K`
+                        : `${Number(blueprintData.threeYearPicture.revenue).toFixed(1)}M`}`
+                    ) : 'Not set'}
+                  </p>
                 </div>
                 <div>
                   <h4 className="font-semibold text-sm text-gray-700">Profit Target</h4>
-                  <p className="text-gray-600">{blueprintData.threeYearPicture.profit || 'Not set'}</p>
+                  <p className="text-gray-600">
+                    {blueprintData.threeYearPicture.profit ? `${blueprintData.threeYearPicture.profit}%` : 'Not set'}
+                  </p>
                 </div>
                 {blueprintData.threeYearPicture?.lookLikeItems && blueprintData.threeYearPicture.lookLikeItems.filter(item => item).length > 0 && (
                   <div>
