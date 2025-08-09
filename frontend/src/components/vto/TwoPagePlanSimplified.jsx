@@ -124,24 +124,17 @@ const TwoPagePlanSimplified = () => {
           <CardContent className="pt-4">
             {blueprintData.coreValues && blueprintData.coreValues.length > 0 ? (
               <ul className="space-y-2">
-                {blueprintData.coreValues.map((value, index) => (
-                  <li key={value.id || index} className="flex items-start">
-                    <span className="text-indigo-600 mr-2">•</span>
-                    <div>
-                      <span className="font-medium text-gray-900">
-                        {value.name || value.value_name || 'Unnamed'}
-                      </span>
-                      {(value.description || value.value_description) && (
-                        <span className="text-gray-600 text-sm ml-2">
-                          - {value.description || value.value_description}
-                        </span>
-                      )}
-                    </div>
+                {(blueprintData.coreValues || []).map((value, index) => (
+                  <li key={index} className="bg-gray-50 p-3 rounded-lg">
+                    <h4 className="font-semibold">{value.value}</h4>
+                    {value.description && (
+                      <p className="text-sm text-gray-600 mt-1">{value.description}</p>
+                    )}
                   </li>
                 ))}
               </ul>
             ) : (
-              <p className="text-gray-500">No core values defined</p>
+              <p className="text-gray-500">No core values defined yet</p>
             )}
           </CardContent>
         </Card>
@@ -182,9 +175,26 @@ const TwoPagePlanSimplified = () => {
             </CardTitle>
           </CardHeader>
           <CardContent className="pt-4">
-            <p className="text-gray-600">
-              {blueprintData.bhag.description || 'Not defined'}
-            </p>
+            <div className="space-y-3">
+              {blueprintData.bhag.year && (
+                <div>
+                  <h4 className="font-semibold text-sm text-gray-700">Target Year</h4>
+                  <p className="text-gray-600">{blueprintData.bhag.year}</p>
+                </div>
+              )}
+              <div>
+                <h4 className="font-semibold text-sm text-gray-700">Description</h4>
+                <p className="text-gray-600">
+                  {blueprintData.bhag.description || 'Not defined'}
+                </p>
+              </div>
+              {blueprintData.bhag.runningTotal && (
+                <div>
+                  <h4 className="font-semibold text-sm text-gray-700">Running Total</h4>
+                  <p className="text-gray-600">{blueprintData.bhag.runningTotal}</p>
+                </div>
+              )}
+            </div>
           </CardContent>
         </Card>
 
@@ -242,7 +252,7 @@ const TwoPagePlanSimplified = () => {
                 </div>
                 {blueprintData.threeYearPicture?.measurables?.length > 0 && (
                   <div>
-                    <h4 className="font-semibold text-sm text-gray-700">Measurables</h4>
+                    <h4 className="font-semibold text-sm text-gray-700">Key Measurables</h4>
                     <ul className="list-disc list-inside text-gray-600 space-y-1">
                       {(blueprintData.threeYearPicture.measurables || []).map((m, index) => (
                         <li key={m.id || index}>
