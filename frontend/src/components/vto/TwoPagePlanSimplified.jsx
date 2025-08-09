@@ -183,7 +183,7 @@ const TwoPagePlanSimplified = () => {
                 </div>
               )}
               <div>
-                <h4 className="font-semibold text-sm text-gray-700">Description</h4>
+                <h4 className="font-semibold text-sm text-gray-700">Vision Description</h4>
                 <p className="text-gray-600">
                   {blueprintData.bhag.description || 'Not defined'}
                 </p>
@@ -210,18 +210,33 @@ const TwoPagePlanSimplified = () => {
             <div className="space-y-3">
               <div>
                 <h4 className="font-semibold text-sm text-gray-700">Target Market</h4>
-                <p className="text-gray-600">
+                <p className="text-gray-600 whitespace-pre-wrap">
                   {blueprintData.marketingStrategy.targetMarket || 'Not defined'}
                 </p>
               </div>
               {blueprintData.marketingStrategy.differentiators.length > 0 && (
                 <div>
                   <h4 className="font-semibold text-sm text-gray-700">Differentiators</h4>
-                  <ul className="list-disc list-inside text-gray-600 space-y-1">
+                  <ul className="space-y-1">
                     {blueprintData.marketingStrategy.differentiators.map((diff, index) => (
-                      <li key={index}>{diff}</li>
+                      <li key={index} className="flex items-start">
+                        <span className="text-indigo-600 mr-2">•</span>
+                        <span className="text-gray-600">{diff}</span>
+                      </li>
                     ))}
                   </ul>
+                </div>
+              )}
+              {blueprintData.marketingStrategy.provenProcessExists && (
+                <div className="flex items-center gap-2">
+                  <span className="text-green-600">✓</span>
+                  <span className="text-sm text-gray-600">Yes, we have a proven process</span>
+                </div>
+              )}
+              {blueprintData.marketingStrategy.guaranteeExists && (
+                <div className="flex items-center gap-2">
+                  <span className="text-green-600">✓</span>
+                  <span className="text-sm text-gray-600">We offer a guarantee</span>
                 </div>
               )}
             </div>
@@ -242,14 +257,26 @@ const TwoPagePlanSimplified = () => {
           <CardContent className="pt-4">
             {blueprintData.threeYearPicture ? (
               <div className="space-y-3">
+                {blueprintData.threeYearPicture.targetDate && (
+                  <div>
+                    <h4 className="font-semibold text-sm text-gray-700">Target Date</h4>
+                    <p className="text-gray-600">{blueprintData.threeYearPicture.targetDate}</p>
+                  </div>
+                )}
                 <div>
-                  <h4 className="font-semibold text-sm text-gray-700">Revenue</h4>
+                  <h4 className="font-semibold text-sm text-gray-700">Revenue Target</h4>
                   <p className="text-gray-600">{blueprintData.threeYearPicture.revenue || 'Not set'}</p>
                 </div>
                 <div>
-                  <h4 className="font-semibold text-sm text-gray-700">Profit</h4>
+                  <h4 className="font-semibold text-sm text-gray-700">Profit Target</h4>
                   <p className="text-gray-600">{blueprintData.threeYearPicture.profit || 'Not set'}</p>
                 </div>
+                {blueprintData.threeYearPicture.description && (
+                  <div>
+                    <h4 className="font-semibold text-sm text-gray-700">What does it look like?</h4>
+                    <p className="text-gray-600 whitespace-pre-wrap">{blueprintData.threeYearPicture.description}</p>
+                  </div>
+                )}
                 {blueprintData.threeYearPicture?.measurables?.length > 0 && (
                   <div>
                     <h4 className="font-semibold text-sm text-gray-700">Key Measurables</h4>
