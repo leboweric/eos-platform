@@ -179,6 +179,17 @@ const TwoPagePlanView = ({ hideIssuesAndPriorities = false }) => {
 
   return (
     <>
+    {/* Add Issue Button */}
+    <div className="mb-4 flex justify-end">
+      <Button
+        onClick={() => setShowIssueDialog(true)}
+        className="bg-blue-600 hover:bg-blue-700 text-white"
+      >
+        <Plus className="h-4 w-4 mr-2" />
+        Add Issue
+      </Button>
+    </div>
+    
     <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
       {/* Left Column - Page 1 */}
       <div className="space-y-6">
@@ -278,27 +289,27 @@ const TwoPagePlanView = ({ hideIssuesAndPriorities = false }) => {
           <CardContent className="pt-4">
             <div className="space-y-3">
               <div>
-                <h4 className="font-semibold text-sm text-gray-700">Target Market</h4>
+                <h4 className="font-semibold text-sm text-gray-700 mb-2">Target Market</h4>
                 {(blueprintData.marketingStrategy?.demographicProfile || 
                   blueprintData.marketingStrategy?.geographicProfile || 
                   blueprintData.marketingStrategy?.psychographicProfile) ? (
-                  <div className="space-y-2 ml-4">
+                  <div className="space-y-4">
                     {blueprintData.marketingStrategy?.demographicProfile && (
-                      <div>
-                        <h5 className="font-medium text-xs text-gray-600 mb-1">Demographic</h5>
-                        <p className="text-gray-600 whitespace-pre-wrap">{blueprintData.marketingStrategy.demographicProfile}</p>
+                      <div className="bg-gray-50 p-3 rounded-lg">
+                        <h5 className="font-semibold text-sm text-indigo-700 mb-2 uppercase tracking-wide">Demographic</h5>
+                        <p className="text-gray-700 whitespace-pre-wrap pl-2">{blueprintData.marketingStrategy.demographicProfile}</p>
                       </div>
                     )}
                     {blueprintData.marketingStrategy?.geographicProfile && (
-                      <div>
-                        <h5 className="font-medium text-xs text-gray-600 mb-1">Geographic</h5>
-                        <p className="text-gray-600 whitespace-pre-wrap">{blueprintData.marketingStrategy.geographicProfile}</p>
+                      <div className="bg-blue-50 p-3 rounded-lg">
+                        <h5 className="font-semibold text-sm text-blue-700 mb-2 uppercase tracking-wide">Geographic</h5>
+                        <p className="text-gray-700 whitespace-pre-wrap pl-2">{blueprintData.marketingStrategy.geographicProfile}</p>
                       </div>
                     )}
                     {blueprintData.marketingStrategy?.psychographicProfile && (
-                      <div>
-                        <h5 className="font-medium text-xs text-gray-600 mb-1">Psychographic</h5>
-                        <p className="text-gray-600 whitespace-pre-wrap">{blueprintData.marketingStrategy.psychographicProfile}</p>
+                      <div className="bg-green-50 p-3 rounded-lg">
+                        <h5 className="font-semibold text-sm text-green-700 mb-2 uppercase tracking-wide">Psychographic</h5>
+                        <p className="text-gray-700 whitespace-pre-wrap pl-2">{blueprintData.marketingStrategy.psychographicProfile}</p>
                       </div>
                     )}
                   </div>
