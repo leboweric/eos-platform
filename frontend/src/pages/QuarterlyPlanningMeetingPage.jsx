@@ -1332,7 +1332,9 @@ const QuarterlyPlanningMeetingPage = () => {
                     </div>
                     <div className="space-y-2 max-h-96 overflow-y-auto">
                       {todos.map((todo) => (
-                        <div key={todo.id} className="bg-white border border-gray-200 rounded-lg p-4 hover:shadow-sm transition-shadow">
+                        <div key={todo.id} className="relative bg-white border border-gray-200 rounded-lg p-4 pl-6 hover:shadow-sm transition-shadow">
+                          {/* Blue left edge indicator */}
+                          <div className="absolute left-0 top-0 bottom-0 w-1 rounded-l-lg bg-blue-500" />
                           <div className="flex items-start justify-between">
                             <div className="flex-1">
                               <h4 className="font-medium text-gray-900">{todo.title}</h4>
