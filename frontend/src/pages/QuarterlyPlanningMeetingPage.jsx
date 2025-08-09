@@ -811,7 +811,7 @@ const QuarterlyPlanningMeetingPage = () => {
                   <div>
                     <CardTitle className="flex items-center gap-2 text-xl">
                       <ClipboardList className="h-5 w-5 text-indigo-600" />
-                      2-Page Plan (V/TO)
+                      2-Page Plan
                     </CardTitle>
                     <CardDescription className="mt-1">Review and align your strategic vision</CardDescription>
                   </div>
