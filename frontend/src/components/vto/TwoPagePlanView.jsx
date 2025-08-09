@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { useAuthStore } from '../../stores/authStore';
 import { businessBlueprintService } from '../../services/businessBlueprintService';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Checkbox } from '@/components/ui/checkbox';
 import { 
   Target, 
   Lightbulb,
@@ -75,6 +76,44 @@ const TwoPagePlanView = ({ hideIssuesAndPriorities = false }) => {
       }
     }
   }, [user]);
+  
+  // Handler for toggling 3-Year Picture items
+  const toggleLookLikeItem = (index) => {
+    const orgId = user?.organization_id;
+    if (!orgId) return;
+    
+    setLookLikeCheckedItems(prev => ({
+      ...prev,
+      [index]: !prev[index]
+    }));
+    
+    // Store the checked state in localStorage for persistence
+    const newCheckedState = {
+      ...lookLikeCheckedItems,
+      [index]: !lookLikeCheckedItems[index]
+    };
+    
+    localStorage.setItem(`lookLikeChecked_${orgId}`, JSON.stringify(newCheckedState));
+  };
+  
+  // Handler for toggling 1-Year Plan goals
+  const toggleGoalItem = (index) => {
+    const orgId = user?.organization_id;
+    if (!orgId) return;
+    
+    setOneYearGoalsCheckedItems(prev => ({
+      ...prev,
+      [index]: !prev[index]
+    }));
+    
+    // Store the checked state in localStorage for persistence
+    const newCheckedState = {
+      ...oneYearGoalsCheckedItems,
+      [index]: !oneYearGoalsCheckedItems[index]
+    };
+    
+    localStorage.setItem(`oneYearGoalsChecked_${orgId}`, JSON.stringify(newCheckedState));
+  };
 
   const fetchBusinessBlueprint = async () => {
     try {
@@ -386,13 +425,19 @@ const TwoPagePlanView = ({ hideIssuesAndPriorities = false }) => {
                   return filteredItems.length > 0 && (
                     <div>
                       <h4 className="font-semibold text-sm text-gray-700">What does it look like?</h4>
-                      <ul className="list-disc pl-5 text-gray-600 space-y-1">
+                      <ul className="space-y-2">
                         {filteredItems.map((item, index) => {
                           const isChecked = lookLikeCheckedItems[index] || false;
                           return (
-                            <li key={index} className={`flex items-start ${isChecked ? 'line-through opacity-60' : ''}`}>
-                              {isChecked && <span className="text-green-600 mr-1">✓</span>}
-                              <span>{item}</span>
+                            <li key={index} className="flex items-start gap-2">
+                              <Checkbox
+                                checked={isChecked}
+                                onCheckedChange={() => toggleLookLikeItem(index)}
+                                className="mt-0.5"
+                              />
+                              <span className={`text-gray-600 ${isChecked ? 'line-through opacity-60' : ''}`}>
+                                {item}
+                              </span>
                             </li>
                           );
                         })}
@@ -451,14 +496,20 @@ const TwoPagePlanView = ({ hideIssuesAndPriorities = false }) => {
                 {blueprintData.oneYearPlan?.goals?.length > 0 && (
                   <div>
                     <h4 className="font-semibold text-sm text-gray-700">Goals</h4>
-                    <ul className="list-disc pl-5 text-gray-600 space-y-1">
+                    <ul className="space-y-2">
                       {(blueprintData.oneYearPlan.goals || []).map((goal, index) => {
                         const isChecked = oneYearGoalsCheckedItems[index] || false;
                         const goalText = typeof goal === 'string' ? goal : (goal.goal_text || goal.text || '');
                         return (
-                          <li key={goal.id || index} className={`flex items-start ${isChecked ? 'line-through opacity-60' : ''}`}>
-                            {isChecked && <span className="text-green-600 mr-1">✓</span>}
-                            <span>{goalText}</span>
+                          <li key={goal.id || index} className="flex items-start gap-2">
+                            <Checkbox
+                              checked={isChecked}
+                              onCheckedChange={() => toggleGoalItem(index)}
+                              className="mt-0.5"
+                            />
+                            <span className={`text-gray-600 ${isChecked ? 'line-through opacity-60' : ''}`}>
+                              {goalText}
+                            </span>
                           </li>
                         );
                       })}
