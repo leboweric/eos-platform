@@ -800,11 +800,32 @@ const QuarterlyPlanningMeetingPage = () => {
           <div className="space-y-4">
             <Card>
               <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <ListChecks className="h-5 w-5" />
-                  Set Quarterly Priorities
-                </CardTitle>
-                <CardDescription>Define 3-7 priorities for the upcoming quarter (60 minutes)</CardDescription>
+                <div className="flex items-center justify-between">
+                  <div>
+                    <CardTitle className="flex items-center gap-2">
+                      <ListChecks className="h-5 w-5" />
+                      Set Quarterly Priorities
+                    </CardTitle>
+                    <CardDescription>Define 3-7 priorities for the upcoming quarter (60 minutes)</CardDescription>
+                  </div>
+                  <div className="flex gap-2">
+                    <Button
+                      onClick={() => window.open('/smart-assistant', '_blank')}
+                      variant="outline"
+                      className="text-purple-600 border-purple-300 hover:bg-purple-50"
+                    >
+                      <MessageSquare className="mr-2 h-4 w-4" />
+                      SMART Assistant
+                    </Button>
+                    <Button
+                      onClick={() => navigate('/quarterly-priorities')}
+                      className="bg-indigo-600 hover:bg-indigo-700"
+                    >
+                      <Plus className="mr-2 h-4 w-4" />
+                      Add Priority
+                    </Button>
+                  </div>
+                </div>
               </CardHeader>
             </Card>
             {priorities.length === 0 ? (
