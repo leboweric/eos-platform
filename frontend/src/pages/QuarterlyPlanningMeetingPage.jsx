@@ -1327,7 +1327,7 @@ const QuarterlyPlanningMeetingPage = () => {
                 <ClipboardList className="h-5 w-5" />
                 Next Steps
               </CardTitle>
-              <CardDescription>Review open action items and responsibilities (15 minutes)</CardDescription>
+              <CardDescription>Review open action items and responsibilities (7 minutes)</CardDescription>
             </CardHeader>
             <CardContent>
               <div className="space-y-4">
@@ -1380,15 +1380,6 @@ const QuarterlyPlanningMeetingPage = () => {
                                   <span className="flex items-center gap-1">
                                     <Calendar className="h-3 w-3" />
                                     {new Date(todo.due_date).toLocaleDateString()}
-                                  </span>
-                                )}
-                                {todo.priority && (
-                                  <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${
-                                    todo.priority === 'high' ? 'bg-red-100 text-red-700' :
-                                    todo.priority === 'medium' ? 'bg-yellow-100 text-yellow-700' :
-                                    'bg-gray-100 text-gray-700'
-                                  }`}>
-                                    {todo.priority}
                                   </span>
                                 )}
                               </div>
@@ -1569,6 +1560,92 @@ const QuarterlyPlanningMeetingPage = () => {
             </div>
           </div>
         )}
+
+        {/* Add Priority Dialog */}
+        <Dialog open={showAddPriority} onOpenChange={setShowAddPriority}>
+          <DialogContent className="sm:max-w-[600px]">
+            <DialogHeader>
+              <DialogTitle>Add New Priority</DialogTitle>
+              <DialogDescription>
+                Create a new quarterly priority. Make it SMART: Specific, Measurable, Achievable, Relevant, and Time-bound.
+              </DialogDescription>
+            </DialogHeader>
+            <div className="space-y-4 py-4">
+              <div className="space-y-2">
+                <Label htmlFor="title">Title *</Label>
+                <Input
+                  id="title"
+                  value={priorityForm.title}
+                  onChange={(e) => setPriorityForm({ ...priorityForm, title: e.target.value })}
+                  placeholder="Enter priority title"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="description">Description</Label>
+                <Textarea
+                  id="description"
+                  value={priorityForm.description}
+                  onChange={(e) => setPriorityForm({ ...priorityForm, description: e.target.value })}
+                  placeholder="Describe what success looks like"
+                  rows={3}
+                />
+              </div>
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="owner">Owner *</Label>
+                  <Select
+                    value={priorityForm.ownerId}
+                    onValueChange={(value) => setPriorityForm({ ...priorityForm, ownerId: value })}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select owner" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {teamMembers.map((member) => (
+                        <SelectItem key={member.id} value={member.id}>
+                          {member.first_name} {member.last_name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="dueDate">Due Date *</Label>
+                  <Input
+                    id="dueDate"
+                    type="date"
+                    value={priorityForm.dueDate}
+                    onChange={(e) => setPriorityForm({ ...priorityForm, dueDate: e.target.value })}
+                  />
+                </div>
+              </div>
+              <div className="flex items-center space-x-2">
+                <input
+                  type="checkbox"
+                  id="isCompany"
+                  checked={priorityForm.isCompanyPriority}
+                  onChange={(e) => setPriorityForm({ ...priorityForm, isCompanyPriority: e.target.checked })}
+                  className="h-4 w-4 text-indigo-600 rounded border-gray-300"
+                />
+                <Label htmlFor="isCompany" className="text-sm font-medium">
+                  Company Priority (visible to all teams)
+                </Label>
+              </div>
+            </div>
+            <DialogFooter>
+              <Button variant="outline" onClick={() => setShowAddPriority(false)}>
+                Cancel
+              </Button>
+              <Button
+                onClick={handleCreatePriority}
+                disabled={!priorityForm.title || !priorityForm.ownerId || !priorityForm.dueDate}
+                className="bg-indigo-600 hover:bg-indigo-700"
+              >
+                Create Priority
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
       </div>
     </div>
   );
