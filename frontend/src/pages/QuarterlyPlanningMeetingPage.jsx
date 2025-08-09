@@ -25,7 +25,10 @@ import { useNavigate } from 'react-router-dom';
 import PriorityCard from '../components/priorities/PriorityCardClean';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
+import { Label } from '@/components/ui/label';
+import { Input } from '@/components/ui/input';
+import { Textarea } from '@/components/ui/textarea';
 import { meetingsService } from '../services/meetingsService';
 import { FileText, GitBranch, Smile, BarChart, Newspaper, ListTodo, ArrowLeftRight, Archive, Plus, MessageSquare, Send, Star } from 'lucide-react';
 import { quarterlyPrioritiesService } from '../services/quarterlyPrioritiesService';
@@ -49,12 +52,12 @@ const QuarterlyPlanningMeetingPage = () => {
   // Meeting data
   const [priorities, setPriorities] = useState([]);
   const [issues, setIssues] = useState([]);
+  const [todos, setTodos] = useState([]);
   const [vtoData, setVtoData] = useState(null);
   const [meetingStarted, setMeetingStarted] = useState(false);
   const [meetingStartTime, setMeetingStartTime] = useState(null);
   const [elapsedTime, setElapsedTime] = useState(0);
   const [meetingRating, setMeetingRating] = useState(null);
-  const [cascadingMessage, setCascadingMessage] = useState('');
   
   // Dialog states for issues and todos
   const [showIssueDialog, setShowIssueDialog] = useState(false);
@@ -62,6 +65,14 @@ const QuarterlyPlanningMeetingPage = () => {
   const [showTodoDialog, setShowTodoDialog] = useState(false);
   const [editingTodo, setEditingTodo] = useState(null);
   const [teamMembers, setTeamMembers] = useState([]);
+  const [showAddPriority, setShowAddPriority] = useState(false);
+  const [priorityForm, setPriorityForm] = useState({
+    title: '',
+    description: '',
+    ownerId: '',
+    dueDate: '',
+    isCompanyPriority: false
+  });
   
   // Collapsible sections state
   const [expandedSections, setExpandedSections] = useState({
@@ -124,7 +135,6 @@ const QuarterlyPlanningMeetingPage = () => {
         meetingType: 'quarterly_planning',
         duration,
         rating: meetingRating,
-        cascadingMessage,
         summary: {
           priorities: priorities.length,
           completed: priorities.filter(p => p.status === 'complete').length
@@ -149,6 +159,8 @@ const QuarterlyPlanningMeetingPage = () => {
       fetchTeamMembers();
     } else if (activeSection === '2-page-plan') {
       fetchVtoData();
+    } else if (activeSection === 'next-steps') {
+      fetchTodosData();
     } else {
       // For non-data sections, ensure loading is false
       setLoading(false);
@@ -314,9 +326,56 @@ const QuarterlyPlanningMeetingPage = () => {
     }
   };
 
+  const fetchTodosData = async () => {
+    try {
+      const effectiveTeamId = teamId || user?.teamId || '00000000-0000-0000-0000-000000000000';
+      const response = await todosService.getTodos(null, null, false, effectiveTeamId);
+      // Filter to only show open todos
+      const openTodos = (response.data.todos || []).filter(
+        todo => todo.status !== 'complete' && todo.status !== 'completed' && todo.status !== 'cancelled'
+      );
+      setTodos(openTodos);
+    } catch (error) {
+      console.error('Failed to fetch todos:', error);
+    }
+  };
+
   const handleAddTodo = () => {
     setEditingTodo(null);
     setShowTodoDialog(true);
+  };
+
+  const handleCreatePriority = async () => {
+    try {
+      const orgId = localStorage.getItem('impersonatedOrgId') || user?.organizationId || user?.organization_id;
+      const effectiveTeamId = teamId || user?.teamId || '00000000-0000-0000-0000-000000000000';
+      
+      const priorityData = {
+        ...priorityForm,
+        quarter: Math.ceil((new Date().getMonth() + 1) / 3),
+        year: new Date().getFullYear(),
+        status: 'on-track',
+        priority_type: priorityForm.isCompanyPriority ? 'company' : 'individual',
+        team_id: effectiveTeamId
+      };
+      
+      await quarterlyPrioritiesService.createPriority(orgId, effectiveTeamId, priorityData);
+      
+      setShowAddPriority(false);
+      setPriorityForm({
+        title: '',
+        description: '',
+        ownerId: '',
+        dueDate: '',
+        isCompanyPriority: false
+      });
+      setSuccess('Priority created successfully');
+      // Refresh priorities
+      await fetchPrioritiesData();
+    } catch (error) {
+      console.error('Failed to create priority:', error);
+      setError('Failed to create priority');
+    }
   };
 
   const handleVote = async (issueId, shouldVote) => {
@@ -806,11 +865,14 @@ const QuarterlyPlanningMeetingPage = () => {
                       <ListChecks className="h-5 w-5" />
                       Set Quarterly Priorities
                     </CardTitle>
-                    <CardDescription>Define 3-7 priorities for the upcoming quarter (60 minutes)</CardDescription>
+                    <CardDescription>Define 3-7 priorities for the upcoming quarter (120 minutes)</CardDescription>
                   </div>
                   <div className="flex gap-2">
                     <Button
-                      onClick={() => window.open('/smart-assistant', '_blank')}
+                      onClick={() => {
+                        const orgId = localStorage.getItem('impersonatedOrgId') || user?.organizationId || user?.organization_id;
+                        window.open(`/organizations/${orgId}/smart-rock-assistant`, '_blank');
+                      }}
                       variant="outline"
                       className="text-purple-600 border-purple-300 hover:bg-purple-50"
                     >
@@ -818,7 +880,16 @@ const QuarterlyPlanningMeetingPage = () => {
                       SMART Assistant
                     </Button>
                     <Button
-                      onClick={() => navigate('/quarterly-priorities')}
+                      onClick={() => {
+                        setPriorityForm({
+                          title: '',
+                          description: '',
+                          ownerId: user?.id || '',
+                          dueDate: '',
+                          isCompanyPriority: false
+                        });
+                        setShowAddPriority(true);
+                      }}
                       className="bg-indigo-600 hover:bg-indigo-700"
                     >
                       <Plus className="mr-2 h-4 w-4" />
@@ -1165,6 +1236,86 @@ const QuarterlyPlanningMeetingPage = () => {
                 }
               }}
             />
+            
+            {/* Add Priority Dialog */}
+            <Dialog open={showAddPriority} onOpenChange={setShowAddPriority}>
+              <DialogContent className="max-w-2xl">
+                <DialogHeader>
+                  <DialogTitle>Add New Priority</DialogTitle>
+                  <DialogDescription>
+                    Create a new priority for Q{Math.ceil((new Date().getMonth() + 1) / 3)} {new Date().getFullYear()}
+                  </DialogDescription>
+                </DialogHeader>
+                <div className="space-y-4">
+                  <div>
+                    <Label htmlFor="title">Title</Label>
+                    <Input
+                      id="title"
+                      value={priorityForm.title}
+                      onChange={(e) => setPriorityForm({ ...priorityForm, title: e.target.value })}
+                      placeholder="Enter priority title"
+                    />
+                  </div>
+                  <div>
+                    <Label htmlFor="description">Description</Label>
+                    <Textarea
+                      id="description"
+                      value={priorityForm.description}
+                      onChange={(e) => setPriorityForm({ ...priorityForm, description: e.target.value })}
+                      placeholder="Describe what needs to be accomplished"
+                      rows={3}
+                    />
+                  </div>
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <Label htmlFor="owner">Owner</Label>
+                      <Select
+                        value={priorityForm.ownerId}
+                        onValueChange={(value) => setPriorityForm({ ...priorityForm, ownerId: value })}
+                      >
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select owner" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {teamMembers.map(member => (
+                            <SelectItem key={member.id} value={member.id}>
+                              {member.first_name} {member.last_name}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <div>
+                      <Label htmlFor="dueDate">Due Date</Label>
+                      <Input
+                        id="dueDate"
+                        type="date"
+                        value={priorityForm.dueDate}
+                        onChange={(e) => setPriorityForm({ ...priorityForm, dueDate: e.target.value })}
+                      />
+                    </div>
+                  </div>
+                  <div className="flex items-center space-x-2">
+                    <input
+                      type="checkbox"
+                      id="isCompany"
+                      checked={priorityForm.isCompanyPriority}
+                      onChange={(e) => setPriorityForm({ ...priorityForm, isCompanyPriority: e.target.checked })}
+                      className="rounded border-gray-300"
+                    />
+                    <Label htmlFor="isCompany">This is a company-wide priority</Label>
+                  </div>
+                </div>
+                <DialogFooter>
+                  <Button variant="outline" onClick={() => setShowAddPriority(false)}>
+                    Cancel
+                  </Button>
+                  <Button onClick={handleCreatePriority}>
+                    Create Priority
+                  </Button>
+                </DialogFooter>
+              </DialogContent>
+            </Dialog>
           </div>
         );
 
@@ -1176,39 +1327,78 @@ const QuarterlyPlanningMeetingPage = () => {
                 <ClipboardList className="h-5 w-5" />
                 Next Steps
               </CardTitle>
-              <CardDescription>Confirm action items and responsibilities (15 minutes)</CardDescription>
+              <CardDescription>Review open action items and responsibilities (15 minutes)</CardDescription>
             </CardHeader>
             <CardContent>
               <div className="space-y-4">
-                <p className="text-gray-600">
-                  Review and confirm the following before concluding:
-                </p>
-                <div className="space-y-4">
-                  <div className="bg-gray-50 p-4 rounded-lg">
-                    <h4 className="font-medium mb-2">1. Priority Owners</h4>
-                    <p className="text-sm text-gray-600">
-                      Ensure each priority has a clear owner who is accountable for its completion.
-                    </p>
-                  </div>
-                  <div className="bg-gray-50 p-4 rounded-lg">
-                    <h4 className="font-medium mb-2">2. Key Dates</h4>
-                    <p className="text-sm text-gray-600">
-                      Review any critical milestones or deadlines for the quarter.
-                    </p>
-                  </div>
-                  <div className="bg-gray-50 p-4 rounded-lg">
-                    <h4 className="font-medium mb-2">3. Communication Plan</h4>
-                    <p className="text-sm text-gray-600">
-                      How will priorities and decisions be communicated to the broader team?
-                    </p>
-                  </div>
-                  <div className="bg-gray-50 p-4 rounded-lg">
-                    <h4 className="font-medium mb-2">4. Support Needed</h4>
-                    <p className="text-sm text-gray-600">
-                      What resources or support do priority owners need to be successful?
-                    </p>
-                  </div>
+                <div className="flex items-center justify-between mb-4">
+                  <p className="text-gray-600">
+                    Review all open to-dos before concluding the meeting:
+                  </p>
+                  <Button
+                    onClick={handleAddTodo}
+                    size="sm"
+                    className="bg-indigo-600 hover:bg-indigo-700"
+                  >
+                    <Plus className="mr-2 h-4 w-4" />
+                    Add To-Do
+                  </Button>
                 </div>
+                
+                {loading ? (
+                  <div className="flex items-center justify-center py-8">
+                    <Loader2 className="h-6 w-6 animate-spin" />
+                  </div>
+                ) : todos.length === 0 ? (
+                  <div className="bg-gray-50 p-6 rounded-lg text-center">
+                    <CheckCircle className="h-12 w-12 text-green-500 mx-auto mb-3" />
+                    <p className="text-gray-600 font-medium">No open to-dos!</p>
+                    <p className="text-sm text-gray-500 mt-1">All action items have been completed.</p>
+                  </div>
+                ) : (
+                  <div className="space-y-3">
+                    <div className="bg-blue-50 border border-blue-200 rounded-lg p-3">
+                      <p className="text-sm text-blue-800">
+                        <span className="font-semibold">{todos.length} open to-do{todos.length !== 1 ? 's' : ''}</span> to review
+                      </p>
+                    </div>
+                    <div className="space-y-2 max-h-96 overflow-y-auto">
+                      {todos.map((todo) => (
+                        <div key={todo.id} className="bg-white border border-gray-200 rounded-lg p-4 hover:shadow-sm transition-shadow">
+                          <div className="flex items-start justify-between">
+                            <div className="flex-1">
+                              <h4 className="font-medium text-gray-900">{todo.title}</h4>
+                              {todo.description && (
+                                <p className="text-sm text-gray-600 mt-1">{todo.description}</p>
+                              )}
+                              <div className="flex items-center gap-4 mt-2 text-sm text-gray-500">
+                                <span className="flex items-center gap-1">
+                                  <User className="h-3 w-3" />
+                                  {todo.assigned_to?.first_name} {todo.assigned_to?.last_name || 'Unassigned'}
+                                </span>
+                                {todo.due_date && (
+                                  <span className="flex items-center gap-1">
+                                    <Calendar className="h-3 w-3" />
+                                    {new Date(todo.due_date).toLocaleDateString()}
+                                  </span>
+                                )}
+                                {todo.priority && (
+                                  <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${
+                                    todo.priority === 'high' ? 'bg-red-100 text-red-700' :
+                                    todo.priority === 'medium' ? 'bg-yellow-100 text-yellow-700' :
+                                    'bg-gray-100 text-gray-700'
+                                  }`}>
+                                    {todo.priority}
+                                  </span>
+                                )}
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
               </div>
             </CardContent>
           </Card>
@@ -1227,7 +1417,7 @@ const QuarterlyPlanningMeetingPage = () => {
                   <CardDescription className="mt-1">Wrap up and capture key takeaways</CardDescription>
                 </div>
                 <div className="text-sm text-gray-500 bg-white px-3 py-1 rounded-full">
-                  10 minutes
+                  8 minutes
                 </div>
               </div>
             </CardHeader>
@@ -1376,21 +1566,6 @@ const QuarterlyPlanningMeetingPage = () => {
                   {i + 1}
                 </Button>
               ))}
-            </div>
-            
-            <div className="space-y-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Cascading Message (Optional)
-                </label>
-                <textarea
-                  value={cascadingMessage}
-                  onChange={(e) => setCascadingMessage(e.target.value)}
-                  placeholder="Key messages to cascade to your teams..."
-                  className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
-                  rows={3}
-                />
-              </div>
             </div>
           </div>
         )}
