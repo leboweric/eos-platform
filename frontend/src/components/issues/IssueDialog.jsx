@@ -178,7 +178,13 @@ const IssueDialog = ({ open, onClose, onSave, issue, teamMembers, timeline }) =>
   };
 
   return (
-    <Dialog open={open} onOpenChange={onClose}>
+    <Dialog open={open} onOpenChange={(newOpen) => {
+      console.log('Dialog onOpenChange called with:', newOpen);
+      if (!newOpen) {
+        // Only call onClose when dialog is being closed (false), not opened (true)
+        onClose();
+      }
+    }}>
       <DialogContent className="sm:max-w-[625px]">
         <form onSubmit={handleSubmit}>
           <DialogHeader>
