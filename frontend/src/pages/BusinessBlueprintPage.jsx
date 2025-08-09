@@ -699,7 +699,7 @@ const BusinessBlueprintPage = () => {
                 Long Range Plan
               </CardTitle>
               <CardDescription className="text-gray-600">
-                Your 10+ year vision
+                Your 5-30 year vision
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
