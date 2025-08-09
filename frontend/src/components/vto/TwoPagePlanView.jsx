@@ -559,8 +559,8 @@ const TwoPagePlanView = ({ hideIssuesAndPriorities = false }) => {
       </div>
     </div>
 
-    {/* Issue Dialog */}
-    {showIssueDialog && (
+    {/* Issue Dialog - Only show if issues section is not hidden */}
+    {!hideIssuesAndPriorities && showIssueDialog && (
       <IssueDialog
         open={showIssueDialog}
         onClose={() => setShowIssueDialog(false)}
