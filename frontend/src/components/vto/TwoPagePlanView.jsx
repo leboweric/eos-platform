@@ -316,7 +316,7 @@ const TwoPagePlanView = ({ hideIssuesAndPriorities = false }) => {
                   return filteredItems.length > 0 && (
                     <div>
                       <h4 className="font-semibold text-sm text-gray-700">What does it look like?</h4>
-                      <ul className="list-disc list-inside text-gray-600 space-y-1">
+                      <ul className="list-disc pl-5 text-gray-600 space-y-1">
                         {filteredItems.map((item, index) => (
                           <li key={index}>{item}</li>
                         ))}
@@ -327,7 +327,7 @@ const TwoPagePlanView = ({ hideIssuesAndPriorities = false }) => {
                 {blueprintData.threeYearPicture?.measurables?.length > 0 && (
                   <div>
                     <h4 className="font-semibold text-sm text-gray-700">Key Measurables</h4>
-                    <ul className="list-disc list-inside text-gray-600 space-y-1">
+                    <ul className="list-disc pl-5 text-gray-600 space-y-1">
                       {(blueprintData.threeYearPicture.measurables || []).map((m, index) => (
                         <li key={m.id || index}>
                           {typeof m === 'string' ? m : `${m.name || m.metric_name || ''}: ${m.value || m.target_value || ''}`}
@@ -375,7 +375,7 @@ const TwoPagePlanView = ({ hideIssuesAndPriorities = false }) => {
                 {blueprintData.oneYearPlan?.goals?.length > 0 && (
                   <div>
                     <h4 className="font-semibold text-sm text-gray-700">Goals</h4>
-                    <ul className="list-disc list-inside text-gray-600 space-y-1">
+                    <ul className="list-disc pl-5 text-gray-600 space-y-1">
                       {(blueprintData.oneYearPlan.goals || []).map((goal, index) => (
                         <li key={goal.id || index}>
                           {typeof goal === 'string' ? goal : (goal.goal_text || goal.text || '')}
