@@ -1019,26 +1019,50 @@ const QuarterlyPlanningMeetingPage = () => {
                 }}
                 onStatusChange={async (issueId, newStatus) => {
                   try {
+                    // Optimistic update
+                    setIssues(prev => 
+                      prev.map(issue => 
+                        issue.id === issueId ? { ...issue, status: newStatus } : issue
+                      )
+                    );
+                    
                     await issuesService.updateIssue(issueId, { status: newStatus });
-                    await fetchIssuesData();
                   } catch (error) {
                     console.error('Failed to update status:', error);
+                    // Revert on error
+                    await fetchIssuesData();
                   }
                 }}
                 onTimelineChange={async (issueId, newTimeline) => {
                   try {
+                    // Optimistic update
+                    setIssues(prev => 
+                      prev.map(issue => 
+                        issue.id === issueId ? { ...issue, timeline: newTimeline } : issue
+                      )
+                    );
+                    
                     await issuesService.updateIssue(issueId, { timeline: newTimeline });
-                    await fetchIssuesData();
+                    setSuccess(`Issue moved to ${newTimeline === 'short_term' ? 'Short Term' : 'Long Term'}`);
                   } catch (error) {
                     console.error('Failed to update timeline:', error);
+                    setError('Failed to move issue');
+                    // Revert on error
+                    await fetchIssuesData();
                   }
                 }}
                 onArchive={async (issueId) => {
                   try {
+                    // Optimistic update - remove from list
+                    setIssues(prev => prev.filter(issue => issue.id !== issueId));
+                    
                     await issuesService.archiveIssue(issueId);
-                    await fetchIssuesData();
+                    setSuccess('Issue archived');
                   } catch (error) {
                     console.error('Failed to archive:', error);
+                    setError('Failed to archive issue');
+                    // Revert on error
+                    await fetchIssuesData();
                   }
                 }}
                 onVote={handleVote}
