@@ -23,6 +23,13 @@ EOS Platform is a web application for implementing the Entrepreneurial Operating
 - The `file_path` column is deprecated and should not be used
 - This ensures documents persist across deployments
 
+### Important Trademark Compliance Changes
+Due to trademark compliance, several tables were renamed:
+- **vtos** → **business_blueprints** (Vision/Traction Organizer)
+- **rocks** → **quarterly_priorities**
+- **eosi_organizations** → **consultant_organizations**
+- Core values are stored in `core_values` table with foreign key `vto_id` referencing `business_blueprints`
+
 ### Important URLs
 - Production: https://axp.com
 - API: https://eos-platform-production.up.railway.app/api/v1
@@ -139,6 +146,64 @@ EOS Platform is a web application for implementing the Entrepreneurial Operating
 - `DELETE /api/v1/organizations/:orgId/teams/:teamId/scorecard/groups/:groupId`
 - `PUT /api/v1/organizations/:orgId/teams/:teamId/scorecard/metrics/:metricId/move-to-group`
 - `PUT /api/v1/organizations/:orgId/teams/:teamId/scorecard/groups/reorder`
+
+## Creating New Organizations via SQL
+
+### Database Schema Reference
+When creating organizations via SQL, use these table structures:
+
+#### Organizations Table
+- `id`: UUID
+- `name`: Organization name
+- `slug`: URL-safe unique identifier (lowercase, hyphens)
+- `subscription_tier`: 'free', 'professional', or 'enterprise'
+- `created_at`, `updated_at`: Timestamps
+
+#### Teams Table  
+- `id`: UUID
+- `organization_id`: References organizations(id)
+- `name`: Team/Department name
+- `created_at`, `updated_at`: Timestamps
+- **Note**: Leadership Team must use UUID '00000000-0000-0000-0000-000000000000'
+
+#### Users Table
+- `id`: UUID
+- `email`: Unique email address
+- `password_hash`: Encrypted password
+- `first_name`, `last_name`: User names
+- `role`: 'admin' or 'member'
+- `organization_id`: References organizations(id)
+- `created_at`, `updated_at`: Timestamps
+
+#### Team Members Table
+- Links users to teams
+- `user_id`: References users(id)
+- `team_id`: References teams(id)
+- `role`: Usually 'member'
+- `joined_at`: Timestamp
+
+### Creating a New Organization
+Use the template in `/migrate_boyum_simple.sql` as a reference. Key steps:
+
+1. Generate organization with unique slug
+2. Create Leadership Team with special UUID ('00000000-0000-0000-0000-000000000000')
+3. Create additional teams/departments
+4. Create users with hashed password ($2a$10$K3KmLLLqOWeL5rzmDPbFp.gGJgYpQzJkgWBMsjWYLwE/FYrc8a6Iq = 'Abc123!@#')
+5. Link users to teams via team_members table
+
+### Important Notes
+- Business Blueprint data (formerly VTO) is stored in `business_blueprints` table with related data in `core_values`, `core_focus`, etc.
+- The `core_values` table still uses `vto_id` as the foreign key column name (referencing `business_blueprints.id`)
+- No subscription or billing tables needed for basic setup
+- Users don't have direct team_id - they're linked through team_members table
+- Due to trademark compliance: VTO → Business Blueprint, Rocks → Quarterly Priorities
+
+### CRITICAL: Business Blueprint Setup Requirements
+**IMPORTANT**: The business blueprint MUST have `team_id = NULL` for organization-level blueprints!
+- The API looks for blueprints with `team_id IS NULL` (not Leadership Team UUID)
+- Even though Leadership Team uses UUID '00000000-0000-0000-0000-000000000000', the blueprint should have NULL
+- The backend auto-creates an empty blueprint if it doesn't find one with NULL team_id
+- Always check for and remove duplicate blueprints after creation
 
 ## SMART Rock Assistant Feature (August 2025)
 

@@ -3,7 +3,7 @@ import { useAuthStore } from '../stores/authStore';
 import { scorecardService } from '../services/scorecardService';
 import { scorecardGroupsService } from '../services/scorecardGroupsService';
 import { useDepartment } from '../contexts/DepartmentContext';
-import { LEADERSHIP_TEAM_ID } from '../utils/teamUtils';
+import { getTeamId } from '../utils/teamUtils';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -110,7 +110,7 @@ const ScorecardPage = () => {
       // Use Leadership Team ID if leadership member without department selected
       let teamId = selectedDepartment?.id;
       if (!teamId && isLeadershipMember) {
-        teamId = LEADERSHIP_TEAM_ID;
+        teamId = getTeamId(user, 'leadership');
       }
       
       if (!teamId) {
@@ -153,7 +153,7 @@ const ScorecardPage = () => {
   const fetchGroups = async () => {
     try {
       const orgId = localStorage.getItem('impersonatedOrgId') || user?.organizationId || user?.organization_id;
-      const teamId = selectedDepartment?.id || LEADERSHIP_TEAM_ID;
+      const teamId = selectedDepartment?.id || getTeamId(user, 'leadership');
       
       if (!orgId || !teamId) return;
       
