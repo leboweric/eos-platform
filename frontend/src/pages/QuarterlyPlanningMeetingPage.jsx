@@ -1628,7 +1628,7 @@ const QuarterlyPlanningMeetingPage = () => {
                   className="h-4 w-4 text-indigo-600 rounded border-gray-300"
                 />
                 <Label htmlFor="isCompany" className="text-sm font-medium">
-                  Company Priority (visible to all teams)
+                  Company Priority
                 </Label>
               </div>
             </div>
