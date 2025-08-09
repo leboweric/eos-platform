@@ -300,10 +300,8 @@ const TwoPagePlanView = ({ hideIssuesAndPriorities = false }) => {
                 <div>
                   <h4 className="font-semibold text-sm text-gray-700">Profit Target</h4>
                   <p className="text-gray-600">
-                    {(blueprintData.threeYearPicture.profit_target || blueprintData.threeYearPicture.profit) ? 
-                      `$${Number(blueprintData.threeYearPicture.profit_target || blueprintData.threeYearPicture.profit) < 1 
-                        ? `${(Number(blueprintData.threeYearPicture.profit_target || blueprintData.threeYearPicture.profit) * 1000).toFixed(0)}K`
-                        : `${Number(blueprintData.threeYearPicture.profit_target || blueprintData.threeYearPicture.profit).toFixed(1)}M`}` 
+                    {(blueprintData.threeYearPicture.profit_percentage || blueprintData.threeYearPicture.profit_target || blueprintData.threeYearPicture.profit) ? 
+                      `${Number(blueprintData.threeYearPicture.profit_percentage || blueprintData.threeYearPicture.profit_target || blueprintData.threeYearPicture.profit).toFixed(2)}%`
                       : 'Not set'}
                   </p>
                 </div>
