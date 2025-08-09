@@ -1,6 +1,6 @@
 // Team utility functions
 
-export const LEADERSHIP_TEAM_ID = '47d53797-be5f-49c2-883a-326a401a17c1';
+export const LEADERSHIP_TEAM_ID = '00000000-0000-0000-0000-000000000000';
 
 /**
  * Get the team ID to use for API calls
@@ -12,8 +12,13 @@ export const LEADERSHIP_TEAM_ID = '47d53797-be5f-49c2-883a-326a401a17c1';
 export const getTeamId = (user, context = null) => {
   // NINETY.IO MODEL: Explicit context-based team selection
   
-  // For Leadership context, always use Leadership Team ID
+  // For Leadership context, find the actual leadership team for this org
   if (context === 'leadership') {
+    const leadershipTeam = user?.teams?.find(t => t.is_leadership_team);
+    if (leadershipTeam) {
+      return leadershipTeam.id;
+    }
+    // Fallback to special UUID if no leadership team found
     return LEADERSHIP_TEAM_ID;
   }
   
@@ -22,10 +27,10 @@ export const getTeamId = (user, context = null) => {
     return context; // This should be the department team ID
   }
   
-  // Auto-detect: If user is on leadership team, use Leadership ID
+  // Auto-detect: If user is on leadership team, use that team's ID
   const leadershipTeam = user?.teams?.find(t => t.is_leadership_team);
   if (leadershipTeam) {
-    return LEADERSHIP_TEAM_ID;
+    return leadershipTeam.id;
   }
   
   // Otherwise use first available team
