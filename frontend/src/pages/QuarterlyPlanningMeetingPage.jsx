@@ -1205,38 +1205,6 @@ const QuarterlyPlanningMeetingPage = () => {
               teamMembers={teamMembers || []}
             />
             
-            {/* Todo Dialog */}
-            <TodoDialog
-              open={showTodoDialog}
-              onOpenChange={setShowTodoDialog}
-              todo={editingTodo}
-              teamMembers={teamMembers || []}
-              onSave={async (todoData) => {
-                try {
-                  const effectiveTeamId = teamId || user?.teamId || '00000000-0000-0000-0000-000000000000';
-                  const todoDataWithOrgInfo = {
-                    ...todoData,
-                    organization_id: user?.organizationId || user?.organization_id,
-                    team_id: effectiveTeamId,
-                    department_id: effectiveTeamId
-                  };
-                  
-                  if (editingTodo) {
-                    await todosService.updateTodo(editingTodo.id, todoDataWithOrgInfo);
-                  } else {
-                    await todosService.createTodo(todoDataWithOrgInfo);
-                  }
-                  setShowTodoDialog(false);
-                  setEditingTodo(null);
-                  setSuccess('To-do saved successfully');
-                  return true;
-                } catch (error) {
-                  console.error('Failed to save todo:', error);
-                  throw error;
-                }
-              }}
-            />
-            
             {/* Add Priority Dialog */}
             <Dialog open={showAddPriority} onOpenChange={setShowAddPriority}>
               <DialogContent className="max-w-2xl">
@@ -1646,6 +1614,44 @@ const QuarterlyPlanningMeetingPage = () => {
             </DialogFooter>
           </DialogContent>
         </Dialog>
+
+        {/* Todo Dialog */}
+        <TodoDialog
+          open={showTodoDialog}
+          onOpenChange={setShowTodoDialog}
+          todo={editingTodo}
+          teamMembers={teamMembers || []}
+          onSave={async (todoData) => {
+            try {
+              const effectiveTeamId = teamId || user?.teamId || '00000000-0000-0000-0000-000000000000';
+              const todoDataWithOrgInfo = {
+                ...todoData,
+                organization_id: user?.organizationId || user?.organization_id,
+                team_id: effectiveTeamId,
+                department_id: effectiveTeamId
+              };
+              
+              if (editingTodo) {
+                await todosService.updateTodo(editingTodo.id, todoDataWithOrgInfo);
+              } else {
+                await todosService.createTodo(todoDataWithOrgInfo);
+              }
+              setShowTodoDialog(false);
+              setEditingTodo(null);
+              setSuccess('To-do saved successfully');
+              
+              // Refresh todos after save
+              const orgId = localStorage.getItem('impersonatedOrgId') || user?.organizationId || user?.organization_id;
+              const response = await todosService.getTodos({ status: 'pending' });
+              setTodos(response.data || []);
+              
+              return true;
+            } catch (error) {
+              console.error('Failed to save todo:', error);
+              throw error;
+            }
+          }}
+        />
       </div>
     </div>
   );
