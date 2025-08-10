@@ -948,6 +948,39 @@ const QuarterlyPrioritiesPage = () => {
                   {priority.description || ''}
                 </CardDescription>
               )}
+              
+              {/* Show Owner and Due Date in edit mode even when not expanded */}
+              {isEditing && !isExpanded && (
+                <div className="grid grid-cols-2 gap-4 mt-3 p-3 bg-gray-50 rounded">
+                  <div>
+                    <Label className="text-xs text-gray-600">Owner</Label>
+                    <Select
+                      value={editForm.ownerId}
+                      onValueChange={(value) => setEditForm({ ...editForm, ownerId: value })}
+                    >
+                      <SelectTrigger className="h-8 mt-1">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {(teamMembers || []).filter(member => member.id).map(member => (
+                          <SelectItem key={member.id} value={member.id}>
+                            {member.name}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div>
+                    <Label className="text-xs text-gray-600">Due Date</Label>
+                    <Input
+                      type="date"
+                      value={editForm.dueDate}
+                      onChange={(e) => setEditForm({ ...editForm, dueDate: e.target.value })}
+                      className="h-8 mt-1"
+                    />
+                  </div>
+                </div>
+              )}
             </div>
             <div className="flex space-x-1">
               {/* Show/Hide Details Button - moved to header */}

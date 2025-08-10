@@ -7,6 +7,7 @@ import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Progress } from '@/components/ui/progress';
 import { Checkbox } from '@/components/ui/checkbox';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { 
   Calendar,
   ChevronDown,
@@ -68,6 +69,8 @@ const PriorityCardClean = ({
   const [newMilestone, setNewMilestone] = useState({ title: '', dueDate: '' });
   const [showAddUpdate, setShowAddUpdate] = useState(false);
   const [updateText, setUpdateText] = useState('');
+  const [editingMilestoneId, setEditingMilestoneId] = useState(null);
+  const [editingMilestone, setEditingMilestone] = useState({ title: '', dueDate: '' });
 
   const getStatusBorderColor = (status) => {
     switch (status) {
@@ -217,19 +220,58 @@ const PriorityCardClean = ({
               </div>
 
               <div className="flex items-center gap-4 text-sm text-gray-600 mb-2">
-                <div className="flex items-center gap-2">
-                  <Avatar className="h-6 w-6">
-                    <AvatarFallback className="text-xs bg-gray-100">
-                      {getUserInitials(priority.owner?.name)}
-                    </AvatarFallback>
-                  </Avatar>
-                  <span>{priority.owner?.name}</span>
-                </div>
-                
-                <div className="flex items-center gap-1">
-                  <Calendar className="h-4 w-4 text-gray-400" />
-                  <span>{formatDate(priority.dueDate)}</span>
-                </div>
+                {isEditing ? (
+                  <>
+                    <div className="flex items-center gap-2">
+                      <Avatar className="h-6 w-6">
+                        <AvatarFallback className="text-xs bg-gray-100">
+                          {getUserInitials(teamMembers.find(m => m.id === editForm.ownerId)?.name || priority.owner?.name)}
+                        </AvatarFallback>
+                      </Avatar>
+                      <Select
+                        value={editForm.ownerId}
+                        onValueChange={(value) => setEditForm({ ...editForm, ownerId: value })}
+                      >
+                        <SelectTrigger className="w-[200px] h-8">
+                          <SelectValue placeholder="Select owner" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {teamMembers.map((member) => (
+                            <SelectItem key={member.id} value={member.id}>
+                              {member.name}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    
+                    <div className="flex items-center gap-1">
+                      <Calendar className="h-4 w-4 text-gray-400" />
+                      <Input
+                        type="date"
+                        value={editForm.dueDate}
+                        onChange={(e) => setEditForm({ ...editForm, dueDate: e.target.value })}
+                        className="h-8 w-[150px]"
+                      />
+                    </div>
+                  </>
+                ) : (
+                  <>
+                    <div className="flex items-center gap-2">
+                      <Avatar className="h-6 w-6">
+                        <AvatarFallback className="text-xs bg-gray-100">
+                          {getUserInitials(priority.owner?.name)}
+                        </AvatarFallback>
+                      </Avatar>
+                      <span>{priority.owner?.name}</span>
+                    </div>
+                    
+                    <div className="flex items-center gap-1">
+                      <Calendar className="h-4 w-4 text-gray-400" />
+                      <span>{formatDate(priority.dueDate)}</span>
+                    </div>
+                  </>
+                )}
 
                 {onStatusChange && !isEditing && priority.status !== 'complete' ? (
                   <Button
@@ -441,21 +483,81 @@ const PriorityCardClean = ({
                         onChange={() => onToggleMilestone && onToggleMilestone(priority.id, milestone.id, !milestone.completed)}
                         className="h-4 w-4 text-blue-600 rounded border-gray-300"
                       />
-                      <span className={`text-sm ${milestone.completed ? 'line-through text-gray-400' : 'text-gray-700'}`}>
-                        {milestone.title}
-                      </span>
-                      <span className="text-xs text-gray-500">
-                        {formatDate(milestone.dueDate)}
-                      </span>
-                      {onDeleteMilestone && (
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => onDeleteMilestone(priority.id, milestone.id)}
-                          className="h-6 w-6 p-0 opacity-0 group-hover:opacity-100 ml-2"
-                        >
-                          <Trash2 className="h-3 w-3 text-red-600" />
-                        </Button>
+                      {editingMilestoneId === milestone.id ? (
+                        <>
+                          <Input
+                            value={editingMilestone.title}
+                            onChange={(e) => setEditingMilestone({ ...editingMilestone, title: e.target.value })}
+                            className="flex-1 h-7 text-sm"
+                            placeholder="Milestone title"
+                          />
+                          <Input
+                            type="date"
+                            value={editingMilestone.dueDate}
+                            onChange={(e) => setEditingMilestone({ ...editingMilestone, dueDate: e.target.value })}
+                            className="w-32 h-7 text-sm"
+                          />
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => {
+                              if (onEditMilestone) {
+                                onEditMilestone(priority.id, milestone.id, editingMilestone);
+                              }
+                              setEditingMilestoneId(null);
+                            }}
+                            className="h-6 w-6 p-0 hover:bg-green-100"
+                          >
+                            <Save className="h-3 w-3 text-green-600" />
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => setEditingMilestoneId(null)}
+                            className="h-6 w-6 p-0 hover:bg-red-100"
+                          >
+                            <X className="h-3 w-3 text-red-600" />
+                          </Button>
+                        </>
+                      ) : (
+                        <>
+                          <span className={`text-sm flex-1 ${milestone.completed ? 'line-through text-gray-400' : 'text-gray-700'}`}>
+                            {milestone.title}
+                          </span>
+                          <span className="text-xs text-gray-500">
+                            {formatDate(milestone.dueDate)}
+                          </span>
+                          {onEditMilestone && (
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => {
+                                setEditingMilestoneId(milestone.id);
+                                setEditingMilestone({
+                                  title: milestone.title,
+                                  dueDate: milestone.dueDate ? (
+                                    milestone.dueDate.includes('T') 
+                                      ? milestone.dueDate.split('T')[0]
+                                      : milestone.dueDate
+                                  ) : ''
+                                });
+                              }}
+                              className="h-6 w-6 p-0 opacity-0 group-hover:opacity-100"
+                            >
+                              <Edit2 className="h-3 w-3 text-blue-600" />
+                            </Button>
+                          )}
+                          {onDeleteMilestone && (
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => onDeleteMilestone(priority.id, milestone.id)}
+                              className="h-6 w-6 p-0 opacity-0 group-hover:opacity-100"
+                            >
+                              <Trash2 className="h-3 w-3 text-red-600" />
+                            </Button>
+                          )}
+                        </>
                       )}
                     </div>
                   ))}
