@@ -24,7 +24,7 @@ import {
 } from 'lucide-react';
 import MetricTrendChart from '../components/scorecard/MetricTrendChart';
 import GroupedScorecardView from '../components/scorecard/GroupedScorecardView';
-import ScorecardTableClean from '../components/scorecard/ScorecardTableClean';
+import ScorecardTable from '../components/scorecard/ScorecardTable';
 
 const ScorecardPageClean = () => {
   const { user } = useAuthStore();
@@ -494,7 +494,7 @@ const ScorecardPageClean = () => {
                 selectedMonths={[]}
               />
             ) : (
-              <ScorecardTableClean
+              <ScorecardTable
                 metrics={weeklyMetrics}
                 weeklyScores={weeklyScores}
                 monthlyScores={monthlyScores}
@@ -537,7 +537,7 @@ const ScorecardPageClean = () => {
                 selectedMonths={monthDates.map(date => ({ value: date, label: date }))}
               />
             ) : (
-              <ScorecardTableClean
+              <ScorecardTable
                 metrics={monthlyMetrics}
                 weeklyScores={weeklyScores}
                 monthlyScores={monthlyScores}

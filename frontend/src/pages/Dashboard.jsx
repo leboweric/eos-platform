@@ -11,7 +11,7 @@ import { todosService } from '../services/todosService';
 import { issuesService } from '../services/issuesService';
 import { organizationService } from '../services/organizationService';
 import { getRevenueLabel } from '../utils/revenueUtils';
-import TodosList from '../components/todos/TodosListClean';
+import TodosList from '../components/todos/TodosList';
 import TodoDialog from '../components/todos/TodoDialog';
 import IssueDialog from '../components/issues/IssueDialog';
 import HeadlineDialog from '../components/headlines/HeadlineDialog';

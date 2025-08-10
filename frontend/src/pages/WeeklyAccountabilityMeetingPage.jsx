@@ -33,12 +33,12 @@ import {
   Users
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
-import ScorecardTable from '../components/scorecard/ScorecardTableClean';
-import PriorityCard from '../components/priorities/PriorityCardClean';
-import IssuesList from '../components/issues/IssuesListClean';
+import ScorecardTable from '../components/scorecard/ScorecardTable';
+import PriorityCard from '../components/priorities/PriorityCard';
+import IssuesList from '../components/issues/IssuesList';
 import IssueDialog from '../components/issues/IssueDialog';
 import { MoveIssueDialog } from '../components/issues/MoveIssueDialog';
-import TodosList from '../components/todos/TodosListClean';
+import TodosList from '../components/todos/TodosList';
 import TodoDialog from '../components/todos/TodoDialog';
 import MetricTrendChart from '../components/scorecard/MetricTrendChart';
 import { scorecardService } from '../services/scorecardService';

@@ -19,7 +19,7 @@ import {
   Archive
 } from 'lucide-react';
 import TodoDialog from '../components/todos/TodoDialog';
-import TodosList from '../components/todos/TodosListClean';
+import TodosList from '../components/todos/TodosList';
 import { useSelectedTodos } from '../contexts/SelectedTodosContext';
 
 const TodosPage = () => {

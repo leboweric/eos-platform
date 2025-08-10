@@ -14,7 +14,7 @@ import {
   Archive
 } from 'lucide-react';
 import IssueDialog from '../components/issues/IssueDialog';
-import IssuesListClean from '../components/issues/IssuesListClean';
+import IssuesList from '../components/issues/IssuesList';
 import ArchivedIssuesList from '../components/issues/ArchivedIssuesList';
 
 // Error Boundary Component
@@ -394,7 +394,7 @@ const IssuesPageClean = () => {
                   getStatusIcon={getStatusIcon}
                 />
               ) : (
-                <IssuesListClean
+                <IssuesList
                   issues={currentIssues}
                   onEdit={handleEditIssue}
                   onStatusChange={handleStatusChange}

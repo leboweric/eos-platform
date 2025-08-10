@@ -22,7 +22,7 @@ import {
   Users
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
-import PriorityCard from '../components/priorities/PriorityCardClean';
+import PriorityCard from '../components/priorities/PriorityCard';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
@@ -34,7 +34,7 @@ import { FileText, GitBranch, Smile, BarChart, Newspaper, ListTodo, ArrowLeftRig
 import { quarterlyPrioritiesService } from '../services/quarterlyPrioritiesService';
 import { issuesService } from '../services/issuesService';
 import { organizationService } from '../services/organizationService';
-import IssuesList from '../components/issues/IssuesListClean';
+import IssuesList from '../components/issues/IssuesList';
 import IssueDialog from '../components/issues/IssueDialog';
 import TodoDialog from '../components/todos/TodoDialog';
 import { todosService } from '../services/todosService';
