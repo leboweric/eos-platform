@@ -38,6 +38,49 @@ Due to trademark compliance, several tables were renamed:
 - Lint: `npm run lint`
 - Type check: `npm run typecheck` (if available)
 
+## CRITICAL: Component Naming Convention
+
+### ⚠️ "Clean" Components are PRODUCTION Components
+
+**IMPORTANT**: Components with "Clean" suffix are the CURRENT PRODUCTION components in active use:
+
+- `PriorityCardClean.jsx` - **PRODUCTION** Priority Card component (fully featured with milestone editing)
+- `QuarterlyPrioritiesPageClean.jsx` - **PRODUCTION** Quarterly Priorities page
+- `DashboardClean.jsx` - **PRODUCTION** Dashboard
+- `ScorecardPageClean.jsx` - **PRODUCTION** Scorecard page
+- `IssuesPageClean.jsx` - **PRODUCTION** Issues page
+- `TodosListClean.jsx` - **PRODUCTION** Todos list component
+
+### Component Import Rules
+
+**App.jsx imports the PRODUCTION "Clean" versions:**
+```javascript
+import Dashboard from './pages/DashboardClean';
+import QuarterlyPrioritiesPage from './pages/QuarterlyPrioritiesPageClean';
+import ScorecardPage from './pages/ScorecardPageClean';
+import IssuesPage from './pages/IssuesPageClean';
+```
+
+**Other components import Clean versions:**
+```javascript
+import PriorityCard from '../components/priorities/PriorityCardClean';
+import TodosList from '../components/todos/TodosListClean';
+import ScorecardTable from '../components/scorecard/ScorecardTableClean';
+import IssuesList from '../components/issues/IssuesListClean';
+```
+
+### ❌ DO NOT DELETE "Clean" Components
+- "Clean" components are NOT duplicates or test versions
+- They are the ACTIVE PRODUCTION components with full functionality
+- Non-Clean versions (if they exist) are often older/incomplete versions
+- Always verify imports in App.jsx to understand which version is actually in use
+
+### Before Making Changes
+1. **Check App.jsx imports** to see which version is actually being used
+2. **Search for component usage** across the codebase before deleting anything
+3. **Test builds** after any component changes
+4. **Never assume** component naming indicates test/production status
+
 ## Recent Updates (July 2025)
 
 ### Scorecard Groups Feature
@@ -67,6 +110,13 @@ Due to trademark compliance, several tables were renamed:
 4. **Team Member Queries**: Updated to use team_members table instead of non-existent users.team_id column
 
 ## Current Issues and Solutions
+
+### Component Naming Confusion (RESOLVED - August 2025)
+- **Problem**: Components with "Clean" suffix were mistakenly thought to be duplicates/test versions and deleted during cleanup
+- **Root Cause**: Counter-intuitive naming where "Clean" suffix indicates the PRODUCTION version
+- **Impact**: Caused Priority Cards and other components to lose formatting and functionality
+- **Solution**: Restored exact working state from commit 4e0100a and documented naming convention above
+- **Prevention**: Always check App.jsx imports before assuming which component version is in use
 
 ### Document Download 404 Error
 - **Problem**: Documents were being stored on local filesystem which is lost on Railway redeploy
