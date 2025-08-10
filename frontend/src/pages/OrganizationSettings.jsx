@@ -175,6 +175,7 @@ const OrganizationSettings = () => {
   };
 
   const handleSaveColorTheme = async (theme) => {
+    console.log('handleSaveColorTheme called with theme:', theme);
     setError(null);
     setSuccess(null);
     setSaving(true);

@@ -230,7 +230,14 @@ const ColorThemePicker = ({ currentTheme, onThemeChange, onSave, saving }) => {
         {/* Save Button */}
         <div className="flex justify-end pt-4 border-t">
           <Button 
-            onClick={() => onSave(selectedTheme)}
+            onClick={() => {
+              console.log('Save button clicked with theme:', selectedTheme);
+              if (onSave) {
+                onSave(selectedTheme);
+              } else {
+                console.error('onSave function not provided to ColorThemePicker');
+              }
+            }}
             disabled={saving}
           >
             {saving ? 'Saving...' : 'Save Color Theme'}
