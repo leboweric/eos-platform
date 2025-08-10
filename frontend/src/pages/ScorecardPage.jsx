@@ -126,16 +126,22 @@ const ScorecardPage = () => {
       
       console.log('🎯 Fetching scorecard with:', { orgId, teamId, departmentId });
       const response = await scorecardService.getScorecard(orgId, teamId, departmentId);
-      console.log('🎯 Scorecard response:', response);
-      console.log('🎯 Response metrics:', response?.data?.metrics || response?.metrics);
-      console.log('🎯 Response weeklyScores:', response?.data?.weeklyScores || response?.weeklyScores);
+      console.log('🎯 Full Scorecard API response:', JSON.stringify(response, null, 2));
       
       if (response && response.data) {
-        console.log('Response has data wrapper:', response.data);
+        console.log('📊 Metrics received:', response.data.metrics?.length || 0);
+        console.log('📊 First metric:', response.data.metrics?.[0]);
+        console.log('📊 WeeklyScores keys:', Object.keys(response.data.weeklyScores || {}));
+        console.log('📊 Sample weeklyScore:', response.data.weeklyScores?.[Object.keys(response.data.weeklyScores || {})[0]]);
+        
         setMetrics(response.data.metrics || []);
         setWeeklyScores(response.data.weeklyScores || {});
         setMonthlyScores(response.data.monthlyScores || {});
         setUsers(response.data.teamMembers || []);
+        
+        // Log what we're setting
+        console.log('📊 Setting metrics state to:', response.data.metrics || []);
+        console.log('📊 Setting weeklyScores state to:', response.data.weeklyScores || {});
       } else if (response) {
         console.log('Response without data wrapper:', response);
         setMetrics(response.metrics || []);
@@ -143,8 +149,6 @@ const ScorecardPage = () => {
         setMonthlyScores(response.monthlyScores || {});
         setUsers(response.teamMembers || []);
       }
-      console.log('State before update - metrics:', metrics.length);
-      console.log('About to set metrics to:', response.metrics || response.data?.metrics || []);
     } catch (error) {
       console.error('Failed to fetch scorecard:', error);
       setError('Failed to load scorecard data');
@@ -544,10 +548,26 @@ const ScorecardPage = () => {
   const weekLabels = isRTL ? [...weekLabelsOriginal].reverse() : weekLabelsOriginal;
   const weekDates = isRTL ? [...weekDatesOriginal].reverse() : weekDatesOriginal;
   
-  // Debug logging
-  console.log('🎯 Week dates generated in ScorecardPage:', weekDatesOriginal);
-  console.log('🎯 Weekly scores in ScorecardPage:', weeklyScores);
-  console.log('🎯 Weekly metrics in ScorecardPage:', weeklyMetrics);
+  // Debug logging with more detail
+  console.log('🗓️ WEEK DATES DEBUG:');
+  console.log('  - Week dates generated:', weekDatesOriginal);
+  console.log('  - Today\'s date:', new Date().toISOString());
+  console.log('  - Metrics count:', metrics.length);
+  console.log('  - Weekly metrics count:', weeklyMetrics.length);
+  console.log('  - Weekly scores object:', weeklyScores);
+  
+  // Check if we have matching data
+  if (weeklyMetrics.length > 0 && Object.keys(weeklyScores).length > 0) {
+    const firstMetricId = weeklyMetrics[0]?.id;
+    console.log('  - First metric ID:', firstMetricId);
+    console.log('  - Scores for first metric:', weeklyScores[firstMetricId]);
+    
+    // Check date matches
+    weekDatesOriginal.forEach(date => {
+      const hasData = weeklyScores[firstMetricId]?.[date];
+      console.log(`  - ${date}: ${hasData ? '✓ HAS DATA' : '✗ NO DATA'}`);
+    });
+  }
   
   const { labels: monthLabelsOriginal, monthDates: monthDatesOriginal } = getMonthLabels();
   const monthLabels = isRTL ? [...monthLabelsOriginal].reverse() : monthLabelsOriginal;
