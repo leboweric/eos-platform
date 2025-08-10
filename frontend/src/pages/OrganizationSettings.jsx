@@ -181,6 +181,15 @@ const OrganizationSettings = () => {
     setSaving(true);
 
     try {
+      console.log('Calling updateOrganization with data:', {
+        name: organizationData?.name || '',
+        revenueMetricType: organizationData?.revenue_metric_type,
+        revenueMetricLabel: organizationData?.revenue_metric_label,
+        themePrimaryColor: theme.primary,
+        themeSecondaryColor: theme.secondary,
+        themeAccentColor: theme.accent
+      });
+      
       const response = await organizationService.updateOrganization({
         name: organizationData?.name || '',
         revenueMetricType: organizationData?.revenue_metric_type,
@@ -190,6 +199,7 @@ const OrganizationSettings = () => {
         themeAccentColor: theme.accent
       });
 
+      console.log('Update response:', response);
       setSuccess('Color theme updated successfully');
       setOrganizationData({
         ...organizationData,
@@ -200,11 +210,14 @@ const OrganizationSettings = () => {
       
       // Store in localStorage for immediate use
       localStorage.setItem('orgTheme', JSON.stringify(theme));
+      console.log('Saved to localStorage:', theme);
       
       // Dispatch event to notify other components
       window.dispatchEvent(new CustomEvent('themeChanged', { detail: theme }));
+      console.log('Dispatched themeChanged event');
     } catch (error) {
-      console.error('Update theme error:', error);
+      console.error('Update theme error full details:', error);
+      console.error('Error response:', error.response);
       setError(error.response?.data?.error || 'Failed to update color theme');
     } finally {
       setSaving(false);
