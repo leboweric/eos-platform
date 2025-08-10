@@ -74,7 +74,7 @@ const Layout = ({ children }) => {
     { name: 'To-Dos', href: '/todos', icon: ClipboardList },
     { name: 'Issues', href: '/issues', icon: MessageSquare },
     { name: 'Meetings', href: '/meetings', icon: Calendar },
-    { name: '2-Page Plan', href: '/business-blueprint', icon: Target, requiresLeadership: true },
+    { name: '2-Page Plan', href: '/business-blueprint', icon: Target },
     { name: 'Organizational Chart', href: '/organizational-chart', icon: GitBranch },
     { name: 'Document Repository', href: '/documents', icon: FileText },
     { name: 'Departments', href: '/departments', icon: Building2, requiresAdmin: true },

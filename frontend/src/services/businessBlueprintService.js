@@ -10,8 +10,9 @@ const buildUrl = (endpoint = '') => {
   const user = useAuthStore.getState().user;
   const orgId = localStorage.getItem('impersonatedOrgId') || user?.organizationId || user?.organization_id;
   
-  // Always use Leadership Team for Business Blueprint
-  const teamId = getTeamId(user, 'leadership');
+  // Use currently selected department or leadership team
+  const selectedDepartment = JSON.parse(localStorage.getItem('selectedDepartment') || 'null');
+  const teamId = selectedDepartment?.id || getTeamId(user, 'leadership');
   
   return API_BASE.replace(':orgId', orgId).replace(':teamId', teamId) + endpoint;
 };
