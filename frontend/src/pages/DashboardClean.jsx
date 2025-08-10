@@ -47,6 +47,11 @@ const DashboardClean = () => {
     measurables: { onTrack: 0, total: 0 }
   });
   const [editingPredictions, setEditingPredictions] = useState(false);
+  const [themeColors, setThemeColors] = useState({
+    primary: '#3B82F6',
+    secondary: '#1E40AF',
+    accent: '#60A5FA'
+  });
   const [dashboardData, setDashboardData] = useState({
     priorities: [],
     todos: [],
@@ -66,7 +71,16 @@ const DashboardClean = () => {
       navigate('/consultant');
     } else if (user) {
       fetchDashboardData();
+      fetchOrganizationTheme();
     }
+    
+    // Listen for theme changes
+    const handleThemeChange = (event) => {
+      setThemeColors(event.detail);
+    };
+    
+    window.addEventListener('themeChanged', handleThemeChange);
+    return () => window.removeEventListener('themeChanged', handleThemeChange);
   }, [user, navigate]);
 
   // Helper function to check if a todo is overdue
@@ -129,6 +143,34 @@ const DashboardClean = () => {
       }
     } catch (error) {
       console.error('Failed to create issues for overdue todos:', error);
+    }
+  };
+
+  const fetchOrganizationTheme = async () => {
+    try {
+      // First check localStorage
+      const savedTheme = localStorage.getItem('orgTheme');
+      if (savedTheme) {
+        const parsedTheme = JSON.parse(savedTheme);
+        setThemeColors(parsedTheme);
+        return;
+      }
+      
+      // Fetch from API
+      const orgData = await organizationService.getOrganization();
+      
+      if (orgData) {
+        const theme = {
+          primary: orgData.theme_primary_color || '#3B82F6',
+          secondary: orgData.theme_secondary_color || '#1E40AF',
+          accent: orgData.theme_accent_color || '#60A5FA'
+        };
+        setThemeColors(theme);
+        localStorage.setItem('orgTheme', JSON.stringify(theme));
+      }
+    } catch (error) {
+      console.error('Failed to fetch organization theme:', error);
+      // Use default colors on error
     }
   };
 
@@ -552,19 +594,18 @@ const DashboardClean = () => {
                   {/* Revenue Progress Bar */}
                   {predictions?.revenue?.target > 0 && (
                     <div className="mt-3">
-                      <div className="w-full bg-gray-200 rounded-full h-2 overflow-hidden">
+                      <div className="w-full bg-gray-100 rounded-full h-2 overflow-hidden">
                         <div 
-                          className={`h-full transition-all duration-500 rounded-full ${
-                            (predictions?.revenue?.current / predictions?.revenue?.target) >= 0.9 
-                              ? 'bg-green-500' 
-                              : (predictions?.revenue?.current / predictions?.revenue?.target) >= 0.7 
-                                ? 'bg-blue-500' 
-                                : (predictions?.revenue?.current / predictions?.revenue?.target) >= 0.5 
-                                  ? 'bg-yellow-500' 
-                                  : 'bg-red-500'
-                          }`}
+                          className="h-full transition-all duration-500 rounded-full"
                           style={{ 
-                            width: `${Math.min(100, Math.round((predictions?.revenue?.current / predictions?.revenue?.target) * 100))}%` 
+                            width: `${Math.min(100, Math.round((predictions?.revenue?.current / predictions?.revenue?.target) * 100))}%`,
+                            backgroundColor: (predictions?.revenue?.current / predictions?.revenue?.target) >= 0.9 
+                              ? themeColors.primary
+                              : (predictions?.revenue?.current / predictions?.revenue?.target) >= 0.7 
+                                ? themeColors.accent
+                                : (predictions?.revenue?.current / predictions?.revenue?.target) >= 0.5 
+                                  ? '#FBBF24'  // yellow
+                                  : '#EF4444'  // red
                           }}
                         />
                       </div>
@@ -594,19 +635,18 @@ const DashboardClean = () => {
                   {/* Profit Progress Bar */}
                   {predictions?.profit?.target > 0 && (
                     <div className="mt-3">
-                      <div className="w-full bg-gray-200 rounded-full h-2 overflow-hidden">
+                      <div className="w-full bg-gray-100 rounded-full h-2 overflow-hidden">
                         <div 
-                          className={`h-full transition-all duration-500 rounded-full ${
-                            (predictions?.profit?.current / predictions?.profit?.target) >= 0.9 
-                              ? 'bg-green-500' 
-                              : (predictions?.profit?.current / predictions?.profit?.target) >= 0.7 
-                                ? 'bg-blue-500' 
-                                : (predictions?.profit?.current / predictions?.profit?.target) >= 0.5 
-                                  ? 'bg-yellow-500' 
-                                  : 'bg-red-500'
-                          }`}
+                          className="h-full transition-all duration-500 rounded-full"
                           style={{ 
-                            width: `${Math.min(100, Math.round((predictions?.profit?.current / predictions?.profit?.target) * 100))}%` 
+                            width: `${Math.min(100, Math.round((predictions?.profit?.current / predictions?.profit?.target) * 100))}%`,
+                            backgroundColor: (predictions?.profit?.current / predictions?.profit?.target) >= 0.9 
+                              ? themeColors.primary
+                              : (predictions?.profit?.current / predictions?.profit?.target) >= 0.7 
+                                ? themeColors.accent
+                                : (predictions?.profit?.current / predictions?.profit?.target) >= 0.5 
+                                  ? '#FBBF24'  // yellow
+                                  : '#EF4444'  // red 
                           }}
                         />
                       </div>
@@ -677,9 +717,13 @@ const DashboardClean = () => {
         )}
 
         {/* Clean Stats Grid */}
-        <div className="grid grid-cols-3 gap-8 mb-8 text-center">
-          <div>
-            <p className="text-3xl font-semibold text-gray-900">
+        <div className="grid grid-cols-3 gap-8 mb-8">
+          <div className="text-center p-4 rounded-lg border border-gray-100 hover:border-gray-200 transition-colors">
+            <p className="text-3xl font-semibold" style={{ 
+              color: dashboardData.stats.prioritiesCompleted === dashboardData.stats.totalPriorities && dashboardData.stats.totalPriorities > 0 
+                ? themeColors.primary 
+                : '#111827'
+            }}>
               {dashboardData.stats.prioritiesCompleted}/{dashboardData.stats.totalPriorities}
             </p>
             <p className="text-sm text-gray-500 mt-1">
@@ -690,16 +734,22 @@ const DashboardClean = () => {
             )}
           </div>
           
-          <div>
+          <div className="text-center p-4 rounded-lg border border-gray-100 hover:border-gray-200 transition-colors">
             <p className={`text-3xl font-semibold ${
               dashboardData.stats.overdueItems > 0 ? 'text-red-600' : 'text-gray-900'
             }`}>
               {dashboardData.stats.overdueItems}
             </p>
             <p className="text-sm text-gray-500 mt-1">Overdue Items</p>
+            {dashboardData.stats.overdueItems === 0 && (
+              <span className="inline-block w-2 h-2 rounded-full mt-2" 
+                style={{ backgroundColor: themeColors.primary }}
+                title="All caught up!" 
+              />
+            )}
           </div>
           
-          <div>
+          <div className="text-center p-4 rounded-lg border border-gray-100 hover:border-gray-200 transition-colors">
             <p className="text-3xl font-semibold text-gray-900">
               {dashboardData.stats.totalShortTermIssues}
             </p>
@@ -711,11 +761,16 @@ const DashboardClean = () => {
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
           {/* Priorities Section */}
           <div>
-            <div className="flex items-center justify-between mb-4">
-              <h2 className="text-lg font-medium text-gray-900">Your Priorities</h2>
+            <div className="flex items-center justify-between mb-4 pb-2 border-b-2" style={{ borderColor: themeColors.accent + '20' }}>
+              <h2 className="text-lg font-medium text-gray-900">
+                <span className="inline-block w-1 h-5 mr-2 rounded-full" style={{ backgroundColor: themeColors.primary }} />
+                Your Priorities
+              </h2>
               <Link 
                 to="/quarterly-priorities" 
-                className="text-sm text-gray-500 hover:text-gray-700 flex items-center gap-1"
+                className="text-sm text-gray-500 hover:text-gray-700 flex items-center gap-1 transition-colors"
+                onMouseEnter={(e) => e.currentTarget.style.color = themeColors.primary}
+                onMouseLeave={(e) => e.currentTarget.style.color = ''}
               >
                 View all
                 <ArrowRight className="h-3 w-3" />
@@ -753,11 +808,16 @@ const DashboardClean = () => {
 
           {/* To-Dos Section */}
           <div>
-            <div className="flex items-center justify-between mb-4">
-              <h2 className="text-lg font-medium text-gray-900">Your To-Dos</h2>
+            <div className="flex items-center justify-between mb-4 pb-2 border-b-2" style={{ borderColor: themeColors.accent + '20' }}>
+              <h2 className="text-lg font-medium text-gray-900">
+                <span className="inline-block w-1 h-5 mr-2 rounded-full" style={{ backgroundColor: themeColors.primary }} />
+                Your To-Dos
+              </h2>
               <Link 
                 to="/todos" 
-                className="text-sm text-gray-500 hover:text-gray-700 flex items-center gap-1"
+                className="text-sm text-gray-500 hover:text-gray-700 flex items-center gap-1 transition-colors"
+                onMouseEnter={(e) => e.currentTarget.style.color = themeColors.primary}
+                onMouseLeave={(e) => e.currentTarget.style.color = ''}
               >
                 View all
                 <ArrowRight className="h-3 w-3" />
