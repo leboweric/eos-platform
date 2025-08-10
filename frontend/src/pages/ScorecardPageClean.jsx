@@ -654,7 +654,9 @@ const ScorecardPageClean = () => {
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
+                    <SelectItem value="greater">Greater than goal (>)</SelectItem>
                     <SelectItem value="greater_equal">Greater than or equal to goal (≥)</SelectItem>
+                    <SelectItem value="less">Less than goal (<)</SelectItem>
                     <SelectItem value="less_equal">Less than or equal to goal (≤)</SelectItem>
                     <SelectItem value="equal">Equal to goal (=)</SelectItem>
                   </SelectContent>

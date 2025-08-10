@@ -122,8 +122,12 @@ const ScorecardTableClean = ({
     }
     
     switch (comparisonOperator) {
+      case 'greater':
+        return `> ${formattedValue}`;
       case 'greater_equal':
         return `≥ ${formattedValue}`;
+      case 'less':
+        return `< ${formattedValue}`;  
       case 'less_equal':
         return `≤ ${formattedValue}`;
       case 'equal':
@@ -140,11 +144,16 @@ const ScorecardTableClean = ({
     const goalVal = parseFloat(goal);
     
     switch (comparisonOperator) {
+      case 'greater':
+        return scoreVal > goalVal;
+      case 'greater_equal':
+        return scoreVal >= goalVal;
+      case 'less':
+        return scoreVal < goalVal;
       case 'less_equal':
         return scoreVal <= goalVal;
       case 'equal':
         return scoreVal === goalVal;
-      case 'greater_equal':
       default:
         return scoreVal >= goalVal;
     }
