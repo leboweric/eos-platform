@@ -110,9 +110,7 @@ const DepartmentTodosPage = () => {
                   <div className={`font-medium ${todo.completed ? 'line-through text-gray-500' : ''}`}>
                     {todo.title}
                   </div>
-                  {todo.description && (
-                    <p className="text-sm text-gray-600 mt-1">{todo.description}</p>
-                  )}
+                  {/* Description hidden from main view - only shown in edit dialog */}
                   <div className="flex items-center space-x-4 mt-2">
                     {todo.assignee_name && (
                       <div className="flex items-center text-sm text-gray-600">

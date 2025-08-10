@@ -1390,9 +1390,7 @@ const QuarterlyPlanningMeetingPage = () => {
                           <div className="flex items-start justify-between">
                             <div className="flex-1">
                               <h4 className="font-medium text-gray-900">{todo.title}</h4>
-                              {todo.description && (
-                                <p className="text-sm text-gray-600 mt-1">{todo.description}</p>
-                              )}
+                              {/* Description hidden from main view - only shown in edit dialog */}
                               <div className="flex items-center gap-4 mt-2 text-sm text-gray-500">
                                 <span className="flex items-center gap-1">
                                   <User className="h-3 w-3" />
