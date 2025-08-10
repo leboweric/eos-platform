@@ -527,11 +527,11 @@ const PriorityCardClean = ({
                           <span className={`text-xs ${getDaysUntilDue(milestone.dueDate) < 0 && !milestone.completed ? 'text-red-600 font-medium' : 'text-gray-500'}`}>
                             {formatDate(milestone.dueDate)}
                           </span>
-                          {onEditMilestone && (
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              onClick={() => {
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => {
+                              if (onEditMilestone) {
                                 setEditingMilestoneId(milestone.id);
                                 setEditingMilestone({
                                   title: milestone.title,
@@ -541,12 +541,12 @@ const PriorityCardClean = ({
                                       : milestone.dueDate
                                   ) : ''
                                 });
-                              }}
-                              className="h-6 w-6 p-0 opacity-0 group-hover:opacity-100 transition-opacity"
-                            >
-                              <Edit2 className="h-3 w-3 text-blue-600" />
-                            </Button>
-                          )}
+                              }
+                            }}
+                            className="h-6 w-6 p-0 opacity-0 group-hover:opacity-100 transition-opacity"
+                          >
+                            <Edit2 className="h-3 w-3 text-blue-600" />
+                          </Button>
                           {onDeleteMilestone && (
                             <Button
                               variant="ghost"
