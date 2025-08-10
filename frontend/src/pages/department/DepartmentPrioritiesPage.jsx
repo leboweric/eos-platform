@@ -2,7 +2,7 @@ import { useOutletContext } from 'react-router-dom';
 import { useState, useEffect } from 'react';
 import { quarterlyPrioritiesService } from '../../services/quarterlyPrioritiesService';
 import { useAuthStore } from '../../stores/authStore';
-import PriorityCard from '../../components/priorities/PriorityCard';
+import PriorityCard from '../../components/priorities/PriorityCardClean';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';

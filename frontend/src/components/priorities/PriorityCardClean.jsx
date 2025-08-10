@@ -33,7 +33,7 @@ import {
 } from 'lucide-react';
 import { format } from 'date-fns';
 
-const PriorityCard = ({ 
+const PriorityCardClean = ({ 
   priority, 
   isCompany = false,
   isArchived = false,
@@ -54,13 +54,13 @@ const PriorityCard = ({
   teamMembers = [],
   readOnly = false
 }) => {
-  console.log('[PriorityCard] Rendering with:', {
+  console.log('[PriorityCardClean] Rendering with:', {
     priorityTitle: priority?.title,
     hasMilestones: priority?.milestones?.length > 0,
     milestones: priority?.milestones,
     teamMembersCount: teamMembers.length
   });
-  console.log('[PriorityCard] Handler props received:', {
+  console.log('[PriorityCardClean] Handler props received:', {
     onEditMilestone: typeof onEditMilestone,
     onEditMilestoneExists: !!onEditMilestone,
     onUpdateExists: !!onUpdate,
@@ -595,7 +595,7 @@ const PriorityCard = ({
                             variant="ghost"
                             size="sm"
                             onClick={() => {
-                              console.log('[PriorityCard] Entering edit mode for milestone:', {
+                              console.log('[PriorityCardClean] Entering edit mode for milestone:', {
                                 milestoneId: milestone.id,
                                 milestone_owner_id: milestone.owner_id,
                                 milestone_owner_name: milestone.owner_name,
@@ -612,7 +612,7 @@ const PriorityCard = ({
                                 ) : '',
                                 ownerId: milestone.owner_id || priority.owner?.id
                               });
-                              console.log('[PriorityCard] Edit state set to:', {
+                              console.log('[PriorityCardClean] Edit state set to:', {
                                 title: milestone.title,
                                 dueDate: milestone.dueDate,
                                 ownerId: milestone.owner_id || priority.owner?.id
@@ -865,4 +865,4 @@ const PriorityCard = ({
   );
 };
 
-export default PriorityCard;
+export default PriorityCardClean;

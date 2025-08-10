@@ -6,7 +6,7 @@ import { organizationService } from '../services/organizationService';
 import { issuesService } from '../services/issuesService';
 import { getRevenueLabel, getRevenueLabelWithSuffix } from '../utils/revenueUtils';
 import { useDepartment } from '../contexts/DepartmentContext';
-import PriorityCard from '../components/priorities/PriorityCard';
+import PriorityCardClean from '../components/priorities/PriorityCardClean';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -93,7 +93,7 @@ class ErrorBoundary extends Component {
   }
 }
 
-const QuarterlyPrioritiesPage = () => {
+const QuarterlyPrioritiesPageClean = () => {
   const navigate = useNavigate();
   const { user, isOnLeadershipTeam } = useAuthStore();
   const { selectedDepartment, loading: departmentLoading } = useDepartment();
@@ -2214,7 +2214,7 @@ const QuarterlyPrioritiesPage = () => {
                       <div className="space-y-4">
                         {quarterData.companyPriorities.map(priority => (
                           <div key={priority.id} className="max-w-5xl">
-                            <PriorityCard priority={priority} isCompany={true} isArchived={true} />
+                            <PriorityCardClean priority={priority} isCompany={true} isArchived={true} />
                           </div>
                         ))}
                       </div>
@@ -2240,7 +2240,7 @@ const QuarterlyPrioritiesPage = () => {
                             </div>
                             {priorities.map(priority => (
                               <div key={priority.id} className="max-w-5xl">
-                                <PriorityCard priority={priority} isArchived={true} />
+                                <PriorityCardClean priority={priority} isArchived={true} />
                               </div>
                             ))}
                           </div>
@@ -2276,7 +2276,7 @@ const QuarterlyPrioritiesPage = () => {
                 <div className="space-y-4 ml-8">
                   {(companyPriorities || []).map(priority => (
                     <div key={priority.id} className="group max-w-5xl">
-                      <PriorityCard 
+                      <PriorityCardClean 
                         priority={priority} 
                         isCompany={true}
                         onStatusChange={handlePriorityStatusChange}
@@ -2337,7 +2337,7 @@ const QuarterlyPrioritiesPage = () => {
                     <div className="space-y-4 ml-16">
                       {memberPriorities.map(priority => (
                         <div key={priority.id} className="group max-w-5xl">
-                          <PriorityCard 
+                          <PriorityCardClean 
                             priority={priority}
                             onStatusChange={handlePriorityStatusChange}
                             onUpdate={handleUpdatePriority}
@@ -2460,10 +2460,10 @@ const QuarterlyPrioritiesPage = () => {
 };
 
 // Wrap with Error Boundary
-const QuarterlyPrioritiesPageWithErrorBoundary = () => (
+const QuarterlyPrioritiesPageCleanWithErrorBoundary = () => (
   <ErrorBoundary>
-    <QuarterlyPrioritiesPage />
+    <QuarterlyPrioritiesPageClean />
   </ErrorBoundary>
 );
 
-export default QuarterlyPrioritiesPageWithErrorBoundary;
+export default QuarterlyPrioritiesPageCleanWithErrorBoundary;
