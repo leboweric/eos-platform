@@ -65,11 +65,13 @@ const LoginPage = () => {
         <div className="relative z-10">
           {/* Logo */}
           <div className="mb-12">
-            <img 
-              src="/AXP_logo_upper_left_transparent.png?v=2" 
-              alt="AXP" 
-              className="h-16 w-auto"
-            />
+            <div className="bg-white p-3 rounded-lg inline-block">
+              <img 
+                src="/AXP_logo_upper_left.png" 
+                alt="AXP" 
+                className="h-12 w-auto"
+              />
+            </div>
           </div>
           
           {/* Main Message */}
@@ -125,7 +127,7 @@ const LoginPage = () => {
           {/* Mobile Logo (shown only on small screens) */}
           <div className="lg:hidden text-center mb-8">
             <img 
-              src="/AXP_logo_upper_left_transparent.png?v=2" 
+              src="/AXP_logo_upper_left.png" 
               alt="AXP" 
               className="h-14 w-auto mx-auto"
             />
