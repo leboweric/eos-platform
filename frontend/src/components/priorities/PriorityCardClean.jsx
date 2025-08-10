@@ -491,11 +491,26 @@ const PriorityCardClean = ({
                             className="flex-1 h-7 text-sm"
                             placeholder="Milestone title"
                           />
+                          <Select
+                            value={editingMilestone.ownerId || milestone.owner_id || priority.owner?.id}
+                            onValueChange={(value) => setEditingMilestone({ ...editingMilestone, ownerId: value })}
+                          >
+                            <SelectTrigger className="w-40 h-7 text-sm">
+                              <SelectValue placeholder="Owner" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              {teamMembers.map((member) => (
+                                <SelectItem key={member.id} value={member.id}>
+                                  {member.name}
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
                           <Input
                             type="date"
                             value={editingMilestone.dueDate}
                             onChange={(e) => setEditingMilestone({ ...editingMilestone, dueDate: e.target.value })}
-                            className="w-40 h-7 text-sm"
+                            className="w-32 h-7 text-sm"
                           />
                           <Button
                             variant="ghost"
@@ -524,6 +539,16 @@ const PriorityCardClean = ({
                           <span className={`text-sm flex-1 ${milestone.completed ? 'line-through text-gray-400' : 'text-gray-700'}`}>
                             {milestone.title}
                           </span>
+                          {milestone.owner_name && milestone.owner_id !== priority.owner?.id && (
+                            <div className="flex items-center gap-1">
+                              <Avatar className="h-5 w-5">
+                                <AvatarFallback className="text-[10px] bg-blue-100 text-blue-700">
+                                  {getUserInitials(milestone.owner_name)}
+                                </AvatarFallback>
+                              </Avatar>
+                              <span className="text-xs text-gray-600">{milestone.owner_name.split(' ')[0]}</span>
+                            </div>
+                          )}
                           <span className={`text-xs ${getDaysUntilDue(milestone.dueDate) < 0 && !milestone.completed ? 'text-red-600 font-medium' : 'text-gray-500'}`}>
                             {formatDate(milestone.dueDate)}
                           </span>
@@ -538,7 +563,8 @@ const PriorityCardClean = ({
                                   milestone.dueDate.includes('T') 
                                     ? milestone.dueDate.split('T')[0]
                                     : milestone.dueDate
-                                ) : ''
+                                ) : '',
+                                ownerId: milestone.owner_id || priority.owner?.id
                               });
                             }}
                             className="h-6 w-6 p-0 opacity-0 group-hover:opacity-100 transition-opacity"
@@ -568,6 +594,21 @@ const PriorityCardClean = ({
                         placeholder="Milestone title"
                         className="flex-1 text-sm"
                       />
+                      <Select
+                        value={newMilestone.ownerId || priority.owner?.id}
+                        onValueChange={(value) => setNewMilestone({ ...newMilestone, ownerId: value })}
+                      >
+                        <SelectTrigger className="w-40 h-9 text-sm">
+                          <SelectValue placeholder="Owner" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {teamMembers.map((member) => (
+                            <SelectItem key={member.id} value={member.id}>
+                              {member.name}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
                       <Input
                         type="date"
                         value={newMilestone.dueDate}
