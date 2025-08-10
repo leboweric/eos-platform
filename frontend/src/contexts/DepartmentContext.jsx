@@ -71,6 +71,7 @@ export const DepartmentProvider = ({ children }) => {
         if (defaultDepartment) {
           setSelectedDepartment(defaultDepartment);
           localStorage.setItem('selectedDepartmentId', defaultDepartment.id);
+          localStorage.setItem('selectedDepartment', JSON.stringify(defaultDepartment));
         } else {
           console.warn('[DepartmentContext] No departments found for user');
         }
@@ -104,6 +105,7 @@ export const DepartmentProvider = ({ children }) => {
     if (department) {
       setSelectedDepartment(department);
       localStorage.setItem('selectedDepartmentId', departmentId);
+      localStorage.setItem('selectedDepartment', JSON.stringify(department));
     }
   };
   
