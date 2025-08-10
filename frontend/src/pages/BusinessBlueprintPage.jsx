@@ -50,6 +50,10 @@ const BusinessBlueprintPage = () => {
   const [activeTab, setActiveTab] = useState('vision');
   const [organization, setOrganization] = useState(null);
   
+  // Check if viewing department-level plan
+  const selectedDepartment = JSON.parse(localStorage.getItem('selectedDepartment') || 'null');
+  const isDepartmentView = selectedDepartment && !selectedDepartment.is_leadership_team;
+  
   // 2-Page Plan data
   const [blueprintData, setBlueprintData] = useState({
     coreValues: [],
@@ -1565,15 +1569,16 @@ const BusinessBlueprintPage = () => {
             </CardContent>
           </Card>
 
-          <Card className="shadow-lg border-0">
-            <CardHeader>
-              <div className="flex items-center justify-between">
-                <div>
-                  <CardTitle className="text-2xl font-bold">Quarterly Priorities</CardTitle>
-                  <CardDescription className="text-gray-600 mt-1">Focus areas for this quarter</CardDescription>
+          {!isDepartmentView && (
+            <Card className="shadow-lg border-0">
+              <CardHeader>
+                <div className="flex items-center justify-between">
+                  <div>
+                    <CardTitle className="text-2xl font-bold">Quarterly Priorities</CardTitle>
+                    <CardDescription className="text-gray-600 mt-1">Focus areas for this quarter</CardDescription>
+                  </div>
                 </div>
-              </div>
-            </CardHeader>
+              </CardHeader>
             <CardContent>
               {blueprintData.quarterlyPriorities && blueprintData.quarterlyPriorities.priorities && blueprintData.quarterlyPriorities.priorities.length > 0 ? (
                 <div className="space-y-6">
@@ -1706,16 +1711,18 @@ const BusinessBlueprintPage = () => {
               )}
             </CardContent>
           </Card>
+          )}
 
-          <Card className="shadow-lg border-0">
-            <CardHeader>
-              <div className="flex items-center justify-between">
-                <div>
-                  <CardTitle className="text-2xl font-bold">Issues</CardTitle>
-                  <CardDescription className="text-gray-600 mt-1">Long term challenges to solve</CardDescription>
+          {!isDepartmentView && (
+            <Card className="shadow-lg border-0">
+              <CardHeader>
+                <div className="flex items-center justify-between">
+                  <div>
+                    <CardTitle className="text-2xl font-bold">Issues</CardTitle>
+                    <CardDescription className="text-gray-600 mt-1">Long term challenges to solve</CardDescription>
+                  </div>
                 </div>
-              </div>
-            </CardHeader>
+              </CardHeader>
             <CardContent>
               {blueprintData.longTermIssues && blueprintData.longTermIssues.length > 0 ? (
                 <div className="space-y-6">
@@ -1797,6 +1804,7 @@ const BusinessBlueprintPage = () => {
               )}
             </CardContent>
           </Card>
+          )}
         </TabsContent>
       </Tabs>
 
