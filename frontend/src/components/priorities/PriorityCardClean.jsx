@@ -54,6 +54,12 @@ const PriorityCardClean = ({
   teamMembers = [],
   readOnly = false
 }) => {
+  console.log('[PriorityCardClean] Rendering with:', {
+    priorityTitle: priority?.title,
+    hasMilestones: priority?.milestones?.length > 0,
+    milestones: priority?.milestones,
+    teamMembersCount: teamMembers.length
+  });
   const [isExpanded, setIsExpanded] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
   const [editForm, setEditForm] = useState({
@@ -516,6 +522,11 @@ const PriorityCardClean = ({
                             variant="ghost"
                             size="sm"
                             onClick={() => {
+                              console.log('[PriorityCardClean] Saving milestone with:', {
+                                priorityId: priority.id,
+                                milestoneId: milestone.id,
+                                updates: editingMilestone
+                              });
                               if (onEditMilestone) {
                                 onEditMilestone(priority.id, milestone.id, editingMilestone);
                               }
@@ -556,6 +567,13 @@ const PriorityCardClean = ({
                             variant="ghost"
                             size="sm"
                             onClick={() => {
+                              console.log('[PriorityCardClean] Entering edit mode for milestone:', {
+                                milestoneId: milestone.id,
+                                milestone_owner_id: milestone.owner_id,
+                                milestone_owner_name: milestone.owner_name,
+                                priority_owner_id: priority.owner?.id,
+                                priority_owner_name: priority.owner?.name
+                              });
                               setEditingMilestoneId(milestone.id);
                               setEditingMilestone({
                                 title: milestone.title,
@@ -564,6 +582,11 @@ const PriorityCardClean = ({
                                     ? milestone.dueDate.split('T')[0]
                                     : milestone.dueDate
                                 ) : '',
+                                ownerId: milestone.owner_id || priority.owner?.id
+                              });
+                              console.log('[PriorityCardClean] Edit state set to:', {
+                                title: milestone.title,
+                                dueDate: milestone.dueDate,
                                 ownerId: milestone.owner_id || priority.owner?.id
                               });
                             }}
