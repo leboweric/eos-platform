@@ -531,17 +531,15 @@ const PriorityCardClean = ({
                             variant="ghost"
                             size="sm"
                             onClick={() => {
-                              if (onEditMilestone) {
-                                setEditingMilestoneId(milestone.id);
-                                setEditingMilestone({
-                                  title: milestone.title,
-                                  dueDate: milestone.dueDate ? (
-                                    milestone.dueDate.includes('T') 
-                                      ? milestone.dueDate.split('T')[0]
-                                      : milestone.dueDate
-                                  ) : ''
-                                });
-                              }
+                              setEditingMilestoneId(milestone.id);
+                              setEditingMilestone({
+                                title: milestone.title,
+                                dueDate: milestone.dueDate ? (
+                                  milestone.dueDate.includes('T') 
+                                    ? milestone.dueDate.split('T')[0]
+                                    : milestone.dueDate
+                                ) : ''
+                              });
                             }}
                             className="h-6 w-6 p-0 opacity-0 group-hover:opacity-100 transition-opacity"
                           >
