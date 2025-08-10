@@ -31,6 +31,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
+import { MultiSelect } from '@/components/ui/multi-select';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -68,13 +69,13 @@ const UsersPage = () => {
     lastName: '', 
     role: 'member',
     sendWelcomeEmail: true,
-    teamId: ''
+    teamIds: []
   });
   const [editForm, setEditForm] = useState({
     firstName: '',
     lastName: '',
     role: 'member',
-    teamId: 'none'
+    teamIds: []
   });
   const [inviteLoading, setInviteLoading] = useState(false);
   const [createLoading, setCreateLoading] = useState(false);
@@ -281,7 +282,8 @@ const UsersPage = () => {
         firstName: '', 
         lastName: '', 
         role: 'member',
-        sendWelcomeEmail: true
+        sendWelcomeEmail: true,
+        teamIds: []
       });
       
       if (createForm.sendWelcomeEmail) {
@@ -302,7 +304,7 @@ const UsersPage = () => {
       firstName: user.first_name,
       lastName: user.last_name,
       role: user.role,
-      teamId: user.team_id || 'none'
+      teamIds: user.team_ids || []
     });
     setEditDialogOpen(true);
   };
@@ -324,8 +326,7 @@ const UsersPage = () => {
           firstName: editForm.firstName,
           lastName: editForm.lastName,
           role: editForm.role,
-          // Only send teamId if it's a valid selection (not 'none' or empty)
-          ...(editForm.teamId && editForm.teamId !== 'none' ? { teamId: editForm.teamId } : {}),
+          teamIds: editForm.teamIds
         }),
       });
 
@@ -530,23 +531,20 @@ const UsersPage = () => {
                         </Select>
                       </div>
                       <div className="space-y-2">
-                        <Label htmlFor="createDepartment">Department</Label>
-                        <Select
-                          value={createForm.teamId}
-                          onValueChange={(value) => setCreateForm({ ...createForm, teamId: value })}
-                        >
-                          <SelectTrigger>
-                            <SelectValue placeholder="Select a department" />
-                          </SelectTrigger>
-                          <SelectContent>
-                            {departments.map((dept) => (
-                              <SelectItem key={dept.id} value={dept.id}>
-                                {dept.name}
-                                {dept.is_leadership_team && ' (Leadership)'}
-                              </SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
+                        <Label htmlFor="createDepartments">Departments</Label>
+                        <MultiSelect
+                          options={departments.map(dept => ({
+                            value: dept.id,
+                            label: dept.name,
+                            description: dept.is_leadership_team ? 'Leadership' : null
+                          }))}
+                          value={createForm.teamIds}
+                          onChange={(value) => setCreateForm({ ...createForm, teamIds: value })}
+                          placeholder="Select departments..."
+                        />
+                        <p className="text-sm text-gray-600">
+                          Select one or more departments for this user
+                        </p>
                       </div>
                       <div className="flex items-center space-x-2">
                         <input
@@ -733,24 +731,20 @@ const UsersPage = () => {
                 </Select>
               </div>
               <div className="space-y-2">
-                <Label htmlFor="editDepartment">Department</Label>
-                <Select
-                  value={editForm.teamId || 'none'}
-                  onValueChange={(value) => setEditForm({ ...editForm, teamId: value === 'none' ? '' : value })}
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select a department" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="none">No Department</SelectItem>
-                    {departments.map((dept) => (
-                      <SelectItem key={dept.id} value={dept.id}>
-                        {dept.name}
-                        {dept.is_leadership_team && ' (Leadership)'}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                <Label htmlFor="editDepartments">Departments</Label>
+                <MultiSelect
+                  options={departments.map(dept => ({
+                    value: dept.id,
+                    label: dept.name,
+                    description: dept.is_leadership_team ? 'Leadership' : null
+                  }))}
+                  value={editForm.teamIds}
+                  onChange={(value) => setEditForm({ ...editForm, teamIds: value })}
+                  placeholder="Select departments..."
+                />
+                <p className="text-sm text-gray-600">
+                  Select one or more departments for this user
+                </p>
               </div>
               {error && (
                 <Alert variant="destructive">

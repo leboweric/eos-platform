@@ -32,7 +32,9 @@ export const getOrganizationUsers = async (req, res) => {
         u.created_at, 
         u.last_login_at,
         STRING_AGG(t.name, ', ' ORDER BY t.name) as departments,
-        -- Get the first team_id (users typically belong to one team/department)
+        -- Get all team_ids as an array for multi-select support
+        ARRAY_AGG(tm.team_id) FILTER (WHERE tm.team_id IS NOT NULL) as team_ids,
+        -- Keep single team_id for backward compatibility
         (SELECT tm2.team_id FROM team_members tm2 WHERE tm2.user_id = u.id LIMIT 1) as team_id
        FROM users u
        LEFT JOIN team_members tm ON u.id = tm.user_id
@@ -56,7 +58,7 @@ export const getOrganizationUsers = async (req, res) => {
 // Create user directly (for consultants)
 export const createUser = async (req, res) => {
   try {
-    const { email, firstName, lastName, role = 'member', sendWelcomeEmail = true, teamId } = req.body;
+    const { email, firstName, lastName, role = 'member', sendWelcomeEmail = true, teamId, teamIds } = req.body;
     const organizationId = req.user.organizationId || req.user.organization_id;
     const createdBy = req.user.id;
 
@@ -90,8 +92,20 @@ export const createUser = async (req, res) => {
 
     const newUser = userResult.rows[0];
 
-    // Add user to team if teamId provided
-    if (teamId) {
+    // Add user to teams - support both single teamId and multiple teamIds
+    if (teamIds && Array.isArray(teamIds)) {
+      // Handle multiple team assignments
+      for (const tid of teamIds) {
+        if (tid && tid !== '' && tid !== 'none') {
+          await query(
+            `INSERT INTO team_members (id, team_id, user_id, role)
+             VALUES ($1, $2, $3, $4)`,
+            [uuidv4(), tid, userId, 'member']
+          );
+        }
+      }
+    } else if (teamId && teamId !== '' && teamId !== 'none') {
+      // Handle single team assignment (backward compatibility)
       await query(
         `INSERT INTO team_members (id, team_id, user_id, role)
          VALUES ($1, $2, $3, $4)`,
@@ -417,7 +431,7 @@ export const cancelInvitation = async (req, res) => {
 export const updateUser = async (req, res) => {
   try {
     const { userId } = req.params;
-    const { firstName, lastName, role, teamId } = req.body;
+    const { firstName, lastName, role, teamId, teamIds } = req.body; // Support both single teamId and multiple teamIds
     const organizationId = req.params.orgId || req.user.organizationId || req.user.organization_id;
 
     // Check if user can update (must be admin or consultant)
@@ -443,8 +457,27 @@ export const updateUser = async (req, res) => {
       [firstName, lastName, role, userId, organizationId]
     );
 
-    // Handle team assignment - only process if teamId is explicitly provided and not 'none'
-    if (teamId !== undefined && teamId !== null && teamId !== 'none') {
+    // Handle team assignment - support both single teamId and multiple teamIds
+    if (teamIds && Array.isArray(teamIds)) {
+      // Handle multiple team assignments
+      // First, remove all existing team memberships for this user
+      await query(
+        'DELETE FROM team_members WHERE user_id = $1',
+        [userId]
+      );
+
+      // Then add new team memberships for each selected team
+      for (const teamId of teamIds) {
+        if (teamId && teamId !== '' && teamId !== 'none') {
+          await query(
+            `INSERT INTO team_members (id, team_id, user_id, role)
+             VALUES ($1, $2, $3, $4)`,
+            [uuidv4(), teamId, userId, 'member']
+          );
+        }
+      }
+    } else if (teamId !== undefined) {
+      // Handle single team assignment (backward compatibility)
       // First, remove all existing team memberships for this user
       await query(
         'DELETE FROM team_members WHERE user_id = $1',
@@ -452,7 +485,7 @@ export const updateUser = async (req, res) => {
       );
 
       // Then add new team membership if teamId is a valid UUID
-      if (teamId && teamId !== '') {
+      if (teamId && teamId !== '' && teamId !== 'none') {
         await query(
           `INSERT INTO team_members (id, team_id, user_id, role)
            VALUES ($1, $2, $3, $4)`,
@@ -462,7 +495,7 @@ export const updateUser = async (req, res) => {
     }
     // If teamId is undefined, null, or 'none', we don't touch the existing team assignments
 
-    // Fetch updated user information
+    // Fetch updated user information with all team memberships
     const updatedUserResult = await query(
       `SELECT 
         u.id, 
@@ -471,10 +504,13 @@ export const updateUser = async (req, res) => {
         u.last_name, 
         u.role,
         u.updated_at,
-        tm.team_id
+        ARRAY_AGG(tm.team_id) FILTER (WHERE tm.team_id IS NOT NULL) as team_ids,
+        STRING_AGG(t.name, ', ' ORDER BY t.name) FILTER (WHERE t.name IS NOT NULL) as departments
        FROM users u
        LEFT JOIN team_members tm ON u.id = tm.user_id
-       WHERE u.id = $1`,
+       LEFT JOIN teams t ON tm.team_id = t.id
+       WHERE u.id = $1
+       GROUP BY u.id, u.email, u.first_name, u.last_name, u.role, u.updated_at`,
       [userId]
     );
 
