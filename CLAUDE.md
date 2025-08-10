@@ -195,6 +195,26 @@ VALUES (gen_random_uuid(), 'Leadership Team', <org_id>, true);
 
 ## Database Tables Reference
 
+### Scorecard Tables
+#### scorecard_metrics
+- `id`: UUID primary key
+- `organization_id`: Foreign key to organizations
+- `team_id`: Foreign key to teams
+- `name`: Metric name (must be unique per org/team combination)
+- `goal`: DECIMAL(20, 2) - supports values up to 999,999,999,999,999,999.99
+- `type`: 'weekly', 'monthly', or 'quarterly'
+- `value_type`: 'number', 'currency', or 'percentage'
+- `comparison_operator`: 'greater_equal', 'less_equal', or 'equal'
+- `owner`: Optional VARCHAR(255) for metric owner name
+- `description`: Optional TEXT for additional context
+
+#### scorecard_scores
+- `id`: UUID primary key
+- `metric_id`: Foreign key to scorecard_metrics
+- `week_date`: DATE for the score date
+- `value`: DECIMAL(20, 2) - supports large financial values
+- UNIQUE constraint on (metric_id, week_date)
+
 ### Scorecard Groups (New)
 - `scorecard_groups`: Stores metric groupings with team-based organization
 - Key columns: `team_id`, `name`, `display_order`, `color`, `is_expanded`
@@ -335,3 +355,80 @@ CREATE TABLE rock_suggestions (
 - Existing Rock creation/editing remains unchanged
 - AI suggestions are stored for learning/improvement
 - No modification to existing quarterly_priorities table structure
+
+## Importing Scorecard Data from Ninety.io (December 2024)
+
+### Overview
+Process for migrating monthly scorecard data from Ninety.io to the EOS Platform. This was implemented for Boyum Barenscheer organization.
+
+### Key Learnings
+
+#### 1. Database Schema Limitations
+- **Problem**: Original scorecard tables used `DECIMAL(10, 2)` which only supports values up to 99,999,999.99
+- **Issue**: Large financial metrics like Assets Under Management (AUM) exceed this limit (e.g., $150,000,000)
+- **Solution**: Alter columns to `DECIMAL(20, 2)` to support values up to 999,999,999,999,999,999.99
+```sql
+ALTER TABLE scorecard_metrics ALTER COLUMN goal TYPE DECIMAL(20, 2);
+ALTER TABLE scorecard_scores ALTER COLUMN value TYPE DECIMAL(20, 2);
+```
+
+#### 2. Multi-Tenancy Considerations
+- **Important**: Each organization can have its own metrics with the same names
+- **Key**: Use `organization_id`, `team_id`, and `name` combination to identify unique metrics
+- **Never**: Create global unique constraints that would prevent multiple orgs from having "Revenue" metrics
+
+#### 3. PL/pgSQL Variable Naming
+- **Problem**: Variable names can conflict with column names causing "ambiguous reference" errors
+- **Solution**: Prefix variables with `v_` (e.g., `v_metric_id` instead of `metric_id`)
+- **Alternative**: Qualify column names with table names (e.g., `scorecard_scores.metric_id`)
+
+#### 4. Data Import Pattern
+```sql
+-- Check if metric exists for this org/team
+SELECT id INTO v_metric_id 
+FROM scorecard_metrics 
+WHERE organization_id = org_id 
+  AND team_id = leadership_team_id 
+  AND name = 'Metric Name';
+
+IF v_metric_id IS NULL THEN
+    -- Insert new metric
+    INSERT INTO scorecard_metrics (organization_id, team_id, name, goal, type, value_type, comparison_operator)
+    VALUES (org_id, leadership_team_id, 'Metric Name', goal_value, 'monthly', 'currency', 'greater_equal')
+    RETURNING id INTO v_metric_id;
+ELSE
+    -- Update existing metric
+    UPDATE scorecard_metrics 
+    SET goal = goal_value, type = 'monthly', value_type = 'currency', comparison_operator = 'greater_equal'
+    WHERE id = v_metric_id;
+END IF;
+
+-- Clear old scores and insert new ones
+DELETE FROM scorecard_scores WHERE scorecard_scores.metric_id = v_metric_id;
+
+INSERT INTO scorecard_scores (metric_id, week_date, value) VALUES
+(v_metric_id, '2024-08-01', 123456.78),
+(v_metric_id, '2024-09-01', 234567.89);
+```
+
+#### 5. Metric Configuration
+- **value_type**: Set to 'number', 'currency', or 'percentage' based on metric type
+- **comparison_operator**: Usually 'greater_equal' for goals (represents ≥)
+- **type**: Set to 'monthly' for monthly scorecards
+- **goal**: Numeric value (89 for 89% in percentage metrics)
+
+#### 6. Date Handling
+- Monthly metrics use first day of month (e.g., '2024-08-01' for August 2024)
+- Handle blank cells by simply not inserting records for those dates
+- Frontend will display blanks where no score records exist
+
+### Files Created for Import
+1. **`fix_scorecard_decimal_precision.sql`** - Schema migration to support large values
+2. **`import_boyum_scorecard_final.sql`** - Main import script with all metrics and scores
+
+### Common Pitfalls to Avoid
+1. Don't assume owner data - only import what you have
+2. Don't create global unique constraints that break multi-tenancy
+3. Don't forget to handle NULL/blank data appropriately
+4. Always check existing data before inserting to avoid duplicates
+5. Remember that DECIMAL precision limits can cause silent failures

@@ -10,6 +10,7 @@ import { quarterlyPrioritiesService } from '../services/quarterlyPrioritiesServi
 import { todosService } from '../services/todosService';
 import { issuesService } from '../services/issuesService';
 import { organizationService } from '../services/organizationService';
+import businessBlueprintService from '../services/businessBlueprintService';
 import { getRevenueLabel } from '../utils/revenueUtils';
 import TodosList from '../components/todos/TodosList';
 import TodoDialog from '../components/todos/TodoDialog';
@@ -40,12 +41,12 @@ const DashboardClean = () => {
   const [showIssueDialog, setShowIssueDialog] = useState(false);
   const [editingIssue, setEditingIssue] = useState(null);
   const [showHeadlineDialog, setShowHeadlineDialog] = useState(false);
-  const [predictions, setPredictions] = useState({
+  const [annualPredictions, setAnnualPredictions] = useState({
     revenue: { target: 0, current: 0 },
     profit: { target: 0, current: 0 },
     measurables: { onTrack: 0, total: 0 }
   });
-  const [editingPredictions, setEditingPredictions] = useState(false);
+  const [editingAnnualPredictions, setEditingAnnualPredictions] = useState(false);
   const [dashboardData, setDashboardData] = useState({
     priorities: [],
     todos: [],
@@ -148,19 +149,35 @@ const DashboardClean = () => {
         }
       }
       
-      const [prioritiesResponse, todosResponse, issuesResponse, orgResponse] = await Promise.all([
+      const [prioritiesResponse, todosResponse, issuesResponse, orgResponse, blueprintResponse] = await Promise.all([
         quarterlyPrioritiesService.getCurrentPriorities(orgId, teamId),
         todosService.getTodos(null, null, true, userDepartmentId),
         issuesService.getIssues(null, false, userDepartmentId),
-        isOnLeadershipTeam() ? organizationService.getOrganization() : Promise.resolve(null)
+        isOnLeadershipTeam() ? organizationService.getOrganization() : Promise.resolve(null),
+        isOnLeadershipTeam() ? businessBlueprintService.getBusinessBlueprint() : Promise.resolve(null)
       ]);
       
       if (orgResponse) {
         setOrganization(orgResponse.data || orgResponse);
       }
       
-      if (prioritiesResponse.predictions) {
-        setPredictions(prioritiesResponse.predictions);
+      // Set annual predictions from 1-Year Plan
+      if (blueprintResponse && blueprintResponse.oneYearPlan) {
+        const oneYearPlan = blueprintResponse.oneYearPlan;
+        setAnnualPredictions(prev => ({
+          ...prev,
+          revenue: { 
+            target: oneYearPlan.revenue_target || 0, 
+            current: prioritiesResponse.predictions?.revenue?.current || 0 
+          },
+          profit: { 
+            target: oneYearPlan.profit_percentage || 0, 
+            current: prioritiesResponse.predictions?.profit?.current || 0 
+          }
+        }));
+      } else if (prioritiesResponse.predictions) {
+        // Fallback to quarterly predictions if no 1-Year Plan
+        setAnnualPredictions(prioritiesResponse.predictions);
       }
       
       // Get user's priorities (including company priorities they own)
@@ -279,32 +296,37 @@ const DashboardClean = () => {
     return `Q${currentQuarter} ${currentYear}`;
   };
 
-  const handleSavePredictions = async () => {
+  const handleSaveAnnualPredictions = async () => {
     try {
+      // Update the 1-Year Plan with new values
+      await businessBlueprintService.updateOneYearPlan({
+        revenue: annualPredictions.revenue.target,
+        profit: annualPredictions.profit.target,
+        targetDate: new Date(new Date().getFullYear() + 1, 0, 1).toISOString() // Next year Jan 1
+      });
+      
+      // Also update the current values in quarterly predictions for tracking
       const orgId = user?.organizationId;
       const teamId = getTeamId(user, 'leadership');
       
-      if (!orgId || !teamId) {
-        console.error('Missing orgId or teamId for predictions update');
-        return;
+      if (orgId && teamId) {
+        const now = new Date();
+        const currentYear = now.getFullYear();
+        const currentQuarter = Math.floor(now.getMonth() / 3) + 1;
+        const quarter = `Q${currentQuarter}`;
+        
+        await quarterlyPrioritiesService.updatePredictions(orgId, teamId, {
+          quarter,
+          year: currentYear,
+          revenue: annualPredictions.revenue,
+          profit: annualPredictions.profit,
+          measurables: annualPredictions.measurables
+        });
       }
       
-      const now = new Date();
-      const currentYear = now.getFullYear();
-      const currentQuarter = Math.floor(now.getMonth() / 3) + 1;
-      const quarter = `Q${currentQuarter}`;
-      
-      await quarterlyPrioritiesService.updatePredictions(orgId, teamId, {
-        quarter,
-        year: currentYear,
-        revenue: predictions.revenue,
-        profit: predictions.profit,
-        measurables: predictions.measurables
-      });
-      
-      setEditingPredictions(false);
+      setEditingAnnualPredictions(false);
     } catch (err) {
-      console.error('Failed to save predictions:', err);
+      console.error('Failed to save annual predictions:', err);
     }
   };
 
@@ -339,24 +361,24 @@ const DashboardClean = () => {
           </p>
         </div>
 
-        {/* Predictions Section - Only for Leadership */}
+        {/* Annual Predictions Section - Only for Leadership */}
         {isOnLeadershipTeam() && (
           <div className="mb-8 pb-8 border-b border-gray-100">
             <div className="flex items-center justify-between mb-6">
               <h2 className="text-lg font-medium text-gray-900">
-                {getCurrentPeriodDisplay()} Predictions
+                Annual Predictions
               </h2>
               <Button
                 variant="ghost"
                 size="sm"
-                onClick={() => setEditingPredictions(!editingPredictions)}
+                onClick={() => setEditingAnnualPredictions(!editingAnnualPredictions)}
                 className="text-gray-500 hover:text-gray-700"
               >
-                {editingPredictions ? <X className="h-4 w-4" /> : <Edit className="h-4 w-4" />}
+                {editingAnnualPredictions ? <X className="h-4 w-4" /> : <Edit className="h-4 w-4" />}
               </Button>
             </div>
 
-            {editingPredictions ? (
+            {editingAnnualPredictions ? (
               <div className="grid grid-cols-3 gap-8">
                 <div>
                   <Label className="text-sm text-gray-600">{getRevenueLabel(organization)}</Label>
@@ -368,9 +390,9 @@ const DashboardClean = () => {
                         <Input
                           type="number"
                           value={predictions?.revenue?.current || 0}
-                          onChange={(e) => setPredictions({
-                            ...predictions,
-                            revenue: { ...predictions.revenue, current: parseFloat(e.target.value) || 0 }
+                          onChange={(e) => setAnnualPredictions({
+                            ...annualPredictions,
+                            revenue: { ...annualPredictions.revenue, current: parseFloat(e.target.value) || 0 }
                           })}
                           className="h-8"
                         />
@@ -383,9 +405,9 @@ const DashboardClean = () => {
                         <Input
                           type="number"
                           value={predictions?.revenue?.target || 0}
-                          onChange={(e) => setPredictions({
-                            ...predictions,
-                            revenue: { ...predictions.revenue, target: parseFloat(e.target.value) || 0 }
+                          onChange={(e) => setAnnualPredictions({
+                            ...annualPredictions,
+                            revenue: { ...annualPredictions.revenue, target: parseFloat(e.target.value) || 0 }
                           })}
                           className="h-8"
                         />
@@ -404,9 +426,9 @@ const DashboardClean = () => {
                           type="number"
                           step="0.1"
                           value={predictions?.profit?.current || 0}
-                          onChange={(e) => setPredictions({
-                            ...predictions,
-                            profit: { ...predictions.profit, current: parseFloat(e.target.value) || 0 }
+                          onChange={(e) => setAnnualPredictions({
+                            ...annualPredictions,
+                            profit: { ...annualPredictions.profit, current: parseFloat(e.target.value) || 0 }
                           })}
                           className="h-8"
                         />
@@ -420,9 +442,9 @@ const DashboardClean = () => {
                           type="number"
                           step="0.1"
                           value={predictions?.profit?.target || 0}
-                          onChange={(e) => setPredictions({
-                            ...predictions,
-                            profit: { ...predictions.profit, target: parseFloat(e.target.value) || 0 }
+                          onChange={(e) => setAnnualPredictions({
+                            ...annualPredictions,
+                            profit: { ...annualPredictions.profit, target: parseFloat(e.target.value) || 0 }
                           })}
                           className="h-8"
                         />
@@ -440,9 +462,9 @@ const DashboardClean = () => {
                       <Input
                         type="number"
                         value={predictions?.measurables?.onTrack || 0}
-                        onChange={(e) => setPredictions({
-                          ...predictions,
-                          measurables: { ...predictions.measurables, onTrack: parseInt(e.target.value) || 0 }
+                        onChange={(e) => setAnnualPredictions({
+                          ...annualPredictions,
+                          measurables: { ...annualPredictions.measurables, onTrack: parseInt(e.target.value) || 0 }
                         })}
                         className="h-8"
                       />
@@ -452,9 +474,9 @@ const DashboardClean = () => {
                       <Input
                         type="number"
                         value={predictions?.measurables?.total || 0}
-                        onChange={(e) => setPredictions({
-                          ...predictions,
-                          measurables: { ...predictions.measurables, total: parseInt(e.target.value) || 0 }
+                        onChange={(e) => setAnnualPredictions({
+                          ...annualPredictions,
+                          measurables: { ...annualPredictions.measurables, total: parseInt(e.target.value) || 0 }
                         })}
                         className="h-8"
                       />
@@ -502,10 +524,10 @@ const DashboardClean = () => {
               </div>
             )}
 
-            {editingPredictions && (
+            {editingAnnualPredictions && (
               <div className="flex justify-end mt-4">
-                <Button onClick={handleSavePredictions} size="sm" className="bg-gray-900 hover:bg-gray-800">
-                  Save Predictions
+                <Button onClick={handleSaveAnnualPredictions} size="sm" className="bg-gray-900 hover:bg-gray-800">
+                  Save Annual Predictions
                 </Button>
               </div>
             )}
