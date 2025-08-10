@@ -416,17 +416,30 @@ const QuarterlyPrioritiesPage = () => {
   };
 
   const handleEditMilestone = async (priorityId, milestoneId, updates) => {
+    console.log('===========================================');
+    console.log('[handleEditMilestone] CALLED');
+    console.log('===========================================');
+    console.log('[handleEditMilestone] priorityId:', priorityId);
+    console.log('[handleEditMilestone] milestoneId:', milestoneId);
+    console.log('[handleEditMilestone] updates:', JSON.stringify(updates, null, 2));
+    console.log('[handleEditMilestone] updates.ownerId:', updates.ownerId);
+    console.log('[handleEditMilestone] updates.ownerId type:', typeof updates.ownerId);
+    
     try {
       const orgId = user?.organizationId;
       const teamId = selectedDepartment?.id;
+      
+      console.log('[handleEditMilestone] orgId:', orgId);
+      console.log('[handleEditMilestone] teamId:', teamId);
       
       if (!orgId || !teamId) {
         throw new Error('Organization or department not found');
       }
       
-      console.log('Updating milestone with:', updates);
+      console.log('[handleEditMilestone] Calling quarterlyPrioritiesService.updateMilestone');
       await quarterlyPrioritiesService.updateMilestone(orgId, teamId, priorityId, milestoneId, updates);
       
+      console.log('[handleEditMilestone] Service call completed, refreshing data');
       // Refresh data
       await fetchQuarterlyData();
     } catch (err) {

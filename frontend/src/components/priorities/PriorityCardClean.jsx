@@ -499,17 +499,27 @@ const PriorityCardClean = ({
                           />
                           <Select
                             value={editingMilestone.ownerId || milestone.owner_id || priority.owner?.id}
-                            onValueChange={(value) => setEditingMilestone({ ...editingMilestone, ownerId: value })}
+                            onValueChange={(value) => {
+                              console.log('[FRONTEND] Owner dropdown changed to:', value);
+                              console.log('[FRONTEND] Setting editingMilestone.ownerId to:', value);
+                              setEditingMilestone({ ...editingMilestone, ownerId: value });
+                            }}
                           >
                             <SelectTrigger className="w-40 h-7 text-sm">
                               <SelectValue placeholder="Owner" />
                             </SelectTrigger>
                             <SelectContent>
-                              {teamMembers.map((member) => (
-                                <SelectItem key={member.id} value={member.id}>
-                                  {member.name}
-                                </SelectItem>
-                              ))}
+                              {teamMembers.length === 0 && (
+                                <div className="px-2 py-1 text-sm text-gray-500">No team members available</div>
+                              )}
+                              {teamMembers.map((member) => {
+                                console.log('[FRONTEND] Rendering team member option:', member.id, member.name);
+                                return (
+                                  <SelectItem key={member.id} value={member.id}>
+                                    {member.name}
+                                  </SelectItem>
+                                );
+                              })}
                             </SelectContent>
                           </Select>
                           <Input
@@ -522,13 +532,25 @@ const PriorityCardClean = ({
                             variant="ghost"
                             size="sm"
                             onClick={() => {
-                              console.log('[PriorityCardClean] Saving milestone with:', {
-                                priorityId: priority.id,
-                                milestoneId: milestone.id,
-                                updates: editingMilestone
-                              });
+                              console.log('===========================================');
+                              console.log('[FRONTEND] MILESTONE SAVE CLICKED');
+                              console.log('===========================================');
+                              console.log('[FRONTEND] Priority ID:', priority.id);
+                              console.log('[FRONTEND] Milestone ID:', milestone.id);
+                              console.log('[FRONTEND] editingMilestone object:', JSON.stringify(editingMilestone, null, 2));
+                              console.log('[FRONTEND] editingMilestone.ownerId:', editingMilestone.ownerId);
+                              console.log('[FRONTEND] editingMilestone.ownerId type:', typeof editingMilestone.ownerId);
+                              console.log('[FRONTEND] onEditMilestone exists?', !!onEditMilestone);
+                              
                               if (onEditMilestone) {
+                                console.log('[FRONTEND] Calling onEditMilestone with:', {
+                                  priorityId: priority.id,
+                                  milestoneId: milestone.id,
+                                  updates: editingMilestone
+                                });
                                 onEditMilestone(priority.id, milestone.id, editingMilestone);
+                              } else {
+                                console.error('[FRONTEND] ERROR: onEditMilestone is not defined!');
                               }
                               setEditingMilestoneId(null);
                             }}

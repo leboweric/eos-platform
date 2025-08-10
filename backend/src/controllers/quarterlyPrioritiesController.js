@@ -719,10 +719,16 @@ export const updateMilestone = async (req, res) => {
     const { orgId, teamId, priorityId, milestoneId } = req.params;
     const { title, dueDate, completed, ownerId, status } = req.body;
     
-    console.log('[updateMilestone] Received request:', {
-      params: { orgId, teamId, priorityId, milestoneId },
-      body: { title, dueDate, completed, ownerId, status }
-    });
+    console.log('===========================================');
+    console.log('[MILESTONE UPDATE] START');
+    console.log('===========================================');
+    console.log('[MILESTONE UPDATE] Params:', JSON.stringify({ orgId, teamId, priorityId, milestoneId }, null, 2));
+    console.log('[MILESTONE UPDATE] Body:', JSON.stringify(req.body, null, 2));
+    console.log('[MILESTONE UPDATE] ownerId type:', typeof ownerId);
+    console.log('[MILESTONE UPDATE] ownerId value:', ownerId);
+    console.log('[MILESTONE UPDATE] Is ownerId undefined?', ownerId === undefined);
+    console.log('[MILESTONE UPDATE] Is ownerId null?', ownerId === null);
+    console.log('[MILESTONE UPDATE] Is ownerId empty string?', ownerId === '');
     
     // Convert empty string to null for date field
     const parsedDueDate = dueDate === '' ? null : dueDate;
@@ -781,9 +787,12 @@ export const updateMilestone = async (req, res) => {
     }
     
     if (ownerId !== undefined) {
+      console.log('[MILESTONE UPDATE] Adding ownerId to update:', ownerId);
       paramCount++;
       updateFields.push(`owner_id = $${paramCount}`);
       updateValues.push(ownerId);
+    } else {
+      console.log('[MILESTONE UPDATE] ownerId is undefined, skipping');
     }
     
     if (status !== undefined) {
@@ -799,6 +808,9 @@ export const updateMilestone = async (req, res) => {
     paramCount++;
     updateValues.push(milestoneId);
     
+    console.log('[MILESTONE UPDATE] SQL Query:', `UPDATE priority_milestones SET ${updateFields.join(', ')} WHERE id = $${paramCount}`);
+    console.log('[MILESTONE UPDATE] SQL Values:', updateValues);
+    
     const result = await query(
       `UPDATE priority_milestones 
        SET ${updateFields.join(', ')}
@@ -807,12 +819,11 @@ export const updateMilestone = async (req, res) => {
       updateValues
     );
     
-    console.log('[updateMilestone] Updated milestone:', {
-      id: result.rows[0].id,
-      title: result.rows[0].title,
-      owner_id: result.rows[0].owner_id,
-      completed: result.rows[0].completed
-    });
+    console.log('[MILESTONE UPDATE] Database returned:', JSON.stringify(result.rows[0], null, 2));
+    console.log('[MILESTONE UPDATE] owner_id in DB after update:', result.rows[0].owner_id);
+    console.log('===========================================');
+    console.log('[MILESTONE UPDATE] END - SUCCESS');
+    console.log('===========================================');
     
     // Update priority progress based on milestones
     await updatePriorityProgress(result.rows[0].priority_id);
@@ -1006,11 +1017,12 @@ export const editPriorityUpdate = async (req, res) => {
 
 // Helper function to get team members based on team context
 async function getTeamMembers(orgId, teamId = null, isLeadershipTeam = false) {
-  console.log('[getTeamMembers] Called with:', {
-    orgId,
-    teamId,
-    isLeadershipTeam
-  });
+  console.log('===========================================');
+  console.log('[TEAM MEMBERS] getTeamMembers CALLED');
+  console.log('===========================================');
+  console.log('[TEAM MEMBERS] orgId:', orgId);
+  console.log('[TEAM MEMBERS] teamId:', teamId);
+  console.log('[TEAM MEMBERS] isLeadershipTeam:', isLeadershipTeam);
   
   let result;
   
@@ -1050,18 +1062,24 @@ async function getTeamMembers(orgId, teamId = null, isLeadershipTeam = false) {
     );
   }
   
-  console.log(`[getTeamMembers] Found ${result.rows.length} team members`);
+  console.log('[TEAM MEMBERS] Query returned:', result.rows.length, 'members');
   if (result.rows.length === 0) {
-    console.log('[getTeamMembers] WARNING: No team members found!');
-    console.log('[getTeamMembers] Debug info:', {
-      orgId,
-      teamId,
-      isLeadershipTeam,
-      queryType: teamId && !isLeadershipTeam ? 'specific team' : 
-                 isLeadershipTeam ? 'leadership team' : 
-                 'all org users'
-    });
+    console.log('[TEAM MEMBERS] WARNING: No team members found!');
+    console.log('[TEAM MEMBERS] Query type used:', 
+      teamId && !isLeadershipTeam ? 'specific team' : 
+      isLeadershipTeam ? 'ALL org users (for Leadership view)' : 
+      'fallback - all org users'
+    );
+  } else {
+    console.log('[TEAM MEMBERS] First 3 members:', result.rows.slice(0, 3).map(m => ({
+      id: m.id,
+      name: m.name
+    })));
   }
+  console.log('===========================================');
+  console.log('[TEAM MEMBERS] getTeamMembers COMPLETE');  
+  console.log('===========================================');
+  
   return result.rows;
 }
 

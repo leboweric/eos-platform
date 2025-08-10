@@ -96,17 +96,30 @@ export const quarterlyPrioritiesService = {
   // Update milestone
   async updateMilestone(orgId, teamId, priorityId, milestoneId, updates) {
     try {
-      console.log('[Service] Sending milestone update:', {
-        url: `/organizations/${orgId}/teams/${teamId}/quarterly-priorities/priorities/${priorityId}/milestones/${milestoneId}`,
-        updates
-      });
+      console.log('===========================================');
+      console.log('[SERVICE] updateMilestone CALLED');
+      console.log('===========================================');
+      console.log('[SERVICE] orgId:', orgId);
+      console.log('[SERVICE] teamId:', teamId);
+      console.log('[SERVICE] priorityId:', priorityId);
+      console.log('[SERVICE] milestoneId:', milestoneId);
+      console.log('[SERVICE] updates object:', JSON.stringify(updates, null, 2));
+      console.log('[SERVICE] updates.ownerId:', updates.ownerId);
+      console.log('[SERVICE] updates.ownerId type:', typeof updates.ownerId);
       
-      const response = await axios.put(
-        `/organizations/${orgId}/teams/${teamId}/quarterly-priorities/priorities/${priorityId}/milestones/${milestoneId}`,
-        updates
-      );
+      const url = `/organizations/${orgId}/teams/${teamId}/quarterly-priorities/priorities/${priorityId}/milestones/${milestoneId}`;
+      console.log('[SERVICE] API URL:', url);
+      console.log('[SERVICE] Sending PUT request with body:', updates);
       
-      console.log('[Service] Milestone update response:', response.data);
+      const response = await axios.put(url, updates);
+      
+      console.log('[SERVICE] Response status:', response.status);
+      console.log('[SERVICE] Response data:', JSON.stringify(response.data, null, 2));
+      console.log('[SERVICE] Returned milestone owner_id:', response.data?.data?.owner_id);
+      console.log('===========================================');
+      console.log('[SERVICE] updateMilestone COMPLETE');
+      console.log('===========================================');
+      
       return response.data.data;
     } catch (error) {
       if (error.response?.status === 404) {
