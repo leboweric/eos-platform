@@ -163,7 +163,13 @@ const UsersPage = () => {
       });
       if (response.ok) {
         const data = await response.json();
-        setUsers(data.data);
+        // Sort users alphabetically by first name
+        const sortedUsers = data.data.sort((a, b) => {
+          const firstNameA = (a.firstName || a.first_name || '').toLowerCase();
+          const firstNameB = (b.firstName || b.first_name || '').toLowerCase();
+          return firstNameA.localeCompare(firstNameB);
+        });
+        setUsers(sortedUsers);
       }
     } catch (error) {
       console.error('Failed to fetch users:', error);
