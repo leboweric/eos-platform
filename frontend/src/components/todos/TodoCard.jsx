@@ -108,9 +108,7 @@ const TodoCard = ({ todo, onEdit, onDelete, onUpdate, onAddToIssues, readOnly = 
                   <h3 className={`font-medium ${todo.status === 'complete' ? 'line-through text-gray-500' : ''}`}>
                     {todo.title}
                   </h3>
-                  {todo.description && (
-                    <p className="text-sm text-gray-600 mt-1">{todo.description}</p>
-                  )}
+                  {/* Description hidden from main view - only shown in edit dialog */}
                 </div>
                 {isOverdue && !readOnly && onAddToIssues && (
                   <Button
