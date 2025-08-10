@@ -2283,6 +2283,7 @@ const QuarterlyPrioritiesPageClean = () => {
                         onUpdate={handleUpdatePriority}
                         onArchive={handleArchivePriority}
                         onAddMilestone={handleCreateMilestone}
+                        onEditMilestone={handleEditMilestone}
                         onToggleMilestone={handleUpdateMilestone}
                         onDeleteMilestone={handleDeleteMilestone}
                         onAddUpdate={handleAddUpdate}
@@ -2342,6 +2343,7 @@ const QuarterlyPrioritiesPageClean = () => {
                             onUpdate={handleUpdatePriority}
                             onArchive={handleArchivePriority}
                             onAddMilestone={handleCreateMilestone}
+                            onEditMilestone={handleEditMilestone}
                             onToggleMilestone={handleUpdateMilestone}
                             onDeleteMilestone={handleDeleteMilestone}
                             onAddUpdate={handleAddUpdate}
