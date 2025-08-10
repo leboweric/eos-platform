@@ -57,6 +57,12 @@ const DepartmentsPage = () => {
       const departmentsArray = Array.isArray(departmentsData) ? departmentsData : [];
       
       console.log('Departments to set:', departmentsArray);
+      // Log member_count values for debugging
+      departmentsArray.forEach(dept => {
+        if (dept.member_count !== undefined && dept.member_count !== null) {
+          console.log(`Department ${dept.name} member_count:`, dept.member_count, 'Type:', typeof dept.member_count);
+        }
+      });
       setDepartments(departmentsArray);
     } catch (error) {
       console.error('Error fetching departments:', error);
@@ -141,7 +147,11 @@ const DepartmentsPage = () => {
   // Calculate statistics
   const totalDepartments = departments.length;
   const activeDepartments = departments.filter(d => d.is_active !== false).length;
-  const totalMembers = departments.reduce((sum, dept) => sum + (dept.member_count || 0), 0);
+  const totalMembers = departments.reduce((sum, dept) => {
+    // Ensure member_count is treated as a number
+    const memberCount = parseInt(dept.member_count) || 0;
+    return sum + memberCount;
+  }, 0);
 
   return (
     <div className="space-y-6">
@@ -266,7 +276,7 @@ const DepartmentsPage = () => {
                       </td>
                       <td className="py-3 px-4 text-center">
                         <Badge variant="secondary">
-                          {dept.member_count || 0}
+                          {parseInt(dept.member_count) || 0}
                         </Badge>
                       </td>
                       <td className="py-3 px-4 text-center">

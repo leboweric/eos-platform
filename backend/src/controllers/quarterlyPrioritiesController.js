@@ -1341,8 +1341,7 @@ export const getCurrentPriorities = async (req, res) => {
         -- Filter by specific department
         CASE
           WHEN $2::uuid IS NULL THEN true  -- No specific team filter
-          WHEN $3 = true THEN true  -- Leadership Team sees all (for now, will refine later)
-          ELSE p.team_id = $2::uuid  -- Specific department requested
+          ELSE p.team_id = $2::uuid  -- Filter by the specific team requested (including Leadership Team)
         END
       )
       ORDER BY p.created_at ASC
@@ -1363,7 +1362,7 @@ export const getCurrentPriorities = async (req, res) => {
       isLeadershipTeamView = teamCheckResult.rows.length > 0 && teamCheckResult.rows[0].is_leadership_team;
     }
     
-    const prioritiesResult = await query(prioritiesQuery, [orgId, departmentFilter, isLeadershipTeamView]);
+    const prioritiesResult = await query(prioritiesQuery, [orgId, departmentFilter]);
     console.log(`Found ${prioritiesResult.rows.length} priorities:`, 
       prioritiesResult.rows.map(p => ({ 
         id: p.id, 
