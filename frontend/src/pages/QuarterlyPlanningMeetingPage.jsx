@@ -312,6 +312,37 @@ const QuarterlyPlanningMeetingPage = () => {
     }
   };
 
+  const handleEditMilestone = async (priorityId, milestoneId, milestoneData) => {
+    try {
+      const orgId = localStorage.getItem('impersonatedOrgId') || user?.organizationId || user?.organization_id;
+      const effectiveTeamId = teamId || user?.teamId || '00000000-0000-0000-0000-000000000000';
+      
+      await quarterlyPrioritiesService.updateMilestone(orgId, effectiveTeamId, priorityId, milestoneId, milestoneData);
+      
+      // Update local state
+      setPriorities(prev => 
+        prev.map(p => {
+          if (p.id === priorityId) {
+            return {
+              ...p,
+              milestones: p.milestones?.map(m => 
+                m.id === milestoneId ? { ...m, ...milestoneData } : m
+              )
+            };
+          }
+          return p;
+        })
+      );
+      
+      setSuccess('Milestone updated');
+      setTimeout(() => setSuccess(null), 3000);
+    } catch (error) {
+      console.error('Failed to edit milestone:', error);
+      setError('Failed to edit milestone');
+      setTimeout(() => setError(null), 3000);
+    }
+  };
+
   const fetchIssuesData = async () => {
     try {
       setLoading(true);
@@ -742,6 +773,8 @@ const QuarterlyPlanningMeetingPage = () => {
                             }}
                             onStatusChange={handlePriorityStatusChange}
                             onToggleMilestone={handleUpdateMilestone}
+                            onEditMilestone={handleEditMilestone}
+                            teamMembers={teamMembers}
                           />
                         ))}
                       </div>
@@ -801,6 +834,8 @@ const QuarterlyPlanningMeetingPage = () => {
                                     }}
                                     onStatusChange={handlePriorityStatusChange}
                                     onToggleMilestone={handleUpdateMilestone}
+                                    onEditMilestone={handleEditMilestone}
+                                    teamMembers={teamMembers}
                                   />
                                 ))}
                               </div>
@@ -967,6 +1002,9 @@ const QuarterlyPlanningMeetingPage = () => {
                                 setTimeout(() => setSuccess(null), 3000);
                               }}
                               onStatusChange={handlePriorityStatusChange}
+                              onToggleMilestone={handleUpdateMilestone}
+                              onEditMilestone={handleEditMilestone}
+                              teamMembers={teamMembers}
                             />
                           ))}
                         </div>
@@ -1026,6 +1064,8 @@ const QuarterlyPlanningMeetingPage = () => {
                                     }}
                                     onStatusChange={handlePriorityStatusChange}
                                     onToggleMilestone={handleUpdateMilestone}
+                                    onEditMilestone={handleEditMilestone}
+                                    teamMembers={teamMembers}
                                   />
                                 ))}
                               </div>

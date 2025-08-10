@@ -524,7 +524,7 @@ const PriorityCardClean = ({
                           <span className={`text-sm flex-1 ${milestone.completed ? 'line-through text-gray-400' : 'text-gray-700'}`}>
                             {milestone.title}
                           </span>
-                          <span className="text-xs text-gray-500">
+                          <span className={`text-xs ${getDaysUntilDue(milestone.dueDate) < 0 && !milestone.completed ? 'text-red-600 font-medium' : 'text-gray-500'}`}>
                             {formatDate(milestone.dueDate)}
                           </span>
                           {onEditMilestone && (
