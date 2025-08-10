@@ -125,14 +125,7 @@ const TodosList = ({
                     {todo.title}
                   </h3>
                   
-                  {/* Description - only show if exists */}
-                  {todo.description && (
-                    <p className={`mt-1.5 text-sm whitespace-pre-wrap ${
-                      todo.status === 'complete' ? 'text-gray-400 line-through' : 'text-gray-600'
-                    }`}>
-                      {todo.description}
-                    </p>
-                  )}
+                  {/* Description hidden from main view - only shown in edit dialog */}
                   
                   {/* Metadata - clean single line */}
                   <div className="mt-2 flex items-center gap-3 text-sm">
