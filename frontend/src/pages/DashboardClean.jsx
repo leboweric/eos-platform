@@ -291,12 +291,19 @@ const DashboardClean = () => {
   const formatRevenue = (value) => {
     if (!value || value === 0) return '$0';
     
-    if (value >= 1000000) {
-      return `$${(value / 1000000).toFixed(1)}M`;
-    } else if (value >= 1000) {
-      return `$${(value / 1000).toFixed(0)}K`;
+    // The value is stored in millions, convert to actual amount
+    const actualValue = value * 1000000;
+    
+    if (actualValue >= 1000000) {
+      // For millions, show 1 decimal place
+      const millions = actualValue / 1000000;
+      return `$${millions.toFixed(1)}M`;
+    } else if (actualValue >= 1000) {
+      // For thousands, show 1 decimal place
+      const thousands = actualValue / 1000;
+      return `$${thousands.toFixed(1)}K`;
     } else {
-      return `$${value.toFixed(0)}`;
+      return `$${actualValue.toFixed(0)}`;
     }
   };
 
@@ -372,7 +379,7 @@ const DashboardClean = () => {
           <div className="mb-8 pb-8 border-b border-gray-100">
             <div className="flex items-center justify-between mb-6">
               <h2 className="text-lg font-medium text-gray-900">
-                {getCurrentPeriodDisplay()} Predictions
+                Annual Predictions
               </h2>
               <Button
                 variant="ghost"
@@ -387,7 +394,7 @@ const DashboardClean = () => {
             {editingPredictions ? (
               <div className="grid grid-cols-3 gap-8">
                 <div>
-                  <Label className="text-sm text-gray-600">{getRevenueLabel(organization)}</Label>
+                  <Label className="text-sm text-gray-600">{getRevenueLabel(organization)} (in millions)</Label>
                   <div className="mt-2 space-y-2">
                     <div>
                       <Label className="text-xs text-gray-500">Current</Label>
@@ -395,12 +402,14 @@ const DashboardClean = () => {
                         <span className="text-sm mr-1">$</span>
                         <Input
                           type="number"
+                          step="0.001"
                           value={predictions?.revenue?.current || 0}
                           onChange={(e) => setPredictions({
                             ...predictions,
                             revenue: { ...predictions.revenue, current: parseFloat(e.target.value) || 0 }
                           })}
                           className="h-8"
+                          placeholder="0.635"
                         />
                       </div>
                     </div>
@@ -410,12 +419,14 @@ const DashboardClean = () => {
                         <span className="text-sm mr-1">$</span>
                         <Input
                           type="number"
+                          step="0.001"
                           value={predictions?.revenue?.target || 0}
                           onChange={(e) => setPredictions({
                             ...predictions,
                             revenue: { ...predictions.revenue, target: parseFloat(e.target.value) || 0 }
                           })}
                           className="h-8"
+                          placeholder="10.5"
                         />
                       </div>
                     </div>
