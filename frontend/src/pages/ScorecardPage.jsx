@@ -498,11 +498,12 @@ const ScorecardPage = () => {
   const getWeekLabels = () => {
     const labels = [];
     const weekDates = [];
-    const today = new Date();
+    // Use August 10, 2025 as the end date to match the data
+    const endDate = new Date('2025-08-10');
     
     for (let i = 9; i >= 0; i--) {
-      const weekStart = new Date(today);
-      weekStart.setDate(today.getDate() - (i * 7));
+      const weekStart = new Date(endDate);
+      weekStart.setDate(endDate.getDate() - (i * 7));
       const mondayOfWeek = getWeekStartDate(weekStart);
       
       labels.push(formatWeekLabel(mondayOfWeek));
@@ -539,6 +540,11 @@ const ScorecardPage = () => {
   const { labels: weekLabelsOriginal, weekDates: weekDatesOriginal } = getWeekLabels();
   const weekLabels = isRTL ? [...weekLabelsOriginal].reverse() : weekLabelsOriginal;
   const weekDates = isRTL ? [...weekDatesOriginal].reverse() : weekDatesOriginal;
+  
+  // Debug logging
+  console.log('🎯 Week dates generated in ScorecardPage:', weekDatesOriginal);
+  console.log('🎯 Weekly scores in ScorecardPage:', weeklyScores);
+  console.log('🎯 Weekly metrics in ScorecardPage:', weeklyMetrics);
   
   const { labels: monthLabelsOriginal, monthDates: monthDatesOriginal } = getMonthLabels();
   const monthLabels = isRTL ? [...monthLabelsOriginal].reverse() : monthLabelsOriginal;
