@@ -863,9 +863,24 @@ export const updateOneYearPlan = async (req, res) => {
       }
     }
     
+    // Fetch the complete data with goals, measurables, and revenue streams
+    const [completeGoals, completeMeasurables, completeRevenueStreams] = await Promise.all([
+      query('SELECT * FROM one_year_goals WHERE one_year_plan_id = $1 ORDER BY sort_order', [planId]),
+      query('SELECT * FROM one_year_measurables WHERE one_year_plan_id = $1', [planId]),
+      query('SELECT * FROM one_year_revenue_streams WHERE one_year_plan_id = $1 ORDER BY display_order', [planId])
+    ]);
+    
+    // Format the response to match what the frontend expects
+    const responseData = {
+      ...planResult.rows[0],
+      goals: completeGoals.rows,
+      measurables: completeMeasurables.rows,
+      revenueStreams: completeRevenueStreams.rows
+    };
+    
     res.json({
       success: true,
-      data: planResult.rows[0]
+      data: responseData
     });
   } catch (error) {
     console.error('Error updating one year plan:', error);

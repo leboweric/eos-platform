@@ -409,10 +409,18 @@ const BusinessBlueprintPage = () => {
       setSaving(true);
       setError(null);
       const savedData = await businessBlueprintService.updateOneYearPlan(data);
-      // Update with the saved data from the backend to ensure we have the latest values
+      // Update with the saved data from the backend, properly formatting it
       setBlueprintData(prev => ({
         ...prev,
-        oneYearPlan: savedData || data
+        oneYearPlan: {
+          ...savedData,
+          revenue: savedData.revenue_target || '',
+          profit: savedData.profit_percentage || '',
+          goals: savedData.goals && Array.isArray(savedData.goals) ? 
+            savedData.goals : [],
+          measurables: savedData.measurables || [],
+          revenueStreams: savedData.revenueStreams || []
+        }
       }));
       setSuccess('1-Year Plan updated successfully');
       // Refresh the business blueprint data to ensure everything is in sync
