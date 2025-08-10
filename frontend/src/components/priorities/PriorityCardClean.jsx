@@ -325,21 +325,7 @@ const PriorityCardClean = ({
                 )}
               </div>
 
-              {isEditing ? (
-                <Textarea
-                  value={editForm.description}
-                  onChange={(e) => setEditForm({ ...editForm, description: e.target.value })}
-                  className="mt-2 text-sm resize-none"
-                  rows={2}
-                  placeholder="Priority description..."
-                />
-              ) : (
-                priority.description && (
-                  <p className="text-sm text-gray-700 whitespace-pre-wrap leading-relaxed">
-                    {priority.description}
-                  </p>
-                )
-              )}
+              {/* Description now only shown when expanded */}
             </div>
             
             <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity ml-4">
@@ -415,6 +401,28 @@ const PriorityCardClean = ({
 
         {isExpanded && (
           <CardContent className="pt-0 space-y-4 border-t">
+            {/* Description section with scroll */}
+            {(priority.description || isEditing) && (
+              <div className="mb-4">
+                <h4 className="text-sm font-medium text-gray-700 mb-2">Description</h4>
+                {isEditing ? (
+                  <Textarea
+                    value={editForm.description}
+                    onChange={(e) => setEditForm({ ...editForm, description: e.target.value })}
+                    className="text-sm resize-none"
+                    rows={4}
+                    placeholder="Priority description..."
+                  />
+                ) : (
+                  <div className="max-h-32 overflow-y-auto bg-gray-50 rounded-md p-3 border border-gray-200">
+                    <p className="text-sm text-gray-700 whitespace-pre-wrap leading-relaxed">
+                      {priority.description}
+                    </p>
+                  </div>
+                )}
+              </div>
+            )}
+            
             {/* Progress Section - Only show if milestones exist */}
             {priority.milestones && priority.milestones.length > 0 && (
               <div className="space-y-2">
