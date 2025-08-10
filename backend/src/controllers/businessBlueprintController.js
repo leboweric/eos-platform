@@ -3,20 +3,42 @@ import { v4 as uuidv4 } from 'uuid';
 
 // Helper function to get or create VTO
 const getOrCreateVTO = async (orgId, teamId) => {
-  // First try to find without team_id (organization-level)
-  let vtoResult = await query(
-    'SELECT id FROM business_blueprints WHERE organization_id = $1 AND team_id IS NULL',
-    [orgId]
-  );
-
-  if (vtoResult.rows.length === 0) {
-    // Create VTO if it doesn't exist - without team_id for now
-    const newVtoId = uuidv4();
-    await query(
-      'INSERT INTO business_blueprints (id, organization_id) VALUES ($1, $2)',
-      [newVtoId, orgId]
+  // Check if this is for a department (not leadership team)
+  const isDepartment = teamId && teamId !== '00000000-0000-0000-0000-000000000000';
+  
+  let vtoResult;
+  if (isDepartment) {
+    // Department-level blueprint
+    vtoResult = await query(
+      'SELECT id FROM business_blueprints WHERE organization_id = $1 AND team_id = $2',
+      [orgId, teamId]
     );
-    return newVtoId;
+    
+    if (vtoResult.rows.length === 0) {
+      // Create department blueprint
+      const newVtoId = uuidv4();
+      await query(
+        'INSERT INTO business_blueprints (id, organization_id, team_id) VALUES ($1, $2, $3)',
+        [newVtoId, orgId, teamId]
+      );
+      return newVtoId;
+    }
+  } else {
+    // Organization-level blueprint
+    vtoResult = await query(
+      'SELECT id FROM business_blueprints WHERE organization_id = $1 AND team_id IS NULL',
+      [orgId]
+    );
+    
+    if (vtoResult.rows.length === 0) {
+      // Create org blueprint
+      const newVtoId = uuidv4();
+      await query(
+        'INSERT INTO business_blueprints (id, organization_id) VALUES ($1, $2)',
+        [newVtoId, orgId]
+      );
+      return newVtoId;
+    }
   }
   
   return vtoResult.rows[0].id;
@@ -39,23 +61,47 @@ export const getVTO = async (req, res) => {
       });
     }
 
-    // Get VTO - look for organization-level VTO (team_id = NULL)
-    let vtoResult = await query(
+    // Check if this is for a department
+    const isDepartment = teamId && teamId !== '00000000-0000-0000-0000-000000000000';
+    
+    // Always get org-level VTO for shared components
+    let orgVtoResult = await query(
       'SELECT * FROM business_blueprints WHERE organization_id = $1 AND team_id IS NULL',
       [orgId]
     );
 
-    let vto;
-    if (vtoResult.rows.length === 0) {
-      // Create default VTO if none exists - organization level for now
+    let orgVto;
+    if (orgVtoResult.rows.length === 0) {
+      // Create default org VTO if none exists
       const newVtoId = uuidv4();
       await query(
         'INSERT INTO business_blueprints (id, organization_id) VALUES ($1, $2)',
         [newVtoId, orgId]
       );
-      vto = { id: newVtoId, organization_id: orgId };
+      orgVto = { id: newVtoId, organization_id: orgId };
     } else {
-      vto = vtoResult.rows[0];
+      orgVto = orgVtoResult.rows[0];
+    }
+    
+    // For departments, also get their specific blueprint
+    let deptVto = null;
+    if (isDepartment) {
+      const deptVtoResult = await query(
+        'SELECT * FROM business_blueprints WHERE organization_id = $1 AND team_id = $2',
+        [orgId, teamId]
+      );
+      
+      if (deptVtoResult.rows.length > 0) {
+        deptVto = deptVtoResult.rows[0];
+      } else {
+        // Create department blueprint if it doesn't exist
+        const newDeptVtoId = uuidv4();
+        await query(
+          'INSERT INTO business_blueprints (id, organization_id, team_id) VALUES ($1, $2, $3)',
+          [newDeptVtoId, orgId, teamId]
+        );
+        deptVto = { id: newDeptVtoId, organization_id: orgId, team_id: teamId };
+      }
     }
 
     // Get current quarter and year
@@ -63,14 +109,19 @@ export const getVTO = async (req, res) => {
     const currentQuarter = `Q${Math.floor(currentDate.getMonth() / 3) + 1}`;
     const currentYear = currentDate.getFullYear();
 
-    // Get all VTO components
-    const [coreValues, coreFocus, tenYearTarget, marketingStrategy, threeYearPicture, oneYearPlan] = await Promise.all([
-      query('SELECT * FROM core_values WHERE vto_id = $1 ORDER BY sort_order', [vto.id]),
-      query('SELECT * FROM core_focus WHERE vto_id = $1', [vto.id]),
-      query('SELECT * FROM ten_year_targets WHERE vto_id = $1', [vto.id]),
-      query('SELECT * FROM marketing_strategies WHERE vto_id = $1', [vto.id]),
-      query('SELECT * FROM three_year_pictures WHERE vto_id = $1', [vto.id]),
-      query('SELECT * FROM one_year_plans WHERE vto_id = $1', [vto.id])
+    // Get shared components from org VTO
+    const [coreValues, coreFocus, tenYearTarget, marketingStrategy] = await Promise.all([
+      query('SELECT * FROM core_values WHERE vto_id = $1 ORDER BY sort_order', [orgVto.id]),
+      query('SELECT * FROM core_focus WHERE vto_id = $1', [orgVto.id]),
+      query('SELECT * FROM ten_year_targets WHERE vto_id = $1', [orgVto.id]),
+      query('SELECT * FROM marketing_strategies WHERE vto_id = $1', [orgVto.id])
+    ]);
+    
+    // Get 3-year and 1-year from department VTO if department, else from org VTO
+    const vtoIdForPlans = deptVto ? deptVto.id : orgVto.id;
+    const [threeYearPicture, oneYearPlan] = await Promise.all([
+      query('SELECT * FROM three_year_pictures WHERE vto_id = $1', [vtoIdForPlans]),
+      query('SELECT * FROM one_year_plans WHERE vto_id = $1', [vtoIdForPlans])
     ]);
 
     // Get sub-components for 3-year and 1-year plans
@@ -126,7 +177,8 @@ export const getVTO = async (req, res) => {
     res.json({
       success: true,
       data: {
-        vto: vto,
+        vto: orgVto,  // Always return org VTO for base structure
+        isDepartment: isDepartment,  // Let frontend know if this is department data
         coreValues: coreValues.rows.map(cv => ({
           ...cv,
           value: cv.value_text  // Map value_text to value for frontend compatibility
@@ -171,7 +223,7 @@ export const upsertCoreValue = async (req, res) => {
     const { id, value, description, sortOrder } = req.body;
     const userId = req.user.id;
 
-    // Get or create VTO
+    // Get or create VTO - use department VTO if teamId is provided and not leadership
     const vtoId = await getOrCreateVTO(orgId, teamId);
 
     if (id) {
@@ -266,7 +318,7 @@ export const updateCoreFocus = async (req, res) => {
     const { purpose, niche, hedgehogType } = req.body;
     const userId = req.user.id;
 
-    // Get or create VTO
+    // Get or create VTO - use department VTO if teamId is provided and not leadership
     const vtoId = await getOrCreateVTO(orgId, teamId);
 
     // Check if core focus exists
@@ -318,7 +370,7 @@ export const updateTenYearTarget = async (req, res) => {
     const { targetDescription, targetYear, runningTotalDescription, currentRunningTotal } = req.body;
     const userId = req.user.id;
 
-    // Get or create VTO
+    // Get or create VTO - use department VTO if teamId is provided and not leadership
     const vtoId = await getOrCreateVTO(orgId, teamId);
 
     // Check if target exists
@@ -386,7 +438,7 @@ export const updateMarketingStrategy = async (req, res) => {
     } = req.body;
     const userId = req.user.id;
 
-    // Get or create VTO
+    // Get or create VTO - use department VTO if teamId is provided and not leadership
     const vtoId = await getOrCreateVTO(orgId, teamId);
 
     // Check if strategy exists
@@ -624,7 +676,7 @@ export const updateThreeYearPicture = async (req, res) => {
       futureDate = futureDate.split('T')[0];
     }
     
-    // Get or create VTO
+    // Get or create VTO - use department VTO if teamId is provided and not leadership
     const vtoId = await getOrCreateVTO(orgId, teamId);
     
     // Check if three year picture exists
@@ -761,7 +813,7 @@ export const updateOneYearPlan = async (req, res) => {
       targetDate = targetDate.split('T')[0];
     }
     
-    // Get or create VTO
+    // Get or create VTO - use department VTO if teamId is provided and not leadership
     const vtoId = await getOrCreateVTO(orgId, teamId);
     
     // Check if one year plan exists
