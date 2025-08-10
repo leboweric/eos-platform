@@ -99,6 +99,13 @@ const BusinessBlueprintPage = () => {
   const [editingCoreFocus, setEditingCoreFocus] = useState(false);
   const [editingBHAG, setEditingBHAG] = useState(false);
   
+  // State for organization theme colors
+  const [themeColors, setThemeColors] = useState({
+    primary: '#3B82F6',
+    secondary: '#1E40AF',
+    accent: '#60A5FA'
+  });
+  
   // State for tracking checked items in 3-Year Picture and 1-Year Plan
   const [lookLikeCheckedItems, setLookLikeCheckedItems] = useState({});
   const [oneYearGoalsCheckedItems, setOneYearGoalsCheckedItems] = useState({});
@@ -108,6 +115,15 @@ const BusinessBlueprintPage = () => {
   useEffect(() => {
     fetchBusinessBlueprint();
     fetchOrganization();
+    fetchOrganizationTheme();
+    
+    // Listen for theme changes
+    const handleThemeChange = (event) => {
+      setThemeColors(event.detail);
+    };
+    
+    window.addEventListener('themeChanged', handleThemeChange);
+    return () => window.removeEventListener('themeChanged', handleThemeChange);
   }, [selectedDepartment?.id]); // Re-fetch when department ID changes
   
   // Hide sidebar if coming from meeting
@@ -212,6 +228,34 @@ const BusinessBlueprintPage = () => {
       setOrganization(orgData);
     } catch (error) {
       console.error('Failed to fetch organization:', error);
+    }
+  };
+
+  const fetchOrganizationTheme = async () => {
+    try {
+      // First check localStorage
+      const savedTheme = localStorage.getItem('orgTheme');
+      if (savedTheme) {
+        const parsedTheme = JSON.parse(savedTheme);
+        setThemeColors(parsedTheme);
+        return;
+      }
+      
+      // Fetch from API
+      const orgData = await organizationService.getOrganization();
+      
+      if (orgData) {
+        const theme = {
+          primary: orgData.theme_primary_color || '#3B82F6',
+          secondary: orgData.theme_secondary_color || '#1E40AF',
+          accent: orgData.theme_accent_color || '#60A5FA'
+        };
+        setThemeColors(theme);
+        localStorage.setItem('orgTheme', JSON.stringify(theme));
+      }
+    } catch (error) {
+      console.error('Failed to fetch organization theme:', error);
+      // Use default colors on error
     }
   };
 
@@ -481,11 +525,25 @@ const BusinessBlueprintPage = () => {
 
         <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
           <TabsList className="grid w-full grid-cols-2 h-14 bg-white shadow-sm">
-            <TabsTrigger value="vision" className="data-[state=active]:bg-indigo-600 data-[state=active]:text-white text-lg font-medium">
+            <TabsTrigger 
+              value="vision" 
+              className="text-lg font-medium transition-colors flex items-center"
+              style={{ 
+                backgroundColor: activeTab === 'vision' ? themeColors.primary : 'transparent',
+                color: activeTab === 'vision' ? 'white' : 'inherit'
+              }}
+            >
               <Target className="mr-2 h-5 w-5" />
               Vision
             </TabsTrigger>
-            <TabsTrigger value="execution" className="data-[state=active]:bg-indigo-600 data-[state=active]:text-white text-lg font-medium">
+            <TabsTrigger 
+              value="execution" 
+              className="text-lg font-medium transition-colors flex items-center"
+              style={{ 
+                backgroundColor: activeTab === 'execution' ? themeColors.primary : 'transparent',
+                color: activeTab === 'execution' ? 'white' : 'inherit'
+              }}
+            >
               <TrendingUp className="mr-2 h-5 w-5" />
               Execution
             </TabsTrigger>
@@ -534,7 +592,7 @@ const BusinessBlueprintPage = () => {
               ))}
 
               <div className="pt-4 border-t">
-                <Button onClick={handleAddCoreValue} disabled={saving} className="bg-indigo-600 hover:bg-indigo-700 text-white">
+                <Button onClick={handleAddCoreValue} disabled={saving} style={{ backgroundColor: themeColors.primary }} className="hover:opacity-90 text-white">
                   <Plus className="mr-2 h-4 w-4" />
                   Add Core Value
                 </Button>
@@ -682,7 +740,7 @@ const BusinessBlueprintPage = () => {
                         setEditingCoreFocus(false);
                       }} 
                       disabled={saving} 
-                      className="bg-indigo-600 hover:bg-indigo-700 text-white flex-1"
+                      style={{ backgroundColor: themeColors.primary }} className="hover:opacity-90 text-white flex-1"
                     >
                       {saving ? (
                         <Loader2 className="mr-2 h-4 w-4 animate-spin" />
@@ -813,7 +871,7 @@ const BusinessBlueprintPage = () => {
                         setEditingBHAG(false);
                       }} 
                       disabled={saving} 
-                      className="bg-indigo-600 hover:bg-indigo-700 text-white flex-1"
+                      style={{ backgroundColor: themeColors.primary }} className="hover:opacity-90 text-white flex-1"
                     >
                       {saving ? (
                         <Loader2 className="mr-2 h-4 w-4 animate-spin" />
@@ -1153,7 +1211,7 @@ const BusinessBlueprintPage = () => {
                         setEditingMarketingStrategy(false);
                       }} 
                       disabled={saving} 
-                      className="bg-indigo-600 hover:bg-indigo-700 text-white flex-1"
+                      style={{ backgroundColor: themeColors.primary }} className="hover:opacity-90 text-white flex-1"
                     >
                       {saving ? (
                         <Loader2 className="mr-2 h-4 w-4 animate-spin" />
@@ -1362,7 +1420,7 @@ const BusinessBlueprintPage = () => {
                     </p>
                     <Button 
                       onClick={() => setShowThreeYearDialog(true)}
-                      className="bg-indigo-600 hover:bg-indigo-700 text-white"
+                      style={{ backgroundColor: themeColors.primary }} className="hover:opacity-90 text-white"
                     >
                       <Plus className="h-4 w-4 mr-2" />
                       Create 3-Year Picture
@@ -1541,7 +1599,7 @@ const BusinessBlueprintPage = () => {
                               className="mt-0.5 h-4 w-4 text-indigo-600 border-gray-300 rounded focus:ring-indigo-500"
                             />
                             <div className="flex items-start flex-1">
-                              <span className={`text-indigo-600 font-semibold mr-2 ${oneYearGoalsCheckedItems[index] ? 'line-through opacity-60' : ''}`}>
+                              <span className={`font-semibold mr-2 ${oneYearGoalsCheckedItems[index] ? 'line-through opacity-60' : ''}`} style={{ color: themeColors.primary }}>
                                 {index + 1}.
                               </span>
                               <p className={`text-sm text-gray-700 ${oneYearGoalsCheckedItems[index] ? 'line-through opacity-60' : ''}`}>
@@ -1565,7 +1623,7 @@ const BusinessBlueprintPage = () => {
                   </p>
                   <Button 
                     onClick={() => setShowOneYearDialog(true)}
-                    className="bg-indigo-600 hover:bg-indigo-700 text-white"
+                    style={{ backgroundColor: themeColors.primary }} className="hover:opacity-90 text-white"
                   >
                     <Plus className="h-4 w-4 mr-2" />
                     Create 1-Year Plan
@@ -1690,7 +1748,7 @@ const BusinessBlueprintPage = () => {
                   <div className="pt-4 border-t">
                     <Link 
                       to="/quarterly-priorities" 
-                      className="text-indigo-600 hover:text-indigo-700 text-sm font-medium inline-flex items-center"
+                      style={{ color: themeColors.primary }} className="hover:opacity-80 text-sm font-medium inline-flex items-center"
                     >
                       View full quarterly priorities page
                       <ArrowRight className="ml-1 h-4 w-4" />
@@ -1708,7 +1766,7 @@ const BusinessBlueprintPage = () => {
                   </p>
                   <Link 
                     to="/quarterly-priorities" 
-                    className="inline-flex items-center justify-center px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white font-medium rounded-lg"
+                    style={{ backgroundColor: themeColors.primary }} className="inline-flex items-center justify-center px-4 py-2 hover:opacity-90 text-white font-medium rounded-lg"
                   >
                     <Plus className="h-4 w-4 mr-2" />
                     Go to Quarterly Priorities
@@ -1783,7 +1841,7 @@ const BusinessBlueprintPage = () => {
                   <div className="pt-4 border-t">
                     <Link 
                       to="/issues?timeline=long_term" 
-                      className="text-indigo-600 hover:text-indigo-700 text-sm font-medium inline-flex items-center"
+                      style={{ color: themeColors.primary }} className="hover:opacity-80 text-sm font-medium inline-flex items-center"
                     >
                       View all long term issues
                       <ArrowRight className="ml-1 h-4 w-4" />
@@ -1801,7 +1859,7 @@ const BusinessBlueprintPage = () => {
                   </p>
                   <Link 
                     to="/issues" 
-                    className="inline-flex items-center justify-center px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white font-medium rounded-lg"
+                    style={{ backgroundColor: themeColors.primary }} className="inline-flex items-center justify-center px-4 py-2 hover:opacity-90 text-white font-medium rounded-lg"
                   >
                     <Plus className="h-4 w-4 mr-2" />
                     Go to Issues
