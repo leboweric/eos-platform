@@ -48,6 +48,7 @@ import {
   Brain
 } from 'lucide-react';
 import { format, addMonths, startOfQuarter, endOfQuarter } from 'date-fns';
+import PriorityCardClean from '../components/priorities/PriorityCardClean';
 
 // Error Boundary Component
 class ErrorBoundary extends Component {
@@ -528,6 +529,133 @@ const QuarterlyPrioritiesPage = () => {
     }
   };
 
+  const handleEditUpdate = async (priorityId, updateId, newText) => {
+    try {
+      const orgId = user?.organizationId;
+      const teamId = selectedDepartment?.id;
+      
+      if (!orgId || !teamId) {
+        throw new Error('Organization or department not found');
+      }
+      
+      await quarterlyPrioritiesService.editPriorityUpdate(orgId, teamId, priorityId, updateId, newText);
+      await fetchQuarterlyData();
+    } catch (err) {
+      console.error('Failed to edit update:', err);
+      setError('Failed to edit update');
+    }
+  };
+
+  const handleDeleteUpdate = async (priorityId, updateId) => {
+    try {
+      const orgId = user?.organizationId;
+      const teamId = selectedDepartment?.id;
+      
+      if (!orgId || !teamId) {
+        throw new Error('Organization or department not found');
+      }
+      
+      await quarterlyPrioritiesService.deletePriorityUpdate(orgId, teamId, priorityId, updateId);
+      await fetchQuarterlyData();
+    } catch (err) {
+      console.error('Failed to delete update:', err);
+      setError('Failed to delete update');
+    }
+  };
+
+  const handleStatusChange = async (priorityId, newStatus) => {
+    try {
+      const orgId = user?.organizationId;
+      const teamId = selectedDepartment?.id;
+      
+      if (!orgId || !teamId) {
+        throw new Error('Organization or department not found');
+      }
+      
+      await quarterlyPrioritiesService.updatePriority(orgId, teamId, priorityId, { status: newStatus });
+      await fetchQuarterlyData();
+    } catch (err) {
+      console.error('Failed to update status:', err);
+      setError('Failed to update status');
+    }
+  };
+
+  const handleUploadAttachment = async (priorityId, file) => {
+    try {
+      const orgId = user?.organizationId;
+      const teamId = selectedDepartment?.id;
+      
+      if (!orgId || !teamId) {
+        throw new Error('Organization or department not found');
+      }
+      
+      await quarterlyPrioritiesService.uploadAttachment(orgId, teamId, priorityId, file);
+      await fetchQuarterlyData();
+    } catch (err) {
+      console.error('Failed to upload attachment:', err);
+      setError('Failed to upload attachment');
+    }
+  };
+
+  const handleDownloadAttachment = async (priorityId, attachmentId, fileName) => {
+    try {
+      const orgId = user?.organizationId;
+      const teamId = selectedDepartment?.id;
+      
+      if (!orgId || !teamId) {
+        throw new Error('Organization or department not found');
+      }
+      
+      await quarterlyPrioritiesService.downloadAttachment(orgId, teamId, priorityId, attachmentId, fileName);
+    } catch (err) {
+      console.error('Failed to download attachment:', err);
+      setError('Failed to download attachment');
+    }
+  };
+
+  const handleDeleteAttachment = async (priorityId, attachmentId) => {
+    try {
+      const orgId = user?.organizationId;
+      const teamId = selectedDepartment?.id;
+      
+      if (!orgId || !teamId) {
+        throw new Error('Organization or department not found');
+      }
+      
+      await quarterlyPrioritiesService.deleteAttachment(orgId, teamId, priorityId, attachmentId);
+      await fetchQuarterlyData();
+    } catch (err) {
+      console.error('Failed to delete attachment:', err);
+      setError('Failed to delete attachment');
+    }
+  };
+
+  const handleCreateDiscussionIssue = async (priority) => {
+    try {
+      const orgId = user?.organizationId;
+      const teamId = selectedDepartment?.id;
+      
+      if (!orgId || !teamId) {
+        throw new Error('Organization or department not found');
+      }
+      
+      // Create an issue from this priority
+      await issuesService.createIssue(orgId, teamId, {
+        title: `Discussion: ${priority.title}`,
+        description: `Priority "${priority.title}" has been marked for discussion.\n\n${priority.description || ''}`,
+        status: 'open',
+        assignedTo: priority.owner?.id
+      });
+      
+      // Update priority status to off-track
+      await quarterlyPrioritiesService.updatePriority(orgId, teamId, priority.id, { status: 'off-track' });
+      await fetchQuarterlyData();
+    } catch (err) {
+      console.error('Failed to create discussion issue:', err);
+      setError('Failed to create discussion issue');
+    }
+  };
+
   const handleArchivePriority = async (priorityId) => {
     if (!window.confirm('Are you sure you want to archive this priority?')) {
       return;
@@ -643,7 +771,38 @@ const QuarterlyPrioritiesPage = () => {
     'complete': <CheckCircle className="h-4 w-4" />
   };
 
+  // Wrapper component for PriorityCardClean
   const PriorityCard = ({ priority, isCompany = false, isArchived = false }) => {
+    return (
+      <PriorityCardClean
+        priority={priority}
+        isCompany={isCompany}
+        isArchived={isArchived}
+        onUpdate={handleUpdatePriority}
+        onArchive={handleArchivePriority}
+        onAddMilestone={handleCreateMilestone}
+        onEditMilestone={handleEditMilestone}
+        onDeleteMilestone={handleDeleteMilestone}
+        onToggleMilestone={handleUpdateMilestone}
+        onAddUpdate={handleAddUpdate}
+        onEditUpdate={handleEditUpdate}
+        onDeleteUpdate={handleDeleteUpdate}
+        onStatusChange={handleStatusChange}
+        onUploadAttachment={handleUploadAttachment}
+        onDownloadAttachment={handleDownloadAttachment}
+        onDeleteAttachment={handleDeleteAttachment}
+        onCreateDiscussionIssue={handleCreateDiscussionIssue}
+        teamMembers={teamMembers.map(member => ({
+          id: member.id,
+          name: member.name || `${member.first_name} ${member.last_name}`
+        }))}
+        readOnly={isArchived}
+      />
+    );
+  };
+
+  // Old inline PriorityCard component (replaced with PriorityCardClean)
+  const PriorityCard_OLD = ({ priority, isCompany = false, isArchived = false }) => {
     // Validate priority data
     if (!priority || !priority.owner) {
       console.error('Invalid priority data:', priority);
