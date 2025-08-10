@@ -152,7 +152,7 @@ const PriorityCardClean = ({
   const handleAddMilestone = async () => {
     if (onAddMilestone && newMilestone.title && newMilestone.dueDate) {
       await onAddMilestone(priority.id, newMilestone);
-      setNewMilestone({ title: '', dueDate: '' });
+      setNewMilestone({ title: '', dueDate: '', ownerId: priority.owner?.id });
       setShowAddMilestone(false);
     }
   };

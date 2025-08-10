@@ -503,6 +503,7 @@ const QuarterlyPrioritiesPageClean = () => {
         throw new Error('Organization or department not found');
       }
       
+      console.log('Updating milestone with:', { priorityId, milestoneId, updates });
       await quarterlyPrioritiesService.updateMilestone(orgId, teamId, priorityId, milestoneId, updates);
       
       // Refresh data

@@ -96,11 +96,17 @@ export const quarterlyPrioritiesService = {
   // Update milestone
   async updateMilestone(orgId, teamId, priorityId, milestoneId, updates) {
     try {
+      console.log('[Service] Sending milestone update:', {
+        url: `/organizations/${orgId}/teams/${teamId}/quarterly-priorities/priorities/${priorityId}/milestones/${milestoneId}`,
+        updates
+      });
+      
       const response = await axios.put(
         `/organizations/${orgId}/teams/${teamId}/quarterly-priorities/priorities/${priorityId}/milestones/${milestoneId}`,
         updates
       );
       
+      console.log('[Service] Milestone update response:', response.data);
       return response.data.data;
     } catch (error) {
       if (error.response?.status === 404) {

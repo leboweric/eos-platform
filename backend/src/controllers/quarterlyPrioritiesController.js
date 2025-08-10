@@ -145,7 +145,8 @@ export const getQuarterlyPriorities = async (req, res) => {
               'title', m.title,
               'completed', m.completed,
               'due_date', m.due_date,
-              'dueDate', m.due_date
+              'dueDate', m.due_date,
+              'owner_id', m.owner_id
             ) ORDER BY m.due_date
           ) FILTER (WHERE m.id IS NOT NULL) as milestones
          FROM quarterly_priorities p
@@ -718,6 +719,11 @@ export const updateMilestone = async (req, res) => {
     const { orgId, teamId, priorityId, milestoneId } = req.params;
     const { title, dueDate, completed, ownerId, status } = req.body;
     
+    console.log('[updateMilestone] Received request:', {
+      params: { orgId, teamId, priorityId, milestoneId },
+      body: { title, dueDate, completed, ownerId, status }
+    });
+    
     // Convert empty string to null for date field
     const parsedDueDate = dueDate === '' ? null : dueDate;
     
@@ -800,6 +806,13 @@ export const updateMilestone = async (req, res) => {
        RETURNING *`,
       updateValues
     );
+    
+    console.log('[updateMilestone] Updated milestone:', {
+      id: result.rows[0].id,
+      title: result.rows[0].title,
+      owner_id: result.rows[0].owner_id,
+      completed: result.rows[0].completed
+    });
     
     // Update priority progress based on milestones
     await updatePriorityProgress(result.rows[0].priority_id);
