@@ -31,6 +31,7 @@ import MetricTrendChart from '../components/scorecard/MetricTrendChart';
 import GroupedScorecardView from '../components/scorecard/GroupedScorecardView';
 
 const ScorecardPage = () => {
+  console.log('🚀 ScorecardPage component mounted');
   const { user } = useAuthStore();
   const { selectedDepartment, isLeadershipMember, loading: departmentLoading } = useDepartment();
   const [loading, setLoading] = useState(true);
@@ -123,9 +124,11 @@ const ScorecardPage = () => {
         throw new Error('No organization ID found');
       }
       
-      console.log('Fetching scorecard with:', { orgId, teamId, departmentId });
+      console.log('🎯 Fetching scorecard with:', { orgId, teamId, departmentId });
       const response = await scorecardService.getScorecard(orgId, teamId, departmentId);
-      console.log('Scorecard response:', response);
+      console.log('🎯 Scorecard response:', response);
+      console.log('🎯 Response metrics:', response?.data?.metrics || response?.metrics);
+      console.log('🎯 Response weeklyScores:', response?.data?.weeklyScores || response?.weeklyScores);
       
       if (response && response.data) {
         console.log('Response has data wrapper:', response.data);
