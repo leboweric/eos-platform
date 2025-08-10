@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useAuthStore } from '../../stores/authStore';
 import { businessBlueprintService } from '../../services/businessBlueprintService';
+import { organizationService } from '../../services/organizationService';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Button } from '@/components/ui/button';
@@ -27,6 +28,13 @@ const TwoPagePlanView = ({ hideIssuesAndPriorities = false }) => {
   
   // State for Issue Dialog
   const [showIssueDialog, setShowIssueDialog] = useState(false);
+  
+  // State for organization theme colors
+  const [themeColors, setThemeColors] = useState({
+    primary: '#3B82F6',
+    secondary: '#1E40AF',
+    accent: '#60A5FA'
+  });
   
   // 2-Page Plan data
   const [blueprintData, setBlueprintData] = useState({
@@ -57,6 +65,15 @@ const TwoPagePlanView = ({ hideIssuesAndPriorities = false }) => {
 
   useEffect(() => {
     fetchBusinessBlueprint();
+    fetchOrganizationTheme();
+    
+    // Listen for theme changes
+    const handleThemeChange = (event) => {
+      setThemeColors(event.detail);
+    };
+    
+    window.addEventListener('themeChanged', handleThemeChange);
+    return () => window.removeEventListener('themeChanged', handleThemeChange);
   }, []);
   
   // Handler for toggling 3-Year Picture items
@@ -89,6 +106,32 @@ const TwoPagePlanView = ({ hideIssuesAndPriorities = false }) => {
     } catch (error) {
       console.error('Failed to toggle goal:', error);
       setError('Failed to update goal completion status');
+    }
+  };
+
+  const fetchOrganizationTheme = async () => {
+    try {
+      // First check localStorage
+      const savedTheme = localStorage.getItem('orgTheme');
+      if (savedTheme) {
+        setThemeColors(JSON.parse(savedTheme));
+        return;
+      }
+      
+      // Fetch from API
+      const orgData = await organizationService.getOrganization();
+      if (orgData?.data) {
+        const theme = {
+          primary: orgData.data.theme_primary_color || '#3B82F6',
+          secondary: orgData.data.theme_secondary_color || '#1E40AF',
+          accent: orgData.data.theme_accent_color || '#60A5FA'
+        };
+        setThemeColors(theme);
+        localStorage.setItem('orgTheme', JSON.stringify(theme));
+      }
+    } catch (error) {
+      console.error('Failed to fetch organization theme:', error);
+      // Use default colors on error
     }
   };
 
@@ -186,7 +229,7 @@ const TwoPagePlanView = ({ hideIssuesAndPriorities = false }) => {
         <Card className="shadow-lg border-0 overflow-hidden">
           <CardHeader className="bg-white border-b">
             <CardTitle className="flex items-center text-xl text-gray-900">
-              <Users className="mr-2 h-6 w-6 text-indigo-600" />
+              <Users className="mr-2 h-6 w-6" style={{ color: themeColors.primary }} />
               Core Values
             </CardTitle>
           </CardHeader>
@@ -212,7 +255,7 @@ const TwoPagePlanView = ({ hideIssuesAndPriorities = false }) => {
         <Card className="shadow-lg border-0 overflow-hidden">
           <CardHeader className="bg-white border-b">
             <CardTitle className="flex items-center text-xl text-gray-900">
-              <Target className="mr-2 h-6 w-6 text-indigo-600" />
+              <Target className="mr-2 h-6 w-6" style={{ color: themeColors.primary }} />
               Focus
             </CardTitle>
           </CardHeader>
@@ -239,7 +282,7 @@ const TwoPagePlanView = ({ hideIssuesAndPriorities = false }) => {
         <Card className="shadow-lg border-0 overflow-hidden">
           <CardHeader className="bg-white border-b">
             <CardTitle className="flex items-center text-xl text-gray-900">
-              <TrendingUp className="mr-2 h-6 w-6 text-indigo-600" />
+              <TrendingUp className="mr-2 h-6 w-6" style={{ color: themeColors.primary }} />
               Long Range Plan
             </CardTitle>
           </CardHeader>
@@ -271,7 +314,7 @@ const TwoPagePlanView = ({ hideIssuesAndPriorities = false }) => {
         <Card className="shadow-lg border-0 overflow-hidden">
           <CardHeader className="bg-white border-b">
             <CardTitle className="flex items-center text-xl text-gray-900">
-              <Lightbulb className="mr-2 h-6 w-6 text-indigo-600" />
+              <Lightbulb className="mr-2 h-6 w-6" style={{ color: themeColors.primary }} />
               Marketing Strategy
             </CardTitle>
           </CardHeader>
@@ -290,8 +333,8 @@ const TwoPagePlanView = ({ hideIssuesAndPriorities = false }) => {
                       </div>
                     )}
                     {blueprintData.marketingStrategy?.geographicProfile && (
-                      <div className="bg-blue-50 p-3 rounded-lg">
-                        <h5 className="font-semibold text-sm text-blue-700 mb-2 uppercase tracking-wide">Geographic</h5>
+                      <div className="p-3 rounded-lg" style={{ backgroundColor: `${themeColors.accent}20` }}>
+                        <h5 className="font-semibold text-sm mb-2 uppercase tracking-wide" style={{ color: themeColors.secondary }}>Geographic</h5>
                         <p className="text-gray-700 whitespace-pre-wrap pl-2">{blueprintData.marketingStrategy.geographicProfile}</p>
                       </div>
                     )}
@@ -362,7 +405,7 @@ const TwoPagePlanView = ({ hideIssuesAndPriorities = false }) => {
         <Card className="shadow-lg border-0 overflow-hidden">
           <CardHeader className="bg-white border-b">
             <CardTitle className="flex items-center text-xl text-gray-900">
-              <Calendar className="mr-2 h-6 w-6 text-indigo-600" />
+              <Calendar className="mr-2 h-6 w-6" style={{ color: themeColors.primary }} />
               3-Year Picture
             </CardTitle>
           </CardHeader>
@@ -457,7 +500,7 @@ const TwoPagePlanView = ({ hideIssuesAndPriorities = false }) => {
         <Card className="shadow-lg border-0 overflow-hidden">
           <CardHeader className="bg-white border-b">
             <CardTitle className="flex items-center text-xl text-gray-900">
-              <Target className="mr-2 h-6 w-6 text-indigo-600" />
+              <Target className="mr-2 h-6 w-6" style={{ color: themeColors.primary }} />
               1-Year Plan
             </CardTitle>
           </CardHeader>
@@ -519,7 +562,7 @@ const TwoPagePlanView = ({ hideIssuesAndPriorities = false }) => {
             <Card className="shadow-lg border-0 overflow-hidden">
               <CardHeader className="bg-white border-b">
                 <CardTitle className="flex items-center text-xl text-gray-900">
-                  <Target className="mr-2 h-6 w-6 text-indigo-600" />
+                  <Target className="mr-2 h-6 w-6" style={{ color: themeColors.primary }} />
                   Quarterly Priorities
                 </CardTitle>
               </CardHeader>
