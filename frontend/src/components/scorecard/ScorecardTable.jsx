@@ -55,6 +55,11 @@ const ScorecardTable = ({ metrics, weeklyScores, readOnly = false, onIssueCreate
   
   const weekDates = isRTL ? [...weekDatesOriginal].reverse() : weekDatesOriginal;
   const weekLabels = isRTL ? [...weekLabelsOriginal].reverse() : weekLabelsOriginal;
+  
+  // Debug logging
+  console.log('Week dates generated:', weekDates);
+  console.log('Weekly scores received:', weeklyScores);
+  console.log('Metrics:', metrics);
 
   // Format goal based on value type and comparison operator
   const formatGoal = (goal, valueType, comparisonOperator) => {
