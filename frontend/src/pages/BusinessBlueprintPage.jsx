@@ -1501,14 +1501,29 @@ const BusinessBlueprintPage = () => {
                     </div>
                   )}
                   
+                  {/* Goals - Debug */}
+                  {console.log('Goals data:', blueprintData.oneYearPlan.goals)}
+                  {console.log('Goals is array:', Array.isArray(blueprintData.oneYearPlan.goals))}
+                  {console.log('Goals length:', blueprintData.oneYearPlan.goals?.length)}
+                  {console.log('First goal:', blueprintData.oneYearPlan.goals?.[0])}
+                  
                   {/* Goals */}
-                  {blueprintData.oneYearPlan.goals && Array.isArray(blueprintData.oneYearPlan.goals) && blueprintData.oneYearPlan.goals.filter(goal => goal).length > 0 && (
+                  {blueprintData.oneYearPlan.goals && Array.isArray(blueprintData.oneYearPlan.goals) && blueprintData.oneYearPlan.goals.length > 0 && (
                     <div className="space-y-2">
                       <div className="flex items-center mb-2">
                         <Flag className="h-5 w-5 text-indigo-600 mr-2" />
                         <h4 className="font-semibold text-gray-900">Goals</h4>
                       </div>
-                      {blueprintData.oneYearPlan.goals.filter(goal => goal && goal.goal_text).map((goal, index) => {
+                      {blueprintData.oneYearPlan.goals.filter(goal => {
+                        // Filter for valid goals - either objects with goal_text or non-empty strings
+                        if (typeof goal === 'object' && goal !== null && goal.goal_text) {
+                          return true;
+                        }
+                        if (typeof goal === 'string' && goal.trim()) {
+                          return true;
+                        }
+                        return false;
+                      }).map((goal, index) => {
                         return (
                           <div 
                             key={goal.id || index} 
@@ -1517,7 +1532,7 @@ const BusinessBlueprintPage = () => {
                             <input
                               type="checkbox"
                               checked={oneYearGoalsCheckedItems[index] || false}
-                              onChange={() => handleToggleOneYearGoal(goal.id, index)}
+                              onChange={() => handleToggleOneYearGoal(goal.id || null, index)}
                               className="mt-0.5 h-4 w-4 text-indigo-600 border-gray-300 rounded focus:ring-indigo-500"
                             />
                             <div className="flex items-start flex-1">
@@ -1525,7 +1540,7 @@ const BusinessBlueprintPage = () => {
                                 {index + 1}.
                               </span>
                               <p className={`text-sm text-gray-700 ${oneYearGoalsCheckedItems[index] ? 'line-through opacity-60' : ''}`}>
-                                {goal.goal_text}
+                                {typeof goal === 'string' ? goal : goal.goal_text}
                               </p>
                             </div>
                           </div>
