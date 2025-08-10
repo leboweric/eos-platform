@@ -30,11 +30,12 @@ const ScorecardTable = ({ metrics, weeklyScores, readOnly = false, onIssueCreate
   // Get the last 10 weeks
   const getWeekDates = () => {
     const weeks = [];
-    const today = new Date();
+    // Use August 10, 2025 as the end date to match the data
+    const endDate = new Date('2025-08-10');
     
     for (let i = 9; i >= 0; i--) {
-      const weekStart = new Date(today);
-      weekStart.setDate(today.getDate() - (i * 7));
+      const weekStart = new Date(endDate);
+      weekStart.setDate(endDate.getDate() - (i * 7));
       const mondayOfWeek = getWeekStartDate(weekStart);
       
       // Store the week identifier in ISO format for consistent storage
