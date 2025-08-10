@@ -6,7 +6,7 @@ import { organizationService } from '../services/organizationService';
 import { issuesService } from '../services/issuesService';
 import { getRevenueLabel, getRevenueLabelWithSuffix } from '../utils/revenueUtils';
 import { useDepartment } from '../contexts/DepartmentContext';
-// PriorityCard is defined locally in this file
+import PriorityCard from '../components/priorities/PriorityCard';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -93,7 +93,7 @@ class ErrorBoundary extends Component {
   }
 }
 
-const QuarterlyPrioritiesPageClean = () => {
+const QuarterlyPrioritiesPage = () => {
   const navigate = useNavigate();
   const { user, isOnLeadershipTeam } = useAuthStore();
   const { selectedDepartment, loading: departmentLoading } = useDepartment();
@@ -2460,10 +2460,10 @@ const QuarterlyPrioritiesPageClean = () => {
 };
 
 // Wrap with Error Boundary
-const QuarterlyPrioritiesPageCleanWithErrorBoundary = () => (
+const QuarterlyPrioritiesPageWithErrorBoundary = () => (
   <ErrorBoundary>
-    <QuarterlyPrioritiesPageClean />
+    <QuarterlyPrioritiesPage />
   </ErrorBoundary>
 );
 
-export default QuarterlyPrioritiesPageCleanWithErrorBoundary;
+export default QuarterlyPrioritiesPageWithErrorBoundary;
