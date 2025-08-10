@@ -495,7 +495,7 @@ const PriorityCardClean = ({
                             type="date"
                             value={editingMilestone.dueDate}
                             onChange={(e) => setEditingMilestone({ ...editingMilestone, dueDate: e.target.value })}
-                            className="w-32 h-7 text-sm"
+                            className="w-40 h-7 text-sm"
                           />
                           <Button
                             variant="ghost"
