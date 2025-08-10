@@ -1,320 +1,867 @@
+import { useState } from 'react';
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
+import { Avatar, AvatarFallback } from '@/components/ui/avatar';
+import { Input } from '@/components/ui/input';
+import { Textarea } from '@/components/ui/textarea';
+import { Progress } from '@/components/ui/progress';
+import { Checkbox } from '@/components/ui/checkbox';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { 
-  Target,
-  User,
   Calendar,
-  CheckCircle,
-  AlertTriangle,
-  Edit,
   ChevronDown,
-  ChevronUp
+  ChevronUp,
+  Edit,
+  Save,
+  X,
+  Archive,
+  Building2,
+  MessageSquare,
+  Plus,
+  Trash2,
+  CheckCircle,
+  TrendingUp,
+  AlertTriangle,
+  Clock,
+  AlertCircle,
+  Target,
+  Paperclip,
+  Download,
+  Upload,
+  Edit2
 } from 'lucide-react';
-import { useState } from 'react';
-import { issuesService } from '../../services/issuesService';
-import { quarterlyPrioritiesService } from '../../services/quarterlyPrioritiesService';
-import { useAuthStore } from '../../stores/authStore';
+import { format } from 'date-fns';
 
-/**
- * PriorityCard component for displaying priority information
- * @param {Object} props - Component props
- * @param {Object} props.priority - Priority data
- * @param {string} props.priority.id - Priority ID
- * @param {string} props.priority.title - Priority title
- * @param {string} props.priority.description - Priority description
- * @param {string} props.priority.status - Priority status (on-track/off-track/at-risk/complete)
- * @param {string} props.priority.due_date - Priority due date
- * @param {Object} props.priority.owner - Priority owner object
- * @param {string} props.priority.owner_first_name - Owner's first name
- * @param {string} props.priority.owner_last_name - Owner's last name
- * @param {string} props.priority.team_id - ID of the team
- * @param {string} props.priority.teamName - Name of the team that owns this priority
- * @param {boolean} props.priority.isFromLeadership - Whether priority is from Leadership team
- * @param {boolean} props.readOnly - Whether in read-only mode
- * @param {Function} props.onIssueCreated - Issue creation handler
- * @param {Function} props.onStatusChange - Status change handler
- */
-const PriorityCard = ({ priority, readOnly = false, onIssueCreated, onStatusChange }) => {
-  const { user, isOnLeadershipTeam } = useAuthStore();
-  const [creatingIssue, setCreatingIssue] = useState(false);
-  const [issueCreatedSuccess, setIssueCreatedSuccess] = useState(false);
-  const [updatingStatus, setUpdatingStatus] = useState(false);
-  const [editingStatus, setEditingStatus] = useState(false);
+const PriorityCard = ({ 
+  priority, 
+  isCompany = false,
+  isArchived = false,
+  onUpdate,
+  onArchive,
+  onAddMilestone,
+  onEditMilestone,
+  onDeleteMilestone,
+  onToggleMilestone,
+  onAddUpdate,
+  onEditUpdate,
+  onDeleteUpdate,
+  onStatusChange,
+  onUploadAttachment,
+  onDownloadAttachment,
+  onDeleteAttachment,
+  onCreateDiscussionIssue,
+  teamMembers = [],
+  readOnly = false
+}) => {
+  console.log('[PriorityCard] Rendering with:', {
+    priorityTitle: priority?.title,
+    hasMilestones: priority?.milestones?.length > 0,
+    milestones: priority?.milestones,
+    teamMembersCount: teamMembers.length
+  });
+  console.log('[PriorityCard] Handler props received:', {
+    onEditMilestone: typeof onEditMilestone,
+    onEditMilestoneExists: !!onEditMilestone,
+    onUpdateExists: !!onUpdate,
+    onAddMilestoneExists: !!onAddMilestone
+  });
   const [isExpanded, setIsExpanded] = useState(false);
-  const statusColors = {
-    'on-track': 'bg-blue-100 text-blue-700 border-blue-200',
-    'off-track': 'bg-red-100 text-red-700 border-red-200',
-    'at-risk': 'bg-yellow-100 text-yellow-700 border-yellow-200',
-    'complete': 'bg-green-100 text-green-700 border-green-200'
+  const [isEditing, setIsEditing] = useState(false);
+  const [editForm, setEditForm] = useState({
+    title: priority.title || '',
+    description: priority.description || '',
+    status: priority.status || 'on-track',
+    progress: priority.progress || 0,
+    dueDate: priority.dueDate || '',
+    ownerId: priority.owner?.id || '',
+    isCompanyPriority: priority.isCompanyPriority || false
+  });
+  const [showAddMilestone, setShowAddMilestone] = useState(false);
+  const [newMilestone, setNewMilestone] = useState({ title: '', dueDate: '' });
+  const [showAddUpdate, setShowAddUpdate] = useState(false);
+  const [updateText, setUpdateText] = useState('');
+  const [editingMilestoneId, setEditingMilestoneId] = useState(null);
+  const [editingMilestone, setEditingMilestone] = useState({ title: '', dueDate: '' });
+
+  const getStatusBorderColor = (status) => {
+    switch (status) {
+      case 'complete':
+        return 'border-l-green-500';
+      case 'on-track':
+        return 'border-l-blue-500';
+      case 'off-track':
+        return 'border-l-red-500';
+      default:
+        return 'border-l-gray-300';
+    }
   };
 
-  const statusIcons = {
-    'on-track': <Target className="h-4 w-4" />,
-    'off-track': <AlertTriangle className="h-4 w-4" />,
-    'at-risk': <AlertTriangle className="h-4 w-4" />,
-    'complete': <CheckCircle className="h-4 w-4" />
-  };
-
-  const getStatusColor = (status) => {
+  const getStatusDotColor = (status) => {
     switch (status) {
       case 'complete':
         return 'bg-green-500';
       case 'on-track':
         return 'bg-blue-500';
-      case 'at-risk':
-        return 'bg-yellow-500';
       case 'off-track':
         return 'bg-red-500';
       default:
-        return 'bg-gray-500';
+        return 'bg-gray-400';
+    }
+  };
+
+  const getUserInitials = (name) => {
+    if (!name) return '??';
+    return name.split(' ').map(n => n[0]).join('').toUpperCase();
+  };
+
+  const formatDate = (dateString) => {
+    if (!dateString) return 'No date set';
+    try {
+      if (typeof dateString === 'string' && dateString.match(/^\d{4}-\d{2}-\d{2}$/)) {
+        const [year, month, day] = dateString.split('-').map(Number);
+        const date = new Date(year, month - 1, day);
+        return format(date, 'MMM d, yyyy');
+      }
+      
+      if (typeof dateString === 'string' && dateString.includes('T')) {
+        const datePart = dateString.split('T')[0];
+        const [year, month, day] = datePart.split('-').map(Number);
+        const date = new Date(year, month - 1, day);
+        return format(date, 'MMM d, yyyy');
+      }
+      
+      const date = new Date(dateString);
+      if (isNaN(date.getTime())) {
+        return 'Invalid date';
+      }
+      const localDate = new Date(date.getFullYear(), date.getMonth(), date.getDate());
+      return format(localDate, 'MMM d, yyyy');
+    } catch (error) {
+      console.error('Error formatting date:', dateString, error);
+      return 'Invalid date';
     }
   };
 
   const getDaysUntilDue = (dueDate) => {
     if (!dueDate) return null;
+    const due = new Date(dueDate);
     const today = new Date();
     today.setHours(0, 0, 0, 0);
-    
-    const due = new Date(dueDate);
     due.setHours(0, 0, 0, 0);
-    
     const diffTime = due - today;
     const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
     return diffDays;
   };
 
-  const formatDate = (dateString) => {
-    if (!dateString) return '-';
-    const date = new Date(dateString);
-    return date.toLocaleDateString('en-US', { 
-      month: 'short', 
-      day: 'numeric',
-      year: 'numeric'
-    });
-  };
-
-  const handleCreateIssue = async () => {
-    try {
-      setCreatingIssue(true);
-      
-      const daysLeft = getDaysUntilDue(priority.due_date);
-      const ownerName = priority.owner_first_name && priority.owner_last_name 
-        ? `${priority.owner_first_name} ${priority.owner_last_name}`
-        : priority.owner?.name || 'Unassigned';
-      
-      // Add status to title if off-track or at-risk
-      const statusSuffix = (priority.status === 'off-track' || priority.status === 'at-risk') 
-        ? ` - ${priority.status.replace('-', ' ').toUpperCase()}` 
-        : '';
-        
-      const issueData = {
-        title: `${priority.title}${statusSuffix}`,
-        description: `Priority "${priority.title}" needs discussion. Status: ${priority.status || 'on-track'}. Due: ${formatDate(priority.due_date)}${daysLeft !== null ? ` (${daysLeft} days)` : ''}. Owner: ${ownerName}`,
-        timeline: 'short_term',
-        ownerId: priority.owner_id || priority.owner?.id || user?.id
-      };
-      
-      await issuesService.createIssue(issueData);
-      
-      if (onIssueCreated) {
-        onIssueCreated(`Issue created for ${priority.title}`);
-      }
-      
-      setCreatingIssue(false);
-      setIssueCreatedSuccess(true);
-      
-      // Reset success state after 3 seconds
-      setTimeout(() => {
-        setIssueCreatedSuccess(false);
-      }, 3000);
-    } catch (error) {
-      console.error('Failed to create issue:', error);
-      setCreatingIssue(false);
-      alert('Failed to create issue. Please try again.');
+  const handleSave = async () => {
+    if (onUpdate) {
+      await onUpdate(priority.id, editForm);
+      setIsEditing(false);
     }
   };
 
-  const handleStatusChange = async (newStatus) => {
-    try {
-      setUpdatingStatus(true);
-      const orgId = localStorage.getItem('impersonatedOrgId') || user?.organizationId || user?.organization_id;
-      const teamId = user?.teamId || '00000000-0000-0000-0000-000000000000';
-      
-      await quarterlyPrioritiesService.updatePriority(orgId, teamId, priority.id, {
-        status: newStatus
-      });
-      
-      // Update local state
-      priority.status = newStatus;
-      setEditingStatus(false);
-      
-      // Notify parent component
-      if (onStatusChange) {
-        onStatusChange(priority.id, newStatus);
-      }
-      
-      setUpdatingStatus(false);
-    } catch (error) {
-      console.error('Failed to update status:', error);
-      setUpdatingStatus(false);
-      alert('Failed to update status. Please try again.');
+  const handleAddMilestone = async () => {
+    if (onAddMilestone && newMilestone.title && newMilestone.dueDate) {
+      await onAddMilestone(priority.id, newMilestone);
+      setNewMilestone({ title: '', dueDate: '', ownerId: priority.owner?.id });
+      setShowAddMilestone(false);
     }
   };
 
-
-  // Always show the Make an Issue button unless in read-only mode
-  const showCreateIssue = !readOnly;
+  const handleAddUpdate = async () => {
+    if (onAddUpdate && updateText) {
+      await onAddUpdate(priority.id, updateText);
+      setUpdateText('');
+      setShowAddUpdate(false);
+    }
+  };
 
   return (
-    <Card className={priority.status === 'off-track' ? 'border-red-200' : ''}>
-      <CardHeader className="pb-3">
-        <div className="flex items-start justify-between">
-          <div className="flex-1">
-            <div className="flex items-center gap-2">
-              <div className={`w-3 h-3 rounded-full ${getStatusColor(priority.status)}`} />
-              <h3 className="font-medium">
-                {priority.title}
-                {priority.isFromLeadership && priority.owner && (
-                  <span className="text-sm font-normal text-gray-600 ml-2">
-                    ({priority.owner.name || `${priority.owner_first_name} ${priority.owner_last_name}`})
-                  </span>
+    <div className="group">
+      <Card className={`transition-all duration-200 border-l-4 ${getStatusBorderColor(isEditing ? editForm.status : priority.status)} hover:shadow-sm bg-white overflow-hidden`}>
+        <CardHeader className="pb-4">
+          <div className="flex items-start justify-between">
+            <div className="flex-1 min-w-0">
+              <div className="flex items-center gap-3 mb-3">
+                {onStatusChange && !readOnly && !isEditing && (
+                  <Checkbox
+                    checked={priority.status === 'complete'}
+                    onCheckedChange={(checked) => {
+                      onStatusChange(priority.id, checked ? 'complete' : 'on-track');
+                    }}
+                    className="flex-shrink-0"
+                  />
                 )}
-              </h3>
-              {priority.teamName && (
-                <Badge variant={priority.isFromLeadership ? "default" : "secondary"} className="text-xs">
-                  {priority.teamName}
-                </Badge>
-              )}
-            </div>
-            {priority.description && isExpanded && (
-              <p className="text-sm text-gray-600 mt-1">{priority.description}</p>
-            )}
-          </div>
-          {!readOnly && !editingStatus ? (
-            <Button
-              variant="ghost"
-              size="sm"
-              className="h-auto p-1"
-              onClick={() => setEditingStatus(true)}
-              disabled={updatingStatus}
-            >
-              <Badge variant="outline" className={statusColors[priority.status] || statusColors['on-track']}>
-                <span className="flex items-center gap-1">
-                  {statusIcons[priority.status] || statusIcons['on-track']}
-                  {priority.status || 'on-track'}
-                  <Edit className="h-3 w-3 ml-1" />
-                </span>
-              </Badge>
-            </Button>
-          ) : editingStatus ? (
-            <Select 
-              value={priority.status || 'on-track'} 
-              onValueChange={handleStatusChange}
-              disabled={updatingStatus}
-            >
-              <SelectTrigger className="w-32">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="on-track">On Track</SelectItem>
-                <SelectItem value="off-track">Off Track</SelectItem>
-                <SelectItem value="at-risk">At Risk</SelectItem>
-                <SelectItem value="complete">Complete</SelectItem>
-              </SelectContent>
-            </Select>
-          ) : (
-            <Badge variant="outline" className={statusColors[priority.status] || statusColors['on-track']}>
-              <span className="flex items-center gap-1">
-                {statusIcons[priority.status] || statusIcons['on-track']}
-                {priority.status || 'on-track'}
-              </span>
-            </Badge>
-          )}
-        </div>
-      </CardHeader>
-      
-      <CardContent>
-        {isExpanded && (
-          <div className="space-y-3">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-4 text-sm text-gray-600">
-                {priority.owner_first_name && (
-                  <div className="flex items-center gap-1">
-                    <User className="h-4 w-4" />
-                    <span>{priority.owner_first_name} {priority.owner_last_name}</span>
+                {!onStatusChange || readOnly || isEditing ? (
+                  <div className={`w-2 h-2 rounded-full flex-shrink-0 ${getStatusDotColor(isEditing ? editForm.status : priority.status)}`} />
+                ) : null}
+                {isEditing ? (
+                  <Input
+                    value={editForm.title}
+                    onChange={(e) => setEditForm({ ...editForm, title: e.target.value })}
+                    className="flex-1 text-lg font-semibold border-0 p-0 focus:ring-0 shadow-none"
+                  />
+                ) : (
+                  <h3 className={`text-lg font-semibold text-gray-900 flex-1 line-clamp-2 ${priority.status === 'complete' ? 'line-through text-gray-500' : ''}`}>
+                    {priority.title}
+                  </h3>
+                )}
+                
+                {isCompany && (
+                  <Badge variant="outline" className="text-xs bg-blue-50 text-blue-700 border-blue-200">
+                    <Building2 className="h-3 w-3 mr-1" />
+                    Company
+                  </Badge>
+                )}
+                
+                {(() => {
+                  const overdueMilestones = (priority.milestones || []).filter(
+                    m => !m.completed && getDaysUntilDue(m.dueDate) < 0
+                  );
+                  if (overdueMilestones.length > 0) {
+                    return (
+                      <Badge variant="outline" className="text-xs bg-red-50 text-red-700 border-red-200">
+                        <AlertCircle className="h-3 w-3 mr-1" />
+                        {overdueMilestones.length} Overdue
+                      </Badge>
+                    );
+                  }
+                  return null;
+                })()}
+              </div>
+
+              <div className="flex items-center gap-4 text-sm text-gray-600 mb-2">
+                {isEditing ? (
+                  <>
+                    <div className="flex items-center gap-2">
+                      <Avatar className="h-6 w-6">
+                        <AvatarFallback className="text-xs bg-gray-100">
+                          {getUserInitials(teamMembers.find(m => m.id === editForm.ownerId)?.name || priority.owner?.name)}
+                        </AvatarFallback>
+                      </Avatar>
+                      <Select
+                        value={editForm.ownerId}
+                        onValueChange={(value) => setEditForm({ ...editForm, ownerId: value })}
+                      >
+                        <SelectTrigger className="w-[200px] h-8">
+                          <SelectValue placeholder="Select owner" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {teamMembers.map((member) => (
+                            <SelectItem key={member.id} value={member.id}>
+                              {member.name}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    
+                    <div className="flex items-center gap-1">
+                      <Calendar className="h-4 w-4 text-gray-400" />
+                      <Input
+                        type="date"
+                        value={editForm.dueDate}
+                        onChange={(e) => setEditForm({ ...editForm, dueDate: e.target.value })}
+                        className="h-8 w-[150px]"
+                      />
+                    </div>
+                  </>
+                ) : (
+                  <>
+                    <div className="flex items-center gap-2">
+                      <Avatar className="h-6 w-6">
+                        <AvatarFallback className="text-xs bg-gray-100">
+                          {getUserInitials(priority.owner?.name)}
+                        </AvatarFallback>
+                      </Avatar>
+                      <span>{priority.owner?.name}</span>
+                    </div>
+                    
+                    <div className="flex items-center gap-1">
+                      <Calendar className="h-4 w-4 text-gray-400" />
+                      <span>{formatDate(priority.dueDate)}</span>
+                    </div>
+                  </>
+                )}
+
+                {onStatusChange && !isEditing && priority.status !== 'complete' ? (
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => {
+                      const currentStatus = priority.status || 'on-track';
+                      const newStatus = currentStatus === 'on-track' ? 'off-track' : 'on-track';
+                      onStatusChange(priority.id, newStatus);
+                    }}
+                    className={`flex items-center gap-2 ${
+                      priority.status === 'off-track' ? 'border-red-300 bg-red-50 hover:bg-red-100' :
+                      'border-green-300 bg-green-50 hover:bg-green-100'
+                    }`}
+                  >
+                    <div className={`w-2 h-2 rounded-full ${getStatusDotColor(priority.status)}`} />
+                    <span className="capitalize font-medium">
+                      {(priority.status || 'on-track').replace('-', ' ')}
+                    </span>
+                  </Button>
+                ) : (
+                  <div className="flex items-center gap-2">
+                    <div className={`w-1.5 h-1.5 rounded-full ${getStatusDotColor(isEditing ? editForm.status : priority.status)}`} />
+                    <span className="capitalize">{(isEditing ? editForm.status : priority.status).replace('-', ' ')}</span>
                   </div>
                 )}
-                {priority.due_date && (
-                  <div className="flex items-center gap-1">
-                    <Calendar className="h-4 w-4" />
-                    <span>
-                      {new Date(priority.due_date).toLocaleDateString('en-US', { 
-                        month: 'short', 
-                        day: 'numeric' 
-                      })}
+                
+                {/* Milestone indicator */}
+                {priority.milestones && priority.milestones.length > 0 && (
+                  <div className="flex items-center gap-1.5 text-xs">
+                    <Target className="h-3.5 w-3.5 text-gray-400" />
+                    <span className="text-gray-600">
+                      {priority.milestones.filter(m => m.completed).length}/{priority.milestones.length}
                     </span>
+                    {priority.progress > 0 && (
+                      <span className="text-gray-500">({priority.progress}%)</span>
+                    )}
                   </div>
                 )}
               </div>
+
+              {isEditing ? (
+                <Textarea
+                  value={editForm.description}
+                  onChange={(e) => setEditForm({ ...editForm, description: e.target.value })}
+                  className="mt-2 text-sm resize-none"
+                  rows={2}
+                  placeholder="Priority description..."
+                />
+              ) : (
+                priority.description && (
+                  <p className="text-sm text-gray-700 whitespace-pre-wrap leading-relaxed">
+                    {priority.description}
+                  </p>
+                )
+              )}
+            </div>
+            
+            <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity ml-4">
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => setIsExpanded(!isExpanded)}
+                className="h-8 w-8 p-0 hover:bg-gray-100"
+              >
+                {isExpanded ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
+              </Button>
               
-              {showCreateIssue && (
-                <Button
-                  size="sm"
-                  variant={issueCreatedSuccess ? "default" : "outline"}
-                  className={issueCreatedSuccess 
-                    ? "h-8 px-3 bg-green-600 hover:bg-green-700 text-white" 
-                    : "h-8 px-3 text-orange-600 border-orange-300 hover:bg-orange-50"
-                  }
-                  onClick={handleCreateIssue}
-                  disabled={creatingIssue || issueCreatedSuccess}
-                  title="Create an issue to discuss this priority"
-                >
-                  {creatingIssue ? (
-                    <>
-                      <span className="animate-spin mr-1">⏳</span>
-                      <span className="text-xs">Creating...</span>
-                    </>
-                  ) : issueCreatedSuccess ? (
-                    <>
-                      <CheckCircle className="h-4 w-4 mr-1" />
-                      <span className="text-xs">Issue Created!</span>
-                    </>
-                  ) : (
-                    <>
-                      <AlertTriangle className="h-4 w-4 mr-1" />
-                      <span className="text-xs">Make an Issue</span>
-                    </>
+              {isEditing ? (
+                <>
+                  <Button 
+                    variant="ghost" 
+                    size="sm" 
+                    onClick={handleSave}
+                    className="h-8 w-8 p-0 hover:bg-green-100"
+                  >
+                    <Save className="h-4 w-4 text-green-600" />
+                  </Button>
+                  <Button 
+                    variant="ghost" 
+                    size="sm" 
+                    onClick={() => setIsEditing(false)}
+                    className="h-8 w-8 p-0 hover:bg-red-100"
+                  >
+                    <X className="h-4 w-4 text-red-600" />
+                  </Button>
+                </>
+              ) : (
+                <>
+                  <Button 
+                    variant="ghost" 
+                    size="sm" 
+                    onClick={() => {
+                      setEditForm({
+                        title: priority.title || '',
+                        description: priority.description || '',
+                        status: priority.status || 'on-track',
+                        progress: priority.progress || 0,
+                        dueDate: priority.dueDate ? (
+                          priority.dueDate.includes('T') 
+                            ? priority.dueDate.split('T')[0]
+                            : priority.dueDate
+                        ) : '',
+                        ownerId: priority.owner?.id || '',
+                        isCompanyPriority: priority.isCompanyPriority || false
+                      });
+                      setIsEditing(true);
+                    }}
+                    className="h-8 w-8 p-0 hover:bg-blue-100"
+                  >
+                    <Edit className="h-4 w-4 text-blue-600" />
+                  </Button>
+                  
+                  {!isArchived && onArchive && (
+                    <Button 
+                      variant="ghost" 
+                      size="sm" 
+                      onClick={() => onArchive(priority.id)}
+                      className="h-8 w-8 p-0 hover:bg-orange-100"
+                    >
+                      <Archive className="h-4 w-4 text-orange-600" />
+                    </Button>
                   )}
-                </Button>
+                </>
               )}
             </div>
           </div>
-        )}
-        
-        <div className="flex justify-center">
-          <Button
-            variant="ghost"
-            size="sm"
-            className="text-gray-500 hover:text-gray-700"
-            onClick={() => setIsExpanded(!isExpanded)}
-          >
-            {isExpanded ? (
-              <>
-                <ChevronUp className="h-4 w-4 mr-1" />
-                Hide Details
-              </>
-            ) : (
-              <>
-                <ChevronDown className="h-4 w-4 mr-1" />
-                Show Details
-              </>
+        </CardHeader>
+
+        {isExpanded && (
+          <CardContent className="pt-0 space-y-4 border-t">
+            {/* Progress Section - Only show if milestones exist */}
+            {priority.milestones && priority.milestones.length > 0 && (
+              <div className="space-y-2">
+                <span className="text-sm font-medium text-gray-700">Progress</span>
+                <div className="flex items-center gap-3">
+                  <Progress value={priority.progress || 0} className="h-2 max-w-[200px]" />
+                  <span className="text-sm text-gray-600">{priority.progress || 0}%</span>
+                </div>
+              </div>
             )}
-          </Button>
-        </div>
-      </CardContent>
-    </Card>
+
+            {/* Quick Action Buttons */}
+            {!isArchived && !readOnly && (
+              <div className="flex gap-2 flex-wrap">
+                {!priority.milestones?.length && !showAddMilestone && onAddMilestone && (
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setShowAddMilestone(true)}
+                    className="h-7 text-xs"
+                  >
+                    <Target className="h-3 w-3 mr-1" />
+                    Add Milestone
+                  </Button>
+                )}
+                {!priority.updates?.length && !showAddUpdate && onAddUpdate && (
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setShowAddUpdate(true)}
+                    className="h-7 text-xs"
+                  >
+                    <MessageSquare className="h-3 w-3 mr-1" />
+                    Add Update
+                  </Button>
+                )}
+                {onCreateDiscussionIssue && priority.status !== 'off-track' && (
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => onCreateDiscussionIssue(priority)}
+                    className="h-7 text-xs border-orange-300 text-orange-600 hover:bg-orange-50"
+                  >
+                    <AlertTriangle className="h-3 w-3 mr-1" />
+                    Drop Down for Discussion
+                  </Button>
+                )}
+              </div>
+            )}
+
+            {/* Milestones Section */}
+            {(priority.milestones?.length > 0 || showAddMilestone) && (
+              <div className="space-y-3">
+                <div className="flex items-center gap-2">
+                  <h4 className="text-sm font-medium text-gray-700 flex items-center gap-2">
+                    <Target className="h-4 w-4" />
+                    Milestones
+                  </h4>
+                  {!showAddMilestone && onAddMilestone && (
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => setShowAddMilestone(true)}
+                      className="h-7 px-2 text-xs"
+                    >
+                      <Plus className="h-3 w-3 mr-1" />
+                      Add
+                    </Button>
+                  )}
+                </div>
+                
+                <div className="space-y-2">
+                  {priority.milestones?.map((milestone, index) => (
+                    <div key={milestone.id || index} className="group flex items-center gap-3 p-2 rounded-lg hover:bg-gray-50">
+                      <input
+                        type="checkbox"
+                        checked={milestone.completed}
+                        onChange={() => onToggleMilestone && onToggleMilestone(priority.id, milestone.id, !milestone.completed)}
+                        className="h-4 w-4 text-blue-600 rounded border-gray-300"
+                      />
+                      {editingMilestoneId === milestone.id ? (
+                        <>
+                          <Input
+                            value={editingMilestone.title}
+                            onChange={(e) => setEditingMilestone({ ...editingMilestone, title: e.target.value })}
+                            className="flex-1 h-7 text-sm"
+                            placeholder="Milestone title"
+                          />
+                          <Select
+                            value={editingMilestone.ownerId || milestone.owner_id || priority.owner?.id}
+                            onValueChange={(value) => {
+                              console.log('[FRONTEND] Owner dropdown changed to:', value);
+                              console.log('[FRONTEND] Setting editingMilestone.ownerId to:', value);
+                              setEditingMilestone({ ...editingMilestone, ownerId: value });
+                            }}
+                          >
+                            <SelectTrigger className="w-40 h-7 text-sm">
+                              <SelectValue placeholder="Owner" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              {teamMembers.length === 0 && (
+                                <div className="px-2 py-1 text-sm text-gray-500">No team members available</div>
+                              )}
+                              {teamMembers.map((member) => {
+                                console.log('[FRONTEND] Rendering team member option:', member.id, member.name);
+                                return (
+                                  <SelectItem key={member.id} value={member.id}>
+                                    {member.name}
+                                  </SelectItem>
+                                );
+                              })}
+                            </SelectContent>
+                          </Select>
+                          <Input
+                            type="date"
+                            value={editingMilestone.dueDate}
+                            onChange={(e) => setEditingMilestone({ ...editingMilestone, dueDate: e.target.value })}
+                            className="w-32 h-7 text-sm"
+                          />
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => {
+                              console.log('===========================================');
+                              console.log('[FRONTEND] MILESTONE SAVE CLICKED');
+                              console.log('===========================================');
+                              console.log('[FRONTEND] Priority ID:', priority.id);
+                              console.log('[FRONTEND] Milestone ID:', milestone.id);
+                              console.log('[FRONTEND] editingMilestone object:', JSON.stringify(editingMilestone, null, 2));
+                              console.log('[FRONTEND] editingMilestone.ownerId:', editingMilestone.ownerId);
+                              console.log('[FRONTEND] editingMilestone.ownerId type:', typeof editingMilestone.ownerId);
+                              console.log('[FRONTEND] onEditMilestone exists?', !!onEditMilestone);
+                              
+                              if (onEditMilestone) {
+                                console.log('[FRONTEND] Calling onEditMilestone with:', {
+                                  priorityId: priority.id,
+                                  milestoneId: milestone.id,
+                                  updates: editingMilestone
+                                });
+                                onEditMilestone(priority.id, milestone.id, editingMilestone);
+                              } else {
+                                console.error('[FRONTEND] ERROR: onEditMilestone is not defined!');
+                              }
+                              setEditingMilestoneId(null);
+                            }}
+                            className="h-6 w-6 p-0 hover:bg-green-100"
+                          >
+                            <Save className="h-3 w-3 text-green-600" />
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => setEditingMilestoneId(null)}
+                            className="h-6 w-6 p-0 hover:bg-red-100"
+                          >
+                            <X className="h-3 w-3 text-red-600" />
+                          </Button>
+                        </>
+                      ) : (
+                        <>
+                          <span className={`text-sm flex-1 ${milestone.completed ? 'line-through text-gray-400' : 'text-gray-700'}`}>
+                            {milestone.title}
+                          </span>
+                          {milestone.owner_name && milestone.owner_id !== priority.owner?.id && (
+                            <div className="flex items-center gap-1">
+                              <Avatar className="h-5 w-5">
+                                <AvatarFallback className="text-[10px] bg-blue-100 text-blue-700">
+                                  {getUserInitials(milestone.owner_name)}
+                                </AvatarFallback>
+                              </Avatar>
+                              <span className="text-xs text-gray-600">{milestone.owner_name.split(' ')[0]}</span>
+                            </div>
+                          )}
+                          <span className={`text-xs ${getDaysUntilDue(milestone.dueDate) < 0 && !milestone.completed ? 'text-red-600 font-medium' : 'text-gray-500'}`}>
+                            {formatDate(milestone.dueDate)}
+                          </span>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => {
+                              console.log('[PriorityCard] Entering edit mode for milestone:', {
+                                milestoneId: milestone.id,
+                                milestone_owner_id: milestone.owner_id,
+                                milestone_owner_name: milestone.owner_name,
+                                priority_owner_id: priority.owner?.id,
+                                priority_owner_name: priority.owner?.name
+                              });
+                              setEditingMilestoneId(milestone.id);
+                              setEditingMilestone({
+                                title: milestone.title,
+                                dueDate: milestone.dueDate ? (
+                                  milestone.dueDate.includes('T') 
+                                    ? milestone.dueDate.split('T')[0]
+                                    : milestone.dueDate
+                                ) : '',
+                                ownerId: milestone.owner_id || priority.owner?.id
+                              });
+                              console.log('[PriorityCard] Edit state set to:', {
+                                title: milestone.title,
+                                dueDate: milestone.dueDate,
+                                ownerId: milestone.owner_id || priority.owner?.id
+                              });
+                            }}
+                            className="h-6 w-6 p-0 opacity-0 group-hover:opacity-100 transition-opacity"
+                          >
+                            <Edit2 className="h-3 w-3 text-blue-600" />
+                          </Button>
+                          {onDeleteMilestone && (
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => onDeleteMilestone(priority.id, milestone.id)}
+                              className="h-6 w-6 p-0 opacity-0 group-hover:opacity-100"
+                            >
+                              <Trash2 className="h-3 w-3 text-red-600" />
+                            </Button>
+                          )}
+                        </>
+                      )}
+                    </div>
+                  ))}
+                  
+                  {showAddMilestone && (
+                    <div className="flex gap-2 p-2 bg-gray-50 rounded-lg">
+                      <Input
+                        value={newMilestone.title}
+                        onChange={(e) => setNewMilestone({ ...newMilestone, title: e.target.value })}
+                        placeholder="Milestone title"
+                        className="flex-1 text-sm"
+                      />
+                      <Select
+                        value={newMilestone.ownerId || priority.owner?.id}
+                        onValueChange={(value) => setNewMilestone({ ...newMilestone, ownerId: value })}
+                      >
+                        <SelectTrigger className="w-40 h-9 text-sm">
+                          <SelectValue placeholder="Owner" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {teamMembers.map((member) => (
+                            <SelectItem key={member.id} value={member.id}>
+                              {member.name}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                      <Input
+                        type="date"
+                        value={newMilestone.dueDate}
+                        onChange={(e) => setNewMilestone({ ...newMilestone, dueDate: e.target.value })}
+                        className="w-32 text-sm"
+                      />
+                      <Button
+                        size="sm"
+                        onClick={handleAddMilestone}
+                        className="bg-gray-900 hover:bg-gray-800"
+                      >
+                        Add
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => {
+                          setShowAddMilestone(false);
+                          setNewMilestone({ title: '', dueDate: '' });
+                        }}
+                      >
+                        Cancel
+                      </Button>
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
+
+            {/* Updates Section */}
+            {(priority.updates?.length > 0 || showAddUpdate) && (
+              <div className="space-y-3">
+                <div className="flex items-center gap-2">
+                  <h4 className="text-sm font-medium text-gray-700 flex items-center gap-2">
+                    <MessageSquare className="h-4 w-4" />
+                    Updates
+                  </h4>
+                  {!showAddUpdate && onAddUpdate && (
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => setShowAddUpdate(true)}
+                      className="h-7 px-2 text-xs"
+                    >
+                      <Plus className="h-3 w-3 mr-1" />
+                      Add
+                    </Button>
+                  )}
+                </div>
+                
+                <div className="space-y-2">
+                  {priority.updates?.slice(0, 3).map((update, index) => {
+                    // Debug log to check update structure
+                    if (!update.id) {
+                      console.warn('Update missing ID:', update);
+                    }
+                    return (
+                      <div key={update.id || index} className="group p-2 bg-gray-50 rounded-lg">
+                        <div className="flex items-start gap-2">
+                          <div>
+                            <p className="text-sm text-gray-700">{update.text}</p>
+                            <div className="text-xs text-gray-500 mt-1">
+                              {update.createdBy} • {formatDate(update.createdAt)}
+                            </div>
+                          </div>
+                          {(onDeleteUpdate || onEditUpdate) && (
+                            <div className="opacity-0 group-hover:opacity-100 transition-opacity flex gap-1 ml-2">
+                              {onEditUpdate && (
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
+                                  onClick={() => {
+                                    console.log('Edit update clicked:', { priorityId: priority.id, updateId: update.id, text: update.text });
+                                    onEditUpdate(priority.id, update.id, update.text);
+                                  }}
+                                  className="h-6 w-6 p-0 hover:bg-blue-100"
+                                >
+                                  <Edit2 className="h-3 w-3 text-blue-600" />
+                                </Button>
+                              )}
+                              {onDeleteUpdate && (
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
+                                  onClick={() => {
+                                    console.log('Delete update clicked:', { priorityId: priority.id, updateId: update.id });
+                                    onDeleteUpdate(priority.id, update.id);
+                                  }}
+                                  className="h-6 w-6 p-0 hover:bg-red-100"
+                                >
+                                  <Trash2 className="h-3 w-3 text-red-600" />
+                                </Button>
+                              )}
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    );
+                  })}
+                  
+                  {showAddUpdate && (
+                    <div className="space-y-2">
+                      <Textarea
+                        value={updateText}
+                        onChange={(e) => setUpdateText(e.target.value)}
+                        placeholder="Add an update..."
+                        className="text-sm"
+                        rows={2}
+                      />
+                      <div className="flex gap-2">
+                        <Button
+                          size="sm"
+                          onClick={handleAddUpdate}
+                          className="bg-gray-900 hover:bg-gray-800"
+                        >
+                          Add Update
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => {
+                            setShowAddUpdate(false);
+                            setUpdateText('');
+                          }}
+                        >
+                          Cancel
+                        </Button>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
+
+            {/* Attachments Section */}
+            {(priority.attachments?.length > 0 || onUploadAttachment) && (
+              <div className="space-y-3">
+                <div className="flex items-center gap-2">
+                  <h4 className="text-sm font-medium text-gray-700 flex items-center gap-2">
+                    <Paperclip className="h-4 w-4" />
+                    Attachments
+                  </h4>
+                  {onUploadAttachment && (
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => {
+                        const input = document.createElement('input');
+                        input.type = 'file';
+                        input.onchange = (e) => {
+                          const file = e.target.files[0];
+                          if (file) {
+                            onUploadAttachment(priority.id, file);
+                          }
+                        };
+                        input.click();
+                      }}
+                      className="h-7 px-2 text-xs"
+                    >
+                      <Upload className="h-3 w-3 mr-1" />
+                      Upload
+                    </Button>
+                  )}
+                </div>
+                
+                <div className="space-y-2">
+                  {priority.attachments?.map((attachment, index) => (
+                    <div key={attachment.id || index} className="group flex items-center gap-2 p-2 rounded-lg hover:bg-gray-50">
+                      <Paperclip className="h-4 w-4 text-gray-400" />
+                      <span className="text-sm text-gray-700">{attachment.fileName}</span>
+                      <span className="text-xs text-gray-500">
+                        {attachment.fileSize ? `(${Math.round(attachment.fileSize / 1024)}KB)` : ''}
+                      </span>
+                      {onDownloadAttachment && (
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => onDownloadAttachment(priority.id, attachment.id)}
+                          className="h-6 w-6 p-0 opacity-0 group-hover:opacity-100 ml-2"
+                        >
+                          <Download className="h-3 w-3 text-blue-600" />
+                        </Button>
+                      )}
+                      {onDeleteAttachment && (
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => onDeleteAttachment(priority.id, attachment.id)}
+                          className="h-6 w-6 p-0 opacity-0 group-hover:opacity-100"
+                        >
+                          <Trash2 className="h-3 w-3 text-red-600" />
+                        </Button>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+          </CardContent>
+        )}
+      </Card>
+    </div>
   );
 };
 

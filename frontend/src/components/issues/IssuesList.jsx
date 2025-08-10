@@ -1,14 +1,19 @@
-import { useState } from 'react';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Badge } from '@/components/ui/badge';
-import { Button } from '@/components/ui/button';
+import { useState, useEffect } from 'react';
 import { Checkbox } from '@/components/ui/checkbox';
+import { Button } from '@/components/ui/button';
 import {
   Dialog,
   DialogContent,
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
+import { Badge } from '@/components/ui/badge';
 import { 
   Edit,
   User,
@@ -17,10 +22,17 @@ import {
   ArrowRight,
   ThumbsUp,
   Clock,
-  MessageSquare,
   Archive,
-  Users
+  MoreVertical,
+  AlertCircle,
+  CheckCircle,
+  Users,
+  MessageSquare,
+  Trash2,
+  Plus
 } from 'lucide-react';
+import { Textarea } from '@/components/ui/textarea';
+import { issuesService } from '../../services/issuesService';
 
 const IssuesList = ({ 
   issues, 
@@ -36,118 +48,280 @@ const IssuesList = ({
   showVoting = false
 }) => {
   const [selectedIssue, setSelectedIssue] = useState(null);
+  const [issueUpdates, setIssueUpdates] = useState([]);
+  const [showAddUpdate, setShowAddUpdate] = useState(false);
+  const [updateText, setUpdateText] = useState('');
+  const [loadingUpdates, setLoadingUpdates] = useState(false);
+  const [savingUpdate, setSavingUpdate] = useState(false);
+
+  // Fetch updates when an issue is selected
+  useEffect(() => {
+    if (selectedIssue) {
+      fetchIssueUpdates(selectedIssue.id);
+    } else {
+      setIssueUpdates([]);
+      setShowAddUpdate(false);
+      setUpdateText('');
+    }
+  }, [selectedIssue]);
+
+  const fetchIssueUpdates = async (issueId) => {
+    try {
+      setLoadingUpdates(true);
+      const response = await issuesService.getIssueUpdates(issueId);
+      setIssueUpdates(response.data || []);
+    } catch (error) {
+      console.error('Failed to fetch issue updates:', error);
+      setIssueUpdates([]);
+    } finally {
+      setLoadingUpdates(false);
+    }
+  };
+
+  const handleAddUpdate = async () => {
+    if (!updateText.trim() || !selectedIssue) return;
+    
+    try {
+      setSavingUpdate(true);
+      const response = await issuesService.addIssueUpdate(selectedIssue.id, updateText);
+      setIssueUpdates([response.data, ...issueUpdates]);
+      setUpdateText('');
+      setShowAddUpdate(false);
+    } catch (error) {
+      console.error('Failed to add update:', error);
+    } finally {
+      setSavingUpdate(false);
+    }
+  };
+
+  const handleDeleteUpdate = async (updateId) => {
+    if (!selectedIssue || !confirm('Are you sure you want to delete this update?')) return;
+    
+    try {
+      await issuesService.deleteIssueUpdate(selectedIssue.id, updateId);
+      setIssueUpdates(issueUpdates.filter(u => u.id !== updateId));
+    } catch (error) {
+      console.error('Failed to delete update:', error);
+    }
+  };
 
   const formatDate = (dateString) => {
     const date = new Date(dateString);
+    const now = new Date();
+    const diffTime = now - date;
+    const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24));
+    
+    if (diffDays === 0) return 'Today';
+    if (diffDays === 1) return 'Yesterday';
+    if (diffDays < 7) return `${diffDays} days ago`;
+    if (diffDays < 30) return `${Math.floor(diffDays / 7)} weeks ago`;
+    
     return date.toLocaleDateString('en-US', { 
       month: 'short', 
       day: 'numeric',
-      year: 'numeric'
+      year: date.getFullYear() !== now.getFullYear() ? 'numeric' : undefined
     });
   };
 
-
   return (
     <>
-      <div className="bg-white rounded-lg shadow-sm border">
-        <Table>
-          <TableHeader>
-            <TableRow>
-              <TableHead className="w-12"></TableHead>
-              <TableHead className="w-12">#</TableHead>
-              <TableHead className="min-w-0">Issue</TableHead>
-              <TableHead className="w-32">Owner</TableHead>
-              {showVoting && <TableHead className="w-20 text-center">Votes</TableHead>}
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {issues.map((issue, index) => {
-              const hasVotes = (issue.vote_count || 0) > 0;
-              const isTopIssue = index === 0 && hasVotes;
+      <div className="space-y-3">
+        {(issues || []).map((issue, index) => {
+          const hasVotes = (issue.vote_count || 0) > 0;
+          const isTopIssue = index === 0 && hasVotes && showVoting;
+          
+          return (
+            <div
+              key={issue.id}
+              className={`
+                group relative bg-white rounded-lg border transition-all duration-200 cursor-pointer
+                ${issue.status === 'closed' ? 'opacity-60' : ''}
+                ${isTopIssue ? 'border-blue-300 shadow-sm' : 'border-gray-200 hover:border-gray-300 hover:shadow-sm'}
+              `}
+              onClick={() => setSelectedIssue(issue)}
+            >
+              {/* Status indicator - subtle left border */}
+              <div className={`absolute left-0 top-0 bottom-0 w-1 rounded-l-lg ${
+                issue.status === 'open' ? 'bg-yellow-500' : 'bg-gray-400'
+              }`} />
               
-              return (
-                <TableRow 
-                  key={issue.id} 
-                  className={`cursor-pointer transition-colors ${
-                    isTopIssue 
-                      ? 'bg-blue-50 border-blue-200 hover:bg-blue-100' 
-                      : hasVotes 
-                      ? 'bg-indigo-25 border-indigo-100 hover:bg-indigo-50'
-                      : 'hover:bg-green-50'
-                  }`}
-                >
-                <TableCell 
-                  className="w-10"
-                  onClick={(e) => e.stopPropagation()}
-                >
-                  <div className="flex items-center justify-center">
+              <div className="p-4 pl-6">
+                <div className="flex items-start gap-4">
+                  {/* Checkbox */}
+                  <div className="pt-0.5" onClick={(e) => e.stopPropagation()}>
                     <Checkbox
                       checked={issue.status === 'closed'}
                       onCheckedChange={(checked) => {
                         onStatusChange(issue.id, checked ? 'closed' : 'open');
                       }}
-                      className="data-[state=checked]:bg-green-600 data-[state=checked]:border-green-600"
+                      className="h-5 w-5 rounded border-gray-300 data-[state=checked]:bg-gray-900 data-[state=checked]:border-gray-900"
                     />
                   </div>
-                </TableCell>
-                <TableCell 
-                  className={`text-sm font-medium ${
-                    isTopIssue 
-                      ? 'text-blue-700 font-bold'
-                      : hasVotes 
-                      ? 'text-indigo-600 font-semibold'
-                      : 'text-gray-500'
-                  }`}
-                  onClick={() => setSelectedIssue(issue)}
-                >
-                  <div className="flex items-center gap-1">
-                    {isTopIssue && <span className="text-xs text-blue-600">🔥</span>}
-                    {index + 1}
-                  </div>
-                </TableCell>
-                <TableCell className="font-medium" onClick={() => setSelectedIssue(issue)}>
-                  <div className="flex items-center gap-3">
-                    <div className="flex-1">
-                      <div className={`line-clamp-1 ${
-                        issue.status === 'closed' ? 'text-gray-500' : 'text-gray-900'
-                      }`}>{issue.title}</div>
+                  
+                  {/* Main content */}
+                  <div className="flex-1 min-w-0">
+                    {/* Title with trending indicator */}
+                    <div className="flex items-start gap-2">
+                      {/* Issue Number */}
+                      <span className={`
+                        text-sm font-semibold min-w-[2rem]
+                        ${isTopIssue ? 'text-blue-600' : 'text-gray-500'}
+                      `}>
+                        #{index + 1}
+                      </span>
+                      {isTopIssue && (
+                        <span className="text-blue-600 text-sm" title="Most voted issue">🔥</span>
+                      )}
+                      <h3 className={`
+                        text-base font-medium leading-tight flex-1
+                        ${issue.status === 'closed' ? 'text-gray-400 line-through' : 'text-gray-900'}
+                      `}>
+                        {issue.title}
+                      </h3>
                     </div>
-                    <div className="flex items-center gap-2 text-gray-400">
+                    
+                    {/* Metadata - clean single line */}
+                    <div className="mt-2 flex items-center gap-3 text-sm">
+                      {/* Owner */}
+                      <span className="text-gray-500">
+                        {issue.owner_name || 'Unassigned'}
+                      </span>
+                      
+                      {/* Separator */}
+                      <span className="text-gray-300">•</span>
+                      
+                      {/* Created date */}
+                      <span className="text-gray-500">
+                        {formatDate(issue.created_at)}
+                      </span>
+                      
+                      {/* Attachments */}
                       {issue.attachment_count > 0 && (
-                        <div className="flex items-center">
-                          <Paperclip className="h-4 w-4" />
-                          <span className="text-xs ml-1">{issue.attachment_count}</span>
-                        </div>
+                        <>
+                          <span className="text-gray-300">•</span>
+                          <span className="flex items-center gap-1 text-gray-500">
+                            <Paperclip className="h-3.5 w-3.5" />
+                            {issue.attachment_count}
+                          </span>
+                        </>
+                      )}
+                      
+                      {/* Votes - only show if voting enabled */}
+                      {showVoting && (
+                        <>
+                          <span className="text-gray-300">•</span>
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              onVote(issue.id, !issue.user_has_voted);
+                            }}
+                            className={`
+                              flex items-center gap-1 text-sm font-medium
+                              ${issue.user_has_voted ? 'text-blue-600' : 'text-gray-500 hover:text-gray-700'}
+                            `}
+                          >
+                            <ThumbsUp className={`h-3.5 w-3.5 ${issue.user_has_voted ? 'fill-current' : ''}`} />
+                            {issue.vote_count || 0}
+                          </button>
+                        </>
+                      )}
+                      
+                      {/* Status dot for closed items */}
+                      {issue.status === 'closed' && (
+                        <>
+                          <span className="text-gray-300">•</span>
+                          <span className="flex items-center gap-1 text-green-600 text-sm font-medium">
+                            <CheckCircle className="h-3.5 w-3.5" />
+                            Solved
+                          </span>
+                        </>
                       )}
                     </div>
                   </div>
-                </TableCell>
-                <TableCell onClick={() => setSelectedIssue(issue)} className="max-w-0">
-                  <span className="text-sm text-gray-600 truncate block">
-                    {issue.owner_name || 'Unassigned'}
-                  </span>
-                </TableCell>
-                {showVoting && (
-                  <TableCell className="text-center" onClick={() => setSelectedIssue(issue)}>
-                    <Button
-                      variant={issue.user_has_voted ? "default" : "outline"}
-                      size="sm"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        onVote(issue.id, !issue.user_has_voted);
-                      }}
-                      className="h-8 px-2"
+                  
+                  {/* Actions menu - visible on hover */}
+                  {!readOnly && (
+                    <div 
+                      className="opacity-0 group-hover:opacity-100 transition-opacity"
+                      onClick={(e) => e.stopPropagation()}
                     >
-                      <ThumbsUp className={`h-3 w-3 ${issue.user_has_voted ? 'fill-current' : ''}`} />
-                      <span className="ml-1 text-xs">{issue.vote_count || 0}</span>
-                    </Button>
-                  </TableCell>
-                )}
-              </TableRow>
-              );
-            })}
-          </TableBody>
-        </Table>
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                          <Button 
+                            variant="ghost" 
+                            size="sm" 
+                            className="h-8 w-8 p-0 hover:bg-gray-100"
+                          >
+                            <MoreVertical className="h-4 w-4 text-gray-500" />
+                          </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end" className="w-48">
+                          <DropdownMenuItem 
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              onEdit(issue);
+                            }}
+                            className="cursor-pointer"
+                          >
+                            <Edit className="mr-2 h-4 w-4" />
+                            Edit
+                          </DropdownMenuItem>
+                          {issue.timeline === 'short_term' ? (
+                            <DropdownMenuItem 
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                onTimelineChange(issue.id, 'long_term');
+                              }}
+                              className="cursor-pointer"
+                            >
+                              <ArrowRight className="mr-2 h-4 w-4" />
+                              Move to Long Term
+                            </DropdownMenuItem>
+                          ) : (
+                            <DropdownMenuItem 
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                onTimelineChange(issue.id, 'short_term');
+                              }}
+                              className="cursor-pointer"
+                            >
+                              <ArrowRight className="mr-2 h-4 w-4" />
+                              Move to Short Term
+                            </DropdownMenuItem>
+                          )}
+                          {issue.status === 'closed' && (
+                            <DropdownMenuItem 
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                onArchive(issue.id);
+                              }}
+                              className="cursor-pointer text-red-600 focus:text-red-600"
+                            >
+                              <Archive className="mr-2 h-4 w-4" />
+                              Archive
+                            </DropdownMenuItem>
+                          )}
+                          {onMoveToTeam && (
+                            <DropdownMenuItem 
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                onMoveToTeam(issue);
+                              }}
+                              className="cursor-pointer"
+                            >
+                              <Users className="mr-2 h-4 w-4" />
+                              Move to Team
+                            </DropdownMenuItem>
+                          )}
+                        </DropdownMenuContent>
+                      </DropdownMenu>
+                    </div>
+                  )}
+                </div>
+              </div>
+            </div>
+          );
+        })}
       </div>
 
       {/* Issue Detail Modal */}
@@ -186,9 +360,9 @@ const IssuesList = ({
                       <div className="flex items-center gap-2 text-sm">
                         <Clock className="h-4 w-4 text-gray-400" />
                         <span className="text-gray-600">Timeline:</span>
-                        <Badge variant="outline" className="text-xs">
+                        <span className="font-medium">
                           {selectedIssue.timeline === 'short_term' ? 'Short Term' : 'Long Term'}
-                        </Badge>
+                        </span>
                       </div>
                     </div>
                   </div>
@@ -197,88 +371,145 @@ const IssuesList = ({
                     <h4 className="text-sm font-medium text-gray-700 mb-2">Status</h4>
                     <div className="space-y-2">
                       <div className="flex items-center gap-2">
-                        <Badge className={`${getStatusColor(selectedIssue.status)}`}>
-                          {getStatusIcon(selectedIssue.status)}
-                          <span className="ml-1 capitalize">{selectedIssue.status}</span>
-                        </Badge>
+                        <div className={`w-2 h-2 rounded-full ${
+                          selectedIssue.status === 'open' ? 'bg-yellow-500' : 'bg-gray-400'
+                        }`} />
+                        <span className="text-sm font-medium capitalize">{selectedIssue.status}</span>
                       </div>
-                      {selectedIssue.attachment_count > 0 && (
-                        <div className="flex items-center gap-2 text-sm text-gray-600">
-                          <Paperclip className="h-4 w-4 text-gray-400" />
-                          <span>{selectedIssue.attachment_count} attachment{selectedIssue.attachment_count > 1 ? 's' : ''}</span>
+                      {selectedIssue.vote_count > 0 && (
+                        <div className="flex items-center gap-2 text-sm">
+                          <ThumbsUp className="h-4 w-4 text-gray-400" />
+                          <span className="text-gray-600">Votes:</span>
+                          <span className="font-medium">{selectedIssue.vote_count}</span>
                         </div>
                       )}
-                      {showVoting && (
-                        <div className="flex items-center gap-2 text-sm text-gray-600">
-                          <ThumbsUp className="h-4 w-4 text-gray-400" />
-                          <span>{selectedIssue.vote_count || 0} vote{(selectedIssue.vote_count || 0) !== 1 ? 's' : ''}</span>
+                      {selectedIssue.attachment_count > 0 && (
+                        <div className="flex items-center gap-2 text-sm">
+                          <Paperclip className="h-4 w-4 text-gray-400" />
+                          <span className="text-gray-600">Attachments:</span>
+                          <span className="font-medium">{selectedIssue.attachment_count}</span>
                         </div>
                       )}
                     </div>
                   </div>
                 </div>
 
-                {selectedIssue.is_published_to_departments && (
-                  <div className="border-t pt-4">
-                    <div className="flex items-center gap-2 text-sm text-gray-600">
-                      <MessageSquare className="h-4 w-4 text-gray-400" />
-                      <span>Published to departments on {formatDate(selectedIssue.published_at)}</span>
-                    </div>
-                  </div>
-                )}
-
-                {!readOnly && (
-                  <div className="flex justify-between items-center pt-4 border-t">
-                    <div className="flex gap-2">
+                {/* Updates Section */}
+                <div className="space-y-3 pt-4 border-t">
+                  <div className="flex items-center justify-between">
+                    <h4 className="text-sm font-medium text-gray-700 flex items-center gap-2">
+                      <MessageSquare className="h-4 w-4" />
+                      Updates ({issueUpdates.length})
+                    </h4>
+                    {!readOnly && !showAddUpdate && (
                       <Button
                         variant="outline"
                         size="sm"
-                        onClick={() => {
-                          onArchive(selectedIssue.id);
-                          setSelectedIssue(null);
-                        }}
+                        onClick={() => setShowAddUpdate(true)}
                       >
-                        <Archive className="mr-2 h-4 w-4" />
-                        Archive
+                        <Plus className="h-3 w-3 mr-1" />
+                        Add Update
                       </Button>
-                      {onMoveToTeam && (
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => {
-                            onMoveToTeam(selectedIssue);
-                            setSelectedIssue(null);
-                          }}
-                        >
-                          <Users className="mr-2 h-4 w-4" />
-                          Move to Team
-                        </Button>
-                      )}
-                    </div>
-                    <div className="flex gap-2">
-                      <Button
-                        variant="outline"
-                        onClick={() => {
-                          onTimelineChange(selectedIssue.id, selectedIssue.timeline === 'short_term' ? 'long_term' : 'short_term');
-                          setSelectedIssue(null);
-                        }}
-                      >
-                        <ArrowRight className="mr-2 h-4 w-4" />
-                        Move to {selectedIssue.timeline === 'short_term' ? 'Long Term' : 'Short Term'}
-                      </Button>
-                      <Button
-                        variant="outline"
-                        onClick={() => {
-                          onEdit(selectedIssue);
-                          setSelectedIssue(null);
-                        }}
-                      >
-                        <Edit className="mr-2 h-4 w-4" />
-                        Edit Issue
-                      </Button>
-                    </div>
+                    )}
                   </div>
-                )}
+
+                  {/* Updates List */}
+                  {loadingUpdates ? (
+                    <div className="text-sm text-gray-500">Loading updates...</div>
+                  ) : (
+                    <>
+                      {issueUpdates.length > 0 && (
+                        <div className="space-y-2 max-h-48 overflow-y-auto">
+                          {issueUpdates.map(update => (
+                            <div key={update.id} className="group bg-gray-50 rounded-lg p-3">
+                              <div className="flex items-start justify-between">
+                                <div className="flex-1">
+                                  <p className="text-sm text-gray-800 whitespace-pre-wrap">{update.update_text}</p>
+                                  <div className="flex items-center gap-2 mt-1">
+                                    <span className="text-xs text-gray-500">
+                                      {update.created_by_name} • {formatDate(update.created_at)}
+                                    </span>
+                                  </div>
+                                </div>
+                                {!readOnly && (
+                                  <Button
+                                    variant="ghost"
+                                    size="sm"
+                                    onClick={() => handleDeleteUpdate(update.id)}
+                                    className="opacity-0 group-hover:opacity-100 transition-opacity h-6 w-6 p-0"
+                                  >
+                                    <Trash2 className="h-3 w-3 text-red-500" />
+                                  </Button>
+                                )}
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+
+                      {/* Add Update Form */}
+                      {showAddUpdate && (
+                        <div className="space-y-2">
+                          <Textarea
+                            value={updateText}
+                            onChange={(e) => setUpdateText(e.target.value)}
+                            placeholder="Add an update..."
+                            className="text-sm"
+                            rows={3}
+                          />
+                          <div className="flex gap-2">
+                            <Button
+                              size="sm"
+                              onClick={handleAddUpdate}
+                              disabled={!updateText.trim() || savingUpdate}
+                              className="bg-gray-900 hover:bg-gray-800"
+                            >
+                              {savingUpdate ? 'Saving...' : 'Add Update'}
+                            </Button>
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => {
+                                setShowAddUpdate(false);
+                                setUpdateText('');
+                              }}
+                            >
+                              Cancel
+                            </Button>
+                          </div>
+                        </div>
+                      )}
+
+                      {issueUpdates.length === 0 && !showAddUpdate && (
+                        <p className="text-sm text-gray-500 text-center py-2">
+                          No updates yet
+                        </p>
+                      )}
+                    </>
+                  )}
+                </div>
+
+                {/* Action Buttons */}
+                <div className="flex justify-end gap-2 pt-4 border-t">
+                  <Button
+                    variant="outline"
+                    onClick={() => setSelectedIssue(null)}
+                  >
+                    Close
+                  </Button>
+                  {!readOnly && (
+                    <Button
+                      onClick={() => {
+                        onEdit(selectedIssue);
+                        // Keep modal open briefly to ensure edit dialog opens
+                        setTimeout(() => setSelectedIssue(null), 100);
+                      }}
+                    >
+                      <Edit className="mr-2 h-4 w-4" />
+                      Edit Issue
+                    </Button>
+                  )}
+                </div>
               </div>
             </>
           )}

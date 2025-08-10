@@ -1,30 +1,66 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, Component } from 'react';
 import { useAuthStore } from '../stores/authStore';
 import { issuesService } from '../services/issuesService';
 import { useDepartment } from '../contexts/DepartmentContext';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import { Badge } from '@/components/ui/badge';
 import { 
   Plus,
   Loader2,
   AlertCircle,
-  Calendar,
-  User,
-  Paperclip,
-  CheckCircle,
-  Clock,
+  CheckSquare,
   AlertTriangle,
   Archive
 } from 'lucide-react';
 import IssueDialog from '../components/issues/IssueDialog';
-import IssuesList from '../components/issues/IssuesList';
+import IssuesListClean from '../components/issues/IssuesListClean';
 import ArchivedIssuesList from '../components/issues/ArchivedIssuesList';
-import { MoveIssueDialog } from '../components/issues/MoveIssueDialog';
 
-const IssuesPage = () => {
+// Error Boundary Component
+class IssuesErrorBoundary extends Component {
+  constructor(props) {
+    super(props);
+    this.state = { hasError: false, error: null };
+  }
+
+  static getDerivedStateFromError(error) {
+    return { hasError: true, error };
+  }
+
+  componentDidCatch(error, errorInfo) {
+    console.error('Issues Page Error:', error, errorInfo);
+  }
+
+  render() {
+    if (this.state.hasError) {
+      return (
+        <div className="p-6">
+          <Alert className="border-red-200 bg-red-50">
+            <AlertCircle className="h-4 w-4 text-red-600" />
+            <AlertDescription>
+              <div className="space-y-2">
+                <p>An error occurred loading the issues page.</p>
+                <p className="text-sm">Error: {this.state.error?.message}</p>
+                <Button 
+                  onClick={() => window.location.reload()} 
+                  size="sm"
+                  variant="outline"
+                >
+                  Refresh Page
+                </Button>
+              </div>
+            </AlertDescription>
+          </Alert>
+        </div>
+      );
+    }
+
+    return this.props.children;
+  }
+}
+
+const IssuesPageClean = () => {
   const { user } = useAuthStore();
   const { selectedDepartment } = useDepartment();
   const [loading, setLoading] = useState(true);
@@ -41,8 +77,6 @@ const IssuesPage = () => {
   // Dialog states
   const [showIssueDialog, setShowIssueDialog] = useState(false);
   const [editingIssue, setEditingIssue] = useState(null);
-  const [showMoveDialog, setShowMoveDialog] = useState(false);
-  const [movingIssue, setMovingIssue] = useState(null);
 
   useEffect(() => {
     fetchIssues();
@@ -60,9 +94,16 @@ const IssuesPage = () => {
         issuesService.getIssues(null, true, selectedDepartment?.id) // Get all archived issues
       ]);
       
-      setShortTermIssues(shortTermResponse.data.issues || []);
-      setLongTermIssues(longTermResponse.data.issues || []);
-      setArchivedIssues(archivedResponse.data.issues || []);
+      // Ensure we have valid arrays and log for debugging
+      const shortTerm = Array.isArray(shortTermResponse?.data?.issues) ? shortTermResponse.data.issues : [];
+      const longTerm = Array.isArray(longTermResponse?.data?.issues) ? longTermResponse.data.issues : [];
+      const archived = Array.isArray(archivedResponse?.data?.issues) ? archivedResponse.data.issues : [];
+      
+      console.log('Issues loaded:', { shortTerm: shortTerm.length, longTerm: longTerm.length, archived: archived.length });
+      
+      setShortTermIssues(shortTerm);
+      setLongTermIssues(longTerm);
+      setArchivedIssues(archived);
       
       // Team members come from either response (they're the same)
       setTeamMembers(shortTermResponse.data.teamMembers || []);
@@ -108,7 +149,6 @@ const IssuesPage = () => {
     }
   };
 
-
   const handleStatusChange = async (issueId, newStatus) => {
     try {
       // Optimistically update the local state first for instant feedback
@@ -127,7 +167,6 @@ const IssuesPage = () => {
       await issuesService.updateIssue(issueId, { status: newStatus });
       
       // Don't refetch - the optimistic update handles it
-      // Only refetch on error (see catch block)
     } catch (error) {
       console.error('Failed to update issue status:', error);
       setError('Failed to update issue status');
@@ -180,7 +219,6 @@ const IssuesPage = () => {
     }
   };
 
-
   const handleArchive = async (issueId) => {
     try {
       await issuesService.archiveIssue(issueId);
@@ -198,7 +236,7 @@ const IssuesPage = () => {
       const closedIssues = currentIssues.filter(issue => issue.status === 'closed');
       
       if (closedIssues.length === 0) {
-        setError('No closed issues to archive. Check the boxes next to issues you want to archive.');
+        setError('No closed issues to archive');
         return;
       }
       
@@ -228,18 +266,6 @@ const IssuesPage = () => {
     }
   };
 
-  const handleMoveToTeam = (issue) => {
-    setMovingIssue(issue);
-    setShowMoveDialog(true);
-  };
-
-  const handleMoveSuccess = async (message) => {
-    setSuccess(message);
-    setShowMoveDialog(false);
-    setMovingIssue(null);
-    await fetchIssues();
-  };
-
   const getStatusColor = (status) => {
     switch (status) {
       case 'open':
@@ -256,14 +282,14 @@ const IssuesPage = () => {
       case 'open':
         return <AlertTriangle className="h-4 w-4" />;
       case 'closed':
-        return <CheckCircle className="h-4 w-4" />;
+        return <CheckSquare className="h-4 w-4" />;
       default:
         return null;
     }
   };
 
   const currentIssues = activeTab === 'short_term' ? shortTermIssues : activeTab === 'long_term' ? longTermIssues : archivedIssues;
-  const closedIssuesCount = currentIssues.filter(issue => issue.status === 'closed').length;
+  const closedIssuesCount = (currentIssues || []).filter(issue => issue.status === 'closed').length;
 
   if (loading) {
     return (
@@ -274,85 +300,91 @@ const IssuesPage = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <div className="max-w-7xl mx-auto p-6 space-y-6">
+    <div className="min-h-screen bg-white">
+      <div className="max-w-6xl mx-auto px-8 py-8">
+        {/* Clean Header */}
         <div className="flex items-center justify-between mb-8">
-          <div>
-            <h1 className="text-4xl font-bold text-gray-900">
-              Issues List{selectedDepartment ? ` - ${selectedDepartment.name}` : ''}
-            </h1>
-            <p className="text-gray-600 mt-2 text-lg">Track and resolve organizational issues</p>
-          </div>
-          <div className="flex gap-2">
+          <h1 className="text-2xl font-semibold text-gray-900">
+            Issues{selectedDepartment ? ` - ${selectedDepartment.name}` : ''}
+          </h1>
+          <div className="flex items-center gap-3">
+            {activeTab !== 'archived' && closedIssuesCount > 0 && (
+              <Button 
+                onClick={handleArchiveSelected} 
+                variant="ghost"
+                className="text-gray-600 hover:text-gray-900"
+              >
+                <Archive className="mr-2 h-4 w-4" />
+                Archive Solved ({closedIssuesCount})
+              </Button>
+            )}
             {activeTab !== 'archived' && (
-              <>
-                <Button 
-                  onClick={handleArchiveSelected} 
-                  variant="outline"
-                  className="text-gray-600 hover:text-gray-800 border-gray-300"
-                  disabled={closedIssuesCount === 0}
-                >
-                  <Archive className="mr-2 h-4 w-4" />
-                  Archive Closed Issues ({closedIssuesCount})
-                </Button>
-                <Button onClick={handleCreateIssue} className="bg-indigo-600 hover:bg-indigo-700 text-white">
-                  <Plus className="mr-2 h-4 w-4" />
-                  Add Issue
-                </Button>
-              </>
+              <Button onClick={handleCreateIssue} className="bg-gray-900 hover:bg-gray-800 text-white">
+                <Plus className="mr-2 h-4 w-4" />
+                New Issue
+              </Button>
             )}
           </div>
         </div>
 
+        {/* Alerts */}
         {error && (
-          <Alert className="border-red-200 bg-red-50">
+          <Alert className="border-red-200 bg-red-50 mb-6">
             <AlertCircle className="h-4 w-4 text-red-600" />
             <AlertDescription className="text-red-800">{error}</AlertDescription>
           </Alert>
         )}
 
         {success && (
-          <Alert className="border-green-200 bg-green-50">
-            <AlertCircle className="h-4 w-4 text-green-600" />
+          <Alert className="border-green-200 bg-green-50 mb-6">
+            <CheckSquare className="h-4 w-4 text-green-600" />
             <AlertDescription className="text-green-800">{success}</AlertDescription>
           </Alert>
         )}
 
-        <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-          <TabsList className="grid w-full grid-cols-3 h-14 bg-white shadow-sm">
-            <TabsTrigger value="short_term" className="data-[state=active]:bg-indigo-600 data-[state=active]:text-white text-lg font-medium">
-              <Calendar className="mr-2 h-5 w-5" />
-              Short Term (This Quarter)
+        {/* Clean Tabs */}
+        <Tabs value={activeTab} onValueChange={setActiveTab}>
+          <TabsList className="bg-transparent border-0 p-0 h-auto mb-8 border-b border-gray-100">
+            <TabsTrigger 
+              value="short_term" 
+              className="data-[state=active]:bg-transparent data-[state=active]:shadow-none data-[state=active]:border-b-2 data-[state=active]:border-gray-900 rounded-none pb-3 px-4 font-medium"
+            >
+              Short Term
+              <span className="ml-2 text-sm text-gray-500">({shortTermIssues.length})</span>
             </TabsTrigger>
-            <TabsTrigger value="long_term" className="data-[state=active]:bg-indigo-600 data-[state=active]:text-white text-lg font-medium">
-              <Calendar className="mr-2 h-5 w-5" />
-              Long Term (Next Quarter)
+            <TabsTrigger 
+              value="long_term" 
+              className="data-[state=active]:bg-transparent data-[state=active]:shadow-none data-[state=active]:border-b-2 data-[state=active]:border-gray-900 rounded-none pb-3 px-4 font-medium"
+            >
+              Long Term
+              <span className="ml-2 text-sm text-gray-500">({longTermIssues.length})</span>
             </TabsTrigger>
-            <TabsTrigger value="archived" className="data-[state=active]:bg-indigo-600 data-[state=active]:text-white text-lg font-medium">
-              <Archive className="mr-2 h-5 w-5" />
-              Archived ({archivedIssues.length})
+            <TabsTrigger 
+              value="archived" 
+              className="data-[state=active]:bg-transparent data-[state=active]:shadow-none data-[state=active]:border-b-2 data-[state=active]:border-gray-900 rounded-none pb-3 px-4 font-medium"
+            >
+              Archived
+              <span className="ml-2 text-sm text-gray-500">({archivedIssues.length})</span>
             </TabsTrigger>
           </TabsList>
 
-          <TabsContent value={activeTab} className="space-y-4">
+          <TabsContent value={activeTab} className="mt-0">
             {currentIssues.length === 0 ? (
-              <Card className="text-center py-12">
-                <CardContent>
-                  <AlertTriangle className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-                  <h3 className="text-lg font-medium text-gray-900 mb-2">
-                    {activeTab === 'archived' ? 'No archived issues' : `No ${activeTab === 'short_term' ? 'short-term' : 'long-term'} issues yet`}
-                  </h3>
-                  <p className="text-gray-500 mb-6">
-                    {activeTab === 'archived' ? 'Archived issues will appear here' : 'Create your first issue to start tracking'}
-                  </p>
-                  {activeTab !== 'archived' && (
-                    <Button onClick={handleCreateIssue}>
-                      <Plus className="mr-2 h-4 w-4" />
-                      Create Issue
-                    </Button>
-                  )}
-                </CardContent>
-              </Card>
+              <div className="text-center py-16">
+                <AlertTriangle className="h-12 w-12 text-gray-300 mx-auto mb-4" />
+                <h3 className="text-lg font-medium text-gray-900 mb-2">
+                  {activeTab === 'archived' ? 'No archived issues' : `No ${activeTab === 'short_term' ? 'short-term' : 'long-term'} issues yet`}
+                </h3>
+                <p className="text-gray-500 mb-6">
+                  {activeTab === 'archived' ? 'Archived issues will appear here' : 'Create your first issue to start tracking'}
+                </p>
+                {activeTab !== 'archived' && (
+                  <Button onClick={handleCreateIssue} variant="outline" className="border-gray-300">
+                    <Plus className="mr-2 h-4 w-4" />
+                    Create Issue
+                  </Button>
+                )}
+              </div>
             ) : (
               activeTab === 'archived' ? (
                 <ArchivedIssuesList
@@ -362,14 +394,13 @@ const IssuesPage = () => {
                   getStatusIcon={getStatusIcon}
                 />
               ) : (
-                <IssuesList
+                <IssuesListClean
                   issues={currentIssues}
                   onEdit={handleEditIssue}
                   onStatusChange={handleStatusChange}
                   onTimelineChange={handleTimelineChange}
                   onArchive={handleArchive}
                   onVote={handleVote}
-                  onMoveToTeam={handleMoveToTeam}
                   getStatusColor={getStatusColor}
                   getStatusIcon={getStatusIcon}
                   showVoting={false} // Will be enabled during Weekly Accountability Meetings
@@ -391,20 +422,16 @@ const IssuesPage = () => {
           teamMembers={teamMembers}
           timeline={activeTab}
         />
-
-        {/* Move Issue Dialog */}
-        <MoveIssueDialog
-          isOpen={showMoveDialog}
-          onClose={() => {
-            setShowMoveDialog(false);
-            setMovingIssue(null);
-          }}
-          issue={movingIssue}
-          onSuccess={handleMoveSuccess}
-        />
       </div>
     </div>
   );
 };
 
-export default IssuesPage;
+// Wrap with error boundary
+const IssuesPageWithErrorBoundary = () => (
+  <IssuesErrorBoundary>
+    <IssuesPageClean />
+  </IssuesErrorBoundary>
+);
+
+export default IssuesPageWithErrorBoundary;

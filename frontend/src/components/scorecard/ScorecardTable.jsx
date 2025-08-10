@@ -1,69 +1,116 @@
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { useState } from 'react';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Target, AlertTriangle, Plus, BarChart3, Loader2, GripVertical } from 'lucide-react';
-import { useState, useEffect } from 'react';
-import { issuesService } from '../../services/issuesService';
-import { useAuthStore } from '../../stores/authStore';
-import { scorecardService } from '../../services/scorecardService';
-import MetricTrendChart from './MetricTrendChart';
+import { 
+  Edit,
+  BarChart3,
+  GripVertical,
+  Trash2,
+  AlertCircle
+} from 'lucide-react';
 
-const ScorecardTable = ({ metrics, weeklyScores, readOnly = false, onIssueCreated, isRTL = false, showTotal = true, departmentId, onMetricsReorder }) => {
-  const { user } = useAuthStore();
-  const [creatingIssue, setCreatingIssue] = useState({});
-  const [chartModal, setChartModal] = useState({ isOpen: false, metric: null, metricId: null });
-  const [draggedItem, setDraggedItem] = useState(null);
-  const [dragOverItem, setDragOverItem] = useState(null);
-  const [orderedMetrics, setOrderedMetrics] = useState(metrics);
-  const [isSaving, setIsSaving] = useState(false);
-  
-  useEffect(() => {
-    setOrderedMetrics(metrics);
-  }, [metrics]);
-  // Get week start date for a given date (Monday)
+const ScorecardTable = ({ 
+  metrics = [], 
+  weeklyScores = {}, 
+  monthlyScores = {},
+  type = 'weekly', // 'weekly' or 'monthly'
+  readOnly = false,
+  isRTL = false,
+  showTotal = true,
+  showAverage = true, // New prop to control average column
+  departmentId,
+  onIssueCreated,
+  onScoreEdit,
+  onChartOpen,
+  onMetricUpdate,
+  onMetricDelete,
+  onAddIssue, // New prop for adding metric issues
+  noWrapper = false, // Add prop to disable Card wrapper
+  maxPeriods = 10, // Control how many weeks/months to show
+  meetingMode = false // New prop for meeting display mode
+}) => {
+  // Get week start date for a given date
   const getWeekStartDate = (date) => {
     const d = new Date(date);
     const day = d.getDay();
-    const diff = d.getDate() - day + (day === 0 ? -6 : 1); // adjust when day is sunday
-    d.setDate(diff);
-    // Reset time to midnight to avoid timezone issues
-    d.setHours(0, 0, 0, 0);
-    return d;
+    const diff = d.getDate() - day + (day === 0 ? -6 : 1);
+    return new Date(d.setDate(diff));
   };
 
-  // Get the last 10 weeks
-  const getWeekDates = () => {
-    const weeks = [];
+  // Format date as "MMM D"
+  const formatWeekLabel = (date) => {
+    const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+    return `${months[date.getMonth()]} ${date.getDate()}`;
+  };
+
+  // Get week labels for the past N weeks
+  const getWeekLabels = () => {
+    const labels = [];
+    const weekDates = [];
     const today = new Date();
+    const weeksToShow = Math.min(maxPeriods, 10); // Cap at 10 weeks max
     
-    for (let i = 9; i >= 0; i--) {
+    for (let i = weeksToShow - 1; i >= 0; i--) {
       const weekStart = new Date(today);
       weekStart.setDate(today.getDate() - (i * 7));
       const mondayOfWeek = getWeekStartDate(weekStart);
       
-      // Store the week identifier in ISO format for consistent storage
-      weeks.push(mondayOfWeek.toISOString().split('T')[0]);
+      labels.push(formatWeekLabel(mondayOfWeek));
+      weekDates.push(mondayOfWeek.toISOString().split('T')[0]);
     }
     
-    return weeks;
+    return { labels, weekDates };
   };
 
-  const weekDatesOriginal = getWeekDates();
-  const weekLabelsOriginal = weekDatesOriginal.map((date, index) => {
-    const d = new Date(date);
-    const month = d.toLocaleDateString('en-US', { month: 'short' });
-    const day = d.getDate();
-    return `${month} ${day}`;
-  });
-  
-  const weekDates = isRTL ? [...weekDatesOriginal].reverse() : weekDatesOriginal;
-  const weekLabels = isRTL ? [...weekLabelsOriginal].reverse() : weekLabelsOriginal;
-  
-  // Debug logging
-  console.log('Week dates generated:', weekDates);
-  console.log('Weekly scores received:', weeklyScores);
-  console.log('Metrics:', metrics);
+  // Get month labels for the past N months
+  const getMonthLabels = () => {
+    const labels = [];
+    const monthDates = [];
+    const today = new Date();
+    const monthsToShow = Math.min(maxPeriods, 12); // Cap at 12 months max
+    
+    for (let i = monthsToShow - 1; i >= 0; i--) {
+      const date = new Date(today.getFullYear(), today.getMonth() - i, 1);
+      const monthLabel = date.toLocaleString('default', { month: 'short' }).toUpperCase();
+      const yearLabel = date.getFullYear().toString().slice(-2);
+      labels.push(`${monthLabel} ${yearLabel}`);
+      monthDates.push(date.toISOString().split('T')[0]);
+    }
+    
+    return { labels, monthDates };
+  };
 
-  // Format goal based on value type and comparison operator
+  const isWeekly = type === 'weekly';
+  const { labels: weekLabelsOriginal, weekDates: weekDatesOriginal } = isWeekly ? getWeekLabels() : { labels: [], weekDates: [] };
+  const { labels: monthLabelsOriginal, monthDates: monthDatesOriginal } = !isWeekly ? getMonthLabels() : { labels: [], monthDates: [] };
+  
+  const periodLabelsOriginal = isWeekly ? weekLabelsOriginal : monthLabelsOriginal;
+  const periodDatesOriginal = isWeekly ? weekDatesOriginal : monthDatesOriginal;
+  const periodLabels = isRTL ? [...periodLabelsOriginal].reverse() : periodLabelsOriginal;
+  const periodDates = isRTL ? [...periodDatesOriginal].reverse() : periodDatesOriginal;
+  
+  const scores = isWeekly ? weeklyScores : monthlyScores;
+
+  // Helper functions for value formatting and goal achievement
+  const formatValue = (value, valueType) => {
+    if (!value && value !== 0) return '-';
+    
+    const numValue = parseFloat(value);
+    switch (valueType) {
+      case 'currency':
+        return new Intl.NumberFormat('en-US', {
+          style: 'currency',
+          currency: 'USD',
+          minimumFractionDigits: 0,
+          maximumFractionDigits: 0
+        }).format(numValue);
+      case 'percentage':
+        return `${Math.round(numValue)}%`;
+      default:
+        return Math.round(numValue).toString();
+    }
+  };
+
   const formatGoal = (goal, valueType, comparisonOperator) => {
     if (!goal && goal !== 0) return 'No goal';
     
@@ -71,27 +118,9 @@ const ScorecardTable = ({ metrics, weeklyScores, readOnly = false, onIssueCreate
     if (valueType === 'number') {
       formattedValue = Math.round(parseFloat(goal)).toString();
     } else {
-      switch (valueType) {
-        case 'percentage':
-          formattedValue = `${Math.round(parseFloat(goal))}%`;
-          break;
-        case 'currency':
-          formattedValue = new Intl.NumberFormat('en-US', {
-            style: 'currency',
-            currency: 'USD',
-            minimumFractionDigits: 0,
-            maximumFractionDigits: 0
-          }).format(parseFloat(goal));
-          break;
-        case 'decimal':
-          formattedValue = parseFloat(goal).toFixed(2);
-          break;
-        default:
-          formattedValue = Math.round(parseFloat(goal)).toString();
-      }
+      formattedValue = formatValue(goal, valueType);
     }
     
-    // Add comparison operator
     switch (comparisonOperator) {
       case 'greater_equal':
         return `≥ ${formattedValue}`;
@@ -100,465 +129,276 @@ const ScorecardTable = ({ metrics, weeklyScores, readOnly = false, onIssueCreate
       case 'equal':
         return `= ${formattedValue}`;
       default:
-        return `≥ ${formattedValue}`; // Default to >= if not specified
+        return `≥ ${formattedValue}`;
     }
   };
 
-  // Format value based on type
-  const formatValue = (value, valueType) => {
-    if (value === null || value === undefined || value === '') return '-';
-    switch (valueType) {
-      case 'percentage':
-        return `${value}%`;
-      case 'currency':
-        return `$${parseFloat(value).toLocaleString()}`;
-      case 'decimal':
-        return parseFloat(value).toFixed(2);
-      default:
-        return value;
-    }
-  };
-
-  // Check if goal is met based on comparison operator
-  const isGoalMet = (value, goal, comparisonOperator) => {
-    if (!value || !goal) return false;
-    const numValue = parseFloat(value);
-    const numGoal = parseFloat(goal);
+  const isGoalMet = (score, goal, comparisonOperator) => {
+    if (!score || !goal) return false;
+    
+    const scoreVal = parseFloat(score);
+    const goalVal = parseFloat(goal);
     
     switch (comparisonOperator) {
-      case '>=':
-      case 'greater_equal':
-        return numValue >= numGoal;
-      case '<=':
       case 'less_equal':
-        return numValue <= numGoal;
-      case '>':
-      case 'greater':
-        return numValue > numGoal;
-      case '<':
-      case 'less':
-        return numValue < numGoal;
-      case '=':
+        return scoreVal <= goalVal;
       case 'equal':
-        return numValue === numGoal;
+        return scoreVal === goalVal;
+      case 'greater_equal':
       default:
-        return numValue >= numGoal;
+        return scoreVal >= goalVal;
     }
   };
 
-  const handleCreateIssue = async (metric, actualValue) => {
-    try {
-      setCreatingIssue(prev => ({ ...prev, [metric.id]: true }));
-      
-      const issueData = {
-        title: `${metric.name} - Off Track`,
-        description: `Metric "${metric.name}" is off track. Current: ${formatValue(actualValue, metric.value_type)}, Goal: ${formatGoal(metric.goal, metric.value_type, metric.comparison_operator)}`,
-        timeline: 'short_term',
-        ownerId: metric.ownerId || metric.owner_id || null,
-        department_id: departmentId
-      };
-      
-      console.log('Creating issue with data:', issueData);
-      await issuesService.createIssue(issueData);
-      
-      // Show success feedback
-      if (onIssueCreated) {
-        onIssueCreated(`Issue created for ${metric.name}`);
-      }
-      
-      setCreatingIssue(prev => ({ ...prev, [metric.id]: false }));
-    } catch (error) {
-      console.error('Failed to create issue:', error);
-      setCreatingIssue(prev => ({ ...prev, [metric.id]: false }));
-      alert('Failed to create issue. Please try again.');
-    }
-  };
-
-  const handleDragStart = (e, index) => {
-    setDraggedItem(index);
-    e.dataTransfer.effectAllowed = 'move';
-    e.currentTarget.style.opacity = '0.5';
-  };
-
-  const handleDragEnd = (e) => {
-    e.currentTarget.style.opacity = '';
-    setDraggedItem(null);
-    setDragOverItem(null);
-  };
-
-  const handleDragOver = (e) => {
-    e.preventDefault();
-    e.dataTransfer.dropEffect = 'move';
-  };
-
-  const handleDragEnter = (e, index) => {
-    if (draggedItem !== index) {
-      setDragOverItem(index);
-    }
-  };
-
-  const handleDragLeave = () => {
-    setDragOverItem(null);
-  };
-
-  const handleDrop = async (e, dropIndex) => {
-    e.preventDefault();
-    setDragOverItem(null);
-
-    if (draggedItem === null || draggedItem === dropIndex) {
-      return;
-    }
-
-    const draggedMetric = orderedMetrics[draggedItem];
-    const newMetrics = [...orderedMetrics];
-    
-    // Remove dragged item
-    newMetrics.splice(draggedItem, 1);
-    
-    // Insert at new position
-    newMetrics.splice(dropIndex, 0, draggedMetric);
-    
-    // Update local state
-    setOrderedMetrics(newMetrics);
-    
-    // Save new order to backend
-    try {
-      setIsSaving(true);
-      
-      // Create array with new display_order values
-      const metricsWithOrder = newMetrics.map((metric, index) => ({
-        id: metric.id,
-        display_order: index
-      }));
-      
-      await scorecardService.updateMetricOrder(
-        user.organizationId,
-        newMetrics[0].team_id || newMetrics[0].teamId,
-        metricsWithOrder
-      );
-      
-      // Call parent callback if provided
-      if (onMetricsReorder) {
-        onMetricsReorder(newMetrics);
-      }
-    } catch (error) {
-      console.error('Failed to save metric order:', error);
-      // Revert on error
-      setOrderedMetrics(metrics);
-      alert('Failed to save new order. Please try again.');
-    } finally {
-      setIsSaving(false);
-    }
-  };
-
-  return (
-    <>
-    <Card className="shadow-lg border-0">
-      <CardHeader className="bg-gradient-to-r from-indigo-500 to-blue-500 text-white">
-        <div className="flex items-center justify-between">
-          <div>
-            <CardTitle className="flex items-center text-xl">
-              <Target className="mr-2 h-6 w-6" />
-              Weekly Scorecard
-            </CardTitle>
-            <CardDescription className="text-indigo-100">
-              Track performance over the past 10 weeks
-            </CardDescription>
-          </div>
-          {isSaving && (
-            <div className="flex items-center gap-2 text-white">
-              <Loader2 className="h-4 w-4 animate-spin" />
-              <span className="text-sm">Saving order...</span>
-            </div>
-          )}
-        </div>
-      </CardHeader>
-      <CardContent className="p-0">
-        <div className="overflow-x-auto">
-          <table className="w-full table-fixed">
-            <thead className="bg-gray-50 border-b">
+  const tableContent = (
+    <div className={noWrapper ? "w-full" : "overflow-x-auto"}>
+      <table className="w-full">
+            <thead className={meetingMode ? "bg-gray-50" : "bg-white border-b border-gray-200"}>
               <tr>
-                {!readOnly && <th className="text-center p-2 font-semibold text-gray-700 w-8"></th>}
-                <th className="text-center p-2 font-semibold text-gray-700 w-16">Owner</th>
-                <th className="text-left p-2 font-semibold text-gray-700 w-48">Metric</th>
-                <th className="text-center p-2 font-semibold text-gray-700 w-12">Chart</th>
-                <th className="text-center p-2 font-semibold text-gray-700 w-20">Goal</th>
-                {isRTL && (
-                  <>
-                    {showTotal && <th className="text-center p-2 font-semibold text-gray-700 w-20 bg-gray-100">Total</th>}
-                    <th className="text-center p-2 font-semibold text-gray-700 w-20 bg-gray-100">Average</th>
-                  </>
-                )}
-                {weekLabels.map((label, index) => {
-                  // Current week is always the last in original order (most recent date)
-                  const originalIndex = isRTL ? weekLabels.length - 1 - index : index;
-                  const isCurrentWeek = originalIndex === weekLabelsOriginal.length - 1;
+                {!meetingMode && <th className="w-4"></th>}
+                <th className={'text-left font-medium text-gray-700 ' + (meetingMode ? 'px-3 py-2 text-sm' : 'px-1 text-[10px]')}>
+                  {meetingMode ? 'Metric / Owner' : 'Owner'}
+                </th>
+                {!meetingMode && <th className="text-left px-1 text-xs font-medium text-gray-700">Metric</th>}
+                <th className={meetingMode ? "w-8" : "w-6"}></th>
+                <th className={'text-center font-medium text-gray-600 ' + (meetingMode ? 'px-2 py-2 text-sm' : 'px-1 text-[10px]')}>Goal</th>
+                
+                {showAverage ? (
+                  <th className={'text-center font-medium text-gray-700 ' + (meetingMode ? 'px-2 py-2 text-sm bg-gray-100' : 'px-1 text-[10px] border-l border-gray-200')}>
+                    13w Avg
+                  </th>
+                ) : null}
+                
+                {/* Week columns */}
+                {periodLabels.map((label, index) => {
+                  const originalIndex = isRTL ? periodLabelsOriginal.length - 1 - index : index;
+                  const isCurrentPeriod = originalIndex === periodLabelsOriginal.length - 1;
                   return (
-                    <th key={weekDates[index]} className={`text-center p-2 font-semibold text-xs w-16 ${
-                      isCurrentWeek ? 'text-indigo-700 bg-indigo-50' : 'text-gray-700'
-                    }`}>
+                    <th key={periodDates[index]} className={'text-center ' + (meetingMode ? 'px-2 py-2' : 'px-1') + ' ' + 
+                      (isCurrentPeriod ? (meetingMode ? 'bg-blue-50 font-semibold' : 'bg-gray-50 border-2 border-gray-300') : '')
+                    }>
                       <div className="flex flex-col items-center">
-                        <span className="text-xs font-normal text-gray-500 mb-1">
-                          {isCurrentWeek ? 'Current' : ''}
-                        </span>
-                        <span>{label}</span>
+                        <span className={'font-medium text-gray-600 ' + (meetingMode ? 'text-xs' : 'text-[10px]')}>{label}</span>
                       </div>
                     </th>
                   );
                 })}
-                {!isRTL && (
-                  <>
-                    <th className="text-center p-2 font-semibold text-gray-700 w-20 bg-gray-100">Average</th>
-                    {showTotal && <th className="text-center p-2 font-semibold text-gray-700 w-20 bg-gray-100">Total</th>}
-                  </>
+                {showTotal && (
+                  <th className={'text-center font-semibold text-gray-700 ' + (meetingMode ? 'px-2 py-2 text-sm bg-gray-100' : 'p-1 text-xs border-l border-gray-200')}>
+                    Total
+                  </th>
                 )}
-                {!readOnly && <th className="text-center p-2 font-semibold text-gray-700 w-20">Actions</th>}
+                {!meetingMode && <th className="text-center p-1 font-semibold text-gray-700 text-xs">Actions</th>}
+                {meetingMode && onAddIssue && <th className="text-center px-2 py-2 text-sm font-medium text-gray-700">Action</th>}
               </tr>
             </thead>
             <tbody>
-              {metrics.length === 0 ? (
-                <tr>
-                  <td colSpan={weekLabels.length + (showTotal ? 7 : 6) + (readOnly ? 0 : 2)} className="text-center p-8 text-gray-500">
-                    No metrics defined. {!readOnly && 'Click "Add Metric" to get started.'}
-                  </td>
-                </tr>
-              ) : (
-                orderedMetrics.map((metric, index) => (
-                  <tr 
-                    key={metric.id} 
-                    className={`border-b hover:bg-gray-50 ${!readOnly ? 'cursor-move' : ''} ${
-                      dragOverItem === index ? 'bg-blue-50' : ''
-                    }`}
-                    draggable={!readOnly}
-                    onDragStart={(e) => !readOnly && handleDragStart(e, index)}
-                    onDragEnd={handleDragEnd}
-                    onDragOver={handleDragOver}
-                    onDragEnter={(e) => !readOnly && handleDragEnter(e, index)}
-                    onDragLeave={handleDragLeave}
-                    onDrop={(e) => !readOnly && handleDrop(e, index)}
-                  >
-                    {!readOnly && (
-                      <td className="p-2 text-center">
-                        <GripVertical className="h-4 w-4 text-gray-400" />
+              {metrics.map((metric, metricIndex) => {
+                // Calculate average based on last 13 weeks of data
+                const getLast13WeeksScores = () => {
+                  const thirteenWeekDates = [];
+                  const today = new Date();
+                  
+                  // Generate dates for the last 13 weeks
+                  for (let i = 12; i >= 0; i--) {
+                    const weekStart = new Date(today);
+                    weekStart.setDate(today.getDate() - (i * 7));
+                    const mondayOfWeek = getWeekStartDate(weekStart);
+                    thirteenWeekDates.push(mondayOfWeek.toISOString().split('T')[0]);
+                  }
+                  
+                  return thirteenWeekDates
+                    .map(date => scores[metric.id]?.[date])
+                    .filter(score => score !== undefined && score !== null && score !== '');
+                };
+                
+                const averageScores = type === 'weekly' ? getLast13WeeksScores() : 
+                  // For monthly, use visible periods for average
+                  periodDates
+                    .map(periodDate => scores[metric.id]?.[periodDate])
+                    .filter(score => score !== undefined && score !== null && score !== '');
+                
+                const average = averageScores.length > 0 
+                  ? averageScores.reduce((sum, score) => sum + parseFloat(score), 0) / averageScores.length 
+                  : null;
+                
+                // For total, still use only visible periods
+                const visibleScores = periodDates
+                  .map(periodDate => scores[metric.id]?.[periodDate])
+                  .filter(score => score !== undefined && score !== null && score !== '');
+                const total = visibleScores.length > 0
+                  ? visibleScores.reduce((sum, score) => sum + parseFloat(score), 0)
+                  : null;
+                const avgGoalMet = average !== null && isGoalMet(average, metric.goal, metric.comparison_operator);
+                
+                return (
+                  <tr key={metric.id} className={'border-b ' + (meetingMode ? 'hover:bg-blue-50/30' : 'hover:bg-gray-50')}>
+                    {!meetingMode && (
+                      <td className="w-4">
+                        <GripVertical className="h-3 w-3 text-gray-400 cursor-move mx-auto" />
                       </td>
                     )}
-                    <td className="p-2 text-center text-sm">{metric.ownerName || metric.owner || '-'}</td>
-                    <td className="p-2 font-medium text-sm">{metric.name}</td>
-                    <td className="p-2 text-center">
+                    <td className={meetingMode ? 'px-3 py-2' : 'text-center px-1 text-[10px]'}>
+                      {meetingMode ? (
+                        <div className="text-left">
+                          <div className="text-sm font-medium text-gray-900">{metric.name}</div>
+                          <div className="text-xs text-gray-500">{metric.ownerName || metric.owner || 'Unassigned'}</div>
+                        </div>
+                      ) : (
+                        metric.ownerName || metric.owner || '-'
+                      )}
+                    </td>
+                    {!meetingMode && <td className="text-left px-1 text-xs font-medium">{metric.name}</td>}
+                    <td className={meetingMode ? "w-8" : "w-6"}>
                       <Button
-                        variant="ghost"
+                        onClick={() => onChartOpen && onChartOpen(metric)}
                         size="sm"
-                        className="h-8 w-8 p-0 hover:bg-blue-100"
-                        onClick={() => setChartModal({ isOpen: true, metric, metricId: metric.id })}
-                        title="View 3-week moving trend chart"
+                        variant="ghost"
+                        className={meetingMode ? "h-6 w-6 p-0 hover:bg-gray-100" : "h-5 w-5 p-0 hover:bg-gray-100"}
                       >
-                        <BarChart3 className="h-4 w-4 text-blue-600" />
+                        <BarChart3 className={meetingMode ? "h-4 w-4 text-gray-600" : "h-3 w-3 text-gray-600"} />
                       </Button>
                     </td>
-                    <td className="p-2 text-center font-semibold text-indigo-600 text-sm">
+                    <td className={'text-center font-medium text-gray-700 ' + (meetingMode ? 'px-2 py-2 text-sm' : 'px-1 text-[10px]')}>
                       {formatGoal(metric.goal, metric.value_type, metric.comparison_operator)}
                     </td>
                     
-                    {/* Total and Average columns for RTL */}
-                    {isRTL && (
-                      <>
-                        {/* Total column */}
-                        {showTotal && (
-                          <td className="p-2 text-center bg-gray-50 font-semibold text-sm">
-                          {(() => {
-                            // Always use original order for calculations
-                            const scores = weekDatesOriginal
-                              .map(weekDate => weeklyScores[metric.id]?.[weekDate])
-                              .filter(score => score !== undefined && score !== null && score !== '');
-                            
-                            if (scores.length === 0) return '-';
-                            
-                            const total = scores.reduce((sum, score) => sum + parseFloat(score), 0);
-                            
-                            return (
-                              <span className="text-gray-700">
-                                {formatValue(total, metric.value_type)}
-                              </span>
-                            );
-                          })()}
-                          </td>
+                    {/* Average column */}
+                    {showAverage ? (
+                      <td className={'text-center ' + (meetingMode ? 'px-2 py-2 bg-gray-50' : 'px-1 bg-white border-l border-gray-200')}>
+                        {average !== null ? (
+                          meetingMode ? (
+                            <div className={'inline-block px-2 py-0.5 rounded-full text-xs font-medium ' + 
+                              (avgGoalMet ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800')
+                            }>
+                              {metric.value_type === 'number' ? Math.round(average) : formatValue(average, metric.value_type)}
+                            </div>
+                          ) : (
+                            <span className={'text-[10px] px-0.5 rounded ' + 
+                              (avgGoalMet ? 'text-green-700' : 'text-red-700')
+                            }>
+                              {metric.value_type === 'number' ? Math.round(average) : formatValue(average, metric.value_type)}
+                            </span>
+                          )
+                        ) : (
+                          <span className={'text-gray-400 ' + (meetingMode ? 'text-xs' : 'text-[10px]')}>-</span>
                         )}
-                        {/* Average column */}
-                        <td className="p-4 text-center bg-gray-50 font-semibold text-sm">
-                          {(() => {
-                            // Always use original order for calculations
-                            const scores = weekDatesOriginal
-                              .map(weekDate => weeklyScores[metric.id]?.[weekDate])
-                              .filter(score => score !== undefined && score !== null && score !== '');
-                            
-                            if (scores.length === 0) return '-';
-                            
-                            const average = scores.reduce((sum, score) => sum + parseFloat(score), 0) / scores.length;
-                            const roundedAverage = Math.ceil(average);
-                            const avgGoalMet = isGoalMet(roundedAverage, metric.goal, metric.comparison_operator);
-                            
-                            return (
-                              <span className={`px-2 py-1 rounded ${
-                                avgGoalMet ? 'text-green-800' : 'text-red-800'
-                              }`}>
-                                {formatValue(roundedAverage, metric.value_type)}
-                              </span>
-                            );
-                          })()}
-                        </td>
-                      </>
-                    )}
+                      </td>
+                    ) : null}
                     
-                    {/* Week columns */}
-                    {weekDates.map((weekDate, index) => {
-                      const score = weeklyScores[metric.id]?.[weekDate];
+                    {/* Period columns */}
+                    {periodDates.map((periodDate, index) => {
+                      const score = scores[metric.id]?.[periodDate];
                       const goalMet = score && isGoalMet(score, metric.goal, metric.comparison_operator);
-                      // Previous week is the second to last in original order
-                      const originalIndex = isRTL ? weekDates.length - 1 - index : index;
-                      const isPreviousWeek = originalIndex === weekDatesOriginal.length - 2;
-                      const showCreateIssue = isPreviousWeek && score && !goalMet;
+                      const originalIndex = isRTL ? periodLabelsOriginal.length - 1 - index : index;
+                      const isCurrentPeriod = originalIndex === periodLabelsOriginal.length - 1;
                       
-                      // Debug previous week detection
-                      if (metric === metrics[0]) {
-                        console.log('Scorecard week debug:', {
-                          metricName: metric.name,
-                          weekDate,
-                          index,
-                          originalIndex,
-                          isPreviousWeek,
-                          isRTL,
-                          weekDatesLength: weekDates.length,
-                          score,
-                          goalMet,
-                          showCreateIssue,
-                          previousWeekIndex: weekDatesOriginal.length - 2
-                        });
+                      let cellClassName = 'text-center ';
+                      if (meetingMode) {
+                        cellClassName += 'px-2 py-2';
+                        if (isCurrentPeriod) cellClassName += ' bg-blue-50';
+                      } else {
+                        cellClassName += 'px-1';
+                        if (isCurrentPeriod) cellClassName += ' bg-gray-50 border-2 border-gray-300';
                       }
                       
                       return (
-                        <td key={weekDate} className="p-2 text-center group relative">
-                          {score !== undefined && score !== null && score !== '' ? (
-                            <div className="relative inline-block">
-                              <span className={`inline-block px-2 py-1 rounded text-sm ${
-                                goalMet 
-                                  ? 'bg-green-100 text-green-800' 
-                                  : showCreateIssue 
-                                    ? 'bg-red-100 text-red-800 cursor-pointer hover:bg-red-200 transition-colors border-2 border-transparent hover:border-red-300' 
-                                    : 'bg-red-100 text-red-800'
-                              }`}>
-                                {formatValue(score, metric.value_type)}
-                                {showCreateIssue && (
-                                  <Plus className="inline-block h-3 w-3 ml-1 opacity-50" />
-                                )}
-                              </span>
-                              {showCreateIssue && (
-                                <button
-                                  className="absolute -top-2 -right-2 opacity-0 group-hover:opacity-100 transition-all duration-200 h-8 px-2 bg-red-600 hover:bg-red-700 text-white text-xs flex items-center gap-1 shadow-lg rounded transform hover:scale-105"
-                                  onClick={(e) => {
-                                    e.stopPropagation();
-                                    handleCreateIssue(metric, score);
-                                  }}
-                                  disabled={creatingIssue[metric.id]}
-                                  title="Create issue for off-track metric"
-                                >
-                                  {creatingIssue[metric.id] ? (
-                                    <Loader2 className="h-3 w-3 animate-spin" />
-                                  ) : (
-                                    <>
-                                      <Plus className="h-3 w-3" />
-                                      <span className="font-semibold">Issue</span>
-                                    </>
-                                  )}
-                                </button>
-                              )}
+                        <td key={periodDate} className={cellClassName}>
+                          {meetingMode ? (
+                            <div className={'inline-block px-2 py-0.5 rounded-full text-xs font-medium ' + 
+                              (score ? (goalMet ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800') : 'text-gray-400')
+                            }>
+                              {score ? formatValue(score, metric.value_type) : '-'}
                             </div>
                           ) : (
-                            <span className="text-gray-400">-</span>
+                            <button
+                              onClick={() => onScoreEdit && onScoreEdit(metric, periodDate)}
+                              className={'w-full px-0.5 py-0.5 rounded text-[10px] font-medium transition-colors ' +
+                                (score ? (goalMet ? 'bg-green-50 text-green-700 border border-green-200' : 'bg-red-50 text-red-700 border border-red-200') : (isCurrentPeriod ? 'bg-gray-100 text-gray-700 hover:bg-gray-200' : 'bg-white border border-gray-200 text-gray-600 hover:bg-gray-50'))
+                              }
+                            >
+                              {score ? formatValue(score, metric.value_type) : '-'}
+                            </button>
                           )}
                         </td>
                       );
                     })}
                     
-                    {/* Total and Average columns for LTR */}
-                    {!isRTL && (
-                      <>
-                        {/* Average column */}
-                        <td className="p-4 text-center bg-gray-50 font-semibold text-sm">
-                          {(() => {
-                            // Always use original order for calculations
-                            const scores = weekDatesOriginal
-                              .map(weekDate => weeklyScores[metric.id]?.[weekDate])
-                              .filter(score => score !== undefined && score !== null && score !== '');
-                            
-                            if (scores.length === 0) return '-';
-                            
-                            const average = scores.reduce((sum, score) => sum + parseFloat(score), 0) / scores.length;
-                            const roundedAverage = Math.ceil(average);
-                            const avgGoalMet = isGoalMet(roundedAverage, metric.goal, metric.comparison_operator);
-                            
-                            return (
-                              <span className={`px-2 py-1 rounded ${
-                                avgGoalMet ? 'text-green-800' : 'text-red-800'
-                              }`}>
-                                {formatValue(roundedAverage, metric.value_type)}
-                              </span>
-                            );
-                          })()}
-                        </td>
-                        {/* Total column */}
-                        {showTotal && (
-                          <td className="p-2 text-center bg-gray-50 font-semibold text-sm">
-                          {(() => {
-                            // Always use original order for calculations
-                            const scores = weekDatesOriginal
-                              .map(weekDate => weeklyScores[metric.id]?.[weekDate])
-                              .filter(score => score !== undefined && score !== null && score !== '');
-                            
-                            if (scores.length === 0) return '-';
-                            
-                            const total = scores.reduce((sum, score) => sum + parseFloat(score), 0);
-                            
-                            return (
-                              <span className="text-gray-700">
-                                {formatValue(total, metric.value_type)}
-                              </span>
-                            );
-                          })()}
-                          </td>
-                        )}
-                      </>
+                    {showTotal && (
+                      <td className={'text-center font-medium ' + (meetingMode ? 'px-2 py-2 bg-gray-50' : 'px-1 text-[10px] border-l border-gray-200')}>
+                        {(() => {
+                          const totalValue = Object.values(scores[metric.id] || {}).reduce((sum, val) => sum + (parseFloat(val) || 0), 0);
+                          const formattedTotal = totalValue !== 0 ? formatValue(totalValue, metric.value_type) : '-';
+                          
+                          return meetingMode ? (
+                            <div className="text-sm font-semibold text-gray-700">
+                              {formattedTotal}
+                            </div>
+                          ) : (
+                            formattedTotal
+                          );
+                        })()}
+                      </td>
                     )}
-                    {/* Actions column - only show when not readOnly */}
-                    {!readOnly && (
-                      <td className="p-2 text-center">
-                        <Button 
+                    {!meetingMode && (
+                      <td className="px-1 text-center">
+                        <div className="flex justify-center gap-0.5">
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className="h-5 w-5 p-0"
+                            onClick={() => onMetricUpdate && onMetricUpdate(metric)}
+                          >
+                            <Edit className="h-3 w-3" />
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className="h-5 w-5 p-0"
+                            onClick={() => onMetricDelete && onMetricDelete(metric.id)}
+                          >
+                            <Trash2 className="h-3 w-3 text-red-600" />
+                          </Button>
+                        </div>
+                      </td>
+                    )}
+                    {meetingMode && onAddIssue && (
+                      <td className="px-2 py-2 text-center">
+                        <Button
+                          onClick={() => {
+                            const isOffTrack = average !== null && !isGoalMet(average, metric.goal, metric.comparison_operator);
+                            onAddIssue(metric, isOffTrack);
+                          }}
                           size="sm"
-                          variant="ghost"
-                          onClick={() => console.log('Edit metric', metric.id)}
+                          variant="outline"
+                          className="h-7 px-2 text-xs border-gray-300 hover:bg-gray-50 hover:border-gray-400"
                         >
-                          Edit
+                          <AlertCircle className="h-3 w-3 mr-1" />
+                          Add Issue
                         </Button>
                       </td>
                     )}
                   </tr>
-                ))
-              )}
+                );
+              })}
             </tbody>
           </table>
         </div>
+  );
+
+  if (noWrapper) {
+    return tableContent;
+  }
+
+  return (
+    <Card className="transition-all bg-white border border-gray-200">
+      <CardHeader className="bg-white border-b border-gray-200">
+        <CardTitle className="text-lg">All Metrics</CardTitle>
+      </CardHeader>
+      <CardContent className="p-0">
+        {tableContent}
       </CardContent>
     </Card>
-    
-    {/* Metric Trend Chart Modal */}
-    <MetricTrendChart
-      isOpen={chartModal.isOpen}
-      onClose={() => setChartModal({ isOpen: false, metric: null, metricId: null })}
-      metric={chartModal.metric}
-      metricId={chartModal.metricId}
-      orgId={user?.organizationId}
-      teamId={user?.teamId || '00000000-0000-0000-0000-000000000000'}
-    />
-  </>
   );
 };
 
