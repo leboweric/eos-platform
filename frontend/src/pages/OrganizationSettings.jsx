@@ -9,6 +9,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Slider } from '@/components/ui/slider';
 import { Building2, Save, Loader2, Upload, X, Image } from 'lucide-react';
 import { organizationService } from '../services/organizationService';
+import ColorThemePicker from '../components/ColorThemePicker';
 
 
 const OrganizationSettings = () => {
@@ -23,7 +24,10 @@ const OrganizationSettings = () => {
     created_at: '',
     logo_updated_at: null,
     revenue_metric_type: 'revenue',
-    revenue_metric_label: ''
+    revenue_metric_label: '',
+    theme_primary_color: '#3B82F6',
+    theme_secondary_color: '#1E40AF',
+    theme_accent_color: '#60A5FA'
   });
   const [logoPreview, setLogoPreview] = useState(null);
   const [selectedFile, setSelectedFile] = useState(null);
@@ -168,6 +172,42 @@ const OrganizationSettings = () => {
     localStorage.setItem('logoSize', size.toString());
     // Trigger a custom event to update logo size in Layout
     window.dispatchEvent(new CustomEvent('logoSizeChanged', { detail: size }));
+  };
+
+  const handleSaveColorTheme = async (theme) => {
+    setError(null);
+    setSuccess(null);
+    setSaving(true);
+
+    try {
+      const response = await organizationService.updateOrganization({
+        name: organizationData?.name || '',
+        revenueMetricType: organizationData?.revenue_metric_type,
+        revenueMetricLabel: organizationData?.revenue_metric_label,
+        themePrimaryColor: theme.primary,
+        themeSecondaryColor: theme.secondary,
+        themeAccentColor: theme.accent
+      });
+
+      setSuccess('Color theme updated successfully');
+      setOrganizationData({
+        ...organizationData,
+        theme_primary_color: theme.primary,
+        theme_secondary_color: theme.secondary,
+        theme_accent_color: theme.accent
+      });
+      
+      // Store in localStorage for immediate use
+      localStorage.setItem('orgTheme', JSON.stringify(theme));
+      
+      // Dispatch event to notify other components
+      window.dispatchEvent(new CustomEvent('themeChanged', { detail: theme }));
+    } catch (error) {
+      console.error('Update theme error:', error);
+      setError(error.response?.data?.error || 'Failed to update color theme');
+    } finally {
+      setSaving(false);
+    }
   };
 
   if (loading) {
@@ -448,6 +488,25 @@ const OrganizationSettings = () => {
           </div>
         </CardContent>
       </Card>
+
+      {/* Color Theme Section */}
+      <ColorThemePicker
+        currentTheme={{
+          primary: organizationData?.theme_primary_color || '#3B82F6',
+          secondary: organizationData?.theme_secondary_color || '#1E40AF',
+          accent: organizationData?.theme_accent_color || '#60A5FA'
+        }}
+        onThemeChange={(theme) => {
+          setOrganizationData({
+            ...organizationData,
+            theme_primary_color: theme.primary,
+            theme_secondary_color: theme.secondary,
+            theme_accent_color: theme.accent
+          });
+        }}
+        onSave={handleSaveColorTheme}
+        saving={saving}
+      />
     </div>
   );
 };
