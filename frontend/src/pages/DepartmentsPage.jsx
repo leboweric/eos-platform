@@ -65,8 +65,17 @@ const DepartmentsPage = () => {
     try {
       setLoading(true);
       setError(null);
-      const data = await departmentService.getDepartments();
-      setDepartments(data);
+      const response = await departmentService.getDepartments();
+      console.log('Departments API response:', response);
+      
+      // Handle different response structures
+      const departmentsData = response.data || response.departments || response;
+      
+      // Ensure it's an array
+      const departmentsArray = Array.isArray(departmentsData) ? departmentsData : [];
+      
+      console.log('Departments to set:', departmentsArray);
+      setDepartments(departmentsArray);
     } catch (error) {
       console.error('Error fetching departments:', error);
       setError('Failed to load departments');

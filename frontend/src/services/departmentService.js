@@ -1,10 +1,22 @@
 import axios from './axiosConfig';
+import { useAuthStore } from '../stores/authStore';
 
 export const departmentService = {
   // Get all departments for the organization
   async getDepartments() {
-    const response = await axios.get('/departments');
-    return response.data;
+    const user = useAuthStore.getState().user;
+    const orgId = user?.organizationId || user?.organization_id;
+    
+    // Try both endpoints - with and without organization ID
+    try {
+      const response = await axios.get(`/organizations/${orgId}/teams`);
+      console.log('Departments fetched with org ID:', response.data);
+      return response.data;
+    } catch (error) {
+      console.log('Trying fallback endpoint /departments');
+      const response = await axios.get('/departments');
+      return response.data;
+    }
   },
 
   // Get single department

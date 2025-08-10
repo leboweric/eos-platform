@@ -78,7 +78,7 @@ const Layout = ({ children }) => {
     { name: 'Organizational Chart', href: '/organizational-chart', icon: GitBranch },
     { name: 'Document Repository', href: '/documents', icon: FileText },
     { name: 'Departments', href: '/departments', icon: Building2, requiresAdmin: true },
-    { name: 'Team', href: '/users', icon: Users, requiresAdmin: true },
+    { name: 'Users', href: '/users', icon: Users, requiresAdmin: true },
     { name: 'Organization', href: '/organization-settings', icon: Settings, requiresAdmin: true },
     { name: 'Billing', href: '/billing', icon: CreditCard, requiresAdmin: true },
   ];
