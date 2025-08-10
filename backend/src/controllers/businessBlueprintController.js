@@ -75,20 +75,23 @@ export const getVTO = async (req, res) => {
 
     // Get sub-components for 3-year and 1-year plans
     let threeYearMeasurables = [];
+    let threeYearRevenueStreams = [];
     let oneYearGoals = [];
     let oneYearMeasurables = [];
+    let oneYearRevenueStreams = [];
 
     if (threeYearPicture.rows.length > 0) {
-      threeYearMeasurables = await query(
-        'SELECT * FROM three_year_measurables WHERE three_year_picture_id = $1',
-        [threeYearPicture.rows[0].id]
-      );
+      [threeYearMeasurables, threeYearRevenueStreams] = await Promise.all([
+        query('SELECT * FROM three_year_measurables WHERE three_year_picture_id = $1', [threeYearPicture.rows[0].id]),
+        query('SELECT * FROM three_year_revenue_streams WHERE three_year_picture_id = $1 ORDER BY display_order', [threeYearPicture.rows[0].id])
+      ]);
     }
 
     if (oneYearPlan.rows.length > 0) {
-      [oneYearGoals, oneYearMeasurables] = await Promise.all([
+      [oneYearGoals, oneYearMeasurables, oneYearRevenueStreams] = await Promise.all([
         query('SELECT * FROM one_year_goals WHERE one_year_plan_id = $1 ORDER BY sort_order', [oneYearPlan.rows[0].id]),
-        query('SELECT * FROM one_year_measurables WHERE one_year_plan_id = $1', [oneYearPlan.rows[0].id])
+        query('SELECT * FROM one_year_measurables WHERE one_year_plan_id = $1', [oneYearPlan.rows[0].id]),
+        query('SELECT * FROM one_year_revenue_streams WHERE one_year_plan_id = $1 ORDER BY display_order', [oneYearPlan.rows[0].id])
       ]);
     }
 
@@ -133,12 +136,14 @@ export const getVTO = async (req, res) => {
         marketingStrategy: marketingStrategy.rows[0] || null,
         threeYearPicture: {
           ...threeYearPicture.rows[0],
-          measurables: threeYearMeasurables.rows
+          measurables: threeYearMeasurables.rows,
+          revenueStreams: threeYearRevenueStreams.rows
         },
         oneYearPlan: {
           ...oneYearPlan.rows[0],
           goals: oneYearGoals.rows,
-          measurables: oneYearMeasurables.rows
+          measurables: oneYearMeasurables.rows,
+          revenueStreams: oneYearRevenueStreams.rows
         },
         quarterlyPriorities: quarterlyPriorities.rows.length > 0 ? {
           quarter: currentQuarter,
@@ -492,20 +497,23 @@ export const getDepartmentBusinessBlueprint = async (req, res) => {
 
     // Get sub-components for 3-year and 1-year plans
     let threeYearMeasurables = [];
+    let threeYearRevenueStreams = [];
     let oneYearGoals = [];
     let oneYearMeasurables = [];
+    let oneYearRevenueStreams = [];
 
     if (threeYearPicture.rows.length > 0) {
-      threeYearMeasurables = await query(
-        'SELECT * FROM three_year_measurables WHERE three_year_picture_id = $1 ORDER BY sort_order',
-        [threeYearPicture.rows[0].id]
-      );
+      [threeYearMeasurables, threeYearRevenueStreams] = await Promise.all([
+        query('SELECT * FROM three_year_measurables WHERE three_year_picture_id = $1 ORDER BY sort_order', [threeYearPicture.rows[0].id]),
+        query('SELECT * FROM three_year_revenue_streams WHERE three_year_picture_id = $1 ORDER BY display_order', [threeYearPicture.rows[0].id])
+      ]);
     }
 
     if (oneYearPlan.rows.length > 0) {
-      [oneYearGoals, oneYearMeasurables] = await Promise.all([
+      [oneYearGoals, oneYearMeasurables, oneYearRevenueStreams] = await Promise.all([
         query('SELECT * FROM one_year_goals WHERE one_year_plan_id = $1 ORDER BY sort_order', [oneYearPlan.rows[0].id]),
-        query('SELECT * FROM one_year_measurables WHERE one_year_plan_id = $1 ORDER BY sort_order', [oneYearPlan.rows[0].id])
+        query('SELECT * FROM one_year_measurables WHERE one_year_plan_id = $1 ORDER BY sort_order', [oneYearPlan.rows[0].id]),
+        query('SELECT * FROM one_year_revenue_streams WHERE one_year_plan_id = $1 ORDER BY display_order', [oneYearPlan.rows[0].id])
       ]);
     }
 
@@ -548,12 +556,14 @@ export const getDepartmentBusinessBlueprint = async (req, res) => {
         marketingStrategy: marketingStrategy.rows[0] || null,
         threeYearPicture: {
           ...threeYearPicture.rows[0],
-          measurables: threeYearMeasurables.rows
+          measurables: threeYearMeasurables.rows,
+          revenueStreams: threeYearRevenueStreams.rows
         } || null,
         oneYearPlan: {
           ...oneYearPlan.rows[0],
           goals: oneYearGoals.rows,
-          measurables: oneYearMeasurables.rows
+          measurables: oneYearMeasurables.rows,
+          revenueStreams: oneYearRevenueStreams.rows
         } || null,
         quarterlyPriorities: quarterlyPriorities.rows.length > 0 ? {
           quarter: currentQuarter,
@@ -578,7 +588,7 @@ export const getDepartmentBusinessBlueprint = async (req, res) => {
 export const updateThreeYearPicture = async (req, res) => {
   try {
     const { orgId, teamId } = req.params;
-    let { revenue, profit, measurables, lookLikeItems, futureDate } = req.body;
+    let { revenue, profit, measurables, lookLikeItems, futureDate, revenueStreams } = req.body;
     
     // Parse revenue - handle formatted strings like "$550M" or "550K"
     if (revenue && typeof revenue === 'string') {
@@ -646,6 +656,24 @@ export const updateThreeYearPicture = async (req, res) => {
     
     const pictureId = pictureResult.rows[0].id;
     
+    // Handle revenue streams
+    if (revenueStreams && Array.isArray(revenueStreams)) {
+      // Delete existing revenue streams
+      await query('DELETE FROM three_year_revenue_streams WHERE three_year_picture_id = $1', [pictureId]);
+      
+      // Insert new revenue streams
+      for (let i = 0; i < revenueStreams.length; i++) {
+        const stream = revenueStreams[i];
+        if (stream.name && stream.revenue_target !== undefined) {
+          await query(
+            `INSERT INTO three_year_revenue_streams (id, three_year_picture_id, name, revenue_target, display_order)
+             VALUES ($1, $2, $3, $4, $5)`,
+            [uuidv4(), pictureId, stream.name, stream.revenue_target, i]
+          );
+        }
+      }
+    }
+    
     // Handle measurables
     if (measurables && Array.isArray(measurables)) {
       // Delete existing measurables
@@ -693,7 +721,7 @@ export const updateThreeYearPicture = async (req, res) => {
 export const updateOneYearPlan = async (req, res) => {
   try {
     const { orgId, teamId } = req.params;
-    let { revenue, profit, targetDate, goals, measurables } = req.body;
+    let { revenue, profit, targetDate, goals, measurables, revenueStreams } = req.body;
     
     // Parse revenue - handle formatted strings like "$550M" or "550K"
     if (revenue && typeof revenue === 'string') {
@@ -760,6 +788,24 @@ export const updateOneYearPlan = async (req, res) => {
     }
     
     const planId = planResult.rows[0].id;
+    
+    // Handle revenue streams
+    if (revenueStreams && Array.isArray(revenueStreams)) {
+      // Delete existing revenue streams
+      await query('DELETE FROM one_year_revenue_streams WHERE one_year_plan_id = $1', [planId]);
+      
+      // Insert new revenue streams
+      for (let i = 0; i < revenueStreams.length; i++) {
+        const stream = revenueStreams[i];
+        if (stream.name && stream.revenue_target !== undefined) {
+          await query(
+            `INSERT INTO one_year_revenue_streams (id, one_year_plan_id, name, revenue_target, display_order)
+             VALUES ($1, $2, $3, $4, $5)`,
+            [uuidv4(), planId, stream.name, stream.revenue_target, i]
+          );
+        }
+      }
+    }
     
     // Handle goals
     if (goals && Array.isArray(goals)) {

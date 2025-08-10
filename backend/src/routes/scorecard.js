@@ -12,6 +12,10 @@ import {
   updateMetricOrder
 } from '../controllers/scorecardController.js';
 import {
+  importMonthlyScorecard,
+  uploadMiddleware
+} from '../controllers/scorecardImportController.js';
+import {
   getGroups,
   createGroup,
   updateGroup,
@@ -38,6 +42,9 @@ router.get('/metrics/:metricId/history', getMetricHistory);
 
 // Score management
 router.put('/scores', updateScore);
+
+// Import scorecard from CSV
+router.post('/import/monthly', uploadMiddleware, importMonthlyScorecard);
 
 // Diagnostic endpoint (for debugging)
 router.get('/find', findScorecardData);

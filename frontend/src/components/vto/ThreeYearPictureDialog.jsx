@@ -22,6 +22,7 @@ const ThreeYearPictureDialog = ({ open, onOpenChange, data, onSave, organization
   const [formData, setFormData] = useState({
     revenue: '',
     profit: '',
+    revenueStreams: [],
     measurables: [],
     lookLikeItems: [''],
     futureDate: getDefaultDate() // Default to Dec 31, 3 years from now
@@ -51,6 +52,9 @@ const ThreeYearPictureDialog = ({ open, onOpenChange, data, onSave, organization
       setFormData({
         revenue: data.revenue || '',
         profit: data.profit || '',
+        revenueStreams: data.revenueStreams && data.revenueStreams.length > 0 
+          ? data.revenueStreams.map(s => ({ name: s.name || '', revenue_target: s.revenue_target || '' }))
+          : [],
         measurables: (data.measurables || []).map(m => ({
           name: m.name || '',
           value: m.target_value || m.value || ''
@@ -96,22 +100,88 @@ const ThreeYearPictureDialog = ({ open, onOpenChange, data, onSave, organization
               </Alert>
             )}
 
+            {/* Revenue Streams Section */}
             <div className="space-y-2">
-              <Label htmlFor="revenue">{getRevenueLabelWithSuffix(organization, 'Target')} (in millions)</Label>
-              <div className="relative">
-                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500">$</span>
-                <Input
-                  id="revenue"
-                  type="number"
-                  step="0.001"
-                  value={formData.revenue}
-                  onChange={(e) => setFormData({ ...formData, revenue: e.target.value })}
-                  placeholder="0.635"
-                  className="pl-8"
-                />
-                <span className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500">M</span>
+              <div className="flex items-center justify-between">
+                <Label>Revenue Streams</Label>
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setFormData({
+                    ...formData,
+                    revenueStreams: [...formData.revenueStreams, { name: '', revenue_target: '' }]
+                  })}
+                >
+                  <Plus className="h-4 w-4 mr-1" />
+                  Add Stream
+                </Button>
               </div>
-              <p className="text-xs text-gray-500">Enter value in millions (e.g., 0.635 for $635K, 10 for $10M)</p>
+              
+              {formData.revenueStreams.length > 0 ? (
+                <div className="space-y-3">
+                  {formData.revenueStreams.map((stream, index) => (
+                    <div key={index} className="flex gap-2">
+                      <Input
+                        placeholder="Stream name (e.g., Accounting)"
+                        value={stream.name}
+                        onChange={(e) => {
+                          const newStreams = [...formData.revenueStreams];
+                          newStreams[index].name = e.target.value;
+                          setFormData({ ...formData, revenueStreams: newStreams });
+                        }}
+                        className="flex-1"
+                      />
+                      <div className="relative w-32">
+                        <span className="absolute left-2 top-1/2 -translate-y-1/2 text-gray-500 text-sm">$</span>
+                        <Input
+                          type="number"
+                          step="0.001"
+                          placeholder="0.635"
+                          value={stream.revenue_target}
+                          onChange={(e) => {
+                            const newStreams = [...formData.revenueStreams];
+                            newStreams[index].revenue_target = e.target.value;
+                            setFormData({ ...formData, revenueStreams: newStreams });
+                          }}
+                          className="pl-6 pr-8"
+                        />
+                        <span className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-500 text-sm">M</span>
+                      </div>
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => {
+                          const newStreams = formData.revenueStreams.filter((_, i) => i !== index);
+                          setFormData({ ...formData, revenueStreams: newStreams });
+                        }}
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
+                    </div>
+                  ))}
+                  <p className="text-xs text-gray-500">Enter revenue targets in millions (e.g., 0.635 for $635K)</p>
+                </div>
+              ) : (
+                <div className="space-y-2">
+                  <Label htmlFor="revenue">{getRevenueLabelWithSuffix(organization, 'Target')} (in millions)</Label>
+                  <div className="relative">
+                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500">$</span>
+                    <Input
+                      id="revenue"
+                      type="number"
+                      step="0.001"
+                      value={formData.revenue}
+                      onChange={(e) => setFormData({ ...formData, revenue: e.target.value })}
+                      placeholder="0.635"
+                      className="pl-8"
+                    />
+                    <span className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500">M</span>
+                  </div>
+                  <p className="text-xs text-gray-500">Enter value in millions (e.g., 0.635 for $635K, 10 for $10M)</p>
+                </div>
+              )}
             </div>
 
             <div className="space-y-2">

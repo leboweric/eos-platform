@@ -164,11 +164,21 @@ const DashboardClean = () => {
       // Set annual predictions from 1-Year Plan
       if (blueprintResponse && blueprintResponse.oneYearPlan) {
         const oneYearPlan = blueprintResponse.oneYearPlan;
+        
+        // Calculate total revenue from revenue streams if available
+        let totalRevenueTarget = oneYearPlan.revenue_target || 0;
+        if (oneYearPlan.revenueStreams && oneYearPlan.revenueStreams.length > 0) {
+          totalRevenueTarget = oneYearPlan.revenueStreams.reduce((sum, stream) => 
+            sum + (parseFloat(stream.revenue_target) || 0), 0
+          );
+        }
+        
         setAnnualPredictions(prev => ({
           ...prev,
           revenue: { 
-            target: oneYearPlan.revenue_target || 0, 
-            current: prioritiesResponse.predictions?.revenue?.current || 0 
+            target: totalRevenueTarget, 
+            current: prioritiesResponse.predictions?.revenue?.current || 0,
+            streams: oneYearPlan.revenueStreams || []
           },
           profit: { 
             target: oneYearPlan.profit_percentage || 0, 
@@ -389,7 +399,7 @@ const DashboardClean = () => {
                         <span className="text-sm mr-1">$</span>
                         <Input
                           type="number"
-                          value={predictions?.revenue?.current || 0}
+                          value={annualPredictions?.revenue?.current || 0}
                           onChange={(e) => setAnnualPredictions({
                             ...annualPredictions,
                             revenue: { ...annualPredictions.revenue, current: parseFloat(e.target.value) || 0 }
@@ -404,7 +414,7 @@ const DashboardClean = () => {
                         <span className="text-sm mr-1">$</span>
                         <Input
                           type="number"
-                          value={predictions?.revenue?.target || 0}
+                          value={annualPredictions?.revenue?.target || 0}
                           onChange={(e) => setAnnualPredictions({
                             ...annualPredictions,
                             revenue: { ...annualPredictions.revenue, target: parseFloat(e.target.value) || 0 }
@@ -425,7 +435,7 @@ const DashboardClean = () => {
                         <Input
                           type="number"
                           step="0.1"
-                          value={predictions?.profit?.current || 0}
+                          value={annualPredictions?.profit?.current || 0}
                           onChange={(e) => setAnnualPredictions({
                             ...annualPredictions,
                             profit: { ...annualPredictions.profit, current: parseFloat(e.target.value) || 0 }
@@ -441,7 +451,7 @@ const DashboardClean = () => {
                         <Input
                           type="number"
                           step="0.1"
-                          value={predictions?.profit?.target || 0}
+                          value={annualPredictions?.profit?.target || 0}
                           onChange={(e) => setAnnualPredictions({
                             ...annualPredictions,
                             profit: { ...annualPredictions.profit, target: parseFloat(e.target.value) || 0 }
@@ -461,7 +471,7 @@ const DashboardClean = () => {
                       <Label className="text-xs text-gray-500">On Track</Label>
                       <Input
                         type="number"
-                        value={predictions?.measurables?.onTrack || 0}
+                        value={annualPredictions?.measurables?.onTrack || 0}
                         onChange={(e) => setAnnualPredictions({
                           ...annualPredictions,
                           measurables: { ...annualPredictions.measurables, onTrack: parseInt(e.target.value) || 0 }
@@ -473,7 +483,7 @@ const DashboardClean = () => {
                       <Label className="text-xs text-gray-500">Total</Label>
                       <Input
                         type="number"
-                        value={predictions?.measurables?.total || 0}
+                        value={annualPredictions?.measurables?.total || 0}
                         onChange={(e) => setAnnualPredictions({
                           ...annualPredictions,
                           measurables: { ...annualPredictions.measurables, total: parseInt(e.target.value) || 0 }
@@ -489,22 +499,31 @@ const DashboardClean = () => {
                 <div>
                   <div className="flex items-baseline gap-2">
                     <span className="text-3xl font-semibold text-gray-900">
-                      {formatRevenue(predictions?.revenue?.current || 0)}
+                      {formatRevenue(annualPredictions?.revenue?.current || 0)}
                     </span>
                     <span className="text-sm text-gray-500">
-                      / {formatRevenue(predictions?.revenue?.target || 0)}
+                      / {formatRevenue(annualPredictions?.revenue?.target || 0)}
                     </span>
                   </div>
                   <p className="text-sm text-gray-500 mt-1">{getRevenueLabel(organization)}</p>
+                  {annualPredictions?.revenue?.streams && annualPredictions.revenue.streams.length > 0 && (
+                    <div className="mt-2 space-y-1">
+                      {annualPredictions.revenue.streams.map((stream, index) => (
+                        <div key={index} className="text-xs text-gray-400">
+                          {stream.name}: {formatRevenue(stream.revenue_target || 0)}
+                        </div>
+                      ))}
+                    </div>
+                  )}
                 </div>
                 
                 <div>
                   <div className="flex items-baseline gap-2">
                     <span className="text-3xl font-semibold text-gray-900">
-                      {(predictions?.profit?.current || 0).toFixed(1)}%
+                      {(annualPredictions?.profit?.current || 0).toFixed(1)}%
                     </span>
                     <span className="text-sm text-gray-500">
-                      / {(predictions?.profit?.target || 0).toFixed(1)}%
+                      / {(annualPredictions?.profit?.target || 0).toFixed(1)}%
                     </span>
                   </div>
                   <p className="text-sm text-gray-500 mt-1">Profit Margin</p>
@@ -513,10 +532,10 @@ const DashboardClean = () => {
                 <div>
                   <div className="flex items-baseline gap-2">
                     <span className="text-3xl font-semibold text-gray-900">
-                      {predictions?.measurables?.onTrack || 0}
+                      {annualPredictions?.measurables?.onTrack || 0}
                     </span>
                     <span className="text-sm text-gray-500">
-                      / {predictions?.measurables?.total || 0}
+                      / {annualPredictions?.measurables?.total || 0}
                     </span>
                   </div>
                   <p className="text-sm text-gray-500 mt-1">Measurables on track</p>

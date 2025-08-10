@@ -168,5 +168,28 @@ export const scorecardService = {
     
     const data = await response.json();
     return data.data;
+  },
+
+  // Import monthly scorecard from CSV
+  importMonthlyScorecard: async (orgId, teamId, formData) => {
+    const token = localStorage.getItem('accessToken');
+    const response = await fetch(
+      `${API_URL}/organizations/${orgId}/teams/${teamId}/scorecard/import/monthly`,
+      {
+        method: 'POST',
+        headers: {
+          Authorization: `Bearer ${token}`,
+          // Don't set Content-Type header - let browser set it with boundary for FormData
+        },
+        body: formData,
+      }
+    );
+    
+    if (!response.ok) {
+      const error = await response.json().catch(() => ({ error: 'Import failed' }));
+      throw new Error(error.details || error.error || 'Failed to import scorecard');
+    }
+    
+    return await response.json();
   }
 };

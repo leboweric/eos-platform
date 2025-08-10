@@ -25,6 +25,7 @@ import {
 import MetricTrendChart from '../components/scorecard/MetricTrendChart';
 import GroupedScorecardView from '../components/scorecard/GroupedScorecardView';
 import ScorecardTableClean from '../components/scorecard/ScorecardTableClean';
+import ScorecardImport from '../components/scorecard/ScorecardImport';
 
 const ScorecardPageClean = () => {
   const { user } = useAuthStore();
@@ -442,10 +443,17 @@ const ScorecardPageClean = () => {
                 </div>
               )}
             </div>
-            <Button onClick={handleAddMetric} className="bg-gray-900 hover:bg-gray-800 text-white">
-              <Plus className="mr-2 h-4 w-4" />
-              Add Metric
-            </Button>
+            <div className="flex gap-2">
+              <ScorecardImport 
+                orgId={user?.organization_id}
+                teamId={selectedDepartment?.id || LEADERSHIP_TEAM_ID}
+                onImportComplete={fetchScorecard}
+              />
+              <Button onClick={handleAddMetric} className="bg-gray-900 hover:bg-gray-800 text-white">
+                <Plus className="mr-2 h-4 w-4" />
+                Add Metric
+              </Button>
+            </div>
           </div>
         </div>
 
