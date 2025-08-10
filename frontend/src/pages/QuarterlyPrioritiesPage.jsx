@@ -787,6 +787,32 @@ const QuarterlyPrioritiesPage = () => {
 
   // Wrapper component for PriorityCardClean
   const PriorityCard = ({ priority, isCompany = false, isArchived = false }) => {
+    console.log('[PriorityCard Wrapper] Rendering with handlers:', {
+      handleEditMilestone: typeof handleEditMilestone,
+      handleEditMilestoneExists: !!handleEditMilestone,
+      allHandlers: {
+        onUpdate: !!handleUpdatePriority,
+        onArchive: !!handleArchivePriority,
+        onAddMilestone: !!handleCreateMilestone,
+        onEditMilestone: !!handleEditMilestone,
+        onDeleteMilestone: !!handleDeleteMilestone,
+        onToggleMilestone: !!handleUpdateMilestone,
+        onAddUpdate: !!handleAddUpdate,
+        onEditUpdate: !!handleEditUpdate,
+        onDeleteUpdate: !!handleDeleteUpdate,
+        onStatusChange: !!handleStatusChange,
+        onUploadAttachment: !!handleUploadAttachment,
+        onDownloadAttachment: !!handleDownloadAttachment,
+        onDeleteAttachment: !!handleDeleteAttachment,
+        onCreateDiscussionIssue: !!handleCreateDiscussionIssue
+      }
+    });
+    
+    // Ensure handleEditMilestone is defined
+    if (!handleEditMilestone) {
+      console.error('[PriorityCard Wrapper] ERROR: handleEditMilestone is undefined!');
+    }
+    
     return (
       <PriorityCardClean
         priority={priority}
@@ -795,7 +821,10 @@ const QuarterlyPrioritiesPage = () => {
         onUpdate={handleUpdatePriority}
         onArchive={handleArchivePriority}
         onAddMilestone={handleCreateMilestone}
-        onEditMilestone={handleEditMilestone}
+        onEditMilestone={(priorityId, milestoneId, updates) => {
+          console.log('[PriorityCard] Inline onEditMilestone called with:', { priorityId, milestoneId, updates });
+          handleEditMilestone(priorityId, milestoneId, updates);
+        }}
         onDeleteMilestone={handleDeleteMilestone}
         onToggleMilestone={handleUpdateMilestone}
         onAddUpdate={handleAddUpdate}

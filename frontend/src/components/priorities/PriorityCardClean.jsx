@@ -60,6 +60,12 @@ const PriorityCardClean = ({
     milestones: priority?.milestones,
     teamMembersCount: teamMembers.length
   });
+  console.log('[PriorityCardClean] Handler props received:', {
+    onEditMilestone: typeof onEditMilestone,
+    onEditMilestoneExists: !!onEditMilestone,
+    onUpdateExists: !!onUpdate,
+    onAddMilestoneExists: !!onAddMilestone
+  });
   const [isExpanded, setIsExpanded] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
   const [editForm, setEditForm] = useState({
