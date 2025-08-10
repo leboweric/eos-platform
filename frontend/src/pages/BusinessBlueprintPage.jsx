@@ -556,7 +556,7 @@ const BusinessBlueprintPage = () => {
             <Card className="shadow-lg border-0 overflow-hidden">
             <CardHeader className="bg-white border-b">
               <CardTitle className="flex items-center text-xl text-gray-900">
-                <Users className="mr-2 h-6 w-6 text-indigo-600" />
+                <Users className="mr-2 h-6 w-6" style={{ color: themeColors.primary }} />
                 Core Values
               </CardTitle>
               <CardDescription className="text-gray-600">
@@ -604,7 +604,7 @@ const BusinessBlueprintPage = () => {
           <Card className="shadow-lg border-0 overflow-hidden">
             <CardHeader className="bg-white border-b">
               <CardTitle className="flex items-center text-xl text-gray-900">
-                <Target className="mr-2 h-6 w-6 text-indigo-600" />
+                <Target className="mr-2 h-6 w-6" style={{ color: themeColors.primary }} />
                 Focus
               </CardTitle>
               <CardDescription className="text-gray-600">
@@ -767,7 +767,7 @@ const BusinessBlueprintPage = () => {
           <Card className="shadow-lg border-0 overflow-hidden">
             <CardHeader className="bg-white border-b">
               <CardTitle className="flex items-center text-xl text-gray-900">
-                <TrendingUp className="mr-2 h-6 w-6 text-indigo-600" />
+                <TrendingUp className="mr-2 h-6 w-6" style={{ color: themeColors.primary }} />
                 Long Range Plan
               </CardTitle>
               <CardDescription className="text-gray-600">
@@ -898,7 +898,7 @@ const BusinessBlueprintPage = () => {
           <Card className="shadow-lg border-0 overflow-hidden">
             <CardHeader className="bg-white border-b">
               <CardTitle className="flex items-center text-xl text-gray-900">
-                <Lightbulb className="mr-2 h-6 w-6 text-indigo-600" />
+                <Lightbulb className="mr-2 h-6 w-6" style={{ color: themeColors.primary }} />
                 Marketing Strategy
               </CardTitle>
               <CardDescription className="text-gray-600">
@@ -1248,7 +1248,7 @@ const BusinessBlueprintPage = () => {
                 <div className="flex items-center justify-between">
                   <div>
                     <CardTitle className="flex items-center text-xl text-gray-900">
-                      <Calendar className="mr-2 h-6 w-6 text-indigo-600" />
+                      <Calendar className="mr-2 h-6 w-6" style={{ color: themeColors.primary }} />
                       3-Year Picture
                     </CardTitle>
                     <CardDescription className="text-gray-600">
@@ -1271,7 +1271,7 @@ const BusinessBlueprintPage = () => {
                     {blueprintData.threeYearPicture.future_date && (
                       <div className="p-4 bg-gray-50 border border-gray-200 rounded-lg hover:shadow-md transition-shadow">
                         <div className="flex items-start">
-                          <Calendar className="h-5 w-5 text-indigo-600 mr-3 mt-0.5" />
+                          <Calendar className="h-5 w-5 mr-3 mt-0.5" style={{ color: themeColors.primary }} />
                           <div className="flex-1">
                             <h4 className="font-semibold text-gray-900">Target Date</h4>
                             <p className="text-sm text-gray-600 mt-1">
@@ -1296,7 +1296,7 @@ const BusinessBlueprintPage = () => {
                       (blueprintData.threeYearPicture.revenueStreams && blueprintData.threeYearPicture.revenueStreams.length > 0)) && (
                       <div className="p-4 bg-gray-50 border border-gray-200 rounded-lg hover:shadow-md transition-shadow">
                         <div className="flex items-start">
-                          <DollarSign className="h-5 w-5 text-indigo-600 mr-3 mt-0.5" />
+                          <DollarSign className="h-5 w-5 mr-3 mt-0.5" style={{ color: themeColors.primary }} />
                           <div className="flex-1 space-y-3">
                             <h4 className="font-semibold text-gray-900">Financial Goals</h4>
                             
@@ -1358,7 +1358,7 @@ const BusinessBlueprintPage = () => {
                     {blueprintData.threeYearPicture.measurables && blueprintData.threeYearPicture.measurables.length > 0 && (
                       <div className="space-y-2">
                         <div className="flex items-center mb-2">
-                          <BarChart3 className="h-5 w-5 text-indigo-600 mr-2" />
+                          <BarChart3 className="h-5 w-5 mr-2" style={{ color: themeColors.primary }} />
                           <h4 className="font-semibold text-gray-900">Key Measurables</h4>
                         </div>
                         {blueprintData.threeYearPicture.measurables.map((measurable, index) => (
@@ -1383,7 +1383,7 @@ const BusinessBlueprintPage = () => {
                     {blueprintData.threeYearPicture.lookLikeItems && blueprintData.threeYearPicture.lookLikeItems.filter(item => item).length > 0 && (
                       <div className="space-y-2">
                         <div className="flex items-center mb-2">
-                          <Eye className="h-5 w-5 text-indigo-600 mr-2" />
+                          <Eye className="h-5 w-5 mr-2" style={{ color: themeColors.primary }} />
                           <h4 className="font-semibold text-gray-900">What does it look like?</h4>
                         </div>
                         {blueprintData.threeYearPicture.lookLikeItems.filter(item => item).map((item, originalIndex) => {
@@ -1398,7 +1398,7 @@ const BusinessBlueprintPage = () => {
                                 type="checkbox"
                                 checked={lookLikeCheckedItems[actualIndex] || false}
                                 onChange={() => handleToggleLookLikeItem(actualIndex)}
-                                className="mt-0.5 h-4 w-4 text-indigo-600 border-gray-300 rounded focus:ring-indigo-500"
+                                className="mt-0.5 h-4 w-4 border-gray-300 rounded" style={{ color: themeColors.primary }}
                               />
                               <p className={`text-sm text-gray-700 ${lookLikeCheckedItems[actualIndex] ? 'line-through opacity-60' : ''}`}>
                                 {item}
@@ -1438,7 +1438,7 @@ const BusinessBlueprintPage = () => {
               <div className="flex items-center justify-between">
                 <div>
                   <CardTitle className="flex items-center text-xl text-gray-900">
-                    <Target className="mr-2 h-6 w-6 text-indigo-600" />
+                    <Target className="mr-2 h-6 w-6" style={{ color: themeColors.primary }} />
                     1-Year Plan
                   </CardTitle>
                   <CardDescription className="text-gray-600">
@@ -1461,7 +1461,7 @@ const BusinessBlueprintPage = () => {
                   {blueprintData.oneYearPlan.future_date && (
                     <div className="p-4 bg-gray-50 border border-gray-200 rounded-lg hover:shadow-md transition-shadow">
                       <div className="flex items-start">
-                        <Calendar className="h-5 w-5 text-indigo-600 mr-3 mt-0.5" />
+                        <Calendar className="h-5 w-5 mr-3 mt-0.5" style={{ color: themeColors.primary }} />
                         <div className="flex-1">
                           <h4 className="font-semibold text-gray-900">Target Date</h4>
                           <p className="text-sm text-gray-600 mt-1">
@@ -1481,7 +1481,7 @@ const BusinessBlueprintPage = () => {
                     (blueprintData.oneYearPlan.revenueStreams && blueprintData.oneYearPlan.revenueStreams.length > 0)) && (
                     <div className="p-4 bg-gray-50 border border-gray-200 rounded-lg hover:shadow-md transition-shadow">
                       <div className="flex items-start">
-                        <DollarSign className="h-5 w-5 text-indigo-600 mr-3 mt-0.5" />
+                        <DollarSign className="h-5 w-5 mr-3 mt-0.5" style={{ color: themeColors.primary }} />
                         <div className="flex-1 space-y-3">
                           <h4 className="font-semibold text-gray-900">Financial Goals</h4>
                           
@@ -1543,7 +1543,7 @@ const BusinessBlueprintPage = () => {
                   {blueprintData.oneYearPlan.measurables && blueprintData.oneYearPlan.measurables.length > 0 && (
                     <div className="space-y-2">
                       <div className="flex items-center mb-2">
-                        <BarChart3 className="h-5 w-5 text-indigo-600 mr-2" />
+                        <BarChart3 className="h-5 w-5 mr-2" style={{ color: themeColors.primary }} />
                         <h4 className="font-semibold text-gray-900">Key Measurables</h4>
                       </div>
                       {blueprintData.oneYearPlan.measurables.map((measurable, index) => (
@@ -1574,7 +1574,7 @@ const BusinessBlueprintPage = () => {
                   {blueprintData.oneYearPlan.goals && Array.isArray(blueprintData.oneYearPlan.goals) && blueprintData.oneYearPlan.goals.length > 0 && (
                     <div className="space-y-2">
                       <div className="flex items-center mb-2">
-                        <Flag className="h-5 w-5 text-indigo-600 mr-2" />
+                        <Flag className="h-5 w-5 mr-2" style={{ color: themeColors.primary }} />
                         <h4 className="font-semibold text-gray-900">Goals</h4>
                       </div>
                       {blueprintData.oneYearPlan.goals.filter(goal => {
@@ -1596,7 +1596,7 @@ const BusinessBlueprintPage = () => {
                               type="checkbox"
                               checked={oneYearGoalsCheckedItems[index] || false}
                               onChange={() => handleToggleOneYearGoal(goal.id || null, index)}
-                              className="mt-0.5 h-4 w-4 text-indigo-600 border-gray-300 rounded focus:ring-indigo-500"
+                              className="mt-0.5 h-4 w-4 border-gray-300 rounded" style={{ color: themeColors.primary }}
                             />
                             <div className="flex items-start flex-1">
                               <span className={`font-semibold mr-2 ${oneYearGoalsCheckedItems[index] ? 'line-through opacity-60' : ''}`} style={{ color: themeColors.primary }}>
@@ -1649,7 +1649,7 @@ const BusinessBlueprintPage = () => {
                   {/* Quarter Header */}
                   <div className="p-4 bg-gray-50 border border-gray-200 rounded-lg hover:shadow-md transition-shadow">
                     <div className="flex items-start">
-                      <Calendar className="h-5 w-5 text-indigo-600 mr-3 mt-0.5" />
+                      <Calendar className="h-5 w-5 mr-3 mt-0.5" style={{ color: themeColors.primary }} />
                       <div className="flex-1">
                         <h4 className="font-semibold text-gray-900">Current Quarter</h4>
                         <p className="text-sm text-gray-600 mt-1">
@@ -1703,7 +1703,7 @@ const BusinessBlueprintPage = () => {
                   {blueprintData.quarterlyPriorities.priorities.some(p => !p.is_company_priority) && (
                     <div className="space-y-3">
                       <div className="flex items-center">
-                        <Users className="h-5 w-5 text-indigo-600 mr-2" />
+                        <Users className="h-5 w-5 mr-2" style={{ color: themeColors.primary }} />
                         <h4 className="font-semibold text-gray-900">Individual Priorities</h4>
                       </div>
                       {blueprintData.quarterlyPriorities.priorities
@@ -1793,7 +1793,7 @@ const BusinessBlueprintPage = () => {
                   {/* Issues Summary */}
                   <div className="p-4 bg-gray-50 border border-gray-200 rounded-lg hover:shadow-md transition-shadow">
                     <div className="flex items-start">
-                      <MessageSquare className="h-5 w-5 text-indigo-600 mr-3 mt-0.5" />
+                      <MessageSquare className="h-5 w-5 mr-3 mt-0.5" style={{ color: themeColors.primary }} />
                       <div className="flex-1">
                         <h4 className="font-semibold text-gray-900">Long Term Issues</h4>
                         <p className="text-sm text-gray-600 mt-1">
