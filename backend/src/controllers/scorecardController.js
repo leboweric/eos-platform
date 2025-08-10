@@ -96,18 +96,6 @@ export const getScorecard = async (req, res) => {
     `;
     const scores = await db.query(scoresQuery, queryParams);
     
-    console.log(`📊 Backend: Found ${scores.rows.length} total scores for org ${orgId}, team ${teamId}`);
-    console.log(`📊 Backend: Found ${metrics.rows.length} metrics for org ${orgId}, team ${teamId}`);
-    
-    // Log first few scores for debugging
-    if (scores.rows.length > 0) {
-      console.log('📊 Backend: Sample scores:', scores.rows.slice(0, 3).map(s => ({
-        metric_id: s.metric_id.substring(0, 8),
-        week_date: s.week_date,
-        value: s.value
-      })));
-    }
-    
     // Organize scores by metric and week/month
     const weeklyScores = {};
     const monthlyScores = {};
@@ -129,8 +117,6 @@ export const getScorecard = async (req, res) => {
         weeklyScores[score.metric_id][scoreDate] = score.value;
       }
     });
-    
-    console.log(`📊 Backend: Weekly scores organized for ${Object.keys(weeklyScores).length} metrics`);
     
     // Get team members for the organization
     const teamMembers = await getTeamMembers(orgId);
