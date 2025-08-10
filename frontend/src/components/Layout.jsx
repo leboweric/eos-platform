@@ -45,6 +45,9 @@ const Layout = ({ children }) => {
   const [logoUrl, setLogoUrl] = useState(null);
   const [logoKey, setLogoKey] = useState(Date.now()); // Force refresh of logo
   const [hideSidebar, setHideSidebar] = useState(false);
+  const [logoSize, setLogoSize] = useState(() => {
+    return parseInt(localStorage.getItem('logoSize') || '100');
+  });
   const location = useLocation();
   const navigate = useNavigate();
   const { user, logout, isOnLeadershipTeam } = useAuthStore();
@@ -59,6 +62,19 @@ const Layout = ({ children }) => {
       setLogoUrl(organizationService.getLogoUrl(orgId));
     }
   }, [user]);
+  
+  // Listen for logo size changes
+  useEffect(() => {
+    const handleLogoSizeChange = (event) => {
+      setLogoSize(event.detail);
+    };
+    
+    window.addEventListener('logoSizeChanged', handleLogoSizeChange);
+    
+    return () => {
+      window.removeEventListener('logoSizeChanged', handleLogoSizeChange);
+    };
+  }, []);
   
   // Refresh logo when returning to this page
   useEffect(() => {
@@ -142,7 +158,12 @@ const Layout = ({ children }) => {
                 key={logoKey}
                 src={`${logoUrl}?t=${logoKey}`} 
                 alt={user?.organizationName} 
-                className="h-10 w-auto max-w-[150px] object-contain"
+                className="object-contain"
+                style={{
+                  height: `${40 * (logoSize / 100)}px`,
+                  maxWidth: `${150 * (logoSize / 100)}px`,
+                  width: 'auto'
+                }}
                 onError={(e) => {
                   e.target.style.display = 'none';
                   e.target.nextSibling.style.display = 'flex';

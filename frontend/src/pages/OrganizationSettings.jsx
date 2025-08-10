@@ -6,6 +6,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Slider } from '@/components/ui/slider';
 import { Building2, Save, Loader2, Upload, X, Image } from 'lucide-react';
 import { organizationService } from '../services/organizationService';
 
@@ -27,6 +28,10 @@ const OrganizationSettings = () => {
   const [logoPreview, setLogoPreview] = useState(null);
   const [selectedFile, setSelectedFile] = useState(null);
   const [uploadingLogo, setUploadingLogo] = useState(false);
+  const [logoSize, setLogoSize] = useState(() => {
+    // Get saved logo size from localStorage, default to 100%
+    return parseInt(localStorage.getItem('logoSize') || '100');
+  });
 
   useEffect(() => {
     fetchOrganizationDetails();
@@ -155,6 +160,14 @@ const OrganizationSettings = () => {
     } finally {
       setUploadingLogo(false);
     }
+  };
+
+  const handleLogoSizeChange = (value) => {
+    const size = value[0]; // Slider returns array
+    setLogoSize(size);
+    localStorage.setItem('logoSize', size.toString());
+    // Trigger a custom event to update logo size in Layout
+    window.dispatchEvent(new CustomEvent('logoSizeChanged', { detail: size }));
   };
 
   if (loading) {
@@ -389,6 +402,49 @@ const OrganizationSettings = () => {
                 )}
               </div>
             </div>
+            
+            {/* Logo Size Adjustment */}
+            {organizationData?.logo_updated_at && (
+              <div className="mt-6 pt-6 border-t">
+                <div className="space-y-4">
+                  <div>
+                    <Label>Logo Display Size</Label>
+                    <p className="text-sm text-gray-600 mb-3">
+                      Adjust how large your logo appears in the sidebar
+                    </p>
+                  </div>
+                  
+                  <div className="flex items-center space-x-4">
+                    <span className="text-sm text-gray-500">Small</span>
+                    <Slider
+                      value={[logoSize]}
+                      onValueChange={handleLogoSizeChange}
+                      min={50}
+                      max={150}
+                      step={10}
+                      className="flex-1"
+                    />
+                    <span className="text-sm text-gray-500">Large</span>
+                    <span className="text-sm font-medium w-12 text-right">{logoSize}%</span>
+                  </div>
+                  
+                  <div className="flex items-center justify-center p-4 bg-gray-50 rounded-lg">
+                    <div className="text-center">
+                      <p className="text-xs text-gray-500 mb-2">Preview</p>
+                      <img 
+                        src={logoPreview} 
+                        alt="Logo preview" 
+                        className="object-contain"
+                        style={{ 
+                          height: `${40 * (logoSize / 100)}px`,
+                          maxWidth: `${150 * (logoSize / 100)}px`
+                        }}
+                      />
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
           </div>
         </CardContent>
       </Card>
