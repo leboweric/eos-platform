@@ -230,6 +230,12 @@ const TwoPagePlanView = ({ hideIssuesAndPriorities = false }) => {
 
   return (
     <>
+    {/* Debug: Show current theme colors */}
+    <div className="mb-4 p-2 bg-gray-100 rounded text-sm">
+      Theme Colors - Primary: <span style={{color: themeColors.primary}}>{themeColors.primary}</span> | 
+      Secondary: <span style={{color: themeColors.secondary}}>{themeColors.secondary}</span> | 
+      Accent: <span style={{color: themeColors.accent}}>{themeColors.accent}</span>
+    </div>
     <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
       {/* Left Column - Page 1 */}
       <div className="space-y-6">
