@@ -723,6 +723,10 @@ export const updateOneYearPlan = async (req, res) => {
     const { orgId, teamId } = req.params;
     let { revenue, profit, targetDate, goals, measurables, revenueStreams } = req.body;
     
+    console.log('Backend - Received goals:', goals);
+    console.log('Backend - Goals type:', typeof goals);
+    console.log('Backend - Goals is array:', Array.isArray(goals));
+    
     // Parse revenue - handle formatted strings like "$550M" or "550K"
     if (revenue && typeof revenue === 'string') {
       // Remove currency symbols and spaces
@@ -807,37 +811,45 @@ export const updateOneYearPlan = async (req, res) => {
       }
     }
     
-    // Handle goals
-    if (goals && Array.isArray(goals)) {
-      // Get existing goals to preserve completion status
-      const existingGoals = await query(
-        'SELECT goal_text, is_completed FROM one_year_goals WHERE one_year_plan_id = $1',
-        [planId]
-      );
+    // Handle goals - only update if goals array is provided
+    // If goals is undefined, preserve existing goals
+    if (goals !== undefined) {
+      console.log('Backend - Processing goals, count:', goals ? goals.length : 0);
       
-      // Create a map of existing goals to their completion status
-      const completionMap = {};
-      existingGoals.rows.forEach(goal => {
-        completionMap[goal.goal_text] = goal.is_completed;
-      });
-      
-      // Delete existing goals
-      await query('DELETE FROM one_year_goals WHERE one_year_plan_id = $1', [planId]);
-      
-      // Insert new goals preserving completion status where text matches
-      for (let i = 0; i < goals.length; i++) {
-        const goal = goals[i];
-        if (goal && goal.trim()) {
-          const goalText = goal.trim();
-          const isCompleted = completionMap[goalText] || false;
-          
-          await query(
-            `INSERT INTO one_year_goals (id, one_year_plan_id, goal_text, sort_order, is_completed)
-             VALUES ($1, $2, $3, $4, $5)`,
-            [uuidv4(), planId, goalText, i, isCompleted]
-          );
+      if (Array.isArray(goals)) {
+        // Get existing goals to preserve completion status
+        const existingGoals = await query(
+          'SELECT goal_text, is_completed FROM one_year_goals WHERE one_year_plan_id = $1',
+          [planId]
+        );
+        
+        // Create a map of existing goals to their completion status
+        const completionMap = {};
+        existingGoals.rows.forEach(goal => {
+          completionMap[goal.goal_text] = goal.is_completed;
+        });
+        
+        // Delete existing goals
+        await query('DELETE FROM one_year_goals WHERE one_year_plan_id = $1', [planId]);
+        
+        // Insert new goals preserving completion status where text matches
+        for (let i = 0; i < goals.length; i++) {
+          const goal = goals[i];
+          if (goal && goal.trim()) {
+            const goalText = goal.trim();
+            const isCompleted = completionMap[goalText] || false;
+            
+            console.log(`Backend - Inserting goal ${i}: ${goalText}`);
+            await query(
+              `INSERT INTO one_year_goals (id, one_year_plan_id, goal_text, sort_order, is_completed)
+               VALUES ($1, $2, $3, $4, $5)`,
+              [uuidv4(), planId, goalText, i, isCompleted]
+            );
+          }
         }
       }
+    } else {
+      console.log('Backend - Goals not provided, preserving existing goals');
     }
     
     // Handle measurables

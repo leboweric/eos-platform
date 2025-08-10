@@ -30,7 +30,9 @@ const OneYearPlanDialog = ({ open, onOpenChange, data, onSave, organization }) =
           ? data.revenueStreams.map(s => ({ name: s.name || '', revenue_target: s.revenue_target || '' }))
           : [],
         targetDate: data.future_date ? data.future_date.split('T')[0] : new Date(new Date().getFullYear() + 1, 11, 31).toISOString().split('T')[0],
-        goals: data.goals && Array.isArray(data.goals) && data.goals.length > 0 ? data.goals : ['', '', ''],
+        goals: data.goals && Array.isArray(data.goals) && data.goals.length > 0 
+          ? data.goals.map(g => typeof g === 'string' ? g : (g.goal_text || ''))
+          : ['', '', ''],
         measurables: (data.measurables || []).map(m => ({
           name: m.name || '',
           value: m.target_value || m.value || ''
@@ -45,6 +47,8 @@ const OneYearPlanDialog = ({ open, onOpenChange, data, onSave, organization }) =
     setError(null);
     
     try {
+      console.log('OneYearPlanDialog - Saving formData:', formData);
+      console.log('OneYearPlanDialog - Goals being saved:', formData.goals);
       await onSave(formData);
       onOpenChange(false);
     } catch (error) {
