@@ -137,20 +137,38 @@ const DashboardClean = () => {
       setLoading(true);
       
       const orgId = localStorage.getItem('impersonatedOrgId') || user?.organizationId || user?.organization_id;
-      const teamId = getTeamId(user, 'leadership');
       
+      // For dashboard, fetch priorities from user's actual department team, not leadership
       let userDepartmentId = null;
+      let teamIdForPriorities = null;
+      
       if (user?.teams && user.teams.length > 0) {
+        // Find the user's actual department team (non-leadership)
         const nonLeadershipTeam = user.teams.find(team => !team.is_leadership_team);
         if (nonLeadershipTeam) {
           userDepartmentId = nonLeadershipTeam.id;
+          teamIdForPriorities = nonLeadershipTeam.id;
         } else {
-          userDepartmentId = user.teams[0].id;
+          // If user is only on leadership team, use that
+          const leadershipTeam = user.teams.find(team => team.is_leadership_team);
+          if (leadershipTeam) {
+            userDepartmentId = leadershipTeam.id;
+            teamIdForPriorities = leadershipTeam.id;
+          } else {
+            // Fallback to first team
+            userDepartmentId = user.teams[0].id;
+            teamIdForPriorities = user.teams[0].id;
+          }
         }
+      } else {
+        // Fallback to leadership team ID if no teams found
+        teamIdForPriorities = getTeamId(user, 'leadership');
       }
       
+      console.log('Dashboard fetching priorities with teamId:', teamIdForPriorities, 'userDepartmentId:', userDepartmentId);
+      
       const [prioritiesResponse, todosResponse, issuesResponse, orgResponse, blueprintResponse] = await Promise.all([
-        quarterlyPrioritiesService.getCurrentPriorities(orgId, teamId),
+        quarterlyPrioritiesService.getCurrentPriorities(orgId, teamIdForPriorities),
         todosService.getTodos(null, null, true, userDepartmentId),
         issuesService.getIssues(null, false, userDepartmentId),
         isOnLeadershipTeam() ? organizationService.getOrganization() : Promise.resolve(null),
@@ -193,25 +211,42 @@ const DashboardClean = () => {
       
       // Get user's priorities (including company priorities they own)
       const userPriorities = [];
+      
+      console.log('Dashboard Priorities Response:', {
+        hasCompanyPriorities: !!prioritiesResponse.companyPriorities,
+        companyPrioritiesCount: prioritiesResponse.companyPriorities?.length || 0,
+        teamMemberPrioritiesKeys: Object.keys(prioritiesResponse.teamMemberPriorities || {}),
+        userId: user.id,
+        userEmail: user.email
+      });
+      
       if (prioritiesResponse.companyPriorities) {
         // Include company priorities owned by the user
         const userCompanyPriorities = prioritiesResponse.companyPriorities.filter(p => {
           // Check both owner.id and owner_id for compatibility
           const ownerId = p.owner?.id || p.owner_id;
-          return ownerId === user.id;
+          const isOwner = ownerId === user.id;
+          console.log(`Priority "${p.title}" - ownerId: ${ownerId}, userId: ${user.id}, isOwner: ${isOwner}`);
+          return isOwner;
         });
-        console.log('Dashboard Priorities Debug:', {
-          companyPriorities: prioritiesResponse.companyPriorities.length,
-          userCompanyPriorities: userCompanyPriorities.length,
-          userId: user.id,
-          sampleCompanyPriority: prioritiesResponse.companyPriorities[0]
-        });
+        console.log('User Company Priorities:', userCompanyPriorities.map(p => ({
+          title: p.title,
+          ownerId: p.owner?.id || p.owner_id,
+          status: p.status
+        })));
         userPriorities.push(...userCompanyPriorities);
       }
+      
       if (prioritiesResponse.teamMemberPriorities?.[user.id]) {
-        userPriorities.push(...prioritiesResponse.teamMemberPriorities[user.id].priorities);
+        const memberPriorities = prioritiesResponse.teamMemberPriorities[user.id].priorities;
+        console.log('User Individual Priorities:', memberPriorities.map(p => ({
+          title: p.title,
+          status: p.status
+        })));
+        userPriorities.push(...memberPriorities);
       }
-      console.log('Total user priorities:', userPriorities.length);
+      
+      console.log('Total user priorities found:', userPriorities.length);
       
       // Calculate priorities stats
       let completedPriorities, totalPriorities, prioritiesProgress;
