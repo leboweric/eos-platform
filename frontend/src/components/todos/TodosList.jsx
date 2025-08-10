@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Button } from '@/components/ui/button';
 import { 
@@ -17,6 +17,7 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { format } from 'date-fns';
 import { todosService } from '../../services/todosService';
+import { organizationService } from '../../services/organizationService';
 import { useSelectedTodos } from '../../contexts/SelectedTodosContext';
 
 const TodosList = ({ 
@@ -29,6 +30,50 @@ const TodosList = ({
   showCompleted = true
 }) => {
   const { selectedTodoIds, toggleTodo, isSelected } = useSelectedTodos();
+  const [themeColors, setThemeColors] = useState({
+    primary: '#3B82F6',
+    secondary: '#1E40AF',
+    accent: '#60A5FA'
+  });
+  
+  useEffect(() => {
+    fetchOrganizationTheme();
+    
+    // Listen for theme changes
+    const handleThemeChange = (event) => {
+      setThemeColors(event.detail);
+    };
+    
+    window.addEventListener('themeChanged', handleThemeChange);
+    return () => window.removeEventListener('themeChanged', handleThemeChange);
+  }, []);
+  
+  const fetchOrganizationTheme = async () => {
+    try {
+      // First check localStorage
+      const savedTheme = localStorage.getItem('orgTheme');
+      if (savedTheme) {
+        const parsedTheme = JSON.parse(savedTheme);
+        setThemeColors(parsedTheme);
+        return;
+      }
+      
+      // Fetch from API
+      const orgData = await organizationService.getOrganization();
+      
+      if (orgData) {
+        const theme = {
+          primary: orgData.theme_primary_color || '#3B82F6',
+          secondary: orgData.theme_secondary_color || '#1E40AF',
+          accent: orgData.theme_accent_color || '#60A5FA'
+        };
+        setThemeColors(theme);
+        localStorage.setItem('orgTheme', JSON.stringify(theme));
+      }
+    } catch (error) {
+      console.error('Failed to fetch organization theme:', error);
+    }
+  };
   
   // Parse date string as local date, not UTC
   const parseDateAsLocal = (dateStr) => {
@@ -90,7 +135,7 @@ const TodosList = ({
             {overdue ? (
               <div className="absolute left-0 top-0 bottom-0 w-1 bg-red-500 rounded-l-lg" />
             ) : (
-              <div className="absolute left-0 top-0 bottom-0 w-1 bg-blue-500 rounded-l-lg" />
+              <div className="absolute left-0 top-0 bottom-0 w-1 rounded-l-lg" style={{ backgroundColor: themeColors.accent }} />
             )}
             
             <div className="p-4 pl-6">
