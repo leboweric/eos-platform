@@ -7,10 +7,20 @@ import { useAuthStore } from '../stores/authStore';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Badge } from '@/components/ui/badge';
-import { Target, Eye, EyeOff, Briefcase } from 'lucide-react';
+import { 
+  Eye, 
+  EyeOff, 
+  Briefcase, 
+  Shield, 
+  Target, 
+  TrendingUp,
+  Users,
+  CheckCircle,
+  ArrowRight,
+  Lock
+} from 'lucide-react';
 
 const loginSchema = z.object({
   email: z.string().email('Please enter a valid email address'),
@@ -42,120 +52,249 @@ const LoginPage = () => {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 to-indigo-100 px-4">
-      <div className="w-full max-w-md">
-        {/* Logo */}
-        <div className="text-center mb-8">
-          <Link to="/" className="inline-flex items-center justify-center">
+    <div className="min-h-screen flex">
+      {/* Left Panel - Branding & Benefits */}
+      <div className="hidden lg:flex lg:w-1/2 bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 p-12 flex-col justify-between relative overflow-hidden">
+        {/* Background Pattern */}
+        <div className="absolute inset-0 opacity-10">
+          <div className="absolute -top-24 -left-24 w-96 h-96 bg-blue-500 rounded-full blur-3xl"></div>
+          <div className="absolute -bottom-24 -right-24 w-96 h-96 bg-indigo-500 rounded-full blur-3xl"></div>
+        </div>
+        
+        {/* Content */}
+        <div className="relative z-10">
+          {/* Logo */}
+          <div className="mb-12">
             <img 
               src="/AXP_logo_upper_left_transparent.png?v=2" 
               alt="AXP" 
-              className="h-20 w-auto"
+              className="h-16 w-auto brightness-0 invert"
             />
-          </Link>
+          </div>
+          
+          {/* Main Message */}
+          <div className="space-y-6">
+            <h1 className="text-4xl lg:text-5xl font-bold text-white leading-tight">
+              Transform Your Business with
+              <span className="text-blue-400 block mt-2">Proven Operating Systems</span>
+            </h1>
+            <p className="text-xl text-gray-300 leading-relaxed">
+              Join thousands of organizations achieving breakthrough results through structured execution and accountability.
+            </p>
+          </div>
+
+          {/* Benefits */}
+          <div className="mt-12 space-y-4">
+            <div className="flex items-start space-x-3">
+              <div className="flex-shrink-0 w-6 h-6 rounded-full bg-blue-500/20 flex items-center justify-center mt-0.5">
+                <CheckCircle className="w-4 h-4 text-blue-400" />
+              </div>
+              <div>
+                <h3 className="text-white font-semibold">Strategic Alignment</h3>
+                <p className="text-gray-400 text-sm mt-1">Get everyone rowing in the same direction with clear priorities</p>
+              </div>
+            </div>
+            
+            <div className="flex items-start space-x-3">
+              <div className="flex-shrink-0 w-6 h-6 rounded-full bg-blue-500/20 flex items-center justify-center mt-0.5">
+                <CheckCircle className="w-4 h-4 text-blue-400" />
+              </div>
+              <div>
+                <h3 className="text-white font-semibold">Measurable Results</h3>
+                <p className="text-gray-400 text-sm mt-1">Track progress with scorecards and data-driven insights</p>
+              </div>
+            </div>
+            
+            <div className="flex items-start space-x-3">
+              <div className="flex-shrink-0 w-6 h-6 rounded-full bg-blue-500/20 flex items-center justify-center mt-0.5">
+                <CheckCircle className="w-4 h-4 text-blue-400" />
+              </div>
+              <div>
+                <h3 className="text-white font-semibold">Team Accountability</h3>
+                <p className="text-gray-400 text-sm mt-1">Build a culture of ownership and execution excellence</p>
+              </div>
+            </div>
+          </div>
         </div>
 
-        <Card>
-          <CardHeader className="text-center">
-            <CardTitle className="text-2xl">Welcome Back</CardTitle>
-            <CardDescription>
-              Sign in to your AXP account
-            </CardDescription>
-            {/* TODO: Update this check for more generic consultant verification */}
-            {emailValue.toLowerCase().endsWith('@eosworldwide.com') && (
-              <Badge variant="secondary" className="mt-2 mx-auto">
-                <Briefcase className="mr-1 h-3 w-3" />
-                Strategy Consultant Account
-              </Badge>
-            )}
-          </CardHeader>
-          <CardContent>
-            <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
-              {error && (
-                <Alert variant="destructive">
-                  <AlertDescription>{error}</AlertDescription>
-                </Alert>
-              )}
+        {/* Stats */}
+        <div className="relative z-10 grid grid-cols-3 gap-8 pt-8 border-t border-gray-700">
+          <div>
+            <div className="text-3xl font-bold text-white">10K+</div>
+            <div className="text-sm text-gray-400 mt-1">Active Users</div>
+          </div>
+          <div>
+            <div className="text-3xl font-bold text-white">500+</div>
+            <div className="text-sm text-gray-400 mt-1">Organizations</div>
+          </div>
+          <div>
+            <div className="text-3xl font-bold text-white">98%</div>
+            <div className="text-sm text-gray-400 mt-1">Success Rate</div>
+          </div>
+        </div>
+      </div>
 
+      {/* Right Panel - Login Form */}
+      <div className="w-full lg:w-1/2 flex items-center justify-center p-8 bg-gray-50">
+        <div className="w-full max-w-md">
+          {/* Mobile Logo (shown only on small screens) */}
+          <div className="lg:hidden text-center mb-8">
+            <img 
+              src="/AXP_logo_upper_left_transparent.png?v=2" 
+              alt="AXP" 
+              className="h-14 w-auto mx-auto"
+            />
+          </div>
+
+          {/* Form Container */}
+          <div className="bg-white p-8 rounded-2xl shadow-xl border border-gray-100">
+            {/* Header */}
+            <div className="text-center mb-8">
+              <h2 className="text-3xl font-bold text-gray-900">Welcome back</h2>
+              <p className="text-gray-600 mt-2">Enter your credentials to access your account</p>
+            </div>
+
+            {/* Consultant Badge */}
+            {emailValue.toLowerCase().endsWith('@eosworldwide.com') && (
+              <div className="mb-6 p-3 bg-indigo-50 rounded-lg border border-indigo-200">
+                <div className="flex items-center justify-center space-x-2">
+                  <Briefcase className="h-4 w-4 text-indigo-600" />
+                  <span className="text-sm font-medium text-indigo-900">Strategy Consultant Account</span>
+                </div>
+              </div>
+            )}
+
+            {/* Error Alert */}
+            {error && (
+              <Alert variant="destructive" className="mb-6">
+                <AlertDescription>{error}</AlertDescription>
+              </Alert>
+            )}
+
+            {/* Form */}
+            <form onSubmit={handleSubmit(onSubmit)} className="space-y-5">
               <div className="space-y-2">
-                <Label htmlFor="email">Email</Label>
-                <Input
-                  id="email"
-                  type="email"
-                  placeholder="Enter your email"
-                  {...register('email')}
-                  className={errors.email ? 'border-red-500' : ''}
-                />
+                <Label htmlFor="email" className="text-sm font-medium text-gray-700">
+                  Email address
+                </Label>
+                <div className="relative">
+                  <Input
+                    id="email"
+                    type="email"
+                    placeholder="name@company.com"
+                    {...register('email')}
+                    className={`h-11 px-4 ${errors.email ? 'border-red-500 focus:ring-red-500' : 'border-gray-300 focus:border-blue-500 focus:ring-blue-500'}`}
+                  />
+                </div>
                 {errors.email && (
-                  <p className="text-sm text-red-500">{errors.email.message}</p>
+                  <p className="text-sm text-red-600 mt-1">{errors.email.message}</p>
                 )}
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="password">Password</Label>
+                <div className="flex items-center justify-between">
+                  <Label htmlFor="password" className="text-sm font-medium text-gray-700">
+                    Password
+                  </Label>
+                  <Link
+                    to="/forgot-password"
+                    className="text-sm text-blue-600 hover:text-blue-700 font-medium"
+                  >
+                    Forgot password?
+                  </Link>
+                </div>
                 <div className="relative">
                   <Input
                     id="password"
                     type={showPassword ? 'text' : 'password'}
                     placeholder="Enter your password"
                     {...register('password')}
-                    className={errors.password ? 'border-red-500 pr-10' : 'pr-10'}
+                    className={`h-11 px-4 pr-10 ${errors.password ? 'border-red-500 focus:ring-red-500' : 'border-gray-300 focus:border-blue-500 focus:ring-blue-500'}`}
                   />
                   <button
                     type="button"
                     onClick={() => setShowPassword(!showPassword)}
-                    className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-500 hover:text-gray-700"
+                    className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600 transition-colors"
                   >
-                    {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                    {showPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
                   </button>
                 </div>
                 {errors.password && (
-                  <p className="text-sm text-red-500">{errors.password.message}</p>
+                  <p className="text-sm text-red-600 mt-1">{errors.password.message}</p>
                 )}
               </div>
 
-              <div className="flex items-center justify-between">
-                <div className="flex items-center space-x-2">
-                  <input
-                    type="checkbox"
-                    id="remember"
-                    className="rounded border-gray-300 text-primary focus:ring-primary"
-                  />
-                  <Label htmlFor="remember" className="text-sm">
-                    Remember me
-                  </Label>
-                </div>
-                <Link
-                  to="/forgot-password"
-                  className="text-sm text-primary hover:underline"
-                >
-                  Forgot password?
-                </Link>
+              <div className="flex items-center">
+                <input
+                  type="checkbox"
+                  id="remember"
+                  className="h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                />
+                <Label htmlFor="remember" className="ml-2 text-sm text-gray-600 cursor-pointer">
+                  Keep me signed in
+                </Label>
               </div>
 
               <Button
                 type="submit"
-                className="w-full"
+                className="w-full h-11 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-lg transition-all transform hover:scale-[1.02] active:scale-[0.98]"
                 disabled={isLoading}
               >
-                {isLoading ? 'Signing in...' : 'Sign In'}
+                {isLoading ? (
+                  <span className="flex items-center justify-center">
+                    <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin mr-2"></div>
+                    Signing in...
+                  </span>
+                ) : (
+                  <span className="flex items-center justify-center">
+                    Sign in
+                    <ArrowRight className="ml-2 h-4 w-4" />
+                  </span>
+                )}
               </Button>
             </form>
 
-            <div className="mt-6 text-center">
-              <p className="text-sm text-gray-600">
-                Don't have an account?{' '}
-                <Link to="/register" className="text-primary hover:underline font-medium">
-                  Sign up
-                </Link>
-              </p>
+            {/* Divider */}
+            <div className="relative my-8">
+              <div className="absolute inset-0 flex items-center">
+                <div className="w-full border-t border-gray-200"></div>
+              </div>
+              <div className="relative flex justify-center text-sm">
+                <span className="px-4 bg-white text-gray-500">New to AXP?</span>
+              </div>
             </div>
-          </CardContent>
-        </Card>
+
+            {/* Sign Up Link */}
+            <div className="text-center">
+              <Link 
+                to="/register" 
+                className="inline-flex items-center justify-center w-full h-11 px-4 border border-gray-300 rounded-lg text-gray-700 font-medium hover:bg-gray-50 transition-colors"
+              >
+                Create an account
+              </Link>
+            </div>
+
+            {/* Security Note */}
+            <div className="mt-6 flex items-center justify-center space-x-2 text-xs text-gray-500">
+              <Lock className="h-3 w-3" />
+              <span>Secured with 256-bit SSL encryption</span>
+            </div>
+          </div>
+
+          {/* Footer Links */}
+          <div className="mt-8 text-center">
+            <div className="flex items-center justify-center space-x-4 text-sm text-gray-500">
+              <a href="#" className="hover:text-gray-700 transition-colors">Terms</a>
+              <span>•</span>
+              <a href="#" className="hover:text-gray-700 transition-colors">Privacy</a>
+              <span>•</span>
+              <a href="#" className="hover:text-gray-700 transition-colors">Support</a>
+            </div>
+          </div>
+        </div>
       </div>
     </div>
   );
 };
 
 export default LoginPage;
-
