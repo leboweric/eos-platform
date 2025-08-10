@@ -1006,7 +1006,11 @@ export const editPriorityUpdate = async (req, res) => {
 
 // Helper function to get team members based on team context
 async function getTeamMembers(orgId, teamId = null, isLeadershipTeam = false) {
-  console.log('Getting team members for org:', orgId, 'teamId:', teamId, 'isLeadershipTeam:', isLeadershipTeam);
+  console.log('[getTeamMembers] Called with:', {
+    orgId,
+    teamId,
+    isLeadershipTeam
+  });
   
   let result;
   
@@ -1022,14 +1026,12 @@ async function getTeamMembers(orgId, teamId = null, isLeadershipTeam = false) {
       [teamId]
     );
   } else if (isLeadershipTeam) {
-    // For Leadership Team view, get only Leadership Team members
+    // For Leadership Team view, get ALL organization users (so they can be assigned as milestone owners)
+    // Changed from getting only Leadership Team members to getting all org users
     result = await query(
       `SELECT DISTINCT u.id, u.first_name || ' ' || u.last_name as name, u.email, u.role, u.first_name
        FROM users u 
-       JOIN team_members tm ON tm.user_id = u.id
-       JOIN teams t ON tm.team_id = t.id
-       WHERE t.organization_id = $1 
-         AND t.is_leadership_team = true 
+       WHERE u.organization_id = $1 
          AND u.role != 'consultant'
        ORDER BY u.first_name`,
       [orgId]
@@ -1048,7 +1050,18 @@ async function getTeamMembers(orgId, teamId = null, isLeadershipTeam = false) {
     );
   }
   
-  console.log(`Found ${result.rows.length} team members`);
+  console.log(`[getTeamMembers] Found ${result.rows.length} team members`);
+  if (result.rows.length === 0) {
+    console.log('[getTeamMembers] WARNING: No team members found!');
+    console.log('[getTeamMembers] Debug info:', {
+      orgId,
+      teamId,
+      isLeadershipTeam,
+      queryType: teamId && !isLeadershipTeam ? 'specific team' : 
+                 isLeadershipTeam ? 'leadership team' : 
+                 'all org users'
+    });
+  }
   return result.rows;
 }
 

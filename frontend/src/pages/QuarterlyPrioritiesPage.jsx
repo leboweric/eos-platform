@@ -187,6 +187,7 @@ const QuarterlyPrioritiesPage = () => {
           })));
         }
         
+        console.log('[QuarterlyPrioritiesPage] Team members from API:', data.teamMembers);
         setCompanyPriorities(data.companyPriorities || []);
         setTeamMemberPriorities(data.teamMemberPriorities || {});
         setTeamMembers(data.teamMembers || []);
