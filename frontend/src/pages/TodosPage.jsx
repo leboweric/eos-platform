@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { useAuthStore } from '../stores/authStore';
 import { todosService } from '../services/todosService';
 import { issuesService } from '../services/issuesService';
+import { organizationService } from '../services/organizationService';
 import { useDepartment } from '../contexts/DepartmentContext';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -32,6 +33,11 @@ const TodosPage = () => {
   const [success, setSuccess] = useState(null);
   const [activeTab, setActiveTab] = useState('not-done');
   const [filterAssignee, setFilterAssignee] = useState('all');
+  const [themeColors, setThemeColors] = useState({
+    primary: '#3B82F6',
+    secondary: '#1E40AF',
+    accent: '#60A5FA'
+  });
   
   // Todos data
   const [todos, setTodos] = useState([]);
@@ -43,6 +49,15 @@ const TodosPage = () => {
 
   useEffect(() => {
     fetchTodos();
+    fetchOrganizationTheme();
+    
+    // Listen for theme changes
+    const handleThemeChange = (event) => {
+      setThemeColors(event.detail);
+    };
+    
+    window.addEventListener('themeChanged', handleThemeChange);
+    return () => window.removeEventListener('themeChanged', handleThemeChange);
   }, [filterAssignee, selectedDepartment]);
 
   // Helper function to check if a todo is overdue
@@ -112,6 +127,33 @@ const TodosPage = () => {
       }
     } catch (error) {
       console.error('Failed to create issues for overdue todos:', error);
+    }
+  };
+
+  const fetchOrganizationTheme = async () => {
+    try {
+      // First check localStorage
+      const savedTheme = localStorage.getItem('orgTheme');
+      if (savedTheme) {
+        const parsedTheme = JSON.parse(savedTheme);
+        setThemeColors(parsedTheme);
+        return;
+      }
+      
+      // Fetch from API
+      const orgData = await organizationService.getOrganization();
+      
+      if (orgData) {
+        const theme = {
+          primary: orgData.theme_primary_color || '#3B82F6',
+          secondary: orgData.theme_secondary_color || '#1E40AF',
+          accent: orgData.theme_accent_color || '#60A5FA'
+        };
+        setThemeColors(theme);
+        localStorage.setItem('orgTheme', JSON.stringify(theme));
+      }
+    } catch (error) {
+      console.error('Failed to fetch organization theme:', error);
     }
   };
 
@@ -318,14 +360,19 @@ const TodosPage = () => {
         {/* Clean Header */}
         <div className="flex items-center justify-between mb-8">
           <div>
-            <h1 className="text-2xl font-semibold text-gray-900">To-Dos{selectedDepartment ? ` - ${selectedDepartment.name}` : ''}</h1>
+            <h1 className="text-2xl font-semibold text-gray-900">
+              <span className="inline-block w-1 h-7 mr-2 rounded-full" style={{ backgroundColor: themeColors.primary }} />
+              To-Dos{selectedDepartment ? ` - ${selectedDepartment.name}` : ''}
+            </h1>
           </div>
           <div className="flex items-center gap-3">
             {doneNotArchivedCount > 0 && activeTab === 'not-done' && (
               <Button 
                 onClick={handleArchiveDone}
                 variant="ghost"
-                className="text-gray-600 hover:text-gray-900"
+                className="text-gray-600 transition-colors"
+                onMouseEnter={(e) => e.currentTarget.style.color = themeColors.primary}
+                onMouseLeave={(e) => e.currentTarget.style.color = ''}
               >
                 <Archive className="mr-2 h-4 w-4" />
                 Archive Done ({doneNotArchivedCount})
@@ -335,13 +382,21 @@ const TodosPage = () => {
               <Button 
                 onClick={handleMarkComplete}
                 variant="ghost"
-                className="text-gray-600 hover:text-gray-900"
+                className="text-gray-600 transition-colors"
+                onMouseEnter={(e) => e.currentTarget.style.color = themeColors.primary}
+                onMouseLeave={(e) => e.currentTarget.style.color = ''}
               >
                 <CheckSquare className="mr-2 h-4 w-4" />
                 Mark Done ({selectedTodoIds.length})
               </Button>
             )}
-            <Button onClick={handleCreateTodo} className="bg-gray-900 hover:bg-gray-800 text-white">
+            <Button 
+              onClick={handleCreateTodo} 
+              className="text-white transition-colors"
+              style={{ backgroundColor: themeColors.primary }}
+              onMouseEnter={(e) => e.currentTarget.style.backgroundColor = themeColors.secondary}
+              onMouseLeave={(e) => e.currentTarget.style.backgroundColor = themeColors.primary}
+            >
               <Plus className="mr-2 h-4 w-4" />
               New To-Do
             </Button>
@@ -368,14 +423,20 @@ const TodosPage = () => {
             <TabsList className="bg-transparent border-0 p-0 h-auto">
               <TabsTrigger 
                 value="not-done" 
-                className="data-[state=active]:bg-transparent data-[state=active]:shadow-none data-[state=active]:border-b-2 data-[state=active]:border-gray-900 rounded-none pb-3 px-4 font-medium"
+                className="bg-transparent shadow-none border-b-2 rounded-none pb-3 px-4 font-medium transition-colors"
+                style={{ 
+                  borderBottomColor: activeTab === 'not-done' ? themeColors.primary : 'transparent'
+                }}
               >
                 Not Done
                 <span className="ml-2 text-sm text-gray-500">({notDoneTodosCount})</span>
               </TabsTrigger>
               <TabsTrigger 
                 value="done" 
-                className="data-[state=active]:bg-transparent data-[state=active]:shadow-none data-[state=active]:border-b-2 data-[state=active]:border-gray-900 rounded-none pb-3 px-4 font-medium"
+                className="bg-transparent shadow-none border-b-2 rounded-none pb-3 px-4 font-medium transition-colors"
+                style={{ 
+                  borderBottomColor: activeTab === 'done' ? themeColors.primary : 'transparent'
+                }}
               >
                 Done
                 <span className="ml-2 text-sm text-gray-500">({doneTodosCount})</span>
