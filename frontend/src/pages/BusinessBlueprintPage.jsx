@@ -4,6 +4,7 @@ import { Link, Navigate } from 'react-router-dom';
 import { businessBlueprintService } from '../services/businessBlueprintService';
 import { organizationService } from '../services/organizationService';
 import { getRevenueLabel, getRevenueLabelWithSuffix } from '../utils/revenueUtils';
+import { useDepartment } from '../contexts/DepartmentContext';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -43,6 +44,7 @@ import {
 
 const BusinessBlueprintPage = () => {
   const { user, isOnLeadershipTeam } = useAuthStore();
+  const { selectedDepartment } = useDepartment();
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState(null);
@@ -51,7 +53,6 @@ const BusinessBlueprintPage = () => {
   const [organization, setOrganization] = useState(null);
   
   // Check if viewing department-level plan
-  const selectedDepartment = JSON.parse(localStorage.getItem('selectedDepartment') || 'null');
   const isDepartmentView = selectedDepartment && !selectedDepartment.is_leadership_team;
   
   // 2-Page Plan data
@@ -103,10 +104,11 @@ const BusinessBlueprintPage = () => {
   const [oneYearGoalsCheckedItems, setOneYearGoalsCheckedItems] = useState({});
   const [editingMarketingStrategy, setEditingMarketingStrategy] = useState(false);
 
+  // Fetch data on mount and when department changes
   useEffect(() => {
     fetchBusinessBlueprint();
     fetchOrganization();
-  }, []);
+  }, [selectedDepartment?.id]); // Re-fetch when department ID changes
   
   // Hide sidebar if coming from meeting
   useEffect(() => {
