@@ -1215,13 +1215,43 @@ const BusinessBlueprintPage = () => {
                     )}
                     
                     {/* Financial Goals */}
-                    {(blueprintData.threeYearPicture.revenue || blueprintData.threeYearPicture.profit) && (
+                    {(blueprintData.threeYearPicture.revenue || blueprintData.threeYearPicture.profit || 
+                      (blueprintData.threeYearPicture.revenueStreams && blueprintData.threeYearPicture.revenueStreams.length > 0)) && (
                       <div className="p-4 bg-gray-50 border border-gray-200 rounded-lg hover:shadow-md transition-shadow">
                         <div className="flex items-start">
                           <DollarSign className="h-5 w-5 text-indigo-600 mr-3 mt-0.5" />
                           <div className="flex-1 space-y-3">
                             <h4 className="font-semibold text-gray-900">Financial Goals</h4>
-                            {blueprintData.threeYearPicture.revenue && (
+                            
+                            {/* Display revenue streams if available */}
+                            {blueprintData.threeYearPicture.revenueStreams && blueprintData.threeYearPicture.revenueStreams.length > 0 ? (
+                              <div>
+                                <p className="text-sm font-medium text-gray-700 mb-2">Revenue Streams</p>
+                                {blueprintData.threeYearPicture.revenueStreams.map((stream, index) => (
+                                  <div key={index} className="ml-2 mb-1">
+                                    <span className="text-sm text-gray-600">{stream.name}:</span>
+                                    <span className="text-sm font-semibold text-gray-900 ml-2">
+                                      ${Number(stream.revenue_target) < 1 
+                                        ? `${(Number(stream.revenue_target) * 1000).toFixed(0)}K`
+                                        : `${Number(stream.revenue_target).toFixed(1)}M`}
+                                    </span>
+                                  </div>
+                                ))}
+                                <div className="mt-2 pt-2 border-t border-gray-200">
+                                  <span className="text-sm font-medium text-gray-700">Total Revenue:</span>
+                                  <span className="text-lg font-semibold text-gray-900 ml-2">
+                                    ${(() => {
+                                      const total = blueprintData.threeYearPicture.revenueStreams.reduce((sum, stream) => 
+                                        sum + (Number(stream.revenue_target) || 0), 0
+                                      );
+                                      return total < 1 
+                                        ? `${(total * 1000).toFixed(0)}K`
+                                        : `${total.toFixed(1)}M`;
+                                    })()}
+                                  </span>
+                                </div>
+                              </div>
+                            ) : blueprintData.threeYearPicture.revenue ? (
                               <div>
                                 <p className="text-sm font-medium text-gray-700">
                                   {getRevenueLabelWithSuffix(organization, 'Target')}
@@ -1232,7 +1262,8 @@ const BusinessBlueprintPage = () => {
                                     : `${Number(blueprintData.threeYearPicture.revenue).toFixed(1)}M`}
                                 </p>
                               </div>
-                            )}
+                            ) : null}
+                            
                             {blueprintData.threeYearPicture.profit && (
                               <div>
                                 <p className="text-sm font-medium text-gray-700">Profit Target</p>
@@ -1367,13 +1398,43 @@ const BusinessBlueprintPage = () => {
                   )}
                   
                   {/* Financial Goals */}
-                  {(blueprintData.oneYearPlan.revenue || blueprintData.oneYearPlan.profit) && (
+                  {(blueprintData.oneYearPlan.revenue || blueprintData.oneYearPlan.profit || 
+                    (blueprintData.oneYearPlan.revenueStreams && blueprintData.oneYearPlan.revenueStreams.length > 0)) && (
                     <div className="p-4 bg-gray-50 border border-gray-200 rounded-lg hover:shadow-md transition-shadow">
                       <div className="flex items-start">
                         <DollarSign className="h-5 w-5 text-indigo-600 mr-3 mt-0.5" />
                         <div className="flex-1 space-y-3">
                           <h4 className="font-semibold text-gray-900">Financial Goals</h4>
-                          {blueprintData.oneYearPlan.revenue && (
+                          
+                          {/* Display revenue streams if available */}
+                          {blueprintData.oneYearPlan.revenueStreams && blueprintData.oneYearPlan.revenueStreams.length > 0 ? (
+                            <div>
+                              <p className="text-sm font-medium text-gray-700 mb-2">Revenue Streams</p>
+                              {blueprintData.oneYearPlan.revenueStreams.map((stream, index) => (
+                                <div key={index} className="ml-2 mb-1">
+                                  <span className="text-sm text-gray-600">{stream.name}:</span>
+                                  <span className="text-sm font-semibold text-gray-900 ml-2">
+                                    ${Number(stream.revenue_target) < 1 
+                                      ? `${(Number(stream.revenue_target) * 1000).toFixed(0)}K`
+                                      : `${Number(stream.revenue_target).toFixed(1)}M`}
+                                  </span>
+                                </div>
+                              ))}
+                              <div className="mt-2 pt-2 border-t border-gray-200">
+                                <span className="text-sm font-medium text-gray-700">Total Revenue:</span>
+                                <span className="text-lg font-semibold text-gray-900 ml-2">
+                                  ${(() => {
+                                    const total = blueprintData.oneYearPlan.revenueStreams.reduce((sum, stream) => 
+                                      sum + (Number(stream.revenue_target) || 0), 0
+                                    );
+                                    return total < 1 
+                                      ? `${(total * 1000).toFixed(0)}K`
+                                      : `${total.toFixed(1)}M`;
+                                  })()}
+                                </span>
+                              </div>
+                            </div>
+                          ) : blueprintData.oneYearPlan.revenue ? (
                             <div>
                               <p className="text-sm font-medium text-gray-700">
                                 {getRevenueLabelWithSuffix(organization, 'Target')}
@@ -1384,7 +1445,8 @@ const BusinessBlueprintPage = () => {
                                   : `${Number(blueprintData.oneYearPlan.revenue).toFixed(1)}M`}
                               </p>
                             </div>
-                          )}
+                          ) : null}
+                          
                           {blueprintData.oneYearPlan.profit && (
                             <div>
                               <p className="text-sm font-medium text-gray-700">Profit Target</p>
