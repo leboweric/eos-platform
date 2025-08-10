@@ -103,6 +103,11 @@ const QuarterlyPrioritiesPageClean = () => {
   const [error, setError] = useState(null);
   const [success, setSuccess] = useState(null);
   const [organization, setOrganization] = useState(null);
+  const [themeColors, setThemeColors] = useState({
+    primary: '#3B82F6',
+    secondary: '#1E40AF',
+    accent: '#60A5FA'
+  });
   
   // State for priorities data
   const [companyPriorities, setCompanyPriorities] = useState([]);
@@ -140,6 +145,15 @@ const QuarterlyPrioritiesPageClean = () => {
       fetchQuarterlyData();
     }
     fetchOrganization();
+    fetchOrganizationTheme();
+    
+    // Listen for theme changes
+    const handleThemeChange = (event) => {
+      setThemeColors(event.detail);
+    };
+    
+    window.addEventListener('themeChanged', handleThemeChange);
+    return () => window.removeEventListener('themeChanged', handleThemeChange);
   }, [selectedDepartment, showArchived]);
 
   const fetchQuarterlyData = async () => {
@@ -217,6 +231,34 @@ const QuarterlyPrioritiesPageClean = () => {
     }
   };
 
+  const fetchOrganizationTheme = async () => {
+    try {
+      // First check localStorage
+      const savedTheme = localStorage.getItem('orgTheme');
+      if (savedTheme) {
+        const parsedTheme = JSON.parse(savedTheme);
+        setThemeColors(parsedTheme);
+        return;
+      }
+      
+      // Fetch from API
+      const orgData = await organizationService.getOrganization();
+      
+      if (orgData) {
+        const theme = {
+          primary: orgData.theme_primary_color || '#3B82F6',
+          secondary: orgData.theme_secondary_color || '#1E40AF',
+          accent: orgData.theme_accent_color || '#60A5FA'
+        };
+        setThemeColors(theme);
+        localStorage.setItem('orgTheme', JSON.stringify(theme));
+      }
+    } catch (error) {
+      console.error('Failed to fetch organization theme:', error);
+      // Use default colors on error
+    }
+  };
+
   const getStatusColor = (status) => {
     switch (status) {
       case 'complete':
@@ -231,15 +273,20 @@ const QuarterlyPrioritiesPageClean = () => {
   };
 
   const getStatusBorderColor = (status) => {
+    // Using inline styles for dynamic colors
+    return status; // Return status to use in inline style
+  };
+  
+  const getStatusBorderStyle = (status) => {
     switch (status) {
       case 'complete':
-        return 'border-l-green-500';
+        return { borderLeftColor: themeColors.primary, borderLeftWidth: '4px' };
       case 'on-track':
-        return 'border-l-blue-500';
+        return { borderLeftColor: themeColors.accent, borderLeftWidth: '4px' };
       case 'off-track':
-        return 'border-l-red-500';
+        return { borderLeftColor: '#EF4444', borderLeftWidth: '4px' };
       default:
-        return 'border-l-gray-300';
+        return { borderLeftColor: '#D1D5DB', borderLeftWidth: '4px' };
     }
   };
 
@@ -1318,7 +1365,10 @@ const QuarterlyPrioritiesPageClean = () => {
 
     try {
       return (
-        <Card className={`transition-all duration-200 border-l-4 ${getStatusBorderColor(isEditing ? editForm.status : priority.status)} hover:shadow-sm bg-white`}>
+        <Card 
+          className="transition-all duration-200 hover:shadow-sm bg-white"
+          style={getStatusBorderStyle(isEditing ? editForm.status : priority.status)}
+        >
           <CardHeader className="pb-4">
             <div className="flex items-start justify-between">
               <div className="flex-1 min-w-0">
@@ -1372,7 +1422,15 @@ const QuarterlyPrioritiesPageClean = () => {
                   )}
                   
                   {isCompany && (
-                    <Badge variant="outline" className="text-xs bg-blue-50 text-blue-700 border-blue-200">
+                    <Badge 
+                      variant="outline" 
+                      className="text-xs"
+                      style={{ 
+                        backgroundColor: themeColors.accent + '15',
+                        color: themeColors.secondary,
+                        borderColor: themeColors.accent + '40'
+                      }}
+                    >
                       <Building2 className="h-3 w-3 mr-1" />
                       Company
                     </Badge>
@@ -1504,9 +1562,11 @@ const QuarterlyPrioritiesPageClean = () => {
                         });
                         setIsEditing(true);
                       }}
-                      className="h-8 w-8 p-0 hover:bg-blue-100"
+                      className="h-8 w-8 p-0 transition-colors"
+                      onMouseEnter={(e) => e.currentTarget.style.backgroundColor = themeColors.accent + '20'}
+                      onMouseLeave={(e) => e.currentTarget.style.backgroundColor = ''}
                     >
-                      <Edit className="h-4 w-4 text-blue-600" />
+                      <Edit className="h-4 w-4" style={{ color: themeColors.primary }} />
                     </Button>
                     
                     {!isArchived && (
@@ -2049,7 +2109,10 @@ const QuarterlyPrioritiesPageClean = () => {
       <div className="bg-white border-b pb-6">
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-3xl font-bold text-gray-900">{selectedDepartment.name} Quarterly Priorities</h1>
+            <h1 className="text-3xl font-bold text-gray-900">
+              <span className="inline-block w-1 h-8 mr-3 rounded-full" style={{ backgroundColor: themeColors.primary }} />
+              {selectedDepartment.name} Quarterly Priorities
+            </h1>
             {showArchived && (
               <p className="text-gray-600 mt-2">
                 Viewing archived priorities from previous quarters
