@@ -263,7 +263,7 @@ const OneYearPlanDialog = ({ open, onOpenChange, data, onSave, organization }) =
             <div className="space-y-2">
               <div className="flex items-center justify-between">
                 <Label>Goals (3-7)</Label>
-                {formData.goals.length < 8 && (
+                {formData.goals.length < 10 && (
                   <Button
                     type="button"
                     size="sm"
