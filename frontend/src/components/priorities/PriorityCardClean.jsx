@@ -686,7 +686,7 @@ const PriorityCardClean = ({
                             }}
                             className="h-6 w-6 p-0 opacity-0 group-hover:opacity-100 transition-opacity"
                           >
-                            <Edit2 className="h-3 w-3 text-blue-600" />
+                            <Edit2 className="h-3 w-3" style={{ color: themeColors.primary }} />
                           </Button>
                           {onDeleteMilestone && (
                             <Button
@@ -695,7 +695,7 @@ const PriorityCardClean = ({
                               onClick={() => onDeleteMilestone(priority.id, milestone.id)}
                               className="h-6 w-6 p-0 opacity-0 group-hover:opacity-100"
                             >
-                              <Trash2 className="h-3 w-3 text-red-600" />
+                              <Trash2 className="h-3 w-3" style={{ color: themeColors.secondary }} />
                             </Button>
                           )}
                         </>
@@ -801,9 +801,11 @@ const PriorityCardClean = ({
                                     console.log('Edit update clicked:', { priorityId: priority.id, updateId: update.id, text: update.text });
                                     onEditUpdate(priority.id, update.id, update.text);
                                   }}
-                                  className="h-6 w-6 p-0 hover:bg-blue-100"
+                                  className="h-6 w-6 p-0 transition-colors"
+                                  onMouseEnter={(e) => e.currentTarget.style.backgroundColor = themeColors.accent + '20'}
+                                  onMouseLeave={(e) => e.currentTarget.style.backgroundColor = ''}
                                 >
-                                  <Edit2 className="h-3 w-3 text-blue-600" />
+                                  <Edit2 className="h-3 w-3" style={{ color: themeColors.primary }} />
                                 </Button>
                               )}
                               {onDeleteUpdate && (
@@ -814,9 +816,11 @@ const PriorityCardClean = ({
                                     console.log('Delete update clicked:', { priorityId: priority.id, updateId: update.id });
                                     onDeleteUpdate(priority.id, update.id);
                                   }}
-                                  className="h-6 w-6 p-0 hover:bg-red-100"
+                                  className="h-6 w-6 p-0 transition-colors"
+                                  onMouseEnter={(e) => e.currentTarget.style.backgroundColor = themeColors.secondary + '15'}
+                                  onMouseLeave={(e) => e.currentTarget.style.backgroundColor = ''}
                                 >
-                                  <Trash2 className="h-3 w-3 text-red-600" />
+                                  <Trash2 className="h-3 w-3" style={{ color: themeColors.secondary }} />
                                 </Button>
                               )}
                             </div>
@@ -916,7 +920,7 @@ const PriorityCardClean = ({
                           onClick={() => onDeleteAttachment(priority.id, attachment.id)}
                           className="h-6 w-6 p-0 opacity-0 group-hover:opacity-100"
                         >
-                          <Trash2 className="h-3 w-3 text-red-600" />
+                          <Trash2 className="h-3 w-3" style={{ color: themeColors.secondary }} />
                         </Button>
                       )}
                     </div>
