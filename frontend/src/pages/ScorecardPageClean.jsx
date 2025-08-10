@@ -49,7 +49,7 @@ const ScorecardPageClean = () => {
   const [viewMode, setViewMode] = useState(() => {
     // Load view mode preference from localStorage
     const savedViewMode = localStorage.getItem('scorecardViewMode');
-    return savedViewMode || 'table';
+    return savedViewMode || 'groups'; // Default to groups view
   }); // 'table' or 'groups'
   const [showOptions, setShowOptions] = useState(false);
   const [isRTL, setIsRTL] = useState(() => {
