@@ -10,6 +10,7 @@ import { quarterlyPrioritiesService } from '../services/quarterlyPrioritiesServi
 import { todosService } from '../services/todosService';
 import { issuesService } from '../services/issuesService';
 import { organizationService } from '../services/organizationService';
+import { businessBlueprintService } from '../services/businessBlueprintService';
 import { getRevenueLabel } from '../utils/revenueUtils';
 import TodosList from '../components/todos/TodosListClean';
 import TodoDialog from '../components/todos/TodoDialog';
@@ -148,18 +149,45 @@ const DashboardClean = () => {
         }
       }
       
-      const [prioritiesResponse, todosResponse, issuesResponse, orgResponse] = await Promise.all([
+      const [prioritiesResponse, todosResponse, issuesResponse, orgResponse, blueprintResponse] = await Promise.all([
         quarterlyPrioritiesService.getCurrentPriorities(orgId, teamId),
         todosService.getTodos(null, null, true, userDepartmentId),
         issuesService.getIssues(null, false, userDepartmentId),
-        isOnLeadershipTeam() ? organizationService.getOrganization() : Promise.resolve(null)
+        isOnLeadershipTeam() ? organizationService.getOrganization() : Promise.resolve(null),
+        businessBlueprintService.getBusinessBlueprint()
       ]);
       
       if (orgResponse) {
         setOrganization(orgResponse.data || orgResponse);
       }
       
-      if (prioritiesResponse.predictions) {
+      // Use 1-Year Plan data for predictions if available
+      if (blueprintResponse?.oneYearPlan) {
+        const oneYearPlan = blueprintResponse.oneYearPlan;
+        
+        // Calculate total revenue from revenue streams or use the revenue field
+        let targetRevenue = 0;
+        if (oneYearPlan.revenueStreams && oneYearPlan.revenueStreams.length > 0) {
+          targetRevenue = oneYearPlan.revenueStreams.reduce((sum, stream) => {
+            return sum + (parseFloat(stream.revenue_target) || 0);
+          }, 0);
+        } else if (oneYearPlan.revenue) {
+          targetRevenue = parseFloat(oneYearPlan.revenue) || 0;
+        }
+        
+        setPredictions(prev => ({
+          ...prev,
+          revenue: {
+            target: targetRevenue,
+            current: prev?.revenue?.current || prioritiesResponse.predictions?.revenue?.current || 0
+          },
+          profit: {
+            target: parseFloat(oneYearPlan.profit) || prev?.profit?.target || 0,
+            current: prev?.profit?.current || prioritiesResponse.predictions?.profit?.current || 0
+          },
+          measurables: prev?.measurables || prioritiesResponse.predictions?.measurables || { onTrack: 0, total: 0 }
+        }));
+      } else if (prioritiesResponse.predictions) {
         setPredictions(prioritiesResponse.predictions);
       }
       
