@@ -548,6 +548,36 @@ const DashboardClean = () => {
                     </span>
                   </div>
                   <p className="text-sm text-gray-500 mt-1">{getRevenueLabel(organization)}</p>
+                  
+                  {/* Revenue Progress Bar */}
+                  {predictions?.revenue?.target > 0 && (
+                    <div className="mt-3">
+                      <div className="w-full bg-gray-200 rounded-full h-2 overflow-hidden">
+                        <div 
+                          className={`h-full transition-all duration-500 rounded-full ${
+                            (predictions?.revenue?.current / predictions?.revenue?.target) >= 0.9 
+                              ? 'bg-green-500' 
+                              : (predictions?.revenue?.current / predictions?.revenue?.target) >= 0.7 
+                                ? 'bg-blue-500' 
+                                : (predictions?.revenue?.current / predictions?.revenue?.target) >= 0.5 
+                                  ? 'bg-yellow-500' 
+                                  : 'bg-red-500'
+                          }`}
+                          style={{ 
+                            width: `${Math.min(100, Math.round((predictions?.revenue?.current / predictions?.revenue?.target) * 100))}%` 
+                          }}
+                        />
+                      </div>
+                      <div className="flex justify-between items-center mt-1">
+                        <span className="text-xs text-gray-500">
+                          {Math.round((predictions?.revenue?.current / predictions?.revenue?.target) * 100)}% of target
+                        </span>
+                        {(predictions?.revenue?.current / predictions?.revenue?.target) >= 1 && (
+                          <span className="text-xs text-green-600 font-medium">Target achieved!</span>
+                        )}
+                      </div>
+                    </div>
+                  )}
                 </div>
                 
                 <div>
@@ -560,6 +590,36 @@ const DashboardClean = () => {
                     </span>
                   </div>
                   <p className="text-sm text-gray-500 mt-1">Profit Margin</p>
+                  
+                  {/* Profit Progress Bar */}
+                  {predictions?.profit?.target > 0 && (
+                    <div className="mt-3">
+                      <div className="w-full bg-gray-200 rounded-full h-2 overflow-hidden">
+                        <div 
+                          className={`h-full transition-all duration-500 rounded-full ${
+                            (predictions?.profit?.current / predictions?.profit?.target) >= 0.9 
+                              ? 'bg-green-500' 
+                              : (predictions?.profit?.current / predictions?.profit?.target) >= 0.7 
+                                ? 'bg-blue-500' 
+                                : (predictions?.profit?.current / predictions?.profit?.target) >= 0.5 
+                                  ? 'bg-yellow-500' 
+                                  : 'bg-red-500'
+                          }`}
+                          style={{ 
+                            width: `${Math.min(100, Math.round((predictions?.profit?.current / predictions?.profit?.target) * 100))}%` 
+                          }}
+                        />
+                      </div>
+                      <div className="flex justify-between items-center mt-1">
+                        <span className="text-xs text-gray-500">
+                          {Math.round((predictions?.profit?.current / predictions?.profit?.target) * 100)}% of target
+                        </span>
+                        {(predictions?.profit?.current / predictions?.profit?.target) >= 1 && (
+                          <span className="text-xs text-green-600 font-medium">On target!</span>
+                        )}
+                      </div>
+                    </div>
+                  )}
                 </div>
                 
                 <div>
@@ -572,6 +632,36 @@ const DashboardClean = () => {
                     </span>
                   </div>
                   <p className="text-sm text-gray-500 mt-1">Measurables on track</p>
+                  
+                  {/* Measurables Progress Bar */}
+                  {predictions?.measurables?.total > 0 && (
+                    <div className="mt-3">
+                      <div className="w-full bg-gray-200 rounded-full h-2 overflow-hidden">
+                        <div 
+                          className={`h-full transition-all duration-500 rounded-full ${
+                            (predictions?.measurables?.onTrack / predictions?.measurables?.total) >= 0.9 
+                              ? 'bg-green-500' 
+                              : (predictions?.measurables?.onTrack / predictions?.measurables?.total) >= 0.7 
+                                ? 'bg-blue-500' 
+                                : (predictions?.measurables?.onTrack / predictions?.measurables?.total) >= 0.5 
+                                  ? 'bg-yellow-500' 
+                                  : 'bg-red-500'
+                          }`}
+                          style={{ 
+                            width: `${Math.min(100, Math.round((predictions?.measurables?.onTrack / predictions?.measurables?.total) * 100))}%` 
+                          }}
+                        />
+                      </div>
+                      <div className="flex justify-between items-center mt-1">
+                        <span className="text-xs text-gray-500">
+                          {Math.round((predictions?.measurables?.onTrack / predictions?.measurables?.total) * 100)}% on track
+                        </span>
+                        {(predictions?.measurables?.onTrack / predictions?.measurables?.total) >= 0.9 && (
+                          <span className="text-xs text-green-600 font-medium">Excellent!</span>
+                        )}
+                      </div>
+                    </div>
+                  )}
                 </div>
               </div>
             )}
