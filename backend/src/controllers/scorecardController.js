@@ -43,11 +43,6 @@ export const getScorecard = async (req, res) => {
     const { orgId, teamId } = req.params;
     const userId = req.user.id;
     
-    console.log('=== SCORECARD REQUEST DEBUG ===');
-    console.log('OrgId:', orgId);
-    console.log('TeamId:', teamId);
-    console.log('User:', req.user.email);
-    
     // Get user's team context
     const userTeam = await getUserTeamContext(userId, orgId);
     const isLeadership = userTeam && userTeam.is_leadership_team;
@@ -87,10 +82,7 @@ export const getScorecard = async (req, res) => {
       ORDER BY sm.display_order ASC, sm.created_at ASC
     `;
     const queryParams = teamId ? [orgId, teamId] : [orgId];
-    console.log('Query params:', queryParams);
-    console.log('Team filter:', teamFilter);
     const metrics = await db.query(metricsQuery, queryParams);
-    console.log('Found metrics:', metrics.rows.length);
     
     // Get all scores for these metrics
     const scoresQuery = `
