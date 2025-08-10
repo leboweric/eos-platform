@@ -77,6 +77,28 @@ Due to trademark compliance, several tables were renamed:
 - **Solution**: Manually synced by pushing a test commit
 - **Prevention**: Always verify Railway is deploying the correct commit hash
 
+## CRITICAL: Creating New Organizations via SQL
+
+### ⚠️ NEVER use the special UUID for Leadership Teams!
+
+When creating organizations via SQL:
+```sql
+-- ✅ CORRECT: Use gen_random_uuid() for Leadership Team
+INSERT INTO teams (id, name, organization_id, is_leadership_team)
+VALUES (gen_random_uuid(), 'Leadership Team', <org_id>, true);
+
+-- ❌ WRONG: Never use the special UUID
+-- VALUES ('00000000-0000-0000-0000-000000000000', ...) -- NO!
+```
+
+**Why this matters:**
+- Only ONE organization can own the special UUID at a time
+- Using it will steal the UUID from another org, breaking their system
+- Each org MUST have its own unique Leadership Team ID
+- The `is_leadership_team = true` flag is what makes the UI work, not the UUID
+
+**See `SPECIAL_UUID_MIGRATION_GUIDE.md` for full details if an org is broken.**
+
 ## Database Schema Notes
 
 ### Documents Table

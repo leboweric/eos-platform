@@ -1,5 +1,18 @@
 # SQL Migration Templates
 
+## ⚠️ CRITICAL WARNING ⚠️
+
+**NEVER USE THE SPECIAL UUID `00000000-0000-0000-0000-000000000000` FOR LEADERSHIP TEAMS!**
+
+Each organization MUST have its own unique Leadership Team ID. Using the special UUID will:
+1. Steal it from another organization
+2. Break that organization's entire system
+3. Make their data inaccessible
+
+**Always use `gen_random_uuid()` for Leadership Team IDs!**
+
+---
+
 ## Complete Organization Setup Template
 
 ```sql
@@ -19,7 +32,7 @@ BEGIN;
 DO $$
 DECLARE
     org_id UUID := gen_random_uuid();
-    leadership_team_id UUID := '00000000-0000-0000-0000-000000000000'::uuid;
+    leadership_team_id UUID := gen_random_uuid();  -- ⚠️ NEVER use special UUID!
     password_hash VARCHAR := '$2a$10$K3KmLLLqOWeL5rzmDPbFp.gGJgYpQzJkgWBMsjWYLwE/FYrc8a6Iq'; -- Abc123!@#
     
     -- User IDs
@@ -32,12 +45,17 @@ BEGIN
     INSERT INTO organizations (id, name, slug, subscription_tier, created_at, updated_at)
     VALUES (org_id, '<Organization Name>', '<org-slug>', 'professional', NOW(), NOW());
 
-    -- 2. Create Leadership Team (MUST use special UUID)
+    -- 2. Create Leadership Team (NEVER use special UUID!)
+    -- ⚠️ CRITICAL: Use gen_random_uuid(), NOT the special UUID!
     INSERT INTO teams (id, name, organization_id, is_leadership_team, created_at, updated_at)
-    VALUES (leadership_team_id, 'Leadership Team', org_id, true, NOW(), NOW())
-    ON CONFLICT (id) DO UPDATE SET 
-        organization_id = org_id,
-        is_leadership_team = true;
+    VALUES (
+        gen_random_uuid(),  -- ✅ CORRECT: Unique UUID for each org
+        'Leadership Team', 
+        org_id, 
+        true,  -- This flag is what matters
+        NOW(), 
+        NOW()
+    );
 
     -- 3. Create other teams/departments
     INSERT INTO teams (name, organization_id, created_at, updated_at)
@@ -171,7 +189,7 @@ BEGIN
         updated_at
     ) VALUES (
         org_id,
-        '00000000-0000-0000-0000-000000000000'::uuid,  -- Leadership Team
+        leadership_team_id,  -- Use the generated UUID for this org's Leadership Team
         '<Priority Title>',
         '<Priority Description>',
         user_id,
@@ -214,7 +232,9 @@ BEGIN
     AND email = '<owner-email@domain.com>';
     
     -- Get team (use Leadership Team or specific team)
-    team_id := '00000000-0000-0000-0000-000000000000'::uuid;
+    -- Get the Leadership Team ID for this org (NOT the special UUID!)
+    SELECT id INTO team_id FROM teams 
+    WHERE organization_id = org_id AND is_leadership_team = true;
     
     -- Insert metrics
     INSERT INTO scorecard_metrics (
@@ -308,8 +328,8 @@ AND id NOT IN (
 -- Fix Leadership Team flag
 UPDATE teams 
 SET is_leadership_team = true 
-WHERE id = '00000000-0000-0000-0000-000000000000'
-AND organization_id = (SELECT id FROM organizations WHERE slug = '<org-slug>');
+WHERE organization_id = (SELECT id FROM organizations WHERE slug = '<org-slug>')
+AND name = 'Leadership Team';  -- Find by name, not by special UUID
 
 -- Fix Business Blueprint team_id
 UPDATE business_blueprints 
@@ -327,7 +347,7 @@ AND NOT EXISTS (
 ## Notes
 
 1. Always use `team_id = NULL` for organization-level business blueprints
-2. Leadership Team UUID is always `'00000000-0000-0000-0000-000000000000'`
+2. ⚠️ NEVER use the special UUID `'00000000-0000-0000-0000-000000000000'` - each org needs its own
 3. Password hash `$2a$10$K3KmLLLqOWeL5rzmDPbFp.gGJgYpQzJkgWBMsjWYLwE/FYrc8a6Iq` = 'Abc123!@#'
 4. Run diagnostic queries after setup to verify everything is correct
 5. Always start with `ROLLBACK;` to clear any failed transactions
