@@ -1193,7 +1193,9 @@ const BusinessBlueprintPage = () => {
                       <Calendar className="mr-2 h-6 w-6 text-indigo-600" />
                       3-Year Picture
                     </CardTitle>
-                    <CardDescription className="text-gray-600">Your organization's 3-year vision</CardDescription>
+                    <CardDescription className="text-gray-600">
+                      {isDepartmentView ? "Your department's 3-year vision" : "Your organization's 3-year vision"}
+                    </CardDescription>
                   </div>
                   <Button 
                     variant="outline" 
@@ -1381,7 +1383,9 @@ const BusinessBlueprintPage = () => {
                     <Target className="mr-2 h-6 w-6 text-indigo-600" />
                     1-Year Plan
                   </CardTitle>
-                  <CardDescription className="text-gray-600">Your goals for the next year</CardDescription>
+                  <CardDescription className="text-gray-600">
+                    {isDepartmentView ? "Your department's goals for the next year" : "Your goals for the next year"}
+                  </CardDescription>
                 </div>
                 <Button 
                   variant="outline" 
