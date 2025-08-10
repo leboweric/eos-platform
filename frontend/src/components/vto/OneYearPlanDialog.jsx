@@ -23,6 +23,17 @@ const OneYearPlanDialog = ({ open, onOpenChange, data, onSave, organization }) =
 
   useEffect(() => {
     if (data) {
+      console.log('OneYearPlanDialog - Loading data:', data);
+      console.log('OneYearPlanDialog - Goals from parent:', data.goals);
+      
+      const processedGoals = data.goals && Array.isArray(data.goals) && data.goals.length > 0 
+        ? data.goals.map(g => {
+            const goalText = typeof g === 'string' ? g : (g.goal_text || '');
+            console.log('Processing goal:', g, '-> text:', goalText);
+            return goalText;
+          })
+        : ['', '', ''];
+      
       setFormData({
         revenue: data.revenue || '',
         profit: data.profit || '',
@@ -30,9 +41,7 @@ const OneYearPlanDialog = ({ open, onOpenChange, data, onSave, organization }) =
           ? data.revenueStreams.map(s => ({ name: s.name || '', revenue_target: s.revenue_target || '' }))
           : [],
         targetDate: data.future_date ? data.future_date.split('T')[0] : new Date(new Date().getFullYear() + 1, 11, 31).toISOString().split('T')[0],
-        goals: data.goals && Array.isArray(data.goals) && data.goals.length > 0 
-          ? data.goals.map(g => typeof g === 'string' ? g : (g.goal_text || ''))
-          : ['', '', ''],
+        goals: processedGoals,
         measurables: (data.measurables || []).map(m => ({
           name: m.name || '',
           value: m.target_value || m.value || ''
@@ -254,7 +263,7 @@ const OneYearPlanDialog = ({ open, onOpenChange, data, onSave, organization }) =
             <div className="space-y-2">
               <div className="flex items-center justify-between">
                 <Label>Goals (3-7)</Label>
-                {formData.goals.length < 7 && (
+                {formData.goals.length < 8 && (
                   <Button
                     type="button"
                     size="sm"
@@ -269,32 +278,37 @@ const OneYearPlanDialog = ({ open, onOpenChange, data, onSave, organization }) =
                 )}
               </div>
               <div className="space-y-2">
-                {formData.goals.map((goal, index) => (
-                  <div key={index} className="flex gap-2">
-                    <Input
-                      placeholder={`Goal ${index + 1}`}
-                      value={goal}
-                      onChange={(e) => setFormData(prev => {
-                        const newGoals = [...prev.goals];
-                        newGoals[index] = e.target.value;
-                        return { ...prev, goals: newGoals };
-                      })}
-                    />
-                    {formData.goals.length > 3 && (
-                      <Button
-                        type="button"
-                        size="sm"
-                        variant="ghost"
-                        onClick={() => setFormData(prev => ({
-                          ...prev,
-                          goals: prev.goals.filter((_, i) => i !== index)
-                        }))}
-                      >
-                        <Trash2 className="h-4 w-4" />
-                      </Button>
-                    )}
-                  </div>
-                ))}
+                {console.log('Goals array length:', formData.goals.length, 'Goals:', formData.goals)}
+                {formData.goals.map((goal, index) => {
+                  const showDeleteButton = formData.goals.length > 3;
+                  console.log(`Goal ${index}: Show delete button?`, showDeleteButton);
+                  return (
+                    <div key={index} className="flex gap-2">
+                      <Input
+                        placeholder={`Goal ${index + 1}`}
+                        value={typeof goal === 'string' ? goal : (goal?.goal_text || '')}
+                        onChange={(e) => setFormData(prev => {
+                          const newGoals = [...prev.goals];
+                          newGoals[index] = e.target.value;
+                          return { ...prev, goals: newGoals };
+                        })}
+                      />
+                      {showDeleteButton && (
+                        <Button
+                          type="button"
+                          size="sm"
+                          variant="ghost"
+                          onClick={() => setFormData(prev => ({
+                            ...prev,
+                            goals: prev.goals.filter((_, i) => i !== index)
+                          }))}
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                      )}
+                    </div>
+                  );
+                })}
               </div>
             </div>
           </div>
