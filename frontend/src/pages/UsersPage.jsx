@@ -38,9 +38,9 @@ import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Switch } from '@/components/ui/switch';
 import {
   UserPlus,
-  Trash2,
   Mail,
   AlertCircle,
   Copy,
@@ -352,28 +352,32 @@ const UsersPage = () => {
     }
   };
 
-  const handleRemoveUser = async (userId, userEmail) => {
-    if (!window.confirm(`Are you sure you want to remove ${userEmail} from the organization?`)) {
-      return;
-    }
-
+  const handleToggleUserActive = async (userId, currentActiveStatus, userEmail) => {
+    const newStatus = !currentActiveStatus;
+    const action = newStatus ? 'activate' : 'deactivate';
+    
     try {
-      const response = await fetch(`${API_URL}/users/${userId}`, {
-        method: 'DELETE',
+      const orgId = selectedOrgId || user?.organizationId;
+      const response = await fetch(`${API_URL}/organizations/${orgId}/users/${userId}`, {
+        method: 'PUT',
         headers: {
+          'Content-Type': 'application/json',
           Authorization: `Bearer ${localStorage.getItem('accessToken')}`,
         },
+        body: JSON.stringify({
+          is_active: newStatus
+        }),
       });
 
       if (response.ok) {
-        setSuccessMessage(`${userEmail} has been removed from the organization`);
+        setSuccessMessage(`${userEmail} has been ${action}d`);
         fetchUsers();
       } else {
         const data = await response.json();
-        setError(data.error || 'Failed to remove user');
+        setError(data.error || `Failed to ${action} user`);
       }
     } catch (error) {
-      setError('Failed to remove user');
+      setError(`Failed to ${action} user`);
     }
   };
 
@@ -846,6 +850,7 @@ const UsersPage = () => {
                     <TableHead>Department(s)</TableHead>
                     <TableHead>Role</TableHead>
                     <TableHead>Joined</TableHead>
+                    {isAdmin && <TableHead className="text-center">Status</TableHead>}
                     {isAdmin && <TableHead className="text-right">Actions</TableHead>}
                   </TableRow>
                 </TableHeader>
@@ -868,24 +873,33 @@ const UsersPage = () => {
                         {format(new Date(user.created_at), 'MMM d, yyyy')}
                       </TableCell>
                       {isAdmin && (
-                        <TableCell className="text-right">
-                          <div className="flex justify-end gap-2">
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              onClick={() => handleEditUser(user)}
-                            >
-                              <Edit className="h-4 w-4" />
-                            </Button>
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              onClick={() => handleRemoveUser(user.id, user.email)}
-                              disabled={user.id === user.id} // Prevent removing yourself
-                            >
-                              <Trash2 className="h-4 w-4" />
-                            </Button>
+                        <TableCell className="text-center">
+                          <div className="flex items-center justify-center">
+                            <Switch
+                              checked={user.is_active !== false}
+                              onCheckedChange={() => handleToggleUserActive(user.id, user.is_active !== false, user.email)}
+                              aria-label={`Toggle ${user.first_name} ${user.last_name} active status`}
+                              disabled={user.id === user.id} // Prevent deactivating yourself
+                            />
+                            <span className="ml-2 text-sm">
+                              {user.is_active !== false ? (
+                                <span className="text-green-600">Active</span>
+                              ) : (
+                                <span className="text-gray-500">Inactive</span>
+                              )}
+                            </span>
                           </div>
+                        </TableCell>
+                      )}
+                      {isAdmin && (
+                        <TableCell className="text-right">
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => handleEditUser(user)}
+                          >
+                            <Edit className="h-4 w-4" />
+                          </Button>
                         </TableCell>
                       )}
                     </TableRow>

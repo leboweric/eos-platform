@@ -1,32 +1,23 @@
 import { useState, useEffect } from 'react';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Switch } from '@/components/ui/switch';
 import { 
   Building2,
   Plus,
   Edit,
-  Trash2,
   Users,
-  ChevronRight,
   Search,
   Loader2,
-  Target,
-  BarChart,
-  Calendar,
-  CheckSquare,
-  AlertCircle,
-  UserPlus,
-  Settings
+  AlertCircle
 } from 'lucide-react';
 import { Textarea } from '@/components/ui/textarea';
 import { departmentService } from '../services/departmentService';
-import { teamsService } from '../services/teamsService';
 import { useAuthStore } from '../stores/authStore';
-import { useNavigate } from 'react-router-dom';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 
 const DepartmentsPage = () => {
@@ -37,23 +28,14 @@ const DepartmentsPage = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [saving, setSaving] = useState(false);
-  const [deleting, setDeleting] = useState(null);
-  const [teamDialogOpen, setTeamDialogOpen] = useState(false);
-  const [selectedDeptForTeams, setSelectedDeptForTeams] = useState(null);
-  const [createTeamDialogOpen, setCreateTeamDialogOpen] = useState(false);
-  const [teamFormData, setTeamFormData] = useState({
-    name: '',
-    description: ''
-  });
-  const [savingTeam, setSavingTeam] = useState(false);
-  const navigate = useNavigate();
   const { user } = useAuthStore();
   
   const [formData, setFormData] = useState({
     name: '',
     description: '',
     leaderId: '',
-    parentDepartmentId: null
+    parentDepartmentId: null,
+    is_active: true
   });
 
   // Fetch departments from API
@@ -91,7 +73,8 @@ const DepartmentsPage = () => {
         name: dept.name,
         description: dept.description || '',
         leaderId: dept.leaderId || '',
-        parentDepartmentId: dept.parentDepartmentId
+        parentDepartmentId: dept.parentDepartmentId,
+        is_active: dept.is_active !== false // Default to true if not set
       });
     } else {
       setEditingDept(null);
@@ -99,7 +82,8 @@ const DepartmentsPage = () => {
         name: '',
         description: '',
         leaderId: '',
-        parentDepartmentId: null
+        parentDepartmentId: null,
+        is_active: true
       });
     }
     setDialogOpen(true);
@@ -124,7 +108,8 @@ const DepartmentsPage = () => {
         name: '',
         description: '',
         leaderId: '',
-        parentDepartmentId: null
+        parentDepartmentId: null,
+        is_active: true
       });
     } catch (error) {
       console.error('Error saving department:', error);
@@ -134,47 +119,17 @@ const DepartmentsPage = () => {
     }
   };
 
-  const handleDelete = async (deptId) => {
-    if (window.confirm('Are you sure you want to delete this department?')) {
-      try {
-        setDeleting(deptId);
-        setError(null);
-        await departmentService.deleteDepartment(deptId);
-        await fetchDepartments();
-      } catch (error) {
-        console.error('Error deleting department:', error);
-        setError(error.response?.data?.error || 'Failed to delete department');
-      } finally {
-        setDeleting(null);
-      }
-    }
-  };
-
-  const handleCreateTeam = async () => {
+  const handleToggleActive = async (dept) => {
     try {
-      setSavingTeam(true);
       setError(null);
-      
-      const newTeam = await teamsService.createTeam({
-        name: teamFormData.name,
-        description: teamFormData.description,
-        department_id: selectedDeptForTeams.id,
-        is_leadership_team: false
+      await departmentService.updateDepartment(dept.id, {
+        ...dept,
+        is_active: !dept.is_active
       });
-      
-      // Refresh departments to show the new team
       await fetchDepartments();
-      
-      // Close dialog and reset form
-      setCreateTeamDialogOpen(false);
-      setTeamFormData({ name: '', description: '' });
-      
-      // Optionally, show success message
     } catch (error) {
-      console.error('Error creating team:', error);
-      setError(error.response?.data?.error || 'Failed to create team');
-    } finally {
-      setSavingTeam(false);
+      console.error('Error toggling department status:', error);
+      setError(error.response?.data?.error || 'Failed to update department status');
     }
   };
 
@@ -183,158 +138,10 @@ const DepartmentsPage = () => {
     dept.description?.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
-  const DepartmentCard = ({ department, isSubDept = false }) => (
-    <Card className={isSubDept ? 'ml-8' : ''}>
-      <CardHeader>
-        <div className="flex items-center justify-between">
-          <div className="flex items-center space-x-3">
-            <Building2 className="h-5 w-5 text-gray-600" />
-            <div>
-              <CardTitle className="text-lg">{department.name}</CardTitle>
-              {department.leader_name && (
-                <p className="text-sm text-gray-600 mt-1">
-                  Led by {department.leader_name}
-                </p>
-              )}
-            </div>
-          </div>
-          <div className="flex items-center space-x-2">
-            <Badge variant="secondary">
-              <Users className="h-3 w-3 mr-1" />
-              {department.member_count || 0} members
-            </Badge>
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => handleOpenDialog(department)}
-              title="Edit department"
-            >
-              <Edit className="h-4 w-4" />
-            </Button>
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => handleDelete(department.id)}
-              disabled={deleting === department.id}
-              title="Delete department"
-            >
-              {deleting === department.id ? (
-                <Loader2 className="h-4 w-4 animate-spin" />
-              ) : (
-                <Trash2 className="h-4 w-4" />
-              )}
-            </Button>
-          </div>
-        </div>
-      </CardHeader>
-      <CardContent>
-        {department.description && (
-          <p className="text-gray-600 mb-4">{department.description}</p>
-        )}
-        
-        {/* Teams Section */}
-        {department.teams && department.teams.length > 0 && (
-          <div className="mb-4 p-3 bg-gray-50 rounded-lg">
-            <div className="flex items-center justify-between mb-2">
-              <h4 className="text-sm font-medium text-gray-700 flex items-center">
-                <Users className="h-4 w-4 mr-1" />
-                Teams ({department.teams.length})
-              </h4>
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={() => {
-                  setSelectedDeptForTeams(department);
-                  setTeamDialogOpen(true);
-                }}
-                className="text-xs"
-              >
-                <Settings className="h-3 w-3 mr-1" />
-                Manage
-              </Button>
-            </div>
-            <div className="space-y-1">
-              {department.teams.map(team => (
-                <div key={team.id} className="flex items-center justify-between text-sm">
-                  <span className="text-gray-600">{team.name}</span>
-                  <Badge variant="secondary" className="text-xs">
-                    {team.member_count || 0} members
-                  </Badge>
-                </div>
-              ))}
-            </div>
-          </div>
-        )}
-        
-        {/* Department Management Actions */}
-        <div className="grid grid-cols-2 md:grid-cols-5 gap-2 mb-4">
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => navigate(`/departments/${department.id}/priorities`)}
-            className="flex items-center justify-center"
-          >
-            <Target className="h-4 w-4 mr-1" />
-            Priorities
-          </Button>
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => navigate(`/departments/${department.id}/scorecard`)}
-            className="flex items-center justify-center"
-          >
-            <BarChart className="h-4 w-4 mr-1" />
-            Scorecard
-          </Button>
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => navigate(`/departments/${department.id}/meetings`)}
-            className="flex items-center justify-center"
-          >
-            <Calendar className="h-4 w-4 mr-1" />
-            Meetings
-          </Button>
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => navigate(`/departments/${department.id}/todos`)}
-            className="flex items-center justify-center"
-          >
-            <CheckSquare className="h-4 w-4 mr-1" />
-            To-Dos
-          </Button>
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => navigate(`/departments/${department.id}/issues`)}
-            className="flex items-center justify-center"
-          >
-            <AlertCircle className="h-4 w-4 mr-1" />
-            Issues
-          </Button>
-        </div>
-        
-        {!isSubDept && department.subDepartments?.length > 0 && (
-          <div className="mt-4 pt-4 border-t">
-            <p className="text-sm font-medium mb-2 flex items-center">
-              <ChevronRight className="h-4 w-4 mr-1" />
-              Sub-departments
-            </p>
-            <div className="space-y-3">
-              {department.subDepartments.map(subDept => (
-                <DepartmentCard
-                  key={subDept.id}
-                  department={subDept}
-                  isSubDept={true}
-                />
-              ))}
-            </div>
-          </div>
-        )}
-      </CardContent>
-    </Card>
-  );
+  // Calculate statistics
+  const totalDepartments = departments.length;
+  const activeDepartments = departments.filter(d => d.is_active !== false).length;
+  const totalMembers = departments.reduce((sum, dept) => sum + (dept.member_count || 0), 0);
 
   return (
     <div className="space-y-6">
@@ -350,6 +157,43 @@ const DepartmentsPage = () => {
           <Plus className="mr-2 h-4 w-4" />
           Add Department
         </Button>
+      </div>
+
+      {/* Statistics Cards */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <Card>
+          <CardContent className="p-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm font-medium text-gray-600">Total Departments</p>
+                <p className="text-2xl font-bold">{totalDepartments}</p>
+              </div>
+              <Building2 className="h-8 w-8 text-gray-400" />
+            </div>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardContent className="p-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm font-medium text-gray-600">Active Departments</p>
+                <p className="text-2xl font-bold">{activeDepartments}</p>
+              </div>
+              <Building2 className="h-8 w-8 text-green-400" />
+            </div>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardContent className="p-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm font-medium text-gray-600">Total Members</p>
+                <p className="text-2xl font-bold">{totalMembers}</p>
+              </div>
+              <Users className="h-8 w-8 text-blue-400" />
+            </div>
+          </CardContent>
+        </Card>
       </div>
 
       {/* Error Alert */}
@@ -372,27 +216,93 @@ const DepartmentsPage = () => {
       </div>
 
       {/* Departments List */}
-      {loading ? (
-        <div className="flex items-center justify-center py-12">
-          <Loader2 className="h-8 w-8 animate-spin text-gray-400" />
-        </div>
-      ) : filteredDepartments.length === 0 ? (
-        <Card>
-          <CardContent className="flex flex-col items-center justify-center py-12">
-            <Building2 className="h-12 w-12 text-gray-400 mb-4" />
-            <p className="text-gray-600 text-lg font-medium">No departments found</p>
-            <p className="text-gray-500 text-sm mt-1">
-              {searchTerm ? 'Try adjusting your search' : 'Create your first department to get started'}
-            </p>
-          </CardContent>
-        </Card>
-      ) : (
-        <div className="space-y-4">
-          {filteredDepartments.map(dept => (
-            <DepartmentCard key={dept.id} department={dept} />
-          ))}
-        </div>
-      )}
+      <Card>
+        <CardHeader>
+          <CardTitle>All Departments</CardTitle>
+        </CardHeader>
+        <CardContent>
+          {loading ? (
+            <div className="flex items-center justify-center py-12">
+              <Loader2 className="h-8 w-8 animate-spin text-gray-400" />
+            </div>
+          ) : filteredDepartments.length === 0 ? (
+            <div className="flex flex-col items-center justify-center py-12">
+              <Building2 className="h-12 w-12 text-gray-400 mb-4" />
+              <p className="text-gray-600 text-lg font-medium">No departments found</p>
+              <p className="text-gray-500 text-sm mt-1">
+                {searchTerm ? 'Try adjusting your search' : 'Create your first department to get started'}
+              </p>
+            </div>
+          ) : (
+            <div className="overflow-x-auto">
+              <table className="w-full">
+                <thead>
+                  <tr className="border-b">
+                    <th className="text-left py-3 px-4 font-medium text-gray-700">Department</th>
+                    <th className="text-left py-3 px-4 font-medium text-gray-700">Description</th>
+                    <th className="text-center py-3 px-4 font-medium text-gray-700">Members</th>
+                    <th className="text-center py-3 px-4 font-medium text-gray-700">Status</th>
+                    <th className="text-right py-3 px-4 font-medium text-gray-700">Actions</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {filteredDepartments.map((dept) => (
+                    <tr key={dept.id} className="border-b hover:bg-gray-50">
+                      <td className="py-3 px-4">
+                        <div className="flex items-center">
+                          <Building2 className="h-5 w-5 text-gray-400 mr-3" />
+                          <div>
+                            <p className="font-medium">{dept.name}</p>
+                            {dept.leader_name && (
+                              <p className="text-sm text-gray-500">Led by {dept.leader_name}</p>
+                            )}
+                          </div>
+                        </div>
+                      </td>
+                      <td className="py-3 px-4">
+                        <p className="text-sm text-gray-600 max-w-xs truncate">
+                          {dept.description || '-'}
+                        </p>
+                      </td>
+                      <td className="py-3 px-4 text-center">
+                        <Badge variant="secondary">
+                          {dept.member_count || 0}
+                        </Badge>
+                      </td>
+                      <td className="py-3 px-4 text-center">
+                        <div className="flex items-center justify-center">
+                          <Switch
+                            checked={dept.is_active !== false}
+                            onCheckedChange={() => handleToggleActive(dept)}
+                            aria-label={`Toggle ${dept.name} active status`}
+                          />
+                          <span className="ml-2 text-sm">
+                            {dept.is_active !== false ? (
+                              <span className="text-green-600">Active</span>
+                            ) : (
+                              <span className="text-gray-500">Inactive</span>
+                            )}
+                          </span>
+                        </div>
+                      </td>
+                      <td className="py-3 px-4 text-right">
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => handleOpenDialog(dept)}
+                          title="Edit department"
+                        >
+                          <Edit className="h-4 w-4" />
+                        </Button>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </CardContent>
+      </Card>
 
       {/* Department Dialog */}
       <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
@@ -439,6 +349,18 @@ const DepartmentsPage = () => {
                 ))}
               </select>
             </div>
+            {editingDept && (
+              <div className="flex items-center space-x-2">
+                <Switch
+                  id="active"
+                  checked={formData.is_active}
+                  onCheckedChange={(checked) => setFormData({ ...formData, is_active: checked })}
+                />
+                <Label htmlFor="active" className="cursor-pointer">
+                  Department is active
+                </Label>
+              </div>
+            )}
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setDialogOpen(false)} disabled={saving}>
@@ -452,121 +374,6 @@ const DepartmentsPage = () => {
                 </>
               ) : (
                 <>{editingDept ? 'Update' : 'Create'} Department</>
-              )}
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-
-      {/* Team Management Dialog */}
-      <Dialog open={teamDialogOpen} onOpenChange={setTeamDialogOpen}>
-        <DialogContent className="max-w-2xl">
-          <DialogHeader>
-            <DialogTitle>
-              Manage Teams - {selectedDeptForTeams?.name}
-            </DialogTitle>
-            <DialogDescription>
-              View and manage teams within this department
-            </DialogDescription>
-          </DialogHeader>
-          <div className="space-y-4 py-4">
-            {selectedDeptForTeams?.teams && selectedDeptForTeams.teams.length > 0 ? (
-              <div className="space-y-3">
-                {selectedDeptForTeams.teams.map(team => (
-                  <Card key={team.id}>
-                    <CardContent className="flex items-center justify-between py-4">
-                      <div>
-                        <h4 className="font-medium">{team.name}</h4>
-                        {team.description && (
-                          <p className="text-sm text-gray-600 mt-1">{team.description}</p>
-                        )}
-                        <div className="flex items-center gap-4 mt-2">
-                          <Badge variant="secondary">
-                            <Users className="h-3 w-3 mr-1" />
-                            {team.member_count || 0} members
-                          </Badge>
-                        </div>
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => navigate(`/departments/${selectedDeptForTeams.id}/teams/${team.id}`)}
-                        >
-                          <UserPlus className="h-4 w-4 mr-1" />
-                          Manage Members
-                        </Button>
-                      </div>
-                    </CardContent>
-                  </Card>
-                ))}
-              </div>
-            ) : (
-              <div className="text-center py-8 text-gray-600">
-                No teams found for this department
-              </div>
-            )}
-            
-            <div className="pt-4 border-t">
-              <Button 
-                className="w-full"
-                onClick={() => {
-                  setCreateTeamDialogOpen(true);
-                  setTeamFormData({ name: '', description: '' });
-                }}
-              >
-                <Plus className="h-4 w-4 mr-2" />
-                Create New Team
-              </Button>
-            </div>
-          </div>
-        </DialogContent>
-      </Dialog>
-
-      {/* Create Team Dialog */}
-      <Dialog open={createTeamDialogOpen} onOpenChange={setCreateTeamDialogOpen}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>
-              Create New Team
-            </DialogTitle>
-            <DialogDescription>
-              Add a new team to {selectedDeptForTeams?.name}
-            </DialogDescription>
-          </DialogHeader>
-          <div className="space-y-4 py-4">
-            <div className="space-y-2">
-              <Label htmlFor="teamName">Team Name</Label>
-              <Input
-                id="teamName"
-                value={teamFormData.name}
-                onChange={(e) => setTeamFormData({ ...teamFormData, name: e.target.value })}
-                placeholder="e.g., Product Team, Support Team"
-              />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="teamDescription">Description</Label>
-              <Textarea
-                id="teamDescription"
-                value={teamFormData.description}
-                onChange={(e) => setTeamFormData({ ...teamFormData, description: e.target.value })}
-                placeholder="What does this team do?"
-                rows={3}
-              />
-            </div>
-          </div>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setCreateTeamDialogOpen(false)} disabled={savingTeam}>
-              Cancel
-            </Button>
-            <Button onClick={handleCreateTeam} disabled={savingTeam || !teamFormData.name}>
-              {savingTeam ? (
-                <>
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  Creating...
-                </>
-              ) : (
-                'Create Team'
               )}
             </Button>
           </DialogFooter>
