@@ -113,19 +113,27 @@ const TwoPagePlanView = ({ hideIssuesAndPriorities = false }) => {
     try {
       // First check localStorage
       const savedTheme = localStorage.getItem('orgTheme');
+      console.log('Saved theme from localStorage:', savedTheme);
       if (savedTheme) {
-        setThemeColors(JSON.parse(savedTheme));
+        const parsedTheme = JSON.parse(savedTheme);
+        console.log('Using saved theme:', parsedTheme);
+        setThemeColors(parsedTheme);
         return;
       }
       
       // Fetch from API
+      console.log('Fetching organization data for theme...');
       const orgData = await organizationService.getOrganization();
-      if (orgData?.data) {
+      console.log('Organization data received:', orgData);
+      
+      if (orgData) {
+        // The service already returns response.data.data, so orgData is the direct data
         const theme = {
-          primary: orgData.data.theme_primary_color || '#3B82F6',
-          secondary: orgData.data.theme_secondary_color || '#1E40AF',
-          accent: orgData.data.theme_accent_color || '#60A5FA'
+          primary: orgData.theme_primary_color || '#3B82F6',
+          secondary: orgData.theme_secondary_color || '#1E40AF',
+          accent: orgData.theme_accent_color || '#60A5FA'
         };
+        console.log('Theme colors extracted:', theme);
         setThemeColors(theme);
         localStorage.setItem('orgTheme', JSON.stringify(theme));
       }
