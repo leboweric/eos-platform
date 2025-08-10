@@ -44,6 +44,7 @@ import WeeklyAccountabilityMeetingPageOriginal from './pages/WeeklyAccountabilit
 import QuarterlyPlanningMeetingPage from './pages/QuarterlyPlanningMeetingPage';
 import DocumentRepositoryPage from './pages/DocumentRepositoryPage';
 import SmartRockAssistant from './pages/SmartRockAssistant';
+import ScorecardDebug from './pages/ScorecardDebug';
 
 // Department Components
 import DepartmentLayout from './components/DepartmentLayout';
@@ -109,6 +110,7 @@ function App() {
           <Route path="/scorecard" element={user ? <Layout><ScorecardPage /></Layout> : <Navigate to="/login" />} />
           <Route path="/scorecard-original" element={user ? <Layout><ScorecardPageOriginal /></Layout> : <Navigate to="/login" />} />
           <Route path="/scorecard-redesigned" element={user ? <Layout><ScorecardPageRedesigned /></Layout> : <Navigate to="/login" />} />
+          <Route path="/scorecard-debug" element={user ? <Layout><ScorecardDebug /></Layout> : <Navigate to="/login" />} />
           <Route path="/meetings" element={user ? <Layout><MeetingsPage /></Layout> : <Navigate to="/login" />} />
           <Route path="/meetings/weekly-accountability/:teamId" element={user ? <Layout><WeeklyAccountabilityMeetingPage /></Layout> : <Navigate to="/login" />} />
           <Route path="/meetings/weekly-accountability-original/:teamId" element={user ? <Layout><WeeklyAccountabilityMeetingPageOriginal /></Layout> : <Navigate to="/login" />} />
