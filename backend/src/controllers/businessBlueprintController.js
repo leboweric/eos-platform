@@ -63,6 +63,7 @@ export const getVTO = async (req, res) => {
 
     // Check if this is for a department
     const isDepartment = teamId && teamId !== '00000000-0000-0000-0000-000000000000';
+    console.log('getVTO - teamId:', teamId, 'isDepartment:', isDepartment);
     
     // Always get org-level VTO for shared components
     let orgVtoResult = await query(
@@ -119,6 +120,7 @@ export const getVTO = async (req, res) => {
     
     // Get 3-year and 1-year from department VTO if department, else from org VTO
     const vtoIdForPlans = deptVto ? deptVto.id : orgVto.id;
+    console.log('getVTO - Using VTO ID for plans:', vtoIdForPlans, 'from', deptVto ? 'department' : 'org');
     const [threeYearPicture, oneYearPlan] = await Promise.all([
       query('SELECT * FROM three_year_pictures WHERE vto_id = $1', [vtoIdForPlans]),
       query('SELECT * FROM one_year_plans WHERE vto_id = $1', [vtoIdForPlans])

@@ -14,6 +14,9 @@ const buildUrl = (endpoint = '') => {
   const selectedDepartment = JSON.parse(localStorage.getItem('selectedDepartment') || 'null');
   const teamId = selectedDepartment?.id || getTeamId(user, 'leadership');
   
+  console.log('businessBlueprintService - selectedDepartment:', selectedDepartment);
+  console.log('businessBlueprintService - teamId:', teamId);
+  
   return API_BASE.replace(':orgId', orgId).replace(':teamId', teamId) + endpoint;
 };
 
