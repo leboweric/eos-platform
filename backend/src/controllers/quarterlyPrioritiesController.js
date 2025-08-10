@@ -412,12 +412,15 @@ export const createPriority = async (req, res) => {
     
     // Create milestones if provided
     if (milestones.length > 0) {
-      for (const milestone of milestones) {
+      for (const [index, milestone] of milestones.entries()) {
         const milestoneDueDate = milestone.dueDate === '' ? null : milestone.dueDate;
+        // Use milestone owner if provided, otherwise use priority owner
+        const milestoneOwnerId = milestone.ownerId || actualOwnerId;
+        
         await query(
-          `INSERT INTO priority_milestones (id, priority_id, title, due_date, completed)
-           VALUES ($1, $2, $3, $4, $5)`,
-          [uuidv4(), priorityId, milestone.title, milestoneDueDate, false]
+          `INSERT INTO priority_milestones (id, priority_id, title, due_date, completed, owner_id, display_order, status)
+           VALUES ($1, $2, $3, $4, $5, $6, $7, $8)`,
+          [uuidv4(), priorityId, milestone.title, milestoneDueDate, false, milestoneOwnerId, index, 'not_started']
         );
       }
     }
@@ -713,7 +716,7 @@ export const createMilestone = async (req, res) => {
 export const updateMilestone = async (req, res) => {
   try {
     const { orgId, teamId, priorityId, milestoneId } = req.params;
-    const { title, dueDate, completed } = req.body;
+    const { title, dueDate, completed, ownerId, status } = req.body;
     
     // Convert empty string to null for date field
     const parsedDueDate = dueDate === '' ? null : dueDate;
@@ -741,15 +744,61 @@ export const updateMilestone = async (req, res) => {
       });
     }
     
+    // Build dynamic update query based on provided fields
+    const updateFields = [];
+    const updateValues = [];
+    let paramCount = 0;
+    
+    if (title !== undefined) {
+      paramCount++;
+      updateFields.push(`title = $${paramCount}`);
+      updateValues.push(title);
+    }
+    
+    if (dueDate !== undefined) {
+      paramCount++;
+      updateFields.push(`due_date = $${paramCount}`);
+      updateValues.push(parsedDueDate);
+    }
+    
+    if (completed !== undefined) {
+      paramCount++;
+      updateFields.push(`completed = $${paramCount}`);
+      updateValues.push(completed);
+      
+      // If marking as completed, set completed_at timestamp
+      if (completed) {
+        paramCount++;
+        updateFields.push(`completed_at = $${paramCount}`);
+        updateValues.push(new Date());
+      }
+    }
+    
+    if (ownerId !== undefined) {
+      paramCount++;
+      updateFields.push(`owner_id = $${paramCount}`);
+      updateValues.push(ownerId);
+    }
+    
+    if (status !== undefined) {
+      paramCount++;
+      updateFields.push(`status = $${paramCount}`);
+      updateValues.push(status);
+    }
+    
+    // Always update the updated_at timestamp
+    updateFields.push('updated_at = NOW()');
+    
+    // Add the milestone ID as the last parameter
+    paramCount++;
+    updateValues.push(milestoneId);
+    
     const result = await query(
       `UPDATE priority_milestones 
-       SET title = COALESCE($1, title),
-           due_date = COALESCE($2, due_date),
-           completed = COALESCE($3, completed),
-           updated_at = NOW()
-       WHERE id = $4
+       SET ${updateFields.join(', ')}
+       WHERE id = $${paramCount}
        RETURNING *`,
-      [title, parsedDueDate, completed, milestoneId]
+      updateValues
     );
     
     // Update priority progress based on milestones
@@ -1289,7 +1338,11 @@ export const getCurrentPriorities = async (req, res) => {
     
     if (priorityIds.length > 0) {
       const milestonesResult = await query(
-        `SELECT * FROM priority_milestones WHERE priority_id = ANY($1) ORDER BY due_date`,
+        `SELECT pm.*, u.first_name || ' ' || u.last_name as owner_name 
+         FROM priority_milestones pm
+         LEFT JOIN users u ON pm.owner_id = u.id
+         WHERE pm.priority_id = ANY($1) 
+         ORDER BY pm.display_order, pm.due_date`,
         [priorityIds]
       );
       
