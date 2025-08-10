@@ -167,7 +167,7 @@ const PriorityCardClean = ({
 
   return (
     <div className="group">
-      <Card className={`transition-all duration-200 border-l-4 ${getStatusBorderColor(isEditing ? editForm.status : priority.status)} hover:shadow-sm bg-white`}>
+      <Card className={`transition-all duration-200 border-l-4 ${getStatusBorderColor(isEditing ? editForm.status : priority.status)} hover:shadow-sm bg-white overflow-hidden`}>
         <CardHeader className="pb-4">
           <div className="flex items-start justify-between">
             <div className="flex-1 min-w-0">
@@ -191,7 +191,7 @@ const PriorityCardClean = ({
                     className="flex-1 text-lg font-semibold border-0 p-0 focus:ring-0 shadow-none"
                   />
                 ) : (
-                  <h3 className={`text-lg font-semibold text-gray-900 truncate flex-1 ${priority.status === 'complete' ? 'line-through text-gray-500' : ''}`}>
+                  <h3 className={`text-lg font-semibold text-gray-900 flex-1 line-clamp-2 ${priority.status === 'complete' ? 'line-through text-gray-500' : ''}`}>
                     {priority.title}
                   </h3>
                 )}
