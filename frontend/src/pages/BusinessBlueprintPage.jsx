@@ -49,11 +49,6 @@ const BusinessBlueprintPage = () => {
   const [success, setSuccess] = useState(null);
   const [activeTab, setActiveTab] = useState('vision');
   const [organization, setOrganization] = useState(null);
-
-  // Check if user is on leadership team
-  if (!isOnLeadershipTeam()) {
-    return <Navigate to="/dashboard" replace />;
-  }
   
   // 2-Page Plan data
   const [blueprintData, setBlueprintData] = useState({
