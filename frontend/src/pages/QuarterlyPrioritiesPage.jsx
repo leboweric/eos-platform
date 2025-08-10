@@ -6,7 +6,7 @@ import { organizationService } from '../services/organizationService';
 import { issuesService } from '../services/issuesService';
 import { getRevenueLabel, getRevenueLabelWithSuffix } from '../utils/revenueUtils';
 import { useDepartment } from '../contexts/DepartmentContext';
-import PriorityCard from '../components/priorities/PriorityCard';
+// PriorityCard is defined locally in this file
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
