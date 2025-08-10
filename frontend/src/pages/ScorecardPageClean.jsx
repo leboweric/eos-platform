@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { useAuthStore } from '../stores/authStore';
 import { scorecardService } from '../services/scorecardService';
 import { scorecardGroupsService } from '../services/scorecardGroupsService';
+import { organizationService } from '../services/organizationService';
 import { useDepartment } from '../contexts/DepartmentContext';
 import { LEADERSHIP_TEAM_ID } from '../utils/teamUtils';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -34,6 +35,11 @@ const ScorecardPageClean = () => {
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState(null);
   const [success, setSuccess] = useState(null);
+  const [themeColors, setThemeColors] = useState({
+    primary: '#3B82F6',
+    secondary: '#1E40AF',
+    accent: '#60A5FA'
+  });
   
   // Scorecard data
   const [metrics, setMetrics] = useState([]);
@@ -82,6 +88,15 @@ const ScorecardPageClean = () => {
       fetchScorecard();
       fetchGroups();
     }
+    fetchOrganizationTheme();
+    
+    // Listen for theme changes
+    const handleThemeChange = (event) => {
+      setThemeColors(event.detail);
+    };
+    
+    window.addEventListener('themeChanged', handleThemeChange);
+    return () => window.removeEventListener('themeChanged', handleThemeChange);
   }, [user?.organizationId, selectedDepartment, isLeadershipMember]);
 
   const fetchScorecard = async () => {
@@ -123,6 +138,33 @@ const ScorecardPageClean = () => {
       setError('Failed to load scorecard data');
     } finally {
       setLoading(false);
+    }
+  };
+
+  const fetchOrganizationTheme = async () => {
+    try {
+      // First check localStorage
+      const savedTheme = localStorage.getItem('orgTheme');
+      if (savedTheme) {
+        const parsedTheme = JSON.parse(savedTheme);
+        setThemeColors(parsedTheme);
+        return;
+      }
+      
+      // Fetch from API
+      const orgData = await organizationService.getOrganization();
+      
+      if (orgData) {
+        const theme = {
+          primary: orgData.theme_primary_color || '#3B82F6',
+          secondary: orgData.theme_secondary_color || '#1E40AF',
+          accent: orgData.theme_accent_color || '#60A5FA'
+        };
+        setThemeColors(theme);
+        localStorage.setItem('orgTheme', JSON.stringify(theme));
+      }
+    } catch (error) {
+      console.error('Failed to fetch organization theme:', error);
     }
   };
 
@@ -401,6 +443,7 @@ const ScorecardPageClean = () => {
         <div className="flex items-center justify-between mb-6">
           <div>
             <h1 className="text-3xl font-semibold text-gray-900">
+              <span className="inline-block w-1 h-8 mr-3 rounded-full" style={{ backgroundColor: themeColors.primary }} />
               {selectedDepartment?.name || ''} Scorecard
             </h1>
             <p className="text-gray-500 mt-1">Track your key metrics and measurables</p>
@@ -449,7 +492,15 @@ const ScorecardPageClean = () => {
                 teamId={selectedDepartment?.id || LEADERSHIP_TEAM_ID}
                 onImportComplete={fetchScorecard}
               />
-              <Button onClick={handleAddMetric} className="bg-gray-900 hover:bg-gray-800 text-white">
+              <Button 
+                onClick={handleAddMetric} 
+                className="text-white transition-colors"
+                style={{ 
+                  backgroundColor: themeColors.primary,
+                }}
+                onMouseEnter={(e) => e.currentTarget.style.backgroundColor = themeColors.secondary}
+                onMouseLeave={(e) => e.currentTarget.style.backgroundColor = themeColors.primary}
+              >
                 <Plus className="mr-2 h-4 w-4" />
                 Add Metric
               </Button>
@@ -473,8 +524,26 @@ const ScorecardPageClean = () => {
 
         <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
           <TabsList className="grid w-48 grid-cols-2 mb-6 bg-gray-100">
-            <TabsTrigger value="weekly" className="data-[state=active]:bg-white">Weekly</TabsTrigger>
-            <TabsTrigger value="monthly" className="data-[state=active]:bg-white">Monthly</TabsTrigger>
+            <TabsTrigger 
+              value="weekly" 
+              className="transition-colors"
+              style={{ 
+                backgroundColor: activeTab === 'weekly' ? themeColors.primary : 'transparent',
+                color: activeTab === 'weekly' ? 'white' : 'inherit'
+              }}
+            >
+              Weekly
+            </TabsTrigger>
+            <TabsTrigger 
+              value="monthly" 
+              className="transition-colors"
+              style={{ 
+                backgroundColor: activeTab === 'monthly' ? themeColors.primary : 'transparent',
+                color: activeTab === 'monthly' ? 'white' : 'inherit'
+              }}
+            >
+              Monthly
+            </TabsTrigger>
           </TabsList>
           
           <TabsContent value="weekly" className="mt-0">
@@ -488,6 +557,7 @@ const ScorecardPageClean = () => {
                 teamId={selectedDepartment?.id || LEADERSHIP_TEAM_ID}
                 type="weekly"
                 isRTL={isRTL}
+                themeColors={themeColors}
                 onMetricUpdate={handleEditMetric}
                 onScoreUpdate={(metric, period) => handleScoreEdit(metric, period, 'weekly')}
                 onMetricDelete={handleDeleteMetric}
@@ -510,6 +580,7 @@ const ScorecardPageClean = () => {
                 readOnly={false}
                 isRTL={isRTL}
                 showTotal={false}
+                themeColors={themeColors}
                 departmentId={selectedDepartment?.id || LEADERSHIP_TEAM_ID}
                 onIssueCreated={null}
                 onScoreEdit={(metric, weekDate) => handleScoreEdit(metric, weekDate, 'weekly')}
@@ -531,6 +602,7 @@ const ScorecardPageClean = () => {
                 teamId={selectedDepartment?.id || LEADERSHIP_TEAM_ID}
                 type="monthly"
                 isRTL={isRTL}
+                themeColors={themeColors}
                 onMetricUpdate={handleEditMetric}
                 onScoreUpdate={(metric, period) => handleScoreEdit(metric, period, 'monthly')}
                 onMetricDelete={handleDeleteMetric}
