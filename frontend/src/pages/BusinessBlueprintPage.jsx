@@ -409,7 +409,10 @@ const BusinessBlueprintPage = () => {
       setSaving(true);
       setError(null);
       const savedData = await businessBlueprintService.updateOneYearPlan(data);
+      console.log('Saved data from backend:', savedData);
+      console.log('Goals from backend:', savedData.goals);
       // Update with the saved data from the backend, properly formatting it
+      // The backend returns goals as objects with goal_text property
       setBlueprintData(prev => ({
         ...prev,
         oneYearPlan: {
@@ -417,16 +420,21 @@ const BusinessBlueprintPage = () => {
           revenue: savedData.revenue_target || '',
           profit: savedData.profit_percentage || '',
           goals: savedData.goals && Array.isArray(savedData.goals) ? 
-            savedData.goals : [],
+            savedData.goals.map(goal => {
+              // Handle both object format (from backend) and string format (from dialog)
+              if (typeof goal === 'object' && goal !== null) {
+                return goal; // Already in correct format with goal_text
+              } else if (typeof goal === 'string') {
+                return { goal_text: goal }; // Convert string to object format
+              }
+              return goal;
+            }) : [],
           measurables: savedData.measurables || [],
           revenueStreams: savedData.revenueStreams || []
         }
       }));
       setSuccess('1-Year Plan updated successfully');
-      // Refresh the business blueprint data to ensure everything is in sync
-      setTimeout(() => {
-        fetchBusinessBlueprint();
-      }, 500);
+      // No need to refresh since we're getting complete data from backend
     } catch (error) {
       setError('Failed to update 1-Year Plan');
       throw error;
