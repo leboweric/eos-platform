@@ -68,15 +68,15 @@ const LoginPage = () => {
             <img 
               src="/AXP_logo_upper_left_transparent.png?v=2" 
               alt="AXP" 
-              className="h-16 w-auto brightness-0 invert"
+              className="h-16 w-auto"
             />
           </div>
           
           {/* Main Message */}
           <div className="space-y-6">
             <h1 className="text-4xl lg:text-5xl font-bold text-white leading-tight">
-              Transform Your Business with
-              <span className="text-blue-400 block mt-2">Proven Operating Systems</span>
+              Transform Your Business with the
+              <span className="text-blue-400 block mt-2">Accountability and Execution Platform (AXP)</span>
             </h1>
             <p className="text-xl text-gray-300 leading-relaxed">
               Join thousands of organizations achieving breakthrough results through structured execution and accountability.
@@ -117,21 +117,6 @@ const LoginPage = () => {
           </div>
         </div>
 
-        {/* Stats */}
-        <div className="relative z-10 grid grid-cols-3 gap-8 pt-8 border-t border-gray-700">
-          <div>
-            <div className="text-3xl font-bold text-white">10K+</div>
-            <div className="text-sm text-gray-400 mt-1">Active Users</div>
-          </div>
-          <div>
-            <div className="text-3xl font-bold text-white">500+</div>
-            <div className="text-sm text-gray-400 mt-1">Organizations</div>
-          </div>
-          <div>
-            <div className="text-3xl font-bold text-white">98%</div>
-            <div className="text-sm text-gray-400 mt-1">Success Rate</div>
-          </div>
-        </div>
       </div>
 
       {/* Right Panel - Login Form */}
