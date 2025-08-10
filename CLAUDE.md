@@ -297,6 +297,42 @@ Use the template in `/migrate_boyum_simple.sql` as a reference. Key steps:
 - The backend auto-creates an empty blueprint if it doesn't find one with NULL team_id
 - Always check for and remove duplicate blueprints after creation
 
+## Scorecard Configuration
+
+### CRITICAL: Scorecard Metrics Requirements
+**IMPORTANT**: Scorecard metrics MUST have the `owner` field populated to display in the UI!
+
+#### Known Issues and Solutions
+1. **Metrics not displaying despite being in database**
+   - **Cause**: The `owner` column is NULL
+   - **Solution**: Update metrics to have an owner value (can be a team name or person name)
+   - **Example fix**:
+   ```sql
+   UPDATE scorecard_metrics
+   SET owner = 'Team Name'
+   WHERE team_id = 'your-team-id'
+     AND owner IS NULL;
+   ```
+
+#### Scorecard Metrics Table Structure
+- `id`: UUID
+- `organization_id`: References organizations(id)
+- `team_id`: References teams(id)
+- `name`: Metric name
+- `goal`: Target value (numeric)
+- `owner`: **REQUIRED** - Must not be NULL for metrics to display
+- `type`: 'weekly' or 'monthly'
+- `value_type`: 'number', 'percentage', 'currency'
+- `comparison_operator`: 'greater_equal', 'less_equal', or 'equal'
+- `display_order`: Sort order for display
+
+#### Valid Comparison Operators
+Only three operators are supported:
+- `greater_equal` (≥) - Use for "greater than or equal to" goals
+- `less_equal` (≤) - Use for "less than or equal to" goals  
+- `equal` (=) - Use for exact match goals
+**Note**: `greater` and `less` are NOT valid and will cause constraint violations
+
 ## SMART Rock Assistant Feature (August 2025)
 
 ### Overview
