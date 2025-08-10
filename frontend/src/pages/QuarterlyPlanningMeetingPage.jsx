@@ -343,6 +343,27 @@ const QuarterlyPlanningMeetingPage = () => {
     }
   };
 
+  const handleUpdatePriority = async (priorityId, updates) => {
+    try {
+      const orgId = localStorage.getItem('impersonatedOrgId') || user?.organizationId || user?.organization_id;
+      const effectiveTeamId = teamId || user?.teamId || '00000000-0000-0000-0000-000000000000';
+      
+      await quarterlyPrioritiesService.updatePriority(orgId, effectiveTeamId, priorityId, updates);
+      
+      // Update local state
+      setPriorities(prev => 
+        prev.map(p => p.id === priorityId ? { ...p, ...updates } : p)
+      );
+      
+      setSuccess('Priority updated');
+      setTimeout(() => setSuccess(null), 3000);
+    } catch (error) {
+      console.error('Failed to update priority:', error);
+      setError('Failed to update priority');
+      setTimeout(() => setError(null), 3000);
+    }
+  };
+
   const fetchIssuesData = async () => {
     try {
       setLoading(true);
@@ -767,6 +788,7 @@ const QuarterlyPlanningMeetingPage = () => {
                             key={priority.id} 
                             priority={priority} 
                             readOnly={false}
+                            onUpdate={handleUpdatePriority}
                             onIssueCreated={(message) => {
                               setSuccess(message);
                               setTimeout(() => setSuccess(null), 3000);
@@ -828,6 +850,7 @@ const QuarterlyPlanningMeetingPage = () => {
                                     key={priority.id} 
                                     priority={priority} 
                                     readOnly={false}
+                                    onUpdate={handleUpdatePriority}
                                     onIssueCreated={(message) => {
                                       setSuccess(message);
                                       setTimeout(() => setSuccess(null), 3000);
@@ -997,6 +1020,7 @@ const QuarterlyPlanningMeetingPage = () => {
                               key={priority.id} 
                               priority={priority} 
                               readOnly={false}
+                              onUpdate={handleUpdatePriority}
                               onIssueCreated={(message) => {
                                 setSuccess(message);
                                 setTimeout(() => setSuccess(null), 3000);
@@ -1058,6 +1082,7 @@ const QuarterlyPlanningMeetingPage = () => {
                                     key={priority.id} 
                                     priority={priority} 
                                     readOnly={false}
+                                    onUpdate={handleUpdatePriority}
                                     onIssueCreated={(message) => {
                                       setSuccess(message);
                                       setTimeout(() => setSuccess(null), 3000);
