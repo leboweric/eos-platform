@@ -533,7 +533,7 @@ const BusinessBlueprintPage = () => {
                 color: activeTab === 'vision' ? 'white' : 'inherit'
               }}
             >
-              <Target className="mr-2 h-5 w-5" />
+              <Target className="mr-2 h-5 w-5" style={{ color: activeTab === 'vision' ? 'white' : themeColors.primary }} />
               Vision
             </TabsTrigger>
             <TabsTrigger 
@@ -544,7 +544,7 @@ const BusinessBlueprintPage = () => {
                 color: activeTab === 'execution' ? 'white' : 'inherit'
               }}
             >
-              <TrendingUp className="mr-2 h-5 w-5" />
+              <TrendingUp className="mr-2 h-5 w-5" style={{ color: activeTab === 'execution' ? 'white' : themeColors.primary }} />
               Execution
             </TabsTrigger>
           </TabsList>
