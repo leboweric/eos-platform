@@ -2212,7 +2212,9 @@ const QuarterlyPrioritiesPageClean = () => {
                       </div>
                       <div className="space-y-4">
                         {quarterData.companyPriorities.map(priority => (
-                          <PriorityCardClean key={priority.id} priority={priority} isCompany={true} isArchived={true} />
+                          <div key={priority.id} className="max-w-5xl">
+                            <PriorityCardClean priority={priority} isCompany={true} isArchived={true} />
+                          </div>
                         ))}
                       </div>
                     </div>
@@ -2236,7 +2238,9 @@ const QuarterlyPrioritiesPageClean = () => {
                               <h4 className="text-lg font-semibold text-gray-900">{firstPriority.owner.name}</h4>
                             </div>
                             {priorities.map(priority => (
-                              <PriorityCardClean key={priority.id} priority={priority} isArchived={true} />
+                              <div key={priority.id} className="max-w-5xl">
+                                <PriorityCardClean priority={priority} isArchived={true} />
+                              </div>
                             ))}
                           </div>
                         );
@@ -2270,7 +2274,7 @@ const QuarterlyPrioritiesPageClean = () => {
               {expandedSections.companyPriorities && (
                 <div className="space-y-4 ml-8">
                   {(companyPriorities || []).map(priority => (
-                    <div key={priority.id} className="group">
+                    <div key={priority.id} className="group max-w-5xl">
                       <PriorityCardClean 
                         priority={priority} 
                         isCompany={true}
@@ -2330,7 +2334,7 @@ const QuarterlyPrioritiesPageClean = () => {
                   {expandedSections.individualPriorities[member.id] && (
                     <div className="space-y-4 ml-16">
                       {memberPriorities.map(priority => (
-                        <div key={priority.id} className="group">
+                        <div key={priority.id} className="group max-w-5xl">
                           <PriorityCardClean 
                             priority={priority}
                             onStatusChange={handlePriorityStatusChange}
