@@ -350,18 +350,18 @@ const DashboardClean = () => {
     }
   };
 
-  const getStatusColor = (status) => {
+  const getStatusStyle = (status) => {
     switch (status) {
       case 'complete':
-        return 'bg-green-500';
+        return { backgroundColor: themeColors.primary };
       case 'on-track':
-        return 'bg-blue-500';
+        return { backgroundColor: themeColors.accent };
       case 'at-risk':
-        return 'bg-yellow-500';
+        return { backgroundColor: '#FBBF24' }; // Keep yellow for warning
       case 'off-track':
-        return 'bg-red-500';
+        return { backgroundColor: '#EF4444' }; // Keep red for danger
       default:
-        return 'bg-gray-400';
+        return { backgroundColor: '#9CA3AF' };
     }
   };
 
@@ -790,7 +790,7 @@ const DashboardClean = () => {
               <div className="space-y-3">
                 {dashboardData.priorities.map((priority) => (
                   <div key={priority.id} className="flex items-center gap-3 group">
-                    <div className={`w-1 h-12 rounded ${getStatusColor(priority.status)}`} />
+                    <div className="w-1 h-12 rounded" style={getStatusStyle(priority.status)} />
                     <div className="flex-1 min-w-0">
                       <p className="text-sm font-medium text-gray-900 truncate">
                         {priority.title}
