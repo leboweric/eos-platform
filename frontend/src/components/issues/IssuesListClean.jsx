@@ -1,4 +1,7 @@
 import { useState, useEffect } from 'react';
+import { useAuthStore } from '../../stores/authStore';
+import { organizationService } from '../../services/organizationService';
+import { getOrgTheme, saveOrgTheme } from '../../utils/themeUtils';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Button } from '@/components/ui/button';
 import {
@@ -47,12 +50,18 @@ const IssuesListClean = ({
   readOnly = false, 
   showVoting = false
 }) => {
+  const { user } = useAuthStore();
   const [selectedIssue, setSelectedIssue] = useState(null);
   const [issueUpdates, setIssueUpdates] = useState([]);
   const [showAddUpdate, setShowAddUpdate] = useState(false);
   const [updateText, setUpdateText] = useState('');
   const [loadingUpdates, setLoadingUpdates] = useState(false);
   const [savingUpdate, setSavingUpdate] = useState(false);
+  const [themeColors, setThemeColors] = useState({
+    primary: '#3B82F6',
+    secondary: '#1E40AF',
+    accent: '#60A5FA'
+  });
 
   // Fetch updates when an issue is selected
   useEffect(() => {
@@ -64,6 +73,54 @@ const IssuesListClean = ({
       setUpdateText('');
     }
   }, [selectedIssue]);
+  
+  useEffect(() => {
+    fetchOrganizationTheme();
+    
+    // Listen for theme changes
+    const handleThemeChange = (event) => {
+      setThemeColors(event.detail);
+    };
+    
+    // Listen for organization changes
+    const handleOrgChange = () => {
+      fetchOrganizationTheme();
+    };
+    
+    window.addEventListener('themeChanged', handleThemeChange);
+    window.addEventListener('organizationChanged', handleOrgChange);
+    
+    return () => {
+      window.removeEventListener('themeChanged', handleThemeChange);
+      window.removeEventListener('organizationChanged', handleOrgChange);
+    };
+  }, []);
+  
+  const fetchOrganizationTheme = async () => {
+    try {
+      const orgId = user?.organizationId || user?.organization_id || localStorage.getItem('organizationId');
+      const savedTheme = getOrgTheme(orgId);
+      if (savedTheme) {
+        setThemeColors(savedTheme);
+        return;
+      }
+      
+      // Fetch from API
+      const orgData = await organizationService.getOrganization();
+      
+      if (orgData) {
+        const theme = {
+          primary: orgData.theme_primary_color || '#3B82F6',
+          secondary: orgData.theme_secondary_color || '#1E40AF',
+          accent: orgData.theme_accent_color || '#60A5FA'
+        };
+        setThemeColors(theme);
+        saveOrgTheme(orgId, theme);
+      }
+    } catch (error) {
+      console.error('Failed to fetch organization theme:', error);
+    }
+  };
 
   const fetchIssueUpdates = async (issueId) => {
     try {
@@ -136,8 +193,21 @@ const IssuesListClean = ({
               className={`
                 group relative bg-white rounded-lg border transition-all duration-200 cursor-pointer
                 ${issue.status === 'closed' ? 'opacity-60' : ''}
-                ${isTopIssue ? 'border-blue-300 shadow-sm' : 'border-gray-200 hover:border-gray-300 hover:shadow-sm'}
+                ${isTopIssue ? 'shadow-sm' : 'hover:shadow-sm'}
               `}
+              style={{
+                borderColor: isTopIssue ? themeColors.accent : '#E5E7EB'
+              }}
+              onMouseEnter={(e) => {
+                if (!isTopIssue && issue.status !== 'closed') {
+                  e.currentTarget.style.borderColor = '#D1D5DB';
+                }
+              }}
+              onMouseLeave={(e) => {
+                if (!isTopIssue && issue.status !== 'closed') {
+                  e.currentTarget.style.borderColor = '#E5E7EB';
+                }
+              }}
               onClick={() => setSelectedIssue(issue)}
             >
               {/* Status indicator - subtle left border */}
@@ -163,14 +233,14 @@ const IssuesListClean = ({
                     {/* Title with trending indicator */}
                     <div className="flex items-start gap-2">
                       {/* Issue Number */}
-                      <span className={`
-                        text-sm font-semibold min-w-[2rem]
-                        ${isTopIssue ? 'text-blue-600' : 'text-gray-500'}
-                      `}>
+                      <span className="text-sm font-semibold min-w-[2rem]"
+                      style={{
+                        color: isTopIssue ? themeColors.primary : '#6B7280'
+                      }}>
                         #{index + 1}
                       </span>
                       {isTopIssue && (
-                        <span className="text-blue-600 text-sm" title="Most voted issue">🔥</span>
+                        <span className="text-sm" style={{ color: themeColors.primary }} title="Most voted issue">🔥</span>
                       )}
                       <h3 className={`
                         text-base font-medium leading-tight flex-1
@@ -217,8 +287,11 @@ const IssuesListClean = ({
                             }}
                             className={`
                               flex items-center gap-1 text-sm font-medium
-                              ${issue.user_has_voted ? 'text-blue-600' : 'text-gray-500 hover:text-gray-700'}
+                              ${issue.user_has_voted ? '' : 'text-gray-500 hover:text-gray-700'}
                             `}
+                            style={{
+                              color: issue.user_has_voted ? themeColors.primary : undefined
+                            }}
                           >
                             <ThumbsUp className={`h-3.5 w-3.5 ${issue.user_has_voted ? 'fill-current' : ''}`} />
                             {issue.vote_count || 0}

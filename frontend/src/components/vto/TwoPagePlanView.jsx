@@ -73,8 +73,19 @@ const TwoPagePlanView = ({ hideIssuesAndPriorities = false }) => {
       setThemeColors(event.detail);
     };
     
+    // Listen for organization changes
+    const handleOrgChange = () => {
+      fetchOrganizationTheme();
+      fetchBusinessBlueprint();
+    };
+    
     window.addEventListener('themeChanged', handleThemeChange);
-    return () => window.removeEventListener('themeChanged', handleThemeChange);
+    window.addEventListener('organizationChanged', handleOrgChange);
+    
+    return () => {
+      window.removeEventListener('themeChanged', handleThemeChange);
+      window.removeEventListener('organizationChanged', handleOrgChange);
+    };
   }, []);
   
   // Handler for toggling 3-Year Picture items
@@ -337,7 +348,7 @@ const TwoPagePlanView = ({ hideIssuesAndPriorities = false }) => {
                   <div className="space-y-4">
                     {blueprintData.marketingStrategy?.demographicProfile && (
                       <div className="bg-gray-50 p-3 rounded-lg">
-                        <h5 className="font-semibold text-sm text-indigo-700 mb-2 uppercase tracking-wide">Demographic</h5>
+                        <h5 className="font-semibold text-sm mb-2 uppercase tracking-wide" style={{ color: themeColors.secondary }}>Demographic</h5>
                         <p className="text-gray-700 whitespace-pre-wrap pl-2">{blueprintData.marketingStrategy.demographicProfile}</p>
                       </div>
                     )}
@@ -348,8 +359,8 @@ const TwoPagePlanView = ({ hideIssuesAndPriorities = false }) => {
                       </div>
                     )}
                     {blueprintData.marketingStrategy?.psychographicProfile && (
-                      <div className="bg-green-50 p-3 rounded-lg">
-                        <h5 className="font-semibold text-sm text-green-700 mb-2 uppercase tracking-wide">Psychographic</h5>
+                      <div className="p-3 rounded-lg" style={{ backgroundColor: `${themeColors.secondary}10` }}>
+                        <h5 className="font-semibold text-sm mb-2 uppercase tracking-wide" style={{ color: themeColors.secondary }}>Psychographic</h5>
                         <p className="text-gray-700 whitespace-pre-wrap pl-2">{blueprintData.marketingStrategy.psychographicProfile}</p>
                       </div>
                     )}
@@ -368,7 +379,7 @@ const TwoPagePlanView = ({ hideIssuesAndPriorities = false }) => {
                       .filter(d => d)
                       .map((diff, index) => (
                         <li key={index} className="flex items-start">
-                          <span className="text-indigo-600 mr-2">•</span>
+                          <span className="mr-2" style={{ color: themeColors.primary }}>•</span>
                           <span className="text-gray-600">{diff}</span>
                         </li>
                       ))}
@@ -587,13 +598,14 @@ const TwoPagePlanView = ({ hideIssuesAndPriorities = false }) => {
               <CardHeader className="bg-white border-b">
                 <CardTitle className="flex items-center justify-between text-xl text-gray-900">
                   <div className="flex items-center">
-                    <AlertCircle className="mr-2 h-6 w-6 text-indigo-600" />
+                    <AlertCircle className="mr-2 h-6 w-6" style={{ color: themeColors.primary }} />
                     Issues List
                   </div>
                   <Button
                     size="sm"
                     onClick={() => setShowIssueDialog(true)}
-                    className="bg-indigo-600 hover:bg-indigo-700"
+                    style={{ backgroundColor: themeColors.primary }}
+                    className="hover:opacity-90"
                   >
                     <Plus className="h-4 w-4 mr-1" />
                     Add Issue

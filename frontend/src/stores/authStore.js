@@ -228,6 +228,16 @@ export const useAuthStore = create((set, get) => ({
   switchToClientOrganization: (organizationId, organizationName) => {
     const currentUser = get().user;
     if (currentUser) {
+      // Update organizationId in localStorage for theme management
+      localStorage.setItem('organizationId', organizationId);
+      
+      // Clear any cached theme for the previous organization
+      const previousOrgId = currentUser.organizationId || currentUser.organization_id;
+      if (previousOrgId) {
+        // Optional: You might want to keep the previous org's theme
+        // localStorage.removeItem(`orgTheme_${previousOrgId}`);
+      }
+      
       set({
         user: {
           ...currentUser,
@@ -237,6 +247,9 @@ export const useAuthStore = create((set, get) => ({
           originalOrganizationId: currentUser.organizationId
         }
       });
+      
+      // Dispatch theme change event to trigger theme refresh in components
+      window.dispatchEvent(new CustomEvent('organizationChanged', { detail: { organizationId } }));
     }
   }
 }));

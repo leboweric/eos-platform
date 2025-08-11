@@ -45,8 +45,18 @@ const TodosListClean = ({
       setThemeColors(event.detail);
     };
     
+    // Listen for organization changes
+    const handleOrgChange = () => {
+      fetchOrganizationTheme();
+    };
+    
     window.addEventListener('themeChanged', handleThemeChange);
-    return () => window.removeEventListener('themeChanged', handleThemeChange);
+    window.addEventListener('organizationChanged', handleOrgChange);
+    
+    return () => {
+      window.removeEventListener('themeChanged', handleThemeChange);
+      window.removeEventListener('organizationChanged', handleOrgChange);
+    };
   }, []);
   
   const fetchOrganizationTheme = async () => {
