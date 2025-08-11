@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { 
@@ -8,6 +8,9 @@ import {
   Trash2,
   AlertCircle
 } from 'lucide-react';
+import { useAuthStore } from '../../stores/authStore';
+import { organizationService } from '../../services/organizationService';
+import { getOrgTheme, saveOrgTheme } from '../../utils/themeUtils';
 
 const ScorecardTableClean = ({ 
   metrics = [], 
@@ -29,6 +32,61 @@ const ScorecardTableClean = ({
   maxPeriods = 10, // Control how many weeks/months to show
   meetingMode = false // New prop for meeting display mode
 }) => {
+  const { user } = useAuthStore();
+  const [themeColors, setThemeColors] = useState({
+    primary: '#3B82F6',
+    secondary: '#1E40AF',
+    accent: '#60A5FA'
+  });
+
+  useEffect(() => {
+    fetchOrganizationTheme();
+    
+    const handleThemeChange = (event) => {
+      setThemeColors(event.detail);
+    };
+    
+    const handleOrgChange = () => {
+      fetchOrganizationTheme();
+    };
+    
+    window.addEventListener('themeChanged', handleThemeChange);
+    window.addEventListener('organizationChanged', handleOrgChange);
+    
+    return () => {
+      window.removeEventListener('themeChanged', handleThemeChange);
+      window.removeEventListener('organizationChanged', handleOrgChange);
+    };
+  }, [user?.organizationId, user?.organization_id]);
+
+  const fetchOrganizationTheme = async () => {
+    try {
+      const orgId = user?.organizationId || user?.organization_id || localStorage.getItem('organizationId');
+      const orgData = await organizationService.getOrganization();
+      
+      if (orgData) {
+        const theme = {
+          primary: orgData.theme_primary_color || '#3B82F6',
+          secondary: orgData.theme_secondary_color || '#1E40AF',
+          accent: orgData.theme_accent_color || '#60A5FA'
+        };
+        setThemeColors(theme);
+        saveOrgTheme(orgId, theme);
+      } else {
+        const savedTheme = getOrgTheme(orgId);
+        if (savedTheme) {
+          setThemeColors(savedTheme);
+        }
+      }
+    } catch (error) {
+      console.error('Failed to fetch organization theme:', error);
+      const orgId = user?.organizationId || user?.organization_id || localStorage.getItem('organizationId');
+      const savedTheme = getOrgTheme(orgId);
+      if (savedTheme) {
+        setThemeColors(savedTheme);
+      }
+    }
+  };
   // Get week start date for a given date
   const getWeekStartDate = (date) => {
     const d = new Date(date);
@@ -265,7 +323,7 @@ const ScorecardTableClean = ({
                         variant="ghost"
                         className={meetingMode ? "h-6 w-6 p-0 hover:bg-gray-100" : "h-5 w-5 p-0 hover:bg-gray-100"}
                       >
-                        <BarChart3 className={meetingMode ? "h-4 w-4 text-gray-600" : "h-3 w-3 text-gray-600"} />
+                        <BarChart3 className={meetingMode ? "h-4 w-4" : "h-3 w-3"} style={{ color: themeColors.primary }} />
                       </Button>
                     </td>
                     <td className={'text-center font-medium text-gray-700 ' + (meetingMode ? 'px-2 py-2 text-sm' : 'px-1 text-[10px]')}>
@@ -358,7 +416,7 @@ const ScorecardTableClean = ({
                             className="h-5 w-5 p-0"
                             onClick={() => onMetricUpdate && onMetricUpdate(metric)}
                           >
-                            <Edit className="h-3 w-3" />
+                            <Edit className="h-3 w-3" style={{ color: themeColors.primary }} />
                           </Button>
                           <Button
                             variant="ghost"
