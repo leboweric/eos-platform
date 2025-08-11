@@ -66,6 +66,49 @@ const DashboardClean = () => {
       navigate('/consultant');
     } else if (user) {
       fetchDashboardData();
+      
+      // Retry fetching business blueprint after a short delay if initial load fails
+      // This helps with timing issues on initial login
+      const retryTimer = setTimeout(() => {
+        if (annualPredictions?.revenue?.target === 0) {
+          console.log('Dashboard - Retrying business blueprint fetch for predictions...');
+          businessBlueprintService.getBusinessBlueprint()
+            .then(blueprintResponse => {
+              if (blueprintResponse?.oneYearPlan) {
+                const oneYearPlan = blueprintResponse.oneYearPlan;
+                
+                // Calculate total revenue from revenue streams if available
+                let totalRevenueTarget = oneYearPlan.revenue_target || 0;
+                if (oneYearPlan.revenueStreams && oneYearPlan.revenueStreams.length > 0) {
+                  totalRevenueTarget = oneYearPlan.revenueStreams.reduce((sum, stream) => 
+                    sum + (parseFloat(stream.revenue_target) || 0), 0
+                  );
+                }
+                
+                if (totalRevenueTarget > 0) {
+                  console.log('Dashboard - Retry successful, updating predictions with revenue:', totalRevenueTarget);
+                  setAnnualPredictions(prev => ({
+                    ...prev,
+                    revenue: {
+                      ...prev.revenue,
+                      target: totalRevenueTarget,
+                      streams: oneYearPlan.revenueStreams || []
+                    },
+                    profit: {
+                      ...prev.profit,
+                      target: oneYearPlan.profit_percentage || prev?.profit?.target || 0
+                    }
+                  }));
+                }
+              }
+            })
+            .catch(err => {
+              console.error('Dashboard - Retry failed for business blueprint:', err);
+            });
+        }
+      }, 2000);
+      
+      return () => clearTimeout(retryTimer);
     }
   }, [user, navigate]);
 
@@ -154,7 +197,10 @@ const DashboardClean = () => {
         todosService.getTodos(null, null, true, userDepartmentId),
         issuesService.getIssues(null, false, userDepartmentId),
         isOnLeadershipTeam() ? organizationService.getOrganization() : Promise.resolve(null),
-        isOnLeadershipTeam() ? businessBlueprintService.getBusinessBlueprint() : Promise.resolve(null)
+        businessBlueprintService.getBusinessBlueprint().catch(err => {
+          console.error('Failed to fetch business blueprint:', err);
+          return null;
+        })
       ]);
       
       if (orgResponse) {

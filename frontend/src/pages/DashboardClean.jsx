@@ -73,6 +73,49 @@ const DashboardClean = () => {
     } else if (user) {
       fetchDashboardData();
       fetchOrganizationTheme();
+      
+      // Retry fetching business blueprint after a short delay if initial load fails
+      // This helps with timing issues on initial login
+      const retryTimer = setTimeout(() => {
+        if (predictions?.revenue?.target === 0) {
+          console.log('Dashboard - Retrying business blueprint fetch for predictions...');
+          businessBlueprintService.getBusinessBlueprint()
+            .then(blueprintResponse => {
+              if (blueprintResponse?.oneYearPlan) {
+                const oneYearPlan = blueprintResponse.oneYearPlan;
+                let targetRevenue = 0;
+                
+                if (oneYearPlan.revenueStreams && oneYearPlan.revenueStreams.length > 0) {
+                  targetRevenue = oneYearPlan.revenueStreams.reduce((sum, stream) => {
+                    return sum + (parseFloat(stream.revenue_target) || 0);
+                  }, 0);
+                } else if (oneYearPlan.revenue) {
+                  targetRevenue = parseFloat(oneYearPlan.revenue) || 0;
+                }
+                
+                if (targetRevenue > 0) {
+                  console.log('Dashboard - Retry successful, updating predictions with revenue:', targetRevenue);
+                  setPredictions(prev => ({
+                    ...prev,
+                    revenue: {
+                      ...prev.revenue,
+                      target: targetRevenue
+                    },
+                    profit: {
+                      ...prev.profit,
+                      target: parseFloat(oneYearPlan.profit) || prev?.profit?.target || 0
+                    }
+                  }));
+                }
+              }
+            })
+            .catch(err => {
+              console.error('Dashboard - Retry failed for business blueprint:', err);
+            });
+        }
+      }, 2000);
+      
+      return () => clearTimeout(retryTimer);
     }
     
     // Listen for theme changes
@@ -216,12 +259,19 @@ const DashboardClean = () => {
         todosService.getTodos(null, null, true, userDepartmentId),
         issuesService.getIssues(null, false, userDepartmentId),
         isOnLeadershipTeam() ? organizationService.getOrganization() : Promise.resolve(null),
-        businessBlueprintService.getBusinessBlueprint()
+        businessBlueprintService.getBusinessBlueprint().catch(err => {
+          console.error('Failed to fetch business blueprint:', err);
+          return null;
+        })
       ]);
       
       if (orgResponse) {
         setOrganization(orgResponse.data || orgResponse);
       }
+      
+      // Debug logging for blueprint response
+      console.log('Dashboard - Blueprint Response:', blueprintResponse);
+      console.log('Dashboard - One Year Plan:', blueprintResponse?.oneYearPlan);
       
       // Use 1-Year Plan data for predictions if available
       if (blueprintResponse?.oneYearPlan) {
@@ -237,6 +287,8 @@ const DashboardClean = () => {
           targetRevenue = parseFloat(oneYearPlan.revenue) || 0;
         }
         
+        console.log('Dashboard - Calculated target revenue:', targetRevenue);
+        
         setPredictions(prev => ({
           ...prev,
           revenue: {
@@ -250,7 +302,10 @@ const DashboardClean = () => {
           measurables: prev?.measurables || prioritiesResponse.predictions?.measurables || { onTrack: 0, total: 0 }
         }));
       } else if (prioritiesResponse.predictions) {
+        console.log('Dashboard - Using priorities predictions:', prioritiesResponse.predictions);
         setPredictions(prioritiesResponse.predictions);
+      } else {
+        console.log('Dashboard - No predictions data available');
       }
       
       // Get user's priorities (including company priorities they own)
