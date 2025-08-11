@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { useAuthStore } from '../stores/authStore';
 import { quarterlyPrioritiesService } from '../services/quarterlyPrioritiesService';
 import { organizationService } from '../services/organizationService';
+import { getOrgTheme, saveOrgTheme } from '../utils/themeUtils';
 import { issuesService } from '../services/issuesService';
 import { getRevenueLabel, getRevenueLabelWithSuffix } from '../utils/revenueUtils';
 import { useDepartment } from '../contexts/DepartmentContext';

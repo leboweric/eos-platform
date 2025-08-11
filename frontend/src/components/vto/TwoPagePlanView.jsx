@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { useAuthStore } from '../../stores/authStore';
 import { businessBlueprintService } from '../../services/businessBlueprintService';
 import { organizationService } from '../../services/organizationService';
+import { getOrgTheme, saveOrgTheme } from '../utils/themeUtils';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Button } from '@/components/ui/button';

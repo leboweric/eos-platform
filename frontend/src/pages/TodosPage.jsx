@@ -3,6 +3,7 @@ import { useAuthStore } from '../stores/authStore';
 import { todosService } from '../services/todosService';
 import { issuesService } from '../services/issuesService';
 import { organizationService } from '../services/organizationService';
+import { getOrgTheme, saveOrgTheme } from '../utils/themeUtils';
 import { useDepartment } from '../contexts/DepartmentContext';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';

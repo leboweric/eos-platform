@@ -3,6 +3,7 @@ import { useAuthStore } from '../stores/authStore';
 import { scorecardService } from '../services/scorecardService';
 import { scorecardGroupsService } from '../services/scorecardGroupsService';
 import { organizationService } from '../services/organizationService';
+import { getOrgTheme, saveOrgTheme } from '../utils/themeUtils';
 import { useDepartment } from '../contexts/DepartmentContext';
 import { LEADERSHIP_TEAM_ID } from '../utils/teamUtils';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';

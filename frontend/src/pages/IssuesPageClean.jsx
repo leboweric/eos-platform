@@ -2,6 +2,7 @@ import { useState, useEffect, Component } from 'react';
 import { useAuthStore } from '../stores/authStore';
 import { issuesService } from '../services/issuesService';
 import { organizationService } from '../services/organizationService';
+import { getOrgTheme, saveOrgTheme } from '../utils/themeUtils';
 import { useDepartment } from '../contexts/DepartmentContext';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';

@@ -3,6 +3,7 @@ import { useAuthStore } from '../stores/authStore';
 import { Link, Navigate } from 'react-router-dom';
 import { businessBlueprintService } from '../services/businessBlueprintService';
 import { organizationService } from '../services/organizationService';
+import { getOrgTheme, saveOrgTheme } from '../utils/themeUtils';
 import { getRevenueLabel, getRevenueLabelWithSuffix } from '../utils/revenueUtils';
 import { useDepartment } from '../contexts/DepartmentContext';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
