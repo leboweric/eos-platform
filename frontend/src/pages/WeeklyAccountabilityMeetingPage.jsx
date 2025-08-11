@@ -1705,6 +1705,7 @@ const WeeklyAccountabilityMeetingPage = () => {
                     getStatusIcon={(status) => null}
                     readOnly={false}
                     showVoting={true}
+                    compactGrid={true}  // Enable compact grid view for meetings
                   />
                 )}
               </CardContent>
