@@ -465,6 +465,7 @@ const IssuesPageClean = () => {
                   getStatusColor={getStatusColor}
                   getStatusIcon={getStatusIcon}
                   showVoting={false} // Will be enabled during Weekly Accountability Meetings
+                  compactGrid={activeTab !== 'archived'} // Use compact grid for Short Term and Long Term only
                 />
               )
             )}
