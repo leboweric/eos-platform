@@ -217,7 +217,7 @@ const TodosListClean = ({
                     {overdue && (
                       <>
                         <span className="text-gray-300">•</span>
-                        <span className="text-orange-600 font-medium text-sm">
+                        <span className="text-red-600 font-medium text-sm">
                           Already in Issues List
                         </span>
                       </>
