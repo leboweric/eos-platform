@@ -18,6 +18,7 @@ import {
 import IssueDialog from '../components/issues/IssueDialog';
 import IssuesListClean from '../components/issues/IssuesListClean';
 import ArchivedIssuesList from '../components/issues/ArchivedIssuesList';
+import { MoveIssueDialog } from '../components/issues/MoveIssueDialog';
 
 // Error Boundary Component
 class IssuesErrorBoundary extends Component {
@@ -84,6 +85,8 @@ const IssuesPageClean = () => {
   // Dialog states
   const [showIssueDialog, setShowIssueDialog] = useState(false);
   const [editingIssue, setEditingIssue] = useState(null);
+  const [showMoveDialog, setShowMoveDialog] = useState(false);
+  const [movingIssue, setMovingIssue] = useState(null);
 
   useEffect(() => {
     fetchIssues();
@@ -260,6 +263,18 @@ const IssuesPageClean = () => {
       // Revert on error
       await fetchIssues();
     }
+  };
+
+  const handleMoveToTeam = (issue) => {
+    setMovingIssue(issue);
+    setShowMoveDialog(true);
+  };
+
+  const handleMoveSuccess = async (message) => {
+    setSuccess(message);
+    setShowMoveDialog(false);
+    setMovingIssue(null);
+    await fetchIssues();
   };
 
   const handleArchive = async (issueId) => {
@@ -462,6 +477,7 @@ const IssuesPageClean = () => {
                   onTimelineChange={handleTimelineChange}
                   onArchive={handleArchive}
                   onVote={handleVote}
+                  onMoveToTeam={handleMoveToTeam}
                   getStatusColor={getStatusColor}
                   getStatusIcon={getStatusIcon}
                   showVoting={false} // Will be enabled during Weekly Accountability Meetings
@@ -471,6 +487,17 @@ const IssuesPageClean = () => {
             )}
           </TabsContent>
         </Tabs>
+
+        {/* Move Issue Dialog */}
+        <MoveIssueDialog
+          isOpen={showMoveDialog}
+          onClose={() => {
+            setShowMoveDialog(false);
+            setMovingIssue(null);
+          }}
+          issue={movingIssue}
+          onSuccess={handleMoveSuccess}
+        />
 
         {/* Issue Dialog */}
         <IssueDialog
