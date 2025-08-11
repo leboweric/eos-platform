@@ -11,14 +11,53 @@ import {
   Plus,
   User
 } from 'lucide-react';
+import { useAuthStore } from '../../stores/authStore';
+import { organizationService } from '../../services/organizationService';
+import { getOrgTheme, saveOrgTheme, hexToRgba } from '../../utils/themeUtils';
 
 const VisualOrgChart = ({ positions, onEdit, onAddPosition, onEditPosition, canEdit }) => {
+  const { user } = useAuthStore();
   const [expandedNodes, setExpandedNodes] = useState(new Set());
   const [searchQuery, setSearchQuery] = useState('');
+  const [themeColors, setThemeColors] = useState({
+    primary: '#3B82F6',
+    secondary: '#1E40AF',
+    accent: '#60A5FA'
+  });
   const containerRef = useRef(null);
   
   // Create a flat map of all positions for quick lookup
   const positionMap = useRef({});
+
+  // Fetch organization theme
+  const fetchOrganizationTheme = async () => {
+    try {
+      const orgId = user?.organizationId || user?.organization_id || localStorage.getItem('organizationId');
+      const orgData = await organizationService.getOrganization();
+      
+      if (orgData) {
+        const theme = {
+          primary: orgData.theme_primary_color || '#3B82F6',
+          secondary: orgData.theme_secondary_color || '#1E40AF',
+          accent: orgData.theme_accent_color || '#60A5FA'
+        };
+        setThemeColors(theme);
+        saveOrgTheme(orgId, theme);
+      } else {
+        const savedTheme = getOrgTheme(orgId);
+        if (savedTheme) {
+          setThemeColors(savedTheme);
+        }
+      }
+    } catch (error) {
+      console.error('Failed to fetch organization theme:', error);
+      const orgId = user?.organizationId || user?.organization_id || localStorage.getItem('organizationId');
+      const savedTheme = getOrgTheme(orgId);
+      if (savedTheme) {
+        setThemeColors(savedTheme);
+      }
+    }
+  };
 
   const getAllNodeIds = (nodes) => {
     const ids = [];
@@ -33,6 +72,27 @@ const VisualOrgChart = ({ positions, onEdit, onAddPosition, onEditPosition, canE
     traverse(nodes);
     return ids;
   };
+
+  // Fetch theme on mount
+  useEffect(() => {
+    fetchOrganizationTheme();
+    
+    const handleThemeChange = (event) => {
+      setThemeColors(event.detail);
+    };
+    
+    const handleOrgChange = () => {
+      fetchOrganizationTheme();
+    };
+    
+    window.addEventListener('themeChanged', handleThemeChange);
+    window.addEventListener('organizationChanged', handleOrgChange);
+    
+    return () => {
+      window.removeEventListener('themeChanged', handleThemeChange);
+      window.removeEventListener('organizationChanged', handleOrgChange);
+    };
+  }, [user?.organizationId, user?.organization_id]);
 
   // Expand all nodes by default
   useEffect(() => {
@@ -100,7 +160,20 @@ const VisualOrgChart = ({ positions, onEdit, onAddPosition, onEditPosition, canE
           />
         </div>
         {canEdit && (
-          <Button onClick={onEdit} variant="outline">
+          <Button 
+            onClick={onEdit} 
+            variant="outline"
+            style={{ 
+              borderColor: themeColors.primary,
+              color: themeColors.primary
+            }}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.backgroundColor = hexToRgba(themeColors.primary, 0.1);
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.backgroundColor = 'transparent';
+            }}
+          >
             <Edit className="mr-2 h-4 w-4" />
             Edit Chart
           </Button>
@@ -129,6 +202,7 @@ const VisualOrgChart = ({ positions, onEdit, onAddPosition, onEditPosition, canE
                     onEditPosition={onEditPosition}
                     canEdit={canEdit}
                     level={0}
+                    themeColors={themeColors}
                   />
                 </div>
               ))}
@@ -140,9 +214,16 @@ const VisualOrgChart = ({ positions, onEdit, onAddPosition, onEditPosition, canE
   );
 };
 
-const OrgNode = ({ position, isExpanded, onToggle, expandedNodes, toggleNode, onAddPosition, onEditPosition, canEdit, level }) => {
+const OrgNode = ({ position, isExpanded, onToggle, expandedNodes, toggleNode, onAddPosition, onEditPosition, canEdit, level, themeColors }) => {
   const hasChildren = position.children && position.children.length > 0;
   const isVacant = !position.holder_id;
+  
+  // Determine border color based on level
+  const getBorderColor = () => {
+    if (level === 0) return themeColors.primary; // CEO/Top level
+    if (level === 1) return themeColors.secondary; // Department heads
+    return themeColors.accent; // Team members
+  };
   
   
   // Create handler functions that capture the current position
@@ -221,8 +302,26 @@ const OrgNode = ({ position, isExpanded, onToggle, expandedNodes, toggleNode, on
     <div className="flex flex-col items-center">
       {/* Position Card */}
       <Card 
-        className={`bg-white p-6 shadow-md hover:shadow-lg transition-shadow relative ${canEdit ? 'cursor-pointer' : ''}`}
-        style={{ minWidth: '320px', maxWidth: '400px' }}
+        className={`bg-white p-6 shadow-md hover:shadow-lg transition-all relative ${canEdit ? 'cursor-pointer' : ''}`}
+        style={{ 
+          minWidth: '320px', 
+          maxWidth: '400px',
+          borderLeft: `4px solid ${getBorderColor()}`,
+          borderTop: isVacant ? `2px dashed ${hexToRgba(getBorderColor(), 0.5)}` : 'none',
+          backgroundColor: hexToRgba(getBorderColor(), 0.02)
+        }}
+        onMouseEnter={(e) => {
+          if (canEdit) {
+            e.currentTarget.style.boxShadow = `0 10px 25px ${hexToRgba(getBorderColor(), 0.15)}`;
+            e.currentTarget.style.borderLeftWidth = '6px';
+          }
+        }}
+        onMouseLeave={(e) => {
+          if (canEdit) {
+            e.currentTarget.style.boxShadow = '';
+            e.currentTarget.style.borderLeftWidth = '4px';
+          }
+        }}
         onClick={handleEditClick}
         data-position-id={position.id}
         data-position-title={position.title}
@@ -241,7 +340,10 @@ const OrgNode = ({ position, isExpanded, onToggle, expandedNodes, toggleNode, on
               }}
               className="p-1"
             >
-              {isExpanded ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
+              {isExpanded ? 
+                <ChevronUp className="h-4 w-4" style={{ color: themeColors.accent }} /> : 
+                <ChevronDown className="h-4 w-4" style={{ color: themeColors.accent }} />
+              }
             </Button>
           )}
         </div>
@@ -250,7 +352,12 @@ const OrgNode = ({ position, isExpanded, onToggle, expandedNodes, toggleNode, on
         <div className="flex items-center space-x-3 mb-4">
           <Avatar>
             <AvatarImage src={position.avatar_url} />
-            <AvatarFallback className={isVacant ? 'bg-gray-200' : 'bg-gray-400'}>
+            <AvatarFallback 
+              style={{ 
+                backgroundColor: isVacant ? hexToRgba(themeColors.accent, 0.2) : hexToRgba(getBorderColor(), 0.15),
+                color: isVacant ? themeColors.accent : getBorderColor()
+              }}
+            >
               {isVacant ? <User className="h-4 w-4" /> : getUserInitials()}
             </AvatarFallback>
           </Avatar>
@@ -286,6 +393,13 @@ const OrgNode = ({ position, isExpanded, onToggle, expandedNodes, toggleNode, on
             size="sm"
             onClick={handleAddClick}
             className="absolute bottom-2 right-2 p-1"
+            style={{ color: themeColors.primary }}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.backgroundColor = hexToRgba(themeColors.primary, 0.1);
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.backgroundColor = 'transparent';
+            }}
           >
             <Plus className="h-4 w-4" />
           </Button>
@@ -295,7 +409,7 @@ const OrgNode = ({ position, isExpanded, onToggle, expandedNodes, toggleNode, on
       {/* Connector Line */}
       {hasChildren && isExpanded && (
         <>
-          <div className="w-0.5 h-8 bg-gray-300"></div>
+          <div className="w-0.5 h-8" style={{ backgroundColor: hexToRgba(themeColors.accent, 0.4) }}></div>
           
           {/* Children Container */}
           <div className="flex space-x-8">
@@ -304,15 +418,15 @@ const OrgNode = ({ position, isExpanded, onToggle, expandedNodes, toggleNode, on
                 {/* Horizontal connector for multiple children */}
                 {position.children.length > 1 && (
                   <div className="relative w-full h-4">
-                    <div className="absolute top-0 left-1/2 w-0.5 h-4 bg-gray-300"></div>
+                    <div className="absolute top-0 left-1/2 w-0.5 h-4" style={{ backgroundColor: hexToRgba(themeColors.accent, 0.4) }}></div>
                     {index === 0 && (
-                      <div className="absolute top-0 left-1/2 right-0 h-0.5 bg-gray-300"></div>
+                      <div className="absolute top-0 left-1/2 right-0 h-0.5" style={{ backgroundColor: hexToRgba(themeColors.accent, 0.4) }}></div>
                     )}
                     {index === position.children.length - 1 && (
-                      <div className="absolute top-0 left-0 right-1/2 h-0.5 bg-gray-300"></div>
+                      <div className="absolute top-0 left-0 right-1/2 h-0.5" style={{ backgroundColor: hexToRgba(themeColors.accent, 0.4) }}></div>
                     )}
                     {index > 0 && index < position.children.length - 1 && (
-                      <div className="absolute top-0 left-0 right-0 h-0.5 bg-gray-300"></div>
+                      <div className="absolute top-0 left-0 right-0 h-0.5" style={{ backgroundColor: hexToRgba(themeColors.accent, 0.4) }}></div>
                     )}
                   </div>
                 )}
@@ -328,6 +442,7 @@ const OrgNode = ({ position, isExpanded, onToggle, expandedNodes, toggleNode, on
                   onEditPosition={onEditPosition}
                   canEdit={canEdit}
                   level={level + 1}
+                  themeColors={themeColors}
                 />
               </div>
             ))}
