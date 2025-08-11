@@ -3,6 +3,8 @@ import { useParams } from 'react-router-dom';
 import { useAuthStore } from '../stores/authStore';
 import { format } from 'date-fns';
 import { meetingsService } from '../services/meetingsService';
+import { organizationService } from '../services/organizationService';
+import { getOrgTheme, saveOrgTheme, hexToRgba } from '../utils/themeUtils';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -117,6 +119,13 @@ const WeeklyAccountabilityMeetingPage = () => {
   // Reference dialogs
   const [showBusinessBlueprint, setShowBusinessBlueprint] = useState(false);
   const [showOrgChart, setShowOrgChart] = useState(false);
+  
+  // Theme state
+  const [themeColors, setThemeColors] = useState({
+    primary: '#3B82F6',
+    secondary: '#1E40AF',
+    accent: '#60A5FA'
+  });
 
   // Meeting agenda items
   const agendaItems = [
@@ -132,6 +141,55 @@ const WeeklyAccountabilityMeetingPage = () => {
   useEffect(() => {
     loadInitialData();
   }, [teamId]);
+
+  useEffect(() => {
+    fetchOrganizationTheme();
+    
+    const handleThemeChange = (event) => {
+      setThemeColors(event.detail);
+    };
+    
+    const handleOrgChange = () => {
+      fetchOrganizationTheme();
+    };
+    
+    window.addEventListener('themeChanged', handleThemeChange);
+    window.addEventListener('organizationChanged', handleOrgChange);
+    
+    return () => {
+      window.removeEventListener('themeChanged', handleThemeChange);
+      window.removeEventListener('organizationChanged', handleOrgChange);
+    };
+  }, [user?.organizationId, user?.organization_id]);
+
+  const fetchOrganizationTheme = async () => {
+    try {
+      const orgId = user?.organizationId || user?.organization_id || localStorage.getItem('organizationId');
+      const orgData = await organizationService.getOrganization();
+      
+      if (orgData) {
+        const theme = {
+          primary: orgData.theme_primary_color || '#3B82F6',
+          secondary: orgData.theme_secondary_color || '#1E40AF',
+          accent: orgData.theme_accent_color || '#60A5FA'
+        };
+        setThemeColors(theme);
+        saveOrgTheme(orgId, theme);
+      } else {
+        const savedTheme = getOrgTheme(orgId);
+        if (savedTheme) {
+          setThemeColors(savedTheme);
+        }
+      }
+    } catch (error) {
+      console.error('Failed to fetch organization theme:', error);
+      const orgId = user?.organizationId || user?.organization_id || localStorage.getItem('organizationId');
+      const savedTheme = getOrgTheme(orgId);
+      if (savedTheme) {
+        setThemeColors(savedTheme);
+      }
+    }
+  };
 
   useEffect(() => {
     const isActive = sessionStorage.getItem('meetingActive');
@@ -1018,11 +1076,13 @@ const WeeklyAccountabilityMeetingPage = () => {
       case 'good-news':
         return (
           <Card className="border-0 shadow-sm">
-            <CardHeader className="bg-gradient-to-r from-blue-50 to-indigo-50 rounded-t-lg">
+            <CardHeader className="rounded-t-lg" style={{ 
+              background: `linear-gradient(to right, ${hexToRgba(themeColors.accent, 0.1)}, ${hexToRgba(themeColors.primary, 0.1)})`
+            }}>
               <div className="flex items-center justify-between">
                 <div>
                   <CardTitle className="flex items-center gap-2 text-xl">
-                    <Smile className="h-5 w-5 text-indigo-600" />
+                    <Smile className="h-5 w-5" style={{ color: themeColors.primary }} />
                     Good News
                   </CardTitle>
                   <CardDescription className="mt-1">Share personal and professional wins</CardDescription>
@@ -1054,11 +1114,13 @@ const WeeklyAccountabilityMeetingPage = () => {
         return (
           <div className="space-y-4">
             <Card className="border-0 shadow-sm">
-              <CardHeader className="bg-gradient-to-r from-green-50 to-emerald-50 rounded-t-lg">
+              <CardHeader className="rounded-t-lg" style={{ 
+                background: `linear-gradient(to right, ${hexToRgba(themeColors.accent, 0.1)}, ${hexToRgba(themeColors.primary, 0.1)})`
+              }}>
                 <div className="flex items-center justify-between">
                   <div>
                     <CardTitle className="flex items-center gap-2 text-xl">
-                      <BarChart className="h-5 w-5 text-emerald-600" />
+                      <BarChart className="h-5 w-5" style={{ color: themeColors.primary }} />
                       Scorecard Review
                     </CardTitle>
                     <CardDescription className="mt-1">Quick Status Update: Metric owners report "on-track" or "off-track" status</CardDescription>
@@ -1147,10 +1209,12 @@ const WeeklyAccountabilityMeetingPage = () => {
         return (
           <div className="space-y-4">
             <Card>
-              <CardHeader>
+              <CardHeader style={{ 
+                background: `linear-gradient(to right, ${hexToRgba(themeColors.accent, 0.05)}, ${hexToRgba(themeColors.primary, 0.05)})`
+              }}>
                 <CardTitle className="flex items-center justify-between">
                   <div className="flex items-center gap-2">
-                    <Target className="h-5 w-5" />
+                    <Target className="h-5 w-5" style={{ color: themeColors.primary }} />
                     Quarterly Priorities Review
                   </div>
                   {priorities.length > 0 && (
@@ -1206,7 +1270,7 @@ const WeeklyAccountabilityMeetingPage = () => {
                           ) : (
                             <ChevronRight className="h-5 w-5 text-gray-600" />
                           )}
-                          <Building2 className="h-5 w-5 text-blue-600" />
+                          <Building2 className="h-5 w-5" style={{ color: themeColors.primary }} />
                           <h3 className="text-lg font-semibold">
                             Company Priorities ({companyPriorities.length})
                           </h3>
@@ -1249,7 +1313,7 @@ const WeeklyAccountabilityMeetingPage = () => {
                   return Object.keys(groupedByOwner).length > 0 && (
                     <div className="space-y-4">
                       <div className="flex items-center gap-3 p-4 bg-white border border-gray-200 rounded-lg">
-                        <Users className="h-5 w-5 text-purple-600" />
+                        <Users className="h-5 w-5" style={{ color: themeColors.primary }} />
                         <h3 className="text-lg font-semibold">
                           Individual Priorities ({individualPriorities.length})
                         </h3>
@@ -1310,11 +1374,13 @@ const WeeklyAccountabilityMeetingPage = () => {
       case 'headlines':
         return (
           <Card className="border-0 shadow-sm">
-            <CardHeader className="bg-gradient-to-r from-orange-50 to-amber-50 rounded-t-lg">
+            <CardHeader className="rounded-t-lg" style={{ 
+              background: `linear-gradient(to right, ${hexToRgba(themeColors.accent, 0.1)}, ${hexToRgba(themeColors.primary, 0.1)})`
+            }}>
               <div className="flex items-center justify-between">
                 <div>
                   <CardTitle className="flex items-center gap-2 text-xl">
-                    <Newspaper className="h-5 w-5 text-orange-600" />
+                    <Newspaper className="h-5 w-5" style={{ color: themeColors.primary }} />
                     Customer & Employee Headlines
                   </CardTitle>
                   <CardDescription className="mt-1">Share important updates</CardDescription>
@@ -1334,7 +1400,7 @@ const WeeklyAccountabilityMeetingPage = () => {
                 {cascadedMessages.length > 0 && (
                   <div className="border border-blue-200 bg-blue-50 p-4 rounded-lg">
                     <h4 className="font-medium mb-3 text-gray-900 flex items-center gap-2">
-                      <MessageSquare className="h-4 w-4 text-blue-600" />
+                      <MessageSquare className="h-4 w-4" style={{ color: themeColors.primary }} />
                       Cascaded Messages from Other Teams
                     </h4>
                     <div className="space-y-3">
@@ -1445,11 +1511,13 @@ const WeeklyAccountabilityMeetingPage = () => {
         return (
           <div className="space-y-4">
             <Card className="border-0 shadow-sm">
-              <CardHeader className="bg-gradient-to-r from-cyan-50 to-blue-50 rounded-t-lg">
+              <CardHeader className="rounded-t-lg" style={{ 
+                background: `linear-gradient(to right, ${hexToRgba(themeColors.accent, 0.1)}, ${hexToRgba(themeColors.primary, 0.1)})`
+              }}>
                 <div className="flex items-center justify-between">
                   <div>
                     <CardTitle className="flex items-center gap-2 text-xl">
-                      <ListTodo className="h-5 w-5 text-cyan-600" />
+                      <ListTodo className="h-5 w-5" style={{ color: themeColors.primary }} />
                       To-do List Review
                     </CardTitle>
                     <CardDescription className="mt-1">Review action items</CardDescription>
@@ -1534,7 +1602,7 @@ const WeeklyAccountabilityMeetingPage = () => {
         return (
           <div className="space-y-4">
             <Card className="border-0 shadow-sm">
-              <CardHeader className="bg-gradient-to-r from-red-50 to-pink-50 rounded-t-lg">
+              <CardHeader className="rounded-t-lg bg-gradient-to-r from-red-50 to-pink-50">
                 <div className="flex items-center justify-between">
                   <div>
                     <CardTitle className="flex items-center gap-2 text-xl">
@@ -1626,11 +1694,13 @@ const WeeklyAccountabilityMeetingPage = () => {
       case 'conclude':
         return (
           <Card className="border-0 shadow-sm">
-            <CardHeader className="bg-gradient-to-r from-green-50 to-teal-50 rounded-t-lg">
+            <CardHeader className="rounded-t-lg" style={{ 
+              background: `linear-gradient(to right, ${hexToRgba(themeColors.accent, 0.1)}, ${hexToRgba(themeColors.primary, 0.1)})`
+            }}>
               <div className="flex items-center justify-between">
                 <div>
                   <CardTitle className="flex items-center gap-2 text-xl">
-                    <CheckSquare className="h-5 w-5 text-green-600" />
+                    <CheckSquare className="h-5 w-5" style={{ color: themeColors.primary }} />
                     Conclude Meeting
                   </CardTitle>
                   <CardDescription className="mt-1">Wrap up and cascade messages</CardDescription>
@@ -1732,7 +1802,11 @@ const WeeklyAccountabilityMeetingPage = () => {
                   <Button
                     onClick={concludeMeeting}
                     size="lg"
-                    className="bg-green-600 hover:bg-green-700"
+                    style={{ 
+                      backgroundColor: themeColors.primary,
+                      borderColor: themeColors.primary
+                    }}
+                    className="text-white hover:opacity-90"
                   >
                     <Send className="mr-2 h-5 w-5" />
                     Conclude Meeting & Send Summary
