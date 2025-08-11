@@ -324,6 +324,17 @@ const PriorityCardClean = ({
                         className="h-8 w-[150px]"
                       />
                     </div>
+                    
+                    <div className="flex items-center gap-2">
+                      <Checkbox
+                        id="company-priority"
+                        checked={editForm.isCompanyPriority}
+                        onCheckedChange={(checked) => setEditForm({ ...editForm, isCompanyPriority: checked })}
+                      />
+                      <label htmlFor="company-priority" className="text-sm font-medium cursor-pointer">
+                        Company-wide
+                      </label>
+                    </div>
                   </>
                 ) : (
                   <>

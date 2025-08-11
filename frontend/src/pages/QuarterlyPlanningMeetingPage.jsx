@@ -193,6 +193,7 @@ const QuarterlyPlanningMeetingPage = () => {
   useEffect(() => {
     if (activeSection === 'review-prior' || activeSection === 'quarterly-priorities') {
       fetchPrioritiesData();
+      fetchTeamMembers(); // Need team members for Add Priority dialog
     } else if (activeSection === 'issues') {
       fetchIssuesData();
       fetchTeamMembers();
@@ -204,6 +205,7 @@ const QuarterlyPlanningMeetingPage = () => {
       setLoading(false);
     } else if (activeSection === 'next-steps') {
       fetchTodosData();
+      fetchTeamMembers(); // Need team members for todos
     } else {
       // For non-data sections, ensure loading is false
       setLoading(false);
@@ -438,6 +440,7 @@ const QuarterlyPlanningMeetingPage = () => {
 
   const fetchTodosData = async () => {
     try {
+      setLoading(true);
       const effectiveTeamId = teamId || user?.teamId || '00000000-0000-0000-0000-000000000000';
       const response = await todosService.getTodos(null, null, false, effectiveTeamId);
       // Filter to only show open todos
@@ -447,6 +450,9 @@ const QuarterlyPlanningMeetingPage = () => {
       setTodos(openTodos);
     } catch (error) {
       console.error('Failed to fetch todos:', error);
+      setError('Failed to fetch todos');
+    } finally {
+      setLoading(false);
     }
   };
 

@@ -1150,13 +1150,10 @@ const QuarterlyPrioritiesPageClean = () => {
   });
   
   // Stats should match what's displayed on the page:
-  // - Company priorities (if user can see them AND viewing Leadership Team)
-  const visibleCompanyPriorities = (isOnLeadershipTeam() && selectedDepartment?.id === '00000000-0000-0000-0000-000000000000') 
-    ? companyPriorities 
-    : [];
-  
+  // - Company priorities (always include in count since they can be created from individual priorities)
+  // - Individual priorities for the current team
   const allPriorities = [
-    ...visibleCompanyPriorities,
+    ...companyPriorities,
     ...currentTeamIndividualPriorities
   ];
   
@@ -2342,8 +2339,8 @@ const QuarterlyPrioritiesPageClean = () => {
         </div>
       ) : (
         <div className="space-y-10">
-          {/* Company Priorities - Only show for Leadership Team */}
-          {isOnLeadershipTeam() && (
+          {/* Company Priorities - Show if there are any company priorities */}
+          {companyPriorities.length > 0 && (
             <div className="space-y-6">
               <div 
                 className="flex items-center gap-3 cursor-pointer hover:bg-gray-50 rounded-lg p-3 -m-3 transition-colors group"

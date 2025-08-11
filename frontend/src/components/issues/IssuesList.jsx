@@ -705,6 +705,18 @@ const IssuesList = ({
                 {/* Action Buttons */}
                 <div className="flex justify-between pt-4 border-t">
                   <div className="flex gap-2">
+                    {!readOnly && onTimelineChange && (
+                      <Button
+                        variant="outline"
+                        onClick={() => {
+                          onTimelineChange(selectedIssue.id, selectedIssue.timeline === 'short_term' ? 'long_term' : 'short_term');
+                          setSelectedIssue(null);
+                        }}
+                      >
+                        <ArrowRight className="mr-2 h-4 w-4" />
+                        Move to {selectedIssue.timeline === 'short_term' ? 'Long Term' : 'Short Term'}
+                      </Button>
+                    )}
                     {!readOnly && onMoveToTeam && (
                       <Button
                         variant="outline"
