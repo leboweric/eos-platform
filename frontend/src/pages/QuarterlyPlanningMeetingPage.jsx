@@ -1380,7 +1380,7 @@ const QuarterlyPlanningMeetingPage = () => {
                           <SelectValue placeholder="Select owner" />
                         </SelectTrigger>
                         <SelectContent>
-                          {teamMembers.map(member => (
+                          {Array.isArray(teamMembers) && teamMembers.map(member => (
                             <SelectItem key={member.id} value={member.id}>
                               {member.first_name} {member.last_name}
                             </SelectItem>
@@ -1467,7 +1467,7 @@ const QuarterlyPlanningMeetingPage = () => {
                       borderColor: hexToRgba(themeColors.accent, 0.2)
                     }}>
                       <p className="text-sm" style={{ color: themeColors.secondary }}>
-                        <span className="font-semibold">{Array.isArray(todos) ? todos.length : 0} open to-do{todos.length !== 1 ? 's' : ''}</span> to review
+                        <span className="font-semibold">{Array.isArray(todos) ? todos.length : 0} open to-do{Array.isArray(todos) && todos.length !== 1 ? 's' : ''}</span> to review
                       </p>
                     </div>
                     <div className="space-y-2 max-h-96 overflow-y-auto">
