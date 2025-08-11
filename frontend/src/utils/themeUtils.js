@@ -6,9 +6,13 @@ export const getThemeStorageKey = (orgId) => {
 };
 
 export const saveOrgTheme = (orgId, theme) => {
-  if (!orgId || !theme) return;
+  if (!orgId || !theme) {
+    console.warn('saveOrgTheme: Missing orgId or theme', { orgId, theme });
+    return;
+  }
   const key = getThemeStorageKey(orgId);
   if (key) {
+    console.log('Saving theme for org:', orgId, 'with key:', key, theme);
     localStorage.setItem(key, JSON.stringify(theme));
     // Clean up old global theme if it exists
     localStorage.removeItem('orgTheme');
@@ -16,18 +20,26 @@ export const saveOrgTheme = (orgId, theme) => {
 };
 
 export const getOrgTheme = (orgId) => {
-  if (!orgId) return null;
+  if (!orgId) {
+    console.warn('getOrgTheme: No orgId provided');
+    return null;
+  }
   const key = getThemeStorageKey(orgId);
   if (!key) return null;
   
+  console.log('Looking for theme with key:', key);
   const savedTheme = localStorage.getItem(key);
   if (savedTheme) {
     try {
-      return JSON.parse(savedTheme);
+      const parsed = JSON.parse(savedTheme);
+      console.log('Found saved theme for org:', orgId, parsed);
+      return parsed;
     } catch (e) {
       console.error('Failed to parse saved theme:', e);
       return null;
     }
+  } else {
+    console.log('No saved theme found for org:', orgId);
   }
   
   // Fallback to old global theme if exists (for migration)

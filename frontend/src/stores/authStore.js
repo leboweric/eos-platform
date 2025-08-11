@@ -132,8 +132,12 @@ export const useAuthStore = create((set, get) => ({
       localStorage.setItem('refreshToken', refreshToken);
       
       // Store organizationId for theme management
-      if (user?.organizationId || user?.organization_id) {
-        localStorage.setItem('organizationId', user.organizationId || user.organization_id);
+      const orgId = user?.organizationId || user?.organization_id;
+      if (orgId) {
+        localStorage.setItem('organizationId', orgId);
+        console.log('Stored organizationId:', orgId);
+      } else {
+        console.error('No organizationId found in user object:', user);
       }
       
       set({ user, isLoading: false, error: null });
@@ -158,8 +162,12 @@ export const useAuthStore = create((set, get) => ({
       localStorage.setItem('refreshToken', refreshToken);
       
       // Store organizationId for theme management
-      if (user?.organizationId || user?.organization_id) {
-        localStorage.setItem('organizationId', user.organizationId || user.organization_id);
+      const orgId = user?.organizationId || user?.organization_id;
+      if (orgId) {
+        localStorage.setItem('organizationId', orgId);
+        console.log('Stored organizationId:', orgId);
+      } else {
+        console.error('No organizationId found in user object:', user);
       }
       
       set({ user, isLoading: false, error: null });
