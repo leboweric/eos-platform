@@ -34,6 +34,7 @@ import { FileText, GitBranch, Smile, BarChart, Newspaper, ListTodo, ArrowLeftRig
 import { quarterlyPrioritiesService } from '../services/quarterlyPrioritiesService';
 import { issuesService } from '../services/issuesService';
 import { organizationService } from '../services/organizationService';
+import { getOrgTheme, saveOrgTheme, hexToRgba } from '../utils/themeUtils';
 import IssuesList from '../components/issues/IssuesList';
 import IssueDialog from '../components/issues/IssueDialog';
 import TodoDialog from '../components/todos/TodoDialog';
@@ -79,6 +80,13 @@ const QuarterlyPlanningMeetingPage = () => {
     companyPriorities: false,
     individualPriorities: {}
   });
+  
+  // Theme state
+  const [themeColors, setThemeColors] = useState({
+    primary: '#3B82F6',
+    secondary: '#1E40AF',
+    accent: '#60A5FA'
+  });
 
   const agendaItems = [
     { id: 'objectives', label: 'Objectives', duration: null, icon: Target, description: 'Review meeting goals' },
@@ -91,6 +99,37 @@ const QuarterlyPlanningMeetingPage = () => {
     { id: 'next-steps', label: 'Next Steps', duration: 7, icon: ClipboardList, description: 'Action items' },
     { id: 'conclude', label: 'Conclude', duration: 8, icon: CheckSquare, description: 'Wrap up & rate' }
   ];
+
+  // Fetch organization theme
+  useEffect(() => {
+    fetchOrganizationTheme();
+    
+    const handleThemeChange = (event) => {
+      setThemeColors(event.detail);
+    };
+    
+    window.addEventListener('themeChanged', handleThemeChange);
+    return () => window.removeEventListener('themeChanged', handleThemeChange);
+  }, [user?.organizationId]);
+  
+  const fetchOrganizationTheme = async () => {
+    try {
+      const orgId = user?.organizationId || user?.organization_id || localStorage.getItem('organizationId');
+      const orgData = await organizationService.getOrganization();
+      
+      if (orgData) {
+        const theme = {
+          primary: orgData.theme_primary_color || '#3B82F6',
+          secondary: orgData.theme_secondary_color || '#1E40AF',
+          accent: orgData.theme_accent_color || '#60A5FA'
+        };
+        setThemeColors(theme);
+        saveOrgTheme(orgId, theme);
+      }
+    } catch (error) {
+      console.error('Failed to fetch organization theme:', error);
+    }
+  };
 
   // Timer effect
   useEffect(() => {
@@ -548,11 +587,11 @@ const QuarterlyPlanningMeetingPage = () => {
       case 'objectives':
         return (
           <Card className="border-0 shadow-sm">
-            <CardHeader className="bg-gradient-to-r from-blue-50 to-indigo-50 rounded-t-lg">
+            <CardHeader className="rounded-t-lg" style={{ backgroundColor: hexToRgba(themeColors.accent, 0.05) }}>
               <div className="flex items-center justify-between">
                 <div>
                   <CardTitle className="flex items-center gap-2 text-xl">
-                    <Target className="h-5 w-5 text-blue-600" />
+                    <Target className="h-5 w-5" style={{ color: themeColors.primary }} />
                     Meeting Objectives
                   </CardTitle>
                   <CardDescription className="mt-1">Review meeting goals and expected outcomes</CardDescription>
@@ -568,7 +607,10 @@ const QuarterlyPlanningMeetingPage = () => {
                   This quarterly planning meeting is designed to help your team transition effectively 
                   from one quarter to the next.
                 </p>
-                <div className="bg-gradient-to-r from-blue-50 to-indigo-50 p-6 rounded-xl border border-blue-100">
+                <div className="p-6 rounded-xl border" style={{ 
+                  backgroundColor: hexToRgba(themeColors.accent, 0.03),
+                  borderColor: hexToRgba(themeColors.accent, 0.2)
+                }}>
                   <h4 className="font-semibold text-lg mb-4 text-gray-900">Meeting Goals:</h4>
                   <div className="space-y-3">
                     <div className="flex items-start gap-3">
@@ -593,9 +635,9 @@ const QuarterlyPlanningMeetingPage = () => {
       case 'check-in':
         return (
           <Card>
-            <CardHeader>
+            <CardHeader style={{ backgroundColor: hexToRgba(themeColors.accent, 0.03) }}>
               <CardTitle className="flex items-center gap-2">
-                <CheckSquare className="h-5 w-5" />
+                <CheckSquare className="h-5 w-5" style={{ color: themeColors.primary }} />
                 Team Check-In
               </CardTitle>
               <CardDescription>Connect as a team before diving into business (10 minutes)</CardDescription>
@@ -606,15 +648,15 @@ const QuarterlyPlanningMeetingPage = () => {
                   Go around the room and have each team member share:
                 </p>
                 <div className="space-y-4">
-                  <div className="border-l-4 border-blue-500 pl-4">
+                  <div className="border-l-4 pl-4" style={{ borderColor: themeColors.accent }}>
                     <h4 className="font-medium">1. Bests</h4>
                     <p className="text-sm text-gray-600">Personal and professional Best from the last 90 days</p>
                   </div>
-                  <div className="border-l-4 border-blue-500 pl-4">
+                  <div className="border-l-4 pl-4" style={{ borderColor: themeColors.accent }}>
                     <h4 className="font-medium">2. Update</h4>
                     <p className="text-sm text-gray-600">What's working/not working?</p>
                   </div>
-                  <div className="border-l-4 border-blue-500 pl-4">
+                  <div className="border-l-4 pl-4" style={{ borderColor: themeColors.accent }}>
                     <h4 className="font-medium">3. Expectations for this session</h4>
                     <p className="text-sm text-gray-600">What do you hope to accomplish in this meeting?</p>
                   </div>
@@ -638,7 +680,7 @@ const QuarterlyPlanningMeetingPage = () => {
               <CardHeader>
                 <CardTitle className="flex items-center justify-between">
                   <div className="flex items-center gap-2">
-                    <Calendar className="h-5 w-5" />
+                    <Calendar className="h-5 w-5" style={{ color: themeColors.primary }} />
                     Review Prior Quarter
                   </div>
                   {priorities.length > 0 && (
@@ -1536,11 +1578,17 @@ const QuarterlyPlanningMeetingPage = () => {
                 <TabsTrigger
                   key={item.id}
                   value={item.id}
-                  className="flex flex-col items-center gap-1 py-3 px-2 data-[state=active]:bg-indigo-50 data-[state=active]:text-indigo-700"
+                  className="flex flex-col items-center gap-1 py-3 px-2"
+                  style={{
+                    ...(activeSection === item.id ? {
+                      backgroundColor: hexToRgba(themeColors.accent, 0.1),
+                      color: themeColors.primary
+                    } : {})
+                  }}
                 >
-                  <Icon className={`h-5 w-5 ${
-                    isCompleted ? 'text-green-600' : ''
-                  }`} />
+                  <Icon className="h-5 w-5" style={{
+                    color: isCompleted ? '#10B981' : (activeSection === item.id ? themeColors.primary : undefined)
+                  }} />
                   <span className="text-xs font-medium">{item.label}</span>
                   {item.duration && <span className="text-xs text-gray-500">{item.duration}m</span>}
                   {isCompleted && (
