@@ -261,15 +261,16 @@ const QuarterlyPrioritiesPageClean = () => {
   };
 
   const getStatusColor = (status) => {
+    // Return inline style object instead of class name for dynamic colors
     switch (status) {
       case 'complete':
-        return 'bg-green-500';
+        return { backgroundColor: '#10B981' }; // Keep green for complete
       case 'on-track':
-        return 'bg-blue-500';
+        return { backgroundColor: themeColors.primary };
       case 'off-track':
-        return 'bg-red-500';
+        return { backgroundColor: '#EF4444' }; // Keep red for off-track
       default:
-        return 'bg-gray-400';
+        return { backgroundColor: '#9CA3AF' };
     }
   };
 
@@ -292,15 +293,16 @@ const QuarterlyPrioritiesPageClean = () => {
   };
 
   const getStatusDotColor = (status) => {
+    // Return inline style object for dynamic colors
     switch (status) {
       case 'complete':
-        return 'bg-green-500';
+        return { backgroundColor: '#10B981' }; // Keep green for complete
       case 'on-track':
-        return 'bg-blue-500';
+        return { backgroundColor: themeColors.primary };
       case 'off-track':
-        return 'bg-red-500';
+        return { backgroundColor: '#EF4444' }; // Keep red for off-track
       default:
-        return 'bg-gray-400';
+        return { backgroundColor: '#9CA3AF' };
     }
   };
 
@@ -1374,7 +1376,7 @@ const QuarterlyPrioritiesPageClean = () => {
             <div className="flex items-start justify-between">
               <div className="flex-1 min-w-0">
                 <div className="flex items-center gap-3 mb-3">
-                  <div className={`w-2 h-2 rounded-full flex-shrink-0 ${getStatusDotColor(isEditing ? editForm.status : priority.status)}`} />
+                  <div className="w-2 h-2 rounded-full flex-shrink-0" style={getStatusDotColor(isEditing ? editForm.status : priority.status)} />
                   {isEditing ? (
                     <Input
                       value={editForm.title}
@@ -1432,7 +1434,7 @@ const QuarterlyPrioritiesPageClean = () => {
                         borderColor: themeColors.accent + '40'
                       }}
                     >
-                      <Building2 className="h-3 w-3 mr-1" />
+                      <Building2 className="h-3 w-3 mr-1" style={{ color: themeColors.primary }} />
                       Company
                     </Badge>
                   )}
@@ -1482,14 +1484,14 @@ const QuarterlyPrioritiesPageClean = () => {
                         'border-green-300 bg-green-50 hover:bg-green-100'
                       }`}
                     >
-                      <div className={`w-2 h-2 rounded-full ${getStatusDotColor(priority.status)}`} />
+                      <div className="w-2 h-2 rounded-full" style={getStatusDotColor(priority.status)} />
                       <span className="capitalize font-medium">
                         {(priority.status || 'on-track').replace('-', ' ')}
                       </span>
                     </Button>
                   ) : (
                     <div className="flex items-center gap-2">
-                      <div className={`w-1.5 h-1.5 rounded-full ${getStatusDotColor(isEditing ? editForm.status : priority.status)}`} />
+                      <div className="w-1.5 h-1.5 rounded-full" style={getStatusDotColor(isEditing ? editForm.status : priority.status)} />
                       <span className="capitalize">{(isEditing ? editForm.status : priority.status).replace('-', ' ')}</span>
                     </div>
                   )}
@@ -1658,7 +1660,7 @@ const QuarterlyPrioritiesPageClean = () => {
                     </Select>
                   ) : (
                     <div className="flex items-center gap-2">
-                      <div className={`w-2 h-2 rounded-full ${getStatusDotColor(priority.status)}`} />
+                      <div className="w-2 h-2 rounded-full" style={getStatusDotColor(priority.status)} />
                       <span className="text-sm text-gray-900 capitalize">{priority.status.replace('-', ' ')}</span>
                     </div>
                   )}
@@ -1711,7 +1713,12 @@ const QuarterlyPrioritiesPageClean = () => {
                     variant="ghost"
                     size="sm"
                     onClick={() => setShowAddMilestone(true)}
-                    className="text-xs h-7 hover:bg-blue-100 text-blue-600"
+                    className="text-xs h-7"
+                    style={{ 
+                      color: themeColors.primary
+                    }}
+                    onMouseEnter={(e) => e.target.style.backgroundColor = themeColors.primary + '15'}
+                    onMouseLeave={(e) => e.target.style.backgroundColor = 'transparent'}
                   >
                     <Plus className="h-3 w-3 mr-1" />
                     Add Milestone
@@ -1725,7 +1732,10 @@ const QuarterlyPrioritiesPageClean = () => {
                         type="checkbox"
                         checked={milestone.completed}
                         onChange={(e) => handleUpdateMilestone(priority.id, milestone.id, e.target.checked)}
-                        className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                        className="rounded border-gray-300 focus:ring-2"
+                        style={{ 
+                          accentColor: themeColors.primary
+                        }}
                       />
                       
                       {editingMilestoneId === milestone.id ? (
@@ -1801,9 +1811,11 @@ const QuarterlyPrioritiesPageClean = () => {
                                   dueDate: milestone.dueDate ? new Date(milestone.dueDate).toISOString().split('T')[0] : ''
                                 });
                               }}
-                              className="h-7 w-7 p-0 hover:bg-blue-100"
+                              className="h-7 w-7 p-0"
+                              onMouseEnter={(e) => e.target.style.backgroundColor = themeColors.primary + '15'}
+                              onMouseLeave={(e) => e.target.style.backgroundColor = 'transparent'}
                             >
-                              <Edit className="h-3 w-3 text-blue-600" />
+                              <Edit className="h-3 w-3" style={{ color: themeColors.primary }} />
                             </Button>
                             <Button
                               size="sm"
@@ -1824,7 +1836,7 @@ const QuarterlyPrioritiesPageClean = () => {
                   ))}
                   
                   {showAddMilestone && (
-                    <div className="flex items-center gap-3 p-2 bg-blue-50 rounded-lg">
+                    <div className="flex items-center gap-3 p-2 rounded-lg" style={{ backgroundColor: themeColors.primary + '10' }}>
                       <Input
                         value={milestoneForm.title}
                         onChange={(e) => setMilestoneForm({ ...milestoneForm, title: e.target.value })}
@@ -1908,7 +1920,12 @@ const QuarterlyPrioritiesPageClean = () => {
                         setUpdateStatusChange(null);
                         setShowUpdateDialog(true);
                       }}
-                      className="text-xs h-7 hover:bg-blue-100 text-blue-600"
+                      className="text-xs h-7"
+                    style={{ 
+                      color: themeColors.primary
+                    }}
+                    onMouseEnter={(e) => e.target.style.backgroundColor = themeColors.primary + '15'}
+                    onMouseLeave={(e) => e.target.style.backgroundColor = 'transparent'}
                     >
                       <Plus className="h-3 w-3 mr-1" />
                       Add Update
@@ -1949,7 +1966,12 @@ const QuarterlyPrioritiesPageClean = () => {
                       <Button
                         variant="ghost"
                         size="sm"
-                        className="text-xs h-7 hover:bg-blue-100 text-blue-600"
+                        className="text-xs h-7"
+                    style={{ 
+                      color: themeColors.primary
+                    }}
+                    onMouseEnter={(e) => e.target.style.backgroundColor = themeColors.primary + '15'}
+                    onMouseLeave={(e) => e.target.style.backgroundColor = 'transparent'}
                         disabled={uploadingFile}
                         onClick={(e) => {
                           e.preventDefault();
@@ -1998,9 +2020,11 @@ const QuarterlyPrioritiesPageClean = () => {
                               variant="ghost"
                               size="sm"
                               onClick={() => handleDownloadAttachment(attachment)}
-                              className="h-7 w-7 p-0 hover:bg-blue-100"
+                              className="h-7 w-7 p-0"
+                              onMouseEnter={(e) => e.target.style.backgroundColor = themeColors.primary + '15'}
+                              onMouseLeave={(e) => e.target.style.backgroundColor = 'transparent'}
                             >
-                              <Download className="h-4 w-4 text-blue-600" />
+                              <Download className="h-4 w-4" style={{ color: themeColors.primary }} />
                             </Button>
                             <Button
                               variant="ghost"
@@ -2230,9 +2254,9 @@ const QuarterlyPrioritiesPageClean = () => {
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-sm font-medium text-gray-600 mb-1">On Track</p>
-                  <p className="text-3xl font-bold text-blue-600">{stats.onTrack}</p>
+                  <p className="text-3xl font-bold" style={{ color: themeColors.primary }}>{stats.onTrack}</p>
                 </div>
-                <TrendingUp className="h-8 w-8 text-blue-300" />
+                <TrendingUp className="h-8 w-8" style={{ color: themeColors.accent }} />
               </div>
             </CardContent>
           </Card>
@@ -2272,7 +2296,7 @@ const QuarterlyPrioritiesPageClean = () => {
                   {isOnLeadershipTeam() && quarterData.companyPriorities.length > 0 && (
                     <div className="space-y-6">
                       <div className="flex items-center gap-3">
-                        <Building2 className="h-6 w-6 text-blue-600" />
+                        <Building2 className="h-6 w-6" style={{ color: themeColors.primary }} />
                         <h3 className="text-xl font-semibold text-gray-900">Company Priorities</h3>
                       </div>
                       <div className="space-y-4">
@@ -2289,7 +2313,7 @@ const QuarterlyPrioritiesPageClean = () => {
                   {Object.keys(quarterData.teamMemberPriorities).length > 0 && (
                     <div className="space-y-8">
                       <div className="flex items-center gap-3">
-                        <Users className="h-6 w-6 text-purple-600" />
+                        <Users className="h-6 w-6" style={{ color: themeColors.secondary }} />
                         <h3 className="text-xl font-semibold text-gray-900">Individual Priorities</h3>
                       </div>
                       {Object.entries(quarterData.teamMemberPriorities).map(([memberId, priorities]) => {
@@ -2330,7 +2354,7 @@ const QuarterlyPrioritiesPageClean = () => {
                 ) : (
                   <ChevronRight className="h-5 w-5 text-gray-400 group-hover:text-gray-600" />
                 )}
-                <Building2 className="h-6 w-6 text-blue-600" />
+                <Building2 className="h-6 w-6" style={{ color: themeColors.primary }} />
                 <h2 className="text-2xl font-bold text-gray-900">Company Priorities</h2>
                 <span className="text-sm font-medium text-gray-500 bg-gray-100 px-2 py-1 rounded-full">
                   {companyPriorities.length}
@@ -2368,7 +2392,7 @@ const QuarterlyPrioritiesPageClean = () => {
           {/* Team Member Priorities */}
           <div className="space-y-8">
             <div className="flex items-center gap-3">
-              <Users className="h-6 w-6 text-purple-600" />
+              <Users className="h-6 w-6" style={{ color: themeColors.secondary }} />
               <h2 className="text-2xl font-bold text-gray-900">Individual Priorities</h2>
             </div>
             {(teamMembers || []).map(member => {
