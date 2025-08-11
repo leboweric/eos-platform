@@ -239,9 +239,12 @@ const IssuesList = ({
               onClick={() => setSelectedIssue(issue)}
             >
               {/* Status indicator - subtle left border */}
-              <div className={`absolute left-0 top-0 bottom-0 w-1 rounded-l-lg ${
-                issue.status === 'open' ? 'bg-yellow-500' : 'bg-gray-400'
-              }`} />
+              <div 
+                className="absolute left-0 top-0 bottom-0 w-1 rounded-l-lg"
+                style={{ 
+                  backgroundColor: issue.status === 'open' ? themeColors.accent : '#9CA3AF' 
+                }}
+              />
               
               <div className="p-4 pl-6">
                 <div className="flex items-start gap-4">
@@ -472,9 +475,12 @@ const IssuesList = ({
                     <h4 className="text-sm font-medium text-gray-700 mb-2">Status</h4>
                     <div className="space-y-2">
                       <div className="flex items-center gap-2">
-                        <div className={`w-2 h-2 rounded-full ${
-                          selectedIssue.status === 'open' ? 'bg-yellow-500' : 'bg-gray-400'
-                        }`} />
+                        <div 
+                          className="w-2 h-2 rounded-full"
+                          style={{ 
+                            backgroundColor: selectedIssue.status === 'open' ? themeColors.accent : '#9CA3AF' 
+                          }}
+                        />
                         <span className="text-sm font-medium capitalize">{selectedIssue.status}</span>
                       </div>
                       {selectedIssue.vote_count > 0 && (
