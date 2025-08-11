@@ -1161,7 +1161,7 @@ const QuarterlyPrioritiesPageClean = () => {
     selectedTeam: selectedDepartment?.name,
     selectedTeamId: selectedDepartment?.id,
     isLeadershipTeam: isOnLeadershipTeam(),
-    companyPrioritiesCount: visibleCompanyPriorities.length,
+    companyPrioritiesCount: companyPriorities.length,
     individualPrioritiesCount: currentTeamIndividualPriorities.length,
     totalCalculated: allPriorities.length,
     allIndividualBeforeFilter: Object.values(teamMemberPriorities).flatMap(m => m?.priorities || []).length
