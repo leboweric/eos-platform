@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuthStore } from '../stores/authStore';
+import { organizationService } from '../services/organizationService';
 import { useDepartment } from '../contexts/DepartmentContext';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -23,6 +24,11 @@ const MeetingsPage = () => {
   const [teams, setTeams] = useState([]);
   const [selectedTeamId, setSelectedTeamId] = useState(null);
   const [loadingTeams, setLoadingTeams] = useState(true);
+  const [themeColors, setThemeColors] = useState({
+    primary: '#3B82F6',
+    secondary: '#1E40AF',
+    accent: '#60A5FA'
+  });
 
   const meetings = [
     {
@@ -32,7 +38,8 @@ const MeetingsPage = () => {
       duration: '90 minutes',
       frequency: 'Weekly',
       icon: Users,
-      color: 'bg-blue-500',
+      getColor: () => themeColors.primary,
+      getBgClass: () => 'bg-opacity-10',
       features: [
         'Good News & Headlines',
         'Scorecard Review',
@@ -47,7 +54,8 @@ const MeetingsPage = () => {
       duration: '2.5 hours',
       frequency: 'Quarterly',
       icon: Target,
-      color: 'bg-green-500',
+      getColor: () => '#10B981', // Keep green for growth/quarterly
+      getBgClass: () => 'bg-opacity-10',
       features: [
         'Review prior quarter performance',
         'Set quarterly priorities',
@@ -62,7 +70,8 @@ const MeetingsPage = () => {
       duration: '2 days',
       frequency: 'Annually',
       icon: Calendar,
-      color: 'bg-purple-500',
+      getColor: () => themeColors.secondary,
+      getBgClass: () => 'bg-opacity-10',
       features: [
         'Vision refinement',
         'Annual goals',
@@ -77,7 +86,43 @@ const MeetingsPage = () => {
     if (selectedDepartment) {
       fetchUserTeams();
     }
+    fetchOrganizationTheme();
+    
+    // Listen for theme changes
+    const handleThemeChange = (event) => {
+      setThemeColors(event.detail);
+    };
+    
+    window.addEventListener('themeChanged', handleThemeChange);
+    return () => window.removeEventListener('themeChanged', handleThemeChange);
   }, [selectedDepartment]);
+  
+  const fetchOrganizationTheme = async () => {
+    try {
+      // First check localStorage
+      const savedTheme = localStorage.getItem('orgTheme');
+      if (savedTheme) {
+        const parsedTheme = JSON.parse(savedTheme);
+        setThemeColors(parsedTheme);
+        return;
+      }
+      
+      // Fetch from API
+      const orgData = await organizationService.getOrganization();
+      
+      if (orgData) {
+        const theme = {
+          primary: orgData.theme_primary_color || '#3B82F6',
+          secondary: orgData.theme_secondary_color || '#1E40AF',
+          accent: orgData.theme_accent_color || '#60A5FA'
+        };
+        setThemeColors(theme);
+        localStorage.setItem('orgTheme', JSON.stringify(theme));
+      }
+    } catch (error) {
+      console.error('Failed to fetch organization theme:', error);
+    }
+  };
 
   const fetchUserTeams = async () => {
     try {
@@ -121,7 +166,10 @@ const MeetingsPage = () => {
         <div className="mb-8">
           <div className="flex items-start justify-between">
             <div>
-              <h1 className="text-4xl font-bold text-gray-900">{selectedDepartment?.name || ''} Meetings</h1>
+              <h1 className="text-4xl font-bold text-gray-900">
+                <span className="inline-block w-1 h-10 mr-3 rounded-full" style={{ backgroundColor: themeColors.primary }} />
+                {selectedDepartment?.name || ''} Meetings
+              </h1>
               <p className="text-gray-600 mt-2 text-lg">Run effective meetings with structured agendas</p>
             </div>
             {teams.length > 1 && (
@@ -148,12 +196,12 @@ const MeetingsPage = () => {
           {meetings.map((meeting) => {
             const Icon = meeting.icon;
             return (
-              <Card key={meeting.id} className={`relative overflow-hidden ${meeting.comingSoon ? 'opacity-75' : ''}`}>
-                <div className={`h-2 ${meeting.color}`} />
+              <Card key={meeting.id} className={`relative overflow-hidden ${meeting.comingSoon ? 'opacity-75' : ''} hover:shadow-lg transition-shadow`}>
+                <div className="h-2" style={{ backgroundColor: meeting.getColor() }} />
                 <CardHeader>
                   <div className="flex items-start justify-between">
-                    <div className={`p-3 rounded-lg ${meeting.color} bg-opacity-10`}>
-                      <Icon className={`h-6 w-6 ${meeting.color.replace('bg-', 'text-')}`} />
+                    <div className="p-3 rounded-lg" style={{ backgroundColor: meeting.getColor() + '1A' }}>
+                      <Icon className="h-6 w-6" style={{ color: meeting.getColor() }} />
                     </div>
                     {meeting.comingSoon && (
                       <span className="text-xs bg-gray-200 text-gray-600 px-2 py-1 rounded">Coming Soon</span>
@@ -190,7 +238,19 @@ const MeetingsPage = () => {
                     <Button 
                       onClick={() => handleStartMeeting(meeting.id)}
                       disabled={meeting.comingSoon || !selectedTeamId || loadingTeams}
-                      className="w-full"
+                      className="w-full text-white transition-colors"
+                      style={{ 
+                        backgroundColor: meeting.comingSoon ? '#9CA3AF' : meeting.getColor(),
+                        cursor: meeting.comingSoon ? 'not-allowed' : 'pointer'
+                      }}
+                      onMouseEnter={(e) => {
+                        if (!meeting.comingSoon) {
+                          e.currentTarget.style.opacity = '0.9';
+                        }
+                      }}
+                      onMouseLeave={(e) => {
+                        e.currentTarget.style.opacity = '1';
+                      }}
                     >
                       {meeting.comingSoon ? 'Coming Soon' : 'Start Meeting'}
                       {!meeting.comingSoon && <ChevronRight className="ml-2 h-4 w-4" />}
