@@ -2,7 +2,7 @@ import axios from './axiosConfig';
 import { useAuthStore } from '../stores/authStore';
 import { getTeamId } from '../utils/teamUtils';
 
-const API_BASE = '/organizations/:orgId/teams/:teamId/business-blueprint';
+const API_BASE = '/api/v1/organizations/:orgId/teams/:teamId/business-blueprint';
 
 // Helper to build URL with org and team IDs
 const buildUrl = (endpoint = '') => {
