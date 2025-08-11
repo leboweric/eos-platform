@@ -1009,7 +1009,8 @@ const QuarterlyPlanningMeetingPage = () => {
                         });
                         setShowAddPriority(true);
                       }}
-                      className="bg-indigo-600 hover:bg-indigo-700"
+                      style={{ backgroundColor: themeColors.primary }}
+                      className="hover:opacity-90"
                     >
                       <Plus className="mr-2 h-4 w-4" />
                       Add Priority
@@ -1209,14 +1210,14 @@ const QuarterlyPlanningMeetingPage = () => {
                     })()}
                   </div>
                   <div className="flex gap-2">
-                    <Button onClick={handleAddTodo} className="bg-indigo-600 hover:bg-indigo-700">
+                    <Button onClick={handleAddTodo} style={{ backgroundColor: themeColors.primary }} className="hover:opacity-90">
                       <Plus className="mr-2 h-4 w-4" />
                       Add To Do
                     </Button>
                     <Button onClick={() => {
                       setEditingIssue(null);
                       setShowIssueDialog(true);
-                    }} className="bg-indigo-600 hover:bg-indigo-700">
+                    }} style={{ backgroundColor: themeColors.primary }} className="hover:opacity-90">
                       <Plus className="mr-2 h-4 w-4" />
                       Add Issue
                     </Button>
