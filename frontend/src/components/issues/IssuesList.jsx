@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useAuthStore } from '../../stores/authStore';
 import { organizationService } from '../../services/organizationService';
-import { getOrgTheme, saveOrgTheme } from '../../utils/themeUtils';
+import { getOrgTheme, saveOrgTheme, hexToRgba } from '../../utils/themeUtils';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Button } from '@/components/ui/button';
 import {
@@ -223,16 +223,17 @@ const IssuesList = ({
                 ${isTopIssue ? 'shadow-sm' : 'hover:shadow-sm'}
               `}
               style={{
-                borderColor: isTopIssue ? themeColors.accent : `${themeColors.accent}40`
+                borderColor: isTopIssue ? themeColors.accent : hexToRgba(themeColors.accent, 0.4),
+                borderWidth: '2px'
               }}
               onMouseEnter={(e) => {
                 if (!isTopIssue && issue.status !== 'closed') {
-                  e.currentTarget.style.borderColor = `${themeColors.accent}80`;
+                  e.currentTarget.style.borderColor = hexToRgba(themeColors.accent, 0.7);
                 }
               }}
               onMouseLeave={(e) => {
                 if (!isTopIssue && issue.status !== 'closed') {
-                  e.currentTarget.style.borderColor = `${themeColors.accent}40`;
+                  e.currentTarget.style.borderColor = hexToRgba(themeColors.accent, 0.4);
                 }
               }}
               onClick={() => setSelectedIssue(issue)}
