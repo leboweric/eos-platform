@@ -927,11 +927,11 @@ const QuarterlyPlanningMeetingPage = () => {
         return (
           <div className="space-y-4">
             <Card className="border-0 shadow-sm">
-              <CardHeader className="bg-gradient-to-r from-indigo-50 to-purple-50 rounded-t-lg">
+              <CardHeader className="rounded-t-lg" style={{ backgroundColor: hexToRgba(themeColors.accent, 0.05) }}>
                 <div className="flex items-center justify-between">
                   <div>
                     <CardTitle className="flex items-center gap-2 text-xl">
-                      <ClipboardList className="h-5 w-5 text-indigo-600" />
+                      <ClipboardList className="h-5 w-5" style={{ color: themeColors.primary }} />
                       2-Page Plan
                     </CardTitle>
                     <CardDescription className="mt-1">Review and align your strategic vision</CardDescription>
@@ -939,7 +939,7 @@ const QuarterlyPlanningMeetingPage = () => {
                   <Button onClick={() => {
                     setEditingIssue(null);
                     setShowIssueDialog(true);
-                  }} className="bg-indigo-600 hover:bg-indigo-700">
+                  }} style={{ backgroundColor: themeColors.primary }} className="hover:opacity-90">
                     <Plus className="mr-2 h-4 w-4" />
                     Add Issue
                   </Button>
@@ -977,7 +977,7 @@ const QuarterlyPlanningMeetingPage = () => {
                 <div className="flex items-center justify-between">
                   <div>
                     <CardTitle className="flex items-center gap-2">
-                      <ListChecks className="h-5 w-5" />
+                      <ListChecks className="h-5 w-5" style={{ color: themeColors.primary }} />
                       Set Quarterly Priorities
                     </CardTitle>
                     <CardDescription>Define 3-7 priorities for the upcoming quarter (120 minutes)</CardDescription>
@@ -989,7 +989,11 @@ const QuarterlyPlanningMeetingPage = () => {
                         window.open(`/organizations/${orgId}/smart-rock-assistant`, '_blank');
                       }}
                       variant="outline"
-                      className="text-purple-600 border-purple-300 hover:bg-purple-50"
+                      style={{ 
+                        color: themeColors.secondary,
+                        borderColor: hexToRgba(themeColors.secondary, 0.3)
+                      }}
+                      className="hover:opacity-80"
                     >
                       <MessageSquare className="mr-2 h-4 w-4" />
                       SMART Assistant
@@ -1159,7 +1163,7 @@ const QuarterlyPlanningMeetingPage = () => {
         return (
           <div className="space-y-4">
             <Card className="border-0 shadow-sm">
-              <CardHeader className="bg-gradient-to-r from-red-50 to-pink-50 rounded-t-lg">
+              <CardHeader className="rounded-t-lg" style={{ backgroundColor: hexToRgba('#EF4444', 0.05) }}>
                 <div className="flex items-center justify-between">
                   <div>
                     <CardTitle className="flex items-center gap-2 text-xl">
@@ -1386,7 +1390,7 @@ const QuarterlyPlanningMeetingPage = () => {
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
-                <ClipboardList className="h-5 w-5" />
+                <ClipboardList className="h-5 w-5" style={{ color: themeColors.primary }} />
                 Next Steps
               </CardTitle>
               <CardDescription>Review open action items and responsibilities (7 minutes)</CardDescription>
@@ -1400,7 +1404,8 @@ const QuarterlyPlanningMeetingPage = () => {
                   <Button
                     onClick={handleAddTodo}
                     size="sm"
-                    className="bg-indigo-600 hover:bg-indigo-700"
+                    style={{ backgroundColor: themeColors.primary }}
+                    className="hover:opacity-90"
                   >
                     <Plus className="mr-2 h-4 w-4" />
                     Add To-Do
@@ -1419,8 +1424,12 @@ const QuarterlyPlanningMeetingPage = () => {
                   </div>
                 ) : (
                   <div className="space-y-3">
-                    <div className="bg-blue-50 border border-blue-200 rounded-lg p-3">
-                      <p className="text-sm text-blue-800">
+                    <div className="rounded-lg p-3" style={{ 
+                      backgroundColor: hexToRgba(themeColors.accent, 0.05),
+                      borderWidth: '1px',
+                      borderColor: hexToRgba(themeColors.accent, 0.2)
+                    }}>
+                      <p className="text-sm" style={{ color: themeColors.secondary }}>
                         <span className="font-semibold">{todos.length} open to-do{todos.length !== 1 ? 's' : ''}</span> to review
                       </p>
                     </div>
@@ -1460,7 +1469,7 @@ const QuarterlyPlanningMeetingPage = () => {
       case 'conclude':
         return (
           <Card className="border-0 shadow-sm">
-            <CardHeader className="bg-gradient-to-r from-green-50 to-emerald-50 rounded-t-lg">
+            <CardHeader className="rounded-t-lg" style={{ backgroundColor: hexToRgba('#10B981', 0.05) }}>
               <div className="flex items-center justify-between">
                 <div>
                   <CardTitle className="flex items-center gap-2 text-xl">
@@ -1477,9 +1486,12 @@ const QuarterlyPlanningMeetingPage = () => {
             <CardContent className="pt-6">
               <div className="space-y-6">
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                  <div className="bg-gradient-to-br from-blue-50 to-indigo-50 p-4 rounded-xl border border-blue-100">
+                  <div className="p-4 rounded-xl border" style={{ 
+                    backgroundColor: hexToRgba(themeColors.accent, 0.03),
+                    borderColor: hexToRgba(themeColors.accent, 0.15)
+                  }}>
                     <h4 className="font-semibold text-gray-900 mb-2 flex items-center gap-2">
-                      <MessageSquare className="h-4 w-4 text-blue-600" />
+                      <MessageSquare className="h-4 w-4" style={{ color: themeColors.primary }} />
                       Feedback
                     </h4>
                     <p className="text-sm text-gray-600">Where's your head? How are you feeling?</p>
@@ -1491,9 +1503,12 @@ const QuarterlyPlanningMeetingPage = () => {
                     </h4>
                     <p className="text-sm text-gray-600">Were your expectations met?</p>
                   </div>
-                  <div className="bg-gradient-to-br from-purple-50 to-pink-50 p-4 rounded-xl border border-purple-100">
+                  <div className="p-4 rounded-xl border" style={{ 
+                    backgroundColor: hexToRgba(themeColors.secondary, 0.03),
+                    borderColor: hexToRgba(themeColors.secondary, 0.15)
+                  }}>
                     <h4 className="font-semibold text-gray-900 mb-2 flex items-center gap-2">
-                      <Star className="h-4 w-4 text-purple-600" />
+                      <Star className="h-4 w-4" style={{ color: themeColors.secondary }} />
                       Session Rating
                     </h4>
                     <p className="text-sm text-gray-600">Rate effectiveness (1-10)</p>
@@ -1616,11 +1631,11 @@ const QuarterlyPlanningMeetingPage = () => {
                   variant={meetingRating === i + 1 ? 'default' : 'outline'}
                   size="sm"
                   onClick={() => setMeetingRating(i + 1)}
-                  className={`w-10 h-10 ${
-                    meetingRating === i + 1 
-                      ? 'bg-indigo-600 hover:bg-indigo-700' 
-                      : ''
-                  }`}
+                  className="w-10 h-10"
+                  style={meetingRating === i + 1 ? {
+                    backgroundColor: themeColors.primary,
+                    color: 'white'
+                  } : {}}
                 >
                   {i + 1}
                 </Button>
