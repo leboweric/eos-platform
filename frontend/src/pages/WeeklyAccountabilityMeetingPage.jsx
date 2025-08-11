@@ -1553,7 +1553,14 @@ const WeeklyAccountabilityMeetingPage = () => {
                       );
                     })()}
                   </div>
-                  <Button onClick={handleAddTodo} className="bg-indigo-600 hover:bg-indigo-700">
+                  <Button 
+                    onClick={handleAddTodo} 
+                    style={{ 
+                      backgroundColor: themeColors.primary,
+                      borderColor: themeColors.primary
+                    }}
+                    className="text-white hover:opacity-90"
+                  >
                     <Plus className="mr-2 h-4 w-4" />
                     Add To-do
                   </Button>
@@ -1648,11 +1655,25 @@ const WeeklyAccountabilityMeetingPage = () => {
                     })()}
                   </div>
                   <div className="flex gap-2">
-                    <Button onClick={handleAddTodo} className="bg-indigo-600 hover:bg-indigo-700">
+                    <Button 
+                      onClick={handleAddTodo}
+                      style={{ 
+                        backgroundColor: themeColors.primary,
+                        borderColor: themeColors.primary
+                      }}
+                      className="text-white hover:opacity-90"
+                    >
                       <Plus className="mr-2 h-4 w-4" />
                       Add To Do
                     </Button>
-                    <Button onClick={handleAddIssue} className="bg-indigo-600 hover:bg-indigo-700">
+                    <Button 
+                      onClick={handleAddIssue}
+                      style={{ 
+                        backgroundColor: themeColors.primary,
+                        borderColor: themeColors.primary
+                      }}
+                      className="text-white hover:opacity-90"
+                    >
                       <Plus className="mr-2 h-4 w-4" />
                       Add Issue
                     </Button>
