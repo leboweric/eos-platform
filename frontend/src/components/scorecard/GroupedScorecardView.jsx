@@ -15,6 +15,9 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { Label } from '@/components/ui/label';
 import { scorecardGroupsService } from '../../services/scorecardGroupsService';
 import { scorecardService } from '../../services/scorecardService';
+import { organizationService } from '../../services/organizationService';
+import { getOrgTheme, saveOrgTheme } from '../../utils/themeUtils';
+import { useAuthStore } from '../../stores/authStore';
 
 const GroupedScorecardView = ({ 
   metrics, 
@@ -48,9 +51,45 @@ const GroupedScorecardView = ({
   const [draggedMetric, setDraggedMetric] = useState(null);
   const [dragOverGroup, setDragOverGroup] = useState(null);
   const [draggedGroup, setDraggedGroup] = useState(null);
+  const { user } = useAuthStore();
+  const [themeColors, setThemeColors] = useState({
+    primary: '#3B82F6',
+    secondary: '#1E40AF',
+    accent: '#60A5FA'
+  });
   const [dragOverGroupIndex, setDragOverGroupIndex] = useState(null);
   const [draggedMetricIndex, setDraggedMetricIndex] = useState(null);
   const [dragOverMetricIndex, setDragOverMetricIndex] = useState(null);
+
+  // Fetch organization theme
+  const fetchOrganizationTheme = async () => {
+    try {
+      const currentOrgId = user?.organizationId || user?.organization_id || localStorage.getItem('organizationId');
+      const orgData = await organizationService.getOrganization();
+      
+      if (orgData) {
+        const theme = {
+          primary: orgData.theme_primary_color || '#3B82F6',
+          secondary: orgData.theme_secondary_color || '#1E40AF',
+          accent: orgData.theme_accent_color || '#60A5FA'
+        };
+        setThemeColors(theme);
+        saveOrgTheme(currentOrgId, theme);
+      } else {
+        const savedTheme = getOrgTheme(currentOrgId);
+        if (savedTheme) {
+          setThemeColors(savedTheme);
+        }
+      }
+    } catch (error) {
+      console.error('Failed to fetch organization theme:', error);
+      const currentOrgId = user?.organizationId || user?.organization_id || localStorage.getItem('organizationId');
+      const savedTheme = getOrgTheme(currentOrgId);
+      if (savedTheme) {
+        setThemeColors(savedTheme);
+      }
+    }
+  };
 
   // Format value based on type
   const formatValue = (value, valueType) => {
@@ -98,6 +137,26 @@ const GroupedScorecardView = ({
         return actualVal >= goalVal;
     }
   };
+
+  useEffect(() => {
+    fetchOrganizationTheme();
+    
+    const handleThemeChange = (event) => {
+      setThemeColors(event.detail);
+    };
+    
+    const handleOrgChange = () => {
+      fetchOrganizationTheme();
+    };
+    
+    window.addEventListener('themeChanged', handleThemeChange);
+    window.addEventListener('organizationChanged', handleOrgChange);
+    
+    return () => {
+      window.removeEventListener('themeChanged', handleThemeChange);
+      window.removeEventListener('organizationChanged', handleOrgChange);
+    };
+  }, [user?.organizationId, user?.organization_id]);
 
   useEffect(() => {
     loadGroups();
@@ -404,7 +463,7 @@ const GroupedScorecardView = ({
             variant="ghost"
             className="h-8 w-8 p-0 hover:bg-gray-100 mx-auto"
           >
-            <BarChart3 className="h-4 w-4 text-gray-600" />
+            <BarChart3 className="h-4 w-4" style={{ color: themeColors.primary }} />
           </Button>
         </td>
         <td className="text-center p-2 w-20 font-semibold text-gray-700 text-sm">{formatGoal(metric.goal, metric.value_type, metric.comparison_operator)}</td>
@@ -461,7 +520,7 @@ const GroupedScorecardView = ({
               className="h-6 w-6 p-0"
               onClick={() => onMetricUpdate(metric)}
             >
-              <Edit className="h-3 w-3" />
+              <Edit className="h-3 w-3" style={{ color: themeColors.primary }} />
             </Button>
             <Button
               variant="ghost"
@@ -584,7 +643,7 @@ const GroupedScorecardView = ({
                       setNewGroupColor(group.color);
                     }}
                   >
-                    <Edit className="h-4 w-4" />
+                    <Edit className="h-4 w-4" style={{ color: themeColors.primary }} />
                   </Button>
                   <Button
                     size="sm"
