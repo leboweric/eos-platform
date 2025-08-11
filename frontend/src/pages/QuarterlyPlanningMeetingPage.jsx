@@ -199,6 +199,9 @@ const QuarterlyPlanningMeetingPage = () => {
     } else if (activeSection === '2-page-plan') {
       fetchVtoData();
       fetchTeamMembers(); // Need team members for Add Issue dialog
+    } else if (activeSection === 'check-in') {
+      fetchTeamMembers(); // Need team members for Add Issue dialog in Check-In
+      setLoading(false);
     } else if (activeSection === 'next-steps') {
       fetchTodosData();
     } else {
@@ -1770,24 +1773,38 @@ const QuarterlyPlanningMeetingPage = () => {
           onSave={async (issueData) => {
             try {
               const effectiveTeamId = teamId || user?.teamId || '00000000-0000-0000-0000-000000000000';
+              
+              // Log for debugging
+              console.log('Saving issue with data:', issueData);
+              console.log('Effective team ID:', effectiveTeamId);
+              
               if (editingIssue) {
                 await issuesService.updateIssue(editingIssue.id, issueData);
               } else {
-                await issuesService.createIssue({
+                const response = await issuesService.createIssue({
                   ...issueData,
-                  team_id: effectiveTeamId
+                  teamId: effectiveTeamId  // Changed from team_id to teamId
                 });
+                console.log('Issue created successfully:', response);
               }
+              
               // Only refresh issues data if we're on the issues section
               if (activeSection === 'issues') {
                 await fetchIssuesData();
               }
+              
               setShowIssueDialog(false);
               setEditingIssue(null);
               setSuccess('Issue saved successfully');
             } catch (error) {
-              console.error('Failed to save issue:', error);
-              setError('Failed to save issue');
+              console.error('Failed to save issue - Full error:', error);
+              console.error('Error response:', error.response);
+              
+              // Show more detailed error message
+              const errorMessage = error.response?.data?.message || error.message || 'Failed to save issue';
+              setError(errorMessage);
+              
+              // Don't close the dialog on error so user can try again
             }
           }}
           issue={editingIssue}
