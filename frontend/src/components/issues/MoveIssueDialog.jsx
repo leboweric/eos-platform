@@ -42,9 +42,26 @@ export function MoveIssueDialog({ isOpen, onClose, issue, onSuccess }) {
   const fetchTeams = async () => {
     try {
       const response = await teamsService.getTeams();
+      console.log('Teams response:', response);
+      console.log('Current issue:', issue);
+      
+      // Check what the actual team field is called
+      const currentTeamId = issue?.team_id || issue?.department_id || issue?.teamId;
+      
+      // Handle different response structures
+      const teamsList = response?.data?.teams || response?.data || response || [];
+      
       // Filter out the current team
-      const availableTeams = response.data.filter(team => team.id !== issue?.team_id);
+      const availableTeams = Array.isArray(teamsList) 
+        ? teamsList.filter(team => team.id !== currentTeamId)
+        : [];
+      
+      console.log('Available teams:', availableTeams);
       setTeams(availableTeams);
+      
+      if (availableTeams.length === 0) {
+        setError('No other teams available to move this issue to');
+      }
     } catch (error) {
       console.error('Error fetching teams:', error);
       setError('Failed to load teams');

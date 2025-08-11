@@ -703,11 +703,13 @@ const IssuesList = ({
                 </div>
 
                 {/* Action Buttons */}
-                <div className="flex justify-between pt-4 border-t">
-                  <div className="flex gap-2">
+                <div className="pt-4 border-t space-y-3">
+                  {/* Move actions */}
+                  <div className="flex flex-wrap gap-2">
                     {!readOnly && onTimelineChange && (
                       <Button
                         variant="outline"
+                        size="sm"
                         onClick={() => {
                           onTimelineChange(selectedIssue.id, selectedIssue.timeline === 'short_term' ? 'long_term' : 'short_term');
                           setSelectedIssue(null);
@@ -720,6 +722,7 @@ const IssuesList = ({
                     {!readOnly && onMoveToTeam && (
                       <Button
                         variant="outline"
+                        size="sm"
                         onClick={() => {
                           onMoveToTeam(selectedIssue);
                           setSelectedIssue(null);
@@ -730,7 +733,9 @@ const IssuesList = ({
                       </Button>
                     )}
                   </div>
-                  <div className="flex gap-2">
+                  
+                  {/* Primary actions */}
+                  <div className="flex justify-between">
                     <Button
                       variant="outline"
                       onClick={() => setSelectedIssue(null)}
