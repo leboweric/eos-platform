@@ -295,18 +295,25 @@ const IssuesListClean = ({
             </div>
             <div className="flex items-center gap-1">
               {!readOnly && (
-                <div onClick={(e) => e.stopPropagation()}>
-                  <DropdownMenu>
+                <div 
+                  onClick={(e) => e.stopPropagation()}
+                  className="relative"
+                >
+                  <DropdownMenu modal={false}>
                     <DropdownMenuTrigger asChild>
                       <Button 
                         variant="ghost" 
                         size="sm" 
-                        className="h-4 w-4 p-0 hover:bg-gray-100"
+                        className="h-5 w-5 p-0 hover:bg-gray-100"
                       >
                         <MoreVertical className="h-3 w-3 text-gray-500" />
                       </Button>
                     </DropdownMenuTrigger>
-                    <DropdownMenuContent align="end" className="w-48">
+                    <DropdownMenuContent 
+                      align="end" 
+                      className="w-48 z-50"
+                      sideOffset={5}
+                    >
                       <DropdownMenuItem 
                         onClick={(e) => {
                           e.stopPropagation();
