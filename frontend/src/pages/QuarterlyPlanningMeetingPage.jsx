@@ -1235,6 +1235,7 @@ const QuarterlyPlanningMeetingPage = () => {
             <div className="bg-white rounded-lg shadow-sm p-6">
               <IssuesList 
                 issues={issues || []}
+                compactGrid={true}
                 onEdit={(issue) => {
                   setEditingIssue(issue);
                   setShowIssueDialog(true);

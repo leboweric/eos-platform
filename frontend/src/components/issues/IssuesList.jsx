@@ -253,6 +253,25 @@ const IssuesList = ({
               }}>
                 #{index + 1}
               </span>
+              {showVoting && (
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onVote(issue.id, !issue.user_has_voted);
+                  }}
+                  className="h-4 px-1 py-0 hover:bg-gray-100"
+                  style={{
+                    color: issue.user_has_voted ? themeColors.primary : '#9CA3AF'
+                  }}
+                >
+                  <ThumbsUp className={`h-3 w-3 ${issue.user_has_voted ? 'fill-current' : ''}`} />
+                  {(issue.vote_count || 0) > 0 && (
+                    <span className="ml-0.5 text-xs font-medium">{issue.vote_count}</span>
+                  )}
+                </Button>
+              )}
               {isTopIssue && <span className="text-xs" title="Top voted">🔥</span>}
             </div>
             <div onClick={(e) => e.stopPropagation()}>
@@ -279,12 +298,6 @@ const IssuesList = ({
             <span className="text-gray-500 truncate max-w-[120px]">
               {issue.owner_name || 'Unassigned'}
             </span>
-            {showVoting && hasVotes && (
-              <div className="flex items-center gap-1">
-                <ThumbsUp className="h-3 w-3 text-gray-400" />
-                <span className="text-gray-600 font-medium">{issue.vote_count}</span>
-              </div>
-            )}
           </div>
         </div>
       </div>
