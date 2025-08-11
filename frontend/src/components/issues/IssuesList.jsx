@@ -98,11 +98,25 @@ const IssuesList = ({
   }, [user?.organizationId, user?.organization_id]);
 
   const fetchOrganizationTheme = async () => {
+    console.log('🎨 IssuesList - Starting theme fetch');
+    console.log('🎨 Current user:', user);
+    console.log('🎨 Current localStorage:', {
+      organizationId: localStorage.getItem('organizationId'),
+      allThemeKeys: Object.keys(localStorage).filter(k => k.includes('theme') || k.includes('Theme'))
+    });
+    
     try {
       const orgId = user?.organizationId || user?.organization_id || localStorage.getItem('organizationId');
+      console.log('🎨 Using orgId:', orgId);
+      
+      // Check what's in cache first
+      const cachedTheme = getOrgTheme(orgId);
+      console.log('🎨 Cached theme for org:', cachedTheme);
       
       // Always fetch fresh theme data to avoid stale cache
+      console.log('🎨 Fetching from API...');
       const orgData = await organizationService.getOrganization();
+      console.log('🎨 API Response:', orgData);
       
       if (orgData) {
         const theme = {
@@ -110,20 +124,25 @@ const IssuesList = ({
           secondary: orgData.theme_secondary_color || '#1E40AF',
           accent: orgData.theme_accent_color || '#60A5FA'
         };
+        console.log('🎨 IssuesList - Setting theme colors:', theme, 'for org:', orgId);
+        console.log('🎨 Theme will be applied - primary:', theme.primary, 'accent:', theme.accent);
         setThemeColors(theme);
         saveOrgTheme(orgId, theme);
       } else {
+        console.log('🎨 No org data from API, using cached theme');
         // Fallback to cached theme if API fails
         const savedTheme = getOrgTheme(orgId);
         if (savedTheme) {
+          console.log('🎨 IssuesList - Using cached theme:', savedTheme);
           setThemeColors(savedTheme);
         }
       }
     } catch (error) {
-      console.error('Failed to fetch organization theme:', error);
+      console.error('🎨 Failed to fetch organization theme:', error);
       // Try to use cached theme on error
       const orgId = user?.organizationId || user?.organization_id || localStorage.getItem('organizationId');
       const savedTheme = getOrgTheme(orgId);
+      console.log('🎨 Error fallback - cached theme:', savedTheme);
       if (savedTheme) {
         setThemeColors(savedTheme);
       }

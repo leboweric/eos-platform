@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { useAuthStore } from '../../stores/authStore';
 import { organizationService } from '../../services/organizationService';
 import { getOrgTheme, saveOrgTheme } from '../../utils/themeUtils';
+import { debugTheme } from '../../utils/debugTheme';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Button } from '@/components/ui/button';
 import {
@@ -79,16 +80,24 @@ const IssuesListClean = ({
     
     // Listen for theme changes
     const handleThemeChange = (event) => {
+      console.log('🎨 Theme change event received:', event.detail);
       setThemeColors(event.detail);
     };
     
     // Listen for organization changes
     const handleOrgChange = () => {
+      console.log('🎨 Organization change event received');
       fetchOrganizationTheme();
     };
     
     window.addEventListener('themeChanged', handleThemeChange);
     window.addEventListener('organizationChanged', handleOrgChange);
+    
+    // Run debug after component renders
+    setTimeout(() => {
+      console.log('🎨 Running theme debug after render...');
+      debugTheme();
+    }, 500);
     
     return () => {
       window.removeEventListener('themeChanged', handleThemeChange);
@@ -97,11 +106,32 @@ const IssuesListClean = ({
   }, [user?.organizationId, user?.organization_id]);
   
   const fetchOrganizationTheme = async () => {
+    console.log('🎨 IssuesListClean - Starting theme fetch');
+    console.log('🎨 Current user:', user);
+    console.log('🎨 Current localStorage:', {
+      organizationId: localStorage.getItem('organizationId'),
+      allThemeKeys: Object.keys(localStorage).filter(k => k.includes('theme') || k.includes('Theme'))
+    });
+    
     try {
       const orgId = user?.organizationId || user?.organization_id || localStorage.getItem('organizationId');
+      console.log('🎨 Using orgId:', orgId);
+      
+      // Check what's in cache first
+      const cachedTheme = getOrgTheme(orgId);
+      console.log('🎨 Cached theme for org:', cachedTheme);
+      
+      // Show all theme-related localStorage items
+      Object.keys(localStorage).forEach(key => {
+        if (key.includes('theme') || key.includes('Theme')) {
+          console.log(`🎨 localStorage[${key}]:`, localStorage.getItem(key));
+        }
+      });
       
       // Always fetch fresh theme data to avoid stale cache
+      console.log('🎨 Fetching from API...');
       const orgData = await organizationService.getOrganization();
+      console.log('🎨 API Response:', orgData);
       
       if (orgData) {
         const theme = {
@@ -109,22 +139,29 @@ const IssuesListClean = ({
           secondary: orgData.theme_secondary_color || '#1E40AF',
           accent: orgData.theme_accent_color || '#60A5FA'
         };
-        console.log('IssuesListClean - Setting theme colors:', theme, 'for org:', orgId);
+        console.log('🎨 IssuesListClean - Setting theme colors:', theme, 'for org:', orgId);
+        console.log('🎨 Theme will be applied - primary:', theme.primary, 'accent:', theme.accent);
         setThemeColors(theme);
         saveOrgTheme(orgId, theme);
+        
+        // Log what was actually saved
+        console.log('🎨 Saved to localStorage key:', `orgTheme_${orgId}`);
+        console.log('🎨 Saved value:', localStorage.getItem(`orgTheme_${orgId}`));
       } else {
+        console.log('🎨 No org data from API, using cached theme');
         // Fallback to cached theme if API fails
         const savedTheme = getOrgTheme(orgId);
         if (savedTheme) {
-          console.log('IssuesListClean - Using cached theme:', savedTheme);
+          console.log('🎨 IssuesListClean - Using cached theme:', savedTheme);
           setThemeColors(savedTheme);
         }
       }
     } catch (error) {
-      console.error('Failed to fetch organization theme:', error);
+      console.error('🎨 Failed to fetch organization theme:', error);
       // Try to use cached theme on error
       const orgId = user?.organizationId || user?.organization_id || localStorage.getItem('organizationId');
       const savedTheme = getOrgTheme(orgId);
+      console.log('🎨 Error fallback - cached theme:', savedTheme);
       if (savedTheme) {
         setThemeColors(savedTheme);
       }
@@ -207,6 +244,9 @@ const IssuesListClean = ({
               style={{
                 borderColor: isTopIssue ? themeColors.accent : `${themeColors.accent}40`
               }}
+              data-theme-accent={themeColors.accent}
+              data-theme-primary={themeColors.primary}
+              data-border-color={isTopIssue ? themeColors.accent : `${themeColors.accent}40`}
               onMouseEnter={(e) => {
                 if (!isTopIssue && issue.status !== 'closed') {
                   e.currentTarget.style.borderColor = `${themeColors.accent}80`;
