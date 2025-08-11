@@ -4,17 +4,75 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Loader2, TrendingUp, TrendingDown, Minus } from 'lucide-react';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, ReferenceLine } from 'recharts';
 import { format } from 'date-fns';
+import { useAuthStore } from '../../stores/authStore';
+import { organizationService } from '../../services/organizationService';
+import { getOrgTheme, saveOrgTheme } from '../../utils/themeUtils';
 
 const MetricTrendChart = ({ isOpen, onClose, metric, metricId, orgId, teamId }) => {
+  const { user } = useAuthStore();
   const [loading, setLoading] = useState(true);
   const [chartData, setChartData] = useState([]);
   const [error, setError] = useState(null);
+  const [themeColors, setThemeColors] = useState({
+    primary: '#3B82F6',
+    secondary: '#1E40AF',
+    accent: '#60A5FA'
+  });
 
   useEffect(() => {
     if (isOpen && metricId) {
       fetchHistoricalData();
     }
   }, [isOpen, metricId]);
+
+  useEffect(() => {
+    fetchOrganizationTheme();
+    
+    const handleThemeChange = (event) => {
+      setThemeColors(event.detail);
+    };
+    
+    const handleOrgChange = () => {
+      fetchOrganizationTheme();
+    };
+    
+    window.addEventListener('themeChanged', handleThemeChange);
+    window.addEventListener('organizationChanged', handleOrgChange);
+    
+    return () => {
+      window.removeEventListener('themeChanged', handleThemeChange);
+      window.removeEventListener('organizationChanged', handleOrgChange);
+    };
+  }, [user?.organizationId, user?.organization_id]);
+
+  const fetchOrganizationTheme = async () => {
+    try {
+      const organizationId = user?.organizationId || user?.organization_id || localStorage.getItem('organizationId');
+      const orgData = await organizationService.getOrganization();
+      
+      if (orgData) {
+        const theme = {
+          primary: orgData.theme_primary_color || '#3B82F6',
+          secondary: orgData.theme_secondary_color || '#1E40AF',
+          accent: orgData.theme_accent_color || '#60A5FA'
+        };
+        setThemeColors(theme);
+        saveOrgTheme(organizationId, theme);
+      } else {
+        const savedTheme = getOrgTheme(organizationId);
+        if (savedTheme) {
+          setThemeColors(savedTheme);
+        }
+      }
+    } catch (error) {
+      console.error('Failed to fetch organization theme:', error);
+      const organizationId = user?.organizationId || user?.organization_id || localStorage.getItem('organizationId');
+      const savedTheme = getOrgTheme(organizationId);
+      if (savedTheme) {
+        setThemeColors(savedTheme);
+      }
+    }
+  };
 
   const fetchHistoricalData = async () => {
     try {
@@ -143,7 +201,7 @@ const MetricTrendChart = ({ isOpen, onClose, metric, metricId, orgId, teamId }) 
     const changePercent = ((lastTrend - firstTrend) / firstTrend) * 100;
     
     if (changePercent > 5) {
-      return <TrendingUp className="h-5 w-5 text-green-600" />;
+      return <TrendingUp className="h-5 w-5" style={{ color: themeColors.primary }} />;
     } else if (changePercent < -5) {
       return <TrendingDown className="h-5 w-5 text-red-600" />;
     }
@@ -202,10 +260,10 @@ const MetricTrendChart = ({ isOpen, onClose, metric, metricId, orgId, teamId }) 
                   <Line 
                     type="monotone" 
                     dataKey="value" 
-                    stroke="#8b5cf6" 
+                    stroke={themeColors.secondary} 
                     name="Weekly Value"
                     strokeWidth={2}
-                    dot={{ fill: '#8b5cf6', r: 4 }}
+                    dot={{ fill: themeColors.secondary, r: 4 }}
                     connectNulls={false}
                   />
                   
@@ -213,10 +271,10 @@ const MetricTrendChart = ({ isOpen, onClose, metric, metricId, orgId, teamId }) 
                   <Line 
                     type="monotone" 
                     dataKey="movingTotal" 
-                    stroke="#3b82f6" 
+                    stroke={themeColors.primary} 
                     name="3-Week Moving Total"
                     strokeWidth={3}
-                    dot={{ fill: '#3b82f6', r: 5 }}
+                    dot={{ fill: themeColors.primary, r: 5 }}
                     strokeDasharray="5 5"
                   />
                   
@@ -224,7 +282,7 @@ const MetricTrendChart = ({ isOpen, onClose, metric, metricId, orgId, teamId }) 
                   <Line 
                     type="monotone" 
                     dataKey="trendline" 
-                    stroke="#ef4444" 
+                    stroke={themeColors.accent} 
                     name="Trend"
                     strokeWidth={2}
                     dot={false}
@@ -244,9 +302,9 @@ const MetricTrendChart = ({ isOpen, onClose, metric, metricId, orgId, teamId }) 
               </ResponsiveContainer>
               
               <div className="mt-4 text-sm text-gray-600">
-                <p>• The blue dashed line shows the 3-week moving total (sum of current week + 2 previous weeks)</p>
-                <p>• The red dashed line shows the trend direction for the 3-week moving total</p>
-                <p>• The purple solid line shows individual weekly values</p>
+                <p>• The dashed line shows the 3-week moving total (sum of current week + 2 previous weeks)</p>
+                <p>• The dotted line shows the trend direction for the 3-week moving total</p>
+                <p>• The solid line shows individual weekly values</p>
                 {metric?.goal && <p>• Green dashed line shows the 3-week goal target ({getValueFormatter(metric.goal * 3)})</p>}
               </div>
             </CardContent>

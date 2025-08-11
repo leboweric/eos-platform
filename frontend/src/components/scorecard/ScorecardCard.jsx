@@ -1,3 +1,4 @@
+import { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import { 
   TrendingUp, 
@@ -5,6 +6,9 @@ import {
   Target,
   User
 } from 'lucide-react';
+import { useAuthStore } from '../../stores/authStore';
+import { organizationService } from '../../services/organizationService';
+import { getOrgTheme, saveOrgTheme } from '../../utils/themeUtils';
 
 /**
  * ScorecardCard component for displaying scorecard metric information
@@ -31,6 +35,61 @@ import {
  * @param {boolean} props.readOnly - Whether in read-only mode
  */
 const ScorecardCard = ({ metric, weeklyScore, readOnly = false }) => {
+  const { user } = useAuthStore();
+  const [themeColors, setThemeColors] = useState({
+    primary: '#3B82F6',
+    secondary: '#1E40AF',
+    accent: '#60A5FA'
+  });
+
+  useEffect(() => {
+    fetchOrganizationTheme();
+    
+    const handleThemeChange = (event) => {
+      setThemeColors(event.detail);
+    };
+    
+    const handleOrgChange = () => {
+      fetchOrganizationTheme();
+    };
+    
+    window.addEventListener('themeChanged', handleThemeChange);
+    window.addEventListener('organizationChanged', handleOrgChange);
+    
+    return () => {
+      window.removeEventListener('themeChanged', handleThemeChange);
+      window.removeEventListener('organizationChanged', handleOrgChange);
+    };
+  }, [user?.organizationId, user?.organization_id]);
+
+  const fetchOrganizationTheme = async () => {
+    try {
+      const orgId = user?.organizationId || user?.organization_id || localStorage.getItem('organizationId');
+      const orgData = await organizationService.getOrganization();
+      
+      if (orgData) {
+        const theme = {
+          primary: orgData.theme_primary_color || '#3B82F6',
+          secondary: orgData.theme_secondary_color || '#1E40AF',
+          accent: orgData.theme_accent_color || '#60A5FA'
+        };
+        setThemeColors(theme);
+        saveOrgTheme(orgId, theme);
+      } else {
+        const savedTheme = getOrgTheme(orgId);
+        if (savedTheme) {
+          setThemeColors(savedTheme);
+        }
+      }
+    } catch (error) {
+      console.error('Failed to fetch organization theme:', error);
+      const orgId = user?.organizationId || user?.organization_id || localStorage.getItem('organizationId');
+      const savedTheme = getOrgTheme(orgId);
+      if (savedTheme) {
+        setThemeColors(savedTheme);
+      }
+    }
+  };
   // Format value based on type
   const formatValue = (value, type) => {
     if (value === null || value === undefined) return '-';
@@ -95,11 +154,13 @@ const ScorecardCard = ({ metric, weeklyScore, readOnly = false }) => {
             )}
           </div>
           {hasScore && (
-            <div className={`p-2 rounded-full ${goalMet ? 'bg-green-100' : 'bg-red-100'}`}>
+            <div className="p-2 rounded-full" style={{ 
+              backgroundColor: goalMet ? `${themeColors.accent}20` : '#FEE2E2' 
+            }}>
               {goalMet ? (
-                <TrendingUp className={`h-5 w-5 text-green-600`} />
+                <TrendingUp className="h-5 w-5" style={{ color: themeColors.primary }} />
               ) : (
-                <TrendingDown className={`h-5 w-5 text-red-600`} />
+                <TrendingDown className="h-5 w-5 text-red-600" />
               )}
             </div>
           )}
@@ -114,7 +175,8 @@ const ScorecardCard = ({ metric, weeklyScore, readOnly = false }) => {
           </div>
           <div>
             <p className="text-sm text-gray-500">This Week</p>
-            <p className={`text-lg font-semibold ${hasScore ? (goalMet ? 'text-green-600' : 'text-red-600') : 'text-gray-400'}`}>
+            <p className={`text-lg font-semibold ${hasScore ? (!goalMet ? 'text-red-600' : '') : 'text-gray-400'}`}
+               style={{ color: hasScore && goalMet ? themeColors.primary : undefined }}>
               {hasScore ? formatValue(currentScore, metric.value_type) : '-'}
             </p>
           </div>
