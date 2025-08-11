@@ -636,9 +636,35 @@ const QuarterlyPlanningMeetingPage = () => {
         return (
           <Card>
             <CardHeader style={{ backgroundColor: hexToRgba(themeColors.accent, 0.03) }}>
-              <CardTitle className="flex items-center gap-2">
-                <CheckSquare className="h-5 w-5" style={{ color: themeColors.primary }} />
-                Team Check-In
+              <CardTitle className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <CheckSquare className="h-5 w-5" style={{ color: themeColors.primary }} />
+                  Team Check-In
+                </div>
+                <Button
+                  onClick={() => {
+                    setEditingIssue(null);
+                    setShowIssueDialog(true);
+                  }}
+                  size="sm"
+                  className="flex items-center gap-2"
+                  style={{
+                    backgroundColor: themeColors.primary,
+                    borderColor: themeColors.primary,
+                    color: 'white'
+                  }}
+                  onMouseEnter={(e) => {
+                    e.currentTarget.style.backgroundColor = themeColors.secondary;
+                    e.currentTarget.style.borderColor = themeColors.secondary;
+                  }}
+                  onMouseLeave={(e) => {
+                    e.currentTarget.style.backgroundColor = themeColors.primary;
+                    e.currentTarget.style.borderColor = themeColors.primary;
+                  }}
+                >
+                  <Plus className="h-4 w-4" />
+                  Add Issue
+                </Button>
               </CardTitle>
               <CardDescription>Connect as a team before diving into business (10 minutes)</CardDescription>
             </CardHeader>
