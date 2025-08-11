@@ -801,7 +801,9 @@ const DashboardClean = () => {
                         {priority.owner?.name || 'Unassigned'} • Due {priority.dueDate ? format(new Date(priority.dueDate), 'MMM d') : 'No date'}
                       </p>
                     </div>
-                    <span className="text-sm text-gray-500">{priority.progress || 0}%</span>
+                    <span className="text-sm text-gray-500">
+                      {priority.status === 'complete' ? 100 : (priority.progress || 0)}%
+                    </span>
                   </div>
                 ))}
               </div>
