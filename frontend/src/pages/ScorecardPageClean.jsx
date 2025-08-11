@@ -424,7 +424,7 @@ const ScorecardPageClean = () => {
   const { labels: monthLabels, monthDates } = getMonthLabels();
 
 
-  if (loading || departmentLoading || !selectedDepartment) {
+  if (loading || departmentLoading || (!selectedDepartment && !isLeadershipMember)) {
     return (
       <div className="flex items-center justify-center min-h-screen">
         <Loader2 className="h-8 w-8 animate-spin text-gray-400" />
