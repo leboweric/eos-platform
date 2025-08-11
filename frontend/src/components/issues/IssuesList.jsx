@@ -48,7 +48,8 @@ const IssuesList = ({
   getStatusColor, 
   getStatusIcon, 
   readOnly = false, 
-  showVoting = false
+  showVoting = false,
+  compactGrid = false  // New prop for compact grid view in meetings
 }) => {
   const { user } = useAuthStore();
   const [selectedIssue, setSelectedIssue] = useState(null);
@@ -207,9 +208,100 @@ const IssuesList = ({
     });
   };
 
+  // Compact card component for grid view
+  const CompactIssueCard = ({ issue, index }) => {
+    const hasVotes = (issue.vote_count || 0) > 0;
+    const isTopIssue = index === 0 && hasVotes && showVoting;
+    
+    return (
+      <div
+        className={`
+          group relative bg-white rounded-lg border transition-all duration-200 cursor-pointer h-full
+          ${issue.status === 'closed' ? 'opacity-60' : ''}
+          ${isTopIssue ? 'shadow-sm' : 'hover:shadow-sm'}
+        `}
+        style={{
+          borderColor: isTopIssue ? themeColors.accent : hexToRgba(themeColors.accent, 0.3),
+          borderWidth: isTopIssue ? '2px' : '1px'
+        }}
+        onMouseEnter={(e) => {
+          if (!isTopIssue && issue.status !== 'closed') {
+            e.currentTarget.style.borderColor = hexToRgba(themeColors.accent, 0.6);
+          }
+        }}
+        onMouseLeave={(e) => {
+          if (!isTopIssue && issue.status !== 'closed') {
+            e.currentTarget.style.borderColor = hexToRgba(themeColors.accent, 0.3);
+          }
+        }}
+        onClick={() => setSelectedIssue(issue)}
+      >
+        {/* Status indicator - left border */}
+        <div 
+          className="absolute left-0 top-0 bottom-0 w-1 rounded-l-lg"
+          style={{ 
+            backgroundColor: issue.status === 'open' ? themeColors.accent : '#9CA3AF' 
+          }}
+        />
+        
+        <div className="p-3 pl-4">
+          {/* Header with number and checkbox */}
+          <div className="flex items-start justify-between gap-2 mb-1">
+            <div className="flex items-center gap-2">
+              <span className="text-xs font-bold" style={{
+                color: isTopIssue ? themeColors.primary : '#6B7280'
+              }}>
+                #{index + 1}
+              </span>
+              {isTopIssue && <span className="text-xs" title="Top voted">🔥</span>}
+            </div>
+            <div onClick={(e) => e.stopPropagation()}>
+              <Checkbox
+                checked={issue.status === 'closed'}
+                onCheckedChange={(checked) => {
+                  onStatusChange(issue.id, checked ? 'closed' : 'open');
+                }}
+                className="h-4 w-4 rounded border-gray-300"
+              />
+            </div>
+          </div>
+          
+          {/* Title - truncated */}
+          <h3 className={`
+            text-sm font-medium leading-tight mb-2 line-clamp-2
+            ${issue.status === 'closed' ? 'text-gray-400 line-through' : 'text-gray-900'}
+          `}>
+            {issue.title}
+          </h3>
+          
+          {/* Bottom info - very compact */}
+          <div className="flex items-center justify-between text-xs">
+            <span className="text-gray-500 truncate max-w-[120px]">
+              {issue.owner_name || 'Unassigned'}
+            </span>
+            {showVoting && hasVotes && (
+              <div className="flex items-center gap-1">
+                <ThumbsUp className="h-3 w-3 text-gray-400" />
+                <span className="text-gray-600 font-medium">{issue.vote_count}</span>
+              </div>
+            )}
+          </div>
+        </div>
+      </div>
+    );
+  };
+
   return (
     <>
-      <div className="space-y-3">
+      {/* Render compact grid or regular list based on prop */}
+      {compactGrid ? (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3">
+          {(issues || []).map((issue, index) => (
+            <CompactIssueCard key={issue.id} issue={issue} index={index} />
+          ))}
+        </div>
+      ) : (
+        <div className="space-y-3">
         {(issues || []).map((issue, index) => {
           const hasVotes = (issue.vote_count || 0) > 0;
           const isTopIssue = index === 0 && hasVotes && showVoting;
@@ -426,9 +518,10 @@ const IssuesList = ({
             </div>
           );
         })}
-      </div>
+        </div>
+      )}
 
-      {/* Issue Detail Modal */}
+      {/* Issue Detail Modal - shared between both views */}
       <Dialog open={!!selectedIssue} onOpenChange={(open) => !open && setSelectedIssue(null)}>
         <DialogContent className="max-w-2xl">
           {selectedIssue && (
