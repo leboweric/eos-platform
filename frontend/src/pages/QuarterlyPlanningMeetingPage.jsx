@@ -1453,7 +1453,7 @@ const QuarterlyPlanningMeetingPage = () => {
                   <div className="flex items-center justify-center py-8">
                     <Loader2 className="h-6 w-6 animate-spin" />
                   </div>
-                ) : todos.length === 0 ? (
+                ) : !Array.isArray(todos) || todos.length === 0 ? (
                   <div className="bg-gray-50 p-6 rounded-lg text-center">
                     <CheckCircle className="h-12 w-12 text-green-500 mx-auto mb-3" />
                     <p className="text-gray-600 font-medium">No open to-dos!</p>
@@ -1467,11 +1467,11 @@ const QuarterlyPlanningMeetingPage = () => {
                       borderColor: hexToRgba(themeColors.accent, 0.2)
                     }}>
                       <p className="text-sm" style={{ color: themeColors.secondary }}>
-                        <span className="font-semibold">{todos.length} open to-do{todos.length !== 1 ? 's' : ''}</span> to review
+                        <span className="font-semibold">{Array.isArray(todos) ? todos.length : 0} open to-do{todos.length !== 1 ? 's' : ''}</span> to review
                       </p>
                     </div>
                     <div className="space-y-2 max-h-96 overflow-y-auto">
-                      {todos.map((todo) => (
+                      {Array.isArray(todos) && todos.map((todo) => (
                         <div key={todo.id} className="relative bg-white border rounded-lg p-4 pl-6 hover:shadow-sm transition-shadow" 
                           style={{ borderColor: hexToRgba(themeColors.accent, 0.3) }}>
                           {/* Theme-colored left edge indicator */}
@@ -1845,11 +1845,16 @@ const QuarterlyPlanningMeetingPage = () => {
               // Refresh todos after save using the same method as fetchTodosData
               const effectiveTeamId = teamId || user?.teamId || '00000000-0000-0000-0000-000000000000';
               const response = await todosService.getTodos(null, null, false, effectiveTeamId);
-              // Filter to only show open todos
-              const openTodos = (response.data.todos || []).filter(
-                todo => todo.status !== 'complete' && todo.status !== 'completed' && todo.status !== 'cancelled'
-              );
-              setTodos(openTodos);
+              // Filter to only show open todos - ensure we always have an array
+              if (response && response.data && Array.isArray(response.data.todos)) {
+                const openTodos = response.data.todos.filter(
+                  todo => todo.status !== 'complete' && todo.status !== 'completed' && todo.status !== 'cancelled'
+                );
+                setTodos(openTodos);
+              } else {
+                console.warn('Invalid todos response structure:', response);
+                setTodos([]);
+              }
               
               return true;
             } catch (error) {
