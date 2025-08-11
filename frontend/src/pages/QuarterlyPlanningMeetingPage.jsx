@@ -1843,7 +1843,7 @@ const QuarterlyPlanningMeetingPage = () => {
               setSuccess('To-do saved successfully');
               
               // Refresh todos after save using the same method as fetchTodosData
-              const effectiveTeamId = teamId || user?.teamId || '00000000-0000-0000-0000-000000000000';
+              // effectiveTeamId is already declared above
               const response = await todosService.getTodos(null, null, false, effectiveTeamId);
               // Filter to only show open todos - ensure we always have an array
               if (response && response.data && Array.isArray(response.data.todos)) {
