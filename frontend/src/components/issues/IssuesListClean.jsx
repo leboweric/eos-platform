@@ -293,74 +293,14 @@ const IssuesListClean = ({
               )}
               {isTopIssue && <span className="text-xs" title="Top voted">🔥</span>}
             </div>
-            <div className="flex items-center gap-1">
-              {!readOnly && (
-                <div 
-                  onClick={(e) => e.stopPropagation()}
-                  className="relative"
-                >
-                  <DropdownMenu modal={false}>
-                    <DropdownMenuTrigger asChild>
-                      <Button 
-                        variant="ghost" 
-                        size="sm" 
-                        className="h-5 w-5 p-0 hover:bg-gray-100"
-                      >
-                        <MoreVertical className="h-3 w-3 text-gray-500" />
-                      </Button>
-                    </DropdownMenuTrigger>
-                    <DropdownMenuContent 
-                      align="end" 
-                      className="w-48 z-50"
-                      sideOffset={5}
-                    >
-                      <DropdownMenuItem 
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          onEdit(issue);
-                        }}
-                        className="cursor-pointer"
-                      >
-                        <Edit className="mr-2 h-4 w-4" />
-                        Edit
-                      </DropdownMenuItem>
-                      {onMoveToTeam && (
-                        <DropdownMenuItem 
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            onMoveToTeam(issue);
-                          }}
-                          className="cursor-pointer"
-                        >
-                          <Users className="mr-2 h-4 w-4" />
-                          Move to Team
-                        </DropdownMenuItem>
-                      )}
-                      {issue.status === 'closed' && (
-                        <DropdownMenuItem 
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            onArchive(issue.id);
-                          }}
-                          className="cursor-pointer text-red-600 focus:text-red-600"
-                        >
-                          <Archive className="mr-2 h-4 w-4" />
-                          Archive
-                        </DropdownMenuItem>
-                      )}
-                    </DropdownMenuContent>
-                  </DropdownMenu>
-                </div>
-              )}
-              <div onClick={(e) => e.stopPropagation()}>
-                <Checkbox
-                  checked={issue.status === 'closed'}
-                  onCheckedChange={(checked) => {
-                    onStatusChange(issue.id, checked ? 'closed' : 'open');
-                  }}
-                  className="h-4 w-4 rounded border-gray-300"
-                />
-              </div>
+            <div onClick={(e) => e.stopPropagation()}>
+              <Checkbox
+                checked={issue.status === 'closed'}
+                onCheckedChange={(checked) => {
+                  onStatusChange(issue.id, checked ? 'closed' : 'open');
+                }}
+                className="h-4 w-4 rounded border-gray-300"
+              />
             </div>
           </div>
           
@@ -785,25 +725,41 @@ const IssuesListClean = ({
                 </div>
 
                 {/* Action Buttons */}
-                <div className="flex justify-end gap-2 pt-4 border-t">
-                  <Button
-                    variant="outline"
-                    onClick={() => setSelectedIssue(null)}
-                  >
-                    Close
-                  </Button>
-                  {!readOnly && (
+                <div className="flex justify-between pt-4 border-t">
+                  <div className="flex gap-2">
+                    {!readOnly && onMoveToTeam && (
+                      <Button
+                        variant="outline"
+                        onClick={() => {
+                          onMoveToTeam(selectedIssue);
+                          setSelectedIssue(null);
+                        }}
+                      >
+                        <Users className="mr-2 h-4 w-4" />
+                        Move to Team
+                      </Button>
+                    )}
+                  </div>
+                  <div className="flex gap-2">
                     <Button
-                      onClick={() => {
-                        onEdit(selectedIssue);
-                        // Keep modal open briefly to ensure edit dialog opens
-                        setTimeout(() => setSelectedIssue(null), 100);
-                      }}
+                      variant="outline"
+                      onClick={() => setSelectedIssue(null)}
                     >
-                      <Edit className="mr-2 h-4 w-4" />
-                      Edit Issue
+                      Close
                     </Button>
-                  )}
+                    {!readOnly && (
+                      <Button
+                        onClick={() => {
+                          onEdit(selectedIssue);
+                          // Keep modal open briefly to ensure edit dialog opens
+                          setTimeout(() => setSelectedIssue(null), 100);
+                        }}
+                      >
+                        <Edit className="mr-2 h-4 w-4" />
+                        Edit Issue
+                      </Button>
+                    )}
+                  </div>
                 </div>
               </div>
             </>
