@@ -196,16 +196,16 @@ const IssuesListClean = ({
                 ${isTopIssue ? 'shadow-sm' : 'hover:shadow-sm'}
               `}
               style={{
-                borderColor: isTopIssue ? themeColors.accent : '#E5E7EB'
+                borderColor: isTopIssue ? themeColors.accent : `${themeColors.accent}40`
               }}
               onMouseEnter={(e) => {
                 if (!isTopIssue && issue.status !== 'closed') {
-                  e.currentTarget.style.borderColor = '#D1D5DB';
+                  e.currentTarget.style.borderColor = `${themeColors.accent}80`;
                 }
               }}
               onMouseLeave={(e) => {
                 if (!isTopIssue && issue.status !== 'closed') {
-                  e.currentTarget.style.borderColor = '#E5E7EB';
+                  e.currentTarget.style.borderColor = `${themeColors.accent}40`;
                 }
               }}
               onClick={() => setSelectedIssue(issue)}
