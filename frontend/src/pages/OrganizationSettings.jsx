@@ -10,6 +10,7 @@ import { Slider } from '@/components/ui/slider';
 import { Building2, Save, Loader2, Upload, X, Image } from 'lucide-react';
 import { organizationService } from '../services/organizationService';
 import ColorThemePicker from '../components/ColorThemePicker';
+import { saveOrgTheme, getOrgTheme } from '../utils/themeUtils';
 
 
 const OrganizationSettings = () => {
@@ -208,9 +209,10 @@ const OrganizationSettings = () => {
         theme_accent_color: theme.accent
       });
       
-      // Store in localStorage for immediate use
-      localStorage.setItem('orgTheme', JSON.stringify(theme));
-      console.log('Saved to localStorage:', theme);
+      // Store in localStorage for immediate use (org-specific)
+      const orgId = user?.organizationId || user?.organization_id;
+      saveOrgTheme(orgId, theme);
+      console.log('Saved theme for org:', orgId, theme);
       
       // Dispatch event to notify other components
       window.dispatchEvent(new CustomEvent('themeChanged', { detail: theme }));

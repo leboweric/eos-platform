@@ -51,10 +51,10 @@ const TodosListClean = ({
   const fetchOrganizationTheme = async () => {
     try {
       // First check localStorage
-      const savedTheme = localStorage.getItem('orgTheme');
+      const orgId = localStorage.getItem('organizationId');
+      const savedTheme = getOrgTheme(orgId);
       if (savedTheme) {
-        const parsedTheme = JSON.parse(savedTheme);
-        setThemeColors(parsedTheme);
+        setThemeColors(savedTheme);
         return;
       }
       
@@ -68,7 +68,8 @@ const TodosListClean = ({
           accent: orgData.theme_accent_color || '#60A5FA'
         };
         setThemeColors(theme);
-        localStorage.setItem('orgTheme', JSON.stringify(theme));
+        const orgId = localStorage.getItem('organizationId');
+        saveOrgTheme(orgId, theme);
       }
     } catch (error) {
       console.error('Failed to fetch organization theme:', error);

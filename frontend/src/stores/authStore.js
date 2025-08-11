@@ -100,7 +100,14 @@ export const useAuthStore = create((set, get) => ({
       }
 
       const response = await authAxios.get('/auth/profile');
-      set({ user: response.data.data, isLoading: false, error: null });
+      const userData = response.data.data;
+      
+      // Store organizationId for theme management
+      if (userData?.organizationId || userData?.organization_id) {
+        localStorage.setItem('organizationId', userData.organizationId || userData.organization_id);
+      }
+      
+      set({ user: userData, isLoading: false, error: null });
     } catch (error) {
       console.error('Auth check failed:', error);
       localStorage.removeItem('accessToken');
@@ -124,6 +131,11 @@ export const useAuthStore = create((set, get) => ({
       localStorage.setItem('accessToken', accessToken);
       localStorage.setItem('refreshToken', refreshToken);
       
+      // Store organizationId for theme management
+      if (user?.organizationId || user?.organization_id) {
+        localStorage.setItem('organizationId', user.organizationId || user.organization_id);
+      }
+      
       set({ user, isLoading: false, error: null });
       return { success: true };
     } catch (error) {
@@ -145,6 +157,11 @@ export const useAuthStore = create((set, get) => ({
       localStorage.setItem('accessToken', accessToken);
       localStorage.setItem('refreshToken', refreshToken);
       
+      // Store organizationId for theme management
+      if (user?.organizationId || user?.organization_id) {
+        localStorage.setItem('organizationId', user.organizationId || user.organization_id);
+      }
+      
       set({ user, isLoading: false, error: null });
       return { success: true };
     } catch (error) {
@@ -163,6 +180,14 @@ export const useAuthStore = create((set, get) => ({
     } finally {
       localStorage.removeItem('accessToken');
       localStorage.removeItem('refreshToken');
+      localStorage.removeItem('organizationId');
+      // Clear all org-specific themes
+      const keys = Object.keys(localStorage);
+      keys.forEach(key => {
+        if (key.startsWith('orgTheme_')) {
+          localStorage.removeItem(key);
+        }
+      });
       set({ user: null, isLoading: false, error: null });
     }
   },

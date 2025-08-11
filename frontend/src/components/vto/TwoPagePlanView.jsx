@@ -112,12 +112,12 @@ const TwoPagePlanView = ({ hideIssuesAndPriorities = false }) => {
   const fetchOrganizationTheme = async () => {
     try {
       // First check localStorage
-      const savedTheme = localStorage.getItem('orgTheme');
+      const orgId = user?.organizationId || user?.organization_id;
+      const savedTheme = getOrgTheme(orgId);
       console.log('Saved theme from localStorage:', savedTheme);
       if (savedTheme) {
-        const parsedTheme = JSON.parse(savedTheme);
-        console.log('Using saved theme:', parsedTheme);
-        setThemeColors(parsedTheme);
+        console.log('Using saved theme:', savedTheme);
+        setThemeColors(savedTheme);
         return;
       }
       
@@ -135,7 +135,7 @@ const TwoPagePlanView = ({ hideIssuesAndPriorities = false }) => {
         };
         console.log('Theme colors extracted:', theme);
         setThemeColors(theme);
-        localStorage.setItem('orgTheme', JSON.stringify(theme));
+        saveOrgTheme(orgId, theme);
       }
     } catch (error) {
       console.error('Failed to fetch organization theme:', error);

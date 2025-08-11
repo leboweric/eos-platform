@@ -133,10 +133,10 @@ const TodosPage = () => {
   const fetchOrganizationTheme = async () => {
     try {
       // First check localStorage
-      const savedTheme = localStorage.getItem('orgTheme');
+      const orgId = user?.organizationId || user?.organization_id;
+      const savedTheme = getOrgTheme(orgId);
       if (savedTheme) {
-        const parsedTheme = JSON.parse(savedTheme);
-        setThemeColors(parsedTheme);
+        setThemeColors(savedTheme);
         return;
       }
       
@@ -150,7 +150,7 @@ const TodosPage = () => {
           accent: orgData.theme_accent_color || '#60A5FA'
         };
         setThemeColors(theme);
-        localStorage.setItem('orgTheme', JSON.stringify(theme));
+        saveOrgTheme(orgId, theme);
       }
     } catch (error) {
       console.error('Failed to fetch organization theme:', error);
