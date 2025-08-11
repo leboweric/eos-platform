@@ -18,7 +18,7 @@ import {
 import { format } from 'date-fns';
 import { todosService } from '../../services/todosService';
 import { organizationService } from '../../services/organizationService';
-import { getOrgTheme, saveOrgTheme } from '../utils/themeUtils';
+import { getOrgTheme, saveOrgTheme } from '../../utils/themeUtils';
 import { useSelectedTodos } from '../../contexts/SelectedTodosContext';
 
 const TodosList = ({ 
