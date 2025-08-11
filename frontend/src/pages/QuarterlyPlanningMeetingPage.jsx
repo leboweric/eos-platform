@@ -1842,9 +1842,14 @@ const QuarterlyPlanningMeetingPage = () => {
               setEditingTodo(null);
               setSuccess('To-do saved successfully');
               
-              // Refresh todos after save
-              const response = await todosService.getTodos({ status: 'pending' });
-              setTodos(response.data || []);
+              // Refresh todos after save using the same method as fetchTodosData
+              const effectiveTeamId = teamId || user?.teamId || '00000000-0000-0000-0000-000000000000';
+              const response = await todosService.getTodos(null, null, false, effectiveTeamId);
+              // Filter to only show open todos
+              const openTodos = (response.data.todos || []).filter(
+                todo => todo.status !== 'complete' && todo.status !== 'completed' && todo.status !== 'cancelled'
+              );
+              setTodos(openTodos);
               
               return true;
             } catch (error) {
