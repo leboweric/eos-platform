@@ -274,14 +274,67 @@ const IssuesList = ({
               )}
               {isTopIssue && <span className="text-xs" title="Top voted">🔥</span>}
             </div>
-            <div onClick={(e) => e.stopPropagation()}>
-              <Checkbox
-                checked={issue.status === 'closed'}
-                onCheckedChange={(checked) => {
-                  onStatusChange(issue.id, checked ? 'closed' : 'open');
-                }}
-                className="h-4 w-4 rounded border-gray-300"
-              />
+            <div className="flex items-center gap-1">
+              {!readOnly && (
+                <div onClick={(e) => e.stopPropagation()}>
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <Button 
+                        variant="ghost" 
+                        size="sm" 
+                        className="h-4 w-4 p-0 hover:bg-gray-100"
+                      >
+                        <MoreVertical className="h-3 w-3 text-gray-500" />
+                      </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="end" className="w-48">
+                      <DropdownMenuItem 
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          onEdit(issue);
+                        }}
+                        className="cursor-pointer"
+                      >
+                        <Edit className="mr-2 h-4 w-4" />
+                        Edit
+                      </DropdownMenuItem>
+                      {onMoveToTeam && (
+                        <DropdownMenuItem 
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            onMoveToTeam(issue);
+                          }}
+                          className="cursor-pointer"
+                        >
+                          <Users className="mr-2 h-4 w-4" />
+                          Move to Team
+                        </DropdownMenuItem>
+                      )}
+                      {issue.status === 'closed' && (
+                        <DropdownMenuItem 
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            onArchive(issue.id);
+                          }}
+                          className="cursor-pointer text-red-600 focus:text-red-600"
+                        >
+                          <Archive className="mr-2 h-4 w-4" />
+                          Archive
+                        </DropdownMenuItem>
+                      )}
+                    </DropdownMenuContent>
+                  </DropdownMenu>
+                </div>
+              )}
+              <div onClick={(e) => e.stopPropagation()}>
+                <Checkbox
+                  checked={issue.status === 'closed'}
+                  onCheckedChange={(checked) => {
+                    onStatusChange(issue.id, checked ? 'closed' : 'open');
+                  }}
+                  className="h-4 w-4 rounded border-gray-300"
+                />
+              </div>
             </div>
           </div>
           
