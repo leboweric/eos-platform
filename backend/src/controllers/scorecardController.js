@@ -112,16 +112,6 @@ export const getScorecard = async (req, res) => {
         notes: score.notes
       } : parseFloat(score.value); // Also parse when sending raw value
       
-      // Debug logging
-      if (hasNotes) {
-        console.log('Score with notes:', {
-          metric_id: score.metric_id,
-          date: scoreDate,
-          value: score.value,
-          notes: score.notes,
-          scoreData
-        });
-      }
       
       // Determine if this is a monthly score based on metric type
       if (score.type === 'monthly') {
@@ -140,16 +130,6 @@ export const getScorecard = async (req, res) => {
     // Get team members for the organization
     const teamMembers = await getTeamMembers(orgId);
     
-    // Debug logging before sending response
-    console.log('Backend sending scorecard data:');
-    console.log('Sample weekly scores:', Object.keys(weeklyScores).slice(0, 1).map(key => ({
-      metricId: key,
-      scores: weeklyScores[key]
-    })));
-    console.log('Sample monthly scores:', Object.keys(monthlyScores).slice(0, 1).map(key => ({
-      metricId: key,
-      scores: monthlyScores[key]
-    })));
     
     res.json({
       success: true,

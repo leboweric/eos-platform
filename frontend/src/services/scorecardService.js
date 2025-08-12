@@ -55,23 +55,6 @@ export const scorecardService = {
     }
     
     const data = await response.json();
-    
-    // Debug logging
-    console.log('Scorecard API Response:', data);
-    if (data.data) {
-      console.log('Weekly Scores:', data.data.weeklyScores);
-      console.log('Monthly Scores:', data.data.monthlyScores);
-      
-      // Check for any scores with notes
-      Object.entries(data.data.weeklyScores || {}).forEach(([metricId, scores]) => {
-        Object.entries(scores).forEach(([date, scoreData]) => {
-          if (typeof scoreData === 'object' && scoreData !== null) {
-            console.log(`Score object found for metric ${metricId} on ${date}:`, scoreData);
-          }
-        });
-      });
-    }
-    
     return data.data || data;
   },
 

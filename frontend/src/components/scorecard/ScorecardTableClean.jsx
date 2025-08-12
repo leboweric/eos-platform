@@ -154,26 +154,8 @@ const ScorecardTableClean = ({
   const formatValue = (value, valueType) => {
     if (value === null || value === undefined || value === '') return '-';
     
-    // Additional debug for currency values showing as $NaN
-    if (valueType === 'currency' && (typeof value === 'object' || typeof value === 'string')) {
-      console.error('formatValue: Currency formatting issue', { 
-        value, 
-        valueType, 
-        typeOfValue: typeof value,
-        stringified: JSON.stringify(value)
-      });
-    }
-    
     const numValue = parseFloat(value);
-    if (isNaN(numValue)) {
-      console.error('formatValue: NaN detected', { 
-        value, 
-        valueType, 
-        typeOfValue: typeof value,
-        stringified: JSON.stringify(value)
-      });
-      return '-';
-    }
+    if (isNaN(numValue)) return '-';
     switch (valueType) {
       case 'currency':
         return new Intl.NumberFormat('en-US', {
@@ -389,19 +371,6 @@ const ScorecardTableClean = ({
                       const scoreValue = (typeof scoreData === 'object' && scoreData !== null) ? scoreData?.value : scoreData;
                       const hasNotes = (typeof scoreData === 'object' && scoreData !== null) && scoreData?.notes && scoreData.notes.length > 0;
                       
-                      // Debug logging for problematic scores
-                      if (scoreData && typeof scoreData === 'object' && scoreData !== null && scoreData.notes) {
-                        console.log('Processing score with notes:', {
-                          metricId: metric.id,
-                          metricName: metric.name,
-                          date: periodDate,
-                          rawScoreData: scoreData,
-                          extractedValue: scoreValue,
-                          extractedValueType: typeof scoreValue,
-                          hasNotes,
-                          willFormat: metric.value_type
-                        });
-                      }
                       const goalMet = scoreValue !== null && scoreValue !== undefined && isGoalMet(scoreValue, metric.goal, metric.comparison_operator);
                       const originalIndex = isRTL ? periodLabelsOriginal.length - 1 - index : index;
                       const isCurrentPeriod = originalIndex === periodLabelsOriginal.length - 1;
