@@ -570,6 +570,8 @@ const ScorecardPageClean = () => {
                 metrics={weeklyMetrics}
                 weeklyScores={weeklyScores}
                 monthlyScores={monthlyScores}
+                weeklyNotes={weeklyNotes}
+                monthlyNotes={monthlyNotes}
                 teamMembers={users}
                 orgId={user?.organizationId}
                 teamId={selectedDepartment?.id || LEADERSHIP_TEAM_ID}
@@ -617,6 +619,8 @@ const ScorecardPageClean = () => {
                 metrics={monthlyMetrics}
                 weeklyScores={weeklyScores}
                 monthlyScores={monthlyScores}
+                weeklyNotes={weeklyNotes}
+                monthlyNotes={monthlyNotes}
                 teamMembers={users}
                 orgId={user?.organizationId}
                 teamId={selectedDepartment?.id || LEADERSHIP_TEAM_ID}

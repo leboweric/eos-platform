@@ -9,7 +9,8 @@ import {
   Edit, 
   Trash2, 
   GripVertical,
-  BarChart3 
+  BarChart3,
+  MessageSquare 
 } from 'lucide-react';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Label } from '@/components/ui/label';
@@ -23,6 +24,8 @@ const GroupedScorecardView = ({
   metrics, 
   weeklyScores, 
   monthlyScores,
+  weeklyNotes,
+  monthlyNotes,
   teamMembers,
   orgId,
   teamId,
@@ -432,6 +435,7 @@ const GroupedScorecardView = ({
   const renderMetricRow = (metric, index, groupId) => {
     const isWeekly = metric.type === 'weekly';
     const scores = isWeekly ? weeklyScores[metric.id] || {} : monthlyScores[metric.id] || {};
+    const notes = isWeekly ? weeklyNotes?.[metric.id] || {} : monthlyNotes?.[metric.id] || {};
     const periodsOriginal = isWeekly ? selectedWeeks : selectedMonths;
     const periods = isRTL ? [...periodsOriginal].reverse() : periodsOriginal;
     
@@ -486,6 +490,8 @@ const GroupedScorecardView = ({
         </td>
         {periods.map((period, periodIndex) => {
           const value = scores[period.value] || '';
+          const noteValue = notes[period.value] || '';
+          const hasNotes = noteValue && noteValue.length > 0;
           const goal = parseFloat(metric.goal) || 0;
           const actual = parseFloat(value) || 0;
           const isOnTrack = isGoalMet(actual, metric.goal, metric.comparison_operator);
@@ -499,10 +505,14 @@ const GroupedScorecardView = ({
             <td key={period.value} className={`p-2 text-center w-20 ${isCurrentPeriod ? 'bg-gray-50 border-2 border-gray-300' : ''}`}>
               <button
                 onClick={() => onScoreUpdate(metric, period.value, value)}
-                className={`w-full px-2 py-1 rounded text-sm font-medium transition-colors
+                className={`w-full px-2 py-1 rounded text-sm font-medium transition-colors relative
                   ${value ? (isOnTrack ? 'bg-green-50 text-green-700 border border-green-200' : 'bg-red-50 text-red-700 border border-red-200') : (isCurrentPeriod ? 'bg-gray-100 text-gray-700 hover:bg-gray-200' : 'bg-white border border-gray-200 text-gray-600 hover:bg-gray-50')}`}
+                title={hasNotes ? `Score: ${value}\nNotes: ${noteValue}` : ''}
               >
-                {value ? formatValue(value, metric.value_type) : '-'}
+                <span>{value ? formatValue(value, metric.value_type) : '-'}</span>
+                {hasNotes && (
+                  <MessageSquare className="inline-block ml-1 h-3 w-3 opacity-60" />
+                )}
               </button>
             </td>
           );
