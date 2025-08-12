@@ -19,6 +19,13 @@ import IssueDialog from '../components/issues/IssueDialog';
 import IssuesListClean from '../components/issues/IssuesListClean';
 import ArchivedIssuesList from '../components/issues/ArchivedIssuesList';
 import { MoveIssueDialog } from '../components/issues/MoveIssueDialog';
+import TodoDialog from '../components/todos/TodoDialog';
+import { todosService } from '../services/todosService';
+import { cascadingMessagesService } from '../services/cascadingMessagesService';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
+import { Label } from '@/components/ui/label';
+import { Textarea } from '@/components/ui/textarea';
+import { Checkbox } from '@/components/ui/checkbox';
 
 // Error Boundary Component
 class IssuesErrorBoundary extends Component {
@@ -87,6 +94,14 @@ const IssuesPageClean = () => {
   const [editingIssue, setEditingIssue] = useState(null);
   const [showMoveDialog, setShowMoveDialog] = useState(false);
   const [movingIssue, setMovingIssue] = useState(null);
+  const [showTodoDialog, setShowTodoDialog] = useState(false);
+  const [todoFromIssue, setTodoFromIssue] = useState(null);
+  const [showCascadeDialog, setShowCascadeDialog] = useState(false);
+  const [cascadeFromIssue, setCascadeFromIssue] = useState(null);
+  const [cascadeMessage, setCascadeMessage] = useState('');
+  const [availableTeams, setAvailableTeams] = useState([]);
+  const [selectedTeams, setSelectedTeams] = useState([]);
+  const [cascadeToAll, setCascadeToAll] = useState(false);
 
   useEffect(() => {
     fetchIssues();
@@ -346,6 +361,78 @@ const IssuesPageClean = () => {
     }
   };
 
+  const handleCreateTodoFromIssue = (issue) => {
+    setTodoFromIssue(issue);
+    setShowTodoDialog(true);
+  };
+
+  const handleSaveTodo = async (todoData) => {
+    try {
+      const orgId = localStorage.getItem('impersonatedOrgId') || user?.organizationId || user?.organization_id;
+      const departmentId = selectedDepartment?.id;
+      
+      // Add reference to the issue in the description
+      const enhancedDescription = todoFromIssue 
+        ? `${todoData.description}\n\n[Related Issue: ${todoFromIssue.title}]`
+        : todoData.description;
+      
+      await todosService.createTodo(orgId, departmentId, {
+        ...todoData,
+        description: enhancedDescription
+      });
+      
+      setSuccess('To-Do created successfully from issue');
+      setShowTodoDialog(false);
+      setTodoFromIssue(null);
+    } catch (error) {
+      console.error('Failed to create todo:', error);
+      setError('Failed to create to-do');
+    }
+  };
+
+  const handleSendCascadingMessage = async (issue) => {
+    // Fetch available teams
+    try {
+      const orgId = localStorage.getItem('impersonatedOrgId') || user?.organizationId || user?.organization_id;
+      const teams = await organizationService.getTeams(orgId);
+      setAvailableTeams(teams.filter(t => !t.is_leadership_team));
+      setCascadeFromIssue(issue);
+      setCascadeMessage(`Issue Update: ${issue.title}\n\nStatus: ${issue.status}\nOwner: ${issue.owner_name || 'Unassigned'}\n\nDetails: ${issue.description || 'No description provided'}`);
+      setShowCascadeDialog(true);
+    } catch (error) {
+      console.error('Failed to fetch teams:', error);
+      setError('Failed to load teams for cascading message');
+    }
+  };
+
+  const handleSendCascade = async () => {
+    try {
+      const orgId = localStorage.getItem('impersonatedOrgId') || user?.organizationId || user?.organization_id;
+      const teamIds = cascadeToAll ? availableTeams.map(t => t.id) : selectedTeams;
+      
+      if (teamIds.length === 0) {
+        setError('Please select at least one team');
+        return;
+      }
+      
+      await cascadingMessagesService.createMessage(orgId, {
+        message: cascadeMessage,
+        team_ids: teamIds,
+        created_by: user?.id
+      });
+      
+      setSuccess('Cascading message sent successfully');
+      setShowCascadeDialog(false);
+      setCascadeFromIssue(null);
+      setCascadeMessage('');
+      setSelectedTeams([]);
+      setCascadeToAll(false);
+    } catch (error) {
+      console.error('Failed to send cascading message:', error);
+      setError('Failed to send cascading message');
+    }
+  };
+
   const currentIssues = activeTab === 'short_term' ? shortTermIssues : activeTab === 'long_term' ? longTermIssues : archivedIssues;
   const closedIssuesCount = (currentIssues || []).filter(issue => issue.status === 'closed').length;
 
@@ -478,6 +565,8 @@ const IssuesPageClean = () => {
                   onArchive={handleArchive}
                   onVote={handleVote}
                   onMoveToTeam={handleMoveToTeam}
+                  onCreateTodo={handleCreateTodoFromIssue}
+                  onSendCascadingMessage={handleSendCascadingMessage}
                   getStatusColor={getStatusColor}
                   getStatusIcon={getStatusIcon}
                   showVoting={false} // Will be enabled during Weekly Accountability Meetings
@@ -498,6 +587,108 @@ const IssuesPageClean = () => {
           issue={movingIssue}
           onSuccess={handleMoveSuccess}
         />
+
+        {/* Todo Dialog */}
+        <TodoDialog
+          isOpen={showTodoDialog}
+          onClose={() => {
+            setShowTodoDialog(false);
+            setTodoFromIssue(null);
+          }}
+          onSave={handleSaveTodo}
+          teamMembers={teamMembers}
+          initialData={todoFromIssue ? {
+            title: `Follow up: ${todoFromIssue.title}`,
+            description: `Related to issue: ${todoFromIssue.title}`,
+            assignee_id: todoFromIssue.owner_id || user?.id
+          } : null}
+        />
+
+        {/* Cascading Message Dialog */}
+        <Dialog open={showCascadeDialog} onOpenChange={(open) => {
+          if (!open) {
+            setShowCascadeDialog(false);
+            setCascadeFromIssue(null);
+            setCascadeMessage('');
+            setSelectedTeams([]);
+            setCascadeToAll(false);
+          }
+        }}>
+          <DialogContent className="max-w-2xl">
+            <DialogHeader>
+              <DialogTitle>Send Cascading Message</DialogTitle>
+            </DialogHeader>
+            <div className="space-y-4">
+              <div>
+                <Label>Message</Label>
+                <Textarea
+                  value={cascadeMessage}
+                  onChange={(e) => setCascadeMessage(e.target.value)}
+                  rows={6}
+                  className="mt-1"
+                  placeholder="Enter your message..."
+                />
+              </div>
+              
+              <div>
+                <Label>Select Teams</Label>
+                <div className="mt-2 space-y-2">
+                  <div className="flex items-center space-x-2">
+                    <Checkbox
+                      id="cascade-all"
+                      checked={cascadeToAll}
+                      onCheckedChange={setCascadeToAll}
+                    />
+                    <label htmlFor="cascade-all" className="text-sm font-medium">
+                      Send to all teams
+                    </label>
+                  </div>
+                  
+                  {!cascadeToAll && (
+                    <div className="space-y-2 ml-6">
+                      {availableTeams.map(team => (
+                        <div key={team.id} className="flex items-center space-x-2">
+                          <Checkbox
+                            id={`team-${team.id}`}
+                            checked={selectedTeams.includes(team.id)}
+                            onCheckedChange={(checked) => {
+                              if (checked) {
+                                setSelectedTeams([...selectedTeams, team.id]);
+                              } else {
+                                setSelectedTeams(selectedTeams.filter(id => id !== team.id));
+                              }
+                            }}
+                          />
+                          <label htmlFor={`team-${team.id}`} className="text-sm">
+                            {team.name}
+                          </label>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              </div>
+            </div>
+            <DialogFooter>
+              <Button variant="outline" onClick={() => {
+                setShowCascadeDialog(false);
+                setCascadeFromIssue(null);
+                setCascadeMessage('');
+                setSelectedTeams([]);
+                setCascadeToAll(false);
+              }}>
+                Cancel
+              </Button>
+              <Button 
+                onClick={handleSendCascade}
+                style={{ backgroundColor: themeColors.primary }}
+                className="text-white"
+              >
+                Send Message
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
 
         {/* Issue Dialog */}
         <IssueDialog

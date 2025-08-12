@@ -32,7 +32,9 @@ import {
   Users,
   MessageSquare,
   Trash2,
-  Plus
+  Plus,
+  ListTodo,
+  Send
 } from 'lucide-react';
 import { Textarea } from '@/components/ui/textarea';
 import { issuesService } from '../../services/issuesService';
@@ -45,6 +47,8 @@ const IssuesList = ({
   onArchive,
   onVote,
   onMoveToTeam,
+  onCreateTodo,
+  onSendCascadingMessage,
   getStatusColor, 
   getStatusIcon, 
   readOnly = false, 
@@ -475,6 +479,30 @@ const IssuesList = ({
                             <Edit className="mr-2 h-4 w-4" />
                             Edit
                           </DropdownMenuItem>
+                          {onCreateTodo && (
+                            <DropdownMenuItem 
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                onCreateTodo(issue);
+                              }}
+                              className="cursor-pointer"
+                            >
+                              <ListTodo className="mr-2 h-4 w-4" />
+                              Create To-Do
+                            </DropdownMenuItem>
+                          )}
+                          {onSendCascadingMessage && (
+                            <DropdownMenuItem 
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                onSendCascadingMessage(issue);
+                              }}
+                              className="cursor-pointer"
+                            >
+                              <Send className="mr-2 h-4 w-4" />
+                              Send Message
+                            </DropdownMenuItem>
+                          )}
                           {issue.timeline === 'short_term' ? (
                             <DropdownMenuItem 
                               onClick={(e) => {
