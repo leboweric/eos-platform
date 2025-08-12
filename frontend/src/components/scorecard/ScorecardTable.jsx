@@ -155,7 +155,9 @@ const ScorecardTable = ({
   const formatValue = (value, valueType) => {
     if (!value && value !== 0) return '-';
     
-    const numValue = parseFloat(value);
+    // Make absolutely sure we have a number
+    const numValue = typeof value === 'number' ? value : parseFloat(value);
+    if (isNaN(numValue)) return '-';
     switch (valueType) {
       case 'currency':
         return new Intl.NumberFormat('en-US', {

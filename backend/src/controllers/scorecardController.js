@@ -107,10 +107,12 @@ export const getScorecard = async (req, res) => {
       // Use object format only when notes actually have content
       // Empty string or null notes should just send the value
       const hasNotes = score.notes && score.notes.trim().length > 0;
+      // Convert the value to a number - PostgreSQL returns strings for DECIMAL
+      const numericValue = score.value !== null ? Number(score.value) : null;
       const scoreData = hasNotes ? {
-        value: parseFloat(score.value), // Ensure value is a number, not a Decimal object
+        value: numericValue,
         notes: score.notes
-      } : parseFloat(score.value); // Also parse when sending raw value
+      } : numericValue;
       
       
       // Determine if this is a monthly score based on metric type
