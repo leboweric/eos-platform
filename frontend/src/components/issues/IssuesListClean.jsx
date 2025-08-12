@@ -796,7 +796,7 @@ const IssuesListClean = ({
                         }}
                       >
                         <ListTodo className="mr-2 h-4 w-4" />
-                        Create To-Do
+                        Create Linked To-Do
                       </Button>
                     )}
                     {!readOnly && onSendCascadingMessage && (
