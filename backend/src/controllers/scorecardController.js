@@ -100,20 +100,15 @@ export const getScorecard = async (req, res) => {
     // Organize scores by metric and week/month
     const weeklyScores = {};
     const monthlyScores = {};
+    const weeklyNotes = {}; // SEPARATE notes storage
+    const monthlyNotes = {}; // SEPARATE notes storage
     
     scores.rows.forEach(score => {
       // Format date as YYYY-MM-DD
       const scoreDate = new Date(score.week_date).toISOString().split('T')[0];
       
-      // Use object format only when notes actually have content
-      // Empty string or null notes should just send the value
-      const hasNotes = score.notes && score.notes.trim().length > 0;
-      // Convert the value to a number - PostgreSQL returns strings for DECIMAL
+      // ALWAYS send just the number value
       const numericValue = score.value !== null ? Number(score.value) : null;
-      const scoreData = hasNotes ? {
-        value: numericValue,
-        notes: score.notes
-      } : numericValue;
       
       
       // Determine if this is a monthly score based on metric type
@@ -121,12 +116,28 @@ export const getScorecard = async (req, res) => {
         if (!monthlyScores[score.metric_id]) {
           monthlyScores[score.metric_id] = {};
         }
-        monthlyScores[score.metric_id][scoreDate] = scoreData;
+        monthlyScores[score.metric_id][scoreDate] = numericValue; // JUST THE NUMBER
+        
+        // Store notes separately if they exist
+        if (score.notes && score.notes.trim().length > 0) {
+          if (!monthlyNotes[score.metric_id]) {
+            monthlyNotes[score.metric_id] = {};
+          }
+          monthlyNotes[score.metric_id][scoreDate] = score.notes;
+        }
       } else {
         if (!weeklyScores[score.metric_id]) {
           weeklyScores[score.metric_id] = {};
         }
-        weeklyScores[score.metric_id][scoreDate] = scoreData;
+        weeklyScores[score.metric_id][scoreDate] = numericValue; // JUST THE NUMBER
+        
+        // Store notes separately if they exist
+        if (score.notes && score.notes.trim().length > 0) {
+          if (!weeklyNotes[score.metric_id]) {
+            weeklyNotes[score.metric_id] = {};
+          }
+          weeklyNotes[score.metric_id][scoreDate] = score.notes;
+        }
       }
     });
     
@@ -143,6 +154,8 @@ export const getScorecard = async (req, res) => {
         })),
         weeklyScores,
         monthlyScores,
+        weeklyNotes,  // Send notes separately
+        monthlyNotes, // Send notes separately
         teamMembers
       }
     });
