@@ -654,6 +654,10 @@ export const updateThreeYearPicture = async (req, res) => {
     const { orgId, teamId } = req.params;
     let { revenue, profit, measurables, lookLikeItems, futureDate, revenueStreams } = req.body;
     
+    console.log('updateThreeYearPicture - Received request body:', JSON.stringify(req.body, null, 2));
+    console.log('updateThreeYearPicture - lookLikeItems:', lookLikeItems);
+    console.log('updateThreeYearPicture - lookLikeItems is array:', Array.isArray(lookLikeItems));
+    
     // Parse revenue - handle formatted strings like "$550M" or "550K"
     if (revenue && typeof revenue === 'string') {
       // Remove currency symbols and spaces
@@ -758,12 +762,23 @@ export const updateThreeYearPicture = async (req, res) => {
     
     // Handle look like items (for now store as JSON in a text field)
     if (lookLikeItems && Array.isArray(lookLikeItems)) {
-      await query(
+      console.log('updateThreeYearPicture - About to update lookLikeItems:', lookLikeItems);
+      console.log('updateThreeYearPicture - pictureId:', pictureId);
+      console.log('updateThreeYearPicture - JSON.stringify(lookLikeItems):', JSON.stringify(lookLikeItems));
+      
+      const updateResult = await query(
         `UPDATE three_year_pictures 
          SET what_does_it_look_like = $1
-         WHERE id = $2`,
+         WHERE id = $2
+         RETURNING what_does_it_look_like`,
         [JSON.stringify(lookLikeItems), pictureId]
       );
+      console.log('updateThreeYearPicture - Update result:', updateResult.rows[0]);
+    } else {
+      console.log('updateThreeYearPicture - NOT updating lookLikeItems because:', {
+        hasLookLikeItems: !!lookLikeItems,
+        isArray: Array.isArray(lookLikeItems)
+      });
     }
     
     // Fetch the complete updated record including what_does_it_look_like
