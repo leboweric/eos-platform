@@ -327,6 +327,8 @@ export const updateScore = async (req, res) => {
   try {
     const { metricId, week, value, notes, scoreType = 'weekly' } = req.body;
     
+    console.log('Updating score:', { metricId, week, value, notes, scoreType });
+    
     // Convert week/month to proper date format
     const scoreDate = new Date(week).toISOString().split('T')[0];
     
@@ -340,6 +342,8 @@ export const updateScore = async (req, res) => {
     `;
     
     const result = await db.query(query, [metricId, scoreDate, value || null, notes || null]);
+    
+    console.log('Score update result:', result.rows[0]);
     
     res.json({
       success: true,
