@@ -10,7 +10,10 @@ import {
   CheckCircle,
   ArrowUpDown,
   ArrowUp,
-  ArrowDown
+  ArrowDown,
+  User,
+  FileText,
+  ArrowRight
 } from 'lucide-react';
 import {
   DropdownMenu,
@@ -18,6 +21,12 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog';
 import { format } from 'date-fns';
 import { todosService } from '../../services/todosService';
 import { organizationService } from '../../services/organizationService';
@@ -42,6 +51,7 @@ const TodosList = ({
   const [sortField, setSortField] = useState(null);
   const [sortDirection, setSortDirection] = useState('asc');
   const [sortedTodos, setSortedTodos] = useState(todos);
+  const [selectedTodo, setSelectedTodo] = useState(null);
   
   useEffect(() => {
     fetchOrganizationTheme();
@@ -236,9 +246,10 @@ const TodosList = ({
           <div
             key={todo.id}
             className={`
-              group relative bg-white rounded-lg border transition-all duration-200
+              group relative bg-white rounded-lg border transition-all duration-200 cursor-pointer
               ${todo.status === 'complete' && !todo.archived ? 'border-gray-400 shadow-sm opacity-60' : 'border-gray-200 hover:border-gray-300 hover:shadow-sm'}
             `}
+            onClick={() => setSelectedTodo(todo)}
           >
             {/* Status indicator - subtle left border */}
             {overdue ? (
@@ -250,7 +261,7 @@ const TodosList = ({
             <div className="p-4 pl-6">
               <div className="flex items-start gap-4">
                 {/* Checkbox */}
-                <div className="pt-0.5">
+                <div className="pt-0.5" onClick={(e) => e.stopPropagation()}>
                   <Checkbox
                     checked={todo.status === 'complete'}
                     onCheckedChange={(checked) => {
@@ -334,7 +345,7 @@ const TodosList = ({
                 </div>
                 
                 {/* Actions menu - visible on hover */}
-                <div className="opacity-0 group-hover:opacity-100 transition-opacity">
+                <div className="opacity-0 group-hover:opacity-100 transition-opacity" onClick={(e) => e.stopPropagation()}>
                   <DropdownMenu>
                     <DropdownMenuTrigger asChild>
                       <Button 
@@ -371,6 +382,171 @@ const TodosList = ({
         );
         })}
       </div>
+      
+      {/* Todo Detail Modal */}
+      <Dialog open={!!selectedTodo} onOpenChange={(open) => !open && setSelectedTodo(null)}>
+        <DialogContent className="max-w-2xl">
+          {selectedTodo && (
+            <>
+              <DialogHeader>
+                <DialogTitle className="text-xl font-semibold pr-8">
+                  {selectedTodo.title}
+                </DialogTitle>
+              </DialogHeader>
+              
+              <div className="space-y-6 mt-4">
+                {/* Description */}
+                {selectedTodo.description && (
+                  <div>
+                    <h4 className="text-sm font-medium text-gray-700 mb-2 flex items-center gap-2">
+                      <FileText className="h-4 w-4" />
+                      Description
+                    </h4>
+                    <p className="text-gray-600 whitespace-pre-wrap bg-gray-50 rounded-lg p-3">
+                      {selectedTodo.description}
+                    </p>
+                  </div>
+                )}
+
+                {/* Details Grid */}
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <h4 className="text-sm font-medium text-gray-700 mb-3">Details</h4>
+                    <div className="space-y-3">
+                      {/* Assignee */}
+                      {selectedTodo.assigned_to && (
+                        <div className="flex items-center gap-2 text-sm">
+                          <User className="h-4 w-4 text-gray-400" />
+                          <span className="text-gray-600">Assigned to:</span>
+                          <span className="font-medium">
+                            {selectedTodo.assigned_to.first_name} {selectedTodo.assigned_to.last_name}
+                          </span>
+                        </div>
+                      )}
+                      
+                      {/* Due Date */}
+                      {selectedTodo.due_date && (
+                        <div className="flex items-center gap-2 text-sm">
+                          <Calendar className="h-4 w-4 text-gray-400" />
+                          <span className="text-gray-600">Due date:</span>
+                          <span className={`font-medium ${
+                            isOverdue(selectedTodo) ? 'text-red-600' : 
+                            getDaysUntilDue(selectedTodo) === 0 ? 'text-orange-600' :
+                            getDaysUntilDue(selectedTodo) === 1 ? 'text-yellow-600' :
+                            'text-gray-900'
+                          }`}>
+                            {formatDueDate(selectedTodo)}
+                          </span>
+                        </div>
+                      )}
+                      
+                      {/* Status */}
+                      <div className="flex items-center gap-2 text-sm">
+                        {selectedTodo.status === 'complete' ? (
+                          <CheckCircle className="h-4 w-4 text-green-600" />
+                        ) : (
+                          <AlertCircle className="h-4 w-4 text-gray-400" />
+                        )}
+                        <span className="text-gray-600">Status:</span>
+                        <span className={`font-medium capitalize ${
+                          selectedTodo.status === 'complete' ? 'text-green-600' : 'text-gray-900'
+                        }`}>
+                          {selectedTodo.status === 'complete' ? 'Complete' : 'Incomplete'}
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                  
+                  <div>
+                    <h4 className="text-sm font-medium text-gray-700 mb-3">Additional Info</h4>
+                    <div className="space-y-3">
+                      {/* Created Date */}
+                      <div className="flex items-center gap-2 text-sm">
+                        <Calendar className="h-4 w-4 text-gray-400" />
+                        <span className="text-gray-600">Created:</span>
+                        <span className="font-medium">
+                          {format(new Date(selectedTodo.created_at), 'MMM d, yyyy')}
+                        </span>
+                      </div>
+                      
+                      {/* Overdue Status */}
+                      {isOverdue(selectedTodo) && (
+                        <div className="flex items-center gap-2 text-sm">
+                          <AlertCircle className="h-4 w-4 text-red-500" />
+                          <span className="text-red-600 font-medium">
+                            Overdue - Added to Issues List
+                          </span>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                </div>
+
+                {/* Action Buttons */}
+                <div className="pt-4 border-t space-y-3">
+                  <div className="flex flex-wrap gap-2">
+                    {/* Convert to Issue button - only if not already overdue */}
+                    {!isOverdue(selectedTodo) && onConvertToIssue && (
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => {
+                          onConvertToIssue(selectedTodo.id);
+                          setSelectedTodo(null);
+                        }}
+                      >
+                        <ArrowRight className="mr-2 h-4 w-4" />
+                        Convert to Issue
+                      </Button>
+                    )}
+                    
+                    {/* Delete button */}
+                    {onDelete && (
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => {
+                          if (window.confirm('Are you sure you want to delete this to-do?')) {
+                            onDelete(selectedTodo.id);
+                            setSelectedTodo(null);
+                          }
+                        }}
+                        className="text-red-600 hover:text-red-700 hover:bg-red-50"
+                      >
+                        <Trash2 className="mr-2 h-4 w-4" />
+                        Delete
+                      </Button>
+                    )}
+                  </div>
+                  
+                  {/* Primary actions */}
+                  <div className="flex justify-between">
+                    <Button
+                      variant="outline"
+                      onClick={() => setSelectedTodo(null)}
+                    >
+                      Close
+                    </Button>
+                    {onEdit && (
+                      <Button
+                        onClick={() => {
+                          onEdit(selectedTodo);
+                          setSelectedTodo(null);
+                        }}
+                        style={{ backgroundColor: themeColors.primary }}
+                        className="text-white hover:opacity-90"
+                      >
+                        <Edit className="mr-2 h-4 w-4" />
+                        Edit
+                      </Button>
+                    )}
+                  </div>
+                </div>
+              </div>
+            </>
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
