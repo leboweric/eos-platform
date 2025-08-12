@@ -370,7 +370,7 @@ const ScorecardTableClean = ({
                       // Handle both old format (just value) and new format (object with value and notes)
                       const scoreValue = typeof scoreData === 'object' ? scoreData?.value : scoreData;
                       const hasNotes = typeof scoreData === 'object' && scoreData?.notes && scoreData.notes.length > 0;
-                      const goalMet = scoreValue && isGoalMet(scoreValue, metric.goal, metric.comparison_operator);
+                      const goalMet = scoreValue !== null && scoreValue !== undefined && isGoalMet(scoreValue, metric.goal, metric.comparison_operator);
                       const originalIndex = isRTL ? periodLabelsOriginal.length - 1 - index : index;
                       const isCurrentPeriod = originalIndex === periodLabelsOriginal.length - 1;
                       
@@ -387,9 +387,9 @@ const ScorecardTableClean = ({
                         <td key={periodDate} className={cellClassName}>
                           {meetingMode ? (
                             <div className={'inline-block px-2 py-0.5 rounded-full text-xs font-medium relative ' + 
-                              (scoreValue ? (goalMet ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800') : 'text-gray-400')
+                              (scoreValue !== null && scoreValue !== undefined ? (goalMet ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800') : 'text-gray-400')
                             }>
-                              {scoreValue ? formatValue(scoreValue, metric.value_type) : '-'}
+                              {scoreValue !== null && scoreValue !== undefined ? formatValue(scoreValue, metric.value_type) : '-'}
                               {hasNotes && (
                                 <MessageSquare className="inline-block ml-1 h-3 w-3 opacity-70" />
                               )}
@@ -398,11 +398,11 @@ const ScorecardTableClean = ({
                             <button
                               onClick={() => onScoreEdit && onScoreEdit(metric, periodDate)}
                               className={'w-full px-0.5 py-0.5 rounded text-[10px] font-medium transition-colors relative ' +
-                                (scoreValue ? (goalMet ? 'bg-green-50 text-green-700 border border-green-200' : 'bg-red-50 text-red-700 border border-red-200') : (isCurrentPeriod ? 'bg-gray-100 text-gray-700 hover:bg-gray-200' : 'bg-white border border-gray-200 text-gray-600 hover:bg-gray-50'))
+                                (scoreValue !== null && scoreValue !== undefined ? (goalMet ? 'bg-green-50 text-green-700 border border-green-200' : 'bg-red-50 text-red-700 border border-red-200') : (isCurrentPeriod ? 'bg-gray-100 text-gray-700 hover:bg-gray-200' : 'bg-white border border-gray-200 text-gray-600 hover:bg-gray-50'))
                               }
                               title={hasNotes ? `Score: ${scoreValue}\nNotes: ${scoreData.notes}` : ''}
                             >
-                              <span>{scoreValue ? formatValue(scoreValue, metric.value_type) : '-'}</span>
+                              <span>{scoreValue !== null && scoreValue !== undefined ? formatValue(scoreValue, metric.value_type) : '-'}</span>
                               {hasNotes && (
                                 <MessageSquare className="inline-block ml-0.5 h-2.5 w-2.5 opacity-60" />
                               )}
