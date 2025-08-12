@@ -988,6 +988,8 @@ export const toggleThreeYearItemCompletion = async (req, res) => {
   const { itemIndex } = req.body;
   
   try {
+    console.log('Toggle 3-year item - orgId:', orgId, 'teamId:', teamId, 'itemIndex:', itemIndex);
+    
     // Get the current VTO - check for team-specific or organization level
     let vtoResult;
     
@@ -997,7 +999,11 @@ export const toggleThreeYearItemCompletion = async (req, res) => {
       [teamId, orgId]
     );
     
+    console.log('Team query result:', teamResult.rows);
+    
     const isLeadershipTeam = teamResult.rows.length > 0 && teamResult.rows[0].is_leadership_team;
+    
+    console.log('Is leadership team:', isLeadershipTeam);
     
     if (isLeadershipTeam) {
       // For leadership team, get organization-level VTO (team_id IS NULL)
@@ -1005,17 +1011,20 @@ export const toggleThreeYearItemCompletion = async (req, res) => {
         'SELECT id FROM business_blueprints WHERE organization_id = $1 AND team_id IS NULL',
         [orgId]
       );
+      console.log('Leadership team VTO query result:', vtoResult.rows);
     } else {
       // For department, get team-specific VTO
       vtoResult = await query(
         'SELECT id FROM business_blueprints WHERE organization_id = $1 AND team_id = $2',
         [orgId, teamId]
       );
+      console.log('Department VTO query result:', vtoResult.rows);
     }
     
     if (vtoResult.rows.length === 0) {
       // If no VTO found and it's a leadership team, the error message should be clearer
       const vtoType = isLeadershipTeam ? 'organization-level' : 'team-specific';
+      console.error(`No ${vtoType} VTO found for org ${orgId}, team ${teamId}`);
       return res.status(404).json({ error: `No ${vtoType} VTO found` });
     }
     
