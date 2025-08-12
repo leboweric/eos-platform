@@ -1265,11 +1265,7 @@ const WeeklyAccountabilityMeetingPage = () => {
                 </CardContent>
               </Card>
             ) : (
-              <div>
-                <div className="mb-4 text-sm text-gray-600">
-                  Debug: {scorecardMetrics.length} metrics loaded, {Object.keys(weeklyScores).length} score entries
-                </div>
-                <ScorecardTableClean 
+              <ScorecardTableClean 
                   metrics={scorecardMetrics} 
                   weeklyScores={weeklyScores}
                   monthlyScores={monthlyScores}
@@ -1290,7 +1286,6 @@ const WeeklyAccountabilityMeetingPage = () => {
                   maxPeriods={4}
                   meetingMode={true}
                 />
-              </div>
             )}
           </div>
         );
