@@ -278,11 +278,16 @@ const WeeklyAccountabilityMeetingPage = () => {
       const effectiveTeamId = teamId || user?.teamId || '00000000-0000-0000-0000-000000000000';
       const departmentId = teamId || user?.teamId;
       
+      console.log('Fetching scorecard data for:', { orgId, effectiveTeamId, departmentId });
+      
       const response = await scorecardService.getScorecard(orgId, effectiveTeamId, departmentId);
+      
+      console.log('Scorecard response:', response);
       
       if (response && response.data) {
         // Filter to only show weekly metrics
         const weeklyMetrics = (response.data.metrics || []).filter(m => m.type === 'weekly');
+        console.log('Weekly metrics found:', weeklyMetrics.length, weeklyMetrics);
         setScorecardMetrics(weeklyMetrics);
         setWeeklyScores(response.data.weeklyScores || {});
         setMonthlyScores(response.data.monthlyScores || {});
@@ -291,6 +296,7 @@ const WeeklyAccountabilityMeetingPage = () => {
       } else if (response) {
         // Filter to only show weekly metrics
         const weeklyMetrics = (response.metrics || []).filter(m => m.type === 'weekly');
+        console.log('Weekly metrics found (no data wrapper):', weeklyMetrics.length, weeklyMetrics);
         setScorecardMetrics(weeklyMetrics);
         setWeeklyScores(response.weeklyScores || {});
         setMonthlyScores(response.monthlyScores || {});
@@ -1253,27 +1259,32 @@ const WeeklyAccountabilityMeetingPage = () => {
                 </CardContent>
               </Card>
             ) : (
-              <ScorecardTableClean 
-                metrics={scorecardMetrics} 
-                weeklyScores={weeklyScores}
-                monthlyScores={monthlyScores}
-                weeklyNotes={weeklyNotes}
-                monthlyNotes={monthlyNotes}
-                type="weekly"
-                readOnly={true}
-                isRTL={isRTL}
-                showTotal={showScorecardTotal}
-                showAverage={showScorecardAverage}
-                departmentId={teamId || user?.teamId || '00000000-0000-0000-0000-000000000000'}
-                onAddIssue={handleAddIssueFromMetric}
-                onScoreEdit={null}
-                onChartOpen={(metric) => setChartModal({ isOpen: true, metric: metric, metricId: metric.id })}
-                onMetricUpdate={null}
-                onMetricDelete={null}
-                noWrapper={true}
-                maxPeriods={4}
-                meetingMode={true}
-              />
+              <div>
+                <div className="mb-4 text-sm text-gray-600">
+                  Debug: {scorecardMetrics.length} metrics loaded, {Object.keys(weeklyScores).length} score entries
+                </div>
+                <ScorecardTableClean 
+                  metrics={scorecardMetrics} 
+                  weeklyScores={weeklyScores}
+                  monthlyScores={monthlyScores}
+                  weeklyNotes={weeklyNotes}
+                  monthlyNotes={monthlyNotes}
+                  type="weekly"
+                  readOnly={true}
+                  isRTL={isRTL}
+                  showTotal={showScorecardTotal}
+                  showAverage={showScorecardAverage}
+                  departmentId={teamId || user?.teamId || '00000000-0000-0000-0000-000000000000'}
+                  onAddIssue={handleAddIssueFromMetric}
+                  onScoreEdit={null}
+                  onChartOpen={(metric) => setChartModal({ isOpen: true, metric: metric, metricId: metric.id })}
+                  onMetricUpdate={null}
+                  onMetricDelete={null}
+                  noWrapper={true}
+                  maxPeriods={4}
+                  meetingMode={true}
+                />
+              </div>
             )}
           </div>
         );
