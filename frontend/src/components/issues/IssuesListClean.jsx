@@ -374,7 +374,7 @@ const IssuesListClean = ({
           {/* Bottom info - very compact */}
           <div className="flex items-center justify-between text-xs">
             <span className="text-gray-500 truncate max-w-[120px]">
-              {issue.owner?.name || 'Unassigned'}
+              {issue.owner_name || 'Unassigned'}
             </span>
           </div>
         </div>
