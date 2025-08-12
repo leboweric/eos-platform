@@ -35,7 +35,10 @@ import {
   Trash2,
   Plus,
   ListTodo,
-  Send
+  Send,
+  ArrowUpDown,
+  ArrowUp,
+  ArrowDown
 } from 'lucide-react';
 import { Textarea } from '@/components/ui/textarea';
 import { issuesService } from '../../services/issuesService';
@@ -68,6 +71,38 @@ const IssuesListClean = ({
     secondary: '#1E40AF',
     accent: '#60A5FA'
   });
+  const [sortField, setSortField] = useState(null);
+  const [sortDirection, setSortDirection] = useState('asc');
+  const [sortedIssues, setSortedIssues] = useState(issues);
+
+  // Sort issues whenever issues prop or sort settings change
+  useEffect(() => {
+    const sorted = [...(issues || [])].sort((a, b) => {
+      if (!sortField) return 0;
+      
+      let aValue, bValue;
+      
+      if (sortField === 'owner') {
+        aValue = (a.owner_name || 'zzz').toLowerCase();
+        bValue = (b.owner_name || 'zzz').toLowerCase();
+      } else if (sortField === 'created') {
+        aValue = a.created_at || '9999-12-31';
+        bValue = b.created_at || '9999-12-31';
+      } else if (sortField === 'title') {
+        aValue = a.title.toLowerCase();
+        bValue = b.title.toLowerCase();
+      } else if (sortField === 'status') {
+        aValue = a.status || 'zzz';
+        bValue = b.status || 'zzz';
+      }
+      
+      if (aValue < bValue) return sortDirection === 'asc' ? -1 : 1;
+      if (aValue > bValue) return sortDirection === 'asc' ? 1 : -1;
+      return 0;
+    });
+    
+    setSortedIssues(sorted);
+  }, [issues, sortField, sortDirection]);
 
   // Fetch updates when an issue is selected
   useEffect(() => {
@@ -231,6 +266,26 @@ const IssuesListClean = ({
     });
   };
 
+  const handleSort = (field) => {
+    if (sortField === field) {
+      // Toggle direction if same field
+      setSortDirection(sortDirection === 'asc' ? 'desc' : 'asc');
+    } else {
+      // New field, default to ascending
+      setSortField(field);
+      setSortDirection('asc');
+    }
+  };
+  
+  const getSortIcon = (field) => {
+    if (sortField !== field) {
+      return <ArrowUpDown className="h-3 w-3 opacity-50" />;
+    }
+    return sortDirection === 'asc' 
+      ? <ArrowUp className="h-3 w-3" />
+      : <ArrowDown className="h-3 w-3" />;
+  };
+
   // Compact card component for grid view
   const CompactIssueCard = ({ issue, index }) => {
     const hasVotes = (issue.vote_count || 0) > 0;
@@ -329,16 +384,68 @@ const IssuesListClean = ({
 
   return (
     <>
+      {/* Sorting header */}
+      <div className="mb-4 p-2 bg-gray-50 rounded-lg border border-gray-200">
+        <div className="flex items-center gap-1">
+          <span className="text-xs font-medium text-gray-600 mr-2">Sort by:</span>
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => handleSort('title')}
+            className={`h-7 px-3 py-1 text-xs font-medium hover:bg-gray-200 ${sortField === 'title' ? 'bg-gray-200 text-gray-900' : 'text-gray-600'}`}
+          >
+            Title {getSortIcon('title')}
+          </Button>
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => handleSort('owner')}
+            className={`h-7 px-3 py-1 text-xs font-medium hover:bg-gray-200 ${sortField === 'owner' ? 'bg-gray-200 text-gray-900' : 'text-gray-600'}`}
+          >
+            Owner {getSortIcon('owner')}
+          </Button>
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => handleSort('created')}
+            className={`h-7 px-3 py-1 text-xs font-medium hover:bg-gray-200 ${sortField === 'created' ? 'bg-gray-200 text-gray-900' : 'text-gray-600'}`}
+          >
+            Created {getSortIcon('created')}
+          </Button>
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => handleSort('status')}
+            className={`h-7 px-3 py-1 text-xs font-medium hover:bg-gray-200 ${sortField === 'status' ? 'bg-gray-200 text-gray-900' : 'text-gray-600'}`}
+          >
+            Status {getSortIcon('status')}
+          </Button>
+          {sortField && (
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => {
+                setSortField(null);
+                setSortDirection('asc');
+              }}
+              className="h-7 px-3 py-1 ml-2 text-xs font-medium text-red-600 hover:bg-red-50"
+            >
+              ✕ Clear
+            </Button>
+          )}
+        </div>
+      </div>
+      
       {/* Render compact grid or regular list based on prop */}
       {compactGrid ? (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3">
-          {(issues || []).map((issue, index) => (
+          {sortedIssues.map((issue, index) => (
             <CompactIssueCard key={issue.id} issue={issue} index={index} />
           ))}
         </div>
       ) : (
         <div className="space-y-3">
-          {(issues || []).map((issue, index) => {
+          {sortedIssues.map((issue, index) => {
           const hasVotes = (issue.vote_count || 0) > 0;
           const isTopIssue = index === 0 && hasVotes && showVoting;
           
