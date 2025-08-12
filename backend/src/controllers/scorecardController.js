@@ -41,6 +41,7 @@ async function getTeamMembers(orgId) {
 export const getScorecard = async (req, res) => {
   try {
     const { orgId, teamId } = req.params;
+    console.log('Scorecard API Version: 2024-08-12-FIXED'); // Version check
     const userId = req.user.id;
     
     // Get user's team context
