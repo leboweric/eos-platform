@@ -1265,27 +1265,32 @@ const WeeklyAccountabilityMeetingPage = () => {
                 </CardContent>
               </Card>
             ) : (
-              <ScorecardTableClean 
-                metrics={scorecardMetrics} 
-                weeklyScores={weeklyScores}
-                monthlyScores={monthlyScores}
-                weeklyNotes={weeklyNotes}
-                monthlyNotes={monthlyNotes}
-                type="weekly"
-                readOnly={true}
-                isRTL={isRTL}
-                showTotal={showScorecardTotal}
-                showAverage={showScorecardAverage}
-                departmentId={teamId || user?.teamId || '00000000-0000-0000-0000-000000000000'}
-                onAddIssue={handleAddIssueFromMetric}
-                onScoreEdit={null}
-                onChartOpen={(metric) => setChartModal({ isOpen: true, metric: metric, metricId: metric.id })}
-                onMetricUpdate={null}
-                onMetricDelete={null}
-                noWrapper={true}
-                maxPeriods={4}
-                meetingMode={true}
-              />
+              <div>
+                <div className="mb-4 text-sm text-gray-600">
+                  Debug: {scorecardMetrics.length} metrics loaded, {Object.keys(weeklyScores).length} score entries
+                </div>
+                <ScorecardTableClean 
+                  metrics={scorecardMetrics} 
+                  weeklyScores={weeklyScores}
+                  monthlyScores={monthlyScores}
+                  weeklyNotes={weeklyNotes}
+                  monthlyNotes={monthlyNotes}
+                  type="weekly"
+                  readOnly={true}
+                  isRTL={isRTL}
+                  showTotal={showScorecardTotal}
+                  showAverage={showScorecardAverage}
+                  departmentId={teamId || user?.teamId || '00000000-0000-0000-0000-000000000000'}
+                  onAddIssue={handleAddIssueFromMetric}
+                  onScoreEdit={null}
+                  onChartOpen={(metric) => setChartModal({ isOpen: true, metric: metric, metricId: metric.id })}
+                  onMetricUpdate={null}
+                  onMetricDelete={null}
+                  noWrapper={true}
+                  maxPeriods={4}
+                  meetingMode={true}
+                />
+              </div>
             )}
           </div>
         );
