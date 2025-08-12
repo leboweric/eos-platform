@@ -86,7 +86,7 @@ export const getScorecard = async (req, res) => {
     
     // Get all scores for these metrics
     const scoresQuery = `
-      SELECT ss.metric_id, ss.week_date, ss.value, sm.type
+      SELECT ss.metric_id, ss.week_date, ss.value, ss.notes, sm.type
       FROM scorecard_scores ss
       JOIN scorecard_metrics sm ON ss.metric_id = sm.id
       WHERE ss.metric_id IN (

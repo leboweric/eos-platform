@@ -6,7 +6,8 @@ import {
   BarChart3,
   GripVertical,
   Trash2,
-  AlertCircle
+  AlertCircle,
+  MessageSquare
 } from 'lucide-react';
 import { useAuthStore } from '../../stores/authStore';
 import { organizationService } from '../../services/organizationService';
@@ -267,14 +268,20 @@ const ScorecardTable = ({
                   }
                   
                   return thirteenWeekDates
-                    .map(date => scores[metric.id]?.[date])
+                    .map(date => {
+                      const scoreData = scores[metric.id]?.[date];
+                      return typeof scoreData === 'object' ? scoreData?.value : scoreData;
+                    })
                     .filter(score => score !== undefined && score !== null && score !== '');
                 };
                 
                 const averageScores = type === 'weekly' ? getLast13WeeksScores() : 
                   // For monthly, use visible periods for average
                   periodDates
-                    .map(periodDate => scores[metric.id]?.[periodDate])
+                    .map(periodDate => {
+                      const scoreData = scores[metric.id]?.[periodDate];
+                      return typeof scoreData === 'object' ? scoreData?.value : scoreData;
+                    })
                     .filter(score => score !== undefined && score !== null && score !== '');
                 
                 const average = averageScores.length > 0 
@@ -283,7 +290,10 @@ const ScorecardTable = ({
                 
                 // For total, still use only visible periods
                 const visibleScores = periodDates
-                  .map(periodDate => scores[metric.id]?.[periodDate])
+                  .map(periodDate => {
+                    const scoreData = scores[metric.id]?.[periodDate];
+                    return typeof scoreData === 'object' ? scoreData?.value : scoreData;
+                  })
                   .filter(score => score !== undefined && score !== null && score !== '');
                 const total = visibleScores.length > 0
                   ? visibleScores.reduce((sum, score) => sum + parseFloat(score), 0)
@@ -347,8 +357,11 @@ const ScorecardTable = ({
                     
                     {/* Period columns */}
                     {periodDates.map((periodDate, index) => {
-                      const score = scores[metric.id]?.[periodDate];
-                      const goalMet = score && isGoalMet(score, metric.goal, metric.comparison_operator);
+                      const scoreData = scores[metric.id]?.[periodDate];
+                      // Handle both old format (just value) and new format (object with value and notes)
+                      const scoreValue = typeof scoreData === 'object' ? scoreData?.value : scoreData;
+                      const hasNotes = typeof scoreData === 'object' && scoreData?.notes && scoreData.notes.length > 0;
+                      const goalMet = scoreValue !== null && scoreValue !== undefined && isGoalMet(scoreValue, metric.goal, metric.comparison_operator);
                       const originalIndex = isRTL ? periodLabelsOriginal.length - 1 - index : index;
                       const isCurrentPeriod = originalIndex === periodLabelsOriginal.length - 1;
                       
@@ -364,19 +377,26 @@ const ScorecardTable = ({
                       return (
                         <td key={periodDate} className={cellClassName}>
                           {meetingMode ? (
-                            <div className={'inline-block px-2 py-0.5 rounded-full text-xs font-medium ' + 
-                              (score ? (goalMet ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800') : 'text-gray-400')
+                            <div className={'inline-block px-2 py-0.5 rounded-full text-xs font-medium relative ' + 
+                              (scoreValue !== null && scoreValue !== undefined ? (goalMet ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800') : 'text-gray-400')
                             }>
-                              {score ? formatValue(score, metric.value_type) : '-'}
+                              {scoreValue !== null && scoreValue !== undefined ? formatValue(scoreValue, metric.value_type) : '-'}
+                              {hasNotes && (
+                                <MessageSquare className="inline-block ml-1 h-3 w-3 opacity-70" />
+                              )}
                             </div>
                           ) : (
                             <button
                               onClick={() => onScoreEdit && onScoreEdit(metric, periodDate)}
-                              className={'w-full px-0.5 py-0.5 rounded text-[10px] font-medium transition-colors ' +
-                                (score ? (goalMet ? 'bg-green-50 text-green-700 border border-green-200' : 'bg-red-50 text-red-700 border border-red-200') : (isCurrentPeriod ? 'bg-gray-100 text-gray-700 hover:bg-gray-200' : 'bg-white border border-gray-200 text-gray-600 hover:bg-gray-50'))
+                              className={'w-full px-0.5 py-0.5 rounded text-[10px] font-medium transition-colors relative ' +
+                                (scoreValue !== null && scoreValue !== undefined ? (goalMet ? 'bg-green-50 text-green-700 border border-green-200' : 'bg-red-50 text-red-700 border border-red-200') : (isCurrentPeriod ? 'bg-gray-100 text-gray-700 hover:bg-gray-200' : 'bg-white border border-gray-200 text-gray-600 hover:bg-gray-50'))
                               }
+                              title={hasNotes ? `Score: ${scoreValue}\nNotes: ${scoreData.notes}` : ''}
                             >
-                              {score ? formatValue(score, metric.value_type) : '-'}
+                              <span>{scoreValue !== null && scoreValue !== undefined ? formatValue(scoreValue, metric.value_type) : '-'}</span>
+                              {hasNotes && (
+                                <MessageSquare className="inline-block ml-0.5 h-2.5 w-2.5 opacity-60" />
+                              )}
                             </button>
                           )}
                         </td>
@@ -386,7 +406,10 @@ const ScorecardTable = ({
                     {showTotal && (
                       <td className={'text-center font-medium ' + (meetingMode ? 'px-2 py-2 bg-gray-50' : 'px-1 text-[10px] border-l border-gray-200')}>
                         {(() => {
-                          const totalValue = Object.values(scores[metric.id] || {}).reduce((sum, val) => sum + (parseFloat(val) || 0), 0);
+                          const totalValue = Object.values(scores[metric.id] || {}).reduce((sum, scoreData) => {
+                            const val = typeof scoreData === 'object' ? scoreData?.value : scoreData;
+                            return sum + (parseFloat(val) || 0);
+                          }, 0);
                           const formattedTotal = totalValue !== 0 ? formatValue(totalValue, metric.value_type) : '-';
                           
                           return meetingMode ? (
