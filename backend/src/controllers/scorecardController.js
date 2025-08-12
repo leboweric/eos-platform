@@ -104,11 +104,11 @@ export const getScorecard = async (req, res) => {
       // Format date as YYYY-MM-DD
       const scoreDate = new Date(score.week_date).toISOString().split('T')[0];
       
-      // Only use object format if there are notes, otherwise just the value
-      const scoreData = score.notes ? {
+      // Always use object format now that notes column exists
+      const scoreData = {
         value: score.value,
-        notes: score.notes
-      } : score.value;
+        notes: score.notes || null
+      };
       
       // Determine if this is a monthly score based on metric type
       if (score.type === 'monthly') {
@@ -327,8 +327,6 @@ export const updateScore = async (req, res) => {
   try {
     const { metricId, week, value, notes, scoreType = 'weekly' } = req.body;
     
-    console.log('Updating score:', { metricId, week, value, notes, scoreType });
-    
     // Convert week/month to proper date format
     const scoreDate = new Date(week).toISOString().split('T')[0];
     
@@ -342,8 +340,6 @@ export const updateScore = async (req, res) => {
     `;
     
     const result = await db.query(query, [metricId, scoreDate, value || null, notes || null]);
-    
-    console.log('Score update result:', result.rows[0]);
     
     res.json({
       success: true,

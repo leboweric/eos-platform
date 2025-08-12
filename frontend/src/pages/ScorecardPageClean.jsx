@@ -125,15 +125,11 @@ const ScorecardPageClean = () => {
       const response = await scorecardService.getScorecard(orgId, teamId, departmentId);
       
       if (response && response.data) {
-        console.log('Scorecard response:', response.data);
-        console.log('Weekly scores:', response.data.weeklyScores);
         setMetrics(response.data.metrics || []);
         setWeeklyScores(response.data.weeklyScores || {});
         setMonthlyScores(response.data.monthlyScores || {});
         setUsers(response.data.teamMembers || []);
       } else if (response) {
-        console.log('Scorecard response (direct):', response);
-        console.log('Weekly scores (direct):', response.weeklyScores);
         setMetrics(response.metrics || []);
         setWeeklyScores(response.weeklyScores || {});
         setMonthlyScores(response.monthlyScores || {});
@@ -321,17 +317,12 @@ const ScorecardPageClean = () => {
     const scores = scoreType === 'monthly' ? monthlyScores : weeklyScores;
     const scoreData = scores[metric.id]?.[weekDate];
     
-    console.log('Opening score edit for:', metric.name, weekDate);
-    console.log('Score data from state:', scoreData);
-    
     const currentValue = scoreData?.value !== undefined 
       ? Math.round(parseFloat(scoreData.value)) 
       : scoreData !== undefined 
       ? Math.round(parseFloat(scoreData))
       : '';
     const currentNotes = scoreData?.notes || '';
-    
-    console.log('Current notes:', currentNotes);
     
     setScoreDialogData({
       metricId: metric.id,
@@ -357,13 +348,6 @@ const ScorecardPageClean = () => {
       if (!orgId || !teamId) {
         return;
       }
-      
-      console.log('Saving score with notes:', {
-        value: scoreInputValue,
-        notes: scoreNotesValue,
-        metricId: scoreDialogData.metricId,
-        weekDate: scoreDialogData.weekDate
-      });
       
       await scorecardService.updateScore(
         orgId, 

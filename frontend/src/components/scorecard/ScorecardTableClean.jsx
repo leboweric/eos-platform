@@ -369,7 +369,7 @@ const ScorecardTableClean = ({
                       const scoreData = scores[metric.id]?.[periodDate];
                       // Handle both old format (just value) and new format (object with value and notes)
                       const scoreValue = typeof scoreData === 'object' ? scoreData?.value : scoreData;
-                      const hasNotes = typeof scoreData === 'object' && scoreData?.notes;
+                      const hasNotes = typeof scoreData === 'object' && scoreData?.notes && scoreData.notes.length > 0;
                       const goalMet = scoreValue && isGoalMet(scoreValue, metric.goal, metric.comparison_operator);
                       const originalIndex = isRTL ? periodLabelsOriginal.length - 1 - index : index;
                       const isCurrentPeriod = originalIndex === periodLabelsOriginal.length - 1;
