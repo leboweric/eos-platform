@@ -104,17 +104,23 @@ export const getScorecard = async (req, res) => {
       // Format date as YYYY-MM-DD
       const scoreDate = new Date(score.week_date).toISOString().split('T')[0];
       
+      // Create score object with value and notes
+      const scoreData = {
+        value: score.value,
+        notes: score.notes
+      };
+      
       // Determine if this is a monthly score based on metric type
       if (score.type === 'monthly') {
         if (!monthlyScores[score.metric_id]) {
           monthlyScores[score.metric_id] = {};
         }
-        monthlyScores[score.metric_id][scoreDate] = score.value;
+        monthlyScores[score.metric_id][scoreDate] = scoreData;
       } else {
         if (!weeklyScores[score.metric_id]) {
           weeklyScores[score.metric_id] = {};
         }
-        weeklyScores[score.metric_id][scoreDate] = score.value;
+        weeklyScores[score.metric_id][scoreDate] = scoreData;
       }
     });
     
@@ -319,21 +325,21 @@ export const deleteMetric = async (req, res) => {
 // Update a weekly or monthly score
 export const updateScore = async (req, res) => {
   try {
-    const { metricId, week, value, scoreType = 'weekly' } = req.body;
+    const { metricId, week, value, notes, scoreType = 'weekly' } = req.body;
     
     // Convert week/month to proper date format
     const scoreDate = new Date(week).toISOString().split('T')[0];
     
-    // Upsert the score
+    // Upsert the score with notes
     const query = `
-      INSERT INTO scorecard_scores (metric_id, week_date, value)
-      VALUES ($1, $2, $3)
+      INSERT INTO scorecard_scores (metric_id, week_date, value, notes)
+      VALUES ($1, $2, $3, $4)
       ON CONFLICT (metric_id, week_date)
-      DO UPDATE SET value = $3, updated_at = CURRENT_TIMESTAMP
-      RETURNING metric_id, week_date, value
+      DO UPDATE SET value = $3, notes = $4, updated_at = CURRENT_TIMESTAMP
+      RETURNING metric_id, week_date, value, notes
     `;
     
-    const result = await db.query(query, [metricId, scoreDate, value || null]);
+    const result = await db.query(query, [metricId, scoreDate, value || null, notes || null]);
     
     res.json({
       success: true,

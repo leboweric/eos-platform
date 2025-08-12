@@ -7,7 +7,10 @@ import {
   AlertCircle,
   Edit,
   Trash2,
-  CheckCircle
+  CheckCircle,
+  ArrowUpDown,
+  ArrowUp,
+  ArrowDown
 } from 'lucide-react';
 import {
   DropdownMenu,
@@ -36,6 +39,9 @@ const TodosListClean = ({
     secondary: '#1E40AF',
     accent: '#60A5FA'
   });
+  const [sortField, setSortField] = useState(null);
+  const [sortDirection, setSortDirection] = useState('asc');
+  const [sortedTodos, setSortedTodos] = useState(todos);
   
   useEffect(() => {
     fetchOrganizationTheme();
@@ -58,6 +64,32 @@ const TodosListClean = ({
       window.removeEventListener('organizationChanged', handleOrgChange);
     };
   }, []);
+  
+  useEffect(() => {
+    // Sort todos whenever todos prop or sort settings change
+    const sorted = [...todos].sort((a, b) => {
+      if (!sortField) return 0;
+      
+      let aValue, bValue;
+      
+      if (sortField === 'assignee') {
+        aValue = a.assigned_to ? `${a.assigned_to.first_name} ${a.assigned_to.last_name}`.toLowerCase() : 'zzz';
+        bValue = b.assigned_to ? `${b.assigned_to.first_name} ${b.assigned_to.last_name}`.toLowerCase() : 'zzz';
+      } else if (sortField === 'dueDate') {
+        aValue = a.due_date || '9999-12-31';
+        bValue = b.due_date || '9999-12-31';
+      } else if (sortField === 'title') {
+        aValue = a.title.toLowerCase();
+        bValue = b.title.toLowerCase();
+      }
+      
+      if (aValue < bValue) return sortDirection === 'asc' ? -1 : 1;
+      if (aValue > bValue) return sortDirection === 'asc' ? 1 : -1;
+      return 0;
+    });
+    
+    setSortedTodos(sorted);
+  }, [todos, sortField, sortDirection]);
   
   const fetchOrganizationTheme = async () => {
     try {
@@ -124,14 +156,81 @@ const TodosListClean = ({
     
     return format(parseDateAsLocal(todo.due_date), 'MMM d');
   };
+  
+  const handleSort = (field) => {
+    if (sortField === field) {
+      // Toggle direction if same field
+      setSortDirection(sortDirection === 'asc' ? 'desc' : 'asc');
+    } else {
+      // New field, default to ascending
+      setSortField(field);
+      setSortDirection('asc');
+    }
+  };
+  
+  const getSortIcon = (field) => {
+    if (sortField !== field) {
+      return <ArrowUpDown className="h-3 w-3 opacity-50" />;
+    }
+    return sortDirection === 'asc' 
+      ? <ArrowUp className="h-3 w-3" />
+      : <ArrowDown className="h-3 w-3" />;
+  };
 
   if (todos.length === 0) {
     return null;
   }
 
   return (
-    <div className="space-y-3">
-      {todos.map((todo) => {
+    <div>
+      {/* Sorting header */}
+      <div className="mb-3 flex items-center gap-2 text-xs text-gray-500">
+        <Button
+          variant="ghost"
+          size="sm"
+          onClick={() => handleSort('title')}
+          className="h-7 px-2 py-1 font-normal hover:text-gray-700"
+        >
+          Title {getSortIcon('title')}
+        </Button>
+        <span className="text-gray-300">|</span>
+        <Button
+          variant="ghost"
+          size="sm"
+          onClick={() => handleSort('assignee')}
+          className="h-7 px-2 py-1 font-normal hover:text-gray-700"
+        >
+          Assignee {getSortIcon('assignee')}
+        </Button>
+        <span className="text-gray-300">|</span>
+        <Button
+          variant="ghost"
+          size="sm"
+          onClick={() => handleSort('dueDate')}
+          className="h-7 px-2 py-1 font-normal hover:text-gray-700"
+        >
+          Due Date {getSortIcon('dueDate')}
+        </Button>
+        {sortField && (
+          <>
+            <span className="text-gray-300">|</span>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => {
+                setSortField(null);
+                setSortDirection('asc');
+              }}
+              className="h-7 px-2 py-1 font-normal text-gray-400 hover:text-gray-600"
+            >
+              Clear
+            </Button>
+          </>
+        )}
+      </div>
+      
+      <div className="space-y-3">
+        {sortedTodos.map((todo) => {
         const daysUntilDue = getDaysUntilDue(todo);
         const overdue = isOverdue(todo);
         
@@ -272,7 +371,8 @@ const TodosListClean = ({
             </div>
           </div>
         );
-      })}
+        })}
+      </div>
     </div>
   );
 };

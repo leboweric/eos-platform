@@ -48,8 +48,9 @@ const ScorecardPageClean = () => {
   const [editingMetric, setEditingMetric] = useState(null);
   const [showMetricDialog, setShowMetricDialog] = useState(false);
   const [showScoreDialog, setShowScoreDialog] = useState(false);
-  const [scoreDialogData, setScoreDialogData] = useState({ metricId: null, weekDate: '', metricName: '', currentValue: '' });
+  const [scoreDialogData, setScoreDialogData] = useState({ metricId: null, weekDate: '', metricName: '', currentValue: '', currentNotes: '' });
   const [scoreInputValue, setScoreInputValue] = useState('');
+  const [scoreNotesValue, setScoreNotesValue] = useState('');
   const [users, setUsers] = useState([]);
   const [chartModal, setChartModal] = useState({ isOpen: false, metric: null, metricId: null });
   const [groups, setGroups] = useState([]);
@@ -314,18 +315,24 @@ const ScorecardPageClean = () => {
 
   const handleScoreEdit = (metric, weekDate, scoreType = 'weekly') => {
     const scores = scoreType === 'monthly' ? monthlyScores : weeklyScores;
-    const currentValue = scores[metric.id] && scores[metric.id][weekDate] 
-      ? Math.round(parseFloat(scores[metric.id][weekDate])) 
+    const scoreData = scores[metric.id]?.[weekDate];
+    const currentValue = scoreData?.value !== undefined 
+      ? Math.round(parseFloat(scoreData.value)) 
+      : scoreData !== undefined 
+      ? Math.round(parseFloat(scoreData))
       : '';
+    const currentNotes = scoreData?.notes || '';
     
     setScoreDialogData({
       metricId: metric.id,
       weekDate: weekDate,
       metricName: metric.name,
       currentValue: currentValue,
+      currentNotes: currentNotes,
       scoreType: scoreType
     });
     setScoreInputValue(currentValue.toString());
+    setScoreNotesValue(currentNotes);
     setShowScoreDialog(true);
   };
 
@@ -347,7 +354,8 @@ const ScorecardPageClean = () => {
         scoreDialogData.metricId, 
         scoreDialogData.weekDate, 
         scoreInputValue || null,
-        scoreDialogData.scoreType || 'weekly'
+        scoreDialogData.scoreType || 'weekly',
+        scoreNotesValue || null
       );
       
       setShowScoreDialog(false);
@@ -365,6 +373,7 @@ const ScorecardPageClean = () => {
   const handleScoreDialogCancel = () => {
     setShowScoreDialog(false);
     setScoreInputValue('');
+    setScoreNotesValue('');
   };
 
   // Get week start date for a given date
@@ -807,6 +816,17 @@ const ScorecardPageClean = () => {
                   onChange={(e) => setScoreInputValue(e.target.value)}
                   placeholder="Enter score"
                   autoFocus
+                />
+              </div>
+              <div>
+                <Label htmlFor="score-notes">Notes (optional)</Label>
+                <textarea
+                  id="score-notes"
+                  className="w-full min-h-[80px] px-3 py-2 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  value={scoreNotesValue}
+                  onChange={(e) => setScoreNotesValue(e.target.value)}
+                  placeholder="Add context or comments about this score..."
+                  rows={3}
                 />
               </div>
             </div>
