@@ -4,7 +4,17 @@ import { v4 as uuidv4 } from 'uuid';
 // Helper function to get or create VTO
 const getOrCreateVTO = async (orgId, teamId) => {
   // Check if this is for a department (not leadership team)
-  const isDepartment = teamId && teamId !== '00000000-0000-0000-0000-000000000000';
+  let isDepartment = false;
+  if (teamId && teamId !== '00000000-0000-0000-0000-000000000000') {
+    // Check if it's actually a leadership team
+    const teamResult = await query(
+      'SELECT is_leadership_team FROM teams WHERE id = $1 AND organization_id = $2',
+      [teamId, orgId]
+    );
+    isDepartment = teamResult.rows.length > 0 && !teamResult.rows[0].is_leadership_team;
+  }
+  
+  console.log('getOrCreateVTO - teamId:', teamId, 'isDepartment:', isDepartment);
   
   let vtoResult;
   if (isDepartment) {
@@ -131,10 +141,15 @@ export const getVTO = async (req, res) => {
     // Get 3-year and 1-year from department VTO if department, else from org VTO
     const vtoIdForPlans = deptVto ? deptVto.id : orgVto.id;
     console.log('getVTO - Using VTO ID for plans:', vtoIdForPlans, 'from', deptVto ? 'department' : 'org');
+    console.log('getVTO - orgId:', orgId, 'teamId:', teamId, 'isDepartment:', isDepartment);
     const [threeYearPicture, oneYearPlan] = await Promise.all([
       query('SELECT * FROM three_year_pictures WHERE vto_id = $1', [vtoIdForPlans]),
       query('SELECT * FROM one_year_plans WHERE vto_id = $1', [vtoIdForPlans])
     ]);
+    console.log('getVTO - Found three_year_picture:', threeYearPicture.rows.length > 0 ? 'yes' : 'no');
+    if (threeYearPicture.rows.length > 0) {
+      console.log('getVTO - what_does_it_look_like:', threeYearPicture.rows[0].what_does_it_look_like);
+    }
 
     // Get sub-components for 3-year and 1-year plans
     let threeYearMeasurables = [];
