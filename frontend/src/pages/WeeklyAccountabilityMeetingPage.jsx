@@ -35,7 +35,7 @@ import {
   Users
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
-import ScorecardTable from '../components/scorecard/ScorecardTable';
+import ScorecardTableClean from '../components/scorecard/ScorecardTableClean';
 import PriorityCard from '../components/priorities/PriorityCardClean';
 import IssuesList from '../components/issues/IssuesList';
 import IssueDialog from '../components/issues/IssueDialog';
@@ -66,6 +66,9 @@ const WeeklyAccountabilityMeetingPage = () => {
   // Meeting data
   const [scorecardMetrics, setScorecardMetrics] = useState([]);
   const [weeklyScores, setWeeklyScores] = useState({});
+  const [weeklyNotes, setWeeklyNotes] = useState({});
+  const [monthlyScores, setMonthlyScores] = useState({});
+  const [monthlyNotes, setMonthlyNotes] = useState({});
   const [priorities, setPriorities] = useState([]);
   const [issues, setIssues] = useState([]);
   const [selectedIssueIds, setSelectedIssueIds] = useState([]);
@@ -274,11 +277,17 @@ const WeeklyAccountabilityMeetingPage = () => {
         const weeklyMetrics = (response.data.metrics || []).filter(m => m.type === 'weekly');
         setScorecardMetrics(weeklyMetrics);
         setWeeklyScores(response.data.weeklyScores || {});
+        setMonthlyScores(response.data.monthlyScores || {});
+        setWeeklyNotes(response.data.weeklyNotes || {});
+        setMonthlyNotes(response.data.monthlyNotes || {});
       } else if (response) {
         // Filter to only show weekly metrics
         const weeklyMetrics = (response.metrics || []).filter(m => m.type === 'weekly');
         setScorecardMetrics(weeklyMetrics);
         setWeeklyScores(response.weeklyScores || {});
+        setMonthlyScores(response.monthlyScores || {});
+        setWeeklyNotes(response.weeklyNotes || {});
+        setMonthlyNotes(response.monthlyNotes || {});
       }
     } catch (error) {
       console.error('Failed to fetch scorecard:', error);
@@ -1182,10 +1191,12 @@ const WeeklyAccountabilityMeetingPage = () => {
                 </CardContent>
               </Card>
             ) : (
-              <ScorecardTable 
+              <ScorecardTableClean 
                 metrics={scorecardMetrics} 
                 weeklyScores={weeklyScores}
-                monthlyScores={{}}
+                monthlyScores={monthlyScores}
+                weeklyNotes={weeklyNotes}
+                monthlyNotes={monthlyNotes}
                 type="weekly"
                 readOnly={true}
                 isRTL={isRTL}
