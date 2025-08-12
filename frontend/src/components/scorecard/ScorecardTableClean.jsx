@@ -152,6 +152,13 @@ const ScorecardTableClean = ({
   
   const scores = isWeekly ? weeklyScores : monthlyScores;
   const notes = isWeekly ? weeklyNotes : monthlyNotes;
+  
+  // Debug: Check if notes are being passed
+  console.log('ScorecardTableClean - Notes prop received:', { 
+    weeklyNotes: Object.keys(weeklyNotes || {}).length,
+    monthlyNotes: Object.keys(monthlyNotes || {}).length,
+    currentNotes: notes 
+  });
 
   // Helper functions for value formatting and goal achievement
   const formatValue = (value, valueType) => {
@@ -375,6 +382,11 @@ const ScorecardTableClean = ({
                       // Notes are stored separately
                       const noteValue = notes[metric.id]?.[periodDate];
                       const hasNotes = noteValue && noteValue.length > 0;
+                      
+                      // Debug: Check if notes are being detected
+                      if (noteValue && !hasNotes) {
+                        console.log('Note exists but hasNotes is false:', { noteValue, length: noteValue.length });
+                      }
                       
                       
                       const goalMet = scoreValue !== null && scoreValue !== undefined && isGoalMet(scoreValue, metric.goal, metric.comparison_operator);
