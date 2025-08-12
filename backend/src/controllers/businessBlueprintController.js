@@ -61,8 +61,18 @@ export const getVTO = async (req, res) => {
       });
     }
 
-    // Check if this is for a department
-    const isDepartment = teamId && teamId !== '00000000-0000-0000-0000-000000000000';
+    // Check if this is for a department (not a leadership team)
+    let isDepartment = false;
+    if (teamId && teamId !== '00000000-0000-0000-0000-000000000000') {
+      // Check if this team is a leadership team
+      const teamResult = await query(
+        'SELECT is_leadership_team FROM teams WHERE id = $1 AND organization_id = $2',
+        [teamId, orgId]
+      );
+      
+      // Only treat as department if NOT a leadership team
+      isDepartment = teamResult.rows.length > 0 && !teamResult.rows[0].is_leadership_team;
+    }
     console.log('getVTO - teamId:', teamId, 'isDepartment:', isDepartment);
     
     // Always get org-level VTO for shared components
