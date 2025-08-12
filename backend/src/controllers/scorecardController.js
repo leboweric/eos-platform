@@ -104,8 +104,10 @@ export const getScorecard = async (req, res) => {
       // Format date as YYYY-MM-DD
       const scoreDate = new Date(score.week_date).toISOString().split('T')[0];
       
-      // Only use object format if there are notes, otherwise just the value
-      const scoreData = score.notes ? {
+      // Use object format only when notes actually have content
+      // Empty string or null notes should just send the value
+      const hasNotes = score.notes && score.notes.trim().length > 0;
+      const scoreData = hasNotes ? {
         value: score.value,
         notes: score.notes
       } : score.value;
