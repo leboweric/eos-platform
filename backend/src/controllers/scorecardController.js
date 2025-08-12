@@ -140,6 +140,17 @@ export const getScorecard = async (req, res) => {
     // Get team members for the organization
     const teamMembers = await getTeamMembers(orgId);
     
+    // Debug logging before sending response
+    console.log('Backend sending scorecard data:');
+    console.log('Sample weekly scores:', Object.keys(weeklyScores).slice(0, 1).map(key => ({
+      metricId: key,
+      scores: weeklyScores[key]
+    })));
+    console.log('Sample monthly scores:', Object.keys(monthlyScores).slice(0, 1).map(key => ({
+      metricId: key,
+      scores: monthlyScores[key]
+    })));
+    
     res.json({
       success: true,
       data: {
