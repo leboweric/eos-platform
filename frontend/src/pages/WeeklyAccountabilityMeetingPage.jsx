@@ -37,7 +37,7 @@ import {
 import { useNavigate } from 'react-router-dom';
 import ScorecardTableClean from '../components/scorecard/ScorecardTableClean';
 import PriorityCard from '../components/priorities/PriorityCardClean';
-import IssuesList from '../components/issues/IssuesList';
+import IssuesListClean from '../components/issues/IssuesListClean';
 import IssueDialog from '../components/issues/IssueDialog';
 import { MoveIssueDialog } from '../components/issues/MoveIssueDialog';
 import TodosList from '../components/todos/TodosList';
@@ -1757,7 +1757,7 @@ const WeeklyAccountabilityMeetingPage = () => {
                     <p className="text-gray-500">No issues found.</p>
                   </div>
                 ) : (
-                  <IssuesList
+                  <IssuesListClean
                     issues={issues || []}
                     onEdit={handleEditIssue}
                     onStatusChange={handleStatusChange}
