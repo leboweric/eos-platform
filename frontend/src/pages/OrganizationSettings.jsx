@@ -7,8 +7,9 @@ import { Label } from '@/components/ui/label';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Slider } from '@/components/ui/slider';
-import { Building2, Save, Loader2, Upload, X, Image } from 'lucide-react';
+import { Building2, Save, Loader2, Upload, X, Image, RefreshCw, AlertTriangle } from 'lucide-react';
 import { organizationService } from '../services/organizationService';
+import { demoService } from '../services/demoService';
 import ColorThemePicker from '../components/ColorThemePicker';
 import { saveOrgTheme, getOrgTheme } from '../utils/themeUtils';
 
@@ -37,10 +38,21 @@ const OrganizationSettings = () => {
     // Get saved logo size from localStorage, default to 100%
     return parseInt(localStorage.getItem('logoSize') || '100');
   });
+  const [demoResetStatus, setDemoResetStatus] = useState(null);
+  const [resettingDemo, setResettingDemo] = useState(false);
+  const [demoResetError, setDemoResetError] = useState(null);
+  const [demoResetSuccess, setDemoResetSuccess] = useState(null);
 
   useEffect(() => {
     fetchOrganizationDetails();
   }, []);
+
+  useEffect(() => {
+    // Check demo status once we have organization data
+    if (organizationData?.id) {
+      checkDemoStatus();
+    }
+  }, [organizationData?.id]);
 
   useEffect(() => {
     // Set logo preview URL when organization data is loaded
@@ -48,6 +60,43 @@ const OrganizationSettings = () => {
       setLogoPreview(organizationService.getLogoUrl(organizationData.id));
     }
   }, [organizationData]);
+
+  const checkDemoStatus = async () => {
+    // Only check demo status if it's the demo org
+    if (organizationData?.slug === 'demo-acme-industries' || organizationData?.id === 'deeeeeee-0000-0000-0000-000000000001') {
+      try {
+        const status = await demoService.getResetStatus();
+        setDemoResetStatus(status);
+      } catch (error) {
+        console.error('Failed to fetch demo status:', error);
+      }
+    }
+  };
+
+  const handleDemoReset = async () => {
+    if (!window.confirm('This will reset the demo organization to its original state. All changes will be lost. Continue?')) {
+      return;
+    }
+
+    setDemoResetError(null);
+    setDemoResetSuccess(null);
+    setResettingDemo(true);
+
+    try {
+      const response = await demoService.resetDemo();
+      setDemoResetSuccess(response.message);
+      setDemoResetStatus({ ...demoResetStatus, canReset: false, nextResetAvailable: response.nextResetAvailable });
+      
+      // Reload page after a short delay to reflect changes
+      setTimeout(() => {
+        window.location.reload();
+      }, 2000);
+    } catch (error) {
+      setDemoResetError(error.response?.data?.message || 'Failed to reset demo');
+    } finally {
+      setResettingDemo(false);
+    }
+  };
 
   const fetchOrganizationDetails = async () => {
     try {
@@ -504,6 +553,77 @@ const OrganizationSettings = () => {
           </div>
         </CardContent>
       </Card>
+
+      {/* Demo Reset Section - Only show for demo org and admin users */}
+      {user?.role === 'admin' && (organizationData?.slug === 'demo-acme-industries' || organizationData?.id === 'deeeeeee-0000-0000-0000-000000000001') && (
+        <Card className="border-orange-200 bg-orange-50">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <AlertTriangle className="h-5 w-5 text-orange-600" />
+              Demo Organization Management
+            </CardTitle>
+            <CardDescription>
+              Reset the demo organization to its original state
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-4">
+              {demoResetError && (
+                <Alert variant="destructive">
+                  <AlertDescription>{demoResetError}</AlertDescription>
+                </Alert>
+              )}
+              
+              {demoResetSuccess && (
+                <Alert className="border-green-200 bg-green-50">
+                  <AlertDescription className="text-green-800">{demoResetSuccess}</AlertDescription>
+                </Alert>
+              )}
+
+              <div className="bg-white p-4 rounded-lg border border-orange-200">
+                <h4 className="font-medium mb-2">What happens when you reset?</h4>
+                <ul className="text-sm text-gray-600 space-y-1 list-disc list-inside">
+                  <li>All data returns to original demo state</li>
+                  <li>Custom changes are removed</li>
+                  <li>Users and passwords are reset</li>
+                  <li>Can only be reset once every 24 hours</li>
+                </ul>
+              </div>
+
+              {demoResetStatus && (
+                <div className="text-sm text-gray-600">
+                  {demoResetStatus.canReset ? (
+                    <p className="text-green-600">✓ Demo can be reset now</p>
+                  ) : (
+                    <p className="text-orange-600">
+                      Next reset available: {new Date(demoResetStatus.nextResetAvailable).toLocaleString()}
+                    </p>
+                  )}
+                </div>
+              )}
+
+              <Button
+                onClick={handleDemoReset}
+                disabled={resettingDemo || (demoResetStatus && !demoResetStatus.canReset)}
+                variant="outline"
+                className="border-orange-400 text-orange-700 hover:bg-orange-100"
+              >
+                {resettingDemo ? (
+                  <>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    Resetting Demo...
+                  </>
+                ) : (
+                  <>
+                    <RefreshCw className="mr-2 h-4 w-4" />
+                    Reset Demo Organization
+                  </>
+                )}
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+      )}
 
       {/* Color Theme Section */}
       <ColorThemePicker

@@ -211,6 +211,8 @@ export const getVTO = async (req, res) => {
         },
         oneYearPlan: {
           ...oneYearPlan.rows[0],
+          revenue: oneYearPlan.rows[0]?.revenue_target, // Map revenue_target to revenue for frontend
+          profit: oneYearPlan.rows[0]?.profit_percentage, // Map profit_percentage to profit for frontend
           goals: oneYearGoals.rows,
           measurables: oneYearMeasurables.rows,
           revenueStreams: oneYearRevenueStreams.rows
@@ -631,6 +633,8 @@ export const getDepartmentBusinessBlueprint = async (req, res) => {
         } || null,
         oneYearPlan: {
           ...oneYearPlan.rows[0],
+          revenue: oneYearPlan.rows[0]?.revenue_target, // Map revenue_target to revenue for frontend
+          profit: oneYearPlan.rows[0]?.profit_percentage, // Map profit_percentage to profit for frontend
           goals: oneYearGoals.rows,
           measurables: oneYearMeasurables.rows,
           revenueStreams: oneYearRevenueStreams.rows
