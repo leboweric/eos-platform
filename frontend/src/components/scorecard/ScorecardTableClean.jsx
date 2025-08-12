@@ -279,7 +279,7 @@ const ScorecardTableClean = ({
                   return thirteenWeekDates
                     .map(date => {
                       const scoreData = scores[metric.id]?.[date];
-                      return typeof scoreData === 'object' ? scoreData?.value : scoreData;
+                      return (typeof scoreData === 'object' && scoreData !== null) ? scoreData?.value : scoreData;
                     })
                     .filter(score => score !== undefined && score !== null && score !== '');
                 };
@@ -289,7 +289,7 @@ const ScorecardTableClean = ({
                   periodDates
                     .map(periodDate => {
                       const scoreData = scores[metric.id]?.[periodDate];
-                      return typeof scoreData === 'object' ? scoreData?.value : scoreData;
+                      return (typeof scoreData === 'object' && scoreData !== null) ? scoreData?.value : scoreData;
                     })
                     .filter(score => score !== undefined && score !== null && score !== '');
                 
@@ -301,7 +301,7 @@ const ScorecardTableClean = ({
                 const visibleScores = periodDates
                   .map(periodDate => {
                     const scoreData = scores[metric.id]?.[periodDate];
-                    return typeof scoreData === 'object' ? scoreData?.value : scoreData;
+                    return (typeof scoreData === 'object' && scoreData !== null) ? scoreData?.value : scoreData;
                   })
                   .filter(score => score !== undefined && score !== null && score !== '');
                 const total = visibleScores.length > 0
@@ -368,8 +368,8 @@ const ScorecardTableClean = ({
                     {periodDates.map((periodDate, index) => {
                       const scoreData = scores[metric.id]?.[periodDate];
                       // Handle both old format (just value) and new format (object with value and notes)
-                      const scoreValue = typeof scoreData === 'object' ? scoreData?.value : scoreData;
-                      const hasNotes = typeof scoreData === 'object' && scoreData?.notes && scoreData.notes.length > 0;
+                      const scoreValue = (typeof scoreData === 'object' && scoreData !== null) ? scoreData?.value : scoreData;
+                      const hasNotes = (typeof scoreData === 'object' && scoreData !== null) && scoreData?.notes && scoreData.notes.length > 0;
                       const goalMet = scoreValue !== null && scoreValue !== undefined && isGoalMet(scoreValue, metric.goal, metric.comparison_operator);
                       const originalIndex = isRTL ? periodLabelsOriginal.length - 1 - index : index;
                       const isCurrentPeriod = originalIndex === periodLabelsOriginal.length - 1;
@@ -416,7 +416,7 @@ const ScorecardTableClean = ({
                       <td className={'text-center font-medium ' + (meetingMode ? 'px-2 py-2 bg-gray-50' : 'px-1 text-[10px] border-l border-gray-200')}>
                         {(() => {
                           const totalValue = Object.values(scores[metric.id] || {}).reduce((sum, scoreData) => {
-                            const val = typeof scoreData === 'object' ? scoreData?.value : scoreData;
+                            const val = (typeof scoreData === 'object' && scoreData !== null) ? scoreData?.value : scoreData;
                             return sum + (parseFloat(val) || 0);
                           }, 0);
                           const formattedTotal = totalValue !== 0 ? formatValue(totalValue, metric.value_type) : '-';
