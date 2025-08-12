@@ -370,7 +370,18 @@ const ScorecardTableClean = ({
                       const scoreData = scores[metric.id]?.[periodDate];
                       // VERSION CHECK: 2024-08-12-FIXED
                       // Handle both old format (just value) and new format (object with value and notes)
-                      const scoreValue = (typeof scoreData === 'object' && scoreData !== null) ? scoreData?.value : scoreData;
+                      // Be EXTREMELY careful with the extraction
+                      let scoreValue;
+                      if (typeof scoreData === 'object' && scoreData !== null && !Array.isArray(scoreData)) {
+                        // It's an object, extract the value property
+                        scoreValue = scoreData.value;
+                      } else if (typeof scoreData === 'number' || typeof scoreData === 'string') {
+                        // It's a raw value
+                        scoreValue = scoreData;
+                      } else {
+                        // Unknown format
+                        scoreValue = null;
+                      }
                       const hasNotes = (typeof scoreData === 'object' && scoreData !== null) && scoreData?.notes && scoreData.notes.length > 0;
                       
                       // Temporary debug for production

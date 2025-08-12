@@ -361,7 +361,18 @@ const ScorecardTable = ({
                     {periodDates.map((periodDate, index) => {
                       const scoreData = scores[metric.id]?.[periodDate];
                       // Handle both old format (just value) and new format (object with value and notes)
-                      const scoreValue = (typeof scoreData === 'object' && scoreData !== null) ? scoreData?.value : scoreData;
+                      // Be EXTREMELY careful with the extraction
+                      let scoreValue;
+                      if (typeof scoreData === 'object' && scoreData !== null && !Array.isArray(scoreData)) {
+                        // It's an object, extract the value property
+                        scoreValue = scoreData.value;
+                      } else if (typeof scoreData === 'number' || typeof scoreData === 'string') {
+                        // It's a raw value
+                        scoreValue = scoreData;
+                      } else {
+                        // Unknown format
+                        scoreValue = null;
+                      }
                       const hasNotes = (typeof scoreData === 'object' && scoreData !== null) && scoreData?.notes && scoreData.notes.length > 0;
                       const goalMet = scoreValue !== null && scoreValue !== undefined && isGoalMet(scoreValue, metric.goal, metric.comparison_operator);
                       const originalIndex = isRTL ? periodLabelsOriginal.length - 1 - index : index;
