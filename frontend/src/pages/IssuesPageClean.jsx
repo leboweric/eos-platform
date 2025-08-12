@@ -22,6 +22,7 @@ import { MoveIssueDialog } from '../components/issues/MoveIssueDialog';
 import TodoDialog from '../components/todos/TodoDialog';
 import { todosService } from '../services/todosService';
 import { cascadingMessagesService } from '../services/cascadingMessagesService';
+import { teamsService } from '../services/teamsService';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
@@ -368,17 +369,15 @@ const IssuesPageClean = () => {
 
   const handleSaveTodo = async (todoData) => {
     try {
-      const orgId = localStorage.getItem('impersonatedOrgId') || user?.organizationId || user?.organization_id;
-      const departmentId = selectedDepartment?.id;
-      
       // Add reference to the issue in the description
       const enhancedDescription = todoFromIssue 
         ? `${todoData.description}\n\n[Related Issue: ${todoFromIssue.title}]`
         : todoData.description;
       
-      await todosService.createTodo(orgId, departmentId, {
+      await todosService.createTodo({
         ...todoData,
-        description: enhancedDescription
+        description: enhancedDescription,
+        department_id: selectedDepartment?.id
       });
       
       setSuccess('To-Do created successfully from issue');
@@ -393,9 +392,9 @@ const IssuesPageClean = () => {
   const handleSendCascadingMessage = async (issue) => {
     // Fetch available teams
     try {
-      const orgId = localStorage.getItem('impersonatedOrgId') || user?.organizationId || user?.organization_id;
-      const teams = await organizationService.getTeams(orgId);
-      setAvailableTeams(teams.filter(t => !t.is_leadership_team));
+      const response = await teamsService.getTeams();
+      const teams = response.data || response;
+      setAvailableTeams(Array.isArray(teams) ? teams.filter(t => !t.is_leadership_team) : []);
       setCascadeFromIssue(issue);
       setCascadeMessage(`Issue Update: ${issue.title}\n\nStatus: ${issue.status}\nOwner: ${issue.owner_name || 'Unassigned'}\n\nDetails: ${issue.description || 'No description provided'}`);
       setShowCascadeDialog(true);
@@ -590,17 +589,19 @@ const IssuesPageClean = () => {
 
         {/* Todo Dialog */}
         <TodoDialog
-          isOpen={showTodoDialog}
-          onClose={() => {
-            setShowTodoDialog(false);
-            setTodoFromIssue(null);
+          open={showTodoDialog}
+          onOpenChange={(open) => {
+            if (!open) {
+              setShowTodoDialog(false);
+              setTodoFromIssue(null);
+            }
           }}
           onSave={handleSaveTodo}
           teamMembers={teamMembers}
-          initialData={todoFromIssue ? {
+          todo={todoFromIssue ? {
             title: `Follow up: ${todoFromIssue.title}`,
             description: `Related to issue: ${todoFromIssue.title}`,
-            assignee_id: todoFromIssue.owner_id || user?.id
+            assigned_to_id: todoFromIssue.owner_id || user?.id
           } : null}
         />
 
