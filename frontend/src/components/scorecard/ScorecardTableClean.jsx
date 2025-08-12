@@ -111,13 +111,54 @@ const ScorecardTableClean = ({
     const today = new Date();
     const weeksToShow = Math.min(maxPeriods, 10); // Cap at 10 weeks max
     
-    for (let i = weeksToShow - 1; i >= 0; i--) {
-      const weekStart = new Date(today);
-      weekStart.setDate(today.getDate() - (i * 7));
-      const mondayOfWeek = getWeekStartDate(weekStart);
+    // In meeting mode, check if we have data for recent weeks
+    // If not, show the most recent weeks that have data
+    if (meetingMode && Object.keys(weeklyScores || {}).length > 0) {
+      // Get all dates from all metrics' scores
+      const allScoreDates = new Set();
+      Object.values(weeklyScores).forEach(metricScores => {
+        Object.keys(metricScores).forEach(date => allScoreDates.add(date));
+      });
       
-      labels.push(formatWeekLabel(mondayOfWeek));
-      weekDates.push(mondayOfWeek.toISOString().split('T')[0]);
+      // Convert to array and sort
+      const sortedDates = Array.from(allScoreDates).sort().reverse();
+      
+      if (sortedDates.length > 0) {
+        // Get the most recent date with data
+        const mostRecentDataDate = new Date(sortedDates[0]);
+        
+        // Generate weeks from the most recent data date
+        for (let i = weeksToShow - 1; i >= 0; i--) {
+          const weekStart = new Date(mostRecentDataDate);
+          weekStart.setDate(mostRecentDataDate.getDate() - (i * 7));
+          const mondayOfWeek = getWeekStartDate(weekStart);
+          
+          labels.push(formatWeekLabel(mondayOfWeek));
+          weekDates.push(mondayOfWeek.toISOString().split('T')[0]);
+        }
+        
+        console.log('WeeklyMeeting - Using data-based dates ending:', sortedDates[0]);
+      } else {
+        // Fallback to current date if no scores
+        for (let i = weeksToShow - 1; i >= 0; i--) {
+          const weekStart = new Date(today);
+          weekStart.setDate(today.getDate() - (i * 7));
+          const mondayOfWeek = getWeekStartDate(weekStart);
+          
+          labels.push(formatWeekLabel(mondayOfWeek));
+          weekDates.push(mondayOfWeek.toISOString().split('T')[0]);
+        }
+      }
+    } else {
+      // Normal mode - use current date
+      for (let i = weeksToShow - 1; i >= 0; i--) {
+        const weekStart = new Date(today);
+        weekStart.setDate(today.getDate() - (i * 7));
+        const mondayOfWeek = getWeekStartDate(weekStart);
+        
+        labels.push(formatWeekLabel(mondayOfWeek));
+        weekDates.push(mondayOfWeek.toISOString().split('T')[0]);
+      }
     }
     
     if (meetingMode) {
