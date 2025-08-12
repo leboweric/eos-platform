@@ -3,7 +3,6 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { Button } from '@/components/ui/button';
 import { 
   Calendar,
-  MoreVertical,
   AlertCircle,
   Edit,
   Trash2,
@@ -16,12 +15,6 @@ import {
   ArrowRight
 } from 'lucide-react';
 import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu';
-import {
   Dialog,
   DialogContent,
   DialogHeader,
@@ -30,7 +23,7 @@ import {
 import { format } from 'date-fns';
 import { todosService } from '../../services/todosService';
 import { organizationService } from '../../services/organizationService';
-import { getOrgTheme, saveOrgTheme } from '../../utils/themeUtils';
+import { getOrgTheme, saveOrgTheme, hexToRgba } from '../../utils/themeUtils';
 import { useSelectedTodos } from '../../contexts/SelectedTodosContext';
 
 const TodosList = ({ 
@@ -237,8 +230,8 @@ const TodosList = ({
         </div>
       </div>
       
-      <div className="space-y-3">
-        {sortedTodos.map((todo) => {
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3">
+        {sortedTodos.map((todo, index) => {
         const daysUntilDue = getDaysUntilDue(todo);
         const overdue = isOverdue(todo);
         
@@ -246,29 +239,50 @@ const TodosList = ({
           <div
             key={todo.id}
             className={`
-              group relative bg-white rounded-lg border transition-all duration-200 cursor-pointer
-              ${todo.status === 'complete' && !todo.archived ? 'border-gray-400 shadow-sm opacity-60' : 'border-gray-200 hover:border-gray-300 hover:shadow-sm'}
+              group relative bg-white rounded-lg border-2 transition-all duration-200 cursor-pointer h-full
+              ${todo.status === 'complete' && !todo.archived ? 'opacity-60' : ''}
             `}
+            style={{
+              borderColor: todo.status === 'complete' ? '#9CA3AF' : hexToRgba(themeColors.accent, 0.4),
+            }}
+            onMouseEnter={(e) => {
+              if (todo.status !== 'complete') {
+                e.currentTarget.style.borderColor = hexToRgba(themeColors.accent, 0.7);
+              }
+            }}
+            onMouseLeave={(e) => {
+              if (todo.status !== 'complete') {
+                e.currentTarget.style.borderColor = hexToRgba(themeColors.accent, 0.4);
+              }
+            }}
             onClick={() => setSelectedTodo(todo)}
           >
             {/* Status indicator - subtle left border */}
-            {overdue ? (
-              <div className="absolute left-0 top-0 bottom-0 w-1 bg-red-500 rounded-l-lg" />
-            ) : (
-              <div className="absolute left-0 top-0 bottom-0 w-1 rounded-l-lg" style={{ backgroundColor: themeColors.accent }} />
-            )}
+            <div 
+              className="absolute left-0 top-0 bottom-0 w-1 rounded-l-lg"
+              style={{ 
+                backgroundColor: overdue ? '#EF4444' : (todo.status === 'complete' ? '#9CA3AF' : themeColors.accent)
+              }}
+            />
             
-            <div className="p-4 pl-6">
-              <div className="flex items-start gap-4">
-                {/* Checkbox */}
-                <div className="pt-0.5" onClick={(e) => e.stopPropagation()}>
+            <div className="p-3 pl-4">
+              {/* Header with number and checkbox */}
+              <div className="flex items-start justify-between mb-2">
+                <div className="flex items-center gap-2">
+                  <span className="text-xs font-bold" style={{
+                    color: todo.status === 'complete' ? '#9CA3AF' : themeColors.primary
+                  }}>
+                    #{index + 1}
+                  </span>
+                  {overdue && <span className="text-xs" title="Overdue">🔥</span>}
+                </div>
+                <div onClick={(e) => e.stopPropagation()}>
                   <Checkbox
                     checked={todo.status === 'complete'}
                     onCheckedChange={(checked) => {
                       if (onStatusChange) {
                         onStatusChange(todo.id, checked);
                       } else if (onUpdate) {
-                        // Fallback to onUpdate if onStatusChange not provided
                         todosService.updateTodo(todo.id, { 
                           status: checked ? 'complete' : 'incomplete' 
                         }).then(() => {
@@ -276,106 +290,58 @@ const TodosList = ({
                         });
                       }
                     }}
-                    className="h-5 w-5 rounded border-gray-300 data-[state=checked]:bg-gray-900 data-[state=checked]:border-gray-900"
+                    className="h-4 w-4 rounded border-gray-300"
                   />
                 </div>
-                
-                {/* Main content */}
-                <div className="flex-1 min-w-0">
-                  {/* Title */}
-                  <h3 className={`
-                    text-base font-medium leading-tight
-                    ${todo.status === 'complete' ? 'text-gray-400 line-through' : 'text-gray-900'}
-                  `}>
-                    {todo.title}
-                  </h3>
-                  
-                  {/* Description hidden from main view - only shown in edit dialog */}
-                  
-                  {/* Metadata - clean single line */}
-                  <div className="mt-2 flex items-center gap-3 text-sm">
-                    {/* Due date */}
-                    {todo.due_date && (
-                      <span className={`
-                        flex items-center gap-1.5
-                        ${overdue ? 'text-red-600 font-medium' : 
-                          daysUntilDue === 0 ? 'text-orange-600 font-medium' :
-                          daysUntilDue === 1 ? 'text-yellow-600' :
-                          'text-gray-500'}
-                      `}>
-                        {overdue && <AlertCircle className="h-3.5 w-3.5" />}
-                        <Calendar className="h-3.5 w-3.5" />
-                        {formatDueDate(todo)}
-                      </span>
-                    )}
-                    
-                    {/* Separator */}
-                    {todo.due_date && todo.assigned_to && (
-                      <span className="text-gray-300">•</span>
-                    )}
-                    
-                    {/* Assignee */}
-                    {todo.assigned_to && (
-                      <span className="text-gray-500">
-                        {todo.assigned_to.first_name} {todo.assigned_to.last_name}
-                      </span>
-                    )}
-                    
-                    {/* Show message for overdue todos */}
-                    {overdue && (
-                      <>
-                        <span className="text-gray-300">•</span>
-                        <span className="text-red-600 font-medium text-sm">
-                          Already in Issues List
-                        </span>
-                      </>
-                    )}
-                    
-                    {/* Show done badge if completed */}
-                    {todo.status === 'complete' && (
-                      <>
-                        <span className="text-gray-300">•</span>
-                        <span className="flex items-center gap-1 text-green-600 text-sm font-medium">
-                          <CheckCircle className="h-3.5 w-3.5" />
-                          Done
-                        </span>
-                      </>
-                    )}
+              </div>
+              
+              {/* Title - truncated */}
+              <h3 className={`
+                text-sm font-medium leading-tight mb-2 line-clamp-2
+                ${todo.status === 'complete' ? 'text-gray-400 line-through' : 'text-gray-900'}
+              `}>
+                {todo.title}
+              </h3>
+              
+              {/* Bottom info - very compact */}
+              <div className="space-y-1">
+                {/* Assignee */}
+                {todo.assigned_to && (
+                  <div className="flex items-center text-xs text-gray-500">
+                    <User className="h-3 w-3 mr-1" />
+                    <span className="truncate">
+                      {todo.assigned_to.first_name} {todo.assigned_to.last_name}
+                    </span>
                   </div>
-                </div>
+                )}
                 
-                {/* Actions menu - visible on hover */}
-                <div className="opacity-0 group-hover:opacity-100 transition-opacity" onClick={(e) => e.stopPropagation()}>
-                  <DropdownMenu>
-                    <DropdownMenuTrigger asChild>
-                      <Button 
-                        variant="ghost" 
-                        size="sm" 
-                        className="h-8 w-8 p-0 hover:bg-gray-100"
-                      >
-                        <MoreVertical className="h-4 w-4 text-gray-500" />
-                      </Button>
-                    </DropdownMenuTrigger>
-                    <DropdownMenuContent align="end" className="w-48">
-                      <DropdownMenuItem 
-                        onClick={() => onEdit(todo)}
-                        className="cursor-pointer"
-                      >
-                        <Edit className="mr-2 h-4 w-4" />
-                        Edit
-                      </DropdownMenuItem>
-                      {onDelete && (
-                        <DropdownMenuItem 
-                          onClick={() => onDelete(todo.id)}
-                          className="cursor-pointer text-red-600 focus:text-red-600"
-                        >
-                          <Trash2 className="mr-2 h-4 w-4" />
-                          Delete
-                        </DropdownMenuItem>
-                      )}
-                    </DropdownMenuContent>
-                  </DropdownMenu>
-                </div>
+                {/* Due date */}
+                {todo.due_date && (
+                  <div className={`flex items-center text-xs ${
+                    overdue ? 'text-red-600 font-medium' : 
+                    getDaysUntilDue(todo) === 0 ? 'text-orange-600 font-medium' :
+                    getDaysUntilDue(todo) === 1 ? 'text-yellow-600' :
+                    'text-gray-500'
+                  }`}>
+                    <Calendar className="h-3 w-3 mr-1" />
+                    <span>{formatDueDate(todo)}</span>
+                  </div>
+                )}
+                
+                {/* Status badges */}
+                {todo.status === 'complete' && (
+                  <div className="flex items-center text-xs text-green-600 font-medium">
+                    <CheckCircle className="h-3 w-3 mr-1" />
+                    <span>Complete</span>
+                  </div>
+                )}
+                
+                {overdue && (
+                  <div className="flex items-center text-xs text-red-600 font-medium">
+                    <AlertCircle className="h-3 w-3 mr-1" />
+                    <span>In Issues</span>
+                  </div>
+                )}
               </div>
             </div>
           </div>
