@@ -67,18 +67,14 @@ const ThreeYearPictureDialog = ({ open, onOpenChange, data, onSave, organization
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    console.log('ThreeYearPictureDialog - handleSubmit called');
-    console.log('ThreeYearPictureDialog - formData:', formData);
     setSaving(true);
     setError(null);
     
     try {
       // Send the date as-is, let the backend handle timezone
-      console.log('ThreeYearPictureDialog - calling onSave with:', formData);
       await onSave(formData);
       onOpenChange(false);
     } catch (error) {
-      console.error('ThreeYearPictureDialog - Save error:', error);
       setError(error.message || 'Failed to save 3-Year Picture');
     } finally {
       setSaving(false);

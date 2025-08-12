@@ -14,8 +14,6 @@ const getOrCreateVTO = async (orgId, teamId) => {
     isDepartment = teamResult.rows.length > 0 && !teamResult.rows[0].is_leadership_team;
   }
   
-  console.log('getOrCreateVTO - teamId:', teamId, 'isDepartment:', isDepartment);
-  
   let vtoResult;
   if (isDepartment) {
     // Department-level blueprint
@@ -83,7 +81,6 @@ export const getVTO = async (req, res) => {
       // Only treat as department if NOT a leadership team
       isDepartment = teamResult.rows.length > 0 && !teamResult.rows[0].is_leadership_team;
     }
-    console.log('getVTO - teamId:', teamId, 'isDepartment:', isDepartment);
     
     // Always get org-level VTO for shared components
     let orgVtoResult = await query(
@@ -140,16 +137,10 @@ export const getVTO = async (req, res) => {
     
     // Get 3-year and 1-year from department VTO if department, else from org VTO
     const vtoIdForPlans = deptVto ? deptVto.id : orgVto.id;
-    console.log('getVTO - Using VTO ID for plans:', vtoIdForPlans, 'from', deptVto ? 'department' : 'org');
-    console.log('getVTO - orgId:', orgId, 'teamId:', teamId, 'isDepartment:', isDepartment);
     const [threeYearPicture, oneYearPlan] = await Promise.all([
       query('SELECT * FROM three_year_pictures WHERE vto_id = $1', [vtoIdForPlans]),
       query('SELECT * FROM one_year_plans WHERE vto_id = $1', [vtoIdForPlans])
     ]);
-    console.log('getVTO - Found three_year_picture:', threeYearPicture.rows.length > 0 ? 'yes' : 'no');
-    if (threeYearPicture.rows.length > 0) {
-      console.log('getVTO - what_does_it_look_like:', threeYearPicture.rows[0].what_does_it_look_like);
-    }
 
     // Get sub-components for 3-year and 1-year plans
     let threeYearMeasurables = [];
@@ -669,10 +660,6 @@ export const updateThreeYearPicture = async (req, res) => {
     const { orgId, teamId } = req.params;
     let { revenue, profit, measurables, lookLikeItems, futureDate, revenueStreams } = req.body;
     
-    console.log('updateThreeYearPicture - Received request body:', JSON.stringify(req.body, null, 2));
-    console.log('updateThreeYearPicture - lookLikeItems:', lookLikeItems);
-    console.log('updateThreeYearPicture - lookLikeItems is array:', Array.isArray(lookLikeItems));
-    
     // Parse revenue - handle formatted strings like "$550M" or "550K"
     if (revenue && typeof revenue === 'string') {
       // Remove currency symbols and spaces
@@ -777,23 +764,12 @@ export const updateThreeYearPicture = async (req, res) => {
     
     // Handle look like items (for now store as JSON in a text field)
     if (lookLikeItems && Array.isArray(lookLikeItems)) {
-      console.log('updateThreeYearPicture - About to update lookLikeItems:', lookLikeItems);
-      console.log('updateThreeYearPicture - pictureId:', pictureId);
-      console.log('updateThreeYearPicture - JSON.stringify(lookLikeItems):', JSON.stringify(lookLikeItems));
-      
-      const updateResult = await query(
+      await query(
         `UPDATE three_year_pictures 
          SET what_does_it_look_like = $1
-         WHERE id = $2
-         RETURNING what_does_it_look_like`,
+         WHERE id = $2`,
         [JSON.stringify(lookLikeItems), pictureId]
       );
-      console.log('updateThreeYearPicture - Update result:', updateResult.rows[0]);
-    } else {
-      console.log('updateThreeYearPicture - NOT updating lookLikeItems because:', {
-        hasLookLikeItems: !!lookLikeItems,
-        isArray: Array.isArray(lookLikeItems)
-      });
     }
     
     // Fetch the complete updated record including what_does_it_look_like
