@@ -104,11 +104,11 @@ export const getScorecard = async (req, res) => {
       // Format date as YYYY-MM-DD
       const scoreDate = new Date(score.week_date).toISOString().split('T')[0];
       
-      // Create score object with value and notes
-      const scoreData = {
+      // Only use object format if there are notes, otherwise just the value
+      const scoreData = score.notes ? {
         value: score.value,
         notes: score.notes
-      };
+      } : score.value;
       
       // Determine if this is a monthly score based on metric type
       if (score.type === 'monthly') {
