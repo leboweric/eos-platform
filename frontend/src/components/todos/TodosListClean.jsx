@@ -184,36 +184,34 @@ const TodosListClean = ({
   return (
     <div>
       {/* Sorting header */}
-      <div className="mb-3 flex items-center gap-2 text-xs text-gray-500">
-        <Button
-          variant="ghost"
-          size="sm"
-          onClick={() => handleSort('title')}
-          className="h-7 px-2 py-1 font-normal hover:text-gray-700"
-        >
-          Title {getSortIcon('title')}
-        </Button>
-        <span className="text-gray-300">|</span>
-        <Button
-          variant="ghost"
-          size="sm"
-          onClick={() => handleSort('assignee')}
-          className="h-7 px-2 py-1 font-normal hover:text-gray-700"
-        >
-          Assignee {getSortIcon('assignee')}
-        </Button>
-        <span className="text-gray-300">|</span>
-        <Button
-          variant="ghost"
-          size="sm"
-          onClick={() => handleSort('dueDate')}
-          className="h-7 px-2 py-1 font-normal hover:text-gray-700"
-        >
-          Due Date {getSortIcon('dueDate')}
-        </Button>
-        {sortField && (
-          <>
-            <span className="text-gray-300">|</span>
+      <div className="mb-4 p-2 bg-gray-50 rounded-lg border border-gray-200">
+        <div className="flex items-center gap-1">
+          <span className="text-xs font-medium text-gray-600 mr-2">Sort by:</span>
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => handleSort('title')}
+            className={`h-7 px-3 py-1 text-xs font-medium hover:bg-gray-200 ${sortField === 'title' ? 'bg-gray-200 text-gray-900' : 'text-gray-600'}`}
+          >
+            Title {getSortIcon('title')}
+          </Button>
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => handleSort('assignee')}
+            className={`h-7 px-3 py-1 text-xs font-medium hover:bg-gray-200 ${sortField === 'assignee' ? 'bg-gray-200 text-gray-900' : 'text-gray-600'}`}
+          >
+            Person {getSortIcon('assignee')}
+          </Button>
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => handleSort('dueDate')}
+            className={`h-7 px-3 py-1 text-xs font-medium hover:bg-gray-200 ${sortField === 'dueDate' ? 'bg-gray-200 text-gray-900' : 'text-gray-600'}`}
+          >
+            Due Date {getSortIcon('dueDate')}
+          </Button>
+          {sortField && (
             <Button
               variant="ghost"
               size="sm"
@@ -221,12 +219,12 @@ const TodosListClean = ({
                 setSortField(null);
                 setSortDirection('asc');
               }}
-              className="h-7 px-2 py-1 font-normal text-gray-400 hover:text-gray-600"
+              className="h-7 px-3 py-1 ml-2 text-xs font-medium text-red-600 hover:bg-red-50"
             >
-              Clear
+              ✕ Clear
             </Button>
-          </>
-        )}
+          )}
+        </div>
       </div>
       
       <div className="space-y-3">

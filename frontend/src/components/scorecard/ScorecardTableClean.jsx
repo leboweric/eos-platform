@@ -152,9 +152,10 @@ const ScorecardTableClean = ({
 
   // Helper functions for value formatting and goal achievement
   const formatValue = (value, valueType) => {
-    if (!value && value !== 0) return '-';
+    if (value === null || value === undefined || value === '') return '-';
     
     const numValue = parseFloat(value);
+    if (isNaN(numValue)) return '-';
     switch (valueType) {
       case 'currency':
         return new Intl.NumberFormat('en-US', {
@@ -385,8 +386,8 @@ const ScorecardTableClean = ({
                       return (
                         <td key={periodDate} className={cellClassName}>
                           {meetingMode ? (
-                            <div className={'inline-block px-2 py-0.5 rounded-full text-xs font-medium ' + 
-                              (score ? (goalMet ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800') : 'text-gray-400')
+                            <div className={'inline-block px-2 py-0.5 rounded-full text-xs font-medium relative ' + 
+                              (scoreValue ? (goalMet ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800') : 'text-gray-400')
                             }>
                               {scoreValue ? formatValue(scoreValue, metric.value_type) : '-'}
                               {hasNotes && (
