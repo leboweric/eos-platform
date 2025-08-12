@@ -120,6 +120,16 @@ const ScorecardTableClean = ({
       weekDates.push(mondayOfWeek.toISOString().split('T')[0]);
     }
     
+    if (meetingMode) {
+      console.log('WeeklyMeeting - Generated week dates:', weekDates);
+      console.log('WeeklyMeeting - Available scores for metrics:', Object.keys(weeklyScores || {}));
+      // Log sample scores for first metric if available
+      const firstMetricId = metrics?.[0]?.id;
+      if (firstMetricId && weeklyScores?.[firstMetricId]) {
+        console.log('WeeklyMeeting - Sample scores for first metric:', firstMetricId, weeklyScores[firstMetricId]);
+      }
+    }
+    
     return { labels, weekDates };
   };
 

@@ -278,11 +278,17 @@ const WeeklyAccountabilityMeetingPage = () => {
       const effectiveTeamId = teamId || user?.teamId || '00000000-0000-0000-0000-000000000000';
       const departmentId = teamId || user?.teamId;
       
-      console.log('Fetching scorecard data for:', { orgId, effectiveTeamId, departmentId });
+      console.log('WeeklyMeeting - Fetching scorecard data for:', { orgId, effectiveTeamId, departmentId });
       
       const response = await scorecardService.getScorecard(orgId, effectiveTeamId, departmentId);
       
-      console.log('Scorecard response:', response);
+      console.log('WeeklyMeeting - Scorecard response:', response);
+      console.log('WeeklyMeeting - Response structure:', {
+        hasData: !!response?.data,
+        metricsCount: response?.data?.metrics?.length || response?.metrics?.length || 0,
+        weeklyScoresKeys: Object.keys(response?.data?.weeklyScores || response?.weeklyScores || {}),
+        sampleScores: response?.data?.weeklyScores || response?.weeklyScores || {}
+      });
       
       if (response && response.data) {
         // Filter to only show weekly metrics
