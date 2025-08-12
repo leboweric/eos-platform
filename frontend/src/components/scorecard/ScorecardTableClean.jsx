@@ -368,9 +368,20 @@ const ScorecardTableClean = ({
                     {/* Period columns */}
                     {periodDates.map((periodDate, index) => {
                       const scoreData = scores[metric.id]?.[periodDate];
+                      // VERSION CHECK: 2024-08-12-FIXED
                       // Handle both old format (just value) and new format (object with value and notes)
                       const scoreValue = (typeof scoreData === 'object' && scoreData !== null) ? scoreData?.value : scoreData;
                       const hasNotes = (typeof scoreData === 'object' && scoreData !== null) && scoreData?.notes && scoreData.notes.length > 0;
+                      
+                      // Temporary debug for production
+                      if (hasNotes && window.location.hostname === 'eos-platform.netlify.app') {
+                        console.log('PRODUCTION DEBUG - Score with notes:', {
+                          scoreData,
+                          extractedValue: scoreValue,
+                          typeOfValue: typeof scoreValue,
+                          metricValueType: metric.value_type
+                        });
+                      }
                       
                       const goalMet = scoreValue !== null && scoreValue !== undefined && isGoalMet(scoreValue, metric.goal, metric.comparison_operator);
                       const originalIndex = isRTL ? periodLabelsOriginal.length - 1 - index : index;
