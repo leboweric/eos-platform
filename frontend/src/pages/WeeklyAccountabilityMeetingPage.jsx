@@ -52,7 +52,11 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/u
 import { FileText, GitBranch } from 'lucide-react';
 import { useSelectedTodos } from '../contexts/SelectedTodosContext';
 import { cascadingMessagesService } from '../services/cascadingMessagesService';
+import { teamsService } from '../services/teamsService';
 import { Checkbox } from '@/components/ui/checkbox';
+import { Label } from '@/components/ui/label';
+import { Textarea } from '@/components/ui/textarea';
+import { DialogFooter } from '@/components/ui/dialog';
 
 const WeeklyAccountabilityMeetingPage = () => {
   const { user } = useAuthStore();
@@ -87,6 +91,13 @@ const WeeklyAccountabilityMeetingPage = () => {
   const [movingIssue, setMovingIssue] = useState(null);
   const [showTodoDialog, setShowTodoDialog] = useState(false);
   const [editingTodo, setEditingTodo] = useState(null);
+  const [todoFromIssue, setTodoFromIssue] = useState(null);
+  const [showCascadeDialog, setShowCascadeDialog] = useState(false);
+  const [cascadeFromIssue, setCascadeFromIssue] = useState(null);
+  const [cascadeMessage, setCascadeMessage] = useState('');
+  const [cascadeToAll, setCascadeToAll] = useState(false);
+  const [availableTeams, setAvailableTeams] = useState([]);
+  const [selectedTeams, setSelectedTeams] = useState([]);
   const [chartModal, setChartModal] = useState({ isOpen: false, metric: null, metricId: null });
   
   // Collapsible sections state
@@ -111,9 +122,6 @@ const WeeklyAccountabilityMeetingPage = () => {
   const [elapsedTime, setElapsedTime] = useState(0);
   const [meetingRating, setMeetingRating] = useState(null);
   const [cascadingMessage, setCascadingMessage] = useState('');
-  const [availableTeams, setAvailableTeams] = useState([]);
-  const [selectedTeams, setSelectedTeams] = useState([]);
-  const [cascadeToAll, setCascadeToAll] = useState(false);
   
   // Scorecard display options
   const [showScorecardAverage, setShowScorecardAverage] = useState(false);
@@ -713,6 +721,60 @@ const WeeklyAccountabilityMeetingPage = () => {
       console.error('Failed to save todo:', error);
       setError('Failed to save to-do');
       throw error; // Re-throw so TodoDialog can handle it
+    }
+  };
+
+  // Create To-Do from Issue
+  const handleCreateTodoFromIssue = (issue) => {
+    setTodoFromIssue(issue);
+    setEditingTodo({
+      title: `Follow up: ${issue.title}`,
+      description: `Related to issue: ${issue.title}`,
+      assigned_to_id: issue.owner_id || user?.id
+    });
+    setShowTodoDialog(true);
+  };
+
+  // Send Cascading Message from Issue
+  const handleSendCascadingMessage = async (issue) => {
+    try {
+      const response = await teamsService.getTeams();
+      const teams = response.data || response;
+      setAvailableTeams(Array.isArray(teams) ? teams.filter(t => !t.is_leadership_team) : []);
+      setCascadeFromIssue(issue);
+      setCascadeMessage(`Issue Update: ${issue.title}\n\nStatus: ${issue.status}\nOwner: ${issue.owner_name || 'Unassigned'}\n\nDetails: ${issue.description || 'No description provided'}`);
+      setShowCascadeDialog(true);
+    } catch (error) {
+      console.error('Failed to fetch teams:', error);
+      setError('Failed to load teams for cascading message');
+    }
+  };
+
+  const handleSendCascade = async () => {
+    try {
+      const orgId = localStorage.getItem('impersonatedOrgId') || user?.organizationId || user?.organization_id;
+      const teamIds = cascadeToAll ? availableTeams.map(t => t.id) : selectedTeams;
+      
+      if (teamIds.length === 0) {
+        setError('Please select at least one team');
+        return;
+      }
+      
+      await cascadingMessagesService.createMessage(orgId, {
+        message: cascadeMessage,
+        team_ids: teamIds,
+        created_by: user?.id
+      });
+      
+      setSuccess('Cascading message sent successfully');
+      setShowCascadeDialog(false);
+      setCascadeFromIssue(null);
+      setCascadeMessage('');
+      setSelectedTeams([]);
+      setCascadeToAll(false);
+    } catch (error) {
+      console.error('Failed to send cascading message:', error);
+      setError('Failed to send cascading message');
     }
   };
 
@@ -1703,6 +1765,8 @@ const WeeklyAccountabilityMeetingPage = () => {
                     onArchive={handleArchive}
                     onVote={handleVote}
                     onMoveToTeam={handleMoveToTeam}
+                    onCreateTodo={handleCreateTodoFromIssue}
+                    onSendCascadingMessage={handleSendCascadingMessage}
                     getStatusColor={(status) => {
                       switch (status) {
                         case 'open':
@@ -1962,12 +2026,99 @@ const WeeklyAccountabilityMeetingPage = () => {
           if (!open) {
             setShowTodoDialog(false);
             setEditingTodo(null);
+            setTodoFromIssue(null);
           }
         }}
         todo={editingTodo}
         onSave={handleSaveTodo}
         teamMembers={teamMembers || []}
       />
+
+      {/* Cascading Message Dialog */}
+      <Dialog open={showCascadeDialog} onOpenChange={(open) => {
+        if (!open) {
+          setShowCascadeDialog(false);
+          setCascadeFromIssue(null);
+          setCascadeMessage('');
+          setSelectedTeams([]);
+          setCascadeToAll(false);
+        }
+      }}>
+        <DialogContent className="max-w-2xl">
+          <DialogHeader>
+            <DialogTitle>Send Cascading Message</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div>
+              <Label>Message</Label>
+              <Textarea
+                value={cascadeMessage}
+                onChange={(e) => setCascadeMessage(e.target.value)}
+                rows={6}
+                className="mt-1"
+                placeholder="Enter your message..."
+              />
+            </div>
+            
+            <div>
+              <Label>Select Teams</Label>
+              <div className="mt-2 space-y-2">
+                <div className="flex items-center space-x-2">
+                  <Checkbox
+                    id="cascade-all"
+                    checked={cascadeToAll}
+                    onCheckedChange={setCascadeToAll}
+                  />
+                  <label htmlFor="cascade-all" className="text-sm font-medium">
+                    Send to all teams
+                  </label>
+                </div>
+                
+                {!cascadeToAll && (
+                  <div className="space-y-2 ml-6">
+                    {availableTeams.map(team => (
+                      <div key={team.id} className="flex items-center space-x-2">
+                        <Checkbox
+                          id={`team-${team.id}`}
+                          checked={selectedTeams.includes(team.id)}
+                          onCheckedChange={(checked) => {
+                            if (checked) {
+                              setSelectedTeams([...selectedTeams, team.id]);
+                            } else {
+                              setSelectedTeams(selectedTeams.filter(id => id !== team.id));
+                            }
+                          }}
+                        />
+                        <label htmlFor={`team-${team.id}`} className="text-sm">
+                          {team.name}
+                        </label>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => {
+              setShowCascadeDialog(false);
+              setCascadeFromIssue(null);
+              setCascadeMessage('');
+              setSelectedTeams([]);
+              setCascadeToAll(false);
+            }}>
+              Cancel
+            </Button>
+            <Button 
+              onClick={handleSendCascade}
+              style={{ backgroundColor: themeColors.primary }}
+              className="text-white"
+            >
+              Send Message
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
       
       {/* Metric Trend Chart Modal */}
       <MetricTrendChart
