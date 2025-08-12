@@ -394,14 +394,28 @@ const BusinessBlueprintPage = () => {
 
   // Three Year Picture handler
   const handleSaveThreeYearPicture = async (data) => {
+    console.log('BusinessBlueprintPage - handleSaveThreeYearPicture called with:', data);
     try {
       setSaving(true);
       setError(null);
+      console.log('BusinessBlueprintPage - calling service with data:', data);
       const savedData = await businessBlueprintService.updateThreeYearPicture(data);
+      console.log('BusinessBlueprintPage - received savedData:', savedData);
+      
+      // Transform the saved data to match frontend structure
+      const transformedData = savedData ? {
+        ...savedData,
+        revenue: savedData.revenue_target || '',
+        profit: savedData.profit_target || '',
+        lookLikeItems: savedData.what_does_it_look_like ? 
+          JSON.parse(savedData.what_does_it_look_like) : [],
+        completions: savedData.what_does_it_look_like_completions || {}
+      } : data;
+      
       // Update with the saved data from the backend to ensure we have the latest values
       setBlueprintData(prev => ({
         ...prev,
-        threeYearPicture: savedData || data
+        threeYearPicture: transformedData
       }));
       setSuccess('3-Year Picture updated successfully');
       // Refresh the business blueprint data to ensure everything is in sync

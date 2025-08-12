@@ -766,9 +766,15 @@ export const updateThreeYearPicture = async (req, res) => {
       );
     }
     
+    // Fetch the complete updated record including what_does_it_look_like
+    const finalResult = await query(
+      'SELECT * FROM three_year_pictures WHERE id = $1',
+      [pictureId]
+    );
+    
     res.json({
       success: true,
-      data: pictureResult.rows[0]
+      data: finalResult.rows[0]
     });
   } catch (error) {
     console.error('Error updating three year picture:', error);
