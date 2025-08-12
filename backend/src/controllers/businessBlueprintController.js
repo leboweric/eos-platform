@@ -988,11 +988,27 @@ export const toggleThreeYearItemCompletion = async (req, res) => {
   const { itemIndex } = req.body;
   
   try {
-    // Get the current VTO - organization level
-    const vtoResult = await query(
-      'SELECT id FROM business_blueprints WHERE organization_id = $1 AND team_id IS NULL',
-      [orgId]
-    );
+    // Get the current VTO - check for team-specific or organization level
+    let vtoResult;
+    
+    // Check if this is for the leadership team (special UUID) or if teamId is 'null'
+    const isLeadershipTeam = teamId === '00000000-0000-0000-0000-000000000000' || 
+                            teamId === 'c7b489a1-5bf4-48a5-a51d-6e5e76f8f626' ||
+                            teamId === 'null';
+    
+    if (isLeadershipTeam) {
+      // For leadership team, get organization-level VTO (team_id IS NULL)
+      vtoResult = await query(
+        'SELECT id FROM business_blueprints WHERE organization_id = $1 AND team_id IS NULL',
+        [orgId]
+      );
+    } else {
+      // For department, get team-specific VTO
+      vtoResult = await query(
+        'SELECT id FROM business_blueprints WHERE organization_id = $1 AND team_id = $2',
+        [orgId, teamId]
+      );
+    }
     
     if (vtoResult.rows.length === 0) {
       return res.status(404).json({ error: 'No VTO found' });
