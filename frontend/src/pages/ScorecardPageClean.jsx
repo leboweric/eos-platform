@@ -45,6 +45,8 @@ const ScorecardPageClean = () => {
   // Scorecard data
   const [metrics, setMetrics] = useState([]);
   const [weeklyScores, setWeeklyScores] = useState({});
+  const [weeklyNotes, setWeeklyNotes] = useState({}); // Add notes state
+  const [monthlyNotes, setMonthlyNotes] = useState({}); // Add notes state
   const [editingMetric, setEditingMetric] = useState(null);
   const [showMetricDialog, setShowMetricDialog] = useState(false);
   const [showScoreDialog, setShowScoreDialog] = useState(false);
@@ -128,11 +130,15 @@ const ScorecardPageClean = () => {
         setMetrics(response.data.metrics || []);
         setWeeklyScores(response.data.weeklyScores || {});
         setMonthlyScores(response.data.monthlyScores || {});
+        setWeeklyNotes(response.data.weeklyNotes || {}); // Load notes
+        setMonthlyNotes(response.data.monthlyNotes || {}); // Load notes
         setUsers(response.data.teamMembers || []);
       } else if (response) {
         setMetrics(response.metrics || []);
         setWeeklyScores(response.weeklyScores || {});
         setMonthlyScores(response.monthlyScores || {});
+        setWeeklyNotes(response.weeklyNotes || {}); // Load notes
+        setMonthlyNotes(response.monthlyNotes || {}); // Load notes
         setUsers(response.teamMembers || []);
       }
     } catch (error) {
@@ -315,14 +321,14 @@ const ScorecardPageClean = () => {
 
   const handleScoreEdit = (metric, weekDate, scoreType = 'weekly') => {
     const scores = scoreType === 'monthly' ? monthlyScores : weeklyScores;
-    const scoreData = scores[metric.id]?.[weekDate];
+    const notes = scoreType === 'monthly' ? monthlyNotes : weeklyNotes;
+    const scoreValue = scores[metric.id]?.[weekDate];
+    const noteValue = notes[metric.id]?.[weekDate] || '';
     
-    const currentValue = scoreData?.value !== undefined 
-      ? Math.round(parseFloat(scoreData.value)) 
-      : scoreData !== undefined 
-      ? Math.round(parseFloat(scoreData))
+    const currentValue = scoreValue !== undefined && scoreValue !== null
+      ? Math.round(parseFloat(scoreValue))
       : '';
-    const currentNotes = scoreData?.notes || '';
+    const currentNotes = noteValue;
     
     setScoreDialogData({
       metricId: metric.id,
@@ -588,6 +594,8 @@ const ScorecardPageClean = () => {
                 metrics={weeklyMetrics}
                 weeklyScores={weeklyScores}
                 monthlyScores={monthlyScores}
+                weeklyNotes={weeklyNotes}
+                monthlyNotes={monthlyNotes}
                 type="weekly"
                 readOnly={false}
                 isRTL={isRTL}
@@ -633,6 +641,8 @@ const ScorecardPageClean = () => {
                 metrics={monthlyMetrics}
                 weeklyScores={weeklyScores}
                 monthlyScores={monthlyScores}
+                weeklyNotes={weeklyNotes}
+                monthlyNotes={monthlyNotes}
                 type="monthly"
                 readOnly={false}
                 isRTL={isRTL}

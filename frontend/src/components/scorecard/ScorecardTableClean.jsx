@@ -17,6 +17,8 @@ const ScorecardTableClean = ({
   metrics = [], 
   weeklyScores = {}, 
   monthlyScores = {},
+  weeklyNotes = {}, // New prop for notes
+  monthlyNotes = {}, // New prop for notes
   type = 'weekly', // 'weekly' or 'monthly'
   readOnly = false,
   isRTL = false,
@@ -149,6 +151,7 @@ const ScorecardTableClean = ({
   const periodDates = isRTL ? [...periodDatesOriginal].reverse() : periodDatesOriginal;
   
   const scores = isWeekly ? weeklyScores : monthlyScores;
+  const notes = isWeekly ? weeklyNotes : monthlyNotes;
 
   // Helper functions for value formatting and goal achievement
   const formatValue = (value, valueType) => {
@@ -367,32 +370,12 @@ const ScorecardTableClean = ({
                     
                     {/* Period columns */}
                     {periodDates.map((periodDate, index) => {
-                      const scoreData = scores[metric.id]?.[periodDate];
-                      // VERSION CHECK: 2024-08-12-FIXED
-                      // Handle both old format (just value) and new format (object with value and notes)
-                      // Be EXTREMELY careful with the extraction
-                      let scoreValue;
-                      if (typeof scoreData === 'object' && scoreData !== null && !Array.isArray(scoreData)) {
-                        // It's an object, extract the value property
-                        scoreValue = scoreData.value;
-                      } else if (typeof scoreData === 'number' || typeof scoreData === 'string') {
-                        // It's a raw value
-                        scoreValue = scoreData;
-                      } else {
-                        // Unknown format
-                        scoreValue = null;
-                      }
-                      const hasNotes = (typeof scoreData === 'object' && scoreData !== null) && scoreData?.notes && scoreData.notes.length > 0;
+                      // Scores are now always raw numbers
+                      const scoreValue = scores[metric.id]?.[periodDate];
+                      // Notes are stored separately
+                      const noteValue = notes[metric.id]?.[periodDate];
+                      const hasNotes = noteValue && noteValue.length > 0;
                       
-                      // Temporary debug for production
-                      if (hasNotes && window.location.hostname === 'eos-platform.netlify.app') {
-                        console.log('PRODUCTION DEBUG - Score with notes:', {
-                          scoreData,
-                          extractedValue: scoreValue,
-                          typeOfValue: typeof scoreValue,
-                          metricValueType: metric.value_type
-                        });
-                      }
                       
                       const goalMet = scoreValue !== null && scoreValue !== undefined && isGoalMet(scoreValue, metric.goal, metric.comparison_operator);
                       const originalIndex = isRTL ? periodLabelsOriginal.length - 1 - index : index;
@@ -424,7 +407,7 @@ const ScorecardTableClean = ({
                               className={'w-full px-0.5 py-0.5 rounded text-[10px] font-medium transition-colors relative ' +
                                 (scoreValue !== null && scoreValue !== undefined ? (goalMet ? 'bg-green-50 text-green-700 border border-green-200' : 'bg-red-50 text-red-700 border border-red-200') : (isCurrentPeriod ? 'bg-gray-100 text-gray-700 hover:bg-gray-200' : 'bg-white border border-gray-200 text-gray-600 hover:bg-gray-50'))
                               }
-                              title={hasNotes ? `Score: ${scoreValue}\nNotes: ${scoreData.notes}` : ''}
+                              title={hasNotes ? `Score: ${scoreValue}\nNotes: ${noteValue}` : ''}
                             >
                               <span>{scoreValue !== null && scoreValue !== undefined ? formatValue(scoreValue, metric.value_type) : '-'}</span>
                               {hasNotes && (
