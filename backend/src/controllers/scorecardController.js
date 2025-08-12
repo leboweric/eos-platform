@@ -108,9 +108,20 @@ export const getScorecard = async (req, res) => {
       // Empty string or null notes should just send the value
       const hasNotes = score.notes && score.notes.trim().length > 0;
       const scoreData = hasNotes ? {
-        value: score.value,
+        value: parseFloat(score.value), // Ensure value is a number, not a Decimal object
         notes: score.notes
-      } : score.value;
+      } : parseFloat(score.value); // Also parse when sending raw value
+      
+      // Debug logging
+      if (hasNotes) {
+        console.log('Score with notes:', {
+          metric_id: score.metric_id,
+          date: scoreDate,
+          value: score.value,
+          notes: score.notes,
+          scoreData
+        });
+      }
       
       // Determine if this is a monthly score based on metric type
       if (score.type === 'monthly') {

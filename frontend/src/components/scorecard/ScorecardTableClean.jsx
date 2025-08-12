@@ -155,7 +155,10 @@ const ScorecardTableClean = ({
     if (value === null || value === undefined || value === '') return '-';
     
     const numValue = parseFloat(value);
-    if (isNaN(numValue)) return '-';
+    if (isNaN(numValue)) {
+      console.error('formatValue: NaN detected', { value, valueType, typeOfValue: typeof value });
+      return '-';
+    }
     switch (valueType) {
       case 'currency':
         return new Intl.NumberFormat('en-US', {
@@ -370,6 +373,17 @@ const ScorecardTableClean = ({
                       // Handle both old format (just value) and new format (object with value and notes)
                       const scoreValue = (typeof scoreData === 'object' && scoreData !== null) ? scoreData?.value : scoreData;
                       const hasNotes = (typeof scoreData === 'object' && scoreData !== null) && scoreData?.notes && scoreData.notes.length > 0;
+                      
+                      // Debug logging
+                      if (scoreData && typeof scoreData === 'object' && scoreData !== null) {
+                        console.log('Score data object:', {
+                          metricId: metric.id,
+                          date: periodDate,
+                          scoreData,
+                          extractedValue: scoreValue,
+                          hasNotes
+                        });
+                      }
                       const goalMet = scoreValue !== null && scoreValue !== undefined && isGoalMet(scoreValue, metric.goal, metric.comparison_operator);
                       const originalIndex = isRTL ? periodLabelsOriginal.length - 1 - index : index;
                       const isCurrentPeriod = originalIndex === periodLabelsOriginal.length - 1;
