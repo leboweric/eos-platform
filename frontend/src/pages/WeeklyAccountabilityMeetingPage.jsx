@@ -1905,52 +1905,52 @@ const WeeklyAccountabilityMeetingPage = () => {
                     Rate this meeting's effectiveness (1-10)
                   </p>
                   
-                  {/* Your Rating */}
-                  <div className="mb-4">
-                    <label className="text-sm font-medium text-gray-700 block mb-2">
-                      Your Rating:
-                    </label>
-                    <Select value={meetingRating?.toString()} onValueChange={(value) => {
-                      const rating = parseInt(value);
-                      setMeetingRating(rating);
-                      // Also store in participant ratings
-                      setParticipantRatings(prev => ({
-                        ...prev,
-                        [user?.id]: {
-                          userId: user?.id,
-                          userName: `${user?.firstName || ''} ${user?.lastName || ''}`.trim() || 'You',
-                          rating: rating
-                        }
-                      }));
-                    }}>
-                      <SelectTrigger className="w-32">
-                        <SelectValue placeholder="Select" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {[...Array(10)].map((_, i) => (
-                          <SelectItem key={i + 1} value={(i + 1).toString()}>
-                            {i + 1}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
-                  
-                  {/* Show all participant ratings if in a meeting */}
-                  {participants.length > 0 && (
-                    <div className="border-t pt-3 mt-3">
-                      <label className="text-sm font-medium text-gray-700 block mb-2">
-                        Team Ratings:
+                  {/* Individual Participant Ratings */}
+                  {participants.length > 0 ? (
+                    <div>
+                      <label className="text-sm font-medium text-gray-700 block mb-3">
+                        Each participant rates the meeting:
                       </label>
-                      <div className="space-y-2">
+                      <div className="space-y-3">
                         {participants.map(participant => {
+                          const isCurrentUser = participant.id === user?.id;
                           const rating = participantRatings[participant.id];
+                          
                           return (
-                            <div key={participant.id} className="flex items-center justify-between text-sm">
-                              <span className="text-gray-600">{participant.name}:</span>
-                              <span className={`font-medium ${rating ? 'text-gray-900' : 'text-gray-400'}`}>
-                                {rating ? rating.rating : 'Not rated'}
+                            <div key={participant.id} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                              <span className={`text-sm ${isCurrentUser ? 'font-medium text-gray-900' : 'text-gray-600'}`}>
+                                {participant.name}{isCurrentUser ? ' (You)' : ''}:
                               </span>
+                              {isCurrentUser ? (
+                                <Select value={rating?.rating?.toString() || ''} onValueChange={(value) => {
+                                  const ratingValue = parseInt(value);
+                                  setParticipantRatings(prev => ({
+                                    ...prev,
+                                    [user.id]: {
+                                      userId: user.id,
+                                      userName: participant.name,
+                                      rating: ratingValue
+                                    }
+                                  }));
+                                  // Also set the old meetingRating for backwards compatibility
+                                  setMeetingRating(ratingValue);
+                                }}>
+                                  <SelectTrigger className="w-24">
+                                    <SelectValue placeholder="Rate" />
+                                  </SelectTrigger>
+                                  <SelectContent>
+                                    {[...Array(10)].map((_, i) => (
+                                      <SelectItem key={i + 1} value={(i + 1).toString()}>
+                                        {i + 1}
+                                      </SelectItem>
+                                    ))}
+                                  </SelectContent>
+                                </Select>
+                              ) : (
+                                <span className={`font-medium ${rating ? 'text-gray-900' : 'text-gray-400'}`}>
+                                  {rating ? rating.rating : 'Waiting...'}
+                                </span>
+                              )}
                             </div>
                           );
                         })}
@@ -1967,6 +1967,36 @@ const WeeklyAccountabilityMeetingPage = () => {
                           </div>
                         </div>
                       )}
+                    </div>
+                  ) : (
+                    /* Fallback for single user (not in a meeting) */
+                    <div>
+                      <label className="text-sm font-medium text-gray-700 block mb-2">
+                        Your Rating:
+                      </label>
+                      <Select value={meetingRating?.toString()} onValueChange={(value) => {
+                        const rating = parseInt(value);
+                        setMeetingRating(rating);
+                        // Store as single participant rating
+                        setParticipantRatings({
+                          [user?.id]: {
+                            userId: user?.id,
+                            userName: `${user?.firstName || ''} ${user?.lastName || ''}`.trim() || 'You',
+                            rating: rating
+                          }
+                        });
+                      }}>
+                        <SelectTrigger className="w-32">
+                          <SelectValue placeholder="Select" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {[...Array(10)].map((_, i) => (
+                            <SelectItem key={i + 1} value={(i + 1).toString()}>
+                              {i + 1}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
                     </div>
                   )}
                 </div>

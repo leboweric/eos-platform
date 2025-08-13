@@ -1683,57 +1683,57 @@ const QuarterlyPlanningMeetingPage = () => {
           <div className="mt-6 bg-white rounded-lg shadow-sm p-6">
             <h3 className="text-lg font-semibold mb-4">Rate This Meeting</h3>
             
-            {/* Your Rating */}
-            <div className="mb-6">
-              <label className="text-sm font-medium text-gray-700 block mb-2">
-                Your Rating:
-              </label>
-              <div className="flex gap-2 mb-4">
-                {[...Array(10)].map((_, i) => (
-                  <Button
-                    key={i + 1}
-                    variant={meetingRating === i + 1 ? 'default' : 'outline'}
-                    size="sm"
-                    onClick={() => {
-                      const rating = i + 1;
-                      setMeetingRating(rating);
-                      // Also store in participant ratings
-                      setParticipantRatings(prev => ({
-                        ...prev,
-                        [user?.id]: {
-                          userId: user?.id,
-                          userName: `${user?.firstName || ''} ${user?.lastName || ''}`.trim() || 'You',
-                          rating: rating
-                        }
-                      }));
-                    }}
-                    className="w-10 h-10"
-                    style={meetingRating === i + 1 ? {
-                      backgroundColor: themeColors.primary,
-                      color: 'white'
-                    } : {}}
-                  >
-                    {i + 1}
-                  </Button>
-                ))}
-              </div>
-            </div>
-            
-            {/* Show all participant ratings if in a meeting */}
-            {participants.length > 0 && (
-              <div className="border-t pt-4">
+            {/* Individual Participant Ratings */}
+            {participants.length > 0 ? (
+              <div>
                 <label className="text-sm font-medium text-gray-700 block mb-3">
-                  Team Ratings:
+                  Each participant rates the meeting:
                 </label>
                 <div className="grid grid-cols-2 gap-3 mb-4">
                   {participants.map(participant => {
+                    const isCurrentUser = participant.id === user?.id;
                     const rating = participantRatings[participant.id];
+                    
                     return (
-                      <div key={participant.id} className="flex items-center justify-between bg-gray-50 p-2 rounded">
-                        <span className="text-sm text-gray-600">{participant.name}:</span>
-                        <span className={`text-sm font-medium ${rating ? 'text-gray-900' : 'text-gray-400'}`}>
-                          {rating ? rating.rating : 'Not rated'}
+                      <div key={participant.id} className="flex items-center justify-between bg-gray-50 p-3 rounded-lg">
+                        <span className={`text-sm ${isCurrentUser ? 'font-medium text-gray-900' : 'text-gray-600'}`}>
+                          {participant.name}{isCurrentUser ? ' (You)' : ''}:
                         </span>
+                        {isCurrentUser ? (
+                          <div className="flex gap-1">
+                            {[...Array(10)].map((_, i) => (
+                              <Button
+                                key={i + 1}
+                                variant={rating?.rating === i + 1 ? 'default' : 'outline'}
+                                size="sm"
+                                className="h-7 w-7 p-0"
+                                onClick={() => {
+                                  const ratingValue = i + 1;
+                                  setParticipantRatings(prev => ({
+                                    ...prev,
+                                    [user.id]: {
+                                      userId: user.id,
+                                      userName: participant.name,
+                                      rating: ratingValue
+                                    }
+                                  }));
+                                  // Also set the old meetingRating for backwards compatibility
+                                  setMeetingRating(ratingValue);
+                                }}
+                                style={rating?.rating === i + 1 ? {
+                                  backgroundColor: themeColors.primary,
+                                  color: 'white'
+                                } : {}}
+                              >
+                                {i + 1}
+                              </Button>
+                            ))}
+                          </div>
+                        ) : (
+                          <span className={`text-sm font-medium ${rating ? 'text-gray-900' : 'text-gray-400'}`}>
+                            {rating ? rating.rating : 'Waiting...'}
+                          </span>
+                        )}
                       </div>
                     );
                   })}
@@ -1750,6 +1750,41 @@ const QuarterlyPlanningMeetingPage = () => {
                     </div>
                   </div>
                 )}
+              </div>
+            ) : (
+              /* Fallback for single user (not in a meeting) */
+              <div className="mb-6">
+                <label className="text-sm font-medium text-gray-700 block mb-2">
+                  Your Rating:
+                </label>
+                <div className="flex gap-2">
+                  {[...Array(10)].map((_, i) => (
+                    <Button
+                      key={i + 1}
+                      variant={meetingRating === i + 1 ? 'default' : 'outline'}
+                      size="sm"
+                      className="w-10 h-10"
+                      onClick={() => {
+                        const rating = i + 1;
+                        setMeetingRating(rating);
+                        // Store as single participant rating
+                        setParticipantRatings({
+                          [user?.id]: {
+                            userId: user?.id,
+                            userName: `${user?.firstName || ''} ${user?.lastName || ''}`.trim() || 'You',
+                            rating: rating
+                          }
+                        });
+                      }}
+                      style={meetingRating === i + 1 ? {
+                        backgroundColor: themeColors.primary,
+                        color: 'white'
+                      } : {}}
+                    >
+                      {i + 1}
+                    </Button>
+                  ))}
+                </div>
               </div>
             )}
           </div>
