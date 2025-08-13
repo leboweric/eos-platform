@@ -218,8 +218,10 @@ const MeetingsPage = () => {
             <div className="flex items-start gap-4">
               <Button
                 onClick={() => setShowJoinDialog(true)}
-                variant="outline"
-                className="flex items-center gap-2"
+                className="flex items-center gap-2 text-white hover:opacity-90 transition-opacity"
+                style={{ 
+                  backgroundColor: themeColors.primary,
+                }}
                 disabled={!selectedTeamId}
               >
                 <Users className="h-4 w-4" />
