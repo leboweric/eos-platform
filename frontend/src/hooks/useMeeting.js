@@ -14,6 +14,7 @@ const useMeeting = () => {
   const [isLeader, setIsLeader] = useState(false);
   const [isFollowing, setIsFollowing] = useState(true);
   const [currentLeader, setCurrentLeader] = useState(null);
+  const [activeMeetings, setActiveMeetings] = useState({}); // Track all active meetings
   const navigate = useNavigate();
   const location = useLocation();
   const { user } = useAuthStore();
@@ -103,6 +104,17 @@ const useMeeting = () => {
       setParticipants(prev => prev.map(p => 
         p.id === data.userId ? { ...p, isFollowing: data.isFollowing } : p
       ));
+    });
+
+    // Handle active meetings update (list of all meetings with participants)
+    newSocket.on('active-meetings-update', (data) => {
+      console.log('📊 Active meetings update:', data.meetings);
+      setActiveMeetings(data.meetings || {});
+    });
+
+    // Request active meetings on connect
+    newSocket.on('connect', () => {
+      newSocket.emit('get-active-meetings');
     });
 
     // Handle errors
@@ -205,6 +217,7 @@ const useMeeting = () => {
     isLeader,
     currentLeader,
     isFollowing,
+    activeMeetings, // All active meetings with participant counts
     
     // Actions
     joinMeeting,

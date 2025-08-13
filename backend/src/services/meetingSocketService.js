@@ -95,6 +95,9 @@ class MeetingSocketService {
           participant: meeting.participants.get(userId)
         });
 
+        // Broadcast updated active meetings to all connected clients
+        this.broadcastActiveMeetings();
+
         console.log(`✅ ${userName} joined meeting ${meetingCode}`);
       });
 
@@ -147,6 +150,39 @@ class MeetingSocketService {
         }
       });
 
+      // Handle request for active meetings
+      socket.on('get-active-meetings', () => {
+        const activeMeetings = {};
+        meetings.forEach((meeting, code) => {
+          if (meeting.participants.size > 0) {
+            // Parse the meeting code to get team and type
+            const [teamId, meetingType] = code.split('-').reduce((acc, part, index, arr) => {
+              if (index < arr.length - 2) {
+                acc[0] = acc[0] ? `${acc[0]}-${part}` : part;
+              } else {
+                acc[1] = acc[1] ? `${acc[1]}-${part}` : part;
+              }
+              return acc;
+            }, ['', '']);
+            
+            activeMeetings[code] = {
+              code,
+              teamId,
+              meetingType,
+              participantCount: meeting.participants.size,
+              participants: Array.from(meeting.participants.values()).map(p => ({
+                id: p.id,
+                name: p.name
+              })),
+              leader: meeting.leader,
+              startedAt: meeting.createdAt
+            };
+          }
+        });
+        
+        socket.emit('active-meetings-update', { meetings: activeMeetings });
+      });
+
       // Handle leaving meeting
       socket.on('leave-meeting', () => {
         this.handleUserDisconnect(socket);
@@ -157,6 +193,34 @@ class MeetingSocketService {
         this.handleUserDisconnect(socket);
       });
     });
+  }
+
+  broadcastActiveMeetings() {
+    const activeMeetings = {};
+    meetings.forEach((meeting, code) => {
+      if (meeting.participants.size > 0) {
+        // Parse the meeting code to get team and type
+        const lastDashIndex = code.lastIndexOf('-');
+        const teamId = code.substring(0, lastDashIndex);
+        const meetingType = code.substring(lastDashIndex + 1);
+        
+        activeMeetings[code] = {
+          code,
+          teamId,
+          meetingType,
+          participantCount: meeting.participants.size,
+          participants: Array.from(meeting.participants.values()).map(p => ({
+            id: p.id,
+            name: p.name
+          })),
+          leader: meeting.leader,
+          startedAt: meeting.createdAt
+        };
+      }
+    });
+    
+    // Broadcast to all connected clients
+    this.io.emit('active-meetings-update', { meetings: activeMeetings });
   }
 
   handleUserDisconnect(socket) {
@@ -179,6 +243,9 @@ class MeetingSocketService {
     });
 
     console.log(`👋 ${userName} left meeting ${userInfo.meetingCode}`);
+    
+    // Broadcast updated active meetings to all connected clients
+    this.broadcastActiveMeetings();
 
     // Clean up empty meetings
     if (meeting.participants.size === 0) {

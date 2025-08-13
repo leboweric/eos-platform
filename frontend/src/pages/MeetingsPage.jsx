@@ -31,7 +31,7 @@ const MeetingsPage = () => {
   const navigate = useNavigate();
   const { user } = useAuthStore();
   const { selectedDepartment } = useDepartment();
-  const { joinMeeting } = useMeeting();
+  const { joinMeeting, activeMeetings } = useMeeting();
   const [teams, setTeams] = useState([]);
   const [selectedTeamId, setSelectedTeamId] = useState(null);
   const [loadingTeams, setLoadingTeams] = useState(true);
@@ -216,17 +216,35 @@ const MeetingsPage = () => {
               <p className="text-gray-600 mt-2 text-lg">Run effective meetings with structured agendas</p>
             </div>
             <div className="flex items-start gap-4">
-              <Button
-                onClick={() => setShowJoinDialog(true)}
-                className="flex items-center gap-2 text-white hover:opacity-90 transition-opacity"
-                style={{ 
-                  backgroundColor: themeColors.primary,
-                }}
-                disabled={!selectedTeamId}
-              >
-                <Users className="h-4 w-4" />
-                Join Team Meeting
-              </Button>
+              {(() => {
+                // Check if any meetings are in progress for this team
+                const teamMeetings = Object.values(activeMeetings || {}).filter(
+                  m => m.teamId === selectedTeamId
+                );
+                const hasActiveMeeting = teamMeetings.length > 0;
+                
+                return (
+                  <Button
+                    onClick={() => setShowJoinDialog(true)}
+                    className={`flex items-center gap-2 text-white hover:opacity-90 transition-all ${
+                      hasActiveMeeting ? 'animate-pulse' : ''
+                    }`}
+                    style={{ 
+                      backgroundColor: hasActiveMeeting ? '#10B981' : themeColors.primary,
+                    }}
+                    disabled={!selectedTeamId}
+                  >
+                    {hasActiveMeeting && (
+                      <span className="relative flex h-3 w-3">
+                        <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-white opacity-75"></span>
+                        <span className="relative inline-flex rounded-full h-3 w-3 bg-white"></span>
+                      </span>
+                    )}
+                    <Users className="h-4 w-4" />
+                    {hasActiveMeeting ? 'Join Meeting in Progress' : 'Join Team Meeting'}
+                  </Button>
+                );
+              })()}
               {teams.length > 1 && (
                 <div className="space-y-2">
                   <label className="text-sm font-medium">Select Team</label>
@@ -251,17 +269,39 @@ const MeetingsPage = () => {
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {meetings.map((meeting) => {
             const Icon = meeting.icon;
+            const meetingCode = `${selectedTeamId}-${meeting.id}`;
+            const activeMeeting = activeMeetings?.[meetingCode];
+            const isActive = !!activeMeeting;
+            
             return (
-              <Card key={meeting.id} className={`relative overflow-hidden ${meeting.comingSoon ? 'opacity-75' : ''} hover:shadow-lg transition-shadow`}>
+              <Card key={meeting.id} className={`relative overflow-hidden ${meeting.comingSoon ? 'opacity-75' : ''} ${
+                isActive ? 'meeting-active ring-2 ring-green-500 ring-opacity-50' : ''
+              } hover:shadow-lg transition-all`}>
                 <div className="h-2" style={{ backgroundColor: meeting.getColor() }} />
                 <CardHeader>
                   <div className="flex items-start justify-between">
-                    <div className="p-3 rounded-lg" style={{ backgroundColor: meeting.getColor() + '1A' }}>
-                      <Icon className="h-6 w-6" style={{ color: meeting.getColor() }} />
+                    <div className="relative">
+                      <div className="p-3 rounded-lg" style={{ backgroundColor: meeting.getColor() + '1A' }}>
+                        <Icon className="h-6 w-6" style={{ color: meeting.getColor() }} />
+                      </div>
+                      {isActive && (
+                        <span className="absolute -top-1 -right-1 flex h-3 w-3">
+                          <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span>
+                          <span className="relative inline-flex rounded-full h-3 w-3 bg-green-500"></span>
+                        </span>
+                      )}
                     </div>
-                    {meeting.comingSoon && (
-                      <span className="text-xs bg-gray-200 text-gray-600 px-2 py-1 rounded">Coming Soon</span>
-                    )}
+                    <div className="flex items-center gap-2">
+                      {isActive && (
+                        <div className="flex items-center gap-1 bg-green-100 text-green-700 px-2 py-1 rounded-full text-xs font-medium">
+                          <Users className="h-3 w-3" />
+                          <span>{activeMeeting.participantCount} in meeting</span>
+                        </div>
+                      )}
+                      {meeting.comingSoon && (
+                        <span className="text-xs bg-gray-200 text-gray-600 px-2 py-1 rounded">Coming Soon</span>
+                      )}
+                    </div>
                   </div>
                   <CardTitle className="text-xl mt-4">{meeting.title}</CardTitle>
                   <CardDescription>{meeting.description}</CardDescription>
@@ -294,9 +334,9 @@ const MeetingsPage = () => {
                     <Button 
                       onClick={() => handleStartMeeting(meeting.id)}
                       disabled={meeting.comingSoon || !selectedTeamId || loadingTeams}
-                      className="w-full text-white transition-colors"
+                      className="w-full text-white transition-all"
                       style={{ 
-                        backgroundColor: meeting.comingSoon ? '#9CA3AF' : meeting.getColor(),
+                        backgroundColor: meeting.comingSoon ? '#9CA3AF' : (isActive ? '#10B981' : meeting.getColor()),
                         cursor: meeting.comingSoon ? 'not-allowed' : 'pointer'
                       }}
                       onMouseEnter={(e) => {
@@ -308,7 +348,7 @@ const MeetingsPage = () => {
                         e.currentTarget.style.opacity = '1';
                       }}
                     >
-                      {meeting.comingSoon ? 'Coming Soon' : 'Start Meeting'}
+                      {meeting.comingSoon ? 'Coming Soon' : (isActive ? 'Join Meeting' : 'Start Meeting')}
                       {!meeting.comingSoon && <ChevronRight className="ml-2 h-4 w-4" />}
                     </Button>
                   </div>
