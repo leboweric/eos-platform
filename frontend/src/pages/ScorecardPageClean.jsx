@@ -398,20 +398,43 @@ const ScorecardPageClean = () => {
     return `${months[date.getMonth()]} ${date.getDate()}`;
   };
 
-  // Get week labels for the past 10 weeks
+  // Get the start of the current quarter
+  const getQuarterStart = (date) => {
+    const d = new Date(date);
+    const quarter = Math.floor(d.getMonth() / 3);
+    return new Date(d.getFullYear(), quarter * 3, 1);
+  };
+
+  // Get the end of the current quarter
+  const getQuarterEnd = (date) => {
+    const d = new Date(date);
+    const quarter = Math.floor(d.getMonth() / 3);
+    return new Date(d.getFullYear(), quarter * 3 + 3, 0);
+  };
+
+  // Get week labels for the current quarter
   const getWeekLabels = () => {
     const labels = [];
     const weekDates = [];
     const today = new Date();
     
-    for (let i = 9; i >= 0; i--) {
-      const weekStart = new Date(today);
-      weekStart.setDate(today.getDate() - (i * 7));
-      const mondayOfWeek = getWeekStartDate(weekStart);
+    // Get current quarter start and today
+    const quarterStart = getQuarterStart(today);
+    const quarterEnd = getQuarterEnd(today);
+    const endDate = today < quarterEnd ? today : quarterEnd;
+    
+    // Generate all weeks from quarter start to current date
+    let currentWeek = getWeekStartDate(quarterStart);
+    while (currentWeek <= endDate) {
+      labels.push(formatWeekLabel(currentWeek));
+      weekDates.push(currentWeek.toISOString().split('T')[0]);
       
-      labels.push(formatWeekLabel(mondayOfWeek));
-      weekDates.push(mondayOfWeek.toISOString().split('T')[0]);
+      // Move to next week
+      currentWeek = new Date(currentWeek);
+      currentWeek.setDate(currentWeek.getDate() + 7);
     }
+    
+    console.log(`ScorecardPage - Showing Q${Math.floor(today.getMonth() / 3) + 1} weeks:`, weekDates);
     
     return { labels, weekDates };
   };
@@ -423,17 +446,28 @@ const ScorecardPageClean = () => {
     return `${months[date.getMonth()]} ${year}`;
   };
 
-  // Get month labels for the past 12 months
+  // Get month labels for the current quarter
   const getMonthLabels = () => {
     const labels = [];
     const monthDates = [];
     const today = new Date();
     
-    for (let i = 11; i >= 0; i--) {
-      const monthDate = new Date(today.getFullYear(), today.getMonth() - i, 1);
+    // Get current quarter start and today
+    const quarterStart = getQuarterStart(today);
+    const quarterEnd = getQuarterEnd(today);
+    
+    // Generate all months in the current quarter up to current month
+    let currentMonth = new Date(quarterStart);
+    while (currentMonth <= today && currentMonth <= quarterEnd) {
+      const monthDate = new Date(currentMonth.getFullYear(), currentMonth.getMonth(), 1);
       labels.push(formatMonthLabel(monthDate));
       monthDates.push(monthDate.toISOString().split('T')[0]);
+      
+      // Move to next month
+      currentMonth.setMonth(currentMonth.getMonth() + 1);
     }
+    
+    console.log(`ScorecardPage - Showing Q${Math.floor(today.getMonth() / 3) + 1} months:`, monthDates);
     
     return { labels, monthDates };
   };
