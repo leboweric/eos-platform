@@ -62,6 +62,7 @@ const QuarterlyPlanningMeetingPage = () => {
   const [meetingStartTime, setMeetingStartTime] = useState(null);
   const [elapsedTime, setElapsedTime] = useState(0);
   const [meetingRating, setMeetingRating] = useState(null);
+  const [participantRatings, setParticipantRatings] = useState({}); // Store ratings by participant
   
   // Dialog states for issues and todos
   const [showIssueDialog, setShowIssueDialog] = useState(false);
@@ -163,10 +164,14 @@ const QuarterlyPlanningMeetingPage = () => {
   };
 
   const concludeMeeting = async () => {
-    if (!meetingRating) {
-      setError('Please rate the meeting before concluding');
+    // Calculate average rating from all participant ratings
+    const ratings = Object.values(participantRatings);
+    if (ratings.length === 0 || !ratings.every(r => r.rating > 0)) {
+      setError('All participants must rate the meeting before concluding');
       return;
     }
+    
+    const averageRating = ratings.reduce((sum, r) => sum + r.rating, 0) / ratings.length;
     
     try {
       const orgId = localStorage.getItem('impersonatedOrgId') || user?.organizationId || user?.organization_id;
@@ -176,7 +181,8 @@ const QuarterlyPlanningMeetingPage = () => {
       await meetingsService.concludeMeeting(orgId, effectiveTeamId, {
         meetingType: 'quarterly_planning',
         duration,
-        rating: meetingRating,
+        rating: Math.round(averageRating), // Use average rating
+        individualRatings: participantRatings, // Include individual ratings
         summary: {
           priorities: priorities.length,
           completed: priorities.filter(p => p.status === 'complete').length
@@ -1676,23 +1682,76 @@ const QuarterlyPlanningMeetingPage = () => {
         {activeSection === 'conclude' && (
           <div className="mt-6 bg-white rounded-lg shadow-sm p-6">
             <h3 className="text-lg font-semibold mb-4">Rate This Meeting</h3>
-            <div className="flex gap-2 mb-4">
-              {[...Array(10)].map((_, i) => (
-                <Button
-                  key={i + 1}
-                  variant={meetingRating === i + 1 ? 'default' : 'outline'}
-                  size="sm"
-                  onClick={() => setMeetingRating(i + 1)}
-                  className="w-10 h-10"
-                  style={meetingRating === i + 1 ? {
-                    backgroundColor: themeColors.primary,
-                    color: 'white'
-                  } : {}}
-                >
-                  {i + 1}
-                </Button>
-              ))}
+            
+            {/* Your Rating */}
+            <div className="mb-6">
+              <label className="text-sm font-medium text-gray-700 block mb-2">
+                Your Rating:
+              </label>
+              <div className="flex gap-2 mb-4">
+                {[...Array(10)].map((_, i) => (
+                  <Button
+                    key={i + 1}
+                    variant={meetingRating === i + 1 ? 'default' : 'outline'}
+                    size="sm"
+                    onClick={() => {
+                      const rating = i + 1;
+                      setMeetingRating(rating);
+                      // Also store in participant ratings
+                      setParticipantRatings(prev => ({
+                        ...prev,
+                        [user?.id]: {
+                          userId: user?.id,
+                          userName: `${user?.firstName || ''} ${user?.lastName || ''}`.trim() || 'You',
+                          rating: rating
+                        }
+                      }));
+                    }}
+                    className="w-10 h-10"
+                    style={meetingRating === i + 1 ? {
+                      backgroundColor: themeColors.primary,
+                      color: 'white'
+                    } : {}}
+                  >
+                    {i + 1}
+                  </Button>
+                ))}
+              </div>
             </div>
+            
+            {/* Show all participant ratings if in a meeting */}
+            {participants.length > 0 && (
+              <div className="border-t pt-4">
+                <label className="text-sm font-medium text-gray-700 block mb-3">
+                  Team Ratings:
+                </label>
+                <div className="grid grid-cols-2 gap-3 mb-4">
+                  {participants.map(participant => {
+                    const rating = participantRatings[participant.id];
+                    return (
+                      <div key={participant.id} className="flex items-center justify-between bg-gray-50 p-2 rounded">
+                        <span className="text-sm text-gray-600">{participant.name}:</span>
+                        <span className={`text-sm font-medium ${rating ? 'text-gray-900' : 'text-gray-400'}`}>
+                          {rating ? rating.rating : 'Not rated'}
+                        </span>
+                      </div>
+                    );
+                  })}
+                </div>
+                
+                {/* Calculate and show average if there are ratings */}
+                {Object.keys(participantRatings).length > 0 && (
+                  <div className="bg-blue-50 p-3 rounded-lg">
+                    <div className="flex items-center justify-between">
+                      <span className="text-sm font-medium text-gray-700">Average Rating:</span>
+                      <span className="text-xl font-bold" style={{ color: themeColors.primary }}>
+                        {(Object.values(participantRatings).reduce((sum, r) => sum + r.rating, 0) / Object.values(participantRatings).length).toFixed(1)}
+                      </span>
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
           </div>
         )}
 

@@ -124,6 +124,7 @@ const WeeklyAccountabilityMeetingPage = () => {
   const [meetingStartTime, setMeetingStartTime] = useState(null);
   const [elapsedTime, setElapsedTime] = useState(0);
   const [meetingRating, setMeetingRating] = useState(null);
+  const [participantRatings, setParticipantRatings] = useState({}); // Store ratings by participant
   const [cascadingMessage, setCascadingMessage] = useState('');
   
   // Scorecard display options
@@ -1079,11 +1080,18 @@ const WeeklyAccountabilityMeetingPage = () => {
         });
       }
       
-      // Send meeting summary
+      // Calculate average rating from all participants
+      const ratingsArray = Object.values(participantRatings).map(r => r.rating);
+      const averageRating = ratingsArray.length > 0 
+        ? ratingsArray.reduce((sum, r) => sum + r, 0) / ratingsArray.length
+        : meetingRating || 8;
+      
+      // Send meeting summary with individual and average ratings
       await meetingsService.concludeMeeting(orgId, effectiveTeamId, {
         meetingType: 'weekly',
         duration: durationMinutes,
-        rating: meetingRating || 8,
+        rating: averageRating,
+        individualRatings: participantRatings, // Include individual ratings
         cascadingMessage: cascadingMessage,
         issuesDiscussed: selectedIssueIds.length,
         todosAssigned: selectedTodoIds.length
@@ -1896,18 +1904,71 @@ const WeeklyAccountabilityMeetingPage = () => {
                   <p className="text-sm text-gray-600 mb-3">
                     Rate this meeting's effectiveness (1-10)
                   </p>
-                  <Select value={meetingRating?.toString()} onValueChange={(value) => setMeetingRating(parseInt(value))}>
-                    <SelectTrigger className="w-32">
-                      <SelectValue placeholder="Select" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {[...Array(10)].map((_, i) => (
-                        <SelectItem key={i + 1} value={(i + 1).toString()}>
-                          {i + 1}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
+                  
+                  {/* Your Rating */}
+                  <div className="mb-4">
+                    <label className="text-sm font-medium text-gray-700 block mb-2">
+                      Your Rating:
+                    </label>
+                    <Select value={meetingRating?.toString()} onValueChange={(value) => {
+                      const rating = parseInt(value);
+                      setMeetingRating(rating);
+                      // Also store in participant ratings
+                      setParticipantRatings(prev => ({
+                        ...prev,
+                        [user?.id]: {
+                          userId: user?.id,
+                          userName: `${user?.firstName || ''} ${user?.lastName || ''}`.trim() || 'You',
+                          rating: rating
+                        }
+                      }));
+                    }}>
+                      <SelectTrigger className="w-32">
+                        <SelectValue placeholder="Select" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {[...Array(10)].map((_, i) => (
+                          <SelectItem key={i + 1} value={(i + 1).toString()}>
+                            {i + 1}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  
+                  {/* Show all participant ratings if in a meeting */}
+                  {participants.length > 0 && (
+                    <div className="border-t pt-3 mt-3">
+                      <label className="text-sm font-medium text-gray-700 block mb-2">
+                        Team Ratings:
+                      </label>
+                      <div className="space-y-2">
+                        {participants.map(participant => {
+                          const rating = participantRatings[participant.id];
+                          return (
+                            <div key={participant.id} className="flex items-center justify-between text-sm">
+                              <span className="text-gray-600">{participant.name}:</span>
+                              <span className={`font-medium ${rating ? 'text-gray-900' : 'text-gray-400'}`}>
+                                {rating ? rating.rating : 'Not rated'}
+                              </span>
+                            </div>
+                          );
+                        })}
+                      </div>
+                      
+                      {/* Calculate and show average if there are ratings */}
+                      {Object.keys(participantRatings).length > 0 && (
+                        <div className="border-t pt-2 mt-2">
+                          <div className="flex items-center justify-between text-sm font-medium">
+                            <span className="text-gray-700">Average Rating:</span>
+                            <span className="text-lg" style={{ color: themeColors.primary }}>
+                              {(Object.values(participantRatings).reduce((sum, r) => sum + r.rating, 0) / Object.values(participantRatings).length).toFixed(1)}
+                            </span>
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  )}
                 </div>
 
                 <div className="text-center pt-4">
