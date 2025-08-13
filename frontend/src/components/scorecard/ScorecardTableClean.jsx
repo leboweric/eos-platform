@@ -133,6 +133,14 @@ const ScorecardTableClean = ({
       const quarterEnd = getQuarterEnd(today);
       const endDate = today < quarterEnd ? today : quarterEnd;
       
+      console.log('Quarter calculation:', {
+        today: today.toISOString().split('T')[0],
+        quarter: Math.floor(today.getMonth() / 3) + 1,
+        quarterStart: quarterStart.toISOString().split('T')[0],
+        quarterEnd: quarterEnd.toISOString().split('T')[0],
+        endDate: endDate.toISOString().split('T')[0]
+      });
+      
       // Generate all weeks from quarter start to current date
       let currentWeek = getWeekStartDate(quarterStart);
       while (currentWeek <= endDate) {
@@ -144,11 +152,12 @@ const ScorecardTableClean = ({
         currentWeek.setDate(currentWeek.getDate() + 7);
       }
       
-      // If we have too many weeks, trim to show most recent ones based on maxPeriods
-      if (weekDates.length > maxPeriods) {
-        const trimCount = weekDates.length - maxPeriods;
-        labels.splice(0, trimCount);
-        weekDates.splice(0, trimCount);
+      // For quarter view, don't trim - show all weeks in the quarter
+      // Only trim if we somehow have more than 13 weeks (a quarter can't have more than that)
+      if (weekDates.length > 13) {
+        console.warn('Quarter has more than 13 weeks, trimming to 13');
+        labels.splice(0, weekDates.length - 13);
+        weekDates.splice(0, weekDates.length - 13);
       }
       
       console.log(`Showing Q${Math.floor(today.getMonth() / 3) + 1} weeks:`, weekDates);
