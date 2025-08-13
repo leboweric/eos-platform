@@ -1,6 +1,8 @@
 import { useState, useEffect } from 'react';
 import { useParams } from 'react-router-dom';
 import { useAuthStore } from '../stores/authStore';
+import MeetingBar from '../components/meeting/MeetingBar';
+import useMeeting from '../hooks/useMeeting';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Alert, AlertDescription } from '@/components/ui/alert';
@@ -45,6 +47,7 @@ const QuarterlyPlanningMeetingPage = () => {
   const { user } = useAuthStore();
   const { teamId } = useParams();
   const navigate = useNavigate();
+  const { meetingCode, participants } = useMeeting();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [activeSection, setActiveSection] = useState('objectives');
@@ -1581,6 +1584,16 @@ const QuarterlyPlanningMeetingPage = () => {
             </div>
             {meetingStarted && (
               <div className="flex items-center gap-4">
+                {participants.length > 0 && (
+                  <div className="bg-blue-50 px-4 py-2 rounded-lg border border-blue-200">
+                    <div className="flex items-center gap-2">
+                      <Users className="h-4 w-4 text-blue-600" />
+                      <span className="text-sm font-medium text-blue-900">
+                        {participants.length} participant{participants.length !== 1 ? 's' : ''}
+                      </span>
+                    </div>
+                  </div>
+                )}
                 <div className="bg-white px-4 py-2 rounded-lg shadow-sm border border-gray-200">
                   <div className="flex items-center gap-2">
                     <Clock className="h-4 w-4 text-gray-500" />
@@ -1863,6 +1876,9 @@ const QuarterlyPlanningMeetingPage = () => {
             }
           }}
         />
+        
+        {/* Meeting Collaboration Bar */}
+        <MeetingBar />
       </div>
     </div>
   );

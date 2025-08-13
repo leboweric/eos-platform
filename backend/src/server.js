@@ -4,6 +4,7 @@ import helmet from 'helmet';
 import morgan from 'morgan';
 import dotenv from 'dotenv';
 import rateLimit from 'express-rate-limit';
+import { createServer } from 'http';
 
 // Import routes
 import authRoutes from './routes/auth.js';
@@ -42,6 +43,9 @@ import { initializeSubscriptionJobs } from './jobs/subscriptionJobs.js';
 
 // Import utilities
 import { ensureUploadsDirectory } from './utils/ensureUploadsDirectory.js';
+
+// Import WebSocket service
+import meetingSocketService from './services/meetingSocketService.js';
 
 // Load environment variables
 dotenv.config();
@@ -189,11 +193,20 @@ app.use(errorHandler);
 // Initialize cron jobs
 initializeSubscriptionJobs();
 
+// Create HTTP server for Socket.io
+const server = createServer(app);
+
+// Initialize WebSocket service
+meetingSocketService.initialize(server);
+
 // Start server
-app.listen(PORT, () => {
+server.listen(PORT, () => {
   console.log(`🚀 Server running on port ${PORT}`);
   console.log(`📊 Environment: ${process.env.NODE_ENV}`);
   console.log(`🔗 Health check: http://localhost:${PORT}/health`);
+  if (process.env.ENABLE_MEETINGS === 'true') {
+    console.log(`🤝 Meeting mode enabled with WebSocket support`);
+  }
 });
 
 export default app;

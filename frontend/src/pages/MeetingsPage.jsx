@@ -4,9 +4,18 @@ import { useAuthStore } from '../stores/authStore';
 import { organizationService } from '../services/organizationService';
 import { getOrgTheme, saveOrgTheme } from '../utils/themeUtils';
 import { useDepartment } from '../contexts/DepartmentContext';
+import useMeeting from '../hooks/useMeeting';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+} from '@/components/ui/dialog';
+import { Input } from '@/components/ui/input';
 import { 
   Users, 
   Calendar,
@@ -22,9 +31,12 @@ const MeetingsPage = () => {
   const navigate = useNavigate();
   const { user } = useAuthStore();
   const { selectedDepartment } = useDepartment();
+  const { joinMeeting } = useMeeting();
   const [teams, setTeams] = useState([]);
   const [selectedTeamId, setSelectedTeamId] = useState(null);
   const [loadingTeams, setLoadingTeams] = useState(true);
+  const [showJoinDialog, setShowJoinDialog] = useState(false);
+  const [selectedMeetingType, setSelectedMeetingType] = useState('weekly-accountability');
   const [themeColors, setThemeColors] = useState({
     primary: '#3B82F6',
     secondary: '#1E40AF',
@@ -154,11 +166,41 @@ const MeetingsPage = () => {
   const handleStartMeeting = (meetingId) => {
     if (!selectedTeamId) return;
     
+    // Use team ID as the meeting identifier (simpler - no codes needed!)
+    const meetingRoom = `${selectedTeamId}-${meetingId}`;
+    
+    // Join the meeting as leader
+    if (joinMeeting) {
+      joinMeeting(meetingRoom, true);
+    }
+    
+    // Navigate to the appropriate meeting page
     if (meetingId === 'weekly-accountability') {
       navigate(`/meetings/weekly-accountability/${selectedTeamId}`);
     } else if (meetingId === 'quarterly-planning') {
       navigate(`/meetings/quarterly-planning/${selectedTeamId}`);
     }
+  };
+
+  const handleJoinMeeting = (meetingType) => {
+    if (!selectedTeamId) return;
+    
+    // Use team ID + meeting type as the meeting identifier
+    const meetingRoom = `${selectedTeamId}-${meetingType}`;
+    
+    // Join the meeting as participant
+    if (joinMeeting) {
+      joinMeeting(meetingRoom, false);
+    }
+    
+    // Navigate to the appropriate meeting page
+    if (meetingType === 'weekly-accountability') {
+      navigate(`/meetings/weekly-accountability/${selectedTeamId}`);
+    } else if (meetingType === 'quarterly-planning') {
+      navigate(`/meetings/quarterly-planning/${selectedTeamId}`);
+    }
+    
+    setShowJoinDialog(false);
   };
 
   return (
@@ -173,23 +215,34 @@ const MeetingsPage = () => {
               </h1>
               <p className="text-gray-600 mt-2 text-lg">Run effective meetings with structured agendas</p>
             </div>
-            {teams.length > 1 && (
-              <div className="space-y-2">
-                <label className="text-sm font-medium">Select Team</label>
-                <Select value={selectedTeamId} onValueChange={setSelectedTeamId}>
-                  <SelectTrigger className="w-[250px]">
-                    <SelectValue placeholder="Choose a team" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {teams.map(team => (
-                      <SelectItem key={team.id} value={team.id}>
-                        {team.name}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-            )}
+            <div className="flex items-start gap-4">
+              <Button
+                onClick={() => setShowJoinDialog(true)}
+                variant="outline"
+                className="flex items-center gap-2"
+                disabled={!selectedTeamId}
+              >
+                <Users className="h-4 w-4" />
+                Join Team Meeting
+              </Button>
+              {teams.length > 1 && (
+                <div className="space-y-2">
+                  <label className="text-sm font-medium">Select Team</label>
+                  <Select value={selectedTeamId} onValueChange={setSelectedTeamId}>
+                    <SelectTrigger className="w-[250px]">
+                      <SelectValue placeholder="Choose a team" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {teams.map(team => (
+                        <SelectItem key={team.id} value={team.id}>
+                          {team.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              )}
+            </div>
           </div>
         </div>
 
@@ -279,6 +332,76 @@ const MeetingsPage = () => {
           </Card>
         )}
       </div>
+      
+      {/* Join Meeting Dialog */}
+      <Dialog open={showJoinDialog} onOpenChange={setShowJoinDialog}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Join Team Meeting</DialogTitle>
+            <DialogDescription>
+              Select which meeting you want to join for the {teams.find(t => t.id === selectedTeamId)?.name || 'selected'} team.
+            </DialogDescription>
+          </DialogHeader>
+          
+          <div className="space-y-4 mt-4">
+            <div className="space-y-3">
+              <div 
+                className={`p-4 border-2 rounded-lg cursor-pointer transition-all ${
+                  selectedMeetingType === 'weekly-accountability' 
+                    ? 'border-blue-500 bg-blue-50' 
+                    : 'border-gray-200 hover:border-gray-300'
+                }`}
+                onClick={() => setSelectedMeetingType('weekly-accountability')}
+              >
+                <div className="flex items-center gap-3">
+                  <Users className="h-5 w-5 text-blue-600" />
+                  <div>
+                    <h4 className="font-medium">Weekly Accountability Meeting</h4>
+                    <p className="text-sm text-gray-600">90 minute team sync</p>
+                  </div>
+                </div>
+              </div>
+              
+              <div 
+                className={`p-4 border-2 rounded-lg cursor-pointer transition-all ${
+                  selectedMeetingType === 'quarterly-planning' 
+                    ? 'border-green-500 bg-green-50' 
+                    : 'border-gray-200 hover:border-gray-300'
+                }`}
+                onClick={() => setSelectedMeetingType('quarterly-planning')}
+              >
+                <div className="flex items-center gap-3">
+                  <Target className="h-5 w-5 text-green-600" />
+                  <div>
+                    <h4 className="font-medium">Quarterly Planning Meeting</h4>
+                    <p className="text-sm text-gray-600">Plan the upcoming quarter</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div className="flex gap-2">
+              <Button
+                variant="outline"
+                onClick={() => {
+                  setShowJoinDialog(false);
+                  setSelectedMeetingType('weekly-accountability');
+                }}
+                className="flex-1"
+              >
+                Cancel
+              </Button>
+              <Button
+                onClick={() => handleJoinMeeting(selectedMeetingType)}
+                className="flex-1"
+                style={{ backgroundColor: themeColors.primary }}
+              >
+                Join Meeting
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
