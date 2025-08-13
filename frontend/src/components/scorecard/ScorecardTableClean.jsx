@@ -104,20 +104,66 @@ const ScorecardTableClean = ({
     return `${months[date.getMonth()]} ${date.getDate()}`;
   };
 
-  // Get week labels for the past N weeks
+  // Get the start of the current quarter
+  const getQuarterStart = (date) => {
+    const d = new Date(date);
+    const quarter = Math.floor(d.getMonth() / 3);
+    return new Date(d.getFullYear(), quarter * 3, 1);
+  };
+
+  // Get the end of the current quarter
+  const getQuarterEnd = (date) => {
+    const d = new Date(date);
+    const quarter = Math.floor(d.getMonth() / 3);
+    return new Date(d.getFullYear(), quarter * 3 + 3, 0);
+  };
+
+  // Get week labels for the past N weeks or current quarter
   const getWeekLabels = () => {
     const labels = [];
     const weekDates = [];
     const today = new Date();
-    const weeksToShow = Math.min(maxPeriods, 10); // Cap at 10 weeks max
     
-    for (let i = weeksToShow - 1; i >= 0; i--) {
-      const weekStart = new Date(today);
-      weekStart.setDate(today.getDate() - (i * 7));
-      const mondayOfWeek = getWeekStartDate(weekStart);
+    // Check if we should show current quarter (for non-meeting mode or when showQuarterToDate is true)
+    const showQuarterToDate = !meetingMode; // Show QTD in normal scorecard view
+    
+    if (showQuarterToDate) {
+      // Get current quarter start and today
+      const quarterStart = getQuarterStart(today);
+      const quarterEnd = getQuarterEnd(today);
+      const endDate = today < quarterEnd ? today : quarterEnd;
       
-      labels.push(formatWeekLabel(mondayOfWeek));
-      weekDates.push(mondayOfWeek.toISOString().split('T')[0]);
+      // Generate all weeks from quarter start to current date
+      let currentWeek = getWeekStartDate(quarterStart);
+      while (currentWeek <= endDate) {
+        labels.push(formatWeekLabel(currentWeek));
+        weekDates.push(currentWeek.toISOString().split('T')[0]);
+        
+        // Move to next week
+        currentWeek = new Date(currentWeek);
+        currentWeek.setDate(currentWeek.getDate() + 7);
+      }
+      
+      // If we have too many weeks, trim to show most recent ones based on maxPeriods
+      if (weekDates.length > maxPeriods) {
+        const trimCount = weekDates.length - maxPeriods;
+        labels.splice(0, trimCount);
+        weekDates.splice(0, trimCount);
+      }
+      
+      console.log(`Showing Q${Math.floor(today.getMonth() / 3) + 1} weeks:`, weekDates);
+    } else {
+      // Meeting mode - show last N weeks as before
+      const weeksToShow = Math.min(maxPeriods, 10);
+      
+      for (let i = weeksToShow - 1; i >= 0; i--) {
+        const weekStart = new Date(today);
+        weekStart.setDate(today.getDate() - (i * 7));
+        const mondayOfWeek = getWeekStartDate(weekStart);
+        
+        labels.push(formatWeekLabel(mondayOfWeek));
+        weekDates.push(mondayOfWeek.toISOString().split('T')[0]);
+      }
     }
     
     if (meetingMode) {
@@ -133,19 +179,45 @@ const ScorecardTableClean = ({
     return { labels, weekDates };
   };
 
-  // Get month labels for the past N months
+  // Get month labels for the past N months or current quarter
   const getMonthLabels = () => {
     const labels = [];
     const monthDates = [];
     const today = new Date();
-    const monthsToShow = Math.min(maxPeriods, 12); // Cap at 12 months max
     
-    for (let i = monthsToShow - 1; i >= 0; i--) {
-      const date = new Date(today.getFullYear(), today.getMonth() - i, 1);
-      const monthLabel = date.toLocaleString('default', { month: 'short' }).toUpperCase();
-      const yearLabel = date.getFullYear().toString().slice(-2);
-      labels.push(`${monthLabel} ${yearLabel}`);
-      monthDates.push(date.toISOString().split('T')[0]);
+    // Check if we should show current quarter (for non-meeting mode)
+    const showQuarterToDate = !meetingMode; // Show QTD in normal scorecard view
+    
+    if (showQuarterToDate) {
+      // Get current quarter start and today
+      const quarterStart = getQuarterStart(today);
+      const quarterEnd = getQuarterEnd(today);
+      
+      // Generate all months in the current quarter up to current month
+      let currentMonth = new Date(quarterStart);
+      while (currentMonth <= today && currentMonth <= quarterEnd) {
+        const date = new Date(currentMonth.getFullYear(), currentMonth.getMonth(), 1);
+        const monthLabel = date.toLocaleString('default', { month: 'short' }).toUpperCase();
+        const yearLabel = date.getFullYear().toString().slice(-2);
+        labels.push(`${monthLabel} ${yearLabel}`);
+        monthDates.push(date.toISOString().split('T')[0]);
+        
+        // Move to next month
+        currentMonth.setMonth(currentMonth.getMonth() + 1);
+      }
+      
+      console.log(`Showing Q${Math.floor(today.getMonth() / 3) + 1} months:`, monthDates);
+    } else {
+      // Meeting mode or fallback - show last N months as before
+      const monthsToShow = Math.min(maxPeriods, 12);
+      
+      for (let i = monthsToShow - 1; i >= 0; i--) {
+        const date = new Date(today.getFullYear(), today.getMonth() - i, 1);
+        const monthLabel = date.toLocaleString('default', { month: 'short' }).toUpperCase();
+        const yearLabel = date.getFullYear().toString().slice(-2);
+        labels.push(`${monthLabel} ${yearLabel}`);
+        monthDates.push(date.toISOString().split('T')[0]);
+      }
     }
     
     return { labels, monthDates };
