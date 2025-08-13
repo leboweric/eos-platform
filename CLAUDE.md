@@ -103,6 +103,30 @@ import IssuesList from '../components/issues/IssuesListClean';
 - **Key Fix**: Use `router({ mergeParams: true })` in meetings.js to access parent route params
 - **Recipients**: Only sends to team members (uses team_members table)
 
+### Collaborative Meeting Mode (December 2024)
+- **Implemented**: Real-time collaborative meeting features with WebSocket/Socket.io
+- **Backend**: Created `meetingSocketService.js` for handling real-time meeting events
+- **Frontend**: Added `useMeeting` hook and `MeetingBar` component for meeting UI
+- **Features**:
+  - Real-time presence indicators showing who's in the meeting
+  - Navigation following - participants can follow the meeting leader
+  - Individual participant ratings - each person rates the meeting independently
+  - "Meeting in Progress" visual indicators on meeting cards
+  - Join active meetings with participant count display
+- **Configuration**: Controlled via `ENABLE_MEETINGS=true` environment variable (feature flag)
+- **Key Design Decision**: Uses team ID as meeting identifier (no codes needed)
+- **Important**: Only available on Weekly Accountability and Quarterly Planning meeting pages
+
+### Individual Meeting Ratings
+- **Problem**: Original implementation only had single meeting rating
+- **Solution**: Each participant can now rate the meeting independently
+- **UI Changes**:
+  - Shows input only for current user (marked with "You")
+  - Other participants' ratings shown as "Waiting..." until submitted
+  - Automatic average calculation displayed
+  - Fallback to single rating when not in collaborative meeting
+- **Backend**: Accepts `individualRatings` object in conclude meeting endpoint
+
 ### Important Fixes Applied
 1. **Data Source Field**: Fixed conditional rendering issue - now saves properly in Edit Metric dialog
 2. **Email Service**: Fixed sendEmail function call - must use `sendEmail(to, templateName, data)` not object syntax
