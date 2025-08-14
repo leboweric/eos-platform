@@ -8,12 +8,12 @@ import {
   getTeamSubscriptions,
   syncMetricScores
 } from '../controllers/sharedMetricsController.js';
-import authMiddleware from '../middleware/auth.js';
+import { authenticate } from '../middleware/auth.js';
 
 const router = express.Router({ mergeParams: true });
 
 // Apply auth middleware to all routes
-router.use(authMiddleware);
+router.use(authenticate);
 
 // Get all shared metrics in the organization
 router.get('/organizations/:orgId/shared-metrics', getSharedMetrics);
