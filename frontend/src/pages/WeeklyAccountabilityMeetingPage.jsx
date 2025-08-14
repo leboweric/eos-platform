@@ -50,6 +50,7 @@ import { quarterlyPrioritiesService } from '../services/quarterlyPrioritiesServi
 import { issuesService } from '../services/issuesService';
 import { todosService } from '../services/todosService';
 import { headlinesService } from '../services/headlinesService';
+import HeadlineDialog from '../components/headlines/HeadlineDialog';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { FileText, GitBranch } from 'lucide-react';
 import { useSelectedTodos } from '../contexts/SelectedTodosContext';
@@ -102,6 +103,7 @@ const WeeklyAccountabilityMeetingPage = () => {
   const [availableTeams, setAvailableTeams] = useState([]);
   const [selectedTeams, setSelectedTeams] = useState([]);
   const [chartModal, setChartModal] = useState({ isOpen: false, metric: null, metricId: null });
+  const [showHeadlineDialog, setShowHeadlineDialog] = useState(false);
   
   // Collapsible sections state
   const [expandedSections, setExpandedSections] = useState({
@@ -1481,8 +1483,19 @@ const WeeklyAccountabilityMeetingPage = () => {
                   </CardTitle>
                   <CardDescription className="mt-1">Share important updates</CardDescription>
                 </div>
-                <div className="text-sm text-gray-500 bg-white px-3 py-1 rounded-full">
-                  5 minutes
+                <div className="flex items-center gap-2">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setShowHeadlineDialog(true)}
+                    className="text-gray-600"
+                  >
+                    <Plus className="mr-2 h-4 w-4" />
+                    Add Headline
+                  </Button>
+                  <div className="text-sm text-gray-500 bg-white px-3 py-1 rounded-full">
+                    5 minutes
+                  </div>
                 </div>
               </div>
             </CardHeader>
@@ -2148,6 +2161,15 @@ const WeeklyAccountabilityMeetingPage = () => {
         todo={editingTodo}
         onSave={handleSaveTodo}
         teamMembers={teamMembers || []}
+      />
+
+      {/* Headline Dialog */}
+      <HeadlineDialog
+        open={showHeadlineDialog}
+        onOpenChange={setShowHeadlineDialog}
+        onSave={async () => {
+          await fetchHeadlines();
+        }}
       />
 
       {/* Cascading Message Dialog */}
