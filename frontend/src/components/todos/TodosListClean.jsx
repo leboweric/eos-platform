@@ -10,7 +10,8 @@ import {
   CheckCircle,
   ArrowUpDown,
   ArrowUp,
-  ArrowDown
+  ArrowDown,
+  List
 } from 'lucide-react';
 import {
   DropdownMenu,
@@ -42,6 +43,7 @@ const TodosListClean = ({
   const [sortField, setSortField] = useState(null);
   const [sortDirection, setSortDirection] = useState('asc');
   const [sortedTodos, setSortedTodos] = useState(todos);
+  const [showListView, setShowListView] = useState(false);
   
   useEffect(() => {
     fetchOrganizationTheme();
@@ -185,7 +187,8 @@ const TodosListClean = ({
     <div>
       {/* Sorting header */}
       <div className="mb-4 p-2 bg-gray-50 rounded-lg border border-gray-200">
-        <div className="flex items-center gap-1">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-1">
           <span className="text-xs font-medium text-gray-600 mr-2">Sort by:</span>
           <Button
             variant="ghost"
@@ -224,14 +227,119 @@ const TodosListClean = ({
               ✕ Clear
             </Button>
           )}
+          </div>
+          
+          {/* List view toggle */}
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => setShowListView(!showListView)}
+            className="h-7 px-3 py-1 text-xs font-medium hover:bg-gray-200"
+            title={showListView ? "Switch to Card View" : "Switch to List View"}
+          >
+            <List className="h-3 w-3 mr-1" />
+            {showListView ? "Card View" : "List View"}
+          </Button>
         </div>
       </div>
       
-      <div className="space-y-3">
+      {/* Default grid view - cards in columns */}
+      <div className={showListView ? "space-y-2" : "grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3"}>
         {sortedTodos.map((todo) => {
         const daysUntilDue = getDaysUntilDue(todo);
         const overdue = isOverdue(todo);
         
+        if (showListView) {
+          // List View - Compact row layout
+          return (
+            <div
+              key={todo.id}
+              className={`
+                group flex items-center gap-3 bg-white rounded-lg border px-4 py-2 transition-all duration-200
+                ${todo.status === 'complete' && !todo.archived ? 'border-gray-300 opacity-60' : 'border-gray-200 hover:border-gray-300 hover:shadow-sm'}
+              `}
+            >
+              {/* Checkbox */}
+              <Checkbox
+                checked={todo.status === 'complete'}
+                onCheckedChange={(checked) => {
+                  if (onStatusChange) {
+                    onStatusChange(todo.id, checked);
+                  } else if (onUpdate) {
+                    todosService.updateTodo(todo.id, { 
+                      status: checked ? 'complete' : 'incomplete' 
+                    }).then(() => {
+                      onUpdate();
+                    });
+                  }
+                }}
+                className="h-4 w-4 rounded border-gray-300 data-[state=checked]:bg-gray-900 data-[state=checked]:border-gray-900"
+              />
+              
+              {/* Title */}
+              <h3 className={`
+                flex-1 text-sm font-medium
+                ${todo.status === 'complete' ? 'text-gray-400 line-through' : 'text-gray-900'}
+              `}>
+                {todo.title}
+              </h3>
+              
+              {/* Assignee */}
+              {todo.assigned_to && (
+                <span className="text-sm text-gray-500">
+                  {todo.assigned_to.first_name} {todo.assigned_to.last_name}
+                </span>
+              )}
+              
+              {/* Due date */}
+              {todo.due_date && (
+                <span className={`
+                  flex items-center gap-1 text-sm
+                  ${overdue ? 'text-red-600 font-medium' : 
+                    daysUntilDue === 0 ? 'text-orange-600' :
+                    daysUntilDue === 1 ? 'text-yellow-600' :
+                    'text-gray-500'}
+                `}>
+                  <Calendar className="h-3 w-3" />
+                  {formatDueDate(todo)}
+                </span>
+              )}
+              
+              {/* Actions */}
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button 
+                    variant="ghost" 
+                    size="sm" 
+                    className="h-7 w-7 p-0 opacity-0 group-hover:opacity-100"
+                  >
+                    <MoreVertical className="h-3.5 w-3.5 text-gray-500" />
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end" className="w-48">
+                  <DropdownMenuItem 
+                    onClick={() => onEdit(todo)}
+                    className="cursor-pointer"
+                  >
+                    <Edit className="mr-2 h-4 w-4" />
+                    Edit
+                  </DropdownMenuItem>
+                  {onDelete && (
+                    <DropdownMenuItem 
+                      onClick={() => onDelete(todo.id)}
+                      className="cursor-pointer text-red-600 focus:text-red-600"
+                    >
+                      <Trash2 className="mr-2 h-4 w-4" />
+                      Delete
+                    </DropdownMenuItem>
+                  )}
+                </DropdownMenuContent>
+              </DropdownMenu>
+            </div>
+          );
+        }
+        
+        // Card View - Default grid layout (UNCHANGED DESIGN)
         return (
           <div
             key={todo.id}
