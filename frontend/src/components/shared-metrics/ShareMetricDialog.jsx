@@ -1,21 +1,13 @@
 import React, { useState } from 'react';
-import {
-  Dialog,
-  DialogTitle,
-  DialogContent,
-  DialogActions,
-  TextField,
-  Button,
-  Box,
-  Typography,
-  Alert,
-  FormControl,
-  InputLabel,
-  Select,
-  MenuItem,
-  CircularProgress
-} from '@mui/material';
-import { Share as ShareIcon } from '@mui/icons-material';
+import { Share2 as ShareIcon, Loader2 } from 'lucide-react';
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Textarea } from '@/components/ui/textarea';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Alert, AlertDescription } from '@/components/ui/alert';
+import { Card, CardContent } from '@/components/ui/card';
 import sharedMetricsService from '../../services/sharedMetricsService';
 
 const ShareMetricDialog = ({ open, onClose, metric, orgId, teamId, onSuccess }) => {
@@ -28,10 +20,10 @@ const ShareMetricDialog = ({ open, onClose, metric, orgId, teamId, onSuccess }) 
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
 
-  const handleChange = (field) => (event) => {
+  const handleChange = (field, value) => {
     setFormData(prev => ({
       ...prev,
-      [field]: event.target.value
+      [field]: value
     }));
   };
 
@@ -58,98 +50,123 @@ const ShareMetricDialog = ({ open, onClose, metric, orgId, teamId, onSuccess }) 
   if (!metric) return null;
 
   return (
-    <Dialog open={open} onClose={onClose} maxWidth="sm" fullWidth>
-      <DialogTitle>
-        <Box display="flex" alignItems="center" gap={1}>
-          <ShareIcon color="primary" />
-          Share Metric: {metric.name}
-        </Box>
-      </DialogTitle>
-      <DialogContent>
-        <Box sx={{ mt: 2, display: 'flex', flexDirection: 'column', gap: 2 }}>
+    <Dialog open={open} onOpenChange={onClose}>
+      <DialogContent className="sm:max-w-[525px]">
+        <DialogHeader>
+          <DialogTitle className="flex items-center gap-2">
+            <ShareIcon className="h-5 w-5 text-blue-600" />
+            Share Metric: {metric.name}
+          </DialogTitle>
+          <DialogDescription>
+            Share this metric with other teams in your organization. They can subscribe to it and track their own goals.
+          </DialogDescription>
+        </DialogHeader>
+        
+        <div className="grid gap-4 py-4">
           {error && (
-            <Alert severity="error" onClose={() => setError(null)}>
-              {error}
+            <Alert variant="destructive">
+              <AlertDescription>{error}</AlertDescription>
             </Alert>
           )}
 
-          <Typography variant="body2" color="text.secondary">
-            Share this metric with other teams in your organization. They can subscribe to it and track their own goals.
-          </Typography>
+          <div className="grid gap-2">
+            <Label htmlFor="description">Description for Other Teams *</Label>
+            <Textarea
+              id="description"
+              placeholder="Explain what this metric measures and how other teams should use it"
+              value={formData.shared_description}
+              onChange={(e) => handleChange('shared_description', e.target.value)}
+              className="min-h-[80px]"
+              required
+            />
+            <p className="text-sm text-gray-500">
+              Explain what this metric measures and how other teams should use it
+            </p>
+          </div>
 
-          <TextField
-            label="Description for Other Teams"
-            multiline
-            rows={3}
-            value={formData.shared_description}
-            onChange={handleChange('shared_description')}
-            helperText="Explain what this metric measures and how other teams should use it"
-            required
-            fullWidth
-          />
+          <div className="grid gap-2">
+            <Label htmlFor="data_source">Data Source</Label>
+            <Input
+              id="data_source"
+              placeholder="e.g., CRM, Google Analytics"
+              value={formData.data_source}
+              onChange={(e) => handleChange('data_source', e.target.value)}
+            />
+            <p className="text-sm text-gray-500">
+              Where does the data for this metric come from?
+            </p>
+          </div>
 
-          <TextField
-            label="Data Source"
-            value={formData.data_source}
-            onChange={handleChange('data_source')}
-            helperText="Where does the data for this metric come from? (e.g., CRM, Google Analytics)"
-            fullWidth
-          />
+          <div className="grid gap-2">
+            <Label htmlFor="calculation_method">Calculation Method</Label>
+            <Textarea
+              id="calculation_method"
+              placeholder="How is this metric calculated? Include any formulas if applicable"
+              value={formData.calculation_method}
+              onChange={(e) => handleChange('calculation_method', e.target.value)}
+              className="min-h-[60px]"
+            />
+            <p className="text-sm text-gray-500">
+              How is this metric calculated? Include any formulas if applicable
+            </p>
+          </div>
 
-          <TextField
-            label="Calculation Method"
-            multiline
-            rows={2}
-            value={formData.calculation_method}
-            onChange={handleChange('calculation_method')}
-            helperText="How is this metric calculated? Include any formulas if applicable"
-            fullWidth
-          />
-
-          <FormControl fullWidth>
-            <InputLabel>Update Frequency</InputLabel>
+          <div className="grid gap-2">
+            <Label htmlFor="update_frequency">Update Frequency</Label>
             <Select
               value={formData.update_frequency}
-              onChange={handleChange('update_frequency')}
-              label="Update Frequency"
+              onValueChange={(value) => handleChange('update_frequency', value)}
             >
-              <MenuItem value="manual">Manual</MenuItem>
-              <MenuItem value="daily">Daily</MenuItem>
-              <MenuItem value="weekly">Weekly</MenuItem>
-              <MenuItem value="monthly">Monthly</MenuItem>
-              <MenuItem value="quarterly">Quarterly</MenuItem>
+              <SelectTrigger>
+                <SelectValue placeholder="Select frequency" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="manual">Manual</SelectItem>
+                <SelectItem value="daily">Daily</SelectItem>
+                <SelectItem value="weekly">Weekly</SelectItem>
+                <SelectItem value="monthly">Monthly</SelectItem>
+                <SelectItem value="quarterly">Quarterly</SelectItem>
+              </SelectContent>
             </Select>
-          </FormControl>
+          </div>
 
-          <Alert severity="info">
-            <Typography variant="body2">
-              <strong>Current Settings:</strong>
-              <br />
-              Type: {metric.type}
-              <br />
-              Value Type: {metric.value_type}
-              <br />
-              Goal: {metric.goal}
-              <br />
-              Comparison: {metric.comparison_operator === 'greater_equal' ? '≥' : 
-                          metric.comparison_operator === 'less_equal' ? '≤' : '='}
-            </Typography>
-          </Alert>
-        </Box>
+          <Card className="bg-blue-50 border-blue-200">
+            <CardContent className="pt-6">
+              <div className="text-sm space-y-1">
+                <p><strong>Current Settings:</strong></p>
+                <p>Type: {metric.type}</p>
+                <p>Value Type: {metric.value_type}</p>
+                <p>Goal: {metric.goal}</p>
+                <p>Comparison: {metric.comparison_operator === 'greater_equal' ? '≥' : 
+                            metric.comparison_operator === 'less_equal' ? '≤' : '='}</p>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+
+        <DialogFooter>
+          <Button variant="outline" onClick={onClose} disabled={loading}>
+            Cancel
+          </Button>
+          <Button
+            onClick={handleSubmit}
+            disabled={loading}
+            className="bg-blue-600 hover:bg-blue-700 text-white"
+          >
+            {loading ? (
+              <>
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                Sharing...
+              </>
+            ) : (
+              <>
+                <ShareIcon className="mr-2 h-4 w-4" />
+                Share Metric
+              </>
+            )}
+          </Button>
+        </DialogFooter>
       </DialogContent>
-      <DialogActions>
-        <Button onClick={onClose} disabled={loading}>
-          Cancel
-        </Button>
-        <Button
-          onClick={handleSubmit}
-          variant="contained"
-          disabled={loading}
-          startIcon={loading ? <CircularProgress size={20} /> : <ShareIcon />}
-        >
-          {loading ? 'Sharing...' : 'Share Metric'}
-        </Button>
-      </DialogActions>
     </Dialog>
   );
 };
