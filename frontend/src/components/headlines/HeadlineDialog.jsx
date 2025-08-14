@@ -13,12 +13,16 @@ const HeadlineDialog = ({ open, onOpenChange, onSave }) => {
   const [error, setError] = useState(null);
   const [saving, setSaving] = useState(false);
 
-  // Reset form when dialog opens
+  // Reset form when dialog opens or closes
   useEffect(() => {
     if (open) {
       setHeadlineType('customer');
       setHeadlineText('');
       setError(null);
+      setSaving(false);
+    } else {
+      // Reset saving state when dialog closes
+      setSaving(false);
     }
   }, [open]);
 
@@ -36,9 +40,11 @@ const HeadlineDialog = ({ open, onOpenChange, onSave }) => {
         type: headlineType,
         text: headlineText.trim()
       });
+      setSaving(false);
       onOpenChange(false);
     } catch (error) {
       setError(error.message || 'Failed to save headline');
+    } finally {
       setSaving(false);
     }
   };
