@@ -382,6 +382,14 @@ const IssuesListClean = ({
             <span className="text-gray-500 truncate max-w-[120px]">
               {issue.owner_name || 'Unassigned'}
             </span>
+            {issue.attachment_count > 0 && (
+              <div className="flex items-center text-gray-400" title={`${issue.attachment_count} attachment${issue.attachment_count > 1 ? 's' : ''}`}>
+                <Paperclip className="h-3 w-3" />
+                {issue.attachment_count > 1 && (
+                  <span className="text-xs ml-0.5">{issue.attachment_count}</span>
+                )}
+              </div>
+            )}
           </div>
         </div>
       </div>
@@ -543,6 +551,16 @@ const IssuesListClean = ({
                 `}>
                   {issue.title}
                 </h3>
+                
+                {/* Attachment indicator */}
+                {issue.attachment_count > 0 && (
+                  <div className="flex items-center text-gray-400" title={`${issue.attachment_count} attachment${issue.attachment_count > 1 ? 's' : ''}`}>
+                    <Paperclip className="h-3 w-3" />
+                    {issue.attachment_count > 1 && (
+                      <span className="text-xs ml-0.5">{issue.attachment_count}</span>
+                    )}
+                  </div>
+                )}
                 
                 {/* Owner */}
                 <span className="text-sm text-gray-500">
