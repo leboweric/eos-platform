@@ -2,6 +2,7 @@ import db from '../config/database.js';
 import multer from 'multer';
 import { v4 as uuidv4 } from 'uuid';
 import { getUserTeamContext } from '../utils/teamUtils.js';
+import { autoSaveToDocuments } from '../utils/documentAutoSave.js';
 
 // Configure multer for memory storage
 const storage = multer.memoryStorage();
@@ -467,14 +468,36 @@ export const uploadAttachment = async (req, res) => {
       });
     }
     
+    // Get issue details for auto-save
+    const issueDetails = await db.query(
+      'SELECT title, team_id FROM issues WHERE id = $1',
+      [issueId]
+    );
+    
     // Insert the attachment
+    const attachmentId = uuidv4();
     const result = await db.query(
       `INSERT INTO issue_attachments 
        (id, issue_id, uploaded_by, file_name, file_data, file_size, mime_type)
        VALUES ($1, $2, $3, $4, $5, $6, $7)
        RETURNING id, issue_id, uploaded_by, file_name, file_size, mime_type, created_at`,
-      [uuidv4(), issueId, uploadedBy, originalname, buffer, size, mimetype]
+      [attachmentId, issueId, uploadedBy, originalname, buffer, size, mimetype]
     );
+    
+    // Auto-save to documents repository
+    await autoSaveToDocuments({
+      fileData: buffer,
+      fileName: originalname,
+      fileSize: size,
+      mimeType: mimetype,
+      orgId: orgId,
+      uploadedBy: uploadedBy,
+      sourceType: 'issue',
+      sourceId: issueId,
+      sourceTitle: issueDetails.rows[0]?.title || 'Untitled Issue',
+      teamId: issueDetails.rows[0]?.team_id,
+      visibility: issueDetails.rows[0]?.team_id ? 'department' : 'company'
+    });
     
     res.status(201).json({
       success: true,

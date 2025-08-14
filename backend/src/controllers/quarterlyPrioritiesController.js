@@ -4,6 +4,7 @@ import { isUserOnLeadershipTeam } from './teamsController.js';
 import fs from 'fs/promises';
 import path from 'path';
 import { fileURLToPath } from 'url';
+import { autoSaveToDocuments } from '../utils/documentAutoSave.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -1727,9 +1728,9 @@ export const uploadPriorityAttachment = async (req, res) => {
       });
     }
 
-    // Verify priority exists and belongs to organization
+    // Verify priority exists and get details for auto-save
     const priorityCheck = await query(
-      'SELECT id FROM quarterly_priorities WHERE id = $1 AND organization_id = $2',
+      'SELECT id, title, team_id FROM quarterly_priorities WHERE id = $1 AND organization_id = $2',
       [priorityId, orgId]
     );
 
@@ -1739,6 +1740,8 @@ export const uploadPriorityAttachment = async (req, res) => {
         error: 'Priority not found'
       });
     }
+    
+    const priorityDetails = priorityCheck.rows[0];
 
     // Create attachment record with file data stored in database
     const attachmentId = uuidv4();
@@ -1775,6 +1778,21 @@ export const uploadPriorityAttachment = async (req, res) => {
         userId
       ]
     );
+    
+    // Auto-save to documents repository
+    await autoSaveToDocuments({
+      fileData: fileBuffer,
+      fileName: file.originalname,
+      fileSize: file.size,
+      mimeType: file.mimetype,
+      orgId: orgId,
+      uploadedBy: userId,
+      sourceType: 'priority',
+      sourceId: priorityId,
+      sourceTitle: priorityDetails.title || 'Untitled Priority',
+      teamId: priorityDetails.team_id || teamId,
+      visibility: priorityDetails.team_id ? 'department' : 'company'
+    });
 
     res.json({
       success: true,
