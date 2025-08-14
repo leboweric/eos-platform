@@ -1485,10 +1485,12 @@ const WeeklyAccountabilityMeetingPage = () => {
                 </div>
                 <div className="flex items-center gap-2">
                   <Button
-                    variant="outline"
                     size="sm"
                     onClick={() => setShowHeadlineDialog(true)}
-                    className="text-gray-600"
+                    className="text-white transition-colors"
+                    style={{ backgroundColor: themeColors.primary }}
+                    onMouseEnter={(e) => e.currentTarget.style.backgroundColor = themeColors.secondary}
+                    onMouseLeave={(e) => e.currentTarget.style.backgroundColor = themeColors.primary}
                   >
                     <Plus className="mr-2 h-4 w-4" />
                     Add Headline
