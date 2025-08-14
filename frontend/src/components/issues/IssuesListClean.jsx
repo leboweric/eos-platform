@@ -76,9 +76,12 @@ const IssuesListClean = ({
   const [sortDirection, setSortDirection] = useState('asc');
   const [sortedIssues, setSortedIssues] = useState(issues);
   const [showListView, setShowListView] = useState(() => {
-    // Default to list view, only show grid if explicitly set
+    // If in compact grid mode, ignore saved preference
+    if (compactGrid) return false;
+    // Otherwise check localStorage, defaulting to list view
     const savedMode = localStorage.getItem('issuesViewMode');
-    return savedMode !== 'grid';
+    // Default to list view if no saved preference or if set to list
+    return !savedMode || savedMode === 'list';
   });
 
   // Sort issues whenever issues prop or sort settings change
