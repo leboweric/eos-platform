@@ -630,7 +630,13 @@ const WeeklyAccountabilityMeetingPage = () => {
 
   const handleStatusChange = async (issueId, newStatus) => {
     try {
-      setIssues(prev => 
+      // Update both short-term and long-term issues states
+      setShortTermIssues(prev => 
+        prev.map(issue => 
+          issue.id === issueId ? { ...issue, status: newStatus } : issue
+        )
+      );
+      setLongTermIssues(prev => 
         prev.map(issue => 
           issue.id === issueId ? { ...issue, status: newStatus } : issue
         )
