@@ -38,7 +38,9 @@ import {
   Send,
   ArrowUpDown,
   ArrowUp,
-  ArrowDown
+  ArrowDown,
+  LayoutGrid,
+  List
 } from 'lucide-react';
 import { Textarea } from '@/components/ui/textarea';
 import { issuesService } from '../../services/issuesService';
@@ -74,6 +76,9 @@ const IssuesListClean = ({
   const [sortField, setSortField] = useState(null);
   const [sortDirection, setSortDirection] = useState('asc');
   const [sortedIssues, setSortedIssues] = useState(issues);
+  const [viewMode, setViewMode] = useState(
+    compactGrid ? 'grid' : (localStorage.getItem('issuesViewMode') || 'card')
+  );
 
   // Sort issues whenever issues prop or sort settings change
   useEffect(() => {
@@ -386,7 +391,8 @@ const IssuesListClean = ({
     <>
       {/* Sorting header */}
       <div className="mb-4 p-2 bg-gray-50 rounded-lg border border-gray-200">
-        <div className="flex items-center gap-1">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-1">
           <span className="text-xs font-medium text-gray-600 mr-2">Sort by:</span>
           <Button
             variant="ghost"
@@ -433,17 +439,49 @@ const IssuesListClean = ({
               ✕ Clear
             </Button>
           )}
+          </div>
+          
+          {/* View toggle - only show if not in compactGrid mode */}
+          {!compactGrid && (
+            <div className="flex items-center gap-1 ml-4">
+              <span className="text-xs font-medium text-gray-600 mr-2">View:</span>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => {
+                  setViewMode('card');
+                  localStorage.setItem('issuesViewMode', 'card');
+                }}
+                className={`h-7 px-2 py-1 ${viewMode === 'card' ? 'bg-gray-200 text-gray-900' : 'text-gray-600'}`}
+                title="Card View"
+              >
+                <LayoutGrid className="h-4 w-4" />
+              </Button>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => {
+                  setViewMode('list');
+                  localStorage.setItem('issuesViewMode', 'list');
+                }}
+                className={`h-7 px-2 py-1 ${viewMode === 'list' ? 'bg-gray-200 text-gray-900' : 'text-gray-600'}`}
+                title="List View"
+              >
+                <List className="h-4 w-4" />
+              </Button>
+            </div>
+          )}
         </div>
       </div>
       
-      {/* Render compact grid or regular list based on prop */}
+      {/* Render based on view mode */}
       {compactGrid ? (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3">
           {sortedIssues.map((issue, index) => (
             <CompactIssueCard key={issue.id} issue={issue} index={index} />
           ))}
         </div>
-      ) : (
+      ) : viewMode === 'card' ? (
         <div className="space-y-3">
           {sortedIssues.map((issue, index) => {
           const hasVotes = (issue.vote_count || 0) > 0;
@@ -586,9 +624,170 @@ const IssuesListClean = ({
           );
         })}
         </div>
+      ) : (
+        // List View - Compact table layout
+        <div className="bg-white rounded-lg border border-gray-200 overflow-hidden">
+          <table className="w-full">
+            <tbody className="divide-y divide-gray-200">
+              {sortedIssues.map((issue, index) => {
+                const hasVotes = (issue.vote_count || 0) > 0;
+                const isTopIssue = index === 0 && hasVotes && showVoting;
+                
+                return (
+                  <tr 
+                    key={issue.id}
+                    className={`
+                      group hover:bg-gray-50 transition-colors duration-200 cursor-pointer
+                      ${issue.status === 'closed' ? 'opacity-60' : ''}
+                    `}
+                    onClick={() => setSelectedIssue(issue)}
+                  >
+                    {/* Checkbox column */}
+                    <td className="w-10 px-3 py-2" onClick={(e) => e.stopPropagation()}>
+                      <Checkbox
+                        checked={issue.status === 'closed'}
+                        onCheckedChange={(checked) => {
+                          onStatusChange(issue.id, checked ? 'closed' : 'open');
+                        }}
+                        className="h-4 w-4 rounded border-gray-300 data-[state=checked]:bg-gray-900 data-[state=checked]:border-gray-900"
+                      />
+                    </td>
+                    
+                    {/* Issue number column */}
+                    <td className="w-12 px-2 py-2">
+                      <span className="text-sm font-semibold" style={{
+                        color: isTopIssue ? themeColors.primary : '#6B7280'
+                      }}>
+                        #{index + 1}
+                      </span>
+                      {isTopIssue && <span className="ml-1 text-xs">🔥</span>}
+                    </td>
+                    
+                    {/* Title column */}
+                    <td className="px-3 py-2">
+                      <span className={`
+                        text-sm font-medium
+                        ${issue.status === 'closed' ? 'text-gray-400 line-through' : 'text-gray-900'}
+                      `}>
+                        {issue.title}
+                      </span>
+                    </td>
+                    
+                    {/* Owner column */}
+                    <td className="px-3 py-2 text-sm text-gray-500 whitespace-nowrap">
+                      {issue.owner_name || 'Unassigned'}
+                    </td>
+                    
+                    {/* Timeline column */}
+                    <td className="px-3 py-2 text-sm text-gray-500 whitespace-nowrap">
+                      {issue.timeline === 'short_term' ? 'Short Term' : 'Long Term'}
+                    </td>
+                    
+                    {/* Votes column (if voting enabled) */}
+                    {showVoting && (
+                      <td className="px-3 py-2 text-sm" onClick={(e) => e.stopPropagation()}>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => onVote(issue.id, !issue.user_has_voted)}
+                          className="h-6 px-2 py-0 hover:bg-gray-100"
+                          style={{
+                            color: issue.user_has_voted ? themeColors.primary : '#9CA3AF'
+                          }}
+                        >
+                          <ThumbsUp className={`h-3 w-3 ${issue.user_has_voted ? 'fill-current' : ''}`} />
+                          {(issue.vote_count || 0) > 0 && (
+                            <span className="ml-1 text-xs font-medium">{issue.vote_count}</span>
+                          )}
+                        </Button>
+                      </td>
+                    )}
+                    
+                    {/* Status column */}
+                    <td className="px-3 py-2 text-sm">
+                      {issue.status === 'closed' ? (
+                        <span className="flex items-center gap-1 text-green-600">
+                          <CheckCircle className="h-3 w-3" />
+                          Closed
+                        </span>
+                      ) : (
+                        <span className="flex items-center gap-1 text-blue-600">
+                          <AlertCircle className="h-3 w-3" />
+                          Open
+                        </span>
+                      )}
+                    </td>
+                    
+                    {/* Actions column */}
+                    <td className="px-3 py-2 text-right" onClick={(e) => e.stopPropagation()}>
+                      <div className="opacity-0 group-hover:opacity-100 transition-opacity">
+                        <DropdownMenu>
+                          <DropdownMenuTrigger asChild>
+                            <Button 
+                              variant="ghost" 
+                              size="sm" 
+                              className="h-7 w-7 p-0 hover:bg-gray-100"
+                            >
+                              <MoreVertical className="h-3.5 w-3.5 text-gray-500" />
+                            </Button>
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent align="end" className="w-48">
+                            <DropdownMenuItem 
+                              onClick={() => onEdit(issue)}
+                              className="cursor-pointer"
+                            >
+                              <Edit className="mr-2 h-4 w-4" />
+                              Edit
+                            </DropdownMenuItem>
+                            {onArchive && (
+                              <DropdownMenuItem 
+                                onClick={() => onArchive(issue.id)}
+                                className="cursor-pointer"
+                              >
+                                <Archive className="mr-2 h-4 w-4" />
+                                Archive
+                              </DropdownMenuItem>
+                            )}
+                            {onCreateTodo && (
+                              <DropdownMenuItem 
+                                onClick={() => onCreateTodo(issue)}
+                                className="cursor-pointer"
+                              >
+                                <ListTodo className="mr-2 h-4 w-4" />
+                                Create Todo
+                              </DropdownMenuItem>
+                            )}
+                            {onSendCascadingMessage && (
+                              <DropdownMenuItem 
+                                onClick={() => onSendCascadingMessage(issue)}
+                                className="cursor-pointer"
+                              >
+                                <Send className="mr-2 h-4 w-4" />
+                                Send Message
+                              </DropdownMenuItem>
+                            )}
+                            {onMoveToTeam && (
+                              <DropdownMenuItem 
+                                onClick={() => onMoveToTeam(issue)}
+                                className="cursor-pointer"
+                              >
+                                <Users className="mr-2 h-4 w-4" />
+                                Move to Team
+                              </DropdownMenuItem>
+                            )}
+                          </DropdownMenuContent>
+                        </DropdownMenu>
+                      </div>
+                    </td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
+        </div>
       )}
 
-      {/* Issue Detail Modal - shared between both views */}
+      {/* Issue Detail Modal - shared between all views */}
       <Dialog open={!!selectedIssue} onOpenChange={(open) => !open && setSelectedIssue(null)}>
         <DialogContent className="max-w-2xl">
           {selectedIssue && (

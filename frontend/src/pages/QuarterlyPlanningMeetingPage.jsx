@@ -37,7 +37,7 @@ import { quarterlyPrioritiesService } from '../services/quarterlyPrioritiesServi
 import { issuesService } from '../services/issuesService';
 import { organizationService } from '../services/organizationService';
 import { getOrgTheme, saveOrgTheme, hexToRgba } from '../utils/themeUtils';
-import IssuesList from '../components/issues/IssuesList';
+import IssuesListClean from '../components/issues/IssuesListClean';
 import IssueDialog from '../components/issues/IssueDialog';
 import TodoDialog from '../components/todos/TodoDialog';
 import { todosService } from '../services/todosService';
@@ -1277,7 +1277,7 @@ const QuarterlyPlanningMeetingPage = () => {
             
             {/* Embedded Issues List */}
             <div className="bg-white rounded-lg shadow-sm p-6">
-              <IssuesList 
+              <IssuesListClean 
                 issues={issues || []}
                 compactGrid={true}
                 onEdit={(issue) => {
