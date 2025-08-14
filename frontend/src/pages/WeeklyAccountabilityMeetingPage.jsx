@@ -669,17 +669,30 @@ const WeeklyAccountabilityMeetingPage = () => {
         return issue;
       };
       
-      // Update and sort issues by vote count
-      setIssues(prev => {
-        const updated = prev.map(updateVote);
-        // Sort by vote count (highest first), then by created date (newest first)
-        return updated.sort((a, b) => {
-          if (b.vote_count !== a.vote_count) {
-            return (b.vote_count || 0) - (a.vote_count || 0);
-          }
-          return new Date(b.created_at) - new Date(a.created_at);
+      // Update the appropriate issues list based on current timeline
+      if (issueTimeline === 'short_term') {
+        setShortTermIssues(prev => {
+          const updated = prev.map(updateVote);
+          // Sort by vote count (highest first), then by created date (newest first)
+          return updated.sort((a, b) => {
+            if (b.vote_count !== a.vote_count) {
+              return (b.vote_count || 0) - (a.vote_count || 0);
+            }
+            return new Date(b.created_at) - new Date(a.created_at);
+          });
         });
-      });
+      } else {
+        setLongTermIssues(prev => {
+          const updated = prev.map(updateVote);
+          // Sort by vote count (highest first), then by created date (newest first)
+          return updated.sort((a, b) => {
+            if (b.vote_count !== a.vote_count) {
+              return (b.vote_count || 0) - (a.vote_count || 0);
+            }
+            return new Date(b.created_at) - new Date(a.created_at);
+          });
+        });
+      }
       
       if (shouldVote) {
         await issuesService.voteForIssue(issueId);
