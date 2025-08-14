@@ -78,7 +78,9 @@ const WeeklyAccountabilityMeetingPage = () => {
   const [monthlyScores, setMonthlyScores] = useState({});
   const [monthlyNotes, setMonthlyNotes] = useState({});
   const [priorities, setPriorities] = useState([]);
-  const [issues, setIssues] = useState([]);
+  const [shortTermIssues, setShortTermIssues] = useState([]);
+  const [longTermIssues, setLongTermIssues] = useState([]);
+  const [issueTimeline, setIssueTimeline] = useState('short_term');
   const [selectedIssueIds, setSelectedIssueIds] = useState([]);
   const [todos, setTodos] = useState([]);
   const { selectedTodoIds } = useSelectedTodos();
@@ -143,6 +145,9 @@ const WeeklyAccountabilityMeetingPage = () => {
     secondary: '#1E40AF',
     accent: '#60A5FA'
   });
+
+  // Computed values
+  const currentIssues = issueTimeline === 'short_term' ? shortTermIssues : longTermIssues;
 
   // Meeting agenda items
   const agendaItems = [
@@ -348,9 +353,14 @@ const WeeklyAccountabilityMeetingPage = () => {
     try {
       const effectiveTeamId = teamId || user?.teamId || '00000000-0000-0000-0000-000000000000';
       
-      const response = await issuesService.getIssues('short_term', false, effectiveTeamId);
+      // Fetch both short-term and long-term issues
+      const [shortTermResponse, longTermResponse] = await Promise.all([
+        issuesService.getIssues('short_term', false, effectiveTeamId),
+        issuesService.getIssues('long_term', false, effectiveTeamId)
+      ]);
+      
       // Sort issues by vote count (highest first), then by created date (newest first)
-      const sortedIssues = (response.data.issues || []).sort((a, b) => {
+      const sortIssues = (issuesList) => (issuesList || []).sort((a, b) => {
         // First sort by vote count (descending)
         if (b.vote_count !== a.vote_count) {
           return (b.vote_count || 0) - (a.vote_count || 0);
@@ -358,8 +368,10 @@ const WeeklyAccountabilityMeetingPage = () => {
         // Then by created date (newest first)
         return new Date(b.created_at) - new Date(a.created_at);
       });
-      setIssues(sortedIssues);
-      setTeamMembers(response.data.teamMembers || []);
+      
+      setShortTermIssues(sortIssues(shortTermResponse.data.issues));
+      setLongTermIssues(sortIssues(longTermResponse.data.issues));
+      setTeamMembers(shortTermResponse.data.teamMembers || []);
     } catch (error) {
       console.error('Failed to fetch issues:', error);
     }
@@ -594,7 +606,7 @@ const WeeklyAccountabilityMeetingPage = () => {
       } else {
         await issuesService.createIssue({
           ...issueData,
-          timeline: 'short_term',
+          timeline: issueTimeline,
           department_id: effectiveTeamId
         });
         setSuccess('Issue created successfully');
@@ -1741,14 +1753,42 @@ const WeeklyAccountabilityMeetingPage = () => {
                   </p>
                 </div>
                 <div className="flex justify-between items-center mb-4">
-                  <div>
+                  <div className="flex items-center gap-2">
+                    <div className="inline-flex rounded-lg border border-gray-200 p-1">
+                      <button
+                        onClick={() => setIssueTimeline('short_term')}
+                        className={`px-3 py-1 text-sm font-medium rounded transition-colors ${
+                          issueTimeline === 'short_term'
+                            ? 'text-white'
+                            : 'text-gray-600 hover:text-gray-900'
+                        }`}
+                        style={{
+                          backgroundColor: issueTimeline === 'short_term' ? themeColors.primary : 'transparent'
+                        }}
+                      >
+                        Short Term ({shortTermIssues.length})
+                      </button>
+                      <button
+                        onClick={() => setIssueTimeline('long_term')}
+                        className={`px-3 py-1 text-sm font-medium rounded transition-colors ${
+                          issueTimeline === 'long_term'
+                            ? 'text-white'
+                            : 'text-gray-600 hover:text-gray-900'
+                        }`}
+                        style={{
+                          backgroundColor: issueTimeline === 'long_term' ? themeColors.primary : 'transparent'
+                        }}
+                      >
+                        Long Term ({longTermIssues.length})
+                      </button>
+                    </div>
                     {(() => {
-                      const closedIssuesCount = issues.filter(issue => issue.status === 'closed').length;
+                      const closedIssuesCount = currentIssues.filter(issue => issue.status === 'closed').length;
                       return closedIssuesCount > 0 && (
                         <Button 
                           onClick={async () => {
                             try {
-                              await issuesService.archiveClosedIssues('short_term');
+                              await issuesService.archiveClosedIssues(issueTimeline);
                               setSuccess(`${closedIssuesCount} closed issue${closedIssuesCount > 1 ? 's' : ''} archived`);
                               await fetchIssuesData();
                             } catch (error) {
@@ -1790,13 +1830,13 @@ const WeeklyAccountabilityMeetingPage = () => {
                     </Button>
                   </div>
                 </div>
-                {issues.length === 0 ? (
+                {currentIssues.length === 0 ? (
                   <div className="text-center py-8">
-                    <p className="text-gray-500">No issues found.</p>
+                    <p className="text-gray-500">No {issueTimeline === 'short_term' ? 'short-term' : 'long-term'} issues found.</p>
                   </div>
                 ) : (
                   <IssuesListClean
-                    issues={issues || []}
+                    issues={currentIssues || []}
                     onEdit={handleEditIssue}
                     onStatusChange={handleStatusChange}
                     onTimelineChange={handleTimelineChange}
