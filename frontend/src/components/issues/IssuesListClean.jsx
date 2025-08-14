@@ -58,7 +58,9 @@ const IssuesListClean = ({
   getStatusIcon, 
   readOnly = false, 
   showVoting = false,
-  compactGrid = false  // New prop for compact grid view in meetings
+  compactGrid = false,  // New prop for compact grid view in meetings
+  maxColumns = 3,  // Maximum number of columns for list view
+  columnBreakpoint = 20  // Number of items before adding another column
 }) => {
   const { user } = useAuthStore();
   const [selectedIssue, setSelectedIssue] = useState(null);
@@ -486,7 +488,7 @@ const IssuesListClean = ({
           if (showListView) {
             // Multi-column list view logic
             const issueCount = sortedIssues.length;
-            const columnCount = Math.min(3, Math.ceil(issueCount / 20)); // 1-20: 1 col, 21-40: 2 cols, 41+: 3 cols
+            const columnCount = Math.min(maxColumns, Math.ceil(issueCount / columnBreakpoint));
             const issuesPerColumn = Math.ceil(issueCount / columnCount);
             
             // Split issues into columns
