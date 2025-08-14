@@ -1550,7 +1550,7 @@ const WeeklyAccountabilityMeetingPage = () => {
                           <li key={headline.id} className="text-gray-700">
                             {headline.text}
                             <span className="text-xs text-gray-500 ml-2">
-                              - {headline.createdBy}
+                              - {headline.created_by_name || headline.createdBy || 'Unknown'}
                             </span>
                           </li>
                         ))}
@@ -1575,7 +1575,7 @@ const WeeklyAccountabilityMeetingPage = () => {
                           <li key={headline.id} className="text-gray-700">
                             {headline.text}
                             <span className="text-xs text-gray-500 ml-2">
-                              - {headline.createdBy}
+                              - {headline.created_by_name || headline.createdBy || 'Unknown'}
                             </span>
                           </li>
                         ))}
@@ -2169,7 +2169,12 @@ const WeeklyAccountabilityMeetingPage = () => {
       <HeadlineDialog
         open={showHeadlineDialog}
         onOpenChange={setShowHeadlineDialog}
-        onSave={async () => {
+        onSave={async (headlineData) => {
+          const effectiveTeamId = teamId || user?.teamId || '00000000-0000-0000-0000-000000000000';
+          await headlinesService.createHeadline({
+            ...headlineData,
+            teamId: effectiveTeamId
+          });
           await fetchHeadlines();
         }}
       />
