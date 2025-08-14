@@ -1,4 +1,4 @@
-import axios from '../axiosSetup';
+import axios from './axiosConfig';
 
 // Get all shared metrics in the organization
 export const getSharedMetrics = async (orgId, teamId = null) => {
