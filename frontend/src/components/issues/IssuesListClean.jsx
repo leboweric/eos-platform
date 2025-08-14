@@ -474,11 +474,18 @@ const IssuesListClean = ({
               <div
                 key={issue.id}
                 className={`
-                  group flex items-center gap-3 bg-white rounded-lg border px-4 py-2 transition-all duration-200 cursor-pointer
+                  group relative flex items-center gap-3 bg-white rounded-lg border pl-2 pr-4 py-2 transition-all duration-200 cursor-pointer
                   ${issue.status === 'closed' ? 'border-gray-300 opacity-60' : 'border-gray-200 hover:border-gray-300 hover:shadow-sm'}
                 `}
                 onClick={() => setSelectedIssue(issue)}
               >
+                {/* Status indicator - left color bar */}
+                <div 
+                  className="absolute left-0 top-0 bottom-0 w-1 rounded-l-lg"
+                  style={{ 
+                    backgroundColor: issue.status === 'open' ? themeColors.accent : '#9CA3AF' 
+                  }}
+                />
                 {/* Checkbox */}
                 <div onClick={(e) => e.stopPropagation()}>
                   <Checkbox
