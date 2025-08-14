@@ -568,7 +568,7 @@ const IssuesPageClean = () => {
                   onSendCascadingMessage={handleSendCascadingMessage}
                   getStatusColor={getStatusColor}
                   getStatusIcon={getStatusIcon}
-                  showVoting={false} // Will be enabled during Weekly Accountability Meetings
+                  showVoting={true} // Enable voting on Issues page
                   compactGrid={false} // Allow toggle between grid and list views
                 />
               )
