@@ -33,6 +33,7 @@ import cascadingMessagesRoutes from './routes/cascadingMessages.js';
 import completionTrackingRoutes from './routes/completionTracking.js';
 import userPreferencesRoutes from './routes/userPreferences.js';
 import demoResetRoutes from './routes/demoReset.js';
+import sharedMetricsRoutes from './routes/sharedMetrics.js';
 
 // Import middleware
 import { errorHandler } from './middleware/errorHandler.js';
@@ -182,6 +183,7 @@ app.use('/api/v1/organizations/:orgId/ai/rock-assistant', aiRockAssistantRoutes)
 app.use('/api/v1', completionTrackingRoutes);
 app.use('/api/v1/user', userPreferencesRoutes);
 app.use('/api/v1/demo', demoResetRoutes);
+app.use('/api/v1', sharedMetricsRoutes);
 
 // Webhook routes (must be before express.json() middleware for raw body)
 app.use('/webhooks', webhookRoutes);

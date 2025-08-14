@@ -7,7 +7,8 @@ import {
   GripVertical,
   Trash2,
   AlertCircle,
-  MessageSquare
+  MessageSquare,
+  Share2
 } from 'lucide-react';
 import { useAuthStore } from '../../stores/authStore';
 import { organizationService } from '../../services/organizationService';
@@ -30,6 +31,7 @@ const ScorecardTableClean = ({
   onChartOpen,
   onMetricUpdate,
   onMetricDelete,
+  onMetricShare, // New prop for sharing metrics
   onAddIssue, // New prop for adding metric issues
   noWrapper = false, // Add prop to disable Card wrapper
   maxPeriods = 10, // Control how many weeks/months to show
@@ -552,6 +554,17 @@ const ScorecardTableClean = ({
                           >
                             <Edit className="h-3 w-3" style={{ color: themeColors.primary }} />
                           </Button>
+                          {onMetricShare && (
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              className="h-5 w-5 p-0"
+                              onClick={() => onMetricShare(metric)}
+                              title={metric.is_shared ? "Shared metric" : "Share metric"}
+                            >
+                              <Share2 className="h-3 w-3" style={{ color: metric.is_shared ? themeColors.accent : themeColors.primary }} />
+                            </Button>
+                          )}
                           <Button
                             variant="ghost"
                             size="sm"

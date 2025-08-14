@@ -28,6 +28,9 @@ import MetricTrendChart from '../components/scorecard/MetricTrendChart';
 import GroupedScorecardView from '../components/scorecard/GroupedScorecardView';
 import ScorecardTableClean from '../components/scorecard/ScorecardTableClean';
 import ScorecardImport from '../components/scorecard/ScorecardImport';
+import ShareMetricDialog from '../components/shared-metrics/ShareMetricDialog';
+import SharedMetricsBrowser from '../components/shared-metrics/SharedMetricsBrowser';
+import sharedMetricsService from '../services/sharedMetricsService';
 
 const ScorecardPageClean = () => {
   const { user } = useAuthStore();
@@ -67,6 +70,10 @@ const ScorecardPageClean = () => {
     const savedRTL = localStorage.getItem('scorecardRTL');
     return savedRTL === 'true';
   }); // Add RTL state
+  
+  // Shared metrics state
+  const [shareMetricDialog, setShareMetricDialog] = useState(false);
+  const [metricToShare, setMetricToShare] = useState(null);
   
   // Filter metrics by type
   const weeklyMetrics = metrics.filter(m => m.type === 'weekly');
@@ -317,6 +324,17 @@ const ScorecardPageClean = () => {
     } finally {
       setSaving(false);
     }
+  };
+
+  const handleMetricShare = (metric) => {
+    setMetricToShare(metric);
+    setShareMetricDialog(true);
+  };
+
+  const handleShareSuccess = async () => {
+    setSuccess('Metric shared successfully');
+    // Refresh metrics to update the is_shared status
+    await fetchScorecard();
   };
 
   const handleScoreEdit = (metric, weekDate, scoreType = 'weekly') => {
@@ -575,7 +593,7 @@ const ScorecardPageClean = () => {
         )}
 
         <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-          <TabsList className="grid w-48 grid-cols-2 mb-6 bg-gray-100">
+          <TabsList className="grid w-72 grid-cols-3 mb-6 bg-gray-100">
             <TabsTrigger 
               value="weekly" 
               className="transition-colors"
@@ -595,6 +613,16 @@ const ScorecardPageClean = () => {
               }}
             >
               Monthly
+            </TabsTrigger>
+            <TabsTrigger 
+              value="shared" 
+              className="transition-colors"
+              style={{ 
+                backgroundColor: activeTab === 'shared' ? themeColors.primary : 'transparent',
+                color: activeTab === 'shared' ? 'white' : 'inherit'
+              }}
+            >
+              Shared
             </TabsTrigger>
           </TabsList>
           
@@ -643,6 +671,7 @@ const ScorecardPageClean = () => {
                 onChartOpen={handleChartOpen}
                 onMetricUpdate={handleEditMetric}
                 onMetricDelete={handleDeleteMetric}
+                onMetricShare={handleMetricShare}
               />
             )}
           </TabsContent>
@@ -691,8 +720,17 @@ const ScorecardPageClean = () => {
                 onChartOpen={handleChartOpen}
                 onMetricUpdate={handleEditMetric}
                 onMetricDelete={handleDeleteMetric}
+                onMetricShare={handleMetricShare}
               />
             )}
+          </TabsContent>
+          
+          <TabsContent value="shared" className="mt-0">
+            <SharedMetricsBrowser
+              orgId={user?.organizationId || user?.organization_id}
+              teamId={selectedDepartment?.id || LEADERSHIP_TEAM_ID}
+              onSubscribe={fetchScorecard}
+            />
           </TabsContent>
         </Tabs>
 
@@ -894,6 +932,19 @@ const ScorecardPageClean = () => {
           </DialogContent>
         </Dialog>
       </div>
+      
+      {/* Share Metric Dialog */}
+      <ShareMetricDialog
+        open={shareMetricDialog}
+        onClose={() => {
+          setShareMetricDialog(false);
+          setMetricToShare(null);
+        }}
+        metric={metricToShare}
+        orgId={user?.organizationId || user?.organization_id}
+        teamId={selectedDepartment?.id || LEADERSHIP_TEAM_ID}
+        onSuccess={handleShareSuccess}
+      />
       
       {/* Metric Trend Chart Modal */}
       <MetricTrendChart
