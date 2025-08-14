@@ -38,7 +38,8 @@ import {
   Send,
   ArrowUpDown,
   ArrowUp,
-  ArrowDown
+  ArrowDown,
+  List
 } from 'lucide-react';
 import { Textarea } from '@/components/ui/textarea';
 import { issuesService } from '../../services/issuesService';
@@ -74,6 +75,7 @@ const IssuesListClean = ({
   const [sortField, setSortField] = useState(null);
   const [sortDirection, setSortDirection] = useState('asc');
   const [sortedIssues, setSortedIssues] = useState(issues);
+  const [showListView, setShowListView] = useState(false);
 
   // Sort issues whenever issues prop or sort settings change
   useEffect(() => {
@@ -386,7 +388,8 @@ const IssuesListClean = ({
     <>
       {/* Sorting header */}
       <div className="mb-4 p-2 bg-gray-50 rounded-lg border border-gray-200">
-        <div className="flex items-center gap-1">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-1">
           <span className="text-xs font-medium text-gray-600 mr-2">Sort by:</span>
           <Button
             variant="ghost"
@@ -433,6 +436,21 @@ const IssuesListClean = ({
               ✕ Clear
             </Button>
           )}
+          </div>
+          
+          {/* List view toggle - only show if not in compactGrid mode */}
+          {!compactGrid && (
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => setShowListView(!showListView)}
+              className="h-7 px-3 py-1 text-xs font-medium hover:bg-gray-200"
+              title={showListView ? "Switch to Card View" : "Switch to List View"}
+            >
+              <List className="h-3 w-3 mr-1" />
+              {showListView ? "Card View" : "List View"}
+            </Button>
+          )}
         </div>
       </div>
       
@@ -444,12 +462,116 @@ const IssuesListClean = ({
           ))}
         </div>
       ) : (
-        // Default grid view when not compactGrid - cards in columns
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3">
+        // Default grid view when not compactGrid - cards in columns (or list if toggled)
+        <div className={showListView ? "space-y-2" : "grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3"}>
           {sortedIssues.map((issue, index) => {
           const hasVotes = (issue.vote_count || 0) > 0;
           const isTopIssue = index === 0 && hasVotes && showVoting;
           
+          if (showListView) {
+            // List View - Compact row layout  
+            return (
+              <div
+                key={issue.id}
+                className={`
+                  group flex items-center gap-3 bg-white rounded-lg border px-4 py-2 transition-all duration-200 cursor-pointer
+                  ${issue.status === 'closed' ? 'border-gray-300 opacity-60' : 'border-gray-200 hover:border-gray-300 hover:shadow-sm'}
+                `}
+                onClick={() => setSelectedIssue(issue)}
+              >
+                {/* Checkbox */}
+                <div onClick={(e) => e.stopPropagation()}>
+                  <Checkbox
+                    checked={issue.status === 'closed'}
+                    onCheckedChange={(checked) => {
+                      onStatusChange(issue.id, checked ? 'closed' : 'open');
+                    }}
+                    className="h-4 w-4 rounded border-gray-300 data-[state=checked]:bg-gray-900 data-[state=checked]:border-gray-900"
+                  />
+                </div>
+                
+                {/* Issue number */}
+                <span className="text-sm font-semibold min-w-[2rem]" style={{
+                  color: isTopIssue ? themeColors.primary : '#6B7280'
+                }}>
+                  #{index + 1}
+                </span>
+                
+                {/* Title */}
+                <h3 className={`
+                  flex-1 text-sm font-medium
+                  ${issue.status === 'closed' ? 'text-gray-400 line-through' : 'text-gray-900'}
+                `}>
+                  {issue.title}
+                </h3>
+                
+                {/* Owner */}
+                <span className="text-sm text-gray-500">
+                  {issue.owner_name || 'Unassigned'}
+                </span>
+                
+                {/* Timeline */}
+                <span className="text-sm text-gray-500">
+                  {issue.timeline === 'short_term' ? 'Short Term' : 'Long Term'}
+                </span>
+                
+                {/* Votes (if voting enabled) */}
+                {showVoting && (
+                  <div onClick={(e) => e.stopPropagation()}>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => onVote(issue.id, !issue.user_has_voted)}
+                      className="h-6 px-2 py-0 hover:bg-gray-100"
+                      style={{
+                        color: issue.user_has_voted ? themeColors.primary : '#9CA3AF'
+                      }}
+                    >
+                      <ThumbsUp className={`h-3 w-3 ${issue.user_has_voted ? 'fill-current' : ''}`} />
+                      {(issue.vote_count || 0) > 0 && (
+                        <span className="ml-1 text-xs font-medium">{issue.vote_count}</span>
+                      )}
+                    </Button>
+                  </div>
+                )}
+                
+                {/* Actions */}
+                <div onClick={(e) => e.stopPropagation()}>
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <Button 
+                        variant="ghost" 
+                        size="sm" 
+                        className="h-7 w-7 p-0 opacity-0 group-hover:opacity-100"
+                      >
+                        <MoreVertical className="h-3.5 w-3.5 text-gray-500" />
+                      </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="end" className="w-48">
+                      <DropdownMenuItem 
+                        onClick={() => onEdit(issue)}
+                        className="cursor-pointer"
+                      >
+                        <Edit className="mr-2 h-4 w-4" />
+                        Edit
+                      </DropdownMenuItem>
+                      {onArchive && (
+                        <DropdownMenuItem 
+                          onClick={() => onArchive(issue.id)}
+                          className="cursor-pointer"
+                        >
+                          <Archive className="mr-2 h-4 w-4" />
+                          Archive
+                        </DropdownMenuItem>
+                      )}
+                    </DropdownMenuContent>
+                  </DropdownMenu>
+                </div>
+              </div>
+            );
+          }
+          
+          // Card View - Default
           return (
             <div
               key={issue.id}

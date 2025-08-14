@@ -21,7 +21,7 @@ import {
   Archive
 } from 'lucide-react';
 import TodoDialog from '../components/todos/TodoDialog';
-import TodosList from '../components/todos/TodosList';
+import TodosListClean from '../components/todos/TodosListClean';
 import { useSelectedTodos } from '../contexts/SelectedTodosContext';
 
 const TodosPage = () => {
@@ -485,7 +485,7 @@ const TodosPage = () => {
               )}
             </div>
           ) : (
-            <TodosList
+            <TodosListClean
               todos={filteredTodos}
               onEdit={handleEditTodo}
               onDelete={handleDeleteTodo}
