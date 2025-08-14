@@ -445,10 +445,10 @@ const IssuesListClean = ({
               size="sm"
               onClick={() => setShowListView(!showListView)}
               className="h-7 px-3 py-1 text-xs font-medium hover:bg-gray-200"
-              title={showListView ? "Switch to Card View" : "Switch to List View"}
+              title={showListView ? "Switch to Compact Grid View" : "Switch to List View"}
             >
               <List className="h-3 w-3 mr-1" />
-              {showListView ? "Card View" : "List View"}
+              {showListView ? "Grid View" : "List View"}
             </Button>
           )}
         </div>
@@ -462,8 +462,8 @@ const IssuesListClean = ({
           ))}
         </div>
       ) : (
-        // Default card view when not compactGrid - original vertical layout (or list if toggled)
-        <div className={showListView ? "space-y-2" : "space-y-3"}>
+        // Default compact grid view when not compactGrid prop
+        <div className={showListView ? "space-y-2" : "grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3"}>
           {sortedIssues.map((issue, index) => {
           const hasVotes = (issue.vote_count || 0) > 0;
           const isTopIssue = index === 0 && hasVotes && showVoting;

@@ -235,16 +235,16 @@ const TodosListClean = ({
             size="sm"
             onClick={() => setShowListView(!showListView)}
             className="h-7 px-3 py-1 text-xs font-medium hover:bg-gray-200"
-            title={showListView ? "Switch to Card View" : "Switch to List View"}
+            title={showListView ? "Switch to Compact Grid View" : "Switch to List View"}
           >
             <List className="h-3 w-3 mr-1" />
-            {showListView ? "Card View" : "List View"}
+            {showListView ? "Grid View" : "List View"}
           </Button>
         </div>
       </div>
       
-      {/* Default card view - original vertical layout */}
-      <div className={showListView ? "space-y-2" : "space-y-3"}>
+      {/* Default compact grid view - cards in columns */}
+      <div className={showListView ? "space-y-2" : "grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3"}>
         {sortedTodos.map((todo) => {
         const daysUntilDue = getDaysUntilDue(todo);
         const overdue = isOverdue(todo);
@@ -339,12 +339,12 @@ const TodosListClean = ({
           );
         }
         
-        // Card View - Default grid layout (UNCHANGED DESIGN)
+        // Compact Grid View - Default
         return (
           <div
             key={todo.id}
             className={`
-              group relative bg-white rounded-lg border transition-all duration-200
+              group relative bg-white rounded-lg border transition-all duration-200 h-full
               ${todo.status === 'complete' && !todo.archived ? 'border-gray-400 shadow-sm opacity-60' : 'border-gray-200 hover:border-gray-300 hover:shadow-sm'}
             `}
           >
@@ -355,8 +355,8 @@ const TodosListClean = ({
               <div className="absolute left-0 top-0 bottom-0 w-1 rounded-l-lg" style={{ backgroundColor: themeColors.accent }} />
             )}
             
-            <div className="p-4 pl-6">
-              <div className="flex items-start gap-4">
+            <div className="p-3 pl-4">
+              <div className="flex items-start gap-3">
                 {/* Checkbox */}
                 <div className="pt-0.5">
                   <Checkbox
@@ -373,15 +373,15 @@ const TodosListClean = ({
                         });
                       }
                     }}
-                    className="h-5 w-5 rounded border-gray-300 data-[state=checked]:bg-gray-900 data-[state=checked]:border-gray-900"
+                    className="h-4 w-4 rounded border-gray-300 data-[state=checked]:bg-gray-900 data-[state=checked]:border-gray-900"
                   />
                 </div>
                 
                 {/* Main content */}
                 <div className="flex-1 min-w-0">
-                  {/* Title */}
+                  {/* Title - smaller for compact view */}
                   <h3 className={`
-                    text-base font-medium leading-tight
+                    text-sm font-medium leading-tight line-clamp-2
                     ${todo.status === 'complete' ? 'text-gray-400 line-through' : 'text-gray-900'}
                   `}>
                     {todo.title}
@@ -389,8 +389,8 @@ const TodosListClean = ({
                   
                   {/* Description hidden from main view - only shown in edit dialog */}
                   
-                  {/* Metadata - clean single line */}
-                  <div className="mt-2 flex flex-wrap items-center gap-3 text-sm">
+                  {/* Metadata - compact */}
+                  <div className="mt-2 flex flex-wrap items-center gap-2 text-xs">
                     {/* Due date */}
                     {todo.due_date && (
                       <span className={`
