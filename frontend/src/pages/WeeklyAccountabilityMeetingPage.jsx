@@ -1904,6 +1904,54 @@ const WeeklyAccountabilityMeetingPage = () => {
             </CardHeader>
             <CardContent className="pt-6">
               <div className="space-y-6">
+                {/* Open To-Dos Summary */}
+                <div className="border border-gray-200 p-4 rounded-lg bg-white">
+                  <h4 className="font-medium mb-3 text-gray-900 flex items-center gap-2">
+                    <ListTodo className="h-4 w-4" />
+                    Open To-Dos Summary
+                  </h4>
+                  <p className="text-sm text-gray-600 mb-3">
+                    Review all open action items before concluding the meeting:
+                  </p>
+                  {todos.filter(todo => todo.status !== 'complete' && todo.status !== 'completed' && todo.status !== 'cancelled').length === 0 ? (
+                    <p className="text-gray-500 text-sm">No open to-dos</p>
+                  ) : (
+                    <div className="space-y-2 max-h-64 overflow-y-auto">
+                      {todos
+                        .filter(todo => todo.status !== 'complete' && todo.status !== 'completed' && todo.status !== 'cancelled')
+                        .map(todo => (
+                          <div key={todo.id} className="flex items-start gap-2 p-2 bg-gray-50 rounded-lg">
+                            <div className="w-1 h-full rounded" style={{ 
+                              backgroundColor: todo.priority === 'high' ? '#EF4444' : 
+                                             todo.priority === 'medium' ? '#F59E0B' : 
+                                             '#10B981',
+                              minHeight: '40px'
+                            }} />
+                            <div className="flex-1 min-w-0">
+                              <p className="text-sm font-medium text-gray-900 truncate">{todo.title}</p>
+                              <div className="flex items-center gap-2 mt-1">
+                                {todo.assigned_to && (
+                                  <span className="text-xs text-gray-600">
+                                    {todo.assigned_to.first_name} {todo.assigned_to.last_name}
+                                  </span>
+                                )}
+                                {todo.due_date && (
+                                  <>
+                                    {todo.assigned_to && <span className="text-xs text-gray-400">•</span>}
+                                    <span className="text-xs text-gray-600">
+                                      Due: {new Date(todo.due_date).toLocaleDateString()}
+                                    </span>
+                                  </>
+                                )}
+                              </div>
+                            </div>
+                          </div>
+                        ))}
+                    </div>
+                  )}
+                </div>
+
+                {/* Cascading Messages */}
                 <div className="border border-gray-200 p-4 rounded-lg bg-white">
                   <h4 className="font-medium mb-2 text-gray-900 flex items-center gap-2">
                     <MessageSquare className="h-4 w-4" />
