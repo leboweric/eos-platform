@@ -75,7 +75,11 @@ const IssuesListClean = ({
   const [sortField, setSortField] = useState(null);
   const [sortDirection, setSortDirection] = useState('asc');
   const [sortedIssues, setSortedIssues] = useState(issues);
-  const [showListView, setShowListView] = useState(false);
+  const [showListView, setShowListView] = useState(() => {
+    // Default to list view, only show grid if explicitly set
+    const savedMode = localStorage.getItem('issuesViewMode');
+    return savedMode !== 'grid';
+  });
 
   // Sort issues whenever issues prop or sort settings change
   useEffect(() => {
@@ -443,7 +447,11 @@ const IssuesListClean = ({
             <Button
               variant="ghost"
               size="sm"
-              onClick={() => setShowListView(!showListView)}
+              onClick={() => {
+                const newMode = !showListView;
+                setShowListView(newMode);
+                localStorage.setItem('issuesViewMode', newMode ? 'list' : 'grid');
+              }}
               className="h-7 px-3 py-1 text-xs font-medium hover:bg-gray-200"
               title={showListView ? "Switch to Compact Grid View" : "Switch to List View"}
             >
