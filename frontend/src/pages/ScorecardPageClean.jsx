@@ -22,7 +22,8 @@ import {
   Edit,
   BarChart3,
   ChevronDown,
-  MoreHorizontal
+  MoreHorizontal,
+  Share2
 } from 'lucide-react';
 import MetricTrendChart from '../components/scorecard/MetricTrendChart';
 import GroupedScorecardView from '../components/scorecard/GroupedScorecardView';
@@ -643,6 +644,7 @@ const ScorecardPageClean = () => {
                 onMetricUpdate={handleEditMetric}
                 onScoreUpdate={(metric, period) => handleScoreEdit(metric, period, 'weekly')}
                 onMetricDelete={handleDeleteMetric}
+                onMetricShare={handleMetricShare}
                 onChartOpen={handleChartOpen}
                 onRefresh={fetchScorecard}
                 showTotal={false}
@@ -693,6 +695,7 @@ const ScorecardPageClean = () => {
                 onMetricUpdate={handleEditMetric}
                 onScoreUpdate={(metric, period) => handleScoreEdit(metric, period, 'monthly')}
                 onMetricDelete={handleDeleteMetric}
+                onMetricShare={handleMetricShare}
                 onChartOpen={handleChartOpen}
                 onRefresh={fetchScorecard}
                 showTotal={false}
@@ -870,16 +873,33 @@ const ScorecardPageClean = () => {
                 </div>
               )}
             </div>
-            <DialogFooter>
-              <Button variant="outline" onClick={() => setShowMetricDialog(false)}>
-                Cancel
-              </Button>
-              <Button onClick={handleSaveMetric} disabled={saving || !metricForm.name || !metricForm.goal}>
-                {saving ? (
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                ) : null}
-                {editingMetric ? 'Update' : 'Create'}
-              </Button>
+            <DialogFooter className="flex justify-between">
+              <div>
+                {editingMetric && (
+                  <Button 
+                    variant="outline" 
+                    onClick={() => {
+                      setShowMetricDialog(false);
+                      handleMetricShare(editingMetric);
+                    }}
+                    className="mr-auto"
+                  >
+                    <Share2 className="mr-2 h-4 w-4" />
+                    {editingMetric.is_shared ? 'Manage Sharing' : 'Share This Metric'}
+                  </Button>
+                )}
+              </div>
+              <div className="flex gap-2">
+                <Button variant="outline" onClick={() => setShowMetricDialog(false)}>
+                  Cancel
+                </Button>
+                <Button onClick={handleSaveMetric} disabled={saving || !metricForm.name || !metricForm.goal}>
+                  {saving ? (
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  ) : null}
+                  {editingMetric ? 'Update' : 'Create'}
+                </Button>
+              </div>
             </DialogFooter>
           </DialogContent>
         </Dialog>

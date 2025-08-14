@@ -10,7 +10,8 @@ import {
   Trash2, 
   GripVertical,
   BarChart3,
-  MessageSquare 
+  MessageSquare,
+  Share2 
 } from 'lucide-react';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Label } from '@/components/ui/label';
@@ -34,6 +35,7 @@ const GroupedScorecardView = ({
   onMetricUpdate,
   onScoreUpdate,
   onMetricDelete,
+  onMetricShare,
   onChartOpen,
   onRefresh,
   showTotal,
@@ -532,6 +534,17 @@ const GroupedScorecardView = ({
             >
               <Edit className="h-3 w-3" style={{ color: themeColors.primary }} />
             </Button>
+            {onMetricShare && (
+              <Button
+                variant="ghost"
+                size="sm"
+                className="h-6 w-6 p-0"
+                onClick={() => onMetricShare(metric)}
+                title={metric.is_shared ? "Metric is shared" : "Share this metric"}
+              >
+                <Share2 className="h-3 w-3" style={{ color: metric.is_shared ? themeColors.accent : themeColors.primary }} />
+              </Button>
+            )}
             <Button
               variant="ghost"
               size="sm"
