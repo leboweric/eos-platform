@@ -264,10 +264,16 @@ const TodosListClean = ({
             <div
               key={todo.id}
               className={`
-                group flex items-center gap-3 bg-white rounded-lg border px-4 py-2 transition-all duration-200
+                group relative flex items-center gap-3 bg-white rounded-lg border pl-2 pr-4 py-2 transition-all duration-200
                 ${todo.status === 'complete' && !todo.archived ? 'border-gray-300 opacity-60' : 'border-gray-200 hover:border-gray-300 hover:shadow-sm'}
               `}
             >
+              {/* Status indicator - left color bar */}
+              {overdue ? (
+                <div className="absolute left-0 top-0 bottom-0 w-1 bg-red-500 rounded-l-lg" />
+              ) : (
+                <div className="absolute left-0 top-0 bottom-0 w-1 rounded-l-lg" style={{ backgroundColor: themeColors.accent }} />
+              )}
               {/* Checkbox */}
               <Checkbox
                 checked={todo.status === 'complete'}
