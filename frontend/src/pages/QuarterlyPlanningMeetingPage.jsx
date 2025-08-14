@@ -1280,8 +1280,8 @@ const QuarterlyPlanningMeetingPage = () => {
               <IssuesListClean 
                 issues={issues || []}
                 compactGrid={false}
-                maxColumns={2}
-                columnBreakpoint={30}
+                maxColumns={1}
+                columnBreakpoint={50}
                 onEdit={(issue) => {
                   setEditingIssue(issue);
                   setShowIssueDialog(true);
