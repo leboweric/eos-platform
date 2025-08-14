@@ -243,8 +243,8 @@ const TodosListClean = ({
         </div>
       </div>
       
-      {/* Default grid view - cards in columns */}
-      <div className={showListView ? "space-y-2" : "grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3"}>
+      {/* Default card view - original vertical layout */}
+      <div className={showListView ? "space-y-2" : "space-y-3"}>
         {sortedTodos.map((todo) => {
         const daysUntilDue = getDaysUntilDue(todo);
         const overdue = isOverdue(todo);

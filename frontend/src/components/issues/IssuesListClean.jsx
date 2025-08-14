@@ -462,8 +462,8 @@ const IssuesListClean = ({
           ))}
         </div>
       ) : (
-        // Default grid view when not compactGrid - cards in columns (or list if toggled)
-        <div className={showListView ? "space-y-2" : "grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3"}>
+        // Default card view when not compactGrid - original vertical layout (or list if toggled)
+        <div className={showListView ? "space-y-2" : "space-y-3"}>
           {sortedIssues.map((issue, index) => {
           const hasVotes = (issue.vote_count || 0) > 0;
           const isTopIssue = index === 0 && hasVotes && showVoting;
