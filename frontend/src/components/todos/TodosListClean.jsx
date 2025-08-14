@@ -390,7 +390,7 @@ const TodosListClean = ({
                   {/* Description hidden from main view - only shown in edit dialog */}
                   
                   {/* Metadata - clean single line */}
-                  <div className="mt-2 flex items-center gap-3 text-sm">
+                  <div className="mt-2 flex flex-wrap items-center gap-3 text-sm">
                     {/* Due date */}
                     {todo.due_date && (
                       <span className={`

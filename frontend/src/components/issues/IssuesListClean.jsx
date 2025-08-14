@@ -643,7 +643,7 @@ const IssuesListClean = ({
                     </div>
                     
                     {/* Metadata - clean single line */}
-                    <div className="mt-2 flex items-center gap-3 text-sm">
+                    <div className="mt-2 flex flex-wrap items-center gap-3 text-sm">
                       {/* Owner */}
                       <span className="text-gray-500">
                         {issue.owner_name || 'Unassigned'}
