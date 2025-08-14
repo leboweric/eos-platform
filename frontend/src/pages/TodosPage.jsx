@@ -4,6 +4,7 @@ import { todosService } from '../services/todosService';
 import { issuesService } from '../services/issuesService';
 import { organizationService } from '../services/organizationService';
 import { getOrgTheme, saveOrgTheme } from '../utils/themeUtils';
+import { exportTodosToExcel } from '../utils/excelExport';
 import { useDepartment } from '../contexts/DepartmentContext';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -18,7 +19,8 @@ import {
   Square,
   ListTodo,
   User,
-  Archive
+  Archive,
+  Download
 } from 'lucide-react';
 import TodoDialog from '../components/todos/TodoDialog';
 import TodosListClean from '../components/todos/TodosListClean';
@@ -391,6 +393,20 @@ const TodosPage = () => {
                 Mark Done ({selectedTodoIds.length})
               </Button>
             )}
+            <Button
+              onClick={() => {
+                if (todos.length > 0) {
+                  exportTodosToExcel(todos);
+                } else {
+                  setError('No to-dos to export');
+                }
+              }}
+              variant="outline"
+              className="border-gray-300 hover:bg-gray-50"
+            >
+              <Download className="mr-2 h-4 w-4" />
+              Export to Excel
+            </Button>
             <Button 
               onClick={handleCreateTodo} 
               className="text-white transition-colors"

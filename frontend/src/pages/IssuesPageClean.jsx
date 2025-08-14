@@ -3,6 +3,7 @@ import { useAuthStore } from '../stores/authStore';
 import { issuesService } from '../services/issuesService';
 import { organizationService } from '../services/organizationService';
 import { getOrgTheme, saveOrgTheme } from '../utils/themeUtils';
+import { exportIssuesToExcel } from '../utils/excelExport';
 import { useDepartment } from '../contexts/DepartmentContext';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -13,7 +14,8 @@ import {
   AlertCircle,
   CheckSquare,
   AlertTriangle,
-  Archive
+  Archive,
+  Download
 } from 'lucide-react';
 import IssueDialog from '../components/issues/IssueDialog';
 import IssuesListClean from '../components/issues/IssuesListClean';
@@ -463,6 +465,23 @@ const IssuesPageClean = () => {
               >
                 <Archive className="mr-2 h-4 w-4" />
                 Archive Solved ({closedIssuesCount})
+              </Button>
+            )}
+            {activeTab !== 'archived' && (
+              <Button
+                onClick={() => {
+                  const allIssues = [...shortTermIssues, ...longTermIssues];
+                  if (allIssues.length > 0) {
+                    exportIssuesToExcel(allIssues);
+                  } else {
+                    setError('No issues to export');
+                  }
+                }}
+                variant="outline"
+                className="border-gray-300 hover:bg-gray-50"
+              >
+                <Download className="mr-2 h-4 w-4" />
+                Export to Excel
               </Button>
             )}
             {activeTab !== 'archived' && (
