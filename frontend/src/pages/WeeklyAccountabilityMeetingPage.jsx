@@ -42,7 +42,7 @@ import PriorityCard from '../components/priorities/PriorityCardClean';
 import IssuesListClean from '../components/issues/IssuesListClean';
 import IssueDialog from '../components/issues/IssueDialog';
 import { MoveIssueDialog } from '../components/issues/MoveIssueDialog';
-import TodosListClean from '../components/todos/TodosListClean';
+import TodosList from '../components/todos/TodosList';
 import TodoDialog from '../components/todos/TodoDialog';
 import MetricTrendChart from '../components/scorecard/MetricTrendChart';
 import { scorecardService } from '../services/scorecardService';
@@ -1666,7 +1666,7 @@ const WeeklyAccountabilityMeetingPage = () => {
                     <p className="text-gray-500">No to-dos found for this week.</p>
                   </div>
                 ) : (
-                  <TodosListClean 
+                  <TodosList 
                     todos={todos}
                     onEdit={(todo) => {
                       setEditingTodo(todo);

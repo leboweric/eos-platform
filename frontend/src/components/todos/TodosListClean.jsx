@@ -10,9 +10,7 @@ import {
   CheckCircle,
   ArrowUpDown,
   ArrowUp,
-  ArrowDown,
-  LayoutGrid,
-  List
+  ArrowDown
 } from 'lucide-react';
 import {
   DropdownMenu,
@@ -44,9 +42,6 @@ const TodosListClean = ({
   const [sortField, setSortField] = useState(null);
   const [sortDirection, setSortDirection] = useState('asc');
   const [sortedTodos, setSortedTodos] = useState(todos);
-  const [viewMode, setViewMode] = useState(
-    localStorage.getItem('todosViewMode') || 'card'
-  );
   
   useEffect(() => {
     fetchOrganizationTheme();
@@ -190,8 +185,7 @@ const TodosListClean = ({
     <div>
       {/* Sorting header */}
       <div className="mb-4 p-2 bg-gray-50 rounded-lg border border-gray-200">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-1">
+        <div className="flex items-center gap-1">
           <span className="text-xs font-medium text-gray-600 mr-2">Sort by:</span>
           <Button
             variant="ghost"
@@ -230,48 +224,15 @@ const TodosListClean = ({
               ✕ Clear
             </Button>
           )}
-          </div>
-          
-          {/* View toggle */}
-          <div className="flex items-center gap-1 ml-4">
-            <span className="text-xs font-medium text-gray-600 mr-2">View:</span>
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => {
-                setViewMode('card');
-                localStorage.setItem('todosViewMode', 'card');
-              }}
-              className={`h-7 px-2 py-1 ${viewMode === 'card' ? 'bg-gray-200 text-gray-900' : 'text-gray-600'}`}
-              title="Card View"
-            >
-              <LayoutGrid className="h-4 w-4" />
-            </Button>
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => {
-                setViewMode('list');
-                localStorage.setItem('todosViewMode', 'list');
-              }}
-              className={`h-7 px-2 py-1 ${viewMode === 'list' ? 'bg-gray-200 text-gray-900' : 'text-gray-600'}`}
-              title="List View"
-            >
-              <List className="h-4 w-4" />
-            </Button>
-          </div>
         </div>
       </div>
       
-      {/* Conditional rendering based on view mode */}
-      {viewMode === 'card' ? (
-        // Card View
-        <div className="space-y-3">
-          {sortedTodos.map((todo) => {
-          const daysUntilDue = getDaysUntilDue(todo);
-          const overdue = isOverdue(todo);
-          
-          return (
+      <div className="space-y-3">
+        {sortedTodos.map((todo) => {
+        const daysUntilDue = getDaysUntilDue(todo);
+        const overdue = isOverdue(todo);
+        
+        return (
           <div
             key={todo.id}
             className={`
@@ -410,133 +371,6 @@ const TodosListClean = ({
         );
         })}
       </div>
-      ) : (
-        // List View - Compact table-like layout
-        <div className="bg-white rounded-lg border border-gray-200 overflow-hidden">
-          <table className="w-full">
-            <tbody className="divide-y divide-gray-200">
-              {sortedTodos.map((todo) => {
-                const daysUntilDue = getDaysUntilDue(todo);
-                const overdue = isOverdue(todo);
-                
-                return (
-                  <tr 
-                    key={todo.id} 
-                    className={`
-                      group hover:bg-gray-50 transition-colors duration-200
-                      ${todo.status === 'complete' && !todo.archived ? 'opacity-60' : ''}
-                    `}
-                  >
-                    {/* Checkbox column */}
-                    <td className="w-10 px-3 py-2">
-                      <Checkbox
-                        checked={todo.status === 'complete'}
-                        onCheckedChange={(checked) => {
-                          if (onStatusChange) {
-                            onStatusChange(todo.id, checked);
-                          } else if (onUpdate) {
-                            todosService.updateTodo(todo.id, { 
-                              status: checked ? 'complete' : 'incomplete' 
-                            }).then(() => {
-                              onUpdate();
-                            });
-                          }
-                        }}
-                        className="h-4 w-4 rounded border-gray-300 data-[state=checked]:bg-gray-900 data-[state=checked]:border-gray-900"
-                      />
-                    </td>
-                    
-                    {/* Title column */}
-                    <td className="px-3 py-2">
-                      <span className={`
-                        text-sm font-medium
-                        ${todo.status === 'complete' ? 'text-gray-400 line-through' : 'text-gray-900'}
-                      `}>
-                        {todo.title}
-                      </span>
-                    </td>
-                    
-                    {/* Assignee column */}
-                    <td className="px-3 py-2 text-sm text-gray-500 whitespace-nowrap">
-                      {todo.assigned_to && (
-                        <span>
-                          {todo.assigned_to.first_name} {todo.assigned_to.last_name}
-                        </span>
-                      )}
-                    </td>
-                    
-                    {/* Due date column */}
-                    <td className="px-3 py-2 text-sm whitespace-nowrap">
-                      {todo.due_date && (
-                        <span className={`
-                          flex items-center gap-1
-                          ${overdue ? 'text-red-600 font-medium' : 
-                            daysUntilDue === 0 ? 'text-orange-600 font-medium' :
-                            daysUntilDue === 1 ? 'text-yellow-600' :
-                            'text-gray-500'}
-                        `}>
-                          <Calendar className="h-3 w-3" />
-                          {formatDueDate(todo)}
-                        </span>
-                      )}
-                    </td>
-                    
-                    {/* Status column */}
-                    <td className="px-3 py-2 text-sm">
-                      {todo.status === 'complete' ? (
-                        <span className="flex items-center gap-1 text-green-600">
-                          <CheckCircle className="h-3 w-3" />
-                          Done
-                        </span>
-                      ) : overdue ? (
-                        <span className="flex items-center gap-1 text-red-600">
-                          <AlertCircle className="h-3 w-3" />
-                          Overdue
-                        </span>
-                      ) : null}
-                    </td>
-                    
-                    {/* Actions column */}
-                    <td className="px-3 py-2 text-right">
-                      <div className="opacity-0 group-hover:opacity-100 transition-opacity">
-                        <DropdownMenu>
-                          <DropdownMenuTrigger asChild>
-                            <Button 
-                              variant="ghost" 
-                              size="sm" 
-                              className="h-7 w-7 p-0 hover:bg-gray-100"
-                            >
-                              <MoreVertical className="h-3.5 w-3.5 text-gray-500" />
-                            </Button>
-                          </DropdownMenuTrigger>
-                          <DropdownMenuContent align="end" className="w-48">
-                            <DropdownMenuItem 
-                              onClick={() => onEdit(todo)}
-                              className="cursor-pointer"
-                            >
-                              <Edit className="mr-2 h-4 w-4" />
-                              Edit
-                            </DropdownMenuItem>
-                            {onDelete && (
-                              <DropdownMenuItem 
-                                onClick={() => onDelete(todo.id)}
-                                className="cursor-pointer text-red-600 focus:text-red-600"
-                              >
-                                <Trash2 className="mr-2 h-4 w-4" />
-                                Delete
-                              </DropdownMenuItem>
-                            )}
-                          </DropdownMenuContent>
-                        </DropdownMenu>
-                      </div>
-                    </td>
-                  </tr>
-                );
-              })}
-            </tbody>
-          </table>
-        </div>
-      )}
     </div>
   );
 };
