@@ -43,7 +43,7 @@ const TodosListClean = ({
   const [sortField, setSortField] = useState(null);
   const [sortDirection, setSortDirection] = useState('asc');
   const [sortedTodos, setSortedTodos] = useState(todos);
-  const [showListView, setShowListView] = useState(false);
+  const [showListView, setShowListView] = useState(true); // List view is default for todos
   
   useEffect(() => {
     fetchOrganizationTheme();
