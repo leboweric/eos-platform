@@ -8,7 +8,7 @@ import {
   getTeamSubscriptions,
   syncMetricScores
 } from '../controllers/sharedMetricsController.js';
-import authMiddleware from '../middleware/authMiddleware.js';
+import authMiddleware from '../middleware/auth.js';
 
 const router = express.Router({ mergeParams: true });
 
