@@ -43,7 +43,12 @@ const TodosListClean = ({
   const [sortField, setSortField] = useState(null);
   const [sortDirection, setSortDirection] = useState('asc');
   const [sortedTodos, setSortedTodos] = useState(todos);
-  const [showListView, setShowListView] = useState(true); // List view is default for todos
+  // Default to list view - only show grid if explicitly set
+  const [showListView, setShowListView] = useState(() => {
+    const savedMode = localStorage.getItem('todosViewMode');
+    // If no saved preference or saved as 'list', show list view
+    return savedMode !== 'grid';
+  });
   
   useEffect(() => {
     fetchOrganizationTheme();
@@ -233,7 +238,11 @@ const TodosListClean = ({
           <Button
             variant="ghost"
             size="sm"
-            onClick={() => setShowListView(!showListView)}
+            onClick={() => {
+              const newMode = !showListView;
+              setShowListView(newMode);
+              localStorage.setItem('todosViewMode', newMode ? 'list' : 'grid');
+            }}
             className="h-7 px-3 py-1 text-xs font-medium hover:bg-gray-200"
             title={showListView ? "Switch to Compact Grid View" : "Switch to List View"}
           >
