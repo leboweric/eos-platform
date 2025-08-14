@@ -533,6 +533,9 @@ const IssuesListClean = ({
                   #{globalIndex + 1}
                 </span>
                 
+                {/* Fire emoji for top voted issue */}
+                {isTopIssue && <span className="text-xs" title="Top voted">🔥</span>}
+                
                 {/* Title */}
                 <h3 className={`
                   flex-1 text-sm font-medium
