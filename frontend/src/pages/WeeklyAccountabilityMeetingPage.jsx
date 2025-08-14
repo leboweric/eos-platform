@@ -749,10 +749,8 @@ const WeeklyAccountabilityMeetingPage = () => {
         setSuccess('To-do created successfully');
       }
       
-      // Refresh todos if we're on the todo section
-      if (activeSection === 'todo-list') {
-        await fetchTodosData();
-      }
+      // Always refresh todos after creating/updating
+      await fetchTodosData();
       
       // Also refresh today's todos for the conclude section
       if (meetingStarted) {
