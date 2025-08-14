@@ -470,22 +470,43 @@ const IssuesListClean = ({
           ))}
         </div>
       ) : (
-        // Default compact grid view when not compactGrid prop
-        <div className={showListView ? "space-y-2" : "grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3"}>
-          {sortedIssues.map((issue, index) => {
-          const hasVotes = (issue.vote_count || 0) > 0;
-          const isTopIssue = index === 0 && hasVotes && showVoting;
-          
+        // Default view - List or Grid based on showListView
+        (() => {
           if (showListView) {
-            // List View - Compact row layout  
+            // Multi-column list view logic
+            const issueCount = sortedIssues.length;
+            const columnCount = Math.min(3, Math.ceil(issueCount / 20)); // 1-20: 1 col, 21-40: 2 cols, 41+: 3 cols
+            const issuesPerColumn = Math.ceil(issueCount / columnCount);
+            
+            // Split issues into columns
+            const columns = [];
+            for (let i = 0; i < columnCount; i++) {
+              const start = i * issuesPerColumn;
+              const end = Math.min(start + issuesPerColumn, issueCount);
+              columns.push(sortedIssues.slice(start, end));
+            }
+            
             return (
-              <div
-                key={issue.id}
-                className={`
-                  group relative flex items-center gap-3 bg-white rounded-lg border pl-2 pr-4 py-2 transition-all duration-200 cursor-pointer
-                  ${issue.status === 'closed' ? 'border-gray-300 opacity-60' : 'border-gray-200 hover:border-gray-300 hover:shadow-sm'}
-                `}
-                onClick={() => setSelectedIssue(issue)}
+              <div className={`grid gap-4 ${
+                columnCount === 1 ? 'grid-cols-1' : 
+                columnCount === 2 ? 'grid-cols-1 lg:grid-cols-2' : 
+                'grid-cols-1 lg:grid-cols-2 xl:grid-cols-3'
+              }`}>
+                {columns.map((columnIssues, colIndex) => (
+                  <div key={colIndex} className="space-y-2">
+                    {columnIssues.map((issue) => {
+                      const globalIndex = sortedIssues.findIndex(i => i.id === issue.id);
+                      const hasVotes = (issue.vote_count || 0) > 0;
+                      const isTopIssue = globalIndex === 0 && hasVotes && showVoting;
+                      
+                      return (
+                        <div
+                          key={issue.id}
+                          className={`
+                            group relative flex items-center gap-3 bg-white rounded-lg border pl-2 pr-4 py-2 transition-all duration-200 cursor-pointer
+                            ${issue.status === 'closed' ? 'border-gray-300 opacity-60' : 'border-gray-200 hover:border-gray-300 hover:shadow-sm'}
+                          `}
+                          onClick={() => setSelectedIssue(issue)}
               >
                 {/* Status indicator - left color bar */}
                 <div 
@@ -509,7 +530,7 @@ const IssuesListClean = ({
                 <span className="text-sm font-semibold min-w-[2rem]" style={{
                   color: isTopIssue ? themeColors.primary : '#6B7280'
                 }}>
-                  #{index + 1}
+                  #{globalIndex + 1}
                 </span>
                 
                 {/* Title */}
@@ -583,13 +604,23 @@ const IssuesListClean = ({
                   </DropdownMenu>
                 </div>
               </div>
+                      );
+                    })}
+                  </div>
+                ))}
+              </div>
+            );
+          } else {
+            // Compact Grid View - Default
+            return (
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3">
+                {sortedIssues.map((issue, index) => (
+                  <CompactIssueCard key={issue.id} issue={issue} index={index} />
+                ))}
+              </div>
             );
           }
-          
-          // Compact Grid View - Default
-          return <CompactIssueCard key={issue.id} issue={issue} index={index} />;
-        })}
-        </div>
+        })()
       )}
 
       {/* Issue Detail Modal - shared between both views */}
