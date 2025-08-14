@@ -737,14 +737,14 @@ const WeeklyAccountabilityMeetingPage = () => {
       if (editingTodo) {
         savedTodo = await todosService.updateTodo(editingTodo.id, {
           ...todoData,
-          team_id: effectiveTeamId
+          department_id: effectiveTeamId
         });
         setSuccess('To-do updated successfully');
       } else {
         savedTodo = await todosService.createTodo({
           ...todoData,
           organization_id: orgId,
-          team_id: effectiveTeamId
+          department_id: effectiveTeamId
         });
         setSuccess('To-do created successfully');
       }
