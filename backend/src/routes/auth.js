@@ -9,7 +9,9 @@ import {
   updateProfile,
   changePassword,
   forgotPassword,
-  resetPassword
+  resetPassword,
+  acceptLegalAgreements,
+  checkLegalAgreements
 } from '../controllers/authController.js';
 import { authenticate } from '../middleware/auth.js';
 
@@ -82,6 +84,16 @@ router.post('/reset-password', [
   body('token').exists().trim(),
   body('password').isLength({ min: 6 })
 ], resetPassword);
+
+// @route   POST /api/v1/auth/accept-agreements
+// @desc    Accept legal agreements for existing users
+// @access  Private
+router.post('/accept-agreements', authenticate, acceptLegalAgreements);
+
+// @route   GET /api/v1/auth/check-agreements
+// @desc    Check if user has accepted legal agreements
+// @access  Private
+router.get('/check-agreements', authenticate, checkLegalAgreements);
 
 export default router;
 

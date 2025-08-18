@@ -603,6 +603,126 @@ export const changePassword = async (req, res) => {
   }
 };
 
+// @desc    Accept legal agreements for existing users
+// @route   POST /api/v1/auth/accept-agreements
+// @access  Private
+export const acceptLegalAgreements = async (req, res) => {
+  try {
+    const userId = req.user.userId;
+    const { termsAccepted, privacyAccepted, version, userAgent } = req.body;
+
+    if (!termsAccepted || !privacyAccepted) {
+      return res.status(400).json({
+        success: false,
+        error: 'Both Terms of Service and Privacy Policy must be accepted'
+      });
+    }
+
+    const client = await beginTransaction();
+
+    try {
+      // Update user record with agreement acceptance
+      await client.query(
+        `UPDATE users 
+         SET terms_accepted_at = CURRENT_TIMESTAMP,
+             privacy_accepted_at = CURRENT_TIMESTAMP,
+             terms_version = $1,
+             privacy_version = $2,
+             agreement_ip_address = $3,
+             agreement_user_agent = $4,
+             updated_at = CURRENT_TIMESTAMP
+         WHERE id = $5`,
+        [version || '1.0', version || '1.0', req.ip, userAgent || req.get('user-agent'), userId]
+      );
+
+      // Log Terms of Service acceptance
+      await client.query(
+        `INSERT INTO legal_agreement_log (user_id, agreement_type, version, action, ip_address, user_agent)
+         VALUES ($1, $2, $3, $4, $5, $6)`,
+        [userId, 'terms_of_service', version || '1.0', 'accepted', req.ip, userAgent || req.get('user-agent')]
+      );
+
+      // Log Privacy Policy acceptance
+      await client.query(
+        `INSERT INTO legal_agreement_log (user_id, agreement_type, version, action, ip_address, user_agent)
+         VALUES ($1, $2, $3, $4, $5, $6)`,
+        [userId, 'privacy_policy', version || '1.0', 'accepted', req.ip, userAgent || req.get('user-agent')]
+      );
+
+      await commitTransaction(client);
+
+      res.json({
+        success: true,
+        message: 'Legal agreements accepted successfully',
+        acceptedAt: new Date().toISOString()
+      });
+
+    } catch (error) {
+      await rollbackTransaction(client);
+      throw error;
+    }
+
+  } catch (error) {
+    console.error('Accept agreements error:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Failed to record agreement acceptance'
+    });
+  }
+};
+
+// @desc    Check if user has accepted legal agreements
+// @route   GET /api/v1/auth/check-agreements
+// @access  Private
+export const checkLegalAgreements = async (req, res) => {
+  try {
+    const userId = req.user.userId;
+
+    const result = await query(
+      `SELECT 
+        terms_accepted_at,
+        privacy_accepted_at,
+        terms_version,
+        privacy_version
+       FROM users 
+       WHERE id = $1`,
+      [userId]
+    );
+
+    if (result.rows.length === 0) {
+      return res.status(404).json({
+        success: false,
+        error: 'User not found'
+      });
+    }
+
+    const user = result.rows[0];
+    const hasAcceptedTerms = !!user.terms_accepted_at;
+    const hasAcceptedPrivacy = !!user.privacy_accepted_at;
+    const needsAcceptance = !hasAcceptedTerms || !hasAcceptedPrivacy;
+
+    res.json({
+      success: true,
+      needsAcceptance,
+      agreements: {
+        termsAccepted: hasAcceptedTerms,
+        privacyAccepted: hasAcceptedPrivacy,
+        termsVersion: user.terms_version,
+        privacyVersion: user.privacy_version,
+        termsAcceptedAt: user.terms_accepted_at,
+        privacyAcceptedAt: user.privacy_accepted_at
+      }
+    });
+
+  } catch (error) {
+    console.error('Check agreements error:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Failed to check agreement status'
+    });
+  }
+};
+
 // @desc    Request password reset
 // @route   POST /api/v1/auth/forgot-password
 // @access  Public

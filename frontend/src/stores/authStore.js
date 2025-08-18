@@ -266,6 +266,28 @@ export const useAuthStore = create((set, get) => ({
       // Dispatch theme change event to trigger theme refresh in components
       window.dispatchEvent(new CustomEvent('organizationChanged', { detail: { organizationId } }));
     }
+  },
+
+  // Check if user has accepted legal agreements
+  checkLegalAgreements: async () => {
+    try {
+      const response = await authAxios.get('/auth/check-agreements');
+      return response.data;
+    } catch (error) {
+      console.error('Failed to check legal agreements:', error);
+      return { success: false, needsAcceptance: true };
+    }
+  },
+
+  // Accept legal agreements for existing users
+  acceptLegalAgreements: async (agreementData) => {
+    try {
+      const response = await authAxios.post('/auth/accept-agreements', agreementData);
+      return response.data;
+    } catch (error) {
+      console.error('Failed to accept legal agreements:', error);
+      throw error;
+    }
   }
 }));
 

@@ -1,10 +1,11 @@
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { useAuthStore } from './stores/authStore';
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { TeamProvider } from './contexts/TeamContext';
 import { DepartmentProvider } from './contexts/DepartmentContext';
 import { SelectedTodosProvider } from './contexts/SelectedTodosContext';
 import { TerminologyProvider } from './contexts/TerminologyContext';
+import ForcedLegalAgreementModal from './components/legal/ForcedLegalAgreementModal';
 
 // Components
 import Layout from './components/Layout';
@@ -61,7 +62,9 @@ import { initTokenRefresh } from './utils/tokenRefresh';
 import './App.css';
 
 function App() {
-  const { user, isLoading, checkAuth } = useAuthStore();
+  const { user, isLoading, checkAuth, checkLegalAgreements } = useAuthStore();
+  const [needsLegalAcceptance, setNeedsLegalAcceptance] = useState(false);
+  const [checkingAgreements, setCheckingAgreements] = useState(false);
 
   useEffect(() => {
     checkAuth();
@@ -71,10 +74,36 @@ function App() {
     // Initialize automatic token refresh when user logs in
     if (user) {
       initTokenRefresh();
+      // Check if user has accepted legal agreements
+      checkUserLegalStatus();
     }
   }, [user]);
 
-  if (isLoading) {
+  const checkUserLegalStatus = async () => {
+    if (!user) return;
+    
+    setCheckingAgreements(true);
+    try {
+      const result = await checkLegalAgreements();
+      if (result.needsAcceptance) {
+        setNeedsLegalAcceptance(true);
+      }
+    } catch (error) {
+      console.error('Failed to check legal agreement status:', error);
+      // Assume needs acceptance on error for safety
+      setNeedsLegalAcceptance(true);
+    } finally {
+      setCheckingAgreements(false);
+    }
+  };
+
+  const handleLegalAcceptance = () => {
+    setNeedsLegalAcceptance(false);
+    // Optionally refresh the page to ensure clean state
+    window.location.reload();
+  };
+
+  if (isLoading || checkingAgreements) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-primary"></div>
@@ -89,6 +118,13 @@ function App() {
           <DepartmentProvider>
             <SelectedTodosProvider>
               <div className="min-h-screen bg-background">
+                {/* Forced Legal Agreement Modal for existing users */}
+                {user && needsLegalAcceptance && (
+                  <ForcedLegalAgreementModal 
+                    isOpen={true}
+                    onAccept={handleLegalAcceptance}
+                  />
+                )}
           <Routes>
           {/* Public routes */}
           <Route path="/" element={!user ? <LandingPage /> : <Navigate to="/dashboard" />} />
