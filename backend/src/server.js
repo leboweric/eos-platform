@@ -118,6 +118,10 @@ const allowedOrigins = [
   'http://localhost:5173',
   'https://eos-platform.netlify.app',
   'https://42vibes.com',
+  'https://axplatform.app',
+  'https://www.axplatform.app',
+  'https://myboyum.axplatform.app',
+  'https://*.axplatform.app', // This won't work with the current logic, but keeping for reference
   process.env.FRONTEND_URL
 ].filter(Boolean);
 
@@ -128,12 +132,20 @@ app.use(cors({
     // Allow requests with no origin (like mobile apps or curl requests)
     if (!origin) return callback(null, true);
     
+    // Check if origin matches any allowed origins exactly
     if (allowedOrigins.indexOf(origin) !== -1) {
       callback(null, true);
-    } else {
-      console.warn(`CORS: Blocked request from origin: ${origin}`);
-      callback(new Error('Not allowed by CORS'));
+      return;
     }
+    
+    // Check if origin is a subdomain of axplatform.app
+    if (origin && (origin.endsWith('.axplatform.app') || origin === 'https://axplatform.app')) {
+      callback(null, true);
+      return;
+    }
+    
+    console.warn(`CORS: Blocked request from origin: ${origin}`);
+    callback(new Error('Not allowed by CORS'));
   },
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
