@@ -61,7 +61,7 @@ const OneYearPlanDialog = ({ open, onOpenChange, data, onSave, organization }) =
       await onSave(formData);
       onOpenChange(false);
     } catch (error) {
-      setError(error.message || 'Failed to save 1-Year Plan');
+      setError(error.message || 'Failed to save Annual Goals');
     } finally {
       setSaving(false);
     }
@@ -72,7 +72,7 @@ const OneYearPlanDialog = ({ open, onOpenChange, data, onSave, organization }) =
       <DialogContent className="sm:max-w-[600px] max-h-[85vh] flex flex-col p-0">
         <form onSubmit={handleSubmit} className="flex flex-col h-full">
           <DialogHeader className="flex-shrink-0 p-6 pb-0">
-            <DialogTitle>1-Year Plan</DialogTitle>
+            <DialogTitle>Annual Goals</DialogTitle>
             <DialogDescription>
               Define your goals and targets for the coming year
             </DialogDescription>
@@ -326,7 +326,7 @@ const OneYearPlanDialog = ({ open, onOpenChange, data, onSave, organization }) =
               ) : (
                 <>
                   <Save className="mr-2 h-4 w-4" />
-                  Save 1-Year Plan
+                  Save Annual Goals
                 </>
               )}
             </Button>

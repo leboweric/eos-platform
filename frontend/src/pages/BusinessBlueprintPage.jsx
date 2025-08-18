@@ -107,7 +107,7 @@ const BusinessBlueprintPage = () => {
     accent: '#60A5FA'
   });
   
-  // State for tracking checked items in 3-Year Picture and 1-Year Plan
+  // State for tracking checked items in Long-term Vision and Annual Goals
   const [lookLikeCheckedItems, setLookLikeCheckedItems] = useState({});
   const [oneYearGoalsCheckedItems, setOneYearGoalsCheckedItems] = useState({});
   const [editingMarketingStrategy, setEditingMarketingStrategy] = useState(false);
@@ -414,13 +414,13 @@ const BusinessBlueprintPage = () => {
         ...prev,
         threeYearPicture: transformedData
       }));
-      setSuccess('3-Year Picture updated successfully');
+      setSuccess('Long-term Vision updated successfully');
       // Refresh the business blueprint data to ensure everything is in sync
       setTimeout(() => {
         fetchBusinessBlueprint();
       }, 500);
     } catch (error) {
-      setError('Failed to update 3-Year Picture');
+      setError('Failed to update Long-term Vision');
       throw error;
     } finally {
       setSaving(false);
@@ -441,7 +441,7 @@ const BusinessBlueprintPage = () => {
     }
   };
   
-  // Handler for toggling 1-Year Plan goal checkboxes
+  // Handler for toggling Annual Goals checkboxes
   const handleToggleOneYearGoal = async (goalId, index) => {
     try {
       if (!goalId) {
@@ -490,10 +490,10 @@ const BusinessBlueprintPage = () => {
           revenueStreams: savedData.revenueStreams || []
         }
       }));
-      setSuccess('1-Year Plan updated successfully');
+      setSuccess('Annual Goals updated successfully');
       // No need to refresh since we're getting complete data from backend
     } catch (error) {
-      setError('Failed to update 1-Year Plan');
+      setError('Failed to update Annual Goals');
       throw error;
     } finally {
       setSaving(false);
@@ -1253,7 +1253,7 @@ const BusinessBlueprintPage = () => {
           </Card>
           </div>
 
-          {/* Right Column - 3-Year Picture */}
+          {/* Right Column - Long-term Vision */}
           <div className="lg:col-span-1">
             <Card className="shadow-lg border-0 overflow-hidden h-full">
               <CardHeader className="bg-white border-b">
@@ -1261,7 +1261,7 @@ const BusinessBlueprintPage = () => {
                   <div>
                     <CardTitle className="flex items-center text-xl text-gray-900">
                       <Calendar className="mr-2 h-6 w-6" style={{ color: themeColors.primary }} />
-                      3-Year Picture
+                      Long-term Vision (3 Years)
                     </CardTitle>
                     <CardDescription className="text-gray-600">
                       {isDepartmentView ? "Your department's 3-year vision" : "Your organization's 3-year vision"}
@@ -1435,7 +1435,7 @@ const BusinessBlueprintPage = () => {
                       style={{ backgroundColor: themeColors.primary }} className="hover:opacity-90 text-white"
                     >
                       <Plus className="h-4 w-4 mr-2" />
-                      Create 3-Year Picture
+                      Create Long-term Vision
                     </Button>
                   </div>
                 )}
@@ -1451,7 +1451,7 @@ const BusinessBlueprintPage = () => {
                 <div>
                   <CardTitle className="flex items-center text-xl text-gray-900">
                     <Target className="mr-2 h-6 w-6" style={{ color: themeColors.primary }} />
-                    1-Year Plan
+                    Annual Goals
                   </CardTitle>
                   <CardDescription className="text-gray-600">
                     {isDepartmentView ? "Your department's goals for the next year" : "Your goals for the next year"}
@@ -1638,7 +1638,7 @@ const BusinessBlueprintPage = () => {
                     style={{ backgroundColor: themeColors.primary }} className="hover:opacity-90 text-white"
                   >
                     <Plus className="h-4 w-4 mr-2" />
-                    Create 1-Year Plan
+                    Create Annual Goals
                   </Button>
                 </div>
               )}

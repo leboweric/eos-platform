@@ -75,7 +75,7 @@ const ThreeYearPictureDialog = ({ open, onOpenChange, data, onSave, organization
       await onSave(formData);
       onOpenChange(false);
     } catch (error) {
-      setError(error.message || 'Failed to save 3-Year Picture');
+      setError(error.message || 'Failed to save Long-term Vision');
     } finally {
       setSaving(false);
     }
@@ -86,9 +86,9 @@ const ThreeYearPictureDialog = ({ open, onOpenChange, data, onSave, organization
       <DialogContent className="sm:max-w-[600px] max-h-[85vh] flex flex-col p-0">
         <form onSubmit={handleSubmit} className="flex flex-col h-full">
           <DialogHeader className="flex-shrink-0 p-6 pb-0">
-            <DialogTitle>3-Year Picture</DialogTitle>
+            <DialogTitle>Long-term Vision (3 Years)</DialogTitle>
             <DialogDescription>
-              Paint a picture of what your organization will look like in 3 years
+              Define your organization's vision for the next 3 years
             </DialogDescription>
           </DialogHeader>
           
@@ -342,7 +342,7 @@ const ThreeYearPictureDialog = ({ open, onOpenChange, data, onSave, organization
               ) : (
                 <>
                   <Save className="mr-2 h-4 w-4" />
-                  Save 3-Year Picture
+                  Save Long-term Vision
                 </>
               )}
             </Button>
