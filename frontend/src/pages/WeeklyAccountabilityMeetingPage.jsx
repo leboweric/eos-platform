@@ -56,6 +56,7 @@ import { FileText, GitBranch } from 'lucide-react';
 import { useSelectedTodos } from '../contexts/SelectedTodosContext';
 import { cascadingMessagesService } from '../services/cascadingMessagesService';
 import { teamsService } from '../services/teamsService';
+import { useTerminology } from '../contexts/TerminologyContext';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
@@ -66,6 +67,7 @@ const WeeklyAccountabilityMeetingPage = () => {
   const { teamId } = useParams();
   const navigate = useNavigate();
   const { meetingCode, participants } = useMeeting();
+  const { labels } = useTerminology();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [activeSection, setActiveSection] = useState('good-news');
@@ -2152,8 +2154,8 @@ const WeeklyAccountabilityMeetingPage = () => {
         <div className="mb-8">
           <div className="flex items-center justify-between mb-6">
             <div>
-              <h1 className="text-3xl font-bold text-gray-900">Weekly Accountability Meeting</h1>
-              <p className="text-gray-600 mt-2">90 minutes - Solve the issues that will prevent your team from completing your Priorities</p>
+              <h1 className="text-3xl font-bold text-gray-900">{labels.weekly_meeting_label || 'Weekly Accountability Meeting'}</h1>
+              <p className="text-gray-600 mt-2">90 minutes - Solve the {labels.issues_label.toLowerCase()} that will prevent your team from completing your {labels.priorities_label}</p>
             </div>
             {meetingStarted && (
               <div className="flex items-center gap-4">

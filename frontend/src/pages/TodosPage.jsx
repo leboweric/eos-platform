@@ -25,11 +25,13 @@ import {
 import TodoDialog from '../components/todos/TodoDialog';
 import TodosListClean from '../components/todos/TodosListClean';
 import { useSelectedTodos } from '../contexts/SelectedTodosContext';
+import { useTerminology } from '../contexts/TerminologyContext';
 
 const TodosPage = () => {
   const { user } = useAuthStore();
   const { selectedDepartment } = useDepartment();
   const { selectedTodoIds, setSelectedTodoIds } = useSelectedTodos();
+  const { labels } = useTerminology();
   const [loading, setLoading] = useState(true);
   const [initialLoad, setInitialLoad] = useState(true);
   const [error, setError] = useState(null);
@@ -209,7 +211,7 @@ const TodosPage = () => {
       let savedTodo;
       if (editingTodo) {
         savedTodo = await todosService.updateTodo(editingTodo.id, todoData);
-        setSuccess('To-do updated successfully');
+        setSuccess(`${labels.todos_label.slice(0, -1)} updated successfully`);
       } else {
         savedTodo = await todosService.createTodo({
           ...todoData,
@@ -228,13 +230,13 @@ const TodosPage = () => {
   };
 
   const handleDeleteTodo = async (todoId) => {
-    if (!window.confirm('Are you sure you want to delete this to-do?')) {
+    if (!window.confirm(`Are you sure you want to delete this ${labels.todos_label.slice(0, -1).toLowerCase()}?`)) {
       return;
     }
 
     try {
       await todosService.deleteTodo(todoId);
-      setSuccess('To-do deleted successfully');
+      setSuccess(`${labels.todos_label.slice(0, -1)} deleted successfully`);
       await fetchTodos();
     } catch (error) {
       console.error('Failed to delete todo:', error);
@@ -288,7 +290,7 @@ const TodosPage = () => {
       // Mark the todo as cancelled
       await todosService.updateTodo(todo.id, { status: 'cancelled' });
       
-      setSuccess(`To-do converted to issue successfully`);
+      setSuccess(`${labels.todos_label.slice(0, -1)} converted to ${labels.issues_label.slice(0, -1).toLowerCase()} successfully`);
       await fetchTodos();
     } catch (error) {
       console.error('Failed to convert todo to issue:', error);
@@ -299,7 +301,7 @@ const TodosPage = () => {
   const handleArchiveDone = async () => {
     try {
       const result = await todosService.archiveDoneTodos();
-      setSuccess(`${result.data.archivedCount} done to-do(s) archived`);
+      setSuccess(`${result.data.archivedCount} done ${labels.todos_label.toLowerCase()} archived`);
       await fetchTodos();
     } catch (error) {
       console.error('Failed to archive done todos:', error);
@@ -309,11 +311,11 @@ const TodosPage = () => {
 
   const handleMarkComplete = async () => {
     if (selectedTodoIds.length === 0) {
-      setError('Please select to-dos to mark as done');
+      setError(`Please select ${labels.todos_label.toLowerCase()} to mark as done`);
       return;
     }
     
-    if (!window.confirm(`Mark ${selectedTodoIds.length} selected to-do(s) as done?`)) {
+    if (!window.confirm(`Mark ${selectedTodoIds.length} selected ${labels.todos_label.toLowerCase()} as done?`)) {
       return;
     }
     
@@ -324,7 +326,7 @@ const TodosPage = () => {
       ));
       setSelectedTodoIds([]);
       await fetchTodos();
-      setSuccess(`${selectedTodoIds.length} to-do(s) marked as done`);
+      setSuccess(`${selectedTodoIds.length} ${labels.todos_label.toLowerCase()} marked as done`);
     } catch (error) {
       console.error('Failed to complete selected todos:', error);
       setError('Failed to mark to-dos as done');
@@ -365,7 +367,7 @@ const TodosPage = () => {
           <div>
             <h1 className="text-2xl font-semibold text-gray-900">
               <span className="inline-block w-1 h-7 mr-2 rounded-full" style={{ backgroundColor: themeColors.primary }} />
-              To-Dos{selectedDepartment ? ` - ${selectedDepartment.name}` : ''}
+              {labels.todos_label}{selectedDepartment ? ` - ${selectedDepartment.name}` : ''}
             </h1>
           </div>
           <div className="flex items-center gap-3">
@@ -415,7 +417,7 @@ const TodosPage = () => {
               onMouseLeave={(e) => e.currentTarget.style.backgroundColor = themeColors.primary}
             >
               <Plus className="mr-2 h-4 w-4" />
-              New To-Do
+              New {labels.todos_label.slice(0, -1)}
             </Button>
           </div>
         </div>
@@ -496,7 +498,7 @@ const TodosPage = () => {
                   className="border-gray-300"
                 >
                   <Plus className="mr-2 h-4 w-4" />
-                  Create To-Do
+                  Create {labels.todos_label.slice(0, -1)}
                 </Button>
               )}
             </div>

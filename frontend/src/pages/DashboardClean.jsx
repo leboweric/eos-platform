@@ -19,6 +19,7 @@ import IssueDialog from '../components/issues/IssueDialog';
 import HeadlineDialog from '../components/headlines/HeadlineDialog';
 import { headlinesService } from '../services/headlinesService';
 import { useSelectedTodos } from '../contexts/SelectedTodosContext';
+import { useTerminology } from '../contexts/TerminologyContext';
 import {
   AlertCircle,
   CheckSquare,
@@ -34,6 +35,7 @@ import { format } from 'date-fns';
 
 const DashboardClean = () => {
   const { user, isOnLeadershipTeam } = useAuthStore();
+  const { labels } = useTerminology();
   const navigate = useNavigate();
   const [loading, setLoading] = useState(true);
   const [organization, setOrganization] = useState(null);
@@ -784,7 +786,7 @@ const DashboardClean = () => {
               {dashboardData.stats.prioritiesCompleted}/{dashboardData.stats.totalPriorities}
             </p>
             <p className="text-sm text-gray-500 mt-1">
-              {isOnLeadershipTeam() ? 'Company Priorities' : 'Your Priorities'}
+              {isOnLeadershipTeam() ? `Company ${labels.priorities_label}` : `Your ${labels.priorities_label}`}
             </p>
             {dashboardData.stats.prioritiesProgress >= 80 && (
               <span className="inline-block w-2 h-2 bg-green-500 rounded-full mt-2" title="Great progress!" />
@@ -810,7 +812,7 @@ const DashboardClean = () => {
             <p className="text-3xl font-semibold text-gray-900">
               {dashboardData.stats.totalShortTermIssues}
             </p>
-            <p className="text-sm text-gray-500 mt-1">Open Issues</p>
+            <p className="text-sm text-gray-500 mt-1">Open {labels.issues_label}</p>
           </div>
         </div>
 
@@ -821,7 +823,7 @@ const DashboardClean = () => {
             <div className="flex items-center justify-between mb-4 pb-2 border-b-2" style={{ borderColor: themeColors.accent + '20' }}>
               <h2 className="text-lg font-medium text-gray-900">
                 <span className="inline-block w-1 h-5 mr-2 rounded-full" style={{ backgroundColor: themeColors.primary }} />
-                Your Priorities
+                Your {labels.priorities_label}
               </h2>
               <Link 
                 to="/quarterly-priorities" 
@@ -839,7 +841,7 @@ const DashboardClean = () => {
                 <p className="text-sm text-gray-500">No priorities assigned</p>
                 <Link to="/quarterly-priorities">
                   <Button variant="outline" size="sm" className="mt-3">
-                    View Priorities
+                    View {labels.priorities_label}
                   </Button>
                 </Link>
               </div>
@@ -870,7 +872,7 @@ const DashboardClean = () => {
             <div className="flex items-center justify-between mb-4 pb-2 border-b-2" style={{ borderColor: themeColors.accent + '20' }}>
               <h2 className="text-lg font-medium text-gray-900">
                 <span className="inline-block w-1 h-5 mr-2 rounded-full" style={{ backgroundColor: themeColors.primary }} />
-                Your To-Dos
+                Your {labels.todos_label}
               </h2>
               <Link 
                 to="/todos" 

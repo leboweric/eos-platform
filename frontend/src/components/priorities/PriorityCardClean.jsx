@@ -10,6 +10,7 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { organizationService } from '../../services/organizationService';
 import { getOrgTheme, saveOrgTheme } from '../../utils/themeUtils';
+import { useTerminology } from '../../contexts/TerminologyContext';
 import { 
   Calendar,
   ChevronDown,
@@ -85,6 +86,7 @@ const PriorityCardClean = ({
   const [updateText, setUpdateText] = useState('');
   const [editingMilestoneId, setEditingMilestoneId] = useState(null);
   const [editingMilestone, setEditingMilestone] = useState({ title: '', dueDate: '' });
+  const { labels } = useTerminology();
   const [themeColors, setThemeColors] = useState({
     primary: '#3B82F6',
     secondary: '#1E40AF',
@@ -482,7 +484,7 @@ const PriorityCardClean = ({
                     onChange={(e) => setEditForm({ ...editForm, description: e.target.value })}
                     className="text-sm resize-none"
                     rows={4}
-                    placeholder="Priority description..."
+                    placeholder={`${labels.priorities_label.slice(0, -1)} description...`}
                   />
                 ) : (
                   <div className="max-h-32 overflow-y-auto bg-gray-50 rounded-md p-3 border border-gray-200">
@@ -516,7 +518,7 @@ const PriorityCardClean = ({
                     className="h-7 text-xs"
                   >
                     <Target className="h-3 w-3 mr-1" />
-                    Add Milestone
+                    Add {labels.milestones_label?.slice(0, -1) || 'Milestone'}
                   </Button>
                 )}
                 {!priority.updates?.length && !showAddUpdate && onAddUpdate && (
@@ -550,7 +552,7 @@ const PriorityCardClean = ({
                 <div className="flex items-center gap-2">
                   <h4 className="text-sm font-medium text-gray-700 flex items-center gap-2">
                     <Target className="h-4 w-4" />
-                    Milestones
+                    {labels.milestones_label || 'Milestones'}
                   </h4>
                   {!showAddMilestone && onAddMilestone && (
                     <Button
@@ -580,7 +582,7 @@ const PriorityCardClean = ({
                             value={editingMilestone.title}
                             onChange={(e) => setEditingMilestone({ ...editingMilestone, title: e.target.value })}
                             className="flex-1 h-7 text-sm"
-                            placeholder="Milestone title"
+                            placeholder={`${labels.milestones_label?.slice(0, -1) || 'Milestone'} title`}
                           />
                           <Select
                             value={editingMilestone.ownerId || milestone.owner_id || priority.owner?.id}
@@ -721,7 +723,7 @@ const PriorityCardClean = ({
                       <Input
                         value={newMilestone.title}
                         onChange={(e) => setNewMilestone({ ...newMilestone, title: e.target.value })}
-                        placeholder="Milestone title"
+                        placeholder={`${labels.milestones_label?.slice(0, -1) || 'Milestone'} title`}
                         className="flex-1 text-sm"
                       />
                       <Select

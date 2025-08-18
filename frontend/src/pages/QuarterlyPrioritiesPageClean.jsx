@@ -1690,7 +1690,7 @@ const QuarterlyPrioritiesPageClean = () => {
                 )}
               </div>
 
-              {/* Company/Individual Priority Toggle (only in edit mode) */}
+              {/* Company/Individual {labels.priorities_label.slice(0, -1)} Toggle (only in edit mode) */}
               {isEditing && (
                 <div className="flex items-center gap-2 p-3 bg-gray-50 rounded-lg">
                   <input
@@ -2313,7 +2313,7 @@ const QuarterlyPrioritiesPageClean = () => {
                     <div className="space-y-8">
                       <div className="flex items-center gap-3">
                         <Users className="h-6 w-6" style={{ color: themeColors.secondary }} />
-                        <h3 className="text-xl font-semibold text-gray-900">Individual Priorities</h3>
+                        <h3 className="text-xl font-semibold text-gray-900">Individual {labels.priorities_label}</h3>
                       </div>
                       {Object.entries(quarterData.teamMemberPriorities).map(([memberId, priorities]) => {
                         const firstPriority = priorities[0];
@@ -2392,7 +2392,7 @@ const QuarterlyPrioritiesPageClean = () => {
           <div className="space-y-8">
             <div className="flex items-center gap-3">
               <Users className="h-6 w-6" style={{ color: themeColors.secondary }} />
-              <h2 className="text-2xl font-bold text-gray-900">Individual Priorities</h2>
+              <h2 className="text-2xl font-bold text-gray-900">Individual {labels.priorities_label}</h2>
             </div>
             {(teamMembers || []).map(member => {
               const memberData = teamMemberPriorities[member.id];

@@ -5,6 +5,7 @@ import { organizationService } from '../services/organizationService';
 import { getOrgTheme, saveOrgTheme } from '../utils/themeUtils';
 import { exportIssuesToExcel } from '../utils/excelExport';
 import { useDepartment } from '../contexts/DepartmentContext';
+import { useTerminology } from '../contexts/TerminologyContext';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Alert, AlertDescription } from '@/components/ui/alert';
@@ -76,6 +77,7 @@ class IssuesErrorBoundary extends Component {
 const IssuesPageClean = () => {
   const { user } = useAuthStore();
   const { selectedDepartment } = useDepartment();
+  const { labels } = useTerminology();
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [success, setSuccess] = useState(null);
@@ -452,7 +454,7 @@ const IssuesPageClean = () => {
         <div className="flex items-center justify-between mb-8">
           <h1 className="text-2xl font-semibold text-gray-900">
             <span className="inline-block w-1 h-7 mr-2 rounded-full" style={{ backgroundColor: themeColors.primary }} />
-            Issues{selectedDepartment ? ` - ${selectedDepartment.name}` : ''}
+            {labels.issues_label}{selectedDepartment ? ` - ${selectedDepartment.name}` : ''}
           </h1>
           <div className="flex items-center gap-3">
             {activeTab !== 'archived' && closedIssuesCount > 0 && (
