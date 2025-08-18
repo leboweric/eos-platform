@@ -1,11 +1,8 @@
 import { useState } from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
-import { Shield, AlertTriangle, FileText, Lock, Scale } from 'lucide-react';
 
 const LegalAgreement = ({ onAccept, isRequired = true }) => {
   const [termsAccepted, setTermsAccepted] = useState(false);
@@ -319,101 +316,65 @@ AXP is the data controller for information collected through the Service. For qu
   `;
 
   return (
-    <Card className="border-2 border-red-200 bg-red-50/50">
-      <CardHeader className="pb-3">
-        <CardTitle className="flex items-center gap-2 text-red-900">
-          <Shield className="h-5 w-5" />
-          Legal Agreements - Must Accept to Continue
-        </CardTitle>
-      </CardHeader>
-      <CardContent className="space-y-4">
-        <Alert className="border-amber-200 bg-amber-50">
-          <AlertTriangle className="h-4 w-4 text-amber-600" />
-          <AlertDescription className="text-amber-900">
-            <strong>Important:</strong> By creating an account, you acknowledge that you have read, understood, and agree to be bound by our Terms of Service and Privacy Policy. This is a legally binding agreement.
-          </AlertDescription>
-        </Alert>
-
-        <div className="space-y-3">
-          <div className="flex items-start space-x-3 p-3 bg-white rounded-lg border">
-            <Checkbox
-              id="terms"
-              checked={termsAccepted}
-              onCheckedChange={setTermsAccepted}
-              className="mt-0.5"
-              required
-            />
-            <div className="flex-1">
-              <label
-                htmlFor="terms"
-                className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 cursor-pointer"
-              >
-                I accept the Terms of Service *
-              </label>
-              <p className="text-xs text-gray-600 mt-1">
-                Including limitations of liability, indemnification, and arbitration agreement
-              </p>
-              <Button
-                variant="link"
-                size="sm"
-                className="p-0 h-auto text-blue-600"
-                onClick={() => setShowTermsDialog(true)}
-              >
-                <FileText className="h-3 w-3 mr-1" />
-                Read Full Terms of Service
-              </Button>
-            </div>
-          </div>
-
-          <div className="flex items-start space-x-3 p-3 bg-white rounded-lg border">
-            <Checkbox
-              id="privacy"
-              checked={privacyAccepted}
-              onCheckedChange={setPrivacyAccepted}
-              className="mt-0.5"
-              required
-            />
-            <div className="flex-1">
-              <label
-                htmlFor="privacy"
-                className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 cursor-pointer"
-              >
-                I accept the Privacy Policy *
-              </label>
-              <p className="text-xs text-gray-600 mt-1">
-                Including data collection, processing, and security practices
-              </p>
-              <Button
-                variant="link"
-                size="sm"
-                className="p-0 h-auto text-blue-600"
-                onClick={() => setShowPrivacyDialog(true)}
-              >
-                <Lock className="h-3 w-3 mr-1" />
-                Read Full Privacy Policy
-              </Button>
-            </div>
-          </div>
+    <>
+      <div className="space-y-3">
+        {/* Simple checkbox agreements - standard SaaS style */}
+        <div className="space-y-2">
+        <div className="flex items-start space-x-2">
+          <Checkbox
+            id="terms"
+            checked={termsAccepted}
+            onCheckedChange={setTermsAccepted}
+            className="mt-0.5"
+            required
+          />
+          <label
+            htmlFor="terms"
+            className="text-sm text-gray-600 leading-relaxed cursor-pointer"
+          >
+            I agree to the{' '}
+            <button
+              type="button"
+              onClick={() => setShowTermsDialog(true)}
+              className="underline hover:text-gray-900 transition-colors"
+            >
+              Terms of Service
+            </button>
+            {' '}*
+          </label>
         </div>
 
-        {error && (
-          <Alert className="border-red-200 bg-red-50">
-            <AlertTriangle className="h-4 w-4 text-red-600" />
-            <AlertDescription className="text-red-800">{error}</AlertDescription>
-          </Alert>
-        )}
-
-        <div className="pt-2 border-t">
-          <p className="text-xs text-gray-600 mb-3">
-            <Scale className="inline h-3 w-3 mr-1" />
-            By clicking "Create Account", you agree to our Terms of Service and Privacy Policy. 
-            You acknowledge that AXP will process your data in accordance with our Privacy Policy and applicable laws.
-          </p>
-          <p className="text-xs text-gray-500">
-            Your acceptance will be recorded with timestamp: {new Date().toLocaleString()}
-          </p>
+        <div className="flex items-start space-x-2">
+          <Checkbox
+            id="privacy"
+            checked={privacyAccepted}
+            onCheckedChange={setPrivacyAccepted}
+            className="mt-0.5"
+            required
+          />
+          <label
+            htmlFor="privacy"
+            className="text-sm text-gray-600 leading-relaxed cursor-pointer"
+          >
+            I agree to the{' '}
+            <button
+              type="button"
+              onClick={() => setShowPrivacyDialog(true)}
+              className="underline hover:text-gray-900 transition-colors"
+            >
+              Privacy Policy
+            </button>
+            {' '}*
+          </label>
         </div>
-      </CardContent>
+      </div>
+
+      {error && (
+        <p className="text-sm text-red-600">
+          {error}
+        </p>
+      )}
+      </div>
 
       {/* Terms of Service Dialog */}
       <Dialog open={showTermsDialog} onOpenChange={setShowTermsDialog}>
@@ -460,7 +421,7 @@ AXP is the data controller for information collected through the Service. For qu
           </DialogFooter>
         </DialogContent>
       </Dialog>
-    </Card>
+    </>
   );
 };
 

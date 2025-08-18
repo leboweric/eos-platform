@@ -375,37 +375,39 @@ const RegisterPage = () => {
                   )}
                 </div>
 
-                {/* Legal Agreement Section */}
-                <div id="legal-agreement" className="space-y-3">
+                {/* Legal Agreements - Subtle like standard SaaS */}
+                <div className="pt-2">
                   <LegalAgreement 
                     onAccept={handleLegalAcceptance}
                     isRequired={true}
                   />
-                  
-                  {agreementError && (
-                    <Alert className="border-red-200 bg-red-50">
-                      <AlertDescription className="text-red-800">
-                        {agreementError}
-                      </AlertDescription>
-                    </Alert>
-                  )}
-
-                  <Button
-                    type="submit"
-                    className="w-full"
-                    size="lg"
-                    disabled={isLoading}
-                  >
-                    {isLoading ? (
-                      'Creating Account...'
-                    ) : (
-                      <>
-                        Start Free Trial
-                        <ArrowRight className="ml-2 h-4 w-4" />
-                      </>
-                    )}
-                  </Button>
                 </div>
+                
+                {agreementError && (
+                  <p className="text-sm text-red-600 mt-2">
+                    {agreementError}
+                  </p>
+                )}
+
+                <Button
+                  type="submit"
+                  className="w-full mt-4"
+                  size="lg"
+                  disabled={isLoading}
+                >
+                  {isLoading ? (
+                    'Creating Account...'
+                  ) : (
+                    <>
+                      Start Free Trial
+                      <ArrowRight className="ml-2 h-4 w-4" />
+                    </>
+                  )}
+                </Button>
+                
+                <p className="text-xs text-gray-500 text-center mt-3">
+                  By clicking "Start Free Trial", you agree to our Terms of Service and Privacy Policy
+                </p>
               </form>
 
               {/* Social Proof */}
