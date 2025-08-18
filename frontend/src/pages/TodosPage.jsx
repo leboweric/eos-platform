@@ -247,8 +247,9 @@ const TodosPage = () => {
       });
       
       setSuccess('Issue created successfully from to-do');
-      // Optionally navigate to issues page
-      // navigate('/issues');
+      // Close the dialog after creating
+      setShowTodoDialog(false);
+      setEditingTodo(null);
     } catch (error) {
       console.error('Failed to create issue from todo:', error);
       setError('Failed to create issue from to-do');

@@ -856,9 +856,7 @@ const WeeklyAccountabilityMeetingPage = () => {
   };
 
   // Create Issue from To-Do
-  const handleCreateIssueFromTodo = (todo) => {
-    // Open the IDS section with a new issue pre-populated
-    setCurrentSection('ids');
+  const handleCreateIssueFromTodo = async (todo) => {
     // Create the new issue data
     const newIssue = {
       title: `Issue from To-Do: ${todo.title}`,
@@ -866,9 +864,12 @@ const WeeklyAccountabilityMeetingPage = () => {
       status: 'open',
       owner_id: todo.assigned_to_id || todo.assignee_id || user?.id
     };
-    // You'll need to add a way to pre-populate the issue dialog
-    // For now, we can create the issue directly
-    handleCreateIssue(newIssue);
+    
+    // Create the issue directly
+    await handleCreateIssue(newIssue);
+    
+    // Navigate to IDS section to show the new issue
+    setCurrentSection('ids');
   };
 
   // Create Issue
