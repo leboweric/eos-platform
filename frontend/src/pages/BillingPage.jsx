@@ -23,6 +23,128 @@ const stripePromise = loadStripe(import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY || 
 // API base URL
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3001/api/v1';
 
+// Update payment method component
+const UpdatePaymentMethodForm = ({ onSuccess }) => {
+  const stripe = useStripe();
+  const elements = useElements();
+  const [error, setError] = useState(null);
+  const [loading, setLoading] = useState(false);
+  const [success, setSuccess] = useState(false);
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    if (!stripe || !elements) return;
+
+    setLoading(true);
+    setError(null);
+    setSuccess(false);
+
+    // Create payment method
+    const { error: stripeError, paymentMethod } = await stripe.createPaymentMethod({
+      type: 'card',
+      card: elements.getElement(CardElement),
+    });
+
+    if (stripeError) {
+      setError(stripeError.message);
+      setLoading(false);
+      return;
+    }
+
+    // Send payment method to backend
+    try {
+      const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:3001/api/v1';
+      const response = await fetch(`${apiUrl}/subscription/payment-method`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${localStorage.getItem('accessToken')}`
+        },
+        body: JSON.stringify({
+          paymentMethodId: paymentMethod.id
+        })
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.error || 'Failed to update payment method');
+      }
+
+      setSuccess(true);
+      if (onSuccess) onSuccess(data);
+      
+      // Clear the card element
+      elements.getElement(CardElement).clear();
+      
+      // Reset success message after 3 seconds
+      setTimeout(() => setSuccess(false), 3000);
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return (
+    <div className="space-y-4">
+      {success && (
+        <Alert className="border-green-200 bg-green-50">
+          <CheckCircle className="h-4 w-4 text-green-600" />
+          <AlertDescription className="text-green-800">
+            Payment method updated successfully!
+          </AlertDescription>
+        </Alert>
+      )}
+      
+      <form onSubmit={handleSubmit} className="space-y-4">
+        <div className="space-y-2">
+          <label className="text-sm font-medium">
+            Card Information
+          </label>
+          <div className="p-3 border rounded-md">
+            <CardElement
+              options={{
+                style: {
+                  base: {
+                    fontSize: '16px',
+                    color: '#424770',
+                    '::placeholder': {
+                      color: '#aab7c4',
+                    },
+                  },
+                },
+              }}
+            />
+          </div>
+        </div>
+
+        {error && (
+          <Alert variant="destructive">
+            <AlertCircle className="h-4 w-4" />
+            <AlertDescription>{error}</AlertDescription>
+          </Alert>
+        )}
+
+        <Button type="submit" disabled={!stripe || loading} className="w-full">
+          {loading ? (
+            <>
+              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+              Updating...
+            </>
+          ) : (
+            'Update Payment Method'
+          )}
+        </Button>
+      </form>
+      
+      <p className="text-xs text-gray-500 text-center">
+        Your new payment method will be used for future charges. Your next billing date remains unchanged.
+      </p>
+    </div>
+  );
+};
+
 // Card input component
 const CardInputForm = ({ onSuccess }) => {
   const stripe = useStripe();
@@ -432,14 +554,12 @@ const BillingPage = () => {
                 <CardHeader>
                   <CardTitle>Payment Method</CardTitle>
                   <CardDescription>
-                    Update your payment method
+                    Update your payment method for future charges
                   </CardDescription>
                 </CardHeader>
                 <CardContent>
                   <Elements stripe={stripePromise}>
-                    <p className="text-sm text-gray-500">
-                      Payment method update coming soon...
-                    </p>
+                    <UpdatePaymentMethodForm />
                   </Elements>
                 </CardContent>
               </Card>
