@@ -134,8 +134,7 @@ Notices to you may be made via email or regular mail. The Service may also provi
 19. CONTACT INFORMATION
 For questions about these Terms, please contact:
 AXP Legal Department
-Email: legal@axp.com
-Address: [Your Company Address]
+Email: legal@axplatform.app
   `;
 
   const privacyPolicy = `
@@ -225,7 +224,7 @@ You have the right to:
 - Withdraw consent where applicable
 - Opt-out of marketing communications
 
-To exercise these rights, contact privacy@axp.com.
+To exercise these rights, contact privacy@axplatform.app.
 
 7. COOKIES AND TRACKING
 
@@ -295,14 +294,10 @@ We may update this Privacy Policy from time to time. We will notify you of mater
 For privacy-related questions or concerns:
 
 Privacy Team
-Email: privacy@axp.com
+Email: privacy@axplatform.app
 
 Data Protection Officer
-Email: dpo@axp.com
-
-Mailing Address:
-AXP Privacy Department
-[Your Company Address]
+Email: dpo@axplatform.app
 
 You may also submit requests through your account settings.
 
