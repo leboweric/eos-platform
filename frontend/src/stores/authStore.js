@@ -102,6 +102,11 @@ export const useAuthStore = create((set, get) => ({
       const response = await authAxios.get('/auth/profile');
       const userData = response.data.data;
       
+      // Normalize organization_id field (backend sends organizationId, frontend expects organization_id)
+      if (userData && userData.organizationId && !userData.organization_id) {
+        userData.organization_id = userData.organizationId;
+      }
+      
       // Store organizationId for theme management
       if (userData?.organizationId || userData?.organization_id) {
         localStorage.setItem('organizationId', userData.organizationId || userData.organization_id);
@@ -127,6 +132,11 @@ export const useAuthStore = create((set, get) => ({
       });
 
       const { user, accessToken, refreshToken } = response.data.data;
+      
+      // Normalize organization_id field (backend sends organizationId, frontend expects organization_id)
+      if (user && user.organizationId && !user.organization_id) {
+        user.organization_id = user.organizationId;
+      }
       
       localStorage.setItem('accessToken', accessToken);
       localStorage.setItem('refreshToken', refreshToken);
@@ -157,6 +167,11 @@ export const useAuthStore = create((set, get) => ({
       const response = await authAxios.post('/auth/register', userData);
       
       const { user, accessToken, refreshToken } = response.data.data;
+      
+      // Normalize organization_id field (backend sends organizationId, frontend expects organization_id)
+      if (user && user.organizationId && !user.organization_id) {
+        user.organization_id = user.organizationId;
+      }
       
       localStorage.setItem('accessToken', accessToken);
       localStorage.setItem('refreshToken', refreshToken);

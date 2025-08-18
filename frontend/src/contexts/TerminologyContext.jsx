@@ -32,10 +32,6 @@ export const TerminologyProvider = ({ children }) => {
   const [error, setError] = useState(null);
   const { user } = useAuthStore();
   const orgId = user?.organization_id;
-  
-  // Debug logging
-  console.log('TerminologyContext - User:', user);
-  console.log('TerminologyContext - OrgId:', orgId);
 
   // Fetch terminology when org changes
   useEffect(() => {

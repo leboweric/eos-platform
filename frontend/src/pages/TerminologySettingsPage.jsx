@@ -34,10 +34,6 @@ const TerminologySettingsPage = () => {
   const [saving, setSaving] = useState(false);
   const [success, setSuccess] = useState(null);
   const [error, setError] = useState(null);
-  
-  // Debug logging
-  console.log('TerminologySettingsPage - User:', user);
-  console.log('TerminologySettingsPage - OrgId:', user?.organization_id);
 
   useEffect(() => {
     // Initialize form with current terminology
