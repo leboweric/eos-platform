@@ -46,6 +46,8 @@ const updateTerminology = async (req, res) => {
       'long_term_vision_label',
       'annual_goals_label',
       'business_blueprint_label',
+      'accountability_chart_label',
+      'milestones_label',
       'problem_solving_process',
       'quarter_label',
       'year_label',
