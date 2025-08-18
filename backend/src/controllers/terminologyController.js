@@ -1,4 +1,4 @@
-import db from '../db/index.js';
+import db from '../config/database.js';
 
 // Get terminology settings for an organization
 const getTerminology = async (req, res) => {
