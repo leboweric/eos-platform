@@ -49,13 +49,24 @@ const BusinessBlueprintPage = () => {
   const { selectedDepartment } = useDepartment();
   const { labels } = useTerminology();
   
+  // Determine framework mode
+  const isEOS = labels.priorities_label === 'Rocks';
+  const isOKR = labels.priorities_label === 'Objectives';
+  const isScalingUp = labels.business_blueprint_label === 'One-Page Strategic Plan';
+  const is4DX = labels.priorities_label?.includes('WIG');
+  
+  // Get framework-specific tab labels
+  const getTabLabels = () => {
+    if (isEOS) {
+      return { vision: 'Vision', execution: 'Traction' };
+    }
+    return { vision: 'Vision', execution: 'Execution' };
+  };
+  
+  const tabLabels = getTabLabels();
+  
   // Get framework-specific section labels and descriptions
-  const getFrameworkSections = () => {
-    const isEOS = labels.priorities_label === 'Rocks';
-    const isOKR = labels.priorities_label === 'Objectives';
-    const isScalingUp = labels.business_blueprint_label === 'One-Page Strategic Plan';
-    const is4DX = labels.priorities_label?.includes('WIG');
-    
+  const getFrameworkSections = () => {    
     if (isEOS) {
       return {
         coreValues: { label: 'Core Values', description: '3-7 rules that define your culture and Right People' },
@@ -661,7 +672,7 @@ const BusinessBlueprintPage = () => {
               }}
             >
               <Target className="mr-2 h-5 w-5" style={{ color: activeTab === 'vision' ? 'white' : themeColors.primary }} />
-              Vision
+              {tabLabels.vision}
             </TabsTrigger>
             <TabsTrigger 
               value="execution" 
@@ -672,7 +683,7 @@ const BusinessBlueprintPage = () => {
               }}
             >
               <TrendingUp className="mr-2 h-5 w-5" style={{ color: activeTab === 'execution' ? 'white' : themeColors.primary }} />
-              Execution
+              {tabLabels.execution}
             </TabsTrigger>
           </TabsList>
 

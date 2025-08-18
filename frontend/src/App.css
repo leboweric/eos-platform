@@ -181,7 +181,7 @@
     display: none !important;
   }
   
-  /* Show both Vision and Execution content regardless of active state */
+  /* Show both Vision and Traction/Execution content regardless of active state */
   [data-slot="tabs-content"],
   [role="tabpanel"],
   [data-state="inactive"],
@@ -201,7 +201,7 @@
     visibility: visible !important;
   }
   
-  /* Force page break between Vision and Execution */
+  /* Force page break between Vision and Traction/Execution */
   [data-slot="tabs-content"]:first-of-type,
   [role="tabpanel"]:first-of-type {
     page-break-after: always;
