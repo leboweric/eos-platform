@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useAuthStore } from '../stores/authStore';
+import { useTerminology } from '../contexts/TerminologyContext';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
@@ -51,6 +52,7 @@ const Layout = ({ children }) => {
   const location = useLocation();
   const navigate = useNavigate();
   const { user, logout, isOnLeadershipTeam } = useAuthStore();
+  const { labels } = useTerminology();
 
   useEffect(() => {
     // Check if consultant is impersonating a client
@@ -85,10 +87,10 @@ const Layout = ({ children }) => {
 
   const baseNavigation = [
     { name: 'Dashboard', href: '/dashboard', icon: Home },
-    { name: 'Quarterly Priorities', href: '/quarterly-priorities', icon: CheckSquare },
-    { name: 'Scorecard', href: '/scorecard', icon: BarChart3 },
-    { name: 'To-Dos', href: '/todos', icon: ClipboardList },
-    { name: 'Issues', href: '/issues', icon: MessageSquare },
+    { name: labels?.priorities || 'Quarterly Priorities', href: '/quarterly-priorities', icon: CheckSquare },
+    { name: labels?.scorecard || 'Scorecard', href: '/scorecard', icon: BarChart3 },
+    { name: labels?.todos || 'To-Dos', href: '/todos', icon: ClipboardList },
+    { name: labels?.issues || 'Issues', href: '/issues', icon: MessageSquare },
     { name: 'Meetings', href: '/meetings', icon: Calendar },
     { name: '2-Page Plan', href: '/business-blueprint', icon: Target },
     { name: 'Organizational Chart', href: '/organizational-chart', icon: GitBranch },

@@ -7,6 +7,7 @@ import { getOrgTheme, saveOrgTheme } from '../utils/themeUtils';
 import { issuesService } from '../services/issuesService';
 import { getRevenueLabel, getRevenueLabelWithSuffix } from '../utils/revenueUtils';
 import { useDepartment } from '../contexts/DepartmentContext';
+import { useTerminology } from '../contexts/TerminologyContext';
 import PriorityCardClean from '../components/priorities/PriorityCardClean';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
