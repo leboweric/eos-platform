@@ -608,7 +608,7 @@ export const changePassword = async (req, res) => {
 // @access  Private
 export const acceptLegalAgreements = async (req, res) => {
   try {
-    const userId = req.user.userId;
+    const userId = req.user.id;
     const { termsAccepted, privacyAccepted, version, userAgent } = req.body;
 
     if (!termsAccepted || !privacyAccepted) {
@@ -676,7 +676,7 @@ export const acceptLegalAgreements = async (req, res) => {
 // @access  Private
 export const checkLegalAgreements = async (req, res) => {
   try {
-    const userId = req.user.userId;
+    const userId = req.user.id;
 
     const result = await query(
       `SELECT 
