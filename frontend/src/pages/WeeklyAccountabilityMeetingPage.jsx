@@ -527,6 +527,8 @@ const WeeklyAccountabilityMeetingPage = () => {
     try {
       const effectiveTeamId = teamId || user?.teamId || '00000000-0000-0000-0000-000000000000';
       
+      console.log('Fetching todos for team:', effectiveTeamId);
+      
       const response = await todosService.getTodos(
         null, // status filter
         null, // assignee filter
@@ -534,6 +536,9 @@ const WeeklyAccountabilityMeetingPage = () => {
         effectiveTeamId // department filter
       );
       const fetchedTodos = response.data?.todos || [];
+      
+      console.log('Fetched todos count:', fetchedTodos.length);
+      
       setTodos(fetchedTodos);
       
       // Automatically create issues for overdue todos
@@ -815,6 +820,9 @@ const WeeklyAccountabilityMeetingPage = () => {
       const orgId = localStorage.getItem('impersonatedOrgId') || user?.organizationId || user?.organization_id;
       const effectiveTeamId = teamId || user?.teamId || '00000000-0000-0000-0000-000000000000';
       
+      console.log('Saving todo with team_id:', effectiveTeamId);
+      console.log('Todo data:', todoData);
+      
       let savedTodo;
       if (editingTodo) {
         savedTodo = await todosService.updateTodo(editingTodo.id, {
@@ -830,6 +838,8 @@ const WeeklyAccountabilityMeetingPage = () => {
         });
         setSuccess('To-do created successfully');
       }
+      
+      console.log('Saved todo:', savedTodo);
       
       // Always refresh todos after creating/updating
       await fetchTodosData();
