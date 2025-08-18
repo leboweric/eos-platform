@@ -263,8 +263,9 @@ const TodosListClean = ({
           return (
             <div
               key={todo.id}
+              onClick={() => onEdit && onEdit(todo)}
               className={`
-                group relative flex items-center gap-3 bg-white rounded-lg border pl-2 pr-4 py-2 transition-all duration-200
+                group relative flex items-center gap-3 bg-white rounded-lg border pl-2 pr-4 py-2 transition-all duration-200 cursor-pointer
                 ${todo.status === 'complete' && !todo.archived ? 'border-gray-300 opacity-60' : 'border-gray-200 hover:border-gray-300 hover:shadow-sm'}
               `}
             >
@@ -277,6 +278,7 @@ const TodosListClean = ({
               {/* Checkbox */}
               <Checkbox
                 checked={todo.status === 'complete'}
+                onClick={(e) => e.stopPropagation()}
                 onCheckedChange={(checked) => {
                   if (onStatusChange) {
                     onStatusChange(todo.id, checked);
@@ -322,7 +324,7 @@ const TodosListClean = ({
               
               {/* Actions */}
               <DropdownMenu>
-                <DropdownMenuTrigger asChild>
+                <DropdownMenuTrigger asChild onClick={(e) => e.stopPropagation()}>
                   <Button 
                     variant="ghost" 
                     size="sm" 
@@ -333,7 +335,10 @@ const TodosListClean = ({
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end" className="w-48">
                   <DropdownMenuItem 
-                    onClick={() => onEdit(todo)}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      onEdit(todo);
+                    }}
                     className="cursor-pointer"
                   >
                     <Edit className="mr-2 h-4 w-4" />
@@ -358,8 +363,9 @@ const TodosListClean = ({
         return (
           <div
             key={todo.id}
+            onClick={() => onEdit && onEdit(todo)}
             className={`
-              group relative bg-white rounded-lg border transition-all duration-200 h-full
+              group relative bg-white rounded-lg border transition-all duration-200 h-full cursor-pointer
               ${todo.status === 'complete' && !todo.archived ? 'border-gray-400 shadow-sm opacity-60' : 'border-gray-200 hover:border-gray-300 hover:shadow-sm'}
             `}
           >
@@ -376,6 +382,7 @@ const TodosListClean = ({
                 <div className="pt-0.5">
                   <Checkbox
                     checked={todo.status === 'complete'}
+                    onClick={(e) => e.stopPropagation()}
                     onCheckedChange={(checked) => {
                       if (onStatusChange) {
                         onStatusChange(todo.id, checked);
@@ -459,7 +466,7 @@ const TodosListClean = ({
                 {/* Actions menu - visible on hover */}
                 <div className="opacity-0 group-hover:opacity-100 transition-opacity">
                   <DropdownMenu>
-                    <DropdownMenuTrigger asChild>
+                    <DropdownMenuTrigger asChild onClick={(e) => e.stopPropagation()}>
                       <Button 
                         variant="ghost" 
                         size="sm" 
@@ -470,7 +477,10 @@ const TodosListClean = ({
                     </DropdownMenuTrigger>
                     <DropdownMenuContent align="end" className="w-48">
                       <DropdownMenuItem 
-                        onClick={() => onEdit(todo)}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          onEdit(todo);
+                        }}
                         className="cursor-pointer"
                       >
                         <Edit className="mr-2 h-4 w-4" />
@@ -478,7 +488,10 @@ const TodosListClean = ({
                       </DropdownMenuItem>
                       {onDelete && (
                         <DropdownMenuItem 
-                          onClick={() => onDelete(todo.id)}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            onDelete(todo.id);
+                          }}
                           className="cursor-pointer text-red-600 focus:text-red-600"
                         >
                           <Trash2 className="mr-2 h-4 w-4" />
