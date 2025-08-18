@@ -48,6 +48,119 @@ const BusinessBlueprintPage = () => {
   const { user, isOnLeadershipTeam } = useAuthStore();
   const { selectedDepartment } = useDepartment();
   const { labels } = useTerminology();
+  
+  // Get framework-specific section labels and descriptions
+  const getFrameworkSections = () => {
+    const isEOS = labels.priorities_label === 'Rocks';
+    const isOKR = labels.priorities_label === 'Objectives';
+    const isScalingUp = labels.business_blueprint_label === 'One-Page Strategic Plan';
+    const is4DX = labels.priorities_label?.includes('WIG');
+    
+    if (isEOS) {
+      return {
+        coreValues: { label: 'Core Values', description: '3-7 rules that define your culture and Right People' },
+        coreFocus: { 
+          label: 'Core Focus', 
+          description: 'Your Purpose/Cause/Passion and your Niche',
+          purposeLabel: 'Purpose/Cause/Passion',
+          nicheLabel: 'Niche'
+        },
+        tenYearTarget: { label: '10-Year Target', description: 'Where do you want your organization to be in 10 years?' },
+        marketingStrategy: { 
+          label: 'Marketing Strategy', 
+          description: 'Target Market, 3 Uniques, and Proven Process',
+          targetMarketLabel: 'Target Market',
+          differentiatorsLabel: '3 Uniques',
+          provenProcessLabel: 'Proven Process'
+        },
+        threeYearPicture: { label: '3-Year Picture', description: 'What does the organization look like in 3 years?' },
+        oneYearPlan: { label: '1-Year Plan', description: 'What must be accomplished this year?' }
+      };
+    } else if (isOKR) {
+      return {
+        coreValues: { label: 'Mission & Values', description: 'Why we exist and how we behave' },
+        coreFocus: { 
+          label: 'Vision Statement', 
+          description: 'Where we are going and what success looks like',
+          purposeLabel: 'Mission',
+          nicheLabel: 'Strategic Focus'
+        },
+        tenYearTarget: { label: 'Long-term Vision', description: 'Our audacious 10-year goal' },
+        marketingStrategy: { 
+          label: 'Strategic Themes', 
+          description: 'Key areas of focus and differentiation',
+          targetMarketLabel: 'Target Segments',
+          differentiatorsLabel: 'Key Differentiators',
+          provenProcessLabel: 'Value Proposition'
+        },
+        threeYearPicture: { label: '3-Year Strategic Goals', description: 'Mid-term objectives and key results' },
+        oneYearPlan: { label: 'Annual OKRs', description: 'This year\'s objectives and measurable results' }
+      };
+    } else if (isScalingUp) {
+      return {
+        coreValues: { label: 'Core Values & Purpose', description: 'Why we exist and our fundamental beliefs' },
+        coreFocus: { 
+          label: 'Core Competencies', 
+          description: 'What we do better than anyone else',
+          purposeLabel: 'Core Purpose',
+          nicheLabel: 'Core Competencies'
+        },
+        tenYearTarget: { label: 'BHAG (10-25 Years)', description: 'Big Hairy Audacious Goal' },
+        marketingStrategy: { 
+          label: 'Brand Promises', 
+          description: 'What customers can always expect from us',
+          targetMarketLabel: 'Target Customers',
+          differentiatorsLabel: 'Brand Promises',
+          provenProcessLabel: 'Value Discipline'
+        },
+        threeYearPicture: { label: '3-5 Year Targets', description: 'Key metrics and milestones' },
+        oneYearPlan: { label: 'Annual Priorities & Goals', description: 'This year\'s critical priorities' }
+      };
+    } else if (is4DX) {
+      return {
+        coreValues: { label: 'Team Values', description: 'Principles that guide our execution' },
+        coreFocus: { 
+          label: 'Mission Focus', 
+          description: 'What we must achieve above all else',
+          purposeLabel: 'Mission',
+          nicheLabel: 'Focus Area'
+        },
+        tenYearTarget: { label: 'Ultimate Goal', description: 'From X to Y by when (long-term)' },
+        marketingStrategy: { 
+          label: 'Strategy Map', 
+          description: 'How we will win in our market',
+          targetMarketLabel: 'Target Audience',
+          differentiatorsLabel: 'Strategic Advantages',
+          provenProcessLabel: 'Execution Method'
+        },
+        threeYearPicture: { label: '3-Year Milestones', description: 'Critical waypoints to our ultimate goal' },
+        oneYearPlan: { label: 'Annual WIGs', description: 'This year\'s Wildly Important Goals' }
+      };
+    } else {
+      // Default/generic labels
+      return {
+        coreValues: { label: 'Core Values', description: 'The fundamental beliefs of your organization' },
+        coreFocus: { 
+          label: 'Core Focus', 
+          description: 'Your organization\'s purpose and focus area',
+          purposeLabel: 'Purpose',
+          nicheLabel: 'Focus Area'
+        },
+        tenYearTarget: { label: '10-Year Vision', description: 'Long-term organizational goals' },
+        marketingStrategy: { 
+          label: 'Strategy', 
+          description: 'How you will succeed in your market',
+          targetMarketLabel: 'Target Market',
+          differentiatorsLabel: 'Key Differentiators',
+          provenProcessLabel: 'Approach'
+        },
+        threeYearPicture: { label: '3-Year Goals', description: 'Mid-term objectives' },
+        oneYearPlan: { label: 'Annual Plan', description: 'This year\'s priorities and goals' }
+      };
+    }
+  };
+  
+  const frameworkSections = getFrameworkSections();
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState(null);
@@ -571,10 +684,10 @@ const BusinessBlueprintPage = () => {
             <CardHeader className="bg-white border-b">
               <CardTitle className="flex items-center text-xl text-gray-900">
                 <Users className="mr-2 h-6 w-6" style={{ color: themeColors.primary }} />
-                Core Values
+                {frameworkSections.coreValues.label}
               </CardTitle>
               <CardDescription className="text-gray-600">
-                3-7 rules that define your culture and Right People
+                {frameworkSections.coreValues.description}
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
@@ -619,17 +732,17 @@ const BusinessBlueprintPage = () => {
             <CardHeader className="bg-white border-b">
               <CardTitle className="flex items-center text-xl text-gray-900">
                 <Target className="mr-2 h-6 w-6" style={{ color: themeColors.primary }} />
-                Focus
+                {frameworkSections.coreFocus.label}
               </CardTitle>
               <CardDescription className="text-gray-600">
-                Your sweet spot
+                {frameworkSections.coreFocus.description}
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
               {/* Display saved values or edit form */}
               {(!editingCoreFocus && (blueprintData.coreFocus[blueprintData.coreFocus.hedgehogType] || blueprintData.coreFocus.niche)) ? (
                 <>
-                  {/* Purpose/Cause/Passion Display */}
+                  {/* Purpose/Mission Display */}
                   {blueprintData.coreFocus[blueprintData.coreFocus.hedgehogType] && (
                     <div className="flex items-start justify-between p-4 bg-gray-50 border border-gray-200 rounded-lg hover:shadow-md transition-shadow">
                       <div className="flex-1">
@@ -656,7 +769,7 @@ const BusinessBlueprintPage = () => {
                   {blueprintData.coreFocus.niche && (
                     <div className="flex items-start justify-between p-4 bg-gray-50 border border-gray-200 rounded-lg hover:shadow-md transition-shadow">
                       <div className="flex-1">
-                        <h4 className="font-semibold text-gray-900">Niche</h4>
+                        <h4 className="font-semibold text-gray-900">{frameworkSections.coreFocus.nicheLabel || 'Niche'}</h4>
                         <p className="text-sm text-gray-600 mt-1">
                           {blueprintData.coreFocus.niche}
                         </p>
@@ -735,7 +848,7 @@ const BusinessBlueprintPage = () => {
                   </div>
 
                   <div>
-                    <Label htmlFor="niche">Niche</Label>
+                    <Label htmlFor="niche">{frameworkSections.coreFocus.nicheLabel || 'Niche'}</Label>
                     <Textarea
                       id="niche"
                       value={blueprintData.coreFocus.niche}
@@ -782,10 +895,10 @@ const BusinessBlueprintPage = () => {
             <CardHeader className="bg-white border-b">
               <CardTitle className="flex items-center text-xl text-gray-900">
                 <TrendingUp className="mr-2 h-6 w-6" style={{ color: themeColors.primary }} />
-                Long Range Plan
+                {frameworkSections.tenYearTarget.label}
               </CardTitle>
               <CardDescription className="text-gray-600">
-                Your 5-30 year vision
+                {frameworkSections.tenYearTarget.description}
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
@@ -913,10 +1026,10 @@ const BusinessBlueprintPage = () => {
             <CardHeader className="bg-white border-b">
               <CardTitle className="flex items-center text-xl text-gray-900">
                 <Lightbulb className="mr-2 h-6 w-6" style={{ color: themeColors.primary }} />
-                Marketing Strategy
+                {frameworkSections.marketingStrategy.label}
               </CardTitle>
               <CardDescription className="text-gray-600">
-                Who you want to talk to and what you say when you do
+                {frameworkSections.marketingStrategy.description}
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
@@ -938,7 +1051,7 @@ const BusinessBlueprintPage = () => {
                     blueprintData.marketingStrategy.targetMarket) && (
                     <div className="space-y-3">
                       <div className="flex items-center justify-between">
-                        <h4 className="font-semibold text-gray-900">Target Market</h4>
+                        <h4 className="font-semibold text-gray-900">{frameworkSections.marketingStrategy.targetMarketLabel || 'Target Market'}</h4>
                         <Button
                           variant="ghost"
                           size="sm"
@@ -989,7 +1102,7 @@ const BusinessBlueprintPage = () => {
                   {blueprintData.marketingStrategy.differentiators.filter(d => d).length > 0 && (
                     <div className="flex items-start justify-between p-4 bg-gray-50 border border-gray-200 rounded-lg hover:shadow-md transition-shadow">
                       <div className="flex-1">
-                        <h4 className="font-semibold text-gray-900">Differentiators</h4>
+                        <h4 className="font-semibold text-gray-900">{frameworkSections.marketingStrategy.differentiatorsLabel || 'Differentiators'}</h4>
                         <ul className="text-sm text-gray-600 mt-1 space-y-1">
                           {blueprintData.marketingStrategy.differentiators
                             .filter(d => d)
@@ -1017,7 +1130,7 @@ const BusinessBlueprintPage = () => {
                   {(blueprintData.marketingStrategy.provenProcessExists !== undefined && blueprintData.marketingStrategy.provenProcessExists !== null) && (
                     <div className="flex items-start justify-between p-4 bg-gray-50 border border-gray-200 rounded-lg hover:shadow-md transition-shadow">
                       <div className="flex-1">
-                        <h4 className="font-semibold text-gray-900">Proven Process</h4>
+                        <h4 className="font-semibold text-gray-900">{frameworkSections.marketingStrategy.provenProcessLabel || 'Proven Process'}</h4>
                         <p className="text-sm text-gray-600 mt-1">
                           {blueprintData.marketingStrategy.provenProcessExists ? 
                             '✓ Yes, we have a proven process' : 
@@ -1081,7 +1194,7 @@ const BusinessBlueprintPage = () => {
                 /* Edit Form */
                 <>
                   <div className="space-y-4">
-                    <h4 className="font-semibold text-gray-900">Target Market</h4>
+                    <h4 className="font-semibold text-gray-900">{frameworkSections.marketingStrategy.targetMarketLabel || 'Target Market'}</h4>
                     <div>
                       <Label htmlFor="demographicProfile">Demographic</Label>
                       <Textarea
@@ -1125,7 +1238,7 @@ const BusinessBlueprintPage = () => {
 
                   <div>
                     <div className="flex items-center justify-between mb-2">
-                      <Label>Differentiators (3-5)</Label>
+                      <Label>{frameworkSections.marketingStrategy.differentiatorsLabel || 'Differentiators'} (3-5)</Label>
                       {blueprintData.marketingStrategy.differentiators.length < 5 && (
                         <Button
                           type="button"
@@ -1183,7 +1296,7 @@ const BusinessBlueprintPage = () => {
                   </div>
 
                   <div className="flex items-center justify-between">
-                    <Label htmlFor="provenProcess">Proven Process</Label>
+                    <Label htmlFor="provenProcess">{frameworkSections.marketingStrategy.provenProcessLabel || 'Proven Process'}</Label>
                     <Switch
                       id="provenProcess"
                       checked={blueprintData.marketingStrategy.provenProcessExists}
@@ -1263,10 +1376,10 @@ const BusinessBlueprintPage = () => {
                   <div>
                     <CardTitle className="flex items-center text-xl text-gray-900">
                       <Calendar className="mr-2 h-6 w-6" style={{ color: themeColors.primary }} />
-                      Long-term Vision (3 Years)
+                      {frameworkSections.threeYearPicture.label}
                     </CardTitle>
                     <CardDescription className="text-gray-600">
-                      {isDepartmentView ? "Your department's 3-year vision" : "Your organization's 3-year vision"}
+                      {frameworkSections.threeYearPicture.description}
                     </CardDescription>
                   </div>
                   <Button 
@@ -1453,10 +1566,10 @@ const BusinessBlueprintPage = () => {
                 <div>
                   <CardTitle className="flex items-center text-xl text-gray-900">
                     <Target className="mr-2 h-6 w-6" style={{ color: themeColors.primary }} />
-                    Annual Goals
+                    {frameworkSections.oneYearPlan.label}
                   </CardTitle>
                   <CardDescription className="text-gray-600">
-                    {isDepartmentView ? "Your department's goals for the next year" : "Your goals for the next year"}
+                    {frameworkSections.oneYearPlan.description}
                   </CardDescription>
                 </div>
                 <Button 
@@ -1652,7 +1765,7 @@ const BusinessBlueprintPage = () => {
               <CardHeader>
                 <div className="flex items-center justify-between">
                   <div>
-                    <CardTitle className="text-2xl font-bold">Quarterly Priorities</CardTitle>
+                    <CardTitle className="text-2xl font-bold">{labels.priorities_label || 'Quarterly Priorities'}</CardTitle>
                     <CardDescription className="text-gray-600 mt-1">Focus areas for this quarter</CardDescription>
                   </div>
                 </div>
@@ -1796,7 +1909,7 @@ const BusinessBlueprintPage = () => {
               <CardHeader>
                 <div className="flex items-center justify-between">
                   <div>
-                    <CardTitle className="text-2xl font-bold">Issues</CardTitle>
+                    <CardTitle className="text-2xl font-bold">{labels.issues_label || 'Issues'}</CardTitle>
                     <CardDescription className="text-gray-600 mt-1">Long term challenges to solve</CardDescription>
                   </div>
                 </div>
