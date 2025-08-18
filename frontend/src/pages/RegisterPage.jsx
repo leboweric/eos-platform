@@ -117,9 +117,6 @@ const RegisterPage = () => {
                 alt="AXP" 
                 className="h-28 w-auto transition-all duration-300 group-hover:scale-105"
               />
-              <div className="mt-2 text-slate-700 text-sm font-medium">
-                Accountability & Execution Platform
-              </div>
             </Link>
             <h1 className="text-4xl font-bold mb-4 text-slate-800">
               Start Your 30-Day Free Trial

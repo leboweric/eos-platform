@@ -73,9 +73,6 @@ const LoginPage = () => {
                 alt="AXP" 
                 className="h-28 w-auto transition-all duration-300 group-hover:scale-105"
               />
-              <div className="mt-2 text-slate-700 text-sm font-medium">
-                Accountability & Execution Platform
-              </div>
             </Link>
           </div>
           
