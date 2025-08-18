@@ -71,7 +71,7 @@ const LoginPage = () => {
               <img 
                 src="/AXP_logo_upper_left_transparent.png?v=2" 
                 alt="AXP" 
-                className="h-20 w-auto transition-all duration-300 group-hover:scale-105"
+                className="h-28 w-auto transition-all duration-300 group-hover:scale-105"
               />
               <div className="mt-2 text-slate-700 text-sm font-medium">
                 Accountability & Execution Platform
