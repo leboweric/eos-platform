@@ -6,6 +6,7 @@ import { organizationService } from '../services/organizationService';
 import { getOrgTheme, saveOrgTheme } from '../utils/themeUtils';
 import { getRevenueLabel, getRevenueLabelWithSuffix } from '../utils/revenueUtils';
 import { useDepartment } from '../contexts/DepartmentContext';
+import { useTerminology } from '../contexts/TerminologyContext';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -46,6 +47,7 @@ import {
 const BusinessBlueprintPage = () => {
   const { user, isOnLeadershipTeam } = useAuthStore();
   const { selectedDepartment } = useDepartment();
+  const { labels } = useTerminology();
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState(null);
@@ -56,7 +58,7 @@ const BusinessBlueprintPage = () => {
   // Check if viewing department-level plan
   const isDepartmentView = selectedDepartment && !selectedDepartment.is_leadership_team;
   
-  // 2-Page Plan data
+  // Business Blueprint data
   const [blueprintData, setBlueprintData] = useState({
     coreValues: [],
     coreFocus: {
@@ -515,7 +517,7 @@ const BusinessBlueprintPage = () => {
         <div className="flex items-center justify-between mb-8">
           <div>
             <h1 className="text-4xl font-bold text-gray-900">
-              2-Page Plan
+              {labels.business_blueprint_label || '2-Page Plan'}
             </h1>
             <p className="text-gray-600 mt-2 text-lg">Define your organization's vision and strategy for success</p>
           </div>

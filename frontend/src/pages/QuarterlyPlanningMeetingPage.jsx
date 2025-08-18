@@ -37,6 +37,7 @@ import { quarterlyPrioritiesService } from '../services/quarterlyPrioritiesServi
 import { issuesService } from '../services/issuesService';
 import { organizationService } from '../services/organizationService';
 import { getOrgTheme, saveOrgTheme, hexToRgba } from '../utils/themeUtils';
+import { useTerminology } from '../contexts/TerminologyContext';
 import IssuesListClean from '../components/issues/IssuesListClean';
 import IssueDialog from '../components/issues/IssueDialog';
 import TodoDialog from '../components/todos/TodoDialog';
@@ -48,6 +49,7 @@ const QuarterlyPlanningMeetingPage = () => {
   const { teamId } = useParams();
   const navigate = useNavigate();
   const { meetingCode, participants } = useMeeting();
+  const { labels } = useTerminology();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [activeSection, setActiveSection] = useState('objectives');
@@ -96,7 +98,7 @@ const QuarterlyPlanningMeetingPage = () => {
     { id: 'objectives', label: 'Objectives', duration: null, icon: Target, description: 'Review meeting goals' },
     { id: 'check-in', label: 'Check In', duration: 15, icon: CheckSquare, description: 'Team connection' },
     { id: 'review-prior', label: 'Review Prior Quarter', duration: 30, icon: Calendar, description: 'Check progress' },
-    { id: '2-page-plan', label: '2-Page Plan', duration: 60, icon: ClipboardList, description: 'Review strategic plan' },
+    { id: '2-page-plan', label: labels?.business_blueprint_label || '2-Page Plan', duration: 60, icon: ClipboardList, description: 'Review strategic plan' },
     { id: 'learning', label: 'Learning', duration: 60, icon: MessageSquare, description: 'Share insights & learnings' },
     { id: 'quarterly-priorities', label: 'Quarterly Priorities', duration: 120, icon: ListChecks, description: 'Set new priorities' },
     { id: 'issues', label: 'Issues', duration: 180, icon: AlertTriangle, description: 'Review and resolve issues' },
@@ -548,7 +550,7 @@ const QuarterlyPlanningMeetingPage = () => {
       setLoading(false);
     } catch (error) {
       console.error('Failed to fetch VTO data:', error);
-      setError('Failed to load 2-Page Plan');
+      setError(`Failed to load ${labels?.business_blueprint_label || '2-Page Plan'}`);
       setLoading(false);
     }
   };
@@ -976,7 +978,7 @@ const QuarterlyPlanningMeetingPage = () => {
                   <div>
                     <CardTitle className="flex items-center gap-2 text-xl">
                       <ClipboardList className="h-5 w-5" style={{ color: themeColors.primary }} />
-                      2-Page Plan
+                      {labels?.business_blueprint_label || '2-Page Plan'}
                     </CardTitle>
                     <CardDescription className="mt-1">Review and align your strategic vision</CardDescription>
                   </div>
@@ -998,7 +1000,7 @@ const QuarterlyPlanningMeetingPage = () => {
               ) : (
                 <Card>
                   <CardContent className="text-center py-8">
-                    <p className="text-gray-500">Loading 2-Page Plan data...</p>
+                    <p className="text-gray-500">Loading {labels?.business_blueprint_label || '2-Page Plan'} data...</p>
                   </CardContent>
                 </Card>
               )}

@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useAuthStore } from '../stores/authStore';
 import { organizationalChartService } from '../services/organizationalChartService';
+import { useTerminology } from '../contexts/TerminologyContext';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -21,6 +22,7 @@ import ChartEditor from '../components/organizationalChart/ChartEditor';
 
 const OrganizationalChartPage = () => {
   const { user } = useAuthStore();
+  const { labels } = useTerminology();
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [charts, setCharts] = useState([]);
@@ -132,7 +134,7 @@ const OrganizationalChartPage = () => {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-bold">Organizational Chart</h1>
+          <h1 className="text-3xl font-bold">{labels.accountability_chart_label || 'Organizational Chart'}</h1>
           <p className="text-gray-600 mt-2">Visualize and manage your organization's structure</p>
         </div>
         {canCreateChart && (
