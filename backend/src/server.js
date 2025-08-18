@@ -35,6 +35,7 @@ import userPreferencesRoutes from './routes/userPreferences.js';
 import demoResetRoutes from './routes/demoReset.js';
 import sharedMetricsRoutes from './routes/sharedMetrics.js';
 import terminologyRoutes from './routes/terminology.js';
+import oauthRoutes from './routes/oauth.js';
 
 // Import middleware
 import { errorHandler } from './middleware/errorHandler.js';
@@ -173,6 +174,7 @@ app.use('/api/v1/*', checkTrialStatus, checkTrialReminders);
 
 // API Routes with specific rate limiters
 app.use('/api/v1/auth', authLimiter, authRoutes);
+app.use('/api/v1/auth', authLimiter, oauthRoutes); // OAuth routes
 app.use('/api/v1/users', userRoutes);
 app.use('/api/v1/organizations/:orgId/users', userRoutes); // For org-scoped user operations
 // Apply logo limiter to logo endpoints specifically

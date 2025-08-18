@@ -48,6 +48,7 @@ import QuarterlyPlanningMeetingPage from './pages/QuarterlyPlanningMeetingPage';
 import DocumentRepositoryPage from './pages/DocumentRepositoryPage';
 import SmartRockAssistant from './pages/SmartRockAssistant';
 import ScorecardDebug from './pages/ScorecardDebug';
+import OAuthCallback from './pages/OAuthCallback';
 import TerminologySettingsPage from './pages/TerminologySettingsPage';
 
 // Department Components
@@ -144,6 +145,7 @@ function App() {
           <Route path="/forgot-password" element={!user ? <ForgotPasswordPage /> : <Navigate to="/dashboard" />} />
           <Route path="/reset-password" element={!user ? <ResetPasswordPage /> : <Navigate to="/dashboard" />} />
           <Route path="/accept-invitation" element={<AcceptInvitationPage />} />
+          <Route path="/auth/success" element={<OAuthCallback />} />
           
           {/* Protected routes */}
           <Route path="/dashboard" element={user ? <Layout><Dashboard /></Layout> : <Navigate to="/login" />} />
