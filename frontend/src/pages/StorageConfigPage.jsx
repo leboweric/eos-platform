@@ -27,7 +27,12 @@ import {
   Info,
   Database,
   Link,
-  Activity
+  Activity,
+  HelpCircle,
+  Book,
+  ExternalLink,
+  PlayCircle,
+  ChevronDown
 } from 'lucide-react';
 import axios from '../utils/axios';
 
@@ -58,6 +63,8 @@ const StorageConfigPage = () => {
   const [storageStats, setStorageStats] = useState(null);
   const [activeTab, setActiveTab] = useState('configuration');
   const [migrationProgress, setMigrationProgress] = useState(null);
+  const [showHelp, setShowHelp] = useState(false);
+  const [expandedGuide, setExpandedGuide] = useState(null);
 
   useEffect(() => {
     fetchCurrentConfig();
@@ -153,13 +160,257 @@ const StorageConfigPage = () => {
     reader.readAsText(file);
   };
 
+  const renderHelpSection = () => {
+    const guides = {
+      google_drive: {
+        title: 'Google Drive Setup Guide',
+        steps: [
+          {
+            title: '1. Create Service Account',
+            content: `• Go to Google Cloud Console
+• Select your project or create new one
+• Navigate to IAM & Admin > Service Accounts
+• Click "Create Service Account"
+• Name it "AXP Document Storage"`,
+            link: 'https://console.cloud.google.com'
+          },
+          {
+            title: '2. Enable APIs',
+            content: `• Go to APIs & Services > Library
+• Enable Google Drive API
+• Enable Google Docs API (optional)
+• Enable Google Sheets API (optional)`,
+          },
+          {
+            title: '3. Create Service Account Key',
+            content: `• Go back to Service Accounts
+• Click on your service account
+• Go to Keys tab
+• Add Key > Create new key > JSON
+• Save the downloaded file securely`,
+          },
+          {
+            title: '4. Enable Domain-Wide Delegation',
+            content: `• In service account details
+• Enable G Suite Domain-wide Delegation
+• Enter product name: "AXP Platform"
+• Copy the Client ID`,
+          },
+          {
+            title: '5. Authorize in Google Workspace',
+            content: `• Go to Google Workspace Admin Console
+• Security > API Controls > Domain-wide delegation
+• Add new with Client ID and these scopes:
+  - https://www.googleapis.com/auth/drive
+  - https://www.googleapis.com/auth/drive.file`,
+            link: 'https://admin.google.com'
+          },
+          {
+            title: '6. Create Root Folder',
+            content: `• Open Google Drive
+• Create folder "AXP Platform"
+• Share with service account email
+• Copy folder ID from URL`,
+          }
+        ],
+        video: 'https://www.youtube.com/embed/dQw4w9WgXcQ', // Replace with actual video
+        troubleshooting: [
+          { issue: 'Permission Denied', solution: 'Verify domain-wide delegation is enabled and authorized' },
+          { issue: 'File Not Found', solution: 'Check that root folder ID is correct and shared with service account' },
+          { issue: 'Invalid Credentials', solution: 'Ensure JSON key file is valid and not expired' }
+        ]
+      },
+      onedrive: {
+        title: 'OneDrive/SharePoint Setup Guide',
+        steps: [
+          {
+            title: '1. Register App in Azure',
+            content: `• Go to Azure Portal
+• Navigate to Azure Active Directory
+• App registrations > New registration
+• Name: "AXP Document Storage"
+• Supported accounts: Single tenant`,
+            link: 'https://portal.azure.com'
+          },
+          {
+            title: '2. Configure API Permissions',
+            content: `• Go to API permissions
+• Add permission > Microsoft Graph
+• Application permissions:
+  - Files.ReadWrite.All
+  - Sites.ReadWrite.All
+  - User.Read.All
+• Grant admin consent`,
+          },
+          {
+            title: '3. Create Client Secret',
+            content: `• Go to Certificates & secrets
+• New client secret
+• Description: "AXP Platform Integration"
+• Expires: 24 months
+• Copy the secret value immediately`,
+          },
+          {
+            title: '4. Get IDs',
+            content: `• Note your Tenant ID
+• Note your Application (Client) ID
+• For SharePoint: Get Site ID
+• For OneDrive: Get Drive ID`,
+          },
+          {
+            title: '5. Create Storage Location',
+            content: `• For OneDrive: Create service account user
+• For SharePoint: Create dedicated site
+• Create "AXP Platform" folder
+• Note the folder path`,
+          }
+        ],
+        video: 'https://www.youtube.com/embed/dQw4w9WgXcQ', // Replace with actual video
+        troubleshooting: [
+          { issue: 'Access Denied', solution: 'Verify admin consent was granted for all permissions' },
+          { issue: 'Invalid Client', solution: 'Check Tenant ID and Client ID are correct' },
+          { issue: 'Secret Expired', solution: 'Create new client secret in Azure Portal' }
+        ]
+      }
+    };
+
+    const guide = guides[selectedProvider];
+    if (!guide) return null;
+
+    return (
+      <Card className="mb-6 border-blue-200 bg-blue-50/50">
+        <CardHeader>
+          <CardTitle className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <Book className="h-5 w-5 text-blue-600" />
+              {guide.title}
+            </div>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setShowHelp(!showHelp)}
+            >
+              {showHelp ? 'Hide' : 'Show'} Guide
+            </Button>
+          </CardTitle>
+          <CardDescription>
+            Estimated setup time: 15-20 minutes • IT Administrator required
+          </CardDescription>
+        </CardHeader>
+        {showHelp && (
+          <CardContent className="space-y-6">
+            {/* Video Tutorial */}
+            {guide.video && (
+              <div className="aspect-video bg-gray-100 rounded-lg overflow-hidden">
+                <div className="flex items-center justify-center h-full text-gray-500">
+                  <div className="text-center">
+                    <PlayCircle className="h-12 w-12 mx-auto mb-2" />
+                    <p>Video Tutorial Coming Soon</p>
+                    {/* <iframe src={guide.video} className="w-full h-full" /> */}
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* Step by Step Guide */}
+            <div className="space-y-4">
+              <h3 className="font-semibold text-lg">Step-by-Step Instructions</h3>
+              {guide.steps.map((step, index) => (
+                <div
+                  key={index}
+                  className="border rounded-lg p-4 hover:bg-gray-50 cursor-pointer"
+                  onClick={() => setExpandedGuide(expandedGuide === index ? null : index)}
+                >
+                  <div className="flex items-start justify-between">
+                    <div className="flex-1">
+                      <h4 className="font-medium flex items-center gap-2">
+                        <span className="bg-blue-100 text-blue-700 rounded-full w-6 h-6 flex items-center justify-center text-sm">
+                          {index + 1}
+                        </span>
+                        {step.title}
+                      </h4>
+                      {expandedGuide === index && (
+                        <div className="mt-3 text-sm text-gray-600 whitespace-pre-line">
+                          {step.content}
+                          {step.link && (
+                            <a
+                              href={step.link}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="flex items-center gap-1 text-blue-500 hover:underline mt-2"
+                            >
+                              Open in new tab
+                              <ExternalLink className="h-3 w-3" />
+                            </a>
+                          )}
+                        </div>
+                      )}
+                    </div>
+                    <ChevronDown
+                      className={`h-4 w-4 transition-transform ${
+                        expandedGuide === index ? 'rotate-180' : ''
+                      }`}
+                    />
+                  </div>
+                </div>
+              ))}
+            </div>
+
+            {/* Troubleshooting */}
+            <div className="space-y-3">
+              <h3 className="font-semibold text-lg flex items-center gap-2">
+                <HelpCircle className="h-5 w-5" />
+                Common Issues & Solutions
+              </h3>
+              <div className="space-y-2">
+                {guide.troubleshooting.map((item, index) => (
+                  <Alert key={index} className="py-2">
+                    <AlertCircle className="h-4 w-4" />
+                    <AlertDescription>
+                      <strong>{item.issue}:</strong> {item.solution}
+                    </AlertDescription>
+                  </Alert>
+                ))}
+              </div>
+            </div>
+
+            {/* Quick Links */}
+            <div className="flex flex-wrap gap-2">
+              <Button variant="outline" size="sm" asChild>
+                <a
+                  href="/docs/CLOUD_STORAGE_SETUP_GOOGLE.md"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                >
+                  <FileText className="mr-1 h-4 w-4" />
+                  Full Documentation
+                </a>
+              </Button>
+              <Button variant="outline" size="sm" asChild>
+                <a
+                  href="mailto:support@axplatform.app?subject=Storage Setup Help"
+                >
+                  <HelpCircle className="mr-1 h-4 w-4" />
+                  Contact Support
+                </a>
+              </Button>
+            </div>
+          </CardContent>
+        )}
+      </Card>
+    );
+  };
+
   const renderProviderConfig = () => {
     switch (selectedProvider) {
       case 'google_drive':
         return (
           <div className="space-y-4">
             <div>
-              <Label htmlFor="service_account_email">Service Account Email</Label>
+              <Label htmlFor="service_account_email" className="flex items-center gap-2">
+                Service Account Email
+                <HelpCircle className="h-4 w-4 text-gray-400" title="The email address of your Google Cloud service account" />
+              </Label>
               <Input
                 id="service_account_email"
                 type="email"
@@ -374,6 +625,9 @@ const StorageConfigPage = () => {
         </TabsList>
 
         <TabsContent value="configuration" className="space-y-6">
+          {/* Help Section - Shows for selected provider */}
+          {selectedProvider !== 'internal' && renderHelpSection()}
+          
           <Card>
             <CardHeader>
               <CardTitle>Storage Provider</CardTitle>
@@ -439,7 +693,18 @@ const StorageConfigPage = () => {
               {selectedProvider !== 'internal' && (
                 <>
                   <div className="border-t pt-6">
-                    <h3 className="font-semibold mb-4">Provider Configuration</h3>
+                    <div className="flex items-center justify-between mb-4">
+                      <h3 className="font-semibold">Provider Configuration</h3>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => setShowHelp(!showHelp)}
+                        className="text-blue-600"
+                      >
+                        <HelpCircle className="mr-1 h-4 w-4" />
+                        {showHelp ? 'Hide' : 'Need'} Help?
+                      </Button>
+                    </div>
                     {renderProviderConfig()}
                   </div>
 
