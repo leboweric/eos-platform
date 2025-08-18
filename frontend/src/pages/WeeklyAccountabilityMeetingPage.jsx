@@ -869,7 +869,7 @@ const WeeklyAccountabilityMeetingPage = () => {
     await handleCreateIssue(newIssue);
     
     // Navigate to IDS section to show the new issue
-    setCurrentSection('ids');
+    setActiveSection('ids');
   };
 
   // Create Issue
