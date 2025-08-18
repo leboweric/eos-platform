@@ -4,7 +4,7 @@
  */
 
 import { StorageAdapter } from './StorageAdapter.js';
-import { query } from '../../config/database.js';
+import { query as dbQuery } from '../../config/database.js';
 import crypto from 'crypto';
 
 export class InternalStorageAdapter extends StorageAdapter {
@@ -16,7 +16,7 @@ export class InternalStorageAdapter extends StorageAdapter {
   async initialize() {
     // Check database connection
     try {
-      await query('SELECT 1');
+      await dbQuery('SELECT 1');
       return true;
     } catch (error) {
       throw this.handleError(error);
@@ -40,7 +40,7 @@ export class InternalStorageAdapter extends StorageAdapter {
       const internalId = crypto.randomUUID();
 
       // Store file in database
-      const query = `
+      const sql = `
         INSERT INTO documents (
           id, title, description, file_name, file_data, file_size, 
           mime_type, visibility, organization_id, department_id, 
@@ -68,7 +68,7 @@ export class InternalStorageAdapter extends StorageAdapter {
         'internal'
       ];
 
-      const result = await query(query, values);
+      const result = await dbQuery(sql, values);
       const document = result.rows[0];
 
       await this.logOperation('upload', { 
@@ -93,8 +93,8 @@ export class InternalStorageAdapter extends StorageAdapter {
 
   async download(externalId) {
     try {
-      const query = 'SELECT file_data, file_name, mime_type FROM documents WHERE id = $1';
-      const result = await query(query, [externalId]);
+      const sql = 'SELECT file_data, file_name, mime_type FROM documents WHERE id = $1';
+      const result = await dbQuery(sql, [externalId]);
 
       if (result.rows.length === 0) {
         const error = new Error('File not found');
@@ -121,8 +121,8 @@ export class InternalStorageAdapter extends StorageAdapter {
 
   async delete(externalId) {
     try {
-      const query = 'DELETE FROM documents WHERE id = $1 RETURNING file_name';
-      const result = await query(query, [externalId]);
+      const sql = 'DELETE FROM documents WHERE id = $1 RETURNING file_name';
+      const result = await dbQuery(sql, [externalId]);
 
       if (result.rows.length === 0) {
         const error = new Error('File not found');
@@ -143,13 +143,13 @@ export class InternalStorageAdapter extends StorageAdapter {
 
   async getMetadata(externalId) {
     try {
-      const query = `
+      const sql = `
         SELECT id, title, description, file_name, file_size, mime_type, 
                visibility, created_at, updated_at, uploaded_by
         FROM documents 
         WHERE id = $1
       `;
-      const result = await query(query, [externalId]);
+      const result = await dbQuery(sql, [externalId]);
 
       if (result.rows.length === 0) {
         const error = new Error('File not found');
@@ -167,13 +167,13 @@ export class InternalStorageAdapter extends StorageAdapter {
     try {
       const { visibility } = permissions;
       
-      const query = `
+      const sql = `
         UPDATE documents 
         SET visibility = $1, updated_at = NOW() 
         WHERE id = $2 
         RETURNING visibility
       `;
-      const result = await query(query, [visibility, externalId]);
+      const result = await dbQuery(sql, [visibility, externalId]);
 
       if (result.rows.length === 0) {
         const error = new Error('File not found');
@@ -194,12 +194,12 @@ export class InternalStorageAdapter extends StorageAdapter {
 
   async createFolder(folderName, parentFolderId = null) {
     try {
-      const query = `
+      const sql = `
         INSERT INTO document_folders (name, parent_folder_id, created_at)
         VALUES ($1, $2, NOW())
         RETURNING *
       `;
-      const result = await query(query, [folderName, parentFolderId]);
+      const result = await dbQuery(sql, [folderName, parentFolderId]);
       
       await this.logOperation('createFolder', { 
         folderId: result.rows[0].id,
@@ -216,14 +216,14 @@ export class InternalStorageAdapter extends StorageAdapter {
     try {
       const { limit = 100, offset = 0 } = options;
       
-      const query = `
+      const sql = `
         SELECT id, title, file_name, file_size, mime_type, created_at
         FROM documents
         WHERE folder_id = $1 OR ($1 IS NULL AND folder_id IS NULL)
         ORDER BY created_at DESC
         LIMIT $2 OFFSET $3
       `;
-      const result = await query(query, [folderId, limit, offset]);
+      const result = await dbQuery(sql, [folderId, limit, offset]);
       
       return result.rows;
     } catch (error) {
@@ -233,13 +233,13 @@ export class InternalStorageAdapter extends StorageAdapter {
 
   async moveFile(externalId, newFolderId) {
     try {
-      const query = `
+      const sql = `
         UPDATE documents 
         SET folder_id = $1, updated_at = NOW() 
         WHERE id = $2 
         RETURNING file_name, folder_id
       `;
-      const result = await query(query, [newFolderId, externalId]);
+      const result = await dbQuery(sql, [newFolderId, externalId]);
 
       if (result.rows.length === 0) {
         const error = new Error('File not found');
@@ -264,7 +264,7 @@ export class InternalStorageAdapter extends StorageAdapter {
       const selectQuery = `
         SELECT * FROM documents WHERE id = $1
       `;
-      const selectResult = await db.query(selectQuery, [externalId]);
+      const selectResult = await dbQuery(selectQuery, [externalId]);
 
       if (selectResult.rows.length === 0) {
         const error = new Error('File not found');
@@ -305,7 +305,7 @@ export class InternalStorageAdapter extends StorageAdapter {
         'internal'
       ];
 
-      const insertResult = await db.query(insertQuery, insertValues);
+      const insertResult = await dbQuery(insertQuery, insertValues);
       
       await this.logOperation('copyFile', { 
         originalId: externalId,
@@ -328,7 +328,7 @@ export class InternalStorageAdapter extends StorageAdapter {
   async getQuota() {
     try {
       // Calculate total storage used by organization
-      const query = `
+      const sql = `
         SELECT 
           COUNT(*) as file_count,
           COALESCE(SUM(file_size), 0) as total_size
@@ -336,7 +336,7 @@ export class InternalStorageAdapter extends StorageAdapter {
         WHERE organization_id = $1
       `;
       
-      const result = await query(query, [this.config.organizationId]);
+      const result = await dbQuery(sql, [this.config.organizationId]);
       const { file_count, total_size } = result.rows[0];
       
       // Internal storage has no hard limit, but we can set soft limits
@@ -358,7 +358,7 @@ export class InternalStorageAdapter extends StorageAdapter {
     try {
       const { limit = 50 } = options;
       
-      const searchQuery = `
+      const searchSql = `
         SELECT id, title, file_name, file_size, mime_type, created_at
         FROM documents
         WHERE organization_id = $1
@@ -368,7 +368,7 @@ export class InternalStorageAdapter extends StorageAdapter {
       `;
       
       const searchPattern = `%${query}%`;
-      const result = await query(searchQuery, [
+      const result = await dbQuery(searchSql, [
         this.config.organizationId,
         searchPattern,
         limit
@@ -383,8 +383,8 @@ export class InternalStorageAdapter extends StorageAdapter {
   async getThumbnail(externalId, options = {}) {
     // For internal storage, we could generate thumbnails on-the-fly
     // or return a placeholder based on file type
-    const query = 'SELECT mime_type FROM documents WHERE id = $1';
-    const result = await db.query(query, [externalId]);
+    const sql = 'SELECT mime_type FROM documents WHERE id = $1';
+    const result = await dbQuery(sql, [externalId]);
     
     if (result.rows.length === 0) {
       return null;
@@ -403,10 +403,10 @@ export class InternalStorageAdapter extends StorageAdapter {
   async validateConfig() {
     try {
       // Validate database connection
-      await query('SELECT 1');
+      await dbQuery('SELECT 1');
       
       // Check if documents table exists
-      const tableCheck = await db.query(`
+      const tableCheck = await dbQuery(`
         SELECT EXISTS (
           SELECT FROM information_schema.tables 
           WHERE table_name = 'documents'

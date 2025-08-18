@@ -8,7 +8,7 @@ import { Client } from '@microsoft/microsoft-graph-client';
 import { ConfidentialClientApplication } from '@azure/msal-node';
 import 'isomorphic-fetch';
 import stream from 'stream';
-import { query } from '../../config/database.js';
+import { query as dbQuery } from '../../config/database.js';
 
 export class OneDriveAdapter extends StorageAdapter {
   constructor(config = {}) {
@@ -672,7 +672,7 @@ export class OneDriveAdapter extends StorageAdapter {
 
   async saveFileMetadata(metadata) {
     // Save file metadata to database
-    const query = `
+    const sql = `
       INSERT INTO documents (
         title, file_name, file_size, mime_type, 
         storage_provider, external_id, external_url, 
@@ -704,7 +704,7 @@ export class OneDriveAdapter extends StorageAdapter {
       metadata.folderId || null
     ];
 
-    const result = await query(query, values);
+    const result = await dbQuery(sql, values);
     return result.rows[0].id;
   }
 

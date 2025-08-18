@@ -6,7 +6,7 @@
 import { StorageAdapter } from './StorageAdapter.js';
 import { google } from 'googleapis';
 import stream from 'stream';
-import { query } from '../../config/database.js';
+import { query as dbQuery } from '../../config/database.js';
 
 export class GoogleDriveAdapter extends StorageAdapter {
   constructor(config = {}) {
@@ -599,7 +599,7 @@ export class GoogleDriveAdapter extends StorageAdapter {
 
   async saveFileMetadata(metadata) {
     // Save file metadata to database
-    const query = `
+    const sql = `
       INSERT INTO documents (
         title, file_name, file_size, mime_type, 
         storage_provider, external_id, external_url, 
@@ -631,7 +631,7 @@ export class GoogleDriveAdapter extends StorageAdapter {
       metadata.folderId || null
     ];
 
-    const result = await query(query, values);
+    const result = await dbQuery(sql, values);
     return result.rows[0].id;
   }
 

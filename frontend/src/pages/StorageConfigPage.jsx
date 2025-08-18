@@ -34,7 +34,7 @@ import {
   PlayCircle,
   ChevronDown
 } from 'lucide-react';
-import axios from '../utils/axios';
+import axios from '../services/axiosConfig';
 
 // Provider icons
 const GoogleDriveIcon = () => (

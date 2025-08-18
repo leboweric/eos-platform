@@ -6,7 +6,7 @@
 import { InternalStorageAdapter } from './InternalStorageAdapter.js';
 import { GoogleDriveAdapter } from './GoogleDriveAdapter.js';
 import { OneDriveAdapter } from './OneDriveAdapter.js';
-import { query } from '../../config/database.js';
+import { query as dbQuery } from '../../config/database.js';
 
 class StorageFactory {
   constructor() {
@@ -44,12 +44,12 @@ class StorageFactory {
    */
   async getOrganizationConfig(organizationId) {
     try {
-      const query = `
+      const sql = `
         SELECT default_storage_provider, storage_config
         FROM organizations
         WHERE id = $1
       `;
-      const result = await query(query, [organizationId]);
+      const result = await dbQuery(sql, [organizationId]);
 
       if (result.rows.length === 0) {
         throw new Error(`Organization ${organizationId} not found`);
@@ -151,7 +151,7 @@ class StorageFactory {
       }
 
       // Update database
-      const query = `
+      const sql = `
         UPDATE organizations
         SET 
           default_storage_provider = $1,
@@ -160,7 +160,7 @@ class StorageFactory {
         WHERE id = $3
       `;
       
-      await query(query, [provider, configData, organizationId]);
+      await dbQuery(sql, [provider, configData, organizationId]);
       
       // Clear cache to force reload with new config
       this.clearCache(organizationId);
@@ -253,13 +253,13 @@ class StorageFactory {
       delete sanitizedConfig.client_secret;
       delete sanitizedConfig.service_account_key;
       
-      const query = `
+      const sql = `
         INSERT INTO cloud_storage_sync_log (
           organization_id, storage_provider, action, status, metadata, created_at
         ) VALUES ($1, $2, $3, $4, $5, NOW())
       `;
       
-      await query(query, [
+      await dbQuery(sql, [
         organizationId,
         provider,
         'config_change',
@@ -282,7 +282,7 @@ class StorageFactory {
       const quota = await adapter.getQuota();
       
       // Get document count by storage provider
-      const query = `
+      const sql = `
         SELECT 
           storage_provider,
           COUNT(*) as file_count,
@@ -292,7 +292,7 @@ class StorageFactory {
         GROUP BY storage_provider
       `;
       
-      const result = await query(query, [organizationId]);
+      const result = await dbQuery(sql, [organizationId]);
       
       return {
         quota,
