@@ -523,11 +523,9 @@ const WeeklyAccountabilityMeetingPage = () => {
     }
   };
 
-  const fetchTodosData = async () => {
+  const fetchTodosData = async (skipIssueCreation = false) => {
     try {
       const effectiveTeamId = teamId || user?.teamId || '00000000-0000-0000-0000-000000000000';
-      
-      console.log('Fetching todos for team:', effectiveTeamId);
       
       const response = await todosService.getTodos(
         null, // status filter
@@ -537,12 +535,12 @@ const WeeklyAccountabilityMeetingPage = () => {
       );
       const fetchedTodos = response.data?.todos || [];
       
-      console.log('Fetched todos count:', fetchedTodos.length);
-      
       setTodos(fetchedTodos);
       
-      // Automatically create issues for overdue todos
-      await createIssuesForOverdueTodos(fetchedTodos, effectiveTeamId);
+      // Only create issues for overdue todos on initial load, not on every refresh
+      if (!skipIssueCreation) {
+        await createIssuesForOverdueTodos(fetchedTodos, effectiveTeamId);
+      }
     } catch (error) {
       console.error('Failed to fetch todos:', error);
     }
@@ -820,9 +818,6 @@ const WeeklyAccountabilityMeetingPage = () => {
       const orgId = localStorage.getItem('impersonatedOrgId') || user?.organizationId || user?.organization_id;
       const effectiveTeamId = teamId || user?.teamId || '00000000-0000-0000-0000-000000000000';
       
-      console.log('Saving todo with team_id:', effectiveTeamId);
-      console.log('Todo data:', todoData);
-      
       let savedTodo;
       if (editingTodo) {
         savedTodo = await todosService.updateTodo(editingTodo.id, {
@@ -839,10 +834,8 @@ const WeeklyAccountabilityMeetingPage = () => {
         setSuccess('To-do created successfully');
       }
       
-      console.log('Saved todo:', savedTodo);
-      
-      // Always refresh todos after creating/updating
-      await fetchTodosData();
+      // Refresh todos after creating/updating, but skip auto-issue creation
+      await fetchTodosData(true);
       
       // Also refresh today's todos for the conclude section
       if (meetingStarted) {
@@ -1786,7 +1779,7 @@ const WeeklyAccountabilityMeetingPage = () => {
                             try {
                               const result = await todosService.archiveDoneTodos();
                               setSuccess(`${result.data.archivedCount} done to-do(s) archived`);
-                              await fetchTodosData();
+                              await fetchTodosData(true);
                             } catch (error) {
                               console.error('Failed to archive done todos:', error);
                               setError('Failed to archive done to-dos');
@@ -1829,7 +1822,7 @@ const WeeklyAccountabilityMeetingPage = () => {
                         await todosService.updateTodo(todoId, { 
                           status: completed ? 'complete' : 'incomplete' 
                         });
-                        await fetchTodosData();
+                        await fetchTodosData(true);
                       } catch (error) {
                         console.error('Failed to update todo:', error);
                       }
@@ -1837,7 +1830,7 @@ const WeeklyAccountabilityMeetingPage = () => {
                     onDelete={async (todoId) => {
                       try {
                         await todosService.deleteTodo(todoId);
-                        await fetchTodosData();
+                        await fetchTodosData(true);
                         setSuccess('To-do deleted');
                       } catch (error) {
                         console.error('Failed to delete todo:', error);
