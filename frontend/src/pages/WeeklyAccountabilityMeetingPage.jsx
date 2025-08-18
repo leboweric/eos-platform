@@ -853,9 +853,45 @@ const WeeklyAccountabilityMeetingPage = () => {
     setEditingTodo({
       title: `Follow up: ${issue.title}`,
       description: `Related to issue: ${issue.title}`,
-      assigned_to_id: issue.owner_id || user?.id
+      assignedToId: issue.owner_id || user?.id
     });
     setShowTodoDialog(true);
+  };
+
+  // Create Issue from To-Do
+  const handleCreateIssueFromTodo = (todo) => {
+    // Open the IDS section with a new issue pre-populated
+    setCurrentSection('ids');
+    // Create the new issue data
+    const newIssue = {
+      title: `Issue from To-Do: ${todo.title}`,
+      description: `Related to to-do: ${todo.title}\n\n${todo.description || ''}`,
+      status: 'open',
+      owner_id: todo.assigned_to_id || todo.assignee_id || user?.id
+    };
+    // You'll need to add a way to pre-populate the issue dialog
+    // For now, we can create the issue directly
+    handleCreateIssue(newIssue);
+  };
+
+  // Create Issue
+  const handleCreateIssue = async (issueData) => {
+    try {
+      const orgId = localStorage.getItem('impersonatedOrgId') || user?.organizationId || user?.organization_id;
+      const effectiveTeamId = teamId || user?.teamId || '00000000-0000-0000-0000-000000000000';
+      
+      await issuesService.createIssue({
+        ...issueData,
+        organization_id: orgId,
+        team_id: effectiveTeamId
+      });
+      
+      setSuccess('Issue created successfully');
+      await fetchIssuesData();
+    } catch (error) {
+      console.error('Failed to create issue:', error);
+      setError('Failed to create issue');
+    }
   };
 
   // Send Cascading Message from Issue
@@ -2343,6 +2379,7 @@ const WeeklyAccountabilityMeetingPage = () => {
         }}
         todo={editingTodo}
         onSave={handleSaveTodo}
+        onCreateIssue={handleCreateIssueFromTodo}
         teamMembers={teamMembers || []}
       />
 

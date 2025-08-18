@@ -229,6 +229,32 @@ const TodosPage = () => {
     }
   };
 
+  const handleCreateIssueFromTodo = async (todo) => {
+    try {
+      const orgId = localStorage.getItem('impersonatedOrgId') || user?.organizationId || user?.organization_id;
+      const effectiveTeamId = selectedDepartment?.id || user?.teamId || '00000000-0000-0000-0000-000000000000';
+      
+      // Import issuesService if not already imported
+      const { issuesService } = await import('../services/issuesService');
+      
+      await issuesService.createIssue({
+        title: `Issue from To-Do: ${todo.title}`,
+        description: `Related to to-do: ${todo.title}\n\n${todo.description || ''}`,
+        status: 'open',
+        owner_id: todo.assigned_to_id || todo.assignee_id || user?.id,
+        organization_id: orgId,
+        team_id: effectiveTeamId
+      });
+      
+      setSuccess('Issue created successfully from to-do');
+      // Optionally navigate to issues page
+      // navigate('/issues');
+    } catch (error) {
+      console.error('Failed to create issue from todo:', error);
+      setError('Failed to create issue from to-do');
+    }
+  };
+
   const handleDeleteTodo = async (todoId) => {
     if (!window.confirm(`Are you sure you want to delete this ${labels.todos_label.slice(0, -1).toLowerCase()}?`)) {
       return;
@@ -522,6 +548,7 @@ const TodosPage = () => {
           todo={editingTodo}
           teamMembers={teamMembers}
           onSave={handleSaveTodo}
+          onCreateIssue={handleCreateIssueFromTodo}
         />
       </div>
     </div>

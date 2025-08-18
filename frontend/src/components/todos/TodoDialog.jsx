@@ -6,12 +6,12 @@ import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import { Loader2, Save, AlertCircle, Calendar, User, Paperclip, X, Download } from 'lucide-react';
+import { Loader2, Save, AlertCircle, Calendar, User, Paperclip, X, Download, AlertTriangle } from 'lucide-react';
 import { todosService } from '../../services/todosService';
 import { useAuthStore } from '../../stores/authStore';
 import { getDateDaysFromNow } from '../../utils/dateUtils';
 
-const TodoDialog = ({ open, onOpenChange, todo, teamMembers, onSave }) => {
+const TodoDialog = ({ open, onOpenChange, todo, teamMembers, onSave, onCreateIssue }) => {
   const { user } = useAuthStore();
   const [formData, setFormData] = useState({
     title: '',
@@ -30,7 +30,7 @@ const TodoDialog = ({ open, onOpenChange, todo, teamMembers, onSave }) => {
       setFormData({
         title: todo.title || '',
         description: todo.description || '',
-        assignedToId: todo.assigned_to_id || todo.assignee_id || '',
+        assignedToId: todo.assigned_to_id || todo.assignee_id || todo.assignedToId || '',
         dueDate: todo.due_date ? todo.due_date.split('T')[0] : '' // Use date string directly, don't convert
       });
       
@@ -307,23 +307,41 @@ const TodoDialog = ({ open, onOpenChange, todo, teamMembers, onSave }) => {
             </div>
           </div>
 
-          <DialogFooter>
-            <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
-              Cancel
-            </Button>
-            <Button type="submit" disabled={saving}>
-              {saving ? (
-                <>
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  Saving...
-                </>
-              ) : (
-                <>
-                  <Save className="mr-2 h-4 w-4" />
-                  {todo ? 'Update' : 'Create'} To-Do
-                </>
+          <DialogFooter className="flex justify-between">
+            <div className="flex-1">
+              {todo && onCreateIssue && (
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => {
+                    onCreateIssue(todo);
+                    onOpenChange(false);
+                  }}
+                  className="mr-auto"
+                >
+                  <AlertTriangle className="mr-2 h-4 w-4" />
+                  Create Linked Issue
+                </Button>
               )}
-            </Button>
+            </div>
+            <div className="flex gap-2">
+              <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
+                Cancel
+              </Button>
+              <Button type="submit" disabled={saving}>
+                {saving ? (
+                  <>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    Saving...
+                  </>
+                ) : (
+                  <>
+                    <Save className="mr-2 h-4 w-4" />
+                    {todo ? 'Update' : 'Create'} To-Do
+                  </>
+                )}
+              </Button>
+            </div>
           </DialogFooter>
         </form>
       </DialogContent>
