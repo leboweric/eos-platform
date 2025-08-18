@@ -185,35 +185,11 @@ const RegisterPage = () => {
                 </div>
                 <div>
                   <p className="font-semibold text-lg text-slate-800">Setup in 10 Minutes</p>
-                  <p className="text-slate-600">No consultants or training required</p>
-                </div>
-              </div>
-              <div className="flex items-start gap-3">
-                <div className="w-8 h-8 rounded-full bg-blue-500 flex items-center justify-center flex-shrink-0 mt-0.5">
-                  <Shield className="h-5 w-5 text-white" />
-                </div>
-                <div>
-                  <p className="font-semibold text-lg text-slate-800">30-Day Money Back Guarantee</p>
-                  <p className="text-slate-600">No risk, cancel anytime</p>
+                  <p className="text-slate-600">Get started immediately with your team</p>
                 </div>
               </div>
             </div>
 
-            {/* Stats */}
-            <div className="grid grid-cols-3 gap-4 p-6 bg-white/70 rounded-xl backdrop-blur-sm shadow-sm">
-              <div>
-                <p className="text-3xl font-bold text-slate-800">500+</p>
-                <p className="text-sm text-slate-600">Teams</p>
-              </div>
-              <div>
-                <p className="text-3xl font-bold text-slate-800">75%</p>
-                <p className="text-sm text-slate-600">Cost Savings</p>
-              </div>
-              <div>
-                <p className="text-3xl font-bold text-slate-800">4.9★</p>
-                <p className="text-sm text-slate-600">Rating</p>
-              </div>
-            </div>
           </div>
 
           {/* Testimonial Carousel */}
@@ -410,23 +386,6 @@ const RegisterPage = () => {
                 </p>
               </form>
 
-              {/* Social Proof */}
-              <div className="mt-4 pt-4 border-t">
-                <div className="flex items-center justify-center gap-4 text-xs text-gray-500">
-                  <div className="flex items-center gap-1">
-                    <Users className="h-3 w-3" />
-                    <span>10,000+ users</span>
-                  </div>
-                  <div className="flex items-center gap-1">
-                    <Shield className="h-3 w-3" />
-                    <span>SOC 2 compliant</span>
-                  </div>
-                  <div className="flex items-center gap-1">
-                    <Zap className="h-3 w-3" />
-                    <span>99.9% uptime</span>
-                  </div>
-                </div>
-              </div>
 
               <div className="mt-4 text-center">
                 <p className="text-sm text-gray-600">
@@ -437,27 +396,9 @@ const RegisterPage = () => {
                 </p>
               </div>
 
-              {/* Consultant Link */}
-              <div className="mt-3 text-center">
-                <p className="text-xs text-gray-500">
-                  Are you a consultant?{' '}
-                  <Link to="/consultant-register" className="text-primary hover:underline">
-                    Register here
-                  </Link>
-                </p>
-              </div>
             </CardContent>
           </Card>
 
-          {/* Trust Badges */}
-          <div className="mt-6 text-center">
-            <p className="text-xs text-gray-500 mb-2">Trusted by teams at</p>
-            <div className="flex justify-center items-center gap-6 opacity-50">
-              <TrendingUp className="h-6 w-6 text-gray-400" />
-              <Building2 className="h-8 w-8 text-gray-400" />
-              <Target className="h-6 w-6 text-gray-400" />
-            </div>
-          </div>
         </div>
       </div>
     </div>
