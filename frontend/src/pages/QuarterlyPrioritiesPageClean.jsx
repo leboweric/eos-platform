@@ -98,6 +98,7 @@ const QuarterlyPrioritiesPageClean = () => {
   const navigate = useNavigate();
   const { user, isOnLeadershipTeam } = useAuthStore();
   const { selectedDepartment, loading: departmentLoading } = useDepartment();
+  const { labels } = useTerminology();
   const [showArchived, setShowArchived] = useState(false);
   const [showAddPriority, setShowAddPriority] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -2193,7 +2194,7 @@ const QuarterlyPrioritiesPageClean = () => {
                   className="text-sm"
                 >
                   <Plus className="mr-2 h-4 w-4" />
-                  Add Priority
+                  Add {labels.priority}
                 </Button>
               </>
             )}
@@ -2294,7 +2295,7 @@ const QuarterlyPrioritiesPageClean = () => {
                     <div className="space-y-6">
                       <div className="flex items-center gap-3">
                         <Building2 className="h-6 w-6" style={{ color: themeColors.primary }} />
-                        <h3 className="text-xl font-semibold text-gray-900">Company Priorities</h3>
+                        <h3 className="text-xl font-semibold text-gray-900">Company {labels.priorities}</h3>
                       </div>
                       <div className="space-y-4">
                         {quarterData.companyPriorities.map(priority => (
@@ -2352,7 +2353,7 @@ const QuarterlyPrioritiesPageClean = () => {
                   <ChevronRight className="h-5 w-5 text-gray-400 group-hover:text-gray-600" />
                 )}
                 <Building2 className="h-6 w-6" style={{ color: themeColors.primary }} />
-                <h2 className="text-2xl font-bold text-gray-900">Company Priorities</h2>
+                <h2 className="text-2xl font-bold text-gray-900">Company {labels.priorities}</h2>
                 <span className="text-sm font-medium text-gray-500 bg-gray-100 px-2 py-1 rounded-full">
                   {companyPriorities.length}
                 </span>

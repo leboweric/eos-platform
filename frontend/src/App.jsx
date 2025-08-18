@@ -4,6 +4,7 @@ import { useEffect } from 'react';
 import { TeamProvider } from './contexts/TeamContext';
 import { DepartmentProvider } from './contexts/DepartmentContext';
 import { SelectedTodosProvider } from './contexts/SelectedTodosContext';
+import { TerminologyProvider } from './contexts/TerminologyContext';
 
 // Components
 import Layout from './components/Layout';
@@ -45,6 +46,7 @@ import QuarterlyPlanningMeetingPage from './pages/QuarterlyPlanningMeetingPage';
 import DocumentRepositoryPage from './pages/DocumentRepositoryPage';
 import SmartRockAssistant from './pages/SmartRockAssistant';
 import ScorecardDebug from './pages/ScorecardDebug';
+import TerminologySettingsPage from './pages/TerminologySettingsPage';
 
 // Department Components
 import DepartmentLayout from './components/DepartmentLayout';
@@ -81,10 +83,11 @@ function App() {
 
   return (
     <Router>
-      <TeamProvider>
-        <DepartmentProvider>
-          <SelectedTodosProvider>
-            <div className="min-h-screen bg-background">
+      <TerminologyProvider>
+        <TeamProvider>
+          <DepartmentProvider>
+            <SelectedTodosProvider>
+              <div className="min-h-screen bg-background">
           <Routes>
           {/* Public routes */}
           <Route path="/" element={!user ? <LandingPage /> : <Navigate to="/dashboard" />} />
@@ -135,6 +138,7 @@ function App() {
           <Route path="/consultant" element={user ? <Layout><ConsultantDashboard /></Layout> : <Navigate to="/login" />} />
           <Route path="/organization-settings" element={user ? <Layout><OrganizationSettings /></Layout> : <Navigate to="/login" />} />
           <Route path="/user-settings" element={user ? <Layout><UserSettings /></Layout> : <Navigate to="/login" />} />
+          <Route path="/terminology-settings" element={user ? <Layout><TerminologySettingsPage /></Layout> : <Navigate to="/login" />} />
           <Route path="/organizational-chart" element={user ? <Layout><OrganizationalChartPage /></Layout> : <Navigate to="/login" />} />
           <Route path="/documents" element={user ? <Layout><DocumentRepositoryPage /></Layout> : <Navigate to="/login" />} />
           
@@ -146,9 +150,10 @@ function App() {
           <Route path="*" element={<Navigate to={user ? "/dashboard" : "/"} />} />
         </Routes>
           </div>
-          </SelectedTodosProvider>
-        </DepartmentProvider>
-      </TeamProvider>
+            </SelectedTodosProvider>
+          </DepartmentProvider>
+        </TeamProvider>
+      </TerminologyProvider>
     </Router>
   );
 }

@@ -96,6 +96,7 @@ const Layout = ({ children }) => {
     { name: 'Departments', href: '/departments', icon: Building2, requiresAdmin: true },
     { name: 'Users', href: '/users', icon: Users, requiresAdmin: true },
     { name: 'Organization', href: '/organization-settings', icon: Settings, requiresAdmin: true },
+    { name: 'Terminology', href: '/terminology-settings', icon: Settings, requiresAdmin: true },
     { name: 'Billing', href: '/billing', icon: CreditCard, requiresAdmin: true },
   ];
 
