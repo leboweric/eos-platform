@@ -97,8 +97,11 @@ const LandingPageNew = () => {
         <div className="container mx-auto px-6 py-4">
           <div className="flex justify-between items-center">
             <div className="flex items-center gap-2">
-              <Target className="h-8 w-8 text-blue-600" />
-              <span className="text-2xl font-bold">AXP</span>
+              <img 
+                src="/AXP_logo_upper_left_transparent.png?v=2" 
+                alt="AXP" 
+                className="h-12 w-auto"
+              />
               <Badge variant="secondary" className="ml-2">Platform</Badge>
             </div>
             <div className="flex items-center gap-6">
@@ -374,8 +377,11 @@ const LandingPageNew = () => {
                   <th className="text-left p-6 font-semibold">Feature</th>
                   <th className="text-center p-6">
                     <div className="flex items-center justify-center gap-2">
-                      <Target className="h-5 w-5 text-blue-600" />
-                      <span className="font-semibold">AXP</span>
+                      <img 
+                        src="/AXP_logo_upper_left_transparent.png?v=2" 
+                        alt="AXP" 
+                        className="h-8 w-auto"
+                      />
                     </div>
                   </th>
                   <th className="text-center p-6 font-semibold text-gray-500">Ninety.io</th>
@@ -782,8 +788,11 @@ const LandingPageNew = () => {
           <div className="grid md:grid-cols-4 gap-8">
             <div>
               <div className="flex items-center gap-2 mb-4">
-                <Target className="h-6 w-6 text-white" />
-                <span className="text-white font-bold text-lg">AXP</span>
+                <img 
+                  src="/AXP_logo_upper_left_transparent.png?v=2" 
+                  alt="AXP" 
+                  className="h-10 w-auto brightness-0 invert"
+                />
               </div>
               <p className="text-sm">
                 The accountability and execution platform that adapts to your methodology.
