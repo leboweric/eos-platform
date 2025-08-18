@@ -11,7 +11,7 @@ import { todosService } from '../../services/todosService';
 import { useAuthStore } from '../../stores/authStore';
 import { getDateDaysFromNow } from '../../utils/dateUtils';
 
-const TodoDialog = ({ open, onOpenChange, todo, teamMembers, onSave, onCreateIssue }) => {
+const TodoDialog = ({ open, onOpenChange, todo, todoFromIssue, teamMembers, onSave, onCreateIssue }) => {
   const { user } = useAuthStore();
   const [formData, setFormData] = useState({
     title: '',
@@ -51,20 +51,31 @@ const TodoDialog = ({ open, onOpenChange, todo, teamMembers, onSave, onCreateIss
     setFiles([]);
   }, [todo]);
 
-  // Clear form when dialog opens without a todo
+  // Clear form when dialog opens without a todo or set from issue
   useEffect(() => {
     if (open && !todo) {
-      setFormData({
-        title: '',
-        description: '',
-        assignedToId: '',
-        dueDate: getDateDaysFromNow(7)
-      });
+      if (todoFromIssue) {
+        // Pre-populate from issue
+        setFormData({
+          title: `Follow up: ${todoFromIssue.title}`,
+          description: `Related to issue: ${todoFromIssue.title}`,
+          assignedToId: todoFromIssue.owner_id || user?.id || '',
+          dueDate: getDateDaysFromNow(7)
+        });
+      } else {
+        // Clear form
+        setFormData({
+          title: '',
+          description: '',
+          assignedToId: '',
+          dueDate: getDateDaysFromNow(7)
+        });
+      }
       setFiles([]);
       setExistingAttachments([]);
       setError(null);
     }
-  }, [open, todo]);
+  }, [open, todo, todoFromIssue, user]);
 
   const loadAttachments = async (todoId) => {
     try {

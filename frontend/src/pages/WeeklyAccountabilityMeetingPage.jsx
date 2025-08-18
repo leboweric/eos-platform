@@ -850,11 +850,8 @@ const WeeklyAccountabilityMeetingPage = () => {
   // Create To-Do from Issue
   const handleCreateTodoFromIssue = (issue) => {
     setTodoFromIssue(issue);
-    setEditingTodo({
-      title: `Follow up: ${issue.title}`,
-      description: `Related to issue: ${issue.title}`,
-      assignedToId: issue.owner_id || user?.id
-    });
+    // Don't set editingTodo for new todos - that's only for existing todos
+    setEditingTodo(null);
     setShowTodoDialog(true);
   };
 
@@ -2378,6 +2375,7 @@ const WeeklyAccountabilityMeetingPage = () => {
           }
         }}
         todo={editingTodo}
+        todoFromIssue={todoFromIssue}
         onSave={handleSaveTodo}
         onCreateIssue={handleCreateIssueFromTodo}
         teamMembers={teamMembers || []}
