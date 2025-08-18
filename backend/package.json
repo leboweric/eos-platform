@@ -20,6 +20,8 @@
   "license": "ISC",
   "dependencies": {
     "@azure/msal-node": "^3.7.1",
+    "@google-cloud/local-auth": "^3.0.1",
+    "@microsoft/microsoft-graph-client": "^3.0.7",
     "@sendgrid/mail": "^8.1.5",
     "bcryptjs": "^2.4.3",
     "cors": "^2.8.5",
@@ -29,7 +31,9 @@
     "express-rate-limit": "^7.4.1",
     "express-validator": "^7.2.0",
     "google-auth-library": "^10.2.1",
+    "googleapis": "^156.0.0",
     "helmet": "^8.0.0",
+    "isomorphic-fetch": "^3.0.0",
     "jsonwebtoken": "^9.0.2",
     "morgan": "^1.10.0",
     "multer": "^2.0.1",

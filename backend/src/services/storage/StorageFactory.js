@@ -4,9 +4,8 @@
  */
 
 import { InternalStorageAdapter } from './InternalStorageAdapter.js';
-// Import these once implemented
-// import { GoogleDriveAdapter } from './GoogleDriveAdapter.js';
-// import { OneDriveAdapter } from './OneDriveAdapter.js';
+import { GoogleDriveAdapter } from './GoogleDriveAdapter.js';
+import { OneDriveAdapter } from './OneDriveAdapter.js';
 import db from '../../config/database.js';
 
 class StorageFactory {
@@ -87,16 +86,12 @@ class StorageFactory {
         break;
       
       case 'google_drive':
-        // TODO: Uncomment when GoogleDriveAdapter is implemented
-        // adapter = new GoogleDriveAdapter(config);
-        throw new Error('Google Drive adapter not yet implemented');
+        adapter = new GoogleDriveAdapter(config);
         break;
       
       case 'onedrive':
       case 'sharepoint':
-        // TODO: Uncomment when OneDriveAdapter is implemented
-        // adapter = new OneDriveAdapter(config);
-        throw new Error('OneDrive/SharePoint adapter not yet implemented');
+        adapter = new OneDriveAdapter(config);
         break;
       
       case 'box':
