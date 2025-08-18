@@ -1,7 +1,8 @@
-const express = require('express');
+import express from 'express';
+import terminologyController from '../controllers/terminologyController.js';
+import authMiddleware from '../middleware/auth.js';
+
 const router = express.Router();
-const terminologyController = require('../controllers/terminologyController');
-const authMiddleware = require('../middleware/auth');
 
 // All routes require authentication
 router.use(authMiddleware);
@@ -21,4 +22,4 @@ router.post('/organizations/:orgId/apply-preset', terminologyController.applyTer
 // Reset terminology to defaults
 router.post('/organizations/:orgId/reset', terminologyController.resetTerminology);
 
-module.exports = router;
+export default router;

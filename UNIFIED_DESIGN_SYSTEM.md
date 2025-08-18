@@ -96,6 +96,307 @@ Colors are **never shouty**. Even our primary actions are confident but not aggr
 - Destructive actions use muted reds, not alarm reds
 - Success states use gentle greens, not neon
 
+---
+
+## 🎨 Branded Color System Architecture
+
+### Overview
+Our branded color system allows organizations to customize their interface colors while maintaining design consistency. This system enables white-label flexibility without sacrificing the unified design language.
+
+### Core Architecture
+
+#### 1. Three-Color System
+Each organization defines three brand colors:
+```javascript
+{
+  primary: '#3B82F6',    // Main brand color - CTAs, headers, active states
+  secondary: '#1E40AF',  // Darker variant - hover states, emphasis
+  accent: '#60A5FA'      // Lighter variant - backgrounds, highlights
+}
+```
+
+#### 2. Database Storage
+Colors are stored at the organization level:
+```sql
+-- organizations table columns
+theme_primary_color VARCHAR(7) DEFAULT '#3B82F6'
+theme_secondary_color VARCHAR(7) DEFAULT '#1E40AF'
+theme_accent_color VARCHAR(7) DEFAULT '#60A5FA'
+```
+
+#### 3. Preset Themes
+Eight carefully curated preset themes provide quick setup:
+- **Blue (Default)** - Trust, stability
+- **Orange (Vibrant)** - Energy, creativity
+- **Green (Growth)** - Success, progress
+- **Purple (Professional)** - Premium, sophisticated
+- **Red (Energy)** - Urgency, action
+- **Teal (Modern)** - Fresh, innovative
+- **Gray (Neutral)** - Minimal, focused
+- **Indigo (Trust)** - Reliable, corporate
+
+### Implementation Pattern
+
+#### Frontend Architecture
+
+##### 1. Theme Fetching & Caching
+```javascript
+// On application load or organization switch
+const fetchOrganizationTheme = async () => {
+  const response = await organizationService.getOrganization();
+  const theme = {
+    primary: response.theme_primary_color || '#3B82F6',
+    secondary: response.theme_secondary_color || '#1E40AF',
+    accent: response.theme_accent_color || '#60A5FA'
+  };
+  
+  // Cache in localStorage for performance
+  saveOrgTheme(orgId, theme);
+  setThemeColors(theme);
+};
+```
+
+##### 2. Local Storage Management
+```javascript
+// Organization-specific theme storage
+const getThemeStorageKey = (orgId) => `orgTheme_${orgId}`;
+
+// Save theme locally for instant loading
+const saveOrgTheme = (orgId, theme) => {
+  localStorage.setItem(getThemeStorageKey(orgId), JSON.stringify(theme));
+};
+
+// Retrieve cached theme
+const getOrgTheme = (orgId) => {
+  const saved = localStorage.getItem(getThemeStorageKey(orgId));
+  return saved ? JSON.parse(saved) : null;
+};
+```
+
+##### 3. Component-Level Application
+```javascript
+// Dynamic style application
+<div style={{ 
+  backgroundColor: themeColors.primary,
+  borderColor: themeColors.secondary 
+}}>
+  
+// Alpha channel variations
+<div style={{ 
+  backgroundColor: `${themeColors.accent}20`, // 20% opacity
+  border: `1px solid ${themeColors.primary}40` // 40% opacity
+}}>
+
+// Hover states
+onMouseEnter={(e) => e.target.style.backgroundColor = `${themeColors.primary}15`}
+onMouseLeave={(e) => e.target.style.backgroundColor = 'transparent'}
+```
+
+##### 4. Color Application Patterns
+
+###### Primary Color Uses:
+- Primary buttons and CTAs
+- Active navigation items
+- Headers and section titles
+- Progress indicators
+- Focus rings
+- Success states
+- Links and interactive text
+
+###### Secondary Color Uses:
+- Hover states for primary elements
+- Emphasis text
+- Secondary headers
+- Border accents
+- Active tab indicators
+- Selected items
+
+###### Accent Color Uses:
+- Subtle backgrounds
+- Hover backgrounds (with low opacity)
+- Badge backgrounds
+- Info alerts
+- Highlight areas
+- Card headers (with very low opacity)
+
+### Color Utility Functions
+
+```javascript
+// Convert hex to RGBA for opacity control
+export const hexToRgba = (hex, opacity) => {
+  hex = hex.replace('#', '');
+  const r = parseInt(hex.substring(0, 2), 16);
+  const g = parseInt(hex.substring(2, 4), 16);
+  const b = parseInt(hex.substring(4, 6), 16);
+  return `rgba(${r}, ${g}, ${b}, ${opacity})`;
+};
+
+// Common opacity patterns
+const colorPatterns = {
+  hover: (color) => `${color}15`,        // 15% for hover backgrounds
+  selected: (color) => `${color}20`,     // 20% for selected states
+  background: (color) => `${color}10`,   // 10% for subtle backgrounds
+  border: (color) => `${color}40`,       // 40% for borders
+  disabled: (color) => `${color}50`      // 50% for disabled states
+};
+```
+
+### Backend Implementation
+
+#### API Endpoints
+```javascript
+// GET /api/v1/organizations/:id
+// Returns organization with theme colors
+{
+  id: "...",
+  name: "...",
+  theme_primary_color: "#FB923C",
+  theme_secondary_color: "#C2410C",
+  theme_accent_color: "#FED7AA"
+}
+
+// PUT /api/v1/organizations/:id/theme
+// Updates organization theme
+{
+  primary: "#FB923C",
+  secondary: "#C2410C",
+  accent: "#FED7AA"
+}
+```
+
+### ColorThemePicker Component
+
+The ColorThemePicker provides a user-friendly interface for theme customization:
+
+#### Features:
+1. **Live Preview** - Real-time color preview
+2. **Preset Selection** - Quick selection from 8 presets
+3. **Custom Colors** - Full hex color picker
+4. **Validation** - Ensures valid hex codes
+5. **Persistence** - Saves to database and localStorage
+
+#### Component Usage:
+```jsx
+<ColorThemePicker
+  currentTheme={themeColors}
+  onThemeChange={handleThemeChange}
+  onSave={saveTheme}
+  saving={saving}
+/>
+```
+
+### Best Practices
+
+#### 1. Contrast Ratios
+- Ensure primary colors meet WCAG AA standards against white backgrounds
+- Test secondary colors for readability on light backgrounds
+- Verify accent colors work with overlaid text
+
+#### 2. Color Consistency
+- Use the same opacity patterns throughout the app
+- Apply colors consistently to similar UI elements
+- Maintain the color hierarchy (primary > secondary > accent)
+
+#### 3. Performance Optimization
+- Cache themes in localStorage to prevent flashing
+- Load theme before rendering UI components
+- Use CSS variables for frequently used colors
+
+#### 4. Fallback Strategy
+```javascript
+const defaultTheme = {
+  primary: '#3B82F6',
+  secondary: '#1E40AF', 
+  accent: '#60A5FA'
+};
+
+const getTheme = () => {
+  return cachedTheme || fetchedTheme || defaultTheme;
+};
+```
+
+### Migration Guide for Other Products
+
+#### Step 1: Database Setup
+```sql
+ALTER TABLE organizations
+ADD COLUMN theme_primary_color VARCHAR(7) DEFAULT '#3B82F6',
+ADD COLUMN theme_secondary_color VARCHAR(7) DEFAULT '#1E40AF',
+ADD COLUMN theme_accent_color VARCHAR(7) DEFAULT '#60A5FA';
+```
+
+#### Step 2: API Implementation
+1. Add theme fields to organization GET endpoint
+2. Create PUT endpoint for theme updates
+3. Add validation for hex color format
+
+#### Step 3: Frontend Integration
+1. Create theme context/store
+2. Implement theme fetching on app load
+3. Add localStorage caching
+4. Create ColorThemePicker component
+5. Apply colors throughout components
+
+#### Step 4: Testing
+1. Test theme persistence across sessions
+2. Verify theme isolation between organizations
+3. Check color accessibility
+4. Test preset theme application
+5. Validate custom color input
+
+### Common Implementation Patterns
+
+#### Pattern 1: Status Indicators
+```javascript
+// Success with brand color
+<div style={{ 
+  backgroundColor: `${themeColors.primary}10`,
+  borderLeft: `3px solid ${themeColors.primary}` 
+}}>
+```
+
+#### Pattern 2: Interactive Elements
+```javascript
+// Button with theme colors
+<button
+  style={{
+    backgroundColor: themeColors.primary,
+    color: 'white'
+  }}
+  onMouseEnter={(e) => e.target.style.backgroundColor = themeColors.secondary}
+  onMouseLeave={(e) => e.target.style.backgroundColor = themeColors.primary}
+>
+```
+
+#### Pattern 3: Data Visualization
+```javascript
+// Charts using theme colors
+const chartColors = [
+  themeColors.primary,
+  themeColors.secondary,
+  themeColors.accent,
+  hexToRgba(themeColors.primary, 0.6),
+  hexToRgba(themeColors.secondary, 0.6)
+];
+```
+
+### Troubleshooting
+
+#### Issue: Theme not persisting
+- Check localStorage key naming
+- Verify organization ID is available
+- Ensure save endpoint is called
+
+#### Issue: Colors flashing on load
+- Load theme before component render
+- Use suspense or loading states
+- Apply default theme immediately
+
+#### Issue: Poor contrast
+- Validate color choices against WCAG
+- Provide contrast warnings in picker
+- Suggest accessible alternatives
+
 ### 5. Animation & Micro-interactions
 
 #### The Timing Function

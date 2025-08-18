@@ -1,4 +1,4 @@
-const db = require('../db');
+import db from '../db/index.js';
 
 // Get terminology settings for an organization
 const getTerminology = async (req, res) => {
@@ -372,7 +372,7 @@ const applyTerminologyPreset = async (req, res) => {
   }
 };
 
-module.exports = {
+export default {
   getTerminology,
   updateTerminology,
   resetTerminology,
