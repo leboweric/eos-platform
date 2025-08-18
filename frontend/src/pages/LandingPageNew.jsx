@@ -525,19 +525,19 @@ const LandingPageNew = () => {
         <div className="container mx-auto max-w-6xl">
           <div className="text-center mb-12">
             <h2 className="text-4xl font-bold mb-4">
-              Simple, Fair Pricing
+              Simple, Transparent Pricing
             </h2>
             <p className="text-xl text-gray-600">
-              No per-user fees. No surprises. Just value.
+              Save 75% compared to Ninety.io. No per-user fees. No surprises.
             </p>
           </div>
 
-          <div className="grid md:grid-cols-3 gap-8">
+          <div className="grid md:grid-cols-4 gap-6">
             <Card className="border-2">
               <CardHeader>
                 <CardTitle>Starter</CardTitle>
                 <div className="mt-4">
-                  <span className="text-4xl font-bold">$99</span>
+                  <span className="text-4xl font-bold">$149</span>
                   <span className="text-gray-600">/month</span>
                 </div>
                 <CardDescription className="mt-2">Perfect for small teams</CardDescription>
@@ -546,7 +546,7 @@ const LandingPageNew = () => {
                 <ul className="space-y-3">
                   <li className="flex items-start gap-2">
                     <Check className="h-5 w-5 text-green-500 mt-0.5" />
-                    <span>Up to 20 users</span>
+                    <span>Up to 25 users</span>
                   </li>
                   <li className="flex items-start gap-2">
                     <Check className="h-5 w-5 text-green-500 mt-0.5" />
@@ -560,8 +560,15 @@ const LandingPageNew = () => {
                     <Check className="h-5 w-5 text-green-500 mt-0.5" />
                     <span>Email support</span>
                   </li>
+                  <li className="flex items-start gap-2">
+                    <Check className="h-5 w-5 text-green-500 mt-0.5" />
+                    <span>30-day free trial</span>
+                  </li>
                 </ul>
-                <Button className="w-full mt-6" variant="outline">Get Started</Button>
+                <div className="mt-4 pt-4 border-t">
+                  <p className="text-sm text-gray-600">vs Ninety.io: <strong className="text-green-600">Save $251/mo</strong></p>
+                </div>
+                <Button className="w-full mt-6" variant="outline">Start Free Trial</Button>
               </CardContent>
             </Card>
 
@@ -570,18 +577,18 @@ const LandingPageNew = () => {
                 Most Popular
               </Badge>
               <CardHeader>
-                <CardTitle>Professional</CardTitle>
+                <CardTitle>Growth</CardTitle>
                 <div className="mt-4">
-                  <span className="text-4xl font-bold">$199</span>
+                  <span className="text-4xl font-bold">$349</span>
                   <span className="text-gray-600">/month</span>
                 </div>
-                <CardDescription className="mt-2">For growing companies</CardDescription>
+                <CardDescription className="mt-2">For scaling teams</CardDescription>
               </CardHeader>
               <CardContent>
                 <ul className="space-y-3">
                   <li className="flex items-start gap-2">
                     <Check className="h-5 w-5 text-green-500 mt-0.5" />
-                    <span>Up to 100 users</span>
+                    <span>Up to 75 users</span>
                   </li>
                   <li className="flex items-start gap-2">
                     <Check className="h-5 w-5 text-green-500 mt-0.5" />
@@ -597,26 +604,34 @@ const LandingPageNew = () => {
                   </li>
                   <li className="flex items-start gap-2">
                     <Check className="h-5 w-5 text-green-500 mt-0.5" />
-                    <span>Data migration help</span>
+                    <span>Migration assistance</span>
+                  </li>
+                  <li className="flex items-start gap-2">
+                    <Check className="h-5 w-5 text-green-500 mt-0.5" />
+                    <span>Advanced analytics</span>
                   </li>
                 </ul>
-                <Button className="w-full mt-6">Get Started</Button>
+                <div className="mt-4 pt-4 border-t">
+                  <p className="text-sm text-gray-600">vs Ninety.io: <strong className="text-green-600">Save $851/mo</strong></p>
+                </div>
+                <Button className="w-full mt-6">Start Free Trial</Button>
               </CardContent>
             </Card>
 
             <Card className="border-2">
               <CardHeader>
-                <CardTitle>Enterprise</CardTitle>
+                <CardTitle>Scale</CardTitle>
                 <div className="mt-4">
-                  <span className="text-4xl font-bold">Custom</span>
+                  <span className="text-4xl font-bold">$599</span>
+                  <span className="text-gray-600">/month</span>
                 </div>
-                <CardDescription className="mt-2">For large organizations</CardDescription>
+                <CardDescription className="mt-2">For larger organizations</CardDescription>
               </CardHeader>
               <CardContent>
                 <ul className="space-y-3">
                   <li className="flex items-start gap-2">
                     <Check className="h-5 w-5 text-green-500 mt-0.5" />
-                    <span>Unlimited users</span>
+                    <span>Up to 200 users</span>
                   </li>
                   <li className="flex items-start gap-2">
                     <Check className="h-5 w-5 text-green-500 mt-0.5" />
@@ -624,7 +639,7 @@ const LandingPageNew = () => {
                   </li>
                   <li className="flex items-start gap-2">
                     <Check className="h-5 w-5 text-green-500 mt-0.5" />
-                    <span>Custom terminology</span>
+                    <span>Multi-framework support</span>
                   </li>
                   <li className="flex items-start gap-2">
                     <Check className="h-5 w-5 text-green-500 mt-0.5" />
@@ -632,25 +647,107 @@ const LandingPageNew = () => {
                   </li>
                   <li className="flex items-start gap-2">
                     <Check className="h-5 w-5 text-green-500 mt-0.5" />
-                    <span>SLA & Security</span>
+                    <span>Custom integrations</span>
+                  </li>
+                  <li className="flex items-start gap-2">
+                    <Check className="h-5 w-5 text-green-500 mt-0.5" />
+                    <span>SLA guarantee</span>
                   </li>
                 </ul>
+                <div className="mt-4 pt-4 border-t">
+                  <p className="text-sm text-gray-600">vs Ninety.io: <strong className="text-green-600">Save $2,601/mo</strong></p>
+                </div>
+                <Button className="w-full mt-6" variant="outline">Start Free Trial</Button>
+              </CardContent>
+            </Card>
+
+            <Card className="border-2">
+              <CardHeader>
+                <CardTitle>Enterprise</CardTitle>
+                <div className="mt-4">
+                  <span className="text-4xl font-bold">$999</span>
+                  <span className="text-gray-600">/month</span>
+                </div>
+                <CardDescription className="mt-2">Unlimited everything</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <ul className="space-y-3">
+                  <li className="flex items-start gap-2">
+                    <Check className="h-5 w-5 text-green-500 mt-0.5" />
+                    <span><strong>Unlimited users</strong></span>
+                  </li>
+                  <li className="flex items-start gap-2">
+                    <Check className="h-5 w-5 text-green-500 mt-0.5" />
+                    <span>White-label options</span>
+                  </li>
+                  <li className="flex items-start gap-2">
+                    <Check className="h-5 w-5 text-green-500 mt-0.5" />
+                    <span>Custom domain</span>
+                  </li>
+                  <li className="flex items-start gap-2">
+                    <Check className="h-5 w-5 text-green-500 mt-0.5" />
+                    <span>24/7 phone support</span>
+                  </li>
+                  <li className="flex items-start gap-2">
+                    <Check className="h-5 w-5 text-green-500 mt-0.5" />
+                    <span>Onboarding manager</span>
+                  </li>
+                  <li className="flex items-start gap-2">
+                    <Check className="h-5 w-5 text-green-500 mt-0.5" />
+                    <span>99.9% uptime SLA</span>
+                  </li>
+                </ul>
+                <div className="mt-4 pt-4 border-t">
+                  <p className="text-sm text-gray-600">Flat rate for <strong>any size team</strong></p>
+                </div>
                 <Button className="w-full mt-6" variant="outline">Contact Sales</Button>
               </CardContent>
             </Card>
           </div>
 
-          <div className="mt-12 text-center">
-            <Card className="inline-block border-2 border-green-200 bg-green-50">
-              <CardContent className="p-6">
-                <p className="text-lg font-semibold text-green-800 mb-2">
-                  🎉 Switching from Ninety.io?
-                </p>
-                <p className="text-green-700">
-                  Get 50% off for 3 months + free migration assistance
-                </p>
-              </CardContent>
-            </Card>
+          <div className="mt-12 space-y-4">
+            {/* Ninety.io Escape Plan */}
+            <div className="text-center">
+              <Card className="inline-block border-2 border-green-200 bg-green-50">
+                <CardContent className="p-6">
+                  <p className="text-lg font-semibold text-green-800 mb-2">
+                    🚀 Ninety.io Escape Plan
+                  </p>
+                  <p className="text-green-700">
+                    Switching from Ninety.io? Get <strong>50% off for 6 months</strong> + free migration assistance
+                  </p>
+                  <p className="text-sm text-green-600 mt-2">
+                    We'll handle the entire migration - data, training, and setup
+                  </p>
+                </CardContent>
+              </Card>
+            </div>
+
+            {/* Additional Benefits */}
+            <div className="text-center">
+              <div className="inline-flex gap-6 text-sm text-gray-600">
+                <div className="flex items-center gap-2">
+                  <CheckCircle2 className="h-4 w-4 text-green-500" />
+                  <span>20% off annual plans</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <CheckCircle2 className="h-4 w-4 text-green-500" />
+                  <span>30-day money-back guarantee</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <CheckCircle2 className="h-4 w-4 text-green-500" />
+                  <span>No setup fees</span>
+                </div>
+              </div>
+            </div>
+
+            {/* Cost Calculator CTA */}
+            <div className="text-center mt-8">
+              <Button size="lg" variant="secondary">
+                <DollarSign className="mr-2 h-5 w-5" />
+                Calculate Your Savings vs Ninety.io
+              </Button>
+            </div>
           </div>
         </div>
       </section>
