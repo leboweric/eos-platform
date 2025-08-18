@@ -857,38 +857,26 @@ const WeeklyAccountabilityMeetingPage = () => {
 
   // Create Issue from To-Do
   const handleCreateIssueFromTodo = async (todo) => {
-    // Create the new issue data
-    const newIssue = {
-      title: `Issue from To-Do: ${todo.title}`,
-      description: `Related to to-do: ${todo.title}\n\n${todo.description || ''}`,
-      status: 'open',
-      owner_id: todo.assigned_to_id || todo.assignee_id || user?.id
-    };
-    
-    // Create the issue directly
-    await handleCreateIssue(newIssue);
-    
-    // Navigate to IDS section to show the new issue
-    setActiveSection('ids');
-  };
-
-  // Create Issue
-  const handleCreateIssue = async (issueData) => {
     try {
-      const orgId = localStorage.getItem('impersonatedOrgId') || user?.organizationId || user?.organization_id;
       const effectiveTeamId = teamId || user?.teamId || '00000000-0000-0000-0000-000000000000';
       
+      // Create the issue using issuesService directly
       await issuesService.createIssue({
-        ...issueData,
-        organization_id: orgId,
-        team_id: effectiveTeamId
+        title: `Issue from To-Do: ${todo.title}`,
+        description: `Related to to-do: ${todo.title}\n\n${todo.description || ''}`,
+        ownerId: todo.assigned_to_id || todo.assignee_id || user?.id,
+        teamId: effectiveTeamId,
+        related_todo_id: todo.id // Link back to the todo
       });
       
-      setSuccess('Issue created successfully');
+      setSuccess('Issue created successfully from to-do');
       await fetchIssuesData();
+      
+      // Navigate to IDS section to show the new issue
+      setActiveSection('ids');
     } catch (error) {
-      console.error('Failed to create issue:', error);
-      setError('Failed to create issue');
+      console.error('Failed to create issue from todo:', error);
+      setError('Failed to create issue from to-do');
     }
   };
 

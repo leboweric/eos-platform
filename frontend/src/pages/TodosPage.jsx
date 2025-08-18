@@ -231,7 +231,6 @@ const TodosPage = () => {
 
   const handleCreateIssueFromTodo = async (todo) => {
     try {
-      const orgId = localStorage.getItem('impersonatedOrgId') || user?.organizationId || user?.organization_id;
       const effectiveTeamId = selectedDepartment?.id || user?.teamId || '00000000-0000-0000-0000-000000000000';
       
       // Import issuesService if not already imported
@@ -240,10 +239,9 @@ const TodosPage = () => {
       await issuesService.createIssue({
         title: `Issue from To-Do: ${todo.title}`,
         description: `Related to to-do: ${todo.title}\n\n${todo.description || ''}`,
-        status: 'open',
-        owner_id: todo.assigned_to_id || todo.assignee_id || user?.id,
-        organization_id: orgId,
-        team_id: effectiveTeamId
+        ownerId: todo.assigned_to_id || todo.assignee_id || user?.id,
+        teamId: effectiveTeamId,
+        related_todo_id: todo.id // Link back to the todo
       });
       
       setSuccess('Issue created successfully from to-do');
