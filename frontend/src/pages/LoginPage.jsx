@@ -85,7 +85,7 @@ const LoginPage = () => {
           <div className="space-y-6">
             <h1 className="text-4xl lg:text-5xl font-bold text-slate-800 leading-tight">
               Welcome Back to
-              <span className="text-blue-600 block mt-2">Your Growth Platform</span>
+              <span className="text-blue-600 block mt-2">Your Accountability Platform</span>
             </h1>
             <p className="text-xl text-slate-600 leading-relaxed">
               Join thousands of organizations achieving breakthrough results through structured execution and accountability.
