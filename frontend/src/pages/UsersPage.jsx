@@ -779,16 +779,16 @@ const UsersPage = () => {
         </DialogContent>
       </Dialog>
 
-      {/* Cost Summary Card */}
+      {/* User Summary Card */}
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <Users className="h-5 w-5" />
-            Subscription Summary
+            User Summary
           </CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="grid grid-cols-3 gap-4">
+          <div className="grid grid-cols-2 gap-4">
             <div>
               <p className="text-sm text-gray-500">Active Users</p>
               <p className="text-2xl font-bold">{users.length}</p>
