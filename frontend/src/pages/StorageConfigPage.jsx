@@ -31,7 +31,6 @@ import {
   HelpCircle,
   Book,
   ExternalLink,
-  PlayCircle,
   ChevronDown
 } from 'lucide-react';
 import axios from '../services/axiosConfig';
@@ -213,7 +212,6 @@ const StorageConfigPage = () => {
 • Copy folder ID from URL`,
           }
         ],
-        video: 'https://www.youtube.com/embed/dQw4w9WgXcQ', // Replace with actual video
         troubleshooting: [
           { issue: 'Permission Denied', solution: 'Verify domain-wide delegation is enabled and authorized' },
           { issue: 'File Not Found', solution: 'Check that root folder ID is correct and shared with service account' },
@@ -265,7 +263,6 @@ const StorageConfigPage = () => {
 • Note the folder path`,
           }
         ],
-        video: 'https://www.youtube.com/embed/dQw4w9WgXcQ', // Replace with actual video
         troubleshooting: [
           { issue: 'Access Denied', solution: 'Verify admin consent was granted for all permissions' },
           { issue: 'Invalid Client', solution: 'Check Tenant ID and Client ID are correct' },
@@ -299,19 +296,6 @@ const StorageConfigPage = () => {
         </CardHeader>
         {showHelp && (
           <CardContent className="space-y-6">
-            {/* Video Tutorial */}
-            {guide.video && (
-              <div className="aspect-video bg-gray-100 rounded-lg overflow-hidden">
-                <div className="flex items-center justify-center h-full text-gray-500">
-                  <div className="text-center">
-                    <PlayCircle className="h-12 w-12 mx-auto mb-2" />
-                    <p>Video Tutorial Coming Soon</p>
-                    {/* <iframe src={guide.video} className="w-full h-full" /> */}
-                  </div>
-                </div>
-              </div>
-            )}
-
             {/* Step by Step Guide */}
             <div className="space-y-4">
               <h3 className="font-semibold text-lg">Step-by-Step Instructions</h3>
