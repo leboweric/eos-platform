@@ -63,6 +63,14 @@ const LandingPageNew = () => {
       meetings: 'Daily Huddle',
       vision: 'One-Page Plan'
     },
+    fourDx: {
+      name: '4DX',
+      priorities: 'WIGs',
+      scorecard: 'Scoreboard',
+      issues: 'Obstacles',
+      meetings: 'WIG Session',
+      vision: 'Execution Plan'
+    },
     custom: {
       name: 'Your Way',
       priorities: 'Goals',
@@ -75,7 +83,7 @@ const LandingPageNew = () => {
 
   // Auto-rotate through frameworks
   useEffect(() => {
-    const frameworks = ['eos', 'okrs', 'scaling', 'custom'];
+    const frameworks = ['eos', 'okrs', 'scaling', 'fourDx', 'custom'];
     let index = 0;
     
     const interval = setInterval(() => {
@@ -134,7 +142,7 @@ const LandingPageNew = () => {
             
             <p className="text-xl text-gray-600 max-w-2xl mx-auto">
               While Ninety.io locks you into EOS, AXP adapts to YOUR business methodology. 
-              Run EOS, OKRs, Scaling Up, or create your own system.
+              Run EOS, OKRs, Scaling Up, 4DX, or create your own system.
             </p>
 
             <div className="flex gap-4 justify-center pt-4">
