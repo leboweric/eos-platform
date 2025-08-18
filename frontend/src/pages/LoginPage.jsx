@@ -85,9 +85,6 @@ const LoginPage = () => {
               Welcome Back to
               <span className="text-blue-600 block mt-2">Your Accountability Platform</span>
             </h1>
-            <p className="text-xl text-slate-600 leading-relaxed">
-              Join thousands of organizations achieving breakthrough results through structured execution and accountability.
-            </p>
           </div>
 
           {/* Benefits */}
