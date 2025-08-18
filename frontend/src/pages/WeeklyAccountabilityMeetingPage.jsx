@@ -916,7 +916,7 @@ const WeeklyAccountabilityMeetingPage = () => {
         )
       );
       
-      // Priority updated silently - no success message to avoid screen jumping
+      // {labels.priority_singular || 'Priority'} updated silently - no success message to avoid screen jumping
     } catch (error) {
       console.error('Failed to update priority:', error);
       setError('Failed to update priority');
@@ -940,7 +940,7 @@ const WeeklyAccountabilityMeetingPage = () => {
           
           // Create issue from off-track priority
           const issueData = {
-            title: `Off-Track Priority: ${priorityTitle}`,
+            title: `Off-Track ${labels.priority_singular || 'Priority'}: ${priorityTitle}`,
             description: `Priority "${priorityTitle}" is off-track and needs attention.\n\nOriginal priority: ${priority.description || 'No description'}`,
             timeline: 'short_term',
             department_id: effectiveTeamId, // issuesService expects department_id
@@ -1418,7 +1418,7 @@ const WeeklyAccountabilityMeetingPage = () => {
                 <CardTitle className="flex items-center justify-between">
                   <div className="flex items-center gap-2">
                     <Target className="h-5 w-5" style={{ color: themeColors.primary }} />
-                    Quarterly Priorities Review
+                    {labels.priorities_label || 'Quarterly Priorities'} Review
                   </div>
                   {priorities.length > 0 && (
                     <div className="text-sm font-normal">
@@ -1444,7 +1444,7 @@ const WeeklyAccountabilityMeetingPage = () => {
                     className="mt-4"
                     onClick={() => navigate('/quarterly-priorities')}
                   >
-                    Go to Quarterly Priorities
+                    Go to {labels.priorities_label || 'Quarterly Priorities'}
                   </Button>
                 </CardContent>
               </Card>
@@ -1455,7 +1455,7 @@ const WeeklyAccountabilityMeetingPage = () => {
                     <span className="font-semibold">Quick Status Check:</span> Each priority owner reports "on-track" or "off-track" status
                   </p>
                 </div>
-                {/* Company Priorities Section */}
+                {/* Company {labels.priorities_label || 'Priorities'} Section */}
                 {(() => {
                   const companyPriorities = priorities.filter(p => p.priority_type === 'company');
                   return companyPriorities.length > 0 && (
@@ -1475,7 +1475,7 @@ const WeeklyAccountabilityMeetingPage = () => {
                           )}
                           <Building2 className="h-5 w-5" style={{ color: themeColors.primary }} />
                           <h3 className="text-lg font-semibold">
-                            Company Priorities ({companyPriorities.length})
+                            Company {labels.priorities_label || 'Priorities'} ({companyPriorities.length})
                           </h3>
                         </div>
                       </div>
@@ -1501,7 +1501,7 @@ const WeeklyAccountabilityMeetingPage = () => {
                   );
                 })()}
                 
-                {/* Individual Priorities Section */}
+                {/* Individual {labels.priorities_label || 'Priorities'} Section */}
                 {(() => {
                   const individualPriorities = priorities.filter(p => p.priority_type !== 'company');
                   const groupedByOwner = individualPriorities.reduce((acc, priority) => {
@@ -1518,7 +1518,7 @@ const WeeklyAccountabilityMeetingPage = () => {
                       <div className="flex items-center gap-3 p-4 bg-white border border-gray-200 rounded-lg">
                         <Users className="h-5 w-5" style={{ color: themeColors.primary }} />
                         <h3 className="text-lg font-semibold">
-                          Individual Priorities ({individualPriorities.length})
+                          Individual {labels.priorities_label || 'Priorities'} ({individualPriorities.length})
                         </h3>
                       </div>
                       {Object.entries(groupedByOwner).map(([ownerId, ownerPriorities]) => {

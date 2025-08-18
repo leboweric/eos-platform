@@ -345,7 +345,7 @@ const QuarterlyPlanningMeetingPage = () => {
             const priorityTitle = priority.title || priority.name || 'Untitled Priority';
             
             await issuesService.createIssue({
-              title: `Off-Track Priority: ${priorityTitle}`,
+              title: `Off-Track ${labels?.priority_singular || 'Priority'}: ${priorityTitle}`,
               description: `Priority "${priorityTitle}" is off-track and needs attention.\n\nOwner: ${priority.owner?.name || 'Unassigned'}\n\nDescription: ${priority.description || 'No description provided'}`,
               timeline: 'short_term',
               ownerId: priority.owner?.id || priority.owner_id || priority.ownerId || user?.id, // Backend expects ownerId
@@ -353,7 +353,7 @@ const QuarterlyPlanningMeetingPage = () => {
               teamId: effectiveTeamId // Add teamId as well for compatibility
             });
             
-            setSuccess('Priority marked off-track and issue created');
+            setSuccess(`${labels?.priority_singular || 'Priority'} marked off-track and issue created`);
           } catch (error) {
             console.error('Failed to create issue for off-track priority:', error);
           }
@@ -552,7 +552,7 @@ const QuarterlyPlanningMeetingPage = () => {
         dueDate: '',
         isCompanyPriority: false
       });
-      setSuccess('Priority created successfully');
+      setSuccess(`${labels?.priority_singular || 'Priority'} created successfully`);
       // Refresh priorities
       await fetchPrioritiesData();
     } catch (error) {
@@ -813,7 +813,7 @@ const QuarterlyPlanningMeetingPage = () => {
                     className="mt-4"
                     onClick={() => navigate('/quarterly-priorities')}
                   >
-                    Go to Quarterly Priorities
+                    Go to {labels?.priorities_label || 'Quarterly Priorities'}
                   </Button>
                 </CardContent>
               </Card>
@@ -904,7 +904,7 @@ const QuarterlyPlanningMeetingPage = () => {
                   )}
                 </div>
                 
-                {/* Company Priorities Section */}
+                {/* Company {labels?.priorities_label || 'Priorities'} Section */}
                 {(() => {
                   const companyPriorities = priorities.filter(p => p.priority_type === 'company');
                   return companyPriorities.length > 0 && (
@@ -921,7 +921,7 @@ const QuarterlyPlanningMeetingPage = () => {
                           )}
                           <Building2 className="h-5 w-5 text-blue-600" />
                           <h3 className="text-lg font-semibold">
-                            Company Priorities ({companyPriorities.length})
+                            Company {labels?.priorities_label || 'Priorities'} ({companyPriorities.length})
                           </h3>
                         </div>
                       </div>
@@ -949,7 +949,7 @@ const QuarterlyPlanningMeetingPage = () => {
                   );
                 })()}
                 
-                {/* Individual Priorities Section */}
+                {/* Individual {labels?.priorities_label || 'Priorities'} Section */}
                 {(() => {
                   const individualPriorities = priorities.filter(p => p.priority_type !== 'company');
                   const groupedByOwner = individualPriorities.reduce((acc, priority) => {
@@ -966,7 +966,7 @@ const QuarterlyPlanningMeetingPage = () => {
                       <div className="flex items-center gap-3 p-4 bg-white border border-gray-200 rounded-lg">
                         <Users className="h-5 w-5 text-purple-600" />
                         <h3 className="text-lg font-semibold">
-                          Individual Priorities ({individualPriorities.length})
+                          Individual {labels?.priorities_label || 'Priorities'} ({individualPriorities.length})
                         </h3>
                       </div>
                       {Object.entries(groupedByOwner).map(([ownerId, ownerPriorities]) => {
@@ -1080,7 +1080,7 @@ const QuarterlyPlanningMeetingPage = () => {
                   <div>
                     <CardTitle className="flex items-center gap-2">
                       <ListChecks className="h-5 w-5" style={{ color: themeColors.primary }} />
-                      Set Quarterly Priorities
+                      Set {labels?.priorities_label || 'Quarterly Priorities'}
                     </CardTitle>
                     <CardDescription>Define 3-7 priorities for the upcoming quarter (120 minutes)</CardDescription>
                   </div>
@@ -1115,7 +1115,7 @@ const QuarterlyPlanningMeetingPage = () => {
                       className="hover:opacity-90"
                     >
                       <Plus className="mr-2 h-4 w-4" />
-                      Add Priority
+                      Add {labels?.priority_singular || 'Priority'}
                     </Button>
                   </div>
                 </div>
@@ -1130,7 +1130,7 @@ const QuarterlyPlanningMeetingPage = () => {
                     className="mt-4"
                     onClick={() => navigate('/quarterly-priorities')}
                   >
-                    Go to Quarterly Priorities
+                    Go to {labels?.priorities_label || 'Quarterly Priorities'}
                   </Button>
                 </CardContent>
               </Card>
@@ -1141,7 +1141,7 @@ const QuarterlyPlanningMeetingPage = () => {
                     <span className="font-semibold">Priority Setting:</span> Each priority should be SMART (Specific, Measurable, Achievable, Relevant, Time-bound). Limit to 3-7 priorities total.
                   </p>
                 </div>
-                {/* Company Priorities Section */}
+                {/* Company {labels?.priorities_label || 'Priorities'} Section */}
                 {(() => {
                   const companyPriorities = priorities.filter(p => p.priority_type === 'company');
                   return companyPriorities.length > 0 && (
@@ -1158,7 +1158,7 @@ const QuarterlyPlanningMeetingPage = () => {
                           )}
                           <Building2 className="h-5 w-5 text-blue-600" />
                           <h3 className="text-lg font-semibold">
-                            Company Priorities ({companyPriorities.length})
+                            Company {labels?.priorities_label || 'Priorities'} ({companyPriorities.length})
                           </h3>
                         </div>
                       </div>
@@ -1186,7 +1186,7 @@ const QuarterlyPlanningMeetingPage = () => {
                   );
                 })()}
                 
-                {/* Individual Priorities Section */}
+                {/* Individual {labels?.priorities_label || 'Priorities'} Section */}
                 {(() => {
                   const individualPriorities = priorities.filter(p => p.priority_type !== 'company');
                   const groupedByOwner = individualPriorities.reduce((acc, priority) => {
@@ -1203,7 +1203,7 @@ const QuarterlyPlanningMeetingPage = () => {
                       <div className="flex items-center gap-3 p-4 bg-white border border-gray-200 rounded-lg">
                         <Users className="h-5 w-5 text-purple-600" />
                         <h3 className="text-lg font-semibold">
-                          Individual Priorities ({individualPriorities.length})
+                          Individual {labels?.priorities_label || 'Priorities'} ({individualPriorities.length})
                         </h3>
                       </div>
                       {Object.entries(groupedByOwner).map(([ownerId, ownerPriorities]) => {
@@ -1413,7 +1413,7 @@ const QuarterlyPlanningMeetingPage = () => {
             <Dialog open={showAddPriority} onOpenChange={setShowAddPriority}>
               <DialogContent className="max-w-2xl">
                 <DialogHeader>
-                  <DialogTitle>Add New Priority</DialogTitle>
+                  <DialogTitle>Add New {labels?.priority_singular || 'Priority'}</DialogTitle>
                   <DialogDescription>
                     Create a new priority for Q{Math.ceil((new Date().getMonth() + 1) / 3)} {new Date().getFullYear()}
                   </DialogDescription>
@@ -1854,7 +1854,7 @@ const QuarterlyPlanningMeetingPage = () => {
         <Dialog open={showAddPriority} onOpenChange={setShowAddPriority}>
           <DialogContent className="sm:max-w-[600px]">
             <DialogHeader>
-              <DialogTitle>Add New Priority</DialogTitle>
+              <DialogTitle>Add New {labels?.priority_singular || 'Priority'}</DialogTitle>
               <DialogDescription>
                 Create a new quarterly priority. Make it SMART: Specific, Measurable, Achievable, Relevant, and Time-bound.
               </DialogDescription>
