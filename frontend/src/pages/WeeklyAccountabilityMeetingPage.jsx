@@ -530,7 +530,7 @@ const WeeklyAccountabilityMeetingPage = () => {
       const response = await todosService.getTodos(
         null, // status filter
         null, // assignee filter
-        false, // include completed
+        true, // include completed - show all todos
         effectiveTeamId // department filter
       );
       const fetchedTodos = response.data?.todos || [];
