@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useTerminology } from '../contexts/TerminologyContext';
 import { terminologyService } from '../services/terminologyService';
+import { useAuthStore } from '../stores/authStore';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -26,12 +27,17 @@ import {
 
 const TerminologySettingsPage = () => {
   const { terminology, updateTerminology, applyPreset, resetToDefaults, labels } = useTerminology();
+  const { user } = useAuthStore();
   const [formData, setFormData] = useState({});
   const [presets, setPresets] = useState({});
   const [selectedPreset, setSelectedPreset] = useState('custom');
   const [saving, setSaving] = useState(false);
   const [success, setSuccess] = useState(null);
   const [error, setError] = useState(null);
+  
+  // Debug logging
+  console.log('TerminologySettingsPage - User:', user);
+  console.log('TerminologySettingsPage - OrgId:', user?.organization_id);
 
   useEffect(() => {
     // Initialize form with current terminology
@@ -112,6 +118,20 @@ const TerminologySettingsPage = () => {
       setSaving(false);
     }
   };
+
+  // Check if user has organization ID
+  if (!user?.organization_id) {
+    return (
+      <div className="container mx-auto p-6 max-w-6xl">
+        <Alert className="border-red-200 bg-red-50">
+          <AlertCircle className="h-4 w-4 text-red-600" />
+          <AlertDescription className="text-red-800">
+            Unable to load terminology settings. Organization information is missing. Please try logging out and back in.
+          </AlertDescription>
+        </Alert>
+      </div>
+    );
+  }
 
   return (
     <div className="container mx-auto p-6 max-w-6xl">

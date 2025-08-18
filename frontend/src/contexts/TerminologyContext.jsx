@@ -32,6 +32,10 @@ export const TerminologyProvider = ({ children }) => {
   const [error, setError] = useState(null);
   const { user } = useAuthStore();
   const orgId = user?.organization_id;
+  
+  // Debug logging
+  console.log('TerminologyContext - User:', user);
+  console.log('TerminologyContext - OrgId:', orgId);
 
   // Fetch terminology when org changes
   useEffect(() => {
@@ -44,6 +48,12 @@ export const TerminologyProvider = ({ children }) => {
   }, [orgId]);
 
   const fetchTerminology = async () => {
+    if (!orgId) {
+      console.error('No organization ID available');
+      setLoading(false);
+      return;
+    }
+    
     try {
       setLoading(true);
       const data = await terminologyService.getTerminology(orgId);
@@ -60,6 +70,10 @@ export const TerminologyProvider = ({ children }) => {
   };
 
   const updateTerminology = async (updates) => {
+    if (!orgId) {
+      throw new Error('No organization ID available');
+    }
+    
     try {
       const data = await terminologyService.updateTerminology(orgId, updates);
       setTerminology(data);
@@ -73,6 +87,10 @@ export const TerminologyProvider = ({ children }) => {
   };
 
   const applyPreset = async (preset) => {
+    if (!orgId) {
+      throw new Error('No organization ID available');
+    }
+    
     try {
       const data = await terminologyService.applyPreset(orgId, preset);
       setTerminology(data);
@@ -86,6 +104,10 @@ export const TerminologyProvider = ({ children }) => {
   };
 
   const resetToDefaults = async () => {
+    if (!orgId) {
+      throw new Error('No organization ID available');
+    }
+    
     try {
       const data = await terminologyService.resetToDefaults(orgId);
       setTerminology(data);
