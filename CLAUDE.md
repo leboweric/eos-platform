@@ -11,11 +11,11 @@ EOS Platform is a web application for implementing the Entrepreneurial Operating
 - Railway deployments have ephemeral filesystems - any local files are lost on redeploy
 
 ### Technology Stack
-- **Backend**: Node.js with Express
+- **Backend**: Node.js with Express (ES6 modules)
 - **Frontend**: React with Vite
 - **Database**: PostgreSQL
-- **Hosting**: Railway (both frontend and backend)
-- **Authentication**: JWT tokens
+- **Hosting**: Railway (backend), Netlify (frontend)
+- **Authentication**: JWT tokens + OAuth 2.0 (Google & Microsoft)
 
 ### Document Storage
 - Documents are stored in the `documents` table
@@ -31,8 +31,10 @@ Due to trademark compliance, several tables were renamed:
 - Core values are stored in `core_values` table with foreign key `vto_id` referencing `business_blueprints`
 
 ### Important URLs
-- Production: https://axp.com
-- API: https://eos-platform-production.up.railway.app/api/v1
+- Production: https://axplatform.app
+- API: https://api.axplatform.app/api/v1 (custom domain pointing to Railway)
+- Railway Backend: https://eos-platform-production.up.railway.app/api/v1
+- Client Subdomains: https://[client].axplatform.app (e.g., myboyum.axplatform.app)
 
 ### Common Commands
 - Lint: `npm run lint`
@@ -80,6 +82,142 @@ import IssuesList from '../components/issues/IssuesListClean';
 2. **Search for component usage** across the codebase before deleting anything
 3. **Test builds** after any component changes
 4. **Never assume** component naming indicates test/production status
+
+## OAuth Authentication (August 2025)
+
+### Overview
+Implemented OAuth 2.0 authentication for Google and Microsoft accounts, allowing users to sign in without passwords. This is especially important for enterprise customers like Boyum who use Microsoft 365.
+
+### Implementation Details
+
+#### Frontend Components
+- **Login/Register Pages**: Added "Continue with Google" and "Continue with Microsoft" buttons
+- **OAuth Service** (`/frontend/src/services/oauthService.js`): Handles OAuth redirects and callbacks
+- **OAuth Callback Page** (`/frontend/src/pages/OAuthCallback.jsx`): Processes OAuth success/failure
+- **Subdomain Routing**: Client-specific subdomains (e.g., myboyum.axplatform.app) redirect directly to login
+
+#### Backend Implementation
+- **Google OAuth Controller** (`/backend/src/controllers/oauthController.js`):
+  - Uses `google-auth-library` package
+  - Exchanges authorization codes for tokens
+  - Creates/links user accounts based on email
+  
+- **Microsoft OAuth Controller** (`/backend/src/controllers/microsoftOAuthController.js`):
+  - Uses `@azure/msal-node` package  
+  - Multi-tenant configuration for any Microsoft account
+  - Special handling for myboyum.com domain users
+
+#### Database Schema
+Added OAuth fields to users table (migration 049_add_oauth_fields.sql):
+```sql
+ALTER TABLE users ADD COLUMN google_id VARCHAR(255) UNIQUE;
+ALTER TABLE users ADD COLUMN microsoft_id VARCHAR(255) UNIQUE;
+ALTER TABLE users ADD COLUMN oauth_provider VARCHAR(50);
+ALTER TABLE users ADD COLUMN email_verified BOOLEAN DEFAULT false;
+```
+
+#### OAuth Flow
+1. User clicks OAuth button → Frontend requests auth URL from backend
+2. Backend generates OAuth URL with proper scopes and redirect URI
+3. User authenticates with provider → Provider redirects to callback URL
+4. Backend exchanges code for tokens and user info
+5. Creates/updates user account and generates JWT
+6. Redirects to frontend with token
+
+### Configuration
+
+#### Environment Variables Required
+```bash
+# Google OAuth
+GOOGLE_CLIENT_ID=your-client-id
+GOOGLE_CLIENT_SECRET=your-client-secret
+GOOGLE_CALLBACK_URL=https://api.axplatform.app/api/v1/auth/google/callback
+
+# Microsoft OAuth  
+MICROSOFT_CLIENT_ID=your-client-id
+MICROSOFT_CLIENT_SECRET=your-client-secret
+MICROSOFT_CALLBACK_URL=https://api.axplatform.app/api/v1/auth/microsoft/callback
+```
+
+#### Google Cloud Console Setup
+1. Create OAuth 2.0 Client ID
+2. Add authorized redirect URI: `https://api.axplatform.app/api/v1/auth/google/callback`
+3. Enable Google+ API
+
+#### Microsoft Azure Setup
+1. Register app in Azure Portal
+2. Set as multi-tenant (Accounts in any organizational directory)
+3. Add redirect URI: `https://api.axplatform.app/api/v1/auth/microsoft/callback`
+4. Create client secret
+
+### Custom Domain Configuration
+- Created `api.axplatform.app` subdomain pointing to Railway backend
+- Required because Google OAuth doesn't accept Railway URLs for production
+- DNS CNAME record: `api.axplatform.app` → Railway deployment URL
+
+### Important Implementation Notes
+
+#### ES6 Module Syntax
+Backend uses ES6 modules (`"type": "module"` in package.json):
+```javascript
+// ✅ Correct
+import express from 'express';
+
+// ❌ Wrong - will cause deployment failure
+const express = require('express');
+```
+
+#### Organization Assignment
+- OAuth users are automatically assigned to first available organization
+- myboyum.com emails are specifically assigned to Boyum organization
+- New users without orgs are redirected to registration
+
+#### Account Linking
+- Existing users can link OAuth accounts
+- Email address is used as the unique identifier
+- Multiple OAuth providers can be linked to same account
+
+### Testing OAuth Endpoints
+```bash
+# Check Google OAuth
+curl https://api.axplatform.app/api/v1/auth/google
+
+# Check Microsoft OAuth  
+curl https://api.axplatform.app/api/v1/auth/microsoft
+```
+
+### Common Issues and Solutions
+
+1. **Invalid Grant Error in Logs**
+   - Normal when testing with invalid codes
+   - Production users with valid codes won't see this
+
+2. **Redirect URI Mismatch**
+   - Ensure callback URLs match exactly in provider console
+   - Include `/api/v1` in the path
+
+3. **CORS Issues**
+   - Frontend uses proxy configuration for local development
+   - Production uses proper domain configuration
+
+## Recent Updates (August 2025)
+
+### Todo and Issue Linking Improvements
+- **Fixed**: Field name mismatch between frontend and backend for todo creation
+  - Backend expected `assignedToId` but frontend sent `assigned_to_id`
+- **Added**: Click-to-open functionality for todos (like issues already had)
+- **Removed**: Three-dots dropdown menu from todos as redundant
+- **Removed**: Complex automatic issue creation logic for overdue todos (181 lines removed)
+- **Improved**: Error messaging for duplicate linked issues (409 conflict handling)
+- **UI Changes**: 
+  - Removed "Already in Issues List" text from overdue todos
+  - Fixed todo list disappearing when creating linked issues
+  - Added explicit error message when issue already exists for a todo
+
+### UI/UX Improvements
+- **Logo Size**: Increased from h-20 to h-28 on login/register pages
+- **Branding**: Removed "Accountability & Execution Platform" tagline
+- **Subdomain Routing**: Client subdomains (e.g., myboyum.axplatform.app) now redirect directly to login
 
 ## Recent Updates (July 2025)
 
