@@ -6,7 +6,7 @@ import {
   updateStorageConfig
 } from '../controllers/documentsControllerV2.js';
 import { storageFactory } from '../services/storage/StorageFactory.js';
-import db from '../config/database.js';
+import { query } from '../config/database.js';
 
 const router = express.Router({ mergeParams: true });
 
@@ -17,7 +17,7 @@ router.get('/config', authenticate, async (req, res) => {
     const userId = req.user.id;
     
     // Check if user is admin
-    const adminCheck = await db.query(
+    const adminCheck = await query(
       'SELECT role FROM users WHERE id = $1 AND organization_id = $2',
       [userId, orgId]
     );
@@ -30,7 +30,7 @@ router.get('/config', authenticate, async (req, res) => {
     }
     
     // Get organization storage configuration
-    const result = await db.query(
+    const result = await query(
       'SELECT default_storage_provider, storage_config FROM organizations WHERE id = $1',
       [orgId]
     );
@@ -103,7 +103,7 @@ router.get('/logs', authenticate, async (req, res) => {
     const { orgId } = req.params;
     const { limit = 50 } = req.query;
     
-    const result = await db.query(
+    const result = await query(
       `SELECT * FROM cloud_storage_sync_log 
        WHERE organization_id = $1 
        ORDER BY created_at DESC 

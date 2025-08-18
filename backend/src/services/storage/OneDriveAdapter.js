@@ -8,7 +8,7 @@ import { Client } from '@microsoft/microsoft-graph-client';
 import { ConfidentialClientApplication } from '@azure/msal-node';
 import 'isomorphic-fetch';
 import stream from 'stream';
-import db from '../../config/database.js';
+import { query } from '../../config/database.js';
 
 export class OneDriveAdapter extends StorageAdapter {
   constructor(config = {}) {
@@ -704,7 +704,7 @@ export class OneDriveAdapter extends StorageAdapter {
       metadata.folderId || null
     ];
 
-    const result = await db.query(query, values);
+    const result = await query(query, values);
     return result.rows[0].id;
   }
 

@@ -6,7 +6,7 @@
 import { InternalStorageAdapter } from './InternalStorageAdapter.js';
 import { GoogleDriveAdapter } from './GoogleDriveAdapter.js';
 import { OneDriveAdapter } from './OneDriveAdapter.js';
-import db from '../../config/database.js';
+import { query } from '../../config/database.js';
 
 class StorageFactory {
   constructor() {
@@ -49,7 +49,7 @@ class StorageFactory {
         FROM organizations
         WHERE id = $1
       `;
-      const result = await db.query(query, [organizationId]);
+      const result = await query(query, [organizationId]);
 
       if (result.rows.length === 0) {
         throw new Error(`Organization ${organizationId} not found`);
@@ -160,7 +160,7 @@ class StorageFactory {
         WHERE id = $3
       `;
       
-      await db.query(query, [provider, configData, organizationId]);
+      await query(query, [provider, configData, organizationId]);
       
       // Clear cache to force reload with new config
       this.clearCache(organizationId);
@@ -259,7 +259,7 @@ class StorageFactory {
         ) VALUES ($1, $2, $3, $4, $5, NOW())
       `;
       
-      await db.query(query, [
+      await query(query, [
         organizationId,
         provider,
         'config_change',
@@ -292,7 +292,7 @@ class StorageFactory {
         GROUP BY storage_provider
       `;
       
-      const result = await db.query(query, [organizationId]);
+      const result = await query(query, [organizationId]);
       
       return {
         quota,

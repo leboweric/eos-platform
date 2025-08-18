@@ -4,7 +4,7 @@
  */
 
 import { StorageAdapter } from './StorageAdapter.js';
-import db from '../../config/database.js';
+import { query } from '../../config/database.js';
 import crypto from 'crypto';
 
 export class InternalStorageAdapter extends StorageAdapter {
@@ -16,7 +16,7 @@ export class InternalStorageAdapter extends StorageAdapter {
   async initialize() {
     // Check database connection
     try {
-      await db.query('SELECT 1');
+      await query('SELECT 1');
       return true;
     } catch (error) {
       throw this.handleError(error);
@@ -68,7 +68,7 @@ export class InternalStorageAdapter extends StorageAdapter {
         'internal'
       ];
 
-      const result = await db.query(query, values);
+      const result = await query(query, values);
       const document = result.rows[0];
 
       await this.logOperation('upload', { 
@@ -94,7 +94,7 @@ export class InternalStorageAdapter extends StorageAdapter {
   async download(externalId) {
     try {
       const query = 'SELECT file_data, file_name, mime_type FROM documents WHERE id = $1';
-      const result = await db.query(query, [externalId]);
+      const result = await query(query, [externalId]);
 
       if (result.rows.length === 0) {
         const error = new Error('File not found');
@@ -122,7 +122,7 @@ export class InternalStorageAdapter extends StorageAdapter {
   async delete(externalId) {
     try {
       const query = 'DELETE FROM documents WHERE id = $1 RETURNING file_name';
-      const result = await db.query(query, [externalId]);
+      const result = await query(query, [externalId]);
 
       if (result.rows.length === 0) {
         const error = new Error('File not found');
@@ -149,7 +149,7 @@ export class InternalStorageAdapter extends StorageAdapter {
         FROM documents 
         WHERE id = $1
       `;
-      const result = await db.query(query, [externalId]);
+      const result = await query(query, [externalId]);
 
       if (result.rows.length === 0) {
         const error = new Error('File not found');
@@ -173,7 +173,7 @@ export class InternalStorageAdapter extends StorageAdapter {
         WHERE id = $2 
         RETURNING visibility
       `;
-      const result = await db.query(query, [visibility, externalId]);
+      const result = await query(query, [visibility, externalId]);
 
       if (result.rows.length === 0) {
         const error = new Error('File not found');
@@ -199,7 +199,7 @@ export class InternalStorageAdapter extends StorageAdapter {
         VALUES ($1, $2, NOW())
         RETURNING *
       `;
-      const result = await db.query(query, [folderName, parentFolderId]);
+      const result = await query(query, [folderName, parentFolderId]);
       
       await this.logOperation('createFolder', { 
         folderId: result.rows[0].id,
@@ -223,7 +223,7 @@ export class InternalStorageAdapter extends StorageAdapter {
         ORDER BY created_at DESC
         LIMIT $2 OFFSET $3
       `;
-      const result = await db.query(query, [folderId, limit, offset]);
+      const result = await query(query, [folderId, limit, offset]);
       
       return result.rows;
     } catch (error) {
@@ -239,7 +239,7 @@ export class InternalStorageAdapter extends StorageAdapter {
         WHERE id = $2 
         RETURNING file_name, folder_id
       `;
-      const result = await db.query(query, [newFolderId, externalId]);
+      const result = await query(query, [newFolderId, externalId]);
 
       if (result.rows.length === 0) {
         const error = new Error('File not found');
@@ -336,7 +336,7 @@ export class InternalStorageAdapter extends StorageAdapter {
         WHERE organization_id = $1
       `;
       
-      const result = await db.query(query, [this.config.organizationId]);
+      const result = await query(query, [this.config.organizationId]);
       const { file_count, total_size } = result.rows[0];
       
       // Internal storage has no hard limit, but we can set soft limits
@@ -368,7 +368,7 @@ export class InternalStorageAdapter extends StorageAdapter {
       `;
       
       const searchPattern = `%${query}%`;
-      const result = await db.query(searchQuery, [
+      const result = await query(searchQuery, [
         this.config.organizationId,
         searchPattern,
         limit
@@ -403,7 +403,7 @@ export class InternalStorageAdapter extends StorageAdapter {
   async validateConfig() {
     try {
       // Validate database connection
-      await db.query('SELECT 1');
+      await query('SELECT 1');
       
       // Check if documents table exists
       const tableCheck = await db.query(`

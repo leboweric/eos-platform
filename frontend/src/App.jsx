@@ -50,6 +50,7 @@ import SmartRockAssistant from './pages/SmartRockAssistant';
 import ScorecardDebug from './pages/ScorecardDebug';
 import OAuthCallback from './pages/OAuthCallback';
 import TerminologySettingsPage from './pages/TerminologySettingsPage';
+import StorageConfigPage from './pages/StorageConfigPage';
 
 // Department Components
 import DepartmentLayout from './components/DepartmentLayout';
@@ -186,6 +187,7 @@ function App() {
           <Route path="/users" element={user ? <Layout><UsersPage /></Layout> : <Navigate to="/login" />} />
           <Route path="/consultant" element={user ? <Layout><ConsultantDashboard /></Layout> : <Navigate to="/login" />} />
           <Route path="/organization-settings" element={user ? <Layout><OrganizationSettings /></Layout> : <Navigate to="/login" />} />
+          <Route path="/organization-settings/storage" element={user && user.role === 'admin' ? <Layout><StorageConfigPage /></Layout> : <Navigate to="/dashboard" />} />
           <Route path="/user-settings" element={user ? <Layout><UserSettings /></Layout> : <Navigate to="/login" />} />
           <Route path="/terminology-settings" element={user ? <Layout><TerminologySettingsPage /></Layout> : <Navigate to="/login" />} />
           <Route path="/organizational-chart" element={user ? <Layout><OrganizationalChartPage /></Layout> : <Navigate to="/login" />} />
