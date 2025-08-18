@@ -31,6 +31,7 @@ const TerminologySettingsPage = () => {
   const [formData, setFormData] = useState({});
   const [presets, setPresets] = useState({});
   const [selectedPreset, setSelectedPreset] = useState('custom');
+  const [currentFramework, setCurrentFramework] = useState('custom');
   const [saving, setSaving] = useState(false);
   const [success, setSuccess] = useState(null);
   const [error, setError] = useState(null);
@@ -39,6 +40,7 @@ const TerminologySettingsPage = () => {
     // Initialize form with current terminology
     setFormData(terminology);
     fetchPresets();
+    detectCurrentFramework();
   }, [terminology]);
 
   const fetchPresets = async () => {
@@ -48,6 +50,37 @@ const TerminologySettingsPage = () => {
     } catch (err) {
       console.error('Failed to fetch presets:', err);
     }
+  };
+
+  const detectCurrentFramework = () => {
+    // Detect which framework is currently active based on terminology
+    if (terminology?.priorities_label === 'Rocks' && terminology?.business_blueprint_label === 'V/TO') {
+      setCurrentFramework('eos');
+      setSelectedPreset('eos');
+    } else if (terminology?.priorities_label === 'Objectives' && terminology?.business_blueprint_label === 'Strategy Document') {
+      setCurrentFramework('okrs');
+      setSelectedPreset('okrs');
+    } else if (terminology?.business_blueprint_label === 'One-Page Strategic Plan') {
+      setCurrentFramework('scaling_up');
+      setSelectedPreset('scaling_up');
+    } else if (terminology?.priorities_label?.includes('WIG')) {
+      setCurrentFramework('fourDx');
+      setSelectedPreset('fourDx');
+    } else {
+      setCurrentFramework('custom');
+      setSelectedPreset('custom');
+    }
+  };
+
+  const getFrameworkDisplayName = () => {
+    const frameworkNames = {
+      eos: 'EOS (Entrepreneurial Operating System)',
+      okrs: 'OKRs (Objectives & Key Results)',
+      scaling_up: 'Scaling Up (Rockefeller Habits)',
+      fourDx: '4 Disciplines of Execution',
+      custom: 'Custom Terminology'
+    };
+    return frameworkNames[currentFramework] || 'Custom Terminology';
   };
 
   const handleInputChange = (field, value) => {
@@ -89,6 +122,7 @@ const TerminologySettingsPage = () => {
 
     try {
       await applyPreset(selectedPreset);
+      setCurrentFramework(selectedPreset);
       setSuccess(`${presets[selectedPreset]?.name || selectedPreset} preset applied successfully!`);
       setTimeout(() => setSuccess(null), 3000);
     } catch (err) {
@@ -139,6 +173,15 @@ const TerminologySettingsPage = () => {
         <p className="text-gray-600 mt-2">
           Customize the terminology used throughout AXP to match your organization's framework
         </p>
+        
+        {/* Current Framework Display */}
+        <div className="mt-4 p-4 bg-blue-50 border border-blue-200 rounded-lg">
+          <div className="flex items-center gap-2">
+            <CheckCircle className="h-5 w-5 text-blue-600" />
+            <span className="font-semibold text-blue-900">Currently Active Framework:</span>
+            <span className="text-blue-800">{getFrameworkDisplayName()}</span>
+          </div>
+        </div>
       </div>
 
       {success && (
@@ -163,7 +206,12 @@ const TerminologySettingsPage = () => {
             Quick Presets
           </CardTitle>
           <CardDescription>
-            Choose a pre-configured terminology set for popular frameworks
+            Choose a pre-configured terminology set for popular frameworks. 
+            {currentFramework !== 'custom' && (
+              <span className="block mt-1 text-blue-600 font-medium">
+                Currently using: {getFrameworkDisplayName()}
+              </span>
+            )}
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -190,6 +238,39 @@ const TerminologySettingsPage = () => {
             >
               Apply Preset
             </Button>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Example Preview */}
+      <Card className="mb-6 bg-gradient-to-r from-blue-50 to-indigo-50 border-blue-200">
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2 text-blue-900">
+            <FileText className="h-5 w-5" />
+            Terminology Preview
+          </CardTitle>
+          <CardDescription className="text-blue-700">
+            Here's how your selected terminology appears throughout the platform:
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+            <div className="bg-white p-3 rounded-lg border border-blue-100">
+              <p className="text-xs text-gray-500 mb-1">Priorities:</p>
+              <p className="font-semibold text-blue-900">{formData.priorities_label || terminology?.priorities_label || 'Quarterly Priorities'}</p>
+            </div>
+            <div className="bg-white p-3 rounded-lg border border-blue-100">
+              <p className="text-xs text-gray-500 mb-1">Strategic Plan:</p>
+              <p className="font-semibold text-blue-900">{formData.business_blueprint_label || terminology?.business_blueprint_label || '2-Page Plan'}</p>
+            </div>
+            <div className="bg-white p-3 rounded-lg border border-blue-100">
+              <p className="text-xs text-gray-500 mb-1">Weekly Meeting:</p>
+              <p className="font-semibold text-blue-900">{formData.weekly_meeting_label || terminology?.weekly_meeting_label || 'Weekly Team Meeting'}</p>
+            </div>
+            <div className="bg-white p-3 rounded-lg border border-blue-100">
+              <p className="text-xs text-gray-500 mb-1">Org Chart:</p>
+              <p className="font-semibold text-blue-900">{formData.accountability_chart_label || terminology?.accountability_chart_label || 'Organizational Chart'}</p>
+            </div>
           </div>
         </CardContent>
       </Card>
