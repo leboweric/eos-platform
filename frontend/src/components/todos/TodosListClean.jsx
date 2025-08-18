@@ -3,22 +3,13 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { Button } from '@/components/ui/button';
 import { 
   Calendar,
-  MoreVertical,
   AlertCircle,
-  Edit,
-  Trash2,
   CheckCircle,
   ArrowUpDown,
   ArrowUp,
   ArrowDown,
   List
 } from 'lucide-react';
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu';
 import { format } from 'date-fns';
 import { todosService } from '../../services/todosService';
 import { organizationService } from '../../services/organizationService';
@@ -322,39 +313,6 @@ const TodosListClean = ({
                 </span>
               )}
               
-              {/* Actions */}
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild onClick={(e) => e.stopPropagation()}>
-                  <Button 
-                    variant="ghost" 
-                    size="sm" 
-                    className="h-7 w-7 p-0 opacity-0 group-hover:opacity-100"
-                  >
-                    <MoreVertical className="h-3.5 w-3.5 text-gray-500" />
-                  </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent align="end" className="w-48">
-                  <DropdownMenuItem 
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      onEdit(todo);
-                    }}
-                    className="cursor-pointer"
-                  >
-                    <Edit className="mr-2 h-4 w-4" />
-                    Edit
-                  </DropdownMenuItem>
-                  {onDelete && (
-                    <DropdownMenuItem 
-                      onClick={() => onDelete(todo.id)}
-                      className="cursor-pointer text-red-600 focus:text-red-600"
-                    >
-                      <Trash2 className="mr-2 h-4 w-4" />
-                      Delete
-                    </DropdownMenuItem>
-                  )}
-                </DropdownMenuContent>
-              </DropdownMenu>
             </div>
           );
         }
@@ -440,15 +398,6 @@ const TodosListClean = ({
                       </span>
                     )}
                     
-                    {/* Show message for overdue todos */}
-                    {overdue && (
-                      <>
-                        <span className="text-gray-300">•</span>
-                        <span className="text-red-600 font-medium text-sm">
-                          Already in Issues List
-                        </span>
-                      </>
-                    )}
                     
                     {/* Show done badge if completed */}
                     {todo.status === 'complete' && (
@@ -463,44 +412,6 @@ const TodosListClean = ({
                   </div>
                 </div>
                 
-                {/* Actions menu - visible on hover */}
-                <div className="opacity-0 group-hover:opacity-100 transition-opacity">
-                  <DropdownMenu>
-                    <DropdownMenuTrigger asChild onClick={(e) => e.stopPropagation()}>
-                      <Button 
-                        variant="ghost" 
-                        size="sm" 
-                        className="h-8 w-8 p-0 hover:bg-gray-100"
-                      >
-                        <MoreVertical className="h-4 w-4 text-gray-500" />
-                      </Button>
-                    </DropdownMenuTrigger>
-                    <DropdownMenuContent align="end" className="w-48">
-                      <DropdownMenuItem 
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          onEdit(todo);
-                        }}
-                        className="cursor-pointer"
-                      >
-                        <Edit className="mr-2 h-4 w-4" />
-                        Edit
-                      </DropdownMenuItem>
-                      {onDelete && (
-                        <DropdownMenuItem 
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            onDelete(todo.id);
-                          }}
-                          className="cursor-pointer text-red-600 focus:text-red-600"
-                        >
-                          <Trash2 className="mr-2 h-4 w-4" />
-                          Delete
-                        </DropdownMenuItem>
-                      )}
-                    </DropdownMenuContent>
-                  </DropdownMenu>
-                </div>
               </div>
             </div>
           </div>

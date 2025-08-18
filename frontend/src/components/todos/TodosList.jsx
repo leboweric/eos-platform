@@ -435,15 +435,6 @@ const TodosList = ({
                         </span>
                       </div>
                       
-                      {/* Overdue Status */}
-                      {isOverdue(selectedTodo) && (
-                        <div className="flex items-center gap-2 text-sm">
-                          <AlertCircle className="h-4 w-4 text-red-500" />
-                          <span className="text-red-600 font-medium">
-                            Overdue - Added to Issues List
-                          </span>
-                        </div>
-                      )}
                     </div>
                   </div>
                 </div>
