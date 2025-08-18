@@ -73,6 +73,10 @@ const TrialBanner = () => {
     sessionStorage.setItem('trialBannerDismissed', 'true');
   };
 
+  // TEMPORARILY DISABLED FOR TESTING - Comment out the entire trial banner
+  return null;
+  
+  /* Original code commented out for testing
   if (loading || dismissed || !subscription) {
     return null;
   }
@@ -81,6 +85,7 @@ const TrialBanner = () => {
   if (subscription.accountStatus === 'active' && subscription.subscriptionTier !== 'trial') {
     return null;
   }
+  */
 
   const daysRemaining = subscription.daysRemaining || subscription.trialDaysRemaining || 0;
   const isUrgent = daysRemaining <= 7 && daysRemaining > 0;

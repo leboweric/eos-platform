@@ -79,6 +79,8 @@ export const enforceTrialLimits = (feature) => {
         return next(); // No limits for paid accounts
       }
 
+      // TEMPORARILY DISABLED FOR TESTING - Skip trial expiration check
+      /*
       // Check if trial is expired
       if (req.trial && req.trial.account_status.startsWith('expired')) {
         // Allow read-only access for expired trials
@@ -93,6 +95,7 @@ export const enforceTrialLimits = (feature) => {
           accountStatus: req.trial.account_status
         });
       }
+      */
 
       // Check specific feature limits during trial
       if (feature && trialLimits[feature] !== undefined) {
