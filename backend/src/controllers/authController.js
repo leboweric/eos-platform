@@ -45,7 +45,7 @@ export const register = async (req, res) => {
       });
     }
 
-    const { email, password, firstName, lastName, organizationName } = req.body;
+    const { email, password, firstName, lastName, organizationName, legalAgreement } = req.body;
 
     // Check if user already exists
     const existingUser = await query('SELECT id FROM users WHERE email = $1', [email]);
@@ -84,13 +84,45 @@ export const register = async (req, res) => {
       );
       const organizationId = orgResult.rows[0].id;
 
-      // Create user
+      // Create user with legal agreement tracking
       const userResult = await client.query(
-        `INSERT INTO users (organization_id, email, password_hash, first_name, last_name, role, is_consultant, consultant_email) 
-         VALUES ($1, $2, $3, $4, $5, $6, $7, $8) RETURNING id, email, first_name, last_name, role, is_consultant`,
-        [organizationId, email, passwordHash, firstName, lastName, 'admin', isConsultant, isConsultant ? email : null]
+        `INSERT INTO users (
+          organization_id, email, password_hash, first_name, last_name, role, 
+          is_consultant, consultant_email,
+          terms_accepted_at, privacy_accepted_at, terms_version, privacy_version,
+          agreement_ip_address, agreement_user_agent
+        ) 
+         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14) 
+         RETURNING id, email, first_name, last_name, role, is_consultant`,
+        [
+          organizationId, email, passwordHash, firstName, lastName, 'admin', 
+          isConsultant, isConsultant ? email : null,
+          legalAgreement?.termsAccepted ? new Date() : null,
+          legalAgreement?.privacyAccepted ? new Date() : null,
+          legalAgreement?.version || '1.0',
+          legalAgreement?.version || '1.0',
+          req.ip || legalAgreement?.ipAddress,
+          req.get('user-agent') || legalAgreement?.userAgent
+        ]
       );
       const user = userResult.rows[0];
+      
+      // Log legal agreement acceptance
+      if (legalAgreement?.termsAccepted) {
+        await client.query(
+          `INSERT INTO legal_agreement_log (user_id, agreement_type, version, action, ip_address, user_agent)
+           VALUES ($1, $2, $3, $4, $5, $6)`,
+          [user.id, 'terms_of_service', legalAgreement?.version || '1.0', 'accepted', req.ip, req.get('user-agent')]
+        );
+      }
+      
+      if (legalAgreement?.privacyAccepted) {
+        await client.query(
+          `INSERT INTO legal_agreement_log (user_id, agreement_type, version, action, ip_address, user_agent)
+           VALUES ($1, $2, $3, $4, $5, $6)`,
+          [user.id, 'privacy_policy', legalAgreement?.version || '1.0', 'accepted', req.ip, req.get('user-agent')]
+        );
+      }
 
       // Create default team
       const teamResult = await client.query(

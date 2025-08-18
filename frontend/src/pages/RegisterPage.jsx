@@ -10,6 +10,7 @@ import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Badge } from '@/components/ui/badge';
+import LegalAgreement from '../components/legal/LegalAgreement';
 import { 
   Target, 
   Eye, 
@@ -44,6 +45,8 @@ const RegisterPage = () => {
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [currentTestimonial, setCurrentTestimonial] = useState(0);
+  const [legalAgreement, setLegalAgreement] = useState(null);
+  const [agreementError, setAgreementError] = useState('');
   const navigate = useNavigate();
   const { register: registerUser, isLoading, error, clearError } = useAuthStore();
 
@@ -88,11 +91,38 @@ const RegisterPage = () => {
 
   const onSubmit = async (data) => {
     clearError();
+    setAgreementError('');
+    
+    // Check if legal agreements are accepted
+    if (!legalAgreement || !legalAgreement.termsAccepted || !legalAgreement.privacyAccepted) {
+      setAgreementError('You must accept both the Terms of Service and Privacy Policy to create an account');
+      // Scroll to the legal agreement section
+      document.getElementById('legal-agreement')?.scrollIntoView({ behavior: 'smooth' });
+      return;
+    }
+    
     const { confirmPassword, ...userData } = data;
-    const result = await registerUser(userData);
+    
+    // Include legal agreement data with registration
+    const registrationData = {
+      ...userData,
+      legalAgreement: {
+        ...legalAgreement,
+        acceptedAt: new Date().toISOString(),
+        ipAddress: window.location.hostname,
+        userAgent: navigator.userAgent
+      }
+    };
+    
+    const result = await registerUser(registrationData);
     if (result.success) {
       navigate('/dashboard');
     }
+  };
+
+  const handleLegalAcceptance = (agreementData) => {
+    setLegalAgreement(agreementData);
+    setAgreementError('');
   };
 
   return (
@@ -345,25 +375,20 @@ const RegisterPage = () => {
                   )}
                 </div>
 
-                <div className="space-y-3">
-                  <div className="flex items-start space-x-2">
-                    <input
-                      type="checkbox"
-                      id="terms"
-                      required
-                      className="mt-1 rounded border-gray-300 text-primary focus:ring-primary"
-                    />
-                    <Label htmlFor="terms" className="text-xs text-gray-600">
-                      I agree to the{' '}
-                      <Link to="/terms" className="text-primary hover:underline">
-                        Terms of Service
-                      </Link>{' '}
-                      and{' '}
-                      <Link to="/privacy" className="text-primary hover:underline">
-                        Privacy Policy
-                      </Link>
-                    </Label>
-                  </div>
+                {/* Legal Agreement Section */}
+                <div id="legal-agreement" className="space-y-3">
+                  <LegalAgreement 
+                    onAccept={handleLegalAcceptance}
+                    isRequired={true}
+                  />
+                  
+                  {agreementError && (
+                    <Alert className="border-red-200 bg-red-50">
+                      <AlertDescription className="text-red-800">
+                        {agreementError}
+                      </AlertDescription>
+                    </Alert>
+                  )}
 
                   <Button
                     type="submit"
