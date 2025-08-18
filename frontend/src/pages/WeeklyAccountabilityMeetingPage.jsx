@@ -151,16 +151,90 @@ const WeeklyAccountabilityMeetingPage = () => {
   // Computed values
   const currentIssues = issueTimeline === 'short_term' ? shortTermIssues : longTermIssues;
 
-  // Meeting agenda items
-  const agendaItems = [
-    { id: 'good-news', label: 'Good News', icon: Smile, duration: 5 },
-    { id: 'scorecard', label: 'Scorecard', icon: BarChart, duration: 5 },
-    { id: 'priorities', label: 'Priorities', icon: Target, duration: 5 },
-    { id: 'headlines', label: 'Headlines', icon: Newspaper, duration: 5 },
-    { id: 'todo-list', label: 'To-do List', icon: ListTodo, duration: 5 },
-    { id: 'issues', label: 'Issues', icon: AlertTriangle, duration: 60 },
-    { id: 'conclude', label: 'Conclude', icon: CheckSquare, duration: 5 }
-  ];
+  // Get framework-specific agenda items
+  const getAgendaItems = () => {
+    // Determine framework based on terminology
+    const isEOS = labels.priorities_label === 'Rocks';
+    const isOKR = labels.priorities_label === 'Objectives';
+    const isScalingUp = labels.business_blueprint_label === 'One-Page Strategic Plan';
+    const is4DX = labels.priorities_label?.includes('WIG');
+    
+    if (isEOS) {
+      // EOS Level 10 Meeting
+      return [
+        { id: 'good-news', label: 'Segue (Good News)', icon: Smile, duration: 5 },
+        { id: 'scorecard', label: 'Scorecard Review', icon: BarChart, duration: 5 },
+        { id: 'priorities', label: 'Rock Review', icon: Target, duration: 5 },
+        { id: 'headlines', label: 'Customer/Employee Headlines', icon: Newspaper, duration: 5 },
+        { id: 'todo-list', label: 'To-Do List', icon: ListTodo, duration: 5 },
+        { id: 'issues', label: 'IDS (Identify, Discuss, Solve)', icon: AlertTriangle, duration: 60 },
+        { id: 'conclude', label: 'Conclude', icon: CheckSquare, duration: 5 }
+      ];
+    } else if (isOKR) {
+      // OKRs Weekly Check-in
+      return [
+        { id: 'good-news', label: 'Wins & Celebrations', icon: Smile, duration: 5 },
+        { id: 'scorecard', label: 'Key Results Review', icon: BarChart, duration: 10 },
+        { id: 'priorities', label: 'Objective Progress', icon: Target, duration: 10 },
+        { id: 'issues', label: 'Blockers & Dependencies', icon: AlertTriangle, duration: 25 },
+        { id: 'todo-list', label: 'Action Items', icon: ListTodo, duration: 5 },
+        { id: 'conclude', label: 'Wrap-up', icon: CheckSquare, duration: 5 }
+      ];
+    } else if (isScalingUp) {
+      // Scaling Up Weekly Meeting
+      return [
+        { id: 'good-news', label: 'Good News', icon: Smile, duration: 5 },
+        { id: 'scorecard', label: 'KPI Dashboard Review', icon: BarChart, duration: 10 },
+        { id: 'priorities', label: 'Priorities Update', icon: Target, duration: 10 },
+        { id: 'headlines', label: 'Customer/Employee Data', icon: Newspaper, duration: 5 },
+        { id: 'todo-list', label: 'Weekly Actions', icon: ListTodo, duration: 5 },
+        { id: 'issues', label: 'Issues Processing', icon: AlertTriangle, duration: 45 },
+        { id: 'conclude', label: 'Cascading Messages', icon: CheckSquare, duration: 10 }
+      ];
+    } else if (is4DX) {
+      // 4DX WIG Session
+      return [
+        { id: 'scorecard', label: 'Review Scoreboard', icon: BarChart, duration: 5 },
+        { id: 'todo-list', label: 'Report on Commitments', icon: ListTodo, duration: 10 },
+        { id: 'issues', label: 'Clear the Path (Obstacles)', icon: AlertTriangle, duration: 15 },
+        { id: 'priorities', label: 'Make New Commitments', icon: Target, duration: 10 },
+        { id: 'good-news', label: 'Celebrate Wins', icon: Smile, duration: 5 }
+      ];
+    } else {
+      // Default/Generic agenda
+      return [
+        { id: 'good-news', label: 'Good News', icon: Smile, duration: 5 },
+        { id: 'scorecard', label: labels.scorecard_label || 'Scorecard', icon: BarChart, duration: 5 },
+        { id: 'priorities', label: labels.priorities_label || 'Priorities', icon: Target, duration: 5 },
+        { id: 'headlines', label: 'Headlines', icon: Newspaper, duration: 5 },
+        { id: 'todo-list', label: labels.todos_label || 'To-Do List', icon: ListTodo, duration: 5 },
+        { id: 'issues', label: labels.issues_label || 'Issues', icon: AlertTriangle, duration: 60 },
+        { id: 'conclude', label: 'Conclude', icon: CheckSquare, duration: 5 }
+      ];
+    }
+  };
+  
+  const agendaItems = getAgendaItems();
+  
+  // Get framework-specific meeting description
+  const getMeetingDescription = () => {
+    const isEOS = labels.priorities_label === 'Rocks';
+    const isOKR = labels.priorities_label === 'Objectives';
+    const isScalingUp = labels.business_blueprint_label === 'One-Page Strategic Plan';
+    const is4DX = labels.priorities_label?.includes('WIG');
+    
+    if (isEOS) {
+      return '90 minutes - Solve issues and keep your Rocks on track';
+    } else if (isOKR) {
+      return '60 minutes - Review key results and remove blockers';
+    } else if (isScalingUp) {
+      return '60-90 minutes - Review KPIs and process issues';
+    } else if (is4DX) {
+      return '30-45 minutes - Focus on your Wildly Important Goals';
+    } else {
+      return `90 minutes - Solve the ${labels.issues_label?.toLowerCase() || 'issues'} that will prevent your team from completing your ${labels.priorities_label?.toLowerCase() || 'priorities'}`;
+    }
+  };
 
   useEffect(() => {
     loadInitialData();
@@ -2155,7 +2229,7 @@ const WeeklyAccountabilityMeetingPage = () => {
           <div className="flex items-center justify-between mb-6">
             <div>
               <h1 className="text-3xl font-bold text-gray-900">{labels.weekly_meeting_label || 'Weekly Accountability Meeting'}</h1>
-              <p className="text-gray-600 mt-2">90 minutes - Solve the {labels.issues_label.toLowerCase()} that will prevent your team from completing your {labels.priorities_label}</p>
+              <p className="text-gray-600 mt-2">{getMeetingDescription()}</p>
             </div>
             {meetingStarted && (
               <div className="flex items-center gap-4">

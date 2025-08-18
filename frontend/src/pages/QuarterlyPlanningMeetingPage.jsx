@@ -94,17 +94,73 @@ const QuarterlyPlanningMeetingPage = () => {
     accent: '#60A5FA'
   });
 
-  const agendaItems = [
-    { id: 'objectives', label: 'Objectives', duration: null, icon: Target, description: 'Review meeting goals' },
-    { id: 'check-in', label: 'Check In', duration: 15, icon: CheckSquare, description: 'Team connection' },
-    { id: 'review-prior', label: 'Review Prior Quarter', duration: 30, icon: Calendar, description: 'Check progress' },
-    { id: '2-page-plan', label: labels?.business_blueprint_label || '2-Page Plan', duration: 60, icon: ClipboardList, description: 'Review strategic plan' },
-    { id: 'learning', label: 'Learning', duration: 60, icon: MessageSquare, description: 'Share insights & learnings' },
-    { id: 'quarterly-priorities', label: 'Quarterly Priorities', duration: 120, icon: ListChecks, description: 'Set new priorities' },
-    { id: 'issues', label: 'Issues', duration: 180, icon: AlertTriangle, description: 'Review and resolve issues' },
-    { id: 'next-steps', label: 'Next Steps', duration: 7, icon: ClipboardList, description: 'Action items' },
-    { id: 'conclude', label: 'Conclude', duration: 8, icon: CheckSquare, description: 'Wrap up & rate' }
-  ];
+  // Get framework-specific quarterly planning agenda
+  const getQuarterlyAgendaItems = () => {
+    const isEOS = labels?.priorities_label === 'Rocks';
+    const isOKR = labels?.priorities_label === 'Objectives';
+    const isScalingUp = labels?.business_blueprint_label === 'One-Page Strategic Plan';
+    const is4DX = labels?.priorities_label?.includes('WIG');
+    
+    if (isEOS) {
+      // EOS Quarterly Pulsing Meeting
+      return [
+        { id: 'check-in', label: 'Segue', duration: 5, icon: CheckSquare, description: 'Good news & expectations' },
+        { id: 'review-prior', label: 'Previous Quarter Review', duration: 45, icon: Calendar, description: 'Review V/TO, financials & Rocks' },
+        { id: '2-page-plan', label: 'V/TO Review', duration: 30, icon: ClipboardList, description: 'Review and update V/TO' },
+        { id: 'learning', label: 'Customer & Employee Headlines', duration: 30, icon: MessageSquare, description: 'Key feedback & insights' },
+        { id: 'quarterly-priorities', label: 'Establish Next 90-Day Rocks', duration: 120, icon: ListChecks, description: 'Set company and individual Rocks' },
+        { id: 'issues', label: 'IDS', duration: 180, icon: AlertTriangle, description: 'Identify, Discuss, Solve key issues' },
+        { id: 'next-steps', label: 'Next Steps', duration: 10, icon: ClipboardList, description: 'Who, what, when' },
+        { id: 'conclude', label: 'Conclude', duration: 10, icon: CheckSquare, description: 'Rate meeting & feedback' }
+      ];
+    } else if (isOKR) {
+      // OKRs Quarterly Planning Session
+      return [
+        { id: 'check-in', label: 'Opening', duration: 10, icon: CheckSquare, description: 'Align on outcomes' },
+        { id: 'review-prior', label: 'Previous OKRs Review', duration: 60, icon: Calendar, description: 'Assess key results achievement' },
+        { id: 'learning', label: 'Learnings & Insights', duration: 45, icon: MessageSquare, description: 'What worked, what didn\'t' },
+        { id: 'quarterly-priorities', label: 'Set New OKRs', duration: 120, icon: ListChecks, description: 'Define objectives & key results' },
+        { id: 'issues', label: 'Dependencies & Risks', duration: 60, icon: AlertTriangle, description: 'Identify blockers & dependencies' },
+        { id: 'conclude', label: 'Commitment & Close', duration: 15, icon: CheckSquare, description: 'Confirm OKRs & next steps' }
+      ];
+    } else if (isScalingUp) {
+      // Scaling Up Quarterly Planning
+      return [
+        { id: 'objectives', label: 'Start on Time', duration: 5, icon: Target, description: 'Set meeting tone' },
+        { id: 'check-in', label: 'Good News', duration: 15, icon: CheckSquare, description: 'Personal & professional wins' },
+        { id: 'review-prior', label: 'Quarterly Theme Review', duration: 45, icon: Calendar, description: 'Review theme progress & KPIs' },
+        { id: '2-page-plan', label: 'OPSP Review', duration: 60, icon: ClipboardList, description: 'One-Page Strategic Plan update' },
+        { id: 'learning', label: 'Customer & Market Data', duration: 60, icon: MessageSquare, description: 'Market insights & feedback' },
+        { id: 'quarterly-priorities', label: 'Quarterly Priorities', duration: 90, icon: ListChecks, description: 'Top 3-5 priorities' },
+        { id: 'issues', label: 'Issues List', duration: 120, icon: AlertTriangle, description: 'Process top issues' },
+        { id: 'conclude', label: 'Meeting Conclusion', duration: 15, icon: CheckSquare, description: 'Actions & cascading messages' }
+      ];
+    } else if (is4DX) {
+      // 4DX Quarterly WIG Planning
+      return [
+        { id: 'review-prior', label: 'Scoreboard Review', duration: 30, icon: Calendar, description: 'Review WIG achievement' },
+        { id: 'learning', label: 'Lessons Learned', duration: 30, icon: MessageSquare, description: 'What moved the needle' },
+        { id: 'quarterly-priorities', label: 'Set New WIGs', duration: 90, icon: ListChecks, description: 'Define Wildly Important Goals' },
+        { id: 'issues', label: 'Clear the Path', duration: 60, icon: AlertTriangle, description: 'Remove obstacles' },
+        { id: 'conclude', label: 'Commitment Session', duration: 30, icon: CheckSquare, description: 'Lock in WIGs & lead measures' }
+      ];
+    } else {
+      // Default agenda
+      return [
+        { id: 'objectives', label: 'Objectives', duration: null, icon: Target, description: 'Review meeting goals' },
+        { id: 'check-in', label: 'Check In', duration: 15, icon: CheckSquare, description: 'Team connection' },
+        { id: 'review-prior', label: 'Review Prior Quarter', duration: 30, icon: Calendar, description: 'Check progress' },
+        { id: '2-page-plan', label: labels?.business_blueprint_label || '2-Page Plan', duration: 60, icon: ClipboardList, description: 'Review strategic plan' },
+        { id: 'learning', label: 'Learning', duration: 60, icon: MessageSquare, description: 'Share insights & learnings' },
+        { id: 'quarterly-priorities', label: labels?.priorities_label || 'Quarterly Priorities', duration: 120, icon: ListChecks, description: 'Set new priorities' },
+        { id: 'issues', label: labels?.issues_label || 'Issues', duration: 180, icon: AlertTriangle, description: 'Review and resolve issues' },
+        { id: 'next-steps', label: 'Next Steps', duration: 7, icon: ClipboardList, description: 'Action items' },
+        { id: 'conclude', label: 'Conclude', duration: 8, icon: CheckSquare, description: 'Wrap up & rate' }
+      ];
+    }
+  };
+  
+  const agendaItems = getQuarterlyAgendaItems();
 
   // Fetch organization theme
   useEffect(() => {
