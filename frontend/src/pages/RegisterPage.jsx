@@ -110,12 +110,17 @@ const RegisterPage = () => {
         <div className="relative z-10 flex flex-col justify-between p-12 w-full">
           {/* Logo and Tagline */}
           <div>
-            <Link to="/" className="inline-flex items-center mb-8">
-              <img 
-                src="/AXP_logo_upper_left_transparent.png?v=2" 
-                alt="AXP" 
-                className="h-12 w-auto brightness-0 invert"
-              />
+            <Link to="/" className="inline-block group mb-8">
+              <div className="bg-white/10 backdrop-blur-sm p-4 rounded-xl inline-block transition-all duration-300 group-hover:bg-white/20 group-hover:scale-105">
+                <img 
+                  src="/AXP_logo_upper_left_transparent.png?v=2" 
+                  alt="AXP" 
+                  className="h-12 w-auto brightness-0 invert"
+                />
+              </div>
+              <div className="mt-2 text-white/80 text-sm font-medium">
+                Accountability & Execution Platform
+              </div>
             </Link>
             <h1 className="text-4xl font-bold mb-4">
               Start Your 30-Day Free Trial
