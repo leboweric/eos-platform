@@ -108,7 +108,7 @@ const LandingPageNew = () => {
               <img 
                 src="/AXP_logo_upper_left_transparent.png?v=2" 
                 alt="AXP" 
-                className="h-12 w-auto"
+                className="h-16 w-auto"
               />
               <Badge variant="secondary" className="ml-2">Platform</Badge>
             </div>
@@ -388,7 +388,7 @@ const LandingPageNew = () => {
                       <img 
                         src="/AXP_logo_upper_left_transparent.png?v=2" 
                         alt="AXP" 
-                        className="h-8 w-auto"
+                        className="h-12 w-auto"
                       />
                     </div>
                   </th>
@@ -799,7 +799,7 @@ const LandingPageNew = () => {
                 <img 
                   src="/AXP_logo_upper_left_transparent.png?v=2" 
                   alt="AXP" 
-                  className="h-10 w-auto brightness-0 invert"
+                  className="h-14 w-auto brightness-0 invert"
                 />
               </div>
               <p className="text-sm">
