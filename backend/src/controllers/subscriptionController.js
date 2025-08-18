@@ -90,14 +90,18 @@ const startTrial = async (req, res) => {
   }
 };
 
-// Get subscription status
+// Get subscription status (works with new trial system)
 const getSubscriptionStatus = async (req, res) => {
   try {
     const organizationId = req.user.organization_id;
     
     const result = await query(
-      `SELECT *, 
-       CASE 
+      `SELECT 
+        s.*,
+        o.trial_started_at,
+        o.trial_ends_at,
+        o.subscription_tier,
+        CASE 
          WHEN status = 'trialing' THEN GREATEST(0, CEIL(EXTRACT(EPOCH FROM (trial_end_date - NOW())) / 86400))
          ELSE 0 
        END as trial_days_remaining,
@@ -106,8 +110,9 @@ const getSubscriptionStatus = async (req, res) => {
          ELSE false
        END as is_trial_expired,
        user_count * price_per_user as monthly_total
-       FROM subscriptions 
-       WHERE organization_id = $1`,
+       FROM subscriptions s
+       LEFT JOIN organizations o ON o.id = s.organization_id
+       WHERE s.organization_id = $1`,
       [organizationId]
     );
 

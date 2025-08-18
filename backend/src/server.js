@@ -39,6 +39,7 @@ import terminologyRoutes from './routes/terminology.js';
 // Import middleware
 import { errorHandler } from './middleware/errorHandler.js';
 import { notFound } from './middleware/notFound.js';
+import { checkTrialStatus, checkTrialReminders } from './middleware/trialCheck.js';
 
 // Import jobs
 import { initializeSubscriptionJobs } from './jobs/subscriptionJobs.js';
@@ -154,6 +155,9 @@ app.get('/health', (req, res) => {
     uptime: process.uptime(),
   });
 });
+
+// Add trial checking middleware for all authenticated routes
+app.use('/api/v1/*', checkTrialStatus, checkTrialReminders);
 
 // API Routes with specific rate limiters
 app.use('/api/v1/auth', authLimiter, authRoutes);
