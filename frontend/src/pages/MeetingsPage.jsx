@@ -4,6 +4,7 @@ import { useAuthStore } from '../stores/authStore';
 import { organizationService } from '../services/organizationService';
 import { getOrgTheme, saveOrgTheme } from '../utils/themeUtils';
 import { useDepartment } from '../contexts/DepartmentContext';
+import { useTerminology } from '../contexts/TerminologyContext';
 import useMeeting from '../hooks/useMeeting';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -31,6 +32,7 @@ const MeetingsPage = () => {
   const navigate = useNavigate();
   const { user } = useAuthStore();
   const { selectedDepartment } = useDepartment();
+  const { labels } = useTerminology();
   const { joinMeeting, activeMeetings } = useMeeting();
   const [teams, setTeams] = useState([]);
   const [selectedTeamId, setSelectedTeamId] = useState(null);
@@ -46,8 +48,8 @@ const MeetingsPage = () => {
   const meetings = [
     {
       id: 'weekly-accountability',
-      title: 'Weekly Accountability Meeting',
-      description: 'Review scorecard, priorities, and solve issues as a team',
+      title: labels.weekly_meeting_label || 'Weekly Accountability Meeting',
+      description: `Review ${labels.scorecard_label?.toLowerCase() || 'scorecard'}, ${labels.priorities_label?.toLowerCase() || 'priorities'}, and solve ${labels.issues_label?.toLowerCase() || 'issues'} as a team`,
       duration: '90 minutes',
       frequency: 'Weekly',
       icon: Users,
@@ -62,8 +64,8 @@ const MeetingsPage = () => {
     },
     {
       id: 'quarterly-planning',
-      title: 'Quarterly Planning Meeting',
-      description: 'Review past performance and set priorities for the upcoming quarter',
+      title: labels.quarterly_meeting_label || 'Quarterly Planning Meeting',
+      description: `Review past performance and set ${labels.priorities_label?.toLowerCase() || 'priorities'} for the upcoming quarter`,
       duration: '2.5 hours',
       frequency: 'Quarterly',
       icon: Target,
@@ -398,7 +400,7 @@ const MeetingsPage = () => {
                 <div className="flex items-center gap-3">
                   <Users className="h-5 w-5 text-blue-600" />
                   <div>
-                    <h4 className="font-medium">Weekly Accountability Meeting</h4>
+                    <h4 className="font-medium">{labels.weekly_meeting_label || 'Weekly Accountability Meeting'}</h4>
                     <p className="text-sm text-gray-600">90 minute team sync</p>
                   </div>
                 </div>
@@ -415,7 +417,7 @@ const MeetingsPage = () => {
                 <div className="flex items-center gap-3">
                   <Target className="h-5 w-5 text-green-600" />
                   <div>
-                    <h4 className="font-medium">Quarterly Planning Meeting</h4>
+                    <h4 className="font-medium">{labels.quarterly_meeting_label || 'Quarterly Planning Meeting'}</h4>
                     <p className="text-sm text-gray-600">Plan the upcoming quarter</p>
                   </div>
                 </div>

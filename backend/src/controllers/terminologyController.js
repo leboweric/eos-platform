@@ -160,10 +160,12 @@ const getTerminologyPresets = async (req, res) => {
         todos_label: 'To-Dos',
         todo_singular: 'To-Do',
         weekly_meeting_label: 'Level 10 Meeting',
-        quarterly_meeting_label: 'Quarterly Planning Meeting',
+        quarterly_meeting_label: 'Quarterly Pulsing Meeting',
         long_term_vision_label: '3-Year Picture',
         annual_goals_label: '1-Year Plan',
         business_blueprint_label: 'V/TO',
+        accountability_chart_label: 'Accountability Chart',
+        milestones_label: 'Milestones',
         problem_solving_process: 'IDS (Identify, Discuss, Solve)'
       },
       okrs: {
@@ -180,6 +182,8 @@ const getTerminologyPresets = async (req, res) => {
         long_term_vision_label: 'Strategic Vision',
         annual_goals_label: 'Annual OKRs',
         business_blueprint_label: 'Strategy Document',
+        accountability_chart_label: 'Organizational Chart',
+        milestones_label: 'Key Results',
         problem_solving_process: 'Blocker Resolution'
       },
       scaling_up: {
@@ -196,6 +200,8 @@ const getTerminologyPresets = async (req, res) => {
         long_term_vision_label: 'BHAG (10-25 Years)',
         annual_goals_label: 'Annual Priorities',
         business_blueprint_label: 'One-Page Strategic Plan',
+        accountability_chart_label: 'Functional Accountability Chart',
+        milestones_label: 'Milestones',
         problem_solving_process: 'Issue Processing'
       },
       fourDx: {
@@ -212,6 +218,8 @@ const getTerminologyPresets = async (req, res) => {
         long_term_vision_label: 'Strategic Goals',
         annual_goals_label: 'Annual WIGs',
         business_blueprint_label: 'Execution Plan',
+        accountability_chart_label: 'Accountability Chart',
+        milestones_label: 'Lead Measures',
         problem_solving_process: 'Obstacle Clearing'
       },
       custom: {
@@ -256,10 +264,12 @@ const applyTerminologyPreset = async (req, res) => {
         todos_label: 'To-Dos',
         todo_singular: 'To-Do',
         weekly_meeting_label: 'Level 10 Meeting',
-        quarterly_meeting_label: 'Quarterly Planning Meeting',
+        quarterly_meeting_label: 'Quarterly Pulsing Meeting',
         long_term_vision_label: '3-Year Picture',
         annual_goals_label: '1-Year Plan',
         business_blueprint_label: 'V/TO',
+        accountability_chart_label: 'Accountability Chart',
+        milestones_label: 'Milestones',
         problem_solving_process: 'IDS (Identify, Discuss, Solve)'
       },
       okrs: {
@@ -275,6 +285,8 @@ const applyTerminologyPreset = async (req, res) => {
         long_term_vision_label: 'Strategic Vision',
         annual_goals_label: 'Annual OKRs',
         business_blueprint_label: 'Strategy Document',
+        accountability_chart_label: 'Organizational Chart',
+        milestones_label: 'Key Results',
         problem_solving_process: 'Blocker Resolution'
       },
       scaling_up: {
@@ -290,6 +302,8 @@ const applyTerminologyPreset = async (req, res) => {
         long_term_vision_label: 'BHAG (10-25 Years)',
         annual_goals_label: 'Annual Priorities',
         business_blueprint_label: 'One-Page Strategic Plan',
+        accountability_chart_label: 'Functional Accountability Chart',
+        milestones_label: 'Milestones',
         problem_solving_process: 'Issue Processing'
       },
       fourDx: {
@@ -305,6 +319,8 @@ const applyTerminologyPreset = async (req, res) => {
         long_term_vision_label: 'Strategic Goals',
         annual_goals_label: 'Annual WIGs',
         business_blueprint_label: 'Execution Plan',
+        accountability_chart_label: 'Accountability Chart',
+        milestones_label: 'Lead Measures',
         problem_solving_process: 'Obstacle Clearing'
       },
       custom: {
