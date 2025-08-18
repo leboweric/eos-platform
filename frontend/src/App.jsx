@@ -30,6 +30,7 @@ import TodosPage from './pages/TodosPage';
 import IssuesPage from './pages/IssuesPageClean';
 import IssuesPageOriginal from './pages/IssuesPageOriginal';
 import LandingPage from './pages/LandingPage';
+import LandingPageNew from './pages/LandingPageNew';
 import DepartmentsPage from './pages/DepartmentsPage';
 import AccountabilityChart from './pages/AccountabilityChart';
 import BillingPage from './pages/BillingPage';
@@ -91,6 +92,7 @@ function App() {
           <Routes>
           {/* Public routes */}
           <Route path="/" element={!user ? <LandingPage /> : <Navigate to="/dashboard" />} />
+          <Route path="/new" element={<LandingPageNew />} />
           <Route path="/login" element={!user ? <LoginPage /> : <Navigate to="/dashboard" />} />
           <Route path="/register" element={!user ? <RegisterPage /> : <Navigate to="/dashboard" />} />
           <Route path="/consultant-register" element={!user ? <ConsultantRegisterPage /> : <Navigate to="/dashboard" />} />
