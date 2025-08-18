@@ -54,33 +54,40 @@ const LoginPage = () => {
   return (
     <div className="min-h-screen flex">
       {/* Left Panel - Branding & Benefits */}
-      <div className="hidden lg:flex lg:w-1/2 bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 p-12 flex-col justify-between relative overflow-hidden">
-        {/* Background Pattern */}
-        <div className="absolute inset-0 opacity-10">
-          <div className="absolute -top-24 -left-24 w-96 h-96 bg-blue-500 rounded-full blur-3xl"></div>
-          <div className="absolute -bottom-24 -right-24 w-96 h-96 bg-indigo-500 rounded-full blur-3xl"></div>
+      <div className="hidden lg:flex lg:w-1/2 bg-gradient-to-br from-blue-600 to-indigo-700 p-12 flex-col justify-between relative overflow-hidden">
+        {/* Subtle Background Pattern */}
+        <div className="absolute inset-0">
+          <div className="absolute top-0 left-0 w-full h-full opacity-5">
+            <div className="absolute top-20 right-20 w-64 h-64 bg-white rounded-full filter blur-3xl"></div>
+            <div className="absolute bottom-20 left-20 w-96 h-96 bg-white rounded-full filter blur-3xl"></div>
+          </div>
         </div>
         
         {/* Content */}
         <div className="relative z-10">
-          {/* Logo */}
+          {/* Logo - Enhanced with animation */}
           <div className="mb-12">
-            <div className="bg-white p-3 rounded-lg inline-block">
-              <img 
-                src="/AXP_logo_upper_left.png" 
-                alt="AXP" 
-                className="h-12 w-auto"
-              />
-            </div>
+            <Link to="/" className="inline-block group">
+              <div className="bg-white/10 backdrop-blur-sm p-4 rounded-xl inline-block transition-all duration-300 group-hover:bg-white/20 group-hover:scale-105">
+                <img 
+                  src="/AXP_logo_upper_left_transparent.png?v=2" 
+                  alt="AXP" 
+                  className="h-12 w-auto brightness-0 invert"
+                />
+              </div>
+              <div className="mt-2 text-white/80 text-sm font-medium">
+                Accountability & Execution Platform
+              </div>
+            </Link>
           </div>
           
           {/* Main Message */}
           <div className="space-y-6">
             <h1 className="text-4xl lg:text-5xl font-bold text-white leading-tight">
-              Transform Your Business with the
-              <span className="text-blue-400 block mt-2">Accountability and Execution Platform (AXP)</span>
+              Welcome Back to
+              <span className="text-yellow-300 block mt-2">Your Command Center</span>
             </h1>
-            <p className="text-xl text-gray-300 leading-relaxed">
+            <p className="text-xl text-blue-100 leading-relaxed">
               Join thousands of organizations achieving breakthrough results through structured execution and accountability.
             </p>
           </div>
@@ -88,32 +95,32 @@ const LoginPage = () => {
           {/* Benefits */}
           <div className="mt-12 space-y-4">
             <div className="flex items-start space-x-3">
-              <div className="flex-shrink-0 w-6 h-6 rounded-full bg-blue-500/20 flex items-center justify-center mt-0.5">
-                <CheckCircle className="w-4 h-4 text-blue-400" />
+              <div className="flex-shrink-0 w-6 h-6 rounded-full bg-white/20 flex items-center justify-center mt-0.5">
+                <CheckCircle className="w-4 h-4 text-white" />
               </div>
               <div>
                 <h3 className="text-white font-semibold">Strategic Alignment</h3>
-                <p className="text-gray-400 text-sm mt-1">Get everyone rowing in the same direction with clear priorities</p>
+                <p className="text-blue-100 text-sm mt-1">Get everyone rowing in the same direction with clear priorities</p>
               </div>
             </div>
             
             <div className="flex items-start space-x-3">
-              <div className="flex-shrink-0 w-6 h-6 rounded-full bg-blue-500/20 flex items-center justify-center mt-0.5">
-                <CheckCircle className="w-4 h-4 text-blue-400" />
+              <div className="flex-shrink-0 w-6 h-6 rounded-full bg-white/20 flex items-center justify-center mt-0.5">
+                <CheckCircle className="w-4 h-4 text-white" />
               </div>
               <div>
                 <h3 className="text-white font-semibold">Measurable Results</h3>
-                <p className="text-gray-400 text-sm mt-1">Track progress with scorecards and data-driven insights</p>
+                <p className="text-blue-100 text-sm mt-1">Track progress with scorecards and data-driven insights</p>
               </div>
             </div>
             
             <div className="flex items-start space-x-3">
-              <div className="flex-shrink-0 w-6 h-6 rounded-full bg-blue-500/20 flex items-center justify-center mt-0.5">
-                <CheckCircle className="w-4 h-4 text-blue-400" />
+              <div className="flex-shrink-0 w-6 h-6 rounded-full bg-white/20 flex items-center justify-center mt-0.5">
+                <CheckCircle className="w-4 h-4 text-white" />
               </div>
               <div>
                 <h3 className="text-white font-semibold">Team Accountability</h3>
-                <p className="text-gray-400 text-sm mt-1">Build a culture of ownership and execution excellence</p>
+                <p className="text-blue-100 text-sm mt-1">Build a culture of ownership and execution excellence</p>
               </div>
             </div>
           </div>
@@ -126,11 +133,13 @@ const LoginPage = () => {
         <div className="w-full max-w-md">
           {/* Mobile Logo (shown only on small screens) */}
           <div className="lg:hidden text-center mb-8">
-            <img 
-              src="/AXP_logo_upper_left.png" 
-              alt="AXP" 
-              className="h-14 w-auto mx-auto"
-            />
+            <Link to="/" className="inline-block">
+              <img 
+                src="/AXP_logo_upper_left_transparent.png?v=2" 
+                alt="AXP" 
+                className="h-16 w-auto mx-auto"
+              />
+            </Link>
           </div>
 
           {/* Form Container */}
