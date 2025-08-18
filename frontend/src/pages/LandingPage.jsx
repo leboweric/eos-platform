@@ -74,9 +74,9 @@ const LandingPage = () => {
         <div className="container mx-auto px-4 py-4 flex items-center justify-between">
           <div className="flex items-center">
             <img 
-              src="/AXP_logo_upper_left.png" 
+              src="/AXP_logo_upper_left_transparent.png" 
               alt="AXP" 
-              className="h-14 w-auto"
+              className="h-20 w-auto"
             />
           </div>
           <div className="flex items-center space-x-4">
