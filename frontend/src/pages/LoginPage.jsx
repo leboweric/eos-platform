@@ -68,13 +68,11 @@ const LoginPage = () => {
           {/* Logo - Enhanced with animation */}
           <div className="mb-12">
             <Link to="/" className="inline-block group">
-              <div className="bg-white/70 backdrop-blur-sm p-4 rounded-xl inline-block transition-all duration-300 group-hover:bg-white/90 group-hover:scale-105 shadow-sm">
-                <img 
-                  src="/AXP_logo_upper_left_transparent.png?v=2" 
-                  alt="AXP" 
-                  className="h-12 w-auto"
-                />
-              </div>
+              <img 
+                src="/AXP_logo_upper_left_transparent.png?v=2" 
+                alt="AXP" 
+                className="h-20 w-auto transition-all duration-300 group-hover:scale-105"
+              />
               <div className="mt-2 text-slate-700 text-sm font-medium">
                 Accountability & Execution Platform
               </div>
@@ -137,7 +135,7 @@ const LoginPage = () => {
               <img 
                 src="/AXP_logo_upper_left_transparent.png?v=2" 
                 alt="AXP" 
-                className="h-16 w-auto mx-auto"
+                className="h-24 w-auto mx-auto"
               />
             </Link>
           </div>
