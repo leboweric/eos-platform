@@ -1,11 +1,11 @@
 import express from 'express';
 import terminologyController from '../controllers/terminologyController.js';
-import authMiddleware from '../middleware/auth.js';
+import { authenticate } from '../middleware/auth.js';
 
 const router = express.Router();
 
 // All routes require authentication
-router.use(authMiddleware);
+router.use(authenticate);
 
 // Get terminology presets (templates)
 router.get('/presets', terminologyController.getTerminologyPresets);
