@@ -805,8 +805,8 @@ const WeeklyAccountabilityMeetingPage = () => {
         title: `Issue from To-Do: ${todo.title}`,
         description: `Related to to-do: ${todo.title}\n\n${todo.description || ''}`,
         ownerId: todo.assigned_to_id || todo.assignee_id || user?.id,
-        teamId: effectiveTeamId
-        // Don't include related_todo_id to allow multiple issues from same todo
+        teamId: effectiveTeamId,
+        related_todo_id: todo.id // Link back to the todo
       });
       
       setSuccess('Issue created successfully from to-do');
