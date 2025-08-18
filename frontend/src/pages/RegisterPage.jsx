@@ -22,7 +22,6 @@ import {
   DollarSign,
   Shield,
   Clock,
-  Star,
   TrendingUp,
   Building2,
   Sparkles,
@@ -44,7 +43,6 @@ const registerSchema = z.object({
 const RegisterPage = () => {
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
-  const [currentTestimonial, setCurrentTestimonial] = useState(0);
   const [legalAgreement, setLegalAgreement] = useState(null);
   const [agreementError, setAgreementError] = useState('');
   const navigate = useNavigate();
@@ -61,33 +59,6 @@ const RegisterPage = () => {
 
   const emailValue = watch('email', '');
 
-  const testimonials = [
-    {
-      quote: "We saved $10,000 in our first year by switching from Ninety.io",
-      author: "Sarah Chen",
-      role: "COO, TechScale Inc",
-      rating: 5
-    },
-    {
-      quote: "Finally, software that adapts to how WE work, not the other way around",
-      author: "Michael Rodriguez",
-      role: "CEO, Growth Partners",
-      rating: 5
-    },
-    {
-      quote: "Setup took 10 minutes. Seriously. Our team was using it the same day",
-      author: "Jessica Park",
-      role: "VP Operations, Innovate Co",
-      rating: 5
-    }
-  ];
-
-  useEffect(() => {
-    const interval = setInterval(() => {
-      setCurrentTestimonial((prev) => (prev + 1) % testimonials.length);
-    }, 5000);
-    return () => clearInterval(interval);
-  }, []);
 
   const onSubmit = async (data) => {
     clearError();
@@ -190,23 +161,6 @@ const RegisterPage = () => {
 
           </div>
 
-          {/* Testimonial Carousel */}
-          <div className="mt-8">
-            <div className="bg-white/70 rounded-xl p-6 backdrop-blur-sm shadow-sm">
-              <div className="flex gap-1 mb-3">
-                {[...Array(5)].map((_, i) => (
-                  <Star key={i} className="h-4 w-4 fill-yellow-400 text-yellow-400" />
-                ))}
-              </div>
-              <p className="text-lg mb-3 italic text-slate-700">
-                "{testimonials[currentTestimonial].quote}"
-              </p>
-              <div>
-                <p className="font-semibold text-slate-800">{testimonials[currentTestimonial].author}</p>
-                <p className="text-sm text-slate-600">{testimonials[currentTestimonial].role}</p>
-              </div>
-            </div>
-          </div>
         </div>
       </div>
 
