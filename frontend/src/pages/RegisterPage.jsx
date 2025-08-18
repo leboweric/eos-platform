@@ -154,7 +154,7 @@ const RegisterPage = () => {
               Start Your 30-Day Free Trial
             </h1>
             <p className="text-xl text-slate-600 mb-8">
-              Join hundreds of teams saving 75% compared to Ninety.io
+              Join hundreds of teams saving 75% vs. Ninety.io, Bloom Growth, and similar platforms
             </p>
 
             {/* Value Props */}

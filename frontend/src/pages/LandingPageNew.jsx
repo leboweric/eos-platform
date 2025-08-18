@@ -244,7 +244,7 @@ const LandingPageNew = () => {
                   <X className="h-6 w-6 text-red-500 flex-shrink-0 mt-1" />
                   <div>
                     <p className="font-semibold">Paying per-user gets expensive fast</p>
-                    <p className="text-gray-600">$16/user/month adds up to thousands</p>
+                    <p className="text-gray-600">$16-20/user/month adds up to thousands</p>
                   </div>
                 </div>
                 <div className="flex gap-3">
@@ -258,8 +258,8 @@ const LandingPageNew = () => {
             </div>
             <div className="bg-white p-8 rounded-xl shadow-lg border-2 border-red-100">
               <div className="text-center">
-                <p className="text-5xl font-bold text-red-600 mb-2">$9,600</p>
-                <p className="text-gray-600 mb-4">Annual cost for 50 users on Ninety.io</p>
+                <p className="text-5xl font-bold text-red-600 mb-2">$9,600+</p>
+                <p className="text-gray-600 mb-4">Annual cost for 50 users on Ninety.io, Bloom Growth, etc.</p>
                 <div className="pt-4 border-t">
                   <p className="text-2xl font-bold text-green-600 mb-2">$2,400</p>
                   <p className="text-gray-600">Same team on AXP (flat rate)</p>
@@ -371,10 +371,10 @@ const LandingPageNew = () => {
           <div className="text-center mb-12">
             <Badge className="mb-4" variant="outline">Side-by-Side</Badge>
             <h2 className="text-4xl font-bold mb-4">
-              AXP vs Ninety.io
+              AXP vs Traditional Platforms
             </h2>
             <p className="text-xl text-gray-600">
-              Why teams are switching to AXP
+              Why teams are switching from Ninety.io, Bloom Growth, and others
             </p>
           </div>
 
@@ -392,7 +392,7 @@ const LandingPageNew = () => {
                       />
                     </div>
                   </th>
-                  <th className="text-center p-6 font-semibold text-gray-500">Ninety.io</th>
+                  <th className="text-center p-6 font-semibold text-gray-500">Others</th>
                 </tr>
               </thead>
               <tbody>
@@ -420,7 +420,7 @@ const LandingPageNew = () => {
                     <span className="font-semibold text-green-600">Flat Rate</span>
                   </td>
                   <td className="text-center p-6">
-                    <span className="text-gray-600">$16/user/month</span>
+                    <span className="text-gray-600">$16-20/user/month</span>
                   </td>
                 </tr>
                 <tr className="border-b">
@@ -542,7 +542,7 @@ const LandingPageNew = () => {
               Simple, Transparent Pricing
             </h2>
             <p className="text-xl text-gray-600">
-              Save 75% compared to Ninety.io. No per-user fees. No surprises.
+              Save 75% compared to per-user pricing platforms. No surprises.
             </p>
           </div>
 

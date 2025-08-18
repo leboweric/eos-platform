@@ -480,10 +480,10 @@ const BillingPage = () => {
                   
                   <div className="p-3 bg-green-50 border border-green-200 rounded-lg">
                     <p className="text-sm text-green-800">
-                      <strong>You're saving vs. Ninety.io pricing!</strong><br/>
-                      With {subscription.userCount || 1} users at $16/user (Ninety.io pricing), you'd pay ${(subscription.userCount || 1) * 16}/month.
+                      <strong>You're saving vs. per-user pricing platforms!</strong><br/>
+                      With {subscription.userCount || 1} users at $16-20/user (Ninety.io, Bloom Growth, etc.), you'd pay ${(subscription.userCount || 1) * 16}-${(subscription.userCount || 1) * 20}/month.
                       You're only paying ${getPricingTier(subscription.userCount || 1).monthlyPrice}/month.
-                      <strong> That's ${Math.max(0, ((subscription.userCount || 1) * 16) - getPricingTier(subscription.userCount || 1).monthlyPrice)}/month in savings!</strong>
+                      <strong> That's ${Math.max(0, ((subscription.userCount || 1) * 16) - getPricingTier(subscription.userCount || 1).monthlyPrice)}-${Math.max(0, ((subscription.userCount || 1) * 20) - getPricingTier(subscription.userCount || 1).monthlyPrice)}/month in savings!</strong>
                     </p>
                   </div>
 
