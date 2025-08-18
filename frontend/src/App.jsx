@@ -66,6 +66,16 @@ function App() {
   const [needsLegalAcceptance, setNeedsLegalAcceptance] = useState(false);
   const [checkingAgreements, setCheckingAgreements] = useState(false);
 
+  // Check if we're on a client-specific subdomain
+  const getDefaultRoute = () => {
+    const hostname = window.location.hostname;
+    // Check for subdomains like myboyum.axplatform.app
+    if (hostname.includes('.axplatform.app') && !hostname.startsWith('www.') && !hostname.startsWith('axplatform.app')) {
+      return '/login'; // Client subdomains go to login
+    }
+    return '/'; // Main domain goes to landing page
+  };
+
   useEffect(() => {
     checkAuth();
   }, [checkAuth]);
@@ -127,7 +137,7 @@ function App() {
                 )}
           <Routes>
           {/* Public routes */}
-          <Route path="/" element={!user ? <LandingPage /> : <Navigate to="/dashboard" />} />
+          <Route path="/" element={!user ? (getDefaultRoute() === '/login' ? <Navigate to="/login" /> : <LandingPage />) : <Navigate to="/dashboard" />} />
           <Route path="/login" element={!user ? <LoginPage /> : <Navigate to="/dashboard" />} />
           <Route path="/register" element={!user ? <RegisterPage /> : <Navigate to="/dashboard" />} />
           <Route path="/consultant-register" element={!user ? <ConsultantRegisterPage /> : <Navigate to="/dashboard" />} />
@@ -184,7 +194,7 @@ function App() {
           <Route path="/rocks" element={<Navigate to="/quarterly-priorities" />} />
           
           {/* Catch all route */}
-          <Route path="*" element={<Navigate to={user ? "/dashboard" : "/"} />} />
+          <Route path="*" element={<Navigate to={user ? "/dashboard" : getDefaultRoute()} />} />
         </Routes>
           </div>
             </SelectedTodosProvider>
