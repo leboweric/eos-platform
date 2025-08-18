@@ -19,6 +19,7 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
+    "@azure/msal-node": "^3.7.1",
     "@sendgrid/mail": "^8.1.5",
     "bcryptjs": "^2.4.3",
     "cors": "^2.8.5",

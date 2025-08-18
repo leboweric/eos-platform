@@ -4,6 +4,11 @@ import {
   handleGoogleCallback,
   linkGoogleAccount 
 } from '../controllers/oauthController.js';
+import {
+  getMicrosoftAuthUrl,
+  handleMicrosoftCallback,
+  linkMicrosoftAccount
+} from '../controllers/microsoftOAuthController.js';
 import { authenticate } from '../middleware/auth.js';
 
 const router = express.Router();
@@ -13,12 +18,9 @@ router.get('/google', getGoogleAuthUrl);
 router.post('/google/callback', handleGoogleCallback);
 router.post('/google/link', authenticate, linkGoogleAccount);
 
-// Microsoft OAuth routes (placeholder for later)
-router.get('/microsoft', (req, res) => {
-  res.status(501).json({ 
-    success: false, 
-    message: 'Microsoft OAuth not yet implemented' 
-  });
-});
+// Microsoft OAuth routes
+router.get('/microsoft', getMicrosoftAuthUrl);
+router.post('/microsoft/callback', handleMicrosoftCallback);
+router.post('/microsoft/link', authenticate, linkMicrosoftAccount);
 
 export default router;
