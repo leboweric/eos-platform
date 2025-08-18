@@ -2135,7 +2135,7 @@ const QuarterlyPrioritiesPageClean = () => {
           <div>
             <h1 className="text-3xl font-bold text-gray-900">
               <span className="inline-block w-1 h-8 mr-3 rounded-full" style={{ backgroundColor: themeColors.primary }} />
-              {selectedDepartment.name} Quarterly Priorities
+              {selectedDepartment.name} {labels.priorities_label}
             </h1>
             {showArchived && (
               <p className="text-gray-600 mt-2">
@@ -2218,7 +2218,7 @@ const QuarterlyPrioritiesPageClean = () => {
             <CardContent className="p-6">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm font-medium text-gray-600 mb-1">Total Priorities</p>
+                  <p className="text-sm font-medium text-gray-600 mb-1">Total {labels.priorities_label}</p>
                   <p className="text-3xl font-bold text-gray-900">{stats.total}</p>
                   <p className={`text-sm font-medium mt-1 ${
                     stats.total > 0 && (stats.completed / stats.total) >= 0.8 
