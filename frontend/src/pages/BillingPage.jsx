@@ -139,11 +139,47 @@ const CardInputForm = ({ onSuccess }) => {
       </Button>
 
       <p className="text-sm text-gray-500 text-center">
-        Your card will be charged $5 per user per month after the 30-day trial ends.
+        Your card will be charged based on our flat-rate pricing tiers after the 30-day trial ends.
         Cancel anytime.
       </p>
     </form>
   );
+};
+
+// Flat-rate pricing tiers
+const PRICING_TIERS = {
+  starter: {
+    name: 'Starter',
+    maxUsers: 25,
+    monthlyPrice: 149,
+    annualPrice: 1430
+  },
+  growth: {
+    name: 'Growth',
+    maxUsers: 75,
+    monthlyPrice: 349,
+    annualPrice: 3350
+  },
+  scale: {
+    name: 'Scale',
+    maxUsers: 200,
+    monthlyPrice: 599,
+    annualPrice: 5750
+  },
+  enterprise: {
+    name: 'Enterprise',
+    maxUsers: null, // unlimited
+    monthlyPrice: 999,
+    annualPrice: 9590
+  }
+};
+
+// Get the appropriate pricing tier based on user count
+const getPricingTier = (userCount) => {
+  if (userCount <= 25) return PRICING_TIERS.starter;
+  if (userCount <= 75) return PRICING_TIERS.growth;
+  if (userCount <= 200) return PRICING_TIERS.scale;
+  return PRICING_TIERS.enterprise;
 };
 
 const BillingPage = () => {
@@ -245,7 +281,7 @@ const BillingPage = () => {
               <CardHeader>
                 <CardTitle>Start Your Free Trial</CardTitle>
                 <CardDescription>
-                  Get 30 days free, then $5 per user per month. Cancel anytime.
+                  Get 30 days free with flat-rate pricing. Cancel anytime.
                 </CardDescription>
               </CardHeader>
               <CardContent>
@@ -304,15 +340,28 @@ const BillingPage = () => {
                   </div>
                   
                   <div className="flex items-center justify-between">
-                    <span className="font-medium">Price per User</span>
-                    <span>${subscription.pricePerUser || 5}/month</span>
+                    <span className="font-medium">Pricing Plan</span>
+                    <span className="font-semibold">
+                      {(() => {
+                        const tier = getPricingTier(subscription.userCount || 1);
+                        return `${tier.name} (up to ${tier.maxUsers || 'unlimited'} users)`;
+                      })()}
+                    </span>
                   </div>
                   
                   <div className="flex items-center justify-between">
                     <span className="font-medium">Monthly Total</span>
                     <span className="text-lg font-semibold">
-                      ${subscription.monthlyTotal || (subscription.userCount || 1) * 5}/month
+                      ${getPricingTier(subscription.userCount || 1).monthlyPrice}/month
                     </span>
+                  </div>
+                  
+                  <div className="p-3 bg-green-50 border border-green-200 rounded-lg">
+                    <p className="text-sm text-green-800">
+                      <strong>You're saving vs. per-user pricing!</strong><br/>
+                      With {subscription.userCount || 1} users at $5/user, you'd pay ${(subscription.userCount || 1) * 5}/month.
+                      You're only paying ${getPricingTier(subscription.userCount || 1).monthlyPrice}/month.
+                    </p>
                   </div>
 
                   {subscription.currentPeriodEnd && subscription.status === 'active' && (
@@ -330,6 +379,50 @@ const BillingPage = () => {
                     >
                       Cancel Subscription
                     </Button>
+                  </div>
+                </CardContent>
+              </Card>
+
+              <Card>
+                <CardHeader>
+                  <CardTitle>Pricing Tiers</CardTitle>
+                  <CardDescription>
+                    Our flat-rate pricing saves you money as you grow
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-3">
+                    {Object.entries(PRICING_TIERS).map(([key, tier]) => {
+                      const userCount = subscription?.userCount || 1;
+                      const isCurrentTier = getPricingTier(userCount).name === tier.name;
+                      
+                      return (
+                        <div 
+                          key={key} 
+                          className={`p-3 rounded-lg border ${
+                            isCurrentTier 
+                              ? 'border-blue-500 bg-blue-50' 
+                              : 'border-gray-200'
+                          }`}
+                        >
+                          <div className="flex items-center justify-between">
+                            <div>
+                              <span className="font-semibold">{tier.name}</span>
+                              <span className="text-sm text-gray-600 ml-2">
+                                (up to {tier.maxUsers || 'unlimited'} users)
+                              </span>
+                              {isCurrentTier && (
+                                <Badge className="ml-2" variant="default">Current Plan</Badge>
+                              )}
+                            </div>
+                            <div className="text-right">
+                              <div className="font-semibold">${tier.monthlyPrice}/month</div>
+                              <div className="text-xs text-gray-500">or ${tier.annualPrice}/year</div>
+                            </div>
+                          </div>
+                        </div>
+                      );
+                    })}
                   </div>
                 </CardContent>
               </Card>

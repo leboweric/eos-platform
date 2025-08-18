@@ -407,9 +407,6 @@ const UsersPage = () => {
     return users.length + invitations.length;
   };
 
-  const getMonthlyCost = () => {
-    return getUserCount() * 7;
-  };
 
   return (
     <div className="space-y-6">
@@ -799,11 +796,6 @@ const UsersPage = () => {
             <div>
               <p className="text-sm text-gray-500">Pending Invitations</p>
               <p className="text-2xl font-bold">{invitations.length}</p>
-            </div>
-            <div>
-              <p className="text-sm text-gray-500">Monthly Cost</p>
-              <p className="text-2xl font-bold">${getMonthlyCost()}/month</p>
-              <p className="text-xs text-gray-500">($7 per user)</p>
             </div>
           </div>
         </CardContent>
