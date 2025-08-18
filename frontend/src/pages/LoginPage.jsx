@@ -54,12 +54,12 @@ const LoginPage = () => {
   return (
     <div className="min-h-screen flex">
       {/* Left Panel - Branding & Benefits */}
-      <div className="hidden lg:flex lg:w-1/2 bg-gradient-to-br from-green-50 via-green-100 to-white p-12 flex-col justify-between relative overflow-hidden">
+      <div className="hidden lg:flex lg:w-1/2 bg-gradient-to-br from-blue-50 via-sky-50 to-white p-12 flex-col justify-between relative overflow-hidden">
         {/* Subtle Background Pattern */}
         <div className="absolute inset-0">
-          <div className="absolute top-0 left-0 w-full h-full opacity-30">
-            <div className="absolute top-20 right-20 w-64 h-64 bg-green-200 rounded-full filter blur-3xl"></div>
-            <div className="absolute bottom-20 left-20 w-96 h-96 bg-green-100 rounded-full filter blur-3xl"></div>
+          <div className="absolute top-0 left-0 w-full h-full opacity-20">
+            <div className="absolute top-20 right-20 w-64 h-64 bg-blue-100 rounded-full filter blur-3xl"></div>
+            <div className="absolute bottom-20 left-20 w-96 h-96 bg-sky-100 rounded-full filter blur-3xl"></div>
           </div>
         </div>
         
@@ -68,14 +68,14 @@ const LoginPage = () => {
           {/* Logo - Enhanced with animation */}
           <div className="mb-12">
             <Link to="/" className="inline-block group">
-              <div className="bg-white/60 backdrop-blur-sm p-4 rounded-xl inline-block transition-all duration-300 group-hover:bg-white/80 group-hover:scale-105 shadow-lg">
+              <div className="bg-white/70 backdrop-blur-sm p-4 rounded-xl inline-block transition-all duration-300 group-hover:bg-white/90 group-hover:scale-105 shadow-sm">
                 <img 
                   src="/AXP_logo_upper_left_transparent.png?v=2" 
                   alt="AXP" 
                   className="h-12 w-auto"
                 />
               </div>
-              <div className="mt-2 text-green-700 text-sm font-medium">
+              <div className="mt-2 text-slate-700 text-sm font-medium">
                 Accountability & Execution Platform
               </div>
             </Link>
@@ -83,11 +83,11 @@ const LoginPage = () => {
           
           {/* Main Message */}
           <div className="space-y-6">
-            <h1 className="text-4xl lg:text-5xl font-bold text-green-900 leading-tight">
+            <h1 className="text-4xl lg:text-5xl font-bold text-slate-800 leading-tight">
               Welcome Back to
-              <span className="text-green-600 block mt-2">Your Growth Platform</span>
+              <span className="text-blue-600 block mt-2">Your Growth Platform</span>
             </h1>
-            <p className="text-xl text-green-700 leading-relaxed">
+            <p className="text-xl text-slate-600 leading-relaxed">
               Join thousands of organizations achieving breakthrough results through structured execution and accountability.
             </p>
           </div>
@@ -95,32 +95,32 @@ const LoginPage = () => {
           {/* Benefits */}
           <div className="mt-12 space-y-4">
             <div className="flex items-start space-x-3">
-              <div className="flex-shrink-0 w-6 h-6 rounded-full bg-green-600 flex items-center justify-center mt-0.5">
+              <div className="flex-shrink-0 w-6 h-6 rounded-full bg-blue-500 flex items-center justify-center mt-0.5">
                 <CheckCircle className="w-4 h-4 text-white" />
               </div>
               <div>
-                <h3 className="text-green-900 font-semibold">Strategic Alignment</h3>
-                <p className="text-green-700 text-sm mt-1">Get everyone rowing in the same direction with clear priorities</p>
+                <h3 className="text-slate-800 font-semibold">Strategic Alignment</h3>
+                <p className="text-slate-600 text-sm mt-1">Get everyone rowing in the same direction with clear priorities</p>
               </div>
             </div>
             
             <div className="flex items-start space-x-3">
-              <div className="flex-shrink-0 w-6 h-6 rounded-full bg-green-600 flex items-center justify-center mt-0.5">
+              <div className="flex-shrink-0 w-6 h-6 rounded-full bg-blue-500 flex items-center justify-center mt-0.5">
                 <CheckCircle className="w-4 h-4 text-white" />
               </div>
               <div>
-                <h3 className="text-green-900 font-semibold">Measurable Results</h3>
-                <p className="text-green-700 text-sm mt-1">Track progress with scorecards and data-driven insights</p>
+                <h3 className="text-slate-800 font-semibold">Measurable Results</h3>
+                <p className="text-slate-600 text-sm mt-1">Track progress with scorecards and data-driven insights</p>
               </div>
             </div>
             
             <div className="flex items-start space-x-3">
-              <div className="flex-shrink-0 w-6 h-6 rounded-full bg-green-600 flex items-center justify-center mt-0.5">
+              <div className="flex-shrink-0 w-6 h-6 rounded-full bg-blue-500 flex items-center justify-center mt-0.5">
                 <CheckCircle className="w-4 h-4 text-white" />
               </div>
               <div>
-                <h3 className="text-green-900 font-semibold">Team Accountability</h3>
-                <p className="text-green-700 text-sm mt-1">Build a culture of ownership and execution excellence</p>
+                <h3 className="text-slate-800 font-semibold">Team Accountability</h3>
+                <p className="text-slate-600 text-sm mt-1">Build a culture of ownership and execution excellence</p>
               </div>
             </div>
           </div>
@@ -179,7 +179,7 @@ const LoginPage = () => {
                     type="email"
                     placeholder="name@company.com"
                     {...register('email')}
-                    className={`h-11 px-4 ${errors.email ? 'border-red-500 focus:ring-red-500' : 'border-gray-300 focus:border-green-500 focus:ring-green-500'}`}
+                    className={`h-11 px-4 ${errors.email ? 'border-red-500 focus:ring-red-500' : 'border-gray-300 focus:border-blue-400 focus:ring-blue-400'}`}
                   />
                 </div>
                 {errors.email && (
@@ -194,7 +194,7 @@ const LoginPage = () => {
                   </Label>
                   <Link
                     to="/forgot-password"
-                    className="text-sm text-green-600 hover:text-green-700 font-medium"
+                    className="text-sm text-blue-600 hover:text-blue-700 font-medium"
                   >
                     Forgot password?
                   </Link>
@@ -205,7 +205,7 @@ const LoginPage = () => {
                     type={showPassword ? 'text' : 'password'}
                     placeholder="Enter your password"
                     {...register('password')}
-                    className={`h-11 px-4 pr-10 ${errors.password ? 'border-red-500 focus:ring-red-500' : 'border-gray-300 focus:border-green-500 focus:ring-green-500'}`}
+                    className={`h-11 px-4 pr-10 ${errors.password ? 'border-red-500 focus:ring-red-500' : 'border-gray-300 focus:border-blue-400 focus:ring-blue-400'}`}
                   />
                   <button
                     type="button"
@@ -224,7 +224,7 @@ const LoginPage = () => {
                 <input
                   type="checkbox"
                   id="remember"
-                  className="h-4 w-4 rounded border-gray-300 text-green-600 focus:ring-green-500"
+                  className="h-4 w-4 rounded border-gray-300 text-blue-500 focus:ring-blue-400"
                 />
                 <Label htmlFor="remember" className="ml-2 text-sm text-gray-600 cursor-pointer">
                   Keep me signed in
@@ -233,7 +233,7 @@ const LoginPage = () => {
 
               <Button
                 type="submit"
-                className="w-full h-11 bg-green-600 hover:bg-green-700 text-white font-medium rounded-lg transition-all transform hover:scale-[1.02] active:scale-[0.98]"
+                className="w-full h-11 bg-blue-500 hover:bg-blue-600 text-white font-medium rounded-lg transition-all transform hover:scale-[1.02] active:scale-[0.98]"
                 disabled={isLoading}
               >
                 {isLoading ? (

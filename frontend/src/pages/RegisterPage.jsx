@@ -128,12 +128,12 @@ const RegisterPage = () => {
   return (
     <div className="min-h-screen flex">
       {/* Left Side - Value Proposition */}
-      <div className="hidden lg:flex lg:w-1/2 bg-gradient-to-br from-green-50 via-green-100 to-white relative overflow-hidden">
+      <div className="hidden lg:flex lg:w-1/2 bg-gradient-to-br from-blue-50 via-sky-50 to-white relative overflow-hidden">
         {/* Subtle Background Pattern */}
         <div className="absolute inset-0">
-          <div className="absolute top-0 left-0 w-full h-full opacity-30">
-            <div className="absolute top-20 right-20 w-64 h-64 bg-green-200 rounded-full filter blur-3xl"></div>
-            <div className="absolute bottom-20 left-20 w-96 h-96 bg-green-100 rounded-full filter blur-3xl"></div>
+          <div className="absolute top-0 left-0 w-full h-full opacity-20">
+            <div className="absolute top-20 right-20 w-64 h-64 bg-blue-100 rounded-full filter blur-3xl"></div>
+            <div className="absolute bottom-20 left-20 w-96 h-96 bg-sky-100 rounded-full filter blur-3xl"></div>
           </div>
         </div>
 
@@ -141,95 +141,95 @@ const RegisterPage = () => {
           {/* Logo and Tagline */}
           <div>
             <Link to="/" className="inline-block group mb-8">
-              <div className="bg-white/60 backdrop-blur-sm p-4 rounded-xl inline-block transition-all duration-300 group-hover:bg-white/80 group-hover:scale-105 shadow-lg">
+              <div className="bg-white/70 backdrop-blur-sm p-4 rounded-xl inline-block transition-all duration-300 group-hover:bg-white/90 group-hover:scale-105 shadow-sm">
                 <img 
                   src="/AXP_logo_upper_left_transparent.png?v=2" 
                   alt="AXP" 
                   className="h-12 w-auto"
                 />
               </div>
-              <div className="mt-2 text-green-700 text-sm font-medium">
+              <div className="mt-2 text-slate-700 text-sm font-medium">
                 Accountability & Execution Platform
               </div>
             </Link>
-            <h1 className="text-4xl font-bold mb-4 text-green-900">
+            <h1 className="text-4xl font-bold mb-4 text-slate-800">
               Start Your 30-Day Free Trial
             </h1>
-            <p className="text-xl text-green-700 mb-8">
+            <p className="text-xl text-slate-600 mb-8">
               Join hundreds of teams saving 75% compared to Ninety.io
             </p>
 
             {/* Value Props */}
             <div className="space-y-4 mb-8">
               <div className="flex items-start gap-3">
-                <div className="w-8 h-8 rounded-full bg-green-600 flex items-center justify-center flex-shrink-0 mt-0.5">
+                <div className="w-8 h-8 rounded-full bg-blue-500 flex items-center justify-center flex-shrink-0 mt-0.5">
                   <Check className="h-5 w-5 text-white" />
                 </div>
                 <div>
-                  <p className="font-semibold text-lg text-green-900">Any Framework, Your Terms</p>
-                  <p className="text-green-700">EOS, OKRs, Scaling Up, or create your own</p>
+                  <p className="font-semibold text-lg text-slate-800">Any Framework, Your Terms</p>
+                  <p className="text-slate-600">EOS, OKRs, Scaling Up, or create your own</p>
                 </div>
               </div>
               <div className="flex items-start gap-3">
-                <div className="w-8 h-8 rounded-full bg-green-600 flex items-center justify-center flex-shrink-0 mt-0.5">
+                <div className="w-8 h-8 rounded-full bg-blue-500 flex items-center justify-center flex-shrink-0 mt-0.5">
                   <DollarSign className="h-5 w-5 text-white" />
                 </div>
                 <div>
-                  <p className="font-semibold text-lg text-green-900">Save Thousands Per Year</p>
-                  <p className="text-green-700">Flat-rate pricing, not per-user charges</p>
+                  <p className="font-semibold text-lg text-slate-800">Save Thousands Per Year</p>
+                  <p className="text-slate-600">Flat-rate pricing, not per-user charges</p>
                 </div>
               </div>
               <div className="flex items-start gap-3">
-                <div className="w-8 h-8 rounded-full bg-green-600 flex items-center justify-center flex-shrink-0 mt-0.5">
+                <div className="w-8 h-8 rounded-full bg-blue-500 flex items-center justify-center flex-shrink-0 mt-0.5">
                   <Clock className="h-5 w-5 text-white" />
                 </div>
                 <div>
-                  <p className="font-semibold text-lg text-green-900">Setup in 10 Minutes</p>
-                  <p className="text-green-700">No consultants or training required</p>
+                  <p className="font-semibold text-lg text-slate-800">Setup in 10 Minutes</p>
+                  <p className="text-slate-600">No consultants or training required</p>
                 </div>
               </div>
               <div className="flex items-start gap-3">
-                <div className="w-8 h-8 rounded-full bg-green-600 flex items-center justify-center flex-shrink-0 mt-0.5">
+                <div className="w-8 h-8 rounded-full bg-blue-500 flex items-center justify-center flex-shrink-0 mt-0.5">
                   <Shield className="h-5 w-5 text-white" />
                 </div>
                 <div>
-                  <p className="font-semibold text-lg text-green-900">30-Day Money Back Guarantee</p>
-                  <p className="text-green-700">No risk, cancel anytime</p>
+                  <p className="font-semibold text-lg text-slate-800">30-Day Money Back Guarantee</p>
+                  <p className="text-slate-600">No risk, cancel anytime</p>
                 </div>
               </div>
             </div>
 
             {/* Stats */}
-            <div className="grid grid-cols-3 gap-4 p-6 bg-white/60 rounded-xl backdrop-blur-sm shadow-lg">
+            <div className="grid grid-cols-3 gap-4 p-6 bg-white/70 rounded-xl backdrop-blur-sm shadow-sm">
               <div>
-                <p className="text-3xl font-bold text-green-900">500+</p>
-                <p className="text-sm text-green-700">Teams</p>
+                <p className="text-3xl font-bold text-slate-800">500+</p>
+                <p className="text-sm text-slate-600">Teams</p>
               </div>
               <div>
-                <p className="text-3xl font-bold text-green-900">75%</p>
-                <p className="text-sm text-green-700">Cost Savings</p>
+                <p className="text-3xl font-bold text-slate-800">75%</p>
+                <p className="text-sm text-slate-600">Cost Savings</p>
               </div>
               <div>
-                <p className="text-3xl font-bold text-green-900">4.9★</p>
-                <p className="text-sm text-green-700">Rating</p>
+                <p className="text-3xl font-bold text-slate-800">4.9★</p>
+                <p className="text-sm text-slate-600">Rating</p>
               </div>
             </div>
           </div>
 
           {/* Testimonial Carousel */}
           <div className="mt-8">
-            <div className="bg-white/60 rounded-xl p-6 backdrop-blur-sm shadow-lg">
+            <div className="bg-white/70 rounded-xl p-6 backdrop-blur-sm shadow-sm">
               <div className="flex gap-1 mb-3">
                 {[...Array(5)].map((_, i) => (
                   <Star key={i} className="h-4 w-4 fill-yellow-400 text-yellow-400" />
                 ))}
               </div>
-              <p className="text-lg mb-3 italic text-green-900">
+              <p className="text-lg mb-3 italic text-slate-700">
                 "{testimonials[currentTestimonial].quote}"
               </p>
               <div>
-                <p className="font-semibold text-green-900">{testimonials[currentTestimonial].author}</p>
-                <p className="text-sm text-green-700">{testimonials[currentTestimonial].role}</p>
+                <p className="font-semibold text-slate-800">{testimonials[currentTestimonial].author}</p>
+                <p className="text-sm text-slate-600">{testimonials[currentTestimonial].role}</p>
               </div>
             </div>
           </div>
