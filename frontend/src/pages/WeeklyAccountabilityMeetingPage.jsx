@@ -817,7 +817,13 @@ const WeeklyAccountabilityMeetingPage = () => {
       // setActiveSection('ids');
     } catch (error) {
       console.error('Failed to create issue from todo:', error);
-      setError('Failed to create issue from to-do');
+      
+      // Check if it's a duplicate issue error
+      if (error.response?.status === 409) {
+        setError('An issue has already been created for this to-do. Each to-do can only have one linked issue.');
+      } else {
+        setError('Failed to create issue from to-do');
+      }
     }
   };
 
