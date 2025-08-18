@@ -1,7 +1,7 @@
-const { OAuth2Client } = require('google-auth-library');
-const jwt = require('jsonwebtoken');
-const db = require('../config/database');
-const bcrypt = require('bcryptjs');
+import { OAuth2Client } from 'google-auth-library';
+import jwt from 'jsonwebtoken';
+import db from '../config/database.js';
+import bcrypt from 'bcryptjs';
 
 // Initialize Google OAuth client
 const googleClient = new OAuth2Client(
