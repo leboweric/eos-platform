@@ -812,8 +812,9 @@ const WeeklyAccountabilityMeetingPage = () => {
       setSuccess('Issue created successfully from to-do');
       await fetchIssuesData();
       
-      // Navigate to IDS section to show the new issue
-      setActiveSection('ids');
+      // Stay on the current section (don't navigate away from todos)
+      // Users can manually navigate to IDS if they want to see the issue
+      // setActiveSection('ids');
     } catch (error) {
       console.error('Failed to create issue from todo:', error);
       setError('Failed to create issue from to-do');
