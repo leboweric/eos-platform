@@ -201,12 +201,14 @@ const SmartInsights = ({
   }
 
   return (
-    <Card>
-      <CardHeader>
-        <div className="flex items-center space-x-2">
-          <Brain className="h-5 w-5 text-purple-600" />
-          <CardTitle>Smart Insights</CardTitle>
-          <Badge variant="secondary" className="text-xs">
+    <Card className="bg-white/80 backdrop-blur-sm border border-white/50 rounded-2xl shadow-xl hover:shadow-2xl transition-all duration-300">
+      <CardHeader className="bg-gradient-to-r from-white/90 to-white/70 backdrop-blur-sm border-b border-white/20">
+        <div className="flex items-center space-x-3">
+          <div className="p-2 rounded-xl bg-gradient-to-br from-purple-100 to-indigo-200">
+            <Brain className="h-5 w-5 text-purple-600" />
+          </div>
+          <CardTitle className="text-xl font-bold text-slate-900">Smart Insights</CardTitle>
+          <Badge variant="secondary" className="text-xs bg-purple-100 text-purple-700">
             {insights.length} new
           </Badge>
         </div>
@@ -220,14 +222,14 @@ const SmartInsights = ({
             >
               <div className="flex items-start justify-between">
                 <div className="flex items-start space-x-3 flex-1">
-                  <div className={`p-1.5 rounded-lg ${insight.bgColor} flex-shrink-0`}>
+                  <div className={`p-2 rounded-xl ${insight.bgColor} flex-shrink-0 shadow-sm`}>
                     <insight.icon className={`h-4 w-4 ${insight.color}`} />
                   </div>
                   
                   <div className="flex-1 min-w-0">
                     <AlertDescription>
                       <div className="space-y-2">
-                        <h4 className="font-semibold text-sm text-gray-900">
+                        <h4 className="font-bold text-sm text-slate-900">
                           {insight.title}
                         </h4>
                         <p className="text-sm text-gray-700">

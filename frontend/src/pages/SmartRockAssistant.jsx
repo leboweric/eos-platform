@@ -261,55 +261,74 @@ const SmartRockAssistant = () => {
   }
 
   return (
-    <div className="container mx-auto p-6 max-w-6xl">
-      {/* Header */}
-      <div className="mb-8">
-        <div className="flex items-center justify-between mb-4">
-          <div className="flex items-center gap-3">
-            <Brain className="h-8 w-8 text-primary" />
-            <h1 className="text-3xl font-bold">SMART Rock Assistant</h1>
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50/30 to-indigo-50/30 relative">
+      {/* Background Pattern */}
+      <div className="absolute inset-0 bg-grid-slate-100 [mask-image:linear-gradient(0deg,white,rgba(255,255,255,0.6))] -z-10"></div>
+      
+      <div className="max-w-7xl mx-auto p-8 space-y-8">
+        {/* Header */}
+        <div className="mb-8">
+          <div className="flex items-center justify-between mb-4">
+            <div className="flex items-center gap-4">
+              <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full text-sm font-medium mb-4 bg-purple-50/80 backdrop-blur-sm text-purple-700">
+                <Brain className="h-4 w-4" />
+                AI ASSISTANT
+              </div>
+            </div>
+            <Button
+              variant="outline"
+              onClick={() => navigate(`/organizations/${orgId}/quarterly-priorities`)}
+              className="bg-white/80 backdrop-blur-sm border-white/20 hover:bg-white/90 shadow-sm transition-all duration-200"
+            >
+              <X className="h-4 w-4 mr-2" />
+              Cancel
+            </Button>
           </div>
-          <Button
-            variant="outline"
-            onClick={() => navigate(`/organizations/${orgId}/quarterly-priorities`)}
-          >
-            <X className="h-4 w-4 mr-2" />
-            Cancel
-          </Button>
+          <h1 className="text-4xl font-bold mb-2 bg-gradient-to-r from-slate-900 via-slate-800 to-slate-900 bg-clip-text text-transparent flex items-center gap-4">
+            <div className="p-3 rounded-xl bg-gradient-to-br from-purple-100 to-indigo-200">
+              <Brain className="h-8 w-8 text-purple-600" />
+            </div>
+            SMART Rock Assistant
+          </h1>
+          <p className="text-lg text-slate-600">
+            Create Rocks that are Specific, Measurable, Achievable, Relevant, and Time-bound
+          </p>
         </div>
-        <p className="text-muted-foreground">
-          Create Rocks that are Specific, Measurable, Achievable, Relevant, and Time-bound
-        </p>
-      </div>
 
-      {/* Progress Bar */}
-      <div className="mb-8">
-        <div className="flex items-center justify-between mb-2">
-          <span className="text-sm text-muted-foreground">Step {currentStep} of 5</span>
-          {smartAnalysis && (
-            <Badge className={getSmartScoreBadge(smartAnalysis.overallScore)}>
-              SMART Score: {smartAnalysis.overallScore}%
-            </Badge>
-          )}
+        {/* Progress Bar */}
+        <div className="mb-8 bg-white/80 backdrop-blur-sm border border-white/50 rounded-2xl p-6 shadow-xl">
+          <div className="flex items-center justify-between mb-4">
+            <span className="text-sm font-semibold text-slate-600">Step {currentStep} of 5</span>
+            {smartAnalysis && (
+              <Badge className={getSmartScoreBadge(smartAnalysis.overallScore)}>
+                SMART Score: {smartAnalysis.overallScore}%
+              </Badge>
+            )}
+          </div>
+          <Progress value={(currentStep / 5) * 100} className="h-3 bg-slate-100" />
         </div>
-        <Progress value={(currentStep / 5) * 100} className="h-2" />
-      </div>
 
-      {/* Step 1: Basic Information */}
-      {currentStep === 1 && (
-        <Card>
-          <CardHeader>
-            <CardTitle>Step 1: Basic Rock Information</CardTitle>
-            <CardDescription>
-              Start with your initial Rock idea. The AI will help refine it.
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-6">
-            <div className="space-y-2">
-              <Label htmlFor="title">Rock Title*</Label>
+        {/* Step 1: Basic Information */}
+        {currentStep === 1 && (
+          <Card className="bg-white/80 backdrop-blur-sm border border-white/50 rounded-2xl shadow-xl">
+            <CardHeader className="bg-gradient-to-r from-white/90 to-white/70 backdrop-blur-sm border-b border-white/20">
+              <CardTitle className="text-xl font-bold text-slate-900 flex items-center gap-3">
+                <div className="p-2 rounded-xl bg-gradient-to-br from-blue-100 to-indigo-200">
+                  <Target className="h-5 w-5 text-blue-600" />
+                </div>
+                Step 1: Basic Rock Information
+              </CardTitle>
+              <CardDescription className="text-slate-600 font-medium">
+                Start with your initial Rock idea. The AI will help refine it.
+              </CardDescription>
+            </CardHeader>
+          <CardContent className="p-6 space-y-6">
+            <div className="space-y-3">
+              <Label htmlFor="title" className="text-sm font-semibold text-slate-700">Rock Title*</Label>
               <Input
                 id="title"
                 value={rockData.title}
+                className="bg-white/80 backdrop-blur-sm border-white/20 focus:border-purple-400 rounded-xl shadow-sm transition-all duration-200"
                 onChange={(e) => setRockData({ ...rockData, title: e.target.value })}
                 placeholder="e.g., Launch new customer portal"
                 className="text-lg"
@@ -429,32 +448,37 @@ const SmartRockAssistant = () => {
         </Card>
       )}
 
-      {/* Step 2: SMART Analysis */}
-      {currentStep === 2 && (
-        <Card>
-          <CardHeader>
-            <CardTitle>Step 2: SMART Analysis</CardTitle>
-            <CardDescription>
-              AI analysis of your Rock against SMART criteria
-            </CardDescription>
-          </CardHeader>
+        {/* Step 2: SMART Analysis */}
+        {currentStep === 2 && (
+          <Card className="bg-white/80 backdrop-blur-sm border border-white/50 rounded-2xl shadow-xl">
+            <CardHeader className="bg-gradient-to-r from-white/90 to-white/70 backdrop-blur-sm border-b border-white/20">
+              <CardTitle className="text-xl font-bold text-slate-900 flex items-center gap-3">
+                <div className="p-2 rounded-xl bg-gradient-to-br from-purple-100 to-indigo-200">
+                  <Sparkles className="h-5 w-5 text-purple-600" />
+                </div>
+                Step 2: SMART Analysis
+              </CardTitle>
+              <CardDescription className="text-slate-600 font-medium">
+                AI analysis of your Rock against SMART criteria
+              </CardDescription>
+            </CardHeader>
           <CardContent>
             {isAnalyzing ? (
               <div className="flex items-center justify-center py-12">
-                <Loader2 className="h-8 w-8 animate-spin text-primary mr-3" />
-                <span>Analyzing your Rock...</span>
+                <Loader2 className="h-8 w-8 animate-spin text-purple-600 mr-3" />
+                <span className="text-slate-600 font-medium">Analyzing your Rock...</span>
               </div>
             ) : smartAnalysis ? (
               <div className="space-y-6">
                 {/* Overall Score */}
-                <div className="bg-gray-50 rounded-lg p-6">
+                <div className="bg-white/60 backdrop-blur-sm border border-white/30 rounded-xl p-6 shadow-sm">
                   <div className="flex items-center justify-between mb-4">
-                    <h3 className="text-lg font-semibold">SMART Score</h3>
+                    <h3 className="text-lg font-bold text-slate-900">SMART Score</h3>
                     <span className={`text-3xl font-bold ${getSmartScoreColor(smartAnalysis.overallScore)}`}>
                       {smartAnalysis.overallScore}%
                     </span>
                   </div>
-                  <Progress value={smartAnalysis.overallScore} className="h-3" />
+                  <Progress value={smartAnalysis.overallScore} className="h-4" />
                 </div>
 
                 {/* Individual Scores */}
@@ -811,7 +835,8 @@ const SmartRockAssistant = () => {
             </div>
           </CardContent>
         </Card>
-      )}
+        )}
+      </div>
     </div>
   );
 };
