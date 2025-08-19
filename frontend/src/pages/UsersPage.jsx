@@ -441,7 +441,6 @@ const UsersPage = () => {
                   ))}
                 </SelectContent>
               </Select>
-          </div>
             </div>
           </div>
         )}

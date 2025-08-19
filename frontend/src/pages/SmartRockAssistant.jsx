@@ -328,10 +328,9 @@ const SmartRockAssistant = () => {
               <Input
                 id="title"
                 value={rockData.title}
-                className="bg-white/80 backdrop-blur-sm border-white/20 focus:border-purple-400 rounded-xl shadow-sm transition-all duration-200"
                 onChange={(e) => setRockData({ ...rockData, title: e.target.value })}
                 placeholder="e.g., Launch new customer portal"
-                className="text-lg"
+                className="text-lg bg-white/80 backdrop-blur-sm border-white/20 focus:border-purple-400 rounded-xl shadow-sm transition-all duration-200"
               />
               <p className="text-sm text-muted-foreground">
                 What do you want to accomplish this quarter?
@@ -339,27 +338,28 @@ const SmartRockAssistant = () => {
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="description">Description (Optional)</Label>
+              <Label htmlFor="description" className="text-sm font-semibold text-slate-700">Description (Optional)</Label>
               <Textarea
                 id="description"
                 value={rockData.description}
                 onChange={(e) => setRockData({ ...rockData, description: e.target.value })}
                 placeholder="Provide additional context or success criteria..."
                 rows={4}
+                className="bg-white/80 backdrop-blur-sm border-white/20 focus:border-purple-400 rounded-xl shadow-sm transition-all duration-200"
               />
             </div>
 
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
-                <Label htmlFor="type">Rock Type</Label>
+                <Label htmlFor="type" className="text-sm font-semibold text-slate-700">Rock Type</Label>
                 <Select
                   value={rockData.type}
                   onValueChange={(value) => setRockData({ ...rockData, type: value })}
                 >
-                  <SelectTrigger>
+                  <SelectTrigger className="bg-white/80 backdrop-blur-sm border-white/20 rounded-xl shadow-sm">
                     <SelectValue />
                   </SelectTrigger>
-                  <SelectContent>
+                  <SelectContent className="bg-white/95 backdrop-blur-sm border-white/20 rounded-xl shadow-xl">
                     <SelectItem value="company">Company Rock</SelectItem>
                     <SelectItem value="individual">Department/Individual Rock</SelectItem>
                   </SelectContent>
@@ -367,15 +367,15 @@ const SmartRockAssistant = () => {
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="team">Team</Label>
+                <Label htmlFor="team" className="text-sm font-semibold text-slate-700">Team</Label>
                 <Select
                   value={rockData.teamId}
                   onValueChange={(value) => setRockData({ ...rockData, teamId: value })}
                 >
-                  <SelectTrigger>
+                  <SelectTrigger className="bg-white/80 backdrop-blur-sm border-white/20 rounded-xl shadow-sm">
                     <SelectValue placeholder="Select team" />
                   </SelectTrigger>
-                  <SelectContent>
+                  <SelectContent className="bg-white/95 backdrop-blur-sm border-white/20 rounded-xl shadow-xl">
                     {teams.map(team => (
                       <SelectItem key={team.id} value={team.id}>
                         {team.name} {team.is_leadership_team && '(Leadership)'}
@@ -388,15 +388,15 @@ const SmartRockAssistant = () => {
 
             <div className="grid grid-cols-3 gap-4">
               <div className="space-y-2">
-                <Label htmlFor="owner">Owner</Label>
+                <Label htmlFor="owner" className="text-sm font-semibold text-slate-700">Owner</Label>
                 <Select
                   value={rockData.owner}
                   onValueChange={(value) => setRockData({ ...rockData, owner: value })}
                 >
-                  <SelectTrigger>
+                  <SelectTrigger className="bg-white/80 backdrop-blur-sm border-white/20 rounded-xl shadow-sm">
                     <SelectValue placeholder="Select owner" />
                   </SelectTrigger>
-                  <SelectContent>
+                  <SelectContent className="bg-white/95 backdrop-blur-sm border-white/20 rounded-xl shadow-xl">
                     {users.map(user => (
                       <SelectItem key={user.id} value={user.id}>
                         {user.first_name} {user.last_name}
@@ -407,15 +407,15 @@ const SmartRockAssistant = () => {
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="quarter">Quarter</Label>
+                <Label htmlFor="quarter" className="text-sm font-semibold text-slate-700">Quarter</Label>
                 <Select
                   value={rockData.quarter}
                   onValueChange={(value) => setRockData({ ...rockData, quarter: value })}
                 >
-                  <SelectTrigger>
+                  <SelectTrigger className="bg-white/80 backdrop-blur-sm border-white/20 rounded-xl shadow-sm">
                     <SelectValue />
                   </SelectTrigger>
-                  <SelectContent>
+                  <SelectContent className="bg-white/95 backdrop-blur-sm border-white/20 rounded-xl shadow-xl">
                     <SelectItem value="Q1">Q1</SelectItem>
                     <SelectItem value="Q2">Q2</SelectItem>
                     <SelectItem value="Q3">Q3</SelectItem>
@@ -425,12 +425,13 @@ const SmartRockAssistant = () => {
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="year">Year</Label>
+                <Label htmlFor="year" className="text-sm font-semibold text-slate-700">Year</Label>
                 <Input
                   id="year"
                   type="number"
                   value={rockData.year}
                   onChange={(e) => setRockData({ ...rockData, year: parseInt(e.target.value) })}
+                  className="bg-white/80 backdrop-blur-sm border-white/20 rounded-xl shadow-sm transition-all duration-200"
                 />
               </div>
             </div>
@@ -439,6 +440,7 @@ const SmartRockAssistant = () => {
               <Button 
                 onClick={nextStep}
                 disabled={!rockData.title || !rockData.owner || !rockData.teamId}
+                className="bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700 text-white rounded-xl shadow-lg hover:shadow-xl transition-all duration-200"
               >
                 Next: SMART Analysis
                 <ArrowRight className="h-4 w-4 ml-2" />
@@ -484,11 +486,11 @@ const SmartRockAssistant = () => {
                 {/* Individual Scores */}
                 <div className="grid grid-cols-5 gap-4">
                   {Object.entries(smartAnalysis.scores).map(([key, score]) => (
-                    <div key={key} className="text-center">
+                    <div key={key} className="text-center bg-white/60 backdrop-blur-sm border border-white/30 rounded-xl p-4 shadow-sm hover:shadow-md transition-all duration-200">
                       <div className={`text-2xl font-bold ${getSmartScoreColor(score)}`}>
                         {score}%
                       </div>
-                      <div className="text-sm text-muted-foreground capitalize">
+                      <div className="text-sm text-slate-600 font-medium capitalize">
                         {key}
                       </div>
                     </div>
@@ -497,40 +499,40 @@ const SmartRockAssistant = () => {
 
                 {/* Improvements */}
                 <Tabs defaultValue="improvements" className="w-full">
-                  <TabsList className="grid w-full grid-cols-3">
-                    <TabsTrigger value="improvements">Improvements</TabsTrigger>
-                    <TabsTrigger value="issues">Key Issues</TabsTrigger>
-                    <TabsTrigger value="suggestion">Suggested Rewrite</TabsTrigger>
+                  <TabsList className="grid w-full grid-cols-3 bg-white/80 backdrop-blur-sm border border-white/50 rounded-2xl shadow-lg">
+                    <TabsTrigger value="improvements" className="rounded-xl transition-all duration-200 data-[state=active]:bg-gradient-to-r data-[state=active]:from-purple-600 data-[state=active]:to-indigo-600 data-[state=active]:text-white data-[state=active]:shadow-lg">Improvements</TabsTrigger>
+                    <TabsTrigger value="issues" className="rounded-xl transition-all duration-200 data-[state=active]:bg-gradient-to-r data-[state=active]:from-purple-600 data-[state=active]:to-indigo-600 data-[state=active]:text-white data-[state=active]:shadow-lg">Key Issues</TabsTrigger>
+                    <TabsTrigger value="suggestion" className="rounded-xl transition-all duration-200 data-[state=active]:bg-gradient-to-r data-[state=active]:from-purple-600 data-[state=active]:to-indigo-600 data-[state=active]:text-white data-[state=active]:shadow-lg">Suggested Rewrite</TabsTrigger>
                   </TabsList>
                   
-                  <TabsContent value="improvements" className="space-y-3">
+                  <TabsContent value="improvements" className="space-y-3 mt-6">
                     {Object.entries(smartAnalysis.improvements).map(([criterion, improvement]) => (
-                      <div key={criterion} className="border-l-4 border-primary pl-4 py-2">
-                        <div className="font-semibold capitalize mb-1">{criterion}</div>
-                        <div className="text-sm text-muted-foreground">{improvement}</div>
+                      <div key={criterion} className="border-l-4 border-purple-400 pl-4 py-3 bg-white/60 backdrop-blur-sm rounded-r-xl shadow-sm hover:shadow-md transition-all duration-200">
+                        <div className="font-bold text-slate-900 capitalize mb-1">{criterion}</div>
+                        <div className="text-sm text-slate-600">{improvement}</div>
                       </div>
                     ))}
                   </TabsContent>
                   
-                  <TabsContent value="issues" className="space-y-3">
+                  <TabsContent value="issues" className="space-y-3 mt-6">
                     {smartAnalysis.keyIssues?.map((issue, index) => (
-                      <div key={index} className="flex items-start gap-3">
-                        <AlertCircle className="h-5 w-5 text-yellow-500 mt-0.5" />
-                        <span className="text-sm">{issue}</span>
+                      <div key={index} className="flex items-start gap-3 bg-yellow-50/80 backdrop-blur-sm border border-yellow-200/50 rounded-xl p-4 shadow-sm">
+                        <AlertCircle className="h-5 w-5 text-yellow-600 mt-0.5 flex-shrink-0" />
+                        <span className="text-sm text-slate-700 font-medium">{issue}</span>
                       </div>
                     ))}
                   </TabsContent>
                   
-                  <TabsContent value="suggestion" className="space-y-4">
-                    <div className="bg-green-50 border border-green-200 rounded-lg p-4">
-                      <h4 className="font-semibold mb-2">Improved Title:</h4>
-                      <p className="text-lg">{smartAnalysis.suggestedRewrite?.title}</p>
+                  <TabsContent value="suggestion" className="space-y-4 mt-6">
+                    <div className="bg-gradient-to-r from-green-50/80 to-emerald-50/80 backdrop-blur-sm border border-green-200/50 rounded-2xl p-6 shadow-sm">
+                      <h4 className="font-bold text-green-900 mb-3">Improved Title:</h4>
+                      <p className="text-lg text-slate-800 font-medium">{smartAnalysis.suggestedRewrite?.title}</p>
                     </div>
-                    <div className="bg-green-50 border border-green-200 rounded-lg p-4">
-                      <h4 className="font-semibold mb-2">Improved Description:</h4>
-                      <p className="text-sm">{smartAnalysis.suggestedRewrite?.description}</p>
+                    <div className="bg-gradient-to-r from-green-50/80 to-emerald-50/80 backdrop-blur-sm border border-green-200/50 rounded-2xl p-6 shadow-sm">
+                      <h4 className="font-bold text-green-900 mb-3">Improved Description:</h4>
+                      <p className="text-sm text-slate-700">{smartAnalysis.suggestedRewrite?.description}</p>
                     </div>
-                    <Button onClick={applySuggestion} className="w-full">
+                    <Button onClick={applySuggestion} className="w-full bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 text-white rounded-xl shadow-lg hover:shadow-xl transition-all duration-200">
                       <Sparkles className="h-4 w-4 mr-2" />
                       Apply Suggested Improvements
                     </Button>
@@ -538,15 +540,15 @@ const SmartRockAssistant = () => {
                 </Tabs>
 
                 <div className="flex justify-between">
-                  <Button variant="outline" onClick={prevStep}>
+                  <Button variant="outline" onClick={prevStep} className="bg-white/80 backdrop-blur-sm border-white/20 hover:bg-white/90 rounded-xl shadow-sm transition-all duration-200">
                     Back
                   </Button>
                   <div className="flex gap-2">
-                    <Button variant="outline" onClick={analyzeRock}>
+                    <Button variant="outline" onClick={analyzeRock} className="bg-white/80 backdrop-blur-sm border-white/20 hover:bg-white/90 rounded-xl shadow-sm transition-all duration-200">
                       <RefreshCw className="h-4 w-4 mr-2" />
                       Re-analyze
                     </Button>
-                    <Button onClick={nextStep}>
+                    <Button onClick={nextStep} className="bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700 text-white rounded-xl shadow-lg hover:shadow-xl transition-all duration-200">
                       Next: Milestones
                       <ArrowRight className="h-4 w-4 ml-2" />
                     </Button>
@@ -567,10 +569,15 @@ const SmartRockAssistant = () => {
 
       {/* Step 3: Milestones */}
       {currentStep === 3 && (
-        <Card>
-          <CardHeader>
-            <CardTitle>Step 3: Milestone Generation</CardTitle>
-            <CardDescription>
+        <Card className="bg-white/80 backdrop-blur-sm border border-white/50 rounded-2xl shadow-xl">
+          <CardHeader className="bg-gradient-to-r from-white/90 to-white/70 backdrop-blur-sm border-b border-white/20">
+            <CardTitle className="text-xl font-bold text-slate-900 flex items-center gap-3">
+              <div className="p-2 rounded-xl bg-gradient-to-br from-green-100 to-emerald-200">
+                <Target className="h-5 w-5 text-green-600" />
+              </div>
+              Step 3: Milestone Generation
+            </CardTitle>
+            <CardDescription className="text-slate-600 font-medium">
               AI-generated milestones to track quarterly progress
             </CardDescription>
           </CardHeader>
@@ -584,27 +591,29 @@ const SmartRockAssistant = () => {
               <div className="space-y-6">
                 <div className="space-y-3">
                   {milestones.map((milestone, index) => (
-                    <div key={index} className="border rounded-lg p-4">
+                    <div key={index} className="bg-white/60 backdrop-blur-sm border border-white/30 rounded-xl p-5 shadow-sm hover:shadow-md transition-all duration-200">
                       <div className="flex items-start justify-between">
                         <div className="flex-1">
                           <div className="flex items-center gap-2 mb-2">
-                            <Target className="h-5 w-5 text-primary" />
-                            <h4 className="font-semibold">{milestone.title}</h4>
+                            <div className="p-1.5 rounded-lg bg-gradient-to-br from-green-100 to-emerald-200">
+                              <Target className="h-4 w-4 text-green-600" />
+                            </div>
+                            <h4 className="font-bold text-slate-900">{milestone.title}</h4>
                           </div>
                           {milestone.description && (
-                            <p className="text-sm text-muted-foreground mb-2">
+                            <p className="text-sm text-slate-600 mb-2">
                               {milestone.description}
                             </p>
                           )}
                           {milestone.successCriteria && (
-                            <p className="text-sm">
-                              <span className="font-medium">Success Criteria:</span> {milestone.successCriteria}
+                            <p className="text-sm text-slate-700">
+                              <span className="font-semibold text-slate-900">Success Criteria:</span> {milestone.successCriteria}
                             </p>
                           )}
                         </div>
-                        <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                          <Calendar className="h-4 w-4" />
-                          {format(new Date(milestone.dueDate), 'MMM d, yyyy')}
+                        <div className="flex items-center gap-2 text-sm px-3 py-1.5 bg-purple-50/80 backdrop-blur-sm rounded-lg border border-purple-200/50">
+                          <Calendar className="h-4 w-4 text-purple-600" />
+                          <span className="font-medium text-purple-700">{format(new Date(milestone.dueDate), 'MMM d, yyyy')}</span>
                         </div>
                       </div>
                     </div>
@@ -612,15 +621,15 @@ const SmartRockAssistant = () => {
                 </div>
 
                 <div className="flex justify-between">
-                  <Button variant="outline" onClick={prevStep}>
+                  <Button variant="outline" onClick={prevStep} className="bg-white/80 backdrop-blur-sm border-white/20 hover:bg-white/90 rounded-xl shadow-sm transition-all duration-200">
                     Back
                   </Button>
                   <div className="flex gap-2">
-                    <Button variant="outline" onClick={generateMilestones}>
+                    <Button variant="outline" onClick={generateMilestones} className="bg-white/80 backdrop-blur-sm border-white/20 hover:bg-white/90 rounded-xl shadow-sm transition-all duration-200">
                       <RefreshCw className="h-4 w-4 mr-2" />
                       Regenerate
                     </Button>
-                    <Button onClick={nextStep}>
+                    <Button onClick={nextStep} className="bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700 text-white rounded-xl shadow-lg hover:shadow-xl transition-all duration-200">
                       {rockData.type === 'individual' ? 'Next: Alignment Check' : 'Next: Review'}
                       <ArrowRight className="h-4 w-4 ml-2" />
                     </Button>
@@ -629,7 +638,7 @@ const SmartRockAssistant = () => {
               </div>
             ) : (
               <div className="text-center py-12">
-                <Button onClick={generateMilestones}>
+                <Button onClick={generateMilestones} className="bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700 text-white rounded-xl shadow-lg hover:shadow-xl transition-all duration-200">
                   <Target className="h-4 w-4 mr-2" />
                   Generate Milestones
                 </Button>
@@ -641,10 +650,15 @@ const SmartRockAssistant = () => {
 
       {/* Step 4: Alignment Check (for Department Rocks) */}
       {currentStep === 4 && rockData.type === 'individual' && (
-        <Card>
-          <CardHeader>
-            <CardTitle>Step 4: Company Rock Alignment</CardTitle>
-            <CardDescription>
+        <Card className="bg-white/80 backdrop-blur-sm border border-white/50 rounded-2xl shadow-xl">
+          <CardHeader className="bg-gradient-to-r from-white/90 to-white/70 backdrop-blur-sm border-b border-white/20">
+            <CardTitle className="text-xl font-bold text-slate-900 flex items-center gap-3">
+              <div className="p-2 rounded-xl bg-gradient-to-br from-indigo-100 to-blue-200">
+                <Users className="h-5 w-5 text-indigo-600" />
+              </div>
+              Step 4: Company Rock Alignment
+            </CardTitle>
+            <CardDescription className="text-slate-600 font-medium">
               Ensure your Department Rock supports Company priorities
             </CardDescription>
           </CardHeader>
@@ -657,15 +671,15 @@ const SmartRockAssistant = () => {
             ) : alignment ? (
               <div className="space-y-6">
                 {/* Alignment Score */}
-                <div className="bg-gray-50 rounded-lg p-6">
+                <div className="bg-white/60 backdrop-blur-sm border border-white/30 rounded-xl p-6 shadow-sm">
                   <div className="flex items-center justify-between mb-4">
-                    <h3 className="text-lg font-semibold">Alignment Score</h3>
+                    <h3 className="text-lg font-bold text-slate-900">Alignment Score</h3>
                     <span className={`text-3xl font-bold ${getSmartScoreColor(alignment.alignmentScore)}`}>
                       {alignment.alignmentScore}%
                     </span>
                   </div>
-                  <Progress value={alignment.alignmentScore} className="h-3" />
-                  <p className="text-sm text-muted-foreground mt-2">
+                  <Progress value={alignment.alignmentScore} className="h-4" />
+                  <p className="text-sm text-slate-600 mt-3">
                     {alignment.alignmentExplanation}
                   </p>
                 </div>
@@ -673,12 +687,12 @@ const SmartRockAssistant = () => {
                 {/* Aligned Company Rocks */}
                 {alignment.alignedRocks?.length > 0 && (
                   <div>
-                    <h4 className="font-semibold mb-3">Supports These Company Rocks:</h4>
+                    <h4 className="font-bold text-slate-900 mb-3">Supports These Company Rocks:</h4>
                     <div className="space-y-2">
                       {alignment.alignedRocks.map((rock, index) => (
-                        <div key={index} className="flex items-center gap-2 p-3 bg-green-50 rounded-lg">
-                          <CheckCircle2 className="h-5 w-5 text-green-600" />
-                          <span className="font-medium">{rock.title}</span>
+                        <div key={index} className="flex items-center gap-3 p-4 bg-gradient-to-r from-green-50/80 to-emerald-50/80 backdrop-blur-sm border border-green-200/50 rounded-xl shadow-sm">
+                          <CheckCircle2 className="h-5 w-5 text-green-600 flex-shrink-0" />
+                          <span className="font-semibold text-slate-800">{rock.title}</span>
                         </div>
                       ))}
                     </div>
@@ -688,12 +702,12 @@ const SmartRockAssistant = () => {
                 {/* Suggested Adjustments */}
                 {alignment.suggestedAdjustments?.length > 0 && (
                   <div>
-                    <h4 className="font-semibold mb-3">Suggested Adjustments:</h4>
+                    <h4 className="font-bold text-slate-900 mb-3">Suggested Adjustments:</h4>
                     <div className="space-y-2">
                       {alignment.suggestedAdjustments.map((adjustment, index) => (
-                        <div key={index} className="flex items-start gap-2">
-                          <Sparkles className="h-4 w-4 text-primary mt-0.5" />
-                          <span className="text-sm">{adjustment}</span>
+                        <div key={index} className="flex items-start gap-3 bg-purple-50/80 backdrop-blur-sm border border-purple-200/50 rounded-xl p-4 shadow-sm">
+                          <Sparkles className="h-4 w-4 text-purple-600 mt-0.5 flex-shrink-0" />
+                          <span className="text-sm text-slate-700 font-medium">{adjustment}</span>
                         </div>
                       ))}
                     </div>
@@ -702,23 +716,23 @@ const SmartRockAssistant = () => {
 
                 {/* Recommendation */}
                 {alignment.recommendation && (
-                  <Alert>
-                    <AlertCircle className="h-4 w-4" />
-                    <AlertTitle>Recommendation</AlertTitle>
-                    <AlertDescription>{alignment.recommendation}</AlertDescription>
+                  <Alert className="bg-blue-50/80 backdrop-blur-sm border-blue-200/50 rounded-xl">
+                    <AlertCircle className="h-4 w-4 text-blue-600" />
+                    <AlertTitle className="font-bold text-blue-900">Recommendation</AlertTitle>
+                    <AlertDescription className="text-blue-800">{alignment.recommendation}</AlertDescription>
                   </Alert>
                 )}
 
                 <div className="flex justify-between">
-                  <Button variant="outline" onClick={prevStep}>
+                  <Button variant="outline" onClick={prevStep} className="bg-white/80 backdrop-blur-sm border-white/20 hover:bg-white/90 rounded-xl shadow-sm transition-all duration-200">
                     Back
                   </Button>
                   <div className="flex gap-2">
-                    <Button variant="outline" onClick={checkAlignment}>
+                    <Button variant="outline" onClick={checkAlignment} className="bg-white/80 backdrop-blur-sm border-white/20 hover:bg-white/90 rounded-xl shadow-sm transition-all duration-200">
                       <RefreshCw className="h-4 w-4 mr-2" />
                       Re-check
                     </Button>
-                    <Button onClick={nextStep}>
+                    <Button onClick={nextStep} className="bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700 text-white rounded-xl shadow-lg hover:shadow-xl transition-all duration-200">
                       Next: Review & Create
                       <ArrowRight className="h-4 w-4 ml-2" />
                     </Button>
@@ -739,56 +753,63 @@ const SmartRockAssistant = () => {
 
       {/* Step 5: Review & Create */}
       {(currentStep === 5 || (currentStep === 4 && rockData.type === 'company')) && (
-        <Card>
-          <CardHeader>
-            <CardTitle>Step 5: Review & Create Rock</CardTitle>
-            <CardDescription>
+        <Card className="bg-white/80 backdrop-blur-sm border border-white/50 rounded-2xl shadow-xl">
+          <CardHeader className="bg-gradient-to-r from-white/90 to-white/70 backdrop-blur-sm border-b border-white/20">
+            <CardTitle className="text-xl font-bold text-slate-900 flex items-center gap-3">
+              <div className="p-2 rounded-xl bg-gradient-to-br from-emerald-100 to-green-200">
+                <Save className="h-5 w-5 text-emerald-600" />
+              </div>
+              Step 5: Review & Create Rock
+            </CardTitle>
+            <CardDescription className="text-slate-600 font-medium">
               Review your SMART Rock before creating it
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-6">
             {/* Final Rock Summary */}
-            <div className="bg-gray-50 rounded-lg p-6 space-y-4">
+            <div className="bg-gradient-to-r from-purple-50/80 to-indigo-50/80 backdrop-blur-sm border border-purple-200/50 rounded-2xl p-6 space-y-4 shadow-sm">
               <div>
-                <Label className="text-sm text-muted-foreground">Title</Label>
-                <p className="text-lg font-semibold">{rockData.title}</p>
+                <Label className="text-sm font-semibold text-purple-700">Title</Label>
+                <p className="text-lg font-bold text-slate-900">{rockData.title}</p>
               </div>
               
               {rockData.description && (
                 <div>
-                  <Label className="text-sm text-muted-foreground">Description</Label>
-                  <p className="text-sm">{rockData.description}</p>
+                  <Label className="text-sm font-semibold text-purple-700">Description</Label>
+                  <p className="text-sm text-slate-700">{rockData.description}</p>
                 </div>
               )}
               
               <div className="grid grid-cols-3 gap-4">
-                <div>
-                  <Label className="text-sm text-muted-foreground">Owner</Label>
-                  <p className="text-sm">
+                <div className="bg-white/60 backdrop-blur-sm rounded-xl p-3">
+                  <Label className="text-xs font-semibold text-purple-700">Owner</Label>
+                  <p className="text-sm font-medium text-slate-800">
                     {users.find(u => u.id === rockData.owner)?.first_name} {users.find(u => u.id === rockData.owner)?.last_name}
                   </p>
                 </div>
-                <div>
-                  <Label className="text-sm text-muted-foreground">Team</Label>
-                  <p className="text-sm">
+                <div className="bg-white/60 backdrop-blur-sm rounded-xl p-3">
+                  <Label className="text-xs font-semibold text-purple-700">Team</Label>
+                  <p className="text-sm font-medium text-slate-800">
                     {teams.find(t => t.id === rockData.teamId)?.name}
                   </p>
                 </div>
-                <div>
-                  <Label className="text-sm text-muted-foreground">Due Date</Label>
-                  <p className="text-sm">{format(new Date(rockData.dueDate), 'MMM d, yyyy')}</p>
+                <div className="bg-white/60 backdrop-blur-sm rounded-xl p-3">
+                  <Label className="text-xs font-semibold text-purple-700">Due Date</Label>
+                  <p className="text-sm font-medium text-slate-800">{format(new Date(rockData.dueDate), 'MMM d, yyyy')}</p>
                 </div>
               </div>
             </div>
 
             {/* SMART Score Summary */}
             {smartAnalysis && (
-              <div className="flex items-center justify-between p-4 border rounded-lg">
+              <div className="flex items-center justify-between p-5 bg-white/60 backdrop-blur-sm border border-white/30 rounded-xl shadow-sm">
                 <div className="flex items-center gap-3">
-                  <Brain className="h-6 w-6 text-primary" />
-                  <span className="font-semibold">SMART Score</span>
+                  <div className="p-2 rounded-xl bg-gradient-to-br from-purple-100 to-indigo-200">
+                    <Brain className="h-5 w-5 text-purple-600" />
+                  </div>
+                  <span className="font-bold text-slate-900">SMART Score</span>
                 </div>
-                <Badge className={getSmartScoreBadge(smartAnalysis.overallScore)}>
+                <Badge className={`${getSmartScoreBadge(smartAnalysis.overallScore)} text-sm px-3 py-1`}>
                   {smartAnalysis.overallScore}%
                 </Badge>
               </div>
@@ -796,13 +817,13 @@ const SmartRockAssistant = () => {
 
             {/* Milestones Summary */}
             {milestones.length > 0 && (
-              <div>
-                <h4 className="font-semibold mb-3">Milestones ({milestones.length})</h4>
+              <div className="bg-white/60 backdrop-blur-sm border border-white/30 rounded-xl p-5 shadow-sm">
+                <h4 className="font-bold text-slate-900 mb-3">Milestones ({milestones.length})</h4>
                 <div className="space-y-2">
                   {milestones.map((milestone, index) => (
-                    <div key={index} className="flex items-center justify-between text-sm">
-                      <span>{milestone.title}</span>
-                      <span className="text-muted-foreground">
+                    <div key={index} className="flex items-center justify-between p-3 bg-purple-50/50 backdrop-blur-sm rounded-lg">
+                      <span className="text-sm font-medium text-slate-800">{milestone.title}</span>
+                      <span className="text-sm font-medium text-purple-700">
                         {format(new Date(milestone.dueDate), 'MMM d')}
                       </span>
                     </div>
@@ -813,22 +834,24 @@ const SmartRockAssistant = () => {
 
             {/* Alignment Summary */}
             {alignment && rockData.type === 'individual' && (
-              <div className="flex items-center justify-between p-4 border rounded-lg">
+              <div className="flex items-center justify-between p-5 bg-white/60 backdrop-blur-sm border border-white/30 rounded-xl shadow-sm">
                 <div className="flex items-center gap-3">
-                  <Target className="h-6 w-6 text-primary" />
-                  <span className="font-semibold">Company Alignment</span>
+                  <div className="p-2 rounded-xl bg-gradient-to-br from-indigo-100 to-blue-200">
+                    <Target className="h-5 w-5 text-indigo-600" />
+                  </div>
+                  <span className="font-bold text-slate-900">Company Alignment</span>
                 </div>
-                <Badge className={getSmartScoreBadge(alignment.alignmentScore)}>
+                <Badge className={`${getSmartScoreBadge(alignment.alignmentScore)} text-sm px-3 py-1`}>
                   {alignment.alignmentScore}%
                 </Badge>
               </div>
             )}
 
             <div className="flex justify-between">
-              <Button variant="outline" onClick={prevStep}>
+              <Button variant="outline" onClick={prevStep} className="bg-white/80 backdrop-blur-sm border-white/20 hover:bg-white/90 rounded-xl shadow-sm transition-all duration-200">
                 Back
               </Button>
-              <Button onClick={saveRock} size="lg">
+              <Button onClick={saveRock} size="lg" className="bg-gradient-to-r from-emerald-600 to-green-600 hover:from-emerald-700 hover:to-green-700 text-white rounded-xl shadow-lg hover:shadow-xl transition-all duration-200">
                 <Save className="h-4 w-4 mr-2" />
                 Create SMART Rock
               </Button>
