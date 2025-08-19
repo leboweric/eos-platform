@@ -3,6 +3,9 @@ const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3001/api/
 class ExportService {
   async exportOrganizationBackup(organizationId) {
     const token = localStorage.getItem('token');
+    console.log('Export service - Token exists:', !!token);
+    console.log('Export service - Token length:', token?.length);
+    console.log('Export service - Token preview:', token?.substring(0, 20) + '...');
     
     try {
       const response = await fetch(`${API_BASE_URL}/organizations/${organizationId}/export/backup`, {

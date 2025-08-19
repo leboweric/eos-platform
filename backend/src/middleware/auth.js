@@ -5,8 +5,15 @@ export const authenticate = async (req, res, next) => {
   try {
     const authHeader = req.header('Authorization');
     console.log('Auth header received:', authHeader ? 'Bearer token present' : 'No auth header');
+    console.log('Request URL:', req.url);
     
     const token = authHeader?.replace('Bearer ', '');
+    
+    // Log first 20 chars of token for debugging (safe to log partial token)
+    if (token) {
+      console.log('Token preview:', token.substring(0, 20) + '...');
+      console.log('Token length:', token.length);
+    }
 
     if (!token) {
       console.log('Authentication failed: No token provided');
