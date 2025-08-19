@@ -1,4 +1,4 @@
-const exportService = require('../services/exportService');
+import exportService from '../services/exportService.js';
 
 const exportController = {
   async exportOrganizationData(req, res) {
@@ -33,4 +33,4 @@ const exportController = {
   }
 };
 
-module.exports = exportController;
+export default exportController;

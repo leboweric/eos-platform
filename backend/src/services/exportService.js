@@ -1,6 +1,6 @@
-const XLSX = require('xlsx');
-const pool = require('../config/database');
-const { format } = require('date-fns');
+import XLSX from 'xlsx';
+import pool from '../config/database.js';
+import { format } from 'date-fns';
 
 class ExportService {
   async exportOrganizationData(organizationId, userId) {
@@ -367,4 +367,4 @@ class ExportService {
   }
 }
 
-module.exports = new ExportService();
+export default new ExportService();

@@ -1,6 +1,8 @@
-const router = require('express').Router();
-const exportController = require('../controllers/exportController');
-const authMiddleware = require('../middleware/auth');
+import express from 'express';
+import exportController from '../controllers/exportController.js';
+import authMiddleware from '../middleware/auth.js';
+
+const router = express.Router();
 
 // Export organization data
 router.get('/organizations/:orgId/export/backup', 
@@ -8,4 +10,4 @@ router.get('/organizations/:orgId/export/backup',
   exportController.exportOrganizationData
 );
 
-module.exports = router;
+export default router;
