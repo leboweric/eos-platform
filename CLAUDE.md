@@ -441,6 +441,86 @@ VALUES (gen_random_uuid(), 'Leadership Team', <org_id>, true);
 - **Personal folders**: Users can create/update/delete their own folders
 - All users can view folders they have access to based on visibility
 
+## UI/UX Design System (January 2025)
+
+### Design Philosophy
+The platform uses a **premium, modern SaaS aesthetic** that adapts to each organization's custom theme colors while maintaining a consistent, sophisticated feel.
+
+### Core Design Elements
+
+#### Color System
+- **Background**: Gradient from `slate-50` via `blue-50/30` to `indigo-50/30`
+- **Grid Pattern**: Subtle grid overlay with gradient mask for depth
+- **Cards**: `white/80` with `backdrop-blur-sm` for glass-morphism effect
+- **Borders**: `border-white/50` for subtle definition
+- **Organization Theme**: Custom colors used for accents, gradients, and interactive elements
+
+#### Typography
+- **Hero Headings**: `text-4xl` to `text-5xl` with `font-bold`
+- **Section Headers**: `text-xl` with `font-semibold`
+- **Body Text**: `text-slate-600` to `text-slate-900` for hierarchy
+- **Gradient Text**: Used sparingly for emphasis on key headings
+
+#### Component Patterns
+- **Cards**: `rounded-2xl` with `shadow-sm` and hover states
+- **Buttons**: Gradient backgrounds with `rounded-lg` and scale hover effects
+- **Icons**: Placed in colored boxes with gradient backgrounds
+- **Progress Bars**: Gradient fills using organization theme colors
+- **Badges**: Gradient backgrounds with complementary borders
+
+#### Interactions
+- **Hover Effects**: `hover:scale-[1.02]` for subtle lift
+- **Transitions**: `transition-all duration-300` for smooth animations
+- **Active States**: Scale and shadow changes for feedback
+- **Focus States**: Consistent with theme colors
+
+#### Layout Principles
+- **Spacing**: Generous padding (`p-6` to `p-8`) for breathing room
+- **Grid Gaps**: `gap-6` to `gap-8` for clear separation
+- **Max Width**: `max-w-7xl` for optimal reading width
+- **Responsive**: Mobile-first with `lg:` breakpoints
+
+### Implementation Examples
+
+#### Standard Card Component
+```jsx
+<div className="bg-white/80 backdrop-blur-sm rounded-2xl p-6 shadow-sm border border-white/50">
+  {/* Content */}
+</div>
+```
+
+#### Theme-Aware Gradient Button
+```jsx
+<Button 
+  className="bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white rounded-lg transition-all transform hover:scale-[1.02]"
+  style={{
+    background: `linear-gradient(135deg, ${themeColors.primary} 0%, ${themeColors.secondary} 100%)`
+  }}
+>
+```
+
+#### Icon Badge Pattern
+```jsx
+<div className="w-10 h-10 rounded-lg flex items-center justify-center"
+     style={{
+       background: `linear-gradient(135deg, ${themeColors.primary} 0%, ${themeColors.secondary} 100%)`
+     }}>
+  <IconComponent className="h-5 w-5 text-white" />
+</div>
+```
+
+### Pages Updated with New Design System
+1. **Landing Page** - Complete with gradient hero and feature cards
+2. **Login/Register Pages** - Split panels with gradient backgrounds
+3. **Dashboard** - Full modernization with all design patterns (January 2025)
+4. **Quarterly Priorities** - (In Progress)
+
+### Important Considerations
+- **Theme Preservation**: Always respect organization's custom colors
+- **Performance**: Use `backdrop-blur-sm` sparingly for performance
+- **Accessibility**: Maintain proper contrast ratios with gradient backgrounds
+- **Consistency**: Use established patterns across all pages
+
 ## Development Guidelines
 
 1. Always use PostgreSQL for data persistence
@@ -449,6 +529,7 @@ VALUES (gen_random_uuid(), 'Leadership Team', <org_id>, true);
 4. Document any new architectural decisions in this file
 5. Always run lint and typecheck before committing
 6. When creating new routes that are nested under teams, use `router({ mergeParams: true })` to access parent params
+7. Follow the UI/UX Design System for all new components and page updates
 7. **LANDING PAGE**: Always update the existing `LandingPage.jsx` file. Do NOT create new landing page files (e.g., LandingPageV2, LandingPageNew, etc.). Since we're not live yet, we don't need multiple versions for A/B testing or campaigns. Just modify the existing landing page directly.
 
 ## Database Tables Reference
