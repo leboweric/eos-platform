@@ -3,9 +3,13 @@ import { query } from '../config/database.js';
 
 export const authenticate = async (req, res, next) => {
   try {
-    const token = req.header('Authorization')?.replace('Bearer ', '');
+    const authHeader = req.header('Authorization');
+    console.log('Auth header received:', authHeader ? 'Bearer token present' : 'No auth header');
+    
+    const token = authHeader?.replace('Bearer ', '');
 
     if (!token) {
+      console.log('Authentication failed: No token provided');
       return res.status(401).json({
         success: false,
         error: 'Access denied. No token provided.'
@@ -14,7 +18,15 @@ export const authenticate = async (req, res, next) => {
 
     let decoded;
     try {
+      if (!process.env.JWT_SECRET) {
+        console.error('JWT_SECRET is not defined in environment variables!');
+        return res.status(500).json({
+          success: false,
+          error: 'Server configuration error.'
+        });
+      }
       decoded = jwt.verify(token, process.env.JWT_SECRET);
+      console.log('Token verified successfully for user:', decoded.userId);
     } catch (jwtError) {
       console.error('JWT verification error:', jwtError.message);
       return res.status(401).json({
