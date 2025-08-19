@@ -1,64 +1,66 @@
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { useAuthStore } from './stores/authStore';
-import { useEffect, useState } from 'react';
+import { useEffect, useState, Suspense, lazy } from 'react';
 import { TeamProvider } from './contexts/TeamContext';
 import { DepartmentProvider } from './contexts/DepartmentContext';
 import { SelectedTodosProvider } from './contexts/SelectedTodosContext';
 import { TerminologyProvider } from './contexts/TerminologyContext';
 import ForcedLegalAgreementModal from './components/legal/ForcedLegalAgreementModal';
 
-// Components
+// Critical components (loaded immediately)
 import Layout from './components/Layout';
 import LoginPage from './pages/LoginPage';
 import RegisterPage from './pages/RegisterPage';
-import ForgotPasswordPage from './pages/ForgotPasswordPage';
-import ResetPasswordPage from './pages/ResetPasswordPage';
-import Dashboard from './pages/DashboardClean';
-import DashboardOriginal from './pages/DashboardOriginal';
-import DashboardRedesigned from './pages/DashboardRedesigned';
-import BusinessBlueprintPage from './pages/BusinessBlueprintPage';
-import QuarterlyPrioritiesPage from './pages/QuarterlyPrioritiesPageClean';
-import QuarterlyPrioritiesPageOriginal from './pages/QuarterlyPrioritiesPageOriginal';
-import QuarterlyPrioritiesPageRedesigned from './pages/QuarterlyPrioritiesPageRedesigned';
-import ComparisonPage from './pages/ComparisonPage';
-import DashboardComparison from './pages/DashboardComparison';
-import ScorecardComparison from './pages/ScorecardComparison';
-import ScorecardPage from './pages/ScorecardPageClean';
-import ScorecardPageOriginal from './pages/ScorecardPageOriginal';
-import ScorecardPageRedesigned from './pages/ScorecardPageRedesigned';
-import MeetingsPage from './pages/MeetingsPage';
-import TodosPage from './pages/TodosPage';
-import IssuesPage from './pages/IssuesPageClean';
-import IssuesPageOriginal from './pages/IssuesPageOriginal';
 import LandingPage from './pages/LandingPage';
-import LandingPageOld from './pages/LandingPageOld';
-import DepartmentsPage from './pages/DepartmentsPage';
-import AccountabilityChart from './pages/AccountabilityChart';
-import BillingPage from './pages/BillingPage';
-import UsersPage from './pages/UsersPage';
-import AcceptInvitationPage from './pages/AcceptInvitationPage';
-import ConsultantDashboard from './pages/ConsultantDashboard';
-import ConsultantRegisterPage from './pages/ConsultantRegisterPage';
-import OrganizationSettings from './pages/OrganizationSettings';
-import UserSettings from './pages/UserSettings';
-import OrganizationalChartPage from './pages/OrganizationalChartPage';
-import WeeklyAccountabilityMeetingPage from './pages/WeeklyAccountabilityMeetingPage';
-import WeeklyAccountabilityMeetingPageOriginal from './pages/WeeklyAccountabilityMeetingPageOriginal';
-import QuarterlyPlanningMeetingPage from './pages/QuarterlyPlanningMeetingPage';
-import DocumentRepositoryPage from './pages/DocumentRepositoryPage';
-import SmartRockAssistant from './pages/SmartRockAssistant';
-import ScorecardDebug from './pages/ScorecardDebug';
-import OAuthCallback from './pages/OAuthCallback';
-import TerminologySettingsPage from './pages/TerminologySettingsPage';
-import StorageConfigPage from './pages/StorageConfigPage';
+
+// Lazy-loaded page components for better performance
+const ForgotPasswordPage = lazy(() => import('./pages/ForgotPasswordPage'));
+const ResetPasswordPage = lazy(() => import('./pages/ResetPasswordPage'));
+const Dashboard = lazy(() => import('./pages/DashboardClean'));
+const DashboardOriginal = lazy(() => import('./pages/DashboardOriginal'));
+const DashboardRedesigned = lazy(() => import('./pages/DashboardRedesigned'));
+const BusinessBlueprintPage = lazy(() => import('./pages/BusinessBlueprintPage'));
+const QuarterlyPrioritiesPage = lazy(() => import('./pages/QuarterlyPrioritiesPageClean'));
+const QuarterlyPrioritiesPageOriginal = lazy(() => import('./pages/QuarterlyPrioritiesPageOriginal'));
+const QuarterlyPrioritiesPageRedesigned = lazy(() => import('./pages/QuarterlyPrioritiesPageRedesigned'));
+const ComparisonPage = lazy(() => import('./pages/ComparisonPage'));
+const DashboardComparison = lazy(() => import('./pages/DashboardComparison'));
+const ScorecardComparison = lazy(() => import('./pages/ScorecardComparison'));
+const ScorecardPage = lazy(() => import('./pages/ScorecardPageClean'));
+const ScorecardPageOriginal = lazy(() => import('./pages/ScorecardPageOriginal'));
+const ScorecardPageRedesigned = lazy(() => import('./pages/ScorecardPageRedesigned'));
+const MeetingsPage = lazy(() => import('./pages/MeetingsPage'));
+const TodosPage = lazy(() => import('./pages/TodosPage'));
+const IssuesPage = lazy(() => import('./pages/IssuesPageClean'));
+const IssuesPageOriginal = lazy(() => import('./pages/IssuesPageOriginal'));
+const LandingPageOld = lazy(() => import('./pages/LandingPageOld'));
+const DepartmentsPage = lazy(() => import('./pages/DepartmentsPage'));
+const AccountabilityChart = lazy(() => import('./pages/AccountabilityChart'));
+const BillingPage = lazy(() => import('./pages/BillingPage'));
+const UsersPage = lazy(() => import('./pages/UsersPage'));
+const AcceptInvitationPage = lazy(() => import('./pages/AcceptInvitationPage'));
+const ConsultantDashboard = lazy(() => import('./pages/ConsultantDashboard'));
+const ConsultantRegisterPage = lazy(() => import('./pages/ConsultantRegisterPage'));
+const OrganizationSettings = lazy(() => import('./pages/OrganizationSettings'));
+const UserSettings = lazy(() => import('./pages/UserSettings'));
+const OrganizationalChartPage = lazy(() => import('./pages/OrganizationalChartPage'));
+const WeeklyAccountabilityMeetingPage = lazy(() => import('./pages/WeeklyAccountabilityMeetingPage'));
+const WeeklyAccountabilityMeetingPageOriginal = lazy(() => import('./pages/WeeklyAccountabilityMeetingPageOriginal'));
+const QuarterlyPlanningMeetingPage = lazy(() => import('./pages/QuarterlyPlanningMeetingPage'));
+const DocumentRepositoryPage = lazy(() => import('./pages/DocumentRepositoryPage'));
+const SmartRockAssistant = lazy(() => import('./pages/SmartRockAssistant'));
+const ScorecardDebug = lazy(() => import('./pages/ScorecardDebug'));
+const OAuthCallback = lazy(() => import('./pages/OAuthCallback'));
+const TerminologySettingsPage = lazy(() => import('./pages/TerminologySettingsPage'));
+const StorageConfigPage = lazy(() => import('./pages/StorageConfigPage'));
 
 // Department Components
-import DepartmentLayout from './components/DepartmentLayout';
-import DepartmentPrioritiesPage from './pages/department/DepartmentPrioritiesPage';
-import DepartmentScorecardPage from './pages/department/DepartmentScorecardPage';
-import DepartmentMeetingsPage from './pages/department/DepartmentMeetingsPage';
-import DepartmentTodosPage from './pages/department/DepartmentTodosPage';
-import DepartmentIssuesPage from './pages/department/DepartmentIssuesPage';
+const DepartmentLayout = lazy(() => import('./components/DepartmentLayout'));
+const DepartmentPrioritiesPage = lazy(() => import('./pages/department/DepartmentPrioritiesPage'));
+const DepartmentScorecardPage = lazy(() => import('./pages/department/DepartmentScorecardPage'));
+const DepartmentMeetingsPage = lazy(() => import('./pages/department/DepartmentMeetingsPage'));
+const DepartmentTodosPage = lazy(() => import('./pages/department/DepartmentTodosPage'));
+const DepartmentIssuesPage = lazy(() => import('./pages/department/DepartmentIssuesPage'));
 import { initTokenRefresh } from './utils/tokenRefresh';
 
 import './App.css';
@@ -137,8 +139,13 @@ function App() {
                     onAccept={handleLegalAcceptance}
                   />
                 )}
-          <Routes>
-          {/* Public routes */}
+          <Suspense fallback={
+            <div className="min-h-screen flex items-center justify-center">
+              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+            </div>
+          }>
+            <Routes>
+            {/* Public routes */}
           <Route path="/" element={!user ? (getDefaultRoute() === '/login' ? <Navigate to="/login" /> : <LandingPage />) : <Navigate to="/dashboard" />} />
           <Route path="/login" element={!user ? <LoginPage /> : <Navigate to="/dashboard" />} />
           <Route path="/register" element={!user ? <RegisterPage /> : <Navigate to="/dashboard" />} />
@@ -199,7 +206,8 @@ function App() {
           
           {/* Catch all route */}
           <Route path="*" element={<Navigate to={user ? "/dashboard" : getDefaultRoute()} />} />
-        </Routes>
+            </Routes>
+          </Suspense>
           </div>
             </SelectedTodosProvider>
           </DepartmentProvider>

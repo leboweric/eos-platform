@@ -179,9 +179,6 @@ const TodosPage = () => {
     try {
       const effectiveTeamId = selectedDepartment?.id || user?.teamId || '00000000-0000-0000-0000-000000000000';
       
-      // Import issuesService if not already imported
-      const { issuesService } = await import('../services/issuesService');
-      
       await issuesService.createIssue({
         title: `Issue from To-Do: ${todo.title}`,
         description: `Related to to-do: ${todo.title}\n\n${todo.description || ''}`,
