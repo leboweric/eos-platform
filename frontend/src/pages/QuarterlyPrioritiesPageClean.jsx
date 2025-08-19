@@ -2223,38 +2223,58 @@ const QuarterlyPrioritiesPageClean = () => {
         </div>
       </div>
 
-      {/* Error Alert */}
-      {error && (
-        <Alert variant="destructive">
-          <AlertCircle className="h-4 w-4" />
-          <AlertDescription>{error}</AlertDescription>
-        </Alert>
-      )}
+        {/* Error Alert */}
+        {error && (
+          <Alert variant="destructive">
+            <AlertCircle className="h-4 w-4" />
+            <AlertDescription>{error}</AlertDescription>
+          </Alert>
+        )}
 
-      {/* Stats Cards - Only show for current priorities */}
-      {!showArchived && (
+        {/* Enhanced Stats Cards - Only show for current priorities */}
+        {!showArchived && (
         <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-          <Card className="border-0 shadow-sm bg-white">
-            <CardContent className="p-6">
+          <div className="group relative overflow-hidden bg-white/80 backdrop-blur-sm p-6 rounded-2xl border border-white/50 shadow-sm hover:shadow-md transition-all duration-300 hover:scale-[1.02]">
+            <div className="absolute inset-0 bg-gradient-to-br opacity-5 group-hover:opacity-10 transition-opacity"
+                 style={{
+                   background: `linear-gradient(135deg, ${themeColors.primary} 0%, ${themeColors.secondary} 100%)`
+                 }}></div>
+            <div className="relative">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm font-medium text-gray-600 mb-1">Total {labels.priorities_label}</p>
-                  <p className="text-3xl font-bold text-gray-900">{stats.total}</p>
-                  <p className={`text-sm font-medium mt-1 ${
-                    stats.total > 0 && (stats.completed / stats.total) >= 0.8 
-                      ? 'text-green-600' 
-                      : 'text-red-600'
-                  }`}>
-                    {stats.total > 0 
-                      ? `${Math.round((stats.completed / stats.total) * 100)}% Complete`
-                      : '0% Complete'
-                    }
-                  </p>
+                  <p className="text-sm font-medium text-slate-600 mb-1">Total {labels.priorities_label}</p>
+                  <p className="text-3xl font-bold text-slate-900">{stats.total}</p>
+                  <div className="mt-2">
+                    <div className="w-full h-2 bg-slate-100 rounded-full overflow-hidden">
+                      <div 
+                        className="h-full rounded-full transition-all duration-500"
+                        style={{ 
+                          width: `${stats.total > 0 ? Math.round((stats.completed / stats.total) * 100) : 0}%`,
+                          background: `linear-gradient(90deg, ${themeColors.primary} 0%, ${themeColors.secondary} 100%)`
+                        }}
+                      />
+                    </div>
+                    <p className={`text-xs font-medium mt-1 ${
+                      stats.total > 0 && (stats.completed / stats.total) >= 0.8 
+                        ? 'text-green-600' 
+                        : 'text-slate-600'
+                    }`}>
+                      {stats.total > 0 
+                        ? `${Math.round((stats.completed / stats.total) * 100)}% Complete`
+                        : '0% Complete'
+                      }
+                    </p>
+                  </div>
                 </div>
-                <CheckSquare className="h-8 w-8 text-gray-300" />
+                <div className="w-12 h-12 rounded-lg flex items-center justify-center"
+                     style={{
+                       background: `linear-gradient(135deg, ${themeColors.primary}20 0%, ${themeColors.secondary}20 100%)`
+                     }}>
+                  <CheckSquare className="h-6 w-6" style={{ color: themeColors.primary }} />
+                </div>
               </div>
-            </CardContent>
-          </Card>
+            </div>
+          </div>
 
             <div className="group relative overflow-hidden bg-white/80 backdrop-blur-sm p-6 rounded-2xl border border-white/50 shadow-sm hover:shadow-md transition-all duration-300 hover:scale-[1.02]">
               <div className="absolute inset-0 bg-gradient-to-br from-green-500/5 to-emerald-500/5 opacity-0 group-hover:opacity-100 transition-opacity"></div>
@@ -2486,7 +2506,9 @@ const QuarterlyPrioritiesPageClean = () => {
           </div>
         </div>
       )}
-
+      
+      </div>
+      
       {/* Add Priority Dialog */}
       <Dialog open={showAddPriority} onOpenChange={setShowAddPriority}>
         <DialogContent className="max-w-2xl">

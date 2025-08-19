@@ -23,7 +23,15 @@ import {
   BarChart3,
   ChevronDown,
   MoreHorizontal,
-  Share2
+  Share2,
+  Sparkles,
+  TrendingUp,
+  TrendingDown,
+  Activity,
+  Target,
+  Calendar,
+  Users,
+  Filter
 } from 'lucide-react';
 import MetricTrendChart from '../components/scorecard/MetricTrendChart';
 import GroupedScorecardView from '../components/scorecard/GroupedScorecardView';
@@ -509,125 +517,196 @@ const ScorecardPageClean = () => {
   const currentLabels = activeTab === 'weekly' ? weekLabels : monthLabels;
 
   return (
-    <div className="min-h-screen bg-white">
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50/30 to-indigo-50/30 relative">
+      {/* Background Pattern */}
+      <div className="absolute inset-0 bg-grid-slate-100 [mask-image:linear-gradient(0deg,white,rgba(255,255,255,0.6))] -z-10"></div>
+      
       <div className="max-w-full mx-auto p-6 space-y-6">
-        <div className="flex items-center justify-between mb-6">
-          <div>
-            <h1 className="text-3xl font-semibold text-gray-900">
-              <span className="inline-block w-1 h-8 mr-3 rounded-full" style={{ backgroundColor: themeColors.primary }} />
-              {selectedDepartment?.name || ''} Scorecard
-            </h1>
-            <p className="text-gray-500 mt-1">Track your key metrics and measurables</p>
-          </div>
-          <div className="flex items-center gap-3">
-            <div className="relative">
-              <Button 
-                onClick={() => setShowOptions(!showOptions)}
-                variant="outline"
-                className="border-gray-200 hover:bg-gray-50"
-              >
-                <MoreHorizontal className="h-4 w-4 mr-2" />
-                Options
-                <ChevronDown className="h-4 w-4 ml-2" />
-              </Button>
-              {showOptions && (
-                <div className="absolute right-0 mt-2 w-48 bg-white border border-gray-200 rounded-lg shadow-sm z-10">
-                  <button
-                    onClick={() => {
-                      const newViewMode = viewMode === 'table' ? 'groups' : 'table';
-                      setViewMode(newViewMode);
-                      localStorage.setItem('scorecardViewMode', newViewMode);
-                      setShowOptions(false);
-                    }}
-                    className="w-full text-left px-4 py-2 hover:bg-gray-50 text-sm"
-                  >
-                    {viewMode === 'table' ? 'Groups View' : 'Table View'}
-                  </button>
-                  <button
-                    onClick={() => {
-                      const newRTL = !isRTL;
-                      setIsRTL(newRTL);
-                      localStorage.setItem('scorecardRTL', newRTL.toString());
-                      setShowOptions(false);
-                    }}
-                    className="w-full text-left px-4 py-2 hover:bg-gray-50 text-sm border-t border-gray-100"
-                  >
-                    {isRTL ? 'Left to Right' : 'Right to Left'}
-                  </button>
-                </div>
-              )}
+        {/* Enhanced Header */}
+        <div className="mb-8">
+          <div className="flex items-center justify-between mb-6">
+            <div>
+              <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full text-sm font-medium mb-4"
+                   style={{
+                     background: `linear-gradient(135deg, ${themeColors.primary}15 0%, ${themeColors.secondary}15 100%)`,
+                     color: themeColors.primary
+                   }}>
+                <Activity className="h-4 w-4" />
+                PERFORMANCE TRACKING
+              </div>
+              <h1 className="text-4xl font-bold mb-2 bg-gradient-to-r from-slate-900 via-slate-800 to-slate-900 bg-clip-text text-transparent">
+                {selectedDepartment?.name || ''} Scorecard
+              </h1>
+              <p className="text-lg text-slate-600">Track your key metrics and measurables</p>
             </div>
-            <div className="flex gap-2">
-              <ScorecardImport 
-                orgId={user?.organization_id}
-                teamId={selectedDepartment?.id || LEADERSHIP_TEAM_ID}
-                onImportComplete={fetchScorecard}
-              />
-              <Button 
-                onClick={handleAddMetric} 
-                className="text-white transition-colors"
-                style={{ 
-                  backgroundColor: themeColors.primary,
-                }}
-                onMouseEnter={(e) => e.currentTarget.style.backgroundColor = themeColors.secondary}
-                onMouseLeave={(e) => e.currentTarget.style.backgroundColor = themeColors.primary}
-              >
-                <Plus className="mr-2 h-4 w-4" />
-                Add Metric
-              </Button>
+            <div className="flex items-center gap-3">
+              <div className="relative">
+                <Button 
+                  onClick={() => setShowOptions(!showOptions)}
+                  variant="outline"
+                  className="bg-white/80 backdrop-blur-sm border-white/20 hover:bg-white/90 shadow-sm transition-all duration-200"
+                >
+                  <Filter className="h-4 w-4 mr-2" />
+                  View Options
+                  <ChevronDown className="h-4 w-4 ml-2" />
+                </Button>
+                {showOptions && (
+                  <div className="absolute right-0 mt-2 w-56 bg-white/95 backdrop-blur-sm border border-white/20 rounded-xl shadow-lg z-10 overflow-hidden">
+                    <button
+                      onClick={() => {
+                        const newViewMode = viewMode === 'table' ? 'groups' : 'table';
+                        setViewMode(newViewMode);
+                        localStorage.setItem('scorecardViewMode', newViewMode);
+                        setShowOptions(false);
+                      }}
+                      className="w-full text-left px-4 py-3 hover:bg-gradient-to-r hover:from-blue-50 hover:to-indigo-50 text-sm font-medium transition-colors"
+                    >
+                      <div className="flex items-center gap-2">
+                        <Target className="h-4 w-4 text-blue-600" />
+                        <span>{viewMode === 'table' ? 'Switch to Groups View' : 'Switch to Table View'}</span>
+                      </div>
+                    </button>
+                    <button
+                      onClick={() => {
+                        const newRTL = !isRTL;
+                        setIsRTL(newRTL);
+                        localStorage.setItem('scorecardRTL', newRTL.toString());
+                        setShowOptions(false);
+                      }}
+                      className="w-full text-left px-4 py-3 hover:bg-gradient-to-r hover:from-blue-50 hover:to-indigo-50 text-sm font-medium border-t border-gray-100 transition-colors"
+                    >
+                      <div className="flex items-center gap-2">
+                        <Activity className="h-4 w-4 text-indigo-600" />
+                        <span>{isRTL ? 'Left to Right Layout' : 'Right to Left Layout'}</span>
+                      </div>
+                    </button>
+                  </div>
+                )}
+              </div>
+              <div className="flex gap-2">
+                <ScorecardImport 
+                  orgId={user?.organization_id}
+                  teamId={selectedDepartment?.id || LEADERSHIP_TEAM_ID}
+                  onImportComplete={fetchScorecard}
+                />
+                <Button 
+                  onClick={handleAddMetric} 
+                  className="text-white shadow-lg hover:shadow-xl transition-all duration-200 transform hover:scale-[1.02]"
+                  style={{ 
+                    background: `linear-gradient(135deg, ${themeColors.primary} 0%, ${themeColors.secondary} 100%)`,
+                  }}
+                >
+                  <Plus className="mr-2 h-4 w-4" />
+                  Add Metric
+                </Button>
+              </div>
+            </div>
+          </div>
+          
+          {/* Stats Cards */}
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
+            <div className="bg-white/80 backdrop-blur-sm rounded-2xl p-6 border border-white/20 shadow-sm hover:shadow-md transition-all duration-200">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm font-medium text-slate-600">Total Metrics</p>
+                  <p className="text-2xl font-bold mt-1" style={{ color: themeColors.primary }}>
+                    {metrics.length}
+                  </p>
+                </div>
+                <div className="h-12 w-12 rounded-xl flex items-center justify-center"
+                     style={{ background: `linear-gradient(135deg, ${themeColors.primary}15 0%, ${themeColors.secondary}15 100%)` }}>
+                  <Target className="h-6 w-6" style={{ color: themeColors.primary }} />
+                </div>
+              </div>
+            </div>
+            
+            <div className="bg-white/80 backdrop-blur-sm rounded-2xl p-6 border border-white/20 shadow-sm hover:shadow-md transition-all duration-200">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm font-medium text-slate-600">Weekly Metrics</p>
+                  <p className="text-2xl font-bold mt-1 text-green-600">
+                    {weeklyMetrics.length}
+                  </p>
+                </div>
+                <div className="h-12 w-12 rounded-xl bg-green-50 flex items-center justify-center">
+                  <Calendar className="h-6 w-6 text-green-600" />
+                </div>
+              </div>
+            </div>
+            
+            <div className="bg-white/80 backdrop-blur-sm rounded-2xl p-6 border border-white/20 shadow-sm hover:shadow-md transition-all duration-200">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm font-medium text-slate-600">Monthly Metrics</p>
+                  <p className="text-2xl font-bold mt-1 text-indigo-600">
+                    {monthlyMetrics.length}
+                  </p>
+                </div>
+                <div className="h-12 w-12 rounded-xl bg-indigo-50 flex items-center justify-center">
+                  <TrendingUp className="h-6 w-6 text-indigo-600" />
+                </div>
+              </div>
+            </div>
+            
+            <div className="bg-white/80 backdrop-blur-sm rounded-2xl p-6 border border-white/20 shadow-sm hover:shadow-md transition-all duration-200">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm font-medium text-slate-600">Team Members</p>
+                  <p className="text-2xl font-bold mt-1 text-purple-600">
+                    {users.length}
+                  </p>
+                </div>
+                <div className="h-12 w-12 rounded-xl bg-purple-50 flex items-center justify-center">
+                  <Users className="h-6 w-6 text-purple-600" />
+                </div>
+              </div>
             </div>
           </div>
         </div>
 
         {error && (
-          <Alert className="border-red-200 bg-red-50">
+          <Alert className="border-red-200 bg-red-50/80 backdrop-blur-sm rounded-xl">
             <AlertCircle className="h-4 w-4 text-red-600" />
-            <AlertDescription className="text-red-800">{error}</AlertDescription>
+            <AlertDescription className="text-red-800 font-medium">{error}</AlertDescription>
           </Alert>
         )}
 
         {success && (
-          <Alert className="border-green-200 bg-green-50">
-            <AlertCircle className="h-4 w-4 text-green-600" />
-            <AlertDescription className="text-green-800">{success}</AlertDescription>
+          <Alert className="border-green-200 bg-green-50/80 backdrop-blur-sm rounded-xl">
+            <Sparkles className="h-4 w-4 text-green-600" />
+            <AlertDescription className="text-green-800 font-medium">{success}</AlertDescription>
           </Alert>
         )}
 
         <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-          <TabsList className="grid w-72 grid-cols-3 mb-6 bg-gray-100">
-            <TabsTrigger 
-              value="weekly" 
-              className="transition-colors"
-              style={{ 
-                backgroundColor: activeTab === 'weekly' ? themeColors.primary : 'transparent',
-                color: activeTab === 'weekly' ? 'white' : 'inherit'
-              }}
-            >
-              Weekly
-            </TabsTrigger>
-            <TabsTrigger 
-              value="monthly" 
-              className="transition-colors"
-              style={{ 
-                backgroundColor: activeTab === 'monthly' ? themeColors.primary : 'transparent',
-                color: activeTab === 'monthly' ? 'white' : 'inherit'
-              }}
-            >
-              Monthly
-            </TabsTrigger>
-            <TabsTrigger 
-              value="shared" 
-              className="transition-colors"
-              style={{ 
-                backgroundColor: activeTab === 'shared' ? themeColors.primary : 'transparent',
-                color: activeTab === 'shared' ? 'white' : 'inherit'
-              }}
-            >
-              Shared
-            </TabsTrigger>
-          </TabsList>
+          <div className="bg-white/80 backdrop-blur-sm rounded-2xl p-2 mb-6 inline-flex shadow-sm">
+            <TabsList className="grid w-80 grid-cols-3 bg-transparent gap-1">
+              <TabsTrigger 
+                value="weekly" 
+                className="data-[state=active]:bg-gradient-to-r data-[state=active]:from-blue-500 data-[state=active]:to-indigo-500 data-[state=active]:text-white data-[state=active]:shadow-lg rounded-xl transition-all duration-200 font-medium"
+              >
+                <Calendar className="h-4 w-4 mr-2" />
+                Weekly
+              </TabsTrigger>
+              <TabsTrigger 
+                value="monthly" 
+                className="data-[state=active]:bg-gradient-to-r data-[state=active]:from-blue-500 data-[state=active]:to-indigo-500 data-[state=active]:text-white data-[state=active]:shadow-lg rounded-xl transition-all duration-200 font-medium"
+              >
+                <TrendingUp className="h-4 w-4 mr-2" />
+                Monthly
+              </TabsTrigger>
+              <TabsTrigger 
+                value="shared" 
+                className="data-[state=active]:bg-gradient-to-r data-[state=active]:from-blue-500 data-[state=active]:to-indigo-500 data-[state=active]:text-white data-[state=active]:shadow-lg rounded-xl transition-all duration-200 font-medium"
+              >
+                <Share2 className="h-4 w-4 mr-2" />
+                Shared
+              </TabsTrigger>
+            </TabsList>
+          </div>
           
           <TabsContent value="weekly" className="mt-0">
+            <div className="bg-white/80 backdrop-blur-sm rounded-2xl border border-white/20 shadow-lg p-6">
             {viewMode === 'groups' ? (
               <GroupedScorecardView
                 metrics={weeklyMetrics}
@@ -676,9 +755,11 @@ const ScorecardPageClean = () => {
                 onMetricShare={handleMetricShare}
               />
             )}
+            </div>
           </TabsContent>
           
           <TabsContent value="monthly" className="mt-0">
+            <div className="bg-white/80 backdrop-blur-sm rounded-2xl border border-white/20 shadow-lg p-6">
             {viewMode === 'groups' ? (
               <GroupedScorecardView
                 metrics={monthlyMetrics}
@@ -726,14 +807,17 @@ const ScorecardPageClean = () => {
                 onMetricShare={handleMetricShare}
               />
             )}
+            </div>
           </TabsContent>
           
           <TabsContent value="shared" className="mt-0">
+            <div className="bg-white/80 backdrop-blur-sm rounded-2xl border border-white/20 shadow-lg p-6">
             <SharedMetricsBrowser
               orgId={user?.organizationId || user?.organization_id}
               teamId={selectedDepartment?.id || LEADERSHIP_TEAM_ID}
               onSubscribe={fetchScorecard}
             />
+            </div>
           </TabsContent>
         </Tabs>
 
