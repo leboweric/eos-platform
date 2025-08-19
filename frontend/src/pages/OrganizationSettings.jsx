@@ -657,6 +657,7 @@ const OrganizationSettings = () => {
         saving={saving}
       />
     </div>
+    </div>
   );
 };
 
