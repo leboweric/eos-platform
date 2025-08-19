@@ -115,7 +115,7 @@ const DocumentRepositoryPage = () => {
       setUploadFile(file);
       setUploadForm(prev => ({
         ...prev,
-        title: prev.title || file.name.replace(/\.[^/.]+$/, '') // Use filename without extension as default title
+        title: prev.title || file.name.substring(0, file.name.lastIndexOf('.')) || file.name // Use filename without extension as default title
       }));
     }
   };
@@ -457,17 +457,18 @@ const DocumentRepositoryPage = () => {
           <Card>
             <CardHeader className="pb-3">
               <div className="flex items-center justify-between">
-                <CardTitle className="text-sm">Folders</CardTitle>
-                <Button 
-                  size="sm" 
-                  variant="ghost"
-                  onClick={() => {
-                    setParentFolderForCreate(null);
-                    setShowCreateFolderDialog(true);
-                  }}
-                >
-                  <Plus className="h-4 w-4" />
-                </Button>
+                  <CardTitle className="text-sm font-bold text-slate-900">Folders</CardTitle>
+                  <Button 
+                    size="sm" 
+                    variant="ghost"
+                    onClick={() => {
+                      setParentFolderForCreate(null);
+                      setShowCreateFolderDialog(true);
+                    }}
+                    className="hover:bg-white/50 rounded-lg transition-all duration-200"
+                  >
+                    <Plus className="h-4 w-4" />
+                  </Button>
               </div>
             </CardHeader>
             <CardContent>
@@ -540,7 +541,7 @@ const DocumentRepositoryPage = () => {
                       setUploadFile(files[0]);
                       setUploadForm(prev => ({
                         ...prev,
-                        title: files[0].name.replace(/\.[^/.]+$/, ''),
+                        title: files[0].name.substring(0, files[0].name.lastIndexOf('.')) || files[0].name,
                         folderId: selectedFolder
                       }));
                       setShowUploadDialog(true);
@@ -560,99 +561,100 @@ const DocumentRepositoryPage = () => {
                   {searchTerm || selectedFolder !== null || showFavorites
                     ? 'No documents found'
                     : 'Drop files here or click to upload'}
-                </h3>
-                <p className="text-gray-600 mb-4">
-                  {searchTerm || selectedFolder !== null || showFavorites
-                    ? 'Try adjusting your filters'
-                    : 'Drag and drop your documents or click to browse'}
-                </p>
-                <p className="text-sm text-gray-500">
-                  Supports PDF, Word, Excel, PowerPoint, images, and more
-                </p>
-              </CardContent>
-            </Card>
-          ) : (
-            <>
-              {/* Drop zone hint */}
-              <Card className="border-2 border-dashed border-gray-200 hover:border-gray-300 transition-colors mb-4">
-                <CardContent className="py-4">
-                  <div className="flex items-center justify-center space-x-3 text-gray-500">
-                    <Upload className="h-5 w-5" />
-                    <span className="text-sm">Drag and drop files anywhere to upload</span>
-                  </div>
+                  </h3>
+                  <p className="text-slate-600 mb-4 font-medium">
+                    {searchTerm || selectedFolder !== null || showFavorites
+                      ? 'Try adjusting your filters'
+                      : 'Drag and drop your documents or click to browse'}
+                  </p>
+                  <p className="text-sm text-slate-500">
+                    Supports PDF, Word, Excel, PowerPoint, images, and more
+                  </p>
                 </CardContent>
               </Card>
+            ) : (
+              <>
+                {/* Drop zone hint */}
+                <Card className="bg-gradient-to-r from-blue-50/50 to-indigo-50/50 backdrop-blur-sm border-2 border-dashed border-blue-300/50 hover:border-blue-400/50 rounded-2xl mb-6 transition-all duration-200">
+                  <CardContent className="py-4">
+                    <div className="flex items-center justify-center space-x-3">
+                      <Upload className="h-5 w-5 text-blue-600" />
+                      <span className="text-sm font-medium text-blue-800">Drag and drop files anywhere to upload</span>
+                    </div>
+                  </CardContent>
+                </Card>
               
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-              {documents.map(doc => (
-                <Card key={doc.id} className="hover:shadow-lg transition-shadow">
-                  <CardHeader className="pb-3">
-                    <div className="flex items-start justify-between">
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                {documents.map(doc => (
+                  <Card key={doc.id} className="bg-white/80 backdrop-blur-sm border border-white/50 rounded-2xl shadow-xl hover:shadow-2xl hover:scale-[1.02] transition-all duration-200">
+                    <CardHeader className="pb-3 bg-gradient-to-r from-white/90 to-white/70 backdrop-blur-sm border-b border-white/20">
+                      <div className="flex items-start justify-between">
                       <div className="flex items-center space-x-3">
                         {getFileIcon(doc.mime_type)}
-                        <div className="min-w-0">
-                          <CardTitle className="text-base line-clamp-1">
-                            {doc.title}
-                          </CardTitle>
-                          <CardDescription className="text-xs">
-                            {formatFileSize(doc.file_size)} • {formatDate(doc.created_at)}
-                          </CardDescription>
-                        </div>
+                          <div className="min-w-0">
+                            <CardTitle className="text-base line-clamp-1 font-bold text-slate-900">
+                              {doc.title}
+                            </CardTitle>
+                            <CardDescription className="text-xs text-slate-600 font-medium">
+                              {formatFileSize(doc.file_size)} • {formatDate(doc.created_at)}
+                            </CardDescription>
+                          </div>
                       </div>
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => handleToggleFavorite(doc)}
-                      >
-                        <Star className={`h-4 w-4 ${doc.is_favorite ? 'fill-yellow-400 text-yellow-400' : ''}`} />
-                      </Button>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => handleToggleFavorite(doc)}
+                          className="hover:bg-white/50 rounded-lg transition-all duration-200"
+                        >
+                          <Star className={`h-4 w-4 ${doc.is_favorite ? 'fill-yellow-500 text-yellow-500' : 'text-slate-400'}`} />
+                        </Button>
                     </div>
                   </CardHeader>
                   <CardContent>
-                    {doc.description && (
-                      <p className="text-sm text-gray-600 mb-3 line-clamp-2">
-                        {doc.description}
-                      </p>
-                    )}
+                      {doc.description && (
+                        <p className="text-sm text-slate-600 mb-3 line-clamp-2">
+                          {doc.description}
+                        </p>
+                      )}
                     
                     <div className="space-y-2">
-                      {/* Tags */}
-                      {doc.tags && doc.tags.length > 0 && (
-                        <div className="flex flex-wrap gap-1">
-                          {doc.tags.map(tag => tag && (
-                            <Badge key={tag} variant="outline" className="text-xs">
-                              {tag}
-                            </Badge>
-                          ))}
-                        </div>
-                      )}
+                        {/* Tags */}
+                        {doc.tags && doc.tags.length > 0 && (
+                          <div className="flex flex-wrap gap-1">
+                            {doc.tags.map(tag => tag && (
+                              <Badge key={tag} variant="outline" className="text-xs bg-blue-50/50 border-blue-200/50 text-blue-700">
+                                {tag}
+                              </Badge>
+                            ))}
+                          </div>
+                        )}
                       
-                      {/* Folder info */}
-                      {doc.folder_name && (
-                        <div className="flex items-center text-xs text-gray-500">
-                          <Folder className="h-3 w-3 mr-1" />
-                          <span>{doc.folder_name}</span>
-                        </div>
-                      )}
+                        {/* Folder info */}
+                        {doc.folder_name && (
+                          <div className="flex items-center text-xs text-slate-600 font-medium">
+                            <Folder className="h-3 w-3 mr-1 text-slate-500" />
+                            <span>{doc.folder_name}</span>
+                          </div>
+                        )}
                       
-                      {/* Metadata */}
-                      <div className="flex items-center justify-between text-xs text-gray-500">
-                        <div className="flex items-center space-x-2">
-                          {getVisibilityIcon(doc.visibility)}
-                          <span className="capitalize">{doc.visibility}</span>
-                          {doc.department_name && (
-                            <>
-                              <span>•</span>
-                              <span>{doc.department_name}</span>
-                            </>
-                          )}
+                        {/* Metadata */}
+                        <div className="flex items-center justify-between text-xs text-slate-600">
+                          <div className="flex items-center space-x-2">
+                            {getVisibilityIcon(doc.visibility)}
+                            <span className="capitalize font-medium">{doc.visibility}</span>
+                            {doc.department_name && (
+                              <>
+                                <span>•</span>
+                                <span className="font-medium">{doc.department_name}</span>
+                              </>
+                            )}
+                          </div>
                         </div>
-                      </div>
                       
-                      {/* Uploader */}
-                      <div className="text-xs text-gray-500">
-                        By {doc.uploader_name}
-                      </div>
+                        {/* Uploader */}
+                        <div className="text-xs text-slate-500">
+                          By {doc.uploader_name}
+                        </div>
                       
                       {/* Actions */}
                       <div className="flex items-center space-x-1 pt-2">
@@ -684,8 +686,8 @@ const DocumentRepositoryPage = () => {
         </div>
       </div>
 
-      {/* Upload Dialog */}
-      <Dialog open={showUploadDialog} onOpenChange={setShowUploadDialog}>
+        {/* Upload Dialog */}
+        <Dialog open={showUploadDialog} onOpenChange={setShowUploadDialog}>
         <DialogContent className="sm:max-w-[600px]">
           <DialogHeader>
             <DialogTitle>Upload Document</DialogTitle>
@@ -866,10 +868,10 @@ const DocumentRepositoryPage = () => {
             </Button>
           </DialogFooter>
         </DialogContent>
-      </Dialog>
+        </Dialog>
 
-      {/* Create Folder Dialog */}
-      <CreateFolderDialog
+        {/* Create Folder Dialog */}
+        <CreateFolderDialog
         open={showCreateFolderDialog}
         onClose={() => {
           setShowCreateFolderDialog(false);
@@ -880,46 +882,47 @@ const DocumentRepositoryPage = () => {
         departments={departments}
         isAdmin={user?.role === 'admin'}
         userId={user?.id}
-      />
+        />
 
-      {/* Rename Folder Dialog */}
-      {renamingFolder && (
-        <Dialog open={!!renamingFolder} onOpenChange={() => setRenamingFolder(null)}>
-          <DialogContent>
-            <DialogHeader>
-              <DialogTitle>Rename Folder</DialogTitle>
-              <DialogDescription>
-                Enter a new name for "{renamingFolder.name}"
-              </DialogDescription>
-            </DialogHeader>
-            <div className="space-y-4 py-4">
-              <div>
-                <Label htmlFor="folder-name">Folder Name</Label>
-                <Input
-                  id="folder-name"
-                  defaultValue={renamingFolder.name}
-                  onKeyPress={(e) => {
-                    if (e.key === 'Enter') {
-                      handleRenameFolder(renamingFolder, e.target.value);
-                    }
-                  }}
-                />
+        {/* Rename Folder Dialog */}
+        {renamingFolder && (
+          <Dialog open={!!renamingFolder} onOpenChange={() => setRenamingFolder(null)}>
+            <DialogContent>
+              <DialogHeader>
+                <DialogTitle>Rename Folder</DialogTitle>
+                <DialogDescription>
+                  Enter a new name for the folder
+                </DialogDescription>
+              </DialogHeader>
+              <div className="space-y-4 py-4">
+                <div>
+                  <Label htmlFor="folder-name">Folder Name</Label>
+                  <Input
+                    id="folder-name"
+                    defaultValue={renamingFolder?.name || ''}
+                    onKeyPress={(e) => {
+                      if (e.key === 'Enter') {
+                        handleRenameFolder(renamingFolder, e.target.value);
+                      }
+                    }}
+                  />
+                </div>
               </div>
-            </div>
-            <DialogFooter>
-              <Button variant="outline" onClick={() => setRenamingFolder(null)}>
-                Cancel
-              </Button>
-              <Button onClick={(e) => {
-                const input = e.target.closest('.space-y-4').querySelector('input');
-                handleRenameFolder(renamingFolder, input.value);
-              }}>
-                Rename
-              </Button>
-            </DialogFooter>
-          </DialogContent>
-        </Dialog>
-      )}
+              <DialogFooter>
+                <Button variant="outline" onClick={() => setRenamingFolder(null)}>
+                  Cancel
+                </Button>
+                <Button onClick={() => {
+                  const input = document.getElementById('folder-name');
+                  handleRenameFolder(renamingFolder, input.value);
+                }}>
+                  Rename
+                </Button>
+              </DialogFooter>
+            </DialogContent>
+          </Dialog>
+        )}
+      </div>
     </div>
   );
 };
