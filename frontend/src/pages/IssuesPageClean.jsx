@@ -16,7 +16,12 @@ import {
   CheckSquare,
   AlertTriangle,
   Archive,
-  Download
+  Download,
+  Activity,
+  Target,
+  Users,
+  TrendingUp,
+  Sparkles
 } from 'lucide-react';
 import IssueDialog from '../components/issues/IssueDialog';
 import IssuesListClean from '../components/issues/IssuesListClean';
@@ -448,154 +453,238 @@ const IssuesPageClean = () => {
   }
 
   return (
-    <div className="min-h-screen bg-white">
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50/30 to-indigo-50/30 relative">
+      {/* Background Pattern */}
+      <div className="absolute inset-0 bg-grid-slate-100 [mask-image:linear-gradient(0deg,white,rgba(255,255,255,0.6))] -z-10"></div>
+      
       <div className="max-w-6xl mx-auto px-8 py-8">
-        {/* Clean Header */}
-        <div className="flex items-center justify-between mb-8">
-          <h1 className="text-2xl font-semibold text-gray-900">
-            <span className="inline-block w-1 h-7 mr-2 rounded-full" style={{ backgroundColor: themeColors.primary }} />
-            {labels.issues_label}{selectedDepartment ? ` - ${selectedDepartment.name}` : ''}
-          </h1>
-          <div className="flex items-center gap-3">
-            {activeTab !== 'archived' && closedIssuesCount > 0 && (
-              <Button 
-                onClick={handleArchiveSelected} 
-                variant="ghost"
-                className="text-gray-600 transition-colors"
-                onMouseEnter={(e) => e.currentTarget.style.color = themeColors.primary}
-                onMouseLeave={(e) => e.currentTarget.style.color = ''}
-              >
-                <Archive className="mr-2 h-4 w-4" />
-                Archive Solved ({closedIssuesCount})
-              </Button>
-            )}
-            {activeTab !== 'archived' && (
-              <Button
-                onClick={() => {
-                  const allIssues = [...shortTermIssues, ...longTermIssues];
-                  if (allIssues.length > 0) {
-                    exportIssuesToExcel(allIssues);
-                  } else {
-                    setError('No issues to export');
-                  }
-                }}
-                variant="outline"
-                className="border-gray-300 hover:bg-gray-50"
-              >
-                <Download className="mr-2 h-4 w-4" />
-                Export to Excel
-              </Button>
-            )}
-            {activeTab !== 'archived' && (
-              <Button 
-                onClick={handleCreateIssue} 
-                className="text-white transition-colors"
-                style={{ backgroundColor: themeColors.primary }}
-                onMouseEnter={(e) => e.currentTarget.style.backgroundColor = themeColors.secondary}
-                onMouseLeave={(e) => e.currentTarget.style.backgroundColor = themeColors.primary}
-              >
-                <Plus className="mr-2 h-4 w-4" />
-                New Issue
-              </Button>
-            )}
+        {/* Enhanced Header */}
+        <div className="mb-8">
+          <div className="flex items-center justify-between mb-6">
+            <div>
+              <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full text-sm font-medium mb-4"
+                   style={{
+                     background: `linear-gradient(135deg, ${themeColors.primary}15 0%, ${themeColors.secondary}15 100%)`,
+                     color: themeColors.primary
+                   }}>
+                <Activity className="h-4 w-4" />
+                ISSUE TRACKING
+              </div>
+              <h1 className="text-4xl font-bold mb-2 bg-gradient-to-r from-slate-900 via-slate-800 to-slate-900 bg-clip-text text-transparent">
+                {labels.issues_label}{selectedDepartment ? ` - ${selectedDepartment.name}` : ''}
+              </h1>
+              <p className="text-lg text-slate-600">Identify, prioritize, and solve challenges</p>
+            </div>
+            <div className="flex items-center gap-3">
+              {activeTab !== 'archived' && closedIssuesCount > 0 && (
+                <Button 
+                  onClick={handleArchiveSelected} 
+                  variant="ghost"
+                  className="text-gray-600 transition-all duration-200 hover:bg-gradient-to-r hover:from-gray-100 hover:to-gray-50 rounded-lg"
+                  onMouseEnter={(e) => e.currentTarget.style.color = themeColors.primary}
+                  onMouseLeave={(e) => e.currentTarget.style.color = ''}
+                >
+                  <Archive className="mr-2 h-4 w-4" />
+                  Archive Solved ({closedIssuesCount})
+                </Button>
+              )}
+              {activeTab !== 'archived' && (
+                <Button
+                  onClick={() => {
+                    const allIssues = [...shortTermIssues, ...longTermIssues];
+                    if (allIssues.length > 0) {
+                      exportIssuesToExcel(allIssues);
+                    } else {
+                      setError('No issues to export');
+                    }
+                  }}
+                  variant="outline"
+                  className="bg-white/80 backdrop-blur-sm border-white/20 hover:bg-white/90 shadow-sm transition-all duration-200"
+                >
+                  <Download className="mr-2 h-4 w-4" />
+                  Export to Excel
+                </Button>
+              )}
+              {activeTab !== 'archived' && (
+                <Button 
+                  onClick={handleCreateIssue} 
+                  className="text-white shadow-lg hover:shadow-xl transition-all duration-200 transform hover:scale-[1.02]"
+                  style={{ 
+                    background: `linear-gradient(135deg, ${themeColors.primary} 0%, ${themeColors.secondary} 100%)`,
+                  }}
+                >
+                  <Plus className="mr-2 h-4 w-4" />
+                  New Issue
+                </Button>
+              )}
+            </div>
+          </div>
+          
+          {/* Stats Cards */}
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
+            <div className="bg-white/80 backdrop-blur-sm rounded-2xl p-6 border border-white/20 shadow-sm hover:shadow-md transition-all duration-200">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm font-medium text-slate-600">Total {labels.issues_label}</p>
+                  <p className="text-2xl font-bold mt-1" style={{ color: themeColors.primary }}>
+                    {shortTermIssues.length + longTermIssues.length}
+                  </p>
+                </div>
+                <div className="h-12 w-12 rounded-xl flex items-center justify-center"
+                     style={{ background: `linear-gradient(135deg, ${themeColors.primary}15 0%, ${themeColors.secondary}15 100%)` }}>
+                  <AlertTriangle className="h-6 w-6" style={{ color: themeColors.primary }} />
+                </div>
+              </div>
+            </div>
+            
+            <div className="bg-white/80 backdrop-blur-sm rounded-2xl p-6 border border-white/20 shadow-sm hover:shadow-md transition-all duration-200">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm font-medium text-slate-600">Short Term</p>
+                  <p className="text-2xl font-bold mt-1 text-orange-600">
+                    {shortTermIssues.length}
+                  </p>
+                </div>
+                <div className="h-12 w-12 rounded-xl bg-orange-50 flex items-center justify-center">
+                  <Target className="h-6 w-6 text-orange-600" />
+                </div>
+              </div>
+            </div>
+            
+            <div className="bg-white/80 backdrop-blur-sm rounded-2xl p-6 border border-white/20 shadow-sm hover:shadow-md transition-all duration-200">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm font-medium text-slate-600">Long Term</p>
+                  <p className="text-2xl font-bold mt-1 text-blue-600">
+                    {longTermIssues.length}
+                  </p>
+                </div>
+                <div className="h-12 w-12 rounded-xl bg-blue-50 flex items-center justify-center">
+                  <TrendingUp className="h-6 w-6 text-blue-600" />
+                </div>
+              </div>
+            </div>
+            
+            <div className="bg-white/80 backdrop-blur-sm rounded-2xl p-6 border border-white/20 shadow-sm hover:shadow-md transition-all duration-200">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm font-medium text-slate-600">Archived</p>
+                  <p className="text-2xl font-bold mt-1 text-green-600">
+                    {archivedIssues.length}
+                  </p>
+                </div>
+                <div className="h-12 w-12 rounded-xl bg-green-50 flex items-center justify-center">
+                  <CheckSquare className="h-6 w-6 text-green-600" />
+                </div>
+              </div>
+            </div>
           </div>
         </div>
 
-        {/* Alerts */}
+        {/* Enhanced Alerts */}
         {error && (
-          <Alert className="border-red-200 bg-red-50 mb-6">
+          <Alert className="border-red-200 bg-red-50/80 backdrop-blur-sm rounded-xl mb-6">
             <AlertCircle className="h-4 w-4 text-red-600" />
-            <AlertDescription className="text-red-800">{error}</AlertDescription>
+            <AlertDescription className="text-red-800 font-medium">{error}</AlertDescription>
           </Alert>
         )}
 
         {success && (
-          <Alert className="border-green-200 bg-green-50 mb-6">
-            <CheckSquare className="h-4 w-4 text-green-600" />
-            <AlertDescription className="text-green-800">{success}</AlertDescription>
+          <Alert className="border-green-200 bg-green-50/80 backdrop-blur-sm rounded-xl mb-6">
+            <Sparkles className="h-4 w-4 text-green-600" />
+            <AlertDescription className="text-green-800 font-medium">{success}</AlertDescription>
           </Alert>
         )}
 
-        {/* Clean Tabs */}
-        <Tabs value={activeTab} onValueChange={setActiveTab}>
-          <TabsList className="bg-transparent border-0 p-0 h-auto mb-8 border-b border-gray-100">
-            <TabsTrigger 
-              value="short_term" 
-              className="bg-transparent shadow-none border-b-2 rounded-none pb-3 px-4 font-medium transition-colors"
-              style={{ 
-                borderBottomColor: activeTab === 'short_term' ? themeColors.primary : 'transparent'
-              }}
-            >
-              Short Term
-              <span className="ml-2 text-sm text-gray-500">({shortTermIssues.length})</span>
-            </TabsTrigger>
-            <TabsTrigger 
-              value="long_term" 
-              className="bg-transparent shadow-none border-b-2 rounded-none pb-3 px-4 font-medium transition-colors"
-              style={{ 
-                borderBottomColor: activeTab === 'long_term' ? themeColors.primary : 'transparent'
-              }}
-            >
-              Long Term
-              <span className="ml-2 text-sm text-gray-500">({longTermIssues.length})</span>
-            </TabsTrigger>
-            <TabsTrigger 
-              value="archived" 
-              className="bg-transparent shadow-none border-b-2 rounded-none pb-3 px-4 font-medium transition-colors"
-              style={{ 
-                borderBottomColor: activeTab === 'archived' ? themeColors.primary : 'transparent'
-              }}
-            >
-              Archived
-              <span className="ml-2 text-sm text-gray-500">({archivedIssues.length})</span>
-            </TabsTrigger>
-          </TabsList>
+        {/* Enhanced Tabs */}
+        <div className="bg-white/80 backdrop-blur-sm rounded-2xl p-6 shadow-sm border border-white/50 mb-6">
+          <Tabs value={activeTab} onValueChange={setActiveTab}>
+            <div className="bg-white/80 backdrop-blur-sm rounded-2xl p-2 inline-flex shadow-sm">
+              <TabsList className="bg-transparent border-0 p-0 h-auto gap-1">
+                <TabsTrigger 
+                  value="short_term" 
+                  className="data-[state=active]:bg-gradient-to-r data-[state=active]:from-orange-500 data-[state=active]:to-amber-500 data-[state=active]:text-white data-[state=active]:shadow-lg rounded-xl transition-all duration-200 font-medium px-4 py-2"
+                >
+                  <Target className="h-4 w-4 mr-2" />
+                  Short Term
+                  <span className="ml-2 text-sm opacity-80">({shortTermIssues.length})</span>
+                </TabsTrigger>
+                <TabsTrigger 
+                  value="long_term" 
+                  className="data-[state=active]:bg-gradient-to-r data-[state=active]:from-blue-500 data-[state=active]:to-indigo-500 data-[state=active]:text-white data-[state=active]:shadow-lg rounded-xl transition-all duration-200 font-medium px-4 py-2"
+                >
+                  <TrendingUp className="h-4 w-4 mr-2" />
+                  Long Term
+                  <span className="ml-2 text-sm opacity-80">({longTermIssues.length})</span>
+                </TabsTrigger>
+                <TabsTrigger 
+                  value="archived" 
+                  className="data-[state=active]:bg-gradient-to-r data-[state=active]:from-green-500 data-[state=active]:to-emerald-500 data-[state=active]:text-white data-[state=active]:shadow-lg rounded-xl transition-all duration-200 font-medium px-4 py-2"
+                >
+                  <CheckSquare className="h-4 w-4 mr-2" />
+                  Archived
+                  <span className="ml-2 text-sm opacity-80">({archivedIssues.length})</span>
+                </TabsTrigger>
+              </TabsList>
+            </div>
 
-          <TabsContent value={activeTab} className="mt-0">
-            {currentIssues.length === 0 ? (
-              <div className="text-center py-16">
-                <AlertTriangle className="h-12 w-12 text-gray-300 mx-auto mb-4" />
-                <h3 className="text-lg font-medium text-gray-900 mb-2">
-                  {activeTab === 'archived' ? 'No archived issues' : `No ${activeTab === 'short_term' ? 'short-term' : 'long-term'} issues yet`}
-                </h3>
-                <p className="text-gray-500 mb-6">
-                  {activeTab === 'archived' ? 'Archived issues will appear here' : 'Create your first issue to start tracking'}
-                </p>
-                {activeTab !== 'archived' && (
-                  <Button onClick={handleCreateIssue} variant="outline" className="border-gray-300">
-                    <Plus className="mr-2 h-4 w-4" />
-                    Create Issue
-                  </Button>
-                )}
-              </div>
-            ) : (
-              activeTab === 'archived' ? (
-                <ArchivedIssuesList
-                  issues={currentIssues}
-                  onUnarchive={handleUnarchive}
-                  getStatusColor={getStatusColor}
-                  getStatusIcon={getStatusIcon}
-                />
+            <TabsContent value={activeTab} className="mt-6">
+              {currentIssues.length === 0 ? (
+                <div className="bg-white/80 backdrop-blur-sm rounded-2xl p-12 shadow-sm border border-white/50 text-center">
+                  <div className="w-16 h-16 rounded-2xl mx-auto mb-6 flex items-center justify-center"
+                       style={{ background: `linear-gradient(135deg, ${themeColors.primary}15 0%, ${themeColors.secondary}15 100%)` }}>
+                    <AlertTriangle className="h-8 w-8" style={{ color: themeColors.primary }} />
+                  </div>
+                  <h3 className="text-xl font-semibold text-gray-900 mb-2">
+                    {activeTab === 'archived' ? 'No archived issues' : `No ${activeTab === 'short_term' ? 'short-term' : 'long-term'} issues yet`}
+                  </h3>
+                  <p className="text-gray-600 mb-8 max-w-md mx-auto">
+                    {activeTab === 'archived' ? 'Archived issues will appear here once you archive them' : 'Create your first issue to start tracking and solving challenges'}
+                  </p>
+                  {activeTab !== 'archived' && (
+                    <Button 
+                      onClick={handleCreateIssue} 
+                      className="shadow-lg hover:shadow-xl transition-all duration-200 transform hover:scale-[1.02]"
+                      style={{ 
+                        background: `linear-gradient(135deg, ${themeColors.primary} 0%, ${themeColors.secondary} 100%)`,
+                      }}
+                    >
+                      <Plus className="mr-2 h-4 w-4" />
+                      Create Issue
+                    </Button>
+                  )}
+                </div>
               ) : (
-                <IssuesListClean
-                  issues={currentIssues}
-                  onEdit={handleEditIssue}
-                  onStatusChange={handleStatusChange}
-                  onTimelineChange={handleTimelineChange}
-                  onArchive={handleArchive}
-                  onVote={handleVote}
-                  onMoveToTeam={handleMoveToTeam}
-                  onCreateTodo={handleCreateTodoFromIssue}
-                  onSendCascadingMessage={handleSendCascadingMessage}
-                  getStatusColor={getStatusColor}
-                  getStatusIcon={getStatusIcon}
-                  showVoting={false} // Will be enabled during Weekly Accountability Meetings
-                  compactGrid={false} // Allow toggle between grid and list views
-                />
-              )
-            )}
-          </TabsContent>
-        </Tabs>
+                <div className="bg-white/80 backdrop-blur-sm rounded-2xl border border-white/50 shadow-lg p-6">
+                  {activeTab === 'archived' ? (
+                    <ArchivedIssuesList
+                      issues={currentIssues}
+                      onUnarchive={handleUnarchive}
+                      getStatusColor={getStatusColor}
+                      getStatusIcon={getStatusIcon}
+                    />
+                  ) : (
+                    <IssuesListClean
+                      issues={currentIssues}
+                      onEdit={handleEditIssue}
+                      onStatusChange={handleStatusChange}
+                      onTimelineChange={handleTimelineChange}
+                      onArchive={handleArchive}
+                      onVote={handleVote}
+                      onMoveToTeam={handleMoveToTeam}
+                      onCreateTodo={handleCreateTodoFromIssue}
+                      onSendCascadingMessage={handleSendCascadingMessage}
+                      getStatusColor={getStatusColor}
+                      getStatusIcon={getStatusIcon}
+                      showVoting={false} // Will be enabled during Weekly Accountability Meetings
+                      compactGrid={false} // Allow toggle between grid and list views
+                    />
+                  )}
+                </div>
+              )}
+            </TabsContent>
+          </Tabs>
+        </div>
 
         {/* Move Issue Dialog */}
         <MoveIssueDialog

@@ -12,6 +12,9 @@ export default defineConfig({
     },
   },
   build: {
+    // Reduce memory usage during build
+    target: 'es2020',
+    minify: 'esbuild',
     rollupOptions: {
       output: {
         manualChunks: {
@@ -19,9 +22,13 @@ export default defineConfig({
           'react-vendor': ['react', 'react-dom', 'react-router-dom'],
           'ui-vendor': ['@radix-ui/react-dialog', '@radix-ui/react-dropdown-menu', '@radix-ui/react-select'],
           'chart-vendor': ['recharts'],
-          'utils-vendor': ['axios', 'date-fns', 'framer-motion']
+          'utils-vendor': ['axios', 'date-fns', 'framer-motion'],
+          // Split the heaviest dependency
+          'excel-vendor': ['xlsx']
         }
-      }
+      },
+      // Reduce memory usage
+      maxParallelFileOps: 2
     },
     // Increase chunk size warning limit since we're now properly splitting
     chunkSizeWarningLimit: 1000
