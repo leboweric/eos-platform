@@ -114,7 +114,7 @@ const LandingPage = () => {
   const testimonials = [
     {
       name: 'Michael Thompson',
-      role: 'CEO, Boyum Barenscheer',
+      role: 'CEO, Strategic Advisory Firm',
       content: 'The ability to use our own Microsoft cloud storage while getting enterprise features is unprecedented. This platform understands enterprise needs.',
       rating: 5
     },
@@ -126,7 +126,7 @@ const LandingPage = () => {
     },
     {
       name: 'David Rodriguez',
-      role: 'COO, TechScale Inc.',
+      role: 'COO, Growth Company',
       content: 'We switched frameworks three times before finding what worked. With AXP, we just toggle settings. It\'s that simple.',
       rating: 5
     }
@@ -199,7 +199,7 @@ const LandingPage = () => {
             </div>
             <div className="flex items-center gap-2">
               <CheckCircle className="h-5 w-5 text-green-500" />
-              <span>14-day free trial</span>
+              <span>30-day free trial</span>
             </div>
             <div className="flex items-center gap-2">
               <CheckCircle className="h-5 w-5 text-green-500" />
@@ -532,12 +532,12 @@ const LandingPage = () => {
           </div>
           
           <div className="mt-12 pt-8 border-t border-white/20">
-            <p className="text-sm text-blue-100 mb-4">Trusted by innovative companies worldwide</p>
+            <p className="text-sm text-blue-100 mb-4">Built for modern organizations</p>
             <div className="flex flex-wrap justify-center gap-8 opacity-70">
-              <div className="text-white font-semibold">Boyum Barenscheer</div>
-              <div className="text-white font-semibold">SkyKit</div>
-              <div className="text-white font-semibold">TechScale</div>
-              <div className="text-white font-semibold">GrowthCo</div>
+              <div className="text-white font-semibold">Strategy Consultants</div>
+              <div className="text-white font-semibold">Growing Companies</div>
+              <div className="text-white font-semibold">Leadership Teams</div>
+              <div className="text-white font-semibold">Enterprise Organizations</div>
             </div>
           </div>
         </div>

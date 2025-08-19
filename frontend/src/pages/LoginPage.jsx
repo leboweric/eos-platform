@@ -134,13 +134,13 @@ const LoginPage = () => {
 
           {/* Trust Badges */}
           <div className="mt-12 pt-8 border-t border-slate-200">
-            <p className="text-sm text-slate-500 mb-3">Trusted by innovative companies</p>
-            <div className="flex flex-wrap gap-4 text-sm font-semibold text-slate-600">
-              <span>Boyum Barenscheer</span>
+            <p className="text-sm text-slate-500 mb-3">Join forward-thinking organizations</p>
+            <div className="flex flex-wrap gap-4 text-sm text-slate-600">
+              <span>✓ Strategy Consultants</span>
               <span>•</span>
-              <span>SkyKit</span>
+              <span>✓ Growing Companies</span>
               <span>•</span>
-              <span>TechScale</span>
+              <span>✓ Leadership Teams</span>
             </div>
           </div>
         </div>
@@ -335,7 +335,7 @@ const LoginPage = () => {
                   <Zap className="ml-2 h-4 w-4" />
                 </Link>
                 <p className="text-xs text-gray-600 mt-2">
-                  14-day free trial • No credit card required
+                  30-day free trial • No credit card required
                 </p>
               </div>
             </div>

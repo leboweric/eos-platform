@@ -175,15 +175,13 @@ const RegisterPage = () => {
 
           {/* Social Proof */}
           <div className="border-t border-slate-200 pt-8">
-            <p className="text-sm text-slate-500 mb-3">Pioneering companies already on board</p>
-            <div className="flex flex-wrap gap-4 text-sm font-semibold text-slate-600">
-              <span>Boyum Barenscheer</span>
+            <p className="text-sm text-slate-500 mb-3">Built for modern organizations</p>
+            <div className="flex flex-wrap gap-4 text-sm text-slate-600">
+              <span>✓ Strategy Consultants</span>
               <span>•</span>
-              <span>SkyKit</span>
+              <span>✓ Growing Teams</span>
               <span>•</span>
-              <span>TechScale</span>
-              <span>•</span>
-              <span>GrowthCo</span>
+              <span>✓ Enterprise Leaders</span>
             </div>
           </div>
         </div>
@@ -207,7 +205,7 @@ const RegisterPage = () => {
           <div>
             <div className="text-center mb-8">
               <h2 className="text-3xl font-bold text-gray-900">Start Your Free Trial</h2>
-              <p className="text-gray-600 mt-2">14 days free • No credit card required</p>
+              <p className="text-gray-600 mt-2">30 days free • No credit card required</p>
             </div>
 
             {/* OAuth Options */}
@@ -432,7 +430,7 @@ const RegisterPage = () => {
               <div className="flex items-center justify-center space-x-6 text-xs text-gray-600">
                 <div className="flex items-center gap-1">
                   <CheckCircle className="h-4 w-4 text-green-500" />
-                  <span>14-day trial</span>
+                  <span>30-day trial</span>
                 </div>
                 <div className="flex items-center gap-1">
                   <CheckCircle className="h-4 w-4 text-green-500" />
