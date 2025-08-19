@@ -227,7 +227,7 @@ meetingSocketService.initialize(server);
 
 // Start server
 server.listen(PORT, () => {
-  console.log(`🚀 Server running on port ${PORT}`);
+  console.log(`🚀 Server running on port ${PORT} - v1.1 with debug logging`);
   console.log(`📊 Environment: ${process.env.NODE_ENV}`);
   console.log(`🔗 Health check: http://localhost:${PORT}/health`);
   if (process.env.ENABLE_MEETINGS === 'true') {
