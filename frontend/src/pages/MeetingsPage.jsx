@@ -24,7 +24,9 @@ import {
   ChevronRight,
   Target,
   BarChart,
-  AlertTriangle
+  AlertTriangle,
+  Activity,
+  Sparkles
 } from 'lucide-react';
 import { teamsService } from '../services/teamsService';
 
@@ -206,16 +208,26 @@ const MeetingsPage = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <div className="max-w-7xl mx-auto p-6 space-y-6">
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50/30 to-indigo-50/30 relative">
+      {/* Background Pattern */}
+      <div className="absolute inset-0 bg-grid-slate-100 [mask-image:linear-gradient(0deg,white,rgba(255,255,255,0.6))] -z-10"></div>
+      
+      <div className="max-w-7xl mx-auto p-8 space-y-8">
         <div className="mb-8">
           <div className="flex items-start justify-between">
             <div>
-              <h1 className="text-4xl font-bold text-gray-900">
-                <span className="inline-block w-1 h-10 mr-3 rounded-full" style={{ backgroundColor: themeColors.primary }} />
+              <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full text-sm font-medium mb-4"
+                   style={{
+                     background: `linear-gradient(135deg, ${themeColors.primary}15 0%, ${themeColors.secondary}15 100%)`,
+                     color: themeColors.primary
+                   }}>
+                <Activity className="h-4 w-4" />
+                TEAM MEETINGS
+              </div>
+              <h1 className="text-4xl font-bold mb-2 bg-gradient-to-r from-slate-900 via-slate-800 to-slate-900 bg-clip-text text-transparent">
                 {selectedDepartment?.name || ''} Meetings
               </h1>
-              <p className="text-gray-600 mt-2 text-lg">Run effective meetings with structured agendas</p>
+              <p className="text-lg text-slate-600">Run effective meetings with structured agendas</p>
             </div>
             <div className="flex items-start gap-4">
               {(() => {
@@ -228,11 +240,11 @@ const MeetingsPage = () => {
                 return (
                   <Button
                     onClick={() => setShowJoinDialog(true)}
-                    className={`flex items-center gap-2 text-white hover:opacity-90 transition-all ${
+                    className={`flex items-center gap-2 text-white shadow-lg hover:shadow-xl transition-all duration-200 transform hover:scale-[1.02] ${
                       hasActiveMeeting ? 'animate-pulse' : ''
                     }`}
                     style={{ 
-                      backgroundColor: hasActiveMeeting ? '#10B981' : themeColors.primary,
+                      background: hasActiveMeeting ? 'linear-gradient(135deg, #10B981 0%, #059669 100%)' : `linear-gradient(135deg, ${themeColors.primary} 0%, ${themeColors.secondary} 100%)`,
                     }}
                     disabled={!selectedTeamId}
                   >
@@ -251,10 +263,10 @@ const MeetingsPage = () => {
                 <div className="space-y-2">
                   <label className="text-sm font-medium">Select Team</label>
                   <Select value={selectedTeamId} onValueChange={setSelectedTeamId}>
-                    <SelectTrigger className="w-[250px]">
+                    <SelectTrigger className="w-[250px] bg-white/80 backdrop-blur-sm border-white/20 shadow-sm">
                       <SelectValue placeholder="Choose a team" />
                     </SelectTrigger>
-                    <SelectContent>
+                    <SelectContent className="bg-white/95 backdrop-blur-sm border-white/20 rounded-xl shadow-xl">
                       {teams.map(team => (
                         <SelectItem key={team.id} value={team.id}>
                           {team.name}
@@ -268,7 +280,7 @@ const MeetingsPage = () => {
           </div>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
           {meetings.map((meeting) => {
             const Icon = meeting.icon;
             const meetingCode = `${selectedTeamId}-${meeting.id}`;
@@ -276,14 +288,16 @@ const MeetingsPage = () => {
             const isActive = !!activeMeeting;
             
             return (
-              <Card key={meeting.id} className={`relative overflow-hidden ${meeting.comingSoon ? 'opacity-75' : ''} ${
-                isActive ? 'meeting-active ring-2 ring-green-500 ring-opacity-50' : ''
-              } hover:shadow-lg transition-all`}>
-                <div className="h-2" style={{ backgroundColor: meeting.getColor() }} />
+              <Card key={meeting.id} className={`relative overflow-hidden bg-white/80 backdrop-blur-sm border border-white/50 rounded-2xl transition-all duration-200 hover:shadow-xl hover:scale-[1.02] ${
+                meeting.comingSoon ? 'opacity-75' : ''
+              } ${
+                isActive ? 'meeting-active ring-2 ring-green-500 ring-opacity-50 shadow-lg' : ''
+              }`}>
+                <div className="h-1.5 bg-gradient-to-r" style={{ background: `linear-gradient(90deg, ${meeting.getColor()} 0%, ${meeting.getColor()}AA 100%)` }} />
                 <CardHeader>
                   <div className="flex items-start justify-between">
                     <div className="relative">
-                      <div className="p-3 rounded-lg" style={{ backgroundColor: meeting.getColor() + '1A' }}>
+                      <div className="p-3 rounded-xl shadow-sm" style={{ background: `linear-gradient(135deg, ${meeting.getColor()}20 0%, ${meeting.getColor()}10 100%)` }}>
                         <Icon className="h-6 w-6" style={{ color: meeting.getColor() }} />
                       </div>
                       {isActive && (
@@ -295,13 +309,13 @@ const MeetingsPage = () => {
                     </div>
                     <div className="flex items-center gap-2">
                       {isActive && (
-                        <div className="flex items-center gap-1 bg-green-100 text-green-700 px-2 py-1 rounded-full text-xs font-medium">
+                        <div className="flex items-center gap-1 bg-green-100/80 backdrop-blur-sm text-green-700 px-3 py-1.5 rounded-full text-xs font-medium shadow-sm">
                           <Users className="h-3 w-3" />
                           <span>{activeMeeting.participantCount} in meeting</span>
                         </div>
                       )}
                       {meeting.comingSoon && (
-                        <span className="text-xs bg-gray-200 text-gray-600 px-2 py-1 rounded">Coming Soon</span>
+                        <span className="text-xs bg-gray-200/80 backdrop-blur-sm text-gray-600 px-3 py-1.5 rounded-full font-medium">Coming Soon</span>
                       )}
                     </div>
                   </div>
@@ -336,18 +350,12 @@ const MeetingsPage = () => {
                     <Button 
                       onClick={() => handleStartMeeting(meeting.id)}
                       disabled={meeting.comingSoon || !selectedTeamId || loadingTeams}
-                      className="w-full text-white transition-all"
+                      className="w-full text-white transition-all duration-200 shadow-lg hover:shadow-xl transform hover:scale-[1.02]"
                       style={{ 
-                        backgroundColor: meeting.comingSoon ? '#9CA3AF' : (isActive ? '#10B981' : meeting.getColor()),
+                        background: meeting.comingSoon ? 'linear-gradient(135deg, #9CA3AF 0%, #6B7280 100%)' : 
+                                  (isActive ? 'linear-gradient(135deg, #10B981 0%, #059669 100%)' : 
+                                  `linear-gradient(135deg, ${meeting.getColor()} 0%, ${meeting.getColor()}DD 100%)`),
                         cursor: meeting.comingSoon ? 'not-allowed' : 'pointer'
-                      }}
-                      onMouseEnter={(e) => {
-                        if (!meeting.comingSoon) {
-                          e.currentTarget.style.opacity = '0.9';
-                        }
-                      }}
-                      onMouseLeave={(e) => {
-                        e.currentTarget.style.opacity = '1';
                       }}
                     >
                       {meeting.comingSoon ? 'Coming Soon' : (isActive ? 'Join Meeting' : 'Start Meeting')}
@@ -361,7 +369,7 @@ const MeetingsPage = () => {
         </div>
 
         {!loadingTeams && teams.length === 0 && (
-          <Card className="mt-6 border-orange-200 bg-orange-50">
+          <Card className="mt-6 border-orange-200/50 bg-orange-50/80 backdrop-blur-sm rounded-2xl shadow-sm">
             <CardHeader>
               <CardTitle className="flex items-center gap-2 text-orange-800">
                 <AlertTriangle className="h-5 w-5" />
@@ -379,7 +387,7 @@ const MeetingsPage = () => {
       
       {/* Join Meeting Dialog */}
       <Dialog open={showJoinDialog} onOpenChange={setShowJoinDialog}>
-        <DialogContent>
+        <DialogContent className="bg-white/95 backdrop-blur-sm border border-white/20 shadow-2xl">
           <DialogHeader>
             <DialogTitle>Join Team Meeting</DialogTitle>
             <DialogDescription>
@@ -390,10 +398,10 @@ const MeetingsPage = () => {
           <div className="space-y-4 mt-4">
             <div className="space-y-3">
               <div 
-                className={`p-4 border-2 rounded-lg cursor-pointer transition-all ${
+                className={`p-4 border-2 rounded-xl cursor-pointer transition-all duration-200 backdrop-blur-sm ${
                   selectedMeetingType === 'weekly-accountability' 
-                    ? 'border-blue-500 bg-blue-50' 
-                    : 'border-gray-200 hover:border-gray-300'
+                    ? 'border-blue-500 bg-blue-50/80 shadow-sm' 
+                    : 'border-white/50 bg-white/60 hover:border-blue-300 hover:bg-blue-50/40'
                 }`}
                 onClick={() => setSelectedMeetingType('weekly-accountability')}
               >
@@ -407,10 +415,10 @@ const MeetingsPage = () => {
               </div>
               
               <div 
-                className={`p-4 border-2 rounded-lg cursor-pointer transition-all ${
+                className={`p-4 border-2 rounded-xl cursor-pointer transition-all duration-200 backdrop-blur-sm ${
                   selectedMeetingType === 'quarterly-planning' 
-                    ? 'border-green-500 bg-green-50' 
-                    : 'border-gray-200 hover:border-gray-300'
+                    ? 'border-green-500 bg-green-50/80 shadow-sm' 
+                    : 'border-white/50 bg-white/60 hover:border-green-300 hover:bg-green-50/40'
                 }`}
                 onClick={() => setSelectedMeetingType('quarterly-planning')}
               >
@@ -431,14 +439,14 @@ const MeetingsPage = () => {
                   setShowJoinDialog(false);
                   setSelectedMeetingType('weekly-accountability');
                 }}
-                className="flex-1"
+                className="flex-1 bg-white/80 backdrop-blur-sm border-white/20 hover:bg-white/90 shadow-sm transition-all duration-200"
               >
                 Cancel
               </Button>
               <Button
                 onClick={() => handleJoinMeeting(selectedMeetingType)}
-                className="flex-1"
-                style={{ backgroundColor: themeColors.primary }}
+                className="flex-1 text-white shadow-lg hover:shadow-xl transition-all duration-200 transform hover:scale-[1.02]"
+                style={{ background: `linear-gradient(135deg, ${themeColors.primary} 0%, ${themeColors.secondary} 100%)` }}
               >
                 Join Meeting
               </Button>
