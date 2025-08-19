@@ -1,10 +1,10 @@
 # AXP Marketing Strategy - Competing with Ninety.io
 
 ## Executive Summary
-AXP (Accountability & Execution Platform) is positioned as the flexible, modern alternative to Ninety.io. While Ninety.io locks users into EOS-specific methodology and terminology, AXP offers framework-agnostic accountability and execution tools that adapt to how teams actually work.
+AXP (Adaptive Execution Platform) is positioned as the flexible, modern alternative to Ninety.io. While Ninety.io locks users into EOS-specific methodology and terminology, AXP offers framework-agnostic accountability and execution tools that adapt to how teams actually work.
 
 **Domain:** axplatform.app  
-**Core Positioning:** "The Accountability & Execution Platform That Adapts to You"
+**Core Positioning:** "The Adaptive Execution Platform That Adapts to You"
 
 ## Competitive Analysis - Ninety.io
 
@@ -55,7 +55,7 @@ AXP (Accountability & Execution Platform) is positioned as the flexible, modern 
 ## Website Strategy
 
 ### Hero Section
-**Headline:** "The Accountability & Execution Platform That Adapts to You"
+**Headline:** "The Adaptive Execution Platform That Adapts to You"
 
 **Subhead:** "While others force you into their framework, AXP flexes to yours. Run EOS, Scaling Up, OKRs—or build your own. Finally, software that speaks your language."
 

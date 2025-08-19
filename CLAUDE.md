@@ -1,7 +1,7 @@
-# EOS Platform - Project Documentation for Claude
+# AXP - Adaptive Execution Platform - Project Documentation for Claude
 
 ## Project Overview
-EOS Platform is a web application for implementing the Entrepreneurial Operating System (EOS) methodology. It helps organizations manage their Vision/Traction Organizer (VTO), priorities, issues, and team accountability.
+AXP (Adaptive Execution Platform) is the world's first execution platform that adapts to any business methodology. Unlike traditional tools locked to specific frameworks, AXP seamlessly transforms between EOS, 4DX, OKRs, Scaling Up, or custom methodologies while preserving all data. It helps organizations manage their strategic plans, priorities, scorecards, and team execution regardless of their chosen framework.
 
 ## Key Architecture Decisions
 

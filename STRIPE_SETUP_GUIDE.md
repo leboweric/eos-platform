@@ -16,7 +16,7 @@
 1. Navigate to **Products** → **Add product**
 2. Fill in:
    - **Name**: `AXP Starter`
-   - **Description**: `Accountability & Execution Platform - Starter Plan (Up to 25 users)`
+   - **Description**: `Adaptive Execution Platform - Starter Plan (Up to 25 users)`
    - **Image**: Upload your logo (optional)
 3. Under **Pricing**:
    - Click **Add another price**
@@ -43,7 +43,7 @@
 1. Click **Add product**
 2. Fill in:
    - **Name**: `AXP Growth`
-   - **Description**: `Accountability & Execution Platform - Growth Plan (Up to 75 users)`
+   - **Description**: `Adaptive Execution Platform - Growth Plan (Up to 75 users)`
 
 #### Growth Monthly Price:
 - **Price**: `349.00`
@@ -58,7 +58,7 @@
 1. Click **Add product**
 2. Fill in:
    - **Name**: `AXP Scale`
-   - **Description**: `Accountability & Execution Platform - Scale Plan (Up to 200 users)`
+   - **Description**: `Adaptive Execution Platform - Scale Plan (Up to 200 users)`
 
 #### Scale Monthly Price:
 - **Price**: `599.00`
@@ -73,7 +73,7 @@
 1. Click **Add product**
 2. Fill in:
    - **Name**: `AXP Enterprise`
-   - **Description**: `Accountability & Execution Platform - Enterprise Plan (Unlimited users)`
+   - **Description**: `Adaptive Execution Platform - Enterprise Plan (Unlimited users)`
 
 #### Enterprise Monthly Price:
 - **Price**: `999.00`

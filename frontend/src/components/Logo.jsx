@@ -49,7 +49,7 @@ const Logo = ({
       {showTagline && (
         <div className="mt-2">
           <p className="text-sm font-medium text-gray-600">
-            Accountability & Execution Platform
+            Adaptive Execution Platform
           </p>
           <p className="text-xs text-gray-500">
             Your Framework. Your Terms.
