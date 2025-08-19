@@ -4,7 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
-import { AlertCircle } from 'lucide-react';
+import { AlertCircle, Megaphone } from 'lucide-react';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 
 const HeadlineDialog = ({ open, onOpenChange, onSave }) => {
@@ -51,34 +51,43 @@ const HeadlineDialog = ({ open, onOpenChange, onSave }) => {
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[500px]">
-        <DialogHeader>
-          <DialogTitle>Add Headline</DialogTitle>
+      <DialogContent className="sm:max-w-[500px] bg-white/95 backdrop-blur-sm border border-white/20 rounded-2xl shadow-2xl">
+        <DialogHeader className="pb-6">
+          <div className="flex items-center gap-3 mb-2">
+            <div className="h-10 w-10 rounded-xl bg-gradient-to-br from-emerald-500 to-teal-600 flex items-center justify-center">
+              <Megaphone className="h-5 w-5 text-white" />
+            </div>
+            <div>
+              <DialogTitle className="text-2xl font-bold bg-gradient-to-r from-slate-900 to-slate-700 bg-clip-text text-transparent">Add Headline</DialogTitle>
+            </div>
+          </div>
         </DialogHeader>
 
-        <div className="space-y-4 py-4">
+        <div className="grid gap-6 py-6">
           {error && (
-            <Alert variant="destructive">
-              <AlertCircle className="h-4 w-4" />
-              <AlertDescription>{error}</AlertDescription>
+            <Alert className="border-red-200 bg-red-50/80 backdrop-blur-sm rounded-xl">
+              <AlertCircle className="h-4 w-4 text-red-600" />
+              <AlertDescription className="text-red-800 font-medium">{error}</AlertDescription>
             </Alert>
           )}
 
-          <div className="space-y-2">
-            <Label htmlFor="headline-type">Headline Type</Label>
+          <div className="grid gap-3">
+            <Label htmlFor="headline-type" className="text-sm font-semibold text-slate-700">Headline Type</Label>
             <Select value={headlineType} onValueChange={setHeadlineType}>
-              <SelectTrigger id="headline-type">
+              <SelectTrigger id="headline-type" className="bg-white/80 backdrop-blur-sm border-white/20 rounded-xl shadow-sm transition-all duration-200">
                 <SelectValue />
               </SelectTrigger>
-              <SelectContent>
+              <SelectContent className="bg-white/95 backdrop-blur-sm border-white/20 rounded-xl shadow-xl">
                 <SelectItem value="customer">Customer Headline</SelectItem>
                 <SelectItem value="employee">Employee Headline</SelectItem>
               </SelectContent>
             </Select>
           </div>
 
-          <div className="space-y-2">
-            <Label htmlFor="headline-text">Headline Text</Label>
+          <div className="grid gap-3">
+            <Label htmlFor="headline-text" className="text-sm font-semibold text-slate-700">
+              Headline Text <span className="text-red-500">*</span>
+            </Label>
             <Textarea
               id="headline-text"
               value={headlineText}
@@ -87,23 +96,25 @@ const HeadlineDialog = ({ open, onOpenChange, onSave }) => {
                 ? 'Enter customer headline (e.g., major wins, feedback, market changes)...' 
                 : 'Enter employee headline (e.g., team updates, hiring, achievements)...'}
               rows={3}
-              className="resize-none"
+              className="resize-none bg-white/80 backdrop-blur-sm border-white/20 rounded-xl shadow-sm transition-all duration-200"
             />
           </div>
         </div>
 
-        <DialogFooter>
+        <DialogFooter className="pt-6 border-t border-white/20">
           <Button
             type="button"
             variant="outline"
             onClick={() => onOpenChange(false)}
             disabled={saving}
+            className="bg-white/80 backdrop-blur-sm border-white/20 hover:bg-white/90 shadow-sm transition-all duration-200"
           >
             Cancel
           </Button>
           <Button
             onClick={handleSave}
             disabled={!headlineText.trim() || saving}
+            className="bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white shadow-lg hover:shadow-xl transition-all duration-200 transform hover:scale-[1.02]"
           >
             {saving ? 'Adding...' : 'Add Headline'}
           </Button>

@@ -3,6 +3,7 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
+import { Target } from 'lucide-react';
 
 const CoreFocusDialog = ({ open, onOpenChange, data, onSave }) => {
   const [formData, setFormData] = useState({
@@ -27,43 +28,66 @@ const CoreFocusDialog = ({ open, onOpenChange, data, onSave }) => {
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-2xl">
+      <DialogContent className="max-w-2xl bg-white/95 backdrop-blur-sm border border-white/20 rounded-2xl shadow-2xl">
         <form onSubmit={handleSubmit}>
-          <DialogHeader>
-            <DialogTitle>Edit Core Focus™</DialogTitle>
-            <DialogDescription>
-              Define your organization's purpose and niche - the "sweet spot" where you excel.
-            </DialogDescription>
+          <DialogHeader className="pb-6">
+            <div className="flex items-center gap-3 mb-2">
+              <div className="h-10 w-10 rounded-xl bg-gradient-to-br from-amber-500 to-orange-600 flex items-center justify-center">
+                <Target className="h-5 w-5 text-white" />
+              </div>
+              <div>
+                <DialogTitle className="text-2xl font-bold bg-gradient-to-r from-slate-900 to-slate-700 bg-clip-text text-transparent">Edit Core Focus™</DialogTitle>
+                <DialogDescription className="text-slate-600 mt-1">
+                  Define your organization's purpose and niche - the "sweet spot" where you excel.
+                </DialogDescription>
+              </div>
+            </div>
           </DialogHeader>
-          <div className="space-y-4 py-4">
-            <div className="space-y-2">
-              <Label htmlFor="purpose">Purpose/Cause/Passion</Label>
+          <div className="grid gap-6 py-6">
+            <div className="grid gap-3">
+              <Label htmlFor="purpose" className="text-sm font-semibold text-slate-700">
+                Purpose/Cause/Passion <span className="text-red-500">*</span>
+              </Label>
               <Textarea
                 id="purpose"
                 value={formData.purpose}
                 onChange={(e) => setFormData({ ...formData, purpose: e.target.value })}
                 placeholder="Why does your organization exist? What drives you?"
                 rows={3}
+                className="bg-white/80 backdrop-blur-sm border-white/20 rounded-xl shadow-sm transition-all duration-200"
                 required
               />
             </div>
-            <div className="space-y-2">
-              <Label htmlFor="niche">Niche</Label>
+            <div className="grid gap-3">
+              <Label htmlFor="niche" className="text-sm font-semibold text-slate-700">
+                Niche <span className="text-red-500">*</span>
+              </Label>
               <Textarea
                 id="niche"
                 value={formData.niche}
                 onChange={(e) => setFormData({ ...formData, niche: e.target.value })}
                 placeholder="What is your organization's 'sweet spot'? Where do you excel?"
                 rows={3}
+                className="bg-white/80 backdrop-blur-sm border-white/20 rounded-xl shadow-sm transition-all duration-200"
                 required
               />
             </div>
           </div>
-          <DialogFooter>
-            <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
+          <DialogFooter className="pt-6 border-t border-white/20">
+            <Button 
+              type="button" 
+              variant="outline" 
+              onClick={() => onOpenChange(false)}
+              className="bg-white/80 backdrop-blur-sm border-white/20 hover:bg-white/90 shadow-sm transition-all duration-200"
+            >
               Cancel
             </Button>
-            <Button type="submit">Save Core Focus</Button>
+            <Button 
+              type="submit"
+              className="bg-gradient-to-r from-amber-600 to-orange-600 hover:from-amber-700 hover:to-orange-700 text-white shadow-lg hover:shadow-xl transition-all duration-200 transform hover:scale-[1.02]"
+            >
+              Save Core Focus
+            </Button>
           </DialogFooter>
         </form>
       </DialogContent>

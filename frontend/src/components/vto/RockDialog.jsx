@@ -112,15 +112,20 @@ const RockDialog = ({ open, onOpenChange, rock, onSave }) => {
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-2xl">
+      <DialogContent className="max-w-2xl bg-white/95 backdrop-blur-sm border border-white/20 rounded-2xl shadow-2xl">
         <form onSubmit={handleSubmit}>
-          <DialogHeader>
+          <DialogHeader className="pb-6">
             <div className="flex items-center justify-between">
-              <div>
-                <DialogTitle>{rock ? 'Edit Priority' : 'Create New Priority'}</DialogTitle>
-                <DialogDescription>
-                  Define a quarterly priority that moves your organization forward.
-                </DialogDescription>
+              <div className="flex items-center gap-3">
+                <div className="h-10 w-10 rounded-xl bg-gradient-to-br from-purple-500 to-indigo-600 flex items-center justify-center">
+                  <Sparkles className="h-5 w-5 text-white" />
+                </div>
+                <div>
+                  <DialogTitle className="text-2xl font-bold bg-gradient-to-r from-slate-900 to-slate-700 bg-clip-text text-transparent">{rock ? 'Edit Priority' : 'Create New Priority'}</DialogTitle>
+                  <DialogDescription className="text-slate-600 mt-1">
+                    Define a quarterly priority that moves your organization forward.
+                  </DialogDescription>
+                </div>
               </div>
               <div className="flex items-center gap-2">
                 {smartScore !== null && (
@@ -141,28 +146,31 @@ const RockDialog = ({ open, onOpenChange, rock, onSave }) => {
               </div>
             </div>
           </DialogHeader>
-          <div className="space-y-4 py-4">
-            <div className="space-y-2">
-              <Label htmlFor="title">Priority Title</Label>
+          <div className="grid gap-6 py-6">
+            <div className="grid gap-3">
+              <Label htmlFor="title" className="text-sm font-semibold text-slate-700">
+                Priority Title <span className="text-red-500">*</span>
+              </Label>
               <Input
                 id="title"
                 value={formData.title}
                 onChange={(e) => setFormData({ ...formData, title: e.target.value })}
                 placeholder="e.g., Launch new customer portal"
+                className="bg-white/80 backdrop-blur-sm border-white/20 rounded-xl shadow-sm transition-all duration-200"
                 required
               />
             </div>
             
-            <div className="space-y-2">
+            <div className="grid gap-3">
               <div className="flex items-center justify-between">
-                <Label htmlFor="description">Description</Label>
+                <Label htmlFor="description" className="text-sm font-semibold text-slate-700">Description</Label>
                 <Button
                   type="button"
                   variant="ghost"
                   size="sm"
                   onClick={analyzeWithAI}
                   disabled={!formData.title || isAnalyzing}
-                  className="gap-2"
+                  className="gap-2 bg-white/80 backdrop-blur-sm border-white/20 hover:bg-white/90 shadow-sm transition-all duration-200"
                 >
                   {isAnalyzing ? (
                     <Loader2 className="h-4 w-4 animate-spin" />
@@ -178,24 +186,25 @@ const RockDialog = ({ open, onOpenChange, rock, onSave }) => {
                 onChange={(e) => setFormData({ ...formData, description: e.target.value })}
                 placeholder="Describe what success looks like for this Priority..."
                 rows={3}
+                className="bg-white/80 backdrop-blur-sm border-white/20 rounded-xl shadow-sm transition-all duration-200"
               />
             </div>
 
             {/* AI Suggestion Section */}
             {showAiHelp && aiSuggestion && (
-              <Alert className="border-blue-200 bg-blue-50">
-                <Brain className="h-4 w-4" />
+              <Alert className="border-blue-200/50 bg-blue-50/80 backdrop-blur-sm rounded-xl">
+                <Brain className="h-4 w-4 text-blue-600" />
                 <AlertDescription>
                   <div className="space-y-3">
-                    <p className="font-semibold">AI Suggestion:</p>
+                    <p className="font-semibold text-blue-900">AI Suggestion:</p>
                     <div className="space-y-2">
                       <div>
-                        <span className="text-sm font-medium">Improved Title:</span>
-                        <p className="text-sm">{aiSuggestion.title}</p>
+                        <span className="text-sm font-medium text-slate-700">Improved Title:</span>
+                        <p className="text-sm text-slate-600">{aiSuggestion.title}</p>
                       </div>
                       <div>
-                        <span className="text-sm font-medium">Improved Description:</span>
-                        <p className="text-sm">{aiSuggestion.description}</p>
+                        <span className="text-sm font-medium text-slate-700">Improved Description:</span>
+                        <p className="text-sm text-slate-600">{aiSuggestion.description}</p>
                       </div>
                     </div>
                     <div className="flex gap-2">
@@ -203,6 +212,7 @@ const RockDialog = ({ open, onOpenChange, rock, onSave }) => {
                         type="button"
                         size="sm"
                         onClick={applySuggestion}
+                        className="bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white shadow-lg hover:shadow-xl transition-all duration-200"
                       >
                         Apply Suggestion
                       </Button>
@@ -211,6 +221,7 @@ const RockDialog = ({ open, onOpenChange, rock, onSave }) => {
                         variant="outline"
                         size="sm"
                         onClick={() => setShowAiHelp(false)}
+                        className="bg-white/80 backdrop-blur-sm border-white/20 hover:bg-white/90 shadow-sm transition-all duration-200"
                       >
                         Dismiss
                       </Button>
@@ -220,21 +231,21 @@ const RockDialog = ({ open, onOpenChange, rock, onSave }) => {
               </Alert>
             )}
 
-            <div className="space-y-2">
-              <Label>Priority Type</Label>
+            <div className="grid gap-3">
+              <Label className="text-sm font-semibold text-slate-700">Priority Type</Label>
               <RadioGroup
                 value={formData.type}
                 onValueChange={(value) => setFormData({ ...formData, type: value })}
               >
                 <div className="flex items-center space-x-2">
                   <RadioGroupItem value="company" id="company" />
-                  <Label htmlFor="company" className="font-normal">
+                  <Label htmlFor="company" className="font-normal text-slate-700">
                     Company Priority (shared across the organization)
                   </Label>
                 </div>
                 <div className="flex items-center space-x-2">
                   <RadioGroupItem value="individual" id="individual" />
-                  <Label htmlFor="individual" className="font-normal">
+                  <Label htmlFor="individual" className="font-normal text-slate-700">
                     Individual Priority (assigned to one person)
                   </Label>
                 </div>
@@ -242,39 +253,43 @@ const RockDialog = ({ open, onOpenChange, rock, onSave }) => {
             </div>
 
             <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label htmlFor="owner">Owner</Label>
+              <div className="grid gap-3">
+                <Label htmlFor="owner" className="text-sm font-semibold text-slate-700">
+                  Owner <span className="text-red-500">*</span>
+                </Label>
                 <Input
                   id="owner"
                   value={formData.owner}
                   onChange={(e) => setFormData({ ...formData, owner: e.target.value })}
                   placeholder="Who owns this Priority?"
+                  className="bg-white/80 backdrop-blur-sm border-white/20 rounded-xl shadow-sm transition-all duration-200"
                   required
                 />
               </div>
               
-              <div className="space-y-2">
-                <Label htmlFor="department">Department</Label>
+              <div className="grid gap-3">
+                <Label htmlFor="department" className="text-sm font-semibold text-slate-700">Department</Label>
                 <Input
                   id="department"
                   value={formData.department}
                   onChange={(e) => setFormData({ ...formData, department: e.target.value })}
                   placeholder="e.g., Sales, Marketing"
+                  className="bg-white/80 backdrop-blur-sm border-white/20 rounded-xl shadow-sm transition-all duration-200"
                 />
               </div>
             </div>
 
             <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label>Due Date</Label>
+              <div className="grid gap-3">
+                <Label className="text-sm font-semibold text-slate-700">Due Date</Label>
                 <Popover>
                   <PopoverTrigger asChild>
-                    <Button variant="outline" className="w-full justify-start text-left font-normal">
+                    <Button variant="outline" className="w-full justify-start text-left font-normal bg-white/80 backdrop-blur-sm border-white/20 rounded-xl shadow-sm transition-all duration-200">
                       <CalendarIcon className="mr-2 h-4 w-4" />
                       {formData.dueDate ? format(formData.dueDate, 'PPP') : 'Select date'}
                     </Button>
                   </PopoverTrigger>
-                  <PopoverContent className="w-auto p-0" align="start">
+                  <PopoverContent className="w-auto p-0 bg-white/95 backdrop-blur-sm border-white/20 rounded-xl shadow-xl" align="start">
                     <Calendar
                       mode="single"
                       selected={formData.dueDate}
@@ -285,16 +300,16 @@ const RockDialog = ({ open, onOpenChange, rock, onSave }) => {
                 </Popover>
               </div>
 
-              <div className="space-y-2">
-                <Label htmlFor="status">Status</Label>
+              <div className="grid gap-3">
+                <Label htmlFor="status" className="text-sm font-semibold text-slate-700">Status</Label>
                 <Select
                   value={formData.status}
                   onValueChange={(value) => setFormData({ ...formData, status: value })}
                 >
-                  <SelectTrigger>
+                  <SelectTrigger className="bg-white/80 backdrop-blur-sm border-white/20 rounded-xl shadow-sm transition-all duration-200">
                     <SelectValue placeholder="Select status" />
                   </SelectTrigger>
-                  <SelectContent>
+                  <SelectContent className="bg-white/95 backdrop-blur-sm border-white/20 rounded-xl shadow-xl">
                     <SelectItem value="on-track">On Track</SelectItem>
                     <SelectItem value="at-risk">At Risk</SelectItem>
                     <SelectItem value="off-track">Off Track</SelectItem>
@@ -304,11 +319,19 @@ const RockDialog = ({ open, onOpenChange, rock, onSave }) => {
               </div>
             </div>
           </div>
-          <DialogFooter>
-            <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
+          <DialogFooter className="pt-6 border-t border-white/20">
+            <Button 
+              type="button" 
+              variant="outline" 
+              onClick={() => onOpenChange(false)}
+              className="bg-white/80 backdrop-blur-sm border-white/20 hover:bg-white/90 shadow-sm transition-all duration-200"
+            >
               Cancel
             </Button>
-            <Button type="submit">
+            <Button 
+              type="submit"
+              className="bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700 text-white shadow-lg hover:shadow-xl transition-all duration-200 transform hover:scale-[1.02]"
+            >
               {rock ? 'Save Priority' : 'Create Priority'}
             </Button>
           </DialogFooter>

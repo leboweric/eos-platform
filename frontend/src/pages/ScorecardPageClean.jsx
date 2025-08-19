@@ -823,34 +823,38 @@ const ScorecardPageClean = () => {
 
         {/* Metric Dialog */}
         <Dialog open={showMetricDialog} onOpenChange={setShowMetricDialog}>
-          <DialogContent>
-            <DialogHeader>
-              <DialogTitle>{editingMetric ? 'Edit Metric' : 'Add New Metric'}</DialogTitle>
-              <DialogDescription>
+          <DialogContent className="bg-white/95 backdrop-blur-sm border border-white/20 rounded-2xl shadow-2xl">
+            <DialogHeader className="pb-4">
+              <DialogTitle className="text-xl font-bold bg-gradient-to-r from-slate-900 to-slate-700 bg-clip-text text-transparent">
+                {editingMetric ? 'Edit Metric' : 'Add New Metric'}
+              </DialogTitle>
+              <DialogDescription className="text-slate-600 font-medium">
                 Define a measurable metric to track {metricForm.type === 'monthly' ? 'monthly' : 'weekly'} performance
               </DialogDescription>
             </DialogHeader>
             <div className="space-y-4">
               <div>
-                <Label htmlFor="metric-name">Metric Name</Label>
+                <Label htmlFor="metric-name" className="text-slate-700 font-medium">Metric Name</Label>
                 <Input
                   id="metric-name"
                   value={metricForm.name}
                   onChange={(e) => setMetricForm(prev => ({ ...prev, name: e.target.value }))}
                   placeholder="e.g., Sales Calls, Customer Satisfaction"
+                  className="bg-white/80 backdrop-blur-sm border-white/20 rounded-xl shadow-sm transition-all duration-200"
                 />
               </div>
               <div>
-                <Label htmlFor="metric-description">Data Source</Label>
+                <Label htmlFor="metric-description" className="text-slate-700 font-medium">Data Source</Label>
                 <Input
                   id="metric-description"
                   value={metricForm.description}
                   onChange={(e) => setMetricForm(prev => ({ ...prev, description: e.target.value }))}
                   placeholder="e.g., CRM system, collected weekly on Fridays"
+                  className="bg-white/80 backdrop-blur-sm border-white/20 rounded-xl shadow-sm transition-all duration-200"
                 />
               </div>
               <div>
-                <Label htmlFor="metric-goal">{metricForm.type === 'monthly' ? 'Monthly' : 'Weekly'} Goal</Label>
+                <Label htmlFor="metric-goal" className="text-slate-700 font-medium">{metricForm.type === 'monthly' ? 'Monthly' : 'Weekly'} Goal</Label>
                 <Input
                   id="metric-goal"
                   type="number"
@@ -858,10 +862,11 @@ const ScorecardPageClean = () => {
                   value={metricForm.goal}
                   onChange={(e) => setMetricForm(prev => ({ ...prev, goal: e.target.value }))}
                   placeholder="e.g., 50, 95"
+                  className="bg-white/80 backdrop-blur-sm border-white/20 rounded-xl shadow-sm transition-all duration-200"
                 />
               </div>
               <div>
-                <Label htmlFor="metric-owner">Owner</Label>
+                <Label htmlFor="metric-owner" className="text-slate-700 font-medium">Owner</Label>
                 <Select
                   value={metricForm.ownerId}
                   onValueChange={(userId) => {
@@ -873,10 +878,10 @@ const ScorecardPageClean = () => {
                     }));
                   }}
                 >
-                  <SelectTrigger id="metric-owner">
+                  <SelectTrigger id="metric-owner" className="bg-white/80 backdrop-blur-sm border-white/20 rounded-xl shadow-sm">
                     <SelectValue placeholder="Select an owner" />
                   </SelectTrigger>
-                  <SelectContent>
+                  <SelectContent className="bg-white/95 backdrop-blur-sm border-white/20 rounded-xl shadow-xl">
                     {users.map(user => (
                       <SelectItem key={user.id} value={user.id}>
                         {user.first_name} {user.last_name}
@@ -886,15 +891,15 @@ const ScorecardPageClean = () => {
                 </Select>
               </div>
               <div>
-                <Label htmlFor="metric-value-type">Value Type</Label>
+                <Label htmlFor="metric-value-type" className="text-slate-700 font-medium">Value Type</Label>
                 <Select
                   value={metricForm.valueType}
                   onValueChange={(value) => setMetricForm(prev => ({ ...prev, valueType: value }))}
                 >
-                  <SelectTrigger id="metric-value-type">
+                  <SelectTrigger id="metric-value-type" className="bg-white/80 backdrop-blur-sm border-white/20 rounded-xl shadow-sm">
                     <SelectValue />
                   </SelectTrigger>
-                  <SelectContent>
+                  <SelectContent className="bg-white/95 backdrop-blur-sm border-white/20 rounded-xl shadow-xl">
                     <SelectItem value="number">Number</SelectItem>
                     <SelectItem value="currency">Currency ($)</SelectItem>
                     <SelectItem value="percentage">Percentage (%)</SelectItem>
@@ -902,15 +907,15 @@ const ScorecardPageClean = () => {
                 </Select>
               </div>
               <div>
-                <Label htmlFor="metric-comparison">Goal Achievement</Label>
+                <Label htmlFor="metric-comparison" className="text-slate-700 font-medium">Goal Achievement</Label>
                 <Select
                   value={metricForm.comparisonOperator}
                   onValueChange={(value) => setMetricForm(prev => ({ ...prev, comparisonOperator: value }))}
                 >
-                  <SelectTrigger id="metric-comparison">
+                  <SelectTrigger id="metric-comparison" className="bg-white/80 backdrop-blur-sm border-white/20 rounded-xl shadow-sm">
                     <SelectValue />
                   </SelectTrigger>
-                  <SelectContent>
+                  <SelectContent className="bg-white/95 backdrop-blur-sm border-white/20 rounded-xl shadow-xl">
                     <SelectItem value="greater">{'Greater than goal (>)'}</SelectItem>
                     <SelectItem value="greater_equal">Greater than or equal to goal (≥)</SelectItem>
                     <SelectItem value="less">{'Less than goal (<)'}</SelectItem>
@@ -920,15 +925,15 @@ const ScorecardPageClean = () => {
                 </Select>
               </div>
               <div>
-                <Label htmlFor="metric-type">Frequency</Label>
+                <Label htmlFor="metric-type" className="text-slate-700 font-medium">Frequency</Label>
                 <Select
                   value={metricForm.type}
                   onValueChange={(value) => setMetricForm(prev => ({ ...prev, type: value }))}
                 >
-                  <SelectTrigger id="metric-type">
+                  <SelectTrigger id="metric-type" className="bg-white/80 backdrop-blur-sm border-white/20 rounded-xl shadow-sm">
                     <SelectValue />
                   </SelectTrigger>
-                  <SelectContent>
+                  <SelectContent className="bg-white/95 backdrop-blur-sm border-white/20 rounded-xl shadow-xl">
                     <SelectItem value="weekly">Weekly</SelectItem>
                     <SelectItem value="monthly">Monthly</SelectItem>
                     <SelectItem value="quarterly">Quarterly</SelectItem>
@@ -937,15 +942,15 @@ const ScorecardPageClean = () => {
               </div>
               {groups.length > 0 && (
                 <div>
-                  <Label htmlFor="metric-group">Group (Optional)</Label>
+                  <Label htmlFor="metric-group" className="text-slate-700 font-medium">Group (Optional)</Label>
                   <Select
                     value={metricForm.groupId || 'none'}
                     onValueChange={(value) => setMetricForm(prev => ({ ...prev, groupId: value === 'none' ? '' : value }))}
                   >
-                    <SelectTrigger id="metric-group">
+                    <SelectTrigger id="metric-group" className="bg-white/80 backdrop-blur-sm border-white/20 rounded-xl shadow-sm">
                       <SelectValue placeholder="No group" />
                     </SelectTrigger>
-                    <SelectContent>
+                    <SelectContent className="bg-white/95 backdrop-blur-sm border-white/20 rounded-xl shadow-xl">
                       <SelectItem value="none">No group</SelectItem>
                       {groups.map(group => (
                         <SelectItem key={group.id} value={group.id}>
@@ -957,7 +962,7 @@ const ScorecardPageClean = () => {
                 </div>
               )}
             </div>
-            <DialogFooter className="flex justify-between">
+            <DialogFooter className="flex justify-between pt-4 border-t border-white/20">
               <div>
                 {editingMetric && (
                   <Button 
@@ -966,7 +971,7 @@ const ScorecardPageClean = () => {
                       setShowMetricDialog(false);
                       handleMetricShare(editingMetric);
                     }}
-                    className="mr-auto"
+                    className="mr-auto bg-white/80 backdrop-blur-sm border-white/20 hover:bg-white/90 rounded-xl shadow-sm transition-all duration-200"
                   >
                     <Share2 className="mr-2 h-4 w-4" />
                     {editingMetric.is_shared ? 'Manage Sharing' : 'Share This Metric'}
@@ -974,10 +979,18 @@ const ScorecardPageClean = () => {
                 )}
               </div>
               <div className="flex gap-2">
-                <Button variant="outline" onClick={() => setShowMetricDialog(false)}>
+                <Button 
+                  variant="outline" 
+                  onClick={() => setShowMetricDialog(false)}
+                  className="bg-white/80 backdrop-blur-sm border-white/20 hover:bg-white/90 rounded-xl shadow-sm transition-all duration-200"
+                >
                   Cancel
                 </Button>
-                <Button onClick={handleSaveMetric} disabled={saving || !metricForm.name || !metricForm.goal}>
+                <Button 
+                  onClick={handleSaveMetric} 
+                  disabled={saving || !metricForm.name || !metricForm.goal}
+                  className="bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white rounded-xl shadow-lg hover:shadow-xl transition-all duration-200 transform hover:scale-[1.02]"
+                >
                   {saving ? (
                     <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                   ) : null}
@@ -990,16 +1003,16 @@ const ScorecardPageClean = () => {
 
         {/* Score Entry Dialog */}
         <Dialog open={showScoreDialog} onOpenChange={setShowScoreDialog}>
-          <DialogContent>
-            <DialogHeader>
-              <DialogTitle>Update Score</DialogTitle>
-              <DialogDescription>
+          <DialogContent className="bg-white/95 backdrop-blur-sm border border-white/20 rounded-2xl shadow-2xl">
+            <DialogHeader className="pb-4">
+              <DialogTitle className="text-xl font-bold bg-gradient-to-r from-slate-900 to-slate-700 bg-clip-text text-transparent">Update Score</DialogTitle>
+              <DialogDescription className="text-slate-600 font-medium">
                 Enter the score for {scoreDialogData.metricName} for {scoreDialogData.scoreType === 'monthly' ? 'the month of' : 'the week of'} {scoreDialogData.weekDate}
               </DialogDescription>
             </DialogHeader>
             <div className="space-y-4">
               <div>
-                <Label htmlFor="score-input">Score</Label>
+                <Label htmlFor="score-input" className="text-slate-700 font-medium">Score</Label>
                 <Input
                   id="score-input"
                   type="number"
@@ -1008,13 +1021,14 @@ const ScorecardPageClean = () => {
                   onChange={(e) => setScoreInputValue(e.target.value)}
                   placeholder="Enter score"
                   autoFocus
+                  className="bg-white/80 backdrop-blur-sm border-white/20 rounded-xl shadow-sm transition-all duration-200"
                 />
               </div>
               <div>
-                <Label htmlFor="score-notes">Notes (optional)</Label>
+                <Label htmlFor="score-notes" className="text-slate-700 font-medium">Notes (optional)</Label>
                 <textarea
                   id="score-notes"
-                  className="w-full min-h-[80px] px-3 py-2 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  className="w-full min-h-[80px] px-3 py-2 text-sm bg-white/80 backdrop-blur-sm border border-white/20 rounded-xl shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200"
                   value={scoreNotesValue}
                   onChange={(e) => setScoreNotesValue(e.target.value)}
                   placeholder="Add context or comments about this score..."
@@ -1022,11 +1036,19 @@ const ScorecardPageClean = () => {
                 />
               </div>
             </div>
-            <DialogFooter>
-              <Button variant="outline" onClick={handleScoreDialogCancel}>
+            <DialogFooter className="pt-4 border-t border-white/20">
+              <Button 
+                variant="outline" 
+                onClick={handleScoreDialogCancel}
+                className="bg-white/80 backdrop-blur-sm border-white/20 hover:bg-white/90 rounded-xl shadow-sm transition-all duration-200"
+              >
                 Cancel
               </Button>
-              <Button onClick={handleScoreDialogSave} disabled={saving}>
+              <Button 
+                onClick={handleScoreDialogSave} 
+                disabled={saving}
+                className="bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white rounded-xl shadow-lg hover:shadow-xl transition-all duration-200 transform hover:scale-[1.02]"
+              >
                 {saving ? (
                   <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                 ) : null}
