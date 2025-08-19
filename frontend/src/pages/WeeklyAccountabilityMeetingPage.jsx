@@ -166,9 +166,9 @@ const WeeklyAccountabilityMeetingPage = () => {
         { id: 'good-news', label: 'Segue (Good News)', icon: Smile, duration: 5 },
         { id: 'scorecard', label: 'Scorecard Review', icon: BarChart, duration: 5 },
         { id: 'priorities', label: 'Rock Review', icon: Target, duration: 5 },
-        { id: 'headlines', label: 'Customer/Employee Headlines', icon: Newspaper, duration: 5 },
+        { id: 'headlines', label: 'Headlines', icon: Newspaper, duration: 5 },
         { id: 'todo-list', label: 'To-Do List', icon: ListTodo, duration: 5 },
-        { id: 'issues', label: 'IDS (Identify, Discuss, Solve)', icon: AlertTriangle, duration: 60 },
+        { id: 'issues', label: 'IDS', icon: AlertTriangle, duration: 60 },
         { id: 'conclude', label: 'Conclude', icon: CheckSquare, duration: 5 }
       ];
     } else if (isOKR) {
