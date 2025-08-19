@@ -12,7 +12,16 @@ export const authenticate = async (req, res, next) => {
       });
     }
 
-    const decoded = jwt.verify(token, process.env.JWT_SECRET);
+    let decoded;
+    try {
+      decoded = jwt.verify(token, process.env.JWT_SECRET);
+    } catch (jwtError) {
+      console.error('JWT verification error:', jwtError.message);
+      return res.status(401).json({
+        success: false,
+        error: 'Invalid token.'
+      });
+    }
     
     // Get user from database
     const result = await query(

@@ -6,8 +6,11 @@ const exportController = {
       const { orgId } = req.params;
       const userId = req.user.id;
       
+      console.log('Export request - User:', req.user.id, 'Org:', orgId, 'User Org:', req.user.organization_id);
+      
       // Check if user has permission to export this organization's data
-      if (req.user.organization_id !== orgId && req.user.role !== 'admin') {
+      // Convert both to strings for comparison since one might be UUID object
+      if (String(req.user.organization_id) !== String(orgId) && req.user.role !== 'admin') {
         return res.status(403).json({ 
           error: 'You do not have permission to export this organization\'s data' 
         });
