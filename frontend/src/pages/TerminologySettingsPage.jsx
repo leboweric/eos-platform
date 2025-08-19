@@ -164,35 +164,42 @@ const TerminologySettingsPage = () => {
   }
 
   return (
-    <div className="container mx-auto p-6 max-w-6xl">
-      <div className="mb-6">
-        <h1 className="text-3xl font-bold flex items-center gap-2">
-          <Settings className="h-8 w-8" />
-          Terminology Settings
-        </h1>
-        <p className="text-gray-600 mt-2">
-          Customize the terminology used throughout AXP to match your organization's framework
-        </p>
-        
-        {/* Current Framework Display */}
-        <div className="mt-4 p-4 bg-blue-50 border border-blue-200 rounded-lg">
-          <div className="flex items-center gap-2">
-            <CheckCircle className="h-5 w-5 text-blue-600" />
-            <span className="font-semibold text-blue-900">Currently Active Framework:</span>
-            <span className="text-blue-800">{getFrameworkDisplayName()}</span>
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50/30 to-indigo-50/30 relative">
+      {/* Background Pattern */}
+      <div className="absolute inset-0 bg-grid-slate-100 [mask-image:linear-gradient(0deg,white,rgba(255,255,255,0.6))] -z-10"></div>
+      
+      <div className="max-w-7xl mx-auto p-8 space-y-8">
+        <div className="mb-6">
+          <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full text-sm font-medium mb-4 bg-blue-50/80 backdrop-blur-sm text-blue-700">
+            <Settings className="h-4 w-4" />
+            FRAMEWORK SETTINGS
+          </div>
+          <h1 className="text-4xl font-bold mb-2 bg-gradient-to-r from-slate-900 via-slate-800 to-slate-900 bg-clip-text text-transparent flex items-center gap-3">
+            Terminology Settings
+          </h1>
+          <p className="text-lg text-slate-600 mb-6">
+            Customize the terminology used throughout AXP to match your organization's framework
+          </p>
+          
+          {/* Current Framework Display */}
+          <div className="p-6 bg-blue-50/80 backdrop-blur-sm border border-blue-200/50 rounded-2xl shadow-lg">
+            <div className="flex items-center gap-3">
+              <CheckCircle className="h-5 w-5 text-blue-600" />
+              <span className="font-bold text-blue-900">Currently Active Framework:</span>
+              <span className="text-blue-800 font-semibold">{getFrameworkDisplayName()}</span>
+            </div>
           </div>
         </div>
-      </div>
 
-      {success && (
-        <Alert className="mb-4 border-green-200 bg-green-50">
-          <CheckCircle className="h-4 w-4 text-green-600" />
-          <AlertDescription className="text-green-800">{success}</AlertDescription>
-        </Alert>
-      )}
+        {success && (
+          <Alert className="mb-4 border-green-200/50 bg-green-50/80 backdrop-blur-sm rounded-2xl shadow-sm">
+            <CheckCircle className="h-4 w-4 text-green-600" />
+            <AlertDescription className="text-green-800 font-medium">{success}</AlertDescription>
+          </Alert>
+        )}
 
-      {error && (
-        <Alert className="mb-4 border-red-200 bg-red-50">
+        {error && (
+          <Alert className="mb-4 border-red-200/50 bg-red-50/80 backdrop-blur-sm rounded-2xl shadow-sm">
           <AlertCircle className="h-4 w-4 text-red-600" />
           <AlertDescription className="text-red-800">{error}</AlertDescription>
         </Alert>
@@ -543,6 +550,7 @@ const TerminologySettingsPage = () => {
         </Button>
       </div>
     </div>
+  </div>
   );
 };
 

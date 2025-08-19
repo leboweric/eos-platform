@@ -383,26 +383,44 @@ const BillingPage = () => {
   }
 
   return (
-    <div className="max-w-4xl mx-auto space-y-6">
-      <div>
-        <h1 className="text-3xl font-bold">Billing & Subscription</h1>
-        <p className="text-gray-600 mt-2">
-          Manage your subscription and billing information
-        </p>
-      </div>
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50/30 to-indigo-50/30 relative">
+      {/* Background Pattern */}
+      <div className="absolute inset-0 bg-grid-slate-100 [mask-image:linear-gradient(0deg,white,rgba(255,255,255,0.6))] -z-10"></div>
+      
+      <div className="max-w-6xl mx-auto p-8 space-y-8">
+        <div>
+          <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full text-sm font-medium mb-4 bg-blue-50/80 backdrop-blur-sm text-blue-700">
+            <CreditCard className="h-4 w-4" />
+            SUBSCRIPTION MANAGEMENT
+          </div>
+          <h1 className="text-4xl font-bold mb-2 bg-gradient-to-r from-slate-900 via-slate-800 to-slate-900 bg-clip-text text-transparent">Billing & Subscription</h1>
+          <p className="text-lg text-slate-600">
+            Manage your subscription and billing information
+          </p>
+        </div>
 
-      <Tabs value={activeTab} onValueChange={setActiveTab}>
-        <TabsList>
-          <TabsTrigger value="subscription">Subscription</TabsTrigger>
-          <TabsTrigger value="billing">Billing History</TabsTrigger>
-        </TabsList>
+        <Tabs value={activeTab} onValueChange={setActiveTab}>
+          <TabsList className="grid w-full grid-cols-2 bg-white/80 backdrop-blur-sm border border-white/50 rounded-2xl shadow-lg">
+            <TabsTrigger 
+              value="subscription"
+              className="rounded-xl transition-all duration-200 data-[state=active]:bg-gradient-to-r data-[state=active]:from-blue-600 data-[state=active]:to-indigo-600 data-[state=active]:text-white data-[state=active]:shadow-lg"
+            >
+              Subscription
+            </TabsTrigger>
+            <TabsTrigger 
+              value="billing"
+              className="rounded-xl transition-all duration-200 data-[state=active]:bg-gradient-to-r data-[state=active]:from-blue-600 data-[state=active]:to-indigo-600 data-[state=active]:text-white data-[state=active]:shadow-lg"
+            >
+              Billing History
+            </TabsTrigger>
+          </TabsList>
 
         <TabsContent value="subscription" className="space-y-6">
           {!subscription ? (
-            <Card>
-              <CardHeader>
-                <CardTitle>Start Your Free Trial</CardTitle>
-                <CardDescription>
+            <Card className="bg-white/80 backdrop-blur-sm border border-white/50 rounded-2xl shadow-xl">
+              <CardHeader className="bg-gradient-to-r from-white/90 to-white/70 backdrop-blur-sm border-b border-white/20">
+                <CardTitle className="text-xl font-bold text-slate-900">Start Your Free Trial</CardTitle>
+                <CardDescription className="text-slate-600 font-medium">
                   Get 30 days free with flat-rate pricing. Cancel anytime.
                 </CardDescription>
               </CardHeader>
@@ -611,7 +629,8 @@ const BillingPage = () => {
             </CardContent>
           </Card>
         </TabsContent>
-      </Tabs>
+        </Tabs>
+      </div>
     </div>
   );
 };
