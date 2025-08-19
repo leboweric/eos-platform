@@ -1382,38 +1382,44 @@ const WeeklyAccountabilityMeetingPage = () => {
 
       case 'priorities':
         return (
-          <div className="space-y-4">
-            <Card>
-              <CardHeader style={{ 
-                background: `linear-gradient(to right, ${hexToRgba(themeColors.accent, 0.05)}, ${hexToRgba(themeColors.primary, 0.05)})`
-              }}>
-                <CardTitle className="flex items-center justify-between">
-                  <div className="flex items-center gap-2">
-                    <Target className="h-5 w-5" style={{ color: themeColors.primary }} />
-                    {labels.priorities_label || 'Quarterly Priorities'} Review
+          <div className="space-y-6">
+            <Card className="bg-white/80 backdrop-blur-sm border border-white/50 rounded-2xl shadow-xl hover:shadow-2xl transition-all duration-300">
+              <CardHeader className="bg-gradient-to-r from-white/90 to-white/70 backdrop-blur-sm border-b border-white/20 rounded-t-2xl">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <CardTitle className="flex items-center gap-3 text-xl font-bold text-slate-900">
+                      <div className="p-2 rounded-xl" style={{ background: `linear-gradient(135deg, ${themeColors.primary}20 0%, ${themeColors.secondary}20 100%)` }}>
+                        <Target className="h-5 w-5" style={{ color: themeColors.primary }} />
+                      </div>
+                      {labels.priorities_label || 'Quarterly Priorities'} Review
+                    </CardTitle>
+                    <CardDescription className="mt-2 text-slate-600 font-medium">Check progress on quarterly priorities</CardDescription>
                   </div>
-                  {priorities.length > 0 && (
-                    <div className="text-sm font-normal">
-                      <span className="text-2xl font-semibold text-gray-900">
-                        {Math.round((priorities.filter(p => p.status === 'complete').length / priorities.length) * 100)}%
-                      </span>
-                      <span className="text-gray-500 ml-2">Complete</span>
-                      <span className="text-gray-400 ml-2">
-                        ({priorities.filter(p => p.status === 'complete').length}/{priorities.length})
-                      </span>
+                  <div className="flex items-center gap-4">
+                    {priorities.length > 0 && (
+                      <div className="text-right">
+                        <span className="text-2xl font-bold bg-gradient-to-r from-slate-900 to-slate-700 bg-clip-text text-transparent">
+                          {Math.round((priorities.filter(p => p.status === 'complete').length / priorities.length) * 100)}%
+                        </span>
+                        <p className="text-sm text-slate-600 font-medium">
+                          {priorities.filter(p => p.status === 'complete').length} of {priorities.length} complete
+                        </p>
+                      </div>
+                    )}
+                    <div className="text-sm text-slate-600 bg-white/80 backdrop-blur-sm px-4 py-2 rounded-full border border-white/30 shadow-sm font-medium">
+                      5 minutes
                     </div>
-                  )}
-                </CardTitle>
-                <CardDescription>Check progress on quarterly priorities (5 minutes)</CardDescription>
+                  </div>
+                </div>
               </CardHeader>
             </Card>
             {priorities.length === 0 ? (
-              <Card>
+              <Card className="bg-white/80 backdrop-blur-sm border border-white/50 rounded-2xl shadow-xl">
                 <CardContent className="text-center py-8">
-                  <p className="text-gray-500">No priorities found for this quarter.</p>
+                  <p className="text-slate-500 font-medium">No priorities found for this quarter.</p>
                   <Button 
                     variant="outline" 
-                    className="mt-4"
+                    className="mt-4 bg-white/80 backdrop-blur-sm border-white/20 hover:bg-white/90 rounded-xl shadow-sm transition-all duration-200"
                     onClick={() => navigate('/quarterly-priorities')}
                   >
                     Go to {labels.priorities_label || 'Quarterly Priorities'}
@@ -1422,9 +1428,9 @@ const WeeklyAccountabilityMeetingPage = () => {
               </Card>
             ) : (
               <div className="space-y-6">
-                <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-                  <p className="text-blue-800 text-center">
-                    <span className="font-semibold">Quick Status Check:</span> Each priority owner reports "on-track" or "off-track" status
+                <div className="bg-gradient-to-r from-blue-50/80 to-indigo-50/80 backdrop-blur-sm border border-blue-200/50 rounded-2xl p-4 shadow-lg">
+                  <p className="text-blue-800 text-center font-medium">
+                    <span className="font-bold">Quick Status Check:</span> Each priority owner reports "on-track" or "off-track" status
                   </p>
                 </div>
                 {/* Company {labels.priorities_label || 'Priorities'} Section */}
@@ -1433,7 +1439,7 @@ const WeeklyAccountabilityMeetingPage = () => {
                   return companyPriorities.length > 0 && (
                     <div>
                       <div 
-                        className="flex items-center justify-between p-4 bg-gray-50 rounded-lg cursor-pointer hover:bg-gray-100 transition-colors"
+                        className="flex items-center justify-between p-4 bg-white/80 backdrop-blur-sm border border-white/50 rounded-2xl cursor-pointer hover:bg-white/90 hover:shadow-lg transition-all duration-200 shadow-md"
                         onClick={() => setExpandedSections(prev => ({ 
                           ...prev, 
                           companyPriorities: !prev.companyPriorities 
@@ -1441,14 +1447,19 @@ const WeeklyAccountabilityMeetingPage = () => {
                       >
                         <div className="flex items-center gap-3">
                           {expandedSections.companyPriorities ? (
-                            <ChevronDown className="h-5 w-5 text-gray-600" />
+                            <ChevronDown className="h-5 w-5 text-slate-600" />
                           ) : (
-                            <ChevronRight className="h-5 w-5 text-gray-600" />
+                            <ChevronRight className="h-5 w-5 text-slate-600" />
                           )}
-                          <Building2 className="h-5 w-5" style={{ color: themeColors.primary }} />
-                          <h3 className="text-lg font-semibold">
-                            Company {labels.priorities_label || 'Priorities'} ({companyPriorities.length})
+                          <div className="p-2 rounded-xl bg-gradient-to-br from-blue-50 to-indigo-50">
+                            <Building2 className="h-5 w-5" style={{ color: themeColors.primary }} />
+                          </div>
+                          <h3 className="text-lg font-bold text-slate-900">
+                            Company {labels.priorities_label || 'Priorities'}
                           </h3>
+                          <Badge className="bg-blue-100 text-blue-800 border-blue-200">
+                            {companyPriorities.length}
+                          </Badge>
                         </div>
                       </div>
                       {expandedSections.companyPriorities && (
@@ -1487,11 +1498,16 @@ const WeeklyAccountabilityMeetingPage = () => {
                   
                   return Object.keys(groupedByOwner).length > 0 && (
                     <div className="space-y-4">
-                      <div className="flex items-center gap-3 p-4 bg-white/60 backdrop-blur-sm border border-white/30 rounded-xl shadow-sm">
-                        <Users className="h-5 w-5" style={{ color: themeColors.primary }} />
-                        <h3 className="text-lg font-semibold">
-                          Individual {labels.priorities_label || 'Priorities'} ({individualPriorities.length})
+                      <div className="flex items-center gap-3 p-4 bg-white/80 backdrop-blur-sm border border-white/50 rounded-2xl shadow-md">
+                        <div className="p-2 rounded-xl bg-gradient-to-br from-indigo-50 to-purple-50">
+                          <Users className="h-5 w-5" style={{ color: themeColors.primary }} />
+                        </div>
+                        <h3 className="text-lg font-bold text-slate-900">
+                          Individual {labels.priorities_label || 'Priorities'}
                         </h3>
+                        <Badge className="bg-indigo-100 text-indigo-800 border-indigo-200">
+                          {individualPriorities.length}
+                        </Badge>
                       </div>
                       {Object.entries(groupedByOwner).map(([ownerId, ownerPriorities]) => {
                         const owner = ownerPriorities[0]?.owner;
@@ -1499,7 +1515,7 @@ const WeeklyAccountabilityMeetingPage = () => {
                         return (
                           <div key={ownerId} className="ml-7">
                             <div 
-                              className="flex items-center gap-3 p-3 bg-white/60 backdrop-blur-sm border border-white/30 rounded-xl cursor-pointer hover:bg-white/80 transition-all duration-200 hover:scale-[1.01] hover:shadow-lg"
+                              className="flex items-center gap-3 p-3 bg-white/70 backdrop-blur-sm border border-white/40 rounded-xl cursor-pointer hover:bg-white/90 transition-all duration-200 hover:scale-[1.01] hover:shadow-lg shadow-sm"
                               onClick={() => setExpandedSections(prev => ({ 
                                 ...prev, 
                                 individualPriorities: {
@@ -1509,13 +1525,16 @@ const WeeklyAccountabilityMeetingPage = () => {
                               }))}
                             >
                               {isExpanded ? (
-                                <ChevronDown className="h-4 w-4 text-gray-600" />
+                                <ChevronDown className="h-4 w-4 text-slate-600" />
                               ) : (
-                                <ChevronRight className="h-4 w-4 text-gray-600" />
+                                <ChevronRight className="h-4 w-4 text-slate-600" />
                               )}
-                              <h4 className="text-md font-medium">
-                                {owner?.name || 'Unassigned'} ({ownerPriorities.length})
+                              <h4 className="text-md font-semibold text-slate-800">
+                                {owner?.name || 'Unassigned'}
                               </h4>
+                              <Badge variant="secondary" className="bg-slate-100 text-slate-700 border-slate-200">
+                                {ownerPriorities.length}
+                              </Badge>
                             </div>
                             {isExpanded && (
                               <div className="space-y-4 ml-7 mt-4">
