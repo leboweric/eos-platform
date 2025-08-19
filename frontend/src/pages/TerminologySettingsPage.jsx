@@ -262,20 +262,20 @@ const TerminologySettingsPage = () => {
         </CardHeader>
         <CardContent>
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-            <div className="bg-white p-3 rounded-lg border border-blue-100">
-              <p className="text-xs text-gray-500 mb-1">Priorities:</p>
+            <div className="bg-white/90 backdrop-blur-sm p-3 rounded-xl border border-white/50 shadow-sm">
+              <p className="text-xs text-slate-500 mb-1 font-medium">Priorities:</p>
               <p className="font-semibold text-blue-900">{formData.priorities_label || terminology?.priorities_label || 'Quarterly Priorities'}</p>
             </div>
-            <div className="bg-white p-3 rounded-lg border border-blue-100">
-              <p className="text-xs text-gray-500 mb-1">Strategic Plan:</p>
+            <div className="bg-white/90 backdrop-blur-sm p-3 rounded-xl border border-white/50 shadow-sm">
+              <p className="text-xs text-slate-500 mb-1 font-medium">Strategic Plan:</p>
               <p className="font-semibold text-blue-900">{formData.business_blueprint_label || terminology?.business_blueprint_label || '2-Page Plan'}</p>
             </div>
-            <div className="bg-white p-3 rounded-lg border border-blue-100">
-              <p className="text-xs text-gray-500 mb-1">Weekly Meeting:</p>
+            <div className="bg-white/90 backdrop-blur-sm p-3 rounded-xl border border-white/50 shadow-sm">
+              <p className="text-xs text-slate-500 mb-1 font-medium">Weekly Meeting:</p>
               <p className="font-semibold text-blue-900">{formData.weekly_meeting_label || terminology?.weekly_meeting_label || 'Weekly Team Meeting'}</p>
             </div>
-            <div className="bg-white p-3 rounded-lg border border-blue-100">
-              <p className="text-xs text-gray-500 mb-1">Org Chart:</p>
+            <div className="bg-white/90 backdrop-blur-sm p-3 rounded-xl border border-white/50 shadow-sm">
+              <p className="text-xs text-slate-500 mb-1 font-medium">Org Chart:</p>
               <p className="font-semibold text-blue-900">{formData.accountability_chart_label || terminology?.accountability_chart_label || 'Organizational Chart'}</p>
             </div>
           </div>
@@ -528,6 +528,7 @@ const TerminologySettingsPage = () => {
           variant="outline" 
           onClick={handleReset}
           disabled={saving}
+          className="bg-white/80 backdrop-blur-sm border-white/20 hover:bg-white/90 rounded-xl shadow-sm transition-all duration-200"
         >
           <RotateCcw className="h-4 w-4 mr-2" />
           Reset to Defaults
@@ -535,6 +536,7 @@ const TerminologySettingsPage = () => {
         <Button 
           onClick={handleSave}
           disabled={saving}
+          className="bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white rounded-xl shadow-lg hover:shadow-xl transition-all duration-200 transform hover:scale-[1.02]"
         >
           {saving ? (
             <>
