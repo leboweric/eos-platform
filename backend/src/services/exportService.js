@@ -83,15 +83,16 @@ class ExportService {
       
       if (result.rows.length > 0) {
         const data = result.rows.map(row => ({
-          'Priority': row.name,
+          'Priority': row.title || row.name || '',
           'Description': row.description || '',
           'Team/Department': row.team_name || 'Company',
           'Owner': row.owner_name || '',
           'Status': row.status || 'Not Started',
           'Completion %': row.completion_percentage || 0,
           'On Track': row.on_track ? 'Yes' : 'No',
-          'Start Date': row.start_date ? format(new Date(row.start_date), 'yyyy-MM-dd') : '',
-          'End Date': row.end_date ? format(new Date(row.end_date), 'yyyy-MM-dd') : '',
+          'Quarter': row.quarter || '',
+          'Year': row.year || '',
+          'Is Company Priority': row.is_company_priority ? 'Yes' : 'No',
           'Created': format(new Date(row.created_at), 'yyyy-MM-dd')
         }));
         
@@ -169,7 +170,7 @@ class ExportService {
           cr.first_name || ' ' || cr.last_name as created_by_name,
           tm.name as team_name
         FROM todos t
-        LEFT JOIN users u ON t.assigned_to = u.id
+        LEFT JOIN users u ON t.assigned_to_id = u.id
         LEFT JOIN users cr ON t.created_by = cr.id
         LEFT JOIN teams tm ON t.team_id = tm.id
         WHERE t.organization_id = $1
@@ -216,7 +217,7 @@ class ExportService {
           'Title': row.title,
           'Description': row.description || '',
           'Team/Department': row.team_name || 'Company',
-          'Type': row.issue_type === 'long_term' ? 'Long Term' : 'Short Term',
+          'Timeline': row.timeline === 'long_term' ? 'Long Term' : 'Short Term',
           'Priority': row.priority || 'Medium',
           'Status': row.status || 'Open',
           'Created By': row.created_by_name || '',
@@ -244,51 +245,87 @@ class ExportService {
         const vto = result.rows[0];
         const vtoData = [];
         
-        // Core Focus
-        if (vto.core_focus) {
+        // Get Core Focus
+        const coreFocusResult = await pool.query(
+          'SELECT * FROM core_focus WHERE vto_id = $1 LIMIT 1',
+          [vto.id]
+        );
+        
+        if (coreFocusResult.rows.length > 0) {
+          const coreFocus = coreFocusResult.rows[0];
           vtoData.push(['CORE FOCUS']);
-          vtoData.push(['Purpose', vto.core_focus.purpose || '']);
-          vtoData.push(['Niche', vto.core_focus.niche || '']);
+          vtoData.push(['Purpose', coreFocus.purpose || '']);
+          vtoData.push(['Niche', coreFocus.niche || '']);
           vtoData.push(['']);
         }
         
         // 10-Year Target
-        if (vto.ten_year_target) {
+        const tenYearResult = await pool.query(
+          'SELECT * FROM ten_year_targets WHERE vto_id = $1 LIMIT 1',
+          [vto.id]
+        );
+        
+        if (tenYearResult.rows.length > 0) {
+          const tenYear = tenYearResult.rows[0];
           vtoData.push(['10-YEAR TARGET']);
-          vtoData.push(['Target', vto.ten_year_target.target_description || '']);
-          vtoData.push(['Target Year', vto.ten_year_target.target_year || '']);
+          vtoData.push(['Target', tenYear.target_description || '']);
+          vtoData.push(['Target Year', tenYear.target_year || '']);
           vtoData.push(['']);
         }
         
         // Marketing Strategy
-        if (vto.marketing_strategy) {
+        const marketingResult = await pool.query(
+          'SELECT * FROM marketing_strategies WHERE vto_id = $1 LIMIT 1',
+          [vto.id]
+        );
+        
+        if (marketingResult.rows.length > 0) {
+          const marketing = marketingResult.rows[0];
           vtoData.push(['MARKETING STRATEGY']);
-          vtoData.push(['Target Market', vto.marketing_strategy.target_market || '']);
-          vtoData.push(['Three Uniques', vto.marketing_strategy.three_uniques || '']);
-          vtoData.push(['Proven Process', vto.marketing_strategy.proven_process || '']);
-          vtoData.push(['Guarantee', vto.marketing_strategy.guarantee || '']);
+          vtoData.push(['Target Market', marketing.target_market || '']);
+          vtoData.push(['Three Uniques', marketing.three_uniques || '']);
+          vtoData.push(['Proven Process', marketing.proven_process || '']);
+          vtoData.push(['Guarantee', marketing.guarantee || '']);
           vtoData.push(['']);
         }
         
         // 3-Year Picture
-        if (vto.three_year_picture) {
+        const threeYearResult = await pool.query(
+          'SELECT * FROM three_year_pictures WHERE vto_id = $1 LIMIT 1',
+          [vto.id]
+        );
+        
+        if (threeYearResult.rows.length > 0) {
+          const threeYear = threeYearResult.rows[0];
           vtoData.push(['3-YEAR PICTURE']);
-          vtoData.push(['Revenue Target', vto.three_year_picture.revenue || '']);
-          vtoData.push(['Profit Target', vto.three_year_picture.profit || '']);
-          vtoData.push(['Future Date', vto.three_year_picture.future_date || '']);
+          vtoData.push(['Revenue Target', threeYear.revenue || '']);
+          vtoData.push(['Profit Target', threeYear.profit || '']);
+          vtoData.push(['Future Date', threeYear.future_date ? format(new Date(threeYear.future_date), 'yyyy-MM-dd') : '']);
           vtoData.push(['']);
         }
         
         // 1-Year Plan
-        if (vto.one_year_plan) {
+        const oneYearResult = await pool.query(
+          'SELECT * FROM one_year_plans WHERE vto_id = $1 LIMIT 1',
+          [vto.id]
+        );
+        
+        if (oneYearResult.rows.length > 0) {
+          const oneYear = oneYearResult.rows[0];
           vtoData.push(['1-YEAR PLAN']);
-          vtoData.push(['Revenue Target', vto.one_year_plan.revenue || '']);
-          vtoData.push(['Profit Target', vto.one_year_plan.profit || '']);
-          if (vto.one_year_plan.goals && Array.isArray(vto.one_year_plan.goals)) {
+          vtoData.push(['Revenue Target', oneYear.revenue || '']);
+          vtoData.push(['Profit Target', oneYear.profit || '']);
+          
+          // Get 1-year goals
+          const goalsResult = await pool.query(
+            'SELECT * FROM one_year_goals WHERE one_year_plan_id = $1 ORDER BY sort_order',
+            [oneYear.id]
+          );
+          
+          if (goalsResult.rows.length > 0) {
             vtoData.push(['Goals:']);
-            vto.one_year_plan.goals.forEach((goal, index) => {
-              const goalText = typeof goal === 'string' ? goal : (goal.goal_text || '');
-              vtoData.push([`  ${index + 1}.`, goalText]);
+            goalsResult.rows.forEach((goal, index) => {
+              vtoData.push([`  ${index + 1}.`, goal.goal_text || '']);
             });
           }
           vtoData.push(['']);
