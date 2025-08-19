@@ -5,7 +5,7 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Input } from '@/components/ui/input';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import { Loader2, Save, AlertCircle, Plus, Trash2 } from 'lucide-react';
+import { Loader2, Save, AlertCircle, Plus, Trash2, Calendar } from 'lucide-react';
 import { getRevenueLabel, getRevenueLabelWithSuffix } from '../../utils/revenueUtils';
 import { formatDateLocal } from '../../utils/dateUtils';
 
@@ -69,20 +69,27 @@ const OneYearPlanDialog = ({ open, onOpenChange, data, onSave, organization }) =
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[600px] max-h-[85vh] flex flex-col p-0">
+      <DialogContent className="sm:max-w-[600px] max-h-[85vh] flex flex-col p-0 bg-white/95 backdrop-blur-sm border border-white/20 rounded-2xl shadow-2xl">
         <form onSubmit={handleSubmit} className="flex flex-col h-full">
           <DialogHeader className="flex-shrink-0 p-6 pb-0">
-            <DialogTitle>Annual Goals</DialogTitle>
-            <DialogDescription>
+            <div className="flex items-center gap-3 mb-2">
+              <div className="p-2 rounded-xl bg-gradient-to-br from-indigo-500/20 to-purple-500/20">
+                <Calendar className="h-5 w-5 text-indigo-600" />
+              </div>
+              <DialogTitle className="text-xl font-bold bg-gradient-to-r from-slate-900 to-slate-700 bg-clip-text text-transparent">
+                Annual Goals
+              </DialogTitle>
+            </div>
+            <DialogDescription className="text-slate-600 font-medium ml-11">
               Define your goals and targets for the coming year
             </DialogDescription>
           </DialogHeader>
           
           <div className="space-y-4 p-6 overflow-y-auto flex-grow max-h-[calc(85vh-180px)]">
             {error && (
-              <Alert className="border-red-200 bg-red-50">
-                <AlertCircle className="h-4 w-4" />
-                <AlertDescription>{error}</AlertDescription>
+              <Alert className="border-red-200/50 bg-red-50/80 backdrop-blur-sm rounded-xl">
+                <AlertCircle className="h-4 w-4 text-red-600" />
+                <AlertDescription className="text-red-800 font-medium">{error}</AlertDescription>
               </Alert>
             )}
 
@@ -98,6 +105,7 @@ const OneYearPlanDialog = ({ open, onOpenChange, data, onSave, organization }) =
                     ...formData,
                     revenueStreams: [...formData.revenueStreams, { name: '', revenue_target: '' }]
                   })}
+                  className="bg-white/80 backdrop-blur-sm border-white/20 hover:bg-white/90 rounded-xl shadow-sm transition-all duration-200"
                 >
                   <Plus className="h-4 w-4 mr-1" />
                   Add Stream
@@ -116,7 +124,7 @@ const OneYearPlanDialog = ({ open, onOpenChange, data, onSave, organization }) =
                           newStreams[index].name = e.target.value;
                           setFormData({ ...formData, revenueStreams: newStreams });
                         }}
-                        className="flex-1"
+                        className="flex-1 bg-white/80 backdrop-blur-sm border-white/20 rounded-xl shadow-sm transition-all duration-200 focus:border-indigo-400"
                       />
                       <div className="relative w-32">
                         <span className="absolute left-2 top-1/2 -translate-y-1/2 text-gray-500 text-sm">$</span>
@@ -130,7 +138,7 @@ const OneYearPlanDialog = ({ open, onOpenChange, data, onSave, organization }) =
                             newStreams[index].revenue_target = e.target.value;
                             setFormData({ ...formData, revenueStreams: newStreams });
                           }}
-                          className="pl-6 pr-8"
+                          className="pl-6 pr-8 bg-white/80 backdrop-blur-sm border-white/20 rounded-xl shadow-sm transition-all duration-200 focus:border-indigo-400"
                         />
                         <span className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-500 text-sm">M</span>
                       </div>
@@ -161,7 +169,7 @@ const OneYearPlanDialog = ({ open, onOpenChange, data, onSave, organization }) =
                       value={formData.revenue}
                       onChange={(e) => setFormData({ ...formData, revenue: e.target.value })}
                       placeholder="0.635"
-                      className="pl-8"
+                      className="pl-8 bg-white/80 backdrop-blur-sm border-white/20 rounded-xl shadow-sm transition-all duration-200 focus:border-indigo-400"
                     />
                     <span className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500">M</span>
                   </div>
@@ -182,7 +190,7 @@ const OneYearPlanDialog = ({ open, onOpenChange, data, onSave, organization }) =
                   value={formData.profit}
                   onChange={(e) => setFormData({ ...formData, profit: e.target.value })}
                   placeholder="20"
-                  className="pr-8"
+                  className="pr-8 bg-white/80 backdrop-blur-sm border-white/20 rounded-xl shadow-sm transition-all duration-200 focus:border-indigo-400"
                 />
                 <span className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500">%</span>
               </div>
@@ -197,6 +205,7 @@ const OneYearPlanDialog = ({ open, onOpenChange, data, onSave, organization }) =
                 value={formData.targetDate}
                 onChange={(e) => setFormData({ ...formData, targetDate: e.target.value })}
                 required
+                className="bg-white/80 backdrop-blur-sm border-white/20 rounded-xl shadow-sm transition-all duration-200 focus:border-indigo-400"
               />
               <p className="text-xs text-gray-500">Select the date 1 year from now</p>
             </div>
@@ -212,6 +221,7 @@ const OneYearPlanDialog = ({ open, onOpenChange, data, onSave, organization }) =
                     ...prev,
                     measurables: [...(prev.measurables || []), { name: '', value: '' }]
                   }))}
+                  className="bg-white/80 backdrop-blur-sm border-white/20 hover:bg-white/90 rounded-xl shadow-sm transition-all duration-200"
                 >
                   <Plus className="h-4 w-4" />
                 </Button>
@@ -228,7 +238,7 @@ const OneYearPlanDialog = ({ open, onOpenChange, data, onSave, organization }) =
                         newItems[index] = { ...newItems[index], name: e.target.value };
                         return { ...prev, measurables: newItems };
                       })}
-                      className="flex-1"
+                      className="flex-1 bg-white/80 backdrop-blur-sm border-white/20 rounded-xl shadow-sm transition-all duration-200 focus:border-indigo-400"
                     />
                     <Input
                       type="text"
@@ -239,7 +249,7 @@ const OneYearPlanDialog = ({ open, onOpenChange, data, onSave, organization }) =
                         newItems[index] = { ...newItems[index], value: e.target.value };
                         return { ...prev, measurables: newItems };
                       })}
-                      className="w-32"
+                      className="w-32 bg-white/80 backdrop-blur-sm border-white/20 rounded-xl shadow-sm transition-all duration-200 focus:border-indigo-400"
                     />
                     <Button
                       type="button"
@@ -272,6 +282,7 @@ const OneYearPlanDialog = ({ open, onOpenChange, data, onSave, organization }) =
                       ...prev,
                       goals: [...prev.goals, '']
                     }))}
+                    className="bg-white/80 backdrop-blur-sm border-white/20 hover:bg-white/90 rounded-xl shadow-sm transition-all duration-200"
                   >
                     <Plus className="h-4 w-4" />
                   </Button>
@@ -292,6 +303,7 @@ const OneYearPlanDialog = ({ open, onOpenChange, data, onSave, organization }) =
                           newGoals[index] = e.target.value;
                           return { ...prev, goals: newGoals };
                         })}
+                        className="bg-white/80 backdrop-blur-sm border-white/20 rounded-xl shadow-sm transition-all duration-200 focus:border-indigo-400"
                       />
                       {showDeleteButton && (
                         <Button
@@ -313,11 +325,20 @@ const OneYearPlanDialog = ({ open, onOpenChange, data, onSave, organization }) =
             </div>
           </div>
 
-          <DialogFooter className="flex-shrink-0 p-6 pt-4 border-t">
-            <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
+          <DialogFooter className="flex-shrink-0 p-6 pt-4 border-t border-white/20">
+            <Button 
+              type="button" 
+              variant="outline" 
+              onClick={() => onOpenChange(false)}
+              className="bg-white/80 backdrop-blur-sm border-white/20 hover:bg-white/90 rounded-xl shadow-sm transition-all duration-200"
+            >
               Cancel
             </Button>
-            <Button type="submit" disabled={saving}>
+            <Button 
+              type="submit" 
+              disabled={saving}
+              className="bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white rounded-xl shadow-lg hover:shadow-xl transition-all duration-200 transform hover:scale-[1.02] disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none"
+            >
               {saving ? (
                 <>
                   <Loader2 className="mr-2 h-4 w-4 animate-spin" />
