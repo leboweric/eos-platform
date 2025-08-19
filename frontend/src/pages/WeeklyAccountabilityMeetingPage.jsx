@@ -1245,34 +1245,37 @@ const WeeklyAccountabilityMeetingPage = () => {
     switch (activeSection) {
       case 'good-news':
         return (
-          <Card className="border-0 shadow-sm">
-            <CardHeader className="rounded-t-lg" style={{ 
-              background: `linear-gradient(to right, ${hexToRgba(themeColors.accent, 0.1)}, ${hexToRgba(themeColors.primary, 0.1)})`
-            }}>
+          <Card className="bg-white/80 backdrop-blur-sm border border-white/50 rounded-2xl shadow-xl hover:shadow-2xl transition-all duration-300">
+            <CardHeader className="bg-gradient-to-r from-white/90 to-white/70 backdrop-blur-sm border-b border-white/20 rounded-t-2xl">
               <div className="flex items-center justify-between">
                 <div>
-                  <CardTitle className="flex items-center gap-2 text-xl">
-                    <Smile className="h-5 w-5" style={{ color: themeColors.primary }} />
+                  <CardTitle className="flex items-center gap-3 text-xl font-bold text-slate-900">
+                    <div className="p-2 rounded-xl" style={{ background: `linear-gradient(135deg, ${themeColors.primary}20 0%, ${themeColors.secondary}20 100%)` }}>
+                      <Smile className="h-5 w-5" style={{ color: themeColors.primary }} />
+                    </div>
                     Good News
                   </CardTitle>
-                  <CardDescription className="mt-1">Share personal and professional wins</CardDescription>
+                  <CardDescription className="mt-2 text-slate-600 font-medium">Share personal and professional wins</CardDescription>
                 </div>
-                <div className="text-sm text-gray-500 bg-white px-3 py-1 rounded-full">
+                <div className="text-sm text-slate-600 bg-white/80 backdrop-blur-sm px-4 py-2 rounded-full border border-white/30 shadow-sm font-medium">
                   5 minutes
                 </div>
               </div>
             </CardHeader>
-            <CardContent className="pt-6">
-              <div className="space-y-4">
-                <p className="text-gray-600">
+            <CardContent className="pt-6 px-6 pb-6">
+              <div className="space-y-6">
+                <p className="text-slate-600 text-lg leading-relaxed">
                   Take turns sharing good news from your personal and professional lives. 
                   This helps build team connection and starts the meeting on a positive note.
                 </p>
-                <div className="border border-gray-200 p-4 rounded-lg bg-white">
-                  <h4 className="font-medium mb-2 text-gray-900">Tips for Good News:</h4>
-                  <ul className="list-disc list-inside text-sm space-y-1">
-                    <li>Keep it brief - aim for 30-60 seconds per person</li>
-                    <li>Share good personal news and good business news</li>
+                <div className="border border-white/30 p-6 rounded-xl bg-white/60 backdrop-blur-sm shadow-sm">
+                  <h4 className="font-bold mb-3 text-slate-900 flex items-center gap-2">
+                    <Star className="h-4 w-4" style={{ color: themeColors.primary }} />
+                    Tips for Good News:
+                  </h4>
+                  <ul className="list-disc list-inside text-sm space-y-2 text-slate-700">
+                    <li className="font-medium">Keep it brief - aim for 30-60 seconds per person</li>
+                    <li className="font-medium">Share good personal news and good business news</li>
                   </ul>
                 </div>
               </div>
@@ -1282,15 +1285,15 @@ const WeeklyAccountabilityMeetingPage = () => {
 
       case 'scorecard':
         return (
-          <div className="space-y-4">
-            <Card className="border-0 shadow-sm">
-              <CardHeader className="rounded-t-lg" style={{ 
-                background: `linear-gradient(to right, ${hexToRgba(themeColors.accent, 0.1)}, ${hexToRgba(themeColors.primary, 0.1)})`
-              }}>
+          <div className="space-y-6">
+            <Card className="bg-white/80 backdrop-blur-sm border border-white/50 rounded-2xl shadow-xl hover:shadow-2xl transition-all duration-300">
+              <CardHeader className="bg-gradient-to-r from-white/90 to-white/70 backdrop-blur-sm border-b border-white/20 rounded-t-2xl">
                 <div className="flex items-center justify-between">
                   <div>
-                    <CardTitle className="flex items-center gap-2 text-xl">
-                      <BarChart className="h-5 w-5" style={{ color: themeColors.primary }} />
+                    <CardTitle className="flex items-center gap-3 text-xl font-bold text-slate-900">
+                      <div className="p-2 rounded-xl" style={{ background: `linear-gradient(135deg, ${themeColors.primary}20 0%, ${themeColors.secondary}20 100%)` }}>
+                        <BarChart className="h-5 w-5" style={{ color: themeColors.primary }} />
+                      </div>
                       Scorecard Review
                     </CardTitle>
                     <CardDescription className="mt-1">Quick Status Update: Metric owners report "on-track" or "off-track" status</CardDescription>
@@ -1303,7 +1306,7 @@ const WeeklyAccountabilityMeetingPage = () => {
             </Card>
             {/* Scorecard Options */}
             {scorecardMetrics.length > 0 && (
-              <div className="flex items-center gap-4 px-4 py-2 bg-white rounded-lg border border-gray-200">
+              <div className="flex items-center gap-4 px-4 py-2 bg-white/60 backdrop-blur-sm rounded-xl border border-white/30 shadow-sm">
                 <span className="text-sm font-medium text-gray-700">Display Options:</span>
                 <label className="flex items-center gap-2 cursor-pointer">
                   <input
@@ -1484,7 +1487,7 @@ const WeeklyAccountabilityMeetingPage = () => {
                   
                   return Object.keys(groupedByOwner).length > 0 && (
                     <div className="space-y-4">
-                      <div className="flex items-center gap-3 p-4 bg-white border border-gray-200 rounded-lg">
+                      <div className="flex items-center gap-3 p-4 bg-white/60 backdrop-blur-sm border border-white/30 rounded-xl shadow-sm">
                         <Users className="h-5 w-5" style={{ color: themeColors.primary }} />
                         <h3 className="text-lg font-semibold">
                           Individual {labels.priorities_label || 'Priorities'} ({individualPriorities.length})
@@ -1496,7 +1499,7 @@ const WeeklyAccountabilityMeetingPage = () => {
                         return (
                           <div key={ownerId} className="ml-7">
                             <div 
-                              className="flex items-center gap-3 p-3 bg-white border rounded-lg cursor-pointer hover:bg-gray-50 transition-colors"
+                              className="flex items-center gap-3 p-3 bg-white/60 backdrop-blur-sm border border-white/30 rounded-xl cursor-pointer hover:bg-white/80 transition-all duration-200 hover:scale-[1.01] hover:shadow-lg"
                               onClick={() => setExpandedSections(prev => ({ 
                                 ...prev, 
                                 individualPriorities: {
@@ -1613,7 +1616,7 @@ const WeeklyAccountabilityMeetingPage = () => {
                 )}
                 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div className="border border-gray-200 p-4 rounded-lg bg-white">
+                  <div className="border border-white/30 p-4 rounded-xl bg-white/60 backdrop-blur-sm shadow-sm">
                     <h4 className="font-medium mb-2 text-gray-900 flex items-center gap-2">
                       <Users className="h-4 w-4" />
                       Customer Headlines
@@ -1638,7 +1641,7 @@ const WeeklyAccountabilityMeetingPage = () => {
                       </ul>
                     )}
                   </div>
-                  <div className="border border-gray-200 p-4 rounded-lg bg-white">
+                  <div className="border border-white/30 p-4 rounded-xl bg-white/60 backdrop-blur-sm shadow-sm">
                     <h4 className="font-medium mb-2 text-gray-900 flex items-center gap-2">
                       <Building2 className="h-4 w-4" />
                       Employee Headlines
@@ -1809,7 +1812,7 @@ const WeeklyAccountabilityMeetingPage = () => {
                 </div>
               </CardHeader>
               <CardContent className="pt-6">
-                <div className="border border-gray-200 bg-white rounded-lg p-4 mb-4">
+                <div className="border border-white/30 bg-white/60 backdrop-blur-sm rounded-xl p-4 mb-4 shadow-sm">
                   <p className="text-gray-700 text-center">
                     <span className="font-semibold">Quick voting:</span> Everyone votes on the most important issues. Then discuss and solve the top-voted issues together.
                   </p>
@@ -2191,19 +2194,30 @@ const WeeklyAccountabilityMeetingPage = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100">
-      <div className="max-w-7xl mx-auto p-6">
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50/30 to-indigo-50/30 relative">
+      {/* Background Pattern */}
+      <div className="absolute inset-0 bg-grid-slate-100 [mask-image:linear-gradient(0deg,white,rgba(255,255,255,0.6))] -z-10"></div>
+      
+      <div className="max-w-7xl mx-auto p-8">
         {/* Header */}
         <div className="mb-8">
           <div className="flex items-center justify-between mb-6">
             <div>
-              <h1 className="text-3xl font-bold text-gray-900">{labels.weekly_meeting_label || 'Weekly Accountability Meeting'}</h1>
-              <p className="text-gray-600 mt-2">{getMeetingDescription()}</p>
+              <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full text-sm font-medium mb-4"
+                   style={{
+                     background: `linear-gradient(135deg, ${themeColors.primary}15 0%, ${themeColors.secondary}15 100%)`,
+                     color: themeColors.primary
+                   }}>
+                <Users className="h-4 w-4" />
+                WEEKLY MEETING
+              </div>
+              <h1 className="text-4xl font-bold mb-2 bg-gradient-to-r from-slate-900 via-slate-800 to-slate-900 bg-clip-text text-transparent">{labels.weekly_meeting_label || 'Weekly Accountability Meeting'}</h1>
+              <p className="text-lg text-slate-600">{getMeetingDescription()}</p>
             </div>
             {meetingStarted && (
               <div className="flex items-center gap-4">
                 {participants.length > 0 && (
-                  <div className="bg-blue-50 px-4 py-2 rounded-lg border border-blue-200">
+                  <div className="bg-blue-50/80 backdrop-blur-sm px-4 py-2 rounded-xl border border-blue-200/50 shadow-sm">
                     <div className="flex items-center gap-2">
                       <Users className="h-4 w-4 text-blue-600" />
                       <span className="text-sm font-medium text-blue-900">
@@ -2212,9 +2226,9 @@ const WeeklyAccountabilityMeetingPage = () => {
                     </div>
                   </div>
                 )}
-                <div className="bg-white px-4 py-2 rounded-lg shadow-sm border border-gray-200">
+                <div className="bg-white/80 backdrop-blur-sm px-4 py-2 rounded-xl shadow-lg border border-white/50">
                   <div className="flex items-center gap-2">
-                    <Clock className="h-4 w-4 text-gray-500" />
+                    <Clock className="h-4 w-4 text-slate-500" />
                     <span className={`text-lg font-mono font-semibold ${getTimerColor()}`}>
                       {formatTimer(elapsedTime)}
                     </span>
@@ -2227,42 +2241,48 @@ const WeeklyAccountabilityMeetingPage = () => {
 
           {/* Alerts */}
           {error && (
-            <Alert className="mb-4 border-red-200 bg-red-50">
+            <Alert className="mb-4 border-red-200/50 bg-red-50/80 backdrop-blur-sm rounded-2xl shadow-sm">
               <AlertCircle className="h-4 w-4 text-red-600" />
-              <AlertDescription className="text-red-800">{error}</AlertDescription>
+              <AlertDescription className="text-red-800 font-medium">{error}</AlertDescription>
             </Alert>
           )}
 
           {success && (
-            <Alert className="mb-4 border-green-200 bg-green-50">
+            <Alert className="mb-4 border-green-200/50 bg-green-50/80 backdrop-blur-sm rounded-2xl shadow-sm">
               <CheckCircle className="h-4 w-4 text-green-600" />
-              <AlertDescription className="text-green-800">{success}</AlertDescription>
+              <AlertDescription className="text-green-800 font-medium">{success}</AlertDescription>
             </Alert>
           )}
         </div>
 
         {/* Tabs Navigation */}
-        <Tabs value={activeSection} onValueChange={handleSectionChange} className="space-y-6">
-          <TabsList className="w-full grid grid-cols-4 lg:grid-cols-8 gap-2 h-auto p-1 bg-white shadow-sm">
+        <Tabs value={activeSection} onValueChange={handleSectionChange} className="space-y-8">
+          <TabsList className="w-full grid grid-cols-4 lg:grid-cols-8 gap-2 h-auto p-2 bg-white/80 backdrop-blur-sm border border-white/50 rounded-2xl shadow-lg">
             {agendaItems.map((item) => {
               const Icon = item.icon;
               const currentIndex = agendaItems.findIndex(i => i.id === activeSection);
               const itemIndex = agendaItems.findIndex(i => i.id === item.id);
               const isCompleted = itemIndex < currentIndex;
+              const isActive = item.id === activeSection;
               
               return (
                 <TabsTrigger
                   key={item.id}
                   value={item.id}
-                  className="flex flex-col items-center gap-1 py-3 px-2 data-[state=active]:bg-indigo-50 data-[state=active]:text-indigo-700"
+                  className="flex flex-col items-center gap-1 py-3 px-2 rounded-xl transition-all duration-200 hover:scale-[1.02]"
+                  style={{
+                    background: isActive ? `linear-gradient(135deg, ${themeColors.primary} 0%, ${themeColors.secondary} 100%)` : 'transparent',
+                    color: isActive ? 'white' : 'inherit',
+                    boxShadow: isActive ? '0 8px 32px rgba(0,0,0,0.12)' : 'none'
+                  }}
                 >
                   <Icon className={`h-5 w-5 ${
-                    isCompleted ? 'text-green-600' : ''
+                    isCompleted ? 'text-green-400' : isActive ? 'text-white' : 'text-slate-600'
                   }`} />
-                  <span className="text-xs font-medium">{item.label}</span>
-                  <span className="text-xs text-gray-500">{item.duration}m</span>
+                  <span className={`text-xs font-medium ${isActive ? 'text-white' : 'text-slate-700'}`}>{item.label}</span>
+                  <span className={`text-xs ${isActive ? 'text-white/80' : 'text-slate-500'}`}>{item.duration}m</span>
                   {isCompleted && (
-                    <CheckCircle className="h-3 w-3 text-green-600" />
+                    <CheckCircle className="h-3 w-3 text-green-400" />
                   )}
                 </TabsTrigger>
               );
@@ -2270,7 +2290,7 @@ const WeeklyAccountabilityMeetingPage = () => {
           </TabsList>
 
           {/* Tab Content */}
-          <div className="bg-white rounded-lg shadow-sm">
+          <div className="bg-white/80 backdrop-blur-sm rounded-2xl shadow-xl border border-white/50">
             {renderContent()}
           </div>
         </Tabs>
