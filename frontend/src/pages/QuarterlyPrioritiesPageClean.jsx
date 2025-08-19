@@ -48,7 +48,10 @@ import {
   EyeOff,
   Paperclip,
   Download,
-  Brain
+  Brain,
+  Sparkles,
+  Activity,
+  Zap
 } from 'lucide-react';
 import { format, addMonths, startOfQuarter, endOfQuarter } from 'date-fns';
 
@@ -1368,7 +1371,7 @@ const QuarterlyPrioritiesPageClean = () => {
     try {
       return (
         <Card 
-          className="transition-all duration-200 hover:shadow-sm bg-white"
+          className="transition-all duration-300 hover:shadow-lg hover:scale-[1.01] bg-white/90 backdrop-blur-sm rounded-xl border border-slate-200"
           style={getStatusBorderStyle(isEditing ? editForm.status : priority.status)}
         >
           <CardHeader className="pb-4">
@@ -2128,78 +2131,95 @@ const QuarterlyPrioritiesPageClean = () => {
   }
 
   return (
-    <div className="space-y-8 bg-white min-h-screen">
-      {/* Header */}
-      <div className="bg-white border-b pb-6">
-        <div className="flex items-center justify-between">
-          <div>
-            <h1 className="text-3xl font-bold text-gray-900">
-              <span className="inline-block w-1 h-8 mr-3 rounded-full" style={{ backgroundColor: themeColors.primary }} />
-              {selectedDepartment.name} {labels.priorities_label}
-            </h1>
-            {showArchived && (
-              <p className="text-gray-600 mt-2">
-                Viewing archived priorities from previous quarters
-              </p>
-            )}
-          </div>
-          <div className="flex items-center gap-3">
-            {!showArchived && (
-              <>
-                <Button 
-                  variant="outline"
-                  size="sm"
-                  onClick={expandAll}
-                  className="text-sm"
-                >
-                  <ChevronDown className="mr-2 h-4 w-4" />
-                  Expand All
-                </Button>
-                <Button 
-                  variant="outline"
-                  size="sm"
-                  onClick={collapseAll}
-                  className="text-sm"
-                >
-                  <ChevronRight className="mr-2 h-4 w-4" />
-                  Collapse All
-                </Button>
-              </>
-            )}
-            <Button 
-              variant={showArchived ? "default" : "outline"}
-              onClick={() => setShowArchived(!showArchived)}
-              className="text-sm"
-            >
-              {showArchived ? 'View Current' : 'View Archive'}
-            </Button>
-            {!showArchived && (
-              <>
-                <Button 
-                  variant="outline"
-                  onClick={() => navigate(`/organizations/${organization?.id || localStorage.getItem('organizationId')}/smart-rock-assistant`)}
-                  className="text-sm"
-                >
-                  <Brain className="mr-2 h-4 w-4" />
-                  SMART Assistant
-                </Button>
-                <Button 
-                  onClick={() => {
-                    // Set default owner to current user when opening dialog
-                    setPriorityForm({
-                      ...priorityForm,
-                      ownerId: user?.id || ''
-                    });
-                    setShowAddPriority(true);
-                  }}
-                  className="text-sm"
-                >
-                  <Plus className="mr-2 h-4 w-4" />
-                  Add {labels.priority}
-                </Button>
-              </>
-            )}
-          </div>
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50/30 to-indigo-50/30 relative">
+      {/* Background Pattern */}
+      <div className="absolute inset-0 bg-grid-slate-100 [mask-image:linear-gradient(0deg,white,rgba(255,255,255,0.6))] -z-10"></div>
+      
+      <div className="max-w-7xl mx-auto px-8 py-8 space-y-8">
+        {/* Enhanced Header */}
+        <div className="bg-white/80 backdrop-blur-sm rounded-2xl p-6 shadow-sm border border-white/50">
+          <div className="flex items-center justify-between">
+            <div>
+              <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full text-sm font-medium mb-4"
+                   style={{
+                     background: `linear-gradient(135deg, ${themeColors.primary}15 0%, ${themeColors.secondary}15 100%)`,
+                     color: themeColors.primary
+                   }}>
+                <Sparkles className="h-4 w-4" />
+                QUARTERLY EXECUTION
+              </div>
+              <h1 className="text-4xl font-bold bg-gradient-to-r from-slate-900 via-blue-900 to-indigo-900 bg-clip-text text-transparent">
+                {selectedDepartment.name} {labels.priorities_label}
+              </h1>
+              {showArchived && (
+                <p className="text-slate-600 mt-2">
+                  Viewing archived priorities from previous quarters
+                </p>
+              )}
+            </div>
+            <div className="flex items-center gap-3">
+              {!showArchived && (
+                <>
+                  <Button 
+                    variant="outline"
+                    size="sm"
+                    onClick={expandAll}
+                    className="bg-white/80 backdrop-blur-sm border border-slate-200 hover:shadow-md hover:scale-[1.02] transition-all rounded-lg"
+                  >
+                    <ChevronDown className="mr-2 h-4 w-4" style={{ color: themeColors.primary }} />
+                    Expand All
+                  </Button>
+                  <Button 
+                    variant="outline"
+                    size="sm"
+                    onClick={collapseAll}
+                    className="bg-white/80 backdrop-blur-sm border border-slate-200 hover:shadow-md hover:scale-[1.02] transition-all rounded-lg"
+                  >
+                    <ChevronRight className="mr-2 h-4 w-4" style={{ color: themeColors.primary }} />
+                    Collapse All
+                  </Button>
+                </>
+              )}
+              <Button 
+                variant={showArchived ? "default" : "outline"}
+                onClick={() => setShowArchived(!showArchived)}
+                className={showArchived 
+                  ? "bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white rounded-lg transition-all transform hover:scale-[1.02]"
+                  : "bg-white/80 backdrop-blur-sm border border-slate-200 hover:shadow-md hover:scale-[1.02] transition-all rounded-lg"
+                }
+              >
+                {showArchived ? 'View Current' : 'View Archive'}
+              </Button>
+              {!showArchived && (
+                <>
+                  <Button 
+                    variant="outline"
+                    onClick={() => navigate(`/organizations/${organization?.id || localStorage.getItem('organizationId')}/smart-rock-assistant`)}
+                    className="bg-white/80 backdrop-blur-sm border border-slate-200 hover:shadow-md hover:scale-[1.02] transition-all rounded-lg"
+                  >
+                    <Brain className="mr-2 h-4 w-4" style={{ color: themeColors.primary }} />
+                    SMART Assistant
+                  </Button>
+                  <Button 
+                    onClick={() => {
+                      // Set default owner to current user when opening dialog
+                      setPriorityForm({
+                        ...priorityForm,
+                        ownerId: user?.id || ''
+                      });
+                      setShowAddPriority(true);
+                    }}
+                    className="bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white rounded-lg transition-all transform hover:scale-[1.02]"
+                    style={{
+                      background: `linear-gradient(135deg, ${themeColors.primary} 0%, ${themeColors.secondary} 100%)`
+                    }}
+                  >
+                    <Plus className="mr-2 h-4 w-4" />
+                    Add {labels.priority}
+                  </Button>
+                </>
+              )}
+            </div>
         </div>
       </div>
 
@@ -2236,43 +2256,58 @@ const QuarterlyPrioritiesPageClean = () => {
             </CardContent>
           </Card>
 
-          <Card className="border-0 shadow-sm bg-white">
-            <CardContent className="p-6">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm font-medium text-gray-600 mb-1">Completed</p>
-                  <p className="text-3xl font-bold text-green-600">{stats.completed}</p>
+            <div className="group relative overflow-hidden bg-white/80 backdrop-blur-sm p-6 rounded-2xl border border-white/50 shadow-sm hover:shadow-md transition-all duration-300 hover:scale-[1.02]">
+              <div className="absolute inset-0 bg-gradient-to-br from-green-500/5 to-emerald-500/5 opacity-0 group-hover:opacity-100 transition-opacity"></div>
+              <div className="relative">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-sm font-medium text-slate-600 mb-1">Completed</p>
+                    <p className="text-3xl font-bold text-green-600">{stats.completed}</p>
+                  </div>
+                  <div className="w-12 h-12 rounded-lg bg-gradient-to-br from-green-50 to-emerald-50 flex items-center justify-center">
+                    <CheckCircle className="h-6 w-6 text-green-600" />
+                  </div>
                 </div>
-                <CheckCircle className="h-8 w-8 text-green-300" />
               </div>
-            </CardContent>
-          </Card>
+            </div>
 
-          <Card className="border-0 shadow-sm bg-white">
-            <CardContent className="p-6">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm font-medium text-gray-600 mb-1">On Track</p>
-                  <p className="text-3xl font-bold" style={{ color: themeColors.primary }}>{stats.onTrack}</p>
+            <div className="group relative overflow-hidden bg-white/80 backdrop-blur-sm p-6 rounded-2xl border border-white/50 shadow-sm hover:shadow-md transition-all duration-300 hover:scale-[1.02]">
+              <div className="absolute inset-0 bg-gradient-to-br opacity-5 group-hover:opacity-10 transition-opacity"
+                   style={{
+                     background: `linear-gradient(135deg, ${themeColors.primary} 0%, ${themeColors.accent} 100%)`
+                   }}></div>
+              <div className="relative">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-sm font-medium text-slate-600 mb-1">On Track</p>
+                    <p className="text-3xl font-bold" style={{ color: themeColors.primary }}>{stats.onTrack}</p>
+                  </div>
+                  <div className="w-12 h-12 rounded-lg flex items-center justify-center"
+                       style={{
+                         background: `linear-gradient(135deg, ${themeColors.primary}20 0%, ${themeColors.accent}20 100%)`
+                       }}>
+                    <TrendingUp className="h-6 w-6" style={{ color: themeColors.primary }} />
+                  </div>
                 </div>
-                <TrendingUp className="h-8 w-8" style={{ color: themeColors.accent }} />
               </div>
-            </CardContent>
-          </Card>
+            </div>
 
-          <Card className="border-0 shadow-sm bg-white">
-            <CardContent className="p-6">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm font-medium text-gray-600 mb-1">Off Track</p>
-                  <p className="text-3xl font-bold text-red-600">{stats.offTrack}</p>
+            <div className="group relative overflow-hidden bg-white/80 backdrop-blur-sm p-6 rounded-2xl border border-white/50 shadow-sm hover:shadow-md transition-all duration-300 hover:scale-[1.02]">
+              <div className="absolute inset-0 bg-gradient-to-br from-red-500/5 to-orange-500/5 opacity-0 group-hover:opacity-100 transition-opacity"></div>
+              <div className="relative">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-sm font-medium text-slate-600 mb-1">Off Track</p>
+                    <p className="text-3xl font-bold text-red-600">{stats.offTrack}</p>
+                  </div>
+                  <div className="w-12 h-12 rounded-lg bg-gradient-to-br from-red-50 to-orange-50 flex items-center justify-center">
+                    <AlertTriangle className="h-6 w-6 text-red-600" />
+                  </div>
                 </div>
-                <AlertTriangle className="h-8 w-8 text-red-300" />
               </div>
-            </CardContent>
-          </Card>
-        </div>
-      )}
+            </div>
+          </div>
+        )}
 
       {/* Display archived priorities by quarter if showing archived */}
       {showArchived ? (
