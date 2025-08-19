@@ -16,6 +16,8 @@ EOS Platform is a web application for implementing the Entrepreneurial Operating
 - **Database**: PostgreSQL
 - **Hosting**: Railway (backend), Netlify (frontend)
 - **Authentication**: JWT tokens + OAuth 2.0 (Google & Microsoft)
+- **Cloud Storage**: Pluggable adapters for Google Drive, OneDrive, SharePoint
+- **AI Integration**: OpenAI GPT-4 for SMART goal validation (planned)
 
 ### Document Storage
 - Documents are stored in the `documents` table
@@ -82,6 +84,55 @@ import IssuesList from '../components/issues/IssuesListClean';
 2. **Search for component usage** across the codebase before deleting anything
 3. **Test builds** after any component changes
 4. **Never assume** component naming indicates test/production status
+
+## Cloud Storage Integration (August 2025)
+
+### Overview
+Implemented a revolutionary cloud storage integration that allows organizations to store documents in their own Google Drive, OneDrive, or SharePoint instead of our internal database. This provides complete data sovereignty while maintaining seamless integration.
+
+### Architecture
+- **Storage Factory Pattern**: `StorageFactory` manages adapter creation and caching
+- **Base Adapter Class**: `StorageAdapter` defines the interface all providers must implement
+- **Provider Adapters**:
+  - `GoogleDriveAdapter`: Google Drive integration via service account
+  - `OneDriveAdapter`: Microsoft OneDrive/SharePoint via app-only auth
+  - `InternalStorageAdapter`: PostgreSQL bytea storage (default)
+
+### Key Features
+1. **Seamless Provider Switching**: Organizations can change storage providers without data loss
+2. **Hierarchical Folder Structure**: Auto-creates year/quarter/department folders
+3. **Permission Sync**: Maps AXP visibility (company/department/private) to cloud permissions
+4. **Admin Configuration UI**: Complete setup wizard with embedded guides
+5. **Test Connection**: Validates configuration before saving
+
+### Configuration Requirements
+
+#### Google Drive
+- Service Account with domain-wide delegation
+- Google Workspace Admin approval
+- Drive API enabled
+- Root folder ID
+
+#### OneDrive/SharePoint  
+- Azure AD App Registration
+- Application permissions (Files.ReadWrite.All)
+- Admin consent granted
+- Tenant ID, Client ID, Client Secret
+
+### Database Schema
+```sql
+ALTER TABLE organizations ADD COLUMN default_storage_provider VARCHAR(50) DEFAULT 'internal';
+ALTER TABLE organizations ADD COLUMN storage_config JSONB DEFAULT '{}';
+ALTER TABLE documents ADD COLUMN storage_provider VARCHAR(50);
+ALTER TABLE documents ADD COLUMN external_id VARCHAR(255);
+ALTER TABLE documents ADD COLUMN external_url TEXT;
+```
+
+### Important Implementation Notes
+- Use `import { query as dbQuery }` to avoid naming conflicts
+- All storage operations are async and return standardized responses
+- Errors are logged to `cloud_storage_sync_log` table
+- Provider config is encrypted in database
 
 ## OAuth Authentication (August 2025)
 
@@ -218,6 +269,50 @@ curl https://api.axplatform.app/api/v1/auth/microsoft
 - **Logo Size**: Increased from h-20 to h-28 on login/register pages
 - **Branding**: Removed "Accountability & Execution Platform" tagline
 - **Subdomain Routing**: Client subdomains (e.g., myboyum.axplatform.app) now redirect directly to login
+
+## Adaptive Framework Technology™ (August 2025)
+
+### Overview
+AXP is the world's first Adaptive Execution Platform that can seamlessly switch between different business methodologies (EOS, 4DX, Scaling Up, custom) while preserving all data.
+
+### Terminology System
+- **Dynamic Terminology Mapping**: All UI labels adapt based on selected framework
+- **Data Preservation**: Switching frameworks doesn't lose data, just remaps terminology
+- **Framework Presets**:
+  - EOS: Rocks, V/TO, Level 10, IDS
+  - 4DX: WIGs, Lead Measures, WIG Sessions
+  - Custom: Fully configurable terminology
+
+### Implementation
+- `useTerminology` hook provides framework-specific terms
+- Organization-level setting: `terminology_set` field
+- Real-time UI updates without page refresh
+- Affects: navigation, headers, buttons, email templates
+
+### Business Impact
+- Organizations aren't locked into one methodology
+- Consultants can serve clients using different frameworks
+- Smooth transitions when companies evolve their approach
+
+## Meeting Improvements (August 2025)
+
+### Todo-Issue Bidirectional Linking
+- Create linked todo from issue (was broken, now fixed)
+- Create linked issue from todo (new feature)
+- Visual indicators show linkage
+- Prevents duplicate creation with clear error messages
+
+### UI/UX Enhancements
+- Click anywhere on todo card to edit (removed redundant three-dots menu)
+- Removed automatic issue creation from overdue todos (too complex)
+- Larger logo on login/register pages (h-28 instead of h-20)
+- Removed "Accountability & Execution Platform" tagline
+
+### Bug Fixes
+- Fixed field naming mismatch (assignedToId vs assigned_to_id)
+- Fixed todo list disappearing after creating linked issue
+- Fixed 409 conflict errors with better error messaging
+- Fixed ES6 module imports for production deployment
 
 ## Recent Updates (July 2025)
 
@@ -553,6 +648,56 @@ CREATE TABLE rock_suggestions (
 - Existing Rock creation/editing remains unchanged
 - AI suggestions are stored for learning/improvement
 - No modification to existing quarterly_priorities table structure
+
+## Landing Page Positioning (August 2025)
+
+### Blue Ocean Strategy
+Completely repositioned AXP as creating a new category rather than competing with existing EOS/4DX tools:
+- **Tagline**: "The Execution Platform That Adapts to You"
+- **Key Message**: "Not another EOS tool. Not another 4DX app."
+- **Category**: "Adaptive Execution Platform"
+
+### Six Game-Changing Features Highlighted
+1. **Adaptive Framework Technology™** - Industry first
+2. **Real-Time Collaborative Meetings** - Game changer
+3. **Your Cloud, Your Control** - Unique
+4. **Enterprise OAuth & SSO** - Enterprise ready
+5. **AI Strategic Assistant** - AI powered
+6. **White-Label Ready** - Your brand
+
+### Marketing Messages
+- "Features That Don't Exist Anywhere Else"
+- "Stop Adapting to Software. Start Using Software That Adapts."
+- "One Platform. Every Methodology."
+- Visual framework switching demonstration
+- Enterprise testimonials (Boyum Barenscheer featured)
+
+## Freemium Model Concept (August 2025 - Planning)
+
+### Concept
+Free tier supported by contextual advertising from consultants and framework providers.
+
+### Contextual Ad Targeting
+- **EOS Users**: See EOS Implementers, training, materials
+- **4DX Users**: See Franklin Covey consultants, coaches
+- **Custom Users**: General business consultants, tools
+
+### Ad Placement Ideas
+- Dashboard sidebar (consultant profiles)
+- Meeting summary emails ("Powered by [Consultant]")
+- Empty states ("Learn how to set effective Rocks")
+- After meeting ratings ("Get professional facilitation")
+
+### Benefits
+- **Organizations**: Free platform access
+- **Consultants**: Qualified leads in their methodology
+- **AXP**: Massive adoption, ad revenue, upsell path
+
+### Privacy-First Approach
+- No behavioral tracking
+- Contextual only (based on framework choice)
+- Clear "Sponsored" labels
+- Easy upgrade to ad-free
 
 ## Importing Scorecard Data from Ninety.io (December 2024)
 
