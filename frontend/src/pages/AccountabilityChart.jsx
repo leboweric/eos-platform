@@ -176,14 +176,14 @@ const AccountabilityChart = () => {
 
     return (
       <div className={`${level > 0 ? 'ml-8' : ''}`}>
-        <Card className="mb-4">
-          <CardHeader>
+        <Card className="mb-6 bg-white/80 backdrop-blur-sm border border-white/50 rounded-2xl shadow-xl hover:shadow-2xl transition-all duration-300">
+          <CardHeader className="bg-gradient-to-r from-white/90 to-white/70 backdrop-blur-sm border-b border-white/20">
             <div className="flex items-center justify-between">
               <div className="flex items-center space-x-3">
                 {hasSubSeats && (
                   <button
                     onClick={() => toggleExpand(seat.id)}
-                    className="p-1 hover:bg-gray-100 rounded"
+                    className="p-1 hover:bg-white/80 backdrop-blur-sm rounded-lg transition-all duration-200"
                   >
                     {isExpanded ? <ChevronDown className="h-4 w-4" /> : <ChevronRight className="h-4 w-4" />}
                   </button>
@@ -217,7 +217,7 @@ const AccountabilityChart = () => {
                 <p className="text-sm font-medium mb-2">Assigned To:</p>
                 {seat.assignedUser ? (
                   <div className="flex items-center space-x-2">
-                    <div className="w-8 h-8 bg-gray-200 rounded-full flex items-center justify-center">
+                    <div className="w-8 h-8 bg-gradient-to-br from-slate-200 to-slate-300 rounded-full flex items-center justify-center shadow-sm">
                       <User className="h-4 w-4 text-gray-600" />
                     </div>
                     <span className="font-medium">{seat.assignedUser.name}</span>
@@ -274,7 +274,7 @@ const AccountabilityChart = () => {
         {hasSubSeats && isExpanded && (
           <div className="relative">
             {level > 0 && (
-              <div className="absolute left-4 top-0 bottom-0 w-px bg-gray-200" />
+              <div className="absolute left-4 top-0 bottom-0 w-px bg-white/30" />
             )}
             {seat.subSeats.map(subSeat => (
               <SeatNode key={subSeat.id} seat={subSeat} level={level + 1} />
@@ -286,31 +286,43 @@ const AccountabilityChart = () => {
   };
 
   return (
-    <div className="space-y-6">
-      {/* Header */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-3xl font-bold">Accountability Chart</h1>
-          <p className="text-gray-600 mt-2">
-            Define seats, responsibilities, and who's accountable
-          </p>
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50/30 to-indigo-50/30 relative">
+      {/* Background Pattern */}
+      <div className="absolute inset-0 bg-grid-slate-100 [mask-image:linear-gradient(0deg,white,rgba(255,255,255,0.6))] -z-10"></div>
+      
+      <div className="max-w-7xl mx-auto p-8 space-y-8">
+        {/* Header */}
+        <div className="flex items-center justify-between">
+          <div>
+            <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full text-sm font-medium mb-4 bg-blue-50/80 backdrop-blur-sm text-blue-700">
+              <Users className="h-4 w-4" />
+              ORGANIZATION STRUCTURE
+            </div>
+            <h1 className="text-4xl font-bold mb-2 bg-gradient-to-r from-slate-900 via-slate-800 to-slate-900 bg-clip-text text-transparent">Accountability Chart</h1>
+            <p className="text-lg text-slate-600">
+              Define seats, responsibilities, and who's accountable
+            </p>
+          </div>
+          <Button 
+            onClick={() => handleOpenSeatDialog()}
+            className="bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white shadow-lg hover:shadow-xl transition-all duration-200 transform hover:scale-[1.02]"
+          >
+            <Plus className="mr-2 h-4 w-4" />
+            Add Seat
+          </Button>
         </div>
-        <Button onClick={() => handleOpenSeatDialog()}>
-          <Plus className="mr-2 h-4 w-4" />
-          Add Seat
-        </Button>
-      </div>
 
-      {/* Chart */}
-      <div className="space-y-4">
-        {seats.map(seat => (
-          <SeatNode key={seat.id} seat={seat} />
-        ))}
+        {/* Chart */}
+        <div className="space-y-6">
+          {seats.map(seat => (
+            <SeatNode key={seat.id} seat={seat} />
+          ))}
+        </div>
       </div>
 
       {/* Seat Dialog */}
       <Dialog open={seatDialog.open} onOpenChange={(open) => setSeatDialog({ open, seat: null })}>
-        <DialogContent>
+        <DialogContent className="bg-white/95 backdrop-blur-sm border border-white/20 shadow-2xl">
           <DialogHeader>
             <DialogTitle>
               {seatDialog.seat ? 'Edit Seat' : 'Create Seat'}
