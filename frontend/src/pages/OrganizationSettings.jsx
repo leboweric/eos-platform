@@ -7,9 +7,10 @@ import { Label } from '@/components/ui/label';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Slider } from '@/components/ui/slider';
-import { Building2, Save, Loader2, Upload, X, Image, RefreshCw, AlertTriangle } from 'lucide-react';
+import { Building2, Save, Loader2, Upload, X, Image, RefreshCw, AlertTriangle, Download, FileSpreadsheet } from 'lucide-react';
 import { organizationService } from '../services/organizationService';
 import { demoService } from '../services/demoService';
+import { exportService } from '../services/exportService';
 import ColorThemePicker from '../components/ColorThemePicker';
 import { saveOrgTheme, getOrgTheme } from '../utils/themeUtils';
 
@@ -42,6 +43,9 @@ const OrganizationSettings = () => {
   const [resettingDemo, setResettingDemo] = useState(false);
   const [demoResetError, setDemoResetError] = useState(null);
   const [demoResetSuccess, setDemoResetSuccess] = useState(null);
+  const [exportingData, setExportingData] = useState(false);
+  const [exportSuccess, setExportSuccess] = useState(null);
+  const [exportError, setExportError] = useState(null);
 
   useEffect(() => {
     fetchOrganizationDetails();
@@ -222,6 +226,27 @@ const OrganizationSettings = () => {
     localStorage.setItem('logoSize', size.toString());
     // Trigger a custom event to update logo size in Layout
     window.dispatchEvent(new CustomEvent('logoSizeChanged', { detail: size }));
+  };
+
+  const handleExportData = async () => {
+    setExportingData(true);
+    setExportError(null);
+    setExportSuccess(null);
+    
+    try {
+      const result = await exportService.exportOrganizationBackup(organizationData.id);
+      setExportSuccess(`Successfully exported data to ${result.filename}`);
+      
+      // Clear success message after 5 seconds
+      setTimeout(() => {
+        setExportSuccess(null);
+      }, 5000);
+    } catch (error) {
+      console.error('Export error:', error);
+      setExportError(error.message || 'Failed to export organization data');
+    } finally {
+      setExportingData(false);
+    }
   };
 
   const handleSaveColorTheme = async (theme) => {
@@ -637,6 +662,65 @@ const OrganizationSettings = () => {
           </CardContent>
         </Card>
       )}
+
+      {/* Data Export Section */}
+      <Card className="bg-white/80 backdrop-blur-sm border-white/20 rounded-2xl shadow-xl">
+        <CardHeader className="pb-3">
+          <CardTitle className="text-xl font-bold flex items-center gap-2 bg-gradient-to-r from-slate-900 to-slate-700 bg-clip-text text-transparent">
+            <FileSpreadsheet className="h-5 w-5 text-blue-600" />
+            Data Backup & Export
+          </CardTitle>
+          <CardDescription className="text-slate-600 font-medium">
+            Export all your organization data to Excel format
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="space-y-4">
+            {exportError && (
+              <Alert variant="destructive">
+                <AlertDescription>{exportError}</AlertDescription>
+              </Alert>
+            )}
+            
+            {exportSuccess && (
+              <Alert className="border-green-200/50 bg-green-50/80 backdrop-blur-sm rounded-xl">
+                <AlertDescription className="text-green-800 font-medium">{exportSuccess}</AlertDescription>
+              </Alert>
+            )}
+
+            <div className="bg-white/90 backdrop-blur-sm p-4 rounded-xl border border-blue-200/50 shadow-sm">
+              <h4 className="font-bold mb-2 text-slate-900">What's included in the export?</h4>
+              <ul className="text-sm text-slate-600 space-y-1 list-disc list-inside font-medium">
+                <li>Quarterly Priorities (Rocks) with milestones</li>
+                <li>Scorecard metrics and historical scores</li>
+                <li>To-Dos with assignments and status</li>
+                <li>Issues (both short-term and long-term)</li>
+                <li>Business Blueprint (VTO) data</li>
+                <li>Accountability Chart</li>
+                <li>Core Values</li>
+              </ul>
+            </div>
+
+            <Button
+              onClick={handleExportData}
+              disabled={exportingData || !organizationData?.id}
+              className="bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white rounded-xl shadow-lg hover:shadow-xl transition-all duration-200 transform hover:scale-[1.02] disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none"
+            >
+              {exportingData ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Exporting Data...
+                </>
+              ) : (
+                <>
+                  <Download className="mr-2 h-4 w-4" />
+                  Export to Excel
+                </>
+              )}
+            </Button>
+          </div>
+        </CardContent>
+      </Card>
 
       {/* Color Theme Section */}
       <ColorThemePicker

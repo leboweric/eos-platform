@@ -37,6 +37,7 @@ import demoResetRoutes from './routes/demoReset.js';
 import sharedMetricsRoutes from './routes/sharedMetrics.js';
 import terminologyRoutes from './routes/terminology.js';
 import oauthRoutes from './routes/oauth.js';
+import exportRoutes from './routes/export.js';
 
 // Import middleware
 import { errorHandler } from './middleware/errorHandler.js';
@@ -206,6 +207,7 @@ app.use('/api/v1/user', userPreferencesRoutes);
 app.use('/api/v1/demo', demoResetRoutes);
 app.use('/api/v1/terminology', terminologyRoutes);
 app.use('/api/v1', sharedMetricsRoutes);
+app.use('/api/v1', exportRoutes);
 
 // Webhook routes (must be before express.json() middleware for raw body)
 app.use('/webhooks', webhookRoutes);
