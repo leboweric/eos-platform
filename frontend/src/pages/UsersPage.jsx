@@ -409,55 +409,67 @@ const UsersPage = () => {
 
 
   return (
-    <div className="space-y-6">
-      {isConsultant && organizations.length > 0 && (
-        <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center space-x-2">
-              <Users className="h-5 w-5 text-blue-600" />
-              <span className="text-sm font-medium text-blue-800">Viewing organization:</span>
-            </div>
-            <Select
-              value={selectedOrgId || user?.organizationId}
-              onValueChange={(value) => {
-                console.log('Organization selected:', value, organizations.find(o => o.id === value)?.name);
-                setSelectedOrgId(value);
-                // Refresh users when organization changes
-                setTimeout(() => fetchUsers(), 100);
-              }}
-            >
-              <SelectTrigger className="w-auto">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                {organizations.map((org) => (
-                  <SelectItem key={org.id} value={org.id}>
-                    {org.name}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50/30 to-indigo-50/30 relative">
+      {/* Background Pattern */}
+      <div className="absolute inset-0 bg-grid-slate-100 [mask-image:linear-gradient(0deg,white,rgba(255,255,255,0.6))] -z-10"></div>
+      
+      <div className="max-w-7xl mx-auto p-8 space-y-8">
+        {isConsultant && organizations.length > 0 && (
+          <div className="bg-blue-50/80 backdrop-blur-sm border border-blue-200/50 rounded-2xl p-6 shadow-lg">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center space-x-2">
+                <Users className="h-5 w-5 text-blue-600" />
+                <span className="text-sm font-semibold text-blue-800">Viewing organization:</span>
+              </div>
+              <Select
+                value={selectedOrgId || user?.organizationId}
+                onValueChange={(value) => {
+                  console.log('Organization selected:', value, organizations.find(o => o.id === value)?.name);
+                  setSelectedOrgId(value);
+                  // Refresh users when organization changes
+                  setTimeout(() => fetchUsers(), 100);
+                }}
+              >
+                <SelectTrigger className="w-auto bg-white/80 backdrop-blur-sm border-white/20 rounded-xl shadow-sm">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent className="bg-white/95 backdrop-blur-sm border-white/20 rounded-xl shadow-xl">
+                  {organizations.map((org) => (
+                    <SelectItem key={org.id} value={org.id}>
+                      {org.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
           </div>
-        </div>
-      )}
-      <div className="flex justify-between items-center">
-        <div>
-          <h1 className="text-3xl font-bold">Team Members</h1>
-          <p className="text-gray-600 mt-2">
-            Manage your organization's team members and invitations
-          </p>
-        </div>
-        {isAdmin && (
-          <div className="flex gap-2">
-            {(isConsultant || isAdmin) && (
-              <Dialog open={createDialogOpen} onOpenChange={setCreateDialogOpen}>
-                <DialogTrigger asChild>
-                  <Button variant="outline">
-                    <UserPlus className="mr-2 h-4 w-4" />
-                    Create User
-                  </Button>
-                </DialogTrigger>
-                <DialogContent>
+            </div>
+          </div>
+        )}
+        <div className="flex justify-between items-center">
+          <div>
+            <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full text-sm font-medium mb-4 bg-blue-50/80 backdrop-blur-sm text-blue-700">
+              <Users className="h-4 w-4" />
+              TEAM MANAGEMENT
+            </div>
+            <h1 className="text-4xl font-bold mb-2 bg-gradient-to-r from-slate-900 via-slate-800 to-slate-900 bg-clip-text text-transparent">Team Members</h1>
+            <p className="text-lg text-slate-600">
+              Manage your organization's team members and invitations
+            </p>
+          </div>
+          {isAdmin && (
+            <div className="flex gap-2">
+              {(isConsultant || isAdmin) && (
+                <Dialog open={createDialogOpen} onOpenChange={setCreateDialogOpen}>
+                  <DialogTrigger asChild>
+                    <Button 
+                      variant="outline"
+                      className="bg-white/80 backdrop-blur-sm border-white/20 hover:bg-white/90 shadow-sm transition-all duration-200"
+                    >
+                      <UserPlus className="mr-2 h-4 w-4" />
+                      Create User
+                    </Button>
+                  </DialogTrigger>
+                  <DialogContent className="bg-white/95 backdrop-blur-sm border border-white/20 shadow-2xl">
                   <form onSubmit={handleCreateUser}>
                     <DialogHeader>
                       <DialogTitle>Create New User</DialogTitle>
@@ -815,24 +827,30 @@ const UsersPage = () => {
         </Alert>
       )}
 
-      <Tabs defaultValue="active" className="space-y-4">
-        <TabsList>
-          <TabsTrigger value="active">
-            Active Users ({users.length})
-          </TabsTrigger>
-          <TabsTrigger value="pending">
-            Pending Invitations ({invitations.length})
-          </TabsTrigger>
-        </TabsList>
+        <Tabs defaultValue="active" className="space-y-6">
+          <TabsList className="grid w-full grid-cols-2 bg-white/80 backdrop-blur-sm border border-white/50 rounded-2xl shadow-lg">
+            <TabsTrigger 
+              value="active"
+              className="rounded-xl transition-all duration-200 data-[state=active]:bg-gradient-to-r data-[state=active]:from-blue-600 data-[state=active]:to-indigo-600 data-[state=active]:text-white data-[state=active]:shadow-lg"
+            >
+              Active Users ({users.length})
+            </TabsTrigger>
+            <TabsTrigger 
+              value="pending"
+              className="rounded-xl transition-all duration-200 data-[state=active]:bg-gradient-to-r data-[state=active]:from-blue-600 data-[state=active]:to-indigo-600 data-[state=active]:text-white data-[state=active]:shadow-lg"
+            >
+              Pending Invitations ({invitations.length})
+            </TabsTrigger>
+          </TabsList>
 
-        <TabsContent value="active">
-          <Card>
-            <CardHeader>
-              <CardTitle>Active Users</CardTitle>
-              <CardDescription>
-                Team members with access to your organization
-              </CardDescription>
-            </CardHeader>
+          <TabsContent value="active">
+            <Card className="bg-white/80 backdrop-blur-sm border border-white/50 rounded-2xl shadow-xl">
+              <CardHeader className="bg-gradient-to-r from-white/90 to-white/70 backdrop-blur-sm border-b border-white/20">
+                <CardTitle className="text-xl font-bold text-slate-900">Active Users</CardTitle>
+                <CardDescription className="text-slate-600 font-medium">
+                  Team members with access to your organization
+                </CardDescription>
+              </CardHeader>
             <CardContent>
               <Table>
                 <TableHeader>
@@ -902,17 +920,17 @@ const UsersPage = () => {
           </Card>
         </TabsContent>
 
-        <TabsContent value="pending">
-          <Card>
-            <CardHeader>
-              <CardTitle>Pending Invitations</CardTitle>
-              <CardDescription>
-                Invitations sent but not yet accepted
-              </CardDescription>
-            </CardHeader>
+          <TabsContent value="pending">
+            <Card className="bg-white/80 backdrop-blur-sm border border-white/50 rounded-2xl shadow-xl">
+              <CardHeader className="bg-gradient-to-r from-white/90 to-white/70 backdrop-blur-sm border-b border-white/20">
+                <CardTitle className="text-xl font-bold text-slate-900">Pending Invitations</CardTitle>
+                <CardDescription className="text-slate-600 font-medium">
+                  Invitations sent but not yet accepted
+                </CardDescription>
+              </CardHeader>
             <CardContent>
               {invitations.length === 0 ? (
-                <p className="text-center py-8 text-gray-500">
+                <p className="text-center py-8 text-slate-500 font-medium">
                   No pending invitations
                 </p>
               ) : (
@@ -962,8 +980,9 @@ const UsersPage = () => {
               )}
             </CardContent>
           </Card>
-        </TabsContent>
-      </Tabs>
+          </TabsContent>
+        </Tabs>
+      </div>
     </div>
   );
 };
