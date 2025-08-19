@@ -32,7 +32,9 @@ import {
   Paperclip,
   Download,
   Upload,
-  Edit2
+  Edit2,
+  Sparkles,
+  Zap
 } from 'lucide-react';
 import { format } from 'date-fns';
 
@@ -136,26 +138,42 @@ const PriorityCardClean = ({
   const getStatusBorderStyle = (status) => {
     switch (status) {
       case 'complete':
-        return { borderLeftColor: themeColors.primary, borderLeftWidth: '4px' };
+        return { 
+          borderLeftColor: themeColors.primary, 
+          borderLeftWidth: '4px',
+          background: `linear-gradient(135deg, ${themeColors.primary}05 0%, ${themeColors.secondary}05 100%)`
+        };
       case 'on-track':
-        return { borderLeftColor: themeColors.accent, borderLeftWidth: '4px' };
+        return { 
+          borderLeftColor: themeColors.accent, 
+          borderLeftWidth: '4px',
+          background: 'linear-gradient(135deg, #10b98108 0%, #3b82f608 100%)'
+        };
       case 'off-track':
-        return { borderLeftColor: '#EF4444', borderLeftWidth: '4px' };
+        return { 
+          borderLeftColor: '#EF4444', 
+          borderLeftWidth: '4px',
+          background: 'linear-gradient(135deg, #ef444408 0%, #dc262608 100%)'
+        };
       default:
-        return { borderLeftColor: '#D1D5DB', borderLeftWidth: '4px' };
+        return { 
+          borderLeftColor: '#D1D5DB', 
+          borderLeftWidth: '4px',
+          background: 'linear-gradient(135deg, #f9fafb 0%, #f3f4f6 100%)'
+        };
     }
   };
 
   const getStatusDotColor = (status) => {
     switch (status) {
       case 'complete':
-        return 'bg-green-500';
+        return 'bg-gradient-to-r from-green-400 to-emerald-500 shadow-sm';
       case 'on-track':
-        return 'bg-blue-500';
+        return 'bg-gradient-to-r from-blue-400 to-indigo-500 shadow-sm';
       case 'off-track':
-        return 'bg-red-500';
+        return 'bg-gradient-to-r from-red-400 to-rose-500 shadow-sm';
       default:
-        return 'bg-gray-400';
+        return 'bg-gradient-to-r from-gray-300 to-gray-400 shadow-sm';
     }
   };
 
@@ -229,7 +247,7 @@ const PriorityCardClean = ({
   return (
     <div className="group">
       <Card 
-        className="transition-all duration-200 hover:shadow-sm bg-white overflow-hidden"
+        className="transition-all duration-300 hover:shadow-xl hover:scale-[1.01] bg-white/90 backdrop-blur-sm overflow-hidden border-white/50 rounded-2xl"
         style={getStatusBorderStyle(isEditing ? editForm.status : priority.status)}
       >
         <CardHeader className="pb-4">
@@ -246,7 +264,7 @@ const PriorityCardClean = ({
                   />
                 )}
                 {!onStatusChange || readOnly || isEditing ? (
-                  <div className={`w-2 h-2 rounded-full flex-shrink-0 ${getStatusDotColor(isEditing ? editForm.status : priority.status)}`} />
+                  <div className={`w-2.5 h-2.5 rounded-full flex-shrink-0 ${getStatusDotColor(isEditing ? editForm.status : priority.status)}`} />
                 ) : null}
                 {isEditing ? (
                   <Input
@@ -263,11 +281,11 @@ const PriorityCardClean = ({
                 {isCompany && (
                   <Badge 
                     variant="outline" 
-                    className="text-xs"
+                    className="text-xs shadow-sm backdrop-blur-sm"
                     style={{ 
-                      backgroundColor: themeColors.accent + '15',
-                      color: themeColors.secondary,
-                      borderColor: themeColors.accent + '40'
+                      background: `linear-gradient(135deg, ${themeColors.primary}20 0%, ${themeColors.secondary}20 100%)`,
+                      color: themeColors.primary,
+                      borderColor: themeColors.primary + '30'
                     }}
                   >
                     <Building2 className="h-3 w-3 mr-1" />
@@ -281,7 +299,7 @@ const PriorityCardClean = ({
                   );
                   if (overdueMilestones.length > 0) {
                     return (
-                      <Badge variant="outline" className="text-xs bg-red-50 text-red-700 border-red-200">
+                      <Badge variant="outline" className="text-xs bg-gradient-to-r from-red-50 to-rose-50 text-red-700 border-red-200 shadow-sm">
                         <AlertCircle className="h-3 w-3 mr-1" />
                         {overdueMilestones.length} Overdue
                       </Badge>
@@ -295,8 +313,8 @@ const PriorityCardClean = ({
                 {isEditing ? (
                   <>
                     <div className="flex items-center gap-2">
-                      <Avatar className="h-6 w-6">
-                        <AvatarFallback className="text-xs bg-gray-100">
+                      <Avatar className="h-6 w-6 ring-2 ring-white shadow-sm">
+                        <AvatarFallback className="text-xs bg-gradient-to-br from-blue-100 to-indigo-100 text-blue-700">
                           {getUserInitials(teamMembers.find(m => m.id === editForm.ownerId)?.name || priority.owner?.name)}
                         </AvatarFallback>
                       </Avatar>
@@ -341,8 +359,8 @@ const PriorityCardClean = ({
                 ) : (
                   <>
                     <div className="flex items-center gap-2">
-                      <Avatar className="h-6 w-6">
-                        <AvatarFallback className="text-xs bg-gray-100">
+                      <Avatar className="h-6 w-6 ring-2 ring-white shadow-sm">
+                        <AvatarFallback className="text-xs bg-gradient-to-br from-blue-100 to-indigo-100 text-blue-700">
                           {getUserInitials(priority.owner?.name)}
                         </AvatarFallback>
                       </Avatar>
@@ -365,32 +383,33 @@ const PriorityCardClean = ({
                       const newStatus = currentStatus === 'on-track' ? 'off-track' : 'on-track';
                       onStatusChange(priority.id, newStatus);
                     }}
-                    className={`flex items-center gap-2 ${
-                      priority.status === 'off-track' ? 'border-red-300 bg-red-50 hover:bg-red-100' :
-                      'border-green-300 bg-green-50 hover:bg-green-100'
+                    className={`flex items-center gap-2 shadow-sm backdrop-blur-sm transition-all duration-200 ${
+                      priority.status === 'off-track' ? 
+                      'border-red-300 bg-gradient-to-r from-red-50 to-rose-50 hover:from-red-100 hover:to-rose-100' :
+                      'border-green-300 bg-gradient-to-r from-green-50 to-emerald-50 hover:from-green-100 hover:to-emerald-100'
                     }`}
                   >
-                    <div className={`w-2 h-2 rounded-full ${getStatusDotColor(priority.status)}`} />
+                    <div className={`w-2.5 h-2.5 rounded-full ${getStatusDotColor(priority.status)}`} />
                     <span className="capitalize font-medium">
                       {(priority.status || 'on-track').replace('-', ' ')}
                     </span>
                   </Button>
                 ) : (
                   <div className="flex items-center gap-2">
-                    <div className={`w-1.5 h-1.5 rounded-full ${getStatusDotColor(isEditing ? editForm.status : priority.status)}`} />
-                    <span className="capitalize">{(isEditing ? editForm.status : priority.status).replace('-', ' ')}</span>
+                    <div className={`w-2 h-2 rounded-full ${getStatusDotColor(isEditing ? editForm.status : priority.status)}`} />
+                    <span className="capitalize font-medium">{(isEditing ? editForm.status : priority.status).replace('-', ' ')}</span>
                   </div>
                 )}
                 
                 {/* Milestone indicator */}
                 {priority.milestones && priority.milestones.length > 0 && (
-                  <div className="flex items-center gap-1.5 text-xs">
-                    <Target className="h-3.5 w-3.5 text-gray-400" />
-                    <span className="text-gray-600">
+                  <div className="flex items-center gap-1.5 text-xs px-2 py-1 rounded-lg bg-gradient-to-r from-blue-50 to-indigo-50">
+                    <Target className="h-3.5 w-3.5" style={{ color: themeColors.primary }} />
+                    <span className="font-medium" style={{ color: themeColors.primary }}>
                       {priority.milestones.filter(m => m.completed).length}/{priority.milestones.length}
                     </span>
                     {priority.progress > 0 && (
-                      <span className="text-gray-500">({priority.progress}%)</span>
+                      <span className="text-gray-600">({priority.progress}%)</span>
                     )}
                   </div>
                 )}
@@ -399,12 +418,12 @@ const PriorityCardClean = ({
               {/* Description now only shown when expanded */}
             </div>
             
-            <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity ml-4">
+            <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-all duration-200 ml-4">
               <Button
                 variant="ghost"
                 size="sm"
                 onClick={() => setIsExpanded(!isExpanded)}
-                className="h-8 w-8 p-0 hover:bg-gray-100"
+                className="h-8 w-8 p-0 hover:bg-gradient-to-r hover:from-gray-100 hover:to-gray-50 rounded-lg transition-all duration-200"
               >
                 {isExpanded ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
               </Button>
@@ -415,7 +434,7 @@ const PriorityCardClean = ({
                     variant="ghost" 
                     size="sm" 
                     onClick={handleSave}
-                    className="h-8 w-8 p-0 hover:bg-green-100"
+                    className="h-8 w-8 p-0 hover:bg-gradient-to-r hover:from-green-100 hover:to-emerald-100 rounded-lg transition-all duration-200"
                   >
                     <Save className="h-4 w-4 text-green-600" />
                   </Button>
@@ -423,7 +442,7 @@ const PriorityCardClean = ({
                     variant="ghost" 
                     size="sm" 
                     onClick={() => setIsEditing(false)}
-                    className="h-8 w-8 p-0 hover:bg-red-100"
+                    className="h-8 w-8 p-0 hover:bg-gradient-to-r hover:from-red-100 hover:to-rose-100 rounded-lg transition-all duration-200"
                   >
                     <X className="h-4 w-4 text-red-600" />
                   </Button>
@@ -449,9 +468,9 @@ const PriorityCardClean = ({
                       });
                       setIsEditing(true);
                     }}
-                    className="h-8 w-8 p-0 transition-colors"
-                    onMouseEnter={(e) => e.currentTarget.style.backgroundColor = themeColors.accent + '20'}
-                    onMouseLeave={(e) => e.currentTarget.style.backgroundColor = ''}
+                    className="h-8 w-8 p-0 rounded-lg transition-all duration-200"
+                    onMouseEnter={(e) => e.currentTarget.style.background = `linear-gradient(135deg, ${themeColors.primary}15 0%, ${themeColors.secondary}15 100%)`}
+                    onMouseLeave={(e) => e.currentTarget.style.background = ''}
                   >
                     <Edit className="h-4 w-4" style={{ color: themeColors.primary }} />
                   </Button>
@@ -461,7 +480,7 @@ const PriorityCardClean = ({
                       variant="ghost" 
                       size="sm" 
                       onClick={() => onArchive(priority.id)}
-                      className="h-8 w-8 p-0 hover:bg-orange-100"
+                      className="h-8 w-8 p-0 hover:bg-gradient-to-r hover:from-orange-100 hover:to-amber-100 rounded-lg transition-all duration-200"
                     >
                       <Archive className="h-4 w-4 text-orange-600" />
                     </Button>
@@ -473,7 +492,7 @@ const PriorityCardClean = ({
         </CardHeader>
 
         {isExpanded && (
-          <CardContent className="pt-0 space-y-4 border-t">
+          <CardContent className="pt-0 space-y-4 border-t border-gray-100/80 backdrop-blur-sm">
             {/* Description section with scroll */}
             {(priority.description || isEditing) && (
               <div className="mb-4">
@@ -487,7 +506,7 @@ const PriorityCardClean = ({
                     placeholder={`${labels.priorities_label.slice(0, -1)} description...`}
                   />
                 ) : (
-                  <div className="max-h-32 overflow-y-auto bg-gray-50 rounded-md p-3 border border-gray-200">
+                  <div className="max-h-32 overflow-y-auto bg-gradient-to-br from-gray-50 to-gray-100/50 rounded-xl p-3 border border-white/50 shadow-sm backdrop-blur-sm">
                     <p className="text-sm text-gray-700 whitespace-pre-wrap leading-relaxed">
                       {priority.description}
                     </p>
