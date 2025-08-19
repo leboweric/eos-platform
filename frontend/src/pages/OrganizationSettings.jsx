@@ -299,34 +299,39 @@ const OrganizationSettings = () => {
   }
 
   return (
-    <div className="max-w-4xl mx-auto space-y-6">
-      <div className="flex items-center space-x-4">
-        <Building2 className="h-8 w-8 text-primary" />
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50/30 to-indigo-50/30 relative">
+      {/* Background Pattern */}
+      <div className="absolute inset-0 bg-grid-slate-100 [mask-image:linear-gradient(0deg,white,rgba(255,255,255,0.6))] -z-10"></div>
+      
+      <div className="max-w-6xl mx-auto p-8 space-y-8">
         <div>
-          <h1 className="text-3xl font-bold">Organization Settings</h1>
-          <p className="text-gray-600">Manage your organization details and preferences</p>
+          <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full text-sm font-medium mb-4 bg-blue-50/80 backdrop-blur-sm text-blue-700">
+            <Building2 className="h-4 w-4" />
+            ORGANIZATION MANAGEMENT
+          </div>
+          <h1 className="text-4xl font-bold mb-2 bg-gradient-to-r from-slate-900 via-slate-800 to-slate-900 bg-clip-text text-transparent">Organization Settings</h1>
+          <p className="text-lg text-slate-600">Manage your organization details and preferences</p>
         </div>
-      </div>
 
-      {error && (
-        <Alert className="border-red-200 bg-red-50">
-          <AlertDescription>{error}</AlertDescription>
-        </Alert>
-      )}
+        {error && (
+          <Alert className="bg-red-50/80 backdrop-blur-sm border-red-200/50 rounded-2xl">
+            <AlertDescription className="text-red-800 font-medium">{error}</AlertDescription>
+          </Alert>
+        )}
 
-      {success && (
-        <Alert className="border-green-200 bg-green-50">
-          <AlertDescription>{success}</AlertDescription>
-        </Alert>
-      )}
+        {success && (
+          <Alert className="bg-green-50/80 backdrop-blur-sm border-green-200/50 rounded-2xl">
+            <AlertDescription className="text-green-800 font-medium">{success}</AlertDescription>
+          </Alert>
+        )}
 
-      <Card>
-        <CardHeader>
-          <CardTitle>General Information</CardTitle>
-          <CardDescription>
-            Update your organization's basic information
-          </CardDescription>
-        </CardHeader>
+        <Card className="bg-white/80 backdrop-blur-sm border border-white/50 rounded-2xl shadow-xl">
+          <CardHeader className="bg-gradient-to-r from-white/90 to-white/70 backdrop-blur-sm border-b border-white/20">
+            <CardTitle className="text-xl font-bold text-slate-900">General Information</CardTitle>
+            <CardDescription className="text-slate-600 font-medium">
+              Update your organization's basic information
+            </CardDescription>
+          </CardHeader>
         <CardContent>
           <form onSubmit={handleSubmit} className="space-y-4">
             <div className="space-y-2">
@@ -337,8 +342,9 @@ const OrganizationSettings = () => {
                 onChange={(e) => setOrganizationData({ ...organizationData, name: e.target.value })}
                 placeholder="Enter organization name"
                 required
+                className="bg-white/80 backdrop-blur-sm border-white/20 rounded-xl shadow-sm transition-all duration-200"
               />
-              <p className="text-sm text-gray-500">
+              <p className="text-sm text-slate-500">
                 This name will appear throughout the platform
               </p>
             </div>
@@ -349,17 +355,17 @@ const OrganizationSettings = () => {
                 value={organizationData?.revenue_metric_type || 'revenue'}
                 onValueChange={(value) => setOrganizationData({ ...organizationData, revenue_metric_type: value })}
               >
-                <SelectTrigger id="revenueMetric">
+                <SelectTrigger id="revenueMetric" className="bg-white/80 backdrop-blur-sm border-white/20 rounded-xl shadow-sm">
                   <SelectValue placeholder="Select revenue metric" />
                 </SelectTrigger>
-                <SelectContent>
+                <SelectContent className="bg-white/95 backdrop-blur-sm border-white/20 rounded-xl shadow-xl">
                   <SelectItem value="revenue">Revenue</SelectItem>
                   <SelectItem value="aum">Assets Under Management (AUM)</SelectItem>
                   <SelectItem value="arr">Annual Recurring Revenue (ARR)</SelectItem>
                   <SelectItem value="custom">Custom</SelectItem>
                 </SelectContent>
               </Select>
-              <p className="text-sm text-gray-500">
+              <p className="text-sm text-slate-500">
                 Choose how revenue is displayed throughout the platform
               </p>
             </div>
@@ -373,8 +379,9 @@ const OrganizationSettings = () => {
                   onChange={(e) => setOrganizationData({ ...organizationData, revenue_metric_label: e.target.value })}
                   placeholder="e.g., GMV, Gross Sales, Total Billings"
                   required={organizationData?.revenue_metric_type === 'custom'}
+                  className="bg-white/80 backdrop-blur-sm border-white/20 rounded-xl shadow-sm transition-all duration-200"
                 />
-                <p className="text-sm text-gray-500">
+                <p className="text-sm text-slate-500">
                   This label will be used wherever revenue is displayed
                 </p>
               </div>
@@ -386,16 +393,16 @@ const OrganizationSettings = () => {
                 id="slug"
                 value={organizationData?.slug || ''}
                 disabled
-                className="bg-gray-50"
+                className="bg-slate-50/50 backdrop-blur-sm border-slate-200/50 rounded-xl"
               />
-              <p className="text-sm text-gray-500">
+              <p className="text-sm text-slate-500">
                 The URL slug cannot be changed
               </p>
             </div>
 
             <div className="space-y-2">
               <Label>Created</Label>
-              <p className="text-sm text-gray-600">
+              <p className="text-sm text-slate-600 font-medium">
                 {organizationData?.created_at ? new Date(organizationData.created_at).toLocaleDateString('en-US', {
                   year: 'numeric',
                   month: 'long',
@@ -405,7 +412,11 @@ const OrganizationSettings = () => {
             </div>
 
             <div className="pt-4">
-              <Button type="submit" disabled={saving}>
+              <Button 
+                type="submit" 
+                disabled={saving}
+                className="bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white rounded-xl shadow-lg hover:shadow-xl transition-all duration-200 transform hover:scale-[1.02]"
+              >
                 {saving ? (
                   <>
                     <Loader2 className="mr-2 h-4 w-4 animate-spin" />
@@ -423,10 +434,10 @@ const OrganizationSettings = () => {
         </CardContent>
       </Card>
 
-      <Card>
-        <CardHeader>
-          <CardTitle>Organization Logo</CardTitle>
-          <CardDescription>
+      <Card className="bg-white/80 backdrop-blur-sm border border-white/50 rounded-2xl shadow-xl">
+        <CardHeader className="bg-gradient-to-r from-white/90 to-white/70 backdrop-blur-sm border-b border-white/20">
+          <CardTitle className="text-xl font-bold text-slate-900">Organization Logo</CardTitle>
+          <CardDescription className="text-slate-600 font-medium">
             Upload a logo to display in the sidebar
           </CardDescription>
         </CardHeader>
@@ -434,7 +445,7 @@ const OrganizationSettings = () => {
           <div className="space-y-4">
             {/* Logo Preview */}
             <div className="flex items-center space-x-4">
-              <div className="w-32 h-32 border-2 border-dashed border-gray-300 rounded-lg flex items-center justify-center bg-gray-50">
+              <div className="w-32 h-32 border-2 border-dashed border-slate-300/50 rounded-xl flex items-center justify-center bg-slate-50/50 backdrop-blur-sm">
                 {logoPreview ? (
                   <img 
                     src={logoPreview} 
@@ -442,12 +453,12 @@ const OrganizationSettings = () => {
                     className="max-w-full max-h-full object-contain rounded"
                   />
                 ) : (
-                  <Image className="h-8 w-8 text-gray-400" />
+                  <Image className="h-8 w-8 text-slate-400" />
                 )}
               </div>
               
               <div className="flex-1 space-y-2">
-                <div className="text-sm text-gray-600">
+                <div className="text-sm text-slate-600 font-medium">
                   <p>Recommended: Square image, at least 200x200px</p>
                   <p>Maximum file size: 5MB</p>
                   <p>Supported formats: JPG, PNG, GIF, SVG</p>
@@ -455,7 +466,7 @@ const OrganizationSettings = () => {
                 
                 <div className="flex items-center space-x-2">
                   <Label htmlFor="logo-upload" className="cursor-pointer">
-                    <Button type="button" variant="outline" asChild>
+                    <Button type="button" variant="outline" asChild className="bg-white/80 backdrop-blur-sm border-white/20 hover:bg-white/90 rounded-xl shadow-sm transition-all duration-200">
                       <span>
                         <Upload className="mr-2 h-4 w-4" />
                         Choose File
@@ -475,6 +486,7 @@ const OrganizationSettings = () => {
                       type="button"
                       onClick={handleUploadLogo}
                       disabled={uploadingLogo}
+                      className="bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white rounded-xl shadow-lg hover:shadow-xl transition-all duration-200"
                     >
                       {uploadingLogo ? (
                         <>
@@ -493,6 +505,7 @@ const OrganizationSettings = () => {
                       variant="destructive"
                       onClick={handleDeleteLogo}
                       disabled={uploadingLogo}
+                      className="bg-gradient-to-r from-red-600 to-pink-600 hover:from-red-700 hover:to-pink-700 text-white rounded-xl shadow-lg hover:shadow-xl transition-all duration-200"
                     >
                       <X className="mr-2 h-4 w-4" />
                       Remove Logo
@@ -501,7 +514,7 @@ const OrganizationSettings = () => {
                 </div>
                 
                 {selectedFile && (
-                  <p className="text-sm text-gray-600">
+                  <p className="text-sm text-slate-600 font-medium">
                     Selected: {selectedFile.name}
                   </p>
                 )}
@@ -514,13 +527,13 @@ const OrganizationSettings = () => {
                 <div className="space-y-4">
                   <div>
                     <Label>Logo Display Size</Label>
-                    <p className="text-sm text-gray-600 mb-3">
+                    <p className="text-sm text-slate-600 mb-3">
                       Adjust how large your logo appears in the sidebar
                     </p>
                   </div>
                   
                   <div className="flex items-center space-x-4">
-                    <span className="text-sm text-gray-500">Small</span>
+                    <span className="text-sm text-slate-500 font-medium">Small</span>
                     <Slider
                       value={[logoSize]}
                       onValueChange={handleLogoSizeChange}
@@ -529,13 +542,13 @@ const OrganizationSettings = () => {
                       step={10}
                       className="flex-1"
                     />
-                    <span className="text-sm text-gray-500">Large</span>
-                    <span className="text-sm font-medium w-12 text-right">{logoSize}%</span>
+                    <span className="text-sm text-slate-500 font-medium">Large</span>
+                    <span className="text-sm font-bold w-12 text-right text-slate-700">{logoSize}%</span>
                   </div>
                   
-                  <div className="flex items-center justify-center p-4 bg-gray-50 rounded-lg">
+                  <div className="flex items-center justify-center p-4 bg-slate-50/50 backdrop-blur-sm rounded-xl border border-slate-200/50">
                     <div className="text-center">
-                      <p className="text-xs text-gray-500 mb-2">Preview</p>
+                      <p className="text-xs text-slate-500 mb-2 font-medium">Preview</p>
                       <img 
                         src={logoPreview} 
                         alt="Logo preview" 
@@ -554,17 +567,17 @@ const OrganizationSettings = () => {
         </CardContent>
       </Card>
 
-      {/* Demo Reset Section - Only show for demo org and admin users */}
-      {user?.role === 'admin' && (organizationData?.slug === 'demo-acme-industries' || organizationData?.id === 'deeeeeee-0000-0000-0000-000000000001') && (
-        <Card className="border-orange-200 bg-orange-50">
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <AlertTriangle className="h-5 w-5 text-orange-600" />
-              Demo Organization Management
-            </CardTitle>
-            <CardDescription>
-              Reset the demo organization to its original state
-            </CardDescription>
+        {/* Demo Reset Section - Only show for demo org and admin users */}
+        {user?.role === 'admin' && (organizationData?.slug === 'demo-acme-industries' || organizationData?.id === 'deeeeeee-0000-0000-0000-000000000001') && (
+          <Card className="bg-orange-50/80 backdrop-blur-sm border border-orange-200/50 rounded-2xl shadow-xl">
+            <CardHeader className="bg-gradient-to-r from-orange-50/90 to-orange-100/70 backdrop-blur-sm border-b border-orange-200/20">
+              <CardTitle className="flex items-center gap-2 text-xl font-bold text-orange-900">
+                <AlertTriangle className="h-5 w-5 text-orange-600" />
+                Demo Organization Management
+              </CardTitle>
+              <CardDescription className="text-orange-700 font-medium">
+                Reset the demo organization to its original state
+              </CardDescription>
           </CardHeader>
           <CardContent>
             <div className="space-y-4">
@@ -580,9 +593,9 @@ const OrganizationSettings = () => {
                 </Alert>
               )}
 
-              <div className="bg-white p-4 rounded-lg border border-orange-200">
-                <h4 className="font-medium mb-2">What happens when you reset?</h4>
-                <ul className="text-sm text-gray-600 space-y-1 list-disc list-inside">
+              <div className="bg-white/90 backdrop-blur-sm p-4 rounded-xl border border-orange-200/50 shadow-sm">
+                <h4 className="font-bold mb-2 text-slate-900">What happens when you reset?</h4>
+                <ul className="text-sm text-slate-600 space-y-1 list-disc list-inside font-medium">
                   <li>All data returns to original demo state</li>
                   <li>Custom changes are removed</li>
                   <li>Users and passwords are reset</li>
@@ -591,11 +604,11 @@ const OrganizationSettings = () => {
               </div>
 
               {demoResetStatus && (
-                <div className="text-sm text-gray-600">
+                <div className="text-sm font-medium">
                   {demoResetStatus.canReset ? (
-                    <p className="text-green-600">✓ Demo can be reset now</p>
+                    <p className="text-green-600 font-semibold">✓ Demo can be reset now</p>
                   ) : (
-                    <p className="text-orange-600">
+                    <p className="text-orange-600 font-semibold">
                       Next reset available: {new Date(demoResetStatus.nextResetAvailable).toLocaleString()}
                     </p>
                   )}
@@ -606,7 +619,7 @@ const OrganizationSettings = () => {
                 onClick={handleDemoReset}
                 disabled={resettingDemo || (demoResetStatus && !demoResetStatus.canReset)}
                 variant="outline"
-                className="border-orange-400 text-orange-700 hover:bg-orange-100"
+                className="bg-gradient-to-r from-orange-600 to-red-600 hover:from-orange-700 hover:to-red-700 text-white rounded-xl shadow-lg hover:shadow-xl transition-all duration-200 transform hover:scale-[1.02] border-0"
               >
                 {resettingDemo ? (
                   <>
