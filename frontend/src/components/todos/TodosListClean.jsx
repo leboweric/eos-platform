@@ -181,8 +181,8 @@ const TodosListClean = ({
 
   return (
     <div>
-      {/* Sorting header */}
-      <div className="mb-4 p-2 bg-gray-50 rounded-lg border border-gray-200">
+      {/* Enhanced Sorting header */}
+      <div className="mb-4 p-4 bg-white/80 backdrop-blur-sm rounded-xl border border-white/20 shadow-sm">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-1">
           <span className="text-xs font-medium text-gray-600 mr-2">Sort by:</span>
@@ -256,33 +256,39 @@ const TodosListClean = ({
               key={todo.id}
               onClick={() => onEdit && onEdit(todo)}
               className={`
-                group relative flex items-center gap-3 bg-white rounded-lg border pl-2 pr-4 py-2 transition-all duration-200 cursor-pointer
-                ${todo.status === 'complete' && !todo.archived ? 'border-gray-300 opacity-60' : 'border-gray-200 hover:border-gray-300 hover:shadow-sm'}
+                group relative flex items-center gap-3 bg-white/90 backdrop-blur-sm rounded-xl border border-white/50 pl-3 pr-4 py-3 transition-all duration-200 cursor-pointer shadow-sm hover:shadow-md hover:scale-[1.01]
+                ${todo.status === 'complete' && !todo.archived ? 'opacity-60' : ''}
               `}
             >
-              {/* Status indicator - left color bar */}
+              {/* Enhanced status indicator */}
               {overdue ? (
-                <div className="absolute left-0 top-0 bottom-0 w-1 bg-red-500 rounded-l-lg" />
+                <div className="absolute left-0 top-0 bottom-0 w-1 bg-gradient-to-b from-red-500 to-red-600 rounded-l-xl" />
               ) : (
-                <div className="absolute left-0 top-0 bottom-0 w-1 rounded-l-lg" style={{ backgroundColor: themeColors.accent }} />
+                <div className="absolute left-0 top-0 bottom-0 w-1 rounded-l-xl" style={{ background: `linear-gradient(135deg, ${themeColors.primary} 0%, ${themeColors.secondary} 100%)` }} />
               )}
-              {/* Checkbox */}
-              <Checkbox
-                checked={todo.status === 'complete'}
-                onClick={(e) => e.stopPropagation()}
-                onCheckedChange={(checked) => {
-                  if (onStatusChange) {
-                    onStatusChange(todo.id, checked);
-                  } else if (onUpdate) {
-                    todosService.updateTodo(todo.id, { 
-                      status: checked ? 'complete' : 'incomplete' 
-                    }).then(() => {
-                      onUpdate();
-                    });
-                  }
-                }}
-                className="h-4 w-4 rounded border-gray-300 data-[state=checked]:bg-gray-900 data-[state=checked]:border-gray-900"
-              />
+              {/* Enhanced checkbox */}
+              <div className="relative">
+                <Checkbox
+                  checked={todo.status === 'complete'}
+                  onClick={(e) => e.stopPropagation()}
+                  onCheckedChange={(checked) => {
+                    if (onStatusChange) {
+                      onStatusChange(todo.id, checked);
+                    } else if (onUpdate) {
+                      todosService.updateTodo(todo.id, { 
+                        status: checked ? 'complete' : 'incomplete' 
+                      }).then(() => {
+                        onUpdate();
+                      });
+                    }
+                  }}
+                  className="h-5 w-5 rounded-lg border-2 transition-all duration-200 data-[state=checked]:border-transparent shadow-sm"
+                  style={{
+                    borderColor: todo.status === 'complete' ? themeColors.primary : '#D1D5DB',
+                    backgroundColor: todo.status === 'complete' ? `linear-gradient(135deg, ${themeColors.primary} 0%, ${themeColors.secondary} 100%)` : 'transparent'
+                  }}
+                />
+              </div>
               
               {/* Title */}
               <h3 className={`
@@ -323,38 +329,44 @@ const TodosListClean = ({
             key={todo.id}
             onClick={() => onEdit && onEdit(todo)}
             className={`
-              group relative bg-white rounded-lg border transition-all duration-200 h-full cursor-pointer
-              ${todo.status === 'complete' && !todo.archived ? 'border-gray-400 shadow-sm opacity-60' : 'border-gray-200 hover:border-gray-300 hover:shadow-sm'}
+              group relative bg-white/90 backdrop-blur-sm rounded-2xl border border-white/50 transition-all duration-200 h-full cursor-pointer shadow-sm hover:shadow-xl hover:scale-[1.02]
+              ${todo.status === 'complete' && !todo.archived ? 'opacity-60' : ''}
             `}
           >
-            {/* Status indicator - subtle left border */}
+            {/* Enhanced status indicator */}
             {overdue ? (
-              <div className="absolute left-0 top-0 bottom-0 w-1 bg-red-500 rounded-l-lg" />
+              <div className="absolute left-0 top-0 bottom-0 w-1 bg-gradient-to-b from-red-500 to-red-600 rounded-l-2xl" />
             ) : (
-              <div className="absolute left-0 top-0 bottom-0 w-1 rounded-l-lg" style={{ backgroundColor: themeColors.accent }} />
+              <div className="absolute left-0 top-0 bottom-0 w-1 rounded-l-2xl" style={{ background: `linear-gradient(135deg, ${themeColors.primary} 0%, ${themeColors.secondary} 100%)` }} />
             )}
             
-            <div className="p-3 pl-4">
+            <div className="p-4 pl-5">
               <div className="flex items-start gap-3">
-                {/* Checkbox */}
+                {/* Enhanced checkbox */}
                 <div className="pt-0.5">
-                  <Checkbox
-                    checked={todo.status === 'complete'}
-                    onClick={(e) => e.stopPropagation()}
-                    onCheckedChange={(checked) => {
-                      if (onStatusChange) {
-                        onStatusChange(todo.id, checked);
-                      } else if (onUpdate) {
-                        // Fallback to onUpdate if onStatusChange not provided
-                        todosService.updateTodo(todo.id, { 
-                          status: checked ? 'complete' : 'incomplete' 
-                        }).then(() => {
-                          onUpdate();
-                        });
-                      }
-                    }}
-                    className="h-4 w-4 rounded border-gray-300 data-[state=checked]:bg-gray-900 data-[state=checked]:border-gray-900"
-                  />
+                  <div className="relative">
+                    <Checkbox
+                      checked={todo.status === 'complete'}
+                      onClick={(e) => e.stopPropagation()}
+                      onCheckedChange={(checked) => {
+                        if (onStatusChange) {
+                          onStatusChange(todo.id, checked);
+                        } else if (onUpdate) {
+                          // Fallback to onUpdate if onStatusChange not provided
+                          todosService.updateTodo(todo.id, { 
+                            status: checked ? 'complete' : 'incomplete' 
+                          }).then(() => {
+                            onUpdate();
+                          });
+                        }
+                      }}
+                      className="h-5 w-5 rounded-lg border-2 transition-all duration-200 data-[state=checked]:border-transparent shadow-sm"
+                      style={{
+                        borderColor: todo.status === 'complete' ? themeColors.primary : '#D1D5DB',
+                        backgroundColor: todo.status === 'complete' ? `linear-gradient(135deg, ${themeColors.primary} 0%, ${themeColors.secondary} 100%)` : 'transparent'
+                      }}
+                    />
+                  </div>
                 </div>
                 
                 {/* Main content */}
@@ -399,12 +411,12 @@ const TodosListClean = ({
                     )}
                     
                     
-                    {/* Show done badge if completed */}
+                    {/* Enhanced done badge if completed */}
                     {todo.status === 'complete' && (
                       <>
                         <span className="text-gray-300">•</span>
-                        <span className="flex items-center gap-1 text-green-600 text-sm font-medium">
-                          <CheckCircle className="h-3.5 w-3.5" />
+                        <span className="flex items-center gap-1.5 px-2 py-1 rounded-full text-xs font-medium" style={{ backgroundColor: `${themeColors.primary}15`, color: themeColors.primary }}>
+                          <CheckCircle className="h-3 w-3" />
                           Done
                         </span>
                       </>

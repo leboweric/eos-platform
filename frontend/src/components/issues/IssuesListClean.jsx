@@ -305,9 +305,9 @@ const IssuesListClean = ({
     return (
       <div
         className={`
-          group relative bg-white rounded-lg border transition-all duration-200 cursor-pointer h-full
+          group relative bg-white/90 backdrop-blur-sm rounded-2xl border border-white/50 transition-all duration-200 cursor-pointer h-full shadow-sm hover:shadow-xl hover:scale-[1.02]
           ${issue.status === 'closed' ? 'opacity-60' : ''}
-          ${isTopIssue ? 'shadow-sm' : 'hover:shadow-sm'}
+          ${isTopIssue ? 'shadow-lg' : ''}
         `}
         style={{
           borderColor: isTopIssue ? themeColors.accent : hexToRgba(themeColors.accent, 0.3),
@@ -325,15 +325,15 @@ const IssuesListClean = ({
         }}
         onClick={() => setSelectedIssue(issue)}
       >
-        {/* Status indicator - left border */}
+        {/* Enhanced status indicator */}
         <div 
-          className="absolute left-0 top-0 bottom-0 w-1 rounded-l-lg"
+          className="absolute left-0 top-0 bottom-0 w-1 rounded-l-2xl"
           style={{ 
-            backgroundColor: issue.status === 'open' ? themeColors.accent : '#9CA3AF' 
+            background: issue.status === 'open' ? `linear-gradient(135deg, ${themeColors.primary} 0%, ${themeColors.secondary} 100%)` : 'linear-gradient(135deg, #9CA3AF 0%, #6B7280 100%)'
           }}
         />
         
-        <div className="p-3 pl-4">
+        <div className="p-4 pl-5">
           {/* Header with number and checkbox */}
           <div className="flex items-start justify-between gap-2 mb-1">
             <div className="flex items-center gap-2">
@@ -364,13 +364,19 @@ const IssuesListClean = ({
               {isTopIssue && <span className="text-xs" title="Top voted">🔥</span>}
             </div>
             <div onClick={(e) => e.stopPropagation()}>
-              <Checkbox
-                checked={issue.status === 'closed'}
-                onCheckedChange={(checked) => {
-                  onStatusChange(issue.id, checked ? 'closed' : 'open');
-                }}
-                className="h-4 w-4 rounded border-gray-300"
-              />
+              <div className="relative">
+                <Checkbox
+                  checked={issue.status === 'closed'}
+                  onCheckedChange={(checked) => {
+                    onStatusChange(issue.id, checked ? 'closed' : 'open');
+                  }}
+                  className="h-5 w-5 rounded-lg border-2 transition-all duration-200 data-[state=checked]:border-transparent shadow-sm"
+                  style={{
+                    borderColor: issue.status === 'closed' ? themeColors.primary : '#D1D5DB',
+                    backgroundColor: issue.status === 'closed' ? `linear-gradient(135deg, ${themeColors.primary} 0%, ${themeColors.secondary} 100%)` : 'transparent'
+                  }}
+                />
+              </div>
             </div>
           </div>
           
@@ -403,8 +409,8 @@ const IssuesListClean = ({
 
   return (
     <>
-      {/* Sorting header */}
-      <div className="mb-4 p-2 bg-gray-50 rounded-lg border border-gray-200">
+      {/* Enhanced Sorting header */}
+      <div className="mb-4 p-4 bg-white/80 backdrop-blur-sm rounded-xl border border-white/20 shadow-sm">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-1">
           <span className="text-xs font-medium text-gray-600 mr-2">Sort by:</span>
@@ -516,27 +522,33 @@ const IssuesListClean = ({
                         <div
                           key={issue.id}
                           className={`
-                            group relative flex items-center gap-3 bg-white rounded-lg border pl-2 pr-4 py-2 transition-all duration-200 cursor-pointer
-                            ${issue.status === 'closed' ? 'border-gray-300 opacity-60' : 'border-gray-200 hover:border-gray-300 hover:shadow-sm'}
+                            group relative flex items-center gap-3 bg-white/90 backdrop-blur-sm rounded-xl border border-white/50 pl-3 pr-4 py-3 transition-all duration-200 cursor-pointer shadow-sm hover:shadow-md hover:scale-[1.01]
+                            ${issue.status === 'closed' ? 'opacity-60' : ''}
                           `}
                           onClick={() => setSelectedIssue(issue)}
               >
-                {/* Status indicator - left color bar */}
+                {/* Enhanced status indicator */}
                 <div 
-                  className="absolute left-0 top-0 bottom-0 w-1 rounded-l-lg"
+                  className="absolute left-0 top-0 bottom-0 w-1 rounded-l-xl"
                   style={{ 
-                    backgroundColor: issue.status === 'open' ? themeColors.accent : '#9CA3AF' 
+                    background: issue.status === 'open' ? `linear-gradient(135deg, ${themeColors.primary} 0%, ${themeColors.secondary} 100%)` : 'linear-gradient(135deg, #9CA3AF 0%, #6B7280 100%)'
                   }}
                 />
-                {/* Checkbox */}
+                {/* Enhanced checkbox */}
                 <div onClick={(e) => e.stopPropagation()}>
-                  <Checkbox
-                    checked={issue.status === 'closed'}
-                    onCheckedChange={(checked) => {
-                      onStatusChange(issue.id, checked ? 'closed' : 'open');
-                    }}
-                    className="h-4 w-4 rounded border-gray-300 data-[state=checked]:bg-gray-900 data-[state=checked]:border-gray-900"
-                  />
+                  <div className="relative">
+                    <Checkbox
+                      checked={issue.status === 'closed'}
+                      onCheckedChange={(checked) => {
+                        onStatusChange(issue.id, checked ? 'closed' : 'open');
+                      }}
+                      className="h-5 w-5 rounded-lg border-2 transition-all duration-200 data-[state=checked]:border-transparent shadow-sm"
+                      style={{
+                        borderColor: issue.status === 'closed' ? themeColors.primary : '#D1D5DB',
+                        backgroundColor: issue.status === 'closed' ? `linear-gradient(135deg, ${themeColors.primary} 0%, ${themeColors.secondary} 100%)` : 'transparent'
+                      }}
+                    />
+                  </div>
                 </div>
                 
                 {/* Issue number */}
@@ -639,7 +651,7 @@ const IssuesListClean = ({
           } else {
             // Compact Grid View - Default
             return (
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3">
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
                 {sortedIssues.map((issue, index) => (
                   <CompactIssueCard key={issue.id} issue={issue} index={index} />
                 ))}
