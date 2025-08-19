@@ -6,7 +6,7 @@ import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import { Loader2, Save, AlertCircle, Calendar, User, Paperclip, X, Download, AlertTriangle } from 'lucide-react';
+import { Loader2, Save, AlertCircle, Calendar, User, Paperclip, X, Download, AlertTriangle, Sparkles } from 'lucide-react';
 import { todosService } from '../../services/todosService';
 import { useAuthStore } from '../../stores/authStore';
 import { getDateDaysFromNow } from '../../utils/dateUtils';
@@ -162,59 +162,70 @@ const TodoDialog = ({ open, onOpenChange, todo, todoFromIssue, teamMembers, onSa
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[600px]">
+      <DialogContent className="sm:max-w-[600px] bg-white/95 backdrop-blur-sm border border-white/20 shadow-2xl">
         <form onSubmit={handleSubmit}>
-          <DialogHeader>
-            <DialogTitle>{todo ? 'Edit To-Do' : 'Create To-Do'}</DialogTitle>
-            <DialogDescription>
-              {todo ? 'Update the to-do details below' : 'Create a new to-do item with automatic 7-day due date'}
-            </DialogDescription>
+          <DialogHeader className="pb-6">
+            <div className="flex items-center gap-3 mb-2">
+              <div className="h-10 w-10 rounded-xl bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center">
+                <AlertTriangle className="h-5 w-5 text-white" />
+              </div>
+              <div>
+                <DialogTitle className="text-2xl font-bold bg-gradient-to-r from-slate-900 to-slate-700 bg-clip-text text-transparent">
+                  {todo ? 'Edit To-Do' : 'Create To-Do'}
+                </DialogTitle>
+                <DialogDescription className="text-slate-600 mt-1">
+                  {todo ? 'Update the to-do details below' : 'Create a new to-do item with automatic 7-day due date'}
+                </DialogDescription>
+              </div>
+            </div>
           </DialogHeader>
           
-          <div className="space-y-4 py-4">
+          <div className="space-y-6 py-6">
             {error && (
-              <Alert className="border-red-200 bg-red-50">
-                <AlertCircle className="h-4 w-4" />
-                <AlertDescription>{error}</AlertDescription>
+              <Alert className="border-red-200 bg-red-50/80 backdrop-blur-sm rounded-xl">
+                <AlertCircle className="h-4 w-4 text-red-600" />
+                <AlertDescription className="text-red-800 font-medium">{error}</AlertDescription>
               </Alert>
             )}
 
-            <div className="space-y-2">
-              <Label htmlFor="title">Title *</Label>
+            <div className="space-y-3">
+              <Label htmlFor="title" className="text-sm font-semibold text-slate-700">Title *</Label>
               <Input
                 id="title"
                 value={formData.title}
                 onChange={(e) => setFormData({ ...formData, title: e.target.value })}
                 placeholder="Enter to-do title..."
                 required
+                className="bg-white/80 backdrop-blur-sm border-white/20 focus:border-blue-400 rounded-xl shadow-sm transition-all duration-200"
               />
             </div>
 
-            <div className="space-y-2">
-              <Label htmlFor="description">Description</Label>
+            <div className="space-y-3">
+              <Label htmlFor="description" className="text-sm font-semibold text-slate-700">Description</Label>
               <Textarea
                 id="description"
                 value={formData.description}
                 onChange={(e) => setFormData({ ...formData, description: e.target.value })}
                 placeholder="Provide additional details..."
                 rows={4}
+                className="bg-white/80 backdrop-blur-sm border-white/20 focus:border-blue-400 rounded-xl shadow-sm transition-all duration-200"
               />
             </div>
 
             <div className="grid grid-cols-1 gap-4">
-              <div className="space-y-2">
-                <Label htmlFor="assignedTo">
-                  <User className="inline-block h-4 w-4 mr-1" />
+              <div className="space-y-3">
+                <Label htmlFor="assignedTo" className="text-sm font-semibold text-slate-700 flex items-center gap-2">
+                  <User className="h-4 w-4" />
                   Assigned To
                 </Label>
                 <Select 
                   value={formData.assignedToId} 
                   onValueChange={(value) => setFormData({ ...formData, assignedToId: value })}
                 >
-                  <SelectTrigger>
+                  <SelectTrigger className="bg-white/80 backdrop-blur-sm border-white/20 focus:border-blue-400 rounded-xl shadow-sm">
                     <SelectValue placeholder="Select team member" />
                   </SelectTrigger>
-                  <SelectContent>
+                  <SelectContent className="bg-white/95 backdrop-blur-sm border-white/20 rounded-xl shadow-xl">
                     {teamMembers.map(member => (
                       <SelectItem key={member.id} value={member.id}>
                         {member.first_name} {member.last_name}
@@ -226,9 +237,9 @@ const TodoDialog = ({ open, onOpenChange, todo, todoFromIssue, teamMembers, onSa
 
             </div>
 
-            <div className="space-y-2">
-              <Label htmlFor="dueDate">
-                <Calendar className="inline-block h-4 w-4 mr-1" />
+            <div className="space-y-3">
+              <Label htmlFor="dueDate" className="text-sm font-semibold text-slate-700 flex items-center gap-2">
+                <Calendar className="h-4 w-4" />
                 Due Date
               </Label>
               <Input
@@ -237,22 +248,23 @@ const TodoDialog = ({ open, onOpenChange, todo, todoFromIssue, teamMembers, onSa
                 value={formData.dueDate}
                 onChange={(e) => setFormData({ ...formData, dueDate: e.target.value })}
                 required
+                className="bg-white/80 backdrop-blur-sm border-white/20 focus:border-blue-400 rounded-xl shadow-sm transition-all duration-200"
               />
-              <p className="text-xs text-gray-500">Defaults to 7 days from creation</p>
+              <p className="text-xs text-slate-500">Defaults to 7 days from creation</p>
             </div>
 
             {/* Attachments section */}
-            <div className="space-y-2">
-              <Label>
-                <Paperclip className="inline-block h-4 w-4 mr-1" />
+            <div className="space-y-3">
+              <Label className="text-sm font-semibold text-slate-700 flex items-center gap-2">
+                <Paperclip className="h-4 w-4" />
                 Attachments
               </Label>
               
               {existingAttachments.length > 0 && (
                 <div className="space-y-2">
                   {existingAttachments.map(attachment => (
-                    <div key={attachment.id} className="flex items-center justify-between p-2 bg-gray-50 rounded">
-                      <span className="text-sm flex-1 truncate">{attachment.file_name}</span>
+                    <div key={attachment.id} className="flex items-center justify-between p-3 bg-white/60 backdrop-blur-sm rounded-xl border border-white/20">
+                      <span className="text-sm flex-1 truncate font-medium">{attachment.file_name}</span>
                       <div className="flex items-center gap-1">
                         <Button
                           type="button"
@@ -287,8 +299,8 @@ const TodoDialog = ({ open, onOpenChange, todo, todoFromIssue, teamMembers, onSa
               {files.length > 0 && (
                 <div className="space-y-2">
                   {files.map((file, index) => (
-                    <div key={index} className="flex items-center justify-between p-2 bg-blue-50 rounded">
-                      <span className="text-sm">{file.name} (new)</span>
+                    <div key={index} className="flex items-center justify-between p-3 bg-blue-50/80 backdrop-blur-sm rounded-xl border border-blue-200/50">
+                      <span className="text-sm font-medium">{file.name} <span className="text-blue-600">(new)</span></span>
                       <Button
                         type="button"
                         variant="ghost"
@@ -309,16 +321,16 @@ const TodoDialog = ({ open, onOpenChange, todo, todoFromIssue, teamMembers, onSa
                   onChange={handleFileChange}
                   className="hidden"
                 />
-                <div className="cursor-pointer border-2 border-dashed border-gray-300 rounded-lg p-4 text-center hover:border-indigo-500 transition-colors">
-                  <Paperclip className="h-8 w-8 mx-auto mb-2 text-gray-400" />
-                  <p className="text-sm text-gray-600">Click here to choose files</p>
+                <div className="cursor-pointer border-2 border-dashed border-slate-300 rounded-xl p-6 text-center hover:border-blue-500 hover:bg-blue-50/50 transition-all duration-200 bg-white/40 backdrop-blur-sm">
+                  <Paperclip className="h-8 w-8 mx-auto mb-2 text-slate-400" />
+                  <p className="text-sm text-slate-600 font-medium">Click here to choose files</p>
                 </div>
               </label>
-              <p className="text-xs text-gray-500">Max file size: 10MB</p>
+              <p className="text-xs text-slate-500">Max file size: 10MB</p>
             </div>
           </div>
 
-          <DialogFooter className="flex justify-between">
+          <DialogFooter className="flex justify-between pt-6 border-t border-white/20">
             <div className="flex-1">
               {todo && onCreateIssue && (
                 <Button
@@ -328,7 +340,7 @@ const TodoDialog = ({ open, onOpenChange, todo, todoFromIssue, teamMembers, onSa
                     onCreateIssue(todo);
                     onOpenChange(false);
                   }}
-                  className="mr-auto"
+                  className="mr-auto bg-white/80 backdrop-blur-sm border-white/20 hover:bg-white/90 shadow-sm transition-all duration-200"
                 >
                   <AlertTriangle className="mr-2 h-4 w-4" />
                   Create Linked Issue
@@ -336,10 +348,19 @@ const TodoDialog = ({ open, onOpenChange, todo, todoFromIssue, teamMembers, onSa
               )}
             </div>
             <div className="flex gap-2">
-              <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
+              <Button 
+                type="button" 
+                variant="outline" 
+                onClick={() => onOpenChange(false)}
+                className="bg-white/80 backdrop-blur-sm border-white/20 hover:bg-white/90 shadow-sm transition-all duration-200"
+              >
                 Cancel
               </Button>
-              <Button type="submit" disabled={saving}>
+              <Button 
+                type="submit" 
+                disabled={saving}
+                className="bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white shadow-lg hover:shadow-xl transition-all duration-200 transform hover:scale-[1.02]"
+              >
                 {saving ? (
                   <>
                     <Loader2 className="mr-2 h-4 w-4 animate-spin" />

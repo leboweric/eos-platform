@@ -21,7 +21,9 @@ import {
   X,
   Paperclip,
   Download,
-  Trash2
+  Trash2,
+  Sparkles,
+  Bug
 } from 'lucide-react';
 import { issuesService } from '../../services/issuesService';
 
@@ -178,27 +180,36 @@ const IssueDialog = ({ open, onClose, onSave, issue, teamMembers, timeline }) =>
         onClose();
       }
     }}>
-      <DialogContent className="sm:max-w-[625px]">
+      <DialogContent className="sm:max-w-[625px] bg-white/95 backdrop-blur-sm border border-white/20 shadow-2xl">
         <form onSubmit={handleSubmit}>
-          <DialogHeader>
-            <DialogTitle>{issue ? 'Edit Issue' : 'Create New Issue'}</DialogTitle>
-            <DialogDescription>
-              {timeline === 'short_term' 
-                ? 'Track an issue to be resolved this quarter'
-                : 'Track an issue for next quarter'}
-            </DialogDescription>
+          <DialogHeader className="pb-6">
+            <div className="flex items-center gap-3 mb-2">
+              <div className="h-10 w-10 rounded-xl bg-gradient-to-br from-red-500 to-orange-600 flex items-center justify-center">
+                <Bug className="h-5 w-5 text-white" />
+              </div>
+              <div>
+                <DialogTitle className="text-2xl font-bold bg-gradient-to-r from-slate-900 to-slate-700 bg-clip-text text-transparent">
+                  {issue ? 'Edit Issue' : 'Create New Issue'}
+                </DialogTitle>
+                <DialogDescription className="text-slate-600 mt-1">
+                  {timeline === 'short_term' 
+                    ? 'Track an issue to be resolved this quarter'
+                    : 'Track an issue for next quarter'}
+                </DialogDescription>
+              </div>
+            </div>
           </DialogHeader>
 
-          <div className="grid gap-4 py-4">
+          <div className="grid gap-6 py-6">
             {error && (
-              <Alert className="border-red-200 bg-red-50">
-                <AlertCircle className="h-4 w-4" />
-                <AlertDescription>{error}</AlertDescription>
+              <Alert className="border-red-200 bg-red-50/80 backdrop-blur-sm rounded-xl">
+                <AlertCircle className="h-4 w-4 text-red-600" />
+                <AlertDescription className="text-red-800 font-medium">{error}</AlertDescription>
               </Alert>
             )}
 
-            <div className="grid gap-2">
-              <Label htmlFor="title">
+            <div className="grid gap-3">
+              <Label htmlFor="title" className="text-sm font-semibold text-slate-700">
                 Issue Title <span className="text-red-500">*</span>
               </Label>
               <Input
@@ -206,22 +217,24 @@ const IssueDialog = ({ open, onClose, onSave, issue, teamMembers, timeline }) =>
                 value={formData.title}
                 onChange={(e) => setFormData({ ...formData, title: e.target.value })}
                 placeholder="Brief description of the issue"
+                className="bg-white/80 backdrop-blur-sm border-white/20 focus:border-red-400 rounded-xl shadow-sm transition-all duration-200"
               />
             </div>
 
-            <div className="grid gap-2">
-              <Label htmlFor="description">Description</Label>
+            <div className="grid gap-3">
+              <Label htmlFor="description" className="text-sm font-semibold text-slate-700">Description</Label>
               <Textarea
                 id="description"
                 value={formData.description}
                 onChange={(e) => setFormData({ ...formData, description: e.target.value })}
                 placeholder="Provide more details about the issue..."
                 rows={4}
+                className="bg-white/80 backdrop-blur-sm border-white/20 focus:border-red-400 rounded-xl shadow-sm transition-all duration-200"
               />
             </div>
 
-            <div className="grid gap-2">
-              <Label htmlFor="owner">Owner</Label>
+            <div className="grid gap-3">
+              <Label htmlFor="owner" className="text-sm font-semibold text-slate-700">Owner</Label>
               <Select
                 value={formData.ownerId || 'no-owner'}
                 onValueChange={(userId) => {
@@ -241,10 +254,10 @@ const IssueDialog = ({ open, onClose, onSave, issue, teamMembers, timeline }) =>
                   }
                 }}
               >
-                <SelectTrigger id="owner">
+                <SelectTrigger id="owner" className="bg-white/80 backdrop-blur-sm border-white/20 focus:border-red-400 rounded-xl shadow-sm">
                   <SelectValue placeholder="Select an owner (optional)" />
                 </SelectTrigger>
-                <SelectContent>
+                <SelectContent className="bg-white/95 backdrop-blur-sm border-white/20 rounded-xl shadow-xl">
                   <SelectItem value="no-owner">No owner</SelectItem>
                   {(teamMembers || []).map(member => (
                     <SelectItem key={member.id} value={member.id}>
@@ -256,16 +269,16 @@ const IssueDialog = ({ open, onClose, onSave, issue, teamMembers, timeline }) =>
             </div>
 
             {issue && (
-              <div className="grid gap-2">
-                <Label htmlFor="status">Status</Label>
+              <div className="grid gap-3">
+                <Label htmlFor="status" className="text-sm font-semibold text-slate-700">Status</Label>
                 <Select
                   value={formData.status}
                   onValueChange={(value) => setFormData({ ...formData, status: value })}
                 >
-                  <SelectTrigger id="status">
+                  <SelectTrigger id="status" className="bg-white/80 backdrop-blur-sm border-white/20 focus:border-red-400 rounded-xl shadow-sm">
                     <SelectValue />
                   </SelectTrigger>
-                  <SelectContent>
+                  <SelectContent className="bg-white/95 backdrop-blur-sm border-white/20 rounded-xl shadow-xl">
                     <SelectItem value="open">Open</SelectItem>
                     <SelectItem value="closed">Solved</SelectItem>
                   </SelectContent>
@@ -273,8 +286,8 @@ const IssueDialog = ({ open, onClose, onSave, issue, teamMembers, timeline }) =>
               </div>
             )}
 
-            <div className="grid gap-2">
-              <Label htmlFor="attachments">Attachments</Label>
+            <div className="grid gap-3">
+              <Label htmlFor="attachments" className="text-sm font-semibold text-slate-700">Attachments</Label>
               <div className="space-y-2">
                 <div className="flex items-center gap-2">
                   <Input
@@ -288,6 +301,7 @@ const IssueDialog = ({ open, onClose, onSave, issue, teamMembers, timeline }) =>
                     type="button"
                     variant="outline"
                     onClick={() => document.getElementById('attachments').click()}
+                    className="bg-white/80 backdrop-blur-sm border-white/20 hover:bg-white/90 shadow-sm transition-all duration-200"
                   >
                     <Upload className="mr-2 h-4 w-4" />
                     Choose Files
@@ -302,11 +316,11 @@ const IssueDialog = ({ open, onClose, onSave, issue, teamMembers, timeline }) =>
                   <div className="space-y-1">
                     <p className="text-sm font-medium text-gray-700">Current attachments:</p>
                     {(existingAttachments || []).map((attachment) => (
-                      <div key={attachment.id} className="flex items-center justify-between p-2 bg-blue-50 rounded">
+                      <div key={attachment.id} className="flex items-center justify-between p-3 bg-blue-50/80 backdrop-blur-sm rounded-xl border border-blue-200/50">
                         <div className="flex items-center gap-2">
                           <Paperclip className="h-4 w-4 text-blue-600" />
-                          <span className="text-sm">{attachment.file_name}</span>
-                          <span className="text-xs text-gray-500">
+                          <span className="text-sm font-medium">{attachment.file_name}</span>
+                          <span className="text-xs text-slate-500">
                             ({(attachment.file_size / 1024).toFixed(1)} KB)
                           </span>
                         </div>
@@ -338,11 +352,11 @@ const IssueDialog = ({ open, onClose, onSave, issue, teamMembers, timeline }) =>
                   <div className="space-y-1">
                     <p className="text-sm font-medium text-gray-700">Files to upload:</p>
                     {(newAttachments || []).map((file, index) => (
-                      <div key={index} className="flex items-center justify-between p-2 bg-green-50 rounded">
+                      <div key={index} className="flex items-center justify-between p-3 bg-green-50/80 backdrop-blur-sm rounded-xl border border-green-200/50">
                         <div className="flex items-center gap-2">
                           <Paperclip className="h-4 w-4 text-green-600" />
-                          <span className="text-sm">{file.name}</span>
-                          <span className="text-xs text-gray-500">
+                          <span className="text-sm font-medium">{file.name}</span>
+                          <span className="text-xs text-slate-500">
                             ({(file.size / 1024).toFixed(1)} KB)
                           </span>
                         </div>
@@ -362,11 +376,20 @@ const IssueDialog = ({ open, onClose, onSave, issue, teamMembers, timeline }) =>
             </div>
           </div>
 
-          <DialogFooter>
-            <Button type="button" variant="outline" onClick={onClose}>
+          <DialogFooter className="pt-6 border-t border-white/20">
+            <Button 
+              type="button" 
+              variant="outline" 
+              onClick={onClose}
+              className="bg-white/80 backdrop-blur-sm border-white/20 hover:bg-white/90 shadow-sm transition-all duration-200"
+            >
               Cancel
             </Button>
-            <Button type="submit" disabled={loading || uploadingFiles}>
+            <Button 
+              type="submit" 
+              disabled={loading || uploadingFiles}
+              className="bg-gradient-to-r from-red-600 to-orange-600 hover:from-red-700 hover:to-orange-700 text-white shadow-lg hover:shadow-xl transition-all duration-200 transform hover:scale-[1.02]"
+            >
               {loading || uploadingFiles ? (
                 <>
                   <Loader2 className="mr-2 h-4 w-4 animate-spin" />
