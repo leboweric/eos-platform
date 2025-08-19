@@ -233,18 +233,18 @@ const Layout = ({ children }) => {
       {/* Main content */}
       <div className="flex-1 flex flex-col">
         {/* Top bar */}
-        <div className="sticky top-0 z-30 bg-white border-b px-4 py-6">
+        <div className="sticky top-0 z-30 bg-white/90 backdrop-blur-sm border-b border-slate-200/50 px-4 py-6 shadow-sm">
           <div className="flex items-center justify-between">
             <div className="flex items-center flex-1">
               {!hideSidebar && (
                 <button
                   onClick={() => setSidebarOpen(true)}
-                  className="lg:hidden mr-3"
+                  className="lg:hidden mr-3 hover:bg-slate-100/50 p-2 rounded-lg transition-all duration-200"
                 >
-                  <Menu className="h-6 w-6" />
+                  <Menu className="h-6 w-6 text-slate-700" />
                 </button>
               )}
-              <h1 className="text-xl font-semibold text-gray-900">
+              <h1 className="text-xl font-bold bg-gradient-to-r from-slate-900 to-slate-700 bg-clip-text text-transparent">
                 {user?.organizationName && (
                   <span>{user.organizationName} </span>
                 )}
@@ -263,43 +263,43 @@ const Layout = ({ children }) => {
 
             <div className="flex items-center space-x-4">
               {/* Department Selector - Global placement */}
-              <DepartmentSelector className="border-2 border-blue-500" />
+              <DepartmentSelector />
               
               
               {/* User menu */}
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
-                  <Button variant="ghost" className="relative h-8 w-8 rounded-full">
-                    <Avatar className="h-8 w-8">
+                  <Button variant="ghost" className="relative h-10 w-10 rounded-full hover:bg-slate-100/50 transition-all duration-200 p-0">
+                    <Avatar className="h-10 w-10 ring-2 ring-white shadow-lg">
                       <AvatarImage src={user?.avatarUrl} alt={user?.firstName} />
-                      <AvatarFallback>{getUserInitials()}</AvatarFallback>
+                      <AvatarFallback className="bg-gradient-to-br from-blue-600 to-indigo-700 text-white font-bold text-sm">{getUserInitials()}</AvatarFallback>
                     </Avatar>
                   </Button>
                 </DropdownMenuTrigger>
-                <DropdownMenuContent className="w-56" align="end" forceMount>
-                  <DropdownMenuLabel className="font-normal">
+                <DropdownMenuContent className="w-56 bg-white/95 backdrop-blur-sm border-white/20 rounded-xl shadow-xl" align="end" forceMount>
+                  <DropdownMenuLabel className="font-normal bg-gradient-to-r from-slate-50 to-slate-100/50 rounded-t-lg -m-1 p-3 mb-2">
                     <div className="flex flex-col space-y-1">
-                      <p className="text-sm font-medium leading-none">
+                      <p className="text-sm font-bold leading-none text-slate-900">
                         {user?.firstName} {user?.lastName}
                       </p>
-                      <p className="text-xs leading-none text-muted-foreground">
+                      <p className="text-xs leading-none text-slate-600 font-medium">
                         {user?.email}
                       </p>
                     </div>
                   </DropdownMenuLabel>
-                  <DropdownMenuSeparator />
-                  <DropdownMenuItem onSelect={() => navigate('/user-settings')}>
-                    <User className="mr-2 h-4 w-4" />
-                    <span>Profile</span>
+                  <DropdownMenuSeparator className="bg-slate-200/50" />
+                  <DropdownMenuItem onSelect={() => navigate('/user-settings')} className="hover:bg-slate-50/80 rounded-lg mx-1 transition-all duration-200 cursor-pointer">
+                    <User className="mr-2 h-4 w-4 text-slate-600" />
+                    <span className="font-medium text-slate-700">Profile</span>
                   </DropdownMenuItem>
-                  <DropdownMenuItem onSelect={() => navigate('/user-settings')}>
-                    <Settings className="mr-2 h-4 w-4" />
-                    <span>Settings</span>
+                  <DropdownMenuItem onSelect={() => navigate('/user-settings')} className="hover:bg-slate-50/80 rounded-lg mx-1 transition-all duration-200 cursor-pointer">
+                    <Settings className="mr-2 h-4 w-4 text-slate-600" />
+                    <span className="font-medium text-slate-700">Settings</span>
                   </DropdownMenuItem>
-                  <DropdownMenuSeparator />
-                  <DropdownMenuItem onSelect={handleLogout}>
+                  <DropdownMenuSeparator className="bg-slate-200/50" />
+                  <DropdownMenuItem onSelect={handleLogout} className="hover:bg-red-50/80 rounded-lg mx-1 transition-all duration-200 text-red-600 cursor-pointer">
                     <LogOut className="mr-2 h-4 w-4" />
-                    <span>Log out</span>
+                    <span className="font-medium">Log out</span>
                   </DropdownMenuItem>
                 </DropdownMenuContent>
               </DropdownMenu>
