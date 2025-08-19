@@ -154,86 +154,103 @@ const DepartmentsPage = () => {
   }, 0);
 
   return (
-    <div className="space-y-6">
-      {/* Header */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-3xl font-bold">Departments</h1>
-          <p className="text-gray-600 mt-2">
-            Organize your teams into departments for better accountability
-          </p>
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50/30 to-indigo-50/30 relative">
+      {/* Background Pattern */}
+      <div className="absolute inset-0 bg-grid-slate-100 [mask-image:linear-gradient(0deg,white,rgba(255,255,255,0.6))] -z-10"></div>
+      
+      <div className="max-w-7xl mx-auto p-8 space-y-8">
+        {/* Header */}
+        <div className="flex items-center justify-between">
+          <div>
+            <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full text-sm font-medium mb-4 bg-blue-50/80 backdrop-blur-sm text-blue-700">
+              <Building2 className="h-4 w-4" />
+              TEAM ORGANIZATION
+            </div>
+            <h1 className="text-4xl font-bold mb-2 bg-gradient-to-r from-slate-900 via-slate-800 to-slate-900 bg-clip-text text-transparent">Departments</h1>
+            <p className="text-lg text-slate-600">
+              Organize your teams into departments for better accountability
+            </p>
+          </div>
+          <Button 
+            onClick={() => handleOpenDialog()}
+            className="bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white shadow-lg hover:shadow-xl transition-all duration-200 transform hover:scale-[1.02]"
+          >
+            <Plus className="mr-2 h-4 w-4" />
+            Add Department
+          </Button>
         </div>
-        <Button onClick={() => handleOpenDialog()}>
-          <Plus className="mr-2 h-4 w-4" />
-          Add Department
-        </Button>
-      </div>
 
-      {/* Statistics Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <Card>
-          <CardContent className="p-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm font-medium text-gray-600">Total Departments</p>
-                <p className="text-2xl font-bold">{totalDepartments}</p>
+        {/* Statistics Cards */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          <Card className="bg-white/80 backdrop-blur-sm border border-white/50 rounded-2xl shadow-xl hover:shadow-2xl transition-all duration-300">
+            <CardContent className="p-6">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm font-semibold text-slate-600">Total Departments</p>
+                  <p className="text-3xl font-bold text-slate-900">{totalDepartments}</p>
+                </div>
+                <div className="p-3 rounded-xl bg-gradient-to-br from-slate-100 to-slate-200">
+                  <Building2 className="h-8 w-8 text-slate-600" />
+                </div>
               </div>
-              <Building2 className="h-8 w-8 text-gray-400" />
-            </div>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardContent className="p-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm font-medium text-gray-600">Active Departments</p>
-                <p className="text-2xl font-bold">{activeDepartments}</p>
+            </CardContent>
+          </Card>
+          <Card className="bg-white/80 backdrop-blur-sm border border-white/50 rounded-2xl shadow-xl hover:shadow-2xl transition-all duration-300">
+            <CardContent className="p-6">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm font-semibold text-slate-600">Active Departments</p>
+                  <p className="text-3xl font-bold text-slate-900">{activeDepartments}</p>
+                </div>
+                <div className="p-3 rounded-xl bg-gradient-to-br from-green-100 to-emerald-200">
+                  <Building2 className="h-8 w-8 text-green-600" />
+                </div>
               </div>
-              <Building2 className="h-8 w-8 text-green-400" />
-            </div>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardContent className="p-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm font-medium text-gray-600">Total Members</p>
-                <p className="text-2xl font-bold">{totalMembers}</p>
+            </CardContent>
+          </Card>
+          <Card className="bg-white/80 backdrop-blur-sm border border-white/50 rounded-2xl shadow-xl hover:shadow-2xl transition-all duration-300">
+            <CardContent className="p-6">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm font-semibold text-slate-600">Total Members</p>
+                  <p className="text-3xl font-bold text-slate-900">{totalMembers}</p>
+                </div>
+                <div className="p-3 rounded-xl bg-gradient-to-br from-blue-100 to-indigo-200">
+                  <Users className="h-8 w-8 text-blue-600" />
+                </div>
               </div>
-              <Users className="h-8 w-8 text-blue-400" />
-            </div>
-          </CardContent>
-        </Card>
-      </div>
+            </CardContent>
+          </Card>
+        </div>
 
-      {/* Error Alert */}
-      {error && (
-        <Alert variant="destructive">
-          <AlertCircle className="h-4 w-4" />
-          <AlertDescription>{error}</AlertDescription>
-        </Alert>
-      )}
+        {/* Error Alert */}
+        {error && (
+          <Alert className="border-red-200/50 bg-red-50/80 backdrop-blur-sm rounded-2xl shadow-sm">
+            <AlertCircle className="h-4 w-4 text-red-600" />
+            <AlertDescription className="text-red-800 font-medium">{error}</AlertDescription>
+          </Alert>
+        )}
 
-      {/* Search */}
-      <div className="relative">
-        <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
-        <Input
-          placeholder="Search departments..."
-          value={searchTerm}
-          onChange={(e) => setSearchTerm(e.target.value)}
-          className="pl-9"
-        />
-      </div>
+        {/* Search */}
+        <div className="relative">
+          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-slate-400 h-4 w-4" />
+          <Input
+            placeholder="Search departments..."
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            className="pl-9 bg-white/80 backdrop-blur-sm border-white/20 rounded-xl shadow-sm transition-all duration-200"
+          />
+        </div>
 
-      {/* Departments List */}
-      <Card>
-        <CardHeader>
-          <CardTitle>All Departments</CardTitle>
-        </CardHeader>
+        {/* Departments List */}
+        <Card className="bg-white/80 backdrop-blur-sm border border-white/50 rounded-2xl shadow-xl">
+          <CardHeader className="bg-gradient-to-r from-white/90 to-white/70 backdrop-blur-sm border-b border-white/20">
+            <CardTitle className="text-xl font-bold text-slate-900">All Departments</CardTitle>
+          </CardHeader>
         <CardContent>
           {loading ? (
             <div className="flex items-center justify-center py-12">
-              <Loader2 className="h-8 w-8 animate-spin text-gray-400" />
+              <Loader2 className="h-8 w-8 animate-spin text-slate-400" />
             </div>
           ) : filteredDepartments.length === 0 ? (
             <div className="flex flex-col items-center justify-center py-12">
@@ -315,8 +332,8 @@ const DepartmentsPage = () => {
       </Card>
 
       {/* Department Dialog */}
-      <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
-        <DialogContent>
+        <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
+          <DialogContent className="bg-white/95 backdrop-blur-sm border border-white/20 shadow-2xl">
           <DialogHeader>
             <DialogTitle>
               {editingDept ? 'Edit Department' : 'Create Department'}
@@ -387,8 +404,9 @@ const DepartmentsPage = () => {
               )}
             </Button>
           </DialogFooter>
-        </DialogContent>
-      </Dialog>
+          </DialogContent>
+        </Dialog>
+      </div>
     </div>
   );
 };
