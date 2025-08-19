@@ -20,7 +20,13 @@ import {
   ListTodo,
   User,
   Archive,
-  Download
+  Download,
+  Sparkles,
+  Activity,
+  Target,
+  Users,
+  Calendar,
+  TrendingUp
 } from 'lucide-react';
 import TodoDialog from '../components/todos/TodoDialog';
 import TodosListClean from '../components/todos/TodosListClean';
@@ -331,22 +337,34 @@ const TodosPage = () => {
   }
 
   return (
-    <div className="min-h-screen bg-white">
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50/30 to-indigo-50/30 relative">
+      {/* Background Pattern */}
+      <div className="absolute inset-0 bg-grid-slate-100 [mask-image:linear-gradient(0deg,white,rgba(255,255,255,0.6))] -z-10"></div>
+      
       <div className="max-w-6xl mx-auto px-8 py-8">
-        {/* Clean Header */}
-        <div className="flex items-center justify-between mb-8">
-          <div>
-            <h1 className="text-2xl font-semibold text-gray-900">
-              <span className="inline-block w-1 h-7 mr-2 rounded-full" style={{ backgroundColor: themeColors.primary }} />
-              {labels.todos_label}{selectedDepartment ? ` - ${selectedDepartment.name}` : ''}
-            </h1>
-          </div>
-          <div className="flex items-center gap-3">
+        {/* Enhanced Header */}
+        <div className="mb-8">
+          <div className="flex items-center justify-between mb-6">
+            <div>
+              <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full text-sm font-medium mb-4"
+                   style={{
+                     background: `linear-gradient(135deg, ${themeColors.primary}15 0%, ${themeColors.secondary}15 100%)`,
+                     color: themeColors.primary
+                   }}>
+                <Activity className="h-4 w-4" />
+                TASK MANAGEMENT
+              </div>
+              <h1 className="text-4xl font-bold mb-2 bg-gradient-to-r from-slate-900 via-slate-800 to-slate-900 bg-clip-text text-transparent">
+                {labels.todos_label}{selectedDepartment ? ` - ${selectedDepartment.name}` : ''}
+              </h1>
+              <p className="text-lg text-slate-600">Manage and track your action items</p>
+            </div>
+            <div className="flex items-center gap-3">
             {doneNotArchivedCount > 0 && activeTab === 'not-done' && (
               <Button 
                 onClick={handleArchiveDone}
                 variant="ghost"
-                className="text-gray-600 transition-colors"
+                className="text-gray-600 transition-all duration-200 hover:bg-gradient-to-r hover:from-gray-100 hover:to-gray-50 rounded-lg"
                 onMouseEnter={(e) => e.currentTarget.style.color = themeColors.primary}
                 onMouseLeave={(e) => e.currentTarget.style.color = ''}
               >
@@ -358,7 +376,7 @@ const TodosPage = () => {
               <Button 
                 onClick={handleMarkComplete}
                 variant="ghost"
-                className="text-gray-600 transition-colors"
+                className="text-gray-600 transition-all duration-200 hover:bg-gradient-to-r hover:from-gray-100 hover:to-gray-50 rounded-lg"
                 onMouseEnter={(e) => e.currentTarget.style.color = themeColors.primary}
                 onMouseLeave={(e) => e.currentTarget.style.color = ''}
               >
@@ -375,98 +393,164 @@ const TodosPage = () => {
                 }
               }}
               variant="outline"
-              className="border-gray-300 hover:bg-gray-50"
+              className="bg-white/80 backdrop-blur-sm border-white/20 hover:bg-white/90 shadow-sm transition-all duration-200"
             >
               <Download className="mr-2 h-4 w-4" />
               Export to Excel
             </Button>
             <Button 
               onClick={handleCreateTodo} 
-              className="text-white transition-colors"
-              style={{ backgroundColor: themeColors.primary }}
-              onMouseEnter={(e) => e.currentTarget.style.backgroundColor = themeColors.secondary}
-              onMouseLeave={(e) => e.currentTarget.style.backgroundColor = themeColors.primary}
+              className="text-white shadow-lg hover:shadow-xl transition-all duration-200 transform hover:scale-[1.02]"
+              style={{ 
+                background: `linear-gradient(135deg, ${themeColors.primary} 0%, ${themeColors.secondary} 100%)`,
+              }}
             >
               <Plus className="mr-2 h-4 w-4" />
               New {labels.todos_label.slice(0, -1)}
             </Button>
+            </div>
+          </div>
+          
+          {/* Stats Cards */}
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
+            <div className="bg-white/80 backdrop-blur-sm rounded-2xl p-6 border border-white/20 shadow-sm hover:shadow-md transition-all duration-200">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm font-medium text-slate-600">Total {labels.todos_label}</p>
+                  <p className="text-2xl font-bold mt-1" style={{ color: themeColors.primary }}>
+                    {todos.length}
+                  </p>
+                </div>
+                <div className="h-12 w-12 rounded-xl flex items-center justify-center"
+                     style={{ background: `linear-gradient(135deg, ${themeColors.primary}15 0%, ${themeColors.secondary}15 100%)` }}>
+                  <ListTodo className="h-6 w-6" style={{ color: themeColors.primary }} />
+                </div>
+              </div>
+            </div>
+            
+            <div className="bg-white/80 backdrop-blur-sm rounded-2xl p-6 border border-white/20 shadow-sm hover:shadow-md transition-all duration-200">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm font-medium text-slate-600">Not Done</p>
+                  <p className="text-2xl font-bold mt-1 text-orange-600">
+                    {notDoneTodosCount}
+                  </p>
+                </div>
+                <div className="h-12 w-12 rounded-xl bg-orange-50 flex items-center justify-center">
+                  <Target className="h-6 w-6 text-orange-600" />
+                </div>
+              </div>
+            </div>
+            
+            <div className="bg-white/80 backdrop-blur-sm rounded-2xl p-6 border border-white/20 shadow-sm hover:shadow-md transition-all duration-200">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm font-medium text-slate-600">Completed</p>
+                  <p className="text-2xl font-bold mt-1 text-green-600">
+                    {doneTodosCount}
+                  </p>
+                </div>
+                <div className="h-12 w-12 rounded-xl bg-green-50 flex items-center justify-center">
+                  <CheckSquare className="h-6 w-6 text-green-600" />
+                </div>
+              </div>
+            </div>
+            
+            <div className="bg-white/80 backdrop-blur-sm rounded-2xl p-6 border border-white/20 shadow-sm hover:shadow-md transition-all duration-200">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm font-medium text-slate-600">Team Members</p>
+                  <p className="text-2xl font-bold mt-1 text-blue-600">
+                    {teamMembers.length}
+                  </p>
+                </div>
+                <div className="h-12 w-12 rounded-xl bg-blue-50 flex items-center justify-center">
+                  <Users className="h-6 w-6 text-blue-600" />
+                </div>
+              </div>
+            </div>
           </div>
         </div>
 
         {error && (
-          <Alert className="border-red-200 bg-red-50 mb-6">
+          <Alert className="border-red-200 bg-red-50/80 backdrop-blur-sm rounded-xl mb-6">
             <AlertCircle className="h-4 w-4 text-red-600" />
-            <AlertDescription className="text-red-800">{error}</AlertDescription>
+            <AlertDescription className="text-red-800 font-medium">{error}</AlertDescription>
           </Alert>
         )}
 
         {success && (
-          <Alert className="border-green-200 bg-green-50 mb-6">
-            <CheckSquare className="h-4 w-4 text-green-600" />
-            <AlertDescription className="text-green-800">{success}</AlertDescription>
+          <Alert className="border-green-200 bg-green-50/80 backdrop-blur-sm rounded-xl mb-6">
+            <Sparkles className="h-4 w-4 text-green-600" />
+            <AlertDescription className="text-green-800 font-medium">{success}</AlertDescription>
           </Alert>
         )}
 
-        {/* Clean Filters Bar */}
-        <div className="flex items-center justify-between mb-8 pb-6 border-b border-gray-100">
-          <Tabs value={activeTab} onValueChange={setActiveTab} className="border-0">
-            <TabsList className="bg-transparent border-0 p-0 h-auto">
-              <TabsTrigger 
-                value="not-done" 
-                className="bg-transparent shadow-none border-b-2 rounded-none pb-3 px-4 font-medium transition-colors"
-                style={{ 
-                  borderBottomColor: activeTab === 'not-done' ? themeColors.primary : 'transparent'
-                }}
-              >
-                Not Done
-                <span className="ml-2 text-sm text-gray-500">({notDoneTodosCount})</span>
-              </TabsTrigger>
-              <TabsTrigger 
-                value="done" 
-                className="bg-transparent shadow-none border-b-2 rounded-none pb-3 px-4 font-medium transition-colors"
-                style={{ 
-                  borderBottomColor: activeTab === 'done' ? themeColors.primary : 'transparent'
-                }}
-              >
-                Done
-                <span className="ml-2 text-sm text-gray-500">({doneTodosCount})</span>
-              </TabsTrigger>
-            </TabsList>
-          </Tabs>
+        {/* Enhanced Filters Bar */}
+        <div className="bg-white/80 backdrop-blur-sm rounded-2xl p-6 shadow-sm border border-white/50 mb-6">
+          <div className="flex items-center justify-between">
+            <div className="bg-white/80 backdrop-blur-sm rounded-2xl p-2 inline-flex shadow-sm">
+              <Tabs value={activeTab} onValueChange={setActiveTab} className="border-0">
+                <TabsList className="bg-transparent border-0 p-0 h-auto gap-1">
+                  <TabsTrigger 
+                    value="not-done" 
+                    className="data-[state=active]:bg-gradient-to-r data-[state=active]:from-orange-500 data-[state=active]:to-amber-500 data-[state=active]:text-white data-[state=active]:shadow-lg rounded-xl transition-all duration-200 font-medium px-4 py-2"
+                  >
+                    <Target className="h-4 w-4 mr-2" />
+                    Not Done
+                    <span className="ml-2 text-sm opacity-80">({notDoneTodosCount})</span>
+                  </TabsTrigger>
+                  <TabsTrigger 
+                    value="done" 
+                    className="data-[state=active]:bg-gradient-to-r data-[state=active]:from-green-500 data-[state=active]:to-emerald-500 data-[state=active]:text-white data-[state=active]:shadow-lg rounded-xl transition-all duration-200 font-medium px-4 py-2"
+                  >
+                    <CheckSquare className="h-4 w-4 mr-2" />
+                    Done
+                    <span className="ml-2 text-sm opacity-80">({doneTodosCount})</span>
+                  </TabsTrigger>
+                </TabsList>
+              </Tabs>
+            </div>
 
-          <Select value={filterAssignee} onValueChange={setFilterAssignee}>
-            <SelectTrigger className="w-[200px] border-gray-200 focus:border-gray-400">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">All Team Members</SelectItem>
-              <SelectItem value="me">Assigned to Me</SelectItem>
-              {teamMembers.map(member => (
-                <SelectItem key={member.id} value={member.id}>
-                  {member.first_name} {member.last_name}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+            <Select value={filterAssignee} onValueChange={setFilterAssignee}>
+              <SelectTrigger className="w-[200px] bg-white/80 backdrop-blur-sm border-white/20 focus:border-gray-400 shadow-sm">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Team Members</SelectItem>
+                <SelectItem value="me">Assigned to Me</SelectItem>
+                {teamMembers.map(member => (
+                  <SelectItem key={member.id} value={member.id}>
+                    {member.first_name} {member.last_name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
         </div>
 
         {/* Main Content with smooth transition */}
         <div className="transition-opacity duration-200 ease-in-out">
           {filteredTodos.length === 0 ? (
-            <div className="text-center py-16">
-              <ListTodo className="h-12 w-12 text-gray-300 mx-auto mb-4" />
-              <h3 className="text-lg font-medium text-gray-900 mb-2">
+            <div className="bg-white/80 backdrop-blur-sm rounded-2xl p-12 shadow-sm border border-white/50 text-center">
+              <div className="w-16 h-16 rounded-2xl mx-auto mb-6 flex items-center justify-center"
+                   style={{ background: `linear-gradient(135deg, ${themeColors.primary}15 0%, ${themeColors.secondary}15 100%)` }}>
+                <ListTodo className="h-8 w-8" style={{ color: themeColors.primary }} />
+              </div>
+              <h3 className="text-xl font-semibold text-gray-900 mb-2">
                 {activeTab === 'not-done' && 'No to-dos not done'}
                 {activeTab === 'done' && 'No done to-dos'}
               </h3>
-              <p className="text-gray-500 mb-6">
-                {activeTab === 'done' ? 'Done to-dos will appear here' : 'Create your first to-do to get started'}
+              <p className="text-gray-600 mb-8 max-w-md mx-auto">
+                {activeTab === 'done' ? 'Done to-dos will appear here once you complete them' : 'Create your first to-do to get started with task management'}
               </p>
               {activeTab !== 'done' && (
                 <Button 
                   onClick={handleCreateTodo} 
-                  variant="outline"
-                  className="border-gray-300"
+                  className="shadow-lg hover:shadow-xl transition-all duration-200 transform hover:scale-[1.02]"
+                  style={{ 
+                    background: `linear-gradient(135deg, ${themeColors.primary} 0%, ${themeColors.secondary} 100%)`,
+                  }}
                 >
                   <Plus className="mr-2 h-4 w-4" />
                   Create {labels.todos_label.slice(0, -1)}
@@ -474,15 +558,17 @@ const TodosPage = () => {
               )}
             </div>
           ) : (
-            <TodosListClean
-              todos={filteredTodos}
-              onEdit={handleEditTodo}
-              onDelete={handleDeleteTodo}
-              onUpdate={fetchTodos}
-              onStatusChange={handleStatusChange}
-              onConvertToIssue={handleConvertToIssue}
-              showCompleted={true}
-            />
+            <div className="bg-white/80 backdrop-blur-sm rounded-2xl border border-white/50 shadow-lg p-6">
+              <TodosListClean
+                todos={filteredTodos}
+                onEdit={handleEditTodo}
+                onDelete={handleDeleteTodo}
+                onUpdate={fetchTodos}
+                onStatusChange={handleStatusChange}
+                onConvertToIssue={handleConvertToIssue}
+                showCompleted={true}
+              />
+            </div>
           )}
         </div>
 
