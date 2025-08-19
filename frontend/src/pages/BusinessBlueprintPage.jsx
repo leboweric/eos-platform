@@ -636,78 +636,93 @@ const BusinessBlueprintPage = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <div className="max-w-7xl mx-auto p-6 space-y-6">
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50/30 to-indigo-50/30 relative">
+      {/* Background Pattern */}
+      <div className="absolute inset-0 bg-grid-slate-100 [mask-image:linear-gradient(0deg,white,rgba(255,255,255,0.6))] -z-10"></div>
+      
+      <div className="max-w-7xl mx-auto p-8 space-y-8">
         <div className="flex items-center justify-between mb-8">
           <div>
-            <h1 className="text-4xl font-bold text-gray-900">
+            <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full text-sm font-medium mb-4"
+                 style={{
+                   background: `linear-gradient(135deg, ${themeColors.primary}15 0%, ${themeColors.secondary}15 100%)`,
+                   color: themeColors.primary
+                 }}>
+              <Building2 className="h-4 w-4" />
+              STRATEGIC PLANNING
+            </div>
+            <h1 className="text-4xl font-bold mb-2 bg-gradient-to-r from-slate-900 via-slate-800 to-slate-900 bg-clip-text text-transparent">
               {labels.business_blueprint_label || '2-Page Plan'}
             </h1>
-            <p className="text-gray-600 mt-2 text-lg">Define your organization's vision and strategy for success</p>
+            <p className="text-lg text-slate-600">Define your organization's vision and strategy for success</p>
           </div>
         </div>
 
         {error && (
-          <Alert className="border-red-200 bg-red-50">
+          <Alert className="border-red-200/50 bg-red-50/80 backdrop-blur-sm rounded-2xl shadow-sm">
             <AlertCircle className="h-4 w-4 text-red-600" />
-            <AlertDescription className="text-red-800">{error}</AlertDescription>
+            <AlertDescription className="text-red-800 font-medium">{error}</AlertDescription>
           </Alert>
         )}
 
         {success && (
-          <Alert className="border-green-200 bg-green-50">
+          <Alert className="border-green-200/50 bg-green-50/80 backdrop-blur-sm rounded-2xl shadow-sm">
             <AlertCircle className="h-4 w-4 text-green-600" />
-            <AlertDescription className="text-green-800">{success}</AlertDescription>
+            <AlertDescription className="text-green-800 font-medium">{success}</AlertDescription>
           </Alert>
         )}
 
-        <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-          <TabsList className="grid w-full grid-cols-2 h-14 bg-white shadow-sm">
+        <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-8">
+          <TabsList className="grid w-full grid-cols-2 h-16 bg-white/80 backdrop-blur-sm border border-white/50 rounded-2xl shadow-lg">
             <TabsTrigger 
               value="vision" 
-              className="text-lg font-medium transition-colors flex items-center"
+              className="text-lg font-medium transition-all duration-200 flex items-center gap-3 rounded-xl"
               style={{ 
-                backgroundColor: activeTab === 'vision' ? themeColors.primary : 'transparent',
-                color: activeTab === 'vision' ? 'white' : 'inherit'
+                background: activeTab === 'vision' ? `linear-gradient(135deg, ${themeColors.primary} 0%, ${themeColors.secondary} 100%)` : 'transparent',
+                color: activeTab === 'vision' ? 'white' : 'inherit',
+                boxShadow: activeTab === 'vision' ? '0 8px 32px rgba(0,0,0,0.12)' : 'none'
               }}
             >
-              <Target className="mr-2 h-5 w-5" style={{ color: activeTab === 'vision' ? 'white' : themeColors.primary }} />
+              <Target className="h-5 w-5" style={{ color: activeTab === 'vision' ? 'white' : themeColors.primary }} />
               {tabLabels.vision}
             </TabsTrigger>
             <TabsTrigger 
               value="execution" 
-              className="text-lg font-medium transition-colors flex items-center"
+              className="text-lg font-medium transition-all duration-200 flex items-center gap-3 rounded-xl"
               style={{ 
-                backgroundColor: activeTab === 'execution' ? themeColors.primary : 'transparent',
-                color: activeTab === 'execution' ? 'white' : 'inherit'
+                background: activeTab === 'execution' ? `linear-gradient(135deg, ${themeColors.primary} 0%, ${themeColors.secondary} 100%)` : 'transparent',
+                color: activeTab === 'execution' ? 'white' : 'inherit',
+                boxShadow: activeTab === 'execution' ? '0 8px 32px rgba(0,0,0,0.12)' : 'none'
               }}
             >
-              <TrendingUp className="mr-2 h-5 w-5" style={{ color: activeTab === 'execution' ? 'white' : themeColors.primary }} />
+              <TrendingUp className="h-5 w-5" style={{ color: activeTab === 'execution' ? 'white' : themeColors.primary }} />
               {tabLabels.execution}
             </TabsTrigger>
           </TabsList>
 
-        <TabsContent value="vision" className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <TabsContent value="vision" className="grid grid-cols-1 lg:grid-cols-3 gap-8">
           {/* Left Column - Core Values, Focus, Long Range Plan, Marketing Strategy */}
-          <div className="lg:col-span-2 space-y-6">
+          <div className="lg:col-span-2 space-y-8">
             {/* Core Values */}
-            <Card className="shadow-lg border-0 overflow-hidden">
-            <CardHeader className="bg-white border-b">
-              <CardTitle className="flex items-center text-xl text-gray-900">
-                <Users className="mr-2 h-6 w-6" style={{ color: themeColors.primary }} />
+            <Card className="bg-white/80 backdrop-blur-sm border border-white/50 rounded-2xl shadow-xl hover:shadow-2xl transition-all duration-300 overflow-hidden">
+            <CardHeader className="bg-gradient-to-r from-white/90 to-white/70 backdrop-blur-sm border-b border-white/20">
+              <CardTitle className="flex items-center text-xl font-bold text-slate-900">
+                <div className="p-2 rounded-xl mr-3" style={{ background: `linear-gradient(135deg, ${themeColors.primary}20 0%, ${themeColors.secondary}20 100%)` }}>
+                  <Users className="h-5 w-5" style={{ color: themeColors.primary }} />
+                </div>
                 {frameworkSections.coreValues.label}
               </CardTitle>
-              <CardDescription className="text-gray-600">
+              <CardDescription className="text-slate-600 font-medium">
                 {frameworkSections.coreValues.description}
               </CardDescription>
             </CardHeader>
-            <CardContent className="space-y-4">
+            <CardContent className="p-6 space-y-4">
               {blueprintData.coreValues.map((value) => (
-                <div key={value.id} className="flex items-start justify-between p-4 bg-gray-50 border border-gray-200 rounded-lg hover:shadow-md transition-shadow">
+                <div key={value.id} className="flex items-start justify-between p-4 bg-white/60 backdrop-blur-sm border border-white/30 rounded-xl hover:shadow-lg hover:scale-[1.01] transition-all duration-200">
                   <div className="flex-1">
-                    <h4 className="font-semibold text-gray-900">{value.value}</h4>
+                    <h4 className="font-bold text-slate-900">{value.value}</h4>
                     {value.description && (
-                      <p className="text-sm text-gray-600 mt-1">{value.description}</p>
+                      <p className="text-sm text-slate-600 mt-1 font-medium">{value.description}</p>
                     )}
                   </div>
                   <div className="flex space-x-2">
@@ -715,6 +730,7 @@ const BusinessBlueprintPage = () => {
                       variant="ghost"
                       size="sm"
                       onClick={() => handleEditCoreValue(value)}
+                      className="hover:bg-white/80 backdrop-blur-sm transition-all duration-200"
                     >
                       <Edit className="h-4 w-4" />
                     </Button>
@@ -722,6 +738,7 @@ const BusinessBlueprintPage = () => {
                       variant="ghost"
                       size="sm"
                       onClick={() => handleDeleteCoreValue(value.id)}
+                      className="hover:bg-red-50/80 hover:text-red-600 backdrop-blur-sm transition-all duration-200"
                     >
                       <Trash2 className="h-4 w-4" />
                     </Button>
@@ -729,8 +746,13 @@ const BusinessBlueprintPage = () => {
                 </div>
               ))}
 
-              <div className="pt-4 border-t">
-                <Button onClick={handleAddCoreValue} disabled={saving} style={{ backgroundColor: themeColors.primary }} className="hover:opacity-90 text-white">
+              <div className="pt-4 border-t border-white/20">
+                <Button 
+                  onClick={handleAddCoreValue} 
+                  disabled={saving} 
+                  className="text-white shadow-lg hover:shadow-xl transition-all duration-200 transform hover:scale-[1.02]"
+                  style={{ background: `linear-gradient(135deg, ${themeColors.primary} 0%, ${themeColors.secondary} 100%)` }}
+                >
                   <Plus className="mr-2 h-4 w-4" />
                   Add Core Value
                 </Button>
@@ -739,28 +761,30 @@ const BusinessBlueprintPage = () => {
           </Card>
 
           {/* Core Focus */}
-          <Card className="shadow-lg border-0 overflow-hidden">
-            <CardHeader className="bg-white border-b">
-              <CardTitle className="flex items-center text-xl text-gray-900">
-                <Target className="mr-2 h-6 w-6" style={{ color: themeColors.primary }} />
+          <Card className="bg-white/80 backdrop-blur-sm border border-white/50 rounded-2xl shadow-xl hover:shadow-2xl transition-all duration-300 overflow-hidden">
+            <CardHeader className="bg-gradient-to-r from-white/90 to-white/70 backdrop-blur-sm border-b border-white/20">
+              <CardTitle className="flex items-center text-xl font-bold text-slate-900">
+                <div className="p-2 rounded-xl mr-3" style={{ background: `linear-gradient(135deg, ${themeColors.primary}20 0%, ${themeColors.secondary}20 100%)` }}>
+                  <Target className="h-5 w-5" style={{ color: themeColors.primary }} />
+                </div>
                 {frameworkSections.coreFocus.label}
               </CardTitle>
-              <CardDescription className="text-gray-600">
+              <CardDescription className="text-slate-600 font-medium">
                 {frameworkSections.coreFocus.description}
               </CardDescription>
             </CardHeader>
-            <CardContent className="space-y-4">
+            <CardContent className="p-6 space-y-4">
               {/* Display saved values or edit form */}
               {(!editingCoreFocus && (blueprintData.coreFocus[blueprintData.coreFocus.hedgehogType] || blueprintData.coreFocus.niche)) ? (
                 <>
                   {/* Purpose/Mission Display */}
                   {blueprintData.coreFocus[blueprintData.coreFocus.hedgehogType] && (
-                    <div className="flex items-start justify-between p-4 bg-gray-50 border border-gray-200 rounded-lg hover:shadow-md transition-shadow">
+                    <div className="flex items-start justify-between p-4 bg-white/60 backdrop-blur-sm border border-white/30 rounded-xl hover:shadow-lg hover:scale-[1.01] transition-all duration-200">
                       <div className="flex-1">
-                        <h4 className="font-semibold text-gray-900">
+                        <h4 className="font-bold text-slate-900">
                           {blueprintData.coreFocus.hedgehogType.charAt(0).toUpperCase() + blueprintData.coreFocus.hedgehogType.slice(1)}
                         </h4>
-                        <p className="text-sm text-gray-600 mt-1">
+                        <p className="text-sm text-slate-600 mt-1 font-medium">
                           {blueprintData.coreFocus[blueprintData.coreFocus.hedgehogType]}
                         </p>
                       </div>
@@ -769,6 +793,7 @@ const BusinessBlueprintPage = () => {
                           variant="ghost"
                           size="sm"
                           onClick={() => setEditingCoreFocus(true)}
+                          className="hover:bg-white/80 backdrop-blur-sm transition-all duration-200"
                         >
                           <Edit className="h-4 w-4" />
                         </Button>
@@ -778,10 +803,10 @@ const BusinessBlueprintPage = () => {
                   
                   {/* Niche Display */}
                   {blueprintData.coreFocus.niche && (
-                    <div className="flex items-start justify-between p-4 bg-gray-50 border border-gray-200 rounded-lg hover:shadow-md transition-shadow">
+                    <div className="flex items-start justify-between p-4 bg-white/60 backdrop-blur-sm border border-white/30 rounded-xl hover:shadow-lg hover:scale-[1.01] transition-all duration-200">
                       <div className="flex-1">
-                        <h4 className="font-semibold text-gray-900">{frameworkSections.coreFocus.nicheLabel || 'Niche'}</h4>
-                        <p className="text-sm text-gray-600 mt-1">
+                        <h4 className="font-bold text-slate-900">{frameworkSections.coreFocus.nicheLabel || 'Niche'}</h4>
+                        <p className="text-sm text-slate-600 mt-1 font-medium">
                           {blueprintData.coreFocus.niche}
                         </p>
                       </div>
@@ -790,6 +815,7 @@ const BusinessBlueprintPage = () => {
                           variant="ghost"
                           size="sm"
                           onClick={() => setEditingCoreFocus(true)}
+                          className="hover:bg-white/80 backdrop-blur-sm transition-all duration-200"
                         >
                           <Edit className="h-4 w-4" />
                         </Button>
@@ -902,26 +928,28 @@ const BusinessBlueprintPage = () => {
           </Card>
 
           {/* Long Range Plan */}
-          <Card className="shadow-lg border-0 overflow-hidden">
-            <CardHeader className="bg-white border-b">
-              <CardTitle className="flex items-center text-xl text-gray-900">
-                <TrendingUp className="mr-2 h-6 w-6" style={{ color: themeColors.primary }} />
+          <Card className="bg-white/80 backdrop-blur-sm border border-white/50 rounded-2xl shadow-xl hover:shadow-2xl transition-all duration-300 overflow-hidden">
+            <CardHeader className="bg-gradient-to-r from-white/90 to-white/70 backdrop-blur-sm border-b border-white/20">
+              <CardTitle className="flex items-center text-xl font-bold text-slate-900">
+                <div className="p-2 rounded-xl mr-3" style={{ background: `linear-gradient(135deg, ${themeColors.primary}20 0%, ${themeColors.secondary}20 100%)` }}>
+                  <TrendingUp className="h-5 w-5" style={{ color: themeColors.primary }} />
+                </div>
                 {frameworkSections.tenYearTarget.label}
               </CardTitle>
-              <CardDescription className="text-gray-600">
+              <CardDescription className="text-slate-600 font-medium">
                 {frameworkSections.tenYearTarget.description}
               </CardDescription>
             </CardHeader>
-            <CardContent className="space-y-4">
+            <CardContent className="p-6 space-y-4">
               {/* Display saved values or edit form */}
               {(!editingBHAG && (blueprintData.bhag.year || blueprintData.bhag.description)) ? (
                 <>
                   {/* Year Display */}
                   {blueprintData.bhag.year && (
-                    <div className="flex items-start justify-between p-4 bg-gray-50 border border-gray-200 rounded-lg hover:shadow-md transition-shadow">
+                    <div className="flex items-start justify-between p-4 bg-white/60 backdrop-blur-sm border border-white/30 rounded-xl hover:shadow-lg hover:scale-[1.01] transition-all duration-200">
                       <div className="flex-1">
-                        <h4 className="font-semibold text-gray-900">Target Year</h4>
-                        <p className="text-sm text-gray-600 mt-1">
+                        <h4 className="font-bold text-slate-900">Target Year</h4>
+                        <p className="text-sm text-slate-600 mt-1 font-medium">
                           {blueprintData.bhag.year}
                         </p>
                       </div>
@@ -930,6 +958,7 @@ const BusinessBlueprintPage = () => {
                           variant="ghost"
                           size="sm"
                           onClick={() => setEditingBHAG(true)}
+                          className="hover:bg-white/80 backdrop-blur-sm transition-all duration-200"
                         >
                           <Edit className="h-4 w-4" />
                         </Button>
@@ -939,10 +968,10 @@ const BusinessBlueprintPage = () => {
                   
                   {/* Description Display */}
                   {blueprintData.bhag.description && (
-                    <div className="flex items-start justify-between p-4 bg-gray-50 border border-gray-200 rounded-lg hover:shadow-md transition-shadow">
+                    <div className="flex items-start justify-between p-4 bg-white/60 backdrop-blur-sm border border-white/30 rounded-xl hover:shadow-lg hover:scale-[1.01] transition-all duration-200">
                       <div className="flex-1">
-                        <h4 className="font-semibold text-gray-900">Vision Description</h4>
-                        <p className="text-sm text-gray-600 mt-1">
+                        <h4 className="font-bold text-slate-900">Vision Description</h4>
+                        <p className="text-sm text-slate-600 mt-1 font-medium">
                           {blueprintData.bhag.description}
                         </p>
                       </div>
@@ -951,6 +980,7 @@ const BusinessBlueprintPage = () => {
                           variant="ghost"
                           size="sm"
                           onClick={() => setEditingBHAG(true)}
+                          className="hover:bg-white/80 backdrop-blur-sm transition-all duration-200"
                         >
                           <Edit className="h-4 w-4" />
                         </Button>
@@ -963,7 +993,7 @@ const BusinessBlueprintPage = () => {
                     <Button
                       variant="outline"
                       onClick={() => setEditingBHAG(true)}
-                      className="w-full"
+                      className="w-full bg-white/80 backdrop-blur-sm border-white/20 hover:bg-white/90 shadow-sm transition-all duration-200"
                     >
                       <Plus className="mr-2 h-4 w-4" />
                       {!blueprintData.bhag.year && !blueprintData.bhag.description 
@@ -1381,15 +1411,17 @@ const BusinessBlueprintPage = () => {
 
           {/* Right Column - Long-term Vision */}
           <div className="lg:col-span-1">
-            <Card className="shadow-lg border-0 overflow-hidden h-full">
-              <CardHeader className="bg-white border-b">
+            <Card className="bg-white/80 backdrop-blur-sm border border-white/50 rounded-2xl shadow-xl hover:shadow-2xl transition-all duration-300 overflow-hidden h-full">
+              <CardHeader className="bg-gradient-to-r from-white/90 to-white/70 backdrop-blur-sm border-b border-white/20">
                 <div className="flex items-center justify-between">
                   <div>
-                    <CardTitle className="flex items-center text-xl text-gray-900">
-                      <Calendar className="mr-2 h-6 w-6" style={{ color: themeColors.primary }} />
+                    <CardTitle className="flex items-center text-xl font-bold text-slate-900">
+                      <div className="p-2 rounded-xl mr-3" style={{ background: `linear-gradient(135deg, ${themeColors.primary}20 0%, ${themeColors.secondary}20 100%)` }}>
+                        <Calendar className="h-5 w-5" style={{ color: themeColors.primary }} />
+                      </div>
                       {frameworkSections.threeYearPicture.label}
                     </CardTitle>
-                    <CardDescription className="text-gray-600">
+                    <CardDescription className="text-slate-600 font-medium">
                       {frameworkSections.threeYearPicture.description}
                     </CardDescription>
                   </div>
@@ -1397,22 +1429,23 @@ const BusinessBlueprintPage = () => {
                     variant="outline" 
                     size="sm"
                     onClick={() => setShowThreeYearDialog(true)}
+                    className="bg-white/80 backdrop-blur-sm border-white/20 hover:bg-white/90 shadow-sm transition-all duration-200"
                   >
                     <Edit className="h-4 w-4" />
                   </Button>
                 </div>
               </CardHeader>
-              <CardContent className="space-y-4 pt-6">
+              <CardContent className="p-6 space-y-4">
                 {blueprintData.threeYearPicture ? (
                   <div className="space-y-4">
                     {/* Target Date */}
                     {blueprintData.threeYearPicture.future_date && (
-                      <div className="p-4 bg-gray-50 border border-gray-200 rounded-lg hover:shadow-md transition-shadow">
+                      <div className="p-4 bg-white/60 backdrop-blur-sm border border-white/30 rounded-xl hover:shadow-lg hover:scale-[1.01] transition-all duration-200">
                         <div className="flex items-start">
                           <Calendar className="h-5 w-5 mr-3 mt-0.5" style={{ color: themeColors.primary }} />
                           <div className="flex-1">
-                            <h4 className="font-semibold text-gray-900">Target Date</h4>
-                            <p className="text-sm text-gray-600 mt-1">
+                            <h4 className="font-bold text-slate-900">Target Date</h4>
+                            <p className="text-sm text-slate-600 mt-1 font-medium">
                               {(() => {
                                 // Parse date string manually to avoid timezone issues
                                 const [year, month, day] = blueprintData.threeYearPicture.future_date.split('T')[0].split('-');
@@ -1570,16 +1603,18 @@ const BusinessBlueprintPage = () => {
           </div>
         </TabsContent>
 
-        <TabsContent value="execution" className="space-y-6">
-          <Card className="shadow-lg border-0 overflow-hidden">
-            <CardHeader className="bg-white border-b">
+        <TabsContent value="execution" className="space-y-8">
+          <Card className="bg-white/80 backdrop-blur-sm border border-white/50 rounded-2xl shadow-xl hover:shadow-2xl transition-all duration-300 overflow-hidden">
+            <CardHeader className="bg-gradient-to-r from-white/90 to-white/70 backdrop-blur-sm border-b border-white/20">
               <div className="flex items-center justify-between">
                 <div>
-                  <CardTitle className="flex items-center text-xl text-gray-900">
-                    <Target className="mr-2 h-6 w-6" style={{ color: themeColors.primary }} />
+                  <CardTitle className="flex items-center text-xl font-bold text-slate-900">
+                    <div className="p-2 rounded-xl mr-3" style={{ background: `linear-gradient(135deg, ${themeColors.primary}20 0%, ${themeColors.secondary}20 100%)` }}>
+                      <Target className="h-5 w-5" style={{ color: themeColors.primary }} />
+                    </div>
                     {frameworkSections.oneYearPlan.label}
                   </CardTitle>
-                  <CardDescription className="text-gray-600">
+                  <CardDescription className="text-slate-600 font-medium">
                     {frameworkSections.oneYearPlan.description}
                   </CardDescription>
                 </div>
@@ -1587,22 +1622,23 @@ const BusinessBlueprintPage = () => {
                   variant="outline" 
                   size="sm"
                   onClick={() => setShowOneYearDialog(true)}
+                  className="bg-white/80 backdrop-blur-sm border-white/20 hover:bg-white/90 shadow-sm transition-all duration-200"
                 >
                   <Edit className="h-4 w-4" />
                 </Button>
               </div>
             </CardHeader>
-            <CardContent className="space-y-4 pt-6">
+            <CardContent className="p-6 space-y-4">
               {blueprintData.oneYearPlan ? (
                 <div className="space-y-4">
                   {/* Target Date */}
                   {blueprintData.oneYearPlan.future_date && (
-                    <div className="p-4 bg-gray-50 border border-gray-200 rounded-lg hover:shadow-md transition-shadow">
+                    <div className="p-4 bg-white/60 backdrop-blur-sm border border-white/30 rounded-xl hover:shadow-lg hover:scale-[1.01] transition-all duration-200">
                       <div className="flex items-start">
                         <Calendar className="h-5 w-5 mr-3 mt-0.5" style={{ color: themeColors.primary }} />
                         <div className="flex-1">
-                          <h4 className="font-semibold text-gray-900">Target Date</h4>
-                          <p className="text-sm text-gray-600 mt-1">
+                          <h4 className="font-bold text-slate-900">Target Date</h4>
+                          <p className="text-sm text-slate-600 mt-1 font-medium">
                             {new Date(blueprintData.oneYearPlan.future_date).toLocaleDateString('en-US', { 
                               year: 'numeric', 
                               month: 'long', 
@@ -1617,7 +1653,7 @@ const BusinessBlueprintPage = () => {
                   {/* Financial Goals */}
                   {(blueprintData.oneYearPlan.revenue || blueprintData.oneYearPlan.profit || 
                     (blueprintData.oneYearPlan.revenueStreams && blueprintData.oneYearPlan.revenueStreams.length > 0)) && (
-                    <div className="p-4 bg-gray-50 border border-gray-200 rounded-lg hover:shadow-md transition-shadow">
+                    <div className="p-4 bg-white/60 backdrop-blur-sm border border-white/30 rounded-xl hover:shadow-lg hover:scale-[1.01] transition-all duration-200">
                       <div className="flex items-start">
                         <DollarSign className="h-5 w-5 mr-3 mt-0.5" style={{ color: themeColors.primary }} />
                         <div className="flex-1 space-y-3">
