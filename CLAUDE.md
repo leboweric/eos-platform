@@ -449,6 +449,7 @@ VALUES (gen_random_uuid(), 'Leadership Team', <org_id>, true);
 4. Document any new architectural decisions in this file
 5. Always run lint and typecheck before committing
 6. When creating new routes that are nested under teams, use `router({ mergeParams: true })` to access parent params
+7. **LANDING PAGE**: Always update the existing `LandingPage.jsx` file. Do NOT create new landing page files (e.g., LandingPageV2, LandingPageNew, etc.). Since we're not live yet, we don't need multiple versions for A/B testing or campaigns. Just modify the existing landing page directly.
 
 ## Database Tables Reference
 
