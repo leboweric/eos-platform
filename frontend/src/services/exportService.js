@@ -2,11 +2,16 @@ const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3001/api/
 
 class ExportService {
   async exportOrganizationBackup(organizationId) {
-    const token = localStorage.getItem('token');
+    // Try both possible token keys
+    const token = localStorage.getItem('token') || localStorage.getItem('accessToken');
     console.log('Export service - Using API URL:', API_BASE_URL);
     console.log('Export service - Token exists:', !!token);
     console.log('Export service - Token length:', token?.length);
     console.log('Export service - Token preview:', token?.substring(0, 20) + '...');
+    
+    if (!token || token === 'null' || token === 'undefined') {
+      throw new Error('No valid authentication token found. Please log in again.');
+    }
     
     try {
       const response = await fetch(`${API_BASE_URL}/organizations/${organizationId}/export/backup`, {
