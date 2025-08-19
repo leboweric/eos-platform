@@ -30,7 +30,7 @@ import MeetingsPage from './pages/MeetingsPage';
 import TodosPage from './pages/TodosPage';
 import IssuesPage from './pages/IssuesPageClean';
 import IssuesPageOriginal from './pages/IssuesPageOriginal';
-import LandingPage from './pages/LandingPageNew';
+import LandingPage from './pages/LandingPage';
 import LandingPageOld from './pages/LandingPageOld';
 import DepartmentsPage from './pages/DepartmentsPage';
 import AccountabilityChart from './pages/AccountabilityChart';
