@@ -819,7 +819,7 @@ const QuarterlyPlanningMeetingPage = () => {
               </Card>
             ) : (
               <div className="space-y-6">
-                <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                <div className="bg-blue-50/80 backdrop-blur-sm border border-blue-200/50 rounded-xl p-4 shadow-sm">
                   <p className="text-blue-800 text-center">
                     <span className="font-semibold">Status Check:</span> Review what was accomplished, what wasn't, and why. Be honest about successes and failures.
                   </p>
@@ -963,7 +963,7 @@ const QuarterlyPlanningMeetingPage = () => {
                   
                   return Object.keys(groupedByOwner).length > 0 && (
                     <div className="space-y-4">
-                      <div className="flex items-center gap-3 p-4 bg-white border border-gray-200 rounded-lg">
+                      <div className="flex items-center gap-3 p-4 bg-white/60 backdrop-blur-sm border border-white/30 rounded-xl shadow-sm">
                         <Users className="h-5 w-5 text-purple-600" />
                         <h3 className="text-lg font-semibold">
                           Individual {labels?.priorities_label || 'Priorities'} ({individualPriorities.length})
@@ -1136,7 +1136,7 @@ const QuarterlyPlanningMeetingPage = () => {
               </Card>
             ) : (
               <div className="space-y-6">
-                <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                <div className="bg-blue-50/80 backdrop-blur-sm border border-blue-200/50 rounded-xl p-4 shadow-sm">
                   <p className="text-blue-800 text-center">
                     <span className="font-semibold">Priority Setting:</span> Each priority should be SMART (Specific, Measurable, Achievable, Relevant, Time-bound). Limit to 3-7 priorities total.
                   </p>
@@ -1200,7 +1200,7 @@ const QuarterlyPlanningMeetingPage = () => {
                   
                   return Object.keys(groupedByOwner).length > 0 && (
                     <div className="space-y-4">
-                      <div className="flex items-center gap-3 p-4 bg-white border border-gray-200 rounded-lg">
+                      <div className="flex items-center gap-3 p-4 bg-white/60 backdrop-blur-sm border border-white/30 rounded-xl shadow-sm">
                         <Users className="h-5 w-5 text-purple-600" />
                         <h3 className="text-lg font-semibold">
                           Individual {labels?.priorities_label || 'Priorities'} ({individualPriorities.length})
@@ -1281,7 +1281,7 @@ const QuarterlyPlanningMeetingPage = () => {
                 </div>
               </CardHeader>
               <CardContent className="pt-6">
-                <div className="border border-gray-200 bg-white rounded-lg p-4 mb-4">
+                <div className="border border-white/30 bg-white/60 backdrop-blur-sm rounded-xl p-4 mb-4 shadow-sm">
                   <p className="text-gray-700 text-center">
                     <span className="font-semibold">Quick voting:</span> Everyone votes on the most important issues. Then discuss and solve the top-voted issues together.
                   </p>
@@ -1334,7 +1334,7 @@ const QuarterlyPlanningMeetingPage = () => {
             </Card>
             
             {/* Embedded Issues List */}
-            <div className="bg-white rounded-lg shadow-sm p-6">
+            <div className="bg-white/80 backdrop-blur-sm rounded-2xl shadow-xl border border-white/50 p-6">
               <IssuesListClean 
                 issues={issues || []}
                 compactGrid={false}
@@ -1523,7 +1523,7 @@ const QuarterlyPlanningMeetingPage = () => {
                     <Loader2 className="h-6 w-6 animate-spin" />
                   </div>
                 ) : !Array.isArray(todos) || todos.length === 0 ? (
-                  <div className="bg-gray-50 p-6 rounded-lg text-center">
+                  <div className="bg-white/40 backdrop-blur-sm p-6 rounded-xl text-center border border-white/30 shadow-sm">
                     <CheckCircle className="h-12 w-12 text-green-500 mx-auto mb-3" />
                     <p className="text-gray-600 font-medium">No open to-dos!</p>
                     <p className="text-sm text-gray-500 mt-1">All action items have been completed.</p>
@@ -1639,19 +1639,30 @@ const QuarterlyPlanningMeetingPage = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100">
-      <div className="max-w-7xl mx-auto p-6">
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50/30 to-indigo-50/30 relative">
+      {/* Background Pattern */}
+      <div className="absolute inset-0 bg-grid-slate-100 [mask-image:linear-gradient(0deg,white,rgba(255,255,255,0.6))] -z-10"></div>
+      
+      <div className="max-w-7xl mx-auto p-8">
         {/* Header */}
         <div className="mb-8">
           <div className="flex items-center justify-between mb-6">
             <div>
-              <h1 className="text-3xl font-bold text-gray-900">Quarterly Planning Meeting</h1>
-              <p className="text-gray-600 mt-2">Plan and align for the upcoming quarter</p>
+              <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full text-sm font-medium mb-4"
+                   style={{
+                     background: `linear-gradient(135deg, ${themeColors.primary}15 0%, ${themeColors.secondary}15 100%)`,
+                     color: themeColors.primary
+                   }}>
+                <Target className="h-4 w-4" />
+                QUARTERLY PLANNING
+              </div>
+              <h1 className="text-4xl font-bold mb-2 bg-gradient-to-r from-slate-900 via-slate-800 to-slate-900 bg-clip-text text-transparent">Quarterly Planning Meeting</h1>
+              <p className="text-lg text-slate-600">Plan and align for the upcoming quarter</p>
             </div>
             {meetingStarted && (
               <div className="flex items-center gap-4">
                 {participants.length > 0 && (
-                  <div className="bg-blue-50 px-4 py-2 rounded-lg border border-blue-200">
+                  <div className="bg-blue-50/80 backdrop-blur-sm px-4 py-2 rounded-xl border border-blue-200/50 shadow-sm">
                     <div className="flex items-center gap-2">
                       <Users className="h-4 w-4 text-blue-600" />
                       <span className="text-sm font-medium text-blue-900">
@@ -1660,10 +1671,10 @@ const QuarterlyPlanningMeetingPage = () => {
                     </div>
                   </div>
                 )}
-                <div className="bg-white px-4 py-2 rounded-lg shadow-sm border border-gray-200">
+                <div className="bg-white/80 backdrop-blur-sm px-4 py-2 rounded-xl shadow-lg border border-white/50">
                   <div className="flex items-center gap-2">
-                    <Clock className="h-4 w-4 text-gray-500" />
-                    <span className="text-lg font-mono font-semibold text-gray-900">
+                    <Clock className="h-4 w-4 text-slate-500" />
+                    <span className="text-lg font-mono font-semibold text-slate-900">
                       {formatTime(elapsedTime)}
                     </span>
                   </div>
@@ -1671,7 +1682,7 @@ const QuarterlyPlanningMeetingPage = () => {
                 {activeSection === 'conclude' && (
                   <Button
                     onClick={concludeMeeting}
-                    className="bg-green-600 hover:bg-green-700"
+                    className="bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 text-white shadow-lg hover:shadow-xl transition-all duration-200 transform hover:scale-[1.02]"
                   >
                     <Send className="h-4 w-4 mr-2" />
                     Conclude Meeting
@@ -1684,48 +1695,48 @@ const QuarterlyPlanningMeetingPage = () => {
 
           {/* Alerts */}
           {error && (
-            <Alert className="mb-4 border-red-200 bg-red-50">
+            <Alert className="mb-4 border-red-200/50 bg-red-50/80 backdrop-blur-sm rounded-2xl shadow-sm">
               <AlertCircle className="h-4 w-4 text-red-600" />
-              <AlertDescription className="text-red-800">{error}</AlertDescription>
+              <AlertDescription className="text-red-800 font-medium">{error}</AlertDescription>
             </Alert>
           )}
 
           {success && (
-            <Alert className="mb-4 border-green-200 bg-green-50">
+            <Alert className="mb-4 border-green-200/50 bg-green-50/80 backdrop-blur-sm rounded-2xl shadow-sm">
               <CheckCircle className="h-4 w-4 text-green-600" />
-              <AlertDescription className="text-green-800">{success}</AlertDescription>
+              <AlertDescription className="text-green-800 font-medium">{success}</AlertDescription>
             </Alert>
           )}
         </div>
 
         {/* Tabs Navigation */}
-        <Tabs value={activeSection} onValueChange={handleSectionChange} className="space-y-6">
-          <TabsList className="w-full grid grid-cols-4 lg:grid-cols-8 gap-2 h-auto p-1 bg-white shadow-sm">
+        <Tabs value={activeSection} onValueChange={handleSectionChange} className="space-y-8">
+          <TabsList className="w-full grid grid-cols-4 lg:grid-cols-8 gap-2 h-auto p-2 bg-white/80 backdrop-blur-sm border border-white/50 rounded-2xl shadow-lg">
             {agendaItems.map((item) => {
               const Icon = item.icon;
               const currentIndex = agendaItems.findIndex(i => i.id === activeSection);
               const itemIndex = agendaItems.findIndex(i => i.id === item.id);
               const isCompleted = itemIndex < currentIndex;
+              const isActive = activeSection === item.id;
               
               return (
                 <TabsTrigger
                   key={item.id}
                   value={item.id}
-                  className="flex flex-col items-center gap-1 py-3 px-2"
+                  className="flex flex-col items-center gap-1 py-3 px-2 rounded-xl transition-all duration-200 hover:scale-[1.02]"
                   style={{
-                    ...(activeSection === item.id ? {
-                      backgroundColor: hexToRgba(themeColors.accent, 0.1),
-                      color: themeColors.primary
-                    } : {})
+                    background: isActive ? `linear-gradient(135deg, ${themeColors.primary} 0%, ${themeColors.secondary} 100%)` : 'transparent',
+                    color: isActive ? 'white' : 'inherit',
+                    boxShadow: isActive ? '0 8px 32px rgba(0,0,0,0.12)' : 'none'
                   }}
                 >
                   <Icon className="h-5 w-5" style={{
                     color: isCompleted ? '#10B981' : (activeSection === item.id ? themeColors.primary : undefined)
                   }} />
-                  <span className="text-xs font-medium">{item.label}</span>
-                  {item.duration && <span className="text-xs text-gray-500">{item.duration}m</span>}
+                  <span className={`text-xs font-medium ${isActive ? 'text-white' : 'text-slate-700'}`}>{item.label}</span>
+                  {item.duration && <span className={`text-xs ${isActive ? 'text-white/80' : 'text-slate-500'}`}>{item.duration}m</span>}
                   {isCompleted && (
-                    <CheckCircle className="h-3 w-3 text-green-600" />
+                    <CheckCircle className="h-3 w-3 text-green-400" />
                   )}
                 </TabsTrigger>
               );
@@ -1733,15 +1744,15 @@ const QuarterlyPlanningMeetingPage = () => {
           </TabsList>
 
           {/* Tab Content */}
-          <div className="bg-white rounded-lg shadow-sm">
+          <div className="bg-white/80 backdrop-blur-sm rounded-2xl shadow-xl border border-white/50">
             {renderContent()}
           </div>
         </Tabs>
 
         {/* Meeting Rating Dialog for Conclude */}
         {activeSection === 'conclude' && (
-          <div className="mt-6 bg-white rounded-lg shadow-sm p-6">
-            <h3 className="text-lg font-semibold mb-4">Rate This Meeting</h3>
+          <div className="mt-6 bg-white/80 backdrop-blur-sm rounded-2xl shadow-xl border border-white/50 p-6">
+            <h3 className="text-lg font-bold mb-4 text-slate-900">Rate This Meeting</h3>
             
             {/* Individual Participant Ratings */}
             {participants.length > 0 ? (
