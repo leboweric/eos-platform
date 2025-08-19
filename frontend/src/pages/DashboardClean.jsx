@@ -28,7 +28,14 @@ import {
   ArrowRight,
   Plus,
   Calendar,
-  Loader2
+  Loader2,
+  TrendingUp,
+  DollarSign,
+  Target,
+  Sparkles,
+  Activity,
+  Users,
+  ChartBar
 } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { format } from 'date-fns';
@@ -446,30 +453,49 @@ const DashboardClean = () => {
   }
 
   return (
-    <div className="min-h-screen bg-white">
-      <div className="max-w-6xl mx-auto px-8 py-8">
-        {/* Clean Welcome Section */}
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50/30 to-indigo-50/30 relative">
+      {/* Background Pattern */}
+      <div className="absolute inset-0 bg-grid-slate-100 [mask-image:linear-gradient(0deg,white,rgba(255,255,255,0.6))] -z-10"></div>
+      
+      <div className="max-w-7xl mx-auto px-8 py-8">
+        {/* Enhanced Welcome Section */}
         <div className="mb-8">
-          <h1 className="text-2xl font-semibold text-gray-900">
+          <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full text-sm font-medium mb-4"
+               style={{
+                 background: `linear-gradient(135deg, ${themeColors.primary}15 0%, ${themeColors.secondary}15 100%)`,
+                 color: themeColors.primary
+               }}>
+            <Sparkles className="h-4 w-4" />
+            ADAPTIVE EXECUTION PLATFORM
+          </div>
+          <h1 className="text-4xl font-bold bg-gradient-to-r from-slate-900 via-blue-900 to-indigo-900 bg-clip-text text-transparent">
             Welcome back, {user?.firstName}
           </h1>
-          <p className="text-sm text-gray-500 mt-1">
-            {format(new Date(), 'EEEE, MMMM d')} • Here's your overview
+          <p className="text-slate-600 mt-2">
+            {format(new Date(), 'EEEE, MMMM d')} • Your command center awaits
           </p>
         </div>
 
-        {/* Predictions Section - Only for Leadership */}
+        {/* Enhanced Predictions Section - Only for Leadership */}
         {isOnLeadershipTeam() && (
-          <div className="mb-8 pb-8 border-b border-gray-100">
+          <div className="mb-8 p-6 bg-white/80 backdrop-blur-sm rounded-2xl shadow-sm border border-white/50">
             <div className="flex items-center justify-between mb-6">
-              <h2 className="text-lg font-medium text-gray-900">
-                Annual Predictions
-              </h2>
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-lg flex items-center justify-center"
+                     style={{
+                       background: `linear-gradient(135deg, ${themeColors.primary} 0%, ${themeColors.secondary} 100%)`
+                     }}>
+                  <TrendingUp className="h-5 w-5 text-white" />
+                </div>
+                <h2 className="text-xl font-semibold text-slate-900">
+                  Annual Predictions
+                </h2>
+              </div>
               <Button
                 variant="ghost"
                 size="sm"
                 onClick={() => setEditingPredictions(!editingPredictions)}
-                className="text-gray-500 hover:text-gray-700"
+                className="text-slate-500 hover:text-slate-700 hover:bg-slate-100 rounded-lg transition-all"
               >
                 {editingPredictions ? <X className="h-4 w-4" /> : <Edit className="h-4 w-4" />}
               </Button>
@@ -586,125 +612,112 @@ const DashboardClean = () => {
                 </div>
               </div>
             ) : (
-              <div className="grid grid-cols-3 gap-8">
-                <div>
+              <div className="grid grid-cols-3 gap-6">
+                <div className="p-4 rounded-xl bg-gradient-to-br from-green-50 to-emerald-50 border border-green-200/50">
+                  <div className="flex items-center gap-2 mb-3">
+                    <DollarSign className="h-5 w-5 text-green-600" />
+                    <p className="text-sm font-medium text-green-900">{getRevenueLabel(organization)}</p>
+                  </div>
                   <div className="flex items-baseline gap-2">
-                    <span className="text-3xl font-semibold text-gray-900">
+                    <span className="text-3xl font-bold text-green-900">
                       {formatRevenue(predictions?.revenue?.current || 0)}
                     </span>
-                    <span className="text-sm text-gray-500">
+                    <span className="text-sm text-green-700">
                       / {formatRevenue(predictions?.revenue?.target || 0)}
                     </span>
                   </div>
-                  <p className="text-sm text-gray-500 mt-1">{getRevenueLabel(organization)}</p>
                   
                   {/* Revenue Progress Bar */}
                   {predictions?.revenue?.target > 0 && (
                     <div className="mt-3">
-                      <div className="w-full bg-gray-100 rounded-full h-2 overflow-hidden">
+                      <div className="w-full bg-green-100 rounded-full h-2.5 overflow-hidden">
                         <div 
-                          className="h-full transition-all duration-500 rounded-full"
+                          className="h-full transition-all duration-500 rounded-full bg-gradient-to-r from-green-400 to-green-600"
                           style={{ 
-                            width: `${Math.min(100, Math.round((predictions?.revenue?.current / predictions?.revenue?.target) * 100))}%`,
-                            backgroundColor: (predictions?.revenue?.current / predictions?.revenue?.target) >= 0.9 
-                              ? themeColors.primary
-                              : (predictions?.revenue?.current / predictions?.revenue?.target) >= 0.7 
-                                ? themeColors.accent
-                                : (predictions?.revenue?.current / predictions?.revenue?.target) >= 0.5 
-                                  ? '#FBBF24'  // yellow
-                                  : '#EF4444'  // red
+                            width: `${Math.min(100, Math.round((predictions?.revenue?.current / predictions?.revenue?.target) * 100))}%`
                           }}
                         />
                       </div>
                       <div className="flex justify-between items-center mt-1">
-                        <span className="text-xs text-gray-500">
+                        <span className="text-xs text-green-700">
                           {Math.round((predictions?.revenue?.current / predictions?.revenue?.target) * 100)}% of target
                         </span>
                         {(predictions?.revenue?.current / predictions?.revenue?.target) >= 1 && (
-                          <span className="text-xs text-green-600 font-medium">Target achieved!</span>
+                          <span className="text-xs text-green-600 font-medium">Target achieved! ✨</span>
                         )}
                       </div>
                     </div>
                   )}
                 </div>
                 
-                <div>
+                <div className="p-4 rounded-xl bg-gradient-to-br from-blue-50 to-indigo-50 border border-blue-200/50">
+                  <div className="flex items-center gap-2 mb-3">
+                    <ChartBar className="h-5 w-5 text-blue-600" />
+                    <p className="text-sm font-medium text-blue-900">Profit Margin</p>
+                  </div>
                   <div className="flex items-baseline gap-2">
-                    <span className="text-3xl font-semibold text-gray-900">
+                    <span className="text-3xl font-bold text-blue-900">
                       {(predictions?.profit?.current || 0).toFixed(1)}%
                     </span>
-                    <span className="text-sm text-gray-500">
+                    <span className="text-sm text-blue-700">
                       / {(predictions?.profit?.target || 0).toFixed(1)}%
                     </span>
                   </div>
-                  <p className="text-sm text-gray-500 mt-1">Profit Margin</p>
                   
                   {/* Profit Progress Bar */}
                   {predictions?.profit?.target > 0 && (
                     <div className="mt-3">
-                      <div className="w-full bg-gray-100 rounded-full h-2 overflow-hidden">
+                      <div className="w-full bg-blue-100 rounded-full h-2.5 overflow-hidden">
                         <div 
-                          className="h-full transition-all duration-500 rounded-full"
+                          className="h-full transition-all duration-500 rounded-full bg-gradient-to-r from-blue-400 to-blue-600"
                           style={{ 
-                            width: `${Math.min(100, Math.round((predictions?.profit?.current / predictions?.profit?.target) * 100))}%`,
-                            backgroundColor: (predictions?.profit?.current / predictions?.profit?.target) >= 0.9 
-                              ? themeColors.primary
-                              : (predictions?.profit?.current / predictions?.profit?.target) >= 0.7 
-                                ? themeColors.accent
-                                : (predictions?.profit?.current / predictions?.profit?.target) >= 0.5 
-                                  ? '#FBBF24'  // yellow
-                                  : '#EF4444'  // red 
+                            width: `${Math.min(100, Math.round((predictions?.profit?.current / predictions?.profit?.target) * 100))}%`
                           }}
                         />
                       </div>
                       <div className="flex justify-between items-center mt-1">
-                        <span className="text-xs text-gray-500">
+                        <span className="text-xs text-blue-700">
                           {Math.round((predictions?.profit?.current / predictions?.profit?.target) * 100)}% of target
                         </span>
                         {(predictions?.profit?.current / predictions?.profit?.target) >= 1 && (
-                          <span className="text-xs text-green-600 font-medium">On target!</span>
+                          <span className="text-xs text-blue-600 font-medium">On target! 🎯</span>
                         )}
                       </div>
                     </div>
                   )}
                 </div>
                 
-                <div>
+                <div className="p-4 rounded-xl bg-gradient-to-br from-purple-50 to-pink-50 border border-purple-200/50">
+                  <div className="flex items-center gap-2 mb-3">
+                    <Target className="h-5 w-5 text-purple-600" />
+                    <p className="text-sm font-medium text-purple-900">Measurables on track</p>
+                  </div>
                   <div className="flex items-baseline gap-2">
-                    <span className="text-3xl font-semibold text-gray-900">
+                    <span className="text-3xl font-bold text-purple-900">
                       {predictions?.measurables?.onTrack || 0}
                     </span>
-                    <span className="text-sm text-gray-500">
+                    <span className="text-sm text-purple-700">
                       / {predictions?.measurables?.total || 0}
                     </span>
                   </div>
-                  <p className="text-sm text-gray-500 mt-1">Measurables on track</p>
                   
                   {/* Measurables Progress Bar */}
                   {predictions?.measurables?.total > 0 && (
                     <div className="mt-3">
-                      <div className="w-full bg-gray-200 rounded-full h-2 overflow-hidden">
+                      <div className="w-full bg-purple-100 rounded-full h-2.5 overflow-hidden">
                         <div 
-                          className={`h-full transition-all duration-500 rounded-full ${
-                            (predictions?.measurables?.onTrack / predictions?.measurables?.total) >= 0.9 
-                              ? 'bg-green-500' 
-                              : (predictions?.measurables?.onTrack / predictions?.measurables?.total) >= 0.7 
-                                ? 'bg-blue-500' 
-                                : (predictions?.measurables?.onTrack / predictions?.measurables?.total) >= 0.5 
-                                  ? 'bg-yellow-500' 
-                                  : 'bg-red-500'
-                          }`}
+                          className="h-full transition-all duration-500 rounded-full bg-gradient-to-r from-purple-400 to-purple-600"
                           style={{ 
                             width: `${Math.min(100, Math.round((predictions?.measurables?.onTrack / predictions?.measurables?.total) * 100))}%` 
                           }}
                         />
                       </div>
                       <div className="flex justify-between items-center mt-1">
-                        <span className="text-xs text-gray-500">
+                        <span className="text-xs text-purple-700">
                           {Math.round((predictions?.measurables?.onTrack / predictions?.measurables?.total) * 100)}% on track
                         </span>
                         {(predictions?.measurables?.onTrack / predictions?.measurables?.total) >= 0.9 && (
-                          <span className="text-xs text-green-600 font-medium">Excellent!</span>
+                          <span className="text-xs text-purple-600 font-medium">Excellent! 🔥</span>
                         )}
                       </div>
                     </div>
@@ -723,61 +736,104 @@ const DashboardClean = () => {
           </div>
         )}
 
-        {/* Clean Stats Grid */}
-        <div className="grid grid-cols-3 gap-8 mb-8">
-          <div className="text-center p-4 rounded-lg border border-gray-100 hover:border-gray-200 transition-colors">
-            <p className="text-3xl font-semibold" style={{ 
-              color: dashboardData.stats.prioritiesCompleted === dashboardData.stats.totalPriorities && dashboardData.stats.totalPriorities > 0 
-                ? themeColors.primary 
-                : '#111827'
-            }}>
-              {dashboardData.stats.prioritiesCompleted}/{dashboardData.stats.totalPriorities}
-            </p>
-            <p className="text-sm text-gray-500 mt-1">
-              {isOnLeadershipTeam() ? `Company ${labels.priorities_label}` : `Your ${labels.priorities_label}`}
-            </p>
-            {dashboardData.stats.prioritiesProgress >= 80 && (
-              <span className="inline-block w-2 h-2 bg-green-500 rounded-full mt-2" title="Great progress!" />
-            )}
+        {/* Enhanced Stats Grid */}
+        <div className="grid grid-cols-3 gap-6 mb-8">
+          <div className="group relative overflow-hidden bg-white/80 backdrop-blur-sm p-6 rounded-2xl border border-white/50 shadow-sm hover:shadow-md transition-all duration-300 hover:scale-[1.02]">
+            <div className="absolute inset-0 bg-gradient-to-br opacity-5 group-hover:opacity-10 transition-opacity"
+                 style={{
+                   background: `linear-gradient(135deg, ${themeColors.primary} 0%, ${themeColors.secondary} 100%)`
+                 }}></div>
+            <div className="relative">
+              <div className="flex items-center justify-center mb-3">
+                <div className="w-10 h-10 rounded-lg flex items-center justify-center"
+                     style={{
+                       background: `linear-gradient(135deg, ${themeColors.primary}20 0%, ${themeColors.secondary}20 100%)`
+                     }}>
+                  <Target className="h-5 w-5" style={{ color: themeColors.primary }} />
+                </div>
+              </div>
+              <p className="text-3xl font-bold" style={{ 
+                color: dashboardData.stats.prioritiesCompleted === dashboardData.stats.totalPriorities && dashboardData.stats.totalPriorities > 0 
+                  ? themeColors.primary 
+                  : '#111827'
+              }}>
+                {dashboardData.stats.prioritiesCompleted}/{dashboardData.stats.totalPriorities}
+              </p>
+              <p className="text-sm text-slate-600 mt-1">
+                {isOnLeadershipTeam() ? `Company ${labels.priorities_label}` : `Your ${labels.priorities_label}`}
+              </p>
+              {dashboardData.stats.prioritiesProgress >= 80 && (
+                <div className="flex items-center justify-center mt-2">
+                  <span className="text-xs font-medium text-green-600">Great progress! ✨</span>
+                </div>
+              )}
+            </div>
           </div>
           
-          <div className="text-center p-4 rounded-lg border border-gray-100 hover:border-gray-200 transition-colors">
-            <p className={`text-3xl font-semibold ${
-              dashboardData.stats.overdueItems > 0 ? 'text-red-600' : 'text-gray-900'
-            }`}>
-              {dashboardData.stats.overdueItems}
-            </p>
-            <p className="text-sm text-gray-500 mt-1">Overdue Items</p>
-            {dashboardData.stats.overdueItems === 0 && (
-              <span className="inline-block w-2 h-2 rounded-full mt-2" 
-                style={{ backgroundColor: themeColors.primary }}
-                title="All caught up!" 
-              />
-            )}
+          <div className="group relative overflow-hidden bg-white/80 backdrop-blur-sm p-6 rounded-2xl border border-white/50 shadow-sm hover:shadow-md transition-all duration-300 hover:scale-[1.02]">
+            <div className="absolute inset-0 bg-gradient-to-br from-red-500/5 to-orange-500/5 opacity-0 group-hover:opacity-100 transition-opacity"></div>
+            <div className="relative">
+              <div className="flex items-center justify-center mb-3">
+                <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-red-50 to-orange-50 flex items-center justify-center">
+                  <AlertCircle className="h-5 w-5 text-red-500" />
+                </div>
+              </div>
+              <p className={`text-3xl font-bold ${
+                dashboardData.stats.overdueItems > 0 ? 'text-red-600' : 'text-slate-900'
+              }`}>
+                {dashboardData.stats.overdueItems}
+              </p>
+              <p className="text-sm text-slate-600 mt-1">Overdue Items</p>
+              {dashboardData.stats.overdueItems === 0 && (
+                <div className="flex items-center justify-center mt-2">
+                  <span className="text-xs font-medium text-green-600">All on track! 🎯</span>
+                </div>
+              )}
+            </div>
           </div>
           
-          <div className="text-center p-4 rounded-lg border border-gray-100 hover:border-gray-200 transition-colors">
-            <p className="text-3xl font-semibold text-gray-900">
-              {dashboardData.stats.totalShortTermIssues}
-            </p>
-            <p className="text-sm text-gray-500 mt-1">Open {labels.issues_label}</p>
+          <div className="group relative overflow-hidden bg-white/80 backdrop-blur-sm p-6 rounded-2xl border border-white/50 shadow-sm hover:shadow-md transition-all duration-300 hover:scale-[1.02]">
+            <div className="absolute inset-0 bg-gradient-to-br opacity-5 group-hover:opacity-10 transition-opacity"
+                 style={{
+                   background: `linear-gradient(135deg, ${themeColors.primary} 0%, ${themeColors.accent} 100%)`
+                 }}></div>
+            <div className="relative">
+              <div className="flex items-center justify-center mb-3">
+                <div className="w-10 h-10 rounded-lg flex items-center justify-center"
+                     style={{
+                       background: `linear-gradient(135deg, ${themeColors.primary}20 0%, ${themeColors.accent}20 100%)`
+                     }}>
+                  <Activity className="h-5 w-5" style={{ color: themeColors.primary }} />
+                </div>
+              </div>
+              <p className="text-3xl font-bold text-slate-900">
+                {dashboardData.stats.totalShortTermIssues}
+              </p>
+              <p className="text-sm text-slate-600 mt-1">Open {labels.issues_label}</p>
+            </div>
           </div>
         </div>
 
         {/* Main Content Grid */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-          {/* Priorities Section */}
-          <div>
-            <div className="flex items-center justify-between mb-4 pb-2 border-b-2" style={{ borderColor: themeColors.accent + '20' }}>
-              <h2 className="text-lg font-medium text-gray-900">
-                <span className="inline-block w-1 h-5 mr-2 rounded-full" style={{ backgroundColor: themeColors.primary }} />
-                Your {labels.priorities_label}
-              </h2>
+          {/* Enhanced Priorities Section */}
+          <div className="bg-white/80 backdrop-blur-sm rounded-2xl p-6 shadow-sm border border-white/50">
+            <div className="flex items-center justify-between mb-6">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-lg flex items-center justify-center"
+                     style={{
+                       background: `linear-gradient(135deg, ${themeColors.primary} 0%, ${themeColors.secondary} 100%)`
+                     }}>
+                  <Target className="h-5 w-5 text-white" />
+                </div>
+                <h2 className="text-xl font-semibold text-slate-900">
+                  Your {labels.priorities_label}
+                </h2>
+              </div>
               <Link 
                 to="/quarterly-priorities" 
-                className="text-sm text-gray-500 hover:text-gray-700 flex items-center gap-1 transition-colors"
-                onMouseEnter={(e) => e.currentTarget.style.color = themeColors.primary}
-                onMouseLeave={(e) => e.currentTarget.style.color = ''}
+                className="text-sm font-medium flex items-center gap-1 transition-all rounded-lg px-3 py-1.5 hover:bg-slate-100"
+                style={{ color: themeColors.primary }}
               >
                 View all
                 <ArrowRight className="h-3 w-3" />
@@ -785,10 +841,13 @@ const DashboardClean = () => {
             </div>
             
             {dashboardData.priorities.length === 0 ? (
-              <div className="text-center py-8 border border-gray-200 rounded-lg">
-                <p className="text-sm text-gray-500">No priorities assigned</p>
+              <div className="text-center py-8 px-4 bg-gradient-to-br from-slate-50 to-blue-50 rounded-xl border border-slate-200">
+                <p className="text-slate-600 mb-3">No priorities assigned</p>
                 <Link to="/quarterly-priorities">
-                  <Button variant="outline" size="sm" className="mt-3">
+                  <Button 
+                    className="bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white rounded-lg transition-all transform hover:scale-[1.02]"
+                    size="sm"
+                  >
                     View {labels.priorities_label}
                   </Button>
                 </Link>
@@ -796,37 +855,58 @@ const DashboardClean = () => {
             ) : (
               <div className="space-y-3">
                 {dashboardData.priorities.map((priority) => (
-                  <div key={priority.id} className="flex items-center gap-3 group">
-                    <div className="w-1 h-12 rounded" style={getStatusStyle(priority.status)} />
-                    <div className="flex-1 min-w-0">
-                      <p className="text-sm font-medium text-gray-900 truncate">
-                        {priority.title}
-                      </p>
-                      <p className="text-xs text-gray-500">
-                        {priority.owner?.name || 'Unassigned'} • Due {priority.dueDate ? format(new Date(priority.dueDate), 'MMM d') : 'No date'}
-                      </p>
+                  <div key={priority.id} className="group p-4 bg-white/60 rounded-xl border border-slate-200 hover:shadow-md transition-all cursor-pointer hover:scale-[1.01]">
+                    <div className="flex items-center gap-3">
+                      <div className="w-2 h-12 rounded-full" style={getStatusStyle(priority.status)} />
+                      <div className="flex-1 min-w-0">
+                        <p className="font-medium text-slate-900 truncate group-hover:text-slate-950">
+                          {priority.title}
+                        </p>
+                        <p className="text-xs text-slate-600 mt-1">
+                          {priority.owner?.name || 'Unassigned'} • Due {priority.dueDate ? format(new Date(priority.dueDate), 'MMM d') : 'No date'}
+                        </p>
+                      </div>
+                      <div className="text-right">
+                        <span className="text-sm font-medium" style={{ color: themeColors.primary }}>
+                          {priority.status === 'complete' ? 100 : (priority.progress || 0)}%
+                        </span>
+                        {priority.progress > 0 && (
+                          <div className="w-16 h-1.5 bg-slate-100 rounded-full mt-1 overflow-hidden">
+                            <div 
+                              className="h-full rounded-full transition-all"
+                              style={{ 
+                                width: `${priority.status === 'complete' ? 100 : (priority.progress || 0)}%`,
+                                background: `linear-gradient(90deg, ${themeColors.primary} 0%, ${themeColors.secondary} 100%)`
+                              }}
+                            />
+                          </div>
+                        )}
+                      </div>
                     </div>
-                    <span className="text-sm text-gray-500">
-                      {priority.status === 'complete' ? 100 : (priority.progress || 0)}%
-                    </span>
                   </div>
                 ))}
               </div>
             )}
           </div>
 
-          {/* To-Dos Section */}
-          <div>
-            <div className="flex items-center justify-between mb-4 pb-2 border-b-2" style={{ borderColor: themeColors.accent + '20' }}>
-              <h2 className="text-lg font-medium text-gray-900">
-                <span className="inline-block w-1 h-5 mr-2 rounded-full" style={{ backgroundColor: themeColors.primary }} />
-                Your {labels.todos_label}
-              </h2>
+          {/* Enhanced To-Dos Section */}
+          <div className="bg-white/80 backdrop-blur-sm rounded-2xl p-6 shadow-sm border border-white/50">
+            <div className="flex items-center justify-between mb-6">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-lg flex items-center justify-center"
+                     style={{
+                       background: `linear-gradient(135deg, ${themeColors.primary} 0%, ${themeColors.secondary} 100%)`
+                     }}>
+                  <CheckSquare className="h-5 w-5 text-white" />
+                </div>
+                <h2 className="text-xl font-semibold text-slate-900">
+                  Your {labels.todos_label}
+                </h2>
+              </div>
               <Link 
                 to="/todos" 
-                className="text-sm text-gray-500 hover:text-gray-700 flex items-center gap-1 transition-colors"
-                onMouseEnter={(e) => e.currentTarget.style.color = themeColors.primary}
-                onMouseLeave={(e) => e.currentTarget.style.color = ''}
+                className="text-sm font-medium flex items-center gap-1 transition-all rounded-lg px-3 py-1.5 hover:bg-slate-100"
+                style={{ color: themeColors.primary }}
               >
                 View all
                 <ArrowRight className="h-3 w-3" />
@@ -834,12 +914,11 @@ const DashboardClean = () => {
             </div>
             
             {dashboardData.todos.length === 0 ? (
-              <div className="text-center py-8 border border-gray-200 rounded-lg">
-                <p className="text-sm text-gray-500">No to-dos assigned</p>
+              <div className="text-center py-8 px-4 bg-gradient-to-br from-slate-50 to-blue-50 rounded-xl border border-slate-200">
+                <p className="text-slate-600 mb-3">No to-dos assigned</p>
                 <Button 
-                  variant="outline" 
+                  className="bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white rounded-lg transition-all transform hover:scale-[1.02]"
                   size="sm" 
-                  className="mt-3"
                   onClick={handleCreateTodo}
                 >
                   <Plus className="h-3 w-3 mr-1" />
@@ -858,41 +937,44 @@ const DashboardClean = () => {
           </div>
         </div>
 
-        {/* Quick Links */}
-        <div className="mt-12 pt-8 border-t border-gray-100">
-          <h3 className="text-sm font-medium text-gray-500 mb-4">Quick Links</h3>
-          <div className="flex gap-4">
+        {/* Enhanced Quick Actions */}
+        <div className="mt-12 pt-8 border-t border-slate-200">
+          <div className="flex items-center gap-2 mb-6">
+            <Sparkles className="h-4 w-4" style={{ color: themeColors.primary }} />
+            <h3 className="text-sm font-semibold text-slate-700">Quick Actions</h3>
+          </div>
+          <div className="flex flex-wrap gap-4">
             <Button 
+              className="bg-white/80 backdrop-blur-sm border border-slate-200 hover:shadow-md hover:scale-[1.02] transition-all rounded-lg"
               variant="outline" 
               size="sm" 
-              className="text-gray-600"
               onClick={() => {
                 setEditingIssue(null);
                 setShowIssueDialog(true);
               }}
             >
-              <Plus className="mr-2 h-4 w-4" />
+              <AlertCircle className="mr-2 h-4 w-4" style={{ color: themeColors.primary }} />
               Add Issue
             </Button>
             <Button 
+              className="bg-white/80 backdrop-blur-sm border border-slate-200 hover:shadow-md hover:scale-[1.02] transition-all rounded-lg"
               variant="outline" 
               size="sm" 
-              className="text-gray-600"
               onClick={() => {
                 setEditingTodo(null);
                 setShowTodoDialog(true);
               }}
             >
-              <Plus className="mr-2 h-4 w-4" />
+              <CheckSquare className="mr-2 h-4 w-4" style={{ color: themeColors.primary }} />
               Add To Do
             </Button>
             <Button 
+              className="bg-white/80 backdrop-blur-sm border border-slate-200 hover:shadow-md hover:scale-[1.02] transition-all rounded-lg"
               variant="outline" 
               size="sm" 
-              className="text-gray-600"
               onClick={() => setShowHeadlineDialog(true)}
             >
-              <Plus className="mr-2 h-4 w-4" />
+              <Plus className="mr-2 h-4 w-4" style={{ color: themeColors.primary }} />
               Add Headline
             </Button>
           </div>
