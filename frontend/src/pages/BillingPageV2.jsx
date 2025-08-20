@@ -364,11 +364,91 @@ const BillingPageV2 = () => {
     });
   };
 
+  const openCustomerPortal = async () => {
+    try {
+      const response = await axios.post('/subscription/portal');
+      if (response.data.url) {
+        window.location.href = response.data.url;
+      }
+    } catch (error) {
+      console.error('Failed to open customer portal:', error);
+      alert('Failed to open billing portal. Please try again.');
+    }
+  };
+
 
   if (loading) {
     return (
       <div className="flex justify-center items-center min-h-[400px]">
         <Loader2 className="h-8 w-8 animate-spin" />
+      </div>
+    );
+  }
+
+  // Show active subscription management if user has one
+  if (subscription?.status === 'active') {
+    const activePlan = PLANS[subscription.plan_id] || PLANS.starter;
+    
+    return (
+      <div className="container mx-auto p-6 max-w-7xl">
+        <div className="text-center mb-8">
+          <h1 className="text-4xl font-bold mb-4">
+            Your Subscription
+          </h1>
+          <p className="text-xl text-gray-600">
+            You're currently on the {activePlan.name} plan
+          </p>
+        </div>
+
+        <Card className="max-w-2xl mx-auto">
+          <CardHeader>
+            <CardTitle className="flex items-center justify-between">
+              <span>{activePlan.name} Plan</span>
+              <Badge className="bg-green-100 text-green-800">Active</Badge>
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="flex justify-between items-center py-2 border-b">
+              <span className="text-gray-600">Status</span>
+              <span className="font-medium capitalize">{subscription.status}</span>
+            </div>
+            <div className="flex justify-between items-center py-2 border-b">
+              <span className="text-gray-600">Users</span>
+              <span className="font-medium">
+                {currentUsers} / {activePlan.maxUsers || 'Unlimited'}
+              </span>
+            </div>
+            <div className="flex justify-between items-center py-2 border-b">
+              <span className="text-gray-600">Price</span>
+              <span className="font-medium">
+                ${activePlan.monthly}/month
+              </span>
+            </div>
+            
+            <div className="pt-4 space-y-3">
+              <Button 
+                onClick={openCustomerPortal}
+                className="w-full"
+                variant="default"
+              >
+                <CreditCard className="h-4 w-4 mr-2" />
+                Manage Billing
+              </Button>
+              <p className="text-sm text-gray-500 text-center">
+                Update payment method, download invoices, or cancel subscription
+              </p>
+            </div>
+          </CardContent>
+        </Card>
+
+        <div className="mt-8 text-center">
+          <Button
+            variant="outline"
+            onClick={() => window.location.reload()}
+          >
+            View Available Plans
+          </Button>
+        </div>
       </div>
     );
   }
