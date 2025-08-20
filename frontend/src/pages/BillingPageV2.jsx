@@ -50,11 +50,15 @@ const PLANS = {
     maxUsers: 25,
     features: [
       'Up to 25 users',
-      'All core features',
+      'All features included',
+      'Unlimited quarterly priorities',
+      'Unlimited scorecard metrics',
+      'Unlimited issues & todos',
+      'All meeting types',
+      'Cloud storage integrations',
       'Custom terminology',
-      'Email support',
-      'Monthly training webinars',
-      'Data export'
+      'Data export & backups',
+      'Email support'
     ],
     popular: false
   },
@@ -68,12 +72,10 @@ const PLANS = {
     maxUsers: 75,
     features: [
       'Up to 75 users',
-      'Everything in Starter',
-      'Priority support',
-      'Advanced analytics',
-      'API access',
-      'Custom integrations',
-      'Quarterly business reviews'
+      'All features included',
+      'Everything from Starter',
+      'Priority email support',
+      'Quarterly check-ins'
     ],
     popular: true
   },
@@ -87,12 +89,11 @@ const PLANS = {
     maxUsers: 200,
     features: [
       'Up to 200 users',
-      'Everything in Growth',
+      'All features included',
+      'Everything from Growth',
       'Dedicated success manager',
       'Custom onboarding',
-      'SLA guarantee',
-      'Advanced security features',
-      'Multi-framework support'
+      'SLA guarantee'
     ],
     popular: false
   },
@@ -106,12 +107,12 @@ const PLANS = {
     maxUsers: null,
     features: [
       'Unlimited users',
-      'Everything in Scale',
+      'All features included',
+      'Everything from Scale',
       'White-label options',
       'Custom domain',
       '24/7 phone support',
       'Dedicated infrastructure',
-      'Custom contracts',
       'Onsite training available'
     ],
     popular: false
@@ -484,8 +485,13 @@ const BillingPageV2 = () => {
           Choose Your Plan
         </h1>
         <p className="text-xl text-gray-600 mb-2">
-          Simple, transparent pricing that scales with your business
+          Simple, transparent pricing that scales with your team size
         </p>
+        <div className="bg-green-50 border border-green-200 rounded-lg p-3 inline-block mt-4">
+          <p className="text-green-800 font-medium">
+            ✨ All plans include every feature - no limitations, no tiers
+          </p>
+        </div>
       </div>
 
       {/* Billing Toggle */}
