@@ -1,7 +1,8 @@
 import express from 'express';
 const router = express.Router();
-import { stripe, STRIPE_WEBHOOK_SECRET } from '../config/stripe-flat-rate.js';
+import { stripe, STRIPE_WEBHOOK_SECRET, PLAN_FEATURES } from '../config/stripe-flat-rate.js';
 import { query } from '../config/database.js';
+import { notifyTrialConverted } from '../services/notificationService.js';
 
 // Stripe webhook endpoint (no auth middleware - Stripe will validate)
 router.post('/stripe', express.raw({ type: 'application/json' }), async (req, res) => {
@@ -49,20 +50,28 @@ router.post('/stripe', express.raw({ type: 'application/json' }), async (req, re
 // Handle successful payment
 async function handlePaymentSucceeded(invoice) {
   const result = await query(
-    'SELECT * FROM subscriptions WHERE stripe_customer_id = $1',
+    'SELECT s.*, o.name as organization_name 
+     FROM subscriptions s
+     JOIN organizations o ON s.organization_id = o.id
+     WHERE s.stripe_customer_id = $1',
     [invoice.customer]
   );
   
   if (result.rows.length === 0) return;
 
   const subscription = result.rows[0];
+  
+  // Check if this is the first payment (trial conversion)
+  const isFirstPayment = !subscription.last_payment_date || subscription.trial_type === 'trial';
 
   await query(
     `UPDATE subscriptions 
      SET last_payment_status = 'succeeded',
          last_payment_amount = $1,
          last_payment_date = NOW(),
-         status = 'active'
+         status = 'active',
+         trial_type = CASE WHEN trial_type = 'trial' THEN 'paid' ELSE trial_type END,
+         trial_converted_at = CASE WHEN trial_type = 'trial' THEN NOW() ELSE trial_converted_at END
      WHERE id = $2`,
     [invoice.amount_paid / 100, subscription.id]
   );
@@ -72,6 +81,20 @@ async function handlePaymentSucceeded(invoice) {
     'UPDATE organizations SET has_active_subscription = true WHERE id = $1',
     [subscription.organization_id]
   );
+  
+  // Send notification if this is a trial conversion
+  if (isFirstPayment && invoice.amount_paid > 0) {
+    // Determine plan name from amount or subscription details
+    const planInfo = PLAN_FEATURES[subscription.plan_id] || { name: 'Unknown' };
+    
+    notifyTrialConverted(
+      subscription.organization_name,
+      planInfo.name,
+      invoice.amount_paid / 100
+    ).catch(err => console.error('Failed to send conversion notification:', err));
+    
+    console.log(`🎉 Trial converted to paid: ${subscription.organization_name} - ${planInfo.name} plan`);
+  }
 }
 
 // Handle failed payment

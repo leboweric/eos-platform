@@ -8,6 +8,7 @@ import {
   PROMO_CODES
 } from '../config/stripe-flat-rate.js';
 import { sendEmail } from '../services/emailService.js';
+import { notifyTrialConverted } from '../services/notificationService.js';
 
 // Convert trial to paid subscription
 const convertTrialToPaid = async (req, res) => {
@@ -188,6 +189,11 @@ const convertTrialToPaid = async (req, res) => {
 
     // Calculate savings
     const savings = calculateNinetySavings(planId, userCount);
+    
+    // Send admin notification about conversion
+    const amount = billingInterval === 'annual' ? planFeatures.price_annual : planFeatures.price_monthly;
+    notifyTrialConverted(org.name, planFeatures.name, amount)
+      .catch(err => console.error('Failed to send conversion notification:', err));
 
     // Send confirmation email
     await sendEmail(
