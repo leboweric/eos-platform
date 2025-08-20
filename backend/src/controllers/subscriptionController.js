@@ -246,6 +246,11 @@ const getBillingHistory = async (req, res) => {
 
     const subscription = result.rows[0];
 
+    // Check if customer exists in Stripe
+    if (!subscription.stripe_customer_id) {
+      return res.json({ invoices: [] });
+    }
+
     // Get invoices from Stripe
     const invoices = await stripe.invoices.list({
       customer: subscription.stripe_customer_id,

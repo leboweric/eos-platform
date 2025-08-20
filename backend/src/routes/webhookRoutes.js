@@ -1,6 +1,6 @@
 import express from 'express';
 const router = express.Router();
-import { stripe, STRIPE_WEBHOOK_SECRET } from '../config/stripe.js';
+import { stripe, STRIPE_WEBHOOK_SECRET } from '../config/stripe-flat-rate.js';
 import { query } from '../config/database.js';
 
 // Stripe webhook endpoint (no auth middleware - Stripe will validate)

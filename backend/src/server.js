@@ -20,6 +20,7 @@ import headlinesRoutes from './routes/headlines.js';
 import departmentRoutes from './routes/departmentRoutes.js';
 import accountabilityRoutes from './routes/accountabilityRoutes.js';
 import subscriptionRoutes from './routes/subscriptionRoutes.js';
+import subscriptionRoutesV2 from './routes/subscriptionRoutesV2.js';
 import webhookRoutes from './routes/webhookRoutes.js';
 import userRoutes from './routes/userRoutes.js';
 import consultantRoutes from './routes/consultantRoutes.js';
@@ -193,7 +194,8 @@ app.use('/api/v1/organizations/:orgId/issues', issueRoutes);
 app.use('/api/v1/organizations/:orgId/headlines', headlinesRoutes);
 app.use('/api/v1/departments', departmentRoutes);
 app.use('/api/v1/accountability', accountabilityRoutes);
-app.use('/api/v1/subscription', subscriptionRoutes);
+app.use('/api/v1/subscription', subscriptionRoutesV2); // V2 routes for flat-rate pricing
+app.use('/api/v1/subscription/legacy', subscriptionRoutes); // Keep V1 routes as legacy
 app.use('/api/v1/consultant', consultantRoutes);
 app.use('/api/v1/organizations/:orgId/organizational-charts', organizationalChartRoutes);
 app.use('/api/v1/organizations/:orgId/skills', skillsRoutes);
@@ -210,7 +212,7 @@ app.use('/api/v1', sharedMetricsRoutes);
 app.use('/api/v1', exportRoutes);
 
 // Webhook routes (must be before express.json() middleware for raw body)
-app.use('/webhooks', webhookRoutes);
+app.use('/api/v1/webhooks', webhookRoutes);
 
 // Error handling middleware
 app.use(notFound);
