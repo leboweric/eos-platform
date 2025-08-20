@@ -136,8 +136,8 @@ export const syncSubscriptionFromStripe = async (req, res) => {
           stripeSub.id,
           stripeSub.status,
           planId,
-          new Date(stripeSub.current_period_start * 1000),
-          new Date(stripeSub.current_period_end * 1000),
+          stripeSub.current_period_start ? new Date(stripeSub.current_period_start * 1000) : new Date(),
+          stripeSub.current_period_end ? new Date(stripeSub.current_period_end * 1000) : new Date(),
           userCount,
           planFeatures.price_monthly,
           stripeSub.items.data[0]?.price.recurring?.interval === 'year' ? 'annual' : 'monthly',
@@ -172,8 +172,8 @@ export const syncSubscriptionFromStripe = async (req, res) => {
           planId,
           'paid',
           new Date(),
-          new Date(stripeSub.current_period_start * 1000),
-          new Date(stripeSub.current_period_end * 1000),
+          stripeSub.current_period_start ? new Date(stripeSub.current_period_start * 1000) : new Date(),
+          stripeSub.current_period_end ? new Date(stripeSub.current_period_end * 1000) : new Date(),
           userCount,
           planFeatures.price_monthly,
           stripeSub.items.data[0]?.price.recurring?.interval === 'year' ? 'annual' : 'monthly',
@@ -195,7 +195,7 @@ export const syncSubscriptionFromStripe = async (req, res) => {
     
     await commitTransaction(client);
     
-    console.log('Successfully synced subscription for org:', organizationId);
+    console.log('✅ Successfully synced subscription for org:', organizationId);
     
     res.json({
       success: true,
@@ -205,7 +205,7 @@ export const syncSubscriptionFromStripe = async (req, res) => {
         status: stripeSub.status,
         planId,
         customerId,
-        currentPeriodEnd: new Date(stripeSub.current_period_end * 1000)
+        currentPeriodEnd: stripeSub.current_period_end ? new Date(stripeSub.current_period_end * 1000) : new Date()
       }
     });
     
