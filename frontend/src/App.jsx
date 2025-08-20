@@ -36,7 +36,7 @@ const IssuesPageOriginal = lazy(() => import('./pages/IssuesPageOriginal'));
 const LandingPageOld = lazy(() => import('./pages/LandingPageOld'));
 const DepartmentsPage = lazy(() => import('./pages/DepartmentsPage'));
 const AccountabilityChart = lazy(() => import('./pages/AccountabilityChart'));
-const BillingPage = lazy(() => import('./pages/BillingPage'));
+const BillingPage = lazy(() => import('./pages/BillingPageV2'));
 const UsersPage = lazy(() => import('./pages/UsersPage'));
 const AcceptInvitationPage = lazy(() => import('./pages/AcceptInvitationPage'));
 const ConsultantDashboard = lazy(() => import('./pages/ConsultantDashboard'));
