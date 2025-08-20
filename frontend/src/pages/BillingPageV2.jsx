@@ -313,7 +313,7 @@ const CheckoutForm = ({ selectedPlan, billingInterval, onSuccess }) => {
 const BillingPageV2 = () => {
   const navigate = useNavigate();
   const [selectedPlan, setSelectedPlan] = useState('growth');
-  const [billingInterval, setBillingInterval] = useState('annual');
+  const [billingInterval, setBillingInterval] = useState('monthly');
   const [currentUsers, setCurrentUsers] = useState(0);
   const [subscription, setSubscription] = useState(null);
   const [loading, setLoading] = useState(true);
