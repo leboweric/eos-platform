@@ -192,10 +192,6 @@ const LandingPage = () => {
                 <ArrowRight className="ml-2 h-5 w-5" />
               </Button>
             </Link>
-            <Button size="lg" variant="outline" className="text-lg px-8 py-6 border-2">
-              Watch Demo
-              <Video className="ml-2 h-5 w-5" />
-            </Button>
           </div>
           
           <div className="flex flex-wrap justify-center gap-8 text-sm text-gray-600">
