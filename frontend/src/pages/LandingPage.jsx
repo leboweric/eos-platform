@@ -169,7 +169,7 @@ const LandingPage = () => {
         <div className="container mx-auto max-w-5xl">
           <div className="inline-flex items-center gap-2 bg-blue-100 text-blue-700 px-4 py-2 rounded-full text-sm font-medium mb-6">
             <Sparkles className="h-4 w-4" />
-            Beyond EOS. Beyond 4DX. Beyond Traditional Software.
+            Supporting EOS, 4DX, OKRs, Scaling Up & Your Custom Framework
           </div>
           
           <h1 className="text-5xl md:text-7xl font-bold mb-6 bg-gradient-to-r from-slate-900 via-blue-900 to-indigo-900 bg-clip-text text-transparent">
@@ -179,9 +179,9 @@ const LandingPage = () => {
           </h1>
           
           <p className="text-xl md:text-2xl text-gray-700 mb-8 max-w-3xl mx-auto leading-relaxed">
-            Not another EOS tool. Not another 4DX app. 
+            The perfect platform for EOS, 4DX, OKRs, or Scaling Up.
             <br />
-            <span className="font-semibold">The world's first Adaptive Execution Platform</span> that transforms 
+            <span className="font-semibold">The world's first truly adaptive platform</span> that transforms 
             with your methodology, integrates with your cloud, and evolves with your business.
           </p>
           
@@ -224,12 +224,12 @@ const LandingPage = () => {
               REVOLUTIONARY FEATURES
             </div>
             <h2 className="text-4xl md:text-5xl font-bold mb-4">
-              Features That Don't Exist
+              Unique Features Designed
               <br />
-              <span className="text-blue-600">Anywhere Else</span>
+              <span className="text-blue-600">For Your Success</span>
             </h2>
             <p className="text-xl text-gray-600 max-w-3xl mx-auto">
-              We didn't just build another business tool. We reimagined what's possible when 
+              We've reimagined what's possible when 
               technology truly serves strategy.
             </p>
           </div>
@@ -360,12 +360,12 @@ const LandingPage = () => {
         <div className="container mx-auto max-w-7xl">
           <div className="text-center mb-16">
             <h2 className="text-4xl font-bold mb-4">
-              Everything You Need.
+              Everything You Need
               <br />
-              <span className="text-blue-600">Nothing You Don't.</span>
+              <span className="text-blue-600">To Execute Your Vision</span>
             </h2>
             <p className="text-xl text-gray-600 max-w-3xl mx-auto">
-              Comprehensive capabilities that work together seamlessly, not a collection of disconnected tools.
+              Comprehensive capabilities that work together seamlessly to support your chosen business framework.
             </p>
           </div>
           
