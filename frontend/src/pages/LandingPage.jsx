@@ -173,7 +173,7 @@ const LandingPage = () => {
           </div>
           
           <h1 className="text-5xl md:text-7xl font-bold mb-6 bg-gradient-to-r from-slate-900 via-blue-900 to-indigo-900 bg-clip-text text-transparent">
-            The Execution Platform That
+            The Business Operating Platform That
             <br />
             <span className="text-blue-600">Adapts to You</span>
           </h1>
