@@ -193,7 +193,7 @@ const LandingPage = () => {
               </Button>
             </Link>
             <Button size="lg" variant="outline" className="text-lg px-8 py-6 border-2">
-              See It In Action
+              Watch Demo
               <Video className="ml-2 h-5 w-5" />
             </Button>
           </div>
