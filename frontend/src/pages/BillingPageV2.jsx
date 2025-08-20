@@ -57,8 +57,7 @@ const PLANS = {
       'All meeting types',
       'Cloud storage integrations',
       'Custom terminology',
-      'Data export & backups',
-      'Email support'
+      'Data export & backups'
     ],
     popular: false
   },
@@ -73,9 +72,13 @@ const PLANS = {
     features: [
       'Up to 75 users',
       'All features included',
-      'Everything from Starter',
-      'Priority email support',
-      'Quarterly check-ins'
+      'Unlimited quarterly priorities',
+      'Unlimited scorecard metrics',
+      'Unlimited issues & todos',
+      'All meeting types',
+      'Cloud storage integrations',
+      'Custom terminology',
+      'Data export & backups'
     ],
     popular: true
   },
@@ -90,10 +93,13 @@ const PLANS = {
     features: [
       'Up to 200 users',
       'All features included',
-      'Everything from Growth',
-      'Dedicated success manager',
-      'Custom onboarding',
-      'SLA guarantee'
+      'Unlimited quarterly priorities',
+      'Unlimited scorecard metrics',
+      'Unlimited issues & todos',
+      'All meeting types',
+      'Cloud storage integrations',
+      'Custom terminology',
+      'Data export & backups'
     ],
     popular: false
   },
@@ -108,12 +114,13 @@ const PLANS = {
     features: [
       'Unlimited users',
       'All features included',
-      'Everything from Scale',
-      'White-label options',
-      'Custom domain',
-      '24/7 phone support',
-      'Dedicated infrastructure',
-      'Onsite training available'
+      'Unlimited quarterly priorities',
+      'Unlimited scorecard metrics',
+      'Unlimited issues & todos',
+      'All meeting types',
+      'Cloud storage integrations',
+      'Custom terminology',
+      'Data export & backups'
     ],
     popular: false
   }
