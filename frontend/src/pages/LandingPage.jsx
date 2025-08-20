@@ -549,6 +549,41 @@ const LandingPage = () => {
         </div>
       </section>
 
+      {/* Disclaimer & Attribution Section */}
+      <section id="disclaimer-section" className="py-12 px-4 bg-gray-50 border-t border-gray-200">
+        <div className="container mx-auto max-w-6xl">
+          <div className="text-center mb-8">
+            <h3 className="text-2xl font-bold mb-4">Framework Independence & Attribution</h3>
+            <div className="max-w-4xl mx-auto space-y-4 text-sm text-gray-600 text-left">
+              <p className="font-semibold text-gray-800">
+                AXP is an independent software platform with no affiliation to any business methodology organization.
+              </p>
+              <p>
+                <strong>Trademark Acknowledgments:</strong> EOS® and Entrepreneurial Operating System® are registered trademarks of EOS Worldwide, LLC. 
+                Scaling Up® and Rockefeller Habits® are registered trademarks of Gazelles, Inc. 
+                OKR (Objectives and Key Results) methodology was developed by Andy Grove at Intel. 
+                4DX® (4 Disciplines of Execution) is a registered trademark of Franklin Covey Co.
+              </p>
+              <p>
+                <strong>Our Position:</strong> AXP is a framework-agnostic execution platform that enables organizations to implement 
+                their chosen business operating system. We provide the software infrastructure to support various methodologies 
+                but are not endorsed by, affiliated with, or certified by any of these organizations. 
+                Organizations should seek official training and certification from the respective methodology providers.
+              </p>
+              <p>
+                <strong>Software Comparison:</strong> References to Ninety.io™, Bloom Growth™, and EOS One™ are for comparative purposes only. 
+                These are trademarks of their respective owners, and we have no affiliation with these companies. 
+                Our platform offers similar functionality with the unique ability to adapt between frameworks.
+              </p>
+              <p className="italic">
+                We encourage organizations to work with certified implementers and coaches from their chosen methodology 
+                while using AXP as their execution platform.
+              </p>
+            </div>
+          </div>
+        </div>
+      </section>
+
       {/* Footer */}
       <footer className="py-12 px-4 bg-gray-900 text-white">
         <div className="container mx-auto max-w-6xl">
@@ -596,11 +631,20 @@ const LandingPage = () => {
               </ul>
             </div>
           </div>
-          <div className="border-t border-gray-800 mt-8 pt-8 flex flex-col md:flex-row justify-between items-center text-gray-400 text-sm">
-            <p>&copy; 2025 AXP Platform. All rights reserved.</p>
-            <p className="mt-4 md:mt-0">
-              EOS® is a registered trademark of EOS Worldwide. 
-              4DX® is a registered trademark of Franklin Covey Co.
+          <div className="border-t border-gray-800 mt-8 pt-8 text-gray-400 text-sm">
+            <div className="flex flex-col md:flex-row justify-between items-center">
+              <p>&copy; 2025 AXP Platform by Profitbuilder Network. All rights reserved.</p>
+              <div className="flex space-x-6 mt-4 md:mt-0">
+                <a href="/privacy" className="hover:text-white">Privacy</a>
+                <a href="/terms" className="hover:text-white">Terms</a>
+                <a href="#disclaimer" className="hover:text-white" onClick={(e) => {
+                  e.preventDefault();
+                  document.querySelector('#disclaimer-section').scrollIntoView({ behavior: 'smooth' });
+                }}>Disclaimers</a>
+              </div>
+            </div>
+            <p className="mt-4 text-xs text-center">
+              All trademarks mentioned are property of their respective owners. See full disclaimer above.
             </p>
           </div>
         </div>
