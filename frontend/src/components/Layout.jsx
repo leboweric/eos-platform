@@ -156,7 +156,7 @@ const Layout = ({ children }) => {
         fixed inset-y-0 left-0 z-50 w-64 bg-white shadow-lg transform transition-transform duration-300 ease-in-out lg:translate-x-0 lg:relative lg:inset-auto lg:flex lg:flex-col lg:min-h-screen
         ${sidebarOpen ? 'translate-x-0' : '-translate-x-full'}
       `}>
-        <div className="flex items-center justify-between h-16 px-6 border-b">
+        <div className="flex items-center justify-between h-20 px-6 border-b">
           <Link to="/dashboard" className="flex items-center space-x-2">
             {logoUrl ? (
               <img 
@@ -241,7 +241,7 @@ const Layout = ({ children }) => {
       {/* Main content */}
       <div className="flex-1 flex flex-col">
         {/* Top bar */}
-        <div className="sticky top-0 z-30 bg-white/90 backdrop-blur-sm border-b border-slate-200/50 px-4 py-6 shadow-sm">
+        <div className="sticky top-0 z-30 bg-white/90 backdrop-blur-sm border-b border-slate-200/50 px-4 py-4 shadow-sm">
           <div className="flex items-center justify-between">
             <div className="flex items-center flex-1">
               {!hideSidebar && (
@@ -261,15 +261,15 @@ const Layout = ({ children }) => {
             </div>
 
             {/* Center Logo */}
-            <div className="absolute left-1/2 transform -translate-x-1/2 flex items-center gap-2">
+            <div className="absolute left-1/2 transform -translate-x-1/2 flex items-center gap-3">
               <img 
                 src="/AXP_logo_upper_left.png" 
                 alt="AXP Logo" 
-                className="h-10 w-auto"
+                className="h-14 w-auto"
               />
               <div className="flex flex-col">
-                <span className="text-lg font-bold text-gray-900 leading-tight">AXP</span>
-                <span className="text-[10px] text-gray-600 leading-tight font-medium">Adaptive Execution Platform</span>
+                <span className="text-2xl font-bold text-gray-900 leading-tight">AXP</span>
+                <span className="text-xs text-gray-600 leading-tight font-medium">Adaptive Execution Platform</span>
               </div>
             </div>
 
