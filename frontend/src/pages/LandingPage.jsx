@@ -169,7 +169,7 @@ const LandingPage = () => {
         <div className="container mx-auto max-w-5xl">
           <div className="inline-flex items-center gap-2 bg-blue-100 text-blue-700 px-4 py-2 rounded-full text-sm font-medium mb-6">
             <Sparkles className="h-4 w-4" />
-            Supporting EOS, 4DX, OKRs, Scaling Up & Your Custom Framework
+            Supporting EOS, 4DX, OKRs, Scaling Up or Your Custom Framework
           </div>
           
           <h1 className="text-5xl md:text-7xl font-bold mb-6 bg-gradient-to-r from-slate-900 via-blue-900 to-indigo-900 bg-clip-text text-transparent">
