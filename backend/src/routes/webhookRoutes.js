@@ -50,10 +50,10 @@ router.post('/stripe', express.raw({ type: 'application/json' }), async (req, re
 // Handle successful payment
 async function handlePaymentSucceeded(invoice) {
   const result = await query(
-    'SELECT s.*, o.name as organization_name 
+    `SELECT s.*, o.name as organization_name 
      FROM subscriptions s
      JOIN organizations o ON s.organization_id = o.id
-     WHERE s.stripe_customer_id = $1',
+     WHERE s.stripe_customer_id = $1`,
     [invoice.customer]
   );
   
