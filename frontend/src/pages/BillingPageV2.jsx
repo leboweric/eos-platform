@@ -364,21 +364,6 @@ const BillingPageV2 = () => {
     });
   };
 
-  const calculateNinetySavings = (planId) => {
-    const plan = PLANS[planId];
-    const ninetyMonthly = currentUsers * 16;
-    const planMonthly = plan.monthly;
-    
-    if (plan.maxUsers && currentUsers > plan.maxUsers) {
-      return { canSelect: false, savings: 0 };
-    }
-    
-    return {
-      canSelect: true,
-      savings: Math.max(0, ninetyMonthly - planMonthly),
-      percentage: Math.round(((ninetyMonthly - planMonthly) / ninetyMonthly) * 100)
-    };
-  };
 
   if (loading) {
     return (
@@ -398,12 +383,6 @@ const BillingPageV2 = () => {
         <p className="text-xl text-gray-600 mb-2">
           Simple, transparent pricing that scales with your business
         </p>
-        <div className="flex items-center justify-center gap-2 text-green-600">
-          <TrendingUp className="h-5 w-5" />
-          <span className="font-semibold">
-            Save ${calculateNinetySavings(selectedPlan).savings}/month vs Ninety.io
-          </span>
-        </div>
       </div>
 
       {/* Billing Toggle */}
@@ -440,9 +419,9 @@ const BillingPageV2 = () => {
         <>
           <div className="grid md:grid-cols-4 gap-6 mb-8">
             {Object.values(PLANS).map((plan) => {
-              const savings = calculateNinetySavings(plan.id);
               const isRecommended = selectedPlan === plan.id;
               const Icon = plan.icon;
+              const canSelect = !plan.maxUsers || currentUsers <= plan.maxUsers;
               
               return (
                 <Card 
@@ -450,9 +429,9 @@ const BillingPageV2 = () => {
                   className={`
                     relative cursor-pointer transition-all
                     ${isRecommended ? 'ring-2 ring-blue-500 shadow-lg' : 'hover:shadow-md'}
-                    ${!savings.canSelect ? 'opacity-50' : ''}
+                    ${!canSelect ? 'opacity-50' : ''}
                   `}
-                  onClick={() => savings.canSelect && setSelectedPlan(plan.id)}
+                  onClick={() => canSelect && setSelectedPlan(plan.id)}
                 >
                   {plan.popular && (
                     <Badge className="absolute -top-3 left-1/2 -translate-x-1/2 bg-blue-600">
@@ -483,12 +462,7 @@ const BillingPageV2 = () => {
                         : 'Unlimited users'
                       }
                     </p>
-                    {savings.canSelect && savings.savings > 0 && (
-                      <Badge variant="secondary" className="mt-2 bg-green-100 text-green-700">
-                        Save ${savings.savings}/mo
-                      </Badge>
-                    )}
-                    {!savings.canSelect && (
+                    {!canSelect && (
                       <Badge variant="secondary" className="mt-2 bg-red-100 text-red-700">
                         Too many users
                       </Badge>
@@ -508,7 +482,7 @@ const BillingPageV2 = () => {
                     <Button 
                       className="w-full mt-4"
                       variant={isRecommended ? 'default' : 'outline'}
-                      disabled={!savings.canSelect}
+                      disabled={!canSelect}
                     >
                       {isRecommended ? 'Selected' : 'Select'}
                     </Button>
