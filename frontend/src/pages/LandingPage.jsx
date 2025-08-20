@@ -179,7 +179,7 @@ const LandingPage = () => {
           </h1>
           
           <p className="text-xl md:text-2xl text-gray-700 mb-8 max-w-3xl mx-auto leading-relaxed">
-            The perfect platform for any business operating system - proven or custom.
+            The perfect platform for any business operating system.
             <br />
             <span className="font-semibold">The world's first truly adaptive platform</span> that transforms 
             with your methodology, integrates with your cloud, and evolves with your business.
