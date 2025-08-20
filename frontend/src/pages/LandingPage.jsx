@@ -188,7 +188,7 @@ const LandingPage = () => {
           <div className="flex flex-col sm:flex-row gap-4 justify-center mb-8">
             <Link to="/register">
               <Button size="lg" className="text-lg px-8 py-6 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700">
-                Start Adapting
+                Start Executing
                 <ArrowRight className="ml-2 h-5 w-5" />
               </Button>
             </Link>
