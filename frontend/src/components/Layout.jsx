@@ -175,12 +175,20 @@ const Layout = ({ children }) => {
                 }}
               />
             ) : null}
-            <img 
-              src="/AXP_logo_upper_left.png" 
-              alt="AXP" 
-              className="h-10 w-auto max-w-[150px] object-contain"
-              style={{ display: logoUrl ? 'none' : 'block' }}
-            />
+            <div 
+              className="flex items-center gap-2"
+              style={{ display: logoUrl ? 'none' : 'flex' }}
+            >
+              <img 
+                src="/AXP_logo_upper_left.png" 
+                alt="AXP Logo" 
+                className="h-10 w-auto"
+              />
+              <div className="flex flex-col">
+                <span className="text-lg font-bold text-gray-900 leading-none">AXP</span>
+                <span className="text-[10px] text-gray-500 leading-none">Adaptive Execution Platform</span>
+              </div>
+            </div>
           </Link>
           <button
             onClick={() => setSidebarOpen(false)}
@@ -253,12 +261,16 @@ const Layout = ({ children }) => {
             </div>
 
             {/* Center Logo */}
-            <div className="absolute left-1/2 transform -translate-x-1/2">
+            <div className="absolute left-1/2 transform -translate-x-1/2 flex items-center gap-2">
               <img 
                 src="/AXP_logo_upper_left.png" 
-                alt="AXP" 
-                className="h-20 w-auto"
+                alt="AXP Logo" 
+                className="h-8 w-auto"
               />
+              <div className="flex flex-col">
+                <span className="text-base font-bold text-gray-900 leading-none">AXP</span>
+                <span className="text-[9px] text-gray-500 leading-none">Adaptive Execution Platform</span>
+              </div>
             </div>
 
             <div className="flex items-center space-x-4">
