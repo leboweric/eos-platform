@@ -5,6 +5,7 @@ import { v4 as uuidv4 } from 'uuid';
 import crypto from 'crypto';
 import { query, beginTransaction, commitTransaction, rollbackTransaction } from '../config/database.js';
 import { sendEmail } from '../services/emailService.js';
+import { notifyNewTrial } from '../services/notificationService.js';
 
 // Helper function to generate JWT tokens
 const generateTokens = (userId) => {
@@ -138,6 +139,14 @@ export const register = async (req, res) => {
       );
 
       await commitTransaction(client);
+
+      // Send notification email about new trial (fire and forget)
+      notifyNewTrial({
+        firstName,
+        lastName,
+        email,
+        organizationName
+      }).catch(err => console.error('Notification failed:', err));
 
       // Generate tokens
       const { accessToken, refreshToken } = generateTokens(user.id);
