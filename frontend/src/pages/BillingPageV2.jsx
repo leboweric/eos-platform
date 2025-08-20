@@ -4,6 +4,7 @@ import { loadStripe } from '@stripe/stripe-js';
 import { Elements, CardElement, useStripe, useElements } from '@stripe/react-stripe-js';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
+import SEO from '../components/SEO';
 import { Badge } from '@/components/ui/badge';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -403,6 +404,11 @@ const BillingPageV2 = () => {
     
     return (
       <div className="container mx-auto p-6 max-w-7xl">
+        <SEO 
+          title="Manage Subscription"
+          description="Manage your AXP subscription, update payment methods, and download invoices."
+          noindex={true}
+        />
         <div className="text-center mb-8">
           <h1 className="text-4xl font-bold mb-4">
             Your Subscription
@@ -467,6 +473,11 @@ const BillingPageV2 = () => {
 
   return (
     <div className="container mx-auto p-6 max-w-7xl">
+      <SEO 
+        title="Pricing"
+        description="Simple, transparent pricing for AXP. Plans starting at $149/month. Save 56% compared to Ninety.io. All plans include a 30-day free trial."
+        keywords="AXP pricing, business software pricing, EOS alternative cost, Ninety.io alternative pricing"
+      />
       {/* Header */}
       <div className="text-center mb-8">
         <h1 className="text-4xl font-bold mb-4">

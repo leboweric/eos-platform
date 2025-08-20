@@ -1,6 +1,7 @@
 import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import SEO from '../components/SEO';
 import { 
   Zap, 
   Users, 
@@ -134,6 +135,11 @@ const LandingPage = () => {
 
   return (
     <div className="min-h-screen">
+      <SEO 
+        title="Home"
+        description="AXP is the most affordable business operating system. Switch from EOS, Ninety.io, OKRs, or any framework. Manage priorities, scorecards, meetings, and more with the only platform that adapts to YOUR methodology."
+        keywords="EOS alternative, Ninety.io alternative, business operating system, OKR software, quarterly planning, business management platform, adaptive framework, EOS tools"
+      />
       {/* Header */}
       <header className="border-b bg-white/95 backdrop-blur supports-[backdrop-filter]:bg-white/60 sticky top-0 z-50">
         <div className="container mx-auto px-4 py-4 flex items-center justify-between">
