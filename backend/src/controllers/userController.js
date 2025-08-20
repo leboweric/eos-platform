@@ -5,6 +5,7 @@ import { updateSubscriptionUserCount } from './subscriptionController.js';
 import { sendEmail } from '../services/emailService.js';
 import { v4 as uuidv4 } from 'uuid';
 import { getUserTeamContext } from '../utils/teamUtils.js';
+import { checkUserLimit } from '../utils/planLimits.js';
 
 // Get all users in organization
 export const getOrganizationUsers = async (req, res) => {
@@ -65,6 +66,20 @@ export const createUser = async (req, res) => {
     // Check if user can create users (must be consultant or admin)
     if (!req.user.is_consultant && req.user.role !== 'admin') {
       return res.status(403).json({ error: 'Only consultants and admins can create users directly' });
+    }
+
+    // Check plan limits before creating user
+    const limitCheck = await checkUserLimit(organizationId);
+    if (!limitCheck.canAddUsers) {
+      return res.status(403).json({
+        error: 'User limit reached',
+        message: limitCheck.message,
+        upgradeRequired: true,
+        recommendedPlan: limitCheck.recommendedPlan,
+        currentCount: limitCheck.currentCount,
+        maxUsers: limitCheck.maxUsers,
+        upgradeUrl: '/billing'
+      });
     }
 
     // Check if user already exists
@@ -171,6 +186,20 @@ export const inviteUser = async (req, res) => {
       return res.status(403).json({ error: 'Only administrators can invite users' });
     }
 
+    // Check plan limits before inviting
+    const limitCheck = await checkUserLimit(organizationId);
+    if (!limitCheck.canAddUsers) {
+      return res.status(403).json({
+        error: 'User limit reached',
+        message: limitCheck.message,
+        upgradeRequired: true,
+        recommendedPlan: limitCheck.recommendedPlan,
+        currentCount: limitCheck.currentCount,
+        maxUsers: limitCheck.maxUsers,
+        upgradeUrl: '/billing'
+      });
+    }
+
     // Check if user already exists in organization
     const existingUser = await query(
       'SELECT id FROM users WHERE email = $1 AND organization_id = $2',
@@ -232,7 +261,8 @@ export const inviteUser = async (req, res) => {
       // Continue even if email fails - they can still share the link manually
     }
     
-    res.json({
+    // Include plan limit warning if approaching limit
+    const response = {
       success: true,
       data: {
         id: invitation.id,
@@ -241,7 +271,15 @@ export const inviteUser = async (req, res) => {
         expires_at: invitation.expires_at,
         invitation_link: invitationLink
       }
-    });
+    };
+
+    // Add warning if approaching limit
+    if (limitCheck.remainingSlots && limitCheck.remainingSlots <= 5) {
+      response.warning = limitCheck.message;
+      response.remainingSlots = limitCheck.remainingSlots;
+    }
+
+    res.json(response);
   } catch (error) {
     console.error('Invite user error:', error);
     res.status(500).json({ error: 'Failed to send invitation' });
@@ -276,6 +314,21 @@ export const acceptInvitation = async (req, res) => {
 
     if (existingUser.rows.length > 0) {
       return res.status(400).json({ error: 'User already exists' });
+    }
+
+    // Check plan limits before accepting invitation
+    const limitCheck = await checkUserLimit(invitation.organization_id);
+    if (!limitCheck.canAddUsers) {
+      return res.status(403).json({
+        error: 'User limit reached',
+        message: `Cannot accept invitation. ${limitCheck.message}`,
+        upgradeRequired: true,
+        recommendedPlan: limitCheck.recommendedPlan,
+        currentCount: limitCheck.currentCount,
+        maxUsers: limitCheck.maxUsers,
+        contactAdmin: true,
+        adminMessage: 'Please contact your organization administrator to upgrade the plan.'
+      });
     }
 
     // Hash password
