@@ -176,17 +176,17 @@ const Layout = ({ children }) => {
               />
             ) : null}
             <div 
-              className="flex items-center gap-2"
+              className="flex items-center gap-3"
               style={{ display: logoUrl ? 'none' : 'flex' }}
             >
               <img 
                 src="/AXP_logo_upper_left.png" 
                 alt="AXP Logo" 
-                className="h-10 w-auto"
+                className="h-14 w-auto"
               />
               <div className="flex flex-col">
-                <span className="text-lg font-bold text-gray-900 leading-none">AXP</span>
-                <span className="text-[10px] text-gray-500 leading-none">Adaptive Execution Platform</span>
+                <span className="text-2xl font-bold text-gray-900 leading-tight">AXP</span>
+                <span className="text-xs text-gray-600 leading-tight font-medium">Adaptive Execution Platform</span>
               </div>
             </div>
           </Link>
@@ -265,11 +265,11 @@ const Layout = ({ children }) => {
               <img 
                 src="/AXP_logo_upper_left.png" 
                 alt="AXP Logo" 
-                className="h-8 w-auto"
+                className="h-10 w-auto"
               />
               <div className="flex flex-col">
-                <span className="text-base font-bold text-gray-900 leading-none">AXP</span>
-                <span className="text-[9px] text-gray-500 leading-none">Adaptive Execution Platform</span>
+                <span className="text-lg font-bold text-gray-900 leading-tight">AXP</span>
+                <span className="text-[10px] text-gray-600 leading-tight font-medium">Adaptive Execution Platform</span>
               </div>
             </div>
 
