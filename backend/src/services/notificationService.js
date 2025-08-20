@@ -8,7 +8,7 @@ export const notifyNewTrial = async (userData) => {
     const { firstName, lastName, email, organizationName } = userData;
     
     // Admin notification email
-    const adminEmail = process.env.ADMIN_NOTIFICATION_EMAIL || 'leboweric@gmail.com';
+    const adminEmail = process.env.ADMIN_NOTIFICATION_EMAIL || 'eric@profitbuildernetwork.com';
     
     const subject = `🎉 New Trial Signup: ${organizationName}`;
     
@@ -78,7 +78,7 @@ Next Steps:
  */
 export const notifyTrialConverted = async (organizationName, planName, amount) => {
   try {
-    const adminEmail = process.env.ADMIN_NOTIFICATION_EMAIL || 'leboweric@gmail.com';
+    const adminEmail = process.env.ADMIN_NOTIFICATION_EMAIL || 'eric@profitbuildernetwork.com';
     
     const subject = `💰 Trial Converted: ${organizationName} → ${planName}`;
     
