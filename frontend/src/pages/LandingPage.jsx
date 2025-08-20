@@ -217,7 +217,7 @@ const LandingPage = () => {
           <div className="text-center mb-16">
             <div className="inline-flex items-center gap-2 bg-gradient-to-r from-blue-600 to-indigo-600 text-white px-4 py-2 rounded-full text-sm font-medium mb-4">
               <Zap className="h-4 w-4" />
-              REVOLUTIONARY FEATURES
+              LEADING EDGE FEATURES
             </div>
             <h2 className="text-4xl md:text-5xl font-bold mb-4">
               Unique Features Designed
