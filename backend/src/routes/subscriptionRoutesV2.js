@@ -7,6 +7,7 @@ import {
   updateSubscription,
   applyPromoCode
 } from '../controllers/subscriptionControllerV2.js';
+import { syncSubscriptionFromStripe } from '../controllers/subscriptionSync.js';
 
 // All routes require authentication
 router.use(authenticate);
@@ -22,6 +23,9 @@ router.post('/convert-trial', authorize('admin'), convertTrialToPaid);
 
 // Update subscription (change plan - requires admin)
 router.post('/update-plan', authorize('admin'), updateSubscription);
+
+// Sync subscription from Stripe (for failed webhooks)
+router.post('/sync', syncSubscriptionFromStripe);
 
 // Get Stripe customer portal URL (for managing billing)
 router.post('/portal', authorize('admin'), async (req, res) => {

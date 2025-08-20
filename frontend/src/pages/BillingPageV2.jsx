@@ -328,9 +328,21 @@ const BillingPageV2 = () => {
       const response = await axios.get('/subscription/status');
       setSubscription(response.data);
       
-      // If already subscribed, redirect to subscription management
-      if (response.data.status === 'active') {
-        // Show current subscription instead
+      // If no active subscription in DB, try to sync from Stripe
+      if (response.data.status !== 'active') {
+        console.log('No active subscription found, attempting to sync from Stripe...');
+        try {
+          const syncResponse = await axios.post('/subscription/sync');
+          if (syncResponse.data.success) {
+            // Refetch subscription status after sync
+            const updatedResponse = await axios.get('/subscription/status');
+            setSubscription(updatedResponse.data);
+            console.log('Subscription synced successfully');
+          }
+        } catch (syncError) {
+          // Sync failed, likely no subscription in Stripe either
+          console.log('No subscription found in Stripe');
+        }
       }
     } catch (error) {
       console.error('Failed to fetch subscription:', error);
