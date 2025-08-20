@@ -167,8 +167,8 @@ const convertTrialToPaid = async (req, res) => {
         paymentMethodId,
         stripeSubscription.status,
         planId,
-        new Date(stripeSubscription.current_period_start * 1000),
-        new Date(stripeSubscription.current_period_end * 1000),
+        stripeSubscription.current_period_start ? new Date(stripeSubscription.current_period_start * 1000) : new Date(),
+        stripeSubscription.current_period_end ? new Date(stripeSubscription.current_period_end * 1000) : new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
         planFeatures.price_monthly,
         userCount,
         organizationId

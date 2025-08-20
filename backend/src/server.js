@@ -172,8 +172,19 @@ app.get('/health', (req, res) => {
   });
 });
 
-// Add trial checking middleware for all authenticated routes
-app.use('/api/v1/*', checkTrialStatus, checkTrialReminders);
+// Webhook routes MUST come before auth middleware (they have their own validation)
+app.use('/api/v1/webhooks', webhookRoutes);
+
+// Add trial checking middleware for all authenticated routes (excluding webhooks)
+app.use('/api/v1/*', (req, res, next) => {
+  // Skip middleware for webhook routes
+  if (req.path.startsWith('/webhooks')) {
+    return next();
+  }
+  checkTrialStatus(req, res, () => {
+    checkTrialReminders(req, res, next);
+  });
+});
 
 // API Routes with specific rate limiters
 app.use('/api/v1/auth', authLimiter, authRoutes);
@@ -210,9 +221,6 @@ app.use('/api/v1/demo', demoResetRoutes);
 app.use('/api/v1/terminology', terminologyRoutes);
 app.use('/api/v1', sharedMetricsRoutes);
 app.use('/api/v1', exportRoutes);
-
-// Webhook routes (must be before express.json() middleware for raw body)
-app.use('/api/v1/webhooks', webhookRoutes);
 
 // Error handling middleware
 app.use(notFound);
