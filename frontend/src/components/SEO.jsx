@@ -16,9 +16,9 @@ const SEO = ({
   
   // Default meta data
   const defaults = {
-    title: 'AXP - Adaptive Execution Platform | EOS Alternative',
-    description: 'The most affordable business operating system. Switch from EOS, Ninety.io, or any framework. Manage priorities, scorecards, and meetings. 30-day free trial.',
-    keywords: 'EOS alternative, Ninety.io alternative, business operating system, quarterly planning software, OKR software, business execution platform, EOS implementer tools, adaptive framework, business management software',
+    title: 'AXP - Adaptive Execution Platform | Business Operating System',
+    description: 'The most affordable alternative to Ninety.io, Bloom Growth, and EOS One. One platform that adapts to any business framework - EOS, OKRs, Scaling Up, or custom. 30-day free trial.',
+    keywords: 'Ninety.io alternative, Bloom Growth alternative, EOS One alternative, business operating system, business management platform, team alignment software, strategic planning software, affordable business software, adaptive business platform',
     image: defaultImage
   };
 
