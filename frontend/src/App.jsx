@@ -48,6 +48,7 @@ const WeeklyAccountabilityMeetingPage = lazy(() => import('./pages/WeeklyAccount
 const WeeklyAccountabilityMeetingPageOriginal = lazy(() => import('./pages/WeeklyAccountabilityMeetingPageOriginal'));
 const QuarterlyPlanningMeetingPage = lazy(() => import('./pages/QuarterlyPlanningMeetingPage'));
 const DocumentRepositoryPage = lazy(() => import('./pages/DocumentRepositoryPage'));
+const NotFound = lazy(() => import('./pages/NotFound'));
 const SmartRockAssistant = lazy(() => import('./pages/SmartRockAssistant'));
 const ScorecardDebug = lazy(() => import('./pages/ScorecardDebug'));
 const OAuthCallback = lazy(() => import('./pages/OAuthCallback'));
@@ -204,8 +205,8 @@ function App() {
           <Route path="/vto" element={<Navigate to="/business-blueprint" />} />
           <Route path="/rocks" element={<Navigate to="/quarterly-priorities" />} />
           
-          {/* Catch all route */}
-          <Route path="*" element={<Navigate to={user ? "/dashboard" : getDefaultRoute()} />} />
+          {/* Catch all route - 404 page */}
+          <Route path="*" element={<NotFound />} />
             </Routes>
           </Suspense>
           </div>

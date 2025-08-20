@@ -73,7 +73,7 @@ const LoginPage = () => {
             <Link to="/" className="inline-block group">
               <img 
                 src="/AXP_logo_upper_left_transparent.png?v=2" 
-                alt="AXP" 
+                alt="AXP - Adaptive Execution Platform Logo" 
                 className="h-28 w-auto transition-all duration-300 group-hover:scale-105"
               />
             </Link>
@@ -154,7 +154,7 @@ const LoginPage = () => {
             <Link to="/" className="inline-block">
               <img 
                 src="/AXP_logo_upper_left_transparent.png?v=2" 
-                alt="AXP" 
+                alt="AXP - Adaptive Execution Platform Logo" 
                 className="h-24 w-auto mx-auto"
               />
             </Link>

@@ -111,7 +111,7 @@ const RegisterPage = () => {
             <Link to="/" className="inline-block group mb-8">
               <img 
                 src="/AXP_logo_upper_left_transparent.png?v=2" 
-                alt="AXP" 
+                alt="AXP - Adaptive Execution Platform Logo" 
                 className="h-28 w-auto transition-all duration-300 group-hover:scale-105"
               />
             </Link>
@@ -195,7 +195,7 @@ const RegisterPage = () => {
             <Link to="/" className="inline-block">
               <img 
                 src="/AXP_logo_upper_left_transparent.png?v=2" 
-                alt="AXP" 
+                alt="AXP - Adaptive Execution Platform Logo" 
                 className="h-20 w-auto mx-auto"
               />
             </Link>

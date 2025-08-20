@@ -27,7 +27,7 @@ const Logo = ({
         {/* Main Logo */}
         <img 
           src="/AXP_logo_upper_left_transparent.png?v=2" 
-          alt="AXP" 
+          alt="AXP - Adaptive Execution Platform Logo" 
           className={`
             ${sizes[variant]} 
             w-auto 

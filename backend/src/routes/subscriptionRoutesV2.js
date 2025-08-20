@@ -8,9 +8,14 @@ import {
   applyPromoCode
 } from '../controllers/subscriptionControllerV2.js';
 import { syncSubscriptionFromStripe } from '../controllers/subscriptionSync.js';
+import debugSubscription from '../controllers/subscriptionDebug.js';
+import getSubscriptionStatus from '../controllers/subscriptionStatusV2.js';
 
 // All routes require authentication
 router.use(authenticate);
+
+// Get subscription status for current organization
+router.get('/status', getSubscriptionStatus);
 
 // Get available plans with pricing (includes user count and recommendations)
 router.get('/plans', getAvailablePlans);
@@ -26,6 +31,9 @@ router.post('/update-plan', authorize('admin'), updateSubscription);
 
 // Sync subscription from Stripe (for failed webhooks)
 router.post('/sync', syncSubscriptionFromStripe);
+
+// Debug endpoint to check subscription status
+router.get('/debug', debugSubscription);
 
 // Get Stripe customer portal URL (for managing billing)
 router.post('/portal', authorize('admin'), async (req, res) => {

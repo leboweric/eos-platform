@@ -12,7 +12,8 @@ export const syncSubscriptionFromStripe = async (req, res) => {
     const organizationId = req.user.organization_id;
     const userEmail = req.user.email;
     
-    console.log('Syncing subscription for org:', organizationId);
+    console.log('🔄 Starting subscription sync for org:', organizationId);
+    console.log('🔄 User email:', userEmail);
     
     // Start transaction
     await client.query('BEGIN');
@@ -26,18 +27,24 @@ export const syncSubscriptionFromStripe = async (req, res) => {
     let subscription = subResult.rows[0];
     let customerId = subscription?.stripe_customer_id;
     
+    console.log('🔍 Existing subscription in DB:', subscription ? 'Found' : 'Not found');
+    console.log('🔍 Customer ID from DB:', customerId || 'None');
+    
     // If no customer ID, search Stripe by email
     if (!customerId) {
-      console.log('No customer ID in DB, searching Stripe for email:', userEmail);
+      console.log('🔎 No customer ID in DB, searching Stripe for email:', userEmail);
       
       const customers = await stripe.customers.list({
         email: userEmail,
         limit: 10
       });
       
+      console.log(`🔎 Found ${customers.data.length} customer(s) in Stripe with email ${userEmail}`);
+      
       if (customers.data.length > 0) {
         // Find customer with active subscription
         for (const customer of customers.data) {
+          console.log(`🔎 Checking customer ${customer.id}...`);
           const subs = await stripe.subscriptions.list({
             customer: customer.id,
             status: 'active',
@@ -46,7 +53,8 @@ export const syncSubscriptionFromStripe = async (req, res) => {
           
           if (subs.data.length > 0) {
             customerId = customer.id;
-            console.log('Found customer in Stripe:', customerId);
+            console.log('✅ Found customer with active subscription in Stripe:', customerId);
+            console.log('✅ Subscription ID:', subs.data[0].id);
             break;
           }
         }
@@ -77,7 +85,9 @@ export const syncSubscriptionFromStripe = async (req, res) => {
     }
     
     const stripeSub = stripeSubscriptions.data[0];
-    console.log('Found Stripe subscription:', stripeSub.id);
+    console.log('📋 Found Stripe subscription:', stripeSub.id);
+    console.log('📋 Subscription status:', stripeSub.status);
+    console.log('📋 Price ID:', stripeSub.items.data[0]?.price.id);
     
     // Determine plan from price ID
     let planId = 'starter'; // default
