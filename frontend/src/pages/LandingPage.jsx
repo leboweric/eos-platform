@@ -603,67 +603,23 @@ const LandingPage = () => {
       </section>
 
       {/* Footer */}
-      <footer className="py-12 px-4 bg-gray-900 text-white">
+      <footer className="py-8 px-4 bg-gray-900 text-white">
         <div className="container mx-auto max-w-6xl">
-          <div className="grid md:grid-cols-4 gap-8">
-            <div>
-              <div className="flex items-center mb-4">
-                <img 
-                  src="/AXP_logo_upper_left.png" 
-                  alt="AXP" 
-                  className="h-8 w-auto brightness-0 invert"
-                />
-              </div>
-              <p className="text-gray-400 text-sm">
-                The Adaptive Execution Platform that transforms with your business.
-              </p>
+          <div className="flex flex-col items-center space-y-4">
+            <img 
+              src="/AXP_logo_upper_left.png" 
+              alt="AXP" 
+              className="h-8 w-auto brightness-0 invert"
+            />
+            <div className="flex space-x-6 text-sm text-gray-400">
+              <a href="/privacy" className="hover:text-white">Privacy</a>
+              <a href="/terms" className="hover:text-white">Terms</a>
+              <a href="#disclaimer" className="hover:text-white" onClick={(e) => {
+                e.preventDefault();
+                document.querySelector('#disclaimer-section').scrollIntoView({ behavior: 'smooth' });
+              }}>Disclaimers</a>
             </div>
-            <div>
-              <h4 className="font-semibold mb-4">Product</h4>
-              <ul className="space-y-2 text-gray-400 text-sm">
-                <li>Features</li>
-                <li>Frameworks</li>
-                <li>Integrations</li>
-                <li>Security</li>
-                <li>Pricing</li>
-              </ul>
-            </div>
-            <div>
-              <h4 className="font-semibold mb-4">Company</h4>
-              <ul className="space-y-2 text-gray-400 text-sm">
-                <li>About</li>
-                <li>Blog</li>
-                <li>Customers</li>
-                <li>Partners</li>
-                <li>Careers</li>
-              </ul>
-            </div>
-            <div>
-              <h4 className="font-semibold mb-4">Resources</h4>
-              <ul className="space-y-2 text-gray-400 text-sm">
-                <li>Documentation</li>
-                <li>API Reference</li>
-                <li>Community</li>
-                <li>Support</li>
-                <li>Status</li>
-              </ul>
-            </div>
-          </div>
-          <div className="border-t border-gray-800 mt-8 pt-8 text-gray-400 text-sm">
-            <div className="flex flex-col md:flex-row justify-between items-center">
-              <p>&copy; 2025 AXP Platform. All rights reserved.</p>
-              <div className="flex space-x-6 mt-4 md:mt-0">
-                <a href="/privacy" className="hover:text-white">Privacy</a>
-                <a href="/terms" className="hover:text-white">Terms</a>
-                <a href="#disclaimer" className="hover:text-white" onClick={(e) => {
-                  e.preventDefault();
-                  document.querySelector('#disclaimer-section').scrollIntoView({ behavior: 'smooth' });
-                }}>Disclaimers</a>
-              </div>
-            </div>
-            <p className="mt-4 text-xs text-center">
-              All trademarks mentioned are property of their respective owners. See full disclaimer above.
-            </p>
+            <p className="text-sm text-gray-400">&copy; 2025 AXP Platform. All rights reserved.</p>
           </div>
         </div>
       </footer>
