@@ -303,12 +303,22 @@ export const sendEmail = async (to, templateName, data) => {
   sgMail.setApiKey(process.env.SENDGRID_API_KEY);
 
   try {
-    const template = templates[templateName];
-    if (!template) {
-      throw new Error(`Email template '${templateName}' not found`);
+    let emailContent;
+    
+    // Handle special case for dailyActiveUsers where content is pre-formatted
+    if (templateName === 'dailyActiveUsers') {
+      emailContent = {
+        subject: data.subject || 'Daily Active Users Report',
+        html: data.htmlContent,
+        text: data.textContent
+      };
+    } else {
+      const template = templates[templateName];
+      if (!template) {
+        throw new Error(`Email template '${templateName}' not found`);
+      }
+      emailContent = template(data);
     }
-
-    const emailContent = template(data);
     
     const msg = {
       to,

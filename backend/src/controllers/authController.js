@@ -233,6 +233,13 @@ export const login = async (req, res) => {
       [user.id]
     );
 
+    // Track login for daily active users report
+    await query(
+      `INSERT INTO user_login_tracking (user_id, organization_id, ip_address, user_agent, auth_method)
+       VALUES ($1, $2, $3, $4, $5)`,
+      [user.id, user.organization_id, req.ip, req.get('user-agent'), 'password']
+    ).catch(err => console.error('Failed to track login:', err));
+
     // Generate tokens
     const { accessToken, refreshToken } = generateTokens(user.id);
 

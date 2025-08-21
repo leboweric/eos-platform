@@ -138,6 +138,19 @@ export const handleGoogleCallback = async (req, res) => {
       );
     }
 
+    // Update last login and track for daily active users
+    await db.query(
+      'UPDATE users SET last_login_at = NOW() WHERE id = $1',
+      [user.id]
+    );
+    
+    // Track login for daily active users report
+    await db.query(
+      `INSERT INTO user_login_tracking (user_id, organization_id, ip_address, user_agent, auth_method)
+       VALUES ($1, $2, $3, $4, $5)`,
+      [user.id, user.organization_id, req.ip, req.get('user-agent'), 'google']
+    ).catch(err => console.error('Failed to track login:', err));
+
     // Generate JWT token
     const token = generateToken(user);
     

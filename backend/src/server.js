@@ -39,6 +39,7 @@ import sharedMetricsRoutes from './routes/sharedMetrics.js';
 import terminologyRoutes from './routes/terminology.js';
 import oauthRoutes from './routes/oauth.js';
 import exportRoutes from './routes/export.js';
+import dailyActiveUsersRoutes from './routes/dailyActiveUsers.js';
 
 // Import middleware
 import { errorHandler } from './middleware/errorHandler.js';
@@ -47,6 +48,7 @@ import { checkTrialStatus, checkTrialReminders } from './middleware/trialCheck.j
 
 // Import jobs
 import { initializeSubscriptionJobs } from './jobs/subscriptionJobs.js';
+import { initializeScheduledJobs } from './services/scheduledJobs.js';
 
 // Import utilities
 import { ensureUploadsDirectory } from './utils/ensureUploadsDirectory.js';
@@ -221,6 +223,7 @@ app.use('/api/v1/demo', demoResetRoutes);
 app.use('/api/v1/terminology', terminologyRoutes);
 app.use('/api/v1', sharedMetricsRoutes);
 app.use('/api/v1', exportRoutes);
+app.use('/api/v1/daily-active-users', dailyActiveUsersRoutes);
 
 // Error handling middleware
 app.use(notFound);
@@ -228,6 +231,7 @@ app.use(errorHandler);
 
 // Initialize cron jobs
 initializeSubscriptionJobs();
+initializeScheduledJobs();
 
 // Create HTTP server for Socket.io
 const server = createServer(app);

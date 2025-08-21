@@ -58,6 +58,11 @@ npm run build       # Build for production
 
 ## Database Best Practices
 
+### Database Management
+- **User uses pgAdmin** for database management
+- Always provide raw SQL code that can be copied and pasted into pgAdmin
+- Include any necessary migration scripts as standalone SQL files
+
 ### Creating Organizations - CRITICAL
 ```sql
 -- ✅ CORRECT: Use gen_random_uuid() for Leadership Team
