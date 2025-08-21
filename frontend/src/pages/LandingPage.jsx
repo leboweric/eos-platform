@@ -567,45 +567,10 @@ const LandingPage = () => {
         </div>
       </section>
 
-      {/* Disclaimer & Attribution Section */}
-      <section id="disclaimer-section" className="py-12 px-4 bg-gray-50 border-t border-gray-200">
+      {/* Footer with Disclaimer */}
+      <footer className="py-12 px-4" style={{ backgroundColor: '#1e3a8a' }}>
         <div className="container mx-auto max-w-6xl">
-          <div className="text-center mb-8">
-            <h3 className="text-2xl font-bold mb-4">Framework Independence & Attribution</h3>
-            <div className="max-w-4xl mx-auto space-y-4 text-sm text-gray-600 text-left">
-              <p className="font-semibold text-gray-800">
-                AXP is an independent software platform with no affiliation to any business methodology organization.
-              </p>
-              <p>
-                <strong>Trademark Acknowledgments:</strong> EOS® and Entrepreneurial Operating System® are registered trademarks of EOS Worldwide, LLC. 
-                Scaling Up® and Rockefeller Habits® are registered trademarks of Gazelles, Inc. 
-                OKR (Objectives and Key Results) methodology was developed by Andy Grove at Intel. 
-                4DX® (4 Disciplines of Execution) is a registered trademark of Franklin Covey Co.
-              </p>
-              <p>
-                <strong>Our Position:</strong> AXP is a framework-agnostic execution platform that enables organizations to implement 
-                their chosen business operating system. We provide the software infrastructure to support various methodologies 
-                but are not endorsed by, affiliated with, or certified by any of these organizations. 
-                Organizations should seek official training and certification from the respective methodology providers.
-              </p>
-              <p>
-                <strong>Software Comparison:</strong> References to Ninety.io™, Bloom Growth™, and EOS One™ are for comparative purposes only. 
-                These are trademarks of their respective owners, and we have no affiliation with these companies. 
-                Our platform offers similar functionality with the unique ability to adapt between frameworks.
-              </p>
-              <p className="italic">
-                We encourage organizations to work with certified implementers and coaches from their chosen methodology 
-                while using AXP as their execution platform.
-              </p>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* Footer */}
-      <footer className="py-8 px-4 bg-gray-900 text-white">
-        <div className="container mx-auto max-w-6xl">
-          <div className="flex flex-col items-center space-y-4">
+          <div className="flex flex-col items-center space-y-6">
             <div className="flex items-center gap-2">
               <img 
                 src="/AXP_logo_upper_left.png" 
@@ -613,17 +578,31 @@ const LandingPage = () => {
                 className="h-10 w-auto"
                 style={{ filter: 'brightness(0) invert(1)' }}
               />
-              <span className="text-2xl font-bold">AXP</span>
+              <span className="text-2xl font-bold text-white">AXP</span>
             </div>
-            <div className="flex space-x-6 text-sm text-gray-400">
+            
+            {/* Disclaimer text */}
+            <div className="max-w-4xl mx-auto text-center space-y-3 text-xs text-blue-100">
+              <p className="font-semibold text-white">
+                AXP is an independent software platform with no affiliation to any business methodology organization.
+              </p>
+              <p>
+                EOS® and Entrepreneurial Operating System® are registered trademarks of EOS Worldwide, LLC. 
+                Scaling Up® is a registered trademark of Gazelles, Inc. 
+                OKR methodology was developed by Andy Grove at Intel. 
+                4DX® is a registered trademark of Franklin Covey Co.
+                Ninety.io™, Bloom Growth™, and EOS One™ are trademarks of their respective owners.
+              </p>
+              <p>
+                We provide software infrastructure to support various methodologies but are not endorsed by, affiliated with, or certified by any of these organizations.
+              </p>
+            </div>
+            
+            <div className="flex space-x-6 text-sm text-blue-200">
               <a href="/privacy" className="hover:text-white">Privacy</a>
               <a href="/terms" className="hover:text-white">Terms</a>
-              <a href="#disclaimer" className="hover:text-white" onClick={(e) => {
-                e.preventDefault();
-                document.querySelector('#disclaimer-section').scrollIntoView({ behavior: 'smooth' });
-              }}>Disclaimers</a>
             </div>
-            <p className="text-sm text-gray-400">&copy; 2025 AXP Platform. All rights reserved.</p>
+            <p className="text-sm text-blue-200">&copy; 2025 AXP Platform. All rights reserved.</p>
           </div>
         </div>
       </footer>
