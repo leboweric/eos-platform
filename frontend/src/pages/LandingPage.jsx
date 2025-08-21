@@ -143,21 +143,23 @@ const LandingPage = () => {
         keywords="EOS alternative, Ninety.io alternative, business operating system, OKR software, quarterly planning, business management platform, adaptive framework, EOS tools"
       />
       {/* Header */}
-      <header className="border-b bg-white/95 backdrop-blur supports-[backdrop-filter]:bg-white/60 sticky top-0 z-50">
+      <header className="sticky top-0 z-50 shadow-md" style={{ backgroundColor: '#1e3a8a' }}>
         <div className="container mx-auto px-4 py-4 flex items-center justify-between">
-          <div className="flex items-center">
+          <div className="flex items-center gap-3">
             <img 
-              src="/AXP_logo_upper_left_transparent.png" 
+              src="/AXP_logo_upper_left.png" 
               alt="AXP" 
-              className="h-20 w-auto"
+              className="h-16 w-auto"
+              style={{ filter: 'brightness(0) invert(1)' }}
             />
+            <span className="text-3xl font-bold text-white">AXP</span>
           </div>
           <div className="flex items-center space-x-4">
             <Link to="/login">
-              <Button variant="ghost">Sign In</Button>
+              <Button variant="ghost" className="text-white hover:bg-white/20">Sign In</Button>
             </Link>
             <Link to="/register">
-              <Button className="bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700">
+              <Button className="bg-white text-blue-700 hover:bg-gray-100">
                 Get Started
               </Button>
             </Link>
