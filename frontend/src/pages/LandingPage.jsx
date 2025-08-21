@@ -119,20 +119,17 @@ const LandingPage = () => {
 
   const testimonials = [
     {
-      name: 'Michael Thompson',
       role: 'CEO, Strategic Advisory Firm',
       content: 'The ability to use our own Microsoft cloud storage while getting enterprise features is unprecedented. This platform understands enterprise needs.',
       rating: 5
     },
     {
-      name: 'Sarah Chen',
-      role: 'EOS Implementer',
+      role: 'Business Coach',
       content: 'Finally, a platform that respects the methodology but enhances it with modern technology. The real-time meeting features are revolutionary.',
       rating: 5
     },
     {
-      name: 'David Rodriguez',
-      role: 'COO, Growth Company',
+      role: 'COO, Growing Company',
       content: 'We switched frameworks three times before finding what worked. With AXP, we just toggle settings. It\'s that simple.',
       rating: 5
     }
@@ -510,7 +507,7 @@ const LandingPage = () => {
           <div className="text-center mb-16">
             <h2 className="text-4xl font-bold mb-4">Leaders Who've Made the Switch</h2>
             <p className="text-xl text-gray-600">
-              From Fortune 500s to scaling startups, see why they chose AXP.
+              From established companies to scaling startups, see why they chose AXP.
             </p>
           </div>
           
@@ -528,8 +525,7 @@ const LandingPage = () => {
                   </CardDescription>
                 </CardHeader>
                 <CardContent>
-                  <div className="font-semibold">{testimonial.name}</div>
-                  <div className="text-sm text-gray-500">{testimonial.role}</div>
+                  <div className="text-sm text-gray-600 font-medium">{testimonial.role}</div>
                 </CardContent>
               </Card>
             ))}
