@@ -55,44 +55,67 @@ const LandingPage = () => {
       highlight: 'Unique'
     },
     {
+      icon: Shield,
+      title: 'Enterprise OAuth & SSO',
+      description: 'Google and Microsoft authentication built-in. Your IT team will love the security and simplicity.',
+      highlight: 'Enterprise Ready'
+    },
+    {
       icon: Brain,
-      title: 'AI-Powered Insights',
-      description: 'Smart priority assistant analyzes your data to suggest optimal goals and predict bottlenecks.',
-      highlight: 'Coming Soon'
+      title: 'AI Strategic Assistant',
+      description: 'SMART goal validation, milestone generation, and alignment checking powered by GPT-4.',
+      highlight: 'AI Powered'
+    },
+    {
+      icon: Palette,
+      title: 'White-Label Ready',
+      description: 'Custom domains, branded login portals, and complete visual customization for consultants.',
+      highlight: 'Your Brand'
     }
   ];
 
-  // Core features organized by workflow
-  const features = {
-    'Strategic Planning': [
-      'Dynamic 2-Page Business Plans',
-      'Strategic Planning Documents',
-      'Core Values & Focus Management',
-      '10-Year Target → 3-Year Picture → 1-Year Plan cascade',
-      'Marketing Strategy Builder'
-    ],
-    'Execution Excellence': [
-      'Quarterly Priorities with Milestones',
-      'Department-to-Company Alignment',
-      'Progress Tracking & Status Updates',
-      'Accountability Chart',
-      'Process Documentation'
-    ],
-    'Performance Management': [
-      'Weekly & Monthly Scorecards',
-      'Drag-and-drop Metric Grouping',
-      'Red/Yellow/Green Goal Tracking',
-      'Trend Analysis & Insights',
-      'Excel Export for Reports'
-    ],
-    'Meeting Productivity': [
-      'Weekly Meeting Facilitation',
-      'Quarterly Planning Sessions',
-      'Structured Problem Solving',
-      'Meeting Summary Emails',
-      'Action Item Tracking'
-    ]
-  };
+  const coreCapabilities = [
+    {
+      category: 'Strategic Planning',
+      features: [
+        'Dynamic 2-Page Business Plans',
+        'Strategic Planning Documents',
+        'Core Values & Focus Management',
+        '10-Year Target → 3-Year Picture → 1-Year Plan cascade',
+        'Marketing Strategy Builder'
+      ]
+    },
+    {
+      category: 'Execution Excellence',
+      features: [
+        'Quarterly Priorities with Milestones',
+        'Department-to-Company Alignment',
+        'Progress Tracking & Status Updates',
+        'Accountability Chart',
+        'Process Documentation'
+      ]
+    },
+    {
+      category: 'Performance Management',
+      features: [
+        'Weekly & Monthly Scorecards',
+        'Drag-and-drop Metric Grouping',
+        'Red/Yellow/Green Goal Tracking',
+        'Trend Analysis & Insights',
+        'Excel Export for Reports'
+      ]
+    },
+    {
+      category: 'Meeting Productivity',
+      features: [
+        'Weekly Meeting Facilitation',
+        'Quarterly Planning Sessions',
+        'Structured Problem Solving',
+        'Meeting Summary Emails',
+        'Action Item Tracking'
+      ]
+    }
+  ];
 
   const testimonials = [
     {
@@ -142,111 +165,114 @@ const LandingPage = () => {
         </div>
       </header>
 
-      {/* Hero Section - Clean and Bold */}
-      <section className="pt-20 pb-24 px-4 bg-gradient-to-br from-slate-50 via-blue-50/30 to-indigo-50/30">
-        <div className="container mx-auto max-w-6xl">
-          <div className="text-center">
-            <div className="inline-flex items-center gap-2 bg-white/60 backdrop-blur px-4 py-2 rounded-full border border-slate-200/50 mb-6">
-              <Sparkles className="h-4 w-4 text-indigo-600" />
-              <span className="text-sm font-medium text-slate-700">
-                Supporting EOS, 4DX, OKRs, Scaling Up or Your Custom Framework
-              </span>
-            </div>
-            
-            <h1 className="text-5xl md:text-7xl font-bold mb-6 bg-gradient-to-r from-slate-900 to-slate-700 bg-clip-text text-transparent">
-              The Business Operating Platform<br />
-              <span className="text-4xl md:text-5xl">That Adapts to You</span>
-            </h1>
-            
-            <p className="text-xl text-slate-600 mb-8 max-w-3xl mx-auto">
-              The perfect platform for any business operating system. 
-              Switch methodologies instantly. Keep all your data. Pay less.
-            </p>
-
-            <div className="flex flex-col sm:flex-row gap-4 justify-center mb-12">
-              <Link to="/register">
-                <Button size="lg" className="text-lg px-8 py-6 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700">
-                  Start Executing
-                  <ArrowRight className="ml-2 h-5 w-5" />
-                </Button>
-              </Link>
-            </div>
-
-            {/* Trust Badges */}
-            <div className="flex flex-wrap justify-center gap-8 text-sm text-slate-600">
-              <div className="flex items-center gap-2">
-                <CheckCircle className="h-5 w-5 text-green-500" />
-                <span>30-Day Free Trial</span>
-              </div>
-              <div className="flex items-center gap-2">
-                <CheckCircle className="h-5 w-5 text-green-500" />
-                <span>No Credit Card Required</span>
-              </div>
-              <div className="flex items-center gap-2">
-                <CheckCircle className="h-5 w-5 text-green-500" />
-                <span>Cancel Anytime</span>
-              </div>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* Framework Independence & Attribution */}
-      <section id="disclaimer" className="py-16 px-4 bg-white border-y">
-        <div className="container mx-auto max-w-4xl">
-          <div className="text-center mb-8">
-            <Shield className="h-12 w-12 text-blue-600 mx-auto mb-4" />
-            <h2 className="text-2xl font-bold mb-4">Framework Independence & Attribution</h2>
+      {/* Hero Section - Bold Statement */}
+      <section className="py-20 px-4 text-center bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50 relative overflow-hidden">
+        <div className="absolute inset-0 bg-grid-slate-100 [mask-image:linear-gradient(0deg,white,rgba(255,255,255,0.6))] -z-10"></div>
+        <div className="container mx-auto max-w-5xl">
+          <div className="inline-flex items-center gap-2 bg-blue-100 text-blue-700 px-4 py-2 rounded-full text-sm font-medium mb-6">
+            <Sparkles className="h-4 w-4" />
+            Supporting EOS, 4DX, OKRs, Scaling Up or Your Custom Framework
           </div>
           
-          <div className="prose prose-slate max-w-none">
-            <div className="bg-slate-50 rounded-xl p-6 mb-6">
-              <p className="text-sm text-slate-700 leading-relaxed mb-4">
-                <strong>Platform Independence:</strong> AXP is an independent software platform that enables organizations to implement various business methodologies. 
-                We have no affiliation with, endorsement from, or partnership with any of the methodology creators or organizations mentioned on this site.
-              </p>
-              
-              <p className="text-sm text-slate-700 leading-relaxed mb-4">
-                <strong>Trademark Acknowledgments:</strong> EOS® and Entrepreneurial Operating System® are registered trademarks of EOS Worldwide, LLC. 
-                Scaling Up® and Rockefeller Habits® are registered trademarks of Gazelles, Inc. 
-                OKR (Objectives and Key Results) methodology was developed by Andy Grove at Intel. 
-                4DX® (4 Disciplines of Execution) is a registered trademark of Franklin Covey Co.
-              </p>
-              
-              <p className="text-sm text-slate-700 leading-relaxed mb-4">
-                <strong>Platform Purpose:</strong> AXP provides a flexible technology platform that can support multiple business operating systems. 
-                Organizations should work with certified implementers, coaches, or consultants for methodology-specific guidance and training.
-              </p>
-              
-              <p className="text-sm text-slate-700 leading-relaxed">
-                <strong>Software Comparison:</strong> References to Ninety.io™, Bloom Growth™, and EOS One™ are for comparative purposes only.
-                These platforms are property of their respective companies. We encourage organizations to evaluate all options to find the best fit for their needs.
-              </p>
+          <h1 className="text-5xl md:text-7xl font-bold mb-6 bg-gradient-to-r from-slate-900 via-blue-900 to-indigo-900 bg-clip-text text-transparent">
+            The Business Operating Platform That
+            <br />
+            <span className="text-blue-600">Adapts to You</span>
+          </h1>
+          
+          <p className="text-xl md:text-2xl text-gray-700 mb-8 max-w-3xl mx-auto leading-relaxed">
+            The perfect platform for any business operating system.
+            <br />
+            <span className="font-semibold">The world's first truly adaptive platform</span> that transforms 
+            with your methodology, integrates with your cloud, and evolves with your business.
+          </p>
+          
+          <div className="flex flex-col sm:flex-row gap-4 justify-center mb-8">
+            <Link to="/register">
+              <Button size="lg" className="text-lg px-8 py-6 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700">
+                Start Executing
+                <ArrowRight className="ml-2 h-5 w-5" />
+              </Button>
+            </Link>
+          </div>
+          
+          <div className="flex flex-wrap justify-center gap-8 text-sm text-gray-600">
+            <div className="flex items-center gap-2">
+              <CheckCircle className="h-5 w-5 text-green-500" />
+              <span>No credit card required</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <CheckCircle className="h-5 w-5 text-green-500" />
+              <span>30-day free trial</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <CheckCircle className="h-5 w-5 text-green-500" />
+              <span>Switch frameworks anytime or build your own</span>
             </div>
           </div>
         </div>
       </section>
 
-      {/* Visual Framework Switcher Demo */}
-      <section className="py-20 px-4 bg-gradient-to-br from-white via-slate-50 to-white">
-        <div className="container mx-auto max-w-6xl">
+      {/* Game Changers Section */}
+      <section className="py-20 px-4 bg-white">
+        <div className="container mx-auto max-w-7xl">
           <div className="text-center mb-16">
-            <div className="inline-flex items-center gap-2 bg-gradient-to-r from-blue-600 to-indigo-600 text-white px-4 py-2 rounded-full text-sm font-medium mb-6">
-              <RefreshCw className="h-4 w-4" />
-              ADAPTIVE FRAMEWORK TECHNOLOGY
+            <div className="inline-flex items-center gap-2 bg-gradient-to-r from-blue-600 to-indigo-600 text-white px-4 py-2 rounded-full text-sm font-medium mb-4">
+              <Zap className="h-4 w-4" />
+              LEADING EDGE FEATURES
             </div>
-            <h2 className="text-4xl font-bold mb-6">
-              One Platform. Any Methodology.
+            <h2 className="text-4xl md:text-5xl font-bold mb-4">
+              Unique Features Designed
+              <br />
+              <span className="text-blue-600">For Your Success</span>
             </h2>
             <p className="text-xl text-gray-600 max-w-3xl mx-auto">
-              Unlike other platforms locked to a single framework, AXP transforms instantly 
-              to match your chosen methodology.
+              We've reimagined what's possible when 
+              technology truly serves strategy.
             </p>
           </div>
+          
+          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
+            {gameChangers.map((feature, index) => (
+              <Card key={index} className="relative border-2 hover:border-blue-500 transition-all duration-300 hover:shadow-xl group">
+                <div className="absolute -top-3 left-4">
+                  <span className="bg-gradient-to-r from-blue-600 to-indigo-600 text-white text-xs px-3 py-1 rounded-full font-semibold">
+                    {feature.highlight}
+                  </span>
+                </div>
+                <CardHeader className="pt-8">
+                  <div className="w-14 h-14 bg-gradient-to-br from-blue-100 to-indigo-100 rounded-lg flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
+                    <feature.icon className="h-7 w-7 text-blue-600" />
+                  </div>
+                  <CardTitle className="text-xl mb-3">{feature.title}</CardTitle>
+                  <CardDescription className="text-base text-gray-700">
+                    {feature.description}
+                  </CardDescription>
+                </CardHeader>
+              </Card>
+            ))}
+          </div>
+        </div>
+      </section>
 
+      {/* Adaptive Framework Showcase */}
+      <section className="py-20 px-4 bg-gradient-to-br from-gray-50 to-blue-50">
+        <div className="container mx-auto max-w-6xl">
           <div className="grid lg:grid-cols-2 gap-12 items-center">
             <div>
-              <h3 className="text-2xl font-bold mb-6">Switch frameworks anytime or switch to your own</h3>
+              <div className="inline-flex items-center gap-2 bg-blue-100 text-blue-700 px-4 py-2 rounded-full text-sm font-medium mb-6">
+                <Layers className="h-4 w-4" />
+                ADAPTIVE FRAMEWORK TECHNOLOGY™
+              </div>
+              <h2 className="text-4xl font-bold mb-6">
+                One Platform.
+                <br />
+                <span className="text-blue-600">Every Methodology.</span>
+              </h2>
+              <p className="text-lg text-gray-700 mb-8">
+                Your business is unique. Your execution platform should be too. 
+                Switch between proven frameworks or create your own—all your data transforms seamlessly.
+              </p>
               
               <div className="space-y-4">
                 <div className="flex items-start gap-3">
@@ -355,74 +381,90 @@ const LandingPage = () => {
         </div>
       </section>
 
-      {/* Leading Edge Features Grid */}
-      <section className="py-20 px-4 bg-gradient-to-br from-slate-50 via-white to-slate-50">
-        <div className="container mx-auto max-w-6xl">
+      {/* Core Capabilities Grid */}
+      <section className="py-20 px-4 bg-white">
+        <div className="container mx-auto max-w-7xl">
           <div className="text-center mb-16">
-            <div className="inline-flex items-center gap-2 bg-gradient-to-r from-purple-600 to-pink-600 text-white px-4 py-2 rounded-full text-sm font-medium mb-6">
-              <Zap className="h-4 w-4" />
-              LEADING EDGE FEATURES
-            </div>
-            <h2 className="text-4xl font-bold mb-6">
-              Features That Actually Matter
+            <h2 className="text-4xl font-bold mb-4">
+              Everything You Need
+              <br />
+              <span className="text-blue-600">To Execute Your Vision</span>
             </h2>
             <p className="text-xl text-gray-600 max-w-3xl mx-auto">
-              Built by operators, for operators. Every feature designed to save time and drive results.
+              Comprehensive capabilities that work together seamlessly to support your chosen business framework.
             </p>
           </div>
           
-          <div className="grid md:grid-cols-2 gap-8">
-            {gameChangers.map((feature, index) => (
-              <div key={index} className="bg-white rounded-2xl p-8 shadow-lg border border-gray-100 hover:shadow-xl transition-shadow">
-                <div className="flex items-start gap-4">
-                  <div className="p-3 bg-gradient-to-br from-blue-50 to-indigo-50 rounded-xl">
-                    <feature.icon className="h-8 w-8 text-blue-600" />
+          <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-8">
+            {coreCapabilities.map((category, index) => (
+              <div key={index} className="space-y-4">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-indigo-500 rounded-lg flex items-center justify-center">
+                    <Target className="h-5 w-5 text-white" />
                   </div>
-                  <div className="flex-1">
-                    <div className="flex items-center gap-2 mb-2">
-                      <h3 className="text-xl font-bold">{feature.title}</h3>
-                      <span className="px-2 py-1 bg-gradient-to-r from-blue-600 to-indigo-600 text-white text-xs rounded-full font-medium">
-                        {feature.highlight}
-                      </span>
-                    </div>
-                    <p className="text-gray-600">{feature.description}</p>
-                  </div>
+                  <h3 className="font-bold text-lg">{category.category}</h3>
                 </div>
-              </div>
-            ))}
-          </div>
-
-          {/* Additional Features Grid */}
-          <div className="mt-16 grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {[
-              { icon: Palette, title: 'White-Label Ready', desc: 'Custom branding for consultants' },
-              { icon: Shield, title: 'Bank-Level Security', desc: '256-bit encryption & SOC2 compliant' },
-              { icon: Globe, title: 'Integration Ready', desc: 'RESTful APIs and webhooks enable custom integrations with your tools.' },
-              { icon: Users, title: 'Department Views', desc: 'Filtered dashboards for each team' },
-              { icon: FileText, title: 'Document Storage', desc: 'Your cloud, your documents' },
-              { icon: TrendingUp, title: 'Predictive Analytics', desc: 'AI-powered trend analysis' }
-            ].map((item, i) => (
-              <div key={i} className="flex items-start gap-4 p-6 bg-white rounded-xl border border-gray-100">
-                <div className="flex items-center gap-4">
-                  <div className="w-12 h-12 bg-orange-100 rounded-lg flex items-center justify-center flex-shrink-0">
-                    <item.icon className="h-6 w-6 text-orange-600" />
-                  </div>
-                  <div>
-                    <h4 className="font-semibold mb-1">{item.title}</h4>
-                    <p className="text-sm text-gray-600">{item.desc}</p>
-                  </div>
-                </div>
+                <ul className="space-y-2">
+                  {category.features.map((feature, idx) => (
+                    <li key={idx} className="flex items-start gap-2">
+                      <CheckCircle className="h-4 w-4 text-green-500 mt-0.5 flex-shrink-0" />
+                      <span className="text-sm text-gray-700">{feature}</span>
+                    </li>
+                  ))}
+                </ul>
               </div>
             ))}
           </div>
         </div>
       </section>
 
-      {/* Enterprise Section */}
-      <section className="py-20 px-4 bg-white">
+      {/* Integration & Security */}
+      <section className="py-20 px-4 bg-gradient-to-br from-slate-50 to-gray-50">
         <div className="container mx-auto max-w-6xl">
           <div className="grid lg:grid-cols-2 gap-12 items-center">
-            <div>
+            <div className="order-2 lg:order-1">
+              <div className="bg-white rounded-xl shadow-xl p-8">
+                <div className="space-y-6">
+                  <div className="flex items-start gap-4">
+                    <div className="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center flex-shrink-0">
+                      <Cloud className="h-6 w-6 text-blue-600" />
+                    </div>
+                    <div>
+                      <h4 className="font-semibold mb-1">Your Cloud Storage</h4>
+                      <p className="text-sm text-gray-600">Connect Google Drive, OneDrive, or SharePoint. Your data stays in YOUR cloud.</p>
+                    </div>
+                  </div>
+                  <div className="flex items-start gap-4">
+                    <div className="w-12 h-12 bg-green-100 rounded-lg flex items-center justify-center flex-shrink-0">
+                      <Shield className="h-6 w-6 text-green-600" />
+                    </div>
+                    <div>
+                      <h4 className="font-semibold mb-1">Enterprise Security</h4>
+                      <p className="text-sm text-gray-600">OAuth 2.0, SSO, 2FA, SOC 2 compliant. Your IT team's requirements, met.</p>
+                    </div>
+                  </div>
+                  <div className="flex items-start gap-4">
+                    <div className="w-12 h-12 bg-purple-100 rounded-lg flex items-center justify-center flex-shrink-0">
+                      <Building className="h-6 w-6 text-purple-600" />
+                    </div>
+                    <div>
+                      <h4 className="font-semibold mb-1">White-Label Options</h4>
+                      <p className="text-sm text-gray-600">Custom domains, branded portals. Make it yours.</p>
+                    </div>
+                  </div>
+                  <div className="flex items-start gap-4">
+                    <div className="w-12 h-12 bg-orange-100 rounded-lg flex items-center justify-center flex-shrink-0">
+                      <Globe className="h-6 w-6 text-orange-600" />
+                    </div>
+                    <div>
+                      <h4 className="font-semibold mb-1">Integration Ready</h4>
+                      <p className="text-sm text-gray-600">RESTful APIs and webhooks enable custom integrations with your tools.</p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div className="order-1 lg:order-2">
               <div className="inline-flex items-center gap-2 bg-green-100 text-green-700 px-4 py-2 rounded-full text-sm font-medium mb-6">
                 <Lock className="h-4 w-4" />
                 ENTERPRISE READY
@@ -467,11 +509,11 @@ const LandingPage = () => {
           
           <div className="grid md:grid-cols-3 gap-8">
             {testimonials.map((testimonial, index) => (
-              <Card key={index} className="hover:shadow-lg transition-shadow">
+              <Card key={index} className="border-2 hover:border-blue-500 transition-colors">
                 <CardHeader>
-                  <div className="flex mb-2">
+                  <div className="flex mb-4">
                     {[...Array(testimonial.rating)].map((_, i) => (
-                      <Star key={i} className="h-5 w-5 fill-yellow-400 text-yellow-400" />
+                      <Star key={i} className="h-5 w-5 text-yellow-400 fill-current" />
                     ))}
                   </div>
                   <CardDescription className="text-base text-gray-700 italic">
@@ -488,7 +530,8 @@ const LandingPage = () => {
       </section>
 
       {/* CTA Section */}
-      <section className="py-20 px-4 bg-gradient-to-r from-blue-600 to-indigo-600 text-white">
+      <section className="py-20 px-4 bg-gradient-to-r from-blue-600 to-indigo-600 text-white relative overflow-hidden">
+        <div className="absolute inset-0 bg-grid-white/10 [mask-image:linear-gradient(0deg,white,rgba(255,255,255,0.6))] -z-10"></div>
         <div className="container mx-auto max-w-4xl text-center relative z-10">
           <div className="inline-flex items-center gap-2 bg-white/20 backdrop-blur text-white px-4 py-2 rounded-full text-sm font-medium mb-6">
             <Sparkles className="h-4 w-4" />
@@ -510,7 +553,6 @@ const LandingPage = () => {
                 <ArrowRight className="ml-2 h-5 w-5" />
               </Button>
             </Link>
-            
           </div>
           
           <div className="mt-12 pt-8 border-t border-white/20">
@@ -525,64 +567,103 @@ const LandingPage = () => {
         </div>
       </section>
 
-      {/* Pricing Section */}
-      <section className="py-20 px-4 bg-gradient-to-br from-gray-50 to-white">
+      {/* Disclaimer & Attribution Section */}
+      <section id="disclaimer-section" className="py-12 px-4 bg-gray-50 border-t border-gray-200">
         <div className="container mx-auto max-w-6xl">
-          <div className="text-center mb-16">
-            <h2 className="text-4xl font-bold mb-4">Simple, Transparent Pricing</h2>
-            <p className="text-xl text-gray-600">All features included. Just choose your team size.</p>
-          </div>
-          
-          <div className="grid md:grid-cols-4 gap-6">
-            {[
-              { name: 'Startup', users: 'Up to 10 users', price: '$97', period: '/month' },
-              { name: 'Growth', users: 'Up to 25 users', price: '$297', period: '/month', popular: true },
-              { name: 'Scale', users: 'Up to 50 users', price: '$497', period: '/month' },
-              { name: 'Enterprise', users: '50+ users', price: 'Custom', period: '' }
-            ].map((plan, i) => (
-              <Card key={i} className={plan.popular ? 'border-blue-500 shadow-xl relative' : ''}>
-                {plan.popular && (
-                  <div className="absolute -top-4 left-1/2 transform -translate-x-1/2 bg-gradient-to-r from-blue-600 to-indigo-600 text-white px-4 py-1 rounded-full text-sm">
-                    Most Popular
-                  </div>
-                )}
-                <CardHeader className="text-center">
-                  <CardTitle>{plan.name}</CardTitle>
-                  <CardDescription>{plan.users}</CardDescription>
-                  <div className="mt-4">
-                    <span className="text-4xl font-bold">{plan.price}</span>
-                    <span className="text-gray-600">{plan.period}</span>
-                  </div>
-                </CardHeader>
-                <CardContent>
-                  <Link to="/register">
-                    <Button className="w-full" variant={plan.popular ? 'default' : 'outline'}>
-                      Get Started
-                    </Button>
-                  </Link>
-                </CardContent>
-              </Card>
-            ))}
+          <div className="text-center mb-8">
+            <h3 className="text-2xl font-bold mb-4">Framework Independence & Attribution</h3>
+            <div className="max-w-4xl mx-auto space-y-4 text-sm text-gray-600 text-left">
+              <p className="font-semibold text-gray-800">
+                AXP is an independent software platform with no affiliation to any business methodology organization.
+              </p>
+              <p>
+                <strong>Trademark Acknowledgments:</strong> EOS® and Entrepreneurial Operating System® are registered trademarks of EOS Worldwide, LLC. 
+                Scaling Up® and Rockefeller Habits® are registered trademarks of Gazelles, Inc. 
+                OKR (Objectives and Key Results) methodology was developed by Andy Grove at Intel. 
+                4DX® (4 Disciplines of Execution) is a registered trademark of Franklin Covey Co.
+              </p>
+              <p>
+                <strong>Our Position:</strong> AXP is a framework-agnostic execution platform that enables organizations to implement 
+                their chosen business operating system. We provide the software infrastructure to support various methodologies 
+                but are not endorsed by, affiliated with, or certified by any of these organizations. 
+                Organizations should seek official training and certification from the respective methodology providers.
+              </p>
+              <p>
+                <strong>Software Comparison:</strong> References to Ninety.io™, Bloom Growth™, and EOS One™ are for comparative purposes only. 
+                These are trademarks of their respective owners, and we have no affiliation with these companies. 
+                Our platform offers similar functionality with the unique ability to adapt between frameworks.
+              </p>
+              <p className="italic">
+                We encourage organizations to work with certified implementers and coaches from their chosen methodology 
+                while using AXP as their execution platform.
+              </p>
+            </div>
           </div>
         </div>
       </section>
 
       {/* Footer */}
-      <footer className="py-8 px-4 bg-gray-900 text-white">
-        <div className="container mx-auto max-w-6xl text-center">
-          <div className="flex items-center justify-center mb-4">
-            <img 
-              src="/AXP_logo_upper_left.png" 
-              alt="AXP" 
-              className="h-10 w-auto brightness-0 invert"
-            />
+      <footer className="py-12 px-4 bg-gray-900 text-white">
+        <div className="container mx-auto max-w-6xl">
+          <div className="grid md:grid-cols-4 gap-8">
+            <div>
+              <div className="flex items-center mb-4">
+                <img 
+                  src="/AXP_logo_upper_left.png" 
+                  alt="AXP" 
+                  className="h-8 w-auto brightness-0 invert"
+                />
+              </div>
+              <p className="text-gray-400 text-sm">
+                The Adaptive Execution Platform that transforms with your business.
+              </p>
+            </div>
+            <div>
+              <h4 className="font-semibold mb-4">Product</h4>
+              <ul className="space-y-2 text-gray-400 text-sm">
+                <li>Features</li>
+                <li>Frameworks</li>
+                <li>Integrations</li>
+                <li>Security</li>
+                <li>Pricing</li>
+              </ul>
+            </div>
+            <div>
+              <h4 className="font-semibold mb-4">Company</h4>
+              <ul className="space-y-2 text-gray-400 text-sm">
+                <li>About</li>
+                <li>Blog</li>
+                <li>Customers</li>
+                <li>Partners</li>
+                <li>Careers</li>
+              </ul>
+            </div>
+            <div>
+              <h4 className="font-semibold mb-4">Resources</h4>
+              <ul className="space-y-2 text-gray-400 text-sm">
+                <li>Documentation</li>
+                <li>API Reference</li>
+                <li>Community</li>
+                <li>Support</li>
+                <li>Status</li>
+              </ul>
+            </div>
           </div>
-          <p className="text-gray-400 text-sm mb-6">
-            Start Executing
-          </p>
-          <div className="text-gray-500 text-xs space-y-2">
-            <p>&copy; 2025 AXP Platform. All rights reserved.</p>
-            <p>All trademarks are property of their respective owners.</p>
+          <div className="border-t border-gray-800 mt-8 pt-8 text-gray-400 text-sm">
+            <div className="flex flex-col md:flex-row justify-between items-center">
+              <p>&copy; 2025 AXP Platform. All rights reserved.</p>
+              <div className="flex space-x-6 mt-4 md:mt-0">
+                <a href="/privacy" className="hover:text-white">Privacy</a>
+                <a href="/terms" className="hover:text-white">Terms</a>
+                <a href="#disclaimer" className="hover:text-white" onClick={(e) => {
+                  e.preventDefault();
+                  document.querySelector('#disclaimer-section').scrollIntoView({ behavior: 'smooth' });
+                }}>Disclaimers</a>
+              </div>
+            </div>
+            <p className="mt-4 text-xs text-center">
+              All trademarks mentioned are property of their respective owners. See full disclaimer above.
+            </p>
           </div>
         </div>
       </footer>
