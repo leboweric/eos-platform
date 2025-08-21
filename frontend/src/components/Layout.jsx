@@ -176,18 +176,10 @@ const Layout = ({ children }) => {
               />
             ) : null}
             <div 
-              className="flex items-center gap-3"
+              className="flex items-center"
               style={{ display: logoUrl ? 'none' : 'flex' }}
             >
-              <img 
-                src="/AXP_logo_upper_left.png" 
-                alt="AXP Logo" 
-                className="h-24 w-auto"
-              />
-              <div className="flex flex-col">
-                <span className="text-4xl font-bold text-gray-900 leading-tight">AXP</span>
-                <span className="text-sm text-gray-600 leading-tight font-medium">Adaptive Execution Platform</span>
-              </div>
+              <span className="text-5xl font-bold bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent">AXP</span>
             </div>
           </Link>
           <button
@@ -261,16 +253,8 @@ const Layout = ({ children }) => {
             </div>
 
             {/* Center Logo */}
-            <div className="absolute left-1/2 transform -translate-x-1/2 flex items-center gap-3">
-              <img 
-                src="/AXP_logo_upper_left.png" 
-                alt="AXP Logo" 
-                className="h-24 w-auto"
-              />
-              <div className="flex flex-col">
-                <span className="text-4xl font-bold text-gray-900 leading-tight">AXP</span>
-                <span className="text-sm text-gray-600 leading-tight font-medium">Adaptive Execution Platform</span>
-              </div>
+            <div className="absolute left-1/2 transform -translate-x-1/2 flex items-center">
+              <span className="text-5xl font-bold bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent">AXP</span>
             </div>
 
             <div className="flex items-center space-x-4">
