@@ -182,10 +182,10 @@ const Layout = ({ children }) => {
               <img 
                 src="/AXP_logo_upper_left.png" 
                 alt="AXP Logo" 
-                className="h-20 w-auto"
+                className="h-24 w-auto"
               />
               <div className="flex flex-col">
-                <span className="text-3xl font-bold text-gray-900 leading-tight">AXP</span>
+                <span className="text-4xl font-bold text-gray-900 leading-tight">AXP</span>
                 <span className="text-sm text-gray-600 leading-tight font-medium">Adaptive Execution Platform</span>
               </div>
             </div>
@@ -265,10 +265,10 @@ const Layout = ({ children }) => {
               <img 
                 src="/AXP_logo_upper_left.png" 
                 alt="AXP Logo" 
-                className="h-20 w-auto"
+                className="h-24 w-auto"
               />
               <div className="flex flex-col">
-                <span className="text-3xl font-bold text-gray-900 leading-tight">AXP</span>
+                <span className="text-4xl font-bold text-gray-900 leading-tight">AXP</span>
                 <span className="text-sm text-gray-600 leading-tight font-medium">Adaptive Execution Platform</span>
               </div>
             </div>
