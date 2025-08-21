@@ -606,11 +606,15 @@ const LandingPage = () => {
       <footer className="py-8 px-4 bg-gray-900 text-white">
         <div className="container mx-auto max-w-6xl">
           <div className="flex flex-col items-center space-y-4">
-            <img 
-              src="/AXP_logo_upper_left.png" 
-              alt="AXP" 
-              className="h-8 w-auto brightness-0 invert"
-            />
+            <div className="flex items-center gap-2">
+              <img 
+                src="/AXP_logo_upper_left.png" 
+                alt="AXP Logo" 
+                className="h-10 w-auto"
+                style={{ filter: 'brightness(0) invert(1)' }}
+              />
+              <span className="text-2xl font-bold">AXP</span>
+            </div>
             <div className="flex space-x-6 text-sm text-gray-400">
               <a href="/privacy" className="hover:text-white">Privacy</a>
               <a href="/terms" className="hover:text-white">Terms</a>
