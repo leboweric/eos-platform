@@ -535,7 +535,7 @@ const LandingPage = () => {
         <div className="container mx-auto max-w-4xl text-center relative z-10">
           <div className="inline-flex items-center gap-2 bg-white/20 backdrop-blur text-white px-4 py-2 rounded-full text-sm font-medium mb-6">
             <Sparkles className="h-4 w-4" />
-            JOIN THE EXECUTION REVOLUTION
+            START EXECUTING
           </div>
           <h2 className="text-4xl md:text-5xl font-bold mb-6">
             Stop Adapting to Software.
@@ -553,9 +553,6 @@ const LandingPage = () => {
                 <ArrowRight className="ml-2 h-5 w-5" />
               </Button>
             </Link>
-            <Button size="lg" variant="outline" className="text-lg px-8 py-6 border-2 border-white text-white hover:bg-white/10">
-              Schedule a Demo
-            </Button>
           </div>
           
           <div className="mt-12 pt-8 border-t border-white/20">
