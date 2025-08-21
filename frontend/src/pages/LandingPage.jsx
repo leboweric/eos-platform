@@ -147,10 +147,9 @@ const LandingPage = () => {
         <div className="container mx-auto px-4 py-4 flex items-center justify-between">
           <div className="flex items-center gap-3">
             <img 
-              src="/AXP_logo_upper_left.png" 
+              src="/AXP_logo_upper_left_transparent.png" 
               alt="AXP" 
               className="h-16 w-auto"
-              style={{ filter: 'brightness(0) invert(1)' }}
             />
             <span className="text-3xl font-bold text-white">AXP</span>
           </div>
