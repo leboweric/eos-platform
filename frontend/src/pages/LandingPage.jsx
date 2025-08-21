@@ -145,13 +145,12 @@ const LandingPage = () => {
       {/* Header */}
       <header className="sticky top-0 z-50 shadow-md" style={{ backgroundColor: '#1e3a8a' }}>
         <div className="container mx-auto px-4 py-4 flex items-center justify-between">
-          <div className="flex items-center gap-3">
+          <div className="flex items-center">
             <img 
               src="/AXP_logo_upper_left_transparent.png" 
               alt="AXP" 
               className="h-16 w-auto"
             />
-            <span className="text-3xl font-bold text-white">AXP</span>
           </div>
           <div className="flex items-center space-x-4">
             <Link to="/login">
@@ -562,15 +561,11 @@ const LandingPage = () => {
       <footer className="py-12 px-4" style={{ backgroundColor: '#1e3a8a' }}>
         <div className="container mx-auto max-w-6xl">
           <div className="flex flex-col items-center space-y-6">
-            <div className="flex items-center gap-2">
-              <img 
-                src="/AXP_logo_upper_left.png" 
-                alt="AXP Logo" 
-                className="h-10 w-auto"
-                style={{ filter: 'brightness(0) invert(1)' }}
-              />
-              <span className="text-2xl font-bold text-white">AXP</span>
-            </div>
+            <img 
+              src="/AXP_logo_upper_left_transparent.png" 
+              alt="AXP Logo" 
+              className="h-12 w-auto"
+            />
             
             {/* Disclaimer text */}
             <div className="max-w-4xl mx-auto text-center space-y-3 text-xs text-blue-100">
