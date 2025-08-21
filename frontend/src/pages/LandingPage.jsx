@@ -554,16 +554,6 @@ const LandingPage = () => {
               </Button>
             </Link>
           </div>
-          
-          <div className="mt-12 pt-8 border-t border-white/20">
-            <p className="text-sm text-blue-100 mb-4">Built for modern organizations</p>
-            <div className="flex flex-wrap justify-center gap-8 opacity-70">
-              <div className="text-white font-semibold">Strategy Consultants</div>
-              <div className="text-white font-semibold">Growing Companies</div>
-              <div className="text-white font-semibold">Leadership Teams</div>
-              <div className="text-white font-semibold">Enterprise Organizations</div>
-            </div>
-          </div>
         </div>
       </section>
 
