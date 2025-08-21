@@ -473,30 +473,30 @@ const LandingPage = () => {
                 ENTERPRISE READY
               </div>
               <h2 className="text-4xl font-bold mb-6">
-                Built for Enterprise.
+                Built for Growth.
                 <br />
-                <span className="text-blue-600">Loved by Teams.</span>
+                <span className="text-blue-600">Powered by Partnership.</span>
               </h2>
               <p className="text-lg text-gray-700 mb-8">
-                We know the difference between a tool and a platform. That's why we built 
-                enterprise features from day one, not as an afterthought.
+                We're building something different. A platform that grows with you, 
+                backed by founders who actually answer your emails.
               </p>
               <ul className="space-y-3 text-gray-700">
                 <li className="flex items-center gap-2">
                   <CheckCircle className="h-5 w-5 text-green-500" />
-                  <span>Unlimited users on all plans</span>
+                  <span>Scale from 10 to 500+ users seamlessly</span>
                 </li>
                 <li className="flex items-center gap-2">
                   <CheckCircle className="h-5 w-5 text-green-500" />
-                  <span>99.9% uptime SLA</span>
+                  <span>Rock-solid infrastructure on Railway cloud</span>
                 </li>
                 <li className="flex items-center gap-2">
                   <CheckCircle className="h-5 w-5 text-green-500" />
-                  <span>GDPR & CCPA compliant</span>
+                  <span>Your data stays yours - full export anytime</span>
                 </li>
                 <li className="flex items-center gap-2">
                   <CheckCircle className="h-5 w-5 text-green-500" />
-                  <span>24/7 priority support</span>
+                  <span>Direct founder support & rapid feature delivery</span>
                 </li>
               </ul>
             </div>
