@@ -165,8 +165,8 @@ const Layout = ({ children }) => {
                 alt={user?.organizationName} 
                 className="object-contain"
                 style={{
-                  height: `${Math.max(96, 96 * (logoSize / 100))}px`,
-                  maxWidth: `${Math.max(300, 300 * (logoSize / 100))}px`,
+                  height: '96px',
+                  maxWidth: '300px',
                   width: 'auto'
                 }}
                 onError={(e) => {
