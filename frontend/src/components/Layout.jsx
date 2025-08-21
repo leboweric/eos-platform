@@ -182,11 +182,11 @@ const Layout = ({ children }) => {
               <img 
                 src="/AXP_logo_upper_left.png" 
                 alt="AXP Logo" 
-                className="h-14 w-auto"
+                className="h-20 w-auto"
               />
               <div className="flex flex-col">
-                <span className="text-2xl font-bold text-gray-900 leading-tight">AXP</span>
-                <span className="text-xs text-gray-600 leading-tight font-medium">Adaptive Execution Platform</span>
+                <span className="text-3xl font-bold text-gray-900 leading-tight">AXP</span>
+                <span className="text-sm text-gray-600 leading-tight font-medium">Adaptive Execution Platform</span>
               </div>
             </div>
           </Link>
@@ -265,11 +265,11 @@ const Layout = ({ children }) => {
               <img 
                 src="/AXP_logo_upper_left.png" 
                 alt="AXP Logo" 
-                className="h-14 w-auto"
+                className="h-20 w-auto"
               />
               <div className="flex flex-col">
-                <span className="text-2xl font-bold text-gray-900 leading-tight">AXP</span>
-                <span className="text-xs text-gray-600 leading-tight font-medium">Adaptive Execution Platform</span>
+                <span className="text-3xl font-bold text-gray-900 leading-tight">AXP</span>
+                <span className="text-sm text-gray-600 leading-tight font-medium">Adaptive Execution Platform</span>
               </div>
             </div>
 
