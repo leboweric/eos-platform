@@ -139,8 +139,14 @@ export const concludeMeeting = async (req, res) => {
       day: 'numeric' 
     });
 
-    // Format duration
-    const formatDuration = (seconds) => {
+    // Format duration - check if duration is in milliseconds
+    const formatDuration = (duration) => {
+      // If duration is > 86400 (more than a day in seconds), it's likely milliseconds
+      let seconds = duration;
+      if (duration > 86400) {
+        seconds = Math.floor(duration / 1000);
+      }
+      
       const hours = Math.floor(seconds / 3600);
       const minutes = Math.floor((seconds % 3600) / 60);
       const secs = seconds % 60;
@@ -232,8 +238,13 @@ export const concludeMeeting = async (req, res) => {
       issue.title || issue.issue || 'Untitled issue'
     );
 
+    // Format meeting type for display
+    const formattedMeetingType = meetingType === 'weekly' ? 'Weekly Accountability Meeting' : 
+                                 meetingType === 'quarterly' ? 'Quarterly Planning Meeting' : 
+                                 meetingType || 'Meeting';
+
     const emailData = {
-      meetingType: meetingType || 'Weekly Accountability Meeting',
+      meetingType: formattedMeetingType,
       teamName,
       meetingDate: formattedDate,
       duration: formatDuration(duration || 0),
