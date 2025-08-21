@@ -16,6 +16,8 @@ import LandingPage from './pages/LandingPage';
 // Lazy-loaded page components for better performance
 const ForgotPasswordPage = lazy(() => import('./pages/ForgotPasswordPage'));
 const ResetPasswordPage = lazy(() => import('./pages/ResetPasswordPage'));
+const PrivacyPolicy = lazy(() => import('./pages/PrivacyPolicy'));
+const TermsOfService = lazy(() => import('./pages/TermsOfService'));
 const Dashboard = lazy(() => import('./pages/DashboardClean'));
 const DashboardOriginal = lazy(() => import('./pages/DashboardOriginal'));
 const DashboardRedesigned = lazy(() => import('./pages/DashboardRedesigned'));
@@ -151,6 +153,8 @@ function App() {
           <Route path="/login" element={!user ? <LoginPage /> : <Navigate to="/dashboard" />} />
           <Route path="/register" element={!user ? <RegisterPage /> : <Navigate to="/dashboard" />} />
           <Route path="/consultant-register" element={!user ? <ConsultantRegisterPage /> : <Navigate to="/dashboard" />} />
+          <Route path="/privacy" element={<PrivacyPolicy />} />
+          <Route path="/terms" element={<TermsOfService />} />
           <Route path="/forgot-password" element={!user ? <ForgotPasswordPage /> : <Navigate to="/dashboard" />} />
           <Route path="/reset-password" element={!user ? <ResetPasswordPage /> : <Navigate to="/dashboard" />} />
           <Route path="/accept-invitation" element={<AcceptInvitationPage />} />
