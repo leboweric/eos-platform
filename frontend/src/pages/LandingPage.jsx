@@ -79,7 +79,7 @@ const LandingPage = () => {
       category: 'Strategic Planning',
       features: [
         'Dynamic 2-Page Business Plans',
-        'Vision/Traction Organizer',
+        'Strategic Planning Documents',
         'Core Values & Focus Management',
         '10-Year Target → 3-Year Picture → 1-Year Plan cascade',
         'Marketing Strategy Builder'
@@ -108,9 +108,9 @@ const LandingPage = () => {
     {
       category: 'Meeting Productivity',
       features: [
-        'Level 10 Meeting Facilitation',
+        'Weekly Meeting Facilitation',
         'Quarterly Planning Sessions',
-        'IDS™ Problem Solving',
+        'Structured Problem Solving',
         'Meeting Summary Emails',
         'Action Item Tracking'
       ]
@@ -284,7 +284,7 @@ const LandingPage = () => {
                   </div>
                   <div>
                     <div className="font-semibold">EOS® (Entrepreneurial Operating System)</div>
-                    <div className="text-gray-600">Full V/TO, Level 10 meetings, Rocks, IDS™</div>
+                    <div className="text-gray-600">Vision/Traction™, Rocks, Scorecards, Level 10™</div>
                   </div>
                 </div>
                 <div className="flex items-start gap-3">
@@ -293,7 +293,7 @@ const LandingPage = () => {
                   </div>
                   <div>
                     <div className="font-semibold">4DX® (4 Disciplines of Execution)</div>
-                    <div className="text-gray-600">WIGs, Lead Measures, Scoreboards, Accountability</div>
+                    <div className="text-gray-600">WIGs, Lead Measures, Scoreboards, WIG Sessions</div>
                   </div>
                 </div>
                 <div className="flex items-start gap-3">
@@ -301,8 +301,26 @@ const LandingPage = () => {
                     <CheckCircle className="h-4 w-4 text-white" />
                   </div>
                   <div>
-                    <div className="font-semibold">Scaling Up / OKRs / Custom</div>
-                    <div className="text-gray-600">Adapt terminology, workflows, and structures to your needs</div>
+                    <div className="font-semibold">OKRs (Objectives & Key Results)</div>
+                    <div className="text-gray-600">Objectives, Key Results, Initiatives, Check-ins</div>
+                  </div>
+                </div>
+                <div className="flex items-start gap-3">
+                  <div className="w-6 h-6 bg-green-500 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5">
+                    <CheckCircle className="h-4 w-4 text-white" />
+                  </div>
+                  <div>
+                    <div className="font-semibold">Scaling Up® (Rockefeller Habits)</div>
+                    <div className="text-gray-600">One-Page Plan, Priorities, KPIs, Daily Huddles</div>
+                  </div>
+                </div>
+                <div className="flex items-start gap-3">
+                  <div className="w-6 h-6 bg-green-500 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5">
+                    <CheckCircle className="h-4 w-4 text-white" />
+                  </div>
+                  <div>
+                    <div className="font-semibold">Custom Framework</div>
+                    <div className="text-gray-600">Design your own methodology with custom terms</div>
                   </div>
                 </div>
               </div>
@@ -332,7 +350,7 @@ const LandingPage = () => {
                   </div>
                   <div className="p-3 border-2 border-blue-500 rounded-lg bg-blue-50">
                     <div className="flex items-center justify-between">
-                      <span className="font-medium">4DX® Mode</span>
+                      <span className="font-medium">OKRs Mode</span>
                       <div className="w-12 h-6 bg-blue-500 rounded-full relative">
                         <div className="absolute right-0.5 top-0.5 w-5 h-5 bg-white rounded-full"></div>
                       </div>
@@ -340,7 +358,13 @@ const LandingPage = () => {
                   </div>
                   <div className="p-3 border-2 border-gray-200 rounded-lg">
                     <div className="flex items-center justify-between">
-                      <span className="font-medium">Custom Framework</span>
+                      <span className="font-medium">Scaling Up Mode</span>
+                      <div className="w-12 h-6 bg-gray-300 rounded-full"></div>
+                    </div>
+                  </div>
+                  <div className="p-3 border-2 border-gray-200 rounded-lg">
+                    <div className="flex items-center justify-between">
+                      <span className="font-medium">4DX® Mode</span>
                       <div className="w-12 h-6 bg-gray-300 rounded-full"></div>
                     </div>
                   </div>
@@ -348,10 +372,10 @@ const LandingPage = () => {
                 <div className="mt-6 p-4 bg-blue-50 rounded-lg">
                   <div className="text-sm font-medium text-blue-900 mb-2">Instant Transformation</div>
                   <div className="text-xs text-blue-700">
-                    • Rocks → WIGs<br />
-                    • V/TO → Execution Plan<br />
-                    • Level 10 → WIG Session<br />
-                    • All data preserved & remapped
+                    • Rocks → Key Results → WIGs → Priorities<br />
+                    • Scorecard → KPIs → Scoreboard → Metrics<br />
+                    • Issues → Blockers → Barriers → Obstacles<br />
+                    • All data preserved & remapped instantly
                   </div>
                 </div>
               </div>
@@ -436,8 +460,8 @@ const LandingPage = () => {
                       <Globe className="h-6 w-6 text-orange-600" />
                     </div>
                     <div>
-                      <h4 className="font-semibold mb-1">API & Webhooks</h4>
-                      <p className="text-sm text-gray-600">Connect with Slack, Teams, Salesforce, and 1000+ apps via Zapier.</p>
+                      <h4 className="font-semibold mb-1">Integration Ready</h4>
+                      <p className="text-sm text-gray-600">RESTful APIs and webhooks enable custom integrations with your tools.</p>
                     </div>
                   </div>
                 </div>
