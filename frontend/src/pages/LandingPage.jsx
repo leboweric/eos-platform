@@ -485,7 +485,7 @@ const LandingPage = () => {
                 </li>
                 <li className="flex items-center gap-2">
                   <CheckCircle className="h-5 w-5 text-green-500" />
-                  <span>Rock-solid infrastructure on Railway cloud</span>
+                  <span>Rock-solid, secure, geographically redundant infrastructure</span>
                 </li>
                 <li className="flex items-center gap-2">
                   <CheckCircle className="h-5 w-5 text-green-500" />
