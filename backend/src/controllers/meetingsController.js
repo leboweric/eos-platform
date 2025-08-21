@@ -33,6 +33,16 @@ export const concludeMeeting = async (req, res) => {
     );
     const organizationName = orgResult.rows[0]?.name || 'Your Organization';
 
+    // Get team/department name
+    let teamName = 'Leadership Team'; // default for leadership team
+    if (teamId && teamId !== '00000000-0000-0000-0000-000000000000') {
+      const teamResult = await db.query(
+        'SELECT name FROM teams WHERE id = $1',
+        [teamId]
+      );
+      teamName = teamResult.rows[0]?.name || 'Team';
+    }
+
     // Get user details
     const userResult = await db.query(
       'SELECT email, first_name, last_name FROM users WHERE id = $1',
@@ -199,7 +209,14 @@ export const concludeMeeting = async (req, res) => {
       }
     }
 
-    // Format todos
+    // Format todos - include ALL todos from the meeting
+    const formattedAllTodos = (todos?.all || todos?.list || []).map(todo => ({
+      title: todo.title || todo.todo || 'Untitled',
+      assignee: todo.assigned_to_name || todo.assignee || todo.assigned_to || 'Unassigned',
+      dueDate: todo.due_date ? new Date(todo.due_date).toLocaleDateString() : 'No due date',
+      status: todo.status || (todo.is_complete ? 'Completed' : 'Pending')
+    }));
+
     const formattedNewTodos = (todos?.added || []).map(todo => ({
       title: todo.title || todo.todo || 'Untitled',
       assignee: todo.assigned_to_name || todo.assignee || 'Unassigned',
@@ -217,6 +234,7 @@ export const concludeMeeting = async (req, res) => {
 
     const emailData = {
       meetingType: meetingType || 'Weekly Accountability Meeting',
+      teamName,
       meetingDate: formattedDate,
       duration: formatDuration(duration || 0),
       rating: rating || 'Not rated',
@@ -227,6 +245,7 @@ export const concludeMeeting = async (req, res) => {
       metrics: metrics || {},
       completedItems: formattedCompletedItems,
       newTodos: formattedNewTodos,
+      allTodos: formattedAllTodos,
       issues: formattedIssues,
       notes: notes || '',
       meetingLink: `${process.env.FRONTEND_URL || 'https://axp.com'}/meetings/weekly-accountability`

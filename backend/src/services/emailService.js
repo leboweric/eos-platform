@@ -204,23 +204,24 @@ const templates = {
   }),
 
   meetingSummary: (data) => ({
-    subject: `Meeting Summary - ${data.meetingType} - ${data.organizationName}`,
+    subject: `${data.teamName} Meeting Summary - ${data.organizationName}`,
     html: `
       <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
-        <h2>${data.meetingType} Summary</h2>
+        <h2>${data.teamName} Meeting Summary</h2>
         <p>Hi Team,</p>
-        <p>Here's a summary of your ${data.meetingType} held on ${data.meetingDate}:</p>
+        <p>Here's a summary of your ${data.teamName} meeting on ${data.meetingDate}:</p>
         
         <div style="background-color: #f8f9fa; padding: 15px; border-radius: 8px; margin: 20px 0;">
           <p style="margin: 5px 0;"><strong>Duration:</strong> ${data.duration}</p>
           <p style="margin: 5px 0;"><strong>Meeting Rating:</strong> ${data.rating}/10</p>
-          ${data.metrics && Object.keys(data.metrics).length > 0 ? `
-            <p style="margin: 5px 0;"><strong>Issues Resolved:</strong> ${data.metrics.issuesResolved || 0}</p>
-            <p style="margin: 5px 0;"><strong>Issues Added:</strong> ${data.metrics.issuesAdded || 0}</p>
-            <p style="margin: 5px 0;"><strong>To-Dos Completed:</strong> ${data.metrics.todosCompleted || 0}</p>
-            <p style="margin: 5px 0;"><strong>To-Dos Added:</strong> ${data.metrics.todosAdded || 0}</p>
-          ` : ''}
         </div>
+        
+        ${data.allTodos && data.allTodos.length > 0 ? `
+          <h3 style="color: #333; margin-top: 30px;">To Dos:</h3>
+          <ul style="color: #666;">
+            ${data.allTodos.map(todo => `<li>${todo.title} - ${todo.assignee} - ${todo.dueDate}</li>`).join('')}
+          </ul>
+        ` : ''}
         
         ${data.attendees && data.attendees.length > 0 ? `
           <h3 style="color: #333; margin-top: 30px;">Attendees</h3>
@@ -267,15 +268,16 @@ const templates = {
       </div>
     `,
     text: `
-      ${data.meetingType} Summary
+      ${data.teamName} Meeting Summary
       
       Hi Team,
       
-      Here's a summary of your ${data.meetingType} held on ${data.meetingDate}:
+      Here's a summary of your ${data.teamName} meeting on ${data.meetingDate}:
       
       Duration: ${data.duration}
-      Rating: ${data.rating}/10
+      Meeting Rating: ${data.rating}/10
       
+      ${data.allTodos && data.allTodos.length > 0 ? `To Dos:\n${data.allTodos.map(t => `- ${t.title} - ${t.assignee} - ${t.dueDate}`).join('\n')}\n\n` : ''}
       ${data.attendees && data.attendees.length > 0 ? `Attendees:\n${data.attendees.map(a => `- ${a}`).join('\n')}\n\n` : ''}
       ${data.completedItems && data.completedItems.length > 0 ? `Completed Items:\n${data.completedItems.map(i => `- ✅ ${i}`).join('\n')}\n\n` : ''}
       ${data.newTodos && data.newTodos.length > 0 ? `New To-Dos:\n${data.newTodos.map(t => `- ${t.title} - Assigned to: ${t.assignee}, Due: ${t.dueDate}`).join('\n')}\n\n` : ''}
