@@ -476,7 +476,7 @@ const LandingPage = () => {
               </h2>
               <p className="text-lg text-gray-700 mb-8">
                 We're building something different. A platform that grows with you, 
-                backed by founders who actually answer your emails.
+                backed by humans who actually answer your emails.
               </p>
               <ul className="space-y-3 text-gray-700">
                 <li className="flex items-center gap-2">
