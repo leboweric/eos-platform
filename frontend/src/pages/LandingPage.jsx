@@ -1,7 +1,10 @@
+import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import SEO from '../components/SEO';
+import FrameworkSwitcherDemo from '../components/FrameworkSwitcherDemo';
+import { Dialog, DialogContent } from '@/components/ui/dialog';
 import { 
   Zap, 
   Users, 
@@ -29,6 +32,8 @@ import {
 } from 'lucide-react';
 
 const LandingPage = () => {
+  const [showFrameworkDemo, setShowFrameworkDemo] = useState(false);
+  
   // Revolutionary features that set us apart
   const gameChangers = [
     {
@@ -302,7 +307,11 @@ const LandingPage = () => {
                 </div>
               </div>
               
-              <Button size="lg" className="mt-8">
+              <Button 
+                size="lg" 
+                className="mt-8"
+                onClick={() => setShowFrameworkDemo(true)}
+              >
                 See Framework Switching in Action
                 <ChevronRight className="ml-2 h-5 w-5" />
               </Button>
@@ -645,6 +654,13 @@ const LandingPage = () => {
           </div>
         </div>
       </footer>
+      
+      {/* Framework Switcher Demo Modal */}
+      <Dialog open={showFrameworkDemo} onOpenChange={setShowFrameworkDemo}>
+        <DialogContent className="max-w-5xl p-8">
+          <FrameworkSwitcherDemo />
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
