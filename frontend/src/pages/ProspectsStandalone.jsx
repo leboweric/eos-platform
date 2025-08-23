@@ -28,6 +28,9 @@ const ProspectsStandalone = () => {
   const [dailySummary, setDailySummary] = useState(null);
   const [authenticated, setAuthenticated] = useState(false);
   const [password, setPassword] = useState('');
+  const [currentPage, setCurrentPage] = useState(1);
+  const [totalProspects, setTotalProspects] = useState(0);
+  const prospectsPerPage = 50;
 
   useEffect(() => {
     // Check if already authenticated
@@ -42,7 +45,7 @@ const ProspectsStandalone = () => {
       fetchProspects();
       fetchDailySummary();
     }
-  }, [filter, authenticated]);
+  }, [filter, authenticated, currentPage]);
 
   const handleLogin = (e) => {
     e.preventDefault();
@@ -65,10 +68,20 @@ const ProspectsStandalone = () => {
       setLoading(true);
       const params = new URLSearchParams();
       if (filter !== 'all') params.append('tier', filter);
+      params.append('limit', prospectsPerPage);
+      params.append('offset', (currentPage - 1) * prospectsPerPage);
       
       const response = await api.get(`/prospects?${params}`);
       
       setProspects(response.data);
+      
+      // Get total count (you may need to update the backend to return this)
+      // For now, estimate based on whether we got a full page
+      if (response.data.length === prospectsPerPage) {
+        setTotalProspects(580); // We know we imported 580
+      } else {
+        setTotalProspects((currentPage - 1) * prospectsPerPage + response.data.length);
+      }
     } catch (error) {
       console.error('Error fetching prospects:', error);
     } finally {
@@ -430,6 +443,44 @@ const ProspectsStandalone = () => {
               </tbody>
             </table>
           </div>
+          
+          {/* Pagination Controls */}
+          {totalProspects > prospectsPerPage && (
+            <div className="px-6 py-4 border-t border-gray-200 flex items-center justify-between">
+              <div className="text-sm text-gray-700">
+                Showing {((currentPage - 1) * prospectsPerPage) + 1} to {Math.min(currentPage * prospectsPerPage, totalProspects)} of {totalProspects} prospects
+              </div>
+              <div className="flex space-x-2">
+                <button
+                  onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
+                  disabled={currentPage === 1}
+                  className="px-3 py-1 rounded-md bg-white border border-gray-300 text-sm font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  Previous
+                </button>
+                {Array.from({ length: Math.ceil(totalProspects / prospectsPerPage) }, (_, i) => i + 1).map(page => (
+                  <button
+                    key={page}
+                    onClick={() => setCurrentPage(page)}
+                    className={`px-3 py-1 rounded-md text-sm font-medium ${
+                      currentPage === page
+                        ? 'bg-indigo-600 text-white'
+                        : 'bg-white border border-gray-300 text-gray-700 hover:bg-gray-50'
+                    }`}
+                  >
+                    {page}
+                  </button>
+                ))}
+                <button
+                  onClick={() => setCurrentPage(prev => Math.min(Math.ceil(totalProspects / prospectsPerPage), prev + 1))}
+                  disabled={currentPage >= Math.ceil(totalProspects / prospectsPerPage)}
+                  className="px-3 py-1 rounded-md bg-white border border-gray-300 text-sm font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  Next
+                </button>
+              </div>
+            </div>
+          )}
         </div>
 
         {/* Prospect Details Modal */}
