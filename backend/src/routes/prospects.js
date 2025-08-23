@@ -1,6 +1,7 @@
 import express from 'express';
 import pool from '../config/database.js';
 import { authenticate } from '../middleware/auth.js';
+import PhantomBusterService from '../services/phantomBusterService.js';
 
 const router = express.Router();
 
@@ -360,6 +361,54 @@ router.post('/bulk-import', authenticate, async (req, res) => {
     res.status(500).json({ error: 'Failed to import prospects' });
   } finally {
     client.release();
+  }
+});
+
+// Fetch from PhantomBuster API
+router.post('/fetch-phantombuster/:phantomId', authenticate, async (req, res) => {
+  try {
+    const { phantomId } = req.params;
+    const { limit = 100 } = req.body;
+    
+    const phantomBuster = new PhantomBusterService();
+    
+    // Fetch results from PhantomBuster
+    console.log(`Fetching results from PhantomBuster phantom ${phantomId}...`);
+    const data = await phantomBuster.fetchPhantomResults(phantomId, limit);
+    
+    // Process and save to database
+    const result = await phantomBuster.processPhantomBusterData(data);
+    
+    res.json({
+      success: true,
+      ...result,
+      message: `Imported ${result.imported} new prospects, skipped ${result.skipped} existing`
+    });
+  } catch (error) {
+    console.error('Error fetching from PhantomBuster:', error);
+    res.status(500).json({ 
+      error: 'Failed to fetch from PhantomBuster',
+      details: error.message 
+    });
+  }
+});
+
+// List all PhantomBuster phantoms
+router.get('/phantombuster/list', authenticate, async (req, res) => {
+  try {
+    const phantomBuster = new PhantomBusterService();
+    const phantoms = await phantomBuster.listPhantoms();
+    
+    res.json({
+      success: true,
+      phantoms: phantoms
+    });
+  } catch (error) {
+    console.error('Error listing phantoms:', error);
+    res.status(500).json({ 
+      error: 'Failed to list phantoms',
+      details: error.message 
+    });
   }
 });
 
