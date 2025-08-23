@@ -41,7 +41,7 @@ class ApolloEnrichmentService {
         },
         {
           headers: {
-            'Authorization': `Bearer ${this.apiKey}`,
+            'X-Api-Key': this.apiKey,
             'Content-Type': 'application/json'
           }
         }
@@ -125,7 +125,7 @@ class ApolloEnrichmentService {
         },
         {
           headers: {
-            'Authorization': `Bearer ${this.apiKey}`,
+            'X-Api-Key': this.apiKey,
             'Content-Type': 'application/json'
           }
         }
