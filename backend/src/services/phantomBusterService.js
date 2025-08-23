@@ -142,29 +142,30 @@ class PhantomBusterService {
           console.log(`Skipping existing prospect: ${prospect.company_name}`);
         } else {
           // Insert new prospect
-          const result = await client.query(`
-            INSERT INTO prospects (
-              company_name, website, linkedin_url, employee_count,
-              industry, has_eos_titles, eos_keywords_found,
-              source, source_date
-            ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, NOW())
-            RETURNING id, company_name
-          `, [
-            prospect.company_name,
-            prospect.website,
-            prospect.linkedin_url,
-            prospect.employee_count,
-            prospect.industry,
-            prospect.has_eos_titles,
-            prospect.eos_keywords_found,
-            'phantombuster_api'
-          ]);
-          
-          const newProspectId = result.rows[0].id;
-          imported.push(result.rows[0]);
-          enrichQueue.push(newProspectId);
-          
-          console.log(`✅ Imported new prospect: ${prospect.company_name}`);
+          try {
+            const result = await client.query(`
+              INSERT INTO prospects (
+                company_name, website, linkedin_url, employee_count,
+                industry, has_eos_titles, eos_keywords_found,
+                source, source_date
+              ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, NOW())
+              RETURNING id, company_name
+            `, [
+              prospect.company_name,
+              prospect.website,
+              prospect.linkedin_url,
+              prospect.employee_count,
+              prospect.industry,
+              prospect.has_eos_titles,
+              prospect.eos_keywords_found,
+              'phantombuster_api'
+            ]);
+            
+            const newProspectId = result.rows[0].id;
+            imported.push(result.rows[0]);
+            enrichQueue.push(newProspectId);
+            
+            console.log(`✅ Imported new prospect: ${prospect.company_name} (ID: ${newProspectId})`);
           
           // Add initial signal
           await client.query(`
@@ -206,8 +207,10 @@ class PhantomBusterService {
       
       await client.query('COMMIT');
       
+      console.log(`✅ Transaction committed: ${imported.length} imported, ${skipped.length} skipped`);
+      
       // Trigger Apollo enrichment for new prospects
-      if (enrichQueue.length > 0) {
+      if (enrichQueue.length > 0 && process.env.APOLLO_API_KEY) {
         console.log(`🚀 Starting enrichment for ${enrichQueue.length} new prospects`);
         this.enrichProspectsAsync(enrichQueue);
       }

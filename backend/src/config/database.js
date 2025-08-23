@@ -6,10 +6,15 @@ dotenv.config();
 const { Pool } = pkg;
 
 // Database configuration
-const dbConfig = process.env.DATABASE_URL
+// In production (Railway), always use their DATABASE_URL
+// Locally, only use DATABASE_URL if explicitly set and not localhost
+const isLocalDatabase = process.env.DATABASE_URL?.includes('localhost') || process.env.DATABASE_URL?.includes('127.0.0.1');
+const useProductionDB = process.env.NODE_ENV === 'production' || (process.env.DATABASE_URL && !isLocalDatabase);
+
+const dbConfig = useProductionDB
   ? {
       connectionString: process.env.DATABASE_URL,
-      ssl: process.env.NODE_ENV === 'production' ? { rejectUnauthorized: false } : false,
+      ssl: { rejectUnauthorized: false }, // Always use SSL for production/Railway
       max: 10, // reduced pool size for Railway
       idleTimeoutMillis: 10000, // close idle connections after 10 seconds
       connectionTimeoutMillis: 5000, // increased timeout for Railway
