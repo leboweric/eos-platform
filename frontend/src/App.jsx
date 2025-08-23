@@ -6,6 +6,7 @@ import { DepartmentProvider } from './contexts/DepartmentContext';
 import { SelectedTodosProvider } from './contexts/SelectedTodosContext';
 import { TerminologyProvider } from './contexts/TerminologyContext';
 import ForcedLegalAgreementModal from './components/legal/ForcedLegalAgreementModal';
+import { useApolloTracking } from './hooks/useApolloTracking';
 
 // Critical components (loaded immediately)
 import Layout from './components/Layout';

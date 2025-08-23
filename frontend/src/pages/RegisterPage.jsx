@@ -5,6 +5,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { useAuthStore } from '../stores/authStore';
 import { oauthService } from '../services/oauthService';
+import { useTrackConversion } from '../hooks/useApolloTracking';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -47,6 +48,7 @@ const RegisterPage = () => {
   const [agreementError, setAgreementError] = useState('');
   const navigate = useNavigate();
   const { register: registerUser, isLoading, error, clearError } = useAuthStore();
+  const { trackSignup } = useTrackConversion();
 
   const {
     register,
@@ -85,6 +87,8 @@ const RegisterPage = () => {
     
     const result = await registerUser(registrationData);
     if (result.success) {
+      // Track successful signup for Apollo
+      trackSignup(userData.email, userData.organizationName);
       navigate('/dashboard');
     }
   };
