@@ -6,7 +6,11 @@ SELECT
     COUNT(*) as total_prospects,
     COUNT(CASE WHEN has_eos_titles = true THEN 1 END) as with_eos_titles,
     COUNT(CASE WHEN eos_keywords_found IS NOT NULL THEN 1 END) as with_eos_keywords,
-    ROUND(COUNT(CASE WHEN has_eos_titles = true THEN 1 END)::numeric / COUNT(*)::numeric * 100, 2) as eos_percentage
+    CASE 
+        WHEN COUNT(*) > 0 
+        THEN ROUND(COUNT(CASE WHEN has_eos_titles = true THEN 1 END)::numeric / COUNT(*)::numeric * 100, 2)
+        ELSE 0
+    END as eos_percentage
 FROM prospects;
 
 -- 2. Top companies with strongest EOS signals

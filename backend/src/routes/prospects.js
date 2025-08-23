@@ -76,6 +76,21 @@ router.get('/:id', authenticate, async (req, res) => {
   try {
     const { id } = req.params;
     
+    // First check if tables exist
+    const tablesExist = await pool.query(`
+      SELECT 
+        EXISTS (SELECT FROM information_schema.tables WHERE table_name = 'prospects') as prospects_exists,
+        EXISTS (SELECT FROM information_schema.tables WHERE table_name = 'prospect_contacts') as contacts_exists,
+        EXISTS (SELECT FROM information_schema.tables WHERE table_name = 'prospect_signals') as signals_exists,
+        EXISTS (SELECT FROM information_schema.tables WHERE table_name = 'competitor_reviews') as reviews_exists
+    `);
+    
+    const tables = tablesExist.rows[0];
+    
+    if (!tables.prospects_exists) {
+      return res.status(404).json({ error: 'Prospects table not found' });
+    }
+    
     // Get prospect
     const prospectResult = await pool.query(
       'SELECT * FROM prospects WHERE id = $1',
@@ -88,33 +103,34 @@ router.get('/:id', authenticate, async (req, res) => {
     
     const prospect = prospectResult.rows[0];
     
-    // Get contacts
-    const contactsResult = await pool.query(
-      'SELECT * FROM prospect_contacts WHERE prospect_id = $1',
-      [id]
-    );
+    // Get contacts if table exists
+    const contacts = tables.contacts_exists 
+      ? (await pool.query('SELECT * FROM prospect_contacts WHERE prospect_id = $1', [id])).rows
+      : [];
     
-    // Get signals
-    const signalsResult = await pool.query(
-      'SELECT * FROM prospect_signals WHERE prospect_id = $1 ORDER BY detected_at DESC',
-      [id]
-    );
+    // Get signals if table exists
+    const signals = tables.signals_exists
+      ? (await pool.query('SELECT * FROM prospect_signals WHERE prospect_id = $1 ORDER BY detected_at DESC', [id])).rows
+      : [];
     
-    // Get reviews if any
-    const reviewsResult = await pool.query(
-      'SELECT * FROM competitor_reviews WHERE prospect_id = $1',
-      [id]
-    );
+    // Get reviews if table exists
+    const reviews = tables.reviews_exists
+      ? (await pool.query('SELECT * FROM competitor_reviews WHERE prospect_id = $1', [id])).rows
+      : [];
     
     res.json({
       ...prospect,
-      contacts: contactsResult.rows,
-      signals: signalsResult.rows,
-      reviews: reviewsResult.rows
+      contacts,
+      signals,
+      reviews
     });
   } catch (error) {
-    console.error('Error fetching prospect:', error);
-    res.status(500).json({ error: 'Failed to fetch prospect' });
+    console.error('Error fetching prospect details:', error.message);
+    console.error('Stack:', error.stack);
+    res.status(500).json({ 
+      error: 'Failed to fetch prospect details',
+      details: error.message 
+    });
   }
 });
 
@@ -458,6 +474,89 @@ router.get('/phantombuster/list', authenticate, async (req, res) => {
     console.error('Error listing phantoms:', error);
     res.status(500).json({ 
       error: 'Failed to list phantoms',
+      details: error.message 
+    });
+  }
+});
+
+// Enrich prospects with Apollo data
+router.post('/enrich', authenticate, async (req, res) => {
+  try {
+    const { limit = 5 } = req.body;
+    
+    // Dynamically import Apollo service only when needed
+    const { default: ApolloEnrichmentService } = await import('../services/apolloEnrichment.js');
+    const apollo = new ApolloEnrichmentService();
+    
+    // Check if API key is configured
+    if (!process.env.APOLLO_API_KEY) {
+      return res.status(400).json({ 
+        error: 'Apollo API key not configured',
+        details: 'Please add APOLLO_API_KEY to environment variables'
+      });
+    }
+    
+    console.log(`🚀 Starting enrichment for up to ${limit} prospects...`);
+    
+    // Get prospects that need enrichment
+    const needsEnrichment = await pool.query(`
+      SELECT id, company_name, website 
+      FROM prospects 
+      WHERE (technologies_used IS NULL 
+        OR employee_count IS NULL
+        OR revenue_estimate IS NULL)
+        AND website IS NOT NULL
+      ORDER BY has_eos_titles DESC, prospect_score DESC NULLS LAST
+      LIMIT $1
+    `, [limit]);
+    
+    if (needsEnrichment.rows.length === 0) {
+      return res.json({
+        success: true,
+        enriched: 0,
+        message: 'No prospects need enrichment'
+      });
+    }
+    
+    const results = [];
+    
+    for (const prospect of needsEnrichment.rows) {
+      try {
+        console.log(`Enriching ${prospect.company_name}...`);
+        const enrichResult = await apollo.enrichProspect(prospect.id);
+        results.push({
+          prospect_id: prospect.id,
+          company_name: prospect.company_name,
+          success: true,
+          contacts_found: enrichResult.contactsFound
+        });
+        
+        // Rate limiting - Apollo has strict limits
+        await new Promise(resolve => setTimeout(resolve, 1000));
+      } catch (error) {
+        console.error(`Failed to enrich ${prospect.company_name}:`, error.message);
+        results.push({
+          prospect_id: prospect.id,
+          company_name: prospect.company_name,
+          success: false,
+          error: error.message
+        });
+      }
+    }
+    
+    const successCount = results.filter(r => r.success).length;
+    
+    res.json({
+      success: true,
+      enriched: successCount,
+      total: results.length,
+      results: results,
+      message: `Enriched ${successCount} out of ${results.length} prospects`
+    });
+  } catch (error) {
+    console.error('Error during enrichment:', error);
+    res.status(500).json({ 
+      error: 'Failed to enrich prospects',
       details: error.message 
     });
   }
