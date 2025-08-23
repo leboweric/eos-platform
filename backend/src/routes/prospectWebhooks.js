@@ -22,13 +22,29 @@ router.post('/phantombuster', validateWebhookToken, async (req, res) => {
   const client = await pool.connect();
   
   try {
-    // PhantomBuster sends data in this format
-    const { data, phantom, runId } = req.body;
+    // PhantomBuster sends data in various formats
+    const { data, phantom, runId, error, resultObject } = req.body;
     
-    console.log(`📥 PhantomBuster webhook received: ${data?.length || 0} prospects from phantom ${phantom}`);
+    console.log(`📥 PhantomBuster webhook received from phantom ${phantom}`);
     
-    if (!data || !Array.isArray(data)) {
-      return res.status(400).json({ error: 'Invalid data format' });
+    // Handle "No new results found" case
+    if (error === 'No new results found' || (resultObject && resultObject.includes('No new results found'))) {
+      console.log('⚠️ PhantomBuster reports no new results found');
+      return res.status(200).json({ 
+        message: 'No new results to process',
+        imported: 0,
+        skipped: 0 
+      });
+    }
+    
+    // Check if we have valid data
+    if (!data || !Array.isArray(data) || data.length === 0) {
+      console.log('ℹ️ No data to process in webhook');
+      return res.status(200).json({ 
+        message: 'No data to process',
+        imported: 0,
+        skipped: 0 
+      });
     }
     
     await client.query('BEGIN');
