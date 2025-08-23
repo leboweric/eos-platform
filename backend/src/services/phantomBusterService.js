@@ -167,40 +167,44 @@ class PhantomBusterService {
             
             console.log(`✅ Imported new prospect: ${prospect.company_name} (ID: ${newProspectId})`);
           
-          // Add initial signal
-          await client.query(`
-            INSERT INTO prospect_signals (
-              prospect_id, signal_type, signal_strength, signal_data, source
-            ) VALUES ($1, $2, $3, $4, $5)
-          `, [
-            newProspectId,
-            prospect.signal_type || 'linkedin_profile',
-            prospect.signal_strength || 5,
-            JSON.stringify(item),
-            'phantombuster_api'
-          ]);
-          
-          // Add contact if we have the information
-          if (prospect.contact_name) {
-            const names = prospect.contact_name.split(' ');
-            const firstName = names[0];
-            const lastName = names.slice(1).join(' ');
-            
+            // Add initial signal
             await client.query(`
-              INSERT INTO prospect_contacts (
-                prospect_id, first_name, last_name, title, 
-                linkedin_url, is_decision_maker, is_eos_role
-              ) VALUES ($1, $2, $3, $4, $5, $6, $7)
-              ON CONFLICT DO NOTHING
+              INSERT INTO prospect_signals (
+                prospect_id, signal_type, signal_strength, signal_data, source
+              ) VALUES ($1, $2, $3, $4, $5)
             `, [
               newProspectId,
-              firstName,
-              lastName,
-              prospect.contact_title,
-              prospect.contact_linkedin,
-              true, // They're likely decision makers if they have EOS titles
-              prospect.has_eos_titles
+              prospect.signal_type || 'linkedin_profile',
+              prospect.signal_strength || 5,
+              JSON.stringify(item),
+              'phantombuster_api'
             ]);
+            
+            // Add contact if we have the information
+            if (prospect.contact_name) {
+              const names = prospect.contact_name.split(' ');
+              const firstName = names[0];
+              const lastName = names.slice(1).join(' ');
+              
+              await client.query(`
+                INSERT INTO prospect_contacts (
+                  prospect_id, first_name, last_name, title, 
+                  linkedin_url, is_decision_maker, is_eos_role
+                ) VALUES ($1, $2, $3, $4, $5, $6, $7)
+                ON CONFLICT DO NOTHING
+              `, [
+                newProspectId,
+                firstName,
+                lastName,
+                prospect.contact_title,
+                prospect.contact_linkedin,
+                true, // They're likely decision makers if they have EOS titles
+                prospect.has_eos_titles
+              ]);
+            }
+          } catch (insertError) {
+            console.error(`Failed to insert prospect ${prospect.company_name}:`, insertError.message);
+            skipped.push(prospect.company_name);
           }
         }
       }
