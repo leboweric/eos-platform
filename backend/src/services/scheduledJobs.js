@@ -1,15 +1,11 @@
 import cron from 'node-cron';
 import { processDailyActiveUsersReport } from './dailyActiveUsersService.js';
-import { initializeProspectJobs } from '../jobs/prospectEnrichmentJob.js';
 
 /**
  * Initialize all scheduled jobs
  */
 export const initializeScheduledJobs = () => {
   console.log('Initializing scheduled jobs...');
-  
-  // Initialize prospect enrichment jobs
-  initializeProspectJobs();
   
   // Schedule daily active users report
   // Runs every day at 8:00 AM server time
