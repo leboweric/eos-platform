@@ -1,6 +1,7 @@
 import axios from 'axios';
 import pool from '../config/database.js';
 import ApolloEnrichmentService from './apolloEnrichment.js';
+import { parse } from 'csv-parse/sync';
 
 class PhantomBusterService {
   constructor() {
@@ -42,22 +43,14 @@ class PhantomBusterService {
             const csvResponse = await axios.get(csvMatch[1]);
             const csvData = csvResponse.data;
             
-            // Parse CSV to JSON
-            const lines = csvData.split('\n');
-            const headers = lines[0].split(',').map(h => h.replace(/"/g, '').trim());
-            const results = [];
-            
-            for (let i = 1; i < lines.length; i++) {
-              if (lines[i].trim()) {
-                // Parse CSV line properly handling quoted values
-                const values = lines[i].match(/(".*?"|[^,]+)(?=\s*,|\s*$)/g) || [];
-                const row = {};
-                headers.forEach((header, index) => {
-                  row[header] = values[index]?.replace(/^"|"$/g, '').trim() || '';
-                });
-                results.push(row);
-              }
-            }
+            // Parse CSV using proper CSV parser
+            const results = parse(csvData, {
+              columns: true,
+              skip_empty_lines: true,
+              trim: true,
+              relax_quotes: true,
+              relax_column_count: true
+            });
             
             console.log(`✅ Parsed ${results.length} records from CSV`);
             return results;
@@ -158,6 +151,29 @@ class PhantomBusterService {
             JSON.stringify(item),
             'phantombuster_api'
           ]);
+          
+          // Add contact if we have the information
+          if (prospect.contact_name) {
+            const names = prospect.contact_name.split(' ');
+            const firstName = names[0];
+            const lastName = names.slice(1).join(' ');
+            
+            await client.query(`
+              INSERT INTO prospect_contacts (
+                prospect_id, first_name, last_name, title, 
+                linkedin_url, is_decision_maker, is_eos_role
+              ) VALUES ($1, $2, $3, $4, $5, $6, $7)
+              ON CONFLICT DO NOTHING
+            `, [
+              newProspectId,
+              firstName,
+              lastName,
+              prospect.contact_title,
+              prospect.contact_linkedin,
+              true, // They're likely decision makers if they have EOS titles
+              prospect.has_eos_titles
+            ]);
+          }
         }
       }
       
@@ -186,13 +202,14 @@ class PhantomBusterService {
 
   // Parse PhantomBuster data into our format
   parsePhantomBusterData(item) {
-    // Handle different field names PhantomBuster might use
+    // Handle PhantomBuster Sales Navigator Export format
     const companyName = item.companyName || item.company || item.name || item.query;
-    const jobTitle = item.jobTitle || item.title || item.currentJobTitle;
+    const fullName = item.fullName || item.name;
+    const jobTitle = item.title || item.jobTitle || item.currentJobTitle;
     
-    // Detect EOS signals
+    // Detect EOS signals from the title
     const eosKeywords = ['eos', 'traction', 'integrator', 'visionary', 'l10', 'rocks', 'accountability', 'level 10'];
-    const allText = `${companyName} ${item.description || ''} ${item.headline || ''} ${jobTitle || ''} ${item.summary || ''}`.toLowerCase();
+    const allText = `${companyName || ''} ${item.description || ''} ${item.headline || ''} ${jobTitle || ''} ${item.summary || ''}`.toLowerCase();
     
     const foundKeywords = eosKeywords.filter(keyword => allText.includes(keyword));
     const hasEOSTitles = /integrator|visionary/i.test(jobTitle || '');
@@ -201,18 +218,23 @@ class PhantomBusterService {
     let signalStrength = 0;
     if (foundKeywords.length > 0) signalStrength += 3 * foundKeywords.length;
     if (hasEOSTitles) signalStrength += 8;
-    if (item.employeeCount >= 10 && item.employeeCount <= 250) signalStrength += 3;
+    
+    // Extract company LinkedIn URL from regularCompanyUrl or companyUrl
+    const companyLinkedIn = item.regularCompanyUrl || item.companyUrl;
     
     return {
-      company_name: companyName,
-      website: item.website || item.companyWebsite || this.extractWebsiteFromLinkedIn(item.companyUrl || item.linkedinUrl),
-      linkedin_url: item.companyUrl || item.linkedinUrl || item.profileUrl || item.url,
+      company_name: companyName || `${fullName}'s Company`,
+      website: item.website || item.companyWebsite || this.extractWebsiteFromLinkedIn(companyLinkedIn),
+      linkedin_url: companyLinkedIn || item.linkedInProfileUrl || item.profileUrl,
       employee_count: this.parseEmployeeCount(item.employeeCount || item.companySize || item.staffCount),
       industry: item.industry || item.companyIndustry || item.field,
       has_eos_titles: hasEOSTitles,
       eos_keywords_found: foundKeywords.length > 0 ? foundKeywords : null,
-      signal_type: hasEOSTitles ? 'eos_title_found' : 'linkedin_company',
-      signal_strength: Math.min(signalStrength, 10) // Cap at 10
+      signal_type: hasEOSTitles ? 'eos_title_found' : 'linkedin_profile',
+      signal_strength: Math.min(signalStrength, 10), // Cap at 10
+      contact_name: fullName,
+      contact_title: jobTitle,
+      contact_linkedin: item.profileUrl || item.linkedInProfileUrl
     };
   }
 
