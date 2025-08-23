@@ -29,13 +29,27 @@ router.get('/', authenticate, async (req, res) => {
     }
     
     let query = `
-      SELECT 
-        p.*,
-        COUNT(DISTINCT pc.id) as contact_count,
-        COUNT(DISTINCT ps.id) as signal_count
-      FROM public.prospects p
-      LEFT JOIN public.prospect_contacts pc ON p.id = pc.prospect_id
-      LEFT JOIN public.prospect_signals ps ON p.id = ps.prospect_id
+      WITH prospect_stats AS (
+        SELECT 
+          p.*,
+          COALESCE(pc.contact_count, 0) as contact_count,
+          COALESCE(ps.signal_count, 0) as signal_count,
+          COALESCE(pc.email_count, 0) as email_count
+        FROM public.prospects p
+        LEFT JOIN (
+          SELECT prospect_id, 
+                 COUNT(*) as contact_count,
+                 COUNT(CASE WHEN email IS NOT NULL THEN 1 END) as email_count
+          FROM public.prospect_contacts
+          GROUP BY prospect_id
+        ) pc ON p.id = pc.prospect_id
+        LEFT JOIN (
+          SELECT prospect_id, COUNT(*) as signal_count
+          FROM public.prospect_signals
+          GROUP BY prospect_id
+        ) ps ON p.id = ps.prospect_id
+      )
+      SELECT * FROM prospect_stats
       WHERE 1=1
     `;
     
@@ -61,8 +75,7 @@ router.get('/', authenticate, async (req, res) => {
     }
     
     query += `
-      GROUP BY p.id
-      ORDER BY p.prospect_score DESC, p.created_at DESC
+      ORDER BY prospect_score DESC, created_at DESC
       LIMIT $${paramCount + 1} OFFSET $${paramCount + 2}
     `;
     
