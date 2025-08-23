@@ -5,6 +5,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import SEO from '../components/SEO';
 import FrameworkSwitcherDemo from '../components/FrameworkSwitcherDemo';
 import { Dialog, DialogContent } from '@/components/ui/dialog';
+import { useTrackConversion } from '../hooks/useApolloTracking';
 import { 
   Zap, 
   Users, 
@@ -33,6 +34,7 @@ import {
 
 const LandingPage = () => {
   const [showFrameworkDemo, setShowFrameworkDemo] = useState(false);
+  const { trackDemo, trackFeatureInterest } = useTrackConversion();
   
   // Revolutionary features that set us apart
   const gameChangers = [
@@ -321,7 +323,10 @@ const LandingPage = () => {
               <Button 
                 size="lg" 
                 className="mt-8"
-                onClick={() => setShowFrameworkDemo(true)}
+                onClick={() => {
+                  setShowFrameworkDemo(true);
+                  trackFeatureInterest('Framework Switching Demo');
+                }}
               >
                 See Framework Switching in Action
                 <ChevronRight className="ml-2 h-5 w-5" />
