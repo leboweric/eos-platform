@@ -113,18 +113,8 @@ class PhantomBusterService {
       // Ensure we're using the public schema
       await client.query('SET search_path TO public');
       
-      // Check if prospects table exists
-      const tableCheck = await client.query(`
-        SELECT EXISTS (
-          SELECT FROM information_schema.tables 
-          WHERE table_schema = 'public' 
-          AND table_name = 'prospects'
-        )
-      `);
-      
-      if (!tableCheck.rows[0].exists) {
-        throw new Error('Prospects table does not exist in database. Please run the migration SQL.');
-      }
+      // Create tables if they don't exist
+      await this.ensureTablesExist(client);
       
       await client.query('BEGIN');
       
@@ -329,6 +319,84 @@ class PhantomBusterService {
     }
   }
 
+  // Ensure tables exist
+  async ensureTablesExist(client) {
+    try {
+      // Create prospects table if it doesn't exist
+      await client.query(`
+        CREATE TABLE IF NOT EXISTS prospects (
+          id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+          company_name VARCHAR(255) NOT NULL,
+          website VARCHAR(255),
+          linkedin_url VARCHAR(500),
+          employee_count INTEGER,
+          revenue_estimate DECIMAL(12,2),
+          industry VARCHAR(100),
+          location VARCHAR(255),
+          description TEXT,
+          using_competitor VARCHAR(50),
+          has_eos_titles BOOLEAN DEFAULT false,
+          eos_keywords_found TEXT[],
+          eos_implementer VARCHAR(255),
+          prospect_score INTEGER DEFAULT 0,
+          prospect_tier VARCHAR(20) DEFAULT 'cold',
+          status VARCHAR(50) DEFAULT 'new',
+          source VARCHAR(100),
+          source_date TIMESTAMP,
+          notes TEXT,
+          tags TEXT[],
+          created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+          last_updated TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+          last_activity_date TIMESTAMP
+        )
+      `);
+      
+      // Create prospect_contacts table if it doesn't exist
+      await client.query(`
+        CREATE TABLE IF NOT EXISTS prospect_contacts (
+          id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+          prospect_id UUID REFERENCES prospects(id) ON DELETE CASCADE,
+          first_name VARCHAR(100),
+          last_name VARCHAR(100),
+          title VARCHAR(200),
+          email VARCHAR(255),
+          phone VARCHAR(50),
+          linkedin_url VARCHAR(500),
+          is_decision_maker BOOLEAN DEFAULT false,
+          is_eos_role BOOLEAN DEFAULT false,
+          notes TEXT,
+          created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+          last_updated TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        )
+      `);
+      
+      // Create prospect_signals table if it doesn't exist
+      await client.query(`
+        CREATE TABLE IF NOT EXISTS prospect_signals (
+          id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+          prospect_id UUID REFERENCES prospects(id) ON DELETE CASCADE,
+          signal_type VARCHAR(100),
+          signal_strength INTEGER DEFAULT 5,
+          signal_data JSONB,
+          source VARCHAR(100),
+          detected_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        )
+      `);
+      
+      // Create indexes if they don't exist
+      await client.query(`
+        CREATE INDEX IF NOT EXISTS idx_prospects_company ON prospects(company_name);
+        CREATE INDEX IF NOT EXISTS idx_prospects_tier ON prospects(prospect_tier);
+        CREATE INDEX IF NOT EXISTS idx_prospects_status ON prospects(status);
+      `);
+      
+      console.log('✅ Tables verified/created successfully');
+    } catch (error) {
+      console.error('Error ensuring tables exist:', error.message);
+      // Don't throw - tables might already exist
+    }
+  }
+  
   // Get all phantoms
   async listPhantoms() {
     try {
