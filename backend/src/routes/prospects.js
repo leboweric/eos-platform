@@ -10,15 +10,20 @@ router.get('/', authenticate, async (req, res) => {
   try {
     const { tier, status, competitor, limit = 50, offset = 0 } = req.query;
     
-    // First check if the prospects table exists
+    // Ensure we're using public schema
+    await pool.query('SET search_path TO public');
+    
+    // First check if the prospects table exists in public schema
     const tableCheck = await pool.query(`
       SELECT EXISTS (
         SELECT FROM information_schema.tables 
-        WHERE table_name = 'prospects'
+        WHERE table_schema = 'public' 
+        AND table_name = 'prospects'
       )
     `);
     
     if (!tableCheck.rows[0].exists) {
+      console.log('Prospects table not found in public schema');
       // Return empty array if table doesn't exist
       return res.json([]);
     }
@@ -28,9 +33,9 @@ router.get('/', authenticate, async (req, res) => {
         p.*,
         COUNT(DISTINCT pc.id) as contact_count,
         COUNT(DISTINCT ps.id) as signal_count
-      FROM prospects p
-      LEFT JOIN prospect_contacts pc ON p.id = pc.prospect_id
-      LEFT JOIN prospect_signals ps ON p.id = ps.prospect_id
+      FROM public.prospects p
+      LEFT JOIN public.prospect_contacts pc ON p.id = pc.prospect_id
+      LEFT JOIN public.prospect_signals ps ON p.id = ps.prospect_id
       WHERE 1=1
     `;
     
@@ -63,7 +68,14 @@ router.get('/', authenticate, async (req, res) => {
     
     params.push(limit, offset);
     
+    console.log(`Fetching prospects with limit=${limit}, offset=${offset}`);
     const result = await pool.query(query, params);
+    console.log(`Found ${result.rows.length} prospects`);
+    
+    // Also log total count for debugging
+    const countResult = await pool.query('SELECT COUNT(*) FROM public.prospects');
+    console.log(`Total prospects in database: ${countResult.rows[0].count}`);
+    
     res.json(result.rows);
   } catch (error) {
     console.error('Error fetching prospects:', error);
