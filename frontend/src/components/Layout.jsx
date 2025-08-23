@@ -38,7 +38,8 @@ import {
   Briefcase,
   Cloud,
   GitBranch,
-  FileText
+  FileText,
+  TrendingUp
 } from 'lucide-react';
 
 const Layout = ({ children }) => {
@@ -102,6 +103,7 @@ const Layout = ({ children }) => {
     { name: 'Storage Config', href: '/organization-settings/storage', icon: Cloud, requiresAdmin: true },
     { name: 'Terminology', href: '/terminology-settings', icon: Settings, requiresAdmin: true },
     { name: 'Billing', href: '/billing', icon: CreditCard, requiresAdmin: true },
+    { name: 'Prospects', href: '/prospects', icon: TrendingUp, requiresAdmin: true },
   ];
 
   // Filter navigation based on user permissions

@@ -40,6 +40,8 @@ import terminologyRoutes from './routes/terminology.js';
 import oauthRoutes from './routes/oauth.js';
 import exportRoutes from './routes/export.js';
 import dailyActiveUsersRoutes from './routes/dailyActiveUsers.js';
+import prospectsRoutes from './routes/prospects.js';
+import prospectWebhooksRoutes from './routes/prospectWebhooks.js';
 
 // Import middleware
 import { errorHandler } from './middleware/errorHandler.js';
@@ -176,6 +178,7 @@ app.get('/health', (req, res) => {
 
 // Webhook routes MUST come before auth middleware (they have their own validation)
 app.use('/api/v1/webhooks', webhookRoutes);
+app.use('/api/v1/prospects/webhooks', prospectWebhooksRoutes);
 
 // Add trial checking middleware for all authenticated routes (excluding webhooks)
 app.use('/api/v1/*', (req, res, next) => {
@@ -224,6 +227,7 @@ app.use('/api/v1/terminology', terminologyRoutes);
 app.use('/api/v1', sharedMetricsRoutes);
 app.use('/api/v1', exportRoutes);
 app.use('/api/v1/daily-active-users', dailyActiveUsersRoutes);
+app.use('/api/v1/prospects', prospectsRoutes);
 
 // Error handling middleware
 app.use(notFound);
