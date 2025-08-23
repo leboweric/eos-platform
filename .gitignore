@@ -49,4 +49,4 @@ coverage/
 
 # Uploads
 backend/uploads/
-uploads/
+uploads/backend/.env.backup
