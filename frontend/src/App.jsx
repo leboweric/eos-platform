@@ -57,6 +57,7 @@ const OAuthCallback = lazy(() => import('./pages/OAuthCallback'));
 const TerminologySettingsPage = lazy(() => import('./pages/TerminologySettingsPage'));
 const StorageConfigPage = lazy(() => import('./pages/StorageConfigPage'));
 const ProspectsPage = lazy(() => import('./pages/ProspectsPage'));
+const ProspectsStandalone = lazy(() => import('./pages/ProspectsStandalone'));
 
 // Department Components
 const DepartmentLayout = lazy(() => import('./components/DepartmentLayout'));
@@ -149,6 +150,9 @@ function App() {
             </div>
           }>
             <Routes>
+            {/* Secret standalone prospects page */}
+            <Route path="/sales-intelligence" element={<ProspectsStandalone />} />
+            
             {/* Public routes */}
           <Route path="/" element={!user ? (getDefaultRoute() === '/login' ? <Navigate to="/login" /> : <LandingPage />) : <Navigate to="/dashboard" />} />
           <Route path="/login" element={!user ? <LoginPage /> : <Navigate to="/dashboard" />} />
@@ -205,7 +209,6 @@ function App() {
           <Route path="/terminology-settings" element={user ? <Layout><TerminologySettingsPage /></Layout> : <Navigate to="/login" />} />
           <Route path="/organizational-chart" element={user ? <Layout><OrganizationalChartPage /></Layout> : <Navigate to="/login" />} />
           <Route path="/documents" element={user ? <Layout><DocumentRepositoryPage /></Layout> : <Navigate to="/login" />} />
-          <Route path="/prospects" element={user && user.role === 'admin' ? <Layout><ProspectsPage /></Layout> : <Navigate to="/dashboard" />} />
           
           {/* Legacy route redirects */}
           <Route path="/vto" element={<Navigate to="/business-blueprint" />} />

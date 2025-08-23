@@ -103,11 +103,20 @@ const Layout = ({ children }) => {
     { name: 'Storage Config', href: '/organization-settings/storage', icon: Cloud, requiresAdmin: true },
     { name: 'Terminology', href: '/terminology-settings', icon: Settings, requiresAdmin: true },
     { name: 'Billing', href: '/billing', icon: CreditCard, requiresAdmin: true },
-    { name: 'Prospects', href: '/prospects', icon: TrendingUp, requiresAdmin: true },
   ];
+
+  // Check if user is super admin (you)
+  const isSuperAdmin = () => {
+    const superAdminEmails = ['eric@axplatform.app', 'ericlebow@gmail.com']; // Add your email(s) here
+    return superAdminEmails.includes(user?.email?.toLowerCase());
+  };
 
   // Filter navigation based on user permissions
   const navigation = baseNavigation.filter(item => {
+    // If item requires super admin and user is not super admin, hide it
+    if (item.requiresSuperAdmin && !isSuperAdmin()) {
+      return false;
+    }
     // If item requires leadership and user is not on leadership team, hide it
     if (item.requiresLeadership && !isOnLeadershipTeam()) {
       return false;
