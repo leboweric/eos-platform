@@ -116,8 +116,8 @@ const ProspectsStandalone = () => {
 
   const fetchFromPhantomBuster = async () => {
     try {
-      // Your PhantomBuster phantom ID
-      const phantomId = '7057234367166084';
+      // Use the correct agent ID from PhantomBuster API
+      const phantomId = '7483492332629658';
       
       const response = await api.post(`/prospects/fetch-phantombuster/${phantomId}`, {
         limit: 700

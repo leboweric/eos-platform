@@ -5,27 +5,88 @@ import ApolloEnrichmentService from './apolloEnrichment.js';
 class PhantomBusterService {
   constructor() {
     this.apiKey = process.env.PHANTOMBUSTER_API_KEY;
-    this.baseUrl = 'https://api.phantombuster.com/api/v2';
+    this.baseUrl = 'https://api.phantombuster.com/api/v1';
   }
 
   // Fetch results from a specific phantom
   async fetchPhantomResults(phantomId, limit = 100) {
     try {
       console.log(`🔍 Fetching results from PhantomBuster phantom: ${phantomId}`);
+      console.log(`Using API key: ${this.apiKey ? 'Present' : 'Missing'}`);
       
-      const response = await axios.get(`${this.baseUrl}/agents/${phantomId}/output`, {
+      // PhantomBuster v1 API endpoint for fetching output
+      const url = `${this.baseUrl}/agent/${phantomId}/output`;
+      
+      console.log(`Fetching from URL: ${url}`);
+      const response = await axios.get(url, {
         headers: {
-          'X-Phantombuster-Key': this.apiKey
-        },
-        params: {
-          limit: limit
+          'X-Phantombuster-Key': this.apiKey,
+          'Accept': 'application/json'
         }
       });
 
-      console.log(`✅ Fetched ${response.data.length} results from PhantomBuster`);
-      return response.data;
+      console.log(`✅ Received response from PhantomBuster`);
+      
+      // V1 API response structure - check for CSV URL in output
+      if (response.data.status === 'success' && response.data.data) {
+        const data = response.data.data;
+        
+        // Try to extract CSV URL from the output logs
+        const csvMatch = data.output?.match(/CSV saved at (https:\/\/phantombuster\.s3\.amazonaws\.com[^\s]+\.csv)/);
+        
+        if (csvMatch) {
+          console.log(`📊 Found CSV URL: ${csvMatch[1]}`);
+          
+          // Download and parse the CSV
+          try {
+            const csvResponse = await axios.get(csvMatch[1]);
+            const csvData = csvResponse.data;
+            
+            // Parse CSV to JSON
+            const lines = csvData.split('\n');
+            const headers = lines[0].split(',').map(h => h.replace(/"/g, '').trim());
+            const results = [];
+            
+            for (let i = 1; i < lines.length; i++) {
+              if (lines[i].trim()) {
+                // Parse CSV line properly handling quoted values
+                const values = lines[i].match(/(".*?"|[^,]+)(?=\s*,|\s*$)/g) || [];
+                const row = {};
+                headers.forEach((header, index) => {
+                  row[header] = values[index]?.replace(/^"|"$/g, '').trim() || '';
+                });
+                results.push(row);
+              }
+            }
+            
+            console.log(`✅ Parsed ${results.length} records from CSV`);
+            return results;
+          } catch (csvError) {
+            console.error('Error downloading CSV:', csvError.message);
+          }
+        }
+        
+        // Fallback to resultObject if no CSV
+        if (data.resultObject) {
+          try {
+            const parsed = JSON.parse(data.resultObject);
+            return Array.isArray(parsed) ? parsed : [];
+          } catch (e) {
+            console.log('Could not parse resultObject');
+          }
+        }
+        
+        return [];
+      } else {
+        console.error('Unexpected response structure:', response.data);
+        return [];
+      }
     } catch (error) {
       console.error('Error fetching PhantomBuster results:', error.message);
+      if (error.response) {
+        console.error('Response status:', error.response.status);
+        console.error('Response data:', error.response.data);
+      }
       throw error;
     }
   }
@@ -212,13 +273,17 @@ class PhantomBusterService {
   // Get all phantoms
   async listPhantoms() {
     try {
-      const response = await axios.get(`${this.baseUrl}/agents`, {
+      const response = await axios.get(`${this.baseUrl}/user`, {
         headers: {
           'X-Phantombuster-Key': this.apiKey
         }
       });
       
-      return response.data;
+      // V1 API returns agents under data.data.agents
+      if (response.data.status === 'success' && response.data.data && response.data.data.agents) {
+        return response.data.data.agents;
+      }
+      return [];
     } catch (error) {
       console.error('Error listing phantoms:', error);
       throw error;
