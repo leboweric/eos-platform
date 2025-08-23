@@ -504,14 +504,10 @@ router.get('/phantombuster/list', authenticate, async (req, res) => {
   }
 });
 
-// Enrich prospects with Apollo data
+// Enrich prospects with Apollo data - BULK VERSION
 router.post('/enrich', authenticate, async (req, res) => {
   try {
-    const { limit = 5 } = req.body;
-    
-    // Dynamically import Apollo service only when needed
-    const { default: ApolloEnrichmentService } = await import('../services/apolloEnrichment.js');
-    const apollo = new ApolloEnrichmentService();
+    const { limit = 50 } = req.body;
     
     // Check if API key is configured
     if (!process.env.APOLLO_API_KEY) {
@@ -521,17 +517,25 @@ router.post('/enrich', authenticate, async (req, res) => {
       });
     }
     
-    console.log(`🚀 Starting enrichment for up to ${limit} prospects...`);
+    console.log(`🚀 Starting bulk enrichment for up to ${limit} prospects...`);
     
-    // Get prospects that need enrichment
+    // Get prospects that need enrichment with their contacts
     const needsEnrichment = await pool.query(`
-      SELECT id, company_name, website 
-      FROM prospects 
-      WHERE (technologies_used IS NULL 
-        OR employee_count IS NULL
-        OR revenue_estimate IS NULL)
-        AND website IS NOT NULL
-      ORDER BY has_eos_titles DESC, prospect_score DESC NULLS LAST
+      SELECT 
+        pc.id as contact_id,
+        pc.prospect_id,
+        pc.first_name,
+        pc.last_name,
+        pc.title,
+        p.company_name,
+        p.website
+      FROM prospect_contacts pc
+      JOIN prospects p ON pc.prospect_id = p.id
+      WHERE p.has_eos_titles = true
+        AND pc.email IS NULL
+        AND pc.first_name IS NOT NULL
+        AND pc.last_name IS NOT NULL
+      ORDER BY p.prospect_score DESC
       LIMIT $1
     `, [limit]);
     
@@ -543,41 +547,108 @@ router.post('/enrich', authenticate, async (req, res) => {
       });
     }
     
-    const results = [];
+    console.log(`Found ${needsEnrichment.rows.length} contacts to enrich`);
     
-    for (const prospect of needsEnrichment.rows) {
-      try {
-        console.log(`Enriching ${prospect.company_name}...`);
-        const enrichResult = await apollo.enrichProspect(prospect.id);
-        results.push({
-          prospect_id: prospect.id,
-          company_name: prospect.company_name,
-          success: true,
-          contacts_found: enrichResult.contactsFound
-        });
-        
-        // Rate limiting - Apollo has strict limits
-        await new Promise(resolve => setTimeout(resolve, 1000));
-      } catch (error) {
-        console.error(`Failed to enrich ${prospect.company_name}:`, error.message);
-        results.push({
-          prospect_id: prospect.id,
-          company_name: prospect.company_name,
-          success: false,
-          error: error.message
-        });
-      }
+    // Prepare bulk search arrays
+    const searchNames = [];
+    const searchCompanies = [];
+    const contactMap = new Map();
+    
+    for (const contact of needsEnrichment.rows) {
+      const fullName = `${contact.first_name} ${contact.last_name}`;
+      searchNames.push(fullName);
+      searchCompanies.push(contact.company_name);
+      contactMap.set(fullName.toLowerCase(), contact);
     }
     
-    const successCount = results.filter(r => r.success).length;
+    // Search Apollo in bulk
+    const { default: axios } = await import('axios');
+    const apiKey = process.env.APOLLO_API_KEY;
     
-    res.json({
-      success: true,
-      enriched: successCount,
-      total: results.length,
-      results: results,
-      message: `Enriched ${successCount} out of ${results.length} prospects`
-    });
+    try {
+      const apolloResponse = await axios.post(
+        'https://api.apollo.io/v1/mixed_people/search',
+        {
+          per_page: 100,
+          person_names: searchNames,
+          organization_names: [...new Set(searchCompanies)], // Unique companies
+          email_status: ['verified', 'guessed', 'unknown']
+        },
+        {
+          headers: {
+            'X-Api-Key': apiKey,
+            'Content-Type': 'application/json'
+          }
+        }
+      );
+      
+      let enrichedCount = 0;
+      
+      if (apolloResponse.data.people && apolloResponse.data.people.length > 0) {
+        console.log(`Apollo returned ${apolloResponse.data.people.length} results`);
+        
+        // Match and update contacts
+        for (const person of apolloResponse.data.people) {
+          if (!person.email) continue;
+          
+          // Try to match by name
+          const personFullName = `${person.first_name} ${person.last_name}`.toLowerCase();
+          const contact = contactMap.get(personFullName);
+          
+          if (contact) {
+            // Update contact with email
+            await pool.query(`
+              UPDATE prospect_contacts
+              SET 
+                email = $1,
+                phone = $2,
+                last_updated = NOW()
+              WHERE id = $3
+            `, [
+              person.email,
+              person.phone_numbers?.[0]?.sanitized_number,
+              contact.contact_id
+            ]);
+            
+            // Update company data if available
+            if (person.organization) {
+              await pool.query(`
+                UPDATE prospects
+                SET 
+                  website = COALESCE($1, website),
+                  employee_count = COALESCE($2, employee_count),
+                  industry = COALESCE($3, industry),
+                  last_updated = NOW()
+                WHERE id = $4
+              `, [
+                person.organization.website_url,
+                person.organization.estimated_num_employees,
+                person.organization.industry,
+                contact.prospect_id
+              ]);
+            }
+            
+            enrichedCount++;
+            console.log(`✅ Enriched: ${contact.first_name} ${contact.last_name} -> ${person.email}`);
+          }
+        }
+      }
+      
+      res.json({
+        success: true,
+        searched: needsEnrichment.rows.length,
+        enriched: enrichedCount,
+        message: `Found emails for ${enrichedCount} out of ${needsEnrichment.rows.length} contacts`
+      });
+      
+    } catch (apolloError) {
+      console.error('Apollo API error:', apolloError.response?.data || apolloError.message);
+      res.status(500).json({
+        error: 'Apollo API error',
+        details: apolloError.response?.data?.error || apolloError.message
+      });
+    }
+    
   } catch (error) {
     console.error('Error during enrichment:', error);
     res.status(500).json({ 
