@@ -48,7 +48,16 @@ class PhantomBusterService {
           
           // Download and parse the CSV
           try {
-            const csvResponse = await axios.get(csvMatch[1]);
+            console.log('📥 Downloading CSV from S3...');
+            const csvResponse = await axios.get(csvMatch[1], {
+              timeout: 30000, // 30 second timeout
+              maxContentLength: 50 * 1024 * 1024, // 50MB max
+              headers: {
+                'Accept': 'text/csv,*/*'
+              }
+            });
+            
+            console.log(`📄 CSV downloaded, size: ${csvResponse.data.length} bytes`);
             const csvData = csvResponse.data;
             
             // Parse CSV using proper CSV parser
@@ -63,7 +72,11 @@ class PhantomBusterService {
             console.log(`✅ Parsed ${results.length} records from CSV`);
             return results;
           } catch (csvError) {
-            console.error('Error downloading CSV:', csvError.message);
+            console.error('Error downloading/parsing CSV:', csvError.message);
+            if (csvError.response) {
+              console.error('CSV download response:', csvError.response.status, csvError.response.statusText);
+            }
+            throw new Error(`Failed to download CSV: ${csvError.message}`);
           }
         }
         

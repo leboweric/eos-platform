@@ -404,14 +404,29 @@ router.post('/fetch-phantombuster/:phantomId', authenticate, async (req, res) =>
     const { phantomId } = req.params;
     const { limit = 100 } = req.body;
     
+    console.log(`📥 API request to fetch PhantomBuster phantom ${phantomId}`);
+    
     const phantomBuster = new PhantomBusterService();
     
+    // Check if API key is configured
+    if (!process.env.PHANTOMBUSTER_API_KEY) {
+      console.error('❌ PHANTOMBUSTER_API_KEY not configured');
+      return res.status(500).json({ 
+        error: 'PhantomBuster API key not configured',
+        details: 'Please add PHANTOMBUSTER_API_KEY to environment variables'
+      });
+    }
+    
     // Fetch results from PhantomBuster
-    console.log(`Fetching results from PhantomBuster phantom ${phantomId}...`);
+    console.log(`🔍 Fetching results from PhantomBuster phantom ${phantomId}...`);
     const data = await phantomBuster.fetchPhantomResults(phantomId, limit);
+    
+    console.log(`📊 Processing ${data.length} records...`);
     
     // Process and save to database
     const result = await phantomBuster.processPhantomBusterData(data);
+    
+    console.log(`✅ Import complete: ${result.imported} imported, ${result.skipped} skipped`);
     
     res.json({
       success: true,
@@ -419,7 +434,9 @@ router.post('/fetch-phantombuster/:phantomId', authenticate, async (req, res) =>
       message: `Imported ${result.imported} new prospects, skipped ${result.skipped} existing`
     });
   } catch (error) {
-    console.error('Error fetching from PhantomBuster:', error);
+    console.error('❌ Error fetching from PhantomBuster:', error.message);
+    console.error('Stack trace:', error.stack);
+    
     res.status(500).json({ 
       error: 'Failed to fetch from PhantomBuster',
       details: error.message 
