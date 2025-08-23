@@ -57,8 +57,6 @@ const ScorecardDebug = lazy(() => import('./pages/ScorecardDebug'));
 const OAuthCallback = lazy(() => import('./pages/OAuthCallback'));
 const TerminologySettingsPage = lazy(() => import('./pages/TerminologySettingsPage'));
 const StorageConfigPage = lazy(() => import('./pages/StorageConfigPage'));
-const ProspectsPage = lazy(() => import('./pages/ProspectsPage'));
-const ProspectsStandalone = lazy(() => import('./pages/ProspectsStandalone'));
 
 // Department Components
 const DepartmentLayout = lazy(() => import('./components/DepartmentLayout'));
@@ -152,7 +150,6 @@ function App() {
           }>
             <Routes>
             {/* Secret standalone prospects page */}
-            <Route path="/sales-intelligence" element={<ProspectsStandalone />} />
             
             {/* Public routes */}
           <Route path="/" element={!user ? (getDefaultRoute() === '/login' ? <Navigate to="/login" /> : <LandingPage />) : <Navigate to="/dashboard" />} />
