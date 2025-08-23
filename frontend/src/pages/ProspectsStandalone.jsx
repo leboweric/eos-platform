@@ -114,6 +114,26 @@ const ProspectsStandalone = () => {
     }
   };
 
+  const fetchFromPhantomBuster = async () => {
+    try {
+      // Your PhantomBuster phantom ID
+      const phantomId = '7057234367166084';
+      
+      const response = await api.post(`/prospects/fetch-phantombuster/${phantomId}`, {
+        limit: 700
+      });
+      
+      alert(`PhantomBuster import complete!\nImported: ${response.data.imported} new prospects\nSkipped: ${response.data.skipped} existing`);
+      
+      // Refresh the prospects list
+      fetchProspects();
+      fetchDailySummary();
+    } catch (error) {
+      console.error('Error fetching from PhantomBuster:', error);
+      alert('Failed to fetch from PhantomBuster. Check console for details.');
+    }
+  };
+
   const getTierColor = (tier) => {
     switch(tier) {
       case 'hot': return 'text-red-600 bg-red-50';
@@ -182,6 +202,13 @@ const ProspectsStandalone = () => {
               <p className="text-gray-600 mt-1">Internal Sales Intelligence System</p>
             </div>
             <div className="flex gap-3">
+              <button
+                onClick={fetchFromPhantomBuster}
+                className="px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 flex items-center gap-2"
+              >
+                <Download className="w-4 h-4" />
+                Import PhantomBuster
+              </button>
               <button
                 onClick={runReviewScraping}
                 className="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 flex items-center gap-2"
