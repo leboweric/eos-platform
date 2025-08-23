@@ -110,6 +110,22 @@ class PhantomBusterService {
     const client = await pool.connect();
     
     try {
+      // Ensure we're using the public schema
+      await client.query('SET search_path TO public');
+      
+      // Check if prospects table exists
+      const tableCheck = await client.query(`
+        SELECT EXISTS (
+          SELECT FROM information_schema.tables 
+          WHERE table_schema = 'public' 
+          AND table_name = 'prospects'
+        )
+      `);
+      
+      if (!tableCheck.rows[0].exists) {
+        throw new Error('Prospects table does not exist in database. Please run the migration SQL.');
+      }
+      
       await client.query('BEGIN');
       
       const imported = [];
