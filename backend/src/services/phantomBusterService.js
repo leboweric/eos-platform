@@ -7,6 +7,10 @@ class PhantomBusterService {
   constructor() {
     this.apiKey = process.env.PHANTOMBUSTER_API_KEY;
     this.baseUrl = 'https://api.phantombuster.com/api/v1';
+    
+    if (!this.apiKey) {
+      console.warn('⚠️ PHANTOMBUSTER_API_KEY not configured');
+    }
   }
 
   // Fetch results from a specific phantom
@@ -14,6 +18,10 @@ class PhantomBusterService {
     try {
       console.log(`🔍 Fetching results from PhantomBuster phantom: ${phantomId}`);
       console.log(`Using API key: ${this.apiKey ? 'Present' : 'Missing'}`);
+      
+      if (!this.apiKey) {
+        throw new Error('PHANTOMBUSTER_API_KEY not configured. Please add it to Railway environment variables.');
+      }
       
       // PhantomBuster v1 API endpoint for fetching output
       const url = `${this.baseUrl}/agent/${phantomId}/output`;

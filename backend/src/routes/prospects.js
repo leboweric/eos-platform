@@ -10,6 +10,19 @@ router.get('/', authenticate, async (req, res) => {
   try {
     const { tier, status, competitor, limit = 50, offset = 0 } = req.query;
     
+    // First check if the prospects table exists
+    const tableCheck = await pool.query(`
+      SELECT EXISTS (
+        SELECT FROM information_schema.tables 
+        WHERE table_name = 'prospects'
+      )
+    `);
+    
+    if (!tableCheck.rows[0].exists) {
+      // Return empty array if table doesn't exist
+      return res.json([]);
+    }
+    
     let query = `
       SELECT 
         p.*,
@@ -237,6 +250,27 @@ router.post('/:id/signals', authenticate, async (req, res) => {
 router.get('/summary/daily', authenticate, async (req, res) => {
   try {
     const { date = new Date().toISOString().split('T')[0] } = req.query;
+    
+    // First check if the table exists
+    const tableCheck = await pool.query(`
+      SELECT EXISTS (
+        SELECT FROM information_schema.tables 
+        WHERE table_name = 'prospect_daily_summary'
+      )
+    `);
+    
+    if (!tableCheck.rows[0].exists) {
+      // Return default summary if table doesn't exist
+      return res.json({
+        summary_date: date,
+        total_prospects: 0,
+        new_prospects_today: 0,
+        hot_prospects: 0,
+        warm_prospects: 0,
+        competitor_users_found: 0,
+        reviews_scraped: 0
+      });
+    }
     
     // Get or create summary for the date
     let result = await pool.query(
