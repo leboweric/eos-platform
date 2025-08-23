@@ -1,11 +1,11 @@
 import express from 'express';
 import pool from '../config/database.js';
-import { authenticateToken } from '../middleware/auth.js';
+import { authenticate } from '../middleware/auth.js';
 
 const router = express.Router();
 
 // Get all prospects with filtering
-router.get('/', authenticateToken, async (req, res) => {
+router.get('/', authenticate, async (req, res) => {
   try {
     const { tier, status, competitor, limit = 50, offset = 0 } = req.query;
     
@@ -58,7 +58,7 @@ router.get('/', authenticateToken, async (req, res) => {
 });
 
 // Get single prospect with all details
-router.get('/:id', authenticateToken, async (req, res) => {
+router.get('/:id', authenticate, async (req, res) => {
   try {
     const { id } = req.params;
     
@@ -105,7 +105,7 @@ router.get('/:id', authenticateToken, async (req, res) => {
 });
 
 // Create new prospect
-router.post('/', authenticateToken, async (req, res) => {
+router.post('/', authenticate, async (req, res) => {
   const client = await pool.connect();
   
   try {
@@ -169,7 +169,7 @@ router.post('/', authenticateToken, async (req, res) => {
 });
 
 // Update prospect
-router.put('/:id', authenticateToken, async (req, res) => {
+router.put('/:id', authenticate, async (req, res) => {
   try {
     const { id } = req.params;
     const updates = req.body;
@@ -210,7 +210,7 @@ router.put('/:id', authenticateToken, async (req, res) => {
 });
 
 // Add signal to prospect
-router.post('/:id/signals', authenticateToken, async (req, res) => {
+router.post('/:id/signals', authenticate, async (req, res) => {
   try {
     const { id } = req.params;
     const { signal_type, signal_strength, signal_data, source } = req.body;
@@ -233,7 +233,7 @@ router.post('/:id/signals', authenticateToken, async (req, res) => {
 });
 
 // Get daily summary
-router.get('/summary/daily', authenticateToken, async (req, res) => {
+router.get('/summary/daily', authenticate, async (req, res) => {
   try {
     const { date = new Date().toISOString().split('T')[0] } = req.query;
     
@@ -286,7 +286,7 @@ router.get('/summary/daily', authenticateToken, async (req, res) => {
 });
 
 // Bulk import prospects (for automation webhooks)
-router.post('/bulk-import', authenticateToken, async (req, res) => {
+router.post('/bulk-import', authenticate, async (req, res) => {
   const client = await pool.connect();
   
   try {
