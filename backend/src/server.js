@@ -160,8 +160,15 @@ app.use(cors({
   optionsSuccessStatus: 204
 }));
 app.use(morgan('combined'));
+
+// IMPORTANT: Webhook routes MUST come BEFORE body parsing middleware
+// Stripe webhooks need the raw body to verify signatures
+app.use('/api/v1/webhooks', webhookRoutes);
+
+// Body parsing middleware (applies to all routes EXCEPT webhooks)
 app.use(express.json({ limit: '100mb' }));
 app.use(express.urlencoded({ extended: true, limit: '100mb' }));
+
 // Apply general limiter to all API routes by default
 app.use('/api/', generalLimiter);
 
@@ -173,9 +180,6 @@ app.get('/health', (req, res) => {
     uptime: process.uptime(),
   });
 });
-
-// Webhook routes MUST come before auth middleware (they have their own validation)
-app.use('/api/v1/webhooks', webhookRoutes);
 
 // Add trial checking middleware for all authenticated routes (excluding webhooks)
 app.use('/api/v1/*', (req, res, next) => {
