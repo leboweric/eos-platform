@@ -13,6 +13,8 @@ const defaultTerminology = {
   issue_singular: 'Issue',
   todos_label: 'To-Dos',
   todo_singular: 'To-Do',
+  processes_label: 'Processes',
+  process_singular: 'Process',
   weekly_meeting_label: 'Weekly Accountability Meeting',
   quarterly_meeting_label: 'Quarterly Planning Meeting',
   long_term_vision_label: 'Long-term Vision (3 Years)',
@@ -155,6 +157,8 @@ export const TerminologyProvider = ({ children }) => {
       organization_label: getTerm('organization_label'),
       team_label: getTerm('team_label'),
       department_label: getTerm('department_label'),
+      processes_label: getTerm('processes_label'),
+      process_singular: getTerm('process_singular'),
       
       // Shortened aliases for backward compatibility
       priorities: getTerm('priorities_label'),
@@ -164,6 +168,8 @@ export const TerminologyProvider = ({ children }) => {
       issue: getTerm('issue_singular'),
       todos: getTerm('todos_label'),
       todo: getTerm('todo_singular'),
+      processes: getTerm('processes_label'),
+      process: getTerm('process_singular'),
       weeklyMeeting: getTerm('weekly_meeting_label'),
       quarterlyMeeting: getTerm('quarterly_meeting_label'),
       longTermVision: getTerm('long_term_vision_label'),
