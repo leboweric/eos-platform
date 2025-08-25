@@ -351,7 +351,7 @@ const ProcessDocumentationPage = () => {
         <div className="flex justify-between items-center">
           <div>
             <h1 className="text-3xl font-bold">
-              {getTerminology('processes', 'Process Documentation')}
+              {labels?.processes || 'Process Documentation'}
             </h1>
             <p className="text-muted-foreground mt-1">
               Document and track your organization's core processes
