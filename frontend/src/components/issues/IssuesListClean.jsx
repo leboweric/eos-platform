@@ -305,7 +305,7 @@ const IssuesListClean = ({
     return (
       <div
         className={`
-          group relative bg-white/90 backdrop-blur-sm rounded-2xl border border-white/50 transition-all duration-200 cursor-pointer h-full shadow-sm hover:shadow-xl hover:scale-[1.02]
+          group relative bg-white/90 backdrop-blur-sm rounded-2xl border border-white/50 transition-shadow duration-200 cursor-pointer h-full shadow-sm hover:shadow-xl
           ${issue.status === 'closed' ? 'opacity-60' : ''}
           ${isTopIssue ? 'shadow-lg' : ''}
         `}
@@ -522,7 +522,7 @@ const IssuesListClean = ({
                         <div
                           key={issue.id}
                           className={`
-                            group relative flex items-center gap-3 bg-white/90 backdrop-blur-sm rounded-xl border border-white/50 pl-3 pr-4 py-3 transition-all duration-200 cursor-pointer shadow-sm hover:shadow-md hover:scale-[1.01]
+                            group relative flex items-center gap-3 bg-white/90 backdrop-blur-sm rounded-xl border border-white/50 pl-3 pr-4 py-3 transition-shadow duration-200 cursor-pointer shadow-sm hover:shadow-md
                             ${issue.status === 'closed' ? 'opacity-60' : ''}
                           `}
                           onClick={() => setSelectedIssue(issue)}
