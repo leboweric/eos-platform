@@ -23,7 +23,8 @@ const TodosListClean = ({
   onUpdate,
   onStatusChange,
   onConvertToIssue,
-  showCompleted = true
+  showCompleted = true,
+  hideViewToggle = false
 }) => {
   const { selectedTodoIds, toggleTodo, isSelected } = useSelectedTodos();
   const [themeColors, setThemeColors] = useState({
@@ -36,6 +37,9 @@ const TodosListClean = ({
   const [sortedTodos, setSortedTodos] = useState(todos);
   // Default to list view - only show grid if explicitly set
   const [showListView, setShowListView] = useState(() => {
+    // If hideViewToggle is true (Dashboard), always show list view
+    if (hideViewToggle) return true;
+    
     const savedMode = localStorage.getItem('todosViewMode');
     // If no saved preference or saved as 'list', show list view
     return savedMode !== 'grid';
@@ -226,20 +230,22 @@ const TodosListClean = ({
           </div>
           
           {/* List view toggle */}
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={() => {
-              const newMode = !showListView;
-              setShowListView(newMode);
-              localStorage.setItem('todosViewMode', newMode ? 'list' : 'grid');
-            }}
-            className="h-7 px-3 py-1 text-xs font-medium hover:bg-gray-200"
-            title={showListView ? "Switch to Compact Grid View" : "Switch to List View"}
-          >
-            <List className="h-3 w-3 mr-1" />
-            {showListView ? "Grid View" : "List View"}
-          </Button>
+          {!hideViewToggle && (
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => {
+                const newMode = !showListView;
+                setShowListView(newMode);
+                localStorage.setItem('todosViewMode', newMode ? 'list' : 'grid');
+              }}
+              className="h-7 px-3 py-1 text-xs font-medium hover:bg-gray-200"
+              title={showListView ? "Switch to Compact Grid View" : "Switch to List View"}
+            >
+              <List className="h-3 w-3 mr-1" />
+              {showListView ? "Grid View" : "List View"}
+            </Button>
+          )}
         </div>
       </div>
       

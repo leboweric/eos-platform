@@ -932,6 +932,7 @@ const DashboardClean = () => {
                 onDelete={() => {}}
                 onUpdate={fetchDashboardData}
                 showCompleted={false}
+                hideViewToggle={true}
               />
             )}
           </div>
