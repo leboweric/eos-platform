@@ -166,10 +166,66 @@ GOOGLE_CLIENT_SECRET=...
 MICROSOFT_CLIENT_ID=...
 MICROSOFT_CLIENT_SECRET=...
 
+# Stripe (CRITICAL - must be set for webhooks)
+STRIPE_SECRET_KEY=sk_live_...
+STRIPE_WEBHOOK_SECRET=whsec_...  # Get from Stripe Dashboard > Webhooks
+
 # Optional
 OPENAI_API_KEY=...  # For AI features
 ENABLE_MEETINGS=true # For collaborative meetings
 ```
+
+## Marketing & Apollo Integration (Aug 2024)
+
+### Strategic Decision: Apollo-Only Workflow
+**Simplified from**: PhantomBuster → AXP Database → Apollo → Import back  
+**To**: PhantomBuster → Apollo (direct upload) → Email campaigns
+
+**Why**: Apollo IS the prospect CRM. No need to duplicate data in AXP.
+
+### Apollo Configuration
+- **Website Tracking**: `appId: 68aa0c1fd256ed000d90dd16` in index.html
+- **Custom Domain**: `track.axplatform.app` → `brainy-figs.aploconnects.com`
+- **Email**: `eric@axplatform.app` via Google Workspace
+- **DNS Records Added to Netlify**:
+  - MX: `SMTP.GOOGLE.COM`
+  - SPF: `v=spf1 include:_spf.google.com ~all`
+  - DKIM: Auto-configured by Apollo
+  - CNAME: track → brainy-figs.aploconnects.com
+
+### Apollo Best Practices
+1. **Custom tracking domain CRITICAL**: 50-70% better deliverability
+2. **Email warmup schedule**: Week 1: 20-30/day, Week 2: 50-75/day, Week 3: 100-150/day
+3. **Web upload vs API**: Web found 160/200 (80%), API found 1/459 (0.2%)
+4. **Target metrics**: 25-35% open rate, 3-5% click rate
+
+### Current Marketing Assets
+- 580 EOS Integrators identified via PhantomBuster
+- 160 enriched with emails via Apollo web upload
+- Website visitor tracking configured
+- Conversion tracking on registration/landing pages
+
+## Critical Webhook Configuration
+
+### ⚠️ Stripe Webhooks MUST Come Before Body Parsing
+```javascript
+// ✅ CORRECT ORDER in server.js
+app.use('/api/v1/webhooks', webhookRoutes);  // Raw body for Stripe signature
+app.use(express.json());                      // Then parse for other routes
+
+// ❌ WRONG ORDER - breaks Stripe signature verification
+app.use(express.json());                      // Parses body first
+app.use('/api/v1/webhooks', webhookRoutes);  // Too late, body already parsed!
+```
+
+This caused a 3-day production outage (Aug 20-23, 2024) where payments processed but database wasn't updated.
+
+## Removed Features (Aug 2024)
+- Prospect tracking database (6,655 lines removed)
+- PhantomBuster integration 
+- Apollo enrichment API
+- `/sales-intelligence` route
+- Use Apollo directly instead
 
 ---
 **Note**: This is a streamlined essential reference. For historical context and detailed guides, see the archive and docs folder.
