@@ -154,6 +154,26 @@ const resetTerminology = async (req, res) => {
 const getTerminologyPresets = async (req, res) => {
   try {
     const presets = {
+      default: {
+        name: 'Default (Methodology-Agnostic)',
+        priorities_label: 'Quarterly Priorities',
+        priority_singular: 'Priority',
+        scorecard_label: 'Metrics',
+        issues_label: 'Issues',
+        issue_singular: 'Issue',
+        todos_label: 'Tasks',
+        todo_singular: 'Task',
+        processes_label: 'Processes',
+        process_singular: 'Process',
+        weekly_meeting_label: 'Weekly Accountability Meeting',
+        quarterly_meeting_label: 'Quarterly Planning Meeting',
+        long_term_vision_label: 'Long-term Vision (3 Years)',
+        annual_goals_label: 'Annual Goals',
+        business_blueprint_label: '2-Page Plan',
+        accountability_chart_label: 'Organizational Chart',
+        milestones_label: 'Milestones',
+        problem_solving_process: 'Issues & Problem Solving'
+      },
       eos: {
         name: 'EOS (Entrepreneurial Operating System)',
         priorities_label: 'Rocks',
@@ -233,22 +253,6 @@ const getTerminologyPresets = async (req, res) => {
         accountability_chart_label: 'Accountability Chart',
         milestones_label: 'Lead Measures',
         problem_solving_process: 'Obstacle Clearing'
-      },
-      custom: {
-        name: 'Custom Terminology',
-        priorities_label: 'Quarterly Priorities',
-        priority_singular: 'Priority',
-        scorecard_label: 'Metrics Dashboard',
-        issues_label: 'Issues',
-        issue_singular: 'Issue',
-        todos_label: 'Tasks',
-        todo_singular: 'Task',
-        weekly_meeting_label: 'Weekly Team Meeting',
-        quarterly_meeting_label: 'Quarterly Planning',
-        long_term_vision_label: 'Long-term Vision',
-        annual_goals_label: 'Annual Goals',
-        business_blueprint_label: 'Strategic Plan',
-        problem_solving_process: 'Problem Solving'
       }
     };
     
@@ -267,6 +271,25 @@ const applyTerminologyPreset = async (req, res) => {
     
     // Get the preset values
     const presets = {
+      default: {
+        priorities_label: 'Quarterly Priorities',
+        priority_singular: 'Priority',
+        scorecard_label: 'Metrics',
+        issues_label: 'Issues',
+        issue_singular: 'Issue',
+        todos_label: 'Tasks',
+        todo_singular: 'Task',
+        processes_label: 'Processes',
+        process_singular: 'Process',
+        weekly_meeting_label: 'Weekly Accountability Meeting',
+        quarterly_meeting_label: 'Quarterly Planning Meeting',
+        long_term_vision_label: 'Long-term Vision (3 Years)',
+        annual_goals_label: 'Annual Goals',
+        business_blueprint_label: '2-Page Plan',
+        accountability_chart_label: 'Organizational Chart',
+        milestones_label: 'Milestones',
+        problem_solving_process: 'Issues & Problem Solving'
+      },
       eos: {
         priorities_label: 'Rocks',
         priority_singular: 'Rock',
