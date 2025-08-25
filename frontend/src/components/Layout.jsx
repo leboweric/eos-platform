@@ -46,7 +46,7 @@ const Layout = ({ children }) => {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [isImpersonating, setIsImpersonating] = useState(false);
   const [logoUrl, setLogoUrl] = useState(null);
-  const [logoKey, setLogoKey] = useState(Date.now()); // Force refresh of logo
+  const [logoKey] = useState(Date.now()); // Cache buster for logo
   const [hideSidebar, setHideSidebar] = useState(false);
   const [logoSize, setLogoSize] = useState(() => {
     return parseInt(localStorage.getItem('logoSize') || '100');
@@ -80,10 +80,8 @@ const Layout = ({ children }) => {
     };
   }, []);
   
-  // Refresh logo when returning to this page
+  // Check for temporary sidebar hide flag
   useEffect(() => {
-    setLogoKey(Date.now());
-    // Check for temporary sidebar hide flag
     setHideSidebar(sessionStorage.getItem('hideSidebarTemp') === 'true');
   }, [location.pathname]);
 
