@@ -37,6 +37,7 @@ const TodosPage = lazy(() => import('./pages/TodosPage'));
 const IssuesPage = lazy(() => import('./pages/IssuesPageClean'));
 const IssuesPageOriginal = lazy(() => import('./pages/IssuesPageOriginal'));
 const LandingPageOld = lazy(() => import('./pages/LandingPageOld'));
+const ProcessDocumentationPage = lazy(() => import('./pages/ProcessDocumentationPage'));
 const DepartmentsPage = lazy(() => import('./pages/DepartmentsPage'));
 const AccountabilityChart = lazy(() => import('./pages/AccountabilityChart'));
 const BillingPage = lazy(() => import('./pages/BillingPageV2'));
@@ -186,6 +187,7 @@ function App() {
           <Route path="/todos" element={user ? <Layout><TodosPage /></Layout> : <Navigate to="/login" />} />
           <Route path="/issues" element={user ? <Layout><IssuesPage /></Layout> : <Navigate to="/login" />} />
           <Route path="/issues-original" element={user ? <Layout><IssuesPageOriginal /></Layout> : <Navigate to="/login" />} />
+          <Route path="/processes" element={user ? <Layout><ProcessDocumentationPage /></Layout> : <Navigate to="/login" />} />
           <Route path="/departments" element={user ? <Layout><DepartmentsPage /></Layout> : <Navigate to="/login" />} />
           
           {/* Department-specific routes */}

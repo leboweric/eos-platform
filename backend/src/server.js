@@ -40,6 +40,7 @@ import terminologyRoutes from './routes/terminology.js';
 import oauthRoutes from './routes/oauth.js';
 import exportRoutes from './routes/export.js';
 import dailyActiveUsersRoutes from './routes/dailyActiveUsers.js';
+import processDocumentationRoutes from './routes/processDocumentation.js';
 
 // Import middleware
 import { errorHandler } from './middleware/errorHandler.js';
@@ -220,6 +221,7 @@ app.use('/api/v1/feedback', feedbackRoutes);
 app.use('/api/v1/organizations/:orgId/documents', documentsRoutes);
 app.use('/api/v1/organizations/:orgId/folders', foldersRoutes);
 app.use('/api/v1/organizations/:orgId/storage', storageRoutes);
+app.use('/api/v1/processes', processDocumentationRoutes);
 app.use('/api/v1/organizations/:orgId/ai/rock-assistant', aiRockAssistantRoutes);
 app.use('/api/v1', completionTrackingRoutes);
 app.use('/api/v1/user', userPreferencesRoutes);

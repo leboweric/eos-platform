@@ -94,6 +94,7 @@ const Layout = ({ children }) => {
     { name: labels?.todos || 'To-Dos', href: '/todos', icon: ClipboardList },
     { name: labels?.issues || 'Issues', href: '/issues', icon: MessageSquare },
     { name: 'Meetings', href: '/meetings', icon: Calendar },
+    { name: labels?.processes || 'Processes', href: '/processes', icon: FileText },
     { name: labels?.business_blueprint_label || '2-Page Plan', href: '/business-blueprint', icon: Target },
     { name: labels?.accountability_chart_label || 'Organizational Chart', href: '/organizational-chart', icon: GitBranch },
     { name: 'Document Repository', href: '/documents', icon: FileText },
