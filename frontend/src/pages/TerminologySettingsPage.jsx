@@ -66,6 +66,9 @@ const TerminologySettingsPage = () => {
     } else if (terminology?.priorities_label?.includes('WIG')) {
       setCurrentFramework('fourDx');
       setSelectedPreset('fourDx');
+    } else if (terminology?.priorities_label === 'Quarterly Priorities' && terminology?.scorecard_label === 'Metrics' && terminology?.todos_label === 'Tasks') {
+      setCurrentFramework('default');
+      setSelectedPreset('default');
     } else {
       setCurrentFramework('custom');
       setSelectedPreset('custom');
@@ -74,6 +77,7 @@ const TerminologySettingsPage = () => {
 
   const getFrameworkDisplayName = () => {
     const frameworkNames = {
+      default: 'Default (Methodology-Agnostic)',
       eos: 'EOS (Entrepreneurial Operating System)',
       okrs: 'OKRs (Objectives & Key Results)',
       scaling_up: 'Scaling Up (Rockefeller Habits)',
@@ -231,10 +235,11 @@ const TerminologySettingsPage = () => {
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="custom">Custom</SelectItem>
-                  <SelectItem value="eos">EOS (Entrepreneurial Operating System)</SelectItem>
-                  <SelectItem value="okrs">OKRs (Objectives & Key Results)</SelectItem>
-                  <SelectItem value="scaling_up">Scaling Up (Rockefeller Habits)</SelectItem>
-                  <SelectItem value="fourDx">4 Disciplines of Execution</SelectItem>
+                  {Object.entries(presets).map(([key, preset]) => (
+                    <SelectItem key={key} value={key}>
+                      {preset.name}
+                    </SelectItem>
+                  ))}
                 </SelectContent>
               </Select>
             </div>
