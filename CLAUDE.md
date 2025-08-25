@@ -118,6 +118,32 @@ style={{
 7. **Respect organization theme colors** in UI
 8. **Update existing files** rather than creating new versions
 
+## Common Fixes & Patterns
+
+### Logo Management
+- **Logo Size Control**: Use `logoSize` state from localStorage, apply as percentage to base dimensions
+- **Prevent Flash on Navigation**: Set `logoKey` once on mount, don't update on route changes
+- **Base Dimensions**: 96px height, 300px max width at 100%
+
+### React Component Issues
+- **"X is not a function" Error**: Usually missing or incorrect hook destructuring
+- **Layout Double-Wrapping**: Page components shouldn't import Layout if already wrapped in App.jsx
+- **Terminology Hook**: Use `const { labels } = useTerminology()` not `getTerminology`
+
+### Database Foreign Keys
+- **User References**: Always use UUID type, not INTEGER
+- **Organization References**: Always use UUID type
+- **Check Existing Tables**: Run queries to verify column types before creating foreign keys
+
+### Stripe Webhook Fix (Critical)
+- **Issue**: "No stripe-signature header value was provided"
+- **Cause**: Webhook routes must come BEFORE express.json() middleware
+- **Solution**: In server.js, place webhook routes before body parsing:
+```javascript
+app.use('/api/v1/webhooks', webhookRoutes);  // Raw body needed
+app.use(express.json());                      // Then parse JSON
+```
+
 ## Important File References
 
 ### For Detailed Documentation
@@ -134,10 +160,29 @@ style={{
 
 ## Recent Active Features
 
+### Apollo.io Integration Decision (Aug 2024)
+- **Decision**: Use Apollo's native features instead of complex database sync
+- **Simplified Approach**: Remove prospect tables and sync infrastructure
+- **Use Apollo For**: Email campaigns, website visitor tracking, lead scoring
+- **Custom Tracking Domain**: track.axplatform.app configured in Netlify DNS
+
+### Process Documentation System (Aug 2024)
+- Comprehensive process management for EOS Core Processes, Scaling Up Process Maps, 4DX Standard Work, OKR Playbooks
+- Supports both internal PostgreSQL storage and external cloud providers
+- Features: templates, version tracking, acknowledgments, review schedules
+- Migration: `create_process_documentation_tables.sql`
+- Routes: `/api/v1/processes` 
+- **Fix Applied**: User foreign keys must be UUID, not INTEGER
+
 ### Adaptive Framework Technology™
 - Organizations can switch between EOS, 4DX, OKRs, Scaling Up methodologies
-- `useTerminology` hook provides framework-specific terms
-- Organization setting: `terminology_set` field
+- Dynamic terminology throughout platform (menu items change based on methodology)
+- Default preset available for reverting to methodology-agnostic terms
+- **Terminology Defaults**: 
+  - "Metrics" instead of "Scorecard" (EOS-specific)
+  - "Tasks" instead of "To-Dos" (more professional)
+  - "Processes" for generic, changes to "Core Processes" for EOS, etc.
+- **Fix Applied**: Terminology presets must include `processes_label` and `process_singular`
 
 ### Cloud Storage Integration
 - Google Drive, OneDrive, SharePoint support
