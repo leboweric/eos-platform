@@ -346,7 +346,7 @@ const applyTerminologyPreset = async (req, res) => {
       custom: {
         priorities_label: 'Quarterly Priorities',
         priority_singular: 'Priority',
-        scorecard_label: 'Metrics Dashboard',
+        scorecard_label: 'Metrics',
         issues_label: 'Issues',
         issue_singular: 'Issue',
         todos_label: 'Tasks',

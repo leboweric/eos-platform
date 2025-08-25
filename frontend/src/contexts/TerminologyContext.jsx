@@ -8,7 +8,7 @@ const TerminologyContext = createContext();
 const defaultTerminology = {
   priorities_label: 'Quarterly Priorities',
   priority_singular: 'Priority',
-  scorecard_label: 'Scorecard',
+  scorecard_label: 'Metrics',
   issues_label: 'Issues',
   issue_singular: 'Issue',
   todos_label: 'To-Dos',
