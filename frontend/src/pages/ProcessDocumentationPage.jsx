@@ -1,7 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useAuthStore } from '../stores/authStore';
 import { useTerminology } from '../contexts/TerminologyContext';
-import Layout from '../components/Layout';
 import ProcessEditor from '../components/processes/ProcessEditor';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -37,7 +36,7 @@ import axios from '../services/axiosConfig';
 
 const ProcessDocumentationPage = () => {
   const { user } = useAuthStore();
-  const { getTerminology } = useTerminology();
+  const { labels } = useTerminology();
   const [processes, setProcesses] = useState([]);
   const [templates, setTemplates] = useState([]);
   const [loading, setLoading] = useState(true);
