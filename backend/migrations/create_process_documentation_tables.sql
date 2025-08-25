@@ -12,7 +12,7 @@ CREATE TABLE IF NOT EXISTS process_documents (
     name VARCHAR(255) NOT NULL,
     category VARCHAR(100), -- Sales, Operations, Finance, HR, etc.
     process_type VARCHAR(50) DEFAULT 'core_process', -- core_process, checklist, sop, playbook
-    owner_user_id INTEGER REFERENCES users(id) ON DELETE SET NULL,
+    owner_user_id UUID REFERENCES users(id) ON DELETE SET NULL,
     owner_name VARCHAR(255), -- Denormalized for display
     
     -- Process Content (stored in DB for quick access)
@@ -46,7 +46,7 @@ CREATE TABLE IF NOT EXISTS process_documents (
     
     -- Status and metadata
     status VARCHAR(50) DEFAULT 'draft', -- draft, published, archived, under_review
-    created_by INTEGER REFERENCES users(id),
+    created_by UUID REFERENCES users(id),
     created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
     updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
     archived_at TIMESTAMP WITH TIME ZONE,
@@ -102,7 +102,7 @@ CREATE TABLE IF NOT EXISTS process_attachments (
     external_file_id TEXT,
     
     -- Metadata
-    uploaded_by INTEGER REFERENCES users(id),
+    uploaded_by UUID REFERENCES users(id),
     uploaded_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
     
     CONSTRAINT check_storage_type CHECK (
@@ -115,7 +115,7 @@ CREATE TABLE IF NOT EXISTS process_attachments (
 CREATE TABLE IF NOT EXISTS process_acknowledgments (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     process_document_id UUID NOT NULL REFERENCES process_documents(id) ON DELETE CASCADE,
-    user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
     
     -- Acknowledgment details
     acknowledged_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
@@ -142,7 +142,7 @@ CREATE TABLE IF NOT EXISTS process_change_history (
     -- Change details
     version_from VARCHAR(20),
     version_to VARCHAR(20),
-    changed_by INTEGER REFERENCES users(id),
+    changed_by UUID REFERENCES users(id),
     changed_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
     
     -- What changed
