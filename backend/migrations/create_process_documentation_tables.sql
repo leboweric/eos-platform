@@ -5,7 +5,7 @@
 -- Main process documentation table
 CREATE TABLE IF NOT EXISTS process_documents (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    organization_id INTEGER NOT NULL REFERENCES organizations(id) ON DELETE CASCADE,
+    organization_id UUID NOT NULL REFERENCES organizations(id) ON DELETE CASCADE,
     team_id UUID REFERENCES teams(id) ON DELETE SET NULL, -- NULL = organization-wide process
     
     -- Basic Information
@@ -181,7 +181,7 @@ CREATE TABLE IF NOT EXISTS process_templates (
 -- Process categories configuration (customizable per organization)
 CREATE TABLE IF NOT EXISTS process_categories (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    organization_id INTEGER NOT NULL REFERENCES organizations(id) ON DELETE CASCADE,
+    organization_id UUID NOT NULL REFERENCES organizations(id) ON DELETE CASCADE,
     
     name VARCHAR(100) NOT NULL,
     color VARCHAR(7), -- Hex color for UI
