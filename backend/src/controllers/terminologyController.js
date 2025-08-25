@@ -294,6 +294,8 @@ const applyTerminologyPreset = async (req, res) => {
         issue_singular: 'Blocker',
         todos_label: 'Action Items',
         todo_singular: 'Action Item',
+        processes_label: 'Playbooks',
+        process_singular: 'Playbook',
         weekly_meeting_label: 'Weekly Check-in',
         quarterly_meeting_label: 'OKR Planning Session',
         long_term_vision_label: 'Strategic Vision',
@@ -356,6 +358,8 @@ const applyTerminologyPreset = async (req, res) => {
         long_term_vision_label: 'Long-term Vision',
         annual_goals_label: 'Annual Goals',
         business_blueprint_label: 'Strategic Plan',
+        accountability_chart_label: 'Organizational Chart',
+        milestones_label: 'Milestones',
         problem_solving_process: 'Problem Solving'
       }
     };
