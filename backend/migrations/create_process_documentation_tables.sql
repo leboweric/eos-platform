@@ -37,7 +37,7 @@ CREATE TABLE IF NOT EXISTS process_documents (
     followed_by_all_percentage INTEGER DEFAULT 0 CHECK (followed_by_all_percentage >= 0 AND followed_by_all_percentage <= 100),
     last_reviewed_date DATE,
     review_frequency_days INTEGER DEFAULT 90, -- How often to review
-    next_review_date DATE GENERATED ALWAYS AS (last_reviewed_date + (review_frequency_days || ' days')::INTERVAL) STORED,
+    next_review_date DATE, -- Will be calculated via trigger or in application
     
     -- Methodology-specific fields
     methodology_type VARCHAR(50), -- eos, scaling_up, 4dx, okr, custom
@@ -203,6 +203,24 @@ CREATE INDEX idx_process_attachments_document ON process_attachments(process_doc
 CREATE INDEX idx_process_acknowledgments_user ON process_acknowledgments(user_id);
 CREATE INDEX idx_process_acknowledgments_document ON process_acknowledgments(process_document_id);
 CREATE INDEX idx_process_change_history_document ON process_change_history(process_document_id);
+
+-- Function to calculate next review date
+CREATE OR REPLACE FUNCTION update_next_review_date()
+RETURNS TRIGGER AS $$
+BEGIN
+    IF NEW.last_reviewed_date IS NOT NULL AND NEW.review_frequency_days IS NOT NULL THEN
+        NEW.next_review_date := NEW.last_reviewed_date + (NEW.review_frequency_days || ' days')::INTERVAL;
+    END IF;
+    RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+-- Trigger to automatically update next_review_date
+CREATE TRIGGER trigger_update_next_review_date
+BEFORE INSERT OR UPDATE OF last_reviewed_date, review_frequency_days
+ON process_documents
+FOR EACH ROW
+EXECUTE FUNCTION update_next_review_date();
 
 -- Default categories for new organizations
 INSERT INTO process_categories (organization_id, name, color, icon, display_order)
