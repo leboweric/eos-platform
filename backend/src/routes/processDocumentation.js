@@ -1,7 +1,7 @@
 import express from 'express';
 import { authenticate } from '../middleware/auth.js';
 import { query } from '../config/database.js';
-import { StorageFactory } from '../services/storage/StorageFactory.js';
+import { storageFactory } from '../services/storage/StorageFactory.js';
 
 const router = express.Router();
 
@@ -453,8 +453,8 @@ router.post('/:id/sync', authenticate, async (req, res) => {
       return res.status(400).json({ error: 'Cloud storage not configured' });
     }
     
-    // Use StorageFactory to get appropriate adapter
-    const storage = StorageFactory.createAdapter(process.storage_type, storageConfig);
+    // Use storageFactory to get appropriate adapter
+    const storage = storageFactory.createAdapter(process.storage_type, storageConfig);
     
     // Sync content from external storage
     const syncedContent = await storage.getFile(process.external_file_id);
