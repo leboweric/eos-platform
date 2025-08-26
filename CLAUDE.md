@@ -272,5 +272,80 @@ This caused a 3-day production outage (Aug 20-23, 2024) where payments processed
 - `/sales-intelligence` route
 - Use Apollo directly instead
 
+## Session: August 26, 2025 - Patent Implementation & Data Protection
+
+### Patent Filing Success
+- **Filed**: Patent Pending Serial No. 63/870,133 for Adaptive Framework Technology™
+- **Cost**: $130 as small entity
+- **Technology**: World's first execution platform that adapts to any business methodology
+- **Potential Value**: $5M according to previous analysis
+
+### Adaptive Framework Implementation Started
+Built foundation for the patent technology:
+1. **Universal Data Schema** (`universal_objectives` table) - Framework-agnostic storage
+2. **Translation Engine** - Real-time framework transformation (not just labels)
+3. **Framework-specific UI components** - EOSRockCard vs OKRKeyResultCard
+4. **Migration strategy** - Parallel operation, no forced migration needed
+
+**Important**: All new schema changes are additive and won't break existing functionality.
+
+### Soft Delete Protection Implemented
+Added data recovery capability to critical tables:
+```sql
+-- Tables now protected with soft delete:
+- quarterly_priorities (already had it)
+- todos ✅ (added today)
+- issues ✅ (added today)
+- scorecard_metrics ✅ (added today)
+- business_blueprints ✅ (added today)
+- meetings ✅ (added today)
+```
+
+**How it works**: Instead of `DELETE`, uses `UPDATE SET deleted_at = NOW()`
+**Recovery**: `UPDATE [table] SET deleted_at = NULL WHERE id = '[item_id]'`
+
+### Critical Lessons Learned
+
+#### 1. Railway File Storage Issue (Data Loss!)
+- **Problem**: 3 attachments lost because stored on filesystem (`/app/uploads/`)
+- **Cause**: Railway has ephemeral filesystem - wiped on every deploy
+- **Solution**: Store in PostgreSQL `file_data` column (already fixed Aug 14+)
+- **Lost files**: Strategic Consulting needs to re-upload 3 documents from Aug 6
+
+#### 2. Database Quarter Storage Issue
+- **Problem**: Strategic Consulting's rocks had "Q3" instead of "3" in quarter field
+- **Solution**: The system actually accepts both formats, but rocks must have `team_id` assigned
+- **Key Learning**: Rocks with `team_id = NULL` won't show in UI
+
+#### 3. Attachment Filename "undefined" Bug
+- **Root Cause**: Backend returns camelCase (`fileName`) but frontend expected snake_case (`file_name`)
+- **Solution**: Check both formats: `attachment.fileName || attachment.file_name`
+- **Applied to**: QuarterlyPrioritiesPageClean.jsx and PriorityCardClean.jsx
+
+#### 4. pgAdmin Database Connection
+- **Issue**: User was querying wrong database (`postgres` instead of `railway`)
+- **Solution**: Use dropdown in pgAdmin to select correct database
+- **Reminder**: Always verify you're connected to the production database
+
+### Database Migration Requirements
+Run these in production (pgAdmin on railway database):
+```sql
+-- 1. Soft delete columns (safe, non-breaking)
+ALTER TABLE business_blueprints ADD COLUMN IF NOT EXISTS deleted_at TIMESTAMP WITH TIME ZONE;
+ALTER TABLE issues ADD COLUMN IF NOT EXISTS deleted_at TIMESTAMP WITH TIME ZONE;
+ALTER TABLE todos ADD COLUMN IF NOT EXISTS deleted_at TIMESTAMP WITH TIME ZONE;
+ALTER TABLE scorecard_metrics ADD COLUMN IF NOT EXISTS deleted_at TIMESTAMP WITH TIME ZONE;
+ALTER TABLE meetings ADD COLUMN IF NOT EXISTS deleted_at TIMESTAMP WITH TIME ZONE;
+
+-- 2. Universal schema for patent technology (optional, additive)
+-- See: backend/database/migrations/061_create_universal_schema.sql
+```
+
+### Action Items
+1. **Strategic Consulting & Coaching** - Re-upload 3 lost documents
+2. **Deploy frontend** - Filename fix for downloads
+3. **Run SQL migrations** - Soft delete protection in production
+4. **Continue patent implementation** - Hybrid framework support next
+
 ---
 **Note**: This is a streamlined essential reference. For historical context and detailed guides, see the archive and docs folder.
