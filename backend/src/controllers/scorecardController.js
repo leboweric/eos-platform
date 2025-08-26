@@ -74,12 +74,12 @@ export const getScorecard = async (req, res) => {
     // Filter by specific team ID from request
     const teamFilter = teamId ? 'AND sm.team_id = $2' : '';
     
-    // Get all metrics for the team
+    // Get all metrics for the team (excluding soft deleted)
     const metricsQuery = `
       SELECT ${selectColumns}
       FROM scorecard_metrics sm
       LEFT JOIN teams t ON sm.team_id = t.id
-      WHERE sm.organization_id = $1 ${teamFilter}
+      WHERE sm.organization_id = $1 AND sm.deleted_at IS NULL ${teamFilter}
       ORDER BY sm.display_order ASC, sm.created_at ASC
     `;
     const queryParams = teamId ? [orgId, teamId] : [orgId];
@@ -182,7 +182,7 @@ export const createMetric = async (req, res) => {
     
     // Get the max display_order for this org/team
     const maxOrderResult = await db.query(
-      'SELECT COALESCE(MAX(display_order), -1) as max_order FROM scorecard_metrics WHERE organization_id = $1 AND team_id = $2',
+      'SELECT COALESCE(MAX(display_order), -1) as max_order FROM scorecard_metrics WHERE organization_id = $1 AND team_id = $2 AND deleted_at IS NULL',
       [orgId, teamId]
     );
     const nextOrder = maxOrderResult.rows[0].max_order + 1;
@@ -313,10 +313,11 @@ export const deleteMetric = async (req, res) => {
     // Delete associated scores first
     await db.query('DELETE FROM scorecard_scores WHERE metric_id = $1', [metricId]);
     
-    // Delete the metric
+    // Soft delete the metric
     const query = `
-      DELETE FROM scorecard_metrics
-      WHERE id = $1 AND organization_id = $2 AND team_id = $3
+      UPDATE scorecard_metrics
+      SET deleted_at = NOW()
+      WHERE id = $1 AND organization_id = $2 AND team_id = $3 AND deleted_at IS NULL
       RETURNING id
     `;
     

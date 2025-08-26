@@ -71,7 +71,7 @@ export const getIssues = async (req, res) => {
       LEFT JOIN users owner ON i.owner_id = owner.id
       LEFT JOIN teams t ON i.team_id = t.id
       LEFT JOIN issue_attachments ia ON ia.issue_id = i.id
-      WHERE i.organization_id = $1
+      WHERE i.organization_id = $1 AND i.deleted_at IS NULL
     `;
     
     const params = [orgId, req.user.id];
@@ -163,7 +163,7 @@ export const createIssue = async (req, res) => {
     const hasTimelineColumn = await checkTimelineColumn();
     
     // Get the next priority rank
-    let maxRankQuery = 'SELECT MAX(priority_rank) as max_rank FROM issues WHERE organization_id = $1';
+    let maxRankQuery = 'SELECT MAX(priority_rank) as max_rank FROM issues WHERE organization_id = $1 AND deleted_at IS NULL';
     let maxRankParams = [orgId];
     
     if (hasTimelineColumn) {
@@ -314,7 +314,7 @@ export const moveIssueToTeam = async (req, res) => {
     
     // Verify the issue exists and belongs to this organization
     const issueCheck = await db.query(
-      'SELECT * FROM issues WHERE id = $1 AND organization_id = $2',
+      'SELECT * FROM issues WHERE id = $1 AND organization_id = $2 AND deleted_at IS NULL',
       [issueId, orgId]
     );
     
@@ -380,7 +380,7 @@ export const deleteIssue = async (req, res) => {
     const { orgId, issueId } = req.params;
     
     const result = await db.query(
-      'DELETE FROM issues WHERE id = $1 AND organization_id = $2 RETURNING id',
+      'UPDATE issues SET deleted_at = NOW() WHERE id = $1 AND organization_id = $2 AND deleted_at IS NULL RETURNING id',
       [issueId, orgId]
     );
     
@@ -457,7 +457,7 @@ export const uploadAttachment = async (req, res) => {
     
     // Verify the issue exists and belongs to this organization
     const issueCheck = await db.query(
-      'SELECT id FROM issues WHERE id = $1 AND organization_id = $2',
+      'SELECT id FROM issues WHERE id = $1 AND organization_id = $2 AND deleted_at IS NULL',
       [issueId, orgId]
     );
     

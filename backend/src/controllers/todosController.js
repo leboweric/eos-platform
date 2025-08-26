@@ -19,7 +19,7 @@ export const getTodos = async (req, res) => {
     console.log('User team context for todos:', userTeam);
 
     // Build query conditions
-    let conditions = ['t.organization_id = $1'];
+    let conditions = ['t.organization_id = $1', 't.deleted_at IS NULL'];
     let params = [orgId];
     let paramIndex = 2;
 
@@ -193,7 +193,7 @@ export const updateTodo = async (req, res) => {
 
     // Check if todo exists and belongs to the organization
     const existingTodo = await query(
-      'SELECT * FROM todos WHERE id = $1 AND organization_id = $2',
+      'SELECT * FROM todos WHERE id = $1 AND organization_id = $2 AND deleted_at IS NULL',
       [todoId, orgId]
     );
 
@@ -317,7 +317,7 @@ export const deleteTodo = async (req, res) => {
     const userId = req.user.id;
 
     const result = await query(
-      'DELETE FROM todos WHERE id = $1 AND organization_id = $2 RETURNING id',
+      'UPDATE todos SET deleted_at = NOW() WHERE id = $1 AND organization_id = $2 AND deleted_at IS NULL RETURNING id',
       [todoId, orgId]
     );
 
@@ -359,7 +359,7 @@ export const uploadTodoAttachment = async (req, res) => {
 
     // Verify todo exists and belongs to organization
     const todoCheck = await query(
-      'SELECT id FROM todos WHERE id = $1 AND organization_id = $2',
+      'SELECT id FROM todos WHERE id = $1 AND organization_id = $2 AND deleted_at IS NULL',
       [todoId, orgId]
     );
 
