@@ -901,7 +901,7 @@ const QuarterlyPrioritiesPageClean = () => {
     }
   };
 
-  const handleDownloadAttachment = async (priorityId, attachmentId) => {
+  const handleDownloadAttachment = async (attachment) => {
     try {
       const orgId = localStorage.getItem('impersonatedOrgId') || user?.organizationId || user?.organization_id;
       const teamId = selectedDepartment?.id || user?.teamId || '00000000-0000-0000-0000-000000000000';
@@ -910,7 +910,13 @@ const QuarterlyPrioritiesPageClean = () => {
         throw new Error('Organization or team not found');
       }
       
-      await quarterlyPrioritiesService.downloadAttachment(orgId, teamId, priorityId, attachmentId);
+      await quarterlyPrioritiesService.downloadAttachment(
+        orgId, 
+        teamId, 
+        attachment.priority_id, 
+        attachment.id, 
+        attachment.file_name
+      );
     } catch (error) {
       console.error('Failed to download attachment:', error);
       setError('Failed to download attachment');
