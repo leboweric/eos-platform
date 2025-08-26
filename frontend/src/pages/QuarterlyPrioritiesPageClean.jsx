@@ -915,7 +915,7 @@ const QuarterlyPrioritiesPageClean = () => {
         teamId, 
         attachment.priority_id, 
         attachment.id, 
-        attachment.file_name
+        attachment.fileName || attachment.file_name
       );
     } catch (error) {
       console.error('Failed to download attachment:', error);
@@ -1311,7 +1311,7 @@ const QuarterlyPrioritiesPageClean = () => {
             teamId, 
             priority.id, 
             attachment.id, 
-            attachment.file_name
+            attachment.fileName || attachment.file_name
           );
         }
       } catch (error) {
@@ -2018,9 +2018,9 @@ const QuarterlyPrioritiesPageClean = () => {
                         <div key={attachment.id} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
                           <div className="flex items-center gap-3 flex-1">
                             <Paperclip className="h-4 w-4 text-gray-400" />
-                            <span className="text-sm text-gray-900 truncate">{attachment.file_name}</span>
+                            <span className="text-sm text-gray-900 truncate">{attachment.fileName || attachment.file_name}</span>
                             <span className="text-xs text-gray-500">
-                              ({attachment.file_size ? `${(attachment.file_size / 1024).toFixed(1)} KB` : 'Unknown size'})
+                              ({(attachment.fileSize || attachment.file_size) ? `${((attachment.fileSize || attachment.file_size) / 1024).toFixed(1)} KB` : 'Unknown size'})
                             </span>
                           </div>
                           <div className="flex items-center gap-1">

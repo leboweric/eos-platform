@@ -941,7 +941,11 @@ const PriorityCardClean = ({
                         <Button
                           variant="ghost"
                           size="sm"
-                          onClick={() => onDownloadAttachment({ ...attachment, priority_id: priority.id })}
+                          onClick={() => onDownloadAttachment({ 
+                            ...attachment, 
+                            priority_id: priority.id,
+                            file_name: attachment.fileName || attachment.file_name 
+                          })}
                           className="h-6 w-6 p-0 opacity-0 group-hover:opacity-100 ml-2"
                         >
                           <Download className="h-3 w-3 text-blue-600" />
