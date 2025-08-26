@@ -41,6 +41,7 @@ import oauthRoutes from './routes/oauth.js';
 import exportRoutes from './routes/export.js';
 import dailyActiveUsersRoutes from './routes/dailyActiveUsers.js';
 import processDocumentationRoutes from './routes/processDocumentation.js';
+import healthRoutes from './routes/healthRoutes.js';
 
 // Import middleware
 import { errorHandler } from './middleware/errorHandler.js';
@@ -166,14 +167,17 @@ app.use(morgan('combined'));
 // Stripe webhooks need the raw body to verify signatures
 app.use('/api/v1/webhooks', webhookRoutes);
 
-// Body parsing middleware (applies to all routes EXCEPT webhooks)
+// Health and utility routes (before body parsing, handles bots gracefully)
+app.use('/', healthRoutes);
+
+// Body parsing middleware (applies to all routes EXCEPT webhooks and health routes)
 app.use(express.json({ limit: '100mb' }));
 app.use(express.urlencoded({ extended: true, limit: '100mb' }));
 
 // Apply general limiter to all API routes by default
 app.use('/api/', generalLimiter);
 
-// Health check endpoint
+// Health check endpoint (keeping for backward compatibility)
 app.get('/health', (req, res) => {
   res.status(200).json({
     status: 'OK',

@@ -1,6 +1,6 @@
 import express from 'express';
 const router = express.Router();
-import { stripe, STRIPE_WEBHOOK_SECRET, PLAN_FEATURES } from '../config/stripe-flat-rate.js';
+import { stripe, STRIPE_WEBHOOK_SECRET, PLAN_FEATURES, STRIPE_PRICES } from '../config/stripe-flat-rate.js';
 import { query } from '../config/database.js';
 import { notifyTrialConverted } from '../services/notificationService.js';
 
@@ -120,6 +120,20 @@ async function handlePaymentFailed(invoice) {
   console.log(`Payment failed for subscription ${subscription.id}`);
 }
 
+// Helper function to detect billing interval and plan from price ID
+function detectPlanAndBilling(priceId) {
+  // Reverse lookup from STRIPE_PRICES to find plan and billing interval
+  for (const [key, value] of Object.entries(STRIPE_PRICES)) {
+    if (value === priceId) {
+      const parts = key.split('_');
+      const billingInterval = parts[parts.length - 1]; // 'monthly' or 'annual'
+      const planId = parts.slice(0, -1).join('_'); // e.g., 'starter', 'growth', etc.
+      return { planId, billingInterval };
+    }
+  }
+  return { planId: null, billingInterval: null };
+}
+
 // Handle subscription updates
 async function handleSubscriptionUpdated(stripeSubscription) {
   const result = await query(
@@ -137,6 +151,32 @@ async function handleSubscriptionUpdated(stripeSubscription) {
     userCount = stripeSubscription.items.data[0].quantity;
   }
 
+  // Detect plan and billing interval from price ID
+  let planId = subscription.plan_id;
+  let billingInterval = subscription.billing_interval;
+  let pricePerUser = subscription.price_per_user;
+  
+  if (stripeSubscription.items && stripeSubscription.items.data[0]) {
+    const priceId = stripeSubscription.items.data[0].price.id;
+    const detected = detectPlanAndBilling(priceId);
+    
+    if (detected.planId) {
+      planId = detected.planId;
+      billingInterval = detected.billingInterval;
+      
+      // Calculate effective monthly price
+      const planFeatures = PLAN_FEATURES[planId];
+      if (planFeatures) {
+        if (billingInterval === 'annual') {
+          // For annual billing, calculate the monthly equivalent
+          pricePerUser = Math.round((planFeatures.price_annual / 12) * 100) / 100;
+        } else {
+          pricePerUser = planFeatures.price_monthly;
+        }
+      }
+    }
+  }
+
   await query(
     `UPDATE subscriptions 
      SET status = $1,
@@ -144,8 +184,11 @@ async function handleSubscriptionUpdated(stripeSubscription) {
          current_period_end = $3,
          user_count = $4,
          stripe_subscription_item_id = $5,
-         canceled_at = $6
-     WHERE id = $7`,
+         canceled_at = $6,
+         plan_id = $7,
+         billing_interval = $8,
+         price_per_user = $9
+     WHERE id = $10`,
     [
       stripeSubscription.status,
       new Date(stripeSubscription.current_period_start * 1000),
@@ -153,9 +196,14 @@ async function handleSubscriptionUpdated(stripeSubscription) {
       userCount,
       stripeSubscription.items.data[0]?.id || subscription.stripe_subscription_item_id,
       stripeSubscription.cancel_at_period_end ? new Date() : null,
+      planId,
+      billingInterval,
+      pricePerUser,
       subscription.id
     ]
   );
+  
+  console.log(`Subscription updated: ${subscription.id} - Plan: ${planId} (${billingInterval}) - Monthly rate: $${pricePerUser}`);
 }
 
 // Handle subscription deletion

@@ -356,6 +356,9 @@ const LoginPage = () => {
               <span>•</span>
               <a href="#" className="hover:text-gray-700 transition-colors">Support</a>
             </div>
+            <div className="mt-3 text-xs text-gray-400">
+              Patent Pending Serial No. 63/870,133 • AXP™ - Adaptive Execution Platform™
+            </div>
           </div>
         </div>
       </div>

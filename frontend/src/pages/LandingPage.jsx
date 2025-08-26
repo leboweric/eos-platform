@@ -586,6 +586,9 @@ const LandingPage = () => {
               <a href="/terms" className="hover:text-white">Terms</a>
             </div>
             <p className="text-sm text-blue-200">&copy; 2025 AXP Platform. All rights reserved.</p>
+            <p className="text-xs text-blue-300 mt-2">
+              Patent Pending Serial No. 63/870,133 • AXP™ - Adaptive Execution Platform™
+            </p>
           </div>
         </div>
       </footer>

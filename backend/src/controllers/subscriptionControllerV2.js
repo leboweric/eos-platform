@@ -147,6 +147,15 @@ const convertTrialToPaid = async (req, res) => {
 
     const stripeSubscription = await stripe.subscriptions.create(subscriptionParams);
 
+    // Calculate the correct price_per_user based on billing interval
+    let pricePerUser;
+    if (billingInterval === 'annual') {
+      // For annual billing, store the monthly equivalent
+      pricePerUser = Math.round((planFeatures.price_annual / 12) * 100) / 100;
+    } else {
+      pricePerUser = planFeatures.price_monthly;
+    }
+
     // Update database subscription
     await client.query(
       `UPDATE subscriptions SET
@@ -160,8 +169,9 @@ const convertTrialToPaid = async (req, res) => {
         current_period_start = $6,
         current_period_end = $7,
         price_per_user = $8,
-        user_count = $9
-      WHERE organization_id = $10`,
+        user_count = $9,
+        billing_interval = $10
+      WHERE organization_id = $11`,
       [
         customerId,
         stripeSubscription.id,
@@ -170,8 +180,9 @@ const convertTrialToPaid = async (req, res) => {
         planId,
         stripeSubscription.current_period_start ? new Date(stripeSubscription.current_period_start * 1000) : new Date(),
         stripeSubscription.current_period_end ? new Date(stripeSubscription.current_period_end * 1000) : new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
-        planFeatures.price_monthly,
+        pricePerUser,
         userCount,
+        billingInterval,
         organizationId
       ]
     );

@@ -335,6 +335,13 @@ const Layout = ({ children }) => {
             </Alert>
           )}
           {children}
+          
+          {/* Footer */}
+          <div className="mt-auto pt-8 pb-4 text-center">
+            <p className="text-xs text-gray-400">
+              Patent Pending Serial No. 63/870,133 • AXP™ - Adaptive Execution Platform™
+            </p>
+          </div>
         </main>
       </div>
       
