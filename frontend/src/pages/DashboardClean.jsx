@@ -1197,15 +1197,17 @@ const DashboardClean = () => {
                 department_id: userTeamId
               };
               
+              let savedTodo;
               if (editingTodo) {
-                await todosService.updateTodo(editingTodo.id, todoDataWithOrgInfo);
+                savedTodo = await todosService.updateTodo(editingTodo.id, todoDataWithOrgInfo);
               } else {
-                await todosService.createTodo(todoDataWithOrgInfo);
+                const createdTodo = await todosService.createTodo(todoDataWithOrgInfo);
+                savedTodo = createdTodo;
               }
               await fetchDashboardData();
               setShowTodoDialog(false);
               setEditingTodo(null);
-              return true; // Indicate success
+              return savedTodo; // Return the todo so attachments can be uploaded
             } catch (error) {
               console.error('Failed to save todo:', error);
               // Don't close the dialog on error
