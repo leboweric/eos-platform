@@ -94,8 +94,6 @@ const IssuesListClean = ({
 
   // Sort issues whenever issues prop or sort settings change
   useEffect(() => {
-    console.log('Issues useEffect running. enableDragDrop:', enableDragDrop, 'issues count:', issues?.length);
-    
     // If drag-drop is enabled, preserve the original order (priority_rank)
     if (enableDragDrop) {
       const sorted = [...(issues || [])].sort((a, b) => {
@@ -105,7 +103,6 @@ const IssuesListClean = ({
         }
         return 0;
       });
-      console.log('Setting sorted issues by priority_rank:', sorted.map(i => ({ title: i.title, rank: i.priority_rank })));
       setSortedIssues(sorted);
       return;
     }
@@ -312,7 +309,6 @@ const IssuesListClean = ({
 
   // Drag and drop handlers
   const handleDragStart = (e, issue, index) => {
-    console.log('Drag started:', { issue: issue.title, index });
     setDraggedIssue(issue);
     setDraggedIssueIndex(index);
     e.dataTransfer.effectAllowed = 'move';
@@ -345,10 +341,7 @@ const IssuesListClean = ({
     e.stopPropagation();
     setDragOverIssueIndex(null);
 
-    console.log('handleDrop called:', { draggedIssueIndex, dropIndex, draggedIssue: draggedIssue?.title });
-
     if (draggedIssueIndex === null || draggedIssueIndex === dropIndex || !draggedIssue) {
-      console.log('Early return from handleDrop');
       return;
     }
 
@@ -363,8 +356,6 @@ const IssuesListClean = ({
       priority_rank: index
     }));
 
-    console.log('New order:', updatedIssues.map(i => ({ id: i.id, title: i.title, rank: i.priority_rank })));
-
     // Update local state immediately for optimistic UI
     setSortedIssues(updatedIssues);
     
@@ -374,17 +365,13 @@ const IssuesListClean = ({
 
     // Call the onReorder callback if provided
     if (onReorder) {
-      console.log('Calling onReorder callback');
       try {
         await onReorder(updatedIssues);
-        console.log('onReorder successful');
       } catch (error) {
         console.error('Failed to reorder issues:', error);
         // Revert on error
         setSortedIssues(sortedIssues);
       }
-    } else {
-      console.log('No onReorder callback provided!');
     }
   };
   
@@ -417,7 +404,12 @@ const IssuesListClean = ({
           borderWidth: isTopIssue ? '2px' : '1px'
         }}
         draggable={enableDragDrop && !readOnly}
-        onDragStart={(e) => enableDragDrop && handleDragStart(e, issue, index)}
+        onDragStart={(e) => {
+          if (enableDragDrop && !readOnly) {
+            e.stopPropagation();
+            handleDragStart(e, issue, index);
+          }
+        }}
         onDragEnd={handleDragEnd}
         onDragOver={handleDragOver}
         onDragEnter={(e) => handleDragEnter(e, index)}
@@ -433,9 +425,15 @@ const IssuesListClean = ({
             e.currentTarget.style.borderColor = hexToRgba(themeColors.accent, 0.3);
           }
         }}
+        onMouseDown={(e) => {
+          // Prevent text selection during drag
+          if (enableDragDrop && !readOnly) {
+            e.preventDefault();
+          }
+        }}
         onClick={(e) => {
-          // Don't open modal if dragging
-          if (!e.defaultPrevented) {
+          // Don't open modal if we're dragging or if drag is enabled and user is holding mouse down
+          if (!enableDragDrop || readOnly) {
             setSelectedIssue(issue);
           }
         }}
@@ -453,7 +451,12 @@ const IssuesListClean = ({
           <div className="flex items-start justify-between gap-2 mb-1">
             <div className="flex items-center gap-2">
               {enableDragDrop && !readOnly && (
-                <GripVertical className="h-4 w-4 text-gray-400 cursor-move" />
+                <div 
+                  className="cursor-move p-1 -m-1 hover:bg-gray-100 rounded"
+                  onMouseDown={(e) => e.stopPropagation()}
+                >
+                  <GripVertical className="h-4 w-4 text-gray-400" />
+                </div>
               )}
               <span className="text-xs font-bold" style={{
                 color: isTopIssue ? themeColors.primary : '#6B7280'
@@ -658,14 +661,24 @@ const IssuesListClean = ({
                             ${draggedIssueIndex === globalIndex ? 'opacity-50' : ''}
                           `}
                           draggable={enableDragDrop && !readOnly}
-                          onDragStart={(e) => enableDragDrop && handleDragStart(e, issue, globalIndex)}
+                          onDragStart={(e) => {
+                            if (enableDragDrop && !readOnly) {
+                              e.stopPropagation();
+                              handleDragStart(e, issue, globalIndex);
+                            }
+                          }}
                           onDragEnd={handleDragEnd}
                           onDragOver={handleDragOver}
                           onDragEnter={(e) => handleDragEnter(e, globalIndex)}
                           onDragLeave={handleDragLeave}
                           onDrop={(e) => handleDrop(e, globalIndex)}
+                          onMouseDown={(e) => {
+                            if (enableDragDrop && !readOnly) {
+                              e.preventDefault();
+                            }
+                          }}
                           onClick={(e) => {
-                            if (!e.defaultPrevented) {
+                            if (!enableDragDrop || readOnly) {
                               setSelectedIssue(issue);
                             }
                           }}
@@ -680,7 +693,12 @@ const IssuesListClean = ({
                 
                 {/* Drag handle */}
                 {enableDragDrop && !readOnly && (
-                  <GripVertical className="h-4 w-4 text-gray-400 cursor-move flex-shrink-0" />
+                  <div 
+                    className="cursor-move p-1 -m-1 hover:bg-gray-100 rounded flex-shrink-0"
+                    onMouseDown={(e) => e.stopPropagation()}
+                  >
+                    <GripVertical className="h-4 w-4 text-gray-400" />
+                  </div>
                 )}
                 
                 {/* Enhanced checkbox */}
