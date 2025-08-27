@@ -344,9 +344,14 @@ const DashboardClean = () => {
         return dueDate < today;
       }).length;
       
-      const shortTermIssues = issuesResponse.data.issues.filter(issue => 
+      console.log('Issues response:', issuesResponse.data);
+      // Temporarily show ALL issues to debug
+      const allIssues = issuesResponse.data.issues || [];
+      console.log('All issues:', allIssues);
+      const shortTermIssues = allIssues.filter(issue => 
         issue.timeline === 'short_term' && issue.status === 'open'
       );
+      console.log('Filtered short-term open issues:', shortTermIssues);
       
       setDashboardData({
         priorities: userPriorities, // Show all user priorities, not just 5
@@ -1219,7 +1224,8 @@ const DashboardClean = () => {
               if (editingIssue) {
                 await issuesService.updateIssue(editingIssue.id, issueDataWithOrgInfo);
               } else {
-                await issuesService.createIssue(issueDataWithOrgInfo);
+                const createdIssue = await issuesService.createIssue(issueDataWithOrgInfo);
+                console.log('Issue created successfully:', createdIssue);
               }
               await fetchDashboardData();
               setShowIssueDialog(false);
