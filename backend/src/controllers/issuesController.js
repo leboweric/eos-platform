@@ -175,7 +175,7 @@ export const createIssue = async (req, res) => {
     const nextRank = (maxRankResult.rows[0].max_rank || 0) + 1;
     
     // Build insert query based on available columns
-    let columns = ['organization_id', 'team_id', 'created_by_id', 'owner_id', 'title', 'description', 'priority_rank'];
+    let columns = ['organization_id', 'team_id', 'created_by_id', 'owner_id', 'title', 'description', 'priority_rank', 'archived', 'status'];
     let values = [
       orgId,
       teamId || null,
@@ -183,9 +183,11 @@ export const createIssue = async (req, res) => {
       ownerId,
       title,
       description,
-      nextRank
+      nextRank,
+      false,  // Ensure new issues are not archived
+      'open'  // Default status for new issues
     ];
-    let placeholders = ['$1', '$2', '$3', '$4', '$5', '$6', '$7'];
+    let placeholders = ['$1', '$2', '$3', '$4', '$5', '$6', '$7', '$8', '$9'];
     
     if (hasTimelineColumn) {
       columns.push('timeline');
