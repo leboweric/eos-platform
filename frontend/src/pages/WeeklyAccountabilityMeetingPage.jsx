@@ -1855,25 +1855,8 @@ const WeeklyAccountabilityMeetingPage = () => {
                     </CardTitle>
                     <CardDescription className="mt-1">Review action items</CardDescription>
                   </div>
-                  <div className="flex items-center gap-2">
-                    <Button
-                      size="sm"
-                      onClick={() => {
-                        setEditingIssue(null);
-                        setShowIssueDialog(true);
-                      }}
-                      style={{ 
-                        backgroundColor: themeColors.primary,
-                        borderColor: themeColors.primary
-                      }}
-                      className="text-white hover:opacity-90 text-xs"
-                    >
-                      <Plus className="h-3 w-3 mr-1" />
-                      Add Issue
-                    </Button>
-                    <div className="text-sm text-gray-500 bg-white px-3 py-1 rounded-full">
-                      5 minutes
-                    </div>
+                  <div className="text-sm text-gray-500 bg-white px-3 py-1 rounded-full">
+                    5 minutes
                   </div>
                 </div>
               </CardHeader>
@@ -1903,17 +1886,30 @@ const WeeklyAccountabilityMeetingPage = () => {
                       );
                     })()}
                   </div>
-                  <Button 
-                    onClick={handleAddTodo} 
-                    style={{ 
-                      backgroundColor: themeColors.primary,
-                      borderColor: themeColors.primary
-                    }}
-                    className="text-white hover:opacity-90"
-                  >
-                    <Plus className="mr-2 h-4 w-4" />
-                    Add To-do
-                  </Button>
+                  <div className="flex gap-2">
+                    <Button 
+                      onClick={handleAddTodo} 
+                      style={{ 
+                        backgroundColor: themeColors.primary,
+                        borderColor: themeColors.primary
+                      }}
+                      className="text-white hover:opacity-90"
+                    >
+                      <Plus className="mr-2 h-4 w-4" />
+                      Add To-do
+                    </Button>
+                    <Button 
+                      onClick={handleAddIssue} 
+                      style={{ 
+                        backgroundColor: themeColors.primary,
+                        borderColor: themeColors.primary
+                      }}
+                      className="text-white hover:opacity-90"
+                    >
+                      <Plus className="mr-2 h-4 w-4" />
+                      Add Issue
+                    </Button>
+                  </div>
                 </div>
                 {todos.length === 0 ? (
                   <div className="text-center py-8">
