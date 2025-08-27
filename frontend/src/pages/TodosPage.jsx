@@ -32,6 +32,7 @@ import TodoDialog from '../components/todos/TodoDialog';
 import TodosListClean from '../components/todos/TodosListClean';
 import { useSelectedTodos } from '../contexts/SelectedTodosContext';
 import { useTerminology } from '../contexts/TerminologyContext';
+import { getEffectiveTeamId } from '../utils/teamUtils';
 
 const TodosPage = () => {
   const { user } = useAuthStore();
@@ -177,7 +178,7 @@ const TodosPage = () => {
 
   const handleCreateIssueFromTodo = async (todo) => {
     try {
-      const effectiveTeamId = selectedDepartment?.id || user?.teamId || '00000000-0000-0000-0000-000000000000';
+      const effectiveTeamId = getEffectiveTeamId(selectedDepartment?.id, user);
       
       await issuesService.createIssue({
         title: `Issue from To-Do: ${todo.title}`,

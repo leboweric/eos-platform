@@ -1,5 +1,7 @@
 // Team utility functions
 
+// Note: This special UUID should NOT be used for creating new items
+// It's a placeholder that doesn't map to any real team
 export const LEADERSHIP_TEAM_ID = '00000000-0000-0000-0000-000000000000';
 
 /**
@@ -35,4 +37,56 @@ export const getTeamId = (user, context = null) => {
   
   // Otherwise use first available team
   return user?.teams?.[0]?.id || LEADERSHIP_TEAM_ID;
+};
+
+/**
+ * Get the user's actual team ID for creating items (issues, todos, etc.)
+ * This ensures items are created with a real team ID, not the placeholder
+ * 
+ * Priority:
+ * 1. Non-leadership team (actual department)
+ * 2. Leadership team (actual team, not placeholder)
+ * 3. First available team
+ * 4. null (never the placeholder UUID)
+ * 
+ * @param {Object} user - The user object from auth store
+ * @returns {string|null} The team ID or null
+ */
+export const getUserTeamId = (user) => {
+  if (!user?.teams || user.teams.length === 0) {
+    return null;
+  }
+
+  // First try to find a non-leadership team (user's actual department)
+  const nonLeadershipTeam = user.teams.find(team => !team.is_leadership_team);
+  if (nonLeadershipTeam) {
+    return nonLeadershipTeam.id;
+  }
+
+  // Fall back to leadership team (actual team, not the placeholder)
+  const leadershipTeam = user.teams.find(team => team.is_leadership_team);
+  if (leadershipTeam) {
+    return leadershipTeam.id;
+  }
+
+  // Last resort: use first available team
+  return user.teams[0].id;
+};
+
+/**
+ * Get effective team ID for creating items, with proper fallbacks
+ * Never returns the placeholder UUID '00000000-0000-0000-0000-000000000000'
+ * 
+ * @param {string} preferredTeamId - Preferred team ID (from URL or selection)
+ * @param {Object} user - The user object from auth store
+ * @returns {string|null} The effective team ID
+ */
+export const getEffectiveTeamId = (preferredTeamId, user) => {
+  // If we have a valid preferred team ID (not the placeholder), use it
+  if (preferredTeamId && preferredTeamId !== LEADERSHIP_TEAM_ID) {
+    return preferredTeamId;
+  }
+
+  // Otherwise get the user's actual team
+  return getUserTeamId(user);
 };

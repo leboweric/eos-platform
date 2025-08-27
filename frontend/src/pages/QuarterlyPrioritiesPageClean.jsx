@@ -8,6 +8,7 @@ import { issuesService } from '../services/issuesService';
 import { getRevenueLabel, getRevenueLabelWithSuffix } from '../utils/revenueUtils';
 import { useDepartment } from '../contexts/DepartmentContext';
 import { useTerminology } from '../contexts/TerminologyContext';
+import { getEffectiveTeamId } from '../utils/teamUtils';
 import PriorityCardClean from '../components/priorities/PriorityCardClean';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -854,7 +855,7 @@ const QuarterlyPrioritiesPageClean = () => {
   const handleUploadAttachment = async (priorityId, file) => {
     try {
       const orgId = localStorage.getItem('impersonatedOrgId') || user?.organizationId || user?.organization_id;
-      const teamId = selectedDepartment?.id || user?.teamId || '00000000-0000-0000-0000-000000000000';
+      const teamId = getEffectiveTeamId(selectedDepartment?.id, user);
       
       if (!orgId || !teamId) {
         throw new Error('Organization or team not found');
@@ -904,7 +905,7 @@ const QuarterlyPrioritiesPageClean = () => {
   const handleDownloadAttachment = async (attachment) => {
     try {
       const orgId = localStorage.getItem('impersonatedOrgId') || user?.organizationId || user?.organization_id;
-      const teamId = selectedDepartment?.id || user?.teamId || '00000000-0000-0000-0000-000000000000';
+      const teamId = getEffectiveTeamId(selectedDepartment?.id, user);
       
       if (!orgId || !teamId) {
         throw new Error('Organization or team not found');
@@ -930,7 +931,7 @@ const QuarterlyPrioritiesPageClean = () => {
     
     try {
       const orgId = localStorage.getItem('impersonatedOrgId') || user?.organizationId || user?.organization_id;
-      const teamId = selectedDepartment?.id || user?.teamId || '00000000-0000-0000-0000-000000000000';
+      const teamId = getEffectiveTeamId(selectedDepartment?.id, user);
       
       if (!orgId || !teamId) {
         throw new Error('Organization or team not found');
@@ -974,7 +975,7 @@ const QuarterlyPrioritiesPageClean = () => {
   const handlePriorityStatusChange = async (priorityId, newStatus) => {
     try {
       const orgId = localStorage.getItem('impersonatedOrgId') || user?.organizationId || user?.organization_id;
-      const teamId = selectedDepartment?.id || user?.teamId || '00000000-0000-0000-0000-000000000000';
+      const teamId = getEffectiveTeamId(selectedDepartment?.id, user);
       
       // Log for debugging
       console.log('Updating priority status:', { priorityId, newStatus, orgId, teamId });

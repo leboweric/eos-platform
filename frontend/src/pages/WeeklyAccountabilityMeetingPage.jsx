@@ -62,6 +62,7 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { DialogFooter } from '@/components/ui/dialog';
+import { getEffectiveTeamId } from '../utils/teamUtils';
 
 const WeeklyAccountabilityMeetingPage = () => {
   const { user } = useAuthStore();
@@ -363,7 +364,7 @@ const WeeklyAccountabilityMeetingPage = () => {
   const fetchScorecardData = async () => {
     try {
       const orgId = localStorage.getItem('impersonatedOrgId') || user?.organizationId || user?.organization_id;
-      const effectiveTeamId = teamId || user?.teamId || '00000000-0000-0000-0000-000000000000';
+      const effectiveTeamId = getEffectiveTeamId(teamId, user);
       const departmentId = teamId || user?.teamId;
       
       console.log('WeeklyMeeting - Fetching scorecard data for:', { orgId, effectiveTeamId, departmentId });
@@ -405,7 +406,7 @@ const WeeklyAccountabilityMeetingPage = () => {
   const fetchPrioritiesData = async () => {
     try {
       const orgId = localStorage.getItem('impersonatedOrgId') || user?.organizationId || user?.organization_id;
-      const effectiveTeamId = teamId || user?.teamId || '00000000-0000-0000-0000-000000000000';
+      const effectiveTeamId = getEffectiveTeamId(teamId, user);
       
       const response = await quarterlyPrioritiesService.getCurrentPriorities(orgId, effectiveTeamId);
       
@@ -428,7 +429,7 @@ const WeeklyAccountabilityMeetingPage = () => {
 
   const fetchIssuesData = async () => {
     try {
-      const effectiveTeamId = teamId || user?.teamId || '00000000-0000-0000-0000-000000000000';
+      const effectiveTeamId = getEffectiveTeamId(teamId, user);
       
       // Fetch both short-term and long-term issues
       const [shortTermResponse, longTermResponse] = await Promise.all([
@@ -468,7 +469,7 @@ const WeeklyAccountabilityMeetingPage = () => {
 
   const fetchTodosData = async () => {
     try {
-      const effectiveTeamId = teamId || user?.teamId || '00000000-0000-0000-0000-000000000000';
+      const effectiveTeamId = getEffectiveTeamId(teamId, user);
       
       const response = await todosService.getTodos(
         null, // status filter
@@ -486,7 +487,7 @@ const WeeklyAccountabilityMeetingPage = () => {
 
   const fetchTodaysTodos = async () => {
     try {
-      const effectiveTeamId = teamId || user?.teamId || '00000000-0000-0000-0000-000000000000';
+      const effectiveTeamId = getEffectiveTeamId(teamId, user);
       
       const response = await todosService.getTodaysTodos(effectiveTeamId);
       setTodaysTodos(response.todos || []);
@@ -521,7 +522,7 @@ const WeeklyAccountabilityMeetingPage = () => {
 
   const fetchHeadlines = async () => {
     try {
-      const effectiveTeamId = teamId || user?.teamId || '00000000-0000-0000-0000-000000000000';
+      const effectiveTeamId = getEffectiveTeamId(teamId, user);
       console.log('Fetching headlines for teamId:', effectiveTeamId);
       
       // Fetch headlines for this team
@@ -552,7 +553,7 @@ const WeeklyAccountabilityMeetingPage = () => {
   
   const handleAddIssueFromMetric = async (metric, isOffTrack) => {
     try {
-      const effectiveTeamId = teamId || user?.teamId || '00000000-0000-0000-0000-000000000000';
+      const effectiveTeamId = getEffectiveTeamId(teamId, user);
       const status = isOffTrack ? 'Off Track' : 'Needs Attention';
       
       await issuesService.createIssue({
@@ -616,7 +617,7 @@ const WeeklyAccountabilityMeetingPage = () => {
 
   const handleSaveIssue = async (issueData) => {
     try {
-      const effectiveTeamId = teamId || user?.teamId || '00000000-0000-0000-0000-000000000000';
+      const effectiveTeamId = getEffectiveTeamId(teamId, user);
       if (editingIssue) {
         await issuesService.updateIssue(editingIssue.id, issueData);
         setSuccess('Issue updated successfully');
@@ -754,7 +755,7 @@ const WeeklyAccountabilityMeetingPage = () => {
   const handleSaveTodo = async (todoData) => {
     try {
       const orgId = localStorage.getItem('impersonatedOrgId') || user?.organizationId || user?.organization_id;
-      const effectiveTeamId = teamId || user?.teamId || '00000000-0000-0000-0000-000000000000';
+      const effectiveTeamId = getEffectiveTeamId(teamId, user);
       
       let savedTodo;
       if (editingTodo) {
@@ -799,7 +800,7 @@ const WeeklyAccountabilityMeetingPage = () => {
   // Create Issue from To-Do
   const handleCreateIssueFromTodo = async (todo) => {
     try {
-      const effectiveTeamId = teamId || user?.teamId || '00000000-0000-0000-0000-000000000000';
+      const effectiveTeamId = getEffectiveTeamId(teamId, user);
       
       // Create the issue using issuesService directly
       await issuesService.createIssue({
@@ -875,7 +876,7 @@ const WeeklyAccountabilityMeetingPage = () => {
   const handleUpdatePriority = async (priorityId, updates) => {
     try {
       const orgId = localStorage.getItem('impersonatedOrgId') || user?.organizationId || user?.organization_id;
-      const teamId = user?.teamId || '00000000-0000-0000-0000-000000000000';
+      const teamId = getEffectiveTeamId(null, user);
       
       await quarterlyPrioritiesService.updatePriority(orgId, teamId, priorityId, updates);
       
@@ -903,7 +904,7 @@ const WeeklyAccountabilityMeetingPage = () => {
       if (priority) {
         try {
           const orgId = localStorage.getItem('impersonatedOrgId') || user?.organizationId || user?.organization_id;
-          const effectiveTeamId = teamId || user?.teamId || '00000000-0000-0000-0000-000000000000';
+          const effectiveTeamId = getEffectiveTeamId(teamId, user);
           
           // Ensure we have a valid title
           const priorityTitle = priority.title || priority.name || 'Untitled Priority';
@@ -949,7 +950,7 @@ const WeeklyAccountabilityMeetingPage = () => {
   const handleUpdateMilestone = async (priorityId, milestoneId, completed) => {
     try {
       const orgId = localStorage.getItem('impersonatedOrgId') || user?.organizationId || user?.organization_id;
-      const teamId = user?.teamId || '00000000-0000-0000-0000-000000000000';
+      const teamId = getEffectiveTeamId(null, user);
       
       await quarterlyPrioritiesService.updateMilestone(orgId, teamId, priorityId, milestoneId, { completed });
       
@@ -979,7 +980,7 @@ const WeeklyAccountabilityMeetingPage = () => {
   const handleCreateDiscussionIssue = async (priority) => {
     try {
       const orgId = localStorage.getItem('impersonatedOrgId') || user?.organizationId || user?.organization_id;
-      const effectiveTeamId = teamId || user?.teamId || '00000000-0000-0000-0000-000000000000';
+      const effectiveTeamId = getEffectiveTeamId(teamId, user);
       
       // Ensure we have a valid title
       const priorityTitle = priority.title || priority.name || 'Untitled Priority';
@@ -1023,7 +1024,7 @@ const WeeklyAccountabilityMeetingPage = () => {
   const handleCreateMilestone = async (priorityId, milestoneData) => {
     try {
       const orgId = localStorage.getItem('impersonatedOrgId') || user?.organizationId || user?.organization_id;
-      const teamId = user?.teamId || '00000000-0000-0000-0000-000000000000';
+      const teamId = getEffectiveTeamId(null, user);
       
       const newMilestone = await quarterlyPrioritiesService.createMilestone(orgId, teamId, priorityId, milestoneData);
       
@@ -1051,7 +1052,7 @@ const WeeklyAccountabilityMeetingPage = () => {
   const handleEditMilestone = async (priorityId, milestoneId, updates) => {
     try {
       const orgId = localStorage.getItem('impersonatedOrgId') || user?.organizationId || user?.organization_id;
-      const teamId = user?.teamId || '00000000-0000-0000-0000-000000000000';
+      const teamId = getEffectiveTeamId(null, user);
       
       await quarterlyPrioritiesService.updateMilestone(orgId, teamId, priorityId, milestoneId, updates);
       
@@ -1081,7 +1082,7 @@ const WeeklyAccountabilityMeetingPage = () => {
   const handleDeleteMilestone = async (priorityId, milestoneId) => {
     try {
       const orgId = localStorage.getItem('impersonatedOrgId') || user?.organizationId || user?.organization_id;
-      const teamId = user?.teamId || '00000000-0000-0000-0000-000000000000';
+      const teamId = getEffectiveTeamId(null, user);
       
       await quarterlyPrioritiesService.deleteMilestone(orgId, teamId, priorityId, milestoneId);
       
@@ -1119,7 +1120,7 @@ const WeeklyAccountabilityMeetingPage = () => {
   const fetchAvailableTeams = async () => {
     try {
       const orgId = localStorage.getItem('impersonatedOrgId') || user?.organizationId || user?.organization_id;
-      const effectiveTeamId = teamId || user?.teamId || '00000000-0000-0000-0000-000000000000';
+      const effectiveTeamId = getEffectiveTeamId(teamId, user);
       
       const response = await cascadingMessagesService.getAvailableTeams(orgId, effectiveTeamId);
       setAvailableTeams(response.data || []);
@@ -1131,7 +1132,7 @@ const WeeklyAccountabilityMeetingPage = () => {
   const fetchCascadedMessages = async () => {
     try {
       const orgId = localStorage.getItem('impersonatedOrgId') || user?.organizationId || user?.organization_id;
-      const effectiveTeamId = teamId || user?.teamId || '00000000-0000-0000-0000-000000000000';
+      const effectiveTeamId = getEffectiveTeamId(teamId, user);
       
       const response = await cascadingMessagesService.getCascadingMessages(orgId, effectiveTeamId);
       setCascadedMessages(response.data || []);
@@ -1143,7 +1144,7 @@ const WeeklyAccountabilityMeetingPage = () => {
   const concludeMeeting = async () => {
     try {
       const orgId = localStorage.getItem('impersonatedOrgId') || user?.organizationId || user?.organization_id;
-      const effectiveTeamId = teamId || user?.teamId || '00000000-0000-0000-0000-000000000000';
+      const effectiveTeamId = getEffectiveTeamId(teamId, user);
       
       // Calculate meeting duration in minutes
       const durationMinutes = Math.floor(elapsedTime / 60);
@@ -1431,7 +1432,7 @@ const WeeklyAccountabilityMeetingPage = () => {
                   isRTL={isRTL}
                   showTotal={showScorecardTotal}
                   showAverage={showScorecardAverage}
-                  departmentId={teamId || user?.teamId || '00000000-0000-0000-0000-000000000000'}
+                  departmentId={getEffectiveTeamId(teamId, user)}
                   onAddIssue={handleAddIssueFromMetric}
                   onScoreEdit={null}
                   onChartOpen={(metric) => setChartModal({ isOpen: true, metric: metric, metricId: metric.id })}
@@ -1821,7 +1822,7 @@ const WeeklyAccountabilityMeetingPage = () => {
                       size="sm"
                       onClick={async () => {
                         try {
-                          const effectiveTeamId = teamId || user?.teamId || '00000000-0000-0000-0000-000000000000';
+                          const effectiveTeamId = getEffectiveTeamId(teamId, user);
                           await headlinesService.archiveHeadlines(effectiveTeamId);
                           setSuccess('Headlines archived');
                           await fetchHeadlines(); // Refresh the headlines
@@ -2500,7 +2501,7 @@ const WeeklyAccountabilityMeetingPage = () => {
         open={showHeadlineDialog}
         onOpenChange={setShowHeadlineDialog}
         onSave={async (headlineData) => {
-          const effectiveTeamId = teamId || user?.teamId || '00000000-0000-0000-0000-000000000000';
+          const effectiveTeamId = getEffectiveTeamId(teamId, user);
           await headlinesService.createHeadline({
             ...headlineData,
             teamId: effectiveTeamId
@@ -2602,7 +2603,7 @@ const WeeklyAccountabilityMeetingPage = () => {
         metric={chartModal.metric}
         metricId={chartModal.metricId}
         orgId={user?.organizationId}
-        teamId={teamId || user?.teamId || '00000000-0000-0000-0000-000000000000'}
+        teamId={getEffectiveTeamId(teamId, user)}
       />
       
       {/* Meeting Collaboration Bar */}
