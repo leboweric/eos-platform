@@ -766,6 +766,9 @@ const WeeklyAccountabilityMeetingPage = () => {
   };
 
   const handleReorderIssues = async (reorderedIssues) => {
+    console.log('handleReorderIssues called with:', reorderedIssues.length, 'issues');
+    console.log('Current issueTimeline:', issueTimeline);
+    
     try {
       // Update local state optimistically
       setShortTermIssues(issueTimeline === 'short_term' ? reorderedIssues : shortTermIssues);
@@ -778,7 +781,10 @@ const WeeklyAccountabilityMeetingPage = () => {
       }));
 
       const effectiveTeamId = getEffectiveTeamId(teamId, user);
+      console.log('Sending reorder request:', { orgId, teamId: effectiveTeamId, updates });
+      
       await issuesService.updateIssueOrder(orgId, effectiveTeamId, updates);
+      console.log('Reorder API call successful');
     } catch (error) {
       console.error('Failed to reorder issues:', error);
       // Refresh to get correct order on error

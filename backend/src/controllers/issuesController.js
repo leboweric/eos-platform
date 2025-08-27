@@ -991,7 +991,10 @@ export const updateIssueOrder = async (req, res) => {
     const { orgId, teamId } = req.params;
     const { issues } = req.body; // Array of { id, priority_rank }
     
-    console.log('Updating issue order:', { orgId, teamId, issuesCount: issues?.length });
+    console.log('UPDATE ISSUE ORDER ENDPOINT HIT');
+    console.log('Params:', { orgId, teamId });
+    console.log('Body:', req.body);
+    console.log('Issues to update:', issues?.length);
     
     if (!issues || !Array.isArray(issues)) {
       return res.status(400).json({

@@ -94,6 +94,8 @@ const IssuesListClean = ({
 
   // Sort issues whenever issues prop or sort settings change
   useEffect(() => {
+    console.log('Issues useEffect running. enableDragDrop:', enableDragDrop, 'issues count:', issues?.length);
+    
     // If drag-drop is enabled, preserve the original order (priority_rank)
     if (enableDragDrop) {
       const sorted = [...(issues || [])].sort((a, b) => {
@@ -103,6 +105,7 @@ const IssuesListClean = ({
         }
         return 0;
       });
+      console.log('Setting sorted issues by priority_rank:', sorted.map(i => ({ title: i.title, rank: i.priority_rank })));
       setSortedIssues(sorted);
       return;
     }
@@ -309,6 +312,7 @@ const IssuesListClean = ({
 
   // Drag and drop handlers
   const handleDragStart = (e, issue, index) => {
+    console.log('Drag started:', { issue: issue.title, index });
     setDraggedIssue(issue);
     setDraggedIssueIndex(index);
     e.dataTransfer.effectAllowed = 'move';
@@ -341,7 +345,10 @@ const IssuesListClean = ({
     e.stopPropagation();
     setDragOverIssueIndex(null);
 
+    console.log('handleDrop called:', { draggedIssueIndex, dropIndex, draggedIssue: draggedIssue?.title });
+
     if (draggedIssueIndex === null || draggedIssueIndex === dropIndex || !draggedIssue) {
+      console.log('Early return from handleDrop');
       return;
     }
 
@@ -356,6 +363,8 @@ const IssuesListClean = ({
       priority_rank: index
     }));
 
+    console.log('New order:', updatedIssues.map(i => ({ id: i.id, title: i.title, rank: i.priority_rank })));
+
     // Update local state immediately for optimistic UI
     setSortedIssues(updatedIssues);
     
@@ -365,13 +374,17 @@ const IssuesListClean = ({
 
     // Call the onReorder callback if provided
     if (onReorder) {
+      console.log('Calling onReorder callback');
       try {
         await onReorder(updatedIssues);
+        console.log('onReorder successful');
       } catch (error) {
         console.error('Failed to reorder issues:', error);
         // Revert on error
         setSortedIssues(sortedIssues);
       }
+    } else {
+      console.log('No onReorder callback provided!');
     }
   };
   
