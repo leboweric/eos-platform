@@ -1177,13 +1177,24 @@ const DashboardClean = () => {
             try {
               // Add organization_id and team_id if not present
               const orgId = localStorage.getItem('impersonatedOrgId') || user?.organizationId || user?.organization_id;
-              const teamId = user?.teamId || '00000000-0000-0000-0000-000000000000';
+              
+              // Get the user's actual department/team ID (same logic as fetchDashboardData)
+              let userTeamId = null;
+              if (user?.teams && user.teams.length > 0) {
+                const nonLeadershipTeam = user.teams.find(team => !team.is_leadership_team);
+                if (nonLeadershipTeam) {
+                  userTeamId = nonLeadershipTeam.id;
+                } else {
+                  const leadershipTeam = user.teams.find(team => team.is_leadership_team);
+                  userTeamId = leadershipTeam ? leadershipTeam.id : user.teams[0].id;
+                }
+              }
               
               const todoDataWithOrgInfo = {
                 ...todoData,
                 organization_id: orgId,
-                team_id: teamId,
-                department_id: teamId
+                team_id: userTeamId,
+                department_id: userTeamId
               };
               
               if (editingTodo) {
@@ -1213,12 +1224,23 @@ const DashboardClean = () => {
           onSave={async (issueData) => {
             try {
               const orgId = localStorage.getItem('impersonatedOrgId') || user?.organizationId || user?.organization_id;
-              const teamId = user?.teamId || '00000000-0000-0000-0000-000000000000';
+              
+              // Get the user's actual department/team ID (same logic as fetchDashboardData)
+              let userTeamId = null;
+              if (user?.teams && user.teams.length > 0) {
+                const nonLeadershipTeam = user.teams.find(team => !team.is_leadership_team);
+                if (nonLeadershipTeam) {
+                  userTeamId = nonLeadershipTeam.id;
+                } else {
+                  const leadershipTeam = user.teams.find(team => team.is_leadership_team);
+                  userTeamId = leadershipTeam ? leadershipTeam.id : user.teams[0].id;
+                }
+              }
               
               const issueDataWithOrgInfo = {
                 ...issueData,
                 organization_id: orgId,
-                department_id: teamId,
+                department_id: userTeamId,
                 timeline: issueData.timeline || 'short_term'
               };
               
@@ -1247,10 +1269,21 @@ const DashboardClean = () => {
           open={showHeadlineDialog}
           onOpenChange={setShowHeadlineDialog}
           onSave={async (headlineData) => {
-            const teamId = user?.teamId || '00000000-0000-0000-0000-000000000000';
+            // Get the user's actual department/team ID (same logic as fetchDashboardData)
+            let userTeamId = null;
+            if (user?.teams && user.teams.length > 0) {
+              const nonLeadershipTeam = user.teams.find(team => !team.is_leadership_team);
+              if (nonLeadershipTeam) {
+                userTeamId = nonLeadershipTeam.id;
+              } else {
+                const leadershipTeam = user.teams.find(team => team.is_leadership_team);
+                userTeamId = leadershipTeam ? leadershipTeam.id : user.teams[0].id;
+              }
+            }
+            
             await headlinesService.createHeadline({
               ...headlineData,
-              teamId: teamId
+              teamId: userTeamId
             });
             // Success is handled in the dialog component
           }}
