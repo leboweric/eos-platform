@@ -159,11 +159,22 @@ const IssuesPageClean = () => {
       setError(null);
       
       // Fetch all types of issues
+      console.log('Issues Page - Fetching issues for department:', selectedDepartment?.id || 'all');
       const [shortTermResponse, longTermResponse, archivedResponse] = await Promise.all([
         issuesService.getIssues('short_term', false, selectedDepartment?.id),
         issuesService.getIssues('long_term', false, selectedDepartment?.id),
         issuesService.getIssues(null, true, selectedDepartment?.id) // Get all archived issues
       ]);
+      
+      console.log('Issues Page - Short term response:', shortTermResponse.data);
+      console.log('Issues Page - Short term issues count:', shortTermResponse.data?.issues?.length);
+      console.log('Issues Page - Short term issue details:', shortTermResponse.data?.issues?.map(i => ({ 
+        id: i.id, 
+        title: i.title, 
+        status: i.status, 
+        archived: i.archived,
+        timeline: i.timeline 
+      })));
       
       // Ensure we have valid arrays and log for debugging
       const shortTerm = Array.isArray(shortTermResponse?.data?.issues) ? shortTermResponse.data.issues : [];

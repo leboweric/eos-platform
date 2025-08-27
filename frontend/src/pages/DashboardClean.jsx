@@ -348,6 +348,7 @@ const DashboardClean = () => {
       // Temporarily show ALL issues to debug
       const allIssues = issuesResponse.data.issues || [];
       console.log('All issues:', allIssues);
+      console.log('Issue titles:', allIssues.map(i => ({ id: i.id, title: i.title, status: i.status, timeline: i.timeline, archived: i.archived })));
       const shortTermIssues = allIssues.filter(issue => 
         issue.timeline === 'short_term' && issue.status === 'open'
       );
@@ -1224,8 +1225,11 @@ const DashboardClean = () => {
               if (editingIssue) {
                 await issuesService.updateIssue(editingIssue.id, issueDataWithOrgInfo);
               } else {
+                console.log('Creating issue with data:', issueDataWithOrgInfo);
                 const createdIssue = await issuesService.createIssue(issueDataWithOrgInfo);
                 console.log('Issue created successfully:', createdIssue);
+                console.log('Created issue ID:', createdIssue?.id);
+                console.log('Created issue title:', createdIssue?.title);
               }
               await fetchDashboardData();
               setShowIssueDialog(false);
