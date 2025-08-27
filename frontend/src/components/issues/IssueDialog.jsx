@@ -40,6 +40,7 @@ const IssueDialog = ({ open, onClose, onSave, issue, teamMembers, timeline }) =>
   const [loading, setLoading] = useState(false);
   const [uploadingFiles, setUploadingFiles] = useState(false);
   const [error, setError] = useState(null);
+  const [isDragging, setIsDragging] = useState(false);
 
   useEffect(() => {
     if (issue) {
@@ -173,6 +174,31 @@ const IssueDialog = ({ open, onClose, onSave, issue, teamMembers, timeline }) =>
     }
   };
 
+  const handleDragOver = (e) => {
+    e.preventDefault();
+    setIsDragging(true);
+  };
+
+  const handleDragLeave = (e) => {
+    e.preventDefault();
+    setIsDragging(false);
+  };
+
+  const handleDrop = (e) => {
+    e.preventDefault();
+    setIsDragging(false);
+    
+    const droppedFiles = Array.from(e.dataTransfer.files);
+    const validFiles = droppedFiles.filter(file => file.size <= 10 * 1024 * 1024); // 10MB limit
+    
+    if (droppedFiles.length !== validFiles.length) {
+      setError('Some files exceed 10MB limit and were not added');
+      setTimeout(() => setError(null), 3000);
+    }
+    
+    setNewAttachments(prev => [...prev, ...validFiles]);
+  };
+
   return (
     <Dialog open={open} onOpenChange={(newOpen) => {
       if (!newOpen) {
@@ -289,27 +315,6 @@ const IssueDialog = ({ open, onClose, onSave, issue, teamMembers, timeline }) =>
             <div className="grid gap-3">
               <Label htmlFor="attachments" className="text-sm font-semibold text-slate-700">Attachments</Label>
               <div className="space-y-2">
-                <div className="flex items-center gap-2">
-                  <Input
-                    id="attachments"
-                    type="file"
-                    multiple
-                    onChange={handleFileChange}
-                    className="hidden"
-                  />
-                  <Button
-                    type="button"
-                    variant="outline"
-                    onClick={() => document.getElementById('attachments').click()}
-                    className="bg-white/80 backdrop-blur-sm border-white/20 hover:bg-white/90 shadow-sm transition-all duration-200"
-                  >
-                    <Upload className="mr-2 h-4 w-4" />
-                    Choose Files
-                  </Button>
-                  <span className="text-sm text-gray-500">
-                    {newAttachments.length > 0 && `${newAttachments.length} new file(s) selected`}
-                  </span>
-                </div>
                 
                 {/* Existing attachments */}
                 {issue && existingAttachments.length > 0 && (
@@ -349,17 +354,10 @@ const IssueDialog = ({ open, onClose, onSave, issue, teamMembers, timeline }) =>
                 
                 {/* New attachments to upload */}
                 {newAttachments.length > 0 && (
-                  <div className="space-y-1">
-                    <p className="text-sm font-medium text-gray-700">Files to upload:</p>
-                    {(newAttachments || []).map((file, index) => (
+                  <div className="space-y-2">
+                    {newAttachments.map((file, index) => (
                       <div key={index} className="flex items-center justify-between p-3 bg-green-50/80 backdrop-blur-sm rounded-xl border border-green-200/50">
-                        <div className="flex items-center gap-2">
-                          <Paperclip className="h-4 w-4 text-green-600" />
-                          <span className="text-sm font-medium">{file.name}</span>
-                          <span className="text-xs text-slate-500">
-                            ({(file.size / 1024).toFixed(1)} KB)
-                          </span>
-                        </div>
+                        <span className="text-sm font-medium">{file.name} <span className="text-green-600">(new)</span></span>
                         <Button
                           type="button"
                           variant="ghost"
@@ -372,6 +370,31 @@ const IssueDialog = ({ open, onClose, onSave, issue, teamMembers, timeline }) =>
                     ))}
                   </div>
                 )}
+                
+                <label className="block">
+                  <input
+                    type="file"
+                    multiple
+                    onChange={handleFileChange}
+                    className="hidden"
+                  />
+                  <div 
+                    className={`cursor-pointer border-2 border-dashed rounded-xl p-6 text-center transition-all duration-200 backdrop-blur-sm ${
+                      isDragging 
+                        ? 'border-red-500 bg-red-50/50' 
+                        : 'border-slate-300 hover:border-red-500 hover:bg-red-50/50 bg-white/40'
+                    }`}
+                    onDragOver={handleDragOver}
+                    onDragLeave={handleDragLeave}
+                    onDrop={handleDrop}
+                  >
+                    <Paperclip className="h-8 w-8 mx-auto mb-2 text-slate-400" />
+                    <p className="text-sm text-slate-600 font-medium">
+                      {isDragging ? 'Drop files here...' : 'Click here to choose files or drag and drop'}
+                    </p>
+                  </div>
+                </label>
+                <p className="text-xs text-slate-500">Max file size: 10MB</p>
               </div>
             </div>
           </div>

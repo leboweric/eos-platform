@@ -24,6 +24,7 @@ const TodoDialog = ({ open, onOpenChange, todo, todoFromIssue, teamMembers, onSa
   const [files, setFiles] = useState([]);
   const [existingAttachments, setExistingAttachments] = useState([]);
   const [loadingAttachments, setLoadingAttachments] = useState(false);
+  const [isDragging, setIsDragging] = useState(false);
 
   useEffect(() => {
     if (todo) {
@@ -145,6 +146,31 @@ const TodoDialog = ({ open, onOpenChange, todo, todoFromIssue, teamMembers, onSa
 
   const removeFile = (index) => {
     setFiles(prev => prev.filter((_, i) => i !== index));
+  };
+
+  const handleDragOver = (e) => {
+    e.preventDefault();
+    setIsDragging(true);
+  };
+
+  const handleDragLeave = (e) => {
+    e.preventDefault();
+    setIsDragging(false);
+  };
+
+  const handleDrop = (e) => {
+    e.preventDefault();
+    setIsDragging(false);
+    
+    const droppedFiles = Array.from(e.dataTransfer.files);
+    const validFiles = droppedFiles.filter(file => file.size <= 10 * 1024 * 1024); // 10MB limit
+    
+    if (droppedFiles.length !== validFiles.length) {
+      setError('Some files exceed 10MB limit and were not added');
+      setTimeout(() => setError(null), 3000);
+    }
+    
+    setFiles(prev => [...prev, ...validFiles]);
   };
 
   const deleteAttachment = async (attachmentId) => {
@@ -321,9 +347,20 @@ const TodoDialog = ({ open, onOpenChange, todo, todoFromIssue, teamMembers, onSa
                   onChange={handleFileChange}
                   className="hidden"
                 />
-                <div className="cursor-pointer border-2 border-dashed border-slate-300 rounded-xl p-6 text-center hover:border-blue-500 hover:bg-blue-50/50 transition-all duration-200 bg-white/40 backdrop-blur-sm">
+                <div 
+                  className={`cursor-pointer border-2 border-dashed rounded-xl p-6 text-center transition-all duration-200 backdrop-blur-sm ${
+                    isDragging 
+                      ? 'border-blue-500 bg-blue-50/50' 
+                      : 'border-slate-300 hover:border-blue-500 hover:bg-blue-50/50 bg-white/40'
+                  }`}
+                  onDragOver={handleDragOver}
+                  onDragLeave={handleDragLeave}
+                  onDrop={handleDrop}
+                >
                   <Paperclip className="h-8 w-8 mx-auto mb-2 text-slate-400" />
-                  <p className="text-sm text-slate-600 font-medium">Click here to choose files</p>
+                  <p className="text-sm text-slate-600 font-medium">
+                    {isDragging ? 'Drop files here...' : 'Click here to choose files or drag and drop'}
+                  </p>
                 </div>
               </label>
               <p className="text-xs text-slate-500">Max file size: 10MB</p>
