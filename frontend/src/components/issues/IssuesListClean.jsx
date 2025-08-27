@@ -94,6 +94,19 @@ const IssuesListClean = ({
 
   // Sort issues whenever issues prop or sort settings change
   useEffect(() => {
+    // If drag-drop is enabled, preserve the original order (priority_rank)
+    if (enableDragDrop) {
+      const sorted = [...(issues || [])].sort((a, b) => {
+        // Sort by priority_rank if it exists, otherwise by id
+        if (a.priority_rank !== undefined && b.priority_rank !== undefined) {
+          return a.priority_rank - b.priority_rank;
+        }
+        return 0;
+      });
+      setSortedIssues(sorted);
+      return;
+    }
+    
     const sorted = [...(issues || [])].sort((a, b) => {
       if (!sortField) return 0;
       
@@ -119,7 +132,7 @@ const IssuesListClean = ({
     });
     
     setSortedIssues(sorted);
-  }, [issues, sortField, sortDirection]);
+  }, [issues, sortField, sortDirection, enableDragDrop]);
 
   // Fetch updates when an issue is selected
   useEffect(() => {
@@ -345,6 +358,10 @@ const IssuesListClean = ({
 
     // Update local state immediately for optimistic UI
     setSortedIssues(updatedIssues);
+    
+    // Reset drag state
+    setDraggedIssue(null);
+    setDraggedIssueIndex(null);
 
     // Call the onReorder callback if provided
     if (onReorder) {
@@ -499,10 +516,17 @@ const IssuesListClean = ({
 
   return (
     <>
-      {/* Enhanced Sorting header */}
+      {/* Enhanced Sorting header or Drag-and-drop indicator */}
       <div className="mb-4 p-4 bg-white/80 backdrop-blur-sm rounded-xl border border-white/20 shadow-sm">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-1">
+          {enableDragDrop ? (
+            <div className="flex items-center gap-2">
+              <GripVertical className="h-4 w-4 text-gray-400" />
+              <span className="text-xs font-medium text-gray-600">Drag and drop to reorder issues</span>
+            </div>
+          ) : (
+            <>
           <span className="text-xs font-medium text-gray-600 mr-2">Sort by:</span>
           <Button
             variant="ghost"
@@ -548,6 +572,8 @@ const IssuesListClean = ({
             >
               ✕ Clear
             </Button>
+          )}
+          </>
           )}
           </div>
           
@@ -607,6 +633,7 @@ const IssuesListClean = ({
                       const globalIndex = sortedIssues.findIndex(i => i.id === issue.id);
                       const hasVotes = (issue.vote_count || 0) > 0;
                       const isTopIssue = globalIndex === 0 && hasVotes && showVoting;
+                      const isDragOver = dragOverIssueIndex === globalIndex;
                       
                       return (
                         <div
@@ -614,8 +641,21 @@ const IssuesListClean = ({
                           className={`
                             group relative flex items-center gap-3 bg-white/90 backdrop-blur-sm rounded-xl border border-white/50 pl-3 pr-4 py-3 transition-shadow duration-200 cursor-pointer shadow-sm hover:shadow-md
                             ${issue.status === 'closed' ? 'opacity-60' : ''}
+                            ${isDragOver ? 'ring-2 ring-blue-400' : ''}
+                            ${draggedIssueIndex === globalIndex ? 'opacity-50' : ''}
                           `}
-                          onClick={() => setSelectedIssue(issue)}
+                          draggable={enableDragDrop && !readOnly}
+                          onDragStart={(e) => enableDragDrop && handleDragStart(e, issue, globalIndex)}
+                          onDragEnd={handleDragEnd}
+                          onDragOver={handleDragOver}
+                          onDragEnter={(e) => handleDragEnter(e, globalIndex)}
+                          onDragLeave={handleDragLeave}
+                          onDrop={(e) => handleDrop(e, globalIndex)}
+                          onClick={(e) => {
+                            if (!e.defaultPrevented) {
+                              setSelectedIssue(issue);
+                            }
+                          }}
               >
                 {/* Enhanced status indicator */}
                 <div 
@@ -624,6 +664,12 @@ const IssuesListClean = ({
                     background: issue.status === 'open' ? `linear-gradient(135deg, ${themeColors.primary} 0%, ${themeColors.secondary} 100%)` : 'linear-gradient(135deg, #9CA3AF 0%, #6B7280 100%)'
                   }}
                 />
+                
+                {/* Drag handle */}
+                {enableDragDrop && !readOnly && (
+                  <GripVertical className="h-4 w-4 text-gray-400 cursor-move flex-shrink-0" />
+                )}
+                
                 {/* Enhanced checkbox */}
                 <div onClick={(e) => e.stopPropagation()}>
                   <div className="relative">
