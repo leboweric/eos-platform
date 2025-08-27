@@ -38,6 +38,7 @@ import { issuesService } from '../services/issuesService';
 import { organizationService } from '../services/organizationService';
 import { getOrgTheme, saveOrgTheme, hexToRgba } from '../utils/themeUtils';
 import { useTerminology } from '../contexts/TerminologyContext';
+import { getEffectiveTeamId } from '../utils/teamUtils';
 import IssuesListClean from '../components/issues/IssuesListClean';
 import IssueDialog from '../components/issues/IssueDialog';
 import TodoDialog from '../components/todos/TodoDialog';
@@ -233,7 +234,7 @@ const QuarterlyPlanningMeetingPage = () => {
     
     try {
       const orgId = localStorage.getItem('impersonatedOrgId') || user?.organizationId || user?.organization_id;
-      const effectiveTeamId = teamId || user?.teamId || '00000000-0000-0000-0000-000000000000';
+      const effectiveTeamId = teamId || getEffectiveTeamId(teamId, user);
       const duration = Math.floor((Date.now() - meetingStartTime) / 60000); // in minutes
       
       await meetingsService.concludeMeeting(orgId, effectiveTeamId, {
@@ -295,7 +296,7 @@ const QuarterlyPlanningMeetingPage = () => {
       setLoading(true);
       setError(null);
       const orgId = localStorage.getItem('impersonatedOrgId') || user?.organizationId || user?.organization_id;
-      const effectiveTeamId = teamId || user?.teamId || '00000000-0000-0000-0000-000000000000';
+      const effectiveTeamId = teamId || getEffectiveTeamId(teamId, user);
       
       // Use the simplified current priorities endpoint
       const response = await quarterlyPrioritiesService.getCurrentPriorities(orgId, effectiveTeamId);
@@ -331,7 +332,7 @@ const QuarterlyPlanningMeetingPage = () => {
     
     try {
       const orgId = localStorage.getItem('impersonatedOrgId') || user?.organizationId || user?.organization_id;
-      const effectiveTeamId = teamId || user?.teamId || '00000000-0000-0000-0000-000000000000';
+      const effectiveTeamId = teamId || getEffectiveTeamId(teamId, user);
       
       // Update in database
       await quarterlyPrioritiesService.updatePriority(orgId, effectiveTeamId, priorityId, { status: newStatus });
@@ -388,7 +389,7 @@ const QuarterlyPlanningMeetingPage = () => {
   const handleUpdateMilestone = async (priorityId, milestoneId, completed) => {
     try {
       const orgId = localStorage.getItem('impersonatedOrgId') || user?.organizationId || user?.organization_id;
-      const effectiveTeamId = teamId || user?.teamId || '00000000-0000-0000-0000-000000000000';
+      const effectiveTeamId = teamId || getEffectiveTeamId(teamId, user);
       
       await quarterlyPrioritiesService.updateMilestone(orgId, effectiveTeamId, priorityId, milestoneId, { completed });
       
@@ -426,7 +427,7 @@ const QuarterlyPlanningMeetingPage = () => {
   const handleEditMilestone = async (priorityId, milestoneId, milestoneData) => {
     try {
       const orgId = localStorage.getItem('impersonatedOrgId') || user?.organizationId || user?.organization_id;
-      const effectiveTeamId = teamId || user?.teamId || '00000000-0000-0000-0000-000000000000';
+      const effectiveTeamId = teamId || getEffectiveTeamId(teamId, user);
       
       await quarterlyPrioritiesService.updateMilestone(orgId, effectiveTeamId, priorityId, milestoneId, milestoneData);
       
@@ -457,7 +458,7 @@ const QuarterlyPlanningMeetingPage = () => {
   const handleUpdatePriority = async (priorityId, updates) => {
     try {
       const orgId = localStorage.getItem('impersonatedOrgId') || user?.organizationId || user?.organization_id;
-      const effectiveTeamId = teamId || user?.teamId || '00000000-0000-0000-0000-000000000000';
+      const effectiveTeamId = teamId || getEffectiveTeamId(teamId, user);
       
       await quarterlyPrioritiesService.updatePriority(orgId, effectiveTeamId, priorityId, updates);
       
@@ -479,7 +480,7 @@ const QuarterlyPlanningMeetingPage = () => {
     try {
       setLoading(true);
       setError(null);
-      const effectiveTeamId = teamId || user?.teamId || '00000000-0000-0000-0000-000000000000';
+      const effectiveTeamId = teamId || getEffectiveTeamId(teamId, user);
       
       const response = await issuesService.getIssues(null, false, effectiveTeamId);
       // Sort issues by vote count (highest first)
@@ -497,7 +498,7 @@ const QuarterlyPlanningMeetingPage = () => {
 
   const fetchTeamMembers = async () => {
     try {
-      const effectiveTeamId = teamId || user?.teamId || '00000000-0000-0000-0000-000000000000';
+      const effectiveTeamId = teamId || getEffectiveTeamId(teamId, user);
       const response = await todosService.getTodos(null, null, true, effectiveTeamId);
       setTeamMembers(response.data.teamMembers || []);
     } catch (error) {
@@ -508,7 +509,7 @@ const QuarterlyPlanningMeetingPage = () => {
   const fetchTodosData = async () => {
     try {
       setLoading(true);
-      const effectiveTeamId = teamId || user?.teamId || '00000000-0000-0000-0000-000000000000';
+      const effectiveTeamId = teamId || getEffectiveTeamId(teamId, user);
       const response = await todosService.getTodos(null, null, false, effectiveTeamId);
       // Filter to only show open todos
       const openTodos = (response.data.todos || []).filter(
@@ -531,7 +532,7 @@ const QuarterlyPlanningMeetingPage = () => {
   const handleCreatePriority = async () => {
     try {
       const orgId = localStorage.getItem('impersonatedOrgId') || user?.organizationId || user?.organization_id;
-      const effectiveTeamId = teamId || user?.teamId || '00000000-0000-0000-0000-000000000000';
+      const effectiveTeamId = teamId || getEffectiveTeamId(teamId, user);
       
       const priorityData = {
         ...priorityForm,
@@ -832,7 +833,7 @@ const QuarterlyPlanningMeetingPage = () => {
                       onClick={async () => {
                         try {
                           const orgId = localStorage.getItem('impersonatedOrgId') || user?.organizationId || user?.organization_id;
-                          const effectiveTeamId = teamId || user?.teamId || '00000000-0000-0000-0000-000000000000';
+                          const effectiveTeamId = teamId || getEffectiveTeamId(teamId, user);
                           
                           // Archive completed priorities
                           const completedPriorities = priorities.filter(p => p.status === 'complete');
@@ -860,7 +861,7 @@ const QuarterlyPlanningMeetingPage = () => {
                       onClick={async () => {
                         try {
                           const orgId = localStorage.getItem('impersonatedOrgId') || user?.organizationId || user?.organization_id;
-                          const effectiveTeamId = teamId || user?.teamId || '00000000-0000-0000-0000-000000000000';
+                          const effectiveTeamId = teamId || getEffectiveTeamId(teamId, user);
                           
                           // Add incomplete priorities to issues list
                           const incompletePriorities = priorities.filter(p => p.status !== 'complete');
@@ -1956,7 +1957,7 @@ const QuarterlyPlanningMeetingPage = () => {
           }}
           onSave={async (issueData) => {
             try {
-              const effectiveTeamId = teamId || user?.teamId || '00000000-0000-0000-0000-000000000000';
+              const effectiveTeamId = teamId || getEffectiveTeamId(teamId, user);
               
               // Log for debugging
               console.log('Saving issue with data:', issueData);
@@ -2003,7 +2004,7 @@ const QuarterlyPlanningMeetingPage = () => {
           teamMembers={teamMembers || []}
           onSave={async (todoData) => {
             try {
-              const effectiveTeamId = teamId || user?.teamId || '00000000-0000-0000-0000-000000000000';
+              const effectiveTeamId = teamId || getEffectiveTeamId(teamId, user);
               const todoDataWithOrgInfo = {
                 ...todoData,
                 organization_id: user?.organizationId || user?.organization_id,
