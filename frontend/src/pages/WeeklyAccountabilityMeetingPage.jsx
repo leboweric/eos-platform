@@ -618,11 +618,12 @@ const WeeklyAccountabilityMeetingPage = () => {
   const handleSaveIssue = async (issueData) => {
     try {
       const effectiveTeamId = getEffectiveTeamId(teamId, user);
+      let savedIssue;
       if (editingIssue) {
-        await issuesService.updateIssue(editingIssue.id, issueData);
+        savedIssue = await issuesService.updateIssue(editingIssue.id, issueData);
         setSuccess('Issue updated successfully');
       } else {
-        await issuesService.createIssue({
+        savedIssue = await issuesService.createIssue({
           ...issueData,
           timeline: issueTimeline,
           department_id: effectiveTeamId
@@ -633,7 +634,7 @@ const WeeklyAccountabilityMeetingPage = () => {
       await fetchIssuesData();
       setShowIssueDialog(false);
       setEditingIssue(null);
-      return issueData;
+      return savedIssue; // Return the actual created/updated issue
     } catch (error) {
       console.error('Failed to save issue:', error);
       setError('Failed to save issue');

@@ -1244,19 +1244,21 @@ const DashboardClean = () => {
                 timeline: issueData.timeline || 'short_term'
               };
               
+              let savedIssue;
               if (editingIssue) {
-                await issuesService.updateIssue(editingIssue.id, issueDataWithOrgInfo);
+                savedIssue = await issuesService.updateIssue(editingIssue.id, issueDataWithOrgInfo);
               } else {
                 console.log('Creating issue with data:', issueDataWithOrgInfo);
                 const createdIssue = await issuesService.createIssue(issueDataWithOrgInfo);
                 console.log('Issue created successfully:', createdIssue);
                 console.log('Created issue ID:', createdIssue?.id);
                 console.log('Created issue title:', createdIssue?.title);
+                savedIssue = createdIssue;
               }
               await fetchDashboardData();
               setShowIssueDialog(false);
               setEditingIssue(null);
-              return true;
+              return savedIssue; // Return the issue so attachments can be uploaded
             } catch (error) {
               console.error('Failed to save issue:', error);
               throw error;
