@@ -1203,6 +1203,7 @@ const DashboardClean = () => {
           onClose={() => setShowIssueDialog(false)}
           issue={editingIssue}
           teamMembers={dashboardData.teamMembers || []}
+          timeline="short_term"
           onSave={async (issueData) => {
             try {
               const orgId = localStorage.getItem('impersonatedOrgId') || user?.organizationId || user?.organization_id;
@@ -1211,7 +1212,8 @@ const DashboardClean = () => {
               const issueDataWithOrgInfo = {
                 ...issueData,
                 organization_id: orgId,
-                department_id: teamId
+                department_id: teamId,
+                timeline: issueData.timeline || 'short_term'
               };
               
               if (editingIssue) {

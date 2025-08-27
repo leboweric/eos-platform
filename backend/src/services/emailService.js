@@ -336,4 +336,5 @@ export const sendEmail = async (to, templateName, data) => {
   }
 };
 
+export const emailService = { sendEmail };
 export default { sendEmail };

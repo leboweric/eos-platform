@@ -22,6 +22,7 @@ import accountabilityRoutes from './routes/accountabilityRoutes.js';
 import subscriptionRoutes from './routes/subscriptionRoutes.js';
 import subscriptionRoutesV2 from './routes/subscriptionRoutesV2.js';
 import webhookRoutes from './routes/webhookRoutes.js';
+import emailInboundRoutes from './routes/emailInboundRoutes.js';
 import userRoutes from './routes/userRoutes.js';
 import consultantRoutes from './routes/consultantRoutes.js';
 import organizationalChartRoutes from './routes/organizationalChart.js';
@@ -166,6 +167,7 @@ app.use(morgan('combined'));
 // IMPORTANT: Webhook routes MUST come BEFORE body parsing middleware
 // Stripe webhooks need the raw body to verify signatures
 app.use('/api/v1/webhooks', webhookRoutes);
+app.use('/api/v1/email', emailInboundRoutes);
 
 // Health and utility routes (before body parsing, handles bots gracefully)
 app.use('/', healthRoutes);
