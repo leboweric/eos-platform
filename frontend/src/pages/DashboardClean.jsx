@@ -20,6 +20,8 @@ import HeadlineDialog from '../components/headlines/HeadlineDialog';
 import { headlinesService } from '../services/headlinesService';
 import { useSelectedTodos } from '../contexts/SelectedTodosContext';
 import { useTerminology } from '../contexts/TerminologyContext';
+import PriorityCardClean from '../components/priorities/PriorityCardClean';
+import { Dialog, DialogContent } from '@/components/ui/dialog';
 import {
   AlertCircle,
   CheckSquare,
@@ -51,6 +53,8 @@ const DashboardClean = () => {
   const [showIssueDialog, setShowIssueDialog] = useState(false);
   const [editingIssue, setEditingIssue] = useState(null);
   const [showHeadlineDialog, setShowHeadlineDialog] = useState(false);
+  const [showPriorityDialog, setShowPriorityDialog] = useState(false);
+  const [selectedPriority, setSelectedPriority] = useState(null);
   const [predictions, setPredictions] = useState({
     revenue: { target: 0, current: 0 },
     profit: { target: 0, current: 0 },
@@ -357,6 +361,14 @@ const DashboardClean = () => {
           totalShortTermIssues: shortTermIssues.length
         }
       });
+
+      // Update selected priority if it's currently open
+      if (selectedPriority) {
+        const updatedPriority = userPriorities.find(p => p.id === selectedPriority.id);
+        if (updatedPriority) {
+          setSelectedPriority(updatedPriority);
+        }
+      }
     } catch (error) {
       console.error('Failed to fetch dashboard data:', error);
     } finally {
@@ -442,6 +454,167 @@ const DashboardClean = () => {
   const handleCreateTodo = () => {
     setEditingTodo(null);
     setShowTodoDialog(true);
+  };
+
+  // Priority handlers
+  const handleUpdatePriority = async (priorityId, updates) => {
+    try {
+      const orgId = user?.organizationId || user?.organization_id;
+      const teamId = getTeamId(user);
+      
+      await quarterlyPrioritiesService.updatePriority(orgId, teamId, priorityId, updates);
+      await fetchDashboardData();
+      // Update the selected priority if it's being edited
+      if (selectedPriority?.id === priorityId) {
+        setSelectedPriority(prev => ({ ...prev, ...updates }));
+      }
+    } catch (error) {
+      console.error('Failed to update priority:', error);
+    }
+  };
+
+  const handleAddMilestone = async (priorityId, milestone) => {
+    try {
+      const orgId = user?.organizationId || user?.organization_id;
+      const teamId = getTeamId(user);
+      
+      await quarterlyPrioritiesService.createMilestone(orgId, teamId, priorityId, milestone);
+      await fetchDashboardData();
+    } catch (error) {
+      console.error('Failed to add milestone:', error);
+    }
+  };
+
+  const handleEditMilestone = async (priorityId, milestoneId, updates) => {
+    try {
+      const orgId = user?.organizationId || user?.organization_id;
+      const teamId = getTeamId(user);
+      
+      await quarterlyPrioritiesService.updateMilestone(orgId, teamId, priorityId, milestoneId, updates);
+      await fetchDashboardData();
+    } catch (error) {
+      console.error('Failed to update milestone:', error);
+    }
+  };
+
+  const handleDeleteMilestone = async (priorityId, milestoneId) => {
+    try {
+      const orgId = user?.organizationId || user?.organization_id;
+      const teamId = getTeamId(user);
+      
+      await quarterlyPrioritiesService.deleteMilestone(orgId, teamId, priorityId, milestoneId);
+      await fetchDashboardData();
+    } catch (error) {
+      console.error('Failed to delete milestone:', error);
+    }
+  };
+
+  const handleToggleMilestone = async (priorityId, milestoneId, completed) => {
+    try {
+      const orgId = user?.organizationId || user?.organization_id;
+      const teamId = getTeamId(user);
+      
+      await quarterlyPrioritiesService.updateMilestone(orgId, teamId, priorityId, milestoneId, { completed });
+      await fetchDashboardData();
+    } catch (error) {
+      console.error('Failed to toggle milestone:', error);
+    }
+  };
+
+  const handleAddUpdate = async (priorityId, updateText) => {
+    try {
+      const orgId = user?.organizationId || user?.organization_id;
+      const teamId = getTeamId(user);
+      
+      await quarterlyPrioritiesService.createUpdate(orgId, teamId, priorityId, { text: updateText });
+      await fetchDashboardData();
+    } catch (error) {
+      console.error('Failed to add update:', error);
+    }
+  };
+
+  const handleEditUpdate = async (priorityId, updateId, newText) => {
+    try {
+      const orgId = user?.organizationId || user?.organization_id;
+      const teamId = getTeamId(user);
+      
+      await quarterlyPrioritiesService.updateUpdate(orgId, teamId, priorityId, updateId, { text: newText });
+      await fetchDashboardData();
+    } catch (error) {
+      console.error('Failed to edit update:', error);
+    }
+  };
+
+  const handleDeleteUpdate = async (priorityId, updateId) => {
+    try {
+      const orgId = user?.organizationId || user?.organization_id;
+      const teamId = getTeamId(user);
+      
+      await quarterlyPrioritiesService.deleteUpdate(orgId, teamId, priorityId, updateId);
+      await fetchDashboardData();
+    } catch (error) {
+      console.error('Failed to delete update:', error);
+    }
+  };
+
+  const handleStatusChange = async (priorityId, newStatus) => {
+    try {
+      const orgId = user?.organizationId || user?.organization_id;
+      const teamId = getTeamId(user);
+      
+      await quarterlyPrioritiesService.updatePriority(orgId, teamId, priorityId, { status: newStatus });
+      await fetchDashboardData();
+    } catch (error) {
+      console.error('Failed to change priority status:', error);
+    }
+  };
+
+  const handleArchivePriority = async (priorityId) => {
+    try {
+      const orgId = user?.organizationId || user?.organization_id;
+      const teamId = getTeamId(user);
+      
+      await quarterlyPrioritiesService.archivePriority(orgId, teamId, priorityId);
+      await fetchDashboardData();
+      setShowPriorityDialog(false);
+    } catch (error) {
+      console.error('Failed to archive priority:', error);
+    }
+  };
+
+  const handleUploadAttachment = async (priorityId, file) => {
+    try {
+      const orgId = user?.organizationId || user?.organization_id;
+      const teamId = getTeamId(user);
+      
+      await quarterlyPrioritiesService.uploadAttachment(orgId, teamId, priorityId, file);
+      await fetchDashboardData();
+    } catch (error) {
+      console.error('Failed to upload attachment:', error);
+    }
+  };
+
+  const handleDownloadAttachment = async (priorityId, attachmentId) => {
+    try {
+      const orgId = user?.organizationId || user?.organization_id;
+      const teamId = getTeamId(user);
+      
+      await quarterlyPrioritiesService.downloadAttachment(orgId, teamId, priorityId, attachmentId);
+    } catch (error) {
+      console.error('Failed to download attachment:', error);
+    }
+  };
+
+  const handleDeleteAttachment = async (priorityId, attachmentId) => {
+    try {
+      const orgId = user?.organizationId || user?.organization_id;
+      const teamId = getTeamId(user);
+      
+      await quarterlyPrioritiesService.deleteAttachment(orgId, teamId, priorityId, attachmentId);
+      await fetchDashboardData();
+    } catch (error) {
+      console.error('Failed to delete attachment:', error);
+    }
   };
 
   if (loading) {
@@ -855,7 +1028,14 @@ const DashboardClean = () => {
             ) : (
               <div className="space-y-3">
                 {dashboardData.priorities.map((priority) => (
-                  <div key={priority.id} className="group p-4 bg-white/60 rounded-xl border border-slate-200 hover:shadow-md transition-all cursor-pointer hover:scale-[1.01]">
+                  <div 
+                    key={priority.id} 
+                    className="group p-4 bg-white/60 rounded-xl border border-slate-200 hover:shadow-md transition-all cursor-pointer hover:scale-[1.01]"
+                    onClick={() => {
+                      setSelectedPriority(priority);
+                      setShowPriorityDialog(true);
+                    }}
+                  >
                     <div className="flex items-center gap-3">
                       <div className="w-2 h-12 rounded-full" style={getStatusStyle(priority.status)} />
                       <div className="flex-1 min-w-0">
@@ -1063,6 +1243,34 @@ const DashboardClean = () => {
             // Success is handled in the dialog component
           }}
         />
+
+        {/* Priority Dialog */}
+        <Dialog open={showPriorityDialog} onOpenChange={setShowPriorityDialog}>
+          <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+            {selectedPriority && (
+              <PriorityCardClean
+                priority={selectedPriority}
+                isCompany={false}
+                isArchived={false}
+                onUpdate={handleUpdatePriority}
+                onArchive={handleArchivePriority}
+                onAddMilestone={handleAddMilestone}
+                onEditMilestone={handleEditMilestone}
+                onDeleteMilestone={handleDeleteMilestone}
+                onToggleMilestone={handleToggleMilestone}
+                onAddUpdate={handleAddUpdate}
+                onEditUpdate={handleEditUpdate}
+                onDeleteUpdate={handleDeleteUpdate}
+                onStatusChange={handleStatusChange}
+                onUploadAttachment={handleUploadAttachment}
+                onDownloadAttachment={handleDownloadAttachment}
+                onDeleteAttachment={handleDeleteAttachment}
+                teamMembers={dashboardData.teamMembers || []}
+                readOnly={false}
+              />
+            )}
+          </DialogContent>
+        </Dialog>
       </div>
     </div>
   );

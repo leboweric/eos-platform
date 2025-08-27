@@ -1258,8 +1258,34 @@ const WeeklyAccountabilityMeetingPage = () => {
                   </CardTitle>
                   <CardDescription className="mt-2 text-slate-600 font-medium">Share personal and professional wins</CardDescription>
                 </div>
-                <div className="text-sm text-slate-600 bg-white/80 backdrop-blur-sm px-4 py-2 rounded-full border border-white/30 shadow-sm font-medium">
-                  5 minutes
+                <div className="flex items-center gap-2">
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={() => {
+                      setEditingTodo(null);
+                      setShowTodoDialog(true);
+                    }}
+                    className="text-xs"
+                  >
+                    <Plus className="h-3 w-3 mr-1" />
+                    To Do
+                  </Button>
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={() => {
+                      setEditingIssue(null);
+                      setShowIssueDialog(true);
+                    }}
+                    className="text-xs"
+                  >
+                    <Plus className="h-3 w-3 mr-1" />
+                    Add Issue
+                  </Button>
+                  <div className="text-sm text-slate-600 bg-white/80 backdrop-blur-sm px-4 py-2 rounded-full border border-white/30 shadow-sm font-medium">
+                    5 minutes
+                  </div>
                 </div>
               </div>
             </CardHeader>
@@ -1299,8 +1325,34 @@ const WeeklyAccountabilityMeetingPage = () => {
                     </CardTitle>
                     <CardDescription className="mt-1">Quick Status Update: Metric owners report "on-track" or "off-track" status</CardDescription>
                   </div>
-                  <div className="text-sm text-gray-500 bg-white px-3 py-1 rounded-full">
-                    5 minutes
+                  <div className="flex items-center gap-2">
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={() => {
+                        setEditingTodo(null);
+                        setShowTodoDialog(true);
+                      }}
+                      className="text-xs"
+                    >
+                      <Plus className="h-3 w-3 mr-1" />
+                      To Do
+                    </Button>
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={() => {
+                        setEditingIssue(null);
+                        setShowIssueDialog(true);
+                      }}
+                      className="text-xs"
+                    >
+                      <Plus className="h-3 w-3 mr-1" />
+                      Add Issue
+                    </Button>
+                    <div className="text-sm text-gray-500 bg-white px-3 py-1 rounded-full">
+                      5 minutes
+                    </div>
                   </div>
                 </div>
               </CardHeader>
@@ -1396,7 +1448,31 @@ const WeeklyAccountabilityMeetingPage = () => {
                     </CardTitle>
                     <CardDescription className="mt-2 text-slate-600 font-medium">Check progress on quarterly priorities</CardDescription>
                   </div>
-                  <div className="flex items-center gap-4">
+                  <div className="flex items-center gap-2">
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={() => {
+                        setEditingTodo(null);
+                        setShowTodoDialog(true);
+                      }}
+                      className="text-xs"
+                    >
+                      <Plus className="h-3 w-3 mr-1" />
+                      To Do
+                    </Button>
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={() => {
+                        setEditingIssue(null);
+                        setShowIssueDialog(true);
+                      }}
+                      className="text-xs"
+                    >
+                      <Plus className="h-3 w-3 mr-1" />
+                      Add Issue
+                    </Button>
                     {priorities.length > 0 && (
                       <div className="text-right">
                         <span className="text-2xl font-bold bg-gradient-to-r from-slate-900 to-slate-700 bg-clip-text text-transparent">
@@ -1583,6 +1659,30 @@ const WeeklyAccountabilityMeetingPage = () => {
                 <div className="flex items-center gap-2">
                   <Button
                     size="sm"
+                    variant="outline"
+                    onClick={() => {
+                      setEditingTodo(null);
+                      setShowTodoDialog(true);
+                    }}
+                    className="text-xs"
+                  >
+                    <Plus className="h-3 w-3 mr-1" />
+                    To Do
+                  </Button>
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={() => {
+                      setEditingIssue(null);
+                      setShowIssueDialog(true);
+                    }}
+                    className="text-xs"
+                  >
+                    <Plus className="h-3 w-3 mr-1" />
+                    Add Issue
+                  </Button>
+                  <Button
+                    size="sm"
                     onClick={() => setShowHeadlineDialog(true)}
                     className="text-white transition-colors"
                     style={{ backgroundColor: themeColors.primary }}
@@ -1730,8 +1830,22 @@ const WeeklyAccountabilityMeetingPage = () => {
                     </CardTitle>
                     <CardDescription className="mt-1">Review action items</CardDescription>
                   </div>
-                  <div className="text-sm text-gray-500 bg-white px-3 py-1 rounded-full">
-                    5 minutes
+                  <div className="flex items-center gap-2">
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={() => {
+                        setEditingIssue(null);
+                        setShowIssueDialog(true);
+                      }}
+                      className="text-xs"
+                    >
+                      <Plus className="h-3 w-3 mr-1" />
+                      Add Issue
+                    </Button>
+                    <div className="text-sm text-gray-500 bg-white px-3 py-1 rounded-full">
+                      5 minutes
+                    </div>
                   </div>
                 </div>
               </CardHeader>
