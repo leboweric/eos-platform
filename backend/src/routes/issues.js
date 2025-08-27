@@ -6,6 +6,7 @@ import {
   updateIssue,
   deleteIssue,
   updateIssuePriority,
+  updateIssueOrder,
   uploadAttachment,
   getAttachments,
   downloadAttachment,
@@ -34,6 +35,9 @@ router.route('/')
 
 router.route('/priorities')
   .put(updateIssuePriority);
+
+router.route('/reorder')
+  .put(updateIssueOrder);
 
 router.route('/archive-closed')
   .post(archiveClosedIssues);

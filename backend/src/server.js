@@ -213,6 +213,7 @@ app.use('/api/v1/organizations/:orgId/teams/:teamId/quarterly-priorities', quart
 app.use('/api/v1/organizations/:orgId/teams/:teamId/scorecard', scorecardRoutes);
 app.use('/api/v1/organizations/:orgId/teams/:teamId/meetings', meetingRoutes);
 app.use('/api/v1/organizations/:orgId/teams/:teamId/cascading-messages', cascadingMessagesRoutes);
+app.use('/api/v1/organizations/:orgId/teams/:teamId/issues', issueRoutes);
 app.use('/api/v1/organizations/:orgId/todos', todoRoutes);
 app.use('/api/v1/organizations/:orgId/issues', issueRoutes);
 app.use('/api/v1/organizations/:orgId/headlines', headlinesRoutes);

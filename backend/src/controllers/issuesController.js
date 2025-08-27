@@ -984,3 +984,50 @@ export const deleteIssueUpdate = async (req, res) => {
     });
   }
 };
+
+// Update issue order for drag-and-drop reordering
+export const updateIssueOrder = async (req, res) => {
+  try {
+    const { orgId, teamId } = req.params;
+    const { issues } = req.body; // Array of { id, priority_rank }
+    
+    console.log('Updating issue order:', { orgId, teamId, issuesCount: issues?.length });
+    
+    if (!issues || !Array.isArray(issues)) {
+      return res.status(400).json({
+        success: false,
+        message: 'Issues array is required'
+      });
+    }
+    
+    // Start a transaction
+    await db.query('BEGIN');
+    
+    try {
+      // Update each issue's priority_rank
+      for (const issue of issues) {
+        await db.query(
+          'UPDATE issues SET priority_rank = $1 WHERE id = $2 AND organization_id = $3',
+          [issue.priority_rank, issue.id, orgId]
+        );
+      }
+      
+      await db.query('COMMIT');
+      
+      res.json({
+        success: true,
+        message: 'Issue order updated successfully'
+      });
+    } catch (error) {
+      await db.query('ROLLBACK');
+      throw error;
+    }
+  } catch (error) {
+    console.error('Error updating issue order:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Failed to update issue order',
+      error: process.env.NODE_ENV === 'development' ? error.message : undefined
+    });
+  }
+};

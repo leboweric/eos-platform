@@ -790,6 +790,27 @@ const WeeklyAccountabilityMeetingPage = () => {
     }
   };
 
+  const handleReorderIssues = async (reorderedIssues) => {
+    try {
+      // Update local state optimistically
+      setShortTermIssues(issueTimeline === 'short_term' ? reorderedIssues : shortTermIssues);
+      setLongTermIssues(issueTimeline === 'long_term' ? reorderedIssues : longTermIssues);
+
+      // Call API to persist the new order
+      const updates = reorderedIssues.map((issue, index) => ({
+        id: issue.id,
+        priority_rank: index
+      }));
+
+      await issuesService.updateIssueOrder(orgId, teamId, updates);
+    } catch (error) {
+      console.error('Failed to reorder issues:', error);
+      // Refresh to get correct order on error
+      fetchIssues();
+      throw error;
+    }
+  };
+
   // Create To-Do from Issue
   const handleCreateTodoFromIssue = (issue) => {
     setTodoFromIssue(issue);
@@ -2072,6 +2093,8 @@ const WeeklyAccountabilityMeetingPage = () => {
                     onMoveToTeam={handleMoveToTeam}
                     onCreateTodo={handleCreateTodoFromIssue}
                     onSendCascadingMessage={handleSendCascadingMessage}
+                    onReorder={handleReorderIssues}
+                    enableDragDrop={true}
                     getStatusColor={(status) => {
                       switch (status) {
                         case 'open':

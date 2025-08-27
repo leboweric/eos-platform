@@ -39,7 +39,8 @@ import {
   ArrowUpDown,
   ArrowUp,
   ArrowDown,
-  List
+  List,
+  GripVertical
 } from 'lucide-react';
 import { Textarea } from '@/components/ui/textarea';
 import { issuesService } from '../../services/issuesService';
@@ -54,10 +55,12 @@ const IssuesListClean = ({
   onMoveToTeam,
   onCreateTodo,
   onSendCascadingMessage,
+  onReorder,  // New prop for handling reordering
   getStatusColor, 
   getStatusIcon, 
   readOnly = false, 
   showVoting = false,
+  enableDragDrop = false,  // New prop to enable drag-and-drop
   compactGrid = false,  // New prop for compact grid view in meetings
   maxColumns = 3,  // Maximum number of columns for list view
   columnBreakpoint = 20  // Number of items before adding another column
@@ -85,6 +88,9 @@ const IssuesListClean = ({
     // Default to list view if no saved preference or if set to list
     return !savedMode || savedMode === 'list';
   });
+  const [draggedIssue, setDraggedIssue] = useState(null);
+  const [draggedIssueIndex, setDraggedIssueIndex] = useState(null);
+  const [dragOverIssueIndex, setDragOverIssueIndex] = useState(null);
 
   // Sort issues whenever issues prop or sort settings change
   useEffect(() => {
@@ -287,6 +293,70 @@ const IssuesListClean = ({
       setSortDirection('asc');
     }
   };
+
+  // Drag and drop handlers
+  const handleDragStart = (e, issue, index) => {
+    setDraggedIssue(issue);
+    setDraggedIssueIndex(index);
+    e.dataTransfer.effectAllowed = 'move';
+  };
+
+  const handleDragEnd = () => {
+    setDraggedIssue(null);
+    setDraggedIssueIndex(null);
+    setDragOverIssueIndex(null);
+  };
+
+  const handleDragOver = (e) => {
+    e.preventDefault();
+    e.dataTransfer.dropEffect = 'move';
+  };
+
+  const handleDragEnter = (e, index) => {
+    e.preventDefault();
+    setDragOverIssueIndex(index);
+  };
+
+  const handleDragLeave = (e) => {
+    e.preventDefault();
+    if (e.currentTarget.contains(e.relatedTarget)) return;
+    setDragOverIssueIndex(null);
+  };
+
+  const handleDrop = async (e, dropIndex) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setDragOverIssueIndex(null);
+
+    if (draggedIssueIndex === null || draggedIssueIndex === dropIndex || !draggedIssue) {
+      return;
+    }
+
+    // Create new order array
+    const newOrder = [...sortedIssues];
+    const [movedIssue] = newOrder.splice(draggedIssueIndex, 1);
+    newOrder.splice(dropIndex, 0, movedIssue);
+
+    // Update display order for all affected issues
+    const updatedIssues = newOrder.map((issue, index) => ({
+      ...issue,
+      priority_rank: index
+    }));
+
+    // Update local state immediately for optimistic UI
+    setSortedIssues(updatedIssues);
+
+    // Call the onReorder callback if provided
+    if (onReorder) {
+      try {
+        await onReorder(updatedIssues);
+      } catch (error) {
+        console.error('Failed to reorder issues:', error);
+        // Revert on error
+        setSortedIssues(sortedIssues);
+      }
+    }
+  };
   
   const getSortIcon = (field) => {
     if (sortField !== field) {
@@ -301,6 +371,7 @@ const IssuesListClean = ({
   const CompactIssueCard = ({ issue, index }) => {
     const hasVotes = (issue.vote_count || 0) > 0;
     const isTopIssue = index === 0 && hasVotes && showVoting;
+    const isDragOver = dragOverIssueIndex === index;
     
     return (
       <div
@@ -308,11 +379,20 @@ const IssuesListClean = ({
           group relative bg-white/90 backdrop-blur-sm rounded-2xl border border-white/50 transition-shadow duration-200 cursor-pointer h-full shadow-sm hover:shadow-xl
           ${issue.status === 'closed' ? 'opacity-60' : ''}
           ${isTopIssue ? 'shadow-lg' : ''}
+          ${isDragOver ? 'ring-2 ring-blue-400' : ''}
+          ${draggedIssueIndex === index ? 'opacity-50' : ''}
         `}
         style={{
           borderColor: isTopIssue ? themeColors.accent : hexToRgba(themeColors.accent, 0.3),
           borderWidth: isTopIssue ? '2px' : '1px'
         }}
+        draggable={enableDragDrop && !readOnly}
+        onDragStart={(e) => enableDragDrop && handleDragStart(e, issue, index)}
+        onDragEnd={handleDragEnd}
+        onDragOver={handleDragOver}
+        onDragEnter={(e) => handleDragEnter(e, index)}
+        onDragLeave={handleDragLeave}
+        onDrop={(e) => handleDrop(e, index)}
         onMouseEnter={(e) => {
           if (!isTopIssue && issue.status !== 'closed') {
             e.currentTarget.style.borderColor = hexToRgba(themeColors.accent, 0.6);
@@ -323,7 +403,12 @@ const IssuesListClean = ({
             e.currentTarget.style.borderColor = hexToRgba(themeColors.accent, 0.3);
           }
         }}
-        onClick={() => setSelectedIssue(issue)}
+        onClick={(e) => {
+          // Don't open modal if dragging
+          if (!e.defaultPrevented) {
+            setSelectedIssue(issue);
+          }
+        }}
       >
         {/* Enhanced status indicator */}
         <div 
@@ -337,6 +422,9 @@ const IssuesListClean = ({
           {/* Header with number and checkbox */}
           <div className="flex items-start justify-between gap-2 mb-1">
             <div className="flex items-center gap-2">
+              {enableDragDrop && !readOnly && (
+                <GripVertical className="h-4 w-4 text-gray-400 cursor-move" />
+              )}
               <span className="text-xs font-bold" style={{
                 color: isTopIssue ? themeColors.primary : '#6B7280'
               }}>

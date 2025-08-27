@@ -241,5 +241,14 @@ export const issuesService = {
       `/organizations/${orgId}/issues/${issueId}/updates/${updateId}`
     );
     return response.data;
+  },
+
+  // Update issue order (for drag-and-drop reordering)
+  updateIssueOrder: async (orgId, teamId, updates) => {
+    const response = await axios.put(
+      `/organizations/${orgId}/teams/${teamId}/issues/reorder`,
+      { issues: updates }
+    );
+    return response.data;
   }
 };
