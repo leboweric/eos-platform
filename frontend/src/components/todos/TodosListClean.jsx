@@ -288,10 +288,12 @@ const TodosListClean = ({
                       });
                     }
                   }}
-                  className="h-5 w-5 rounded-lg border-2 transition-all duration-200 data-[state=checked]:border-transparent shadow-sm"
+                  className={`h-5 w-5 rounded-lg border-2 transition-all duration-200 shadow-sm ${
+                    todo.status === 'complete' ? 'data-[state=checked]:text-white data-[state=checked]:border-transparent' : ''
+                  }`}
                   style={{
                     borderColor: todo.status === 'complete' ? themeColors.primary : '#D1D5DB',
-                    backgroundColor: todo.status === 'complete' ? `linear-gradient(135deg, ${themeColors.primary} 0%, ${themeColors.secondary} 100%)` : 'transparent'
+                    backgroundColor: todo.status === 'complete' ? themeColors.primary : 'transparent'
                   }}
                 />
               </div>
