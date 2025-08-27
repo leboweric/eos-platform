@@ -437,18 +437,10 @@ const WeeklyAccountabilityMeetingPage = () => {
         issuesService.getIssues('long_term', false, effectiveTeamId)
       ]);
       
-      // Sort issues by vote count (highest first), then by created date (newest first)
-      const sortIssues = (issuesList) => (issuesList || []).sort((a, b) => {
-        // First sort by vote count (descending)
-        if (b.vote_count !== a.vote_count) {
-          return (b.vote_count || 0) - (a.vote_count || 0);
-        }
-        // Then by created date (newest first)
-        return new Date(b.created_at) - new Date(a.created_at);
-      });
-      
-      setShortTermIssues(sortIssues(shortTermResponse.data.issues));
-      setLongTermIssues(sortIssues(longTermResponse.data.issues));
+      // Don't re-sort issues - they come from backend already sorted by priority_rank
+      // This preserves the drag-and-drop order
+      setShortTermIssues(shortTermResponse.data.issues || []);
+      setLongTermIssues(longTermResponse.data.issues || []);
       setTeamMembers(shortTermResponse.data.teamMembers || []);
     } catch (error) {
       console.error('Failed to fetch issues:', error);
@@ -695,28 +687,11 @@ const WeeklyAccountabilityMeetingPage = () => {
       };
       
       // Update the appropriate issues list based on current timeline
+      // Don't re-sort - preserve the drag-and-drop order
       if (issueTimeline === 'short_term') {
-        setShortTermIssues(prev => {
-          const updated = prev.map(updateVote);
-          // Sort by vote count (highest first), then by created date (newest first)
-          return updated.sort((a, b) => {
-            if (b.vote_count !== a.vote_count) {
-              return (b.vote_count || 0) - (a.vote_count || 0);
-            }
-            return new Date(b.created_at) - new Date(a.created_at);
-          });
-        });
+        setShortTermIssues(prev => prev.map(updateVote));
       } else {
-        setLongTermIssues(prev => {
-          const updated = prev.map(updateVote);
-          // Sort by vote count (highest first), then by created date (newest first)
-          return updated.sort((a, b) => {
-            if (b.vote_count !== a.vote_count) {
-              return (b.vote_count || 0) - (a.vote_count || 0);
-            }
-            return new Date(b.created_at) - new Date(a.created_at);
-          });
-        });
+        setLongTermIssues(prev => prev.map(updateVote));
       }
       
       if (shouldVote) {
@@ -802,11 +777,12 @@ const WeeklyAccountabilityMeetingPage = () => {
         priority_rank: index
       }));
 
-      await issuesService.updateIssueOrder(orgId, teamId, updates);
+      const effectiveTeamId = getEffectiveTeamId(teamId, user);
+      await issuesService.updateIssueOrder(orgId, effectiveTeamId, updates);
     } catch (error) {
       console.error('Failed to reorder issues:', error);
       // Refresh to get correct order on error
-      fetchIssues();
+      fetchIssuesData();
       throw error;
     }
   };
