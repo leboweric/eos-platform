@@ -1261,24 +1261,30 @@ const WeeklyAccountabilityMeetingPage = () => {
                 <div className="flex items-center gap-2">
                   <Button
                     size="sm"
-                    variant="outline"
                     onClick={() => {
                       setEditingTodo(null);
                       setShowTodoDialog(true);
                     }}
-                    className="text-xs"
+                    style={{ 
+                      backgroundColor: themeColors.primary,
+                      borderColor: themeColors.primary
+                    }}
+                    className="text-white hover:opacity-90 text-xs"
                   >
                     <Plus className="h-3 w-3 mr-1" />
                     To Do
                   </Button>
                   <Button
                     size="sm"
-                    variant="outline"
                     onClick={() => {
                       setEditingIssue(null);
                       setShowIssueDialog(true);
                     }}
-                    className="text-xs"
+                    style={{ 
+                      backgroundColor: themeColors.primary,
+                      borderColor: themeColors.primary
+                    }}
+                    className="text-white hover:opacity-90 text-xs"
                   >
                     <Plus className="h-3 w-3 mr-1" />
                     Add Issue
@@ -1328,24 +1334,30 @@ const WeeklyAccountabilityMeetingPage = () => {
                   <div className="flex items-center gap-2">
                     <Button
                       size="sm"
-                      variant="outline"
                       onClick={() => {
                         setEditingTodo(null);
                         setShowTodoDialog(true);
                       }}
-                      className="text-xs"
+                      style={{ 
+                        backgroundColor: themeColors.primary,
+                        borderColor: themeColors.primary
+                      }}
+                      className="text-white hover:opacity-90 text-xs"
                     >
                       <Plus className="h-3 w-3 mr-1" />
                       To Do
                     </Button>
                     <Button
                       size="sm"
-                      variant="outline"
                       onClick={() => {
                         setEditingIssue(null);
                         setShowIssueDialog(true);
                       }}
-                      className="text-xs"
+                      style={{ 
+                        backgroundColor: themeColors.primary,
+                        borderColor: themeColors.primary
+                      }}
+                      className="text-white hover:opacity-90 text-xs"
                     >
                       <Plus className="h-3 w-3 mr-1" />
                       Add Issue
@@ -1451,24 +1463,30 @@ const WeeklyAccountabilityMeetingPage = () => {
                   <div className="flex items-center gap-2">
                     <Button
                       size="sm"
-                      variant="outline"
                       onClick={() => {
                         setEditingTodo(null);
                         setShowTodoDialog(true);
                       }}
-                      className="text-xs"
+                      style={{ 
+                        backgroundColor: themeColors.primary,
+                        borderColor: themeColors.primary
+                      }}
+                      className="text-white hover:opacity-90 text-xs"
                     >
                       <Plus className="h-3 w-3 mr-1" />
                       To Do
                     </Button>
                     <Button
                       size="sm"
-                      variant="outline"
                       onClick={() => {
                         setEditingIssue(null);
                         setShowIssueDialog(true);
                       }}
-                      className="text-xs"
+                      style={{ 
+                        backgroundColor: themeColors.primary,
+                        borderColor: themeColors.primary
+                      }}
+                      className="text-white hover:opacity-90 text-xs"
                     >
                       <Plus className="h-3 w-3 mr-1" />
                       Add Issue
@@ -1659,24 +1677,30 @@ const WeeklyAccountabilityMeetingPage = () => {
                 <div className="flex items-center gap-2">
                   <Button
                     size="sm"
-                    variant="outline"
                     onClick={() => {
                       setEditingTodo(null);
                       setShowTodoDialog(true);
                     }}
-                    className="text-xs"
+                    style={{ 
+                      backgroundColor: themeColors.primary,
+                      borderColor: themeColors.primary
+                    }}
+                    className="text-white hover:opacity-90 text-xs"
                   >
                     <Plus className="h-3 w-3 mr-1" />
                     To Do
                   </Button>
                   <Button
                     size="sm"
-                    variant="outline"
                     onClick={() => {
                       setEditingIssue(null);
                       setShowIssueDialog(true);
                     }}
-                    className="text-xs"
+                    style={{ 
+                      backgroundColor: themeColors.primary,
+                      borderColor: themeColors.primary
+                    }}
+                    className="text-white hover:opacity-90 text-xs"
                   >
                     <Plus className="h-3 w-3 mr-1" />
                     Add Issue
@@ -1684,12 +1708,13 @@ const WeeklyAccountabilityMeetingPage = () => {
                   <Button
                     size="sm"
                     onClick={() => setShowHeadlineDialog(true)}
-                    className="text-white transition-colors"
-                    style={{ backgroundColor: themeColors.primary }}
-                    onMouseEnter={(e) => e.currentTarget.style.backgroundColor = themeColors.secondary}
-                    onMouseLeave={(e) => e.currentTarget.style.backgroundColor = themeColors.primary}
+                    style={{ 
+                      backgroundColor: themeColors.primary,
+                      borderColor: themeColors.primary
+                    }}
+                    className="text-white hover:opacity-90 text-xs"
                   >
-                    <Plus className="mr-2 h-4 w-4" />
+                    <Plus className="h-3 w-3 mr-1" />
                     Add Headline
                   </Button>
                   <div className="text-sm text-gray-500 bg-white px-3 py-1 rounded-full">
@@ -1833,12 +1858,15 @@ const WeeklyAccountabilityMeetingPage = () => {
                   <div className="flex items-center gap-2">
                     <Button
                       size="sm"
-                      variant="outline"
                       onClick={() => {
                         setEditingIssue(null);
                         setShowIssueDialog(true);
                       }}
-                      className="text-xs"
+                      style={{ 
+                        backgroundColor: themeColors.primary,
+                        borderColor: themeColors.primary
+                      }}
+                      className="text-white hover:opacity-90 text-xs"
                     >
                       <Plus className="h-3 w-3 mr-1" />
                       Add Issue
