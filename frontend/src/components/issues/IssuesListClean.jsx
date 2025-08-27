@@ -370,10 +370,12 @@ const IssuesListClean = ({
                   onCheckedChange={(checked) => {
                     onStatusChange(issue.id, checked ? 'closed' : 'open');
                   }}
-                  className="h-5 w-5 rounded-lg border-2 transition-all duration-200 data-[state=checked]:border-transparent shadow-sm"
+                  className={`h-5 w-5 rounded-lg border-2 transition-all duration-200 shadow-sm ${
+                    issue.status === 'closed' ? 'data-[state=checked]:text-white data-[state=checked]:border-transparent' : ''
+                  }`}
                   style={{
                     borderColor: issue.status === 'closed' ? themeColors.primary : '#D1D5DB',
-                    backgroundColor: issue.status === 'closed' ? `linear-gradient(135deg, ${themeColors.primary} 0%, ${themeColors.secondary} 100%)` : 'transparent'
+                    backgroundColor: issue.status === 'closed' ? themeColors.primary : 'transparent'
                   }}
                 />
               </div>
@@ -542,10 +544,12 @@ const IssuesListClean = ({
                       onCheckedChange={(checked) => {
                         onStatusChange(issue.id, checked ? 'closed' : 'open');
                       }}
-                      className="h-5 w-5 rounded-lg border-2 transition-all duration-200 data-[state=checked]:border-transparent shadow-sm"
+                      className={`h-5 w-5 rounded-lg border-2 transition-all duration-200 shadow-sm ${
+                        issue.status === 'closed' ? 'data-[state=checked]:text-white data-[state=checked]:border-transparent' : ''
+                      }`}
                       style={{
                         borderColor: issue.status === 'closed' ? themeColors.primary : '#D1D5DB',
-                        backgroundColor: issue.status === 'closed' ? `linear-gradient(135deg, ${themeColors.primary} 0%, ${themeColors.secondary} 100%)` : 'transparent'
+                        backgroundColor: issue.status === 'closed' ? themeColors.primary : 'transparent'
                       }}
                     />
                   </div>
