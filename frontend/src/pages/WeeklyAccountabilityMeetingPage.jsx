@@ -780,6 +780,7 @@ const WeeklyAccountabilityMeetingPage = () => {
         priority_rank: index
       }));
 
+      const orgId = localStorage.getItem('impersonatedOrgId') || user?.organizationId || user?.organization_id;
       const effectiveTeamId = getEffectiveTeamId(teamId, user);
       console.log('Sending reorder request:', { orgId, teamId: effectiveTeamId, updates });
       
