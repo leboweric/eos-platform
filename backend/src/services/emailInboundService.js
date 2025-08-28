@@ -10,7 +10,7 @@ class EmailInboundService {
     try {
       // 1. Verify sender is an authorized user
       const userResult = await pool.query(
-        'SELECT id, first_name, last_name, organization_id, team_id FROM users WHERE email = $1 AND deleted_at IS NULL',
+        'SELECT id, first_name, last_name, organization_id FROM users WHERE email = $1 AND deleted_at IS NULL',
         [senderEmail]
       );
 
@@ -34,7 +34,7 @@ class EmailInboundService {
       // - issues-[org-id]@axplatform.app
       // - [org-subdomain]-issues@axplatform.app
       let organizationId = user.organization_id;
-      let teamId = user.team_id;
+      let teamId = null; // Users don't have a default team, issues will be org-level
 
       // Parse recipient email for org/team routing
       const recipientParts = recipientEmail.split('@')[0];
