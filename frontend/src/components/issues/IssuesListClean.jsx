@@ -5,18 +5,6 @@ import { getOrgTheme, saveOrgTheme, hexToRgba } from '../../utils/themeUtils';
 import { debugTheme } from '../../utils/debugTheme';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Button } from '@/components/ui/button';
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-} from '@/components/ui/dialog';
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu';
 import { Badge } from '@/components/ui/badge';
 import { 
   Edit,
@@ -27,7 +15,6 @@ import {
   ThumbsUp,
   Clock,
   Archive,
-  MoreVertical,
   AlertCircle,
   CheckCircle,
   Users,
@@ -801,39 +788,6 @@ const IssuesListClean = ({
                     </Button>
                   </div>
                 )}
-                
-                {/* Actions */}
-                <div onClick={(e) => e.stopPropagation()}>
-                  <DropdownMenu>
-                    <DropdownMenuTrigger asChild>
-                      <Button 
-                        variant="ghost" 
-                        size="sm" 
-                        className="h-7 w-7 p-0 opacity-0 group-hover:opacity-100"
-                      >
-                        <MoreVertical className="h-3.5 w-3.5 text-gray-500" />
-                      </Button>
-                    </DropdownMenuTrigger>
-                    <DropdownMenuContent align="end" className="w-48">
-                      <DropdownMenuItem 
-                        onClick={() => onEdit(issue)}
-                        className="cursor-pointer"
-                      >
-                        <Edit className="mr-2 h-4 w-4" />
-                        Edit
-                      </DropdownMenuItem>
-                      {onArchive && (
-                        <DropdownMenuItem 
-                          onClick={() => onArchive(issue.id)}
-                          className="cursor-pointer"
-                        >
-                          <Archive className="mr-2 h-4 w-4" />
-                          Archive
-                        </DropdownMenuItem>
-                      )}
-                    </DropdownMenuContent>
-                  </DropdownMenu>
-                </div>
               </div>
                       );
                     })}

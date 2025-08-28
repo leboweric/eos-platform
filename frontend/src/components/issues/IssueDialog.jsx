@@ -313,7 +313,7 @@ const IssueDialog = ({
                 value={formData.title}
                 onChange={(e) => setFormData({ ...formData, title: e.target.value })}
                 placeholder="Brief description of the issue"
-                className="bg-white/80 backdrop-blur-sm border-white/20 focus:border-red-400 rounded-xl shadow-sm transition-all duration-200"
+                className="bg-white/80 backdrop-blur-sm border-white/20 focus:border-blue-400 rounded-xl shadow-sm transition-all duration-200"
               />
             </div>
 
@@ -325,7 +325,7 @@ const IssueDialog = ({
                 onChange={(e) => setFormData({ ...formData, description: e.target.value })}
                 placeholder="Provide more details about the issue..."
                 rows={4}
-                className="bg-white/80 backdrop-blur-sm border-white/20 focus:border-red-400 rounded-xl shadow-sm transition-all duration-200"
+                className="bg-white/80 backdrop-blur-sm border-white/20 focus:border-blue-400 rounded-xl shadow-sm transition-all duration-200"
               />
             </div>
 
@@ -350,7 +350,7 @@ const IssueDialog = ({
                   }
                 }}
               >
-                <SelectTrigger id="owner" className="bg-white/80 backdrop-blur-sm border-white/20 focus:border-red-400 rounded-xl shadow-sm">
+                <SelectTrigger id="owner" className="bg-white/80 backdrop-blur-sm border-white/20 focus:border-blue-400 rounded-xl shadow-sm">
                   <SelectValue placeholder="Select an owner (optional)" />
                 </SelectTrigger>
                 <SelectContent className="bg-white/95 backdrop-blur-sm border-white/20 rounded-xl shadow-xl">
@@ -363,24 +363,6 @@ const IssueDialog = ({
                 </SelectContent>
               </Select>
             </div>
-
-            {issue && (
-              <div className="grid gap-3">
-                <Label htmlFor="status" className="text-sm font-semibold text-slate-700">Status</Label>
-                <Select
-                  value={formData.status}
-                  onValueChange={(value) => setFormData({ ...formData, status: value })}
-                >
-                  <SelectTrigger id="status" className="bg-white/80 backdrop-blur-sm border-white/20 focus:border-red-400 rounded-xl shadow-sm">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent className="bg-white/95 backdrop-blur-sm border-white/20 rounded-xl shadow-xl">
-                    <SelectItem value="open">Open</SelectItem>
-                    <SelectItem value="closed">Solved</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-            )}
 
             <div className="grid gap-3">
               <Label htmlFor="attachments" className="text-sm font-semibold text-slate-700">Attachments</Label>
@@ -451,8 +433,8 @@ const IssueDialog = ({
                   <div 
                     className={`cursor-pointer border-2 border-dashed rounded-xl p-6 text-center transition-all duration-200 backdrop-blur-sm ${
                       isDragging 
-                        ? 'border-red-500 bg-red-50/50' 
-                        : 'border-slate-300 hover:border-red-500 hover:bg-red-50/50 bg-white/40'
+                        ? 'border-blue-500 bg-blue-50/50' 
+                        : 'border-slate-300 hover:border-blue-400 hover:bg-blue-50/30 bg-white/40'
                     }`}
                     onDragOver={handleDragOver}
                     onDragLeave={handleDragLeave}
@@ -497,7 +479,7 @@ const IssueDialog = ({
                       onChange={(e) => setUpdateText(e.target.value)}
                       placeholder="Add an update..."
                       rows={3}
-                      className="bg-white/80 backdrop-blur-sm border-white/20 focus:border-red-400 rounded-xl shadow-sm"
+                      className="bg-white/80 backdrop-blur-sm border-white/20 focus:border-blue-400 rounded-xl shadow-sm"
                     />
                     <div className="flex gap-2">
                       <Button
