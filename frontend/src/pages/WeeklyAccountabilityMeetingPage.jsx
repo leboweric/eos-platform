@@ -1394,6 +1394,9 @@ const WeeklyAccountabilityMeetingPage = () => {
         ));
       } else if (action === 'delete') {
         setTodos(prev => prev.filter(t => t.id !== todoId));
+      } else if (action === 'archive-done') {
+        // Archive all completed todos
+        setTodos(prev => prev.filter(t => t.status !== 'complete'));
       } else if (action === 'refresh') {
         fetchTodosData();
       }
@@ -2067,6 +2070,12 @@ const WeeklyAccountabilityMeetingPage = () => {
                               const result = await todosService.archiveDoneTodos();
                               setSuccess(`${result.data.archivedCount} done to-do(s) archived`);
                               await fetchTodosData();
+                              
+                              // Broadcast archive action to other meeting participants
+                              broadcastTodoUpdate({
+                                action: 'archive-done',
+                                archivedCount: result.data.archivedCount
+                              });
                             } catch (error) {
                               console.error('Failed to archive done todos:', error);
                               setError('Failed to archive done to-dos');
