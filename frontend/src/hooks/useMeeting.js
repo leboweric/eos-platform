@@ -160,6 +160,26 @@ const useMeeting = () => {
       newSocket.emit('get-active-meetings');
     });
 
+    // Handle issue vote updates from other participants
+    newSocket.on('issue-vote-update', (data) => {
+      console.log('📊 Received vote update:', data);
+      // Dispatch custom event that the meeting page can listen to
+      const voteEvent = new CustomEvent('meeting-vote-update', { 
+        detail: data 
+      });
+      window.dispatchEvent(voteEvent);
+    });
+    
+    // Handle issue status updates from other participants
+    newSocket.on('issue-status-update', (data) => {
+      console.log('📊 Received issue status update:', data);
+      // Dispatch custom event that the meeting page can listen to
+      const statusEvent = new CustomEvent('meeting-issue-update', { 
+        detail: data 
+      });
+      window.dispatchEvent(statusEvent);
+    });
+    
     // Handle errors
     newSocket.on('error', (data) => {
       console.error('❌ Meeting error:', data.message);
@@ -283,6 +303,26 @@ const useMeeting = () => {
       scrollPosition: window.scrollY
     });
   }, [isLeader, socket, meetingCode, location]);
+  
+  // Emit vote update to other meeting participants
+  const broadcastVote = useCallback((issueId, voteCount, userHasVoted) => {
+    if (!socket || !meetingCode) return;
+    
+    console.log('📊 Broadcasting vote for issue:', issueId);
+    socket.emit('vote-issue', {
+      issueId,
+      voteCount,
+      userHasVoted
+    });
+  }, [socket, meetingCode]);
+  
+  // Emit issue status update to other meeting participants  
+  const broadcastIssueUpdate = useCallback((issueData) => {
+    if (!socket || !meetingCode) return;
+    
+    console.log('📊 Broadcasting issue update:', issueData);
+    socket.emit('update-issue-status', issueData);
+  }, [socket, meetingCode]);
 
   return {
     // Connection status
@@ -302,7 +342,9 @@ const useMeeting = () => {
     leaveMeeting,
     toggleFollow,
     navigateTo,
-    navigateToSection
+    navigateToSection,
+    broadcastVote,
+    broadcastIssueUpdate
   };
 };
 

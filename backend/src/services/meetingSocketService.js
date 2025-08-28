@@ -198,6 +198,40 @@ class MeetingSocketService {
         this.handleUserDisconnect(socket);
       });
 
+      // Handle issue voting
+      socket.on('vote-issue', (data) => {
+        const { issueId, voteCount, userHasVoted } = data;
+        const userData = userSocketMap.get(socket.id);
+        
+        if (!userData) return;
+        
+        const { meetingCode } = userData;
+        
+        // Broadcast vote update to all participants in the meeting
+        socket.to(meetingCode).emit('issue-vote-update', {
+          issueId,
+          voteCount,
+          voterId: userData.userId,
+          userHasVoted
+        });
+        
+        console.log('📊 Broadcasting vote update for issue:', issueId, 'to meeting:', meetingCode);
+      });
+      
+      // Handle issue status changes
+      socket.on('update-issue-status', (data) => {
+        const userData = userSocketMap.get(socket.id);
+        
+        if (!userData) return;
+        
+        const { meetingCode } = userData;
+        
+        // Broadcast issue status update to all participants
+        socket.to(meetingCode).emit('issue-status-update', data);
+        
+        console.log('📊 Broadcasting issue status update to meeting:', meetingCode);
+      });
+      
       // Handle disconnect
       socket.on('disconnect', () => {
         this.handleUserDisconnect(socket);

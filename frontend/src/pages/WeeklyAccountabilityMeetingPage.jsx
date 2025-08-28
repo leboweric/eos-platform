@@ -68,7 +68,7 @@ const WeeklyAccountabilityMeetingPage = () => {
   const { user } = useAuthStore();
   const { teamId } = useParams();
   const navigate = useNavigate();
-  const { meetingCode, participants, joinMeeting, isConnected, isLeader, currentLeader, navigateToSection } = useMeeting();
+  const { meetingCode, participants, joinMeeting, isConnected, isLeader, currentLeader, navigateToSection, broadcastVote, broadcastIssueUpdate } = useMeeting();
   
   // Debug logging for participants
   useEffect(() => {
@@ -670,6 +670,11 @@ const WeeklyAccountabilityMeetingPage = () => {
         )
       );
       
+      // Broadcast status change to other meeting participants
+      if (meetingCode && broadcastIssueUpdate) {
+        broadcastIssueUpdate({ issueId, status: newStatus });
+      }
+      
       await issuesService.updateIssue(issueId, { status: newStatus });
     } catch (error) {
       console.error('Failed to update issue status:', error);
@@ -692,12 +697,19 @@ const WeeklyAccountabilityMeetingPage = () => {
     try {
       const updateVote = (issue) => {
         if (issue.id === issueId) {
+          const newVoteCount = shouldVote 
+            ? (issue.vote_count || 0) + 1 
+            : Math.max(0, (issue.vote_count || 0) - 1);
+          
+          // Broadcast vote to other meeting participants
+          if (meetingCode && broadcastVote) {
+            broadcastVote(issueId, newVoteCount, shouldVote);
+          }
+          
           return {
             ...issue,
             user_has_voted: shouldVote,
-            vote_count: shouldVote 
-              ? (issue.vote_count || 0) + 1 
-              : Math.max(0, (issue.vote_count || 0) - 1)
+            vote_count: newVoteCount
           };
         }
         return issue;
@@ -1254,6 +1266,47 @@ const WeeklyAccountabilityMeetingPage = () => {
     window.addEventListener('meeting-section-change', handleMeetingSectionChange);
     return () => window.removeEventListener('meeting-section-change', handleMeetingSectionChange);
   }, [isLeader]);
+  
+  // Listen for vote updates from other meeting participants
+  useEffect(() => {
+    const handleVoteUpdate = (event) => {
+      const { issueId, voteCount, voterId } = event.detail;
+      
+      // Don't update if this is our own vote
+      if (voterId === user?.id) return;
+      
+      console.log('📊 Received vote update for issue:', issueId, 'new count:', voteCount);
+      
+      const updateIssueVote = (issue) => {
+        if (issue.id === issueId) {
+          return {
+            ...issue,
+            vote_count: voteCount
+            // Note: We don't update user_has_voted for other users' votes
+          };
+        }
+        return issue;
+      };
+      
+      setShortTermIssues(prev => prev.map(updateIssueVote));
+      setLongTermIssues(prev => prev.map(updateIssueVote));
+    };
+    
+    const handleIssueUpdate = (event) => {
+      const issueData = event.detail;
+      console.log('📊 Received issue update:', issueData);
+      // Refresh issues to get latest status
+      fetchIssuesData();
+    };
+    
+    window.addEventListener('meeting-vote-update', handleVoteUpdate);
+    window.addEventListener('meeting-issue-update', handleIssueUpdate);
+    
+    return () => {
+      window.removeEventListener('meeting-vote-update', handleVoteUpdate);
+      window.removeEventListener('meeting-issue-update', handleIssueUpdate);
+    };
+  }, [user?.id]);
 
   const getNextSection = () => {
     const currentIndex = agendaItems.findIndex(item => item.id === activeSection);
