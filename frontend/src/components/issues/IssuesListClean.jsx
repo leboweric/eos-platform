@@ -412,14 +412,6 @@ const IssuesListClean = ({
           borderColor: isTopIssue ? themeColors.accent : hexToRgba(themeColors.accent, 0.3),
           borderWidth: isTopIssue ? '2px' : '1px'
         }}
-        draggable={enableDragDrop && !readOnly}
-        onDragStart={(e) => {
-          if (enableDragDrop && !readOnly) {
-            e.stopPropagation();
-            handleDragStart(e, issue, index);
-          }
-        }}
-        onDragEnd={handleDragEnd}
         onDragOver={handleDragOver}
         onDragEnter={(e) => handleDragEnter(e, index)}
         onDragLeave={handleDragLeave}
@@ -434,15 +426,9 @@ const IssuesListClean = ({
             e.currentTarget.style.borderColor = hexToRgba(themeColors.accent, 0.3);
           }
         }}
-        onMouseDown={(e) => {
-          // Prevent text selection during drag
-          if (enableDragDrop && !readOnly) {
-            e.preventDefault();
-          }
-        }}
         onClick={(e) => {
-          // Only open modal if not currently dragging and not clicking on drag handle
-          if (!isDragging && !e.target.closest('.drag-handle')) {
+          // Open modal unless clicking on drag handle or interactive elements
+          if (!e.target.closest('.drag-handle') && !e.target.closest('button') && !e.target.closest('input')) {
             setSelectedIssue(issue);
           }
         }}
@@ -462,7 +448,13 @@ const IssuesListClean = ({
               {enableDragDrop && !readOnly && (
                 <div 
                   className="drag-handle cursor-move p-1 -m-1 hover:bg-gray-100 rounded"
-                  onMouseDown={(e) => e.stopPropagation()}
+                  draggable
+                  onDragStart={(e) => {
+                    e.stopPropagation();
+                    handleDragStart(e, issue, index);
+                  }}
+                  onDragEnd={handleDragEnd}
+                  onClick={(e) => e.stopPropagation()}
                 >
                   <GripVertical className="h-4 w-4 text-gray-400" />
                 </div>
@@ -673,26 +665,13 @@ const IssuesListClean = ({
                             ${isDragOver ? 'ring-2 ring-blue-400' : ''}
                             ${draggedIssueIndex === globalIndex ? 'opacity-50' : ''}
                           `}
-                          draggable={enableDragDrop && !readOnly}
-                          onDragStart={(e) => {
-                            if (enableDragDrop && !readOnly) {
-                              e.stopPropagation();
-                              handleDragStart(e, issue, globalIndex);
-                            }
-                          }}
-                          onDragEnd={handleDragEnd}
                           onDragOver={handleDragOver}
                           onDragEnter={(e) => handleDragEnter(e, globalIndex)}
                           onDragLeave={handleDragLeave}
                           onDrop={(e) => handleDrop(e, globalIndex)}
-                          onMouseDown={(e) => {
-                            if (enableDragDrop && !readOnly) {
-                              e.preventDefault();
-                            }
-                          }}
                           onClick={(e) => {
-                            // Only open modal if not currently dragging and not clicking on drag handle
-                            if (!isDragging && !e.target.closest('.drag-handle')) {
+                            // Open modal unless clicking on drag handle or interactive elements
+                            if (!e.target.closest('.drag-handle') && !e.target.closest('button') && !e.target.closest('input')) {
                               setSelectedIssue(issue);
                             }
                           }}
@@ -709,7 +688,13 @@ const IssuesListClean = ({
                 {enableDragDrop && !readOnly && (
                   <div 
                     className="drag-handle cursor-move p-1 -m-1 hover:bg-gray-100 rounded flex-shrink-0"
-                    onMouseDown={(e) => e.stopPropagation()}
+                    draggable
+                    onDragStart={(e) => {
+                      e.stopPropagation();
+                      handleDragStart(e, issue, globalIndex);
+                    }}
+                    onDragEnd={handleDragEnd}
+                    onClick={(e) => e.stopPropagation()}
                   >
                     <GripVertical className="h-4 w-4 text-gray-400" />
                   </div>
