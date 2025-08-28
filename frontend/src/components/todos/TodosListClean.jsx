@@ -204,7 +204,7 @@ const TodosListClean = ({
             onClick={() => handleSort('assignee')}
             className={`h-7 px-3 py-1 text-xs font-medium hover:bg-gray-200 ${sortField === 'assignee' ? 'bg-gray-200 text-gray-900' : 'text-gray-600'}`}
           >
-            Person {getSortIcon('assignee')}
+            Owner {getSortIcon('assignee')}
           </Button>
           <Button
             variant="ghost"

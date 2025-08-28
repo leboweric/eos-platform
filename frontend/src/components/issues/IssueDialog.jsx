@@ -287,11 +287,6 @@ const IssueDialog = ({
                 <DialogTitle className="text-2xl font-bold bg-gradient-to-r from-slate-900 to-slate-700 bg-clip-text text-transparent">
                   {issue ? 'Edit Issue' : 'Create New Issue'}
                 </DialogTitle>
-                <DialogDescription className="text-slate-600 mt-1">
-                  {timeline === 'short_term' 
-                    ? 'Track an issue to be resolved this quarter'
-                    : 'Track an issue for next quarter'}
-                </DialogDescription>
               </div>
             </div>
           </DialogHeader>
