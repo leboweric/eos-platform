@@ -114,6 +114,7 @@ const useMeeting = () => {
 
     // Request active meetings on connect
     newSocket.on('connect', () => {
+      console.log('🔄 Requesting active meetings on connect');
       newSocket.emit('get-active-meetings');
     });
 
@@ -123,8 +124,17 @@ const useMeeting = () => {
     });
 
     setSocket(newSocket);
+    
+    // Set up periodic refresh of active meetings every 5 seconds
+    const refreshInterval = setInterval(() => {
+      if (newSocket.connected) {
+        console.log('🔄 Refreshing active meetings list');
+        newSocket.emit('get-active-meetings');
+      }
+    }, 5000);
 
     return () => {
+      clearInterval(refreshInterval);
       newSocket.disconnect();
     };
   }, []);

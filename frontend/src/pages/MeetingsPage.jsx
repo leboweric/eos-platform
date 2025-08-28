@@ -232,9 +232,12 @@ const MeetingsPage = () => {
             <div className="flex items-start gap-4">
               {(() => {
                 // Check if any meetings are in progress for this team
+                console.log('Active meetings:', activeMeetings);
+                console.log('Selected team ID:', selectedTeamId);
                 const teamMeetings = Object.values(activeMeetings || {}).filter(
                   m => m.teamId === selectedTeamId
                 );
+                console.log('Team meetings found:', teamMeetings);
                 const hasActiveMeeting = teamMeetings.length > 0;
                 
                 return (
