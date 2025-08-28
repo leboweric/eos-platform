@@ -1,5 +1,6 @@
 import pool from '../config/database.js';
 import { emailService } from './emailService.js';
+import { v4 as uuidv4 } from 'uuid';
 
 class EmailInboundService {
   /**
@@ -70,7 +71,7 @@ class EmailInboundService {
       }
 
       // 3. Parse email content for metadata
-      const parsedData = this.parseEmailContent(subject, body);
+      const parsedData = this.parseEmailContent(subject, body, html, attachments);
 
       // 4. Create the issue
       const issueQuery = `
@@ -111,11 +112,11 @@ class EmailInboundService {
 
       // 5. Handle attachments if any
       if (attachments && attachments.length > 0) {
-        await this.processAttachments(issue.id, attachments);
+        await this.processAttachments(issue.id, attachments, user.id);
       }
 
       // 6. Send confirmation email
-      await this.sendConfirmationEmail(senderEmail, issue, userName);
+      await this.sendConfirmationEmail(senderEmail, issue, userName, attachments?.length || 0);
 
       return {
         success: true,
@@ -134,17 +135,35 @@ class EmailInboundService {
   /**
    * Parse email content to extract issue metadata
    */
-  parseEmailContent(subject, body) {
+  parseEmailContent(subject, body, html, attachments) {
+    // If we have HTML content with inline images, process them
+    let processedBody = body;
+    
+    if (html && attachments && attachments.length > 0) {
+      // Look for inline images (cid: references in HTML)
+      const inlineImages = attachments.filter(att => 
+        att.fieldname && att.fieldname.startsWith('attachment') && 
+        html.includes(`cid:${att.originalname}`)
+      );
+      
+      if (inlineImages.length > 0) {
+        console.log(`[EmailInbound] Found ${inlineImages.length} inline images`);
+        // For now, we'll note inline images in the description
+        // In future, we could convert them to base64 or upload them
+        processedBody = body + '\n\n[Note: This email contained inline images that have been attached to the issue]';
+      }
+    }
+    
     const result = {
       title: subject,
-      description: body,
+      description: processedBody,
       timeline: 'short_term',
       assigneeId: null,
       priority: null
     };
 
     // Clean up the body
-    result.description = body
+    result.description = result.description
       .replace(/\r\n/g, '\n')
       .replace(/\n{3,}/g, '\n\n')
       .trim();
@@ -201,27 +220,46 @@ class EmailInboundService {
   /**
    * Process and store email attachments
    */
-  async processAttachments(issueId, attachments) {
-    // For now, we'll just log them
-    // In production, you'd upload to S3/CloudStorage and save references
+  async processAttachments(issueId, attachments, userId) {
     console.log(`[EmailInbound] Processing ${attachments.length} attachments for issue ${issueId}`);
     
     for (const attachment of attachments) {
-      console.log(`[EmailInbound] Attachment: ${attachment.originalname} (${attachment.size} bytes)`);
-      
-      // TODO: Upload to cloud storage and save reference in database
-      // await uploadToS3(attachment.buffer, attachment.originalname);
-      // await pool.query(
-      //   'INSERT INTO issue_attachments (issue_id, filename, url, size) VALUES ($1, $2, $3, $4)',
-      //   [issueId, attachment.originalname, s3Url, attachment.size]
-      // );
+      try {
+        console.log(`[EmailInbound] Processing attachment: ${attachment.originalname} (${attachment.size} bytes)`);
+        
+        // Store attachment in PostgreSQL (following Railway's ephemeral filesystem requirement)
+        const attachmentId = uuidv4();
+        await pool.query(
+          `INSERT INTO issue_attachments 
+           (id, issue_id, uploaded_by, file_name, file_data, file_size, mime_type, created_at)
+           VALUES ($1, $2, $3, $4, $5, $6, $7, NOW())`,
+          [
+            attachmentId,
+            issueId,
+            userId,
+            attachment.originalname,
+            attachment.buffer,
+            attachment.size,
+            attachment.mimetype || 'application/octet-stream'
+          ]
+        );
+        
+        console.log(`[EmailInbound] Stored attachment ${attachmentId} for issue ${issueId}`);
+      } catch (error) {
+        console.error(`[EmailInbound] Failed to store attachment ${attachment.originalname}:`, error);
+        // Continue processing other attachments even if one fails
+      }
     }
   }
 
   /**
    * Send confirmation email to sender
    */
-  async sendConfirmationEmail(recipientEmail, issue, userName) {
+  async sendConfirmationEmail(recipientEmail, issue, userName, attachmentCount = 0) {
+    const attachmentText = attachmentCount > 0 
+      ? `<p><strong>Attachments:</strong> ${attachmentCount} file${attachmentCount > 1 ? 's' : ''} attached</p>` 
+      : '';
+      
     const emailData = {
       to: recipientEmail,
       subject: `Issue #${issue.id} created: ${issue.title}`,
@@ -235,6 +273,7 @@ class EmailInboundService {
             <p><strong>Issue ID:</strong> #${issue.id}</p>
             <p><strong>Status:</strong> Open</p>
             <p><strong>Timeline:</strong> ${issue.timeline === 'short_term' ? 'Short Term' : 'Long Term'}</p>
+            ${attachmentText}
           </div>
           <p>You can view and manage this issue in AXP.</p>
           <hr style="border: none; border-top: 1px solid #e5e7eb; margin: 30px 0;">
