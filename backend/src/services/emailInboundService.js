@@ -10,7 +10,7 @@ class EmailInboundService {
     try {
       // 1. Verify sender is an authorized user
       const userResult = await pool.query(
-        'SELECT id, first_name, last_name, organization_id FROM users WHERE email = $1 AND deleted_at IS NULL',
+        'SELECT id, first_name, last_name, organization_id FROM users WHERE email = $1',
         [senderEmail]
       );
 
