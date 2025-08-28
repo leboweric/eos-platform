@@ -553,11 +553,14 @@ export const downloadAttachment = async (req, res) => {
   try {
     const { orgId, issueId, attachmentId } = req.params;
     
+    console.log(`[Attachment] Downloading attachment ${attachmentId} for issue ${issueId}`);
+    
     const result = await db.query(
       `SELECT 
         ia.file_name,
         ia.file_data,
-        ia.mime_type
+        ia.mime_type,
+        ia.file_size
        FROM issue_attachments ia
        JOIN issues i ON ia.issue_id = i.id
        WHERE ia.id = $1 AND ia.issue_id = $2 AND i.organization_id = $3`,
@@ -565,26 +568,34 @@ export const downloadAttachment = async (req, res) => {
     );
     
     if (result.rows.length === 0) {
+      console.log(`[Attachment] Not found: ${attachmentId}`);
       return res.status(404).json({
         success: false,
         message: 'Attachment not found'
       });
     }
     
-    const { file_name, file_data, mime_type } = result.rows[0];
+    const { file_name, file_data, mime_type, file_size } = result.rows[0];
+    
+    console.log(`[Attachment] Found: ${file_name} (${file_size} bytes, type: ${mime_type})`);
+    
+    // Encode filename properly for Content-Disposition header
+    const encodedFilename = encodeURIComponent(file_name);
     
     // Set headers for file download
     res.setHeader('Content-Type', mime_type || 'application/octet-stream');
-    res.setHeader('Content-Disposition', `attachment; filename="${file_name}"`);
+    res.setHeader('Content-Disposition', `attachment; filename*=UTF-8''${encodedFilename}; filename="${file_name.replace(/"/g, '\\"')}"`);
     res.setHeader('Content-Length', file_data.length);
     
     // Send the file data
     res.send(file_data);
   } catch (error) {
-    console.error('Error downloading attachment:', error);
+    console.error('[Attachment] Download error:', error);
+    console.error('[Attachment] Error details:', error.message, error.stack);
     res.status(500).json({
       success: false,
-      message: 'Failed to download attachment'
+      message: 'Failed to download attachment',
+      error: error.message
     });
   }
 };

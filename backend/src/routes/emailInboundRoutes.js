@@ -156,10 +156,28 @@ router.post('/inbound-email', upload.any(), async (req, res) => {
         cleanText = parsed.text || parsed.html?.replace(/<[^>]*>/g, '') || '';
         cleanText = filterSignature(cleanText);
         
-        // Extract attachments from MIME
+        // Extract attachments from MIME (excluding inline images from signatures)
         if (parsed.attachments && parsed.attachments.length > 0) {
           console.log(`[EmailInbound] Found ${parsed.attachments.length} attachments in MIME`);
-          parsedAttachments = parsed.attachments.map(att => ({
+          
+          // Filter out inline images (typically from email signatures)
+          // Keep only attachments that are NOT inline/embedded
+          const realAttachments = parsed.attachments.filter(att => {
+            // Check if it's an inline image (has cid or is marked as inline)
+            const isInline = att.contentDisposition === 'inline' || 
+                           att.cid || 
+                           (att.headers && att.headers['content-id']);
+            
+            if (isInline) {
+              console.log(`[EmailInbound] Filtering out inline image: ${att.filename || 'unnamed'}`);
+              return false;
+            }
+            return true;
+          });
+          
+          console.log(`[EmailInbound] Keeping ${realAttachments.length} real attachments (filtered ${parsed.attachments.length - realAttachments.length} inline images)`);
+          
+          parsedAttachments = realAttachments.map(att => ({
             originalname: att.filename || 'unnamed',
             buffer: att.content,
             size: att.size,
