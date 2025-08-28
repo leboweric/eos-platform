@@ -267,20 +267,24 @@ class EmailInboundService {
     const attachmentText = attachmentCount > 0 
       ? `<p><strong>Attachments:</strong> ${attachmentCount} file${attachmentCount > 1 ? 's' : ''} attached</p>` 
       : '';
+    
+    // Truncate description for email (show first 200 chars)
+    const descriptionPreview = issue.description && issue.description.length > 200 
+      ? issue.description.substring(0, 200) + '...' 
+      : issue.description || 'No description provided';
       
     const emailData = {
       to: recipientEmail,
-      subject: `Issue #${issue.id} created: ${issue.title}`,
+      subject: `Issue created: ${issue.title}`,
       html: `
         <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
           <h2>Issue Created Successfully</h2>
           <p>Hi ${userName},</p>
-          <p>Your issue has been created in AXP and added to the <strong>${teamName}</strong> issues list:</p>
+          <p>Your issue has been created in AXP and added to the <strong>${teamName}</strong> issues list.</p>
           <div style="background: #f3f4f6; padding: 20px; border-radius: 8px; margin: 20px 0;">
-            <h3 style="margin-top: 0;">${issue.title}</h3>
-            <p><strong>Issue ID:</strong> #${issue.id}</p>
+            <p><strong>Subject:</strong> ${issue.title}</p>
+            <p><strong>Description:</strong> ${descriptionPreview}</p>
             <p><strong>Team:</strong> ${teamName}</p>
-            <p><strong>Status:</strong> Open</p>
             <p><strong>Timeline:</strong> ${issue.timeline === 'short_term' ? 'Short Term' : 'Long Term'}</p>
             ${attachmentText}
           </div>
@@ -300,12 +304,13 @@ class EmailInboundService {
         
         Hi ${userName},
         
-        Your issue has been created in AXP:
+        Your issue has been created in AXP and added to the ${teamName} issues list.
         
-        ${issue.title}
-        Issue ID: #${issue.id}
-        Status: Open
+        Subject: ${issue.title}
+        Description: ${descriptionPreview}
+        Team: ${teamName}
         Timeline: ${issue.timeline === 'short_term' ? 'Short Term' : 'Long Term'}
+        ${attachmentCount > 0 ? `Attachments: ${attachmentCount} file${attachmentCount > 1 ? 's' : ''} attached` : ''}
         
         You can view and manage this issue in AXP.
       `
