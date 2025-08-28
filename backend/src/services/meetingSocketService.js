@@ -233,6 +233,98 @@ class MeetingSocketService {
         console.log('📊 Broadcasting issue status update to meeting:', meetingCode);
       });
       
+      // Handle todo updates (completion, creation, deletion)
+      socket.on('update-todo', (data) => {
+        const userData = userSocketMap.get(socket.id);
+        
+        if (!userData) return;
+        
+        const { meetingCode } = userData;
+        
+        // Broadcast todo update to all participants
+        socket.to(meetingCode).emit('todo-update', data);
+        
+        console.log('✅ Broadcasting todo update to meeting:', meetingCode, 'action:', data.action);
+      });
+      
+      // Handle issue creation/deletion
+      socket.on('update-issue-list', (data) => {
+        const userData = userSocketMap.get(socket.id);
+        
+        if (!userData) return;
+        
+        const { meetingCode } = userData;
+        
+        // Broadcast issue list update to all participants
+        socket.to(meetingCode).emit('issue-list-update', data);
+        
+        console.log('📝 Broadcasting issue list update to meeting:', meetingCode, 'action:', data.action);
+      });
+      
+      // Handle meeting timer sync
+      socket.on('sync-timer', (data) => {
+        const userData = userSocketMap.get(socket.id);
+        
+        if (!userData) return;
+        
+        const { meetingCode, userId } = userData;
+        const meeting = meetings.get(meetingCode);
+        
+        if (!meeting || meeting.leader !== userId) {
+          socket.emit('error', { message: 'Only leader can control timer' });
+          return;
+        }
+        
+        // Broadcast timer state to all participants
+        socket.to(meetingCode).emit('timer-update', data);
+        
+        console.log('⏱️ Broadcasting timer update to meeting:', meetingCode);
+      });
+      
+      // Handle meeting notes updates
+      socket.on('update-notes', (data) => {
+        const userData = userSocketMap.get(socket.id);
+        
+        if (!userData) return;
+        
+        const { meetingCode } = userData;
+        
+        // Store notes in meeting object
+        const meeting = meetings.get(meetingCode);
+        if (meeting) {
+          if (!meeting.notes) meeting.notes = {};
+          meeting.notes[data.section] = data.content;
+        }
+        
+        // Broadcast notes update to all participants
+        socket.to(meetingCode).emit('notes-update', data);
+        
+        console.log('📝 Broadcasting notes update to meeting:', meetingCode, 'section:', data.section);
+      });
+      
+      // Handle presenter claim
+      socket.on('claim-presenter', (data) => {
+        const userData = userSocketMap.get(socket.id);
+        
+        if (!userData) return;
+        
+        const { meetingCode, userId } = userData;
+        const meeting = meetings.get(meetingCode);
+        
+        if (!meeting) return;
+        
+        // Update leader
+        meeting.leader = userId;
+        
+        // Broadcast new presenter to all participants
+        socket.to(meetingCode).emit('presenter-changed', {
+          newPresenter: userId,
+          presenterName: data.presenterName
+        });
+        
+        console.log('👑 Presenter changed in meeting:', meetingCode, 'new presenter:', userId);
+      });
+      
       // Handle disconnect
       socket.on('disconnect', () => {
         this.handleUserDisconnect(socket);

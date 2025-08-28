@@ -183,6 +183,53 @@ const useMeeting = () => {
       window.dispatchEvent(statusEvent);
     });
     
+    // Handle todo updates from other participants
+    newSocket.on('todo-update', (data) => {
+      console.log('✅ Received todo update:', data);
+      const todoEvent = new CustomEvent('meeting-todo-update', { 
+        detail: data 
+      });
+      window.dispatchEvent(todoEvent);
+    });
+    
+    // Handle issue list updates (creation/deletion)
+    newSocket.on('issue-list-update', (data) => {
+      console.log('📝 Received issue list update:', data);
+      const listEvent = new CustomEvent('meeting-issue-list-update', { 
+        detail: data 
+      });
+      window.dispatchEvent(listEvent);
+    });
+    
+    // Handle timer updates from leader
+    newSocket.on('timer-update', (data) => {
+      console.log('⏱️ Received timer update:', data);
+      const timerEvent = new CustomEvent('meeting-timer-update', { 
+        detail: data 
+      });
+      window.dispatchEvent(timerEvent);
+    });
+    
+    // Handle notes updates from other participants
+    newSocket.on('notes-update', (data) => {
+      console.log('📝 Received notes update:', data);
+      const notesEvent = new CustomEvent('meeting-notes-update', { 
+        detail: data 
+      });
+      window.dispatchEvent(notesEvent);
+    });
+    
+    // Handle presenter changes
+    newSocket.on('presenter-changed', (data) => {
+      console.log('👑 Presenter changed:', data);
+      setCurrentLeader(data.newPresenter);
+      setIsLeader(data.newPresenter === user?.id);
+      const presenterEvent = new CustomEvent('meeting-presenter-changed', { 
+        detail: data 
+      });
+      window.dispatchEvent(presenterEvent);
+    });
+    
     // Handle errors
     newSocket.on('error', (data) => {
       console.error('❌ Meeting error:', data.message);
@@ -326,6 +373,50 @@ const useMeeting = () => {
     console.log('📊 Broadcasting issue update:', issueData);
     socket.emit('update-issue-status', issueData);
   }, [socket, meetingCode]);
+  
+  // Broadcast todo updates
+  const broadcastTodoUpdate = useCallback((todoData) => {
+    if (!socket || !meetingCode) return;
+    
+    console.log('✅ Broadcasting todo update:', todoData);
+    socket.emit('update-todo', todoData);
+  }, [socket, meetingCode]);
+  
+  // Broadcast issue list changes
+  const broadcastIssueListUpdate = useCallback((listData) => {
+    if (!socket || !meetingCode) return;
+    
+    console.log('📝 Broadcasting issue list update:', listData);
+    socket.emit('update-issue-list', listData);
+  }, [socket, meetingCode]);
+  
+  // Sync timer (leader only)
+  const syncTimer = useCallback((timerData) => {
+    if (!socket || !meetingCode || !isLeaderRef.current) return;
+    
+    console.log('⏱️ Syncing timer:', timerData);
+    socket.emit('sync-timer', timerData);
+  }, [socket, meetingCode]);
+  
+  // Update notes
+  const updateNotes = useCallback((notesData) => {
+    if (!socket || !meetingCode) return;
+    
+    console.log('📝 Updating notes:', notesData);
+    socket.emit('update-notes', notesData);
+  }, [socket, meetingCode]);
+  
+  // Claim presenter role
+  const claimPresenter = useCallback(() => {
+    if (!socket || !meetingCode) return;
+    
+    console.log('👑 Claiming presenter role');
+    socket.emit('claim-presenter', {
+      presenterName: user ? `${user.firstName} ${user.lastName}` : 'Unknown'
+    });
+    setIsLeader(true);
+    setCurrentLeader(user?.id);
+  }, [socket, meetingCode, user]);
 
   return {
     // Connection status
@@ -347,7 +438,12 @@ const useMeeting = () => {
     navigateTo,
     navigateToSection,
     broadcastVote,
-    broadcastIssueUpdate
+    broadcastIssueUpdate,
+    broadcastTodoUpdate,
+    broadcastIssueListUpdate,
+    syncTimer,
+    updateNotes,
+    claimPresenter
   };
 };
 

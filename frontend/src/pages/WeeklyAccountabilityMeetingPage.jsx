@@ -68,7 +68,23 @@ const WeeklyAccountabilityMeetingPage = () => {
   const { user } = useAuthStore();
   const { teamId } = useParams();
   const navigate = useNavigate();
-  const { meetingCode, participants, joinMeeting, isConnected, isLeader, currentLeader, navigateToSection, broadcastVote, broadcastIssueUpdate, activeMeetings } = useMeeting();
+  const { 
+    meetingCode, 
+    participants, 
+    joinMeeting, 
+    isConnected, 
+    isLeader, 
+    currentLeader, 
+    navigateToSection, 
+    broadcastVote, 
+    broadcastIssueUpdate,
+    broadcastTodoUpdate,
+    broadcastIssueListUpdate,
+    syncTimer,
+    updateNotes,
+    claimPresenter,
+    activeMeetings 
+  } = useMeeting();
   
   // Debug logging for participants
   useEffect(() => {
@@ -139,6 +155,9 @@ const WeeklyAccountabilityMeetingPage = () => {
   const [meetingStarted, setMeetingStarted] = useState(false);
   const [meetingStartTime, setMeetingStartTime] = useState(null);
   const [elapsedTime, setElapsedTime] = useState(0);
+  const [sectionNotes, setSectionNotes] = useState({});
+  const [isEditingNotes, setIsEditingNotes] = useState(false);
+  const notesTimeoutRef = useRef(null);
   const [meetingRating, setMeetingRating] = useState(null);
   const [participantRatings, setParticipantRatings] = useState({}); // Store ratings by participant
   const [cascadingMessage, setCascadingMessage] = useState('');
@@ -546,6 +565,14 @@ const WeeklyAccountabilityMeetingPage = () => {
     setMeetingStarted(true);
     setElapsedTime(0);
     
+    // Sync timer with other participants if leader
+    if (isLeader && syncTimer) {
+      syncTimer({
+        startTime: now,
+        isPaused: false
+      });
+    }
+    
     // Dispatch custom event to immediately update Layout
     window.dispatchEvent(new Event('meetingStateChanged'));
     
@@ -803,6 +830,15 @@ const WeeklyAccountabilityMeetingPage = () => {
           department_id: effectiveTeamId
         });
         setSuccess('To-do updated successfully');
+        
+        // Broadcast todo update to other participants
+        if (meetingCode && broadcastTodoUpdate) {
+          broadcastTodoUpdate({
+            action: 'update',
+            todoId: editingTodo.id,
+            todo: savedTodo
+          });
+        }
       } else {
         savedTodo = await todosService.createTodo({
           ...todoData,
@@ -810,6 +846,14 @@ const WeeklyAccountabilityMeetingPage = () => {
           department_id: effectiveTeamId
         });
         setSuccess('To-do created successfully');
+        
+        // Broadcast new todo to other participants
+        if (meetingCode && broadcastTodoUpdate) {
+          broadcastTodoUpdate({
+            action: 'create',
+            todo: savedTodo
+          });
+        }
       }
       
       // Refresh todos after creating/updating
@@ -1301,7 +1345,7 @@ const WeeklyAccountabilityMeetingPage = () => {
     return () => window.removeEventListener('meeting-section-change', handleMeetingSectionChange);
   }, [isLeader]);
   
-  // Listen for vote updates from other meeting participants
+  // Listen for all meeting updates from other participants
   useEffect(() => {
     const handleVoteUpdate = (event) => {
       const { issueId, voteCount, voterId } = event.detail;
@@ -1316,7 +1360,6 @@ const WeeklyAccountabilityMeetingPage = () => {
           return {
             ...issue,
             vote_count: voteCount
-            // Note: We don't update user_has_voted for other users' votes
           };
         }
         return issue;
@@ -1329,16 +1372,71 @@ const WeeklyAccountabilityMeetingPage = () => {
     const handleIssueUpdate = (event) => {
       const issueData = event.detail;
       console.log('📊 Received issue update:', issueData);
-      // Refresh issues to get latest status
       fetchIssuesData();
+    };
+    
+    const handleTodoUpdate = (event) => {
+      const { action, todoId, todo, status } = event.detail;
+      console.log('✅ Received todo update:', event.detail);
+      
+      if (action === 'create') {
+        setTodos(prev => [...prev, todo]);
+      } else if (action === 'update') {
+        setTodos(prev => prev.map(t => t.id === todoId ? { ...t, ...todo } : t));
+      } else if (action === 'complete') {
+        setTodos(prev => prev.map(t => t.id === todoId ? { ...t, status } : t));
+      } else if (action === 'delete') {
+        setTodos(prev => prev.filter(t => t.id !== todoId));
+      } else if (action === 'refresh') {
+        fetchTodosData();
+      }
+    };
+    
+    const handleIssueListUpdate = (event) => {
+      const { action } = event.detail;
+      console.log('📝 Received issue list update:', event.detail);
+      if (action === 'refresh' || action === 'create' || action === 'delete') {
+        fetchIssuesData();
+      }
+    };
+    
+    const handleTimerUpdate = (event) => {
+      const { startTime, isPaused } = event.detail;
+      console.log('⏱️ Received timer update:', event.detail);
+      if (startTime) {
+        setMeetingStartTime(new Date(startTime));
+        setMeetingStarted(!isPaused);
+      }
+    };
+    
+    const handleNotesUpdate = (event) => {
+      const { section, content } = event.detail;
+      console.log('📝 Received notes update for section:', section);
+      setSectionNotes(prev => ({ ...prev, [section]: content }));
+    };
+    
+    const handlePresenterChange = (event) => {
+      const { presenterName } = event.detail;
+      console.log('👑 New presenter:', presenterName);
+      setSuccess(`${presenterName} is now presenting`);
     };
     
     window.addEventListener('meeting-vote-update', handleVoteUpdate);
     window.addEventListener('meeting-issue-update', handleIssueUpdate);
+    window.addEventListener('meeting-todo-update', handleTodoUpdate);
+    window.addEventListener('meeting-issue-list-update', handleIssueListUpdate);
+    window.addEventListener('meeting-timer-update', handleTimerUpdate);
+    window.addEventListener('meeting-notes-update', handleNotesUpdate);
+    window.addEventListener('meeting-presenter-changed', handlePresenterChange);
     
     return () => {
       window.removeEventListener('meeting-vote-update', handleVoteUpdate);
       window.removeEventListener('meeting-issue-update', handleIssueUpdate);
+      window.removeEventListener('meeting-todo-update', handleTodoUpdate);
+      window.removeEventListener('meeting-issue-list-update', handleIssueListUpdate);
+      window.removeEventListener('meeting-timer-update', handleTimerUpdate);
+      window.removeEventListener('meeting-notes-update', handleNotesUpdate);
+      window.removeEventListener('meeting-presenter-changed', handlePresenterChange);
     };
   }, [user?.id]);
 
@@ -2473,32 +2571,59 @@ const WeeklyAccountabilityMeetingPage = () => {
             {meetingStarted && (
               <div className="flex items-center gap-4">
                 {participants.length > 0 && (
-                  <div className="relative group">
-                    <div className="bg-blue-50/80 backdrop-blur-sm px-4 py-2 rounded-xl border border-blue-200/50 shadow-sm cursor-pointer">
-                      <div className="flex items-center gap-2">
-                        <Users className="h-4 w-4 text-blue-600" />
-                        <span className="text-sm font-medium text-blue-900">
-                          {participants.length} participant{participants.length !== 1 ? 's' : ''}
-                        </span>
+                  <>
+                    <div className="relative group">
+                      <div className="bg-blue-50/80 backdrop-blur-sm px-4 py-2 rounded-xl border border-blue-200/50 shadow-sm cursor-pointer">
+                        <div className="flex items-center gap-2">
+                          <Users className="h-4 w-4 text-blue-600" />
+                          <span className="text-sm font-medium text-blue-900">
+                            {participants.length} participant{participants.length !== 1 ? 's' : ''}
+                          </span>
+                        </div>
+                      </div>
+                      
+                      {/* Participant names tooltip */}
+                      <div className="absolute top-full mt-2 left-0 bg-white rounded-lg shadow-lg border border-gray-200 p-3 opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none z-50 min-w-[200px]">
+                        <div className="text-xs font-semibold text-gray-700 mb-2">Participants:</div>
+                        <div className="space-y-1">
+                          {participants.map((participant, idx) => (
+                            <div key={idx} className="flex items-center gap-2 text-sm text-gray-600">
+                              <div className="w-2 h-2 rounded-full bg-green-400" />
+                              <span>{participant.name || 'Unknown'}</span>
+                              {participant.id === currentLeader && (
+                                <span className="text-xs text-blue-600 font-medium">(Presenter)</span>
+                              )}
+                            </div>
+                          ))}
+                        </div>
                       </div>
                     </div>
                     
-                    {/* Participant names tooltip */}
-                    <div className="absolute top-full mt-2 left-0 bg-white rounded-lg shadow-lg border border-gray-200 p-3 opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none z-50 min-w-[200px]">
-                      <div className="text-xs font-semibold text-gray-700 mb-2">Participants:</div>
-                      <div className="space-y-1">
-                        {participants.map((participant, idx) => (
-                          <div key={idx} className="flex items-center gap-2 text-sm text-gray-600">
-                            <div className="w-2 h-2 rounded-full bg-green-400" />
-                            <span>{participant.name || 'Unknown'}</span>
-                            {participant.id === currentLeader && (
-                              <span className="text-xs text-blue-600 font-medium">(Leader)</span>
-                            )}
-                          </div>
-                        ))}
+                    {/* Claim Presenter button */}
+                    {!isLeader && meetingCode && (
+                      <Button
+                        onClick={() => {
+                          if (claimPresenter) {
+                            claimPresenter();
+                          }
+                        }}
+                        className="bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700 text-white shadow-lg hover:shadow-xl transition-all duration-200"
+                        size="sm"
+                      >
+                        Claim Presenter
+                      </Button>
+                    )}
+                    
+                    {/* Current presenter indicator */}
+                    {isLeader && (
+                      <div className="bg-green-50/80 backdrop-blur-sm px-4 py-2 rounded-xl border border-green-200/50 shadow-sm">
+                        <div className="flex items-center gap-2">
+                          <div className="w-2 h-2 rounded-full bg-green-400 animate-pulse" />
+                          <span className="text-sm font-medium text-green-900">You're Presenting</span>
+                        </div>
                       </div>
-                    </div>
-                  </div>
+                    )}
+                  </>
                 )}
                 <div className="bg-white/80 backdrop-blur-sm px-4 py-2 rounded-xl shadow-lg border border-white/50">
                   <div className="flex items-center gap-2">
