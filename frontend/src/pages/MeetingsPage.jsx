@@ -233,7 +233,14 @@ const MeetingsPage = () => {
               {(() => {
                 // Check if any meetings are in progress for this team
                 console.log('Active meetings:', activeMeetings);
+                console.log('Active meetings entries:', Object.entries(activeMeetings || {}));
                 console.log('Selected team ID:', selectedTeamId);
+                
+                // Log each meeting's teamId for debugging
+                Object.values(activeMeetings || {}).forEach(meeting => {
+                  console.log(`Meeting ${meeting.code}: teamId=${meeting.teamId}, type=${meeting.type}`);
+                });
+                
                 const teamMeetings = Object.values(activeMeetings || {}).filter(
                   m => m.teamId === selectedTeamId
                 );
