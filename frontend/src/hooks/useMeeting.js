@@ -171,16 +171,28 @@ const useMeeting = () => {
 
   // Join meeting
   const joinMeeting = useCallback((code, asLeader = false) => {
-    if (!socket || !user) return;
+    if (!socket) {
+      console.error('❌ Cannot join meeting: Socket not connected');
+      return;
+    }
+    if (!user) {
+      console.error('❌ Cannot join meeting: User not authenticated');
+      return;
+    }
 
     console.log('🚀 Joining meeting:', code, 'as', asLeader ? 'leader' : 'participant');
+    console.log('🚀 User info:', { id: user.id, name: `${user.firstName} ${user.lastName}` });
+    console.log('🚀 Socket connected:', socket.connected);
     
-    socket.emit('join-meeting', {
+    const meetingData = {
       meetingCode: code,
       userId: user.id,
       userName: `${user.firstName} ${user.lastName}`,
       isLeader: asLeader
-    });
+    };
+    
+    console.log('🚀 Emitting join-meeting with data:', meetingData);
+    socket.emit('join-meeting', meetingData);
 
     setIsLeader(asLeader);
     setIsFollowing(!asLeader);
