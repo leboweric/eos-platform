@@ -44,6 +44,7 @@ import {
 } from 'lucide-react';
 import { Textarea } from '@/components/ui/textarea';
 import { issuesService } from '../../services/issuesService';
+import IssueDialog from './IssueDialog';
 
 const IssuesListClean = ({ 
   issues, 
@@ -56,6 +57,8 @@ const IssuesListClean = ({
   onCreateTodo,
   onSendCascadingMessage,
   onReorder,  // New prop for handling reordering
+  onSave,  // Callback for saving issue changes
+  teamMembers = [],  // Team members for assignment
   getStatusColor, 
   getStatusIcon, 
   readOnly = false, 
@@ -856,259 +859,23 @@ const IssuesListClean = ({
         })()
       )}
 
-      {/* Issue Detail Modal - shared between both views */}
-      <Dialog open={!!selectedIssue} onOpenChange={(open) => !open && setSelectedIssue(null)}>
-        <DialogContent className="max-w-2xl">
-          {selectedIssue && (
-            <>
-              <DialogHeader>
-                <DialogTitle className="text-xl font-semibold pr-8">
-                  {selectedIssue.title}
-                </DialogTitle>
-              </DialogHeader>
-              
-              <div className="space-y-6 mt-4">
-                {selectedIssue.description && (
-                  <div>
-                    <h4 className="text-sm font-medium text-gray-700 mb-2">Description</h4>
-                    <p className="text-gray-600 whitespace-pre-wrap">{selectedIssue.description}</p>
-                  </div>
-                )}
-
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <h4 className="text-sm font-medium text-gray-700 mb-2">Details</h4>
-                    <div className="space-y-2">
-                      <div className="flex items-center gap-2 text-sm">
-                        <User className="h-4 w-4 text-gray-400" />
-                        <span className="text-gray-600">Owner:</span>
-                        <span className="font-medium">{selectedIssue.owner_name || 'Unassigned'}</span>
-                      </div>
-                      <div className="flex items-center gap-2 text-sm">
-                        <Calendar className="h-4 w-4 text-gray-400" />
-                        <span className="text-gray-600">Created:</span>
-                        <span className="font-medium">{formatDate(selectedIssue.created_at)}</span>
-                      </div>
-                      <div className="flex items-center gap-2 text-sm">
-                        <Clock className="h-4 w-4 text-gray-400" />
-                        <span className="text-gray-600">Timeline:</span>
-                        <span className="font-medium">
-                          {selectedIssue.timeline === 'short_term' ? 'Short Term' : 'Long Term'}
-                        </span>
-                      </div>
-                    </div>
-                  </div>
-
-                  <div>
-                    <h4 className="text-sm font-medium text-gray-700 mb-2">Status</h4>
-                    <div className="space-y-2">
-                      <div className="flex items-center gap-2">
-                        <div 
-                          className="w-2 h-2 rounded-full"
-                          style={{ 
-                            backgroundColor: selectedIssue.status === 'open' ? themeColors.accent : '#9CA3AF' 
-                          }}
-                        />
-                        <span className="text-sm font-medium capitalize">{selectedIssue.status}</span>
-                      </div>
-                      {selectedIssue.vote_count > 0 && (
-                        <div className="flex items-center gap-2 text-sm">
-                          <ThumbsUp className="h-4 w-4 text-gray-400" />
-                          <span className="text-gray-600">Votes:</span>
-                          <span className="font-medium">{selectedIssue.vote_count}</span>
-                        </div>
-                      )}
-                      {selectedIssue.attachment_count > 0 && (
-                        <div className="flex items-center gap-2 text-sm">
-                          <Paperclip className="h-4 w-4 text-gray-400" />
-                          <span className="text-gray-600">Attachments:</span>
-                          <span className="font-medium">{selectedIssue.attachment_count}</span>
-                        </div>
-                      )}
-                    </div>
-                  </div>
-                </div>
-
-                {/* Updates Section */}
-                <div className="space-y-3 pt-4 border-t">
-                  <div className="flex items-center justify-between">
-                    <h4 className="text-sm font-medium text-gray-700 flex items-center gap-2">
-                      <MessageSquare className="h-4 w-4" />
-                      Updates ({issueUpdates.length})
-                    </h4>
-                    {!readOnly && !showAddUpdate && (
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => setShowAddUpdate(true)}
-                      >
-                        <Plus className="h-3 w-3 mr-1" />
-                        Add Update
-                      </Button>
-                    )}
-                  </div>
-
-                  {/* Updates List */}
-                  {loadingUpdates ? (
-                    <div className="text-sm text-gray-500">Loading updates...</div>
-                  ) : (
-                    <>
-                      {issueUpdates.length > 0 && (
-                        <div className="space-y-2 max-h-48 overflow-y-auto">
-                          {issueUpdates.map(update => (
-                            <div key={update.id} className="group bg-gray-50 rounded-lg p-3">
-                              <div className="flex items-start justify-between">
-                                <div className="flex-1">
-                                  <p className="text-sm text-gray-800 whitespace-pre-wrap">{update.update_text}</p>
-                                  <div className="flex items-center gap-2 mt-1">
-                                    <span className="text-xs text-gray-500">
-                                      {update.created_by_name} • {formatDate(update.created_at)}
-                                    </span>
-                                  </div>
-                                </div>
-                                {!readOnly && (
-                                  <Button
-                                    variant="ghost"
-                                    size="sm"
-                                    onClick={() => handleDeleteUpdate(update.id)}
-                                    className="opacity-0 group-hover:opacity-100 transition-opacity h-6 w-6 p-0"
-                                  >
-                                    <Trash2 className="h-3 w-3 text-red-500" />
-                                  </Button>
-                                )}
-                              </div>
-                            </div>
-                          ))}
-                        </div>
-                      )}
-
-                      {/* Add Update Form */}
-                      {showAddUpdate && (
-                        <div className="space-y-2">
-                          <Textarea
-                            value={updateText}
-                            onChange={(e) => setUpdateText(e.target.value)}
-                            placeholder="Add an update..."
-                            className="text-sm"
-                            rows={3}
-                          />
-                          <div className="flex gap-2">
-                            <Button
-                              size="sm"
-                              onClick={handleAddUpdate}
-                              disabled={!updateText.trim() || savingUpdate}
-                              className="bg-gray-900 hover:bg-gray-800"
-                            >
-                              {savingUpdate ? 'Saving...' : 'Add Update'}
-                            </Button>
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              onClick={() => {
-                                setShowAddUpdate(false);
-                                setUpdateText('');
-                              }}
-                            >
-                              Cancel
-                            </Button>
-                          </div>
-                        </div>
-                      )}
-
-                      {issueUpdates.length === 0 && !showAddUpdate && (
-                        <p className="text-sm text-gray-500 text-center py-2">
-                          No updates yet
-                        </p>
-                      )}
-                    </>
-                  )}
-                </div>
-
-                {/* Action Buttons */}
-                <div className="pt-4 border-t space-y-3">
-                  {/* Move actions */}
-                  <div className="flex flex-wrap gap-2">
-                    {!readOnly && onTimelineChange && (
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => {
-                          onTimelineChange(selectedIssue.id, selectedIssue.timeline === 'short_term' ? 'long_term' : 'short_term');
-                          setSelectedIssue(null);
-                        }}
-                      >
-                        <ArrowRight className="mr-2 h-4 w-4" />
-                        Move to {selectedIssue.timeline === 'short_term' ? 'Long Term' : 'Short Term'}
-                      </Button>
-                    )}
-                    {!readOnly && onMoveToTeam && (
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => {
-                          onMoveToTeam(selectedIssue);
-                          setSelectedIssue(null);
-                        }}
-                      >
-                        <Users className="mr-2 h-4 w-4" />
-                        Move to Team
-                      </Button>
-                    )}
-                    {!readOnly && onCreateTodo && (
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => {
-                          onCreateTodo(selectedIssue);
-                          setSelectedIssue(null);
-                        }}
-                      >
-                        <ListTodo className="mr-2 h-4 w-4" />
-                        Create Linked To-Do
-                      </Button>
-                    )}
-                    {!readOnly && onSendCascadingMessage && (
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => {
-                          onSendCascadingMessage(selectedIssue);
-                          setSelectedIssue(null);
-                        }}
-                      >
-                        <Send className="mr-2 h-4 w-4" />
-                        Send Message
-                      </Button>
-                    )}
-                  </div>
-                  
-                  {/* Primary actions */}
-                  <div className="flex justify-between">
-                    <Button
-                      variant="outline"
-                      onClick={() => setSelectedIssue(null)}
-                    >
-                      Close
-                    </Button>
-                    {!readOnly && (
-                      <Button
-                        onClick={() => {
-                          onEdit(selectedIssue);
-                          // Keep modal open briefly to ensure edit dialog opens
-                          setTimeout(() => setSelectedIssue(null), 100);
-                        }}
-                      >
-                        <Edit className="mr-2 h-4 w-4" />
-                        Edit Issue
-                      </Button>
-                    )}
-                  </div>
-                </div>
-              </div>
-            </>
-          )}
-        </DialogContent>
-      </Dialog>
+      {/* Issue Edit Modal - using IssueDialog for consistency with TodoDialog */}
+      <IssueDialog
+        open={!!selectedIssue}
+        onClose={() => setSelectedIssue(null)}
+        issue={selectedIssue}
+        teamMembers={teamMembers}
+        timeline={selectedIssue?.timeline}
+        onSave={(updatedIssue) => {
+          if (onSave) {
+            onSave(updatedIssue);
+          } else if (onEdit) {
+            // Fallback to onEdit if onSave not provided
+            onEdit(updatedIssue);
+          }
+          setSelectedIssue(null);
+        }}
+      />
     </>
   );
 };

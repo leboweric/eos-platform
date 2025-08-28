@@ -678,6 +678,8 @@ const IssuesPageClean = () => {
                     <IssuesListClean
                       issues={currentIssues}
                       onEdit={handleEditIssue}
+                      onSave={handleSaveIssue}
+                      teamMembers={teamMembers}
                       onStatusChange={handleStatusChange}
                       onTimelineChange={handleTimelineChange}
                       onArchive={handleArchive}
