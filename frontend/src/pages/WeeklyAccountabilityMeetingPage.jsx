@@ -1978,119 +1978,135 @@ const WeeklyAccountabilityMeetingPage = () => {
                     <span className="font-semibold">Quick voting:</span> Everyone votes on the most important issues. Then discuss and solve the top-voted issues together.
                   </p>
                 </div>
-                <div className="flex justify-between items-center mb-4">
-                  <div className="flex items-center gap-2">
-                    <div className="inline-flex rounded-lg border border-gray-200 p-1">
-                      <button
-                        onClick={() => setIssueTimeline('short_term')}
-                        className={`px-3 py-1 text-sm font-medium rounded transition-colors ${
-                          issueTimeline === 'short_term'
-                            ? 'text-white'
-                            : 'text-gray-600 hover:text-gray-900'
-                        }`}
-                        style={{
-                          backgroundColor: issueTimeline === 'short_term' ? themeColors.primary : 'transparent'
-                        }}
-                      >
-                        Short Term ({shortTermIssues.length})
-                      </button>
-                      <button
-                        onClick={() => setIssueTimeline('long_term')}
-                        className={`px-3 py-1 text-sm font-medium rounded transition-colors ${
-                          issueTimeline === 'long_term'
-                            ? 'text-white'
-                            : 'text-gray-600 hover:text-gray-900'
-                        }`}
-                        style={{
-                          backgroundColor: issueTimeline === 'long_term' ? themeColors.primary : 'transparent'
-                        }}
-                      >
-                        Long Term ({longTermIssues.length})
-                      </button>
-                    </div>
-                    {(() => {
-                      const closedIssuesCount = currentIssues.filter(issue => issue.status === 'closed').length;
-                      return closedIssuesCount > 0 && (
+                <div className="mb-4">
+                  <Tabs value={issueTimeline} onValueChange={setIssueTimeline} className="w-full">
+                    <div className="flex justify-between items-center mb-4">
+                      <TabsList className="bg-white/80 backdrop-blur-sm border border-white/50 rounded-xl p-1">
+                        <TabsTrigger value="short_term" className="min-w-[120px] data-[state=active]:bg-gradient-to-r data-[state=active]:from-blue-600 data-[state=active]:to-indigo-600 data-[state=active]:text-white">
+                          Short Term ({shortTermIssues.length})
+                        </TabsTrigger>
+                        <TabsTrigger value="long_term" className="min-w-[120px] data-[state=active]:bg-gradient-to-r data-[state=active]:from-blue-600 data-[state=active]:to-indigo-600 data-[state=active]:text-white">
+                          Long Term ({longTermIssues.length})
+                        </TabsTrigger>
+                      </TabsList>
+                      
+                      <div className="flex gap-2">
+                        {(() => {
+                          const closedIssuesCount = currentIssues.filter(issue => issue.status === 'closed').length;
+                          return closedIssuesCount > 0 && (
+                            <Button 
+                              onClick={async () => {
+                                try {
+                                  await issuesService.archiveClosedIssues(issueTimeline);
+                                  setSuccess(`${closedIssuesCount} closed issue${closedIssuesCount > 1 ? 's' : ''} archived`);
+                                  await fetchIssuesData();
+                                } catch (error) {
+                                  console.error('Failed to archive closed issues:', error);
+                                  setError('Failed to archive closed issues');
+                                }
+                              }}
+                              variant="outline"
+                              className="text-gray-600 hover:text-gray-900 bg-white/80 backdrop-blur-sm border-white/50"
+                            >
+                              <Archive className="mr-2 h-4 w-4" />
+                              Archive Solved ({closedIssuesCount})
+                            </Button>
+                          );
+                        })()}
                         <Button 
-                          onClick={async () => {
-                            try {
-                              await issuesService.archiveClosedIssues(issueTimeline);
-                              setSuccess(`${closedIssuesCount} closed issue${closedIssuesCount > 1 ? 's' : ''} archived`);
-                              await fetchIssuesData();
-                            } catch (error) {
-                              console.error('Failed to archive closed issues:', error);
-                              setError('Failed to archive closed issues');
+                          onClick={handleAddTodo}
+                          className="bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white shadow-lg hover:shadow-xl transition-all duration-200"
+                        >
+                          <Plus className="mr-2 h-4 w-4" />
+                          Add To Do
+                        </Button>
+                        <Button 
+                          onClick={handleAddIssue}
+                          className="bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white shadow-lg hover:shadow-xl transition-all duration-200"
+                        >
+                          <Plus className="mr-2 h-4 w-4" />
+                          Add Issue
+                        </Button>
+                      </div>
+                    </div>
+                    
+                    <TabsContent value="short_term" className="mt-0">
+                      {shortTermIssues.length === 0 ? (
+                        <div className="text-center py-8">
+                          <p className="text-gray-500">No short-term issues found.</p>
+                        </div>
+                      ) : (
+                        <IssuesListClean
+                          issues={shortTermIssues || []}
+                          onEdit={handleEditIssue}
+                          onSave={handleSaveIssue}
+                          teamMembers={teamMembers}
+                          onStatusChange={handleStatusChange}
+                          onTimelineChange={handleTimelineChange}
+                          onArchive={handleArchive}
+                          onVote={handleVote}
+                          onMoveToTeam={handleMoveToTeam}
+                          onCreateTodo={handleCreateTodoFromIssue}
+                          onSendCascadingMessage={handleSendCascadingMessage}
+                          onReorder={handleReorderIssues}
+                          enableDragDrop={true}
+                          getStatusColor={(status) => {
+                            switch (status) {
+                              case 'open':
+                                return 'bg-yellow-100 text-yellow-800';
+                              case 'closed':
+                                return 'bg-gray-100 text-gray-800';
+                              default:
+                                return 'bg-gray-100 text-gray-800';
                             }
                           }}
-                          variant="outline"
-                          className="text-gray-600 hover:text-gray-900"
-                        >
-                          <Archive className="mr-2 h-4 w-4" />
-                          Archive Solved ({closedIssuesCount})
-                        </Button>
-                      );
-                    })()}
-                  </div>
-                  <div className="flex gap-2">
-                    <Button 
-                      onClick={handleAddTodo}
-                      style={{ 
-                        backgroundColor: themeColors.primary,
-                        borderColor: themeColors.primary
-                      }}
-                      className="text-white hover:opacity-90"
-                    >
-                      <Plus className="mr-2 h-4 w-4" />
-                      Add To Do
-                    </Button>
-                    <Button 
-                      onClick={handleAddIssue}
-                      style={{ 
-                        backgroundColor: themeColors.primary,
-                        borderColor: themeColors.primary
-                      }}
-                      className="text-white hover:opacity-90"
-                    >
-                      <Plus className="mr-2 h-4 w-4" />
-                      Add Issue
-                    </Button>
-                  </div>
+                          getStatusIcon={(status) => null}
+                          readOnly={false}
+                          showVoting={true}
+                          compactGrid={false}  // Allow toggle between grid and list views
+                        />
+                      )}
+                    </TabsContent>
+                    
+                    <TabsContent value="long_term" className="mt-0">
+                      {longTermIssues.length === 0 ? (
+                        <div className="text-center py-8">
+                          <p className="text-gray-500">No long-term issues found.</p>
+                        </div>
+                      ) : (
+                        <IssuesListClean
+                          issues={longTermIssues || []}
+                          onEdit={handleEditIssue}
+                          onSave={handleSaveIssue}
+                          teamMembers={teamMembers}
+                          onStatusChange={handleStatusChange}
+                          onTimelineChange={handleTimelineChange}
+                          onArchive={handleArchive}
+                          onVote={handleVote}
+                          onMoveToTeam={handleMoveToTeam}
+                          onCreateTodo={handleCreateTodoFromIssue}
+                          onSendCascadingMessage={handleSendCascadingMessage}
+                          onReorder={handleReorderIssues}
+                          enableDragDrop={true}
+                          getStatusColor={(status) => {
+                            switch (status) {
+                              case 'open':
+                                return 'bg-yellow-100 text-yellow-800';
+                              case 'closed':
+                                return 'bg-gray-100 text-gray-800';
+                              default:
+                                return 'bg-gray-100 text-gray-800';
+                            }
+                          }}
+                          getStatusIcon={(status) => null}
+                          readOnly={false}
+                          showVoting={true}
+                          compactGrid={false}  // Allow toggle between grid and list views
+                        />
+                      )}
+                    </TabsContent>
+                  </Tabs>
                 </div>
-                {currentIssues.length === 0 ? (
-                  <div className="text-center py-8">
-                    <p className="text-gray-500">No {issueTimeline === 'short_term' ? 'short-term' : 'long-term'} issues found.</p>
-                  </div>
-                ) : (
-                  <IssuesListClean
-                    issues={currentIssues || []}
-                    onEdit={handleEditIssue}
-                    onSave={handleSaveIssue}
-                    teamMembers={teamMembers}
-                    onStatusChange={handleStatusChange}
-                    onTimelineChange={handleTimelineChange}
-                    onArchive={handleArchive}
-                    onVote={handleVote}
-                    onMoveToTeam={handleMoveToTeam}
-                    onCreateTodo={handleCreateTodoFromIssue}
-                    onSendCascadingMessage={handleSendCascadingMessage}
-                    onReorder={handleReorderIssues}
-                    enableDragDrop={true}
-                    getStatusColor={(status) => {
-                      switch (status) {
-                        case 'open':
-                          return 'bg-yellow-100 text-yellow-800';
-                        case 'closed':
-                          return 'bg-gray-100 text-gray-800';
-                        default:
-                          return 'bg-gray-100 text-gray-800';
-                      }
-                    }}
-                    getStatusIcon={(status) => null}
-                    readOnly={false}
-                    showVoting={true}
-                    compactGrid={false}  // Allow toggle between grid and list views
-                  />
-                )}
               </CardContent>
             </Card>
           </div>
