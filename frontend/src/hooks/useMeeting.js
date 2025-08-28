@@ -82,15 +82,25 @@ const useMeeting = () => {
     newSocket.on('navigation-update', (data) => {
       console.log('📍 Navigation update:', data);
       if (isFollowing && !navigationLock.current) {
-        navigationLock.current = true;
-        navigate(data.route);
+        // Only navigate to a different route if needed
+        if (data.route !== location.pathname) {
+          navigationLock.current = true;
+          navigate(data.route);
+        }
         
-        // Scroll to position after navigation
+        // Handle section changes or scrolling
         setTimeout(() => {
           if (data.scrollPosition) {
             window.scrollTo(0, data.scrollPosition);
           }
           if (data.section) {
+            // Try to trigger section change in the UI
+            const sectionChangeEvent = new CustomEvent('meeting-section-change', { 
+              detail: { section: data.section } 
+            });
+            window.dispatchEvent(sectionChangeEvent);
+            
+            // Also try to scroll to the section
             const element = document.getElementById(data.section);
             if (element) {
               element.scrollIntoView({ behavior: 'smooth' });
@@ -228,16 +238,30 @@ const useMeeting = () => {
   const navigateTo = useCallback((path, section = null) => {
     if (!isLeader || !socket || !meetingCode) return;
 
-    navigationLock.current = true;
-    navigate(path);
+    if (path !== location.pathname) {
+      navigationLock.current = true;
+      navigate(path);
+    }
 
     // Emit navigation event
     socket.emit('navigate', {
-      route: path,
+      route: path || location.pathname,
       section,
       scrollPosition: 0
     });
-  }, [isLeader, socket, meetingCode, navigate]);
+  }, [isLeader, socket, meetingCode, navigate, location]);
+  
+  // Navigate to section only (leader only)
+  const navigateToSection = useCallback((section) => {
+    if (!isLeader || !socket || !meetingCode) return;
+    
+    console.log('📍 Leader navigating to section:', section);
+    socket.emit('navigate', {
+      route: location.pathname,
+      section,
+      scrollPosition: window.scrollY
+    });
+  }, [isLeader, socket, meetingCode, location]);
 
   return {
     // Connection status
@@ -256,7 +280,8 @@ const useMeeting = () => {
     joinMeeting,
     leaveMeeting,
     toggleFollow,
-    navigateTo
+    navigateTo,
+    navigateToSection
   };
 };
 

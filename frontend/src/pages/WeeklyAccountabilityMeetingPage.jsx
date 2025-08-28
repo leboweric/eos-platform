@@ -68,7 +68,7 @@ const WeeklyAccountabilityMeetingPage = () => {
   const { user } = useAuthStore();
   const { teamId } = useParams();
   const navigate = useNavigate();
-  const { meetingCode, participants, joinMeeting, isConnected } = useMeeting();
+  const { meetingCode, participants, joinMeeting, isConnected, isLeader, currentLeader, navigateToSection } = useMeeting();
   const { labels } = useTerminology();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
@@ -1226,7 +1226,26 @@ const WeeklyAccountabilityMeetingPage = () => {
   const handleSectionChange = (sectionId) => {
     setActiveSection(sectionId);
     setError(null);
+    
+    // Emit navigation event if leader
+    if (isLeader && navigateToSection) {
+      navigateToSection(sectionId);
+    }
   };
+  
+  // Listen for section changes from leader
+  useEffect(() => {
+    const handleMeetingSectionChange = (event) => {
+      const { section } = event.detail;
+      if (section && !isLeader) {
+        console.log('📍 Follower changing section to:', section);
+        setActiveSection(section);
+      }
+    };
+    
+    window.addEventListener('meeting-section-change', handleMeetingSectionChange);
+    return () => window.removeEventListener('meeting-section-change', handleMeetingSectionChange);
+  }, [isLeader]);
 
   const getNextSection = () => {
     const currentIndex = agendaItems.findIndex(item => item.id === activeSection);
@@ -2359,12 +2378,30 @@ const WeeklyAccountabilityMeetingPage = () => {
             {meetingStarted && (
               <div className="flex items-center gap-4">
                 {participants.length > 0 && (
-                  <div className="bg-blue-50/80 backdrop-blur-sm px-4 py-2 rounded-xl border border-blue-200/50 shadow-sm">
-                    <div className="flex items-center gap-2">
-                      <Users className="h-4 w-4 text-blue-600" />
-                      <span className="text-sm font-medium text-blue-900">
-                        {participants.length} participant{participants.length !== 1 ? 's' : ''}
-                      </span>
+                  <div className="relative group">
+                    <div className="bg-blue-50/80 backdrop-blur-sm px-4 py-2 rounded-xl border border-blue-200/50 shadow-sm cursor-pointer">
+                      <div className="flex items-center gap-2">
+                        <Users className="h-4 w-4 text-blue-600" />
+                        <span className="text-sm font-medium text-blue-900">
+                          {participants.length} participant{participants.length !== 1 ? 's' : ''}
+                        </span>
+                      </div>
+                    </div>
+                    
+                    {/* Participant names tooltip */}
+                    <div className="absolute top-full mt-2 left-0 bg-white rounded-lg shadow-lg border border-gray-200 p-3 opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none z-50 min-w-[200px]">
+                      <div className="text-xs font-semibold text-gray-700 mb-2">Participants:</div>
+                      <div className="space-y-1">
+                        {participants.map((participant, idx) => (
+                          <div key={idx} className="flex items-center gap-2 text-sm text-gray-600">
+                            <div className="w-2 h-2 rounded-full bg-green-400" />
+                            <span>{participant.name || 'Unknown'}</span>
+                            {participant.id === currentLeader && (
+                              <span className="text-xs text-blue-600 font-medium">(Leader)</span>
+                            )}
+                          </div>
+                        ))}
+                      </div>
                     </div>
                   </div>
                 )}
