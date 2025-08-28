@@ -579,12 +579,15 @@ export const downloadAttachment = async (req, res) => {
     
     console.log(`[Attachment] Found: ${file_name} (${file_size} bytes, type: ${mime_type})`);
     
-    // Encode filename properly for Content-Disposition header
-    const encodedFilename = encodeURIComponent(file_name);
+    // Sanitize filename for Content-Disposition header
+    // Remove or replace problematic characters
+    const safeFilename = file_name
+      .replace(/[^\w\s.-]/g, '_')  // Replace non-alphanumeric (except spaces, dots, hyphens) with underscore
+      .replace(/\s+/g, '_');        // Replace spaces with underscores
     
     // Set headers for file download
     res.setHeader('Content-Type', mime_type || 'application/octet-stream');
-    res.setHeader('Content-Disposition', `attachment; filename*=UTF-8''${encodedFilename}; filename="${file_name.replace(/"/g, '\\"')}"`);
+    res.setHeader('Content-Disposition', `attachment; filename="${safeFilename}"`);
     res.setHeader('Content-Length', file_data.length);
     
     // Send the file data
