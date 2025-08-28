@@ -75,6 +75,17 @@ const useMeeting = () => {
         navigationLock.current = true;
         navigate(data.meeting.currentRoute);
       }
+      
+      // Sync timer state if meeting already started
+      if (data.meeting.timerStartTime) {
+        const timerEvent = new CustomEvent('meeting-timer-update', {
+          detail: {
+            startTime: data.meeting.timerStartTime,
+            isPaused: data.meeting.timerPaused || false
+          }
+        });
+        window.dispatchEvent(timerEvent);
+      }
     });
 
     // Handle participant joined

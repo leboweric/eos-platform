@@ -67,7 +67,9 @@ class MeetingSocketService {
             currentRoute: initialRoute,
             currentSection: null,
             scrollPosition: 0,
-            createdAt: new Date()
+            createdAt: new Date(),
+            timerStartTime: null,
+            timerPaused: false
           });
         }
 
@@ -95,7 +97,9 @@ class MeetingSocketService {
             leader: meeting.leader,
             currentRoute: meeting.currentRoute,
             currentSection: meeting.currentSection,
-            scrollPosition: meeting.scrollPosition
+            scrollPosition: meeting.scrollPosition,
+            timerStartTime: meeting.timerStartTime,
+            timerPaused: meeting.timerPaused
           },
           participants: Array.from(meeting.participants.values())
         });
@@ -275,10 +279,18 @@ class MeetingSocketService {
           return;
         }
         
+        // Store timer state in meeting object
+        if (data.startTime !== undefined) {
+          meeting.timerStartTime = data.startTime;
+        }
+        if (data.isPaused !== undefined) {
+          meeting.timerPaused = data.isPaused;
+        }
+        
         // Broadcast timer state to all participants
         socket.to(meetingCode).emit('timer-update', data);
         
-        console.log('⏱️ Broadcasting timer update to meeting:', meetingCode);
+        console.log('⏱️ Broadcasting timer update to meeting:', meetingCode, 'timer state:', data);
       });
       
       // Handle meeting notes updates

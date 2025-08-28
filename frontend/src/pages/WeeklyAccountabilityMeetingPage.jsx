@@ -558,19 +558,23 @@ const WeeklyAccountabilityMeetingPage = () => {
     }
   };
 
-  // Auto-start meeting on component mount
+  // Auto-start meeting timer only if leader
   useEffect(() => {
-    const now = Date.now();
-    setMeetingStartTime(now);
-    setMeetingStarted(true);
-    setElapsedTime(0);
-    
-    // Sync timer with other participants if leader
-    if (isLeader && syncTimer) {
-      syncTimer({
-        startTime: now,
-        isPaused: false
-      });
+    // Only start timer if we're the leader (first to join)
+    // Otherwise, timer will be synced from meeting-joined event
+    if (isLeader && !meetingStartTime) {
+      const now = Date.now();
+      setMeetingStartTime(now);
+      setMeetingStarted(true);
+      setElapsedTime(0);
+      
+      // Sync timer with other participants
+      if (syncTimer) {
+        syncTimer({
+          startTime: now,
+          isPaused: false
+        });
+      }
     }
     
     // Dispatch custom event to immediately update Layout
@@ -578,7 +582,7 @@ const WeeklyAccountabilityMeetingPage = () => {
     
     // Fetch today's todos for the conclude section
     fetchTodaysTodos();
-  }, []);
+  }, [isLeader, syncTimer]);
 
   // Fetch data based on active section
   useEffect(() => {
@@ -1404,7 +1408,7 @@ const WeeklyAccountabilityMeetingPage = () => {
       const { startTime, isPaused } = event.detail;
       console.log('⏱️ Received timer update:', event.detail);
       if (startTime) {
-        setMeetingStartTime(new Date(startTime));
+        setMeetingStartTime(startTime); // Keep as number (milliseconds)
         setMeetingStarted(!isPaused);
       }
     };
@@ -2108,6 +2112,14 @@ const WeeklyAccountabilityMeetingPage = () => {
                           status: completed ? 'complete' : 'incomplete' 
                         });
                         await fetchTodosData();
+                        
+                        // Broadcast todo status change to other meeting participants
+                        broadcastTodoUpdate({
+                          action: 'status',
+                          todoId,
+                          completed,
+                          status: completed ? 'complete' : 'incomplete'
+                        });
                       } catch (error) {
                         console.error('Failed to update todo:', error);
                       }
@@ -2117,6 +2129,12 @@ const WeeklyAccountabilityMeetingPage = () => {
                         await todosService.deleteTodo(todoId);
                         await fetchTodosData();
                         setSuccess('To-do deleted');
+                        
+                        // Broadcast todo deletion/archive to other meeting participants
+                        broadcastTodoUpdate({
+                          action: 'delete',
+                          todoId
+                        });
                       } catch (error) {
                         console.error('Failed to delete todo:', error);
                         setError('Failed to delete to-do');
