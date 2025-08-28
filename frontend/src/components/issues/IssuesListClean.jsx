@@ -91,6 +91,7 @@ const IssuesListClean = ({
   const [draggedIssue, setDraggedIssue] = useState(null);
   const [draggedIssueIndex, setDraggedIssueIndex] = useState(null);
   const [dragOverIssueIndex, setDragOverIssueIndex] = useState(null);
+  const [isDragging, setIsDragging] = useState(false);
 
   // Sort issues whenever issues prop or sort settings change
   useEffect(() => {
@@ -311,6 +312,7 @@ const IssuesListClean = ({
   const handleDragStart = (e, issue, index) => {
     setDraggedIssue(issue);
     setDraggedIssueIndex(index);
+    setIsDragging(true);
     e.dataTransfer.effectAllowed = 'move';
   };
 
@@ -318,6 +320,7 @@ const IssuesListClean = ({
     setDraggedIssue(null);
     setDraggedIssueIndex(null);
     setDragOverIssueIndex(null);
+    setIsDragging(false);
   };
 
   const handleDragOver = (e) => {
@@ -438,8 +441,8 @@ const IssuesListClean = ({
           }
         }}
         onClick={(e) => {
-          // Don't open modal if we're dragging or if drag is enabled and user is holding mouse down
-          if (!enableDragDrop || readOnly) {
+          // Only open modal if not currently dragging and not clicking on drag handle
+          if (!isDragging && !e.target.closest('.drag-handle')) {
             setSelectedIssue(issue);
           }
         }}
@@ -458,7 +461,7 @@ const IssuesListClean = ({
             <div className="flex items-center gap-2">
               {enableDragDrop && !readOnly && (
                 <div 
-                  className="cursor-move p-1 -m-1 hover:bg-gray-100 rounded"
+                  className="drag-handle cursor-move p-1 -m-1 hover:bg-gray-100 rounded"
                   onMouseDown={(e) => e.stopPropagation()}
                 >
                   <GripVertical className="h-4 w-4 text-gray-400" />
@@ -688,7 +691,8 @@ const IssuesListClean = ({
                             }
                           }}
                           onClick={(e) => {
-                            if (!enableDragDrop || readOnly) {
+                            // Only open modal if not currently dragging and not clicking on drag handle
+                            if (!isDragging && !e.target.closest('.drag-handle')) {
                               setSelectedIssue(issue);
                             }
                           }}
@@ -704,7 +708,7 @@ const IssuesListClean = ({
                 {/* Drag handle */}
                 {enableDragDrop && !readOnly && (
                   <div 
-                    className="cursor-move p-1 -m-1 hover:bg-gray-100 rounded flex-shrink-0"
+                    className="drag-handle cursor-move p-1 -m-1 hover:bg-gray-100 rounded flex-shrink-0"
                     onMouseDown={(e) => e.stopPropagation()}
                   >
                     <GripVertical className="h-4 w-4 text-gray-400" />
