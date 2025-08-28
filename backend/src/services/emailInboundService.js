@@ -1,5 +1,5 @@
 import pool from '../config/database.js';
-import { emailService } from './emailService.js';
+import sgMail from '@sendgrid/mail';
 import { v4 as uuidv4 } from 'uuid';
 
 class EmailInboundService {
@@ -313,7 +313,18 @@ class EmailInboundService {
     };
 
     try {
-      await emailService.sendEmail(emailData);
+      // Set API key
+      sgMail.setApiKey(process.env.SENDGRID_API_KEY);
+      
+      const msg = {
+        to: recipientEmail,
+        from: process.env.SENDGRID_FROM_EMAIL || 'noreply@axplatform.app',
+        subject: emailData.subject,
+        text: emailData.text,
+        html: emailData.html
+      };
+      
+      await sgMail.send(msg);
       console.log(`[EmailInbound] Confirmation email sent to ${recipientEmail}`);
     } catch (error) {
       console.error('[EmailInbound] Failed to send confirmation email:', error);
@@ -346,7 +357,18 @@ class EmailInboundService {
     };
 
     try {
-      await emailService.sendEmail(emailData);
+      // Set API key
+      sgMail.setApiKey(process.env.SENDGRID_API_KEY);
+      
+      const msg = {
+        to: recipientEmail,
+        from: process.env.SENDGRID_FROM_EMAIL || 'noreply@axplatform.app',
+        subject: emailData.subject,
+        text: emailData.text,
+        html: emailData.html
+      };
+      
+      await sgMail.send(msg);
       console.log(`[EmailInbound] Rejection email sent to ${recipientEmail}`);
     } catch (error) {
       console.error('[EmailInbound] Failed to send rejection email:', error);
