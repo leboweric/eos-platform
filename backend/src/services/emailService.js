@@ -203,6 +203,61 @@ const templates = {
     `
   }),
 
+  todoReminder: (data) => ({
+    subject: `To-Do Reminder - ${data.teamName} - ${data.organizationName}`,
+    html: `
+      <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+        <h2>📋 Weekly To-Do Reminder</h2>
+        <p>Hi Team,</p>
+        <p>Your next ${data.teamName} meeting is tomorrow. Here are your open to-dos:</p>
+        
+        ${data.openTodos && data.openTodos.length > 0 ? `
+          <div style="background-color: #fef3c7; padding: 20px; border-radius: 8px; margin: 20px 0; border-left: 4px solid #f59e0b;">
+            <h3 style="color: #92400e; margin-top: 0;">⚠️ Open To-Dos (${data.openTodos.length} items)</h3>
+            <ul style="color: #333; line-height: 2;">
+              ${data.openTodos.map(todo => `
+                <li style="margin-bottom: 8px;">
+                  <strong>${todo.title}</strong><br/>
+                  <span style="color: #666; font-size: 14px;">
+                    Assigned to: ${todo.assignee}
+                    ${todo.dueDate !== 'No due date' ? `<br/>Due: <span style="color: ${new Date(todo.dueDate) < new Date() ? '#dc2626' : '#059669'};">${todo.dueDate}</span>` : ''}
+                  </span>
+                </li>
+              `).join('')}
+            </ul>
+          </div>
+        ` : `
+          <div style="background-color: #d1fae5; padding: 20px; border-radius: 8px; margin: 20px 0;">
+            <p style="color: #065f46; margin: 0;">✅ Great job! All to-dos are complete.</p>
+          </div>
+        `}
+        
+        <p style="color: #666; margin-top: 30px;">
+          <em>This is your weekly reminder sent 6 days after your last meeting. Please review and update your to-dos before tomorrow's meeting.</em>
+        </p>
+        
+        <div style="text-align: center; margin: 30px 0;">
+          <a href="${data.meetingLink}" style="background-color: #4F46E5; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; display: inline-block;">
+            View All To-Dos
+          </a>
+        </div>
+      </div>
+    `,
+    text: `
+      Weekly To-Do Reminder
+      
+      Hi Team,
+      
+      Your next ${data.teamName} meeting is tomorrow. Here are your open to-dos:
+      
+      ${data.openTodos && data.openTodos.length > 0 ? `OPEN TO-DOS (${data.openTodos.length} items):\n${data.openTodos.map(t => `- ${t.title}\n  Assigned to: ${t.assignee}${t.dueDate !== 'No due date' ? `\n  Due: ${t.dueDate}` : ''}`).join('\n\n')}\n\n` : 'Great job! All to-dos are complete.\n\n'}
+      
+      This is your weekly reminder sent 6 days after your last meeting. Please review and update your to-dos before tomorrow's meeting.
+      
+      View all to-dos: ${data.meetingLink}
+    `
+  }),
+
   meetingSummary: (data) => ({
     subject: `${data.teamName} Meeting Summary - ${data.organizationName}`,
     html: `

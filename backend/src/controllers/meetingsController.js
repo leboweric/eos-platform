@@ -1,5 +1,6 @@
 import db from '../config/database.js';
 import emailService from '../services/emailService.js';
+import { recordMeetingConclusion } from '../services/todoReminderService.js';
 
 // Conclude a meeting and send summary email
 export const concludeMeeting = async (req, res) => {
@@ -317,6 +318,9 @@ export const concludeMeeting = async (req, res) => {
     } else {
       console.warn('No email addresses found for team members');
     }
+
+    // Record meeting conclusion for reminder scheduling
+    await recordMeetingConclusion(organizationId, teamId, meetingType);
 
     res.json({
       success: true,

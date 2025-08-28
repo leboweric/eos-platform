@@ -43,6 +43,7 @@ import exportRoutes from './routes/export.js';
 import dailyActiveUsersRoutes from './routes/dailyActiveUsers.js';
 import processDocumentationRoutes from './routes/processDocumentation.js';
 import healthRoutes from './routes/healthRoutes.js';
+import todoReminderRoutes from './routes/todoReminders.js';
 
 // Import middleware
 import { errorHandler } from './middleware/errorHandler.js';
@@ -237,6 +238,7 @@ app.use('/api/v1/terminology', terminologyRoutes);
 app.use('/api/v1', sharedMetricsRoutes);
 app.use('/api/v1', exportRoutes);
 app.use('/api/v1/daily-active-users', dailyActiveUsersRoutes);
+app.use('/api/v1/todo-reminders', todoReminderRoutes);
 
 // Error handling middleware
 app.use(notFound);

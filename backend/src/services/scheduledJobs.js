@@ -1,5 +1,6 @@
 import cron from 'node-cron';
 import { processDailyActiveUsersReport } from './dailyActiveUsersService.js';
+import { sendTodoReminders } from './todoReminderService.js';
 
 /**
  * Initialize all scheduled jobs
@@ -22,8 +23,24 @@ export const initializeScheduledJobs = () => {
     timezone: process.env.TZ || 'America/New_York' // Default to EST
   });
   
+  // Schedule todo reminders
+  // Runs every day at 9:00 AM to check for teams that need reminders
+  cron.schedule('0 9 * * *', async () => {
+    console.log('Running scheduled todo reminders check...');
+    try {
+      const result = await sendTodoReminders();
+      console.log('Todo reminders completed:', result);
+    } catch (error) {
+      console.error('Failed to send todo reminders:', error);
+    }
+  }, {
+    scheduled: true,
+    timezone: process.env.TZ || 'America/New_York' // Default to EST
+  });
+  
   console.log('Scheduled jobs initialized:');
   console.log('- Daily active users report: 8:00 AM daily');
+  console.log('- Todo reminders: 9:00 AM daily (sends to teams 6 days after meeting)');
   
   // Optional: Schedule a test run in development
   if (process.env.NODE_ENV === 'development') {
