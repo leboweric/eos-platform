@@ -102,7 +102,7 @@ class EmailInboundService {
         organizationId,
         teamId || '00000000-0000-0000-0000-000000000000',
         'email',
-        headers['message-id'] || null
+        headers?.['message-id'] || null
       ];
 
       const issueResult = await pool.query(issueQuery, issueValues);
