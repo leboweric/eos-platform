@@ -5,6 +5,7 @@ import { TeamProvider } from './contexts/TeamContext';
 import { DepartmentProvider } from './contexts/DepartmentContext';
 import { SelectedTodosProvider } from './contexts/SelectedTodosContext';
 import { TerminologyProvider } from './contexts/TerminologyContext';
+import { DarkModeProvider } from './contexts/DarkModeContext';
 import ForcedLegalAgreementModal from './components/legal/ForcedLegalAgreementModal';
 import { useApolloTracking } from './hooks/useApolloTracking';
 
@@ -132,11 +133,12 @@ function App() {
 
   return (
     <Router>
-      <TerminologyProvider>
-        <TeamProvider>
-          <DepartmentProvider>
-            <SelectedTodosProvider>
-              <div className="min-h-screen bg-background">
+      <DarkModeProvider>
+        <TerminologyProvider>
+          <TeamProvider>
+            <DepartmentProvider>
+              <SelectedTodosProvider>
+                <div className="min-h-screen bg-background dark:bg-dark-bg transition-colors">
                 {/* Forced Legal Agreement Modal for existing users */}
                 {user && needsLegalAcceptance && (
                   <ForcedLegalAgreementModal 
@@ -223,6 +225,7 @@ function App() {
           </DepartmentProvider>
         </TeamProvider>
       </TerminologyProvider>
+      </DarkModeProvider>
     </Router>
   );
 }
