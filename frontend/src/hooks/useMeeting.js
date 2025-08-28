@@ -19,6 +19,17 @@ const useMeeting = () => {
   const location = useLocation();
   const { user } = useAuthStore();
   const navigationLock = useRef(false);
+  const isFollowingRef = useRef(true);
+  const isLeaderRef = useRef(false);
+  
+  // Keep refs in sync with state
+  useEffect(() => {
+    isFollowingRef.current = isFollowing;
+  }, [isFollowing]);
+  
+  useEffect(() => {
+    isLeaderRef.current = isLeader;
+  }, [isLeader]);
 
   // Initialize socket connection
   useEffect(() => {
@@ -80,20 +91,28 @@ const useMeeting = () => {
 
     // Handle navigation updates from leader
     newSocket.on('navigation-update', (data) => {
-      console.log('📍 Navigation update:', data);
-      if (isFollowing && !navigationLock.current) {
+      console.log('📍 Navigation update received:', data);
+      console.log('📍 Current isFollowing state:', isFollowingRef.current);
+      console.log('📍 Current isLeader state:', isLeaderRef.current);
+      
+      // Only followers should respond to navigation updates
+      if (isFollowingRef.current && !isLeaderRef.current && !navigationLock.current) {
+        console.log('📍 Follower processing navigation update');
+        
         // Only navigate to a different route if needed
-        if (data.route !== location.pathname) {
+        if (data.route && data.route !== window.location.pathname) {
+          console.log('📍 Navigating to new route:', data.route);
           navigationLock.current = true;
           navigate(data.route);
         }
         
         // Handle section changes or scrolling
         setTimeout(() => {
-          if (data.scrollPosition) {
+          if (data.scrollPosition !== undefined) {
             window.scrollTo(0, data.scrollPosition);
           }
           if (data.section) {
+            console.log('📍 Triggering section change to:', data.section);
             // Try to trigger section change in the UI
             const sectionChangeEvent = new CustomEvent('meeting-section-change', { 
               detail: { section: data.section } 
@@ -107,6 +126,8 @@ const useMeeting = () => {
             }
           }
         }, 100);
+      } else {
+        console.log('📍 Ignoring navigation update (leader or not following)');
       }
     });
 

@@ -69,6 +69,14 @@ const WeeklyAccountabilityMeetingPage = () => {
   const { teamId } = useParams();
   const navigate = useNavigate();
   const { meetingCode, participants, joinMeeting, isConnected, isLeader, currentLeader, navigateToSection } = useMeeting();
+  
+  // Debug logging for participants
+  useEffect(() => {
+    console.log('📊 Participants updated:', participants);
+    console.log('📊 Number of participants:', participants.length);
+    console.log('📊 Is Leader:', isLeader);
+    console.log('📊 Current Leader:', currentLeader);
+  }, [participants, isLeader, currentLeader]);
   const { labels } = useTerminology();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
