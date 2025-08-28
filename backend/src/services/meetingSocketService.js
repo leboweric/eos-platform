@@ -50,11 +50,21 @@ class MeetingSocketService {
 
         // Create meeting if it doesn't exist
         if (!meetings.has(meetingCode)) {
+          // Determine initial route based on meeting type
+          let initialRoute = '/';
+          if (meetingCode.includes('-weekly-accountability')) {
+            const teamId = meetingCode.replace('-weekly-accountability', '');
+            initialRoute = `/meetings/weekly-accountability/${teamId}`;
+          } else if (meetingCode.includes('-quarterly-planning')) {
+            const teamId = meetingCode.replace('-quarterly-planning', '');
+            initialRoute = `/meetings/quarterly-planning/${teamId}`;
+          }
+          
           meetings.set(meetingCode, {
             code: meetingCode,
             leader: isLeader ? userId : null,
             participants: new Map(),
-            currentRoute: '/',
+            currentRoute: initialRoute,
             currentSection: null,
             scrollPosition: 0,
             createdAt: new Date()
