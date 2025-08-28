@@ -1,5 +1,6 @@
 import express from 'express';
 import multer from 'multer';
+import { simpleParser } from 'mailparser';
 import { emailInboundService } from '../services/emailInboundService.js';
 import { authenticateWebhook } from '../middleware/webhookAuth.js';
 
@@ -138,27 +139,58 @@ router.post('/inbound-email', upload.any(), async (req, res) => {
     console.log('[EmailInbound] Received webhook from SendGrid');
     console.log('[EmailInbound] Headers:', req.headers);
     console.log('[EmailInbound] Body fields:', Object.keys(req.body));
-    console.log('[EmailInbound] Files received:', req.files ? req.files.length : 0);
-    if (req.files && req.files.length > 0) {
-      req.files.forEach(file => {
-        console.log(`[EmailInbound] Attachment: ${file.originalname || file.fieldname} (${file.size} bytes)`);
-      });
-    }
+    console.log('[EmailInbound] Files received from multipart:', req.files ? req.files.length : 0);
     
     // Parse the email data from SendGrid
-    // SendGrid sends the raw email in the 'email' field when configured for raw MIME
     const rawEmail = req.body.email || '';
-    const cleanText = extractCleanText(rawEmail);
+    let cleanText = '';
+    let parsedAttachments = [];
+    
+    // If we have raw MIME email, parse it for attachments
+    if (rawEmail && rawEmail.includes('Content-Type:')) {
+      try {
+        console.log('[EmailInbound] Parsing MIME message for attachments...');
+        const parsed = await simpleParser(rawEmail);
+        
+        // Extract clean text
+        cleanText = parsed.text || parsed.html?.replace(/<[^>]*>/g, '') || '';
+        cleanText = filterSignature(cleanText);
+        
+        // Extract attachments from MIME
+        if (parsed.attachments && parsed.attachments.length > 0) {
+          console.log(`[EmailInbound] Found ${parsed.attachments.length} attachments in MIME`);
+          parsedAttachments = parsed.attachments.map(att => ({
+            originalname: att.filename || 'unnamed',
+            buffer: att.content,
+            size: att.size,
+            mimetype: att.contentType || 'application/octet-stream'
+          }));
+          
+          parsedAttachments.forEach(att => {
+            console.log(`[EmailInbound] MIME Attachment: ${att.originalname} (${att.size} bytes)`);
+          });
+        }
+      } catch (parseError) {
+        console.error('[EmailInbound] Failed to parse MIME:', parseError.message);
+        cleanText = extractCleanText(rawEmail); // Fallback to old method
+      }
+    } else {
+      cleanText = extractCleanText(rawEmail);
+    }
+    
+    // Combine multipart files (if any) with MIME attachments
+    const allAttachments = [...(req.files || []), ...parsedAttachments];
+    console.log(`[EmailInbound] Total attachments to process: ${allAttachments.length}`);
     
     const emailData = {
       to: req.body.to,
       from: req.body.from,
       subject: req.body.subject || 'No Subject',
-      text: req.body.text || cleanText || '',  // Use extracted clean text
+      text: req.body.text || cleanText || '',
       html: req.body.html || '',
       headers: req.body.headers,
       envelope: req.body.envelope ? JSON.parse(req.body.envelope) : {},
-      attachments: req.files || [],
+      attachments: allAttachments,
       attachmentInfo: req.body['attachment-info'] ? JSON.parse(req.body['attachment-info']) : {}
     };
 

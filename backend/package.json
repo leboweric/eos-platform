@@ -41,6 +41,7 @@
     "helmet": "^8.0.0",
     "isomorphic-fetch": "^3.0.0",
     "jsonwebtoken": "^9.0.2",
+    "mailparser": "^3.7.4",
     "morgan": "^1.10.0",
     "multer": "^2.0.2",
     "node-cron": "^4.2.1",
