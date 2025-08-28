@@ -9,7 +9,11 @@ const router = express.Router();
 // Multer configuration for handling form-data from SendGrid
 const upload = multer({ 
   storage: multer.memoryStorage(),
-  limits: { fileSize: 10 * 1024 * 1024 } // 10MB limit for attachments
+  limits: { 
+    fileSize: 25 * 1024 * 1024,     // 25MB limit for attachments
+    fieldSize: 25 * 1024 * 1024,    // 25MB limit for field values (handles large email content)
+    fields: 50                       // Max number of fields
+  }
 });
 
 /**
