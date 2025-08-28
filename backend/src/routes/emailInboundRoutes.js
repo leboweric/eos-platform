@@ -28,13 +28,53 @@ function extractCleanText(rawEmail) {
               .replace(/=\r?\n/g, '') // Remove soft line breaks
               .replace(/=([0-9A-F]{2})/gi, (match, hex) => String.fromCharCode(parseInt(hex, 16)));
     
-    // Remove email signature boundaries and everything after
-    const signatureIndex = text.search(/^--_/m);
-    if (signatureIndex > 0) {
-      text = text.substring(0, signatureIndex);
+    // Remove various signature patterns
+    const signaturePatterns = [
+      /^--_/m,  // Email boundaries
+      /\[cid:.*?\]/gi,  // Inline image references
+      /\[.*Material Handling.*\]/i,  // Company logos/names in brackets
+      /^(Regards|Best|Thanks|Sincerely|Sent from|Get Outlook)/im,  // Common signature starters
+      /^-{2,}/m,  // Signature separator lines (-- or more)
+      /^_{2,}/m,  // Underscore separators
+      /^From:\s/im,  // Forwarded message headers
+      /^Sent:\s/im,
+      /^To:\s/im,
+      /^Subject:\s/im
+    ];
+    
+    // Find the earliest signature indicator
+    let earliestIndex = text.length;
+    for (const pattern of signaturePatterns) {
+      const match = text.search(pattern);
+      if (match >= 0 && match < earliestIndex) {
+        earliestIndex = match;
+      }
     }
     
-    return text.trim();
+    // Also check for lines that look like contact info (email, phone, web)
+    const contactInfoIndex = text.search(/^.*(Direct:|Main:|Phone:|Cell:|Mobile:|Email:|Web:|Website:|Fax:)/im);
+    if (contactInfoIndex >= 0 && contactInfoIndex < earliestIndex) {
+      // Look for the start of that line to cut from there
+      const lineStart = text.lastIndexOf('\n', contactInfoIndex);
+      if (lineStart >= 0) {
+        earliestIndex = lineStart;
+      } else {
+        earliestIndex = contactInfoIndex;
+      }
+    }
+    
+    // Cut the text at the earliest signature indicator
+    if (earliestIndex < text.length) {
+      text = text.substring(0, earliestIndex);
+    }
+    
+    // Clean up any remaining artifacts
+    text = text.replace(/\[cid:.*?\]/gi, '') // Remove any inline image references
+               .replace(/\r\n/g, '\n') // Normalize line endings
+               .replace(/\n{3,}/g, '\n\n') // Collapse multiple blank lines
+               .trim();
+    
+    return text;
   }
   
   // If no plain text section, return the raw email (fallback)
