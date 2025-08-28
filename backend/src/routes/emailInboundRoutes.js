@@ -12,6 +12,36 @@ const upload = multer({
 });
 
 /**
+ * Extract clean text from raw email content
+ * Handles multipart MIME messages and quoted-printable encoding
+ */
+function extractCleanText(rawEmail) {
+  if (!rawEmail) return '';
+  
+  // First, try to extract plain text section from multipart email
+  const textMatch = rawEmail.match(/Content-Type: text\/plain[^]*?\r?\n\r?\n([^]*?)(?=--_|\r?\n--_|$)/i);
+  if (textMatch && textMatch[1]) {
+    let text = textMatch[1];
+    
+    // Decode quoted-printable encoding
+    text = text.replace(/=3D/g, '=')
+              .replace(/=\r?\n/g, '') // Remove soft line breaks
+              .replace(/=([0-9A-F]{2})/gi, (match, hex) => String.fromCharCode(parseInt(hex, 16)));
+    
+    // Remove email signature boundaries and everything after
+    const signatureIndex = text.search(/^--_/m);
+    if (signatureIndex > 0) {
+      text = text.substring(0, signatureIndex);
+    }
+    
+    return text.trim();
+  }
+  
+  // If no plain text section, return the raw email (fallback)
+  return rawEmail.substring(0, 1000); // Limit to first 1000 chars as fallback
+}
+
+/**
  * SendGrid Inbound Parse Webhook
  * Receives emails sent to issues@axplatform.app or org-specific addresses
  * 
@@ -34,11 +64,15 @@ router.post('/inbound-email', upload.any(), async (req, res) => {
     console.log('[EmailInbound] Body fields:', Object.keys(req.body));
     
     // Parse the email data from SendGrid
+    // SendGrid sends the raw email in the 'email' field when configured for raw MIME
+    const rawEmail = req.body.email || '';
+    const cleanText = extractCleanText(rawEmail);
+    
     const emailData = {
       to: req.body.to,
       from: req.body.from,
       subject: req.body.subject || 'No Subject',
-      text: req.body.text || req.body.email || '',  // SendGrid sometimes sends as 'email' field
+      text: req.body.text || cleanText || '',  // Use extracted clean text
       html: req.body.html || '',
       headers: req.body.headers,
       envelope: req.body.envelope ? JSON.parse(req.body.envelope) : {},
@@ -57,6 +91,7 @@ router.post('/inbound-email', upload.any(), async (req, res) => {
     console.log(`[EmailInbound] Processing email from ${senderEmail} to ${recipientEmail}`);
     console.log(`[EmailInbound] Subject: ${emailData.subject}`);
     console.log(`[EmailInbound] Body text length: ${emailData.text.length}`);
+    console.log(`[EmailInbound] Clean text preview: ${emailData.text.substring(0, 100)}...`);
     
     // Process the email and create an issue
     const result = await emailInboundService.processInboundEmail({
