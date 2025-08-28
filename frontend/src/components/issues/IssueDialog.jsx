@@ -27,7 +27,8 @@ import {
   Users,
   ListTodo,
   Send,
-  MessageSquare
+  MessageSquare,
+  Plus
 } from 'lucide-react';
 import { issuesService } from '../../services/issuesService';
 
@@ -55,6 +56,13 @@ const IssueDialog = ({
   const [uploadingFiles, setUploadingFiles] = useState(false);
   const [error, setError] = useState(null);
   const [isDragging, setIsDragging] = useState(false);
+  
+  // Updates state
+  const [updates, setUpdates] = useState([]);
+  const [updateText, setUpdateText] = useState('');
+  const [loadingUpdates, setLoadingUpdates] = useState(false);
+  const [savingUpdate, setSavingUpdate] = useState(false);
+  const [showAddUpdate, setShowAddUpdate] = useState(false);
 
   useEffect(() => {
     if (issue) {
@@ -65,8 +73,9 @@ const IssueDialog = ({
         ownerName: issue.owner_name || '',
         status: issue.status || 'open'
       });
-      // Load existing attachments if editing
+      // Load existing attachments and updates if editing
       fetchAttachments(issue.id);
+      fetchUpdates(issue.id);
     } else {
       setFormData({
         title: '',
@@ -76,8 +85,11 @@ const IssueDialog = ({
         status: 'open'
       });
       setExistingAttachments([]);
+      setUpdates([]);
     }
     setNewAttachments([]);
+    setUpdateText('');
+    setShowAddUpdate(false);
   }, [issue]);
 
   // Clear form when dialog opens without an issue
@@ -92,6 +104,9 @@ const IssueDialog = ({
       });
       setNewAttachments([]);
       setExistingAttachments([]);
+      setUpdates([]);
+      setUpdateText('');
+      setShowAddUpdate(false);
       setError(null);
     }
   }, [open, issue]);
@@ -102,6 +117,47 @@ const IssueDialog = ({
       setExistingAttachments(attachments);
     } catch (error) {
       console.error('Failed to fetch attachments:', error);
+    }
+  };
+
+  const fetchUpdates = async (issueId) => {
+    try {
+      setLoadingUpdates(true);
+      const response = await issuesService.getIssueUpdates(issueId);
+      setUpdates(response.data || []);
+    } catch (error) {
+      console.error('Failed to fetch updates:', error);
+      setUpdates([]);
+    } finally {
+      setLoadingUpdates(false);
+    }
+  };
+
+  const handleAddUpdate = async () => {
+    if (!updateText.trim() || !issue?.id) return;
+    
+    try {
+      setSavingUpdate(true);
+      const response = await issuesService.addIssueUpdate(issue.id, updateText);
+      setUpdates([response.data, ...updates]);
+      setUpdateText('');
+      setShowAddUpdate(false);
+    } catch (error) {
+      console.error('Failed to add update:', error);
+      setError('Failed to add update');
+    } finally {
+      setSavingUpdate(false);
+    }
+  };
+
+  const handleDeleteUpdate = async (updateId) => {
+    if (!confirm('Are you sure you want to delete this update?')) return;
+    
+    try {
+      await issuesService.deleteIssueUpdate(issue.id, updateId);
+      setUpdates(updates.filter(u => u.id !== updateId));
+    } catch (error) {
+      console.error('Failed to delete update:', error);
     }
   };
 
@@ -411,6 +467,102 @@ const IssueDialog = ({
                 <p className="text-xs text-slate-500">Max file size: 10MB</p>
               </div>
             </div>
+            {/* Updates Section - only show for existing issues */}
+            {issue && (
+              <div className="grid gap-3">
+                <div className="flex items-center justify-between">
+                  <Label className="text-sm font-semibold text-slate-700 flex items-center gap-2">
+                    <MessageSquare className="h-4 w-4" />
+                    Updates ({updates.length})
+                  </Label>
+                  {!showAddUpdate && (
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setShowAddUpdate(true)}
+                      className="text-xs"
+                    >
+                      <Plus className="h-3 w-3 mr-1" />
+                      Add Update
+                    </Button>
+                  )}
+                </div>
+
+                {/* Add Update Form */}
+                {showAddUpdate && (
+                  <div className="space-y-2">
+                    <Textarea
+                      value={updateText}
+                      onChange={(e) => setUpdateText(e.target.value)}
+                      placeholder="Add an update..."
+                      rows={3}
+                      className="bg-white/80 backdrop-blur-sm border-white/20 focus:border-red-400 rounded-xl shadow-sm"
+                    />
+                    <div className="flex gap-2">
+                      <Button
+                        type="button"
+                        size="sm"
+                        onClick={handleAddUpdate}
+                        disabled={!updateText.trim() || savingUpdate}
+                        className="bg-gradient-to-r from-red-600 to-orange-600 hover:from-red-700 hover:to-orange-700 text-white"
+                      >
+                        {savingUpdate ? (
+                          <>
+                            <Loader2 className="mr-1 h-3 w-3 animate-spin" />
+                            Saving...
+                          </>
+                        ) : (
+                          'Add Update'
+                        )}
+                      </Button>
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        onClick={() => {
+                          setShowAddUpdate(false);
+                          setUpdateText('');
+                        }}
+                      >
+                        Cancel
+                      </Button>
+                    </div>
+                  </div>
+                )}
+
+                {/* Updates List */}
+                {loadingUpdates ? (
+                  <div className="text-sm text-slate-500">Loading updates...</div>
+                ) : updates.length > 0 ? (
+                  <div className="space-y-2 max-h-32 overflow-y-auto">
+                    {updates.map(update => (
+                      <div key={update.id} className="group bg-slate-50/80 backdrop-blur-sm rounded-lg p-3">
+                        <div className="flex items-start justify-between">
+                          <div className="flex-1">
+                            <p className="text-sm text-slate-700 whitespace-pre-wrap">{update.update_text}</p>
+                            <p className="text-xs text-slate-500 mt-1">
+                              {update.created_by_name} • {new Date(update.created_at).toLocaleDateString()}
+                            </p>
+                          </div>
+                          <Button
+                            type="button"
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => handleDeleteUpdate(update.id)}
+                            className="opacity-0 group-hover:opacity-100 transition-opacity h-6 w-6 p-0"
+                          >
+                            <Trash2 className="h-3 w-3 text-red-500" />
+                          </Button>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                ) : !showAddUpdate && (
+                  <p className="text-sm text-slate-500 text-center py-2">No updates yet</p>
+                )}
+              </div>
+            )}
           </div>
 
           {/* Action Buttons for existing issues */}
