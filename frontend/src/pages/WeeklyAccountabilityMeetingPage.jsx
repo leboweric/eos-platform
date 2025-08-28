@@ -252,22 +252,44 @@ const WeeklyAccountabilityMeetingPage = () => {
 
   // Join meeting when page loads
   const hasJoinedRef = useRef(false);
+  const hasCheckedMeetingsRef = useRef(false);
+  
   useEffect(() => {
-    if (teamId && isConnected && joinMeeting && !meetingCode && activeMeetings && !hasJoinedRef.current) {
+    if (teamId && isConnected && joinMeeting && !meetingCode && !hasJoinedRef.current) {
       const meetingRoom = `${teamId}-weekly-accountability`;
-      // Check if there's already an active meeting with a leader
-      const existingMeeting = activeMeetings[meetingRoom];
-      const hasParticipants = existingMeeting?.participantCount > 0;
       
-      console.log('🎬 Auto-joining meeting on page load:', meetingRoom);
-      console.log('🎬 Active meetings:', activeMeetings);
-      console.log('🎬 Existing meeting found:', hasParticipants ? 'Yes, joining as participant' : 'No, joining as leader');
-      
-      // Mark as joined to prevent double-joining
-      hasJoinedRef.current = true;
-      
-      // Join as participant if meeting already has participants, otherwise as leader
-      joinMeeting(meetingRoom, !hasParticipants);
+      // Wait a bit for active meetings to load if we haven't checked yet
+      if (!hasCheckedMeetingsRef.current && (!activeMeetings || Object.keys(activeMeetings).length === 0)) {
+        console.log('🎬 Waiting for active meetings to load...');
+        hasCheckedMeetingsRef.current = true;
+        // Wait 500ms for active meetings to populate
+        setTimeout(() => {
+          if (!hasJoinedRef.current && !meetingCode) {
+            const existingMeeting = activeMeetings?.[meetingRoom];
+            const hasParticipants = existingMeeting?.participantCount > 0;
+            
+            console.log('🎬 Auto-joining meeting after delay:', meetingRoom);
+            console.log('🎬 Active meetings:', activeMeetings);
+            console.log('🎬 Existing meeting:', existingMeeting);
+            console.log('🎬 Existing meeting found:', hasParticipants ? 'Yes, joining as participant' : 'No, joining as leader');
+            
+            hasJoinedRef.current = true;
+            joinMeeting(meetingRoom, !hasParticipants);
+          }
+        }, 500);
+      } else if (activeMeetings && Object.keys(activeMeetings).length > 0) {
+        // Active meetings loaded, check immediately
+        const existingMeeting = activeMeetings[meetingRoom];
+        const hasParticipants = existingMeeting?.participantCount > 0;
+        
+        console.log('🎬 Auto-joining meeting on page load:', meetingRoom);
+        console.log('🎬 Active meetings:', activeMeetings);
+        console.log('🎬 Existing meeting:', existingMeeting);
+        console.log('🎬 Existing meeting found:', hasParticipants ? 'Yes, joining as participant' : 'No, joining as leader');
+        
+        hasJoinedRef.current = true;
+        joinMeeting(meetingRoom, !hasParticipants);
+      }
     }
   }, [teamId, isConnected, joinMeeting, meetingCode, activeMeetings]);
 
