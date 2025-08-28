@@ -35,7 +35,7 @@ const MeetingsPage = () => {
   const { user } = useAuthStore();
   const { selectedDepartment } = useDepartment();
   const { labels } = useTerminology();
-  const { joinMeeting, activeMeetings } = useMeeting();
+  const { joinMeeting, activeMeetings, isConnected, isEnabled } = useMeeting();
   const [teams, setTeams] = useState([]);
   const [selectedTeamId, setSelectedTeamId] = useState(null);
   const [loadingTeams, setLoadingTeams] = useState(true);
@@ -232,6 +232,7 @@ const MeetingsPage = () => {
             <div className="flex items-start gap-4">
               {(() => {
                 // Check if any meetings are in progress for this team
+                console.log('Socket connection status:', { isEnabled, isConnected });
                 console.log('Active meetings:', activeMeetings);
                 console.log('Active meetings entries:', Object.entries(activeMeetings || {}));
                 console.log('Selected team ID:', selectedTeamId);

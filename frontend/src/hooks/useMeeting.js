@@ -108,7 +108,9 @@ const useMeeting = () => {
 
     // Handle active meetings update (list of all meetings with participants)
     newSocket.on('active-meetings-update', (data) => {
-      console.log('📊 Active meetings update:', data.meetings);
+      console.log('📊 Active meetings update received:', data);
+      console.log('📊 Meetings data:', data.meetings);
+      console.log('📊 Number of active meetings:', Object.keys(data.meetings || {}).length);
       setActiveMeetings(data.meetings || {});
     });
 
