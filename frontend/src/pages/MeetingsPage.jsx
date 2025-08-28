@@ -233,6 +233,8 @@ const MeetingsPage = () => {
               {(() => {
                 // Check if any meetings are in progress for this team
                 console.log('Socket connection status:', { isEnabled, isConnected });
+                if (!isEnabled) console.warn('⚠️ Meetings are disabled! Set VITE_ENABLE_MEETINGS=true');
+                if (!isConnected) console.warn('⚠️ Socket not connected!');
                 console.log('Active meetings:', activeMeetings);
                 console.log('Active meetings entries:', Object.entries(activeMeetings || {}));
                 console.log('Selected team ID:', selectedTeamId);
