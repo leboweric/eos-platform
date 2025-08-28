@@ -94,8 +94,8 @@ const IssuesListClean = ({
 
   // Sort issues whenever issues prop or sort settings change
   useEffect(() => {
-    // If drag-drop is enabled, preserve the original order (priority_rank)
-    if (enableDragDrop) {
+    // If drag-drop is enabled AND no sort field is selected, preserve the original order (priority_rank)
+    if (enableDragDrop && !sortField) {
       const sorted = [...(issues || [])].sort((a, b) => {
         // Sort by priority_rank if it exists, otherwise by id
         if (a.priority_rank !== undefined && b.priority_rank !== undefined) {
@@ -345,6 +345,12 @@ const IssuesListClean = ({
       return;
     }
 
+    // If there's a sort applied, clear it to preserve manual order
+    if (sortField) {
+      setSortField(null);
+      setSortDirection('asc');
+    }
+
     // Create new order array
     const newOrder = [...sortedIssues];
     const [movedIssue] = newOrder.splice(draggedIssueIndex, 1);
@@ -532,17 +538,23 @@ const IssuesListClean = ({
 
   return (
     <>
-      {/* Enhanced Sorting header or Drag-and-drop indicator */}
+      {/* Enhanced Sorting header with drag-and-drop indicator */}
       <div className="mb-4 p-4 bg-white/80 backdrop-blur-sm rounded-xl border border-white/20 shadow-sm">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-1">
-          {enableDragDrop ? (
-            <div className="flex items-center gap-2">
+          {enableDragDrop && !sortField && (
+            <div className="flex items-center gap-2 mr-4">
               <GripVertical className="h-4 w-4 text-gray-400" />
-              <span className="text-xs font-medium text-gray-600">Drag and drop to reorder issues</span>
+              <span className="text-xs font-medium text-gray-600">Drag to reorder</span>
+              <span className="text-xs text-gray-400 mx-2">|</span>
             </div>
-          ) : (
-            <>
+          )}
+          {sortField && enableDragDrop && (
+            <div className="flex items-center gap-2 mr-4">
+              <span className="text-xs font-medium text-yellow-600">⚠️ Sorting overrides manual order</span>
+              <span className="text-xs text-gray-400 mx-2">|</span>
+            </div>
+          )}
           <span className="text-xs font-medium text-gray-600 mr-2">Sort by:</span>
           <Button
             variant="ghost"
@@ -588,8 +600,6 @@ const IssuesListClean = ({
             >
               ✕ Clear
             </Button>
-          )}
-          </>
           )}
           </div>
           
