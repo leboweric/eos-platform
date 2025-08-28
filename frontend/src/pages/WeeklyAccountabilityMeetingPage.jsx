@@ -1380,15 +1380,18 @@ const WeeklyAccountabilityMeetingPage = () => {
     };
     
     const handleTodoUpdate = (event) => {
-      const { action, todoId, todo, status } = event.detail;
+      const { action, todoId, todo, status, completed } = event.detail;
       console.log('✅ Received todo update:', event.detail);
       
       if (action === 'create') {
         setTodos(prev => [...prev, todo]);
       } else if (action === 'update') {
         setTodos(prev => prev.map(t => t.id === todoId ? { ...t, ...todo } : t));
-      } else if (action === 'complete') {
-        setTodos(prev => prev.map(t => t.id === todoId ? { ...t, status } : t));
+      } else if (action === 'status') {
+        // Handle status changes (checking/unchecking)
+        setTodos(prev => prev.map(t => 
+          t.id === todoId ? { ...t, status, completed } : t
+        ));
       } else if (action === 'delete') {
         setTodos(prev => prev.filter(t => t.id !== todoId));
       } else if (action === 'refresh') {
