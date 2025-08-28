@@ -38,7 +38,7 @@ router.post('/inbound-email', upload.any(), async (req, res) => {
       to: req.body.to,
       from: req.body.from,
       subject: req.body.subject || 'No Subject',
-      text: req.body.text || '',
+      text: req.body.text || req.body.email || '',  // SendGrid sometimes sends as 'email' field
       html: req.body.html || '',
       headers: req.body.headers,
       envelope: req.body.envelope ? JSON.parse(req.body.envelope) : {},
@@ -56,6 +56,7 @@ router.post('/inbound-email', upload.any(), async (req, res) => {
     
     console.log(`[EmailInbound] Processing email from ${senderEmail} to ${recipientEmail}`);
     console.log(`[EmailInbound] Subject: ${emailData.subject}`);
+    console.log(`[EmailInbound] Body text length: ${emailData.text.length}`);
     
     // Process the email and create an issue
     const result = await emailInboundService.processInboundEmail({

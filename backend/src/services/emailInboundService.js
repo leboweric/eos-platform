@@ -9,7 +9,7 @@ class EmailInboundService {
     try {
       // 1. Verify sender is an authorized user
       const userResult = await pool.query(
-        'SELECT id, name, organization_id, team_id FROM users WHERE email = $1 AND deleted_at IS NULL',
+        'SELECT id, first_name, last_name, organization_id, team_id FROM users WHERE email = $1 AND deleted_at IS NULL',
         [senderEmail]
       );
 
@@ -24,7 +24,8 @@ class EmailInboundService {
       }
 
       const user = userResult.rows[0];
-      console.log(`[EmailInbound] Found user: ${user.name} (${user.id})`);
+      const userName = `${user.first_name} ${user.last_name}`.trim();
+      console.log(`[EmailInbound] Found user: ${userName} (${user.id})`);
 
       // 2. Determine organization and team from recipient email
       // Format options: 
@@ -114,7 +115,7 @@ class EmailInboundService {
       }
 
       // 6. Send confirmation email
-      await this.sendConfirmationEmail(senderEmail, issue, user.name);
+      await this.sendConfirmationEmail(senderEmail, issue, userName);
 
       return {
         success: true,
