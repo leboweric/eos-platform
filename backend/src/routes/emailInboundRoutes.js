@@ -12,69 +12,105 @@ const upload = multer({
 });
 
 /**
+ * Filter out email signatures from text
+ */
+function filterSignature(text) {
+  if (!text) return '';
+  
+  // Remove various signature patterns
+  const signaturePatterns = [
+    /^--_/m,  // Email boundaries
+    /\[cid:.*?\]/gi,  // Inline image references
+    /\[.*Material Handling.*\]/i,  // Company logos/names in brackets
+    /^(Regards|Best|Thanks|Sincerely|Sent from|Get Outlook)/im,  // Common signature starters
+    /^-{2,}/m,  // Signature separator lines (-- or more)
+    /^_{2,}/m,  // Underscore separators
+    /^From:\s/im,  // Forwarded message headers
+    /^Sent:\s/im,
+    /^To:\s/im,
+    /^Subject:\s/im
+  ];
+  
+  // Find the earliest signature indicator
+  let earliestIndex = text.length;
+  for (const pattern of signaturePatterns) {
+    const match = text.search(pattern);
+    if (match >= 0 && match < earliestIndex) {
+      earliestIndex = match;
+    }
+  }
+  
+  // Also check for lines that look like contact info
+  const contactInfoIndex = text.search(/^.*(Direct:|Main:|Phone:|Cell:|Mobile:|Email:|Web:|Website:|Fax:|Chief|Officer|Manager|Director)/im);
+  if (contactInfoIndex >= 0 && contactInfoIndex < earliestIndex) {
+    const lineStart = text.lastIndexOf('\n', contactInfoIndex);
+    if (lineStart >= 0) {
+      earliestIndex = lineStart;
+    } else {
+      earliestIndex = contactInfoIndex;
+    }
+  }
+  
+  // Cut the text at the earliest signature indicator
+  if (earliestIndex < text.length) {
+    text = text.substring(0, earliestIndex);
+  }
+  
+  // Clean up any remaining artifacts
+  text = text.replace(/\[cid:.*?\]/gi, '') // Remove any inline image references
+             .replace(/\r\n/g, '\n') // Normalize line endings
+             .replace(/\n{3,}/g, '\n\n') // Collapse multiple blank lines
+             .trim();
+  
+  // If the result is empty or just whitespace, return a default message
+  if (!text || text.length === 0) {
+    return '[No text content - see attachments]';
+  }
+  
+  return text;
+}
+
+/**
  * Extract clean text from raw email content
- * Handles multipart MIME messages and quoted-printable encoding
+ * Handles multipart MIME messages, quoted-printable, and base64 encoding
  */
 function extractCleanText(rawEmail) {
   if (!rawEmail) return '';
+  
+  // Check if the entire content is base64 encoded (no MIME structure)
+  if (!rawEmail.includes('Content-Type:') && /^[A-Za-z0-9+/\r\n]+=*$/m.test(rawEmail)) {
+    try {
+      // Decode base64
+      const decoded = Buffer.from(rawEmail.replace(/[\r\n]/g, ''), 'base64').toString('utf-8');
+      // Apply signature filtering to decoded content
+      return filterSignature(decoded);
+    } catch (e) {
+      console.log('[EmailInbound] Failed to decode base64:', e.message);
+    }
+  }
   
   // First, try to extract plain text section from multipart email
   const textMatch = rawEmail.match(/Content-Type: text\/plain[^]*?\r?\n\r?\n([^]*?)(?=--_|\r?\n--_|$)/i);
   if (textMatch && textMatch[1]) {
     let text = textMatch[1];
     
+    // Check if this section is base64 encoded
+    const transferEncodingMatch = rawEmail.match(/Content-Transfer-Encoding:\s*base64[^]*?\r?\n\r?\n([^]*?)(?=--_|\r?\n--_|$)/i);
+    if (transferEncodingMatch) {
+      try {
+        text = Buffer.from(text.replace(/[\r\n]/g, ''), 'base64').toString('utf-8');
+      } catch (e) {
+        console.log('[EmailInbound] Failed to decode base64 section:', e.message);
+      }
+    }
+    
     // Decode quoted-printable encoding
     text = text.replace(/=3D/g, '=')
               .replace(/=\r?\n/g, '') // Remove soft line breaks
               .replace(/=([0-9A-F]{2})/gi, (match, hex) => String.fromCharCode(parseInt(hex, 16)));
     
-    // Remove various signature patterns
-    const signaturePatterns = [
-      /^--_/m,  // Email boundaries
-      /\[cid:.*?\]/gi,  // Inline image references
-      /\[.*Material Handling.*\]/i,  // Company logos/names in brackets
-      /^(Regards|Best|Thanks|Sincerely|Sent from|Get Outlook)/im,  // Common signature starters
-      /^-{2,}/m,  // Signature separator lines (-- or more)
-      /^_{2,}/m,  // Underscore separators
-      /^From:\s/im,  // Forwarded message headers
-      /^Sent:\s/im,
-      /^To:\s/im,
-      /^Subject:\s/im
-    ];
-    
-    // Find the earliest signature indicator
-    let earliestIndex = text.length;
-    for (const pattern of signaturePatterns) {
-      const match = text.search(pattern);
-      if (match >= 0 && match < earliestIndex) {
-        earliestIndex = match;
-      }
-    }
-    
-    // Also check for lines that look like contact info (email, phone, web)
-    const contactInfoIndex = text.search(/^.*(Direct:|Main:|Phone:|Cell:|Mobile:|Email:|Web:|Website:|Fax:)/im);
-    if (contactInfoIndex >= 0 && contactInfoIndex < earliestIndex) {
-      // Look for the start of that line to cut from there
-      const lineStart = text.lastIndexOf('\n', contactInfoIndex);
-      if (lineStart >= 0) {
-        earliestIndex = lineStart;
-      } else {
-        earliestIndex = contactInfoIndex;
-      }
-    }
-    
-    // Cut the text at the earliest signature indicator
-    if (earliestIndex < text.length) {
-      text = text.substring(0, earliestIndex);
-    }
-    
-    // Clean up any remaining artifacts
-    text = text.replace(/\[cid:.*?\]/gi, '') // Remove any inline image references
-               .replace(/\r\n/g, '\n') // Normalize line endings
-               .replace(/\n{3,}/g, '\n\n') // Collapse multiple blank lines
-               .trim();
-    
-    return text;
+    // Apply signature filtering
+    return filterSignature(text);
   }
   
   // If no plain text section, return the raw email (fallback)
@@ -102,6 +138,12 @@ router.post('/inbound-email', upload.any(), async (req, res) => {
     console.log('[EmailInbound] Received webhook from SendGrid');
     console.log('[EmailInbound] Headers:', req.headers);
     console.log('[EmailInbound] Body fields:', Object.keys(req.body));
+    console.log('[EmailInbound] Files received:', req.files ? req.files.length : 0);
+    if (req.files && req.files.length > 0) {
+      req.files.forEach(file => {
+        console.log(`[EmailInbound] Attachment: ${file.originalname || file.fieldname} (${file.size} bytes)`);
+      });
+    }
     
     // Parse the email data from SendGrid
     // SendGrid sends the raw email in the 'email' field when configured for raw MIME
