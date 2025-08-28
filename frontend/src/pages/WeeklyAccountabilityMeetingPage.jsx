@@ -840,7 +840,7 @@ const WeeklyAccountabilityMeetingPage = () => {
           broadcastTodoUpdate({
             action: 'update',
             todoId: editingTodo.id,
-            todo: savedTodo
+            todo: savedTodo.data || savedTodo
           });
         }
       } else {
@@ -855,7 +855,7 @@ const WeeklyAccountabilityMeetingPage = () => {
         if (meetingCode && broadcastTodoUpdate) {
           broadcastTodoUpdate({
             action: 'create',
-            todo: savedTodo
+            todo: savedTodo.data || savedTodo
           });
         }
       }
@@ -1386,7 +1386,8 @@ const WeeklyAccountabilityMeetingPage = () => {
       if (action === 'create') {
         setTodos(prev => [...prev, todo]);
       } else if (action === 'update') {
-        setTodos(prev => prev.map(t => t.id === todoId ? { ...t, ...todo } : t));
+        // Handle todo edits - replace the entire todo with the updated one
+        setTodos(prev => prev.map(t => t.id === todoId ? (todo.id ? todo : { ...t, ...todo }) : t));
       } else if (action === 'status') {
         // Handle status changes (checking/unchecking)
         setTodos(prev => prev.map(t => 
