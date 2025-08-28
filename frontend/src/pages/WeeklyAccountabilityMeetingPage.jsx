@@ -917,6 +917,15 @@ const WeeklyAccountabilityMeetingPage = () => {
       const effectiveTeamId = getEffectiveTeamId(teamId, user);
       
       await issuesService.updateIssueOrder(orgId, effectiveTeamId, updates);
+      
+      // Broadcast the reordering to other meeting participants
+      if (meetingCode && broadcastIssueListUpdate) {
+        broadcastIssueListUpdate({
+          action: 'reorder',
+          timeline: issueTimeline,
+          issues: reorderedIssues
+        });
+      }
     } catch (error) {
       console.error('Failed to reorder issues:', error);
       // Refresh to get correct order on error
@@ -1429,7 +1438,7 @@ const WeeklyAccountabilityMeetingPage = () => {
     };
     
     const handleIssueListUpdate = (event) => {
-      const { action, issue, issueId, timeline } = event.detail;
+      const { action, issue, issueId, timeline, issues } = event.detail;
       console.log('📝 Received issue list update:', event.detail);
       
       if (action === 'create' && issue) {
@@ -1447,6 +1456,13 @@ const WeeklyAccountabilityMeetingPage = () => {
         // Remove deleted/archived issue
         setShortTermIssues(prev => prev.filter(i => i.id !== issueId));
         setLongTermIssues(prev => prev.filter(i => i.id !== issueId));
+      } else if (action === 'reorder' && issues) {
+        // Update the order of issues
+        if (timeline === 'short_term') {
+          setShortTermIssues(issues);
+        } else if (timeline === 'long_term') {
+          setLongTermIssues(issues);
+        }
       } else if (action === 'archive-closed') {
         // Remove all closed issues for the specified timeline
         if (timeline === 'short_term') {
