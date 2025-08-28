@@ -448,13 +448,11 @@ const IssuesListClean = ({
               {enableDragDrop && !readOnly && (
                 <div 
                   className="drag-handle cursor-move p-1 -m-1 hover:bg-gray-100 rounded"
-                  draggable
+                  draggable="true"
                   onDragStart={(e) => {
-                    e.stopPropagation();
                     handleDragStart(e, issue, index);
                   }}
                   onDragEnd={handleDragEnd}
-                  onClick={(e) => e.stopPropagation()}
                 >
                   <GripVertical className="h-4 w-4 text-gray-400" />
                 </div>
@@ -688,13 +686,11 @@ const IssuesListClean = ({
                 {enableDragDrop && !readOnly && (
                   <div 
                     className="drag-handle cursor-move p-1 -m-1 hover:bg-gray-100 rounded flex-shrink-0"
-                    draggable
+                    draggable="true"
                     onDragStart={(e) => {
-                      e.stopPropagation();
                       handleDragStart(e, issue, globalIndex);
                     }}
                     onDragEnd={handleDragEnd}
-                    onClick={(e) => e.stopPropagation()}
                   >
                     <GripVertical className="h-4 w-4 text-gray-400" />
                   </div>
