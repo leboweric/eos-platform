@@ -29,12 +29,22 @@ class EmailInboundService {
       console.log(`[EmailInbound] Found user: ${userName} (${user.id})`);
 
       // 2. Determine organization and team from recipient email
-      // Format options: 
-      // - issues@axplatform.app (uses sender's org, no specific team)
-      // - issues-[org-id]@axplatform.app
-      // - [org-subdomain]-issues@axplatform.app
       let organizationId = user.organization_id;
-      let teamId = null; // Organization-level issue by default
+      
+      // Find user's team - prioritize Leadership Team if they're on it
+      const teamResult = await pool.query(`
+        SELECT t.id, t.name, t.is_leadership_team 
+        FROM teams t
+        JOIN team_members tm ON t.id = tm.team_id
+        WHERE tm.user_id = $1 AND t.organization_id = $2
+        ORDER BY t.is_leadership_team DESC, t.created_at ASC
+        LIMIT 1
+      `, [user.id, organizationId]);
+      
+      let teamId = teamResult.rows[0]?.id || null;
+      const teamName = teamResult.rows[0]?.name || 'Organization';
+      
+      console.log(`[EmailInbound] Issue will be assigned to ${teamName} team`);
 
       // Parse recipient email for org/team routing
       const recipientParts = recipientEmail.split('@')[0];
@@ -91,13 +101,6 @@ class EmailInboundService {
         RETURNING *
       `;
 
-      // Get the next priority rank for new issues
-      const priorityResult = await pool.query(
-        'SELECT COALESCE(MAX(priority_rank), 0) + 1 as next_rank FROM issues WHERE organization_id = $1',
-        [organizationId]
-      );
-      const nextPriorityRank = priorityResult.rows[0].next_rank;
-
       const issueValues = [
         parsedData.title,
         parsedData.description,
@@ -106,8 +109,8 @@ class EmailInboundService {
         user.id, // created_by_id
         parsedData.assigneeId || user.id, // owner_id
         organizationId,
-        teamId, // will be NULL for org-level issues
-        nextPriorityRank
+        teamId, // will be user's team
+        999999 // Default priority - issues aren't prioritized until voted on in EOS
       ];
 
       const issueResult = await pool.query(issueQuery, issueValues);
@@ -121,7 +124,7 @@ class EmailInboundService {
       }
 
       // 6. Send confirmation email
-      await this.sendConfirmationEmail(senderEmail, issue, userName, attachments?.length || 0);
+      await this.sendConfirmationEmail(senderEmail, issue, userName, attachments?.length || 0, teamName);
 
       return {
         success: true,
@@ -260,7 +263,7 @@ class EmailInboundService {
   /**
    * Send confirmation email to sender
    */
-  async sendConfirmationEmail(recipientEmail, issue, userName, attachmentCount = 0) {
+  async sendConfirmationEmail(recipientEmail, issue, userName, attachmentCount = 0, teamName = 'Organization') {
     const attachmentText = attachmentCount > 0 
       ? `<p><strong>Attachments:</strong> ${attachmentCount} file${attachmentCount > 1 ? 's' : ''} attached</p>` 
       : '';
@@ -272,10 +275,11 @@ class EmailInboundService {
         <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
           <h2>Issue Created Successfully</h2>
           <p>Hi ${userName},</p>
-          <p>Your issue has been created in AXP:</p>
+          <p>Your issue has been created in AXP and added to the <strong>${teamName}</strong> issues list:</p>
           <div style="background: #f3f4f6; padding: 20px; border-radius: 8px; margin: 20px 0;">
             <h3 style="margin-top: 0;">${issue.title}</h3>
             <p><strong>Issue ID:</strong> #${issue.id}</p>
+            <p><strong>Team:</strong> ${teamName}</p>
             <p><strong>Status:</strong> Open</p>
             <p><strong>Timeline:</strong> ${issue.timeline === 'short_term' ? 'Short Term' : 'Long Term'}</p>
             ${attachmentText}
