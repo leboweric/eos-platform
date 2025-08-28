@@ -870,6 +870,9 @@ const IssuesListClean = ({
           }
           setSelectedIssue(null);
         }}
+        onMoveToTeam={onMoveToTeam}
+        onCreateTodo={onCreateTodo}
+        onSendCascadingMessage={onSendCascadingMessage}
       />
     </>
   );

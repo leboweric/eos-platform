@@ -23,11 +23,25 @@ import {
   Download,
   Trash2,
   Sparkles,
-  Bug
+  Bug,
+  Users,
+  ListTodo,
+  Send,
+  MessageSquare
 } from 'lucide-react';
 import { issuesService } from '../../services/issuesService';
 
-const IssueDialog = ({ open, onClose, onSave, issue, teamMembers, timeline }) => {
+const IssueDialog = ({ 
+  open, 
+  onClose, 
+  onSave, 
+  issue, 
+  teamMembers, 
+  timeline,
+  onMoveToTeam,
+  onCreateTodo,
+  onSendCascadingMessage
+}) => {
   const [formData, setFormData] = useState({
     title: '',
     description: '',
@@ -399,7 +413,58 @@ const IssueDialog = ({ open, onClose, onSave, issue, teamMembers, timeline }) =>
             </div>
           </div>
 
-          <DialogFooter className="pt-6 border-t border-white/20">
+          {/* Action Buttons for existing issues */}
+          {issue && (
+            <div className="flex flex-wrap gap-2 pb-4 border-b border-white/20">
+              {onMoveToTeam && (
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={() => {
+                    onMoveToTeam(issue);
+                    onClose();
+                  }}
+                  className="text-xs"
+                >
+                  <Users className="mr-1 h-3 w-3" />
+                  Send to Team
+                </Button>
+              )}
+              {onCreateTodo && (
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={() => {
+                    onCreateTodo(issue);
+                    onClose();
+                  }}
+                  className="text-xs"
+                >
+                  <ListTodo className="mr-1 h-3 w-3" />
+                  Create To-Do
+                </Button>
+              )}
+              {onSendCascadingMessage && (
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={() => {
+                    onSendCascadingMessage(issue);
+                    onClose();
+                  }}
+                  className="text-xs"
+                >
+                  <Send className="mr-1 h-3 w-3" />
+                  Send Message
+                </Button>
+              )}
+            </div>
+          )}
+
+          <DialogFooter className="pt-6">
             <Button 
               type="button" 
               variant="outline" 
