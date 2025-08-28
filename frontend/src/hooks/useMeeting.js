@@ -91,9 +91,10 @@ const useMeeting = () => {
 
     // Handle navigation updates from leader
     newSocket.on('navigation-update', (data) => {
-      console.log('📍 Navigation update received:', data);
+      console.log('📍 Navigation update received v2:', data);
       console.log('📍 Current isFollowing state:', isFollowingRef.current);
       console.log('📍 Current isLeader state:', isLeaderRef.current);
+      console.log('📍 Navigation lock status:', navigationLock.current);
       
       // Only followers should respond to navigation updates
       if (isFollowingRef.current && !isLeaderRef.current && !navigationLock.current) {
@@ -107,11 +108,9 @@ const useMeeting = () => {
         }
         
         // Handle section changes or scrolling
-        setTimeout(() => {
-          if (data.scrollPosition !== undefined) {
-            window.scrollTo(0, data.scrollPosition);
-          }
-          if (data.section) {
+        // Always process section changes, even without route change
+        if (data.section) {
+          setTimeout(() => {
             console.log('📍 Triggering section change to:', data.section);
             // Try to trigger section change in the UI
             const sectionChangeEvent = new CustomEvent('meeting-section-change', { 
@@ -124,10 +123,14 @@ const useMeeting = () => {
             if (element) {
               element.scrollIntoView({ behavior: 'smooth' });
             }
-          }
-        }, 100);
+            
+            if (data.scrollPosition !== undefined) {
+              window.scrollTo(0, data.scrollPosition);
+            }
+          }, 100);
+        }
       } else {
-        console.log('📍 Ignoring navigation update (leader or not following)');
+        console.log('📍 Ignoring navigation update - isFollowing:', isFollowingRef.current, 'isLeader:', isLeaderRef.current);
       }
     });
 

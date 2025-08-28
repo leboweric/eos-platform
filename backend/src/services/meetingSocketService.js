@@ -137,7 +137,8 @@ class MeetingSocketService {
           scrollPosition: data.scrollPosition
         });
 
-        console.log(`📍 Leader navigated to ${data.route}`);
+        console.log(`📍 Leader ${userInfo.userId} navigated to route: ${data.route}, section: ${data.section || 'none'}`);
+        console.log(`📍 Broadcasting to meeting: ${userInfo.meetingCode}`);
       });
 
       // Handle follow toggle
