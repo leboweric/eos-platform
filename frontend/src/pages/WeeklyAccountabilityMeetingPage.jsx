@@ -696,6 +696,15 @@ const WeeklyAccountabilityMeetingPage = () => {
       if (editingIssue) {
         savedIssue = await issuesService.updateIssue(editingIssue.id, issueData);
         setSuccess('Issue updated successfully');
+        
+        // Broadcast issue update to other participants
+        if (meetingCode && broadcastIssueListUpdate) {
+          broadcastIssueListUpdate({
+            action: 'update',
+            issueId: editingIssue.id,
+            issue: savedIssue.data || savedIssue
+          });
+        }
       } else {
         savedIssue = await issuesService.createIssue({
           ...issueData,
@@ -703,6 +712,14 @@ const WeeklyAccountabilityMeetingPage = () => {
           department_id: effectiveTeamId
         });
         setSuccess('Issue created successfully');
+        
+        // Broadcast new issue to other participants
+        if (meetingCode && broadcastIssueListUpdate) {
+          broadcastIssueListUpdate({
+            action: 'create',
+            issue: savedIssue.data || savedIssue
+          });
+        }
       }
       
       await fetchIssuesData();
@@ -804,6 +821,14 @@ const WeeklyAccountabilityMeetingPage = () => {
       await issuesService.archiveIssue(issueId);
       setSuccess('Issue archived successfully');
       await fetchIssuesData();
+      
+      // Broadcast issue archive to other participants
+      if (meetingCode && broadcastIssueListUpdate) {
+        broadcastIssueListUpdate({
+          action: 'delete',
+          issueId
+        });
+      }
     } catch (error) {
       console.error('Failed to archive issue:', error);
       setError('Failed to archive issue');
@@ -1404,9 +1429,32 @@ const WeeklyAccountabilityMeetingPage = () => {
     };
     
     const handleIssueListUpdate = (event) => {
-      const { action } = event.detail;
+      const { action, issue, issueId, timeline } = event.detail;
       console.log('📝 Received issue list update:', event.detail);
-      if (action === 'refresh' || action === 'create' || action === 'delete') {
+      
+      if (action === 'create' && issue) {
+        // Add new issue to the appropriate list
+        if (issue.timeline === 'short_term') {
+          setShortTermIssues(prev => [...prev, issue]);
+        } else {
+          setLongTermIssues(prev => [...prev, issue]);
+        }
+      } else if (action === 'update' && issue) {
+        // Update existing issue
+        setShortTermIssues(prev => prev.map(i => i.id === issueId ? issue : i));
+        setLongTermIssues(prev => prev.map(i => i.id === issueId ? issue : i));
+      } else if (action === 'delete' && issueId) {
+        // Remove deleted/archived issue
+        setShortTermIssues(prev => prev.filter(i => i.id !== issueId));
+        setLongTermIssues(prev => prev.filter(i => i.id !== issueId));
+      } else if (action === 'archive-closed') {
+        // Remove all closed issues for the specified timeline
+        if (timeline === 'short_term') {
+          setShortTermIssues(prev => prev.filter(i => i.status !== 'closed'));
+        } else if (timeline === 'long_term') {
+          setLongTermIssues(prev => prev.filter(i => i.status !== 'closed'));
+        }
+      } else if (action === 'refresh') {
         fetchIssuesData();
       }
     };
@@ -2208,6 +2256,15 @@ const WeeklyAccountabilityMeetingPage = () => {
                                   await issuesService.archiveClosedIssues(issueTimeline);
                                   setSuccess(`${closedIssuesCount} closed issue${closedIssuesCount > 1 ? 's' : ''} archived`);
                                   await fetchIssuesData();
+                                  
+                                  // Broadcast archive closed issues to other participants
+                                  if (meetingCode && broadcastIssueListUpdate) {
+                                    broadcastIssueListUpdate({
+                                      action: 'archive-closed',
+                                      timeline: issueTimeline,
+                                      archivedCount: closedIssuesCount
+                                    });
+                                  }
                                 } catch (error) {
                                   console.error('Failed to archive closed issues:', error);
                                   setError('Failed to archive closed issues');
