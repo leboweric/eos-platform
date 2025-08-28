@@ -168,20 +168,31 @@ const MeetingsPage = () => {
   };
 
   const handleStartMeeting = (meetingId) => {
-    if (!selectedTeamId) return;
+    console.log('🎯 handleStartMeeting called with:', { meetingId, selectedTeamId });
+    
+    if (!selectedTeamId) {
+      console.error('❌ No team selected');
+      return;
+    }
     
     // Use team ID as the meeting identifier (simpler - no codes needed!)
     const meetingRoom = `${selectedTeamId}-${meetingId}`;
+    console.log('🏠 Meeting room code:', meetingRoom);
     
     // Join the meeting as leader
     if (joinMeeting) {
+      console.log('📞 Calling joinMeeting function');
       joinMeeting(meetingRoom, true);
+    } else {
+      console.error('❌ joinMeeting function not available');
     }
     
     // Navigate to the appropriate meeting page
     if (meetingId === 'weekly-accountability') {
+      console.log('🧭 Navigating to weekly meeting');
       navigate(`/meetings/weekly-accountability/${selectedTeamId}`);
     } else if (meetingId === 'quarterly-planning') {
+      console.log('🧭 Navigating to quarterly meeting');
       navigate(`/meetings/quarterly-planning/${selectedTeamId}`);
     }
   };
