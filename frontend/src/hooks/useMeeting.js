@@ -24,7 +24,10 @@ const useMeeting = () => {
   useEffect(() => {
     if (!ENABLE_MEETINGS) return;
 
-    const socketUrl = import.meta.env.VITE_API_URL || 'http://localhost:3001';
+    const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:3001';
+    // Remove /api/v1 from the URL for socket connection
+    const socketUrl = apiUrl.replace('/api/v1', '');
+    console.log('🔌 Connecting to socket server:', socketUrl);
     const newSocket = io(socketUrl, {
       path: '/meeting-socket',
       reconnection: true,
@@ -35,12 +38,18 @@ const useMeeting = () => {
 
     newSocket.on('connect', () => {
       console.log('📡 Connected to meeting server');
+      console.log('📡 Socket ID:', newSocket.id);
       setIsConnected(true);
     });
 
-    newSocket.on('disconnect', () => {
-      console.log('📡 Disconnected from meeting server');
+    newSocket.on('disconnect', (reason) => {
+      console.log('📡 Disconnected from meeting server:', reason);
       setIsConnected(false);
+    });
+
+    newSocket.on('connect_error', (error) => {
+      console.error('📡 Socket connection error:', error.message);
+      console.error('📡 Error type:', error.type);
     });
 
     // Handle meeting joined
