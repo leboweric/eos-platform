@@ -68,7 +68,7 @@ const WeeklyAccountabilityMeetingPage = () => {
   const { user } = useAuthStore();
   const { teamId } = useParams();
   const navigate = useNavigate();
-  const { meetingCode, participants } = useMeeting();
+  const { meetingCode, participants, joinMeeting, isConnected } = useMeeting();
   const { labels } = useTerminology();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
@@ -241,6 +241,15 @@ const WeeklyAccountabilityMeetingPage = () => {
   useEffect(() => {
     loadInitialData();
   }, [teamId]);
+
+  // Join meeting when page loads
+  useEffect(() => {
+    if (teamId && isConnected && joinMeeting && !meetingCode) {
+      const meetingRoom = `${teamId}-weekly-accountability`;
+      console.log('🎬 Auto-joining meeting on page load:', meetingRoom);
+      joinMeeting(meetingRoom, true); // Join as leader by default
+    }
+  }, [teamId, isConnected, joinMeeting, meetingCode]);
 
   useEffect(() => {
     fetchOrganizationTheme();
