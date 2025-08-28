@@ -290,7 +290,6 @@ class EmailInboundService {
             <strong>Pro tip:</strong> Include these keywords in your emails to automatically set properties:
           </p>
           <ul style="color: #6b7280; font-size: 14px;">
-            <li>Priority: high, medium, low, urgent</li>
             <li>Timeline: short_term or long_term</li>
             <li>Assign: @username</li>
           </ul>
