@@ -68,7 +68,7 @@ const WeeklyAccountabilityMeetingPage = () => {
   const { user } = useAuthStore();
   const { teamId } = useParams();
   const navigate = useNavigate();
-  const { meetingCode, participants, joinMeeting, isConnected, isLeader, currentLeader, navigateToSection, broadcastVote, broadcastIssueUpdate } = useMeeting();
+  const { meetingCode, participants, joinMeeting, isConnected, isLeader, currentLeader, navigateToSection, broadcastVote, broadcastIssueUpdate, activeMeetings } = useMeeting();
   
   // Debug logging for participants
   useEffect(() => {
@@ -252,12 +252,20 @@ const WeeklyAccountabilityMeetingPage = () => {
 
   // Join meeting when page loads
   useEffect(() => {
-    if (teamId && isConnected && joinMeeting && !meetingCode) {
+    if (teamId && isConnected && joinMeeting && !meetingCode && activeMeetings) {
       const meetingRoom = `${teamId}-weekly-accountability`;
+      // Check if there's already an active meeting with a leader
+      const existingMeeting = activeMeetings[meetingRoom];
+      const hasParticipants = existingMeeting?.participantCount > 0;
+      
       console.log('🎬 Auto-joining meeting on page load:', meetingRoom);
-      joinMeeting(meetingRoom, true); // Join as leader by default
+      console.log('🎬 Active meetings:', activeMeetings);
+      console.log('🎬 Existing meeting found:', hasParticipants ? 'Yes, joining as participant' : 'No, joining as leader');
+      
+      // Join as participant if meeting already has participants, otherwise as leader
+      joinMeeting(meetingRoom, !hasParticipants);
     }
-  }, [teamId, isConnected, joinMeeting, meetingCode]);
+  }, [teamId, isConnected, joinMeeting, meetingCode, activeMeetings]);
 
   useEffect(() => {
     fetchOrganizationTheme();
