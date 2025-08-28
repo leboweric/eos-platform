@@ -30,11 +30,11 @@ class EmailInboundService {
 
       // 2. Determine organization and team from recipient email
       // Format options: 
-      // - issues@axplatform.app (uses sender's default org/team)
+      // - issues@axplatform.app (uses sender's org, no specific team)
       // - issues-[org-id]@axplatform.app
       // - [org-subdomain]-issues@axplatform.app
       let organizationId = user.organization_id;
-      let teamId = null; // Users don't have a default team, issues will be org-level
+      let teamId = null; // Organization-level issue by default
 
       // Parse recipient email for org/team routing
       const recipientParts = recipientEmail.split('@')[0];
@@ -80,29 +80,34 @@ class EmailInboundService {
           description,
           status,
           timeline,
-          created_by,
+          created_by_id,
           owner_id,
           organization_id,
           team_id,
-          created_via,
-          external_id,
+          priority_rank,
           created_at,
           updated_at
-        ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, NOW(), NOW())
+        ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, NOW(), NOW())
         RETURNING *
       `;
+
+      // Get the next priority rank for new issues
+      const priorityResult = await pool.query(
+        'SELECT COALESCE(MAX(priority_rank), 0) + 1 as next_rank FROM issues WHERE organization_id = $1',
+        [organizationId]
+      );
+      const nextPriorityRank = priorityResult.rows[0].next_rank;
 
       const issueValues = [
         parsedData.title,
         parsedData.description,
         'open',
         parsedData.timeline || 'short_term',
-        user.id,
-        parsedData.assigneeId || user.id,
+        user.id, // created_by_id
+        parsedData.assigneeId || user.id, // owner_id
         organizationId,
-        teamId || '00000000-0000-0000-0000-000000000000',
-        'email',
-        headers?.['message-id'] || null
+        teamId, // will be NULL for org-level issues
+        nextPriorityRank
       ];
 
       const issueResult = await pool.query(issueQuery, issueValues);
