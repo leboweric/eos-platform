@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useParams } from 'react-router-dom';
 import { useAuthStore } from '../stores/authStore';
 import { format } from 'date-fns';
@@ -251,8 +251,9 @@ const WeeklyAccountabilityMeetingPage = () => {
   }, [teamId]);
 
   // Join meeting when page loads
+  const hasJoinedRef = useRef(false);
   useEffect(() => {
-    if (teamId && isConnected && joinMeeting && !meetingCode && activeMeetings) {
+    if (teamId && isConnected && joinMeeting && !meetingCode && activeMeetings && !hasJoinedRef.current) {
       const meetingRoom = `${teamId}-weekly-accountability`;
       // Check if there's already an active meeting with a leader
       const existingMeeting = activeMeetings[meetingRoom];
@@ -261,6 +262,9 @@ const WeeklyAccountabilityMeetingPage = () => {
       console.log('🎬 Auto-joining meeting on page load:', meetingRoom);
       console.log('🎬 Active meetings:', activeMeetings);
       console.log('🎬 Existing meeting found:', hasParticipants ? 'Yes, joining as participant' : 'No, joining as leader');
+      
+      // Mark as joined to prevent double-joining
+      hasJoinedRef.current = true;
       
       // Join as participant if meeting already has participants, otherwise as leader
       joinMeeting(meetingRoom, !hasParticipants);
