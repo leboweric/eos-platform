@@ -71,7 +71,8 @@ const WeeklyAccountabilityMeetingPage = () => {
   const { 
     meetingCode, 
     participants, 
-    joinMeeting, 
+    joinMeeting,
+    leaveMeeting, 
     isConnected, 
     isLeader, 
     currentLeader, 
@@ -1322,6 +1323,27 @@ const WeeklyAccountabilityMeetingPage = () => {
       
       setSuccess('Meeting concluded and summary sent!');
       
+      // Broadcast meeting end to all participants
+      if (meetingCode) {
+        // Create a custom event that all participants will receive
+        const meetingEndEvent = new CustomEvent('meeting-ended', {
+          detail: { message: 'Meeting has been concluded by the presenter' }
+        });
+        
+        // Broadcast through the meeting socket if available
+        if (broadcastIssueListUpdate) {
+          broadcastIssueListUpdate({
+            action: 'meeting-ended',
+            message: 'Meeting has been concluded by the presenter'
+          });
+        }
+      }
+      
+      // Leave the meeting room
+      if (leaveMeeting) {
+        leaveMeeting();
+      }
+      
       // Clear sessionStorage
       sessionStorage.removeItem('meetingActive');
       
@@ -1470,6 +1492,29 @@ const WeeklyAccountabilityMeetingPage = () => {
         } else if (timeline === 'long_term') {
           setLongTermIssues(prev => prev.filter(i => i.status !== 'closed'));
         }
+      } else if (action === 'meeting-ended') {
+        // Meeting has been concluded by presenter
+        console.log('📍 Meeting ended by presenter');
+        setSuccess('Meeting has been concluded by the presenter');
+        
+        // Reset meeting state
+        setMeetingStarted(false);
+        setMeetingStartTime(null);
+        setElapsedTime(0);
+        setMeetingRating(null);
+        setActiveSection('good-news');
+        
+        // Clear sessionStorage
+        sessionStorage.removeItem('meetingActive');
+        sessionStorage.removeItem('meetingStartTime');
+        
+        // Update UI
+        window.dispatchEvent(new Event('meetingStateChanged'));
+        
+        // Use timeout to ensure state updates before leaving
+        setTimeout(() => {
+          window.location.reload(); // Reload to fully reset
+        }, 1000);
       } else if (action === 'refresh') {
         fetchIssuesData();
       }
