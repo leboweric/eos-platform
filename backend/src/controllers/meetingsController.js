@@ -139,24 +139,21 @@ export const concludeMeeting = async (req, res) => {
       day: 'numeric' 
     });
 
-    // Format duration - check if duration is in milliseconds
-    const formatDuration = (duration) => {
-      // If duration is > 86400 (more than a day in seconds), it's likely milliseconds
-      let seconds = duration;
-      if (duration > 86400) {
-        seconds = Math.floor(duration / 1000);
-      }
+    // Format duration - duration comes in as minutes from frontend
+    const formatDuration = (durationInMinutes) => {
+      // Convert minutes to total seconds for consistent calculation
+      const totalMinutes = Math.floor(durationInMinutes);
+      const hours = Math.floor(totalMinutes / 60);
+      const minutes = totalMinutes % 60;
       
-      const hours = Math.floor(seconds / 3600);
-      const minutes = Math.floor((seconds % 3600) / 60);
-      const secs = seconds % 60;
-      
-      if (hours > 0) {
-        return `${hours}h ${minutes}m ${secs}s`;
+      if (hours > 0 && minutes > 0) {
+        return `${hours} hour${hours !== 1 ? 's' : ''} ${minutes} minute${minutes !== 1 ? 's' : ''}`;
+      } else if (hours > 0) {
+        return `${hours} hour${hours !== 1 ? 's' : ''}`;
       } else if (minutes > 0) {
-        return `${minutes}m ${secs}s`;
+        return `${minutes} minute${minutes !== 1 ? 's' : ''}`;
       }
-      return `${secs}s`;
+      return '0 minutes';
     };
 
     // Get team member names for the email - match the logic used for emails
@@ -215,17 +212,47 @@ export const concludeMeeting = async (req, res) => {
       }
     }
 
-    // Format todos - include ALL todos from the meeting
-    const formattedAllTodos = (todos?.all || todos?.list || []).map(todo => ({
-      title: todo.title || todo.todo || 'Untitled',
-      assignee: todo.assigned_to_name || todo.assignee || todo.assigned_to || 'Unassigned',
-      dueDate: todo.due_date ? new Date(todo.due_date).toLocaleDateString() : 'No due date',
-      status: todo.status || (todo.is_complete ? 'Completed' : 'Pending')
-    }));
+    // Fetch open todos from database
+    let openTodos = [];
+    try {
+      const todoQuery = teamId && teamId !== '00000000-0000-0000-0000-000000000000'
+        ? `SELECT t.*, u.first_name, u.last_name 
+           FROM todos t
+           LEFT JOIN users u ON t.assigned_to = u.id::text
+           WHERE t.team_id = $1 
+           AND t.status != 'complete' 
+           AND t.deleted_at IS NULL
+           ORDER BY t.due_date ASC NULLS LAST, t.created_at DESC`
+        : `SELECT t.*, u.first_name, u.last_name 
+           FROM todos t
+           LEFT JOIN users u ON t.assigned_to = u.id::text
+           WHERE t.organization_id = $1 
+           AND (t.team_id IS NULL OR t.team_id = '00000000-0000-0000-0000-000000000000')
+           AND t.status != 'complete' 
+           AND t.deleted_at IS NULL
+           ORDER BY t.due_date ASC NULLS LAST, t.created_at DESC`;
+      
+      const todoResult = await db.query(
+        todoQuery,
+        [teamId && teamId !== '00000000-0000-0000-0000-000000000000' ? teamId : organizationId]
+      );
+      
+      openTodos = todoResult.rows.map(todo => ({
+        title: todo.todo || 'Untitled',
+        assignee: todo.first_name && todo.last_name 
+          ? `${todo.first_name} ${todo.last_name}`
+          : todo.assigned_to_name || 'Unassigned',
+        dueDate: todo.due_date ? new Date(todo.due_date).toLocaleDateString() : 'No due date'
+      }));
+    } catch (todoError) {
+      console.error('Failed to fetch open todos:', todoError);
+      // Continue with empty todos rather than failing
+    }
 
+    // Format todos from request body (if provided)
     const formattedNewTodos = (todos?.added || []).map(todo => ({
       title: todo.title || todo.todo || 'Untitled',
-      assignee: todo.assigned_to_name || todo.assignee || 'Unassigned',
+      assignee: todo.assigned_to_name || todo.assignee || todo.assigned_to || 'Unassigned',
       dueDate: todo.due_date ? new Date(todo.due_date).toLocaleDateString() : 'No due date'
     }));
 
@@ -251,12 +278,11 @@ export const concludeMeeting = async (req, res) => {
       rating: rating || 'Not rated',
       organizationName,
       concludedBy: userName,
-      attendees: attendeeNames,
       summary: summary || '',
       metrics: metrics || {},
+      openTodos: openTodos, // Primary focus: all open todos
       completedItems: formattedCompletedItems,
       newTodos: formattedNewTodos,
-      allTodos: formattedAllTodos,
       issues: formattedIssues,
       notes: notes || '',
       meetingLink: `${process.env.FRONTEND_URL || 'https://axp.com'}/meetings/weekly-accountability`

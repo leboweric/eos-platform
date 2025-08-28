@@ -212,49 +212,17 @@ const templates = {
         <p>Here's a summary of your ${data.teamName} meeting on ${data.meetingDate}:</p>
         
         <div style="background-color: #f8f9fa; padding: 15px; border-radius: 8px; margin: 20px 0;">
-          <p style="margin: 5px 0;"><strong>Duration:</strong> ${data.duration}</p>
           <p style="margin: 5px 0;"><strong>Meeting Rating:</strong> ${data.rating}/10</p>
         </div>
         
-        ${data.allTodos && data.allTodos.length > 0 ? `
-          <h3 style="color: #333; margin-top: 30px;">To Dos:</h3>
-          <ul style="color: #666;">
-            ${data.allTodos.map(todo => `<li>${todo.title} - ${todo.assignee} - ${todo.dueDate}</li>`).join('')}
+        ${data.openTodos && data.openTodos.length > 0 ? `
+          <h3 style="color: #d97706; margin-top: 30px; border-bottom: 2px solid #f8f9fa; padding-bottom: 10px;">📋 Open To-Dos</h3>
+          <ul style="color: #333; line-height: 1.8;">
+            ${data.openTodos.map(todo => `<li><strong>${todo.title}</strong> - Assigned to: ${todo.assignee}${todo.dueDate !== 'No due date' ? `, Due: ${todo.dueDate}` : ''}</li>`).join('')}
           </ul>
-        ` : ''}
-        
-        ${data.attendees && data.attendees.length > 0 ? `
-          <h3 style="color: #333; margin-top: 30px;">Attendees</h3>
-          <ul style="color: #666;">
-            ${data.attendees.map(attendee => `<li>${attendee}</li>`).join('')}
-          </ul>
-        ` : ''}
-        
-        ${data.completedItems && data.completedItems.length > 0 ? `
-          <h3 style="color: #333; margin-top: 30px;">Completed Items</h3>
-          <ul style="color: #666;">
-            ${data.completedItems.map(item => `<li>✅ ${item}</li>`).join('')}
-          </ul>
-        ` : ''}
-        
-        ${data.newTodos && data.newTodos.length > 0 ? `
-          <h3 style="color: #333; margin-top: 30px;">New To-Dos</h3>
-          <ul style="color: #666;">
-            ${data.newTodos.map(todo => `<li>${todo.title} - Assigned to: ${todo.assignee}, Due: ${todo.dueDate}</li>`).join('')}
-          </ul>
-        ` : ''}
-        
-        ${data.issues && data.issues.length > 0 ? `
-          <h3 style="color: #333; margin-top: 30px;">Issues Discussed</h3>
-          <ul style="color: #666;">
-            ${data.issues.map(issue => `<li>${issue}</li>`).join('')}
-          </ul>
-        ` : ''}
-        
-        ${data.notes ? `
-          <h3 style="color: #333; margin-top: 30px;">Meeting Notes</h3>
-          <div style="color: #666; white-space: pre-wrap;">${data.notes}</div>
-        ` : ''}
+        ` : `
+          <p style="color: #666; margin-top: 30px;">No open to-dos at this time.</p>
+        `}
         
         <div style="text-align: center; margin: 30px 0;">
           <a href="${data.meetingLink}" style="background-color: #4F46E5; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; display: inline-block;">
@@ -274,15 +242,9 @@ const templates = {
       
       Here's a summary of your ${data.teamName} meeting on ${data.meetingDate}:
       
-      Duration: ${data.duration}
       Meeting Rating: ${data.rating}/10
       
-      ${data.allTodos && data.allTodos.length > 0 ? `To Dos:\n${data.allTodos.map(t => `- ${t.title} - ${t.assignee} - ${t.dueDate}`).join('\n')}\n\n` : ''}
-      ${data.attendees && data.attendees.length > 0 ? `Attendees:\n${data.attendees.map(a => `- ${a}`).join('\n')}\n\n` : ''}
-      ${data.completedItems && data.completedItems.length > 0 ? `Completed Items:\n${data.completedItems.map(i => `- ✅ ${i}`).join('\n')}\n\n` : ''}
-      ${data.newTodos && data.newTodos.length > 0 ? `New To-Dos:\n${data.newTodos.map(t => `- ${t.title} - Assigned to: ${t.assignee}, Due: ${t.dueDate}`).join('\n')}\n\n` : ''}
-      ${data.issues && data.issues.length > 0 ? `Issues Discussed:\n${data.issues.map(i => `- ${i}`).join('\n')}\n\n` : ''}
-      ${data.notes ? `Meeting Notes:\n${data.notes}\n\n` : ''}
+      ${data.openTodos && data.openTodos.length > 0 ? `OPEN TO-DOS:\n${data.openTodos.map(t => `- ${t.title} - Assigned to: ${t.assignee}${t.dueDate !== 'No due date' ? `, Due: ${t.dueDate}` : ''}`).join('\n')}\n\n` : 'No open to-dos at this time.\n\n'}
       
       View full meeting details: ${data.meetingLink}
       
