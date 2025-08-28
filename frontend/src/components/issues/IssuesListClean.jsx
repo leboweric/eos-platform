@@ -782,11 +782,6 @@ const IssuesListClean = ({
                   {issue.owner_name || 'Unassigned'}
                 </span>
                 
-                {/* Timeline */}
-                <span className="text-sm text-gray-500">
-                  {issue.timeline === 'short_term' ? 'Short Term' : 'Long Term'}
-                </span>
-                
                 {/* Votes (if voting enabled) */}
                 {showVoting && (
                   <div onClick={(e) => e.stopPropagation()}>
