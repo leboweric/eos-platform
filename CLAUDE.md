@@ -347,5 +347,116 @@ ALTER TABLE meetings ADD COLUMN IF NOT EXISTS deleted_at TIMESTAMP WITH TIME ZON
 3. **Run SQL migrations** - Soft delete protection in production
 4. **Continue patent implementation** - Hybrid framework support next
 
+## Session: August 28, 2024 - Real-Time Meeting Collaboration (Ninety.io Style)
+
+### Overview
+Implemented comprehensive real-time meeting collaboration features similar to Ninety.io, enabling multiple participants to join meetings and see synchronized updates across all UI elements.
+
+### Key Implementations
+
+#### 1. Meeting Socket Infrastructure
+- **WebSocket Service**: `backend/src/services/meetingSocketService.js` handles all real-time events
+- **React Hook**: `frontend/src/hooks/useMeeting.js` manages socket connections and state
+- **Feature Flag**: `ENABLE_MEETINGS=true` to enable/disable functionality
+
+#### 2. Complete Sync Features Implemented
+
+**Issues (IDS Section)**:
+- ✅ Status changes (checking as solved/open)
+- ✅ Voting (thumbs up synchronization)
+- ✅ Creating new issues (appear for all)
+- ✅ Editing issues (sync after save)
+- ✅ Individual & bulk archiving
+- ✅ **Drag-and-drop reordering** (critical for top 3 prioritization)
+
+**To-Dos**:
+- ✅ Status changes (checking/unchecking)
+- ✅ Creating new todos
+- ✅ Editing todos (sync after save)
+- ✅ Individual deletion
+- ✅ Bulk "Archive Done" button
+
+**Meeting Controls**:
+- ✅ Section navigation (leader controls, followers auto-navigate)
+- ✅ Timer synchronization (shared start time)
+- ✅ Presenter role claiming
+- ✅ Meeting conclusion broadcast (everyone exits together)
+- ✅ Participant list with hover tooltips
+
+#### 3. Critical Fixes & Lessons Learned
+
+**Stale Closure Issue**:
+```javascript
+// Problem: isFollowing state was stale in socket handlers
+// Solution: Use refs for real-time state
+const isFollowingRef = useRef(true);
+useEffect(() => {
+  isFollowingRef.current = isFollowing;
+}, [isFollowing]);
+```
+
+**Race Condition Prevention**:
+```javascript
+// Problem: Both users joining as leaders
+// Solution: Add delay to check existing meetings
+setTimeout(() => {
+  const existingMeeting = activeMeetings?.[meetingRoom];
+  const hasParticipants = existingMeeting?.participantCount > 0;
+  joinMeeting(meetingRoom, !hasParticipants);
+}, 500);
+```
+
+**Action Mismatch Bug**:
+```javascript
+// Problem: Broadcasting 'status' but handler expected 'complete'
+// Fix: Update handler to match broadcast action
+if (action === 'status') { // Changed from 'complete'
+  setTodos(prev => prev.map(t => 
+    t.id === todoId ? { ...t, status, completed } : t
+  ));
+}
+```
+
+**Meeting Conclusion Sync**:
+```javascript
+// Broadcast meeting end to all participants
+broadcastIssueListUpdate({
+  action: 'meeting-ended',
+  message: 'Meeting has been concluded by the presenter'
+});
+// All participants reset and reload
+```
+
+#### 4. Architecture Patterns
+
+**Broadcast After Save Pattern**:
+- Edits happen locally in modals
+- Changes broadcast AFTER database save
+- No "live typing" conflicts - clean, simple sync
+
+**Leader/Follower Pattern**:
+- First joiner becomes leader (presenter)
+- Leader controls navigation and timer
+- Followers can claim presenter role
+- All participants can interact with data
+
+**Event-Driven Updates**:
+- Custom events for cross-component communication
+- Socket events for cross-participant sync
+- Centralized handlers for consistency
+
+### Database Requirements
+No database changes required - all meeting state is ephemeral and stored in memory on the backend.
+
+### Testing Insights
+- Tested with multiple users (Eric as leader, Bo as participant)
+- Confirmed all sync features working in production
+- Identified and fixed edge cases through real usage
+
+### Future Enhancements
+- Could add "who's typing" indicators (not implemented - adds complexity)
+- Could add cursor positions like Google Docs (not implemented - overkill)
+- Could persist meeting state to database (currently ephemeral)
+
 ---
 **Note**: This is a streamlined essential reference. For historical context and detailed guides, see the archive and docs folder.
