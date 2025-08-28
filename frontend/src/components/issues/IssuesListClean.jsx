@@ -398,19 +398,27 @@ const IssuesListClean = ({
     const hasVotes = (issue.vote_count || 0) > 0;
     const isTopIssue = index === 0 && hasVotes && showVoting;
     const isDragOver = dragOverIssueIndex === index;
+    const isTopThree = index < 3;  // Check if this is in top 3
     
     return (
       <div
         className={`
-          group relative bg-white/90 backdrop-blur-sm rounded-2xl border border-white/50 transition-shadow duration-200 cursor-pointer h-full shadow-sm hover:shadow-xl
+          group relative backdrop-blur-sm rounded-2xl border transition-shadow duration-200 cursor-pointer h-full shadow-sm hover:shadow-xl
           ${issue.status === 'closed' ? 'opacity-60' : ''}
-          ${isTopIssue ? 'shadow-lg' : ''}
+          ${isTopThree ? 'shadow-lg' : ''}
           ${isDragOver ? 'ring-2 ring-blue-400' : ''}
           ${draggedIssueIndex === index ? 'opacity-50' : ''}
         `}
         style={{
-          borderColor: isTopIssue ? themeColors.accent : hexToRgba(themeColors.accent, 0.3),
-          borderWidth: isTopIssue ? '2px' : '1px'
+          backgroundColor: index === 0 ? hexToRgba(themeColors.primary, 0.08) : 
+                          index === 1 ? hexToRgba(themeColors.secondary, 0.06) :
+                          index === 2 ? hexToRgba(themeColors.accent, 0.04) :
+                          'rgba(255, 255, 255, 0.9)',
+          borderColor: index === 0 ? themeColors.primary : 
+                      index === 1 ? themeColors.secondary :
+                      index === 2 ? themeColors.accent :
+                      hexToRgba(themeColors.accent, 0.3),
+          borderWidth: isTopThree ? '2px' : '1px'
         }}
         onDragOver={handleDragOver}
         onDragEnter={(e) => handleDragEnter(e, index)}
@@ -458,7 +466,10 @@ const IssuesListClean = ({
                 </div>
               )}
               <span className="text-xs font-bold" style={{
-                color: isTopIssue ? themeColors.primary : '#6B7280'
+                color: index === 0 ? themeColors.primary : 
+                       index === 1 ? themeColors.secondary :
+                       index === 2 ? themeColors.accent :
+                       '#6B7280'
               }}>
                 #{index + 1}
               </span>
@@ -481,7 +492,9 @@ const IssuesListClean = ({
                   )}
                 </Button>
               )}
-              {isTopIssue && <span className="text-xs" title="Top voted">🔥</span>}
+              {index === 0 && <span className="text-xs" title="#1 Priority">🥇</span>}
+              {index === 1 && <span className="text-xs" title="#2 Priority">🥈</span>}
+              {index === 2 && <span className="text-xs" title="#3 Priority">🥉</span>}
             </div>
             <div onClick={(e) => e.stopPropagation()}>
               <div className="relative">
@@ -653,16 +666,29 @@ const IssuesListClean = ({
                       const hasVotes = (issue.vote_count || 0) > 0;
                       const isTopIssue = globalIndex === 0 && hasVotes && showVoting;
                       const isDragOver = dragOverIssueIndex === globalIndex;
+                      const isTopThree = globalIndex < 3;  // Check if this is in top 3
                       
                       return (
                         <div
                           key={issue.id}
                           className={`
-                            group relative flex items-center gap-3 bg-white/90 backdrop-blur-sm rounded-xl border border-white/50 pl-3 pr-4 py-3 transition-shadow duration-200 cursor-pointer shadow-sm hover:shadow-md
+                            group relative flex items-center gap-3 backdrop-blur-sm rounded-xl border pl-3 pr-4 py-3 transition-shadow duration-200 cursor-pointer shadow-sm hover:shadow-md
                             ${issue.status === 'closed' ? 'opacity-60' : ''}
                             ${isDragOver ? 'ring-2 ring-blue-400' : ''}
                             ${draggedIssueIndex === globalIndex ? 'opacity-50' : ''}
+                            ${isTopThree ? 'shadow-lg' : ''}
                           `}
+                          style={{
+                            backgroundColor: globalIndex === 0 ? hexToRgba(themeColors.primary, 0.08) : 
+                                          globalIndex === 1 ? hexToRgba(themeColors.secondary, 0.06) :
+                                          globalIndex === 2 ? hexToRgba(themeColors.accent, 0.04) :
+                                          'rgba(255, 255, 255, 0.9)',
+                            borderColor: globalIndex === 0 ? themeColors.primary : 
+                                        globalIndex === 1 ? themeColors.secondary :
+                                        globalIndex === 2 ? themeColors.accent :
+                                        'rgba(255, 255, 255, 0.5)',
+                            borderWidth: isTopThree ? '2px' : '1px'
+                          }}
                           onDragOver={handleDragOver}
                           onDragEnter={(e) => handleDragEnter(e, globalIndex)}
                           onDragLeave={handleDragLeave}
@@ -715,15 +741,20 @@ const IssuesListClean = ({
                   </div>
                 </div>
                 
-                {/* Issue number */}
+                {/* Issue number with priority colors */}
                 <span className="text-sm font-semibold min-w-[2rem]" style={{
-                  color: isTopIssue ? themeColors.primary : '#6B7280'
+                  color: globalIndex === 0 ? themeColors.primary : 
+                         globalIndex === 1 ? themeColors.secondary :
+                         globalIndex === 2 ? themeColors.accent :
+                         '#6B7280'
                 }}>
                   #{globalIndex + 1}
                 </span>
                 
-                {/* Fire emoji for top voted issue */}
-                {isTopIssue && <span className="text-xs" title="Top voted">🔥</span>}
+                {/* Medal emojis for top 3 */}
+                {globalIndex === 0 && <span className="text-xs" title="#1 Priority">🥇</span>}
+                {globalIndex === 1 && <span className="text-xs" title="#2 Priority">🥈</span>}
+                {globalIndex === 2 && <span className="text-xs" title="#3 Priority">🥉</span>}
                 
                 {/* Title */}
                 <h3 className={`
