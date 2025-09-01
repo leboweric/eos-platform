@@ -507,21 +507,16 @@ const ProcessWorkflowEditor = ({ process, onSave, onCancel, templates = [], team
     if (e.key === 'Tab') {
       e.preventDefault();
       
-      // Find the current line
-      const lineStart = text.lastIndexOf('\n', start - 1) + 1;
-      const lineEnd = text.indexOf('\n', start);
-      const currentLine = text.substring(lineStart, lineEnd === -1 ? text.length : lineEnd);
+      // Always insert 4 spaces and a bullet when Tab is pressed
+      const newText = text.substring(0, start) + '    • ' + text.substring(end);
+      handleUpdateSubStep(stepIndex, subStepIndex, 'notes', newText);
       
-      // Check if we're at the beginning of a line or on an empty line after pressing Enter
-      const lineBeforeCursor = text.substring(lineStart, start);
-      if (lineBeforeCursor.trim() === '') {
-        // Add indented bullet
-        const newText = text.substring(0, start) + '    • ' + text.substring(end);
-        handleUpdateSubStep(stepIndex, subStepIndex, 'notes', newText);
-        setTimeout(() => {
-          textarea.selectionStart = textarea.selectionEnd = start + 6; // 4 spaces + "• "
-        }, 0);
-      }
+      // Set cursor position after the bullet
+      setTimeout(() => {
+        textarea.focus();
+        const newPos = start + 6; // 4 spaces + "• "
+        textarea.setSelectionRange(newPos, newPos);
+      }, 10);
       return;
     }
     
