@@ -67,7 +67,7 @@ const ProcessDocumentationPage = () => {
     accent: '#60A5FA'
   });
 
-  // Terminology mapping
+  // Terminology mapping for different methodologies
   const processTerms = {
     eos: 'Core Process',
     scaling_up: 'Process Map',
