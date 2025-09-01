@@ -1810,6 +1810,11 @@ const ProcessWorkflowEditor = ({ process, onSave, onCancel, templates = [], team
                                                    attachment.file_type?.startsWith('image/') ||
                                                    /\.(jpg|jpeg|png|gif|webp)$/i.test(attachment.fileName || attachment.file_name || '');
                                     
+                                    console.log('Expanded view - Attachment:', idx, attachment);
+                                    console.log('Expanded view - Is image?', isImage);
+                                    console.log('Expanded view - File type:', attachment.fileType || attachment.file_type);
+                                    console.log('Expanded view - File name:', attachment.fileName || attachment.file_name);
+                                    
                                     return (
                                       <div key={idx} className="inline-flex items-center gap-2 px-3 py-2 bg-white rounded-lg border border-slate-200 w-full">
                                         <Paperclip className="h-4 w-4 text-slate-400" />
@@ -1818,15 +1823,25 @@ const ProcessWorkflowEditor = ({ process, onSave, onCancel, templates = [], team
                                         </span>
                                         <div className="flex items-center gap-1">
                                           {isImage && (
-                                            <Button
-                                              size="sm"
-                                              variant="ghost"
-                                              className="h-7 w-7 p-0"
-                                              onClick={() => handlePreviewAttachment(attachment)}
+                                            <button
+                                              className="h-7 w-7 p-0 hover:bg-slate-100 rounded flex items-center justify-center"
+                                              onClick={(e) => {
+                                                console.log('Eye button clicked - plain button!');
+                                                console.log('Event:', e);
+                                                console.log('Attachment:', attachment);
+                                                e.preventDefault();
+                                                e.stopPropagation();
+                                                handlePreviewAttachment(attachment);
+                                              }}
+                                              onMouseDown={(e) => {
+                                                console.log('Mouse down on eye button!');
+                                                e.preventDefault();
+                                              }}
                                               title="Preview"
+                                              type="button"
                                             >
                                               <Eye className="h-3 w-3" />
-                                            </Button>
+                                            </button>
                                           )}
                                           <Button
                                             size="sm"
