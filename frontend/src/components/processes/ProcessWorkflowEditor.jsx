@@ -90,6 +90,7 @@ const ProcessWorkflowEditor = ({ process, onSave, onCancel, templates = [], team
   const [editingStepIndex, setEditingStepIndex] = useState(null);
   const [editingSubStepIndex, setEditingSubStepIndex] = useState(null);
   const [expandedSubSteps, setExpandedSubSteps] = useState({}); // Track which substeps have expanded notes
+  const [editingNotes, setEditingNotes] = useState({}); // Track which notes are being edited
 
   useEffect(() => {
     fetchOrganizationTheme();
@@ -321,29 +322,89 @@ const ProcessWorkflowEditor = ({ process, onSave, onCancel, templates = [], team
 
     switch (format) {
       case 'bold':
-        newText = text.substring(0, start) + `**${selectedText}**` + text.substring(end);
-        newCursorPos = start + 2;
+        // Check if already bold and toggle
+        if (selectedText.startsWith('**') && selectedText.endsWith('**')) {
+          newText = text.substring(0, start) + selectedText.slice(2, -2) + text.substring(end);
+          newCursorPos = end - 4;
+        } else {
+          newText = text.substring(0, start) + `**${selectedText}**` + text.substring(end);
+          newCursorPos = end + 4;
+        }
         break;
+      
       case 'italic':
-        newText = text.substring(0, start) + `*${selectedText}*` + text.substring(end);
-        newCursorPos = start + 1;
+        // Check if already italic and toggle
+        if (selectedText.startsWith('*') && selectedText.endsWith('*') && !selectedText.startsWith('**')) {
+          newText = text.substring(0, start) + selectedText.slice(1, -1) + text.substring(end);
+          newCursorPos = end - 2;
+        } else {
+          newText = text.substring(0, start) + `*${selectedText}*` + text.substring(end);
+          newCursorPos = end + 2;
+        }
         break;
+      
       case 'bullet':
-        // Add bullet at start of current line
-        const lineStart = text.lastIndexOf('\n', start - 1) + 1;
-        newText = text.substring(0, lineStart) + '• ' + text.substring(lineStart);
-        newCursorPos = start + 2;
+        // Handle multiple lines
+        if (selectedText.includes('\n') || selectedText.length > 0) {
+          const lines = selectedText.split('\n');
+          const bulletedLines = lines.map(line => {
+            // Skip if already bulleted
+            if (line.trim().startsWith('•')) return line;
+            // Remove existing numbering if present
+            const cleanLine = line.replace(/^\d+\.\s*/, '');
+            return line.length > 0 ? `• ${cleanLine}` : line;
+          });
+          newText = text.substring(0, start) + bulletedLines.join('\n') + text.substring(end);
+        } else {
+          // Single line or cursor position
+          const lineStart = text.lastIndexOf('\n', start - 1) + 1;
+          const lineEnd = text.indexOf('\n', start);
+          const currentLine = text.substring(lineStart, lineEnd === -1 ? text.length : lineEnd);
+          
+          if (!currentLine.trim().startsWith('•')) {
+            const cleanLine = currentLine.replace(/^\d+\.\s*/, '');
+            newText = text.substring(0, lineStart) + `• ${cleanLine}` + text.substring(lineEnd === -1 ? text.length : lineEnd);
+            newCursorPos = start + 2;
+          } else {
+            newText = text;
+          }
+        }
         break;
+      
       case 'number':
-        // Add number at start of current line
-        const lineStartNum = text.lastIndexOf('\n', start - 1) + 1;
-        newText = text.substring(0, lineStartNum) + '1. ' + text.substring(lineStartNum);
-        newCursorPos = start + 3;
+        // Handle multiple lines
+        if (selectedText.includes('\n') || selectedText.length > 0) {
+          const lines = selectedText.split('\n');
+          let lineNumber = 1;
+          const numberedLines = lines.map(line => {
+            // Skip empty lines
+            if (line.trim().length === 0) return line;
+            // Remove existing bullets or numbers
+            const cleanLine = line.replace(/^[•\-]\s*/, '').replace(/^\d+\.\s*/, '');
+            return `${lineNumber++}. ${cleanLine}`;
+          });
+          newText = text.substring(0, start) + numberedLines.join('\n') + text.substring(end);
+        } else {
+          // Single line or cursor position
+          const lineStart = text.lastIndexOf('\n', start - 1) + 1;
+          const lineEnd = text.indexOf('\n', start);
+          const currentLine = text.substring(lineStart, lineEnd === -1 ? text.length : lineEnd);
+          
+          if (!currentLine.match(/^\d+\.\s*/)) {
+            const cleanLine = currentLine.replace(/^[•\-]\s*/, '');
+            newText = text.substring(0, lineStart) + `1. ${cleanLine}` + text.substring(lineEnd === -1 ? text.length : lineEnd);
+            newCursorPos = start + 3;
+          } else {
+            newText = text;
+          }
+        }
         break;
+      
       case 'code':
         newText = text.substring(0, start) + `\`${selectedText}\`` + text.substring(end);
-        newCursorPos = start + 1;
+        newCursorPos = end + 2;
         break;
+      
       case 'divider':
         newText = text.substring(0, start) + '\n---\n' + text.substring(start);
         newCursorPos = start + 5;
@@ -352,11 +413,19 @@ const ProcessWorkflowEditor = ({ process, onSave, onCancel, templates = [], team
 
     handleUpdateSubStep(stepIndex, subStepIndex, 'notes', newText);
     
-    // Restore cursor position
+    // Restore cursor position and selection
     setTimeout(() => {
       textarea.focus();
       textarea.setSelectionRange(newCursorPos, newCursorPos);
     }, 0);
+  };
+
+  const toggleEditMode = (stepIndex, subStepIndex, editing) => {
+    const key = `${stepIndex}-${subStepIndex}`;
+    setEditingNotes(prev => ({
+      ...prev,
+      [key]: editing
+    }));
   };
 
   // Handle paste to preserve formatting
@@ -371,6 +440,59 @@ const ProcessWorkflowEditor = ({ process, onSave, onCancel, templates = [], team
     // Preserve formatting from paste
     const newText = text.substring(0, start) + paste + text.substring(end);
     handleUpdateSubStep(stepIndex, subStepIndex, 'notes', newText);
+  };
+
+  // Render formatted text for display
+  const renderFormattedText = (text) => {
+    if (!text) return '';
+    
+    // Escape HTML first to prevent XSS
+    const escapeHtml = (str) => {
+      const div = document.createElement('div');
+      div.textContent = str;
+      return div.innerHTML;
+    };
+    
+    // Split into lines first to handle structure
+    const lines = text.split('\n');
+    const formattedLines = lines.map(line => {
+      let formattedLine = escapeHtml(line);
+      
+      // Apply inline formatting
+      // Bold (must come before italic to handle ** correctly)
+      formattedLine = formattedLine.replace(/\*\*([^*]+)\*\*/g, '<strong style="font-weight: 600;">$1</strong>');
+      
+      // Italic (single asterisk, not part of bold)
+      formattedLine = formattedLine.replace(/(?<!\*)\*([^*]+)\*(?!\*)/g, '<em style="font-style: italic;">$1</em>');
+      
+      // Code/monospace
+      formattedLine = formattedLine.replace(/`([^`]+)`/g, '<code style="background: #f1f5f9; padding: 2px 6px; border-radius: 4px; font-family: monospace; font-size: 0.9em; color: #0f172a;">$1</code>');
+      
+      // Handle line types
+      if (line.trim().startsWith('•')) {
+        const content = formattedLine.substring(formattedLine.indexOf('•') + 1).trim();
+        return `<div style="padding-left: 20px; position: relative; margin: 2px 0;"><span style="position: absolute; left: 0;">•</span>${content}</div>`;
+      }
+      
+      if (line.match(/^\d+\.\s+/)) {
+        const num = line.match(/^(\d+)\.\s+/)[1];
+        const content = formattedLine.replace(/^\d+\.\s+/, '');
+        return `<div style="padding-left: 20px; position: relative; margin: 2px 0;"><span style="position: absolute; left: 0;">${num}.</span>${content}</div>`;
+      }
+      
+      if (line.trim() === '---') {
+        return '<hr style="margin: 12px 0; border: none; border-top: 1px solid #e2e8f0;" />';
+      }
+      
+      // Regular paragraph (or empty line)
+      if (line.trim()) {
+        return `<div style="margin: 2px 0;">${formattedLine}</div>`;
+      } else {
+        return '<div style="margin: 2px 0; height: 1em;"></div>';
+      }
+    });
+    
+    return formattedLines.join('');
   };
 
   const handleSaveProcess = async () => {
@@ -860,24 +982,62 @@ const ProcessWorkflowEditor = ({ process, onSave, onCancel, templates = [], team
                                                   </div>
                                                 </div>
                                                 
-                                                <Textarea
-                                                  id={`notes-${index}-${subIndex}`}
-                                                  value={bullet.notes || ''}
-                                                  onChange={(e) => handleUpdateSubStep(index, subIndex, 'notes', e.target.value)}
-                                                  onPaste={(e) => handlePaste(index, subIndex, e)}
-                                                  placeholder="Enter required information, notes, or details for this sub-step...&#10;&#10;Example:&#10;• Purchase Date&#10;• Control Numbers&#10;• Serial Numbers&#10;• Dollar Amount for each item&#10;• Account Codes:&#10;  - 131000 New Inventory&#10;  - 183000 Fixed Assets"
-                                                  rows={8}
-                                                  className="text-sm font-mono whitespace-pre-wrap"
-                                                  style={{ lineHeight: '1.6' }}
-                                                />
-                                                <div className="flex items-start justify-between mt-2">
-                                                  <p className="text-xs text-slate-500">
-                                                    Formatting: **bold**, *italic*, `code`, • bullets
-                                                  </p>
-                                                  <p className="text-xs text-slate-500">
-                                                    Paste content to preserve formatting
-                                                  </p>
-                                                </div>
+                                                {/* Show formatted preview or edit mode */}
+                                                {editingNotes[`${index}-${subIndex}`] ? (
+                                                  <>
+                                                    <Textarea
+                                                      id={`notes-${index}-${subIndex}`}
+                                                      value={bullet.notes || ''}
+                                                      onChange={(e) => handleUpdateSubStep(index, subIndex, 'notes', e.target.value)}
+                                                      onPaste={(e) => handlePaste(index, subIndex, e)}
+                                                      placeholder="Enter required information, notes, or details for this sub-step...&#10;&#10;Example:&#10;• Purchase Date&#10;• Control Numbers&#10;• Serial Numbers&#10;• Dollar Amount for each item&#10;• Account Codes:&#10;  - 131000 New Inventory&#10;  - 183000 Fixed Assets"
+                                                      rows={8}
+                                                      className="text-sm font-mono whitespace-pre-wrap"
+                                                      style={{ lineHeight: '1.6' }}
+                                                      onBlur={() => toggleEditMode(index, subIndex, false)}
+                                                      autoFocus
+                                                    />
+                                                    <div className="flex items-start justify-between mt-2">
+                                                      <p className="text-xs text-slate-500">
+                                                        Formatting: **bold**, *italic*, `code`, • bullets
+                                                      </p>
+                                                      <p className="text-xs text-slate-500">
+                                                        Paste content to preserve formatting
+                                                      </p>
+                                                    </div>
+                                                  </>
+                                                ) : (
+                                                  <>
+                                                    <div 
+                                                      className="text-sm bg-white border border-slate-200 rounded-lg p-3 min-h-[120px] cursor-text hover:bg-slate-50 transition-colors"
+                                                      onClick={() => toggleEditMode(index, subIndex, true)}
+                                                      style={{ lineHeight: '1.6' }}
+                                                    >
+                                                      {bullet.notes ? (
+                                                        <div 
+                                                          dangerouslySetInnerHTML={{ __html: renderFormattedText(bullet.notes) }}
+                                                          className="formatted-text"
+                                                        />
+                                                      ) : (
+                                                        <p className="text-slate-400">Click to add required information, notes, or details...</p>
+                                                      )}
+                                                    </div>
+                                                    <div className="flex items-start justify-between mt-2">
+                                                      <p className="text-xs text-slate-500">
+                                                        Click text to edit • Use toolbar for formatting
+                                                      </p>
+                                                      <Button
+                                                        type="button"
+                                                        variant="ghost"
+                                                        size="sm"
+                                                        className="h-5 text-xs -mt-1"
+                                                        onClick={() => toggleEditMode(index, subIndex, true)}
+                                                      >
+                                                        Edit
+                                                      </Button>
+                                                    </div>
+                                                  </>
+                                                )}
                                               </div>
                                             )}
                                           </div>
@@ -889,12 +1049,9 @@ const ProcessWorkflowEditor = ({ process, onSave, onCancel, templates = [], team
                                                 <FileTextIcon className="h-3 w-3" />
                                                 <span className="font-medium">Requirements/Notes:</span>
                                               </div>
-                                              <div className="text-slate-700 line-clamp-3 whitespace-pre-wrap font-mono text-xs">
-                                                {bullet.notes
-                                                  .replace(/\*\*(.*?)\*\*/g, '$1')  // Remove bold markers for preview
-                                                  .replace(/\*(.*?)\*/g, '$1')      // Remove italic markers
-                                                  .replace(/`(.*?)`/g, '$1')        // Remove code markers
-                                                }
+                                              <div 
+                                                className="text-slate-700 line-clamp-3 text-xs overflow-hidden"
+                                                dangerouslySetInnerHTML={{ __html: renderFormattedText(bullet.notes).substring(0, 200) }}
                                               </div>
                                             </div>
                                           )}
@@ -1293,3 +1450,40 @@ const ProcessWorkflowEditor = ({ process, onSave, onCancel, templates = [], team
 };
 
 export default ProcessWorkflowEditor;
+
+// Add custom styles for formatted text
+const styles = `
+  .formatted-text {
+    color: #1e293b;
+    font-size: 0.875rem;
+    line-height: 1.6;
+  }
+  .formatted-text strong {
+    font-weight: 600;
+    color: #0f172a;
+  }
+  .formatted-text em {
+    font-style: italic;
+  }
+  .formatted-text code {
+    background: #f1f5f9;
+    padding: 2px 6px;
+    border-radius: 4px;
+    font-family: monospace;
+    font-size: 0.9em;
+    color: #0f172a;
+  }
+  .formatted-text hr {
+    margin: 12px 0;
+    border: none;
+    border-top: 1px solid #e2e8f0;
+  }
+`;
+
+// Inject styles if not already present
+if (typeof document !== 'undefined' && !document.getElementById('process-workflow-styles')) {
+  const styleSheet = document.createElement('style');
+  styleSheet.id = 'process-workflow-styles';
+  styleSheet.textContent = styles;
+  document.head.appendChild(styleSheet);
+}
