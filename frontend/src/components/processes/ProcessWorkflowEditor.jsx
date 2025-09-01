@@ -531,35 +531,45 @@ const ProcessWorkflowEditor = ({ process, onSave, onCancel, templates = [], team
     const text = textarea.value;
     
     // If we have HTML content, parse it to extract structure
-    if (htmlContent) {
+    if (htmlContent && !htmlContent.includes('<!--')) {
       // Create a temporary div to parse HTML
       const tempDiv = document.createElement('div');
       tempDiv.innerHTML = htmlContent;
       
+      // Remove all style tags and their content
+      const styles = tempDiv.querySelectorAll('style');
+      styles.forEach(style => style.remove());
+      
+      // Remove all script tags
+      const scripts = tempDiv.querySelectorAll('script');
+      scripts.forEach(script => script.remove());
+      
       // Extract text with formatting preserved
-      const processNode = (node, result = []) => {
+      const processNode = (node, depth = 0) => {
         if (node.nodeType === Node.TEXT_NODE) {
           return node.textContent;
         }
         
         if (node.nodeName === 'LI') {
-          // List item - add bullet
-          const content = Array.from(node.childNodes).map(child => processNode(child)).join('');
-          return '• ' + content.trim();
+          // List item - add bullet with proper indentation
+          const content = Array.from(node.childNodes).map(child => processNode(child, depth)).join('');
+          const indent = '    '.repeat(depth);
+          return indent + '• ' + content.trim();
         }
         
         if (node.nodeName === 'P' || node.nodeName === 'DIV') {
-          const content = Array.from(node.childNodes).map(child => processNode(child)).join('');
+          const content = Array.from(node.childNodes).map(child => processNode(child, depth)).join('');
           return content ? content + '\n' : '';
         }
         
         if (node.nodeName === 'UL' || node.nodeName === 'OL') {
           const items = Array.from(node.children).map((li, index) => {
-            const content = Array.from(li.childNodes).map(child => processNode(child)).join('');
+            const content = Array.from(li.childNodes).map(child => processNode(child, depth + 1)).join('');
+            const indent = '    '.repeat(depth);
             if (node.nodeName === 'OL') {
-              return `${index + 1}. ${content.trim()}`;
+              return indent + `${index + 1}. ${content.trim()}`;
             }
-            return '• ' + content.trim();
+            return indent + '• ' + content.trim();
           });
           return items.join('\n') + '\n';
         }
@@ -569,21 +579,41 @@ const ProcessWorkflowEditor = ({ process, onSave, onCancel, templates = [], team
         }
         
         // Process children for other nodes
-        return Array.from(node.childNodes).map(child => processNode(child)).join('');
+        return Array.from(node.childNodes).map(child => processNode(child, depth)).join('');
       };
       
       paste = processNode(tempDiv).trim();
+    } else if (htmlContent && htmlContent.includes('<!--')) {
+      // If HTML contains comments (likely Word CSS), just use plain text
+      // Plain text paste is already in the paste variable
     }
     
-    // Clean up the pasted text
+    // Clean up the pasted text - handle more bullet types
     paste = paste
-      .replace(/^[●▪▫◦‣⁃◘○◙]/gm, '•')  // Replace various bullet chars with our standard bullet
-      .replace(/^[\-\*\+]/gm, '•')     // Replace dashes, asterisks, plus signs at line start
-      .replace(/^\s*([●▪▫◦‣⁃◘○◙•])\s*/gm, '• ')  // Normalize spacing after bullets
+      .replace(/^[●▪▫◦‣⁃◘○◙§·]/gm, '•')  // Replace various bullet chars with our standard bullet
+      .replace(/^[\-\*\+>]/gm, '•')     // Replace dashes, asterisks, plus signs, arrows at line start
+      .replace(/^\s*([●▪▫◦‣⁃◘○◙§·•])\s*/gm, '• ')  // Normalize spacing after bullets
+      .replace(/^o\s+/gm, '• ')  // Replace 'o' used as bullet
       .replace(/^\s*(\d+)[.)]/gm, '$1.')  // Normalize numbered list formatting
       .replace(/\t/g, '    ')  // Convert tabs to spaces
       .replace(/\r\n/g, '\n')  // Normalize line endings
-      .replace(/\r/g, '\n');  // Normalize Mac line endings
+      .replace(/\r/g, '\n')  // Normalize Mac line endings
+      .replace(/\n{3,}/g, '\n\n');  // Collapse multiple blank lines
+    
+    // If paste looks like it has Word CSS garbage, extract just the visible text
+    if (paste.includes('@font-face') || paste.includes('mso-') || paste.includes('<!--')) {
+      // Find where the actual content starts (after the CSS)
+      const contentStart = paste.lastIndexOf('->');
+      if (contentStart > -1) {
+        paste = paste.substring(contentStart + 2).trim();
+      }
+      
+      // Additional cleanup for Word artifacts
+      paste = paste
+        .replace(/^\s*[·§]\s*/gm, '• ')  // Replace Word bullet characters
+        .replace(/\n\s*\n/g, '\n')  // Remove empty lines with just spaces
+        .trim();
+    }
     
     // Preserve formatting from paste
     const newText = text.substring(0, start) + paste + text.substring(end);
