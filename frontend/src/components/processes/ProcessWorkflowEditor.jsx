@@ -526,31 +526,64 @@ const ProcessWorkflowEditor = ({ process, onSave, onCancel, templates = [], team
       
       // Find the current line
       const lineStart = text.lastIndexOf('\n', start - 1) + 1;
-      const currentLine = text.substring(lineStart, start);
+      const lineEnd = text.indexOf('\n', start);
+      const currentLine = text.substring(lineStart, lineEnd === -1 ? text.length : lineEnd);
       
-      // Check if we're at the end of a line or on an empty bullet
-      if (currentLine.trim() === '•') {
-        // Replace the existing empty bullet with an indented one
-        const newText = text.substring(0, lineStart) + '    • ' + text.substring(start);
-        handleUpdateSubStep(stepIndex, subStepIndex, 'notes', newText);
-        
-        // Set cursor position after the indented bullet
-        setTimeout(() => {
-          textarea.focus();
-          const newPos = lineStart + 6; // 4 spaces + "• "
-          textarea.setSelectionRange(newPos, newPos);
-        }, 10);
+      // Calculate current indentation level
+      const currentIndentMatch = currentLine.match(/^(\s*)/);
+      const currentIndent = currentIndentMatch ? currentIndentMatch[1] : '';
+      const currentIndentLevel = Math.floor(currentIndent.length / 4);
+      
+      if (e.shiftKey) {
+        // Shift+Tab: Decrease indentation (outdent)
+        if (currentIndentLevel > 0) {
+          const newIndentLevel = currentIndentLevel - 1;
+          const newIndent = '    '.repeat(newIndentLevel);
+          
+          // Replace current line's indentation
+          const lineWithoutIndent = currentLine.trimStart();
+          const newLine = newIndent + lineWithoutIndent;
+          const newText = text.substring(0, lineStart) + newLine + text.substring(lineStart + currentLine.length);
+          handleUpdateSubStep(stepIndex, subStepIndex, 'notes', newText);
+          
+          // Maintain cursor position relative to content
+          setTimeout(() => {
+            textarea.focus();
+            const cursorOffset = start - lineStart - currentIndent.length;
+            const newPos = lineStart + newIndent.length + Math.max(0, cursorOffset);
+            textarea.setSelectionRange(newPos, newPos);
+          }, 10);
+        }
       } else {
-        // Insert a new line with an indented bullet
-        const newText = text.substring(0, start) + '\n    • ' + text.substring(end);
-        handleUpdateSubStep(stepIndex, subStepIndex, 'notes', newText);
+        // Tab: Increase indentation (indent)
+        // Add one more level of indentation (max 3 levels deep, so 4 total including base)
+        const newIndentLevel = Math.min(currentIndentLevel + 1, 3);
+        const newIndent = '    '.repeat(newIndentLevel);
         
-        // Set cursor position after the new indented bullet
-        setTimeout(() => {
-          textarea.focus();
-          const newPos = start + 7; // newline + 4 spaces + "• "
-          textarea.setSelectionRange(newPos, newPos);
-        }, 10);
+        // Check if we're on an empty bullet line (just spaces and bullet)
+        if (currentLine.trim() === '•') {
+          // Replace the existing bullet with a more indented one
+          const newText = text.substring(0, lineStart) + newIndent + '• ' + text.substring(start);
+          handleUpdateSubStep(stepIndex, subStepIndex, 'notes', newText);
+          
+          // Set cursor position after the indented bullet
+          setTimeout(() => {
+            textarea.focus();
+            const newPos = lineStart + newIndent.length + 2; // indent + "• "
+            textarea.setSelectionRange(newPos, newPos);
+          }, 10);
+        } else {
+          // Insert a new line with an indented bullet (one level deeper than current)
+          const newText = text.substring(0, start) + '\n' + newIndent + '• ' + text.substring(end);
+          handleUpdateSubStep(stepIndex, subStepIndex, 'notes', newText);
+          
+          // Set cursor position after the new indented bullet
+          setTimeout(() => {
+            textarea.focus();
+            const newPos = start + 1 + newIndent.length + 2; // newline + indent + "• "
+            textarea.setSelectionRange(newPos, newPos);
+          }, 10);
+        }
       }
       return;
     }
