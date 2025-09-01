@@ -1043,11 +1043,30 @@ const ProcessWorkflowEditor = ({ process, onSave, onCancel, templates = [], team
                               {step.step_number}
                             </div>
                             {editingStepIndex === index ? (
-                              <Input
+                              <Textarea
                                 value={step.title}
                                 onChange={(e) => handleUpdateStep(index, 'title', e.target.value)}
+                                onKeyDown={(e) => {
+                                  if (e.key === 'Enter' && !e.shiftKey) {
+                                    e.preventDefault();
+                                    // Focus the description field
+                                    const descriptionField = document.querySelector(`#step-description-${index}`);
+                                    if (descriptionField) {
+                                      descriptionField.focus();
+                                    }
+                                  }
+                                }}
                                 placeholder="Enter step title"
-                                className="flex-1 font-medium"
+                                className="flex-1 font-medium resize-none overflow-hidden"
+                                rows={1}
+                                style={{ 
+                                  minHeight: '2.5rem',
+                                  height: 'auto'
+                                }}
+                                onInput={(e) => {
+                                  e.target.style.height = 'auto';
+                                  e.target.style.height = e.target.scrollHeight + 'px';
+                                }}
                                 autoFocus
                               />
                             ) : (
@@ -1099,10 +1118,27 @@ const ProcessWorkflowEditor = ({ process, onSave, onCancel, templates = [], team
                                 Step Description
                               </Label>
                               <Textarea
+                                id={`step-description-${index}`}
                                 value={step.description}
                                 onChange={(e) => handleUpdateStep(index, 'description', e.target.value)}
                                 placeholder="Describe what happens in this step"
                                 rows={3}
+                                onKeyDown={(e) => {
+                                  if (e.key === 'Enter' && !e.shiftKey && e.ctrlKey) {
+                                    e.preventDefault();
+                                    // Focus the first sub-step or add a new one
+                                    const firstSubStep = document.querySelector(`#substep-${index}-0`);
+                                    if (firstSubStep) {
+                                      firstSubStep.focus();
+                                    } else {
+                                      handleAddSubStep(index);
+                                      setTimeout(() => {
+                                        const newSubStep = document.querySelector(`#substep-${index}-0`);
+                                        if (newSubStep) newSubStep.focus();
+                                      }, 100);
+                                    }
+                                  }
+                                }}
                               />
                             </div>
 
@@ -1119,6 +1155,7 @@ const ProcessWorkflowEditor = ({ process, onSave, onCancel, templates = [], team
                                         <span className="text-slate-400 mt-1">•</span>
                                         <div className="flex-1 space-y-2">
                                           <Input
+                                            id={`substep-${index}-${subIndex}`}
                                             value={bullet.text}
                                             onChange={(e) => handleUpdateSubStep(index, subIndex, 'text', e.target.value)}
                                             placeholder="Enter sub-step description"
