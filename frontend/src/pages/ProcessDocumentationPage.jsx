@@ -4,6 +4,7 @@ import { useTerminology } from '../contexts/TerminologyContext';
 import { organizationService } from '../services/organizationService';
 import { getOrgTheme } from '../utils/themeUtils';
 import ProcessWorkflowEditor from '../components/processes/ProcessWorkflowEditor';
+import ProcessRunner from '../components/processes/ProcessRunner';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -40,7 +41,8 @@ import {
   List,
   Eye,
   CheckSquare,
-  Loader2
+  Loader2,
+  Play
 } from 'lucide-react';
 import axios from '../services/axiosConfig';
 import { format } from 'date-fns';
@@ -56,6 +58,7 @@ const ProcessDocumentationPage = () => {
   const [showEditor, setShowEditor] = useState(false);
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const [processToDelete, setProcessToDelete] = useState(null);
+  const [showRunMode, setShowRunMode] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
   const [filterCategory, setFilterCategory] = useState('all');
   const [filterStatus, setFilterStatus] = useState('all');
@@ -144,6 +147,11 @@ const ProcessDocumentationPage = () => {
   const handleEditProcess = (process) => {
     setSelectedProcess(process);
     setShowEditor(true);
+  };
+
+  const handleRunProcess = (process) => {
+    setSelectedProcess(process);
+    setShowRunMode(true);
   };
 
   const handleDeleteProcess = async () => {
@@ -264,6 +272,19 @@ const ProcessDocumentationPage = () => {
         }}
         templates={templates}
         teamMembers={teamMembers}
+      />
+    );
+  }
+
+  if (showRunMode) {
+    return (
+      <ProcessRunner
+        process={selectedProcess}
+        onClose={() => {
+          setShowRunMode(false);
+          setSelectedProcess(null);
+        }}
+        themeColors={themeColors}
       />
     );
   }
@@ -519,6 +540,20 @@ const ProcessDocumentationPage = () => {
                         <div className="flex items-center gap-2 pt-2">
                           <Button
                             size="sm"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleRunProcess(process);
+                            }}
+                            className="flex-1"
+                            style={{ 
+                              background: `linear-gradient(135deg, ${themeColors.primary} 0%, ${themeColors.secondary} 100%)`,
+                            }}
+                          >
+                            <Play className="h-3 w-3 mr-1" />
+                            Run Process
+                          </Button>
+                          <Button
+                            size="sm"
                             variant="outline"
                             onClick={(e) => {
                               e.stopPropagation();
@@ -532,14 +567,12 @@ const ProcessDocumentationPage = () => {
                           {!process.user_acknowledgment && (
                             <Button
                               size="sm"
+                              variant="outline"
                               onClick={(e) => {
                                 e.stopPropagation();
                                 handleAcknowledgeProcess(process.id);
                               }}
                               className="flex-1"
-                              style={{ 
-                                background: `linear-gradient(135deg, ${themeColors.primary} 0%, ${themeColors.secondary} 100%)`,
-                              }}
                             >
                               <CheckSquare className="h-3 w-3 mr-1" />
                               Acknowledge
