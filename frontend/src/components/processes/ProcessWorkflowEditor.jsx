@@ -44,7 +44,13 @@ import {
   ChevronRight as ChevronRightIcon,
   StickyNote,
   FileText as FileTextIcon,
-  Info
+  Info,
+  Bold,
+  Italic,
+  List,
+  ListOrdered,
+  Code,
+  Minus
 } from 'lucide-react';
 import axios from '../../services/axiosConfig';
 
@@ -261,6 +267,73 @@ const ProcessWorkflowEditor = ({ process, onSave, onCancel, templates = [], team
     const updatedSteps = [...formData.steps];
     updatedSteps[stepIndex].attachments = updatedSteps[stepIndex].attachments.filter((_, i) => i !== attachmentIndex);
     setFormData({ ...formData, steps: updatedSteps });
+  };
+
+  // Rich text formatting functions
+  const applyFormatting = (stepIndex, subStepIndex, format) => {
+    const textarea = document.getElementById(`notes-${stepIndex}-${subStepIndex}`);
+    if (!textarea) return;
+
+    const start = textarea.selectionStart;
+    const end = textarea.selectionEnd;
+    const text = textarea.value;
+    const selectedText = text.substring(start, end);
+    
+    let newText = '';
+    let newCursorPos = start;
+
+    switch (format) {
+      case 'bold':
+        newText = text.substring(0, start) + `**${selectedText}**` + text.substring(end);
+        newCursorPos = start + 2;
+        break;
+      case 'italic':
+        newText = text.substring(0, start) + `*${selectedText}*` + text.substring(end);
+        newCursorPos = start + 1;
+        break;
+      case 'bullet':
+        // Add bullet at start of current line
+        const lineStart = text.lastIndexOf('\n', start - 1) + 1;
+        newText = text.substring(0, lineStart) + '• ' + text.substring(lineStart);
+        newCursorPos = start + 2;
+        break;
+      case 'number':
+        // Add number at start of current line
+        const lineStartNum = text.lastIndexOf('\n', start - 1) + 1;
+        newText = text.substring(0, lineStartNum) + '1. ' + text.substring(lineStartNum);
+        newCursorPos = start + 3;
+        break;
+      case 'code':
+        newText = text.substring(0, start) + `\`${selectedText}\`` + text.substring(end);
+        newCursorPos = start + 1;
+        break;
+      case 'divider':
+        newText = text.substring(0, start) + '\n---\n' + text.substring(start);
+        newCursorPos = start + 5;
+        break;
+    }
+
+    handleUpdateSubStep(stepIndex, subStepIndex, 'notes', newText);
+    
+    // Restore cursor position
+    setTimeout(() => {
+      textarea.focus();
+      textarea.setSelectionRange(newCursorPos, newCursorPos);
+    }, 0);
+  };
+
+  // Handle paste to preserve formatting
+  const handlePaste = (stepIndex, subStepIndex, event) => {
+    event.preventDefault();
+    const paste = event.clipboardData.getData('text');
+    const textarea = event.target;
+    const start = textarea.selectionStart;
+    const end = textarea.selectionEnd;
+    const text = textarea.value;
+    
+    // Preserve formatting from paste
+    const newText = text.substring(0, start) + paste + text.substring(end);
+    handleUpdateSubStep(stepIndex, subStepIndex, 'notes', newText);
   };
 
   const handleSaveProcess = async () => {
@@ -666,29 +739,115 @@ const ProcessWorkflowEditor = ({ process, onSave, onCancel, templates = [], team
                                             
                                             {isExpanded && (
                                               <div className="mt-2 p-3 bg-white rounded-md border border-slate-200">
-                                                <Label className="text-xs font-medium text-slate-600 mb-1 flex items-center gap-1">
-                                                  <Info className="h-3 w-3" />
-                                                  Required Information / Notes
-                                                </Label>
+                                                <div className="flex items-center justify-between mb-2">
+                                                  <Label className="text-xs font-medium text-slate-600 flex items-center gap-1">
+                                                    <Info className="h-3 w-3" />
+                                                    Required Information / Notes
+                                                  </Label>
+                                                  
+                                                  {/* Formatting Toolbar */}
+                                                  <div className="flex items-center gap-1">
+                                                    <Button
+                                                      type="button"
+                                                      variant="ghost"
+                                                      size="sm"
+                                                      className="h-7 w-7 p-0"
+                                                      onClick={() => applyFormatting(index, subIndex, 'bold')}
+                                                      title="Bold (select text first)"
+                                                    >
+                                                      <Bold className="h-3 w-3" />
+                                                    </Button>
+                                                    <Button
+                                                      type="button"
+                                                      variant="ghost"
+                                                      size="sm"
+                                                      className="h-7 w-7 p-0"
+                                                      onClick={() => applyFormatting(index, subIndex, 'italic')}
+                                                      title="Italic (select text first)"
+                                                    >
+                                                      <Italic className="h-3 w-3" />
+                                                    </Button>
+                                                    <div className="w-px h-4 bg-slate-200 mx-1" />
+                                                    <Button
+                                                      type="button"
+                                                      variant="ghost"
+                                                      size="sm"
+                                                      className="h-7 w-7 p-0"
+                                                      onClick={() => applyFormatting(index, subIndex, 'bullet')}
+                                                      title="Bullet point"
+                                                    >
+                                                      <List className="h-3 w-3" />
+                                                    </Button>
+                                                    <Button
+                                                      type="button"
+                                                      variant="ghost"
+                                                      size="sm"
+                                                      className="h-7 w-7 p-0"
+                                                      onClick={() => applyFormatting(index, subIndex, 'number')}
+                                                      title="Numbered list"
+                                                    >
+                                                      <ListOrdered className="h-3 w-3" />
+                                                    </Button>
+                                                    <div className="w-px h-4 bg-slate-200 mx-1" />
+                                                    <Button
+                                                      type="button"
+                                                      variant="ghost"
+                                                      size="sm"
+                                                      className="h-7 w-7 p-0"
+                                                      onClick={() => applyFormatting(index, subIndex, 'code')}
+                                                      title="Code/Account number"
+                                                    >
+                                                      <Code className="h-3 w-3" />
+                                                    </Button>
+                                                    <Button
+                                                      type="button"
+                                                      variant="ghost"
+                                                      size="sm"
+                                                      className="h-7 w-7 p-0"
+                                                      onClick={() => applyFormatting(index, subIndex, 'divider')}
+                                                      title="Divider line"
+                                                    >
+                                                      <Minus className="h-3 w-3" />
+                                                    </Button>
+                                                  </div>
+                                                </div>
+                                                
                                                 <Textarea
+                                                  id={`notes-${index}-${subIndex}`}
                                                   value={bullet.notes || ''}
                                                   onChange={(e) => handleUpdateSubStep(index, subIndex, 'notes', e.target.value)}
+                                                  onPaste={(e) => handlePaste(index, subIndex, e)}
                                                   placeholder="Enter required information, notes, or details for this sub-step...&#10;&#10;Example:&#10;• Purchase Date&#10;• Control Numbers&#10;• Serial Numbers&#10;• Dollar Amount for each item&#10;• Account Codes:&#10;  - 131000 New Inventory&#10;  - 183000 Fixed Assets"
-                                                  rows={6}
-                                                  className="text-sm font-mono"
+                                                  rows={8}
+                                                  className="text-sm font-mono whitespace-pre-wrap"
+                                                  style={{ lineHeight: '1.6' }}
                                                 />
-                                                <p className="text-xs text-slate-500 mt-1">
-                                                  Use bullet points (•) or dashes (-) for lists. Press Enter for new lines.
-                                                </p>
+                                                <div className="flex items-start justify-between mt-2">
+                                                  <p className="text-xs text-slate-500">
+                                                    Formatting: **bold**, *italic*, `code`, • bullets
+                                                  </p>
+                                                  <p className="text-xs text-slate-500">
+                                                    Paste content to preserve formatting
+                                                  </p>
+                                                </div>
                                               </div>
                                             )}
                                           </div>
                                           
                                           {/* Show indicator if notes exist but are collapsed */}
                                           {!isExpanded && bullet.notes && (
-                                            <div className="flex items-center gap-2 text-xs text-slate-600 bg-blue-50 px-2 py-1 rounded">
-                                              <FileTextIcon className="h-3 w-3" />
-                                              <span className="italic">Has requirements/notes</span>
+                                            <div className="text-xs bg-blue-50 px-3 py-2 rounded mt-2">
+                                              <div className="flex items-center gap-2 text-slate-600 mb-1">
+                                                <FileTextIcon className="h-3 w-3" />
+                                                <span className="font-medium">Requirements/Notes:</span>
+                                              </div>
+                                              <div className="text-slate-700 line-clamp-3 whitespace-pre-wrap font-mono text-xs">
+                                                {bullet.notes
+                                                  .replace(/\*\*(.*?)\*\*/g, '$1')  // Remove bold markers for preview
+                                                  .replace(/\*(.*?)\*/g, '$1')      // Remove italic markers
+                                                  .replace(/`(.*?)`/g, '$1')        // Remove code markers
+                                                }
+                                              </div>
                                             </div>
                                           )}
                                         </div>
