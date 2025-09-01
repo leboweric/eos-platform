@@ -20,7 +20,8 @@ import {
   ChevronRight,
   Info,
   Paperclip,
-  RefreshCw
+  RefreshCw,
+  AlertCircle
 } from 'lucide-react';
 import axios from '../../services/axiosConfig';
 
@@ -36,8 +37,15 @@ const ProcessRunner = ({ process, onClose, themeColors }) => {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    fetchProcessSteps();
-    setStartTime(Date.now());
+    // If process already has steps, use them
+    if (process.steps && process.steps.length > 0) {
+      setSteps(process.steps);
+      setLoading(false);
+      setStartTime(Date.now());
+    } else {
+      // Otherwise fetch the full process details
+      fetchProcessDetails();
+    }
   }, [process.id]);
 
   useEffect(() => {
@@ -50,13 +58,15 @@ const ProcessRunner = ({ process, onClose, themeColors }) => {
     }
   }, [startTime, isPaused]);
 
-  const fetchProcessSteps = async () => {
+  const fetchProcessDetails = async () => {
     try {
-      const response = await axios.get(`/processes/${process.id}/steps`);
-      setSteps(response.data || []);
+      const response = await axios.get(`/processes/${process.id}`);
+      const processData = response.data;
+      setSteps(processData.steps || []);
       setLoading(false);
+      setStartTime(Date.now());
     } catch (error) {
-      console.error('Failed to fetch process steps:', error);
+      console.error('Failed to fetch process details:', error);
       setLoading(false);
     }
   };
@@ -228,6 +238,22 @@ const ProcessRunner = ({ process, onClose, themeColors }) => {
         )}
 
         {/* Steps List */}
+        {steps.length === 0 ? (
+          <Card className="bg-white/80 backdrop-blur-sm border-white/50">
+            <CardContent className="pt-6">
+              <div className="text-center py-8">
+                <AlertCircle className="h-12 w-12 text-slate-400 mx-auto mb-3" />
+                <h3 className="text-lg font-medium text-slate-900 mb-2">No Steps Found</h3>
+                <p className="text-sm text-slate-600 mb-4">
+                  This process doesn't have any steps defined yet.
+                </p>
+                <Button onClick={onClose} variant="outline">
+                  Return to Processes
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+        ) : (
         <div className="space-y-4">
           {steps.map((step, stepIndex) => {
             const isCompleted = completedSteps.has(stepIndex);
@@ -369,6 +395,7 @@ const ProcessRunner = ({ process, onClose, themeColors }) => {
             );
           })}
         </div>
+        )}
 
         {/* Completion Message */}
         {completedCount === totalSteps && totalSteps > 0 && (
