@@ -1189,10 +1189,17 @@ const ProcessWorkflowEditor = ({ process, onSave, onCancel, templates = [], team
                               <div className="space-y-3">
                                 {step.bullets?.map((bullet, subIndex) => {
                                   const isExpanded = expandedSubSteps[`${index}-${subIndex}`];
+                                  const subStepLetter = String.fromCharCode(97 + subIndex); // Convert to letter (a, b, c...)
                                   return (
-                                    <div key={subIndex} className="border border-slate-200 rounded-lg p-3 bg-slate-50/50">
+                                    <div key={subIndex} className="border border-slate-200 rounded-lg p-3 bg-slate-50/50 ml-4 relative">
+                                      {/* Letter indicator with connecting line */}
+                                      <div className="absolute -left-8 top-3 flex items-center">
+                                        <div className="w-4 h-px bg-slate-300"></div>
+                                        <div className="bg-white border border-slate-300 rounded-full w-6 h-6 flex items-center justify-center text-xs font-medium text-slate-600">
+                                          {subStepLetter}
+                                        </div>
+                                      </div>
                                       <div className="flex items-start gap-2">
-                                        <span className="text-slate-400 mt-1">•</span>
                                         <div className="flex-1 space-y-2">
                                           <Input
                                             id={`substep-${index}-${subIndex}`}
@@ -1407,29 +1414,6 @@ const ProcessWorkflowEditor = ({ process, onSave, onCancel, templates = [], team
                                   <Plus className="mr-2 h-3 w-3" />
                                   Add Sub-step
                                 </Button>
-                              </div>
-                            </div>
-
-                            <div className="grid grid-cols-2 gap-4">
-                              <div>
-                                <Label className="text-sm font-medium text-slate-700 mb-2">
-                                  Responsible Role
-                                </Label>
-                                <Input
-                                  value={step.responsible_role}
-                                  onChange={(e) => handleUpdateStep(index, 'responsible_role', e.target.value)}
-                                  placeholder="Who performs this step?"
-                                />
-                              </div>
-                              <div>
-                                <Label className="text-sm font-medium text-slate-700 mb-2">
-                                  Estimated Time
-                                </Label>
-                                <Input
-                                  value={step.estimated_time}
-                                  onChange={(e) => handleUpdateStep(index, 'estimated_time', e.target.value)}
-                                  placeholder="e.g., 15 minutes"
-                                />
                               </div>
                             </div>
 
