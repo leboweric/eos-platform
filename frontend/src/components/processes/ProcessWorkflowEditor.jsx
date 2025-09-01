@@ -60,6 +60,7 @@ const ProcessWorkflowEditor = ({ process, onSave, onCancel, templates = [], team
   const [currentStep, setCurrentStep] = useState(0);
   const [showExitDialog, setShowExitDialog] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [loading, setLoading] = useState(false);
   const [errors, setErrors] = useState({});
   const [themeColors, setThemeColors] = useState({
     primary: '#3B82F6',
@@ -92,7 +93,42 @@ const ProcessWorkflowEditor = ({ process, onSave, onCancel, templates = [], team
 
   useEffect(() => {
     fetchOrganizationTheme();
-  }, []);
+    // If editing an existing process, fetch its full details including steps
+    if (process?.id) {
+      fetchProcessDetails(process.id);
+    }
+  }, [process?.id]);
+
+  const fetchProcessDetails = async (processId) => {
+    try {
+      setLoading(true);
+      const response = await axios.get(`/processes/${processId}`);
+      const processData = response.data;
+      
+      // Update formData with the fetched process including steps
+      setFormData({
+        ...formData,
+        name: processData.name || '',
+        description: processData.description || '',
+        category: processData.category || 'Operations',
+        owner_user_id: processData.owner_user_id || user?.id || '',
+        purpose: processData.purpose || '',
+        outcomes: processData.outcomes || '',
+        storage_type: processData.storage_type || 'internal',
+        methodology_type: processData.methodology_type || 'eos',
+        is_core_process: processData.is_core_process || false,
+        status: processData.status || 'draft',
+        review_frequency_days: processData.review_frequency_days || 90,
+        steps: processData.steps || [],
+        external_url: processData.external_url || '',
+        external_file_id: processData.external_file_id || '',
+      });
+    } catch (error) {
+      console.error('Failed to fetch process details:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const fetchOrganizationTheme = async () => {
     try {
@@ -167,7 +203,8 @@ const ProcessWorkflowEditor = ({ process, onSave, onCancel, templates = [], team
       responsible_role: '',
       estimated_time: '',
       tools_required: [],
-      attachments: [] // Array to store attachments/screenshots for this step
+      attachments: [], // Array to store attachments/screenshots for this step
+      resources: {}
     };
     setFormData({ ...formData, steps: [...formData.steps, newStep] });
     setEditingStepIndex(formData.steps.length);
@@ -358,6 +395,17 @@ const ProcessWorkflowEditor = ({ process, onSave, onCancel, templates = [], team
 
   // Calculate progress
   const progressPercentage = ((currentStep + 1) / workflowSteps.length) * 100;
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50/30 to-indigo-50/30 relative flex items-center justify-center">
+        <div className="text-center">
+          <Loader2 className="h-8 w-8 animate-spin mx-auto mb-4" style={{ color: themeColors.primary }} />
+          <p className="text-slate-600">Loading process details...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50/30 to-indigo-50/30 relative">
