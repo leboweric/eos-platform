@@ -1051,8 +1051,8 @@ const ProcessWorkflowEditor = ({ process, onSave, onCancel, templates = [], team
                                               </div>
                                               <div 
                                                 className="text-slate-700 line-clamp-3 text-xs overflow-hidden"
-                                                dangerouslySetInnerHTML={{ __html: renderFormattedText(bullet.notes).substring(0, 200) }}
-                                              </div>
+                                                dangerouslySetInnerHTML={{ __html: renderFormattedText(bullet.notes) }}
+                                              />
                                             </div>
                                           )}
                                         </div>
