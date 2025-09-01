@@ -509,12 +509,11 @@ const ProcessWorkflowEditor = ({ process, onSave, onCancel, templates = [], team
       
       // Find the current line
       const lineStart = text.lastIndexOf('\n', start - 1) + 1;
-      const lineEnd = text.indexOf('\n', start);
       const currentLine = text.substring(lineStart, start);
       
-      // Check if we're on a line with just a bullet (user pressed Enter after a bullet, then Tab)
+      // Check if we're at the end of a line or on an empty bullet
       if (currentLine.trim() === '•') {
-        // Replace the existing bullet with an indented one
+        // Replace the existing empty bullet with an indented one
         const newText = text.substring(0, lineStart) + '    • ' + text.substring(start);
         handleUpdateSubStep(stepIndex, subStepIndex, 'notes', newText);
         
@@ -525,14 +524,14 @@ const ProcessWorkflowEditor = ({ process, onSave, onCancel, templates = [], team
           textarea.setSelectionRange(newPos, newPos);
         }, 10);
       } else {
-        // Just insert an indented bullet at cursor position
-        const newText = text.substring(0, start) + '    • ' + text.substring(end);
+        // Insert a new line with an indented bullet
+        const newText = text.substring(0, start) + '\n    • ' + text.substring(end);
         handleUpdateSubStep(stepIndex, subStepIndex, 'notes', newText);
         
-        // Set cursor position after the bullet
+        // Set cursor position after the new indented bullet
         setTimeout(() => {
           textarea.focus();
-          const newPos = start + 6; // 4 spaces + "• "
+          const newPos = start + 7; // newline + 4 spaces + "• "
           textarea.setSelectionRange(newPos, newPos);
         }, 10);
       }
