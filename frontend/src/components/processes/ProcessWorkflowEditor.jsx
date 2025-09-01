@@ -1271,7 +1271,7 @@ const ProcessWorkflowEditor = ({ process, onSave, onCancel, templates = [], team
                           <div className="space-y-4 mt-4">
                             <div>
                               <Label className="text-sm font-medium text-slate-700 mb-2">
-                                Step Description
+                                Step Notes
                               </Label>
                               <Textarea
                                 id={`step-description-${index}`}
@@ -1743,10 +1743,10 @@ const ProcessWorkflowEditor = ({ process, onSave, onCancel, templates = [], team
                         {/* Expanded View (not editing) */}
                         {expandedSteps[index] && editingStepIndex !== index && (
                           <div className="mt-4 p-4 bg-slate-50 rounded-lg space-y-3">
-                            {/* Step Description */}
+                            {/* Step Notes */}
                             {step.description && (
                               <div>
-                                <p className="text-xs font-medium text-slate-600 mb-1">Description</p>
+                                <p className="text-xs font-medium text-slate-600 mb-1">Notes</p>
                                 <p className="text-sm text-slate-700">{step.description}</p>
                               </div>
                             )}
