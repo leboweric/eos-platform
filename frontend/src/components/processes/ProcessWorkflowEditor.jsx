@@ -62,6 +62,7 @@ const ProcessWorkflowEditor = ({ process, onSave, onCancel, templates = [], team
   const [saving, setSaving] = useState(false);
   const [loading, setLoading] = useState(false);
   const [errors, setErrors] = useState({});
+  const [deleteConfirm, setDeleteConfirm] = useState({ show: false, type: null, index: null, subIndex: null });
   const [themeColors, setThemeColors] = useState({
     primary: '#3B82F6',
     secondary: '#1E40AF',
@@ -218,6 +219,10 @@ const ProcessWorkflowEditor = ({ process, onSave, onCancel, templates = [], team
   };
 
   const handleDeleteStep = (index) => {
+    setDeleteConfirm({ show: true, type: 'step', index, subIndex: null });
+  };
+
+  const confirmDeleteStep = (index) => {
     const updatedSteps = formData.steps.filter((_, i) => i !== index);
     // Renumber remaining steps
     updatedSteps.forEach((step, i) => {
@@ -225,6 +230,7 @@ const ProcessWorkflowEditor = ({ process, onSave, onCancel, templates = [], team
     });
     setFormData({ ...formData, steps: updatedSteps });
     setEditingStepIndex(null);
+    setDeleteConfirm({ show: false, type: null, index: null, subIndex: null });
   };
 
   const handleMoveStep = (index, direction) => {
@@ -264,9 +270,14 @@ const ProcessWorkflowEditor = ({ process, onSave, onCancel, templates = [], team
   };
 
   const handleDeleteSubStep = (stepIndex, subStepIndex) => {
+    setDeleteConfirm({ show: true, type: 'substep', index: stepIndex, subIndex: subStepIndex });
+  };
+
+  const confirmDeleteSubStep = (stepIndex, subStepIndex) => {
     const updatedSteps = [...formData.steps];
     updatedSteps[stepIndex].bullets = updatedSteps[stepIndex].bullets.filter((_, i) => i !== subStepIndex);
     setFormData({ ...formData, steps: updatedSteps });
+    setDeleteConfirm({ show: false, type: null, index: null, subIndex: null });
   };
 
   // Handle file upload for step attachments
@@ -305,9 +316,14 @@ const ProcessWorkflowEditor = ({ process, onSave, onCancel, templates = [], team
   };
 
   const handleDeleteAttachment = (stepIndex, attachmentIndex) => {
+    setDeleteConfirm({ show: true, type: 'attachment', index: stepIndex, subIndex: attachmentIndex });
+  };
+
+  const confirmDeleteAttachment = (stepIndex, attachmentIndex) => {
     const updatedSteps = [...formData.steps];
     updatedSteps[stepIndex].attachments = updatedSteps[stepIndex].attachments.filter((_, i) => i !== attachmentIndex);
     setFormData({ ...formData, steps: updatedSteps });
+    setDeleteConfirm({ show: false, type: null, index: null, subIndex: null });
   };
 
   // Handle attachment download
@@ -1776,6 +1792,42 @@ const ProcessWorkflowEditor = ({ process, onSave, onCancel, templates = [], team
           </div>
         </div>
       </div>
+
+      {/* Delete Confirmation Dialog */}
+      <Dialog open={deleteConfirm.show} onOpenChange={(open) => !open && setDeleteConfirm({ show: false, type: null, index: null, subIndex: null })}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Confirm Deletion</DialogTitle>
+            <DialogDescription>
+              {deleteConfirm.type === 'step' && `Are you sure you want to delete Step ${deleteConfirm.index + 1}? This will remove the step and all its sub-steps, notes, and attachments.`}
+              {deleteConfirm.type === 'substep' && `Are you sure you want to delete this sub-step? Any notes associated with it will also be removed.`}
+              {deleteConfirm.type === 'attachment' && `Are you sure you want to delete this attachment? This action cannot be undone.`}
+            </DialogDescription>
+          </DialogHeader>
+          <div className="flex gap-3 justify-end pt-4">
+            <Button 
+              variant="outline" 
+              onClick={() => setDeleteConfirm({ show: false, type: null, index: null, subIndex: null })}
+            >
+              Cancel
+            </Button>
+            <Button 
+              variant="destructive"
+              onClick={() => {
+                if (deleteConfirm.type === 'step') {
+                  confirmDeleteStep(deleteConfirm.index);
+                } else if (deleteConfirm.type === 'substep') {
+                  confirmDeleteSubStep(deleteConfirm.index, deleteConfirm.subIndex);
+                } else if (deleteConfirm.type === 'attachment') {
+                  confirmDeleteAttachment(deleteConfirm.index, deleteConfirm.subIndex);
+                }
+              }}
+            >
+              Delete
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
 
       {/* Exit Confirmation Dialog */}
       <Dialog open={showExitDialog} onOpenChange={setShowExitDialog}>
