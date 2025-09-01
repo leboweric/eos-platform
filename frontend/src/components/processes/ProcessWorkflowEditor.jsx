@@ -1204,7 +1204,14 @@ const ProcessWorkflowEditor = ({ process, onSave, onCancel, templates = [], team
                                       {/* Letter indicator with connecting line */}
                                       <div className="absolute -left-8 top-3 flex items-center">
                                         <div className="w-4 h-px bg-slate-300"></div>
-                                        <div className="bg-white border border-slate-300 rounded-full w-6 h-6 flex items-center justify-center text-xs font-medium text-slate-600">
+                                        <div 
+                                          className="bg-white border rounded-full w-6 h-6 flex items-center justify-center text-xs font-medium"
+                                          style={{ 
+                                            borderColor: `${themeColors.primary}40`,
+                                            color: `${themeColors.primary}99`,
+                                            backgroundColor: `${themeColors.primary}08`
+                                          }}
+                                        >
                                           {subStepLetter}
                                         </div>
                                       </div>
@@ -1347,7 +1354,7 @@ const ProcessWorkflowEditor = ({ process, onSave, onCancel, templates = [], team
                                                         className="h-5 text-xs -mt-1"
                                                         onClick={() => toggleEditMode(index, subIndex, false)}
                                                       >
-                                                        Preview
+                                                        Save
                                                       </Button>
                                                     </div>
                                                   </>
