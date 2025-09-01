@@ -14,7 +14,7 @@ router.get('/', authenticate, async (req, res) => {
     let sql = `
       SELECT 
         pd.*,
-        u.name as owner_name,
+        CONCAT(u.first_name, ' ', u.last_name) as owner_name,
         COUNT(DISTINCT ps.id) as step_count,
         COUNT(DISTINCT pa.id) as attachment_count,
         COUNT(DISTINCT pack.id) as acknowledgment_count,
@@ -50,7 +50,7 @@ router.get('/', authenticate, async (req, res) => {
     }
     
     sql += ` 
-      GROUP BY pd.id, u.name
+      GROUP BY pd.id, u.first_name, u.last_name
       ORDER BY pd.is_core_process DESC, pd.category, pd.name
     `;
     
@@ -70,7 +70,7 @@ router.get('/:id', authenticate, async (req, res) => {
     
     // Get process document
     const processResult = await query(
-      `SELECT pd.*, u.name as owner_name
+      `SELECT pd.*, CONCAT(u.first_name, ' ', u.last_name) as owner_name
        FROM process_documents pd
        LEFT JOIN users u ON pd.owner_user_id = u.id
        WHERE pd.id = $1 AND pd.organization_id = $2`,
