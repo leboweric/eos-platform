@@ -474,6 +474,35 @@ router.post('/:id/sync', authenticate, async (req, res) => {
   }
 });
 
+// Delete a process
+router.delete('/:id', authenticate, async (req, res) => {
+  try {
+    const { organizationId } = req.user;
+    const { id } = req.params;
+    
+    // Check if process exists and belongs to this organization
+    const checkResult = await query(
+      'SELECT id FROM process_documents WHERE id = $1 AND organization_id = $2',
+      [id, organizationId]
+    );
+    
+    if (checkResult.rows.length === 0) {
+      return res.status(404).json({ error: 'Process not found' });
+    }
+    
+    // Delete the process (cascades to steps, attachments, and acknowledgments)
+    await query(
+      'DELETE FROM process_documents WHERE id = $1 AND organization_id = $2',
+      [id, organizationId]
+    );
+    
+    res.json({ message: 'Process deleted successfully' });
+  } catch (error) {
+    console.error('Error deleting process:', error);
+    res.status(500).json({ error: 'Failed to delete process' });
+  }
+});
+
 // Export process to PDF
 router.get('/:id/export', authenticate, async (req, res) => {
   try {
