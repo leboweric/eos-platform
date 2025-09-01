@@ -1132,8 +1132,13 @@ const ProcessWorkflowEditor = ({ process, onSave, onCancel, templates = [], team
                               variant="ghost"
                               size="sm"
                               onClick={() => setEditingStepIndex(editingStepIndex === index ? null : index)}
+                              className={editingStepIndex === index ? "text-green-600 hover:text-green-700" : ""}
                             >
-                              <Edit className="h-4 w-4" />
+                              {editingStepIndex === index ? (
+                                <Save className="h-4 w-4" />
+                              ) : (
+                                <Edit className="h-4 w-4" />
+                              )}
                             </Button>
                             <Button
                               variant="ghost"
