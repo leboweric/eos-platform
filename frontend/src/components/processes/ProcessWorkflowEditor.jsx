@@ -366,7 +366,13 @@ const ProcessWorkflowEditor = ({ process, onSave, onCancel, templates = [], team
     }
     
     const textarea = document.getElementById(`notes-${stepIndex}-${subStepIndex}`);
-    if (!textarea) return;
+    if (!textarea) {
+      console.error('Textarea not found for formatting');
+      return;
+    }
+    
+    // Focus the textarea to ensure selection is active
+    textarea.focus();
 
     const start = textarea.selectionStart;
     const end = textarea.selectionEnd;
@@ -400,57 +406,31 @@ const ProcessWorkflowEditor = ({ process, onSave, onCancel, templates = [], team
         break;
       
       case 'bullet':
-        // If nothing is selected, select the current line(s) based on cursor position
-        if (!selectedText && start === end) {
-          // Find the start and end of the current line
-          const lineStart = text.lastIndexOf('\n', start - 1) + 1;
-          const lineEnd = text.indexOf('\n', start);
-          const actualLineEnd = lineEnd === -1 ? text.length : lineEnd;
-          
-          // Select the current line
-          textarea.setSelectionRange(lineStart, actualLineEnd);
-          selectedText = text.substring(lineStart, actualLineEnd);
-          start = lineStart;
-          end = actualLineEnd;
-        }
-        
-        // Handle multiple lines or single line with selection
-        if (selectedText) {
+        // If nothing is selected or just cursor position
+        if (selectedText === '' || (start === end)) {
+          // Just add a bullet at the current position
+          newText = text.substring(0, start) + '• ' + text.substring(end);
+          newCursorPos = start + 2;
+        } else {
+          // Text is selected - add bullet to each line
           const lines = selectedText.split('\n');
-          let allBulleted = true;
-          let anyBulleted = false;
-          
-          // Check if all non-empty lines are bulleted
-          lines.forEach(line => {
-            if (line.trim()) {
-              if (line.trim().startsWith('•')) {
-                anyBulleted = true;
-              } else {
-                allBulleted = false;
-              }
-            }
-          });
-          
-          // If all are bulleted, remove bullets. Otherwise, add bullets.
           const bulletedLines = lines.map(line => {
-            if (!line.trim()) return line;  // Keep empty lines as-is
+            const trimmedLine = line.trim();
+            if (!trimmedLine) return line; // Keep empty lines
             
-            if (allBulleted) {
-              // Remove bullets
+            // Check if already has a bullet
+            if (trimmedLine.startsWith('•')) {
+              // Remove the bullet (toggle off)
               return line.replace(/^\s*•\s*/, '');
             } else {
-              // Add bullets (remove any existing numbers or other markers first)
-              const cleanLine = line
-                .replace(/^\s*•\s*/, '')  // Remove existing bullet
-                .replace(/^\s*\d+\.\s*/, '')  // Remove numbering
-                .replace(/^\s*[\-\*\+]\s*/, '')  // Remove other list markers
-                .trim();
-              return cleanLine ? `• ${cleanLine}` : '';
+              // Add bullet (remove any numbers first)
+              const cleanLine = trimmedLine.replace(/^\d+\.\s*/, '');
+              return `• ${cleanLine}`;
             }
           });
           
           newText = text.substring(0, start) + bulletedLines.join('\n') + text.substring(end);
-          newCursorPos = start + bulletedLines.join('\n').length;
+          newCursorPos = end + (bulletedLines.join('\n').length - selectedText.length);
         }
         break;
       
@@ -1107,6 +1087,7 @@ const ProcessWorkflowEditor = ({ process, onSave, onCancel, templates = [], team
                                                       variant="ghost"
                                                       size="sm"
                                                       className="h-7 w-7 p-0"
+                                                      onMouseDown={(e) => e.preventDefault()}
                                                       onClick={() => applyFormatting(index, subIndex, 'bold')}
                                                       title="Bold (select text first)"
                                                     >
@@ -1117,6 +1098,7 @@ const ProcessWorkflowEditor = ({ process, onSave, onCancel, templates = [], team
                                                       variant="ghost"
                                                       size="sm"
                                                       className="h-7 w-7 p-0"
+                                                      onMouseDown={(e) => e.preventDefault()}
                                                       onClick={() => applyFormatting(index, subIndex, 'italic')}
                                                       title="Italic (select text first)"
                                                     >
@@ -1128,6 +1110,7 @@ const ProcessWorkflowEditor = ({ process, onSave, onCancel, templates = [], team
                                                       variant="ghost"
                                                       size="sm"
                                                       className="h-7 w-7 p-0"
+                                                      onMouseDown={(e) => e.preventDefault()}
                                                       onClick={() => applyFormatting(index, subIndex, 'bullet')}
                                                       title="Bullet point"
                                                     >
@@ -1138,6 +1121,7 @@ const ProcessWorkflowEditor = ({ process, onSave, onCancel, templates = [], team
                                                       variant="ghost"
                                                       size="sm"
                                                       className="h-7 w-7 p-0"
+                                                      onMouseDown={(e) => e.preventDefault()}
                                                       onClick={() => applyFormatting(index, subIndex, 'number')}
                                                       title="Numbered list"
                                                     >
@@ -1149,6 +1133,7 @@ const ProcessWorkflowEditor = ({ process, onSave, onCancel, templates = [], team
                                                       variant="ghost"
                                                       size="sm"
                                                       className="h-7 w-7 p-0"
+                                                      onMouseDown={(e) => e.preventDefault()}
                                                       onClick={() => applyFormatting(index, subIndex, 'code')}
                                                       title="Code/Account number"
                                                     >
@@ -1159,6 +1144,7 @@ const ProcessWorkflowEditor = ({ process, onSave, onCancel, templates = [], team
                                                       variant="ghost"
                                                       size="sm"
                                                       className="h-7 w-7 p-0"
+                                                      onMouseDown={(e) => e.preventDefault()}
                                                       onClick={() => applyFormatting(index, subIndex, 'divider')}
                                                       title="Divider line"
                                                     >
