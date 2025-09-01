@@ -195,14 +195,13 @@ router.post('/', authenticate, async (req, res) => {
         const stepResult = await query(
           `INSERT INTO process_steps (
             process_document_id, step_number, title, description, bullets,
-            responsible_role, estimated_time, tools_required, attachments
-          ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
+            responsible_role, estimated_time, tools_required
+          ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
           RETURNING id`,
           [
             process.id, step.step_number, step.title, step.description,
             JSON.stringify(step.bullets), step.responsible_role,
-            step.estimated_time, step.tools_required,
-            JSON.stringify(step.attachments || [])
+            step.estimated_time, step.tools_required
           ]
         );
         
@@ -319,14 +318,13 @@ router.put('/:id', authenticate, async (req, res) => {
         const stepResult = await query(
           `INSERT INTO process_steps (
             process_document_id, step_number, title, description, bullets,
-            responsible_role, estimated_time, tools_required, attachments
-          ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
+            responsible_role, estimated_time, tools_required
+          ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
           RETURNING id`,
           [
             id, step.step_number, step.title, step.description,
             JSON.stringify(step.bullets), step.responsible_role,
-            step.estimated_time, step.tools_required,
-            JSON.stringify(step.attachments || [])
+            step.estimated_time, step.tools_required
           ]
         );
         
