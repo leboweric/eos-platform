@@ -1170,11 +1170,17 @@ const ProcessWorkflowEditor = ({ process, onSave, onCancel, templates = [], team
                                                     />
                                                     <div className="flex items-start justify-between mt-2">
                                                       <p className="text-xs text-slate-500">
-                                                        Formatting: **bold**, *italic*, `code`, • bullets
+                                                        **bold** *italic* `code` • bullets (Click outside to see formatted)
                                                       </p>
-                                                      <p className="text-xs text-slate-500">
-                                                        Paste content to preserve formatting
-                                                      </p>
+                                                      <Button
+                                                        type="button"
+                                                        variant="ghost"
+                                                        size="sm"
+                                                        className="h-5 text-xs -mt-1"
+                                                        onClick={() => toggleEditMode(index, subIndex, false)}
+                                                      >
+                                                        Preview
+                                                      </Button>
                                                     </div>
                                                   </>
                                                 ) : (
