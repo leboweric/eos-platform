@@ -497,14 +497,35 @@ const ProcessWorkflowEditor = ({ process, onSave, onCancel, templates = [], team
     }));
   };
 
-  // Handle Enter key for auto-continuing lists
+  // Handle Enter key for auto-continuing lists and Tab for indentation
   const handleKeyDown = (e, stepIndex, subStepIndex) => {
-    if (e.key === 'Enter') {
-      const textarea = e.target;
-      const start = textarea.selectionStart;
-      const end = textarea.selectionEnd;
-      const text = textarea.value;
+    const textarea = e.target;
+    const start = textarea.selectionStart;
+    const end = textarea.selectionEnd;
+    const text = textarea.value;
+    
+    if (e.key === 'Tab') {
+      e.preventDefault();
       
+      // Find the current line
+      const lineStart = text.lastIndexOf('\n', start - 1) + 1;
+      const lineEnd = text.indexOf('\n', start);
+      const currentLine = text.substring(lineStart, lineEnd === -1 ? text.length : lineEnd);
+      
+      // Check if we're at the beginning of a line or on an empty line after pressing Enter
+      const lineBeforeCursor = text.substring(lineStart, start);
+      if (lineBeforeCursor.trim() === '') {
+        // Add indented bullet
+        const newText = text.substring(0, start) + '    • ' + text.substring(end);
+        handleUpdateSubStep(stepIndex, subStepIndex, 'notes', newText);
+        setTimeout(() => {
+          textarea.selectionStart = textarea.selectionEnd = start + 6; // 4 spaces + "• "
+        }, 0);
+      }
+      return;
+    }
+    
+    if (e.key === 'Enter') {
       // Find the current line
       const lineStart = text.lastIndexOf('\n', start - 1) + 1;
       const lineEnd = text.indexOf('\n', start);
