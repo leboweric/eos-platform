@@ -236,8 +236,6 @@ router.post('/', authenticate, async (req, res) => {
         const stepId = stepResult.rows[0].id;
         
         // If step has attachments, save them to process_attachments table
-        // NOTE: Temporarily disabled - run fix_process_attachments_step_id.sql first
-        /*
         if (step.attachments && step.attachments.length > 0) {
           for (const attachment of step.attachments) {
             // Extract base64 data if present
@@ -269,7 +267,6 @@ router.post('/', authenticate, async (req, res) => {
             );
           }
         }
-        */
       }
     }
     
@@ -363,9 +360,7 @@ router.put('/:id', authenticate, async (req, res) => {
         
         const stepId = stepResult.rows[0].id;
         
-        // If step has attachments, save them to process_attachments table  
-        // NOTE: Temporarily disabled - run fix_process_attachments_step_id.sql first
-        /*
+        // If step has attachments, save them to process_attachments table
         if (step.attachments && step.attachments.length > 0) {
           for (const attachment of step.attachments) {
             // Extract base64 data if present
@@ -397,7 +392,6 @@ router.put('/:id', authenticate, async (req, res) => {
             );
           }
         }
-        */
       }
     }
     
