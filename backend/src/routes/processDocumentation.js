@@ -90,46 +90,74 @@ router.get('/:id', authenticate, async (req, res) => {
         [id]
       );
       
-      // For each step, get its attachments
-      for (const step of stepsResult.rows) {
-        const stepAttachmentsResult = await query(
-          `SELECT id, file_name, file_type, file_size, 
-           encode(file_data, 'base64') as file_data_base64,
-           uploaded_at
-           FROM process_attachments 
-           WHERE process_document_id = $1 AND step_id = $2`,
-          [id, step.id]
-        );
+      // Parse steps and handle attachments
+      process.steps = stepsResult.rows.map(step => {
+        // Parse bullets if it's a JSON string
+        if (typeof step.bullets === 'string') {
+          try {
+            step.bullets = JSON.parse(step.bullets);
+          } catch (e) {
+            console.error('Failed to parse bullets:', e);
+            step.bullets = [];
+          }
+        }
         
-        // Convert attachments to the format expected by frontend
-        step.attachments = stepAttachmentsResult.rows.map(att => ({
-          id: att.id,
-          file_name: att.file_name,
-          name: att.file_name,  // Compatibility
-          file_type: att.file_type,
-          type: att.file_type,  // Compatibility
-          file_size: att.file_size,
-          size: att.file_size,  // Compatibility
-          file_data: att.file_data_base64 ? `data:${att.file_type};base64,${att.file_data_base64}` : null,
-          url: att.file_data_base64 ? `data:${att.file_type};base64,${att.file_data_base64}` : null,
-          isImage: att.file_type && att.file_type.startsWith('image/'),
-          uploadedAt: att.uploaded_at
-        }));
-      }
+        // Initialize attachments array
+        step.attachments = [];
+        return step;
+      });
       
-      process.steps = stepsResult.rows;
+      // Try to get attachments from the attachments table (for new processes)
+      // This is optional - old processes might not have entries here
+      try {
+        for (const step of process.steps) {
+          const stepAttachmentsResult = await query(
+            `SELECT id, file_name, file_type, file_size, 
+             encode(file_data, 'base64') as file_data_base64,
+             uploaded_at
+             FROM process_attachments 
+             WHERE process_document_id = $1 AND step_id = $2`,
+            [id, step.id]
+          );
+          
+          if (stepAttachmentsResult.rows.length > 0) {
+            // Convert attachments to the format expected by frontend
+            step.attachments = stepAttachmentsResult.rows.map(att => ({
+              id: att.id,
+              file_name: att.file_name,
+              name: att.file_name,  // Compatibility
+              file_type: att.file_type,
+              type: att.file_type,  // Compatibility
+              file_size: att.file_size,
+              size: att.file_size,  // Compatibility
+              file_data: att.file_data_base64 ? `data:${att.file_type};base64,${att.file_data_base64}` : null,
+              url: att.file_data_base64 ? `data:${att.file_type};base64,${att.file_data_base64}` : null,
+              isImage: att.file_type && att.file_type.startsWith('image/'),
+              uploadedAt: att.uploaded_at
+            }));
+          }
+        }
+      } catch (attachmentError) {
+        console.error('Error fetching attachments:', attachmentError);
+        // Continue without attachments - they're optional
+      }
     }
     
     // Get process-level attachments (not tied to specific steps)
-    const attachmentsResult = await query(
-      `SELECT id, file_name, file_type, file_size,
-       encode(file_data, 'base64') as file_data_base64,
-       uploaded_at
-       FROM process_attachments 
-       WHERE process_document_id = $1 AND step_id IS NULL`,
-      [id]
-    );
-    process.attachments = attachmentsResult.rows;
+    try {
+      const attachmentsResult = await query(
+        `SELECT id, file_name, file_type, file_size,
+         encode(file_data, 'base64') as file_data_base64,
+         uploaded_at
+         FROM process_attachments 
+         WHERE process_document_id = $1 AND step_id IS NULL`,
+        [id]
+      );
+      process.attachments = attachmentsResult.rows || [];
+    } catch (error) {
+      console.error('Error fetching process attachments:', error);
+      process.attachments = [];
+    }
     
     // Get user's acknowledgment status
     const ackResult = await query(
@@ -214,10 +242,12 @@ router.post('/', authenticate, async (req, res) => {
             let fileData = null;
             if (attachment.file_data || attachment.url) {
               const dataUrl = attachment.file_data || attachment.url;
-              if (dataUrl.startsWith('data:')) {
+              if (dataUrl && typeof dataUrl === 'string' && dataUrl.startsWith('data:')) {
                 // Extract base64 content after the comma
                 const base64Data = dataUrl.split(',')[1];
-                fileData = Buffer.from(base64Data, 'base64');
+                if (base64Data) {
+                  fileData = Buffer.from(base64Data, 'base64');
+                }
               }
             }
             
@@ -337,10 +367,12 @@ router.put('/:id', authenticate, async (req, res) => {
             let fileData = null;
             if (attachment.file_data || attachment.url) {
               const dataUrl = attachment.file_data || attachment.url;
-              if (dataUrl.startsWith('data:')) {
+              if (dataUrl && typeof dataUrl === 'string' && dataUrl.startsWith('data:')) {
                 // Extract base64 content after the comma
                 const base64Data = dataUrl.split(',')[1];
-                fileData = Buffer.from(base64Data, 'base64');
+                if (base64Data) {
+                  fileData = Buffer.from(base64Data, 'base64');
+                }
               }
             }
             
