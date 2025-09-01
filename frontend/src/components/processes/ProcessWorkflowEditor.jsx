@@ -742,16 +742,25 @@ const ProcessWorkflowEditor = ({ process, onSave, onCancel, templates = [], team
       // Code/monospace
       formattedLine = formattedLine.replace(/`([^`]+)`/g, '<code style="background: #f1f5f9; padding: 2px 6px; border-radius: 4px; font-family: monospace; font-size: 0.9em; color: #0f172a;">$1</code>');
       
-      // Handle line types
-      if (line.trim().startsWith('•')) {
+      // Handle line types - check for bullets with indentation
+      const bulletMatch = line.match(/^(\s*)(•\s+)(.*)$/);
+      if (bulletMatch) {
+        const indent = bulletMatch[1];
+        const indentLevel = Math.floor(indent.length / 4); // Count 4-space indents
+        const paddingLeft = 20 + (indentLevel * 20); // Base padding + additional for each indent
         const content = formattedLine.substring(formattedLine.indexOf('•') + 1).trim();
-        return `<div style="padding-left: 20px; position: relative; margin: 2px 0;"><span style="position: absolute; left: 0;">•</span>${content}</div>`;
+        return `<div style="padding-left: ${paddingLeft}px; position: relative; margin: 2px 0;"><span style="position: absolute; left: ${indentLevel * 20}px;">•</span>${content}</div>`;
       }
       
-      if (line.match(/^\d+\.\s+/)) {
-        const num = line.match(/^(\d+)\.\s+/)[1];
-        const content = formattedLine.replace(/^\d+\.\s+/, '');
-        return `<div style="padding-left: 20px; position: relative; margin: 2px 0;"><span style="position: absolute; left: 0;">${num}.</span>${content}</div>`;
+      // Handle numbered lists with indentation
+      const numberMatch = line.match(/^(\s*)(\d+)\.\s+(.*)$/);
+      if (numberMatch) {
+        const indent = numberMatch[1];
+        const num = numberMatch[2];
+        const indentLevel = Math.floor(indent.length / 4);
+        const paddingLeft = 20 + (indentLevel * 20);
+        const content = formattedLine.replace(/^\s*\d+\.\s+/, '');
+        return `<div style="padding-left: ${paddingLeft}px; position: relative; margin: 2px 0;"><span style="position: absolute; left: ${indentLevel * 20}px;">${num}.</span>${content}</div>`;
       }
       
       if (line.trim() === '---') {
