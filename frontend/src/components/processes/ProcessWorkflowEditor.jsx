@@ -341,15 +341,29 @@ const ProcessWorkflowEditor = ({ process, onSave, onCancel, templates = [], team
 
   // Handle attachment preview
   const handlePreviewAttachment = (attachment) => {
+    console.log('Preview attachment clicked:', attachment);
+    
     // Check if it's an image based on file type or name
     const isImage = attachment.fileType?.startsWith('image/') || 
                    attachment.file_type?.startsWith('image/') ||
                    attachment.isImage ||
                    /\.(jpg|jpeg|png|gif|webp)$/i.test(attachment.fileName || attachment.file_name || attachment.name || '');
     
+    console.log('Is image?', isImage);
+    console.log('File name:', attachment.fileName || attachment.file_name);
+    console.log('File type:', attachment.fileType || attachment.file_type);
+    
     if (isImage) {
-      // For images, open in a modal or new tab
-      const imageUrl = attachment.url || attachment.file_url || attachment.file_data || attachment.fileData;
+      // For base64 images, ensure proper data URL format
+      let imageUrl = attachment.url || attachment.file_url || attachment.file_data || attachment.fileData || attachment.data;
+      
+      // If it's base64 data without the data URL prefix, add it
+      if (imageUrl && !imageUrl.startsWith('data:') && !imageUrl.startsWith('http')) {
+        const mimeType = attachment.fileType || attachment.file_type || 'image/jpeg';
+        imageUrl = `data:${mimeType};base64,${imageUrl}`;
+      }
+      
+      console.log('Image URL preview:', imageUrl ? imageUrl.substring(0, 100) + '...' : 'No URL');
       
       if (!imageUrl) {
         console.error('No image URL found for preview:', attachment);
@@ -366,14 +380,19 @@ const ProcessWorkflowEditor = ({ process, onSave, onCancel, templates = [], team
               <style>
                 body { margin: 0; display: flex; justify-content: center; align-items: center; min-height: 100vh; background: #1f2937; }
                 img { max-width: 100%; max-height: 100vh; object-fit: contain; }
+                .error { color: white; font-family: sans-serif; text-align: center; padding: 20px; }
               </style>
             </head>
             <body>
-              <img src="${imageUrl}" alt="${attachment.fileName || attachment.file_name || 'Preview'}" />
+              <img src="${imageUrl}" alt="${attachment.fileName || attachment.file_name || 'Preview'}" 
+                   onerror="document.body.innerHTML='<div class=error>Failed to load image. The image data may be corrupted or in an unsupported format.</div>'" />
             </body>
           </html>
         `);
         newWindow.document.close();
+      } else {
+        console.error('Failed to open preview window - popup may be blocked');
+        alert('Unable to open preview window. Please check if popups are blocked for this site.');
       }
     } else {
       // For documents, try to open in browser or download
