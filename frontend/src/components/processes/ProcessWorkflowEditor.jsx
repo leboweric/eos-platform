@@ -358,75 +358,92 @@ const ProcessWorkflowEditor = ({ process, onSave, onCancel, templates = [], team
         break;
       
       case 'bullet':
-        // Handle multiple lines
-        if (selectedText.includes('\n') || selectedText.length > 0) {
-          const lines = selectedText.split('\n');
-          let hasChanges = false;
-          const bulletedLines = lines.map(line => {
-            // Toggle bullets - if already bulleted, remove; if not, add
-            if (line.trim().startsWith('•')) {
-              hasChanges = true;
-              return line.replace(/^\s*•\s*/, '');  // Remove bullet
-            }
-            // Remove existing numbering if present
-            const cleanLine = line.replace(/^\s*\d+\.\s*/, '').replace(/^\s*[\-\*]\s*/, '');
-            if (line.trim().length > 0) {
-              hasChanges = true;
-              return `• ${cleanLine}`;
-            }
-            return line;
-          });
-          if (hasChanges) {
-            newText = text.substring(0, start) + bulletedLines.join('\n') + text.substring(end);
-          } else {
-            newText = text;
-          }
-        } else {
-          // Single line or cursor position
+        // If nothing is selected, select the current line(s) based on cursor position
+        if (!selectedText && start === end) {
+          // Find the start and end of the current line
           const lineStart = text.lastIndexOf('\n', start - 1) + 1;
           const lineEnd = text.indexOf('\n', start);
-          const currentLine = text.substring(lineStart, lineEnd === -1 ? text.length : lineEnd);
+          const actualLineEnd = lineEnd === -1 ? text.length : lineEnd;
           
-          if (currentLine.trim().startsWith('•')) {
-            // Remove bullet
-            const cleanLine = currentLine.replace(/^\s*•\s*/, '');
-            newText = text.substring(0, lineStart) + cleanLine + text.substring(lineEnd === -1 ? text.length : lineEnd);
-            newCursorPos = lineStart;
-          } else {
-            // Add bullet
-            const cleanLine = currentLine.replace(/^\s*\d+\.\s*/, '').replace(/^\s*[\-\*]\s*/, '');
-            newText = text.substring(0, lineStart) + `• ${cleanLine}` + text.substring(lineEnd === -1 ? text.length : lineEnd);
-            newCursorPos = start + 2;
-          }
+          // Select the current line
+          textarea.setSelectionRange(lineStart, actualLineEnd);
+          selectedText = text.substring(lineStart, actualLineEnd);
+          start = lineStart;
+          end = actualLineEnd;
+        }
+        
+        // Handle multiple lines or single line with selection
+        if (selectedText) {
+          const lines = selectedText.split('\n');
+          let allBulleted = true;
+          let anyBulleted = false;
+          
+          // Check if all non-empty lines are bulleted
+          lines.forEach(line => {
+            if (line.trim()) {
+              if (line.trim().startsWith('•')) {
+                anyBulleted = true;
+              } else {
+                allBulleted = false;
+              }
+            }
+          });
+          
+          // If all are bulleted, remove bullets. Otherwise, add bullets.
+          const bulletedLines = lines.map(line => {
+            if (!line.trim()) return line;  // Keep empty lines as-is
+            
+            if (allBulleted) {
+              // Remove bullets
+              return line.replace(/^\s*•\s*/, '');
+            } else {
+              // Add bullets (remove any existing numbers or other markers first)
+              const cleanLine = line
+                .replace(/^\s*•\s*/, '')  // Remove existing bullet
+                .replace(/^\s*\d+\.\s*/, '')  // Remove numbering
+                .replace(/^\s*[\-\*\+]\s*/, '')  // Remove other list markers
+                .trim();
+              return cleanLine ? `• ${cleanLine}` : '';
+            }
+          });
+          
+          newText = text.substring(0, start) + bulletedLines.join('\n') + text.substring(end);
+          newCursorPos = start + bulletedLines.join('\n').length;
         }
         break;
       
       case 'number':
-        // Handle multiple lines
-        if (selectedText.includes('\n') || selectedText.length > 0) {
+        // If nothing is selected, select the current line(s) based on cursor position
+        if (!selectedText && start === end) {
+          // Find the start and end of the current line
+          const lineStart = text.lastIndexOf('\n', start - 1) + 1;
+          const lineEnd = text.indexOf('\n', start);
+          const actualLineEnd = lineEnd === -1 ? text.length : lineEnd;
+          
+          // Select the current line
+          textarea.setSelectionRange(lineStart, actualLineEnd);
+          selectedText = text.substring(lineStart, actualLineEnd);
+          start = lineStart;
+          end = actualLineEnd;
+        }
+        
+        // Handle multiple lines or single line with selection
+        if (selectedText) {
           const lines = selectedText.split('\n');
           let lineNumber = 1;
           const numberedLines = lines.map(line => {
-            // Skip empty lines
-            if (line.trim().length === 0) return line;
-            // Remove existing bullets or numbers
-            const cleanLine = line.replace(/^[•\-]\s*/, '').replace(/^\d+\.\s*/, '');
-            return `${lineNumber++}. ${cleanLine}`;
+            if (!line.trim()) return line;  // Keep empty lines as-is
+            
+            // Remove existing formatting and add number
+            const cleanLine = line
+              .replace(/^[•\-\*\+]\s*/, '')  // Remove bullets
+              .replace(/^\d+\.\s*/, '')  // Remove existing numbers
+              .trim();
+            return cleanLine ? `${lineNumber++}. ${cleanLine}` : '';
           });
-          newText = text.substring(0, start) + numberedLines.join('\n') + text.substring(end);
-        } else {
-          // Single line or cursor position
-          const lineStart = text.lastIndexOf('\n', start - 1) + 1;
-          const lineEnd = text.indexOf('\n', start);
-          const currentLine = text.substring(lineStart, lineEnd === -1 ? text.length : lineEnd);
           
-          if (!currentLine.match(/^\d+\.\s*/)) {
-            const cleanLine = currentLine.replace(/^[•\-]\s*/, '');
-            newText = text.substring(0, lineStart) + `1. ${cleanLine}` + text.substring(lineEnd === -1 ? text.length : lineEnd);
-            newCursorPos = start + 3;
-          } else {
-            newText = text;
-          }
+          newText = text.substring(0, start) + numberedLines.join('\n') + text.substring(end);
+          newCursorPos = start + numberedLines.join('\n').length;
         }
         break;
       
@@ -461,19 +478,70 @@ const ProcessWorkflowEditor = ({ process, onSave, onCancel, templates = [], team
   // Handle paste to preserve formatting
   const handlePaste = (stepIndex, subStepIndex, event) => {
     event.preventDefault();
-    let paste = event.clipboardData.getData('text');
+    
+    // Try to get HTML content first for better formatting preservation
+    let htmlContent = event.clipboardData.getData('text/html');
+    let paste = event.clipboardData.getData('text/plain');
+    
     const textarea = event.target;
     const start = textarea.selectionStart;
     const end = textarea.selectionEnd;
     const text = textarea.value;
     
-    // Convert common bullet characters from Word/other sources to our bullet format
+    // If we have HTML content, parse it to extract structure
+    if (htmlContent) {
+      // Create a temporary div to parse HTML
+      const tempDiv = document.createElement('div');
+      tempDiv.innerHTML = htmlContent;
+      
+      // Extract text with formatting preserved
+      const processNode = (node, result = []) => {
+        if (node.nodeType === Node.TEXT_NODE) {
+          return node.textContent;
+        }
+        
+        if (node.nodeName === 'LI') {
+          // List item - add bullet
+          const content = Array.from(node.childNodes).map(child => processNode(child)).join('');
+          return '• ' + content.trim();
+        }
+        
+        if (node.nodeName === 'P' || node.nodeName === 'DIV') {
+          const content = Array.from(node.childNodes).map(child => processNode(child)).join('');
+          return content ? content + '\n' : '';
+        }
+        
+        if (node.nodeName === 'UL' || node.nodeName === 'OL') {
+          const items = Array.from(node.children).map((li, index) => {
+            const content = Array.from(li.childNodes).map(child => processNode(child)).join('');
+            if (node.nodeName === 'OL') {
+              return `${index + 1}. ${content.trim()}`;
+            }
+            return '• ' + content.trim();
+          });
+          return items.join('\n') + '\n';
+        }
+        
+        if (node.nodeName === 'BR') {
+          return '\n';
+        }
+        
+        // Process children for other nodes
+        return Array.from(node.childNodes).map(child => processNode(child)).join('');
+      };
+      
+      paste = processNode(tempDiv).trim();
+    }
+    
+    // Clean up the pasted text
     paste = paste
-      .replace(/^[●▪▫◦‣⁃]/gm, '•')  // Replace various bullet chars with our standard bullet
-      .replace(/^[\-\*]/gm, '•')     // Replace dashes and asterisks at line start
-      .replace(/^\s*([●▪▫◦‣⁃•\-\*])\s*/gm, '• ')  // Normalize spacing after bullets
+      .replace(/^[●▪▫◦‣⁃◘○◙]/gm, '•')  // Replace various bullet chars with our standard bullet
+      .replace(/^[\-\*\+]/gm, '•')     // Replace dashes, asterisks, plus signs at line start
+      .replace(/^\s*([●▪▫◦‣⁃◘○◙•])\s*/gm, '• ')  // Normalize spacing after bullets
       .replace(/^\s*(\d+)[.)]/gm, '$1.')  // Normalize numbered list formatting
-      .replace(/\t/g, '    ');  // Convert tabs to spaces
+      .replace(/\t/g, '    ')  // Convert tabs to spaces
+      .replace(/\r\n/g, '\n')  // Normalize line endings
+      .replace(/\r/g, '\n');  // Normalize Mac line endings
     
     // Preserve formatting from paste
     const newText = text.substring(0, start) + paste + text.substring(end);
