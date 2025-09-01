@@ -341,28 +341,49 @@ const ProcessWorkflowEditor = ({ process, onSave, onCancel, templates = [], team
 
   // Handle attachment preview
   const handlePreviewAttachment = (attachment) => {
-    if (attachment.isImage) {
+    // Check if it's an image based on file type or name
+    const isImage = attachment.fileType?.startsWith('image/') || 
+                   attachment.file_type?.startsWith('image/') ||
+                   attachment.isImage ||
+                   /\.(jpg|jpeg|png|gif|webp)$/i.test(attachment.fileName || attachment.file_name || attachment.name || '');
+    
+    if (isImage) {
       // For images, open in a modal or new tab
+      const imageUrl = attachment.url || attachment.file_url || attachment.file_data || attachment.fileData;
+      
+      if (!imageUrl) {
+        console.error('No image URL found for preview:', attachment);
+        alert('Unable to preview this image. The image data may not be available.');
+        return;
+      }
+      
       const newWindow = window.open('', '_blank');
-      newWindow.document.write(`
-        <html>
-          <head>
-            <title>${attachment.name || 'Image Preview'}</title>
-            <style>
-              body { margin: 0; display: flex; justify-content: center; align-items: center; min-height: 100vh; background: #1f2937; }
-              img { max-width: 100%; max-height: 100vh; object-fit: contain; }
-            </style>
-          </head>
-          <body>
-            <img src="${attachment.url || attachment.file_data}" alt="${attachment.name || 'Preview'}" />
-          </body>
-        </html>
-      `);
-      newWindow.document.close();
+      if (newWindow) {
+        newWindow.document.write(`
+          <html>
+            <head>
+              <title>${attachment.fileName || attachment.file_name || attachment.name || 'Image Preview'}</title>
+              <style>
+                body { margin: 0; display: flex; justify-content: center; align-items: center; min-height: 100vh; background: #1f2937; }
+                img { max-width: 100%; max-height: 100vh; object-fit: contain; }
+              </style>
+            </head>
+            <body>
+              <img src="${imageUrl}" alt="${attachment.fileName || attachment.file_name || 'Preview'}" />
+            </body>
+          </html>
+        `);
+        newWindow.document.close();
+      }
     } else {
       // For documents, try to open in browser or download
       if (attachment.file_type && attachment.file_type.includes('pdf')) {
-        window.open(attachment.url || attachment.file_data, '_blank');
+        const pdfUrl = attachment.url || attachment.file_url || attachment.file_data;
+        if (pdfUrl) {
+          window.open(pdfUrl, '_blank');
+        } else {
+          handleDownloadAttachment(attachment);
+        }
       } else {
         // For other files, trigger download
         handleDownloadAttachment(attachment);
