@@ -89,12 +89,44 @@ router.get('/:id', authenticate, async (req, res) => {
         'SELECT * FROM process_steps WHERE process_document_id = $1 ORDER BY step_number',
         [id]
       );
+      
+      // For each step, get its attachments
+      for (const step of stepsResult.rows) {
+        const stepAttachmentsResult = await query(
+          `SELECT id, file_name, file_type, file_size, 
+           encode(file_data, 'base64') as file_data_base64,
+           uploaded_at
+           FROM process_attachments 
+           WHERE process_document_id = $1 AND step_id = $2`,
+          [id, step.id]
+        );
+        
+        // Convert attachments to the format expected by frontend
+        step.attachments = stepAttachmentsResult.rows.map(att => ({
+          id: att.id,
+          file_name: att.file_name,
+          name: att.file_name,  // Compatibility
+          file_type: att.file_type,
+          type: att.file_type,  // Compatibility
+          file_size: att.file_size,
+          size: att.file_size,  // Compatibility
+          file_data: att.file_data_base64 ? `data:${att.file_type};base64,${att.file_data_base64}` : null,
+          url: att.file_data_base64 ? `data:${att.file_type};base64,${att.file_data_base64}` : null,
+          isImage: att.file_type && att.file_type.startsWith('image/'),
+          uploadedAt: att.uploaded_at
+        }));
+      }
+      
       process.steps = stepsResult.rows;
     }
     
-    // Get attachments
+    // Get process-level attachments (not tied to specific steps)
     const attachmentsResult = await query(
-      'SELECT * FROM process_attachments WHERE process_document_id = $1',
+      `SELECT id, file_name, file_type, file_size,
+       encode(file_data, 'base64') as file_data_base64,
+       uploaded_at
+       FROM process_attachments 
+       WHERE process_document_id = $1 AND step_id IS NULL`,
       [id]
     );
     process.attachments = attachmentsResult.rows;
@@ -159,17 +191,53 @@ router.post('/', authenticate, async (req, res) => {
     // If internal storage, create steps
     if (storage_type === 'internal' && steps && steps.length > 0) {
       for (const step of steps) {
-        await query(
+        // Insert the step first
+        const stepResult = await query(
           `INSERT INTO process_steps (
             process_document_id, step_number, title, description, bullets,
-            responsible_role, estimated_time, tools_required
-          ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8)`,
+            responsible_role, estimated_time, tools_required, attachments
+          ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
+          RETURNING id`,
           [
             process.id, step.step_number, step.title, step.description,
             JSON.stringify(step.bullets), step.responsible_role,
-            step.estimated_time, step.tools_required
+            step.estimated_time, step.tools_required,
+            JSON.stringify(step.attachments || [])
           ]
         );
+        
+        const stepId = stepResult.rows[0].id;
+        
+        // If step has attachments, save them to process_attachments table
+        if (step.attachments && step.attachments.length > 0) {
+          for (const attachment of step.attachments) {
+            // Extract base64 data if present
+            let fileData = null;
+            if (attachment.file_data || attachment.url) {
+              const dataUrl = attachment.file_data || attachment.url;
+              if (dataUrl.startsWith('data:')) {
+                // Extract base64 content after the comma
+                const base64Data = dataUrl.split(',')[1];
+                fileData = Buffer.from(base64Data, 'base64');
+              }
+            }
+            
+            await query(
+              `INSERT INTO process_attachments (
+                process_document_id, step_id, file_name, file_type, file_size,
+                file_data, uploaded_by
+              ) VALUES ($1, $2, $3, $4, $5, $6, $7)`,
+              [
+                process.id, stepId, 
+                attachment.file_name || attachment.name,
+                attachment.file_type || attachment.type,
+                attachment.file_size || attachment.size,
+                fileData,
+                req.user.id
+              ]
+            );
+          }
+        }
       }
     }
     
@@ -241,22 +309,59 @@ router.put('/:id', authenticate, async (req, res) => {
     
     // Update steps if provided
     if (updates.steps && updates.storage_type === 'internal') {
-      // Delete existing steps
+      // Delete existing steps and attachments
+      await query('DELETE FROM process_attachments WHERE process_document_id = $1', [id]);
       await query('DELETE FROM process_steps WHERE process_document_id = $1', [id]);
       
       // Insert new steps
       for (const step of updates.steps) {
-        await query(
+        // Insert the step first
+        const stepResult = await query(
           `INSERT INTO process_steps (
             process_document_id, step_number, title, description, bullets,
-            responsible_role, estimated_time, tools_required
-          ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8)`,
+            responsible_role, estimated_time, tools_required, attachments
+          ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
+          RETURNING id`,
           [
             id, step.step_number, step.title, step.description,
             JSON.stringify(step.bullets), step.responsible_role,
-            step.estimated_time, step.tools_required
+            step.estimated_time, step.tools_required,
+            JSON.stringify(step.attachments || [])
           ]
         );
+        
+        const stepId = stepResult.rows[0].id;
+        
+        // If step has attachments, save them to process_attachments table
+        if (step.attachments && step.attachments.length > 0) {
+          for (const attachment of step.attachments) {
+            // Extract base64 data if present
+            let fileData = null;
+            if (attachment.file_data || attachment.url) {
+              const dataUrl = attachment.file_data || attachment.url;
+              if (dataUrl.startsWith('data:')) {
+                // Extract base64 content after the comma
+                const base64Data = dataUrl.split(',')[1];
+                fileData = Buffer.from(base64Data, 'base64');
+              }
+            }
+            
+            await query(
+              `INSERT INTO process_attachments (
+                process_document_id, step_id, file_name, file_type, file_size,
+                file_data, uploaded_by
+              ) VALUES ($1, $2, $3, $4, $5, $6, $7)`,
+              [
+                id, stepId,
+                attachment.file_name || attachment.name,
+                attachment.file_type || attachment.type,
+                attachment.file_size || attachment.size,
+                fileData,
+                req.user.id
+              ]
+            );
+          }
+        }
       }
     }
     

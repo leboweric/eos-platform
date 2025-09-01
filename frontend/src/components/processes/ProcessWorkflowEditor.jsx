@@ -280,16 +280,19 @@ const ProcessWorkflowEditor = ({ process, onSave, onCancel, templates = [], team
       // Check if it's an image
       const isImage = file.type.startsWith('image/');
       
-      // For production, you'd upload to server here
-      // For now, we'll create a local preview URL
+      // Convert file to base64 for storage
       const reader = new FileReader();
       reader.onload = (e) => {
         const attachment = {
           id: Date.now() + Math.random(), // Temporary ID
-          name: file.name,
-          type: file.type,
-          size: file.size,
-          url: e.target.result, // Base64 data URL for preview
+          file_name: file.name,  // Use file_name to match backend
+          name: file.name,       // Keep for compatibility
+          file_type: file.type,  // Use file_type to match backend
+          type: file.type,       // Keep for compatibility
+          file_size: file.size,  // Use file_size to match backend
+          size: file.size,       // Keep for compatibility
+          file_data: e.target.result, // Base64 data for storage
+          url: e.target.result,  // For preview
           isImage: isImage,
           uploadedAt: new Date().toISOString()
         };
@@ -309,6 +312,17 @@ const ProcessWorkflowEditor = ({ process, onSave, onCancel, templates = [], team
 
   // Rich text formatting functions
   const applyFormatting = (stepIndex, subStepIndex, format) => {
+    // First ensure we're in edit mode
+    const key = `${stepIndex}-${subStepIndex}`;
+    if (!editingNotes[key]) {
+      toggleEditMode(stepIndex, subStepIndex, true);
+      // Wait for textarea to be rendered
+      setTimeout(() => {
+        applyFormatting(stepIndex, subStepIndex, format);
+      }, 100);
+      return;
+    }
+    
     const textarea = document.getElementById(`notes-${stepIndex}-${subStepIndex}`);
     if (!textarea) return;
 
@@ -347,26 +361,42 @@ const ProcessWorkflowEditor = ({ process, onSave, onCancel, templates = [], team
         // Handle multiple lines
         if (selectedText.includes('\n') || selectedText.length > 0) {
           const lines = selectedText.split('\n');
+          let hasChanges = false;
           const bulletedLines = lines.map(line => {
-            // Skip if already bulleted
-            if (line.trim().startsWith('•')) return line;
+            // Toggle bullets - if already bulleted, remove; if not, add
+            if (line.trim().startsWith('•')) {
+              hasChanges = true;
+              return line.replace(/^\s*•\s*/, '');  // Remove bullet
+            }
             // Remove existing numbering if present
-            const cleanLine = line.replace(/^\d+\.\s*/, '');
-            return line.length > 0 ? `• ${cleanLine}` : line;
+            const cleanLine = line.replace(/^\s*\d+\.\s*/, '').replace(/^\s*[\-\*]\s*/, '');
+            if (line.trim().length > 0) {
+              hasChanges = true;
+              return `• ${cleanLine}`;
+            }
+            return line;
           });
-          newText = text.substring(0, start) + bulletedLines.join('\n') + text.substring(end);
+          if (hasChanges) {
+            newText = text.substring(0, start) + bulletedLines.join('\n') + text.substring(end);
+          } else {
+            newText = text;
+          }
         } else {
           // Single line or cursor position
           const lineStart = text.lastIndexOf('\n', start - 1) + 1;
           const lineEnd = text.indexOf('\n', start);
           const currentLine = text.substring(lineStart, lineEnd === -1 ? text.length : lineEnd);
           
-          if (!currentLine.trim().startsWith('•')) {
-            const cleanLine = currentLine.replace(/^\d+\.\s*/, '');
+          if (currentLine.trim().startsWith('•')) {
+            // Remove bullet
+            const cleanLine = currentLine.replace(/^\s*•\s*/, '');
+            newText = text.substring(0, lineStart) + cleanLine + text.substring(lineEnd === -1 ? text.length : lineEnd);
+            newCursorPos = lineStart;
+          } else {
+            // Add bullet
+            const cleanLine = currentLine.replace(/^\s*\d+\.\s*/, '').replace(/^\s*[\-\*]\s*/, '');
             newText = text.substring(0, lineStart) + `• ${cleanLine}` + text.substring(lineEnd === -1 ? text.length : lineEnd);
             newCursorPos = start + 2;
-          } else {
-            newText = text;
           }
         }
         break;
@@ -431,15 +461,30 @@ const ProcessWorkflowEditor = ({ process, onSave, onCancel, templates = [], team
   // Handle paste to preserve formatting
   const handlePaste = (stepIndex, subStepIndex, event) => {
     event.preventDefault();
-    const paste = event.clipboardData.getData('text');
+    let paste = event.clipboardData.getData('text');
     const textarea = event.target;
     const start = textarea.selectionStart;
     const end = textarea.selectionEnd;
     const text = textarea.value;
     
+    // Convert common bullet characters from Word/other sources to our bullet format
+    paste = paste
+      .replace(/^[●▪▫◦‣⁃]/gm, '•')  // Replace various bullet chars with our standard bullet
+      .replace(/^[\-\*]/gm, '•')     // Replace dashes and asterisks at line start
+      .replace(/^\s*([●▪▫◦‣⁃•\-\*])\s*/gm, '• ')  // Normalize spacing after bullets
+      .replace(/^\s*(\d+)[.)]/gm, '$1.')  // Normalize numbered list formatting
+      .replace(/\t/g, '    ');  // Convert tabs to spaces
+    
     // Preserve formatting from paste
     const newText = text.substring(0, start) + paste + text.substring(end);
     handleUpdateSubStep(stepIndex, subStepIndex, 'notes', newText);
+    
+    // Update cursor position
+    setTimeout(() => {
+      textarea.focus();
+      const newPos = start + paste.length;
+      textarea.setSelectionRange(newPos, newPos);
+    }, 0);
   };
 
   // Render formatted text for display
