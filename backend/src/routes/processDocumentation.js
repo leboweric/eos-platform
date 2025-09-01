@@ -112,8 +112,8 @@ router.get('/:id', authenticate, async (req, res) => {
       try {
         for (const step of process.steps) {
           const stepAttachmentsResult = await query(
-            `SELECT id, file_name, file_type, file_size, 
-             encode(file_data, 'base64') as file_data_base64,
+            `SELECT id, name, file_type, file_size, 
+             encode(file_content, 'base64') as file_data_base64,
              uploaded_at
              FROM process_attachments 
              WHERE process_document_id = $1 AND step_id = $2`,
@@ -124,8 +124,8 @@ router.get('/:id', authenticate, async (req, res) => {
             // Convert attachments to the format expected by frontend
             step.attachments = stepAttachmentsResult.rows.map(att => ({
               id: att.id,
-              file_name: att.file_name,
-              name: att.file_name,  // Compatibility
+              file_name: att.name,
+              name: att.name,  // Compatibility
               file_type: att.file_type,
               type: att.file_type,  // Compatibility
               file_size: att.file_size,
@@ -146,8 +146,8 @@ router.get('/:id', authenticate, async (req, res) => {
     // Get process-level attachments (not tied to specific steps)
     try {
       const attachmentsResult = await query(
-        `SELECT id, file_name, file_type, file_size,
-         encode(file_data, 'base64') as file_data_base64,
+        `SELECT id, name, file_type, file_size,
+         encode(file_content, 'base64') as file_data_base64,
          uploaded_at
          FROM process_attachments 
          WHERE process_document_id = $1 AND step_id IS NULL`,
@@ -253,8 +253,8 @@ router.post('/', authenticate, async (req, res) => {
             
             await query(
               `INSERT INTO process_attachments (
-                process_document_id, step_id, file_name, file_type, file_size,
-                file_data, uploaded_by
+                process_document_id, step_id, name, file_type, file_size,
+                file_content, uploaded_by
               ) VALUES ($1, $2, $3, $4, $5, $6, $7)`,
               [
                 process.id, stepId, 
@@ -378,8 +378,8 @@ router.put('/:id', authenticate, async (req, res) => {
             
             await query(
               `INSERT INTO process_attachments (
-                process_document_id, step_id, file_name, file_type, file_size,
-                file_data, uploaded_by
+                process_document_id, step_id, name, file_type, file_size,
+                file_content, uploaded_by
               ) VALUES ($1, $2, $3, $4, $5, $6, $7)`,
               [
                 id, stepId,
