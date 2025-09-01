@@ -93,6 +93,7 @@ const ProcessWorkflowEditor = ({ process, onSave, onCancel, templates = [], team
   const [expandedSubSteps, setExpandedSubSteps] = useState({}); // Track which substeps have expanded notes
   const [editingNotes, setEditingNotes] = useState({}); // Track which notes are being edited
   const [expandedSteps, setExpandedSteps] = useState({}); // Track which steps are expanded for viewing
+  const [savedNotes, setSavedNotes] = useState({}); // Track which notes were just saved for visual feedback
 
   useEffect(() => {
     fetchOrganizationTheme();
@@ -512,6 +513,19 @@ const ProcessWorkflowEditor = ({ process, onSave, onCancel, templates = [], team
       ...prev,
       [key]: editing
     }));
+    
+    // If we're closing edit mode (saving), show saved feedback
+    if (!editing) {
+      setSavedNotes(prev => ({ ...prev, [key]: true }));
+      // Clear the saved indicator after 2 seconds
+      setTimeout(() => {
+        setSavedNotes(prev => {
+          const updated = { ...prev };
+          delete updated[key];
+          return updated;
+        });
+      }, 2000);
+    }
   };
 
   // Handle Enter key for auto-continuing lists and Tab for indentation
@@ -1309,13 +1323,26 @@ const ProcessWorkflowEditor = ({ process, onSave, onCancel, templates = [], team
                                                   [key]: !prev[key]
                                                 }));
                                               }}
-                                              className="text-xs text-slate-600 hover:text-slate-900 -ml-2"
+                                              className={`text-xs -ml-2 ${
+                                                savedNotes[`${index}-${subIndex}`] 
+                                                  ? 'text-green-600 hover:text-green-700' 
+                                                  : 'text-slate-600 hover:text-slate-900'
+                                              }`}
                                             >
-                                              <ChevronRightIcon 
-                                                className={`h-3 w-3 mr-1 transition-transform ${isExpanded ? 'rotate-90' : ''}`} 
-                                              />
-                                              <StickyNote className="h-3 w-3 mr-1" />
-                                              {bullet.notes ? 'Edit Requirements/Notes' : 'Add Requirements/Notes'}
+                                              {savedNotes[`${index}-${subIndex}`] ? (
+                                                <>
+                                                  <Check className="h-3 w-3 mr-1" />
+                                                  Saved!
+                                                </>
+                                              ) : (
+                                                <>
+                                                  <ChevronRightIcon 
+                                                    className={`h-3 w-3 mr-1 transition-transform ${isExpanded ? 'rotate-90' : ''}`} 
+                                                  />
+                                                  <StickyNote className="h-3 w-3 mr-1" />
+                                                  {bullet.notes ? 'Edit Requirements/Notes' : 'Add Requirements/Notes'}
+                                                </>
+                                              )}
                                             </Button>
                                             
                                             {isExpanded && (
@@ -1412,7 +1439,6 @@ const ProcessWorkflowEditor = ({ process, onSave, onCancel, templates = [], team
                                                       rows={8}
                                                       className="text-sm font-mono whitespace-pre-wrap"
                                                       style={{ lineHeight: '1.6' }}
-                                                      onBlur={() => toggleEditMode(index, subIndex, false)}
                                                       autoFocus
                                                     />
                                                     <div className="flex items-start justify-between mt-2">
@@ -1424,7 +1450,11 @@ const ProcessWorkflowEditor = ({ process, onSave, onCancel, templates = [], team
                                                         variant="ghost"
                                                         size="sm"
                                                         className="h-5 text-xs -mt-1"
-                                                        onClick={() => toggleEditMode(index, subIndex, false)}
+                                                        onClick={(e) => {
+                                                          e.preventDefault();
+                                                          e.stopPropagation();
+                                                          toggleEditMode(index, subIndex, false);
+                                                        }}
                                                       >
                                                         Save
                                                       </Button>
