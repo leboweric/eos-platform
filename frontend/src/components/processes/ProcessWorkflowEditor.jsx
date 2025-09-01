@@ -507,16 +507,35 @@ const ProcessWorkflowEditor = ({ process, onSave, onCancel, templates = [], team
     if (e.key === 'Tab') {
       e.preventDefault();
       
-      // Always insert 4 spaces and a bullet when Tab is pressed
-      const newText = text.substring(0, start) + '    • ' + text.substring(end);
-      handleUpdateSubStep(stepIndex, subStepIndex, 'notes', newText);
+      // Find the current line
+      const lineStart = text.lastIndexOf('\n', start - 1) + 1;
+      const lineEnd = text.indexOf('\n', start);
+      const currentLine = text.substring(lineStart, start);
       
-      // Set cursor position after the bullet
-      setTimeout(() => {
-        textarea.focus();
-        const newPos = start + 6; // 4 spaces + "• "
-        textarea.setSelectionRange(newPos, newPos);
-      }, 10);
+      // Check if we're on a line with just a bullet (user pressed Enter after a bullet, then Tab)
+      if (currentLine.trim() === '•') {
+        // Replace the existing bullet with an indented one
+        const newText = text.substring(0, lineStart) + '    • ' + text.substring(start);
+        handleUpdateSubStep(stepIndex, subStepIndex, 'notes', newText);
+        
+        // Set cursor position after the indented bullet
+        setTimeout(() => {
+          textarea.focus();
+          const newPos = lineStart + 6; // 4 spaces + "• "
+          textarea.setSelectionRange(newPos, newPos);
+        }, 10);
+      } else {
+        // Just insert an indented bullet at cursor position
+        const newText = text.substring(0, start) + '    • ' + text.substring(end);
+        handleUpdateSubStep(stepIndex, subStepIndex, 'notes', newText);
+        
+        // Set cursor position after the bullet
+        setTimeout(() => {
+          textarea.focus();
+          const newPos = start + 6; // 4 spaces + "• "
+          textarea.setSelectionRange(newPos, newPos);
+        }, 10);
+      }
       return;
     }
     
