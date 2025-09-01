@@ -497,6 +497,80 @@ const ProcessWorkflowEditor = ({ process, onSave, onCancel, templates = [], team
     }));
   };
 
+  // Handle Enter key for auto-continuing lists
+  const handleKeyDown = (e, stepIndex, subStepIndex) => {
+    if (e.key === 'Enter') {
+      const textarea = e.target;
+      const start = textarea.selectionStart;
+      const end = textarea.selectionEnd;
+      const text = textarea.value;
+      
+      // Find the current line
+      const lineStart = text.lastIndexOf('\n', start - 1) + 1;
+      const lineEnd = text.indexOf('\n', start);
+      const currentLine = text.substring(lineStart, lineEnd === -1 ? start : Math.min(start, lineEnd));
+      
+      // Check if current line starts with a bullet
+      const bulletMatch = currentLine.match(/^(\s*)(•\s+)/);
+      if (bulletMatch) {
+        e.preventDefault();
+        const indent = bulletMatch[1];
+        const bullet = bulletMatch[2];
+        
+        // Check if the line has content after the bullet
+        const lineContent = currentLine.substring(bulletMatch[0].length).trim();
+        
+        if (lineContent === '') {
+          // Empty bullet line - remove the bullet and add plain new line
+          const newText = text.substring(0, lineStart) + '\n' + text.substring(start);
+          handleUpdateSubStep(stepIndex, subStepIndex, 'notes', newText);
+          setTimeout(() => {
+            textarea.selectionStart = textarea.selectionEnd = lineStart + 1;
+          }, 0);
+        } else {
+          // Add new bullet on next line
+          const newText = text.substring(0, start) + '\n' + indent + bullet + text.substring(end);
+          handleUpdateSubStep(stepIndex, subStepIndex, 'notes', newText);
+          setTimeout(() => {
+            const newPos = start + 1 + indent.length + bullet.length;
+            textarea.selectionStart = textarea.selectionEnd = newPos;
+          }, 0);
+        }
+        return;
+      }
+      
+      // Check if current line starts with a number
+      const numberMatch = currentLine.match(/^(\s*)(\d+)\.\s+/);
+      if (numberMatch) {
+        e.preventDefault();
+        const indent = numberMatch[1];
+        const currentNum = parseInt(numberMatch[2]);
+        
+        // Check if the line has content after the number
+        const lineContent = currentLine.substring(numberMatch[0].length).trim();
+        
+        if (lineContent === '') {
+          // Empty numbered line - remove the number and add plain new line
+          const newText = text.substring(0, lineStart) + '\n' + text.substring(start);
+          handleUpdateSubStep(stepIndex, subStepIndex, 'notes', newText);
+          setTimeout(() => {
+            textarea.selectionStart = textarea.selectionEnd = lineStart + 1;
+          }, 0);
+        } else {
+          // Add new numbered item on next line
+          const nextNum = currentNum + 1;
+          const newText = text.substring(0, start) + '\n' + indent + nextNum + '. ' + text.substring(end);
+          handleUpdateSubStep(stepIndex, subStepIndex, 'notes', newText);
+          setTimeout(() => {
+            const newPos = start + 1 + indent.length + (nextNum + '. ').length;
+            textarea.selectionStart = textarea.selectionEnd = newPos;
+          }, 0);
+        }
+        return;
+      }
+    }
+  };
+
   // Handle paste to preserve formatting
   const handlePaste = (stepIndex, subStepIndex, event) => {
     event.preventDefault();
@@ -1160,6 +1234,7 @@ const ProcessWorkflowEditor = ({ process, onSave, onCancel, templates = [], team
                                                       id={`notes-${index}-${subIndex}`}
                                                       value={bullet.notes || ''}
                                                       onChange={(e) => handleUpdateSubStep(index, subIndex, 'notes', e.target.value)}
+                                                      onKeyDown={(e) => handleKeyDown(e, index, subIndex)}
                                                       onPaste={(e) => handlePaste(index, subIndex, e)}
                                                       placeholder="Enter required information, notes, or details for this sub-step...&#10;&#10;Example:&#10;• Purchase Date&#10;• Control Numbers&#10;• Serial Numbers&#10;• Dollar Amount for each item&#10;• Account Codes:&#10;  - 131000 New Inventory&#10;  - 183000 Fixed Assets"
                                                       rows={8}
