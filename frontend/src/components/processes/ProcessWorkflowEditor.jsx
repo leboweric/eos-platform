@@ -1764,15 +1764,43 @@ const ProcessWorkflowEditor = ({ process, onSave, onCancel, templates = [], team
                             {step.attachments && step.attachments.length > 0 && (
                               <div>
                                 <p className="text-xs font-medium text-slate-600 mb-2">Attachments</p>
-                                <div className="flex flex-wrap gap-2">
-                                  {step.attachments.map((attachment, idx) => (
-                                    <div key={idx} className="inline-flex items-center gap-2 px-3 py-1 bg-white rounded-full border border-slate-200">
-                                      <Paperclip className="h-3 w-3 text-slate-400" />
-                                      <span className="text-xs text-slate-600">
-                                        {attachment.fileName || attachment.file_name || 'File'}
-                                      </span>
-                                    </div>
-                                  ))}
+                                <div className="space-y-2">
+                                  {step.attachments.map((attachment, idx) => {
+                                    const isImage = attachment.fileType?.startsWith('image/') || 
+                                                   attachment.file_type?.startsWith('image/') ||
+                                                   /\.(jpg|jpeg|png|gif|webp)$/i.test(attachment.fileName || attachment.file_name || '');
+                                    
+                                    return (
+                                      <div key={idx} className="inline-flex items-center gap-2 px-3 py-2 bg-white rounded-lg border border-slate-200 w-full">
+                                        <Paperclip className="h-4 w-4 text-slate-400" />
+                                        <span className="text-sm text-slate-700 flex-1">
+                                          {attachment.fileName || attachment.file_name || 'File'}
+                                        </span>
+                                        <div className="flex items-center gap-1">
+                                          {isImage && (
+                                            <Button
+                                              size="sm"
+                                              variant="ghost"
+                                              className="h-7 w-7 p-0"
+                                              onClick={() => handlePreviewAttachment(attachment)}
+                                              title="Preview"
+                                            >
+                                              <Eye className="h-3 w-3" />
+                                            </Button>
+                                          )}
+                                          <Button
+                                            size="sm"
+                                            variant="ghost"
+                                            className="h-7 w-7 p-0"
+                                            onClick={() => handleDownloadAttachment(attachment)}
+                                            title="Download"
+                                          >
+                                            <Download className="h-3 w-3" />
+                                          </Button>
+                                        </div>
+                                      </div>
+                                    );
+                                  })}
                                 </div>
                               </div>
                             )}
