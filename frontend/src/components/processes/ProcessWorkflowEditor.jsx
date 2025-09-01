@@ -34,7 +34,17 @@ import {
   X,
   GripVertical,
   Edit,
-  Check
+  Check,
+  Upload,
+  Image,
+  Paperclip,
+  Eye,
+  Download,
+  Loader2,
+  ChevronRight as ChevronRightIcon,
+  StickyNote,
+  FileText as FileTextIcon,
+  Info
 } from 'lucide-react';
 import axios from '../../services/axiosConfig';
 
@@ -72,6 +82,7 @@ const ProcessWorkflowEditor = ({ process, onSave, onCancel, templates = [], team
   // Track which step is being edited
   const [editingStepIndex, setEditingStepIndex] = useState(null);
   const [editingSubStepIndex, setEditingSubStepIndex] = useState(null);
+  const [expandedSubSteps, setExpandedSubSteps] = useState({}); // Track which substeps have expanded notes
 
   useEffect(() => {
     fetchOrganizationTheme();
@@ -149,7 +160,8 @@ const ProcessWorkflowEditor = ({ process, onSave, onCancel, templates = [], team
       bullets: [],
       responsible_role: '',
       estimated_time: '',
-      tools_required: []
+      tools_required: [],
+      attachments: [] // Array to store attachments/screenshots for this step
     };
     setFormData({ ...formData, steps: [...formData.steps, newStep] });
     setEditingStepIndex(formData.steps.length);
@@ -190,15 +202,19 @@ const ProcessWorkflowEditor = ({ process, onSave, onCancel, templates = [], team
     if (!updatedSteps[stepIndex].bullets) {
       updatedSteps[stepIndex].bullets = [];
     }
-    updatedSteps[stepIndex].bullets.push({ text: '', completed: false });
+    updatedSteps[stepIndex].bullets.push({ 
+      text: '', 
+      notes: '', // Added notes field for requirements/details
+      completed: false 
+    });
     setFormData({ ...formData, steps: updatedSteps });
   };
 
-  const handleUpdateSubStep = (stepIndex, subStepIndex, value) => {
+  const handleUpdateSubStep = (stepIndex, subStepIndex, field, value) => {
     const updatedSteps = [...formData.steps];
     updatedSteps[stepIndex].bullets[subStepIndex] = { 
       ...updatedSteps[stepIndex].bullets[subStepIndex], 
-      text: value 
+      [field]: value 
     };
     setFormData({ ...formData, steps: updatedSteps });
   };
@@ -206,6 +222,44 @@ const ProcessWorkflowEditor = ({ process, onSave, onCancel, templates = [], team
   const handleDeleteSubStep = (stepIndex, subStepIndex) => {
     const updatedSteps = [...formData.steps];
     updatedSteps[stepIndex].bullets = updatedSteps[stepIndex].bullets.filter((_, i) => i !== subStepIndex);
+    setFormData({ ...formData, steps: updatedSteps });
+  };
+
+  // Handle file upload for step attachments
+  const handleFileUpload = async (stepIndex, files) => {
+    const updatedSteps = [...formData.steps];
+    if (!updatedSteps[stepIndex].attachments) {
+      updatedSteps[stepIndex].attachments = [];
+    }
+
+    for (const file of files) {
+      // Check if it's an image
+      const isImage = file.type.startsWith('image/');
+      
+      // For production, you'd upload to server here
+      // For now, we'll create a local preview URL
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        const attachment = {
+          id: Date.now() + Math.random(), // Temporary ID
+          name: file.name,
+          type: file.type,
+          size: file.size,
+          url: e.target.result, // Base64 data URL for preview
+          isImage: isImage,
+          uploadedAt: new Date().toISOString()
+        };
+        
+        updatedSteps[stepIndex].attachments.push(attachment);
+        setFormData({ ...formData, steps: updatedSteps });
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
+  const handleDeleteAttachment = (stepIndex, attachmentIndex) => {
+    const updatedSteps = [...formData.steps];
+    updatedSteps[stepIndex].attachments = updatedSteps[stepIndex].attachments.filter((_, i) => i !== attachmentIndex);
     setFormData({ ...formData, steps: updatedSteps });
   };
 
@@ -515,9 +569,26 @@ const ProcessWorkflowEditor = ({ process, onSave, onCancel, templates = [], team
                                 autoFocus
                               />
                             ) : (
-                              <h3 className="font-medium text-lg text-slate-900">
-                                {step.title || 'Untitled Step'}
-                              </h3>
+                              <div className="flex-1">
+                                <h3 className="font-medium text-lg text-slate-900">
+                                  {step.title || 'Untitled Step'}
+                                </h3>
+                                {!editingStepIndex && (
+                                  <div className="flex items-center gap-4 mt-1">
+                                    {step.description && (
+                                      <p className="text-sm text-slate-600 line-clamp-1">
+                                        {step.description}
+                                      </p>
+                                    )}
+                                    {step.attachments?.length > 0 && (
+                                      <Badge variant="secondary" className="text-xs">
+                                        <Paperclip className="h-3 w-3 mr-1" />
+                                        {step.attachments.length}
+                                      </Badge>
+                                    )}
+                                  </div>
+                                )}
+                              </div>
                             )}
                           </div>
                           <div className="flex items-center gap-2">
@@ -557,26 +628,83 @@ const ProcessWorkflowEditor = ({ process, onSave, onCancel, templates = [], team
                               <Label className="text-sm font-medium text-slate-700 mb-2">
                                 Sub-steps / Checklist
                               </Label>
-                              <div className="space-y-2">
-                                {step.bullets?.map((bullet, subIndex) => (
-                                  <div key={subIndex} className="flex items-center gap-2">
-                                    <span className="text-slate-400">•</span>
-                                    <Input
-                                      value={bullet.text}
-                                      onChange={(e) => handleUpdateSubStep(index, subIndex, e.target.value)}
-                                      placeholder="Enter sub-step"
-                                      className="flex-1"
-                                    />
-                                    <Button
-                                      variant="ghost"
-                                      size="sm"
-                                      onClick={() => handleDeleteSubStep(index, subIndex)}
-                                      className="text-red-500 hover:text-red-700"
-                                    >
-                                      <X className="h-4 w-4" />
-                                    </Button>
-                                  </div>
-                                ))}
+                              <div className="space-y-3">
+                                {step.bullets?.map((bullet, subIndex) => {
+                                  const isExpanded = expandedSubSteps[`${index}-${subIndex}`];
+                                  return (
+                                    <div key={subIndex} className="border border-slate-200 rounded-lg p-3 bg-slate-50/50">
+                                      <div className="flex items-start gap-2">
+                                        <span className="text-slate-400 mt-1">•</span>
+                                        <div className="flex-1 space-y-2">
+                                          <Input
+                                            value={bullet.text}
+                                            onChange={(e) => handleUpdateSubStep(index, subIndex, 'text', e.target.value)}
+                                            placeholder="Enter sub-step description"
+                                            className="bg-white"
+                                          />
+                                          
+                                          {/* Expandable Notes Section */}
+                                          <div>
+                                            <Button
+                                              variant="ghost"
+                                              size="sm"
+                                              onClick={() => {
+                                                const key = `${index}-${subIndex}`;
+                                                setExpandedSubSteps(prev => ({
+                                                  ...prev,
+                                                  [key]: !prev[key]
+                                                }));
+                                              }}
+                                              className="text-xs text-slate-600 hover:text-slate-900 -ml-2"
+                                            >
+                                              <ChevronRightIcon 
+                                                className={`h-3 w-3 mr-1 transition-transform ${isExpanded ? 'rotate-90' : ''}`} 
+                                              />
+                                              <StickyNote className="h-3 w-3 mr-1" />
+                                              {bullet.notes ? 'Edit Requirements/Notes' : 'Add Requirements/Notes'}
+                                            </Button>
+                                            
+                                            {isExpanded && (
+                                              <div className="mt-2 p-3 bg-white rounded-md border border-slate-200">
+                                                <Label className="text-xs font-medium text-slate-600 mb-1 flex items-center gap-1">
+                                                  <Info className="h-3 w-3" />
+                                                  Required Information / Notes
+                                                </Label>
+                                                <Textarea
+                                                  value={bullet.notes || ''}
+                                                  onChange={(e) => handleUpdateSubStep(index, subIndex, 'notes', e.target.value)}
+                                                  placeholder="Enter required information, notes, or details for this sub-step...&#10;&#10;Example:&#10;• Purchase Date&#10;• Control Numbers&#10;• Serial Numbers&#10;• Dollar Amount for each item&#10;• Account Codes:&#10;  - 131000 New Inventory&#10;  - 183000 Fixed Assets"
+                                                  rows={6}
+                                                  className="text-sm font-mono"
+                                                />
+                                                <p className="text-xs text-slate-500 mt-1">
+                                                  Use bullet points (•) or dashes (-) for lists. Press Enter for new lines.
+                                                </p>
+                                              </div>
+                                            )}
+                                          </div>
+                                          
+                                          {/* Show indicator if notes exist but are collapsed */}
+                                          {!isExpanded && bullet.notes && (
+                                            <div className="flex items-center gap-2 text-xs text-slate-600 bg-blue-50 px-2 py-1 rounded">
+                                              <FileTextIcon className="h-3 w-3" />
+                                              <span className="italic">Has requirements/notes</span>
+                                            </div>
+                                          )}
+                                        </div>
+                                        
+                                        <Button
+                                          variant="ghost"
+                                          size="sm"
+                                          onClick={() => handleDeleteSubStep(index, subIndex)}
+                                          className="text-red-500 hover:text-red-700"
+                                        >
+                                          <X className="h-4 w-4" />
+                                        </Button>
+                                      </div>
+                                    </div>
+                                  );
+                                })}
                                 <Button
                                   variant="outline"
                                   size="sm"
@@ -609,6 +737,110 @@ const ProcessWorkflowEditor = ({ process, onSave, onCancel, templates = [], team
                                   onChange={(e) => handleUpdateStep(index, 'estimated_time', e.target.value)}
                                   placeholder="e.g., 15 minutes"
                                 />
+                              </div>
+                            </div>
+
+                            {/* Attachments Section */}
+                            <div>
+                              <Label className="text-sm font-medium text-slate-700 mb-2">
+                                Attachments & Screenshots
+                              </Label>
+                              <div className="space-y-3">
+                                {/* Upload Area */}
+                                <div className="border-2 border-dashed border-slate-300 rounded-lg p-4 text-center hover:border-slate-400 transition-colors">
+                                  <input
+                                    type="file"
+                                    id={`file-upload-${index}`}
+                                    multiple
+                                    accept="image/*,.pdf,.doc,.docx,.xls,.xlsx"
+                                    className="hidden"
+                                    onChange={(e) => handleFileUpload(index, Array.from(e.target.files))}
+                                  />
+                                  <label
+                                    htmlFor={`file-upload-${index}`}
+                                    className="cursor-pointer"
+                                  >
+                                    <Upload className="h-8 w-8 mx-auto mb-2 text-slate-400" />
+                                    <p className="text-sm text-slate-600 font-medium">
+                                      Click to upload files or drag and drop
+                                    </p>
+                                    <p className="text-xs text-slate-500 mt-1">
+                                      Images, PDFs, Documents (Max 10MB each)
+                                    </p>
+                                  </label>
+                                </div>
+
+                                {/* Attachment List */}
+                                {step.attachments && step.attachments.length > 0 && (
+                                  <div className="space-y-2">
+                                    <p className="text-xs font-medium text-slate-600">
+                                      {step.attachments.length} file{step.attachments.length > 1 ? 's' : ''} attached
+                                    </p>
+                                    <div className="grid grid-cols-2 gap-2">
+                                      {step.attachments.map((attachment, attIndex) => (
+                                        <div
+                                          key={attIndex}
+                                          className="relative group"
+                                        >
+                                          {attachment.isImage ? (
+                                            // Image Preview
+                                            <div className="relative aspect-video bg-slate-100 rounded-lg overflow-hidden border border-slate-200">
+                                              <img
+                                                src={attachment.url}
+                                                alt={attachment.name}
+                                                className="w-full h-full object-cover"
+                                              />
+                                              <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2">
+                                                <Button
+                                                  size="sm"
+                                                  variant="ghost"
+                                                  className="text-white hover:text-white"
+                                                  onClick={() => window.open(attachment.url, '_blank')}
+                                                >
+                                                  <Eye className="h-4 w-4" />
+                                                </Button>
+                                                <Button
+                                                  size="sm"
+                                                  variant="ghost"
+                                                  className="text-white hover:text-red-400"
+                                                  onClick={() => handleDeleteAttachment(index, attIndex)}
+                                                >
+                                                  <Trash2 className="h-4 w-4" />
+                                                </Button>
+                                              </div>
+                                              <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/60 to-transparent p-2">
+                                                <p className="text-white text-xs truncate">
+                                                  {attachment.name}
+                                                </p>
+                                              </div>
+                                            </div>
+                                          ) : (
+                                            // Document Preview
+                                            <div className="flex items-center gap-2 p-3 bg-slate-50 rounded-lg border border-slate-200 group-hover:border-slate-300">
+                                              <Paperclip className="h-4 w-4 text-slate-400" />
+                                              <div className="flex-1 min-w-0">
+                                                <p className="text-xs font-medium text-slate-700 truncate">
+                                                  {attachment.name}
+                                                </p>
+                                                <p className="text-xs text-slate-500">
+                                                  {(attachment.size / 1024).toFixed(1)} KB
+                                                </p>
+                                              </div>
+                                              <Button
+                                                size="sm"
+                                                variant="ghost"
+                                                className="opacity-0 group-hover:opacity-100"
+                                                onClick={() => handleDeleteAttachment(index, attIndex)}
+                                              >
+                                                <X className="h-3 w-3 text-red-500" />
+                                              </Button>
+                                            </div>
+                                          )}
+                                        </div>
+                                      ))}
+                                    </div>
+                                  </div>
+                                )}
                               </div>
                             </div>
                           </div>
@@ -685,11 +917,24 @@ const ProcessWorkflowEditor = ({ process, onSave, onCancel, templates = [], team
                         </div>
                         <div className="flex-1">
                           <p className="font-medium">{step.title || 'Untitled Step'}</p>
-                          {step.bullets?.length > 0 && (
-                            <p className="text-xs text-slate-500 mt-1">
-                              {step.bullets.length} sub-step{step.bullets.length > 1 ? 's' : ''}
-                            </p>
-                          )}
+                          <div className="flex items-center gap-3 mt-1">
+                            {step.bullets?.length > 0 && (
+                              <p className="text-xs text-slate-500">
+                                {step.bullets.length} sub-step{step.bullets.length > 1 ? 's' : ''}
+                                {step.bullets.filter(b => b.notes).length > 0 && (
+                                  <span className="ml-1 text-blue-600">
+                                    ({step.bullets.filter(b => b.notes).length} with notes)
+                                  </span>
+                                )}
+                              </p>
+                            )}
+                            {step.attachments?.length > 0 && (
+                              <p className="text-xs text-slate-500 flex items-center gap-1">
+                                <Paperclip className="h-3 w-3" />
+                                {step.attachments.length} file{step.attachments.length > 1 ? 's' : ''}
+                              </p>
+                            )}
+                          </div>
                         </div>
                       </div>
                     ))}
