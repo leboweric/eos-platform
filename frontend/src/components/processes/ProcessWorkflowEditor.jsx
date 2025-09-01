@@ -310,6 +310,48 @@ const ProcessWorkflowEditor = ({ process, onSave, onCancel, templates = [], team
     setFormData({ ...formData, steps: updatedSteps });
   };
 
+  // Handle attachment download
+  const handleDownloadAttachment = (attachment) => {
+    // Create a download link
+    const link = document.createElement('a');
+    link.href = attachment.url || attachment.file_data;
+    link.download = attachment.name || attachment.file_name || 'attachment';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
+
+  // Handle attachment preview
+  const handlePreviewAttachment = (attachment) => {
+    if (attachment.isImage) {
+      // For images, open in a modal or new tab
+      const newWindow = window.open('', '_blank');
+      newWindow.document.write(`
+        <html>
+          <head>
+            <title>${attachment.name || 'Image Preview'}</title>
+            <style>
+              body { margin: 0; display: flex; justify-content: center; align-items: center; min-height: 100vh; background: #1f2937; }
+              img { max-width: 100%; max-height: 100vh; object-fit: contain; }
+            </style>
+          </head>
+          <body>
+            <img src="${attachment.url || attachment.file_data}" alt="${attachment.name || 'Preview'}" />
+          </body>
+        </html>
+      `);
+      newWindow.document.close();
+    } else {
+      // For documents, try to open in browser or download
+      if (attachment.file_type && attachment.file_type.includes('pdf')) {
+        window.open(attachment.url || attachment.file_data, '_blank');
+      } else {
+        // For other files, trigger download
+        handleDownloadAttachment(attachment);
+      }
+    }
+  };
+
   // Rich text formatting functions
   const applyFormatting = (stepIndex, subStepIndex, format) => {
     // First ensure we're in edit mode
@@ -1269,18 +1311,32 @@ const ProcessWorkflowEditor = ({ process, onSave, onCancel, templates = [], team
                                               />
                                               <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2">
                                                 <Button
+                                                  type="button"
                                                   size="sm"
                                                   variant="ghost"
                                                   className="text-white hover:text-white"
-                                                  onClick={() => window.open(attachment.url, '_blank')}
+                                                  onClick={() => handlePreviewAttachment(attachment)}
+                                                  title="Preview"
                                                 >
                                                   <Eye className="h-4 w-4" />
                                                 </Button>
                                                 <Button
+                                                  type="button"
+                                                  size="sm"
+                                                  variant="ghost"
+                                                  className="text-white hover:text-white"
+                                                  onClick={() => handleDownloadAttachment(attachment)}
+                                                  title="Download"
+                                                >
+                                                  <Download className="h-4 w-4" />
+                                                </Button>
+                                                <Button
+                                                  type="button"
                                                   size="sm"
                                                   variant="ghost"
                                                   className="text-white hover:text-red-400"
                                                   onClick={() => handleDeleteAttachment(index, attIndex)}
+                                                  title="Delete"
                                                 >
                                                   <Trash2 className="h-4 w-4" />
                                                 </Button>
@@ -1303,14 +1359,35 @@ const ProcessWorkflowEditor = ({ process, onSave, onCancel, templates = [], team
                                                   {(attachment.size / 1024).toFixed(1)} KB
                                                 </p>
                                               </div>
-                                              <Button
-                                                size="sm"
-                                                variant="ghost"
-                                                className="opacity-0 group-hover:opacity-100"
-                                                onClick={() => handleDeleteAttachment(index, attIndex)}
-                                              >
-                                                <X className="h-3 w-3 text-red-500" />
-                                              </Button>
+                                              <div className="flex gap-1 opacity-0 group-hover:opacity-100">
+                                                <Button
+                                                  type="button"
+                                                  size="sm"
+                                                  variant="ghost"
+                                                  onClick={() => handlePreviewAttachment(attachment)}
+                                                  title="Preview"
+                                                >
+                                                  <Eye className="h-3 w-3 text-slate-500" />
+                                                </Button>
+                                                <Button
+                                                  type="button"
+                                                  size="sm"
+                                                  variant="ghost"
+                                                  onClick={() => handleDownloadAttachment(attachment)}
+                                                  title="Download"
+                                                >
+                                                  <Download className="h-3 w-3 text-slate-500" />
+                                                </Button>
+                                                <Button
+                                                  type="button"
+                                                  size="sm"
+                                                  variant="ghost"
+                                                  onClick={() => handleDeleteAttachment(index, attIndex)}
+                                                  title="Delete"
+                                                >
+                                                  <X className="h-3 w-3 text-red-500" />
+                                                </Button>
+                                              </div>
                                             </div>
                                           )}
                                         </div>
