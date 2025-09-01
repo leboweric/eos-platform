@@ -106,7 +106,7 @@ const ProcessDocumentationPage = () => {
   const fetchProcesses = async () => {
     try {
       setLoading(true);
-      const response = await axios.get('/api/v1/processes');
+      const response = await axios.get('/processes');
       setProcesses(response.data);
     } catch (error) {
       console.error('Failed to fetch processes:', error);
@@ -117,7 +117,7 @@ const ProcessDocumentationPage = () => {
 
   const fetchTemplates = async () => {
     try {
-      const response = await axios.get('/api/v1/processes/templates/list');
+      const response = await axios.get('/processes/templates/list');
       setTemplates(response.data);
     } catch (error) {
       console.error('Failed to fetch templates:', error);
@@ -127,7 +127,7 @@ const ProcessDocumentationPage = () => {
   const fetchTeamMembers = async () => {
     try {
       const orgId = user?.organizationId || user?.organization_id;
-      const response = await axios.get(`/api/v1/organizations/${orgId}/users`);
+      const response = await axios.get(`/organizations/${orgId}/users`);
       setTeamMembers(response.data);
     } catch (error) {
       console.error('Failed to fetch team members:', error);
@@ -150,7 +150,7 @@ const ProcessDocumentationPage = () => {
     if (!processToDelete) return;
     
     try {
-      await axios.delete(`/api/v1/processes/${processToDelete.id}`);
+      await axios.delete(`/processes/${processToDelete.id}`);
       await fetchProcesses();
       setShowDeleteDialog(false);
       setProcessToDelete(null);
@@ -162,9 +162,9 @@ const ProcessDocumentationPage = () => {
   const handleSaveProcess = async (processData) => {
     try {
       if (selectedProcess) {
-        await axios.put(`/api/v1/processes/${selectedProcess.id}`, processData);
+        await axios.put(`/processes/${selectedProcess.id}`, processData);
       } else {
-        await axios.post('/api/v1/processes', processData);
+        await axios.post('/processes', processData);
       }
       setShowEditor(false);
       setSelectedProcess(null);
@@ -176,7 +176,7 @@ const ProcessDocumentationPage = () => {
 
   const handleAcknowledgeProcess = async (processId) => {
     try {
-      await axios.post(`/api/v1/processes/${processId}/acknowledge`);
+      await axios.post(`/processes/${processId}/acknowledge`);
       await fetchProcesses();
     } catch (error) {
       console.error('Failed to acknowledge process:', error);
