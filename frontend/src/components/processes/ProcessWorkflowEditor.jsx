@@ -92,6 +92,7 @@ const ProcessWorkflowEditor = ({ process, onSave, onCancel, templates = [], team
   const [editingSubStepIndex, setEditingSubStepIndex] = useState(null);
   const [expandedSubSteps, setExpandedSubSteps] = useState({}); // Track which substeps have expanded notes
   const [editingNotes, setEditingNotes] = useState({}); // Track which notes are being edited
+  const [expandedSteps, setExpandedSteps] = useState({}); // Track which steps are expanded for viewing
 
   useEffect(() => {
     fetchOrganizationTheme();
@@ -1155,8 +1156,30 @@ const ProcessWorkflowEditor = ({ process, onSave, onCancel, templates = [], team
                             <Button
                               variant="ghost"
                               size="sm"
+                              onClick={() => {
+                                const newExpanded = { ...expandedSteps };
+                                if (newExpanded[index]) {
+                                  delete newExpanded[index];
+                                } else {
+                                  newExpanded[index] = true;
+                                }
+                                setExpandedSteps(newExpanded);
+                              }}
+                              className="text-slate-600 hover:text-slate-900"
+                              title={expandedSteps[index] ? "Collapse" : "Expand"}
+                            >
+                              {expandedSteps[index] ? (
+                                <ChevronUp className="h-4 w-4" />
+                              ) : (
+                                <ChevronDown className="h-4 w-4" />
+                              )}
+                            </Button>
+                            <Button
+                              variant="ghost"
+                              size="sm"
                               onClick={() => setEditingStepIndex(editingStepIndex === index ? null : index)}
                               className={editingStepIndex === index ? "text-green-600 hover:text-green-700" : ""}
+                              title={editingStepIndex === index ? "Save" : "Edit"}
                             >
                               {editingStepIndex === index ? (
                                 <Save className="h-4 w-4" />
@@ -1169,6 +1192,7 @@ const ProcessWorkflowEditor = ({ process, onSave, onCancel, templates = [], team
                               size="sm"
                               onClick={() => handleDeleteStep(index)}
                               className="text-red-500 hover:text-red-700"
+                              title="Delete Step"
                             >
                               <Trash2 className="h-4 w-4" />
                             </Button>
@@ -1586,6 +1610,66 @@ const ProcessWorkflowEditor = ({ process, onSave, onCancel, templates = [], team
                                 )}
                               </div>
                             </div>
+                          </div>
+                        )}
+
+                        {/* Expanded View (not editing) */}
+                        {expandedSteps[index] && editingStepIndex !== index && (
+                          <div className="mt-4 p-4 bg-slate-50 rounded-lg space-y-3">
+                            {/* Step Description */}
+                            {step.description && (
+                              <div>
+                                <p className="text-xs font-medium text-slate-600 mb-1">Description</p>
+                                <p className="text-sm text-slate-700">{step.description}</p>
+                              </div>
+                            )}
+                            
+                            {/* Sub-steps */}
+                            {step.bullets && step.bullets.length > 0 && (
+                              <div>
+                                <p className="text-xs font-medium text-slate-600 mb-2">Sub-steps</p>
+                                <div className="space-y-2">
+                                  {step.bullets.map((bullet, subIndex) => {
+                                    const subStepLetter = String.fromCharCode(97 + subIndex);
+                                    return (
+                                      <div key={subIndex} className="flex items-start gap-2">
+                                        <div className="w-5 h-5 rounded-full bg-white border border-slate-300 flex items-center justify-center text-xs font-medium text-slate-600">
+                                          {subStepLetter}
+                                        </div>
+                                        <div className="flex-1">
+                                          <p className="text-sm text-slate-700">{bullet.text}</p>
+                                          {bullet.notes && (
+                                            <div className="mt-1 p-2 bg-white rounded border border-slate-200">
+                                              <div 
+                                                className="text-xs text-slate-600"
+                                                dangerouslySetInnerHTML={{ __html: renderFormattedText(bullet.notes) }}
+                                              />
+                                            </div>
+                                          )}
+                                        </div>
+                                      </div>
+                                    );
+                                  })}
+                                </div>
+                              </div>
+                            )}
+                            
+                            {/* Attachments */}
+                            {step.attachments && step.attachments.length > 0 && (
+                              <div>
+                                <p className="text-xs font-medium text-slate-600 mb-2">Attachments</p>
+                                <div className="flex flex-wrap gap-2">
+                                  {step.attachments.map((attachment, idx) => (
+                                    <div key={idx} className="inline-flex items-center gap-2 px-3 py-1 bg-white rounded-full border border-slate-200">
+                                      <Paperclip className="h-3 w-3 text-slate-400" />
+                                      <span className="text-xs text-slate-600">
+                                        {attachment.fileName || attachment.file_name || 'File'}
+                                      </span>
+                                    </div>
+                                  ))}
+                                </div>
+                              </div>
+                            )}
                           </div>
                         )}
                       </div>
