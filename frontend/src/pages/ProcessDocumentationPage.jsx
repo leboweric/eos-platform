@@ -1,7 +1,9 @@
 import { useState, useEffect } from 'react';
 import { useAuthStore } from '../stores/authStore';
 import { useTerminology } from '../contexts/TerminologyContext';
-import ProcessEditor from '../components/processes/ProcessEditor';
+import { organizationService } from '../services/organizationService';
+import { getOrgTheme } from '../utils/themeUtils';
+import ProcessWorkflowEditor from '../components/processes/ProcessWorkflowEditor';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -30,23 +32,40 @@ import {
   Trash2,
   Archive,
   Star,
-  ChevronRight
+  ChevronRight,
+  Sparkles,
+  Activity,
+  Target,
+  Grid,
+  List,
+  Eye,
+  CheckSquare,
+  Loader2
 } from 'lucide-react';
 import axios from '../services/axiosConfig';
+import { format } from 'date-fns';
 
 const ProcessDocumentationPage = () => {
   const { user } = useAuthStore();
   const { labels } = useTerminology();
   const [processes, setProcesses] = useState([]);
+  const [teamMembers, setTeamMembers] = useState([]);
   const [templates, setTemplates] = useState([]);
   const [loading, setLoading] = useState(true);
   const [selectedProcess, setSelectedProcess] = useState(null);
   const [showEditor, setShowEditor] = useState(false);
+  const [showDeleteDialog, setShowDeleteDialog] = useState(false);
+  const [processToDelete, setProcessToDelete] = useState(null);
   const [searchTerm, setSearchTerm] = useState('');
   const [filterCategory, setFilterCategory] = useState('all');
   const [filterStatus, setFilterStatus] = useState('all');
   const [viewMode, setViewMode] = useState('grid'); // grid or list
   const [activeTab, setActiveTab] = useState('all');
+  const [themeColors, setThemeColors] = useState({
+    primary: '#3B82F6',
+    secondary: '#1E40AF',
+    accent: '#60A5FA'
+  });
 
   // Terminology mapping
   const processTerms = {
@@ -60,7 +79,29 @@ const ProcessDocumentationPage = () => {
   useEffect(() => {
     fetchProcesses();
     fetchTemplates();
+    fetchTeamMembers();
+    fetchOrganizationTheme();
+    
+    // Listen for theme changes
+    const handleThemeChange = (event) => {
+      setThemeColors(event.detail);
+    };
+    
+    window.addEventListener('themeChanged', handleThemeChange);
+    return () => window.removeEventListener('themeChanged', handleThemeChange);
   }, []);
+
+  const fetchOrganizationTheme = async () => {
+    try {
+      const orgId = user?.organizationId || user?.organization_id;
+      const savedTheme = getOrgTheme(orgId);
+      if (savedTheme) {
+        setThemeColors(savedTheme);
+      }
+    } catch (error) {
+      console.error('Failed to fetch organization theme:', error);
+    }
+  };
 
   const fetchProcesses = async () => {
     try {
@@ -83,6 +124,18 @@ const ProcessDocumentationPage = () => {
     }
   };
 
+  const fetchTeamMembers = async () => {
+    try {
+      const orgId = user?.organizationId || user?.organization_id;
+      const response = await axios.get(`/api/v1/organizations/${orgId}/users`);
+      setTeamMembers(response.data);
+    } catch (error) {
+      console.error('Failed to fetch team members:', error);
+      // Fallback to current user
+      setTeamMembers([{ id: user?.id, name: user?.name || user?.email }]);
+    }
+  };
+
   const handleCreateProcess = () => {
     setSelectedProcess(null);
     setShowEditor(true);
@@ -93,6 +146,19 @@ const ProcessDocumentationPage = () => {
     setShowEditor(true);
   };
 
+  const handleDeleteProcess = async () => {
+    if (!processToDelete) return;
+    
+    try {
+      await axios.delete(`/api/v1/processes/${processToDelete.id}`);
+      await fetchProcesses();
+      setShowDeleteDialog(false);
+      setProcessToDelete(null);
+    } catch (error) {
+      console.error('Failed to delete process:', error);
+    }
+  };
+
   const handleSaveProcess = async (processData) => {
     try {
       if (selectedProcess) {
@@ -100,470 +166,519 @@ const ProcessDocumentationPage = () => {
       } else {
         await axios.post('/api/v1/processes', processData);
       }
-      fetchProcesses();
       setShowEditor(false);
+      setSelectedProcess(null);
+      await fetchProcesses();
     } catch (error) {
       console.error('Failed to save process:', error);
     }
   };
 
-  const handleAcknowledge = async (processId) => {
+  const handleAcknowledgeProcess = async (processId) => {
     try {
-      await axios.post(`/api/v1/processes/${processId}/acknowledge`, {
-        training_completed: true
-      });
-      fetchProcesses();
+      await axios.post(`/api/v1/processes/${processId}/acknowledge`);
+      await fetchProcesses();
     } catch (error) {
       console.error('Failed to acknowledge process:', error);
     }
   };
 
-  const handleArchiveProcess = async (processId) => {
-    try {
-      await axios.put(`/api/v1/processes/${processId}`, {
-        status: 'archived',
-        archived_at: new Date()
-      });
-      fetchProcesses();
-    } catch (error) {
-      console.error('Failed to archive process:', error);
+  // Filter processes based on search and filters
+  const getFilteredProcesses = () => {
+    let filtered = processes;
+
+    // Search filter
+    if (searchTerm) {
+      filtered = filtered.filter(p => 
+        p.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        p.description?.toLowerCase().includes(searchTerm.toLowerCase())
+      );
     }
+
+    // Category filter
+    if (filterCategory !== 'all') {
+      filtered = filtered.filter(p => p.category === filterCategory);
+    }
+
+    // Status filter
+    if (filterStatus !== 'all') {
+      filtered = filtered.filter(p => p.status === filterStatus);
+    }
+
+    // Tab filter
+    switch (activeTab) {
+      case 'core':
+        filtered = filtered.filter(p => p.is_core_process);
+        break;
+      case 'review':
+        filtered = filtered.filter(p => {
+          if (!p.next_review_date) return false;
+          const reviewDate = new Date(p.next_review_date);
+          const today = new Date();
+          return reviewDate <= today;
+        });
+        break;
+      case 'unread':
+        filtered = filtered.filter(p => !p.user_acknowledgment);
+        break;
+    }
+
+    return filtered;
   };
 
-  const handleExportProcess = async (processId) => {
-    try {
-      const response = await axios.get(`/api/v1/processes/${processId}/export`);
-      // TODO: Handle PDF download when implemented
-      console.log('Export data:', response.data);
-    } catch (error) {
-      console.error('Failed to export process:', error);
-    }
-  };
-
-  // Filter processes
-  const filteredProcesses = processes.filter(process => {
-    const matchesSearch = process.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                          process.description?.toLowerCase().includes(searchTerm.toLowerCase());
-    const matchesCategory = filterCategory === 'all' || process.category === filterCategory;
-    const matchesStatus = filterStatus === 'all' || process.status === filterStatus;
-    
-    if (activeTab === 'core' && !process.is_core_process) return false;
-    if (activeTab === 'review' && process.next_review_date > new Date()) return false;
-    if (activeTab === 'unread' && process.user_acknowledgment) return false;
-    
-    return matchesSearch && matchesCategory && matchesStatus;
-  });
-
-  // Get categories from processes
-  const categories = [...new Set(processes.map(p => p.category))].filter(Boolean);
+  const filteredProcesses = getFilteredProcesses();
 
   // Calculate stats
   const stats = {
     total: processes.length,
     core: processes.filter(p => p.is_core_process).length,
-    needsReview: processes.filter(p => new Date(p.next_review_date) <= new Date()).length,
+    needsReview: processes.filter(p => {
+      if (!p.next_review_date) return false;
+      const reviewDate = new Date(p.next_review_date);
+      const today = new Date();
+      return reviewDate <= today;
+    }).length,
     unread: processes.filter(p => !p.user_acknowledgment).length,
-    avgCompliance: processes.length > 0 
-      ? Math.round(processes.reduce((acc, p) => acc + (p.followed_by_all_percentage || 0), 0) / processes.length)
+    compliance: processes.length > 0 
+      ? Math.round(processes.reduce((sum, p) => sum + (p.followed_by_all_percentage || 0), 0) / processes.length)
       : 0
   };
 
-  const ProcessCard = ({ process }) => {
-    const isOverdue = new Date(process.next_review_date) <= new Date();
-    const isExternal = process.storage_type !== 'internal';
-    
+  if (loading) {
     return (
-      <Card className="hover:shadow-lg transition-shadow cursor-pointer">
-        <CardHeader>
-          <div className="flex justify-between items-start">
-            <div className="flex-1">
-              <CardTitle className="text-lg flex items-center gap-2">
-                {process.name}
-                {process.is_core_process && (
-                  <Star className="h-4 w-4 text-yellow-500 fill-yellow-500" />
-                )}
-              </CardTitle>
-              <CardDescription className="mt-1">
-                {process.category} • {process.step_count || 0} steps
-              </CardDescription>
-            </div>
-            <Badge variant={
-              process.status === 'published' ? 'success' :
-              process.status === 'draft' ? 'secondary' :
-              process.status === 'under_review' ? 'warning' : 'default'
-            }>
-              {process.status}
-            </Badge>
-          </div>
-        </CardHeader>
-        <CardContent>
-          <p className="text-sm text-muted-foreground mb-4 line-clamp-2">
-            {process.description || 'No description provided'}
-          </p>
-          
-          <div className="space-y-3">
-            {/* Owner */}
-            <div className="flex items-center justify-between text-sm">
-              <span className="text-muted-foreground">Owner</span>
-              <span className="font-medium">{process.owner_name || 'Unassigned'}</span>
-            </div>
-            
-            {/* Compliance */}
-            <div className="space-y-1">
-              <div className="flex items-center justify-between text-sm">
-                <span className="text-muted-foreground">Followed by All</span>
-                <span className="font-medium">{process.followed_by_all_percentage || 0}%</span>
-              </div>
-              <Progress value={process.followed_by_all_percentage || 0} className="h-2" />
-            </div>
-            
-            {/* Review Status */}
-            {isOverdue && (
-              <Alert className="py-2">
-                <AlertCircle className="h-3 w-3" />
-                <AlertDescription className="text-xs">
-                  Due for review
-                </AlertDescription>
-              </Alert>
-            )}
-            
-            {/* Acknowledgment Status */}
-            {process.user_acknowledgment ? (
-              <div className="flex items-center gap-2 text-sm text-green-600">
-                <CheckCircle className="h-4 w-4" />
-                <span>Acknowledged</span>
-              </div>
-            ) : (
-              <div className="flex items-center gap-2 text-sm text-amber-600">
-                <AlertCircle className="h-4 w-4" />
-                <span>Not yet read</span>
-              </div>
-            )}
-            
-            {/* Actions */}
-            <div className="flex gap-2 pt-2">
-              <Button 
-                size="sm" 
-                variant="outline" 
-                className="flex-1"
-                onClick={() => handleEditProcess(process)}
-              >
-                <Edit className="h-3 w-3 mr-1" />
-                {isExternal ? 'View' : 'Edit'}
-              </Button>
-              
-              {!process.user_acknowledgment && (
-                <Button 
-                  size="sm" 
-                  variant="default"
-                  className="flex-1"
-                  onClick={() => handleAcknowledge(process.id)}
-                >
-                  <CheckCircle className="h-3 w-3 mr-1" />
-                  Acknowledge
-                </Button>
-              )}
-              
-              {isExternal && (
-                <Button 
-                  size="sm" 
-                  variant="ghost"
-                  onClick={() => window.open(process.external_url, '_blank')}
-                >
-                  <ExternalLink className="h-3 w-3" />
-                </Button>
-              )}
-            </div>
-          </div>
-        </CardContent>
-      </Card>
-    );
-  };
-
-  const ProcessListItem = ({ process }) => {
-    const isOverdue = new Date(process.next_review_date) <= new Date();
-    
-    return (
-      <div className="flex items-center justify-between p-4 hover:bg-accent rounded-lg transition-colors">
-        <div className="flex items-center gap-4 flex-1">
-          <div className="p-2 bg-primary/10 rounded-lg">
-            <FileText className="h-5 w-5 text-primary" />
-          </div>
-          
-          <div className="flex-1">
-            <div className="flex items-center gap-2">
-              <span className="font-medium">{process.name}</span>
-              {process.is_core_process && (
-                <Star className="h-3 w-3 text-yellow-500 fill-yellow-500" />
-              )}
-              <Badge variant="outline" className="text-xs">
-                {process.category}
-              </Badge>
-            </div>
-            <p className="text-sm text-muted-foreground">
-              {process.step_count || 0} steps • Owner: {process.owner_name || 'Unassigned'}
-            </p>
-          </div>
-          
-          <div className="flex items-center gap-6">
-            <div className="text-center">
-              <p className="text-2xl font-semibold">{process.followed_by_all_percentage || 0}%</p>
-              <p className="text-xs text-muted-foreground">FBA</p>
-            </div>
-            
-            <div className="flex items-center gap-2">
-              {process.user_acknowledgment ? (
-                <Badge variant="success">
-                  <CheckCircle className="h-3 w-3 mr-1" />
-                  Read
-                </Badge>
-              ) : (
-                <Badge variant="warning">
-                  <AlertCircle className="h-3 w-3 mr-1" />
-                  Unread
-                </Badge>
-              )}
-              
-              {isOverdue && (
-                <Badge variant="destructive">
-                  <Clock className="h-3 w-3 mr-1" />
-                  Review Due
-                </Badge>
-              )}
-            </div>
-            
-            <Button
-              size="sm"
-              variant="ghost"
-              onClick={() => handleEditProcess(process)}
-            >
-              <ChevronRight className="h-4 w-4" />
-            </Button>
-          </div>
-        </div>
+      <div className="flex items-center justify-center min-h-screen">
+        <Loader2 className="h-8 w-8 animate-spin" />
       </div>
     );
-  };
+  }
+
+  // Show editor in full screen mode
+  if (showEditor) {
+    return (
+      <ProcessWorkflowEditor
+        process={selectedProcess}
+        onSave={handleSaveProcess}
+        onCancel={() => {
+          setShowEditor(false);
+          setSelectedProcess(null);
+        }}
+        templates={templates}
+        teamMembers={teamMembers}
+      />
+    );
+  }
 
   return (
-    <div className="container mx-auto py-6 space-y-6">
-        {/* Header */}
-        <div className="flex justify-between items-center">
-          <div>
-            <h1 className="text-3xl font-bold">
-              {labels?.processes || 'Process Documentation'}
-            </h1>
-            <p className="text-muted-foreground mt-1">
-              Document and track your organization's core processes
-            </p>
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50/30 to-indigo-50/30 relative">
+      {/* Background Pattern */}
+      <div className="absolute inset-0 bg-grid-slate-100 [mask-image:linear-gradient(0deg,white,rgba(255,255,255,0.6))] -z-10"></div>
+      
+      <div className="max-w-7xl mx-auto px-8 py-8">
+        {/* Enhanced Header */}
+        <div className="mb-8">
+          <div className="flex items-center justify-between mb-6">
+            <div>
+              <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full text-sm font-medium mb-4"
+                   style={{
+                     background: `linear-gradient(135deg, ${themeColors.primary}15 0%, ${themeColors.secondary}15 100%)`,
+                     color: themeColors.primary
+                   }}>
+                <Activity className="h-4 w-4" />
+                PROCESS DOCUMENTATION
+              </div>
+              <h1 className="text-4xl font-bold mb-2 bg-gradient-to-r from-slate-900 via-slate-800 to-slate-900 bg-clip-text text-transparent">
+                {labels.processes_label || 'Processes'}
+              </h1>
+              <p className="text-lg text-slate-600">
+                Document, standardize, and optimize your business processes
+              </p>
+            </div>
+            <div className="flex items-center gap-3">
+              <Button
+                onClick={() => setViewMode(viewMode === 'grid' ? 'list' : 'grid')}
+                variant="outline"
+                className="bg-white/80 backdrop-blur-sm border-white/20 hover:bg-white/90 shadow-sm"
+              >
+                {viewMode === 'grid' ? <List className="h-4 w-4" /> : <Grid className="h-4 w-4" />}
+              </Button>
+              <Button 
+                onClick={handleCreateProcess}
+                className="text-white shadow-lg hover:shadow-xl transition-all duration-200 transform hover:scale-[1.02]"
+                style={{ 
+                  background: `linear-gradient(135deg, ${themeColors.primary} 0%, ${themeColors.secondary} 100%)`,
+                }}
+              >
+                <Plus className="mr-2 h-4 w-4" />
+                New Process
+              </Button>
+            </div>
           </div>
-          
-          <Button onClick={handleCreateProcess}>
-            <Plus className="h-4 w-4 mr-2" />
-            New Process
-          </Button>
-        </div>
 
-        {/* Stats Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
-          <Card>
-            <CardContent className="p-4">
+          {/* Stats Cards */}
+          <div className="grid grid-cols-1 md:grid-cols-5 gap-4 mb-6">
+            <div className="bg-white/80 backdrop-blur-sm rounded-2xl p-6 border border-white/50 shadow-sm hover:shadow-md transition-all duration-200 hover:scale-[1.01]">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm text-muted-foreground">Total Processes</p>
-                  <p className="text-2xl font-bold">{stats.total}</p>
+                  <p className="text-sm font-medium text-slate-600">Total</p>
+                  <p className="text-2xl font-bold mt-1" style={{ color: themeColors.primary }}>
+                    {stats.total}
+                  </p>
                 </div>
-                <FileText className="h-8 w-8 text-primary/20" />
+                <FileText className="h-8 w-8 text-slate-300" />
               </div>
-            </CardContent>
-          </Card>
-          
-          <Card>
-            <CardContent className="p-4">
+            </div>
+
+            <div className="bg-white/80 backdrop-blur-sm rounded-2xl p-6 border border-white/50 shadow-sm hover:shadow-md transition-all duration-200 hover:scale-[1.01]">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm text-muted-foreground">Core Processes</p>
-                  <p className="text-2xl font-bold">{stats.core}</p>
+                  <p className="text-sm font-medium text-slate-600">Core</p>
+                  <p className="text-2xl font-bold mt-1" style={{ color: themeColors.primary }}>
+                    {stats.core}
+                  </p>
                 </div>
-                <Star className="h-8 w-8 text-yellow-500/20" />
+                <Star className="h-8 w-8 text-yellow-400" />
               </div>
-            </CardContent>
-          </Card>
-          
-          <Card>
-            <CardContent className="p-4">
+            </div>
+
+            <div className="bg-white/80 backdrop-blur-sm rounded-2xl p-6 border border-white/50 shadow-sm hover:shadow-md transition-all duration-200 hover:scale-[1.01]">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm text-muted-foreground">Need Review</p>
-                  <p className="text-2xl font-bold">{stats.needsReview}</p>
+                  <p className="text-sm font-medium text-slate-600">Need Review</p>
+                  <p className="text-2xl font-bold mt-1 text-orange-600">
+                    {stats.needsReview}
+                  </p>
                 </div>
-                <Clock className="h-8 w-8 text-amber-500/20" />
+                <Clock className="h-8 w-8 text-orange-400" />
               </div>
-            </CardContent>
-          </Card>
-          
-          <Card>
-            <CardContent className="p-4">
+            </div>
+
+            <div className="bg-white/80 backdrop-blur-sm rounded-2xl p-6 border border-white/50 shadow-sm hover:shadow-md transition-all duration-200 hover:scale-[1.01]">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm text-muted-foreground">Unread</p>
-                  <p className="text-2xl font-bold">{stats.unread}</p>
+                  <p className="text-sm font-medium text-slate-600">Unread</p>
+                  <p className="text-2xl font-bold mt-1 text-blue-600">
+                    {stats.unread}
+                  </p>
                 </div>
-                <BookOpen className="h-8 w-8 text-blue-500/20" />
+                <Eye className="h-8 w-8 text-blue-400" />
               </div>
-            </CardContent>
-          </Card>
-          
-          <Card>
-            <CardContent className="p-4">
+            </div>
+
+            <div className="bg-white/80 backdrop-blur-sm rounded-2xl p-6 border border-white/50 shadow-sm hover:shadow-md transition-all duration-200 hover:scale-[1.01]">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm text-muted-foreground">Avg Compliance</p>
-                  <p className="text-2xl font-bold">{stats.avgCompliance}%</p>
+                  <p className="text-sm font-medium text-slate-600">Compliance</p>
+                  <p className="text-2xl font-bold mt-1 text-green-600">
+                    {stats.compliance}%
+                  </p>
                 </div>
-                <Users className="h-8 w-8 text-green-500/20" />
+                <CheckCircle className="h-8 w-8 text-green-400" />
               </div>
-            </CardContent>
-          </Card>
+            </div>
+          </div>
         </div>
 
         {/* Filters and Search */}
-        <div className="flex flex-col md:flex-row gap-4">
-          <div className="relative flex-1">
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-            <Input
-              placeholder="Search processes..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              className="pl-10"
-            />
-          </div>
-          
-          <Select value={filterCategory} onValueChange={setFilterCategory}>
-            <SelectTrigger className="w-[200px]">
-              <SelectValue placeholder="All Categories" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">All Categories</SelectItem>
-              {categories.map(cat => (
-                <SelectItem key={cat} value={cat}>{cat}</SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-          
-          <Select value={filterStatus} onValueChange={setFilterStatus}>
-            <SelectTrigger className="w-[150px]">
-              <SelectValue placeholder="All Status" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">All Status</SelectItem>
-              <SelectItem value="draft">Draft</SelectItem>
-              <SelectItem value="published">Published</SelectItem>
-              <SelectItem value="under_review">Under Review</SelectItem>
-              <SelectItem value="archived">Archived</SelectItem>
-            </SelectContent>
-          </Select>
-          
-          <div className="flex gap-2">
-            <Button
-              size="sm"
-              variant={viewMode === 'grid' ? 'default' : 'outline'}
-              onClick={() => setViewMode('grid')}
-            >
-              Grid
-            </Button>
-            <Button
-              size="sm"
-              variant={viewMode === 'list' ? 'default' : 'outline'}
-              onClick={() => setViewMode('list')}
-            >
-              List
-            </Button>
+        <div className="bg-white/80 backdrop-blur-sm rounded-2xl p-6 border border-white/50 shadow-sm mb-6">
+          <div className="flex flex-col md:flex-row gap-4">
+            <div className="flex-1">
+              <div className="relative">
+                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-slate-400" />
+                <Input
+                  placeholder="Search processes..."
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  className="pl-10"
+                />
+              </div>
+            </div>
+            <Select value={filterCategory} onValueChange={setFilterCategory}>
+              <SelectTrigger className="w-[200px]">
+                <SelectValue placeholder="All Categories" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Categories</SelectItem>
+                <SelectItem value="Sales & Marketing">Sales & Marketing</SelectItem>
+                <SelectItem value="Operations">Operations</SelectItem>
+                <SelectItem value="Finance">Finance</SelectItem>
+                <SelectItem value="Human Resources">Human Resources</SelectItem>
+                <SelectItem value="Customer Success">Customer Success</SelectItem>
+                <SelectItem value="Technology">Technology</SelectItem>
+              </SelectContent>
+            </Select>
+            <Select value={filterStatus} onValueChange={setFilterStatus}>
+              <SelectTrigger className="w-[200px]">
+                <SelectValue placeholder="All Status" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Status</SelectItem>
+                <SelectItem value="draft">Draft</SelectItem>
+                <SelectItem value="published">Published</SelectItem>
+                <SelectItem value="under_review">Under Review</SelectItem>
+                <SelectItem value="archived">Archived</SelectItem>
+              </SelectContent>
+            </Select>
           </div>
         </div>
 
-        {/* Tabs */}
-        <Tabs value={activeTab} onValueChange={setActiveTab}>
-          <TabsList>
-            <TabsTrigger value="all">
-              All Processes {processes.length > 0 && `(${processes.length})`}
-            </TabsTrigger>
-            <TabsTrigger value="core">
-              Core {stats.core > 0 && `(${stats.core})`}
-            </TabsTrigger>
-            <TabsTrigger value="review">
-              Need Review {stats.needsReview > 0 && (
-                <Badge variant="destructive" className="ml-2">{stats.needsReview}</Badge>
-              )}
-            </TabsTrigger>
-            <TabsTrigger value="unread">
-              Unread {stats.unread > 0 && (
-                <Badge variant="warning" className="ml-2">{stats.unread}</Badge>
-              )}
-            </TabsTrigger>
+        {/* Tabs and Content */}
+        <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4">
+          <TabsList className="bg-white/80 backdrop-blur-sm border border-white/50">
+            <TabsTrigger value="all">All Processes</TabsTrigger>
+            <TabsTrigger value="core">Core Processes</TabsTrigger>
+            <TabsTrigger value="review">Need Review</TabsTrigger>
+            <TabsTrigger value="unread">Unread</TabsTrigger>
           </TabsList>
 
-          <TabsContent value={activeTab} className="mt-6">
-            {loading ? (
-              <div className="flex items-center justify-center py-12">
-                <RefreshCw className="h-8 w-8 animate-spin text-primary" />
+          <TabsContent value={activeTab} className="space-y-4">
+            {filteredProcesses.length === 0 ? (
+              <div className="text-center py-12 px-4 bg-white/80 backdrop-blur-sm rounded-2xl border border-white/50">
+                <BookOpen className="h-12 w-12 mx-auto mb-4 text-slate-400" />
+                <h3 className="text-lg font-medium text-slate-900 mb-2">
+                  No processes found
+                </h3>
+                <p className="text-slate-600 mb-6">
+                  {searchTerm || filterCategory !== 'all' || filterStatus !== 'all' 
+                    ? 'Try adjusting your filters'
+                    : 'Get started by creating your first process'}
+                </p>
+                {!searchTerm && filterCategory === 'all' && filterStatus === 'all' && (
+                  <Button
+                    onClick={handleCreateProcess}
+                    className="text-white shadow-lg hover:shadow-xl transition-all duration-200"
+                    style={{ 
+                      background: `linear-gradient(135deg, ${themeColors.primary} 0%, ${themeColors.secondary} 100%)`,
+                    }}
+                  >
+                    <Plus className="mr-2 h-4 w-4" />
+                    Create First Process
+                  </Button>
+                )}
               </div>
-            ) : filteredProcesses.length === 0 ? (
-              <Card>
-                <CardContent className="flex flex-col items-center justify-center py-12">
-                  <FileText className="h-12 w-12 text-muted-foreground mb-4" />
-                  <p className="text-lg font-medium mb-2">No processes found</p>
-                  <p className="text-sm text-muted-foreground mb-4">
-                    {searchTerm ? 'Try adjusting your search terms' : 'Create your first process to get started'}
-                  </p>
-                  {!searchTerm && (
-                    <Button onClick={handleCreateProcess}>
-                      <Plus className="h-4 w-4 mr-2" />
-                      Create Process
-                    </Button>
-                  )}
-                </CardContent>
-              </Card>
             ) : viewMode === 'grid' ? (
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                {filteredProcesses.map(process => (
-                  <ProcessCard key={process.id} process={process} />
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                {filteredProcesses.map((process) => (
+                  <Card key={process.id} className="bg-white/80 backdrop-blur-sm border-white/50 shadow-sm hover:shadow-lg transition-all duration-200 hover:scale-[1.02] cursor-pointer">
+                    <CardHeader className="pb-3">
+                      <div className="flex items-start justify-between">
+                        <div className="flex-1">
+                          <CardTitle className="text-lg line-clamp-1">
+                            {process.name}
+                          </CardTitle>
+                          <CardDescription className="line-clamp-2 mt-1">
+                            {process.description}
+                          </CardDescription>
+                        </div>
+                        {process.is_core_process && (
+                          <Star className="h-5 w-5 text-yellow-400 fill-current" />
+                        )}
+                      </div>
+                    </CardHeader>
+                    <CardContent>
+                      <div className="space-y-3">
+                        <div className="flex items-center gap-2 flex-wrap">
+                          <Badge variant="outline" className="text-xs">
+                            {process.category}
+                          </Badge>
+                          <Badge 
+                            variant={process.status === 'published' ? 'default' : 'secondary'}
+                            className="text-xs"
+                          >
+                            {process.status}
+                          </Badge>
+                          {process.step_count > 0 && (
+                            <Badge variant="outline" className="text-xs">
+                              {process.step_count} steps
+                            </Badge>
+                          )}
+                        </div>
+
+                        <div className="text-sm text-slate-600 space-y-1">
+                          <div className="flex items-center gap-2">
+                            <Users className="h-3 w-3" />
+                            <span>{process.owner_name || 'Unassigned'}</span>
+                          </div>
+                          {process.next_review_date && (
+                            <div className="flex items-center gap-2">
+                              <Clock className="h-3 w-3" />
+                              <span>Review: {format(new Date(process.next_review_date), 'MMM d, yyyy')}</span>
+                            </div>
+                          )}
+                        </div>
+
+                        {process.followed_by_all_percentage !== null && (
+                          <div className="space-y-1">
+                            <div className="flex items-center justify-between text-xs">
+                              <span className="text-slate-600">Compliance</span>
+                              <span className="font-medium">{process.followed_by_all_percentage}%</span>
+                            </div>
+                            <Progress value={process.followed_by_all_percentage} className="h-1.5" />
+                          </div>
+                        )}
+
+                        <div className="flex items-center gap-2 pt-2">
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleEditProcess(process);
+                            }}
+                            className="flex-1"
+                          >
+                            <Edit className="h-3 w-3 mr-1" />
+                            Edit
+                          </Button>
+                          {!process.user_acknowledgment && (
+                            <Button
+                              size="sm"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleAcknowledgeProcess(process.id);
+                              }}
+                              className="flex-1"
+                              style={{ 
+                                background: `linear-gradient(135deg, ${themeColors.primary} 0%, ${themeColors.secondary} 100%)`,
+                              }}
+                            >
+                              <CheckSquare className="h-3 w-3 mr-1" />
+                              Acknowledge
+                            </Button>
+                          )}
+                          <Button
+                            size="sm"
+                            variant="ghost"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setProcessToDelete(process);
+                              setShowDeleteDialog(true);
+                            }}
+                            className="text-red-500 hover:text-red-700"
+                          >
+                            <Trash2 className="h-3 w-3" />
+                          </Button>
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
                 ))}
               </div>
             ) : (
-              <Card>
-                <CardContent className="p-0">
-                  <div className="divide-y">
-                    {filteredProcesses.map(process => (
-                      <ProcessListItem key={process.id} process={process} />
+              <div className="bg-white/80 backdrop-blur-sm rounded-2xl border border-white/50 shadow-sm overflow-hidden">
+                <table className="w-full">
+                  <thead className="bg-slate-50/50">
+                    <tr>
+                      <th className="text-left p-4 font-medium text-slate-700">Process Name</th>
+                      <th className="text-left p-4 font-medium text-slate-700">Category</th>
+                      <th className="text-left p-4 font-medium text-slate-700">Owner</th>
+                      <th className="text-left p-4 font-medium text-slate-700">Status</th>
+                      <th className="text-left p-4 font-medium text-slate-700">Steps</th>
+                      <th className="text-left p-4 font-medium text-slate-700">Compliance</th>
+                      <th className="text-left p-4 font-medium text-slate-700">Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {filteredProcesses.map((process) => (
+                      <tr key={process.id} className="border-t border-slate-200 hover:bg-slate-50/50">
+                        <td className="p-4">
+                          <div className="flex items-center gap-2">
+                            {process.is_core_process && (
+                              <Star className="h-4 w-4 text-yellow-400 fill-current" />
+                            )}
+                            <span className="font-medium">{process.name}</span>
+                          </div>
+                        </td>
+                        <td className="p-4">
+                          <Badge variant="outline" className="text-xs">
+                            {process.category}
+                          </Badge>
+                        </td>
+                        <td className="p-4 text-sm text-slate-600">
+                          {process.owner_name || 'Unassigned'}
+                        </td>
+                        <td className="p-4">
+                          <Badge 
+                            variant={process.status === 'published' ? 'default' : 'secondary'}
+                            className="text-xs"
+                          >
+                            {process.status}
+                          </Badge>
+                        </td>
+                        <td className="p-4 text-sm text-slate-600">
+                          {process.step_count || 0}
+                        </td>
+                        <td className="p-4">
+                          {process.followed_by_all_percentage !== null && (
+                            <div className="flex items-center gap-2">
+                              <Progress value={process.followed_by_all_percentage} className="h-1.5 w-20" />
+                              <span className="text-xs font-medium">{process.followed_by_all_percentage}%</span>
+                            </div>
+                          )}
+                        </td>
+                        <td className="p-4">
+                          <div className="flex items-center gap-2">
+                            <Button
+                              size="sm"
+                              variant="ghost"
+                              onClick={() => handleEditProcess(process)}
+                            >
+                              <Edit className="h-3 w-3" />
+                            </Button>
+                            {!process.user_acknowledgment && (
+                              <Button
+                                size="sm"
+                                variant="ghost"
+                                onClick={() => handleAcknowledgeProcess(process.id)}
+                                style={{ color: themeColors.primary }}
+                              >
+                                <CheckSquare className="h-3 w-3" />
+                              </Button>
+                            )}
+                            <Button
+                              size="sm"
+                              variant="ghost"
+                              onClick={() => {
+                                setProcessToDelete(process);
+                                setShowDeleteDialog(true);
+                              }}
+                              className="text-red-500 hover:text-red-700"
+                            >
+                              <Trash2 className="h-3 w-3" />
+                            </Button>
+                          </div>
+                        </td>
+                      </tr>
                     ))}
-                  </div>
-                </CardContent>
-              </Card>
+                  </tbody>
+                </table>
+              </div>
             )}
           </TabsContent>
         </Tabs>
+      </div>
 
-        {/* Process Editor Dialog */}
-        <Dialog open={showEditor} onOpenChange={setShowEditor}>
-          <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
-            <DialogHeader>
-              <DialogTitle>
-                {selectedProcess ? 'Edit Process' : 'Create New Process'}
-              </DialogTitle>
-              <DialogDescription>
-                Define your process steps and tracking requirements
-              </DialogDescription>
-            </DialogHeader>
-            
-            <ProcessEditor
-              process={selectedProcess}
-              templates={templates}
-              onSave={handleSaveProcess}
-              onCancel={() => setShowEditor(false)}
-            />
-          </DialogContent>
-        </Dialog>
+      {/* Delete Confirmation Dialog */}
+      <Dialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Delete Process</DialogTitle>
+            <DialogDescription>
+              Are you sure you want to delete "{processToDelete?.name}"? This action cannot be undone.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="flex justify-end gap-3 mt-4">
+            <Button variant="outline" onClick={() => setShowDeleteDialog(false)}>
+              Cancel
+            </Button>
+            <Button 
+              variant="destructive" 
+              onClick={handleDeleteProcess}
+            >
+              Delete Process
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
