@@ -1291,14 +1291,18 @@ const ProcessWorkflowEditor = ({ process, onSave, onCancel, templates = [], team
                                       <div className="absolute -left-8 top-3 flex items-center">
                                         <div className="w-4 h-px bg-slate-300"></div>
                                         <div 
-                                          className="bg-white border rounded-full w-6 h-6 flex items-center justify-center text-xs font-medium"
-                                          style={{ 
+                                          className={`border rounded-full w-6 h-6 flex items-center justify-center text-xs font-medium transition-all ${
+                                            savedNotes[`${index}-${subIndex}`] 
+                                              ? 'bg-green-100 border-green-400 text-green-700'
+                                              : 'bg-white'
+                                          }`}
+                                          style={savedNotes[`${index}-${subIndex}`] ? {} : { 
                                             borderColor: `${themeColors.primary}40`,
                                             color: `${themeColors.primary}99`,
                                             backgroundColor: `${themeColors.primary}08`
                                           }}
                                         >
-                                          {subStepLetter}
+                                          {savedNotes[`${index}-${subIndex}`] ? '✓' : subStepLetter}
                                         </div>
                                       </div>
                                       <div className="flex items-start gap-2">
@@ -1309,6 +1313,45 @@ const ProcessWorkflowEditor = ({ process, onSave, onCancel, templates = [], team
                                             onChange={(e) => handleUpdateSubStep(index, subIndex, 'text', e.target.value)}
                                             placeholder="Enter sub-step description"
                                             className="bg-white"
+                                            onKeyDown={(e) => {
+                                              if (e.key === 'Enter' && !e.shiftKey) {
+                                                e.preventDefault();
+                                                
+                                                // Check if this is the last sub-step
+                                                const isLastSubStep = subIndex === step.bullets.length - 1;
+                                                
+                                                if (isLastSubStep) {
+                                                  // Add a new sub-step
+                                                  handleAddSubStep(index);
+                                                  // Focus the new sub-step after a short delay
+                                                  setTimeout(() => {
+                                                    const newSubStep = document.querySelector(`#substep-${index}-${subIndex + 1}`);
+                                                    if (newSubStep) {
+                                                      newSubStep.focus();
+                                                      newSubStep.select();
+                                                    }
+                                                  }, 100);
+                                                } else {
+                                                  // Move to next sub-step
+                                                  const nextSubStep = document.querySelector(`#substep-${index}-${subIndex + 1}`);
+                                                  if (nextSubStep) {
+                                                    nextSubStep.focus();
+                                                    nextSubStep.select();
+                                                  }
+                                                }
+                                                
+                                                // Show saved feedback for current sub-step
+                                                const key = `${index}-${subIndex}`;
+                                                setSavedNotes(prev => ({ ...prev, [key]: true }));
+                                                setTimeout(() => {
+                                                  setSavedNotes(prev => {
+                                                    const updated = { ...prev };
+                                                    delete updated[key];
+                                                    return updated;
+                                                  });
+                                                }, 1500);
+                                              }
+                                            }}
                                           />
                                           
                                           {/* Expandable Notes Section */}
