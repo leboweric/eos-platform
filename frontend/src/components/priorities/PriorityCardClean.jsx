@@ -738,51 +738,66 @@ const PriorityCardClean = ({
                   ))}
                   
                   {showAddMilestone && (
-                    <div className="flex gap-2 p-2 bg-gray-50 rounded-lg">
-                      <Input
-                        value={newMilestone.title}
-                        onChange={(e) => setNewMilestone({ ...newMilestone, title: e.target.value })}
-                        placeholder={`${labels.milestones_label?.slice(0, -1) || 'Milestone'} title`}
-                        className="flex-1 text-sm"
-                      />
-                      <Select
-                        value={newMilestone.ownerId || priority.owner?.id}
-                        onValueChange={(value) => setNewMilestone({ ...newMilestone, ownerId: value })}
-                      >
-                        <SelectTrigger className="w-40 h-9 text-sm">
-                          <SelectValue placeholder="Owner" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {teamMembers.map((member) => (
-                            <SelectItem key={member.id} value={member.id}>
-                              {member.name}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                      <Input
-                        type="date"
-                        value={newMilestone.dueDate}
-                        onChange={(e) => setNewMilestone({ ...newMilestone, dueDate: e.target.value })}
-                        className="w-32 text-sm"
-                      />
-                      <Button
-                        size="sm"
-                        onClick={handleAddMilestone}
-                        className="bg-gray-900 hover:bg-gray-800"
-                      >
-                        Add
-                      </Button>
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => {
-                          setShowAddMilestone(false);
-                          setNewMilestone({ title: '', dueDate: '' });
-                        }}
-                      >
-                        Cancel
-                      </Button>
+                    <div className="p-3 bg-gray-50 rounded-lg space-y-2">
+                      <div className="flex gap-2">
+                        <Input
+                          value={newMilestone.title}
+                          onChange={(e) => setNewMilestone({ ...newMilestone, title: e.target.value })}
+                          placeholder={`${labels.milestones_label?.slice(0, -1) || 'Milestone'} title`}
+                          className="flex-1 text-sm h-9"
+                          autoFocus
+                        />
+                      </div>
+                      <div className="flex gap-2">
+                        <Select
+                          value={newMilestone.ownerId || priority.owner?.id}
+                          onValueChange={(value) => setNewMilestone({ ...newMilestone, ownerId: value })}
+                        >
+                          <SelectTrigger className="flex-1 h-9 text-sm">
+                            <SelectValue placeholder="Select owner" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {teamMembers && teamMembers.length > 0 ? (
+                              teamMembers.map((member) => (
+                                <SelectItem key={member.id} value={member.id}>
+                                  {member.name || `${member.first_name} ${member.last_name}`}
+                                </SelectItem>
+                              ))
+                            ) : (
+                              <SelectItem value={priority.owner?.id}>
+                                {priority.owner?.name || 'Current Owner'}
+                              </SelectItem>
+                            )}
+                          </SelectContent>
+                        </Select>
+                        <Input
+                          type="date"
+                          value={newMilestone.dueDate}
+                          onChange={(e) => setNewMilestone({ ...newMilestone, dueDate: e.target.value })}
+                          className="w-40 text-sm h-9"
+                        />
+                      </div>
+                      <div className="flex gap-2 justify-end">
+                        <Button
+                          size="sm"
+                          onClick={handleAddMilestone}
+                          className="bg-gray-900 hover:bg-gray-800 h-9"
+                          disabled={!newMilestone.title || !newMilestone.dueDate}
+                        >
+                          Add {labels.milestones_label?.slice(0, -1) || 'Milestone'}
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          className="h-9"
+                          onClick={() => {
+                            setShowAddMilestone(false);
+                            setNewMilestone({ title: '', dueDate: '' });
+                          }}
+                        >
+                          Cancel
+                        </Button>
+                      </div>
                     </div>
                   )}
                 </div>

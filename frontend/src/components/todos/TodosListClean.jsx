@@ -24,7 +24,8 @@ const TodosListClean = ({
   onStatusChange,
   onConvertToIssue,
   showCompleted = true,
-  hideViewToggle = false
+  hideViewToggle = false,
+  hideSortOptions = false
 }) => {
   const { selectedTodoIds, toggleTodo, isSelected } = useSelectedTodos();
   const [themeColors, setThemeColors] = useState({
@@ -186,6 +187,7 @@ const TodosListClean = ({
   return (
     <div>
       {/* Enhanced Sorting header */}
+      {!hideSortOptions && (
       <div className="mb-4 p-4 bg-white/80 backdrop-blur-sm rounded-xl border border-white/20 shadow-sm">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-1">
@@ -248,6 +250,7 @@ const TodosListClean = ({
           )}
         </div>
       </div>
+      )}
       
       {/* Default compact grid view - cards in columns */}
       <div className={showListView ? "space-y-2" : "grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3"}>

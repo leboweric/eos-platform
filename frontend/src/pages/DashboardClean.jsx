@@ -521,7 +521,31 @@ const DashboardClean = () => {
       const teamId = getTeamId(user);
       
       await quarterlyPrioritiesService.updateMilestone(orgId, teamId, priorityId, milestoneId, { completed });
-      await fetchDashboardData();
+      
+      // Update local state
+      setDashboardData(prev => ({
+        ...prev,
+        priorities: prev.priorities?.map(p => 
+          p.id === priorityId 
+            ? {
+                ...p,
+                milestones: p.milestones?.map(m => 
+                  m.id === milestoneId ? { ...m, completed } : m
+                ) || []
+              }
+            : p
+        ) || []
+      }));
+      
+      // Update selected priority if it's the one being viewed
+      if (selectedPriority?.id === priorityId) {
+        setSelectedPriority(prev => ({
+          ...prev,
+          milestones: prev.milestones?.map(m => 
+            m.id === milestoneId ? { ...m, completed } : m
+          ) || []
+        }));
+      }
     } catch (error) {
       console.error('Failed to toggle milestone:', error);
     }
@@ -532,8 +556,32 @@ const DashboardClean = () => {
       const orgId = user?.organizationId || user?.organization_id;
       const teamId = getTeamId(user);
       
-      await quarterlyPrioritiesService.createUpdate(orgId, teamId, priorityId, { text: updateText });
-      await fetchDashboardData();
+      const response = await quarterlyPrioritiesService.createUpdate(orgId, teamId, priorityId, { text: updateText });
+      
+      // Update local state with the new update
+      const newUpdate = {
+        id: response.id || Date.now(),
+        text: updateText,
+        createdAt: new Date().toISOString(),
+        authorName: user?.name || 'You'
+      };
+      
+      setDashboardData(prev => ({
+        ...prev,
+        priorities: prev.priorities?.map(p => 
+          p.id === priorityId 
+            ? { ...p, updates: [...(p.updates || []), newUpdate] }
+            : p
+        ) || []
+      }));
+      
+      // Update selected priority if it's the one being viewed
+      if (selectedPriority?.id === priorityId) {
+        setSelectedPriority(prev => ({
+          ...prev,
+          updates: [...(prev.updates || []), newUpdate]
+        }));
+      }
     } catch (error) {
       console.error('Failed to add update:', error);
     }
@@ -569,9 +617,23 @@ const DashboardClean = () => {
       const teamId = getTeamId(user);
       
       await quarterlyPrioritiesService.updatePriority(orgId, teamId, priorityId, { status: newStatus });
-      await fetchDashboardData();
+      
+      // Update local state instead of refetching to prevent flashing
+      setDashboardData(prev => ({
+        ...prev,
+        priorities: prev.priorities?.map(p => 
+          p.id === priorityId ? { ...p, status: newStatus } : p
+        ) || []
+      }));
+      
+      // Update selected priority if it's the one being viewed
+      if (selectedPriority?.id === priorityId) {
+        setSelectedPriority(prev => ({ ...prev, status: newStatus }));
+      }
     } catch (error) {
       console.error('Failed to change priority status:', error);
+      // Revert on error
+      await fetchDashboardData();
     }
   };
 
@@ -1042,6 +1104,7 @@ const DashboardClean = () => {
                 onUpdate={fetchDashboardData}
                 showCompleted={false}
                 hideViewToggle={true}
+                hideSortOptions={true}
               />
             )}
           </div>
@@ -1218,9 +1281,10 @@ const DashboardClean = () => {
 
         {/* Priority Dialog */}
         <Dialog open={showPriorityDialog} onOpenChange={setShowPriorityDialog}>
-          <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+          <DialogContent className="max-w-5xl max-h-[90vh] overflow-y-auto p-0">
             {selectedPriority && (
-              <PriorityCardClean
+              <div className="p-6">
+                <PriorityCardClean
                 priority={selectedPriority}
                 isCompany={false}
                 isArchived={false}
@@ -1239,7 +1303,8 @@ const DashboardClean = () => {
                 onDeleteAttachment={handleDeleteAttachment}
                 teamMembers={dashboardData.teamMembers || []}
                 readOnly={false}
-              />
+                />
+              </div>
             )}
           </DialogContent>
         </Dialog>
