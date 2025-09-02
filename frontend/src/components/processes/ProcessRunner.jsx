@@ -283,7 +283,9 @@ const ProcessRunner = ({ process, onClose, themeColors }) => {
               <CardTitle className="text-base">Process Overview</CardTitle>
             </CardHeader>
             <CardContent>
-              <p className="text-sm text-slate-600">{process.description}</p>
+              <pre className="text-sm text-slate-600 font-sans whitespace-pre-wrap break-words">
+                {process.description}
+              </pre>
             </CardContent>
           </Card>
         )}
@@ -343,9 +345,9 @@ const ProcessRunner = ({ process, onClose, themeColors }) => {
                           {step.title || `Step ${stepIndex + 1}`}
                         </CardTitle>
                         {step.description && isExpanded && (
-                          <CardDescription className="mt-2">
+                          <pre className="mt-2 text-sm text-slate-600 font-sans whitespace-pre-wrap break-words">
                             {step.description}
-                          </CardDescription>
+                          </pre>
                         )}
                       </div>
                     </div>
