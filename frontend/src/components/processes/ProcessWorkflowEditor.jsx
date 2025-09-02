@@ -1767,7 +1767,9 @@ const ProcessWorkflowEditor = ({ process, onSave, onCancel, templates = [], team
                             {step.description && (
                               <div>
                                 <p className="text-xs font-medium text-slate-600 mb-1">Notes</p>
-                                <p className="text-sm text-slate-700">{step.description}</p>
+                                <div className="text-sm text-slate-700 whitespace-pre-wrap">
+                                  {step.description}
+                                </div>
                               </div>
                             )}
                             
