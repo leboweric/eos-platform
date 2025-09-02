@@ -139,6 +139,64 @@ const ProcessRunner = ({ process, onClose, themeColors }) => {
     return `${mins}:${secs.toString().padStart(2, '0')}`;
   };
 
+  // Handle attachment preview
+  const handlePreviewAttachment = (attachment) => {
+    // Check if it's an image
+    const isImage = attachment.isImage || 
+                   attachment.fileType?.startsWith('image/') || 
+                   attachment.file_type?.startsWith('image/') ||
+                   /\.(jpg|jpeg|png|gif|webp)$/i.test(attachment.name || attachment.fileName || attachment.file_name || '');
+    
+    if (isImage) {
+      // Get the image URL
+      let imageUrl = attachment.url || attachment.file_url || attachment.file_data || attachment.fileData || attachment.data;
+      
+      // If it's base64 data without the data URL prefix, add it
+      if (imageUrl && !imageUrl.startsWith('data:') && !imageUrl.startsWith('http')) {
+        const mimeType = attachment.fileType || attachment.file_type || 'image/jpeg';
+        imageUrl = `data:${mimeType};base64,${imageUrl}`;
+      }
+      
+      if (!imageUrl) {
+        alert('Unable to preview this image.');
+        return;
+      }
+      
+      // Open in new window
+      const newWindow = window.open('', '_blank');
+      if (newWindow) {
+        newWindow.document.write(`
+          <html>
+            <head>
+              <title>${attachment.name || attachment.fileName || attachment.file_name || 'Image Preview'}</title>
+              <style>
+                body { margin: 0; display: flex; justify-content: center; align-items: center; min-height: 100vh; background: #1f2937; }
+                img { max-width: 100%; max-height: 100vh; object-fit: contain; }
+              </style>
+            </head>
+            <body>
+              <img src="${imageUrl}" alt="Preview" />
+            </body>
+          </html>
+        `);
+        newWindow.document.close();
+      }
+    } else {
+      // For non-images, download
+      handleDownloadAttachment(attachment);
+    }
+  };
+
+  // Handle attachment download
+  const handleDownloadAttachment = (attachment) => {
+    const link = document.createElement('a');
+    link.href = attachment.url || attachment.file_url || attachment.file_data || attachment.fileData || '';
+    link.download = attachment.name || attachment.fileName || attachment.file_name || 'download';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
+
   const completedCount = completedSteps.size;
   const totalSteps = steps.length;
   const progressPercentage = totalSteps > 0 ? (completedCount / totalSteps) * 100 : 0;
@@ -381,6 +439,8 @@ const ProcessRunner = ({ process, onClose, themeColors }) => {
                                 size="sm"
                                 variant="ghost"
                                 className="h-6 w-6 p-0"
+                                onClick={() => handlePreviewAttachment(attachment)}
+                                title="Preview"
                               >
                                 <Eye className="h-3 w-3" />
                               </Button>
