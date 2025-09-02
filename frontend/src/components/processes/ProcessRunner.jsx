@@ -377,38 +377,35 @@ const ProcessRunner = ({ process, onClose, themeColors }) => {
                   <CardContent>
                     {/* Sub-steps */}
                     {step.bullets && step.bullets.length > 0 && (
-                      <div className="space-y-3 mb-4">
+                      <div className="space-y-3 mb-4 ml-11">
                         {step.bullets.map((subStep, subIndex) => {
                           const subKey = `${stepIndex}-${subIndex}`;
                           const isSubCompleted = completedSubSteps.has(subKey);
                           const subStepLetter = String.fromCharCode(97 + subIndex);
                           
                           return (
-                            <div key={subIndex} className="flex items-start gap-3 ml-11">
-                              <div className={`w-6 h-6 rounded-full border flex items-center justify-center text-xs font-medium transition-all ${
+                            <div key={subIndex} className="flex items-start gap-3">
+                              <div className={`w-6 h-6 rounded-full border flex-shrink-0 flex items-center justify-center text-xs font-medium transition-all ${
                                 isSubCompleted 
                                   ? 'bg-green-100 border-green-300 text-green-700' 
                                   : 'bg-white border-slate-300 text-slate-600'
                               }`}>
                                 {isSubCompleted ? '✓' : subStepLetter}
                               </div>
+                              <Checkbox
+                                checked={isSubCompleted}
+                                onCheckedChange={() => handleSubStepComplete(stepIndex, subIndex)}
+                                className="mt-0.5 flex-shrink-0"
+                              />
                               <div className="flex-1">
-                                <div className="flex items-start gap-2">
-                                  <Checkbox
-                                    checked={isSubCompleted}
-                                    onCheckedChange={() => handleSubStepComplete(stepIndex, subIndex)}
-                                  />
-                                  <div className="flex-1">
-                                    <p className={`text-sm ${isSubCompleted ? 'line-through text-slate-400' : 'text-slate-700'}`}>
-                                      {subStep.text}
-                                    </p>
-                                    {subStep.notes && (
-                                      <div className="mt-2 p-3 bg-slate-50 rounded-lg">
-                                        {renderFormattedText(subStep.notes)}
-                                      </div>
-                                    )}
+                                <p className={`text-sm ${isSubCompleted ? 'line-through text-slate-400' : 'text-slate-700'}`}>
+                                  {subStep.text}
+                                </p>
+                                {subStep.notes && (
+                                  <div className="mt-2 p-3 bg-slate-50 rounded-lg">
+                                    {renderFormattedText(subStep.notes)}
                                   </div>
-                                </div>
+                                )}
                               </div>
                             </div>
                           );
