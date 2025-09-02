@@ -358,18 +358,6 @@ const TodosPage = () => {
               <p className="text-lg text-slate-600">Manage and track your action items</p>
             </div>
             <div className="flex items-center gap-3">
-            {doneNotArchivedCount > 0 && activeTab === 'not-done' && (
-              <Button 
-                onClick={handleArchiveDone}
-                variant="ghost"
-                className="text-gray-600 transition-all duration-200 hover:bg-gradient-to-r hover:from-gray-100 hover:to-gray-50 rounded-lg"
-                onMouseEnter={(e) => e.currentTarget.style.color = themeColors.primary}
-                onMouseLeave={(e) => e.currentTarget.style.color = ''}
-              >
-                <Archive className="mr-2 h-4 w-4" />
-                Archive Done ({doneNotArchivedCount})
-              </Button>
-            )}
             {selectedTodoIds.length > 0 && (
               <Button 
                 onClick={handleMarkComplete}
@@ -487,27 +475,39 @@ const TodosPage = () => {
         {/* Enhanced Filters Bar */}
         <div className="bg-white/80 backdrop-blur-sm rounded-2xl p-6 shadow-sm border border-white/50 mb-6">
           <div className="flex items-center justify-between">
-            <div className="bg-white/80 backdrop-blur-sm rounded-2xl p-2 inline-flex shadow-sm">
-              <Tabs value={activeTab} onValueChange={setActiveTab} className="border-0">
-                <TabsList className="bg-transparent border-0 p-0 h-auto gap-1">
-                  <TabsTrigger 
-                    value="not-done" 
-                    className="data-[state=active]:bg-gradient-to-r data-[state=active]:from-orange-500 data-[state=active]:to-amber-500 data-[state=active]:text-white data-[state=active]:shadow-lg rounded-xl transition-all duration-200 font-medium px-4 py-2"
-                  >
-                    <Target className="h-4 w-4 mr-2" />
-                    Not Done
-                    <span className="ml-2 text-sm opacity-80">({notDoneTodosCount})</span>
-                  </TabsTrigger>
-                  <TabsTrigger 
-                    value="done" 
-                    className="data-[state=active]:bg-gradient-to-r data-[state=active]:from-green-500 data-[state=active]:to-emerald-500 data-[state=active]:text-white data-[state=active]:shadow-lg rounded-xl transition-all duration-200 font-medium px-4 py-2"
-                  >
-                    <CheckSquare className="h-4 w-4 mr-2" />
-                    Done
-                    <span className="ml-2 text-sm opacity-80">({doneTodosCount})</span>
-                  </TabsTrigger>
-                </TabsList>
-              </Tabs>
+            <div className="flex items-center gap-3">
+              <div className="bg-white/80 backdrop-blur-sm rounded-2xl p-2 inline-flex shadow-sm">
+                <Tabs value={activeTab} onValueChange={setActiveTab} className="border-0">
+                  <TabsList className="bg-transparent border-0 p-0 h-auto gap-1">
+                    <TabsTrigger 
+                      value="not-done" 
+                      className="data-[state=active]:bg-gradient-to-r data-[state=active]:from-orange-500 data-[state=active]:to-amber-500 data-[state=active]:text-white data-[state=active]:shadow-lg rounded-xl transition-all duration-200 font-medium px-4 py-2"
+                    >
+                      <Target className="h-4 w-4 mr-2" />
+                      Not Done
+                      <span className="ml-2 text-sm opacity-80">({notDoneTodosCount})</span>
+                    </TabsTrigger>
+                    <TabsTrigger 
+                      value="done" 
+                      className="data-[state=active]:bg-gradient-to-r data-[state=active]:from-green-500 data-[state=active]:to-emerald-500 data-[state=active]:text-white data-[state=active]:shadow-lg rounded-xl transition-all duration-200 font-medium px-4 py-2"
+                    >
+                      <CheckSquare className="h-4 w-4 mr-2" />
+                      Done
+                      <span className="ml-2 text-sm opacity-80">({doneTodosCount})</span>
+                    </TabsTrigger>
+                  </TabsList>
+                </Tabs>
+              </div>
+              
+              {doneNotArchivedCount > 0 && activeTab === 'not-done' && (
+                <Button 
+                  onClick={handleArchiveDone}
+                  className="bg-gradient-to-r from-purple-500 to-indigo-500 text-white hover:from-purple-600 hover:to-indigo-600 transition-all duration-200 shadow-md hover:shadow-lg rounded-lg"
+                >
+                  <Archive className="mr-2 h-4 w-4" />
+                  Archive Done ({doneNotArchivedCount})
+                </Button>
+              )}
             </div>
 
             <Select value={filterAssignee} onValueChange={setFilterAssignee}>

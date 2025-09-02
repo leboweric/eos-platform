@@ -2191,8 +2191,7 @@ const WeeklyAccountabilityMeetingPage = () => {
                               setError('Failed to archive done to-dos');
                             }
                           }}
-                          variant="outline"
-                          className="text-gray-600 hover:text-gray-900"
+                          className="bg-gradient-to-r from-purple-500 to-indigo-500 text-white hover:from-purple-600 hover:to-indigo-600 transition-all duration-200 shadow-md hover:shadow-lg rounded-lg"
                         >
                           <Archive className="mr-2 h-4 w-4" />
                           Archive Done ({doneTodosCount})
@@ -2331,8 +2330,7 @@ const WeeklyAccountabilityMeetingPage = () => {
                                   setError('Failed to archive closed issues');
                                 }
                               }}
-                              variant="outline"
-                              className="text-gray-600 hover:text-gray-900 bg-white/80 backdrop-blur-sm border-white/50"
+                              className="bg-gradient-to-r from-purple-500 to-indigo-500 text-white hover:from-purple-600 hover:to-indigo-600 transition-all duration-200 shadow-md hover:shadow-lg rounded-lg"
                             >
                               <Archive className="mr-2 h-4 w-4" />
                               Archive Solved ({closedIssuesCount})
