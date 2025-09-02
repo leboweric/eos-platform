@@ -204,19 +204,12 @@ const ProcessRunner = ({ process, onClose, themeColors }) => {
   const renderFormattedText = (text) => {
     if (!text) return '';
     
-    // This is a simplified version - you may want to reuse the one from ProcessWorkflowEditor
-    return text.split('\n').map((line, idx) => (
-      <div key={idx} className="mb-1">
-        {line.startsWith('• ') ? (
-          <div className="flex items-start gap-2 ml-4">
-            <span className="text-slate-400 mt-0.5">•</span>
-            <span>{line.substring(2)}</span>
-          </div>
-        ) : (
-          <span>{line}</span>
-        )}
-      </div>
-    ));
+    // Preserve formatting with proper indentation
+    return (
+      <pre className="font-sans text-xs text-slate-600 whitespace-pre-wrap break-words">
+        {text}
+      </pre>
+    );
   };
 
   if (loading) {
@@ -408,7 +401,7 @@ const ProcessRunner = ({ process, onClose, themeColors }) => {
                                       {subStep.text}
                                     </p>
                                     {subStep.notes && (
-                                      <div className="mt-2 p-3 bg-slate-50 rounded-lg text-xs text-slate-600">
+                                      <div className="mt-2 p-3 bg-slate-50 rounded-lg">
                                         {renderFormattedText(subStep.notes)}
                                       </div>
                                     )}
