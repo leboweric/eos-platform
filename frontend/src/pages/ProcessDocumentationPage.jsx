@@ -334,69 +334,6 @@ const ProcessDocumentationPage = () => {
               </Button>
             </div>
           </div>
-
-          {/* Stats Cards */}
-          <div className="grid grid-cols-1 md:grid-cols-5 gap-4 mb-6">
-            <div className="bg-white/80 backdrop-blur-sm rounded-2xl p-6 border border-white/50 shadow-sm hover:shadow-md transition-all duration-200 hover:scale-[1.01]">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm font-medium text-slate-600">Total</p>
-                  <p className="text-2xl font-bold mt-1" style={{ color: themeColors.primary }}>
-                    {stats.total}
-                  </p>
-                </div>
-                <FileText className="h-8 w-8 text-slate-300" />
-              </div>
-            </div>
-
-            <div className="bg-white/80 backdrop-blur-sm rounded-2xl p-6 border border-white/50 shadow-sm hover:shadow-md transition-all duration-200 hover:scale-[1.01]">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm font-medium text-slate-600">Core</p>
-                  <p className="text-2xl font-bold mt-1" style={{ color: themeColors.primary }}>
-                    {stats.core}
-                  </p>
-                </div>
-                <Star className="h-8 w-8 text-yellow-400" />
-              </div>
-            </div>
-
-            <div className="bg-white/80 backdrop-blur-sm rounded-2xl p-6 border border-white/50 shadow-sm hover:shadow-md transition-all duration-200 hover:scale-[1.01]">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm font-medium text-slate-600">Need Review</p>
-                  <p className="text-2xl font-bold mt-1 text-orange-600">
-                    {stats.needsReview}
-                  </p>
-                </div>
-                <Clock className="h-8 w-8 text-orange-400" />
-              </div>
-            </div>
-
-            <div className="bg-white/80 backdrop-blur-sm rounded-2xl p-6 border border-white/50 shadow-sm hover:shadow-md transition-all duration-200 hover:scale-[1.01]">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm font-medium text-slate-600">Unread</p>
-                  <p className="text-2xl font-bold mt-1 text-blue-600">
-                    {stats.unread}
-                  </p>
-                </div>
-                <Eye className="h-8 w-8 text-blue-400" />
-              </div>
-            </div>
-
-            <div className="bg-white/80 backdrop-blur-sm rounded-2xl p-6 border border-white/50 shadow-sm hover:shadow-md transition-all duration-200 hover:scale-[1.01]">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm font-medium text-slate-600">Compliance</p>
-                  <p className="text-2xl font-bold mt-1 text-green-600">
-                    {stats.compliance}%
-                  </p>
-                </div>
-                <CheckCircle className="h-8 w-8 text-green-400" />
-              </div>
-            </div>
-          </div>
         </div>
 
         {/* Filters and Search */}

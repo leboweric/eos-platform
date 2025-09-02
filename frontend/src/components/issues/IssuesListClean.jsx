@@ -388,7 +388,7 @@ const IssuesListClean = ({
     const hasVotes = (issue.vote_count || 0) > 0;
     const isTopIssue = index === 0 && hasVotes && showVoting;
     const isDragOver = dragOverIssueIndex === index;
-    const isTopThree = index < 3;  // Check if this is in top 3
+    const isTopThree = showVoting && index < 3;  // Only highlight top 3 during meetings
     
     return (
       <div
@@ -400,13 +400,13 @@ const IssuesListClean = ({
           ${draggedIssueIndex === index ? 'opacity-50' : ''}
         `}
         style={{
-          backgroundColor: index === 0 ? hexToRgba(themeColors.primary, 0.08) : 
-                          index === 1 ? hexToRgba(themeColors.secondary, 0.06) :
-                          index === 2 ? hexToRgba(themeColors.accent, 0.04) :
+          backgroundColor: showVoting && index === 0 ? hexToRgba(themeColors.primary, 0.08) : 
+                          showVoting && index === 1 ? hexToRgba(themeColors.secondary, 0.06) :
+                          showVoting && index === 2 ? hexToRgba(themeColors.accent, 0.04) :
                           'rgba(255, 255, 255, 0.9)',
-          borderColor: index === 0 ? themeColors.primary : 
-                      index === 1 ? themeColors.secondary :
-                      index === 2 ? themeColors.accent :
+          borderColor: showVoting && index === 0 ? themeColors.primary : 
+                      showVoting && index === 1 ? themeColors.secondary :
+                      showVoting && index === 2 ? themeColors.accent :
                       hexToRgba(themeColors.accent, 0.3),
           borderWidth: isTopThree ? '2px' : '1px'
         }}
@@ -456,9 +456,9 @@ const IssuesListClean = ({
                 </div>
               )}
               <span className="text-xs font-bold" style={{
-                color: index === 0 ? themeColors.primary : 
-                       index === 1 ? themeColors.secondary :
-                       index === 2 ? themeColors.accent :
+                color: showVoting && index === 0 ? themeColors.primary : 
+                       showVoting && index === 1 ? themeColors.secondary :
+                       showVoting && index === 2 ? themeColors.accent :
                        '#6B7280'
               }}>
                 #{index + 1}
@@ -482,9 +482,9 @@ const IssuesListClean = ({
                   )}
                 </Button>
               )}
-              {index === 0 && <span className="text-xs" title="#1 Priority">🥇</span>}
-              {index === 1 && <span className="text-xs" title="#2 Priority">🥈</span>}
-              {index === 2 && <span className="text-xs" title="#3 Priority">🥉</span>}
+              {showVoting && index === 0 && <span className="text-xs" title="#1 Priority">🥇</span>}
+              {showVoting && index === 1 && <span className="text-xs" title="#2 Priority">🥈</span>}
+              {showVoting && index === 2 && <span className="text-xs" title="#3 Priority">🥉</span>}
             </div>
             <div onClick={(e) => e.stopPropagation()}>
               <div className="relative">
@@ -575,14 +575,6 @@ const IssuesListClean = ({
             className={`h-7 px-3 py-1 text-xs font-medium hover:bg-gray-200 ${sortField === 'created' ? 'bg-gray-200 text-gray-900' : 'text-gray-600'}`}
           >
             Created {getSortIcon('created')}
-          </Button>
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={() => handleSort('status')}
-            className={`h-7 px-3 py-1 text-xs font-medium hover:bg-gray-200 ${sortField === 'status' ? 'bg-gray-200 text-gray-900' : 'text-gray-600'}`}
-          >
-            Status {getSortIcon('status')}
           </Button>
           {sortField && (
             <Button
@@ -733,18 +725,18 @@ const IssuesListClean = ({
                 
                 {/* Issue number with priority colors */}
                 <span className="text-sm font-semibold min-w-[2rem]" style={{
-                  color: globalIndex === 0 ? themeColors.primary : 
-                         globalIndex === 1 ? themeColors.secondary :
-                         globalIndex === 2 ? themeColors.accent :
+                  color: showVoting && globalIndex === 0 ? themeColors.primary : 
+                         showVoting && globalIndex === 1 ? themeColors.secondary :
+                         showVoting && globalIndex === 2 ? themeColors.accent :
                          '#6B7280'
                 }}>
                   #{globalIndex + 1}
                 </span>
                 
-                {/* Medal emojis for top 3 */}
-                {globalIndex === 0 && <span className="text-xs" title="#1 Priority">🥇</span>}
-                {globalIndex === 1 && <span className="text-xs" title="#2 Priority">🥈</span>}
-                {globalIndex === 2 && <span className="text-xs" title="#3 Priority">🥉</span>}
+                {/* Medal emojis for top 3 - only during meetings */}
+                {showVoting && globalIndex === 0 && <span className="text-xs" title="#1 Priority">🥇</span>}
+                {showVoting && globalIndex === 1 && <span className="text-xs" title="#2 Priority">🥈</span>}
+                {showVoting && globalIndex === 2 && <span className="text-xs" title="#3 Priority">🥉</span>}
                 
                 {/* Title */}
                 <h3 className={`
