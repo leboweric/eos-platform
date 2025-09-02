@@ -984,7 +984,18 @@ const DashboardClean = () => {
                 {(() => {
                   // Group todos by assignee
                   const groupedTodos = dashboardData.todos.reduce((groups, todo) => {
-                    const assigneeName = todo.assignedTo?.name || todo.assigned_to?.name || 'Unassigned';
+                    // Get assignee name from various possible structures
+                    let assigneeName = 'Unassigned';
+                    if (todo.assignedTo) {
+                      assigneeName = todo.assignedTo.name || 
+                        `${todo.assignedTo.first_name || ''} ${todo.assignedTo.last_name || ''}`.trim() ||
+                        'Unassigned';
+                    } else if (todo.assigned_to) {
+                      assigneeName = todo.assigned_to.name || 
+                        `${todo.assigned_to.first_name || ''} ${todo.assigned_to.last_name || ''}`.trim() ||
+                        'Unassigned';
+                    }
+                    
                     if (!groups[assigneeName]) {
                       groups[assigneeName] = [];
                     }
