@@ -204,11 +204,34 @@ const ProcessRunner = ({ process, onClose, themeColors }) => {
   const renderFormattedText = (text) => {
     if (!text) return '';
     
-    // Preserve formatting with proper indentation and bullet alignment
+    // Split text into lines and handle bullet formatting
+    const lines = text.split('\n');
+    
     return (
-      <pre className="font-sans text-xs text-slate-600 whitespace-pre-wrap break-words pl-0 m-0">
-        {text}
-      </pre>
+      <div className="font-sans text-xs text-slate-600 space-y-1">
+        {lines.map((line, index) => {
+          // Check if line starts with a bullet
+          const bulletMatch = line.match(/^(\s*)(•|\*|-)\s+(.*)$/);
+          
+          if (bulletMatch) {
+            const [, indent, bullet, content] = bulletMatch;
+            // Use padding-left for wrapped text alignment
+            return (
+              <div key={index} className="flex">
+                <span className="flex-shrink-0">{indent}{bullet}</span>
+                <span className="ml-2 block">{content}</span>
+              </div>
+            );
+          }
+          
+          // For non-bullet lines, preserve indentation
+          return (
+            <div key={index} className="whitespace-pre-wrap break-words">
+              {line || '\u00A0'}
+            </div>
+          );
+        })}
+      </div>
     );
   };
 
@@ -402,7 +425,7 @@ const ProcessRunner = ({ process, onClose, themeColors }) => {
                                   {subStep.text}
                                 </p>
                                 {subStep.notes && (
-                                  <div className="mt-2 bg-slate-50 rounded-lg" style={{ padding: '12px 12px 12px 16px' }}>
+                                  <div className="mt-2 p-3 bg-slate-50 rounded-lg">
                                     {renderFormattedText(subStep.notes)}
                                   </div>
                                 )}
