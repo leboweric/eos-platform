@@ -997,42 +997,61 @@ const DashboardClean = () => {
                       <h3 className="text-sm font-semibold text-slate-700 px-2">
                         {assigneeName} ({todos.length})
                       </h3>
-                      {todos.map((todo) => (
-                        <div 
-                          key={todo.id} 
-                          className="group p-3 bg-white/60 rounded-lg border border-slate-200 hover:shadow-md transition-all cursor-pointer hover:scale-[1.01] ml-4"
-                          onClick={() => handleEditTodo(todo)}
-                        >
-                          <div className="flex items-center gap-2">
-                            <input
-                              type="checkbox"
-                              checked={todo.status === 'completed' || todo.status === 'complete'}
-                              onChange={(e) => {
-                                e.stopPropagation();
-                                handleTodoStatusChange(todo, e.target.checked);
-                              }}
-                              className="h-4 w-4 rounded border-gray-300"
-                              style={{
-                                accentColor: themeColors.primary
-                              }}
-                            />
-                            <div className="flex-1 min-w-0">
-                              <p className={`text-sm font-medium truncate ${
-                                todo.status === 'completed' || todo.status === 'complete'
-                                  ? 'line-through text-slate-500'
-                                  : 'text-slate-900 group-hover:text-slate-950'
-                              }`}>
-                                {todo.title}
-                              </p>
-                              {todo.due_date && (
-                                <p className="text-xs text-slate-600 mt-0.5">
-                                  Due {format(new Date(todo.due_date), 'MMM d')}
+                      {todos.map((todo) => {
+                        const dueDate = todo.due_date ? new Date(todo.due_date) : null;
+                        const today = new Date();
+                        today.setHours(0, 0, 0, 0);
+                        const overdue = dueDate && dueDate < today;
+                        
+                        return (
+                          <div 
+                            key={todo.id} 
+                            className="group relative bg-white/90 backdrop-blur-sm rounded-xl border border-white/50 pl-3 pr-4 py-3 transition-all duration-200 cursor-pointer shadow-sm hover:shadow-md hover:scale-[1.01] ml-4"
+                            onClick={() => handleEditTodo(todo)}
+                          >
+                            {/* Status indicator bar */}
+                            {overdue ? (
+                              <div className="absolute left-0 top-0 bottom-0 w-1 bg-gradient-to-b from-red-500 to-red-600 rounded-l-xl" />
+                            ) : (
+                              <div className="absolute left-0 top-0 bottom-0 w-1 rounded-l-xl" style={{ background: `linear-gradient(135deg, ${themeColors.primary} 0%, ${themeColors.secondary} 100%)` }} />
+                            )}
+                            
+                            <div className="flex items-center gap-3">
+                              <input
+                                type="checkbox"
+                                checked={todo.status === 'completed' || todo.status === 'complete'}
+                                onChange={(e) => {
+                                  e.stopPropagation();
+                                  handleTodoStatusChange(todo, e.target.checked);
+                                }}
+                                className="h-5 w-5 rounded-lg border-2 transition-all duration-200 shadow-sm"
+                                style={{
+                                  borderColor: (todo.status === 'completed' || todo.status === 'complete') ? themeColors.primary : '#D1D5DB',
+                                  backgroundColor: (todo.status === 'completed' || todo.status === 'complete') ? themeColors.primary : 'transparent',
+                                  accentColor: themeColors.primary
+                                }}
+                              />
+                              <div className="flex-1 min-w-0">
+                                <p className={`text-sm font-medium truncate ${
+                                  todo.status === 'completed' || todo.status === 'complete'
+                                    ? 'line-through text-gray-400'
+                                    : 'text-gray-900'
+                                }`}>
+                                  {todo.title}
                                 </p>
+                              </div>
+                              {todo.due_date && (
+                                <span className={`flex items-center gap-1 text-sm ${
+                                  overdue ? 'text-red-600 font-medium' : 'text-gray-500'
+                                }`}>
+                                  <Calendar className="h-3 w-3" />
+                                  {format(new Date(todo.due_date), 'MMM d')}
+                                </span>
                               )}
                             </div>
                           </div>
-                        </div>
-                      ))}
+                        );
+                      })}
                     </div>
                   ));
                 })()}
