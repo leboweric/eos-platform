@@ -204,9 +204,9 @@ const ProcessRunner = ({ process, onClose, themeColors }) => {
   const renderFormattedText = (text) => {
     if (!text) return '';
     
-    // Preserve formatting with proper indentation
+    // Preserve formatting with proper indentation and bullet alignment
     return (
-      <pre className="font-sans text-xs text-slate-600 whitespace-pre-wrap break-words">
+      <pre className="font-sans text-xs text-slate-600 whitespace-pre-wrap break-words pl-0 m-0">
         {text}
       </pre>
     );
@@ -402,7 +402,7 @@ const ProcessRunner = ({ process, onClose, themeColors }) => {
                                   {subStep.text}
                                 </p>
                                 {subStep.notes && (
-                                  <div className="mt-2 p-3 bg-slate-50 rounded-lg">
+                                  <div className="mt-2 bg-slate-50 rounded-lg" style={{ padding: '12px 12px 12px 16px' }}>
                                     {renderFormattedText(subStep.notes)}
                                   </div>
                                 )}
