@@ -415,7 +415,12 @@ const TodosPage = () => {
                 <TabsList className="bg-transparent border-0 p-0 h-auto gap-1">
                   <TabsTrigger 
                     value="not-done" 
-                    className="data-[state=active]:bg-gradient-to-r data-[state=active]:from-orange-500 data-[state=active]:to-amber-500 data-[state=active]:text-white data-[state=active]:shadow-lg rounded-xl transition-all duration-200 font-medium px-4 py-2"
+                    className="data-[state=active]:text-white data-[state=active]:shadow-lg rounded-xl transition-all duration-200 font-medium px-4 py-2"
+                    style={{
+                      ...(activeTab === 'not-done' ? {
+                        background: `linear-gradient(135deg, ${themeColors.primary} 0%, ${themeColors.secondary} 100%)`
+                      } : {})
+                    }}
                   >
                     <Target className="h-4 w-4 mr-2" />
                     Not Done
@@ -423,7 +428,12 @@ const TodosPage = () => {
                   </TabsTrigger>
                   <TabsTrigger 
                     value="archived" 
-                    className="data-[state=active]:bg-gradient-to-r data-[state=active]:from-green-500 data-[state=active]:to-emerald-500 data-[state=active]:text-white data-[state=active]:shadow-lg rounded-xl transition-all duration-200 font-medium px-4 py-2"
+                    className="data-[state=active]:text-white data-[state=active]:shadow-lg rounded-xl transition-all duration-200 font-medium px-4 py-2"
+                    style={{
+                      ...(activeTab === 'archived' ? {
+                        background: `linear-gradient(135deg, ${themeColors.secondary} 0%, ${themeColors.accent} 100%)`
+                      } : {})
+                    }}
                   >
                     <Archive className="h-4 w-4 mr-2" />
                     Archived
@@ -436,7 +446,10 @@ const TodosPage = () => {
             {doneNotArchivedCount > 0 && activeTab === 'not-done' && (
               <Button 
                 onClick={handleArchiveDone}
-                className="bg-gradient-to-r from-purple-500 to-indigo-500 text-white hover:from-purple-600 hover:to-indigo-600 transition-all duration-200 shadow-md hover:shadow-lg rounded-lg"
+                className="text-white transition-all duration-200 shadow-md hover:shadow-lg rounded-lg"
+                style={{
+                  background: `linear-gradient(135deg, ${themeColors.accent} 0%, ${themeColors.primary} 100%)`
+                }}
               >
                 <Archive className="mr-2 h-4 w-4" />
                 Archive Done ({doneNotArchivedCount})

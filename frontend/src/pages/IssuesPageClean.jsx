@@ -543,7 +543,12 @@ const IssuesPageClean = () => {
                 <TabsList className="bg-transparent border-0 p-0 h-auto gap-1">
                   <TabsTrigger 
                     value="short_term" 
-                    className="data-[state=active]:bg-gradient-to-r data-[state=active]:from-orange-500 data-[state=active]:to-amber-500 data-[state=active]:text-white data-[state=active]:shadow-lg rounded-xl transition-all duration-200 font-medium px-4 py-2"
+                    className="data-[state=active]:text-white data-[state=active]:shadow-lg rounded-xl transition-all duration-200 font-medium px-4 py-2"
+                    style={{
+                      ...(activeTab === 'short_term' ? {
+                        background: `linear-gradient(135deg, ${themeColors.primary} 0%, ${themeColors.secondary} 100%)`
+                      } : {})
+                    }}
                   >
                     <Target className="h-4 w-4 mr-2" />
                     Short Term
@@ -551,7 +556,12 @@ const IssuesPageClean = () => {
                   </TabsTrigger>
                   <TabsTrigger 
                     value="long_term" 
-                    className="data-[state=active]:bg-gradient-to-r data-[state=active]:from-blue-500 data-[state=active]:to-indigo-500 data-[state=active]:text-white data-[state=active]:shadow-lg rounded-xl transition-all duration-200 font-medium px-4 py-2"
+                    className="data-[state=active]:text-white data-[state=active]:shadow-lg rounded-xl transition-all duration-200 font-medium px-4 py-2"
+                    style={{
+                      ...(activeTab === 'long_term' ? {
+                        background: `linear-gradient(135deg, ${themeColors.primary} 0%, ${themeColors.accent} 100%)`
+                      } : {})
+                    }}
                   >
                     <TrendingUp className="h-4 w-4 mr-2" />
                     Long Term
@@ -559,7 +569,12 @@ const IssuesPageClean = () => {
                   </TabsTrigger>
                   <TabsTrigger 
                     value="archived" 
-                    className="data-[state=active]:bg-gradient-to-r data-[state=active]:from-green-500 data-[state=active]:to-emerald-500 data-[state=active]:text-white data-[state=active]:shadow-lg rounded-xl transition-all duration-200 font-medium px-4 py-2"
+                    className="data-[state=active]:text-white data-[state=active]:shadow-lg rounded-xl transition-all duration-200 font-medium px-4 py-2"
+                    style={{
+                      ...(activeTab === 'archived' ? {
+                        background: `linear-gradient(135deg, ${themeColors.secondary} 0%, ${themeColors.accent} 100%)`
+                      } : {})
+                    }}
                   >
                     <CheckSquare className="h-4 w-4 mr-2" />
                     Archived
@@ -571,7 +586,10 @@ const IssuesPageClean = () => {
               {activeTab !== 'archived' && closedIssuesCount > 0 && (
                 <Button 
                   onClick={handleArchiveSelected} 
-                  className="bg-gradient-to-r from-purple-500 to-indigo-500 text-white hover:from-purple-600 hover:to-indigo-600 transition-all duration-200 shadow-md hover:shadow-lg rounded-lg"
+                  className="text-white transition-all duration-200 shadow-md hover:shadow-lg rounded-lg"
+                  style={{
+                    background: `linear-gradient(135deg, ${themeColors.accent} 0%, ${themeColors.primary} 100%)`
+                  }}
                 >
                   <Archive className="mr-2 h-4 w-4" />
                   Archive Solved ({closedIssuesCount})
