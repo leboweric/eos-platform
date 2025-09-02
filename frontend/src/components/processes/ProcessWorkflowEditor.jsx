@@ -343,18 +343,19 @@ const ProcessWorkflowEditor = ({ process, onSave, onCancel, templates = [], team
   const handlePreviewAttachment = (attachment) => {
     console.log('Preview attachment clicked:', attachment);
     
-    // Check if it's an image based on file type or name
-    const isImage = attachment.fileType?.startsWith('image/') || 
+    // Check if it's an image - use same logic as edit mode
+    const isImage = attachment.isImage || 
+                   attachment.fileType?.startsWith('image/') || 
                    attachment.file_type?.startsWith('image/') ||
-                   attachment.isImage ||
-                   /\.(jpg|jpeg|png|gif|webp)$/i.test(attachment.fileName || attachment.file_name || attachment.name || '');
+                   /\.(jpg|jpeg|png|gif|webp)$/i.test(attachment.name || attachment.fileName || attachment.file_name || '');
     
     console.log('Is image?', isImage);
-    console.log('File name:', attachment.fileName || attachment.file_name);
-    console.log('File type:', attachment.fileType || attachment.file_type);
+    console.log('attachment.isImage:', attachment.isImage);
+    console.log('attachment.url:', attachment.url);
+    console.log('attachment.name:', attachment.name);
     
     if (isImage) {
-      // For base64 images, ensure proper data URL format
+      // Use attachment.url first (same as edit mode)
       let imageUrl = attachment.url || attachment.file_url || attachment.file_data || attachment.fileData || attachment.data;
       
       // If it's base64 data without the data URL prefix, add it
@@ -1806,20 +1807,23 @@ const ProcessWorkflowEditor = ({ process, onSave, onCancel, templates = [], team
                                 <p className="text-xs font-medium text-slate-600 mb-2">Attachments</p>
                                 <div className="space-y-2">
                                   {step.attachments.map((attachment, idx) => {
-                                    const isImage = attachment.fileType?.startsWith('image/') || 
+                                    // Use same properties as in edit mode
+                                    const isImage = attachment.isImage || 
+                                                   attachment.fileType?.startsWith('image/') || 
                                                    attachment.file_type?.startsWith('image/') ||
-                                                   /\.(jpg|jpeg|png|gif|webp)$/i.test(attachment.fileName || attachment.file_name || '');
+                                                   /\.(jpg|jpeg|png|gif|webp)$/i.test(attachment.name || attachment.fileName || attachment.file_name || '');
                                     
                                     console.log('Expanded view - Attachment:', idx, attachment);
                                     console.log('Expanded view - Is image?', isImage);
-                                    console.log('Expanded view - File type:', attachment.fileType || attachment.file_type);
-                                    console.log('Expanded view - File name:', attachment.fileName || attachment.file_name);
+                                    console.log('Expanded view - attachment.isImage:', attachment.isImage);
+                                    console.log('Expanded view - attachment.url:', attachment.url);
+                                    console.log('Expanded view - attachment.name:', attachment.name);
                                     
                                     return (
                                       <div key={idx} className="inline-flex items-center gap-2 px-3 py-2 bg-white rounded-lg border border-slate-200 w-full">
                                         <Paperclip className="h-4 w-4 text-slate-400" />
                                         <span className="text-sm text-slate-700 flex-1">
-                                          {attachment.fileName || attachment.file_name || 'File'}
+                                          {attachment.name || attachment.fileName || attachment.file_name || 'File'}
                                         </span>
                                         <div className="flex items-center gap-1">
                                           {isImage && (
