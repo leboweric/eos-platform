@@ -518,66 +518,6 @@ const IssuesPageClean = () => {
               )}
             </div>
           </div>
-          
-          {/* Stats Cards */}
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
-            <div className="bg-white/80 backdrop-blur-sm rounded-2xl p-6 border border-white/20 shadow-sm hover:shadow-md transition-all duration-200">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm font-medium text-slate-600">Total {labels.issues_label}</p>
-                  <p className="text-2xl font-bold mt-1" style={{ color: themeColors.primary }}>
-                    {shortTermIssues.length + longTermIssues.length}
-                  </p>
-                </div>
-                <div className="h-12 w-12 rounded-xl flex items-center justify-center"
-                     style={{ background: `linear-gradient(135deg, ${themeColors.primary}15 0%, ${themeColors.secondary}15 100%)` }}>
-                  <AlertTriangle className="h-6 w-6" style={{ color: themeColors.primary }} />
-                </div>
-              </div>
-            </div>
-            
-            <div className="bg-white/80 backdrop-blur-sm rounded-2xl p-6 border border-white/20 shadow-sm hover:shadow-md transition-all duration-200">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm font-medium text-slate-600">Short Term</p>
-                  <p className="text-2xl font-bold mt-1 text-orange-600">
-                    {shortTermIssues.length}
-                  </p>
-                </div>
-                <div className="h-12 w-12 rounded-xl bg-orange-50 flex items-center justify-center">
-                  <Target className="h-6 w-6 text-orange-600" />
-                </div>
-              </div>
-            </div>
-            
-            <div className="bg-white/80 backdrop-blur-sm rounded-2xl p-6 border border-white/20 shadow-sm hover:shadow-md transition-all duration-200">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm font-medium text-slate-600">Long Term</p>
-                  <p className="text-2xl font-bold mt-1 text-blue-600">
-                    {longTermIssues.length}
-                  </p>
-                </div>
-                <div className="h-12 w-12 rounded-xl bg-blue-50 flex items-center justify-center">
-                  <TrendingUp className="h-6 w-6 text-blue-600" />
-                </div>
-              </div>
-            </div>
-            
-            <div className="bg-white/80 backdrop-blur-sm rounded-2xl p-6 border border-white/20 shadow-sm hover:shadow-md transition-all duration-200">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm font-medium text-slate-600">Archived</p>
-                  <p className="text-2xl font-bold mt-1 text-green-600">
-                    {archivedIssues.length}
-                  </p>
-                </div>
-                <div className="h-12 w-12 rounded-xl bg-green-50 flex items-center justify-center">
-                  <CheckSquare className="h-6 w-6 text-green-600" />
-                </div>
-              </div>
-            </div>
-          </div>
         </div>
 
         {/* Enhanced Alerts */}

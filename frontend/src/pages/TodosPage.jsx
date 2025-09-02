@@ -396,66 +396,6 @@ const TodosPage = () => {
             </Button>
             </div>
           </div>
-          
-          {/* Stats Cards */}
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
-            <div className="bg-white/80 backdrop-blur-sm rounded-2xl p-6 border border-white/20 shadow-sm hover:shadow-md transition-all duration-200">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm font-medium text-slate-600">Total {labels.todos_label}</p>
-                  <p className="text-2xl font-bold mt-1" style={{ color: themeColors.primary }}>
-                    {todos.length}
-                  </p>
-                </div>
-                <div className="h-12 w-12 rounded-xl flex items-center justify-center"
-                     style={{ background: `linear-gradient(135deg, ${themeColors.primary}15 0%, ${themeColors.secondary}15 100%)` }}>
-                  <ListTodo className="h-6 w-6" style={{ color: themeColors.primary }} />
-                </div>
-              </div>
-            </div>
-            
-            <div className="bg-white/80 backdrop-blur-sm rounded-2xl p-6 border border-white/20 shadow-sm hover:shadow-md transition-all duration-200">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm font-medium text-slate-600">Not Done</p>
-                  <p className="text-2xl font-bold mt-1 text-orange-600">
-                    {notDoneTodosCount}
-                  </p>
-                </div>
-                <div className="h-12 w-12 rounded-xl bg-orange-50 flex items-center justify-center">
-                  <Target className="h-6 w-6 text-orange-600" />
-                </div>
-              </div>
-            </div>
-            
-            <div className="bg-white/80 backdrop-blur-sm rounded-2xl p-6 border border-white/20 shadow-sm hover:shadow-md transition-all duration-200">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm font-medium text-slate-600">Completed</p>
-                  <p className="text-2xl font-bold mt-1 text-green-600">
-                    {doneTodosCount}
-                  </p>
-                </div>
-                <div className="h-12 w-12 rounded-xl bg-green-50 flex items-center justify-center">
-                  <CheckSquare className="h-6 w-6 text-green-600" />
-                </div>
-              </div>
-            </div>
-            
-            <div className="bg-white/80 backdrop-blur-sm rounded-2xl p-6 border border-white/20 shadow-sm hover:shadow-md transition-all duration-200">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm font-medium text-slate-600">Team Members</p>
-                  <p className="text-2xl font-bold mt-1 text-blue-600">
-                    {teamMembers.length}
-                  </p>
-                </div>
-                <div className="h-12 w-12 rounded-xl bg-blue-50 flex items-center justify-center">
-                  <Users className="h-6 w-6 text-blue-600" />
-                </div>
-              </div>
-            </div>
-          </div>
         </div>
 
         {error && (
