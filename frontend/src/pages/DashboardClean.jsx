@@ -22,7 +22,6 @@ import { useSelectedTodos } from '../contexts/SelectedTodosContext';
 import { useTerminology } from '../contexts/TerminologyContext';
 import PriorityCardClean from '../components/priorities/PriorityCardClean';
 import { Dialog, DialogContent } from '@/components/ui/dialog';
-import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
 import { format } from 'date-fns';
 import {
@@ -46,7 +45,6 @@ import {
   ChartBar
 } from 'lucide-react';
 import { Link } from 'react-router-dom';
-import { format } from 'date-fns';
 
 const DashboardClean = () => {
   const { user, isOnLeadershipTeam } = useAuthStore();
