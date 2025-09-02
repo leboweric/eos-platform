@@ -10,7 +10,6 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { 
   Plus,
   Loader2,
@@ -44,7 +43,6 @@ const TodosPage = () => {
   const [error, setError] = useState(null);
   const [success, setSuccess] = useState(null);
   const [activeTab, setActiveTab] = useState('not-done');
-  const [filterAssignee, setFilterAssignee] = useState('all');
   const [themeColors, setThemeColors] = useState({
     primary: '#3B82F6',
     secondary: '#1E40AF',
@@ -70,7 +68,7 @@ const TodosPage = () => {
     
     window.addEventListener('themeChanged', handleThemeChange);
     return () => window.removeEventListener('themeChanged', handleThemeChange);
-  }, [filterAssignee, selectedDepartment]);
+  }, [selectedDepartment]);
 
   // Helper function to check if a todo is overdue
   const isOverdue = (todo) => {
@@ -120,12 +118,9 @@ const TodosPage = () => {
       }
       setError(null);
       
-      const assignedTo = filterAssignee === 'me' ? user.id : 
-                        filterAssignee === 'all' ? null : filterAssignee;
-      
       const response = await todosService.getTodos(
         null, // Always fetch all todos for accurate counts
-        assignedTo,
+        null, // No assignee filter
         true, // Include completed
         selectedDepartment?.id, // Filter by selected department
         true // Include archived to show in the archived tab
@@ -314,7 +309,7 @@ const TodosPage = () => {
       // Handle missing archived field for backwards compatibility
       return todos.filter(todo => todo.archived !== true);
     }
-    if (activeTab === 'done') {
+    if (activeTab === 'archived') {
       // Show only archived todos
       return todos.filter(todo => todo.archived === true);
     }
@@ -415,55 +410,38 @@ const TodosPage = () => {
         {/* Enhanced Filters Bar */}
         <div className="bg-white/80 backdrop-blur-sm rounded-2xl p-6 shadow-sm border border-white/50 mb-6">
           <div className="flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <div className="bg-white/80 backdrop-blur-sm rounded-2xl p-2 inline-flex shadow-sm">
-                <Tabs value={activeTab} onValueChange={setActiveTab} className="border-0">
-                  <TabsList className="bg-transparent border-0 p-0 h-auto gap-1">
-                    <TabsTrigger 
-                      value="not-done" 
-                      className="data-[state=active]:bg-gradient-to-r data-[state=active]:from-orange-500 data-[state=active]:to-amber-500 data-[state=active]:text-white data-[state=active]:shadow-lg rounded-xl transition-all duration-200 font-medium px-4 py-2"
-                    >
-                      <Target className="h-4 w-4 mr-2" />
-                      Not Done
-                      <span className="ml-2 text-sm opacity-80">({notDoneTodosCount})</span>
-                    </TabsTrigger>
-                    <TabsTrigger 
-                      value="done" 
-                      className="data-[state=active]:bg-gradient-to-r data-[state=active]:from-green-500 data-[state=active]:to-emerald-500 data-[state=active]:text-white data-[state=active]:shadow-lg rounded-xl transition-all duration-200 font-medium px-4 py-2"
-                    >
-                      <CheckSquare className="h-4 w-4 mr-2" />
-                      Done
-                      <span className="ml-2 text-sm opacity-80">({doneTodosCount})</span>
-                    </TabsTrigger>
-                  </TabsList>
-                </Tabs>
-              </div>
-              
-              {doneNotArchivedCount > 0 && activeTab === 'not-done' && (
-                <Button 
-                  onClick={handleArchiveDone}
-                  className="bg-gradient-to-r from-purple-500 to-indigo-500 text-white hover:from-purple-600 hover:to-indigo-600 transition-all duration-200 shadow-md hover:shadow-lg rounded-lg"
-                >
-                  <Archive className="mr-2 h-4 w-4" />
-                  Archive Done ({doneNotArchivedCount})
-                </Button>
-              )}
+            <div className="bg-white/80 backdrop-blur-sm rounded-2xl p-2 inline-flex shadow-sm">
+              <Tabs value={activeTab} onValueChange={setActiveTab} className="border-0">
+                <TabsList className="bg-transparent border-0 p-0 h-auto gap-1">
+                  <TabsTrigger 
+                    value="not-done" 
+                    className="data-[state=active]:bg-gradient-to-r data-[state=active]:from-orange-500 data-[state=active]:to-amber-500 data-[state=active]:text-white data-[state=active]:shadow-lg rounded-xl transition-all duration-200 font-medium px-4 py-2"
+                  >
+                    <Target className="h-4 w-4 mr-2" />
+                    Not Done
+                    <span className="ml-2 text-sm opacity-80">({notDoneTodosCount})</span>
+                  </TabsTrigger>
+                  <TabsTrigger 
+                    value="archived" 
+                    className="data-[state=active]:bg-gradient-to-r data-[state=active]:from-green-500 data-[state=active]:to-emerald-500 data-[state=active]:text-white data-[state=active]:shadow-lg rounded-xl transition-all duration-200 font-medium px-4 py-2"
+                  >
+                    <Archive className="h-4 w-4 mr-2" />
+                    Archived
+                    <span className="ml-2 text-sm opacity-80">({doneTodosCount})</span>
+                  </TabsTrigger>
+                </TabsList>
+              </Tabs>
             </div>
-
-            <Select value={filterAssignee} onValueChange={setFilterAssignee}>
-              <SelectTrigger className="w-[200px] bg-white/80 backdrop-blur-sm border-white/20 focus:border-gray-400 shadow-sm">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">All Team Members</SelectItem>
-                <SelectItem value="me">Assigned to Me</SelectItem>
-                {teamMembers.map(member => (
-                  <SelectItem key={member.id} value={member.id}>
-                    {member.first_name} {member.last_name}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+            
+            {doneNotArchivedCount > 0 && activeTab === 'not-done' && (
+              <Button 
+                onClick={handleArchiveDone}
+                className="bg-gradient-to-r from-purple-500 to-indigo-500 text-white hover:from-purple-600 hover:to-indigo-600 transition-all duration-200 shadow-md hover:shadow-lg rounded-lg"
+              >
+                <Archive className="mr-2 h-4 w-4" />
+                Archive Done ({doneNotArchivedCount})
+              </Button>
+            )}
           </div>
         </div>
 
@@ -477,12 +455,12 @@ const TodosPage = () => {
               </div>
               <h3 className="text-xl font-semibold text-gray-900 mb-2">
                 {activeTab === 'not-done' && 'No to-dos not done'}
-                {activeTab === 'done' && 'No done to-dos'}
+                {activeTab === 'archived' && 'No archived to-dos'}
               </h3>
               <p className="text-gray-600 mb-8 max-w-md mx-auto">
-                {activeTab === 'done' ? 'Done to-dos will appear here once you complete them' : 'Create your first to-do to get started with task management'}
+                {activeTab === 'archived' ? 'Archived to-dos will appear here once you archive them' : 'Create your first to-do to get started with task management'}
               </p>
-              {activeTab !== 'done' && (
+              {activeTab !== 'archived' && (
                 <Button 
                   onClick={handleCreateTodo} 
                   className="shadow-lg hover:shadow-xl transition-all duration-200 transform hover:scale-[1.02]"
