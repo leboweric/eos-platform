@@ -1023,6 +1023,7 @@ const DashboardClean = () => {
                           showCompleted={false}
                           hideViewToggle={true}
                           hideSortOptions={true}
+                          hideAssignee={true}
                         />
                       </div>
                     </div>

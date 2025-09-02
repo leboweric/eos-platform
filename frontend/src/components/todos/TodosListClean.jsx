@@ -25,7 +25,8 @@ const TodosListClean = ({
   onConvertToIssue,
   showCompleted = true,
   hideViewToggle = false,
-  hideSortOptions = false
+  hideSortOptions = false,
+  hideAssignee = false
 }) => {
   const { selectedTodoIds, toggleTodo, isSelected } = useSelectedTodos();
   const [themeColors, setThemeColors] = useState({
@@ -310,7 +311,7 @@ const TodosListClean = ({
               </h3>
               
               {/* Assignee */}
-              {todo.assigned_to && (
+              {!hideAssignee && todo.assigned_to && (
                 <span className="text-sm text-gray-500">
                   {todo.assigned_to.first_name} {todo.assigned_to.last_name}
                 </span>
@@ -415,7 +416,7 @@ const TodosListClean = ({
                     )}
                     
                     {/* Assignee */}
-                    {todo.assigned_to && (
+                    {!hideAssignee && todo.assigned_to && (
                       <span className="text-gray-500">
                         {todo.assigned_to.first_name} {todo.assigned_to.last_name}
                       </span>
