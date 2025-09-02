@@ -87,7 +87,7 @@ const Layout = ({ children }) => {
   }, [location.pathname]);
 
   const baseNavigation = [
-    { name: 'Dashboard', href: '/dashboard', icon: Home },
+    { name: 'My AXP', href: '/dashboard', icon: Home },
     { name: labels?.priorities || 'Quarterly Priorities', href: '/quarterly-priorities', icon: CheckSquare },
     { name: labels?.scorecard || 'Scorecard', href: '/scorecard', icon: BarChart3 },
     { name: labels?.todos || 'To-Dos', href: '/todos', icon: ClipboardList },
