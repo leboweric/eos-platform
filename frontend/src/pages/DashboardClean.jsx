@@ -37,7 +37,9 @@ import {
   Sparkles,
   Activity,
   Users,
-  ChartBar
+  ChartBar,
+  User,
+  Users2
 } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { format } from 'date-fns';
@@ -55,6 +57,7 @@ const DashboardClean = () => {
   const [showHeadlineDialog, setShowHeadlineDialog] = useState(false);
   const [showPriorityDialog, setShowPriorityDialog] = useState(false);
   const [selectedPriority, setSelectedPriority] = useState(null);
+  const [viewMode, setViewMode] = useState('my-items'); // 'my-items' or 'team-view'
   const [predictions, setPredictions] = useState({
     revenue: { target: 0, current: 0 },
     profit: { target: 0, current: 0 },
@@ -79,6 +82,13 @@ const DashboardClean = () => {
       totalShortTermIssues: 0
     }
   });
+  
+  // Re-fetch data when view mode changes
+  useEffect(() => {
+    if (user) {
+      fetchDashboardData();
+    }
+  }, [viewMode]);
   
   useEffect(() => {
     if (user?.isConsultant && localStorage.getItem('consultantImpersonating') !== 'true') {
@@ -218,9 +228,12 @@ const DashboardClean = () => {
       
       console.log('Dashboard fetching priorities with teamId:', teamIdForPriorities, 'userDepartmentId:', userDepartmentId);
       
+      // In team view mode, fetch all todos regardless of assignment
+      const fetchAllForTeam = viewMode === 'team-view';
+      
       const [prioritiesResponse, todosResponse, issuesResponse, orgResponse, blueprintResponse] = await Promise.all([
         quarterlyPrioritiesService.getCurrentPriorities(orgId, teamIdForPriorities),
-        todosService.getTodos(null, null, true, userDepartmentId),
+        todosService.getTodos(null, null, fetchAllForTeam, userDepartmentId),
         issuesService.getIssues(null, false, userDepartmentId),
         isOnLeadershipTeam() ? organizationService.getOrganization() : Promise.resolve(null),
         businessBlueprintService.getBusinessBlueprint().catch(err => {
@@ -272,68 +285,107 @@ const DashboardClean = () => {
         console.log('Dashboard - No predictions data available');
       }
       
-      // Get user's priorities (including company priorities they own)
-      const userPriorities = [];
+      // Get priorities based on view mode
+      let displayPriorities = [];
+      let allTeamPriorities = [];
       
       console.log('Dashboard Priorities Response:', {
         hasCompanyPriorities: !!prioritiesResponse.companyPriorities,
         companyPrioritiesCount: prioritiesResponse.companyPriorities?.length || 0,
         teamMemberPrioritiesKeys: Object.keys(prioritiesResponse.teamMemberPriorities || {}),
         userId: user.id,
-        userEmail: user.email
+        userEmail: user.email,
+        viewMode: viewMode
       });
       
-      if (prioritiesResponse.companyPriorities) {
-        // Include company priorities owned by the user
-        const userCompanyPriorities = prioritiesResponse.companyPriorities.filter(p => {
-          // Check both owner.id and owner_id for compatibility
-          const ownerId = p.owner?.id || p.owner_id;
-          const isOwner = ownerId === user.id;
-          console.log(`Priority "${p.title}" - ownerId: ${ownerId}, userId: ${user.id}, isOwner: ${isOwner}`);
-          return isOwner;
-        });
-        console.log('User Company Priorities:', userCompanyPriorities.map(p => ({
-          title: p.title,
-          ownerId: p.owner?.id || p.owner_id,
-          status: p.status
-        })));
-        userPriorities.push(...userCompanyPriorities);
+      if (viewMode === 'team-view') {
+        // In team view, show all company and team member priorities
+        if (prioritiesResponse.companyPriorities) {
+          allTeamPriorities.push(...prioritiesResponse.companyPriorities);
+        }
+        
+        // Add all team member priorities
+        if (prioritiesResponse.teamMemberPriorities) {
+          Object.entries(prioritiesResponse.teamMemberPriorities).forEach(([memberId, memberData]) => {
+            if (memberData.priorities) {
+              allTeamPriorities.push(...memberData.priorities);
+            }
+          });
+        }
+        displayPriorities = allTeamPriorities;
+      } else {
+        // In my items view, show only user's priorities
+        const userPriorities = [];
+        
+        if (prioritiesResponse.companyPriorities) {
+          // Include company priorities owned by the user
+          const userCompanyPriorities = prioritiesResponse.companyPriorities.filter(p => {
+            // Check both owner.id and owner_id for compatibility
+            const ownerId = p.owner?.id || p.owner_id;
+            const isOwner = ownerId === user.id;
+            console.log(`Priority "${p.title}" - ownerId: ${ownerId}, userId: ${user.id}, isOwner: ${isOwner}`);
+            return isOwner;
+          });
+          console.log('User Company Priorities:', userCompanyPriorities.map(p => ({
+            title: p.title,
+            ownerId: p.owner?.id || p.owner_id,
+            status: p.status
+          })));
+          userPriorities.push(...userCompanyPriorities);
+        }
+        
+        if (prioritiesResponse.teamMemberPriorities?.[user.id]) {
+          const memberPriorities = prioritiesResponse.teamMemberPriorities[user.id].priorities;
+          console.log('User Individual Priorities:', memberPriorities.map(p => ({
+            title: p.title,
+            status: p.status
+          })));
+          userPriorities.push(...memberPriorities);
+        }
+        displayPriorities = userPriorities;
       }
       
-      if (prioritiesResponse.teamMemberPriorities?.[user.id]) {
-        const memberPriorities = prioritiesResponse.teamMemberPriorities[user.id].priorities;
-        console.log('User Individual Priorities:', memberPriorities.map(p => ({
-          title: p.title,
-          status: p.status
-        })));
-        userPriorities.push(...memberPriorities);
-      }
-      
-      console.log('Total user priorities found:', userPriorities.length);
+      console.log('Total priorities found:', displayPriorities.length, 'for view:', viewMode);
       
       // Calculate priorities stats
       let completedPriorities, totalPriorities, prioritiesProgress;
       
-      if (isOnLeadershipTeam()) {
+      if (viewMode === 'team-view') {
+        // In team view, show stats for all priorities
+        completedPriorities = displayPriorities.filter(p => p.status === 'complete').length;
+        totalPriorities = displayPriorities.length;
+        prioritiesProgress = totalPriorities > 0 ? Math.round((completedPriorities / totalPriorities) * 100) : 0;
+      } else if (isOnLeadershipTeam()) {
         const companyPriorities = prioritiesResponse.companyPriorities || [];
         completedPriorities = companyPriorities.filter(p => p.status === 'complete').length;
         totalPriorities = companyPriorities.length;
         prioritiesProgress = totalPriorities > 0 ? Math.round((completedPriorities / totalPriorities) * 100) : 0;
       } else {
-        completedPriorities = userPriorities.filter(p => p.status === 'complete').length;
-        totalPriorities = userPriorities.length;
+        completedPriorities = displayPriorities.filter(p => p.status === 'complete').length;
+        totalPriorities = displayPriorities.length;
         prioritiesProgress = totalPriorities > 0 ? Math.round((completedPriorities / totalPriorities) * 100) : 0;
       }
       
       // Process todos
       const allTodos = todosResponse.data.todos || [];
       
-      const userTodos = allTodos.filter(todo => {
-        const assignedToId = todo.assignedTo?.id || todo.assigned_to?.id || todo.assigned_to_id;
-        const isAssignedToUser = assignedToId === user.id;
-        const isNotCompleted = todo.status !== 'completed' && todo.status !== 'complete';
-        return isAssignedToUser && isNotCompleted;
-      });
+      let displayTodos;
+      if (viewMode === 'team-view') {
+        // In team view, show all active todos
+        displayTodos = allTodos.filter(todo => 
+          todo.status !== 'completed' && todo.status !== 'complete'
+        );
+      } else {
+        // In my items view, show only user's todos
+        displayTodos = allTodos.filter(todo => {
+          const assignedToId = todo.assignedTo?.id || todo.assigned_to?.id || todo.assigned_to_id;
+          const isAssignedToUser = assignedToId === user.id;
+          const isNotCompleted = todo.status !== 'completed' && todo.status !== 'complete';
+          return isAssignedToUser && isNotCompleted;
+        });
+      }
+      
+      const userTodos = displayTodos;
       
       const today = new Date();
       today.setHours(0, 0, 0, 0);
@@ -355,8 +407,8 @@ const DashboardClean = () => {
       console.log('Filtered short-term open issues:', shortTermIssues);
       
       setDashboardData({
-        priorities: userPriorities, // Show all user priorities, not just 5
-        todos: userTodos.slice(0, 5),
+        priorities: displayPriorities,
+        todos: viewMode === 'team-view' ? userTodos : userTodos.slice(0, 5),
         issues: shortTermIssues,
         teamMembers: todosResponse.data.teamMembers || [],
         stats: {
@@ -370,7 +422,7 @@ const DashboardClean = () => {
 
       // Update selected priority if it's currently open
       if (selectedPriority) {
-        const updatedPriority = userPriorities.find(p => p.id === selectedPriority.id);
+        const updatedPriority = displayPriorities.find(p => p.id === selectedPriority.id);
         if (updatedPriority) {
           setSelectedPriority(updatedPriority);
         }
@@ -455,6 +507,16 @@ const DashboardClean = () => {
   const handleEditTodo = (todo) => {
     setEditingTodo(todo);
     setShowTodoDialog(true);
+  };
+  
+  const handleTodoStatusChange = async (todo, isCompleted) => {
+    try {
+      const newStatus = isCompleted ? 'completed' : 'pending';
+      await todosService.updateTodo(todo.id, { status: newStatus });
+      await fetchDashboardData();
+    } catch (error) {
+      console.error('Failed to update todo status:', error);
+    }
   };
 
   const handleCreateTodo = () => {
@@ -701,20 +763,52 @@ const DashboardClean = () => {
       <div className="max-w-7xl mx-auto px-8 py-8">
         {/* Enhanced Welcome Section */}
         <div className="mb-8">
-          <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full text-sm font-medium mb-4"
-               style={{
-                 background: `linear-gradient(135deg, ${themeColors.primary}15 0%, ${themeColors.secondary}15 100%)`,
-                 color: themeColors.primary
-               }}>
-            <Sparkles className="h-4 w-4" />
-            ADAPTIVE EXECUTION PLATFORM
+          <div className="flex items-center justify-between">
+            <div>
+              <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full text-sm font-medium mb-4"
+                   style={{
+                     background: `linear-gradient(135deg, ${themeColors.primary}15 0%, ${themeColors.secondary}15 100%)`,
+                     color: themeColors.primary
+                   }}>
+                <Sparkles className="h-4 w-4" />
+                ADAPTIVE EXECUTION PLATFORM
+              </div>
+              <h1 className="text-4xl font-bold bg-gradient-to-r from-slate-900 via-blue-900 to-indigo-900 bg-clip-text text-transparent">
+                Welcome back, {user?.firstName}
+              </h1>
+              <p className="text-slate-600 mt-2">
+                {format(new Date(), 'EEEE, MMMM d')} • Your command center awaits
+              </p>
+            </div>
+            
+            {/* View Mode Toggle */}
+            <div className="flex items-center gap-2 bg-white/80 backdrop-blur-sm rounded-xl p-1 shadow-sm border border-white/50">
+              <Button
+                variant={viewMode === 'my-items' ? 'default' : 'ghost'}
+                size="sm"
+                onClick={() => setViewMode('my-items')}
+                className={`rounded-lg transition-all ${viewMode === 'my-items' ? '' : 'hover:bg-slate-100'}`}
+                style={viewMode === 'my-items' ? {
+                  background: `linear-gradient(135deg, ${themeColors.primary} 0%, ${themeColors.secondary} 100%)`
+                } : {}}
+              >
+                <User className="h-4 w-4 mr-2" />
+                My Items
+              </Button>
+              <Button
+                variant={viewMode === 'team-view' ? 'default' : 'ghost'}
+                size="sm"
+                onClick={() => setViewMode('team-view')}
+                className={`rounded-lg transition-all ${viewMode === 'team-view' ? '' : 'hover:bg-slate-100'}`}
+                style={viewMode === 'team-view' ? {
+                  background: `linear-gradient(135deg, ${themeColors.primary} 0%, ${themeColors.secondary} 100%)`
+                } : {}}
+              >
+                <Users2 className="h-4 w-4 mr-2" />
+                Team View
+              </Button>
+            </div>
           </div>
-          <h1 className="text-4xl font-bold bg-gradient-to-r from-slate-900 via-blue-900 to-indigo-900 bg-clip-text text-transparent">
-            Welcome back, {user?.firstName}
-          </h1>
-          <p className="text-slate-600 mt-2">
-            {format(new Date(), 'EEEE, MMMM d')} • Your command center awaits
-          </p>
         </div>
 
         {/* Enhanced Predictions Section - Only for Leadership */}
@@ -991,7 +1085,7 @@ const DashboardClean = () => {
                   <Target className="h-5 w-5 text-white" />
                 </div>
                 <h2 className="text-xl font-semibold text-slate-900">
-                  Your {labels.priorities_label}
+                  {viewMode === 'team-view' ? `All Team ${labels.priorities_label}` : `Your ${labels.priorities_label}`}
                 </h2>
               </div>
               <Link 
@@ -1016,7 +1110,56 @@ const DashboardClean = () => {
                   </Button>
                 </Link>
               </div>
+            ) : viewMode === 'team-view' ? (
+              // Team View: Group by owner
+              <div className="space-y-4 max-h-[600px] overflow-y-auto pr-2">
+                {(() => {
+                  // Group priorities by owner
+                  const groupedPriorities = dashboardData.priorities.reduce((groups, priority) => {
+                    const ownerName = priority.owner?.name || 'Unassigned';
+                    if (!groups[ownerName]) {
+                      groups[ownerName] = [];
+                    }
+                    groups[ownerName].push(priority);
+                    return groups;
+                  }, {});
+                  
+                  return Object.entries(groupedPriorities).map(([ownerName, priorities]) => (
+                    <div key={ownerName} className="space-y-2">
+                      <h3 className="text-sm font-semibold text-slate-700 px-2">
+                        {ownerName} ({priorities.length})
+                      </h3>
+                      {priorities.map((priority) => (
+                        <div 
+                          key={priority.id} 
+                          className="group p-3 bg-white/60 rounded-lg border border-slate-200 hover:shadow-md transition-all cursor-pointer hover:scale-[1.01] ml-4"
+                          onClick={() => {
+                            setSelectedPriority(priority);
+                            setShowPriorityDialog(true);
+                          }}
+                        >
+                          <div className="flex items-center gap-2">
+                            <div className="w-1.5 h-8 rounded-full" style={getStatusStyle(priority.status)} />
+                            <div className="flex-1 min-w-0">
+                              <p className="text-sm font-medium text-slate-900 truncate group-hover:text-slate-950">
+                                {priority.title}
+                              </p>
+                              <p className="text-xs text-slate-600 mt-0.5">
+                                Due {priority.dueDate ? format(new Date(priority.dueDate), 'MMM d') : 'No date'}
+                              </p>
+                            </div>
+                            <span className="text-xs font-medium" style={{ color: themeColors.primary }}>
+                              {priority.status === 'complete' ? 100 : (priority.progress || 0)}%
+                            </span>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  ));
+                })()}
+              </div>
             ) : (
+              // My Items View: Flat list
               <div className="space-y-3">
                 {dashboardData.priorities.map((priority) => (
                   <div 
@@ -1071,7 +1214,7 @@ const DashboardClean = () => {
                   <CheckSquare className="h-5 w-5 text-white" />
                 </div>
                 <h2 className="text-xl font-semibold text-slate-900">
-                  Your {labels.todos_label}
+                  {viewMode === 'team-view' ? `All Team ${labels.todos_label}` : `Your ${labels.todos_label}`}
                 </h2>
               </div>
               <Link 
@@ -1096,7 +1239,67 @@ const DashboardClean = () => {
                   Create To-Do
                 </Button>
               </div>
+            ) : viewMode === 'team-view' ? (
+              // Team View: Group by assignee
+              <div className="space-y-4 max-h-[600px] overflow-y-auto pr-2">
+                {(() => {
+                  // Group todos by assignee
+                  const groupedTodos = dashboardData.todos.reduce((groups, todo) => {
+                    const assigneeName = todo.assignedTo?.name || todo.assigned_to?.name || 'Unassigned';
+                    if (!groups[assigneeName]) {
+                      groups[assigneeName] = [];
+                    }
+                    groups[assigneeName].push(todo);
+                    return groups;
+                  }, {});
+                  
+                  return Object.entries(groupedTodos).map(([assigneeName, todos]) => (
+                    <div key={assigneeName} className="space-y-2">
+                      <h3 className="text-sm font-semibold text-slate-700 px-2">
+                        {assigneeName} ({todos.length})
+                      </h3>
+                      {todos.map((todo) => (
+                        <div 
+                          key={todo.id} 
+                          className="group p-3 bg-white/60 rounded-lg border border-slate-200 hover:shadow-md transition-all cursor-pointer hover:scale-[1.01] ml-4"
+                          onClick={() => handleEditTodo(todo)}
+                        >
+                          <div className="flex items-center gap-2">
+                            <input
+                              type="checkbox"
+                              checked={todo.status === 'completed' || todo.status === 'complete'}
+                              onChange={(e) => {
+                                e.stopPropagation();
+                                handleTodoStatusChange(todo, e.target.checked);
+                              }}
+                              className="h-4 w-4 rounded border-gray-300"
+                              style={{
+                                accentColor: themeColors.primary
+                              }}
+                            />
+                            <div className="flex-1 min-w-0">
+                              <p className={`text-sm font-medium truncate ${
+                                todo.status === 'completed' || todo.status === 'complete'
+                                  ? 'line-through text-slate-500'
+                                  : 'text-slate-900 group-hover:text-slate-950'
+                              }`}>
+                                {todo.title}
+                              </p>
+                              {todo.due_date && (
+                                <p className="text-xs text-slate-600 mt-0.5">
+                                  Due {format(new Date(todo.due_date), 'MMM d')}
+                                </p>
+                              )}
+                            </div>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  ));
+                })()}
+              </div>
             ) : (
+              // My Items View: Use TodosList component
               <TodosList
                 todos={dashboardData.todos}
                 onEdit={handleEditTodo}
