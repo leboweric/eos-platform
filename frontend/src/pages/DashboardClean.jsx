@@ -22,6 +22,9 @@ import { useSelectedTodos } from '../contexts/SelectedTodosContext';
 import { useTerminology } from '../contexts/TerminologyContext';
 import PriorityCardClean from '../components/priorities/PriorityCardClean';
 import { Dialog, DialogContent } from '@/components/ui/dialog';
+import { Button } from '@/components/ui/button';
+import { Checkbox } from '@/components/ui/checkbox';
+import { format } from 'date-fns';
 import {
   AlertCircle,
   CheckSquare,
@@ -30,6 +33,9 @@ import {
   ArrowRight,
   Plus,
   Calendar,
+  MessageSquare,
+  Paperclip,
+  Download,
   Loader2,
   TrendingUp,
   DollarSign,
@@ -1279,31 +1285,174 @@ const DashboardClean = () => {
           }}
         />
 
-        {/* Priority Dialog */}
+        {/* Priority Dialog - Full Screen Modal */}
         <Dialog open={showPriorityDialog} onOpenChange={setShowPriorityDialog}>
-          <DialogContent className="max-w-5xl max-h-[90vh] overflow-y-auto p-0">
+          <DialogContent className="max-w-7xl w-[95vw] max-h-[90vh] overflow-hidden p-0">
             {selectedPriority && (
-              <div className="p-6">
-                <PriorityCardClean
-                priority={selectedPriority}
-                isCompany={false}
-                isArchived={false}
-                onUpdate={handleUpdatePriority}
-                onArchive={handleArchivePriority}
-                onAddMilestone={handleAddMilestone}
-                onEditMilestone={handleEditMilestone}
-                onDeleteMilestone={handleDeleteMilestone}
-                onToggleMilestone={handleToggleMilestone}
-                onAddUpdate={handleAddUpdate}
-                onEditUpdate={handleEditUpdate}
-                onDeleteUpdate={handleDeleteUpdate}
-                onStatusChange={handleStatusChange}
-                onUploadAttachment={handleUploadAttachment}
-                onDownloadAttachment={handleDownloadAttachment}
-                onDeleteAttachment={handleDeleteAttachment}
-                teamMembers={dashboardData.teamMembers || []}
-                readOnly={false}
-                />
+              <div className="flex flex-col h-full">
+                {/* Modal Header */}
+                <div className="px-6 py-4 border-b bg-gradient-to-r from-slate-50 to-blue-50">
+                  <div className="flex items-start justify-between">
+                    <div className="flex-1">
+                      <h2 className="text-2xl font-bold text-gray-900">{selectedPriority.title}</h2>
+                      <div className="flex items-center gap-4 mt-2">
+                        <span className="text-sm text-gray-600">
+                          Owner: {selectedPriority.owner?.name || 'Unassigned'}
+                        </span>
+                        <span className="text-sm text-gray-600">
+                          Due: {selectedPriority.dueDate ? format(new Date(selectedPriority.dueDate), 'MMM d, yyyy') : 'No date'}
+                        </span>
+                        <Button
+                          size="sm"
+                          variant={selectedPriority.status === 'off-track' ? 'destructive' : 'default'}
+                          onClick={() => {
+                            const newStatus = selectedPriority.status === 'on-track' ? 'off-track' : 'on-track';
+                            handleStatusChange(selectedPriority.id, newStatus);
+                          }}
+                        >
+                          {selectedPriority.status === 'off-track' ? 'Off Track' : 'On Track'}
+                        </Button>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+                
+                {/* Modal Body - Scrollable */}
+                <div className="flex-1 overflow-y-auto">
+                  <div className="p-6 space-y-6">
+                    {/* Description */}
+                    {selectedPriority.description && (
+                      <div>
+                        <h3 className="text-sm font-semibold text-gray-700 mb-2">Description</h3>
+                        <p className="text-gray-600 whitespace-pre-wrap">{selectedPriority.description}</p>
+                      </div>
+                    )}
+                    
+                    {/* Milestones Section */}
+                    <div>
+                      <div className="flex items-center justify-between mb-3">
+                        <h3 className="text-sm font-semibold text-gray-700">Milestones</h3>
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={() => {
+                            const title = prompt('Milestone title:');
+                            const dueDate = prompt('Due date (YYYY-MM-DD):');
+                            if (title && dueDate) {
+                              handleAddMilestone(selectedPriority.id, { title, dueDate });
+                            }
+                          }}
+                        >
+                          <Plus className="h-4 w-4 mr-1" />
+                          Add Milestone
+                        </Button>
+                      </div>
+                      <div className="space-y-2">
+                        {selectedPriority.milestones?.map(milestone => (
+                          <div key={milestone.id} className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg">
+                            <Checkbox
+                              checked={milestone.completed}
+                              onCheckedChange={(checked) => handleToggleMilestone(selectedPriority.id, milestone.id, checked)}
+                            />
+                            <span className={milestone.completed ? 'line-through text-gray-500' : 'text-gray-700'}>
+                              {milestone.title}
+                            </span>
+                            {milestone.dueDate && (
+                              <span className="text-sm text-gray-500">
+                                {format(new Date(milestone.dueDate), 'MMM d')}
+                              </span>
+                            )}
+                          </div>
+                        )) || <p className="text-gray-500 text-sm">No milestones yet</p>}
+                      </div>
+                    </div>
+                    
+                    {/* Updates Section */}
+                    <div>
+                      <div className="flex items-center justify-between mb-3">
+                        <h3 className="text-sm font-semibold text-gray-700">Updates</h3>
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={() => {
+                            const updateText = prompt('Add an update:');
+                            if (updateText) {
+                              handleAddUpdate(selectedPriority.id, updateText);
+                            }
+                          }}
+                        >
+                          <MessageSquare className="h-4 w-4 mr-1" />
+                          Add Update
+                        </Button>
+                      </div>
+                      <div className="space-y-2">
+                        {selectedPriority.updates?.map((update, index) => (
+                          <div key={update.id || index} className="p-3 bg-blue-50 rounded-lg">
+                            <p className="text-sm text-gray-700">{update.text}</p>
+                            <p className="text-xs text-gray-500 mt-1">
+                              {update.authorName} • {update.createdAt ? format(new Date(update.createdAt), 'MMM d, yyyy') : 'Just now'}
+                            </p>
+                          </div>
+                        )) || <p className="text-gray-500 text-sm">No updates yet</p>}
+                      </div>
+                    </div>
+                    
+                    {/* Attachments Section */}
+                    <div>
+                      <div className="flex items-center justify-between mb-3">
+                        <h3 className="text-sm font-semibold text-gray-700">Attachments</h3>
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={() => {
+                            const input = document.createElement('input');
+                            input.type = 'file';
+                            input.onchange = (e) => {
+                              const file = e.target.files[0];
+                              if (file) {
+                                handleUploadAttachment(selectedPriority.id, file);
+                              }
+                            };
+                            input.click();
+                          }}
+                        >
+                          <Paperclip className="h-4 w-4 mr-1" />
+                          Upload File
+                        </Button>
+                      </div>
+                      <div className="space-y-2">
+                        {selectedPriority.attachments?.map((attachment, index) => (
+                          <div key={attachment.id || index} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                            <span className="text-sm text-gray-700">{attachment.fileName || attachment.file_name}</span>
+                            <Button
+                              size="sm"
+                              variant="ghost"
+                              onClick={() => handleDownloadAttachment(attachment)}
+                            >
+                              <Download className="h-4 w-4" />
+                            </Button>
+                          </div>
+                        )) || <p className="text-gray-500 text-sm">No attachments yet</p>}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+                
+                {/* Modal Footer */}
+                <div className="px-6 py-4 border-t bg-gray-50 flex justify-end gap-2">
+                  <Button
+                    variant="outline"
+                    onClick={() => handleArchivePriority(selectedPriority.id)}
+                  >
+                    Archive
+                  </Button>
+                  <Button
+                    variant="outline"
+                    onClick={() => setShowPriorityDialog(false)}
+                  >
+                    Close
+                  </Button>
+                </div>
               </div>
             )}
           </DialogContent>
