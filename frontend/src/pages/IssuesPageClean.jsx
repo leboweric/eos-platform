@@ -539,46 +539,44 @@ const IssuesPageClean = () => {
         <div className="bg-white/80 backdrop-blur-sm rounded-2xl p-6 shadow-sm border border-white/50 mb-6">
           <Tabs value={activeTab} onValueChange={setActiveTab}>
             <div className="flex items-center justify-between">
-              <div className="flex items-center gap-3">
-                <div className="bg-white/80 backdrop-blur-sm rounded-2xl p-2 inline-flex shadow-sm">
-                  <TabsList className="bg-transparent border-0 p-0 h-auto gap-1">
-                    <TabsTrigger 
-                      value="short_term" 
-                      className="data-[state=active]:bg-gradient-to-r data-[state=active]:from-orange-500 data-[state=active]:to-amber-500 data-[state=active]:text-white data-[state=active]:shadow-lg rounded-xl transition-all duration-200 font-medium px-4 py-2"
-                    >
-                      <Target className="h-4 w-4 mr-2" />
-                      Short Term
-                      <span className="ml-2 text-sm opacity-80">({shortTermIssues.length})</span>
-                    </TabsTrigger>
-                    <TabsTrigger 
-                      value="long_term" 
-                      className="data-[state=active]:bg-gradient-to-r data-[state=active]:from-blue-500 data-[state=active]:to-indigo-500 data-[state=active]:text-white data-[state=active]:shadow-lg rounded-xl transition-all duration-200 font-medium px-4 py-2"
-                    >
-                      <TrendingUp className="h-4 w-4 mr-2" />
-                      Long Term
-                      <span className="ml-2 text-sm opacity-80">({longTermIssues.length})</span>
-                    </TabsTrigger>
-                    <TabsTrigger 
-                      value="archived" 
-                      className="data-[state=active]:bg-gradient-to-r data-[state=active]:from-green-500 data-[state=active]:to-emerald-500 data-[state=active]:text-white data-[state=active]:shadow-lg rounded-xl transition-all duration-200 font-medium px-4 py-2"
-                    >
-                      <CheckSquare className="h-4 w-4 mr-2" />
-                      Archived
-                      <span className="ml-2 text-sm opacity-80">({archivedIssues.length})</span>
-                    </TabsTrigger>
-                  </TabsList>
-                </div>
-                
-                {activeTab !== 'archived' && closedIssuesCount > 0 && (
-                  <Button 
-                    onClick={handleArchiveSelected} 
-                    className="bg-gradient-to-r from-purple-500 to-indigo-500 text-white hover:from-purple-600 hover:to-indigo-600 transition-all duration-200 shadow-md hover:shadow-lg rounded-lg"
+              <div className="bg-white/80 backdrop-blur-sm rounded-2xl p-2 inline-flex shadow-sm">
+                <TabsList className="bg-transparent border-0 p-0 h-auto gap-1">
+                  <TabsTrigger 
+                    value="short_term" 
+                    className="data-[state=active]:bg-gradient-to-r data-[state=active]:from-orange-500 data-[state=active]:to-amber-500 data-[state=active]:text-white data-[state=active]:shadow-lg rounded-xl transition-all duration-200 font-medium px-4 py-2"
                   >
-                    <Archive className="mr-2 h-4 w-4" />
-                    Archive Solved ({closedIssuesCount})
-                  </Button>
-                )}
+                    <Target className="h-4 w-4 mr-2" />
+                    Short Term
+                    <span className="ml-2 text-sm opacity-80">({shortTermIssues.length})</span>
+                  </TabsTrigger>
+                  <TabsTrigger 
+                    value="long_term" 
+                    className="data-[state=active]:bg-gradient-to-r data-[state=active]:from-blue-500 data-[state=active]:to-indigo-500 data-[state=active]:text-white data-[state=active]:shadow-lg rounded-xl transition-all duration-200 font-medium px-4 py-2"
+                  >
+                    <TrendingUp className="h-4 w-4 mr-2" />
+                    Long Term
+                    <span className="ml-2 text-sm opacity-80">({longTermIssues.length})</span>
+                  </TabsTrigger>
+                  <TabsTrigger 
+                    value="archived" 
+                    className="data-[state=active]:bg-gradient-to-r data-[state=active]:from-green-500 data-[state=active]:to-emerald-500 data-[state=active]:text-white data-[state=active]:shadow-lg rounded-xl transition-all duration-200 font-medium px-4 py-2"
+                  >
+                    <CheckSquare className="h-4 w-4 mr-2" />
+                    Archived
+                    <span className="ml-2 text-sm opacity-80">({archivedIssues.length})</span>
+                  </TabsTrigger>
+                </TabsList>
               </div>
+              
+              {activeTab !== 'archived' && closedIssuesCount > 0 && (
+                <Button 
+                  onClick={handleArchiveSelected} 
+                  className="bg-gradient-to-r from-purple-500 to-indigo-500 text-white hover:from-purple-600 hover:to-indigo-600 transition-all duration-200 shadow-md hover:shadow-lg rounded-lg"
+                >
+                  <Archive className="mr-2 h-4 w-4" />
+                  Archive Solved ({closedIssuesCount})
+                </Button>
+              )}
             </div>
 
             <TabsContent value={activeTab} className="mt-6">
