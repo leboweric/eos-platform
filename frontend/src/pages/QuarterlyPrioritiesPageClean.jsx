@@ -9,7 +9,7 @@ import { getRevenueLabel, getRevenueLabelWithSuffix } from '../utils/revenueUtil
 import { useDepartment } from '../contexts/DepartmentContext';
 import { useTerminology } from '../contexts/TerminologyContext';
 import { getEffectiveTeamId } from '../utils/teamUtils';
-import PriorityCardClean from '../components/priorities/PriorityCardClean';
+import PriorityDialog from '../components/priorities/PriorityDialog';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -145,6 +145,10 @@ const QuarterlyPrioritiesPageClean = () => {
     title: '',
     dueDate: ''
   });
+  
+  // Modal states
+  const [selectedPriority, setSelectedPriority] = useState(null);
+  const [showPriorityDialog, setShowPriorityDialog] = useState(false);
 
   // Fetch data when department or archive view changes
   useEffect(() => {
@@ -1186,7 +1190,8 @@ const QuarterlyPrioritiesPageClean = () => {
     offTrack: allPriorities.filter(p => p.status === 'off-track').length
   };
 
-  const PriorityCard = ({ priority, isCompany = false, isArchived = false }) => {
+  // Removed PriorityCard component - now using simple cards with modal
+  const RemovedPriorityCard = ({ priority, isCompany = false, isArchived = false }) => {
     // Validate priority data
     if (!priority || !priority.owner) {
       console.error('Invalid priority data:', priority);
@@ -2263,11 +2268,48 @@ const QuarterlyPrioritiesPageClean = () => {
                         <h3 className="text-xl font-semibold text-gray-900">Company {labels.priorities}</h3>
                       </div>
                       <div className="space-y-4">
-                        {quarterData.companyPriorities.map(priority => (
-                          <div key={priority.id} className="max-w-5xl">
-                            <PriorityCardClean priority={priority} isCompany={true} isArchived={true} />
-                          </div>
-                        ))}
+                        {quarterData.companyPriorities.map(priority => {
+                          const isComplete = priority.status === 'complete' || priority.status === 'completed' || priority.progress === 100;
+                          
+                          return (
+                            <Card 
+                              key={priority.id}
+                              className={`max-w-5xl ${
+                                isComplete 
+                                  ? 'bg-gradient-to-r from-green-50/60 to-emerald-50/60 border-green-200' 
+                                  : 'bg-gray-50 border-gray-200'
+                              }`}
+                            >
+                              <CardHeader className="pb-4">
+                                <div className="flex items-start justify-between">
+                                  <div className="flex-1">
+                                    <div className="flex items-center gap-3">
+                                      {isComplete ? (
+                                        <CheckCircle className="h-5 w-5 text-green-600" />
+                                      ) : (
+                                        <Archive className="h-5 w-5 text-gray-400" />
+                                      )}
+                                      <h3 className={`text-lg font-semibold ${
+                                        isComplete ? 'text-green-900 line-through' : 'text-gray-700'
+                                      }`}>
+                                        {priority.title}
+                                      </h3>
+                                    </div>
+                                    <p className="text-sm text-gray-600 mt-2">
+                                      Owner: {priority.owner?.name || 'Unassigned'} • 
+                                      Progress: {priority.progress || 0}%
+                                    </p>
+                                  </div>
+                                  {isComplete && (
+                                    <Badge className="bg-green-100 text-green-800">
+                                      Complete
+                                    </Badge>
+                                  )}
+                                </div>
+                              </CardHeader>
+                            </Card>
+                          );
+                        })}
                       </div>
                     </div>
                   )}
@@ -2289,11 +2331,47 @@ const QuarterlyPrioritiesPageClean = () => {
                               </Avatar>
                               <h4 className="text-lg font-semibold text-gray-900">{firstPriority.owner.name}</h4>
                             </div>
-                            {priorities.map(priority => (
-                              <div key={priority.id} className="max-w-5xl">
-                                <PriorityCardClean priority={priority} isArchived={true} />
-                              </div>
-                            ))}
+                            {priorities.map(priority => {
+                              const isComplete = priority.status === 'complete' || priority.status === 'completed' || priority.progress === 100;
+                              
+                              return (
+                                <Card 
+                                  key={priority.id}
+                                  className={`max-w-5xl ${
+                                    isComplete 
+                                      ? 'bg-gradient-to-r from-green-50/60 to-emerald-50/60 border-green-200' 
+                                      : 'bg-gray-50 border-gray-200'
+                                  }`}
+                                >
+                                  <CardHeader className="pb-4">
+                                    <div className="flex items-start justify-between">
+                                      <div className="flex-1">
+                                        <div className="flex items-center gap-3">
+                                          {isComplete ? (
+                                            <CheckCircle className="h-5 w-5 text-green-600" />
+                                          ) : (
+                                            <Archive className="h-5 w-5 text-gray-400" />
+                                          )}
+                                          <h3 className={`text-lg font-semibold ${
+                                            isComplete ? 'text-green-900 line-through' : 'text-gray-700'
+                                          }`}>
+                                            {priority.title}
+                                          </h3>
+                                        </div>
+                                        <p className="text-sm text-gray-600 mt-2">
+                                          Progress: {priority.progress || 0}%
+                                        </p>
+                                      </div>
+                                      {isComplete && (
+                                        <Badge className="bg-green-100 text-green-800">
+                                          Complete
+                                        </Badge>
+                                      )}
+                                    </div>
+                                  </CardHeader>
+                                </Card>
+                              );
+                            })}
                           </div>
                         );
                       })}
@@ -2325,28 +2403,80 @@ const QuarterlyPrioritiesPageClean = () => {
               </div>
               {expandedSections.companyPriorities && (
                 <div className="space-y-4 ml-8">
-                  {(companyPriorities || []).map(priority => (
-                    <div key={priority.id} className="group max-w-5xl">
-                      <PriorityCardClean 
-                        priority={priority} 
-                        isCompany={true}
-                        onStatusChange={handlePriorityStatusChange}
-                        onUpdate={handleUpdatePriority}
-                        onArchive={handleArchivePriority}
-                        onAddMilestone={handleCreateMilestone}
-                        onEditMilestone={handleEditMilestone}
-                        onToggleMilestone={handleUpdateMilestone}
-                        onDeleteMilestone={handleDeleteMilestone}
-                        onAddUpdate={handleAddUpdate}
-                        onEditUpdate={handleEditUpdate}
-                        onDeleteUpdate={handleDeleteUpdate}
-                        onUploadAttachment={handleUploadAttachment}
-                        onDownloadAttachment={handleDownloadAttachment}
-                        onDeleteAttachment={handleDeleteAttachment}
-                        teamMembers={teamMembers}
-                      />
-                    </div>
-                  ))}
+                  {(companyPriorities || []).map(priority => {
+                    const isComplete = priority.status === 'complete' || priority.status === 'completed' || priority.progress === 100;
+                    const daysUntil = getDaysUntilDue(priority.dueDate || priority.due_date);
+                    
+                    return (
+                      <Card 
+                        key={priority.id}
+                        className={`max-w-5xl transition-all duration-300 hover:shadow-lg hover:scale-[1.01] cursor-pointer ${
+                          isComplete 
+                            ? 'bg-gradient-to-r from-green-50/80 to-emerald-50/80 border-green-200' 
+                            : 'bg-white/90 backdrop-blur-sm border-slate-200'
+                        }`}
+                        onClick={() => {
+                          setSelectedPriority(priority);
+                          setShowPriorityDialog(true);
+                        }}
+                      >
+                        <CardHeader className="pb-4">
+                          <div className="flex items-start justify-between">
+                            <div className="flex-1 min-w-0">
+                              <div className="flex items-center gap-3">
+                                {isComplete ? (
+                                  <CheckCircle className="h-5 w-5 text-green-600 flex-shrink-0" />
+                                ) : (
+                                  <div className="w-2 h-2 rounded-full flex-shrink-0" style={getStatusDotColor(priority.status)} />
+                                )}
+                                <h3 className={`text-lg font-semibold truncate ${
+                                  isComplete 
+                                    ? 'text-green-900 line-through decoration-green-400' 
+                                    : 'text-gray-900'
+                                }`}>
+                                  {priority.title}
+                                </h3>
+                              </div>
+                              <div className="flex items-center gap-4 mt-2 text-sm text-gray-600">
+                                <span className="flex items-center gap-1">
+                                  <User className="h-3 w-3" />
+                                  {priority.owner?.name || 'Unassigned'}
+                                </span>
+                                <span className="flex items-center gap-1">
+                                  <Calendar className="h-3 w-3" />
+                                  Due {priority.dueDate ? format(new Date(priority.dueDate), 'MMM d') : 'No date'}
+                                </span>
+                                {daysUntil !== null && (
+                                  <span className={`text-xs px-2 py-1 rounded-full font-medium ${
+                                    daysUntil < 0 ? 'bg-red-100 text-red-700' :
+                                    daysUntil <= 7 ? 'bg-yellow-100 text-yellow-700' :
+                                    'bg-green-100 text-green-700'
+                                  }`}>
+                                    {daysUntil < 0 ? `${Math.abs(daysUntil)} days overdue` :
+                                     daysUntil === 0 ? 'Due today' :
+                                     `${daysUntil} days left`}
+                                  </span>
+                                )}
+                              </div>
+                            </div>
+                            <div className="flex items-center gap-3">
+                              <div className="text-right">
+                                <div className="text-2xl font-bold" style={{ color: themeColors.primary }}>
+                                  {priority.progress || 0}%
+                                </div>
+                                <Progress value={priority.progress || 0} className="w-24 h-2" />
+                              </div>
+                              {isComplete && (
+                                <Badge className="bg-green-100 text-green-800 border-green-200">
+                                  Complete
+                                </Badge>
+                              )}
+                            </div>
+                          </div>
+                        </CardHeader>
+                      </Card>
+                    );
+                  })}
                 </div>
               )}
             </div>
@@ -2386,27 +2516,76 @@ const QuarterlyPrioritiesPageClean = () => {
                   </div>
                   {expandedSections.individualPriorities[member.id] && (
                     <div className="space-y-4 ml-16">
-                      {memberPriorities.map(priority => (
-                        <div key={priority.id} className="group max-w-5xl">
-                          <PriorityCardClean 
-                            priority={priority}
-                            onStatusChange={handlePriorityStatusChange}
-                            onUpdate={handleUpdatePriority}
-                            onArchive={handleArchivePriority}
-                            onAddMilestone={handleCreateMilestone}
-                            onEditMilestone={handleEditMilestone}
-                            onToggleMilestone={handleUpdateMilestone}
-                            onDeleteMilestone={handleDeleteMilestone}
-                            onAddUpdate={handleAddUpdate}
-                            onEditUpdate={handleEditUpdate}
-                            onDeleteUpdate={handleDeleteUpdate}
-                            onUploadAttachment={handleUploadAttachment}
-                            onDownloadAttachment={handleDownloadAttachment}
-                            onDeleteAttachment={handleDeleteAttachment}
-                            teamMembers={teamMembers}
-                          />
-                        </div>
-                      ))}
+                      {memberPriorities.map(priority => {
+                        const isComplete = priority.status === 'complete' || priority.status === 'completed' || priority.progress === 100;
+                        const daysUntil = getDaysUntilDue(priority.dueDate || priority.due_date);
+                        
+                        return (
+                          <Card 
+                            key={priority.id}
+                            className={`max-w-5xl transition-all duration-300 hover:shadow-lg hover:scale-[1.01] cursor-pointer ${
+                              isComplete 
+                                ? 'bg-gradient-to-r from-green-50/80 to-emerald-50/80 border-green-200' 
+                                : 'bg-white/90 backdrop-blur-sm border-slate-200'
+                            }`}
+                            onClick={() => {
+                              setSelectedPriority(priority);
+                              setShowPriorityDialog(true);
+                            }}
+                          >
+                            <CardHeader className="pb-4">
+                              <div className="flex items-start justify-between">
+                                <div className="flex-1 min-w-0">
+                                  <div className="flex items-center gap-3">
+                                    {isComplete ? (
+                                      <CheckCircle className="h-5 w-5 text-green-600 flex-shrink-0" />
+                                    ) : (
+                                      <div className="w-2 h-2 rounded-full flex-shrink-0" style={getStatusDotColor(priority.status)} />
+                                    )}
+                                    <h3 className={`text-lg font-semibold truncate ${
+                                      isComplete 
+                                        ? 'text-green-900 line-through decoration-green-400' 
+                                        : 'text-gray-900'
+                                    }`}>
+                                      {priority.title}
+                                    </h3>
+                                  </div>
+                                  <div className="flex items-center gap-4 mt-2 text-sm text-gray-600">
+                                    <span className="flex items-center gap-1">
+                                      <Calendar className="h-3 w-3" />
+                                      Due {priority.dueDate ? format(new Date(priority.dueDate), 'MMM d') : 'No date'}
+                                    </span>
+                                    {daysUntil !== null && (
+                                      <span className={`text-xs px-2 py-1 rounded-full font-medium ${
+                                        daysUntil < 0 ? 'bg-red-100 text-red-700' :
+                                        daysUntil <= 7 ? 'bg-yellow-100 text-yellow-700' :
+                                        'bg-green-100 text-green-700'
+                                      }`}>
+                                        {daysUntil < 0 ? `${Math.abs(daysUntil)} days overdue` :
+                                         daysUntil === 0 ? 'Due today' :
+                                         `${daysUntil} days left`}
+                                      </span>
+                                    )}
+                                  </div>
+                                </div>
+                                <div className="flex items-center gap-3">
+                                  <div className="text-right">
+                                    <div className="text-2xl font-bold" style={{ color: themeColors.primary }}>
+                                      {priority.progress || 0}%
+                                    </div>
+                                    <Progress value={priority.progress || 0} className="w-24 h-2" />
+                                  </div>
+                                  {isComplete && (
+                                    <Badge className="bg-green-100 text-green-800 border-green-200">
+                                      Complete
+                                    </Badge>
+                                  )}
+                                </div>
+                              </div>
+                            </CardHeader>
+                          </Card>
+                        );
+                      })}
                     </div>
                   )}
                 </div>
@@ -2508,6 +2687,35 @@ const QuarterlyPrioritiesPageClean = () => {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* Priority Details Dialog */}
+      {selectedPriority && (
+        <PriorityDialog
+          open={showPriorityDialog}
+          onOpenChange={setShowPriorityDialog}
+          priority={selectedPriority}
+          teamMembers={teamMembers}
+          onSave={async (updates) => {
+            await handleUpdatePriority(selectedPriority.id, updates);
+            setShowPriorityDialog(false);
+          }}
+          onUpdate={handleUpdatePriority}
+          onArchive={async (priorityId) => {
+            await handleArchivePriority(priorityId);
+            setShowPriorityDialog(false);
+          }}
+          onAddMilestone={handleCreateMilestone}
+          onEditMilestone={handleEditMilestone}
+          onToggleMilestone={handleUpdateMilestone}
+          onDeleteMilestone={handleDeleteMilestone}
+          onAddUpdate={handleAddUpdate}
+          onEditUpdate={handleEditUpdate}
+          onDeleteUpdate={handleDeleteUpdate}
+          onUploadAttachment={handleUploadAttachment}
+          onDownloadAttachment={handleDownloadAttachment}
+          onDeleteAttachment={handleDeleteAttachment}
+        />
+      )}
     </div>
   );
 };
