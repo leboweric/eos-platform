@@ -21,6 +21,7 @@ import HeadlineDialog from '../components/headlines/HeadlineDialog';
 import { headlinesService } from '../services/headlinesService';
 import { useSelectedTodos } from '../contexts/SelectedTodosContext';
 import { useTerminology } from '../contexts/TerminologyContext';
+import { useTeam } from '../contexts/TeamContext';
 import PriorityDialog from '../components/priorities/PriorityDialog';
 import {
   AlertCircle,
@@ -48,6 +49,7 @@ import { format } from 'date-fns';
 const DashboardClean = () => {
   const { user, isOnLeadershipTeam } = useAuthStore();
   const { labels } = useTerminology();
+  const { selectedTeamId, getSelectedTeam } = useTeam();
   const navigate = useNavigate();
   const [loading, setLoading] = useState(true);
   const [organization, setOrganization] = useState(null);
@@ -89,7 +91,7 @@ const DashboardClean = () => {
     if (user) {
       fetchDashboardData();
     }
-  }, [viewMode]);
+  }, [viewMode, selectedTeamId]);
   
   useEffect(() => {
     if (user?.isConsultant && localStorage.getItem('consultantImpersonating') !== 'true') {
@@ -200,31 +202,21 @@ const DashboardClean = () => {
       
       const orgId = localStorage.getItem('impersonatedOrgId') || user?.organizationId || user?.organization_id;
       
-      // For dashboard, fetch priorities from user's actual department team, not leadership
-      let userDepartmentId = null;
-      let teamIdForPriorities = null;
+      // Use the selected team from context for fetching data
+      let teamIdForPriorities = selectedTeamId;
+      let userDepartmentId = selectedTeamId;
       
-      if (user?.teams && user.teams.length > 0) {
-        // Find the user's actual department team (non-leadership)
-        const nonLeadershipTeam = user.teams.find(team => !team.is_leadership_team);
-        if (nonLeadershipTeam) {
-          userDepartmentId = nonLeadershipTeam.id;
-          teamIdForPriorities = nonLeadershipTeam.id;
+      // If it's the default leadership team ID, find the actual leadership team
+      if (selectedTeamId === '00000000-0000-0000-0000-000000000000') {
+        const leadershipTeam = user?.teams?.find(team => team.is_leadership_team);
+        if (leadershipTeam) {
+          teamIdForPriorities = leadershipTeam.id;
+          userDepartmentId = leadershipTeam.id;
         } else {
-          // If user is only on leadership team, use that
-          const leadershipTeam = user.teams.find(team => team.is_leadership_team);
-          if (leadershipTeam) {
-            userDepartmentId = leadershipTeam.id;
-            teamIdForPriorities = leadershipTeam.id;
-          } else {
-            // Fallback to first team
-            userDepartmentId = user.teams[0].id;
-            teamIdForPriorities = user.teams[0].id;
-          }
+          // Fallback to leadership team ID if no teams found
+          teamIdForPriorities = getTeamId(user, 'leadership');
+          userDepartmentId = teamIdForPriorities;
         }
-      } else {
-        // Fallback to leadership team ID if no teams found
-        teamIdForPriorities = getTeamId(user, 'leadership');
       }
       
       console.log('Dashboard fetching priorities with teamId:', teamIdForPriorities, 'userDepartmentId:', userDepartmentId);
