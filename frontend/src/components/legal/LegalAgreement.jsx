@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
@@ -10,6 +10,31 @@ const LegalAgreement = ({ onAccept, isRequired = true }) => {
   const [showTermsDialog, setShowTermsDialog] = useState(false);
   const [showPrivacyDialog, setShowPrivacyDialog] = useState(false);
   const [error, setError] = useState('');
+  
+  // Notify parent whenever checkbox state changes
+  useEffect(() => {
+    if (termsAccepted && privacyAccepted) {
+      const agreementData = {
+        termsAccepted: true,
+        privacyAccepted: true,
+        acceptedAt: new Date().toISOString(),
+        ipAddress: window.location.hostname,
+        userAgent: navigator.userAgent,
+        version: '1.0'
+      };
+      onAccept(agreementData);
+    } else {
+      // Pass null or partial state so parent knows the current status
+      onAccept({
+        termsAccepted,
+        privacyAccepted,
+        acceptedAt: null,
+        ipAddress: null,
+        userAgent: null,
+        version: null
+      });
+    }
+  }, [termsAccepted, privacyAccepted, onAccept]);
 
   const handleAcceptAll = () => {
     if (!termsAccepted || !privacyAccepted) {
