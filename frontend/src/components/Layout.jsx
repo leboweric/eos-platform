@@ -72,23 +72,19 @@ const Layout = ({ children }) => {
     if (user?.organizationId) {
       const orgId = localStorage.getItem('impersonatedOrgId') || user.organizationId;
       setLogoUrl(organizationService.getLogoUrl(orgId));
-      
-      // Load theme colors
-      const savedTheme = getOrgTheme(orgId);
-      if (savedTheme) {
-        setThemeColors(savedTheme);
-      }
     }
   }, [user]);
   
-  // Listen for theme changes
+  // Listen for theme changes and load theme on mount
   useEffect(() => {
     const handleThemeChange = (event) => {
       setThemeColors(event.detail);
     };
     
-    const handleOrgChange = async () => {
+    const loadOrgTheme = async () => {
       const orgId = user?.organizationId || user?.organization_id || localStorage.getItem('organizationId');
+      if (!orgId) return;
+      
       const savedTheme = getOrgTheme(orgId);
       if (savedTheme) {
         setThemeColors(savedTheme);
@@ -111,12 +107,17 @@ const Layout = ({ children }) => {
       }
     };
     
+    // Load theme immediately when user is available
+    if (user) {
+      loadOrgTheme();
+    }
+    
     window.addEventListener('themeChanged', handleThemeChange);
-    window.addEventListener('organizationChanged', handleOrgChange);
+    window.addEventListener('organizationChanged', loadOrgTheme);
     
     return () => {
       window.removeEventListener('themeChanged', handleThemeChange);
-      window.removeEventListener('organizationChanged', handleOrgChange);
+      window.removeEventListener('organizationChanged', loadOrgTheme);
     };
   }, [user]);
   

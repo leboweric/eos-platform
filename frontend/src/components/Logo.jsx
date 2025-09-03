@@ -1,8 +1,9 @@
 import { Link } from 'react-router-dom';
 import { Target } from 'lucide-react';
 import { useState, useEffect } from 'react';
-import { getOrgTheme } from '../utils/themeUtils';
+import { getOrgTheme, saveOrgTheme } from '../utils/themeUtils';
 import { useAuthStore } from '../stores/authStore';
+import { organizationService } from '../services/organizationService';
 
 /**
  * Logo Component Collection
@@ -244,17 +245,39 @@ export const LogoText = ({
   });
 
   useEffect(() => {
-    if (useThemeColors) {
-      try {
-        const orgId = user?.organizationId || user?.organization_id || localStorage.getItem('organizationId');
-        const savedTheme = getOrgTheme(orgId);
-        if (savedTheme && savedTheme.primary && savedTheme.secondary) {
-          setThemeColors(savedTheme);
+    const loadTheme = async () => {
+      if (useThemeColors) {
+        try {
+          const orgId = user?.organizationId || user?.organization_id || localStorage.getItem('organizationId');
+          if (!orgId) return;
+          
+          const savedTheme = getOrgTheme(orgId);
+          if (savedTheme && savedTheme.primary && savedTheme.secondary) {
+            setThemeColors(savedTheme);
+          } else {
+            // Try to fetch from organization service if no saved theme
+            try {
+              const orgData = await organizationService.getOrganization();
+              if (orgData && orgData.theme_primary_color) {
+                const theme = {
+                  primary: orgData.theme_primary_color || '#3B82F6',
+                  secondary: orgData.theme_secondary_color || '#1E40AF',
+                  accent: orgData.theme_accent_color || '#60A5FA'
+                };
+                setThemeColors(theme);
+                saveOrgTheme(orgId, theme);
+              }
+            } catch (fetchError) {
+              console.error('Failed to fetch organization theme for logo:', fetchError);
+            }
+          }
+        } catch (error) {
+          console.error('Error loading theme colors for logo:', error);
         }
-      } catch (error) {
-        console.error('Error loading theme colors for logo:', error);
       }
-    }
+    };
+    
+    loadTheme();
   }, [useThemeColors, user]);
 
   if (gradient && useThemeColors && themeColors.primary && themeColors.secondary) {
