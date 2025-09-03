@@ -559,10 +559,16 @@ const ScorecardPageClean = () => {
                         localStorage.setItem('scorecardViewMode', newViewMode);
                         setShowOptions(false);
                       }}
-                      className="w-full text-left px-4 py-3 hover:bg-gradient-to-r hover:from-blue-50 hover:to-indigo-50 text-sm font-medium transition-colors"
+                      className="w-full text-left px-4 py-3 text-sm font-medium transition-colors"
+                      onMouseEnter={(e) => {
+                        e.currentTarget.style.background = `linear-gradient(135deg, ${themeColors.primary}10 0%, ${themeColors.secondary}10 100%)`;
+                      }}
+                      onMouseLeave={(e) => {
+                        e.currentTarget.style.background = 'transparent';
+                      }}
                     >
                       <div className="flex items-center gap-2">
-                        <Target className="h-4 w-4 text-blue-600" />
+                        <Target className="h-4 w-4" style={{ color: themeColors.primary }} />
                         <span>{viewMode === 'table' ? 'Switch to Groups View' : 'Switch to Table View'}</span>
                       </div>
                     </button>
@@ -573,10 +579,16 @@ const ScorecardPageClean = () => {
                         localStorage.setItem('scorecardRTL', newRTL.toString());
                         setShowOptions(false);
                       }}
-                      className="w-full text-left px-4 py-3 hover:bg-gradient-to-r hover:from-blue-50 hover:to-indigo-50 text-sm font-medium border-t border-gray-100 transition-colors"
+                      className="w-full text-left px-4 py-3 text-sm font-medium border-t border-gray-100 transition-colors"
+                      onMouseEnter={(e) => {
+                        e.currentTarget.style.background = `linear-gradient(135deg, ${themeColors.primary}10 0%, ${themeColors.secondary}10 100%)`;
+                      }}
+                      onMouseLeave={(e) => {
+                        e.currentTarget.style.background = 'transparent';
+                      }}
                     >
                       <div className="flex items-center gap-2">
-                        <Activity className="h-4 w-4 text-indigo-600" />
+                        <Activity className="h-4 w-4" style={{ color: themeColors.secondary }} />
                         <span>{isRTL ? 'Left to Right Layout' : 'Right to Left Layout'}</span>
                       </div>
                     </button>
@@ -623,21 +635,30 @@ const ScorecardPageClean = () => {
             <TabsList className="grid w-80 grid-cols-3 bg-transparent gap-1">
               <TabsTrigger 
                 value="weekly" 
-                className="data-[state=active]:bg-gradient-to-r data-[state=active]:from-blue-500 data-[state=active]:to-indigo-500 data-[state=active]:text-white data-[state=active]:shadow-lg rounded-xl transition-all duration-200 font-medium"
+                className="data-[state=active]:text-white data-[state=active]:shadow-lg rounded-xl transition-all duration-200 font-medium"
+                style={activeTab === 'weekly' ? {
+                  background: `linear-gradient(135deg, ${themeColors.primary} 0%, ${themeColors.secondary} 100%)`
+                } : {}}
               >
                 <Calendar className="h-4 w-4 mr-2" />
                 Weekly
               </TabsTrigger>
               <TabsTrigger 
                 value="monthly" 
-                className="data-[state=active]:bg-gradient-to-r data-[state=active]:from-blue-500 data-[state=active]:to-indigo-500 data-[state=active]:text-white data-[state=active]:shadow-lg rounded-xl transition-all duration-200 font-medium"
+                className="data-[state=active]:text-white data-[state=active]:shadow-lg rounded-xl transition-all duration-200 font-medium"
+                style={activeTab === 'monthly' ? {
+                  background: `linear-gradient(135deg, ${themeColors.primary} 0%, ${themeColors.secondary} 100%)`
+                } : {}}
               >
                 <TrendingUp className="h-4 w-4 mr-2" />
                 Monthly
               </TabsTrigger>
               <TabsTrigger 
                 value="shared" 
-                className="data-[state=active]:bg-gradient-to-r data-[state=active]:from-blue-500 data-[state=active]:to-indigo-500 data-[state=active]:text-white data-[state=active]:shadow-lg rounded-xl transition-all duration-200 font-medium"
+                className="data-[state=active]:text-white data-[state=active]:shadow-lg rounded-xl transition-all duration-200 font-medium"
+                style={activeTab === 'shared' ? {
+                  background: `linear-gradient(135deg, ${themeColors.primary} 0%, ${themeColors.secondary} 100%)`
+                } : {}}
               >
                 <Share2 className="h-4 w-4 mr-2" />
                 Shared
@@ -929,7 +950,16 @@ const ScorecardPageClean = () => {
                 <Button 
                   onClick={handleSaveMetric} 
                   disabled={saving || !metricForm.name || !metricForm.goal}
-                  className="bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white rounded-xl shadow-lg hover:shadow-xl transition-all duration-200 transform hover:scale-[1.02]"
+                  className="text-white rounded-xl shadow-lg hover:shadow-xl transition-all duration-200 transform hover:scale-[1.02]"
+                  style={{
+                    background: `linear-gradient(135deg, ${themeColors.primary} 0%, ${themeColors.secondary} 100%)`
+                  }}
+                  onMouseEnter={(e) => {
+                    e.currentTarget.style.filter = 'brightness(1.1)';
+                  }}
+                  onMouseLeave={(e) => {
+                    e.currentTarget.style.filter = 'brightness(1)';
+                  }}
                 >
                   {saving ? (
                     <Loader2 className="mr-2 h-4 w-4 animate-spin" />
@@ -987,7 +1017,16 @@ const ScorecardPageClean = () => {
               <Button 
                 onClick={handleScoreDialogSave} 
                 disabled={saving}
-                className="bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white rounded-xl shadow-lg hover:shadow-xl transition-all duration-200 transform hover:scale-[1.02]"
+                className="text-white rounded-xl shadow-lg hover:shadow-xl transition-all duration-200 transform hover:scale-[1.02]"
+                style={{
+                  background: `linear-gradient(135deg, ${themeColors.primary} 0%, ${themeColors.secondary} 100%)`
+                }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.filter = 'brightness(1.1)';
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.filter = 'brightness(1)';
+                }}
               >
                 {saving ? (
                   <Loader2 className="mr-2 h-4 w-4 animate-spin" />
