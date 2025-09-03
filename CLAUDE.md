@@ -80,6 +80,13 @@ VALUES (gen_random_uuid(), 'Leadership Team', <org_id>, true);
 - **MUST have `owner` field populated** to display in UI
 - Fix: `UPDATE scorecard_metrics SET owner = 'Team Name' WHERE owner IS NULL;`
 
+### Quarterly Priorities (Rocks) - IMPORTANT
+- **NEVER filter by quarter/year** when fetching priorities
+- **ALWAYS use getCurrentPriorities** endpoint/pattern which fetches ALL active priorities
+- The quarterly_priorities table has `quarter` as VARCHAR(2) ('Q1', 'Q2', etc.) but we don't filter by it
+- Just query: `WHERE organization_id = $1 AND deleted_at IS NULL`
+- This matches how the Rock Review page works - it shows all active priorities regardless of quarter
+
 ## Trademark Compliance Renames
 - **vtos** → **business_blueprints**
 - **rocks** → **quarterly_priorities**
