@@ -2536,19 +2536,19 @@ const WeeklyAccountabilityMeetingPage = () => {
       case 'issues':
         return (
           <div className="space-y-4">
-            <Card className="bg-white/80 backdrop-blur-sm border border-white/50 rounded-2xl shadow-xl hover:shadow-2xl transition-all duration-300">
-              <CardHeader className="bg-gradient-to-r from-white/90 to-white/70 backdrop-blur-sm border-b border-white/20 rounded-t-2xl">
+            <Card className="border-0 shadow-sm">
+              <CardHeader className="rounded-t-lg" style={{ 
+                background: `linear-gradient(to right, ${hexToRgba(themeColors.accent, 0.1)}, ${hexToRgba(themeColors.primary, 0.1)})`
+              }}>
                 <div className="flex items-center justify-between">
                   <div>
-                    <CardTitle className="flex items-center gap-3 text-xl font-bold text-slate-900">
-                      <div className="p-2 rounded-xl" style={{ background: `linear-gradient(135deg, ${themeColors.primary}20 0%, ${themeColors.secondary}20 100%)` }}>
-                        <AlertTriangle className="h-5 w-5" style={{ color: themeColors.primary }} />
-                      </div>
+                    <CardTitle className="flex items-center gap-2 text-xl">
+                      <AlertTriangle className="h-5 w-5" style={{ color: themeColors.primary }} />
                       Identify Discuss Solve
                     </CardTitle>
-                    <CardDescription className="mt-2 text-slate-600 font-medium">Solve the most important Issue(s)</CardDescription>
+                    <CardDescription className="mt-1">Solve the most important Issue(s)</CardDescription>
                   </div>
-                  <div className="text-sm text-slate-600 bg-white/50 rounded-xl px-3 py-1 border border-white/30">
+                  <div className="text-sm text-gray-500 bg-white px-3 py-1 rounded-full">
                     60 minutes
                   </div>
                 </div>
