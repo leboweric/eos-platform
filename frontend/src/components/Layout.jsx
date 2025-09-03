@@ -12,6 +12,7 @@ import DepartmentSelector from './DepartmentSelector';
 import DarkModeToggle from './DarkModeToggle';
 import HelpWidget from './help/HelpWidget';
 import { LogoText } from './Logo';
+import { getOrgTheme, saveOrgTheme } from '../utils/themeUtils';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -53,6 +54,11 @@ const Layout = ({ children }) => {
   const [logoSize, setLogoSize] = useState(() => {
     return parseInt(localStorage.getItem('logoSize') || '100');
   });
+  const [themeColors, setThemeColors] = useState({
+    primary: '#3B82F6',
+    secondary: '#1E40AF',
+    accent: '#60A5FA'
+  });
   const location = useLocation();
   const navigate = useNavigate();
   const { user, logout, isOnLeadershipTeam } = useAuthStore();
@@ -66,7 +72,52 @@ const Layout = ({ children }) => {
     if (user?.organizationId) {
       const orgId = localStorage.getItem('impersonatedOrgId') || user.organizationId;
       setLogoUrl(organizationService.getLogoUrl(orgId));
+      
+      // Load theme colors
+      const savedTheme = getOrgTheme(orgId);
+      if (savedTheme) {
+        setThemeColors(savedTheme);
+      }
     }
+  }, [user]);
+  
+  // Listen for theme changes
+  useEffect(() => {
+    const handleThemeChange = (event) => {
+      setThemeColors(event.detail);
+    };
+    
+    const handleOrgChange = async () => {
+      const orgId = user?.organizationId || user?.organization_id || localStorage.getItem('organizationId');
+      const savedTheme = getOrgTheme(orgId);
+      if (savedTheme) {
+        setThemeColors(savedTheme);
+      } else {
+        // Try to fetch from organization service
+        try {
+          const orgData = await organizationService.getOrganization();
+          if (orgData && orgData.theme_primary_color) {
+            const theme = {
+              primary: orgData.theme_primary_color || '#3B82F6',
+              secondary: orgData.theme_secondary_color || '#1E40AF',
+              accent: orgData.theme_accent_color || '#60A5FA'
+            };
+            setThemeColors(theme);
+            saveOrgTheme(orgId, theme);
+          }
+        } catch (error) {
+          console.error('Failed to fetch organization theme:', error);
+        }
+      }
+    };
+    
+    window.addEventListener('themeChanged', handleThemeChange);
+    window.addEventListener('organizationChanged', handleOrgChange);
+    
+    return () => {
+      window.removeEventListener('themeChanged', handleThemeChange);
+      window.removeEventListener('organizationChanged', handleOrgChange);
+    };
   }, [user]);
   
   // Listen for logo size changes
@@ -282,7 +333,14 @@ const Layout = ({ children }) => {
                   <Button variant="ghost" className="relative h-10 w-10 rounded-full hover:bg-slate-100/50 transition-all duration-200 p-0">
                     <Avatar className="h-10 w-10 ring-2 ring-white shadow-lg">
                       <AvatarImage src={user?.avatarUrl} alt={user?.firstName} />
-                      <AvatarFallback className="bg-gradient-to-br from-blue-600 to-indigo-700 text-white font-bold text-sm">{getUserInitials()}</AvatarFallback>
+                      <AvatarFallback 
+                        className="text-white font-bold text-sm"
+                        style={{
+                          background: `linear-gradient(135deg, ${themeColors.primary} 0%, ${themeColors.secondary} 100%)`
+                        }}
+                      >
+                        {getUserInitials()}
+                      </AvatarFallback>
                     </Avatar>
                   </Button>
                 </DropdownMenuTrigger>
