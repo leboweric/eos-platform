@@ -21,7 +21,7 @@ import HeadlineDialog from '../components/headlines/HeadlineDialog';
 import { headlinesService } from '../services/headlinesService';
 import { useSelectedTodos } from '../contexts/SelectedTodosContext';
 import { useTerminology } from '../contexts/TerminologyContext';
-import { useTeam } from '../contexts/TeamContext';
+import { useDepartment } from '../contexts/DepartmentContext';
 import PriorityDialog from '../components/priorities/PriorityDialog';
 import {
   AlertCircle,
@@ -49,7 +49,7 @@ import { format } from 'date-fns';
 const DashboardClean = () => {
   const { user, isOnLeadershipTeam } = useAuthStore();
   const { labels } = useTerminology();
-  const { selectedTeamId, getSelectedTeam } = useTeam();
+  const { selectedDepartment } = useDepartment();
   const navigate = useNavigate();
   const [loading, setLoading] = useState(true);
   const [organization, setOrganization] = useState(null);
@@ -86,12 +86,13 @@ const DashboardClean = () => {
     }
   });
   
-  // Re-fetch data when view mode changes
+  // Re-fetch data when view mode or department changes
   useEffect(() => {
-    if (user) {
+    if (user && selectedDepartment) {
+      console.log('Dashboard useEffect triggered - viewMode:', viewMode, 'selectedDepartment:', selectedDepartment?.id);
       fetchDashboardData();
     }
-  }, [viewMode, selectedTeamId]);
+  }, [viewMode, selectedDepartment, user]);
   
   useEffect(() => {
     if (user?.isConsultant && localStorage.getItem('consultantImpersonating') !== 'true') {
@@ -202,12 +203,12 @@ const DashboardClean = () => {
       
       const orgId = localStorage.getItem('impersonatedOrgId') || user?.organizationId || user?.organization_id;
       
-      // Use the selected team from context for fetching data
-      let teamIdForPriorities = selectedTeamId;
-      let userDepartmentId = selectedTeamId;
+      // Use the selected department from context for fetching data
+      let teamIdForPriorities = selectedDepartment?.id;
+      let userDepartmentId = selectedDepartment?.id;
       
-      // If it's the default leadership team ID, find the actual leadership team
-      if (selectedTeamId === '00000000-0000-0000-0000-000000000000') {
+      // If no department selected, fallback to leadership team
+      if (!teamIdForPriorities) {
         const leadershipTeam = user?.teams?.find(team => team.is_leadership_team);
         if (leadershipTeam) {
           teamIdForPriorities = leadershipTeam.id;
@@ -219,7 +220,7 @@ const DashboardClean = () => {
         }
       }
       
-      console.log('Dashboard fetching priorities with teamId:', teamIdForPriorities, 'userDepartmentId:', userDepartmentId);
+      console.log('Dashboard fetching priorities with teamId:', teamIdForPriorities, 'userDepartmentId:', userDepartmentId, 'selectedDepartment:', selectedDepartment);
       
       // In team view mode, fetch all todos regardless of assignment
       const fetchAllForTeam = viewMode === 'team-view';
@@ -305,7 +306,7 @@ const DashboardClean = () => {
       console.log('Dashboard - All priorities collected:', {
         count: allPriorities.length,
         viewMode: viewMode,
-        selectedTeamId: selectedTeamId,
+        selectedDepartmentId: selectedDepartment?.id,
         userId: user.id
       });
       
