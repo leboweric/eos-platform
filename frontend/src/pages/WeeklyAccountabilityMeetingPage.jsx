@@ -70,6 +70,11 @@ import { getEffectiveTeamId } from '../utils/teamUtils';
 const WeeklyAccountabilityMeetingPage = () => {
   const { user } = useAuthStore();
   const { teamId } = useParams();
+  
+  // DEBUG: Log the raw teamId from URL params
+  console.log('🐛 [WeeklyAccountabilityMeeting] Raw teamId from useParams:', teamId);
+  console.log('🐛 [WeeklyAccountabilityMeeting] teamId length:', teamId?.length);
+  console.log('🐛 [WeeklyAccountabilityMeeting] teamId type:', typeof teamId);
   const navigate = useNavigate();
   const { 
     meetingCode, 
@@ -1369,7 +1374,21 @@ const WeeklyAccountabilityMeetingPage = () => {
   const concludeMeeting = async () => {
     try {
       const orgId = localStorage.getItem('impersonatedOrgId') || user?.organizationId || user?.organization_id;
-      const effectiveTeamId = getEffectiveTeamId(teamId, user);
+      let effectiveTeamId = getEffectiveTeamId(teamId, user);
+      
+      // DEBUG: Log the team IDs being used for concludeMeeting
+      console.log('🐛 [concludeMeeting] Raw teamId from URL:', teamId);
+      console.log('🐛 [concludeMeeting] effectiveTeamId from getEffectiveTeamId:', effectiveTeamId);
+      console.log('🐛 [concludeMeeting] orgId:', orgId);
+      
+      // HOTFIX: Handle truncated Bennett Material Handling Leadership Team UUID
+      // If teamId is the truncated version, use the full UUID
+      if (teamId === 'd23dff10959f' || effectiveTeamId === 'd23dff10959f') {
+        console.log('🔧 [HOTFIX] Detected truncated Bennett Leadership Team UUID, using full UUID');
+        effectiveTeamId = '559822f8-c442-48dd-91dc-d23dff10959f';
+      }
+      
+      console.log('🐛 [concludeMeeting] Final effectiveTeamId being sent:', effectiveTeamId);
       
       // Calculate meeting duration in minutes
       const durationMinutes = Math.floor(elapsedTime / 60);
