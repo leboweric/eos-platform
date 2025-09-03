@@ -93,7 +93,10 @@ const PriorityDialog = ({
       const orgId = localStorage.getItem('impersonatedOrgId') || user?.organizationId || user?.organization_id;
       if (orgId) {
         const theme = await getOrgTheme(orgId);
-        setThemeColors(theme);
+        // Only update if theme is not null and has required properties
+        if (theme && theme.primary && theme.secondary) {
+          setThemeColors(theme);
+        }
       }
     };
     fetchTheme();
