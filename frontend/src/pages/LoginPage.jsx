@@ -10,6 +10,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Badge } from '@/components/ui/badge';
+import { LogoText } from '../components/Logo';
 import { 
   Eye, 
   EyeOff, 
@@ -71,11 +72,9 @@ const LoginPage = () => {
           {/* Logo */}
           <div className="mb-12">
             <Link to="/" className="inline-block group">
-              <img 
-                src="/AXP_logo_upper_left_transparent.png?v=2" 
-                alt="AXP - Adaptive Execution Platform Logo" 
-                className="h-28 w-auto transition-all duration-300 group-hover:scale-105"
-              />
+              <div className="transition-all duration-300 group-hover:scale-105">
+                <LogoText useThemeColors={false} />
+              </div>
             </Link>
           </div>
           
