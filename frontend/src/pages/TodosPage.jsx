@@ -385,6 +385,12 @@ const TodosPage = () => {
               style={{ 
                 background: `linear-gradient(135deg, ${themeColors.primary} 0%, ${themeColors.secondary} 100%)`,
               }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.filter = 'brightness(1.1)';
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.filter = 'brightness(1)';
+              }}
             >
               <Plus className="mr-2 h-4 w-4" />
               New {labels.todos_label.slice(0, -1)}
@@ -448,7 +454,13 @@ const TodosPage = () => {
                 onClick={handleArchiveDone}
                 className="text-white transition-all duration-200 shadow-md hover:shadow-lg rounded-lg"
                 style={{
-                  background: `linear-gradient(135deg, ${themeColors.accent} 0%, ${themeColors.primary} 100%)`
+                  background: `linear-gradient(135deg, ${themeColors.primary} 0%, ${themeColors.secondary} 100%)`
+                }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.filter = 'brightness(1.1)';
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.filter = 'brightness(1)';
                 }}
               >
                 <Archive className="mr-2 h-4 w-4" />
@@ -476,9 +488,15 @@ const TodosPage = () => {
               {activeTab !== 'archived' && (
                 <Button 
                   onClick={handleCreateTodo} 
-                  className="shadow-lg hover:shadow-xl transition-all duration-200 transform hover:scale-[1.02]"
+                  className="text-white shadow-lg hover:shadow-xl transition-all duration-200 transform hover:scale-[1.02]"
                   style={{ 
                     background: `linear-gradient(135deg, ${themeColors.primary} 0%, ${themeColors.secondary} 100%)`,
+                  }}
+                  onMouseEnter={(e) => {
+                    e.currentTarget.style.filter = 'brightness(1.1)';
+                  }}
+                  onMouseLeave={(e) => {
+                    e.currentTarget.style.filter = 'brightness(1)';
                   }}
                 >
                   <Plus className="mr-2 h-4 w-4" />
