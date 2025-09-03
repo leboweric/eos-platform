@@ -10,6 +10,7 @@ import { Loader2, Save, AlertCircle, Calendar, User, Paperclip, X, Download, Ale
 import { todosService } from '../../services/todosService';
 import { useAuthStore } from '../../stores/authStore';
 import { getDateDaysFromNow } from '../../utils/dateUtils';
+import { getOrgTheme } from '../../utils/themeUtils';
 
 const TodoDialog = ({ open, onOpenChange, todo, todoFromIssue, teamMembers, onSave, onCreateIssue }) => {
   const { user } = useAuthStore();
@@ -25,6 +26,22 @@ const TodoDialog = ({ open, onOpenChange, todo, todoFromIssue, teamMembers, onSa
   const [existingAttachments, setExistingAttachments] = useState([]);
   const [loadingAttachments, setLoadingAttachments] = useState(false);
   const [isDragging, setIsDragging] = useState(false);
+  const [themeColors, setThemeColors] = useState({
+    primary: '#3B82F6',
+    secondary: '#1E40AF',
+    accent: '#60A5FA'
+  });
+
+  useEffect(() => {
+    const fetchTheme = async () => {
+      const orgId = localStorage.getItem('impersonatedOrgId') || user?.organizationId || user?.organization_id;
+      if (orgId) {
+        const theme = await getOrgTheme(orgId);
+        setThemeColors(theme);
+      }
+    };
+    fetchTheme();
+  }, [user]);
 
   useEffect(() => {
     if (todo) {
@@ -192,7 +209,12 @@ const TodoDialog = ({ open, onOpenChange, todo, todoFromIssue, teamMembers, onSa
         <form onSubmit={handleSubmit}>
           <DialogHeader className="pb-6">
             <div className="flex items-center gap-3 mb-2">
-              <div className="h-10 w-10 rounded-xl bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center">
+              <div 
+                className="h-10 w-10 rounded-xl flex items-center justify-center"
+                style={{
+                  background: `linear-gradient(135deg, ${themeColors.primary} 0%, ${themeColors.secondary} 100%)`
+                }}
+              >
                 <AlertTriangle className="h-5 w-5 text-white" />
               </div>
               <div>
@@ -223,7 +245,7 @@ const TodoDialog = ({ open, onOpenChange, todo, todoFromIssue, teamMembers, onSa
                 onFocus={(e) => e.target.setSelectionRange(e.target.value.length, e.target.value.length)}
                 placeholder="Enter to-do title..."
                 required
-                className="bg-white/80 backdrop-blur-sm border-white/20 focus:border-blue-400 rounded-xl shadow-sm transition-all duration-200"
+                className="bg-white/80 backdrop-blur-sm border-white/20 rounded-xl shadow-sm transition-all duration-200"
               />
             </div>
 
@@ -235,7 +257,7 @@ const TodoDialog = ({ open, onOpenChange, todo, todoFromIssue, teamMembers, onSa
                 onChange={(e) => setFormData({ ...formData, description: e.target.value })}
                 placeholder="Provide additional details..."
                 rows={4}
-                className="bg-white/80 backdrop-blur-sm border-white/20 focus:border-blue-400 rounded-xl shadow-sm transition-all duration-200"
+                className="bg-white/80 backdrop-blur-sm border-white/20 rounded-xl shadow-sm transition-all duration-200"
               />
             </div>
 
@@ -275,7 +297,7 @@ const TodoDialog = ({ open, onOpenChange, todo, todoFromIssue, teamMembers, onSa
                 value={formData.dueDate}
                 onChange={(e) => setFormData({ ...formData, dueDate: e.target.value })}
                 required
-                className="bg-white/80 backdrop-blur-sm border-white/20 focus:border-blue-400 rounded-xl shadow-sm transition-all duration-200"
+                className="bg-white/80 backdrop-blur-sm border-white/20 rounded-xl shadow-sm transition-all duration-200"
               />
               <p className="text-xs text-slate-500">Defaults to 7 days from creation</p>
             </div>
@@ -397,7 +419,10 @@ const TodoDialog = ({ open, onOpenChange, todo, todoFromIssue, teamMembers, onSa
               <Button 
                 type="submit" 
                 disabled={saving}
-                className="bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white shadow-lg hover:shadow-xl transition-all duration-200 transform hover:scale-[1.02]"
+                className="text-white shadow-lg hover:shadow-xl transition-all duration-200 transform hover:scale-[1.02]"
+                style={{
+                  background: `linear-gradient(135deg, ${themeColors.primary} 0%, ${themeColors.secondary} 100%)`
+                }}
               >
                 {saving ? (
                   <>
