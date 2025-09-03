@@ -47,7 +47,6 @@ import {
 
 const Layout = ({ children }) => {
   const [sidebarOpen, setSidebarOpen] = useState(false);
-  const [isImpersonating, setIsImpersonating] = useState(false);
   const [logoUrl, setLogoUrl] = useState(null);
   const [logoKey] = useState(Date.now()); // Cache buster for logo
   const [hideSidebar, setHideSidebar] = useState(false);
@@ -65,13 +64,9 @@ const Layout = ({ children }) => {
   const { labels } = useTerminology();
 
   useEffect(() => {
-    // Check if consultant is impersonating a client
-    setIsImpersonating(localStorage.getItem('consultantImpersonating') === 'true');
-    
     // Set logo URL if organization ID is available
     if (user?.organizationId) {
-      const orgId = localStorage.getItem('impersonatedOrgId') || user.organizationId;
-      setLogoUrl(organizationService.getLogoUrl(orgId));
+      setLogoUrl(organizationService.getLogoUrl(user.organizationId));
     }
   }, [user]);
   
@@ -181,27 +176,16 @@ const Layout = ({ children }) => {
     return true;
   });
 
-  // Add Consultant Dashboard if user is consultant and not impersonating
-  if (user?.isConsultant && !isImpersonating) {
+  // Add Consultant Dashboard if user is consultant
+  if (user?.isConsultant) {
     navigation.unshift({ name: 'Consultant Dashboard', href: '/consultant', icon: Briefcase });
   }
 
   const handleLogout = async () => {
-    // Clear any impersonation state on logout to prevent cross-contamination
-    localStorage.removeItem('consultantImpersonating');
-    localStorage.removeItem('impersonatedOrgId');
-    
     await logout();
     navigate('/login');
   };
 
-  const handleReturnToConsultant = () => {
-    // Clear impersonation state
-    localStorage.removeItem('consultantImpersonating');
-    localStorage.removeItem('impersonatedOrgId');
-    // Force reload to refresh auth state
-    window.location.href = '/consultant';
-  };
 
   const getUserInitials = () => {
     if (!user) return 'U';
@@ -383,24 +367,6 @@ const Layout = ({ children }) => {
         {/* Page content */}
         <main className="flex-1 p-6 overflow-auto bg-gray-50 dark:bg-gray-900 transition-colors">
           <TrialBanner />
-          {isImpersonating && (
-            <Alert className="mb-4 border-blue-200 bg-blue-50">
-              <AlertDescription className="flex items-center justify-between">
-                <span>
-                  You are currently viewing this organization as a Strategy Consultant.
-                </span>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={handleReturnToConsultant}
-                  className="ml-4"
-                >
-                  <ArrowLeft className="mr-2 h-4 w-4" />
-                  Return to Consultant Dashboard
-                </Button>
-              </AlertDescription>
-            </Alert>
-          )}
           {children}
           
           {/* Footer */}

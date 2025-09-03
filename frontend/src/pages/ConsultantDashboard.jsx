@@ -128,13 +128,8 @@ const ConsultantDashboard = () => {
 
       if (response.ok) {
         const data = await response.json();
-        // Store the impersonation state
-        localStorage.setItem('consultantImpersonating', 'true');
-        localStorage.setItem('consultantOriginalOrg', user.organizationId);
-        localStorage.setItem('impersonatedOrgId', data.data.organizationId);
-        
-        // Update the auth store with the new organization context
-        switchToClientOrganization(data.data.organizationId, data.data.organizationName);
+        // Impersonation feature has been disabled for security reasons
+        alert('Organization impersonation has been disabled. Please contact support if you need access to client organizations.');
         
         // Navigate to the client's dashboard
         navigate('/dashboard');

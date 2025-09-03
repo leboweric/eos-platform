@@ -201,7 +201,7 @@ const DashboardClean = () => {
     try {
       setLoading(true);
       
-      const orgId = localStorage.getItem('impersonatedOrgId') || user?.organizationId || user?.organization_id;
+      const orgId = user?.organizationId || user?.organization_id;
       
       // Use the selected department from context for fetching data
       let teamIdForPriorities = selectedDepartment?.id;
@@ -1182,7 +1182,7 @@ const DashboardClean = () => {
           onSave={async (todoData) => {
             try {
               // Add organization_id and team_id if not present
-              const orgId = localStorage.getItem('impersonatedOrgId') || user?.organizationId || user?.organization_id;
+              const orgId = user?.organizationId || user?.organization_id;
               
               // Get the user's actual department/team ID (same logic as fetchDashboardData)
               let userTeamId = null;
@@ -1231,7 +1231,7 @@ const DashboardClean = () => {
           timeline="short_term"
           onSave={async (issueData) => {
             try {
-              const orgId = localStorage.getItem('impersonatedOrgId') || user?.organizationId || user?.organization_id;
+              const orgId = user?.organizationId || user?.organization_id;
               
               // Get the user's actual department/team ID (same logic as fetchDashboardData)
               let userTeamId = null;

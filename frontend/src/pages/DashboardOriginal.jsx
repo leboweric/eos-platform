@@ -77,7 +77,7 @@ const Dashboard = () => {
     try {
       setLoading(true);
       
-      const orgId = localStorage.getItem('impersonatedOrgId') || user?.organizationId || user?.organization_id;
+      const orgId = user?.organizationId || user?.organization_id;
       const teamId = getTeamId(user, 'leadership');
       
       console.log('Dashboard: Fetching data with:', { orgId, teamId, user });

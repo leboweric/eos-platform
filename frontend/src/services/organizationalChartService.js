@@ -2,12 +2,6 @@ import axios from './axiosConfig';
 import { useAuthStore } from '../stores/authStore';
 
 const getOrgId = () => {
-  // First check for impersonated org ID
-  const impersonatedOrgId = localStorage.getItem('impersonatedOrgId');
-  if (impersonatedOrgId) {
-    return impersonatedOrgId;
-  }
-  
   // Get user from Zustand store
   const user = useAuthStore.getState().user;
   

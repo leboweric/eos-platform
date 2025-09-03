@@ -121,7 +121,7 @@ const DashboardRedesigned = () => {
       setLoading(true);
       setError(null);
       
-      const orgId = localStorage.getItem('impersonatedOrgId') || user?.organizationId || user?.organization_id;
+      const orgId = user?.organizationId || user?.organization_id;
       const teamId = getTeamId(user, 'leadership');
       
       // Get user's department ID for filtering

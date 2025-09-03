@@ -8,7 +8,7 @@ const API_BASE = '/organizations/:orgId/teams/:teamId/business-blueprint';
 const buildUrl = (endpoint = '') => {
   // Get user from Zustand store
   const user = useAuthStore.getState().user;
-  const orgId = localStorage.getItem('impersonatedOrgId') || user?.organizationId || user?.organization_id;
+  const orgId = user?.organizationId || user?.organization_id;
   
   // Use currently selected department or leadership team
   const selectedDepartment = JSON.parse(localStorage.getItem('selectedDepartment') || 'null');

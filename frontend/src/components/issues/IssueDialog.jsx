@@ -76,7 +76,7 @@ const IssueDialog = ({
 
   useEffect(() => {
     const fetchTheme = async () => {
-      const orgId = localStorage.getItem('impersonatedOrgId') || user?.organizationId || user?.organization_id;
+      const orgId = user?.organizationId || user?.organization_id;
       if (orgId) {
         const theme = await getOrgTheme(orgId);
         // Only update if theme is not null and has required properties

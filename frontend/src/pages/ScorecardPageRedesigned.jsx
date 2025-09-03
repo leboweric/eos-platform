@@ -139,7 +139,7 @@ const ScorecardPageRedesigned = () => {
       setLoading(true);
       setError(null);
       
-      const orgId = localStorage.getItem('impersonatedOrgId') || user?.organizationId || user?.organization_id;
+      const orgId = user?.organizationId || user?.organization_id;
       
       let teamId = selectedDepartment?.id;
       if (!teamId && isLeadershipMember) {
@@ -180,7 +180,7 @@ const ScorecardPageRedesigned = () => {
 
   const fetchGroups = async () => {
     try {
-      const orgId = localStorage.getItem('impersonatedOrgId') || user?.organizationId || user?.organization_id;
+      const orgId = user?.organizationId || user?.organization_id;
       const teamId = selectedDepartment?.id || LEADERSHIP_TEAM_ID;
       
       if (!orgId || !teamId) return;
@@ -229,7 +229,7 @@ const ScorecardPageRedesigned = () => {
       setSaving(true);
       setError(null);
       
-      const orgId = localStorage.getItem('impersonatedOrgId') || user?.organizationId || user?.organization_id;
+      const orgId = user?.organizationId || user?.organization_id;
       const teamId = selectedDepartment?.id;
       
       if (!teamId) {
@@ -293,7 +293,7 @@ const ScorecardPageRedesigned = () => {
       setSaving(true);
       setError(null);
       
-      const orgId = localStorage.getItem('impersonatedOrgId') || user?.organizationId || user?.organization_id;
+      const orgId = user?.organizationId || user?.organization_id;
       const teamId = selectedDepartment?.id;
       
       if (!teamId) {
@@ -346,7 +346,7 @@ const ScorecardPageRedesigned = () => {
 
   const handleBulkUpdateSave = async (updates) => {
     try {
-      const orgId = localStorage.getItem('impersonatedOrgId') || user?.organizationId || user?.organization_id;
+      const orgId = user?.organizationId || user?.organization_id;
       const teamId = selectedDepartment?.id;
       
       if (!orgId || !teamId) {

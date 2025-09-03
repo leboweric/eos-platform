@@ -233,7 +233,7 @@ const QuarterlyPlanningMeetingPage = () => {
     const averageRating = ratings.reduce((sum, r) => sum + r.rating, 0) / ratings.length;
     
     try {
-      const orgId = localStorage.getItem('impersonatedOrgId') || user?.organizationId || user?.organization_id;
+      const orgId = user?.organizationId || user?.organization_id;
       const effectiveTeamId = teamId || getEffectiveTeamId(teamId, user);
       const duration = Math.floor((Date.now() - meetingStartTime) / 60000); // in minutes
       
@@ -295,7 +295,7 @@ const QuarterlyPlanningMeetingPage = () => {
     try {
       setLoading(true);
       setError(null);
-      const orgId = localStorage.getItem('impersonatedOrgId') || user?.organizationId || user?.organization_id;
+      const orgId = user?.organizationId || user?.organization_id;
       const effectiveTeamId = teamId || getEffectiveTeamId(teamId, user);
       
       // Use the simplified current priorities endpoint
@@ -331,7 +331,7 @@ const QuarterlyPlanningMeetingPage = () => {
     );
     
     try {
-      const orgId = localStorage.getItem('impersonatedOrgId') || user?.organizationId || user?.organization_id;
+      const orgId = user?.organizationId || user?.organization_id;
       const effectiveTeamId = teamId || getEffectiveTeamId(teamId, user);
       
       // Update in database
@@ -388,7 +388,7 @@ const QuarterlyPlanningMeetingPage = () => {
 
   const handleUpdateMilestone = async (priorityId, milestoneId, completed) => {
     try {
-      const orgId = localStorage.getItem('impersonatedOrgId') || user?.organizationId || user?.organization_id;
+      const orgId = user?.organizationId || user?.organization_id;
       const effectiveTeamId = teamId || getEffectiveTeamId(teamId, user);
       
       await quarterlyPrioritiesService.updateMilestone(orgId, effectiveTeamId, priorityId, milestoneId, { completed });
@@ -426,7 +426,7 @@ const QuarterlyPlanningMeetingPage = () => {
 
   const handleEditMilestone = async (priorityId, milestoneId, milestoneData) => {
     try {
-      const orgId = localStorage.getItem('impersonatedOrgId') || user?.organizationId || user?.organization_id;
+      const orgId = user?.organizationId || user?.organization_id;
       const effectiveTeamId = teamId || getEffectiveTeamId(teamId, user);
       
       await quarterlyPrioritiesService.updateMilestone(orgId, effectiveTeamId, priorityId, milestoneId, milestoneData);
@@ -457,7 +457,7 @@ const QuarterlyPlanningMeetingPage = () => {
 
   const handleUpdatePriority = async (priorityId, updates) => {
     try {
-      const orgId = localStorage.getItem('impersonatedOrgId') || user?.organizationId || user?.organization_id;
+      const orgId = user?.organizationId || user?.organization_id;
       const effectiveTeamId = teamId || getEffectiveTeamId(teamId, user);
       
       await quarterlyPrioritiesService.updatePriority(orgId, effectiveTeamId, priorityId, updates);
@@ -531,7 +531,7 @@ const QuarterlyPlanningMeetingPage = () => {
 
   const handleCreatePriority = async () => {
     try {
-      const orgId = localStorage.getItem('impersonatedOrgId') || user?.organizationId || user?.organization_id;
+      const orgId = user?.organizationId || user?.organization_id;
       const effectiveTeamId = teamId || getEffectiveTeamId(teamId, user);
       
       const priorityData = {
@@ -832,7 +832,7 @@ const QuarterlyPlanningMeetingPage = () => {
                     <Button
                       onClick={async () => {
                         try {
-                          const orgId = localStorage.getItem('impersonatedOrgId') || user?.organizationId || user?.organization_id;
+                          const orgId = user?.organizationId || user?.organization_id;
                           const effectiveTeamId = teamId || getEffectiveTeamId(teamId, user);
                           
                           // Archive completed priorities
@@ -860,7 +860,7 @@ const QuarterlyPlanningMeetingPage = () => {
                     <Button
                       onClick={async () => {
                         try {
-                          const orgId = localStorage.getItem('impersonatedOrgId') || user?.organizationId || user?.organization_id;
+                          const orgId = user?.organizationId || user?.organization_id;
                           const effectiveTeamId = teamId || getEffectiveTeamId(teamId, user);
                           
                           // Add incomplete priorities to issues list
@@ -1088,7 +1088,7 @@ const QuarterlyPlanningMeetingPage = () => {
                   <div className="flex gap-2">
                     <Button
                       onClick={() => {
-                        const orgId = localStorage.getItem('impersonatedOrgId') || user?.organizationId || user?.organization_id;
+                        const orgId = user?.organizationId || user?.organization_id;
                         window.open(`/organizations/${orgId}/smart-rock-assistant`, '_blank');
                       }}
                       variant="outline"

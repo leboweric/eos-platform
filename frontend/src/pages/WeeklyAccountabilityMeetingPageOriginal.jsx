@@ -180,7 +180,7 @@ const WeeklyAccountabilityMeetingPage = () => {
     try {
       setLoading(true);
       setError(null);
-      const orgId = localStorage.getItem('impersonatedOrgId') || user?.organizationId || user?.organization_id;
+      const orgId = user?.organizationId || user?.organization_id;
       // Use the same default as ScorecardPage if teamId is not provided
       const effectiveTeamId = teamId || user?.teamId || '00000000-0000-0000-0000-000000000000';
       console.log('Fetching scorecard with:', { orgId, teamId: effectiveTeamId });
@@ -213,7 +213,7 @@ const WeeklyAccountabilityMeetingPage = () => {
     try {
       setLoading(true);
       setError(null);
-      const orgId = localStorage.getItem('impersonatedOrgId') || user?.organizationId || user?.organization_id;
+      const orgId = user?.organizationId || user?.organization_id;
       // Use the same default as ScorecardPage if teamId is not provided
       const effectiveTeamId = teamId || user?.teamId || '00000000-0000-0000-0000-000000000000';
       
@@ -634,7 +634,7 @@ const WeeklyAccountabilityMeetingPage = () => {
   // Priority handlers for FullPriorityCard
   const handleUpdatePriority = async (priorityId, updates) => {
     try {
-      const orgId = localStorage.getItem('impersonatedOrgId') || user?.organizationId || user?.organization_id;
+      const orgId = user?.organizationId || user?.organization_id;
       const teamId = user?.teamId || '00000000-0000-0000-0000-000000000000';
       
       await quarterlyPrioritiesService.updatePriority(orgId, teamId, priorityId, updates);
@@ -660,7 +660,7 @@ const WeeklyAccountabilityMeetingPage = () => {
 
   const handleUpdateMilestone = async (priorityId, milestoneId, completed) => {
     try {
-      const orgId = localStorage.getItem('impersonatedOrgId') || user?.organizationId || user?.organization_id;
+      const orgId = user?.organizationId || user?.organization_id;
       const teamId = user?.teamId || '00000000-0000-0000-0000-000000000000';
       
       await quarterlyPrioritiesService.updateMilestone(orgId, teamId, priorityId, milestoneId, { completed });
@@ -690,7 +690,7 @@ const WeeklyAccountabilityMeetingPage = () => {
 
   const handleCreateMilestone = async (priorityId, milestoneData) => {
     try {
-      const orgId = localStorage.getItem('impersonatedOrgId') || user?.organizationId || user?.organization_id;
+      const orgId = user?.organizationId || user?.organization_id;
       const teamId = user?.teamId || '00000000-0000-0000-0000-000000000000';
       
       const newMilestone = await quarterlyPrioritiesService.createMilestone(orgId, teamId, priorityId, milestoneData);
@@ -718,7 +718,7 @@ const WeeklyAccountabilityMeetingPage = () => {
 
   const handleEditMilestone = async (priorityId, milestoneId, updates) => {
     try {
-      const orgId = localStorage.getItem('impersonatedOrgId') || user?.organizationId || user?.organization_id;
+      const orgId = user?.organizationId || user?.organization_id;
       const teamId = user?.teamId || '00000000-0000-0000-0000-000000000000';
       
       await quarterlyPrioritiesService.updateMilestone(orgId, teamId, priorityId, milestoneId, updates);
@@ -748,7 +748,7 @@ const WeeklyAccountabilityMeetingPage = () => {
 
   const handleDeleteMilestone = async (priorityId, milestoneId) => {
     try {
-      const orgId = localStorage.getItem('impersonatedOrgId') || user?.organizationId || user?.organization_id;
+      const orgId = user?.organizationId || user?.organization_id;
       const teamId = user?.teamId || '00000000-0000-0000-0000-000000000000';
       
       await quarterlyPrioritiesService.deleteMilestone(orgId, teamId, priorityId, milestoneId);
@@ -776,7 +776,7 @@ const WeeklyAccountabilityMeetingPage = () => {
 
   const handleAddPriorityUpdate = async (priorityId, updateText, statusChange = null) => {
     try {
-      const orgId = localStorage.getItem('impersonatedOrgId') || user?.organizationId || user?.organization_id;
+      const orgId = user?.organizationId || user?.organization_id;
       const teamId = user?.teamId || '00000000-0000-0000-0000-000000000000';
       
       await quarterlyPrioritiesService.addUpdate(orgId, teamId, priorityId, { text: updateText, statusChange });
@@ -898,7 +898,7 @@ const WeeklyAccountabilityMeetingPage = () => {
 
       // Send meeting summary email
       try {
-        const orgId = localStorage.getItem('impersonatedOrgId') || user?.organizationId || user?.organization_id;
+        const orgId = user?.organizationId || user?.organization_id;
         const effectiveTeamId = teamId || user?.teamId || '00000000-0000-0000-0000-000000000000';
         
         await meetingsService.concludeMeeting(orgId, effectiveTeamId, meetingData);

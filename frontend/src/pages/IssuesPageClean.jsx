@@ -426,7 +426,7 @@ const IssuesPageClean = () => {
 
   const handleSendCascade = async () => {
     try {
-      const orgId = localStorage.getItem('impersonatedOrgId') || user?.organizationId || user?.organization_id;
+      const orgId = user?.organizationId || user?.organization_id;
       const teamIds = cascadeToAll ? availableTeams.map(t => t.id) : selectedTeams;
       
       if (teamIds.length === 0) {

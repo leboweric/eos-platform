@@ -16,11 +16,7 @@ authAxios.interceptors.request.use(
       config.headers.Authorization = `Bearer ${token}`;
     }
     
-    // Add impersonation header if consultant is viewing client org
-    const impersonatedOrgId = localStorage.getItem('impersonatedOrgId');
-    if (impersonatedOrgId && localStorage.getItem('consultantImpersonating') === 'true') {
-      config.headers['X-Impersonated-Org-Id'] = impersonatedOrgId;
-    }
+    // Removed impersonation header - feature no longer supported
     
     return config;
   },

@@ -124,7 +124,7 @@ const ScorecardPageClean = () => {
       setLoading(true);
       setError(null);
       
-      const orgId = localStorage.getItem('impersonatedOrgId') || user?.organizationId || user?.organization_id;
+      const orgId = user?.organizationId || user?.organization_id;
       
       let teamId = selectedDepartment?.id;
       if (!teamId && isLeadershipMember) {
@@ -194,7 +194,7 @@ const ScorecardPageClean = () => {
 
   const fetchGroups = async () => {
     try {
-      const orgId = localStorage.getItem('impersonatedOrgId') || user?.organizationId || user?.organization_id;
+      const orgId = user?.organizationId || user?.organization_id;
       const teamId = selectedDepartment?.id || LEADERSHIP_TEAM_ID;
       
       if (!orgId || !teamId) return;
@@ -256,7 +256,7 @@ const ScorecardPageClean = () => {
       setSaving(true);
       setError(null);
       
-      const orgId = localStorage.getItem('impersonatedOrgId') || user?.organizationId || user?.organization_id;
+      const orgId = user?.organizationId || user?.organization_id;
       const teamId = selectedDepartment?.id;
       
       if (!teamId) {
@@ -314,7 +314,7 @@ const ScorecardPageClean = () => {
       setSaving(true);
       setError(null);
       
-      const orgId = localStorage.getItem('impersonatedOrgId') || user?.organizationId || user?.organization_id;
+      const orgId = user?.organizationId || user?.organization_id;
       const teamId = selectedDepartment?.id;
       
       if (!teamId) {
@@ -375,7 +375,7 @@ const ScorecardPageClean = () => {
       setSaving(true);
       setError(null);
       
-      const orgId = localStorage.getItem('impersonatedOrgId') || user?.organizationId || user?.organization_id;
+      const orgId = user?.organizationId || user?.organization_id;
       const teamId = selectedDepartment?.id;
       
       if (!orgId || !teamId) {

@@ -5,8 +5,8 @@ const getOrgId = () => {
   // Get user from Zustand store
   const user = useAuthStore.getState().user;
   
-  // Check for impersonated org ID first, then user's organization ID
-  const orgId = localStorage.getItem('impersonatedOrgId') || user?.organizationId || user?.organization_id;
+  // Get user's organization ID
+  const orgId = user?.organizationId || user?.organization_id;
   
   return orgId;
 };

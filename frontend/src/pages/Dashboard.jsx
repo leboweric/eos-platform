@@ -179,7 +179,7 @@ const DashboardClean = () => {
     try {
       setLoading(true);
       
-      const orgId = localStorage.getItem('impersonatedOrgId') || user?.organizationId || user?.organization_id;
+      const orgId = user?.organizationId || user?.organization_id;
       const teamId = getTeamId(user, 'leadership');
       
       let userDepartmentId = null;
@@ -761,7 +761,7 @@ const DashboardClean = () => {
           onSave={async (todoData) => {
             try {
               // Add organization_id and team_id if not present
-              const orgId = localStorage.getItem('impersonatedOrgId') || user?.organizationId || user?.organization_id;
+              const orgId = user?.organizationId || user?.organization_id;
               const teamId = user?.teamId || '00000000-0000-0000-0000-000000000000';
               
               const todoDataWithOrgInfo = {
@@ -796,7 +796,7 @@ const DashboardClean = () => {
           teamMembers={dashboardData.teamMembers || []}
           onSave={async (issueData) => {
             try {
-              const orgId = localStorage.getItem('impersonatedOrgId') || user?.organizationId || user?.organization_id;
+              const orgId = user?.organizationId || user?.organization_id;
               const teamId = user?.teamId || '00000000-0000-0000-0000-000000000000';
               
               const issueDataWithOrgInfo = {

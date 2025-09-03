@@ -24,7 +24,7 @@ const DepartmentIssuesPage = () => {
   const fetchIssues = async () => {
     try {
       setLoading(true);
-      const orgId = localStorage.getItem('impersonatedOrgId') || user?.organizationId || user?.organization_id;
+      const orgId = user?.organizationId || user?.organization_id;
       
       // Use the department's first team ID if available, otherwise use department ID
       const teamId = department.teams && department.teams.length > 0 

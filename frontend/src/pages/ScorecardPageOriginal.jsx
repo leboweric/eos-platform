@@ -105,7 +105,7 @@ const ScorecardPage = () => {
       setLoading(true);
       setError(null);
       
-      const orgId = localStorage.getItem('impersonatedOrgId') || user?.organizationId || user?.organization_id;
+      const orgId = user?.organizationId || user?.organization_id;
       
       // Use Leadership Team ID if leadership member without department selected
       let teamId = selectedDepartment?.id;
@@ -152,7 +152,7 @@ const ScorecardPage = () => {
 
   const fetchGroups = async () => {
     try {
-      const orgId = localStorage.getItem('impersonatedOrgId') || user?.organizationId || user?.organization_id;
+      const orgId = user?.organizationId || user?.organization_id;
       const teamId = selectedDepartment?.id || LEADERSHIP_TEAM_ID;
       
       if (!orgId || !teamId) return;
@@ -207,7 +207,7 @@ const ScorecardPage = () => {
       setSaving(true);
       setError(null);
       
-      const orgId = localStorage.getItem('impersonatedOrgId') || user?.organizationId || user?.organization_id;
+      const orgId = user?.organizationId || user?.organization_id;
       const teamId = selectedDepartment?.id;
       
       if (!teamId) {
@@ -272,7 +272,7 @@ const ScorecardPage = () => {
       setSaving(true);
       setError(null);
       
-      const orgId = localStorage.getItem('impersonatedOrgId') || user?.organizationId || user?.organization_id;
+      const orgId = user?.organizationId || user?.organization_id;
       const teamId = selectedDepartment?.id;
       
       if (!teamId) {
@@ -314,7 +314,7 @@ const ScorecardPage = () => {
       setSaving(true);
       setError(null);
       
-      const orgId = localStorage.getItem('impersonatedOrgId') || user?.organizationId || user?.organization_id;
+      const orgId = user?.organizationId || user?.organization_id;
       const teamId = selectedDepartment?.id;
       
       if (!orgId || !teamId) {
@@ -353,7 +353,7 @@ const ScorecardPage = () => {
       setSaving(true);
       setError(null);
       
-      const orgId = localStorage.getItem('impersonatedOrgId') || user?.organizationId || user?.organization_id;
+      const orgId = user?.organizationId || user?.organization_id;
       const teamId = selectedDepartment?.id;
       
       if (!teamId) {

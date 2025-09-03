@@ -3,7 +3,7 @@ import { useAuthStore } from '../stores/authStore';
 
 const getOrgId = () => {
   const user = useAuthStore.getState().user;
-  return localStorage.getItem('impersonatedOrgId') || user?.organizationId || user?.organization_id;
+  return user?.organizationId || user?.organization_id;
 };
 
 export const headlinesService = {

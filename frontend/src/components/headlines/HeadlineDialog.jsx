@@ -11,7 +11,7 @@ import { useAuthStore } from '../../stores/authStore';
 
 const HeadlineDialog = ({ open, onOpenChange, onSave }) => {
   const { user } = useAuthStore();
-  const orgId = localStorage.getItem('impersonatedOrgId') || user?.organizationId || user?.organization_id;
+  const orgId = user?.organizationId || user?.organization_id;
   const savedTheme = getOrgTheme(orgId);
   const themeColors = savedTheme || {
     primary: '#3B82F6',

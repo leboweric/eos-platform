@@ -858,7 +858,7 @@ const QuarterlyPrioritiesPageClean = () => {
 
   const handleUploadAttachment = async (priorityId, file) => {
     try {
-      const orgId = localStorage.getItem('impersonatedOrgId') || user?.organizationId || user?.organization_id;
+      const orgId = user?.organizationId || user?.organization_id;
       const teamId = getEffectiveTeamId(selectedDepartment?.id, user);
       
       if (!orgId || !teamId) {
@@ -908,7 +908,7 @@ const QuarterlyPrioritiesPageClean = () => {
 
   const handleDownloadAttachment = async (attachment) => {
     try {
-      const orgId = localStorage.getItem('impersonatedOrgId') || user?.organizationId || user?.organization_id;
+      const orgId = user?.organizationId || user?.organization_id;
       const teamId = getEffectiveTeamId(selectedDepartment?.id, user);
       
       if (!orgId || !teamId) {
@@ -934,7 +934,7 @@ const QuarterlyPrioritiesPageClean = () => {
     }
     
     try {
-      const orgId = localStorage.getItem('impersonatedOrgId') || user?.organizationId || user?.organization_id;
+      const orgId = user?.organizationId || user?.organization_id;
       const teamId = getEffectiveTeamId(selectedDepartment?.id, user);
       
       if (!orgId || !teamId) {
@@ -978,7 +978,7 @@ const QuarterlyPrioritiesPageClean = () => {
 
   const handlePriorityStatusChange = async (priorityId, newStatus) => {
     try {
-      const orgId = localStorage.getItem('impersonatedOrgId') || user?.organizationId || user?.organization_id;
+      const orgId = user?.organizationId || user?.organization_id;
       const teamId = getEffectiveTeamId(selectedDepartment?.id, user);
       
       // Log for debugging
