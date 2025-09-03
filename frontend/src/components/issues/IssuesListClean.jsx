@@ -407,8 +407,7 @@ const IssuesListClean = ({
           borderColor: showVoting && index === 0 ? themeColors.primary : 
                       showVoting && index === 1 ? themeColors.secondary :
                       showVoting && index === 2 ? themeColors.accent :
-                      hexToRgba(themeColors.accent, 0.3),
-          borderWidth: isTopThree ? '2px' : '1px'
+                      hexToRgba(themeColors.accent, 0.3)
         }}
         onDragOver={handleDragOver}
         onDragEnter={(e) => handleDragEnter(e, index)}
