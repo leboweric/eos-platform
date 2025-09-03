@@ -140,6 +140,39 @@ export const register = async (req, res) => {
 
       await commitTransaction(client);
 
+      // Create subscription after successful commit
+      // This replaces the trigger-based subscription creation to avoid timing issues
+      try {
+        await query(
+          `INSERT INTO subscriptions (
+            organization_id,
+            status,
+            plan_id,
+            trial_type,
+            trial_start_date,
+            trial_end_date,
+            billing_email,
+            user_count,
+            price_per_user
+          ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
+          ON CONFLICT (organization_id) DO NOTHING`,
+          [
+            organizationId,
+            'trialing',
+            'pro',
+            'free',
+            new Date(),
+            new Date(Date.now() + 30 * 24 * 60 * 60 * 1000), // 30 days from now
+            email,
+            1,
+            0
+          ]
+        );
+      } catch (subError) {
+        console.error('Failed to create subscription, but registration succeeded:', subError);
+        // Don't fail the registration if subscription creation fails
+      }
+
       // Send notification email about new trial (fire and forget)
       notifyNewTrial({
         firstName,
