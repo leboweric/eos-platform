@@ -242,6 +242,56 @@ export const concludeMeeting = async (req, res) => {
       }
     }
 
+    // Fetch quarterly priorities (rocks) completion status
+    let rockCompletionPercentage = 0;
+    let completedRocks = 0;
+    let totalRocks = 0;
+    
+    try {
+      // Get current quarter
+      const now = new Date();
+      const currentQuarter = Math.ceil((now.getMonth() + 1) / 3);
+      const currentYear = now.getFullYear();
+      
+      const rocksQuery = teamId && teamId !== '00000000-0000-0000-0000-000000000000'
+        ? `SELECT id, title, status, is_complete 
+           FROM quarterly_priorities 
+           WHERE team_id = $1 
+           AND quarter = $2
+           AND year = $3
+           AND deleted_at IS NULL
+           AND archived_at IS NULL`
+        : `SELECT id, title, status, is_complete 
+           FROM quarterly_priorities 
+           WHERE organization_id = $1 
+           AND (team_id IS NULL OR team_id = '00000000-0000-0000-0000-000000000000')
+           AND quarter = $2
+           AND year = $3
+           AND deleted_at IS NULL
+           AND archived_at IS NULL`;
+      
+      const rocksResult = await db.query(
+        rocksQuery,
+        teamId && teamId !== '00000000-0000-0000-0000-000000000000' 
+          ? [teamId, currentQuarter, currentYear]
+          : [organizationId, currentQuarter, currentYear]
+      );
+      
+      totalRocks = rocksResult.rows.length;
+      completedRocks = rocksResult.rows.filter(rock => 
+        rock.is_complete === true || rock.status === 'complete'
+      ).length;
+      
+      if (totalRocks > 0) {
+        rockCompletionPercentage = Math.round((completedRocks / totalRocks) * 100);
+      }
+      
+      console.log(`Rock completion: ${completedRocks} of ${totalRocks} (${rockCompletionPercentage}%)`);
+    } catch (rockError) {
+      console.error('Failed to fetch quarterly priorities:', rockError);
+      // Continue without rock data
+    }
+    
     // Fetch open todos from database
     let openTodos = [];
     try {
@@ -320,6 +370,9 @@ export const concludeMeeting = async (req, res) => {
       concludedBy: userName,
       summary: summary || '',
       metrics: metrics || {},
+      rockCompletionPercentage,
+      completedRocks,
+      totalRocks,
       openTodos: openTodos, // Primary focus: all open todos
       completedItems: formattedCompletedItems,
       newTodos: formattedNewTodos,
