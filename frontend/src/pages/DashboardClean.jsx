@@ -479,7 +479,7 @@ const DashboardClean = () => {
   
   const handleTodoStatusChange = async (todo, isCompleted) => {
     try {
-      const newStatus = isCompleted ? 'completed' : 'pending';
+      const newStatus = isCompleted ? 'complete' : 'incomplete';
       await todosService.updateTodo(todo.id, { status: newStatus });
       await fetchDashboardData();
     } catch (error) {

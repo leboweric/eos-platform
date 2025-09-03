@@ -286,7 +286,7 @@ const TodosListClean = ({
                       onStatusChange(todo.id, checked);
                     } else if (onUpdate) {
                       todosService.updateTodo(todo.id, { 
-                        status: checked ? 'completed' : 'pending' 
+                        status: checked ? 'complete' : 'incomplete' 
                       }).then(() => {
                         onUpdate();
                       });
@@ -366,7 +366,7 @@ const TodosListClean = ({
                         } else if (onUpdate) {
                           // Fallback to onUpdate if onStatusChange not provided
                           todosService.updateTodo(todo.id, { 
-                            status: checked ? 'completed' : 'pending' 
+                            status: checked ? 'complete' : 'incomplete' 
                           }).then(() => {
                             onUpdate();
                           });
