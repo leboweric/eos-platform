@@ -459,6 +459,7 @@ const QuarterlyPrioritiesPageClean = () => {
         throw new Error('Organization or department not found');
       }
       
+      // First update the milestone
       await quarterlyPrioritiesService.updateMilestone(orgId, teamId, priorityId, milestoneId, { completed });
       
       // Update local state and recalculate progress
@@ -474,10 +475,33 @@ const QuarterlyPrioritiesPageClean = () => {
         const totalCount = updatedMilestones.length;
         const newProgress = totalCount > 0 ? Math.round((completedCount / totalCount) * 100) : 0;
         
+        // Auto-update status based on milestone completion
+        let newStatus = p.status;
+        if (totalCount > 0) {
+          if (newProgress === 100) {
+            // All milestones complete - mark as complete
+            newStatus = 'complete';
+          } else if (newStatus === 'complete' && newProgress < 100) {
+            // Was complete but unchecked a milestone - revert to on-track
+            newStatus = 'on-track';
+          }
+        }
+        
+        console.log('Milestone Progress Calculation:', {
+          priorityId,
+          completedCount,
+          totalCount,
+          newProgress,
+          newStatus,
+          previousStatus: p.status,
+          milestones: updatedMilestones.map(m => ({ id: m.id, title: m.title, completed: m.completed }))
+        });
+        
         return { 
           ...p, 
           milestones: updatedMilestones,
-          progress: newProgress
+          progress: newProgress,
+          status: newStatus
         };
       };
       
@@ -498,6 +522,19 @@ const QuarterlyPrioritiesPageClean = () => {
       // Update selectedPriority if this is the currently selected one
       if (selectedPriority?.id === priorityId) {
         setSelectedPriority(prev => updatePriorityWithProgress(prev));
+      }
+      
+      // If status changed, update it on the backend
+      const currentPriority = companyPriorities.find(p => p.id === priorityId) || 
+        Object.values(teamMemberPriorities).flatMap(m => m.priorities || []).find(p => p.id === priorityId);
+      
+      if (currentPriority) {
+        const updatedPriority = updatePriorityWithProgress(currentPriority);
+        if (updatedPriority.status !== currentPriority.status) {
+          await quarterlyPrioritiesService.updatePriority(orgId, teamId, priorityId, { 
+            status: updatedPriority.status 
+          });
+        }
       }
     } catch (err) {
       console.error('Failed to update milestone:', err);
@@ -2316,7 +2353,7 @@ const QuarterlyPrioritiesPageClean = () => {
                       </div>
                       <div className="space-y-4">
                         {quarterData.companyPriorities.map(priority => {
-                          const isComplete = priority.status === 'complete' || priority.status === 'completed' || priority.progress === 100;
+                          const isComplete = priority.status === 'complete' || priority.status === 'completed';
                           
                           return (
                             <Card 
@@ -2383,7 +2420,7 @@ const QuarterlyPrioritiesPageClean = () => {
                               <h4 className="text-lg font-semibold text-gray-900">{firstPriority.owner.name}</h4>
                             </div>
                             {priorities.map(priority => {
-                              const isComplete = priority.status === 'complete' || priority.status === 'completed' || priority.progress === 100;
+                              const isComplete = priority.status === 'complete' || priority.status === 'completed';
                               
                               return (
                                 <Card 
@@ -2459,9 +2496,10 @@ const QuarterlyPrioritiesPageClean = () => {
               {expandedSections.companyPriorities && (
                 <div className="space-y-4 ml-8">
                   {(companyPriorities || []).map(priority => {
-                    const isComplete = priority.status === 'complete' || priority.status === 'completed' || priority.progress === 100;
+                    const isComplete = priority.status === 'complete' || priority.status === 'completed';
                     const daysUntil = !isComplete ? getDaysUntilDue(priority.dueDate || priority.due_date) : null;
-                    const displayProgress = isComplete ? 100 : (priority.progress || 0);
+                    // Always show actual progress, don't force 100% for complete status
+                    const displayProgress = priority.progress || 0;
                     
                     return (
                       <Card 
@@ -2579,9 +2617,10 @@ const QuarterlyPrioritiesPageClean = () => {
                   {expandedSections.individualPriorities[member.id] && (
                     <div className="space-y-4 ml-16">
                       {memberPriorities.map(priority => {
-                        const isComplete = priority.status === 'complete' || priority.status === 'completed' || priority.progress === 100;
+                        const isComplete = priority.status === 'complete' || priority.status === 'completed';
                         const daysUntil = !isComplete ? getDaysUntilDue(priority.dueDate || priority.due_date) : null;
-                        const displayProgress = isComplete ? 100 : (priority.progress || 0);
+                        // Always show actual progress, don't force 100% for complete status
+                        const displayProgress = priority.progress || 0;
                         
                         return (
                           <Card 

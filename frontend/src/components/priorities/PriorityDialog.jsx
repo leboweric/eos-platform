@@ -289,7 +289,18 @@ const PriorityDialog = ({
                     <Label htmlFor="status">Status</Label>
                     <Select 
                       value={formData.status} 
-                      onValueChange={(value) => setFormData({ ...formData, status: value })}
+                      onValueChange={(value) => {
+                        // Don't allow setting to complete unless all milestones are done
+                        if (value === 'complete') {
+                          const completedMilestones = priority?.milestones?.filter(m => m.completed).length || 0;
+                          const totalMilestones = priority?.milestones?.length || 0;
+                          if (totalMilestones > 0 && completedMilestones < totalMilestones) {
+                            alert(`Cannot mark as complete. Only ${completedMilestones} of ${totalMilestones} milestones are complete.`);
+                            return;
+                          }
+                        }
+                        setFormData({ ...formData, status: value });
+                      }}
                     >
                       <SelectTrigger id="status" className="mt-1">
                         <SelectValue />
