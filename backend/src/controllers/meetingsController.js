@@ -269,13 +269,21 @@ export const concludeMeeting = async (req, res) => {
       
       console.log(`Found ${todoResult.rows.length} incomplete to-dos for team ${teamId}`);
       
-      openTodos = todoResult.rows.map(todo => ({
-        title: todo.title || 'Untitled',
-        assignee: todo.first_name && todo.last_name 
-          ? `${todo.first_name} ${todo.last_name}`
-          : todo.assigned_to_name || 'Unassigned',
-        dueDate: todo.due_date ? new Date(todo.due_date).toLocaleDateString() : 'No due date'
-      }));
+      openTodos = todoResult.rows.map(todo => {
+        const dueDateObj = todo.due_date ? new Date(todo.due_date) : null;
+        const today = new Date();
+        today.setHours(0, 0, 0, 0); // Reset to start of day for fair comparison
+        const isPastDue = dueDateObj && dueDateObj < today;
+        
+        return {
+          title: todo.title || 'Untitled',
+          assignee: todo.first_name && todo.last_name 
+            ? `${todo.first_name} ${todo.last_name}`
+            : todo.assigned_to_name || 'Unassigned',
+          dueDate: dueDateObj ? dueDateObj.toLocaleDateString() : 'No due date',
+          isPastDue: isPastDue
+        };
+      });
     } catch (todoError) {
       console.error('Failed to fetch open todos:', todoError);
       // Continue with empty todos rather than failing
