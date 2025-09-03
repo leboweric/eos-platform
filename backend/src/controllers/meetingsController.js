@@ -248,38 +248,30 @@ export const concludeMeeting = async (req, res) => {
     let totalRocks = 0;
     
     try {
-      // Get current quarter
+      // Get current quarter - format as 'Q1', 'Q2', 'Q3', 'Q4'
       const now = new Date();
-      const currentQuarter = Math.ceil((now.getMonth() + 1) / 3);
+      const quarterNum = Math.ceil((now.getMonth() + 1) / 3);
+      const currentQuarter = `Q${quarterNum}`;
       const currentYear = now.getFullYear();
       
-      const rocksQuery = teamId && teamId !== '00000000-0000-0000-0000-000000000000'
-        ? `SELECT id, title, status, is_complete 
-           FROM quarterly_priorities 
-           WHERE team_id = $1 
-           AND quarter = $2
-           AND year = $3
-           AND deleted_at IS NULL
-           AND archived_at IS NULL`
-        : `SELECT id, title, status, is_complete 
-           FROM quarterly_priorities 
-           WHERE organization_id = $1 
-           AND (team_id IS NULL OR team_id = '00000000-0000-0000-0000-000000000000')
-           AND quarter = $2
-           AND year = $3
-           AND deleted_at IS NULL
-           AND archived_at IS NULL`;
+      // quarterly_priorities table only has organization_id, not team_id
+      // It has status column with values: 'on-track', 'off-track', 'complete'
+      // No is_complete or archived_at columns exist
+      const rocksQuery = `SELECT id, title, status, progress 
+         FROM quarterly_priorities 
+         WHERE organization_id = $1 
+         AND quarter = $2
+         AND year = $3
+         AND deleted_at IS NULL`;
       
       const rocksResult = await db.query(
         rocksQuery,
-        teamId && teamId !== '00000000-0000-0000-0000-000000000000' 
-          ? [teamId, currentQuarter, currentYear]
-          : [organizationId, currentQuarter, currentYear]
+        [organizationId, currentQuarter, currentYear]
       );
       
       totalRocks = rocksResult.rows.length;
       completedRocks = rocksResult.rows.filter(rock => 
-        rock.is_complete === true || rock.status === 'complete'
+        rock.status === 'complete' || rock.progress === 100
       ).length;
       
       if (totalRocks > 0) {
