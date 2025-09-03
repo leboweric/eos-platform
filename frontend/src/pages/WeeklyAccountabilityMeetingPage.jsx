@@ -2565,19 +2565,23 @@ const WeeklyAccountabilityMeetingPage = () => {
                       <TabsList className="bg-white/80 backdrop-blur-sm border border-white/50 rounded-xl p-1">
                         <TabsTrigger 
                           value="short_term" 
-                          className="min-w-[120px] data-[state=active]:text-white"
-                          style={{
-                            '--active-bg': `linear-gradient(135deg, ${themeColors.primary} 0%, ${themeColors.secondary} 100%)`
-                          }}
+                          className="min-w-[120px] relative z-10 data-[state=active]:text-white data-[state=active]:shadow-sm transition-all"
+                          data-state={issueTimeline === 'short_term' ? 'active' : 'inactive'}
+                          style={issueTimeline === 'short_term' ? {
+                            background: `linear-gradient(135deg, ${themeColors.primary} 0%, ${themeColors.secondary} 100%)`,
+                            color: 'white'
+                          } : {}}
                         >
                           Short Term ({shortTermIssues.length})
                         </TabsTrigger>
                         <TabsTrigger 
                           value="long_term" 
-                          className="min-w-[120px] data-[state=active]:text-white"
-                          style={{
-                            '--active-bg': `linear-gradient(135deg, ${themeColors.primary} 0%, ${themeColors.secondary} 100%)`
-                          }}
+                          className="min-w-[120px] relative z-10 data-[state=active]:text-white data-[state=active]:shadow-sm transition-all"
+                          data-state={issueTimeline === 'long_term' ? 'active' : 'inactive'}
+                          style={issueTimeline === 'long_term' ? {
+                            background: `linear-gradient(135deg, ${themeColors.primary} 0%, ${themeColors.secondary} 100%)`,
+                            color: 'white'
+                          } : {}}
                         >
                           Long Term ({longTermIssues.length})
                         </TabsTrigger>
