@@ -31,6 +31,8 @@ import {
   Plus
 } from 'lucide-react';
 import { issuesService } from '../../services/issuesService';
+import { getOrgTheme } from '../../utils/themeUtils';
+import { useAuthStore } from '../../stores/authStore';
 
 const IssueDialog = ({ 
   open, 
@@ -43,6 +45,7 @@ const IssueDialog = ({
   onCreateTodo,
   onSendCascadingMessage
 }) => {
+  const { user } = useAuthStore();
   const [formData, setFormData] = useState({
     title: '',
     description: '',
@@ -56,6 +59,11 @@ const IssueDialog = ({
   const [uploadingFiles, setUploadingFiles] = useState(false);
   const [error, setError] = useState(null);
   const [isDragging, setIsDragging] = useState(false);
+  const [themeColors, setThemeColors] = useState({
+    primary: '#3B82F6',
+    secondary: '#1E40AF',
+    accent: '#60A5FA'
+  });
   
   // Updates state
   const [updates, setUpdates] = useState([]);
@@ -63,6 +71,17 @@ const IssueDialog = ({
   const [loadingUpdates, setLoadingUpdates] = useState(false);
   const [savingUpdate, setSavingUpdate] = useState(false);
   const [showAddUpdate, setShowAddUpdate] = useState(false);
+
+  useEffect(() => {
+    const fetchTheme = async () => {
+      const orgId = localStorage.getItem('impersonatedOrgId') || user?.organizationId || user?.organization_id;
+      if (orgId) {
+        const theme = await getOrgTheme(orgId);
+        setThemeColors(theme);
+      }
+    };
+    fetchTheme();
+  }, [user]);
 
   useEffect(() => {
     if (issue) {
@@ -280,7 +299,12 @@ const IssueDialog = ({
         <form onSubmit={handleSubmit}>
           <DialogHeader className="pb-6">
             <div className="flex items-center gap-3 mb-2">
-              <div className="h-10 w-10 rounded-xl bg-gradient-to-br from-red-500 to-orange-600 flex items-center justify-center">
+              <div 
+                className="h-10 w-10 rounded-xl flex items-center justify-center"
+                style={{
+                  background: `linear-gradient(135deg, ${themeColors.primary} 0%, ${themeColors.secondary} 100%)`
+                }}
+              >
                 <Bug className="h-5 w-5 text-white" />
               </div>
               <div>
@@ -309,7 +333,7 @@ const IssueDialog = ({
                 onChange={(e) => setFormData({ ...formData, title: e.target.value })}
                 onFocus={(e) => e.target.setSelectionRange(e.target.value.length, e.target.value.length)}
                 placeholder="Brief description of the issue"
-                className="bg-white/80 backdrop-blur-sm border-white/20 focus:border-blue-400 rounded-xl shadow-sm transition-all duration-200"
+                className="bg-white/80 backdrop-blur-sm border-white/20 rounded-xl shadow-sm transition-all duration-200"
               />
             </div>
 
@@ -321,7 +345,7 @@ const IssueDialog = ({
                 onChange={(e) => setFormData({ ...formData, description: e.target.value })}
                 placeholder="Provide more details about the issue..."
                 rows={4}
-                className="bg-white/80 backdrop-blur-sm border-white/20 focus:border-blue-400 rounded-xl shadow-sm transition-all duration-200"
+                className="bg-white/80 backdrop-blur-sm border-white/20 rounded-xl shadow-sm transition-all duration-200"
               />
             </div>
 
@@ -346,7 +370,7 @@ const IssueDialog = ({
                   }
                 }}
               >
-                <SelectTrigger id="owner" className="bg-white/80 backdrop-blur-sm border-white/20 focus:border-blue-400 rounded-xl shadow-sm">
+                <SelectTrigger id="owner" className="bg-white/80 backdrop-blur-sm border-white/20 rounded-xl shadow-sm">
                   <SelectValue placeholder="Select an owner (optional)" />
                 </SelectTrigger>
                 <SelectContent className="bg-white/95 backdrop-blur-sm border-white/20 rounded-xl shadow-xl">
@@ -483,7 +507,10 @@ const IssueDialog = ({
                         size="sm"
                         onClick={handleAddUpdate}
                         disabled={!updateText.trim() || savingUpdate}
-                        className="bg-gradient-to-r from-red-600 to-orange-600 hover:from-red-700 hover:to-orange-700 text-white"
+                        className="text-white"
+                        style={{
+                          background: `linear-gradient(135deg, ${themeColors.primary} 0%, ${themeColors.secondary} 100%)`
+                        }}
                       >
                         {savingUpdate ? (
                           <>
@@ -606,7 +633,10 @@ const IssueDialog = ({
             <Button 
               type="submit" 
               disabled={loading || uploadingFiles}
-              className="bg-gradient-to-r from-red-600 to-orange-600 hover:from-red-700 hover:to-orange-700 text-white shadow-lg hover:shadow-xl transition-all duration-200 transform hover:scale-[1.02]"
+              className="text-white shadow-lg hover:shadow-xl transition-all duration-200 transform hover:scale-[1.02]"
+              style={{
+                background: `linear-gradient(135deg, ${themeColors.primary} 0%, ${themeColors.secondary} 100%)`
+              }}
             >
               {loading || uploadingFiles ? (
                 <>
