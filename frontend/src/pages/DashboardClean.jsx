@@ -280,84 +280,58 @@ const DashboardClean = () => {
       
       // Get priorities based on view mode
       let displayPriorities = [];
-      let allTeamPriorities = [];
+      let allPriorities = [];
       
-      console.log('Dashboard Priorities Response:', {
-        hasCompanyPriorities: !!prioritiesResponse.companyPriorities,
-        companyPrioritiesCount: prioritiesResponse.companyPriorities?.length || 0,
-        teamMemberPrioritiesKeys: Object.keys(prioritiesResponse.teamMemberPriorities || {}),
-        userId: user.id,
-        userEmail: user.email,
-        viewMode: viewMode
+      // Collect all priorities from the response
+      if (prioritiesResponse.companyPriorities) {
+        allPriorities.push(...prioritiesResponse.companyPriorities);
+      }
+      
+      if (prioritiesResponse.teamMemberPriorities) {
+        Object.entries(prioritiesResponse.teamMemberPriorities).forEach(([memberId, memberData]) => {
+          if (memberData.priorities) {
+            allPriorities.push(...memberData.priorities);
+          }
+        });
+      }
+      
+      // If no priorities in expected structure, check if priorities are in a flat array
+      if (allPriorities.length === 0 && Array.isArray(prioritiesResponse)) {
+        allPriorities = prioritiesResponse;
+      } else if (allPriorities.length === 0 && prioritiesResponse.priorities) {
+        allPriorities = prioritiesResponse.priorities;
+      }
+      
+      console.log('Dashboard - All priorities collected:', {
+        count: allPriorities.length,
+        viewMode: viewMode,
+        selectedTeamId: selectedTeamId,
+        userId: user.id
       });
       
       if (viewMode === 'team-view') {
-        // In team view, show all company and team member priorities
-        if (prioritiesResponse.companyPriorities) {
-          allTeamPriorities.push(...prioritiesResponse.companyPriorities);
-        }
-        
-        // Add all team member priorities
-        if (prioritiesResponse.teamMemberPriorities) {
-          Object.entries(prioritiesResponse.teamMemberPriorities).forEach(([memberId, memberData]) => {
-            if (memberData.priorities) {
-              allTeamPriorities.push(...memberData.priorities);
-            }
-          });
-        }
-        displayPriorities = allTeamPriorities;
+        // In team view, show all priorities for the selected team
+        displayPriorities = allPriorities;
       } else {
         // In my items view, show only user's priorities
-        const userPriorities = [];
-        
-        if (prioritiesResponse.companyPriorities) {
-          // Include company priorities owned by the user
-          const userCompanyPriorities = prioritiesResponse.companyPriorities.filter(p => {
-            // Check both owner.id and owner_id for compatibility
-            const ownerId = p.owner?.id || p.owner_id;
-            const isOwner = ownerId === user.id;
-            console.log(`Priority "${p.title}" - ownerId: ${ownerId}, userId: ${user.id}, isOwner: ${isOwner}`);
-            return isOwner;
-          });
-          console.log('User Company Priorities:', userCompanyPriorities.map(p => ({
-            title: p.title,
-            ownerId: p.owner?.id || p.owner_id,
-            status: p.status
-          })));
-          userPriorities.push(...userCompanyPriorities);
-        }
-        
-        if (prioritiesResponse.teamMemberPriorities?.[user.id]) {
-          const memberPriorities = prioritiesResponse.teamMemberPriorities[user.id].priorities;
-          console.log('User Individual Priorities:', memberPriorities.map(p => ({
-            title: p.title,
-            status: p.status
-          })));
-          userPriorities.push(...memberPriorities);
-        }
-        displayPriorities = userPriorities;
+        displayPriorities = allPriorities.filter(p => {
+          // Check multiple owner field formats
+          const ownerId = p.owner?.id || p.owner_id || p.assigned_to_id;
+          const isOwner = ownerId === user.id;
+          console.log(`Priority "${p.title}" - ownerId: ${ownerId}, userId: ${user.id}, isOwner: ${isOwner}`);
+          return isOwner;
+        });
+        console.log('User priorities filtered:', displayPriorities.length);
       }
       
       console.log('Total priorities found:', displayPriorities.length, 'for view:', viewMode);
       
       // Calculate priorities stats
-      let completedPriorities, totalPriorities, prioritiesProgress;
-      
-      if (viewMode === 'team-view') {
-        // In team view, show stats for all priorities
-        completedPriorities = displayPriorities.filter(p => p.status === 'complete').length;
-        totalPriorities = displayPriorities.length;
-        prioritiesProgress = totalPriorities > 0 ? Math.round((completedPriorities / totalPriorities) * 100) : 0;
-      } else if (isOnLeadershipTeam()) {
-        const companyPriorities = prioritiesResponse.companyPriorities || [];
-        completedPriorities = companyPriorities.filter(p => p.status === 'complete').length;
-        totalPriorities = companyPriorities.length;
-        prioritiesProgress = totalPriorities > 0 ? Math.round((completedPriorities / totalPriorities) * 100) : 0;
-      } else {
-        completedPriorities = displayPriorities.filter(p => p.status === 'complete').length;
-        totalPriorities = displayPriorities.length;
-        prioritiesProgress = totalPriorities > 0 ? Math.round((completedPriorities / totalPriorities) * 100) : 0;
-      }
+      const completedPriorities = displayPriorities.filter(p => 
+        p.status === 'complete' || p.status === 'completed'
+      ).length;
+      const totalPriorities = displayPriorities.length;
+      const prioritiesProgress = totalPriorities > 0 ? Math.round((completedPriorities / totalPriorities) * 100) : 0;
       
       // Process todos
       const allTodos = todosResponse.data.todos || [];
