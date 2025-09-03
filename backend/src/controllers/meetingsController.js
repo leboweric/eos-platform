@@ -275,15 +275,39 @@ export const concludeMeeting = async (req, res) => {
       // Continue without rock data
     }
     
-    // Include cascading message only if it was created in this meeting
+    // Fetch cascading messages from today for this specific team
     let cascadingMessages = [];
-    if (cascadingMessage && cascadingMessage.trim()) {
-      // Add the cascading message that was just created in this meeting
-      cascadingMessages = [{
-        message: cascadingMessage,
-        recipientTeams: 'All Teams' // Default to all teams for now
-      }];
-      console.log('Including cascading message from current meeting:', cascadingMessage);
+    try {
+      // Get today's cascading messages from this specific team
+      const cascadeQuery = `
+        SELECT 
+          cm.id,
+          cm.message,
+          COALESCE(
+            STRING_AGG(t.name, ', ' ORDER BY t.name),
+            'All Teams'
+          ) as recipient_teams
+        FROM cascading_messages cm
+        LEFT JOIN cascading_message_recipients cmr ON cm.id = cmr.message_id
+        LEFT JOIN teams t ON cmr.to_team_id = t.id
+        WHERE cm.organization_id = $1
+        AND cm.from_team_id = $2
+        AND cm.meeting_date = CURRENT_DATE
+        GROUP BY cm.id, cm.message, cm.created_at
+        ORDER BY cm.created_at DESC
+      `;
+      
+      const cascadeResult = await db.query(cascadeQuery, [organizationId, teamId]);
+      
+      console.log(`Found ${cascadeResult.rows.length} cascading messages from today for team ${teamId}`);
+      
+      cascadingMessages = cascadeResult.rows.map(msg => ({
+        message: msg.message,
+        recipientTeams: msg.recipient_teams
+      }));
+    } catch (cascadeError) {
+      console.error('Failed to fetch cascading messages:', cascadeError);
+      // Continue without cascading messages
     }
     
     // Fetch open todos from database
