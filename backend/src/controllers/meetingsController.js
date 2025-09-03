@@ -242,31 +242,21 @@ export const concludeMeeting = async (req, res) => {
       }
     }
 
-    // Fetch quarterly priorities (rocks) completion status
+    // Fetch quarterly priorities (rocks) completion status - same as getCurrentPriorities
     let rockCompletionPercentage = 0;
     let completedRocks = 0;
     let totalRocks = 0;
     
     try {
-      // Get current quarter - format as 'Q1', 'Q2', 'Q3', 'Q4'
-      const now = new Date();
-      const quarterNum = Math.ceil((now.getMonth() + 1) / 3);
-      const currentQuarter = `Q${quarterNum}`;
-      const currentYear = now.getFullYear();
-      
-      // quarterly_priorities table only has organization_id, not team_id
-      // It has status column with values: 'on-track', 'off-track', 'complete'
-      // No is_complete or archived_at columns exist
+      // Get current active priorities - no quarter filtering, just like the Rock Review page
       const rocksQuery = `SELECT id, title, status, progress 
          FROM quarterly_priorities 
          WHERE organization_id = $1 
-         AND quarter = $2
-         AND year = $3
          AND deleted_at IS NULL`;
       
       const rocksResult = await db.query(
         rocksQuery,
-        [organizationId, currentQuarter, currentYear]
+        [organizationId]
       );
       
       totalRocks = rocksResult.rows.length;
