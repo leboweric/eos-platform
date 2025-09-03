@@ -1984,7 +1984,7 @@ const WeeklyAccountabilityMeetingPage = () => {
                         </div>
                       </div>
                       {expandedSections.companyPriorities && (
-                        <div className="space-y-4 ml-7 mt-4">
+                        <div className="space-y-4 ml-7 mt-4 p-4 bg-slate-50/50 rounded-xl">
                           {companyPriorities.map(priority => {
                             const isComplete = priority.status === 'complete' || priority.status === 'completed' || priority.progress === 100;
                             const daysUntil = !isComplete ? getDaysUntilDue(priority.dueDate || priority.due_date) : null;
@@ -1993,12 +1993,12 @@ const WeeklyAccountabilityMeetingPage = () => {
                             return (
                               <Card 
                                 key={priority.id}
-                                className={`max-w-5xl transition-all duration-300 hover:shadow-lg hover:scale-[1.01] cursor-pointer ${
+                                className={`max-w-5xl transition-all duration-300 shadow-md hover:shadow-xl hover:scale-[1.01] cursor-pointer ${
                                   isComplete 
                                     ? 'bg-gradient-to-r from-green-50/80 to-emerald-50/80 border-green-200' 
                                     : priority.status === 'off-track'
                                     ? 'bg-gradient-to-r from-red-50/80 to-rose-50/80 border-red-200'
-                                    : 'bg-white/90 backdrop-blur-sm border-slate-200'
+                                    : 'bg-white border-slate-200'
                                 }`}
                                 onClick={() => {
                                   setSelectedPriority(priority);
@@ -2123,7 +2123,7 @@ const WeeklyAccountabilityMeetingPage = () => {
                               </Badge>
                             </div>
                             {isExpanded && (
-                              <div className="space-y-4 ml-7 mt-4">
+                              <div className="space-y-4 ml-7 mt-4 p-4 bg-slate-50/50 rounded-xl">
                                 {ownerPriorities.map(priority => {
                                   const isComplete = priority.status === 'complete' || priority.status === 'completed' || priority.progress === 100;
                                   const daysUntil = !isComplete ? getDaysUntilDue(priority.dueDate || priority.due_date) : null;
@@ -2132,12 +2132,12 @@ const WeeklyAccountabilityMeetingPage = () => {
                                   return (
                                     <Card 
                                       key={priority.id}
-                                      className={`max-w-5xl transition-all duration-300 hover:shadow-lg hover:scale-[1.01] cursor-pointer ${
+                                      className={`max-w-5xl transition-all duration-300 shadow-md hover:shadow-xl hover:scale-[1.01] cursor-pointer ${
                                         isComplete 
                                           ? 'bg-gradient-to-r from-green-50/80 to-emerald-50/80 border-green-200' 
                                           : priority.status === 'off-track'
                                           ? 'bg-gradient-to-r from-red-50/80 to-rose-50/80 border-red-200'
-                                          : 'bg-white/90 backdrop-blur-sm border-slate-200'
+                                          : 'bg-white border-slate-200'
                                       }`}
                                       onClick={() => {
                                         setSelectedPriority(priority);
