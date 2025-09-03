@@ -2405,7 +2405,8 @@ const QuarterlyPrioritiesPageClean = () => {
                 <div className="space-y-4 ml-8">
                   {(companyPriorities || []).map(priority => {
                     const isComplete = priority.status === 'complete' || priority.status === 'completed' || priority.progress === 100;
-                    const daysUntil = getDaysUntilDue(priority.dueDate || priority.due_date);
+                    const daysUntil = !isComplete ? getDaysUntilDue(priority.dueDate || priority.due_date) : null;
+                    const displayProgress = isComplete ? 100 : (priority.progress || 0);
                     
                     return (
                       <Card 
@@ -2462,9 +2463,9 @@ const QuarterlyPrioritiesPageClean = () => {
                             <div className="flex items-center gap-3">
                               <div className="text-right">
                                 <div className="text-2xl font-bold" style={{ color: themeColors.primary }}>
-                                  {priority.progress || 0}%
+                                  {displayProgress}%
                                 </div>
-                                <Progress value={priority.progress || 0} className="w-24 h-2" />
+                                <Progress value={displayProgress} className="w-24 h-2" />
                               </div>
                               {isComplete && (
                                 <Badge className="bg-green-100 text-green-800 border-green-200">
@@ -2518,7 +2519,8 @@ const QuarterlyPrioritiesPageClean = () => {
                     <div className="space-y-4 ml-16">
                       {memberPriorities.map(priority => {
                         const isComplete = priority.status === 'complete' || priority.status === 'completed' || priority.progress === 100;
-                        const daysUntil = getDaysUntilDue(priority.dueDate || priority.due_date);
+                        const daysUntil = !isComplete ? getDaysUntilDue(priority.dueDate || priority.due_date) : null;
+                        const displayProgress = isComplete ? 100 : (priority.progress || 0);
                         
                         return (
                           <Card 
@@ -2571,9 +2573,9 @@ const QuarterlyPrioritiesPageClean = () => {
                                 <div className="flex items-center gap-3">
                                   <div className="text-right">
                                     <div className="text-2xl font-bold" style={{ color: themeColors.primary }}>
-                                      {priority.progress || 0}%
+                                      {displayProgress}%
                                     </div>
-                                    <Progress value={priority.progress || 0} className="w-24 h-2" />
+                                    <Progress value={displayProgress} className="w-24 h-2" />
                                   </div>
                                   {isComplete && (
                                     <Badge className="bg-green-100 text-green-800 border-green-200">
