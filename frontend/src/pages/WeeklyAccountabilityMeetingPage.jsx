@@ -2141,18 +2141,22 @@ const WeeklyAccountabilityMeetingPage = () => {
                                         )}
                                       </div>
                                     </div>
-                                    <div className="flex items-center gap-3">
+                                    <div className="flex flex-col items-end gap-2">
                                       <div className="text-right">
                                         <div className="text-2xl font-bold" style={{ color: themeColors.primary }}>
                                           {displayProgress}%
                                         </div>
                                         <Progress value={displayProgress} className="w-24 h-2" />
                                       </div>
-                                      {isComplete && (
-                                        <Badge className="bg-green-100 text-green-800 border-green-200">
-                                          Complete
-                                        </Badge>
-                                      )}
+                                      {/* Status badge underneath progress bar */}
+                                      <Badge className={`${
+                                        isComplete ? 'bg-green-100 text-green-800 border-green-200' :
+                                        priority.status === 'off-track' ? 'bg-red-100 text-red-800 border-red-200' :
+                                        'bg-blue-100 text-blue-800 border-blue-200'
+                                      }`}>
+                                        {isComplete ? 'Complete' :
+                                         priority.status === 'off-track' ? 'Off Track' : 'On Track'}
+                                      </Badge>
                                     </div>
                                   </div>
                                 </CardHeader>
@@ -2276,18 +2280,22 @@ const WeeklyAccountabilityMeetingPage = () => {
                                               )}
                                             </div>
                                           </div>
-                                          <div className="flex items-center gap-3">
+                                          <div className="flex flex-col items-end gap-2">
                                             <div className="text-right">
                                               <div className="text-2xl font-bold" style={{ color: themeColors.primary }}>
                                                 {displayProgress}%
                                               </div>
                                               <Progress value={displayProgress} className="w-24 h-2" />
                                             </div>
-                                            {isComplete && (
-                                              <Badge className="bg-green-100 text-green-800 border-green-200">
-                                                Complete
-                                              </Badge>
-                                            )}
+                                            {/* Status badge underneath progress bar */}
+                                            <Badge className={`${
+                                              isComplete ? 'bg-green-100 text-green-800 border-green-200' :
+                                              priority.status === 'off-track' ? 'bg-red-100 text-red-800 border-red-200' :
+                                              'bg-blue-100 text-blue-800 border-blue-200'
+                                            }`}>
+                                              {isComplete ? 'Complete' :
+                                               priority.status === 'off-track' ? 'Off Track' : 'On Track'}
+                                            </Badge>
                                           </div>
                                         </div>
                                       </CardHeader>
