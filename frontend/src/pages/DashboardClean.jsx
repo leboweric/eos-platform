@@ -21,8 +21,7 @@ import HeadlineDialog from '../components/headlines/HeadlineDialog';
 import { headlinesService } from '../services/headlinesService';
 import { useSelectedTodos } from '../contexts/SelectedTodosContext';
 import { useTerminology } from '../contexts/TerminologyContext';
-import PriorityCardClean from '../components/priorities/PriorityCardClean';
-import { Dialog, DialogContent } from '@/components/ui/dialog';
+import PriorityDialog from '../components/priorities/PriorityDialog';
 import {
   AlertCircle,
   CheckSquare,
@@ -1256,34 +1255,24 @@ const DashboardClean = () => {
         />
 
         {/* Priority Dialog */}
-        <Dialog open={showPriorityDialog} onOpenChange={setShowPriorityDialog}>
-          <DialogContent className="max-w-5xl max-h-[90vh] overflow-y-auto p-0">
-            {selectedPriority && (
-              <div className="p-6">
-                <PriorityCardClean
-                priority={selectedPriority}
-                isCompany={false}
-                isArchived={false}
-                onUpdate={handleUpdatePriority}
-                onArchive={handleArchivePriority}
-                onAddMilestone={handleAddMilestone}
-                onEditMilestone={handleEditMilestone}
-                onDeleteMilestone={handleDeleteMilestone}
-                onToggleMilestone={handleToggleMilestone}
-                onAddUpdate={handleAddUpdate}
-                onEditUpdate={handleEditUpdate}
-                onDeleteUpdate={handleDeleteUpdate}
-                onStatusChange={handleStatusChange}
-                onUploadAttachment={handleUploadAttachment}
-                onDownloadAttachment={handleDownloadAttachment}
-                onDeleteAttachment={handleDeleteAttachment}
-                teamMembers={dashboardData.teamMembers || []}
-                readOnly={false}
-                />
-              </div>
-            )}
-          </DialogContent>
-        </Dialog>
+        <PriorityDialog
+          open={showPriorityDialog}
+          onOpenChange={setShowPriorityDialog}
+          priority={selectedPriority}
+          teamMembers={dashboardData.teamMembers || []}
+          onUpdate={handleUpdatePriority}
+          onAddMilestone={handleAddMilestone}
+          onEditMilestone={handleEditMilestone}
+          onDeleteMilestone={handleDeleteMilestone}
+          onToggleMilestone={handleToggleMilestone}
+          onAddUpdate={handleAddUpdate}
+          onEditUpdate={handleEditUpdate}
+          onDeleteUpdate={handleDeleteUpdate}
+          onUploadAttachment={handleUploadAttachment}
+          onDownloadAttachment={handleDownloadAttachment}
+          onDeleteAttachment={handleDeleteAttachment}
+          onArchive={handleArchivePriority}
+        />
       </div>
     </div>
   );
