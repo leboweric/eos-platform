@@ -1034,11 +1034,22 @@ const DashboardClean = () => {
             </div>
             
             {dashboardData.todos.length === 0 ? (
-              <div className="text-center py-8 px-4 bg-gradient-to-br from-slate-50 to-blue-50 rounded-xl border border-slate-200">
+              <div className="text-center py-8 px-4 rounded-xl border border-slate-200" style={{
+                background: `linear-gradient(135deg, ${hexToRgba(themeColors.primary, 0.05)} 0%, ${hexToRgba(themeColors.secondary, 0.05)} 100%)`
+              }}>
                 <p className="text-slate-600 mb-3">No to-dos assigned</p>
                 <Button 
-                  className="bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white rounded-lg transition-all transform hover:scale-[1.02]"
+                  className="text-white rounded-lg transition-all transform hover:scale-[1.02]"
                   size="sm" 
+                  style={{
+                    background: `linear-gradient(135deg, ${themeColors.primary} 0%, ${themeColors.secondary} 100%)`
+                  }}
+                  onMouseEnter={(e) => {
+                    e.currentTarget.style.filter = 'brightness(1.1)';
+                  }}
+                  onMouseLeave={(e) => {
+                    e.currentTarget.style.filter = 'brightness(1)';
+                  }}
                   onClick={handleCreateTodo}
                 >
                   <Plus className="h-3 w-3 mr-1" />
