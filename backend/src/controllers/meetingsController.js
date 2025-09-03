@@ -244,7 +244,7 @@ export const concludeMeeting = async (req, res) => {
            FROM todos t
            LEFT JOIN users u ON t.assigned_to = u.id::text
            WHERE t.team_id = $1 
-           AND t.status != 'complete' 
+           AND t.status = 'incomplete' 
            AND t.deleted_at IS NULL
            ORDER BY t.due_date ASC NULLS LAST, t.created_at DESC`
         : `SELECT t.*, u.first_name, u.last_name 
@@ -252,7 +252,7 @@ export const concludeMeeting = async (req, res) => {
            LEFT JOIN users u ON t.assigned_to = u.id::text
            WHERE t.organization_id = $1 
            AND (t.team_id IS NULL OR t.team_id = '00000000-0000-0000-0000-000000000000')
-           AND t.status != 'complete' 
+           AND t.status = 'incomplete' 
            AND t.deleted_at IS NULL
            ORDER BY t.due_date ASC NULLS LAST, t.created_at DESC`;
       
@@ -260,6 +260,8 @@ export const concludeMeeting = async (req, res) => {
         todoQuery,
         [teamId && teamId !== '00000000-0000-0000-0000-000000000000' ? teamId : organizationId]
       );
+      
+      console.log(`Found ${todoResult.rows.length} incomplete to-dos for team ${teamId}`);
       
       openTodos = todoResult.rows.map(todo => ({
         title: todo.title || 'Untitled',
