@@ -35,10 +35,14 @@ const Logo = ({
 
   useEffect(() => {
     if (useThemeColors) {
-      const orgId = user?.organizationId || user?.organization_id || localStorage.getItem('organizationId');
-      const savedTheme = getOrgTheme(orgId);
-      if (savedTheme) {
-        setThemeColors(savedTheme);
+      try {
+        const orgId = user?.organizationId || user?.organization_id || localStorage.getItem('organizationId');
+        const savedTheme = getOrgTheme(orgId);
+        if (savedTheme && savedTheme.primary && savedTheme.secondary) {
+          setThemeColors(savedTheme);
+        }
+      } catch (error) {
+        console.error('Error loading theme colors for main logo:', error);
       }
     }
   }, [useThemeColors, user]);
@@ -120,16 +124,20 @@ export const LogoSVG = ({
 
   useEffect(() => {
     if (useThemeColors) {
-      const orgId = user?.organizationId || user?.organization_id || localStorage.getItem('organizationId');
-      const savedTheme = getOrgTheme(orgId);
-      if (savedTheme) {
-        setColors({
-          primary: savedTheme.primary,
-          secondary: savedTheme.secondary
-        });
+      try {
+        const orgId = user?.organizationId || user?.organization_id || localStorage.getItem('organizationId');
+        const savedTheme = getOrgTheme(orgId);
+        if (savedTheme && savedTheme.primary && savedTheme.secondary) {
+          setColors({
+            primary: savedTheme.primary || primaryColor,
+            secondary: savedTheme.secondary || secondaryColor
+          });
+        }
+      } catch (error) {
+        console.error('Error loading theme colors for SVG logo:', error);
       }
     }
-  }, [useThemeColors, user]);
+  }, [useThemeColors, user, primaryColor, secondaryColor]);
 
   // Generate unique ID for this instance to avoid conflicts
   const gradientId = `logoGradient-${Math.random().toString(36).substr(2, 9)}`;
@@ -237,15 +245,19 @@ export const LogoText = ({
 
   useEffect(() => {
     if (useThemeColors) {
-      const orgId = user?.organizationId || user?.organization_id || localStorage.getItem('organizationId');
-      const savedTheme = getOrgTheme(orgId);
-      if (savedTheme) {
-        setThemeColors(savedTheme);
+      try {
+        const orgId = user?.organizationId || user?.organization_id || localStorage.getItem('organizationId');
+        const savedTheme = getOrgTheme(orgId);
+        if (savedTheme && savedTheme.primary && savedTheme.secondary) {
+          setThemeColors(savedTheme);
+        }
+      } catch (error) {
+        console.error('Error loading theme colors for logo:', error);
       }
     }
   }, [useThemeColors, user]);
 
-  if (gradient && useThemeColors) {
+  if (gradient && useThemeColors && themeColors.primary && themeColors.secondary) {
     return (
       <span 
         className={`${size} font-bold bg-gradient-to-r bg-clip-text text-transparent ${className}`}

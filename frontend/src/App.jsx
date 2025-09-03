@@ -78,6 +78,29 @@ function App() {
   const [needsLegalAcceptance, setNeedsLegalAcceptance] = useState(false);
   const [checkingAgreements, setCheckingAgreements] = useState(false);
 
+  // Add global error handler
+  useEffect(() => {
+    const handleError = (event) => {
+      console.error('Global error caught:', event.error);
+      console.error('Error message:', event.message);
+      console.error('Error stack:', event.error?.stack);
+      console.error('Error location:', event.filename, 'Line:', event.lineno, 'Column:', event.colno);
+    };
+    
+    const handleUnhandledRejection = (event) => {
+      console.error('Unhandled promise rejection:', event.reason);
+      console.error('Promise:', event.promise);
+    };
+    
+    window.addEventListener('error', handleError);
+    window.addEventListener('unhandledrejection', handleUnhandledRejection);
+    
+    return () => {
+      window.removeEventListener('error', handleError);
+      window.removeEventListener('unhandledrejection', handleUnhandledRejection);
+    };
+  }, []);
+
   // Check if we're on a client-specific subdomain
   const getDefaultRoute = () => {
     const hostname = window.location.hostname;
