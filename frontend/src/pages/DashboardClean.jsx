@@ -835,7 +835,7 @@ const DashboardClean = () => {
                     e.currentTarget.style.filter = 'brightness(1)';
                   }}
                   onClick={() => {
-                    setEditingPriority(null);
+                    setSelectedPriority(null);
                     setShowPriorityDialog(true);
                   }}
                 >
