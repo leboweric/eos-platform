@@ -503,8 +503,10 @@ const WeeklyAccountabilityMeetingPage = () => {
   const fetchScorecardData = async () => {
     try {
       const orgId = user?.organizationId || user?.organization_id;
-      const effectiveTeamId = getEffectiveTeamId(teamId, user);
-      const departmentId = teamId || user?.teamId;
+      // Handle "null" string from URL params
+      const cleanTeamId = (teamId === 'null' || teamId === 'undefined') ? null : teamId;
+      const effectiveTeamId = getEffectiveTeamId(cleanTeamId, user);
+      const departmentId = cleanTeamId || user?.teamId;
       
       console.log('WeeklyMeeting - Fetching scorecard data for:', { orgId, effectiveTeamId, departmentId });
       
@@ -545,7 +547,9 @@ const WeeklyAccountabilityMeetingPage = () => {
   const fetchPrioritiesData = async () => {
     try {
       const orgId = user?.organizationId || user?.organization_id;
-      const effectiveTeamId = getEffectiveTeamId(teamId, user);
+      // Handle "null" string from URL params
+      const cleanTeamId = (teamId === 'null' || teamId === 'undefined') ? null : teamId;
+      const effectiveTeamId = getEffectiveTeamId(cleanTeamId, user);
       
       const response = await quarterlyPrioritiesService.getCurrentPriorities(orgId, effectiveTeamId);
       
@@ -568,7 +572,9 @@ const WeeklyAccountabilityMeetingPage = () => {
 
   const fetchIssuesData = async () => {
     try {
-      const effectiveTeamId = getEffectiveTeamId(teamId, user);
+      // Handle "null" string from URL params
+      const cleanTeamId = (teamId === 'null' || teamId === 'undefined') ? null : teamId;
+      const effectiveTeamId = getEffectiveTeamId(cleanTeamId, user);
       
       // Fetch both short-term and long-term issues
       const [shortTermResponse, longTermResponse] = await Promise.all([
@@ -600,7 +606,9 @@ const WeeklyAccountabilityMeetingPage = () => {
 
   const fetchTodosData = async () => {
     try {
-      const effectiveTeamId = getEffectiveTeamId(teamId, user);
+      // Handle "null" string from URL params
+      const cleanTeamId = (teamId === 'null' || teamId === 'undefined') ? null : teamId;
+      const effectiveTeamId = getEffectiveTeamId(cleanTeamId, user);
       
       const response = await todosService.getTodos(
         null, // status filter
@@ -665,7 +673,9 @@ const WeeklyAccountabilityMeetingPage = () => {
 
   const fetchHeadlines = async () => {
     try {
-      const effectiveTeamId = getEffectiveTeamId(teamId, user);
+      // Handle "null" string from URL params
+      const cleanTeamId = (teamId === 'null' || teamId === 'undefined') ? null : teamId;
+      const effectiveTeamId = getEffectiveTeamId(cleanTeamId, user);
       console.log('Fetching headlines for teamId:', effectiveTeamId);
       
       // Fetch headlines for this team

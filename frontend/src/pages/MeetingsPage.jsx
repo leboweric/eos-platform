@@ -100,9 +100,8 @@ const MeetingsPage = () => {
   ];
 
   useEffect(() => {
-    if (selectedDepartment) {
-      fetchUserTeams();
-    }
+    // Always fetch teams, even without a selected department
+    fetchUserTeams();
     fetchOrganizationTheme();
     
     // Listen for theme changes
@@ -145,17 +144,25 @@ const MeetingsPage = () => {
     try {
       setLoadingTeams(true);
       
-      // Use the selected department
-      const teamId = selectedDepartment?.id;
+      // Use the selected department, or default to Leadership Team
+      const teamId = selectedDepartment?.id || user?.teamId || user?.team_id;
+      const teamName = selectedDepartment?.name || 'Leadership Team';
       
       if (!teamId) {
+        // If still no team ID, use a placeholder for Leadership Team
+        const defaultTeam = {
+          id: '00000000-0000-0000-0000-000000000000',
+          name: 'Leadership Team'
+        };
+        setTeams([defaultTeam]);
+        setSelectedTeamId(defaultTeam.id);
         setLoadingTeams(false);
         return;
       }
       
       const defaultTeam = {
         id: teamId,
-        name: selectedDepartment?.name
+        name: teamName
       };
       setTeams([defaultTeam]);
       setSelectedTeamId(teamId);
