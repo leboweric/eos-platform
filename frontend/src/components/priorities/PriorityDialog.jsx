@@ -124,8 +124,16 @@ const PriorityDialog = ({
     }
     setFiles([]);
     setError(null);
-    setActiveTab('details');
-  }, [priority]);
+    // Only reset to details tab when dialog is opened (priority changes from null to object)
+    // Don't reset when priority is just updated (milestones added/removed)
+  }, [priority?.id]); // Only depend on ID, not the entire object
+  
+  // Reset tab to details only when dialog opens/closes
+  useEffect(() => {
+    if (open) {
+      setActiveTab('details');
+    }
+  }, [open]);
 
   const getStatusColor = (status) => {
     switch (status) {
