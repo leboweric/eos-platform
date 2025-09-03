@@ -903,7 +903,16 @@ const DashboardClean = () => {
               // My Items View: Flat list
               <div className="space-y-3">
                 {dashboardData.priorities.map((priority) => {
-                  const isComplete = priority.status === 'complete';
+                  // Check multiple ways a priority might be marked as complete
+                  const isComplete = priority.status === 'complete' || 
+                                     priority.status === 'completed' || 
+                                     priority.progress === 100;
+                  console.log('Priority status check:', { 
+                    title: priority.title, 
+                    status: priority.status, 
+                    progress: priority.progress, 
+                    isComplete 
+                  });
                   return (
                     <div 
                       key={priority.id} 
