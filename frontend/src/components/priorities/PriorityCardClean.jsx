@@ -376,32 +376,8 @@ const PriorityCardClean = ({
                   </>
                 )}
 
-                {onStatusChange && !isEditing && priority.status !== 'complete' ? (
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => {
-                      const currentStatus = priority.status || 'on-track';
-                      const newStatus = currentStatus === 'on-track' ? 'off-track' : 'on-track';
-                      onStatusChange(priority.id, newStatus);
-                    }}
-                    className={`flex items-center gap-2 shadow-sm backdrop-blur-sm transition-all duration-200 ${
-                      priority.status === 'off-track' ? 
-                      'border-red-300 bg-gradient-to-r from-red-50 to-rose-50 hover:from-red-100 hover:to-rose-100' :
-                      'border-green-300 bg-gradient-to-r from-green-50 to-emerald-50 hover:from-green-100 hover:to-emerald-100'
-                    }`}
-                  >
-                    <div className={`w-2.5 h-2.5 rounded-full ${getStatusDotColor(priority.status)}`} />
-                    <span className="capitalize font-medium">
-                      {(priority.status || 'on-track').replace('-', ' ')}
-                    </span>
-                  </Button>
-                ) : (
-                  <div className="flex items-center gap-2">
-                    <div className={`w-2 h-2 rounded-full ${getStatusDotColor(isEditing ? editForm.status : priority.status)}`} />
-                    <span className="capitalize font-medium">{(isEditing ? editForm.status : priority.status).replace('-', ' ')}</span>
-                  </div>
-                )}
+                {/* Status indicator moved to below progress bar - keeping minimal dot indicator in header */}
+                <div className={`w-2.5 h-2.5 rounded-full ${getStatusDotColor(isEditing ? editForm.status : priority.status)}`} />
                 
                 {/* Milestone indicator */}
                 {priority.milestones && priority.milestones.length > 0 && (
@@ -517,16 +493,64 @@ const PriorityCardClean = ({
               </div>
             )}
             
-            {/* Progress Section - Only show if milestones exist */}
-            {priority.milestones && priority.milestones.length > 0 && (
-              <div className="space-y-2">
-                <span className="text-sm font-medium text-gray-700">Progress</span>
-                <div className="flex items-center gap-3">
-                  <Progress value={priority.progress || 0} className="h-2 max-w-[200px]" />
-                  <span className="text-sm text-gray-600">{priority.progress || 0}%</span>
+            {/* Progress Section with Status - Always show status */}
+            <div className="space-y-3">
+              {priority.milestones && priority.milestones.length > 0 && (
+                <div className="space-y-2">
+                  <span className="text-sm font-medium text-gray-700">Progress</span>
+                  <div className="flex items-center gap-3">
+                    <Progress value={priority.progress || 0} className="h-2 max-w-[200px]" />
+                    <span className="text-sm text-gray-600">{priority.progress || 0}%</span>
+                  </div>
                 </div>
+              )}
+              
+              {/* Status Badge - Always visible */}
+              <div className="flex items-center gap-2">
+                {onStatusChange && !isEditing && priority.status !== 'complete' ? (
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => {
+                      const currentStatus = priority.status || 'on-track';
+                      const newStatus = currentStatus === 'on-track' ? 'off-track' : 'on-track';
+                      onStatusChange(priority.id, newStatus);
+                    }}
+                    className={`flex items-center gap-2 shadow-sm backdrop-blur-sm transition-all duration-200 ${
+                      priority.status === 'off-track' ? 
+                      'border-red-300 bg-gradient-to-r from-red-50 to-rose-50 hover:from-red-100 hover:to-rose-100' :
+                      priority.status === 'complete' ?
+                      'border-green-300 bg-gradient-to-r from-green-50 to-emerald-50 hover:from-green-100 hover:to-emerald-100' :
+                      'border-blue-300 bg-gradient-to-r from-blue-50 to-indigo-50 hover:from-blue-100 hover:to-indigo-100'
+                    }`}
+                  >
+                    <div className={`w-2.5 h-2.5 rounded-full ${getStatusDotColor(priority.status)}`} />
+                    <span className="capitalize font-medium">
+                      {priority.status === 'complete' ? 'Complete' : 
+                       priority.status === 'off-track' ? 'Off Track' : 'On Track'}
+                    </span>
+                  </Button>
+                ) : (
+                  <div className={`inline-flex items-center gap-2 px-3 py-1.5 rounded-lg shadow-sm ${
+                    priority.status === 'complete' ?
+                    'bg-gradient-to-r from-green-50 to-emerald-50 border border-green-200' :
+                    priority.status === 'off-track' ?
+                    'bg-gradient-to-r from-red-50 to-rose-50 border border-red-200' :
+                    'bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-200'
+                  }`}>
+                    <div className={`w-2.5 h-2.5 rounded-full ${getStatusDotColor(isEditing ? editForm.status : priority.status)}`} />
+                    <span className={`capitalize font-medium text-sm ${
+                      priority.status === 'complete' ? 'text-green-700' :
+                      priority.status === 'off-track' ? 'text-red-700' :
+                      'text-blue-700'
+                    }`}>
+                      {priority.status === 'complete' ? 'Complete' : 
+                       priority.status === 'off-track' ? 'Off Track' : 'On Track'}
+                    </span>
+                  </div>
+                )}
               </div>
-            )}
+            </div>
 
             {/* Quick Action Buttons */}
             {!isArchived && !readOnly && (
