@@ -89,7 +89,7 @@ const LoginPage = () => {
             <h1 className="text-4xl lg:text-5xl font-bold text-slate-900 leading-tight">
               Welcome Back to
               <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-600 to-indigo-600 block mt-2">
-                The Platform That Adapts
+                The Business Software That Adapts
               </span>
             </h1>
             
