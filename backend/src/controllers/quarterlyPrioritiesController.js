@@ -1187,6 +1187,7 @@ export const getArchivedPriorities = async (req, res) => {
     // Get latest updates for each priority
     const priorityIds = prioritiesResult.rows.map(p => p.id);
     let updates = {};
+    let attachments = {};
     
     if (priorityIds.length > 0) {
       // Get all updates for each priority
