@@ -647,7 +647,7 @@ const IssuesListClean = ({
                       const hasVotes = (issue.vote_count || 0) > 0;
                       const isTopIssue = globalIndex === 0 && hasVotes && showVoting;
                       const isDragOver = dragOverIssueIndex === globalIndex;
-                      const isTopThree = globalIndex < 3;  // Check if this is in top 3
+                      const isTopThree = showVoting && globalIndex < 3;  // Only highlight top 3 during meetings
                       
                       return (
                         <div
