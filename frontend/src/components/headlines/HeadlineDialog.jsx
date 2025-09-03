@@ -6,8 +6,18 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Textarea } from '@/components/ui/textarea';
 import { AlertCircle, Megaphone } from 'lucide-react';
 import { Alert, AlertDescription } from '@/components/ui/alert';
+import { getOrgTheme } from '../../utils/themeUtils';
+import { useAuthStore } from '../../stores/authStore';
 
 const HeadlineDialog = ({ open, onOpenChange, onSave }) => {
+  const { user } = useAuthStore();
+  const orgId = localStorage.getItem('impersonatedOrgId') || user?.organizationId || user?.organization_id;
+  const savedTheme = getOrgTheme(orgId);
+  const themeColors = savedTheme || {
+    primary: '#3B82F6',
+    secondary: '#8B5CF6',
+    accent: '#10B981'
+  };
   const [headlineType, setHeadlineType] = useState('customer');
   const [headlineText, setHeadlineText] = useState('');
   const [error, setError] = useState(null);
@@ -54,7 +64,9 @@ const HeadlineDialog = ({ open, onOpenChange, onSave }) => {
       <DialogContent className="sm:max-w-[500px] bg-white/95 backdrop-blur-sm border border-white/20 rounded-2xl shadow-2xl">
         <DialogHeader className="pb-6">
           <div className="flex items-center gap-3 mb-2">
-            <div className="h-10 w-10 rounded-xl bg-gradient-to-br from-emerald-500 to-teal-600 flex items-center justify-center">
+            <div className="h-10 w-10 rounded-xl flex items-center justify-center" style={{
+              background: `linear-gradient(135deg, ${themeColors.primary} 0%, ${themeColors.secondary} 100%)`
+            }}>
               <Megaphone className="h-5 w-5 text-white" />
             </div>
             <div>
@@ -114,7 +126,16 @@ const HeadlineDialog = ({ open, onOpenChange, onSave }) => {
           <Button
             onClick={handleSave}
             disabled={!headlineText.trim() || saving}
-            className="bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white shadow-lg hover:shadow-xl transition-all duration-200 transform hover:scale-[1.02]"
+            className="text-white shadow-lg hover:shadow-xl transition-all duration-200 transform hover:scale-[1.02]"
+            style={{
+              background: `linear-gradient(135deg, ${themeColors.primary} 0%, ${themeColors.secondary} 100%)`
+            }}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.filter = 'brightness(1.1)';
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.filter = 'brightness(1)';
+            }}
           >
             {saving ? 'Adding...' : 'Add Headline'}
           </Button>
