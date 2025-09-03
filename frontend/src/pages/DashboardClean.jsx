@@ -822,24 +822,26 @@ const DashboardClean = () => {
                 background: `linear-gradient(135deg, ${hexToRgba(themeColors.primary, 0.05)} 0%, ${hexToRgba(themeColors.secondary, 0.05)} 100%)`
               }}>
                 <p className="text-slate-600 mb-3">No priorities assigned</p>
-                <Link to="/quarterly-priorities">
-                  <Button 
-                    className="text-white rounded-lg transition-all transform hover:scale-[1.02]"
-                    size="sm"
-                    style={{
-                      background: `linear-gradient(135deg, ${themeColors.primary} 0%, ${themeColors.secondary} 100%)`
-                    }}
-                    onMouseEnter={(e) => {
-                      e.currentTarget.style.filter = 'brightness(1.1)';
-                    }}
-                    onMouseLeave={(e) => {
-                      e.currentTarget.style.filter = 'brightness(1)';
-                    }}
-                  >
-                    <Plus className="mr-1 h-3 w-3" />
-                    Add {labels.priority_singular}
-                  </Button>
-                </Link>
+                <Button 
+                  className="text-white rounded-lg transition-all transform hover:scale-[1.02]"
+                  size="sm"
+                  style={{
+                    background: `linear-gradient(135deg, ${themeColors.primary} 0%, ${themeColors.secondary} 100%)`
+                  }}
+                  onMouseEnter={(e) => {
+                    e.currentTarget.style.filter = 'brightness(1.1)';
+                  }}
+                  onMouseLeave={(e) => {
+                    e.currentTarget.style.filter = 'brightness(1)';
+                  }}
+                  onClick={() => {
+                    setEditingPriority(null);
+                    setShowPriorityDialog(true);
+                  }}
+                >
+                  <Plus className="mr-1 h-3 w-3" />
+                  Add {labels.priority_singular}
+                </Button>
               </div>
             ) : viewMode === 'team-view' ? (
               // Team View: Group by owner
