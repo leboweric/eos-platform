@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Alert, AlertDescription } from '@/components/ui/alert';
+import { Badge } from '@/components/ui/badge';
 import { quarterlyPrioritiesService } from '../services/quarterlyPrioritiesService';
 import { todosService } from '../services/todosService';
 import { issuesService } from '../services/issuesService';
@@ -25,6 +26,7 @@ import { Dialog, DialogContent } from '@/components/ui/dialog';
 import {
   AlertCircle,
   CheckSquare,
+  CheckCircle,
   Edit,
   X,
   ArrowRight,
@@ -777,7 +779,7 @@ const DashboardClean = () => {
                 Welcome back, {user?.firstName}
               </h1>
               <p className="text-slate-600 mt-2">
-                {format(new Date(), 'EEEE, MMMM d')} • Your command center awaits
+                {format(new Date(), 'EEEE, MMMM d')}
               </p>
             </div>
             
@@ -900,44 +902,74 @@ const DashboardClean = () => {
             ) : (
               // My Items View: Flat list
               <div className="space-y-3">
-                {dashboardData.priorities.map((priority) => (
-                  <div 
-                    key={priority.id} 
-                    className="group p-4 bg-white/60 rounded-xl border border-slate-200 hover:shadow-md transition-all cursor-pointer hover:scale-[1.01]"
-                    onClick={() => {
-                      setSelectedPriority(priority);
-                      setShowPriorityDialog(true);
-                    }}
-                  >
-                    <div className="flex items-center gap-3">
-                      <div className="w-2 h-12 rounded-full" style={getStatusStyle(priority.status)} />
-                      <div className="flex-1 min-w-0">
-                        <p className="font-medium text-slate-900 truncate group-hover:text-slate-950">
-                          {priority.title}
-                        </p>
-                        <p className="text-xs text-slate-600 mt-1">
-                          {priority.owner?.name || 'Unassigned'} • Due {priority.dueDate ? format(new Date(priority.dueDate), 'MMM d') : 'No date'}
-                        </p>
-                      </div>
-                      <div className="text-right">
-                        <span className="text-sm font-medium" style={{ color: themeColors.primary }}>
-                          {priority.status === 'complete' ? 100 : (priority.progress || 0)}%
-                        </span>
-                        {priority.progress > 0 && (
-                          <div className="w-16 h-1.5 bg-slate-100 rounded-full mt-1 overflow-hidden">
-                            <div 
-                              className="h-full rounded-full transition-all"
-                              style={{ 
-                                width: `${priority.status === 'complete' ? 100 : (priority.progress || 0)}%`,
-                                background: `linear-gradient(90deg, ${themeColors.primary} 0%, ${themeColors.secondary} 100%)`
-                              }}
-                            />
+                {dashboardData.priorities.map((priority) => {
+                  const isComplete = priority.status === 'complete';
+                  return (
+                    <div 
+                      key={priority.id} 
+                      className={`group p-4 rounded-xl border transition-all cursor-pointer hover:scale-[1.01] ${
+                        isComplete 
+                          ? 'bg-gradient-to-r from-green-50/80 to-emerald-50/80 border-green-200 hover:shadow-lg' 
+                          : 'bg-white/60 border-slate-200 hover:shadow-md'
+                      }`}
+                      onClick={() => {
+                        setSelectedPriority(priority);
+                        setShowPriorityDialog(true);
+                      }}
+                    >
+                      <div className="flex items-center gap-3">
+                        {isComplete ? (
+                          <div className="w-10 h-10 rounded-full bg-gradient-to-br from-green-500 to-emerald-600 flex items-center justify-center shadow-sm">
+                            <CheckCircle className="h-5 w-5 text-white" />
                           </div>
+                        ) : (
+                          <div className="w-2 h-12 rounded-full" style={getStatusStyle(priority.status)} />
                         )}
+                        <div className="flex-1 min-w-0">
+                          <p className={`font-medium truncate ${
+                            isComplete 
+                              ? 'text-green-900 line-through decoration-green-400' 
+                              : 'text-slate-900 group-hover:text-slate-950'
+                          }`}>
+                            {priority.title}
+                          </p>
+                          <p className={`text-xs mt-1 ${
+                            isComplete ? 'text-green-700' : 'text-slate-600'
+                          }`}>
+                            {priority.owner?.name || 'Unassigned'} • Due {priority.dueDate ? format(new Date(priority.dueDate), 'MMM d') : 'No date'}
+                          </p>
+                        </div>
+                        <div className="text-right">
+                          {isComplete ? (
+                            <div className="flex flex-col items-end gap-1">
+                              <Badge className="bg-green-100 text-green-800 border-green-200 px-2 py-0.5 text-xs font-semibold">
+                                ✓ Complete
+                              </Badge>
+                              <span className="text-xs text-green-600 font-medium">100%</span>
+                            </div>
+                          ) : (
+                            <>
+                              <span className="text-sm font-medium" style={{ color: themeColors.primary }}>
+                                {priority.progress || 0}%
+                              </span>
+                              {priority.progress > 0 && (
+                                <div className="w-16 h-1.5 bg-slate-100 rounded-full mt-1 overflow-hidden">
+                                  <div 
+                                    className="h-full rounded-full transition-all"
+                                    style={{ 
+                                      width: `${priority.progress || 0}%`,
+                                      background: `linear-gradient(90deg, ${themeColors.primary} 0%, ${themeColors.secondary} 100%)`
+                                    }}
+                                  />
+                                </div>
+                              )}
+                            </>
+                          )}
+                        </div>
                       </div>
                     </div>
-                  </div>
-                ))}
+                  );
+                })}
               </div>
             )}
           </div>
