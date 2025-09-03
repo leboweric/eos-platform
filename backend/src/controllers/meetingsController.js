@@ -262,7 +262,7 @@ export const concludeMeeting = async (req, res) => {
       );
       
       openTodos = todoResult.rows.map(todo => ({
-        title: todo.todo || 'Untitled',
+        title: todo.title || 'Untitled',
         assignee: todo.first_name && todo.last_name 
           ? `${todo.first_name} ${todo.last_name}`
           : todo.assigned_to_name || 'Unassigned',
@@ -308,8 +308,7 @@ export const concludeMeeting = async (req, res) => {
       completedItems: formattedCompletedItems,
       newTodos: formattedNewTodos,
       issues: formattedIssues,
-      notes: notes || '',
-      meetingLink: `${process.env.FRONTEND_URL || 'https://axp.com'}/meetings/weekly-accountability`
+      notes: notes || ''
     };
 
     // Send email to all attendees
