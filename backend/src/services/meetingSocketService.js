@@ -54,13 +54,12 @@ class MeetingSocketService {
           let initialRoute = '/';
           if (meetingCode.includes('-weekly-accountability')) {
             // Extract teamId from meeting code format: orgId-teamId-weekly-accountability
-            const parts = meetingCode.split('-');
-            const teamId = parts[parts.length - 3]; // Get teamId (second to last before 'weekly-accountability')
+            // Format: 8-4-4-4-12-8-4-4-4-12-weekly-accountability (UUID-UUID-suffix)
+            const teamId = this.extractTeamIdFromMeetingCode(meetingCode, 'weekly-accountability');
             initialRoute = `/meetings/weekly-accountability/${teamId}`;
           } else if (meetingCode.includes('-quarterly-planning')) {
             // Extract teamId from meeting code format: orgId-teamId-quarterly-planning
-            const parts = meetingCode.split('-');
-            const teamId = parts[parts.length - 3]; // Get teamId (second to last before 'quarterly-planning')
+            const teamId = this.extractTeamIdFromMeetingCode(meetingCode, 'quarterly-planning');
             initialRoute = `/meetings/quarterly-planning/${teamId}`;
           }
           
@@ -414,6 +413,45 @@ class MeetingSocketService {
         });
         console.log(`👑 Leadership transferred to ${nextParticipant.name}`);
       }
+    }
+  }
+
+  // Extract teamId from meeting code that contains UUIDs with hyphens
+  extractTeamIdFromMeetingCode(meetingCode, meetingType) {
+    try {
+      // Remove the meeting type suffix first
+      const suffix = `-${meetingType}`;
+      if (!meetingCode.endsWith(suffix)) {
+        console.error('Meeting code does not end with expected suffix:', suffix);
+        return null;
+      }
+      
+      // Remove the suffix to get: orgId-teamId
+      const withoutSuffix = meetingCode.slice(0, -suffix.length);
+      
+      // UUIDs are 36 characters long (8-4-4-4-12 format)
+      // So we need to find where the first UUID ends and second begins
+      // Expected format: orgId (36 chars) + '-' + teamId (36 chars)
+      if (withoutSuffix.length !== 73) { // 36 + 1 + 36 = 73
+        console.error('Unexpected meeting code format. Expected length 73, got:', withoutSuffix.length);
+        return null;
+      }
+      
+      // Extract teamId (last 36 characters)
+      const teamId = withoutSuffix.slice(-36);
+      
+      // Validate it looks like a UUID (basic check)
+      const uuidPattern = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+      if (!uuidPattern.test(teamId)) {
+        console.error('Extracted teamId does not match UUID pattern:', teamId);
+        return null;
+      }
+      
+      console.log(`✅ Extracted teamId from meeting code: ${teamId}`);
+      return teamId;
+    } catch (error) {
+      console.error('Error extracting teamId from meeting code:', error);
+      return null;
     }
   }
 
