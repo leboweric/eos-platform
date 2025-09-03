@@ -869,31 +869,61 @@ const DashboardClean = () => {
                       <h3 className="text-sm font-semibold text-slate-700 px-2">
                         {ownerName} ({priorities.length})
                       </h3>
-                      {priorities.map((priority) => (
-                        <div 
-                          key={priority.id} 
-                          className="group p-3 bg-white/60 rounded-lg border border-slate-200 hover:shadow-md transition-all cursor-pointer hover:scale-[1.01] ml-4"
-                          onClick={() => {
-                            setSelectedPriority(priority);
-                            setShowPriorityDialog(true);
-                          }}
-                        >
-                          <div className="flex items-center gap-2">
-                            <div className="w-1.5 h-8 rounded-full" style={getStatusStyle(priority.status)} />
-                            <div className="flex-1 min-w-0">
-                              <p className="text-sm font-medium text-slate-900 truncate group-hover:text-slate-950">
-                                {priority.title}
-                              </p>
-                              <p className="text-xs text-slate-600 mt-0.5">
-                                Due {priority.dueDate ? format(new Date(priority.dueDate), 'MMM d') : 'No date'}
-                              </p>
+                      {priorities.map((priority) => {
+                        const isComplete = priority.status === 'complete' || 
+                                         priority.status === 'completed' || 
+                                         priority.progress === 100;
+                        return (
+                          <div 
+                            key={priority.id} 
+                            className={`group p-3 rounded-lg border transition-all cursor-pointer hover:scale-[1.01] ml-4 ${
+                              isComplete 
+                                ? 'bg-gradient-to-r from-green-50/80 to-emerald-50/80 border-green-200 hover:shadow-lg' 
+                                : 'bg-white/60 border-slate-200 hover:shadow-md'
+                            }`}
+                            onClick={() => {
+                              setSelectedPriority(priority);
+                              setShowPriorityDialog(true);
+                            }}
+                          >
+                            <div className="flex items-center gap-2">
+                              {isComplete ? (
+                                <div className="w-8 h-8 rounded-full bg-gradient-to-br from-green-500 to-emerald-600 flex items-center justify-center shadow-sm">
+                                  <CheckCircle className="h-4 w-4 text-white" />
+                                </div>
+                              ) : (
+                                <div className="w-1.5 h-8 rounded-full" style={getStatusStyle(priority.status)} />
+                              )}
+                              <div className="flex-1 min-w-0">
+                                <p className={`text-sm font-medium truncate ${
+                                  isComplete 
+                                    ? 'text-green-900 line-through decoration-green-400' 
+                                    : 'text-slate-900 group-hover:text-slate-950'
+                                }`}>
+                                  {priority.title}
+                                </p>
+                                <p className={`text-xs mt-0.5 ${
+                                  isComplete ? 'text-green-700' : 'text-slate-600'
+                                }`}>
+                                  Due {priority.dueDate ? format(new Date(priority.dueDate), 'MMM d') : 'No date'}
+                                </p>
+                              </div>
+                              {isComplete ? (
+                                <div className="flex items-center gap-2">
+                                  <Badge className="bg-green-100 text-green-800 border-green-200 px-1.5 py-0.5 text-xs font-semibold">
+                                    ✓
+                                  </Badge>
+                                  <span className="text-xs text-green-600 font-medium">100%</span>
+                                </div>
+                              ) : (
+                                <span className="text-xs font-medium" style={{ color: themeColors.primary }}>
+                                  {priority.progress || 0}%
+                                </span>
+                              )}
                             </div>
-                            <span className="text-xs font-medium" style={{ color: themeColors.primary }}>
-                              {priority.status === 'complete' ? 100 : (priority.progress || 0)}%
-                            </span>
                           </div>
-                        </div>
-                      ))}
+                        );
+                      })}
                     </div>
                   ));
                 })()}
