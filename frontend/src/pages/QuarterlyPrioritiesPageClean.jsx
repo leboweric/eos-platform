@@ -2414,6 +2414,8 @@ const QuarterlyPrioritiesPageClean = () => {
                         className={`max-w-5xl transition-all duration-300 hover:shadow-lg hover:scale-[1.01] cursor-pointer ${
                           isComplete 
                             ? 'bg-gradient-to-r from-green-50/80 to-emerald-50/80 border-green-200' 
+                            : priority.status === 'off-track'
+                            ? 'bg-gradient-to-r from-red-50/80 to-rose-50/80 border-red-200'
                             : 'bg-white/90 backdrop-blur-sm border-slate-200'
                         }`}
                         onClick={() => {
@@ -2528,6 +2530,8 @@ const QuarterlyPrioritiesPageClean = () => {
                             className={`max-w-5xl transition-all duration-300 hover:shadow-lg hover:scale-[1.01] cursor-pointer ${
                               isComplete 
                                 ? 'bg-gradient-to-r from-green-50/80 to-emerald-50/80 border-green-200' 
+                                : priority.status === 'off-track'
+                                ? 'bg-gradient-to-r from-red-50/80 to-rose-50/80 border-red-200'
                                 : 'bg-white/90 backdrop-blur-sm border-slate-200'
                             }`}
                             onClick={() => {
