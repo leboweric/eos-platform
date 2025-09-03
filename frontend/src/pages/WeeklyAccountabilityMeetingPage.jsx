@@ -1978,10 +1978,10 @@ const WeeklyAccountabilityMeetingPage = () => {
                     {priorities.length > 0 && (
                       <div className="text-center bg-white/50 rounded-xl px-4 py-2 border border-white/30">
                         <span className="text-3xl font-bold bg-gradient-to-r from-slate-900 to-slate-700 bg-clip-text text-transparent">
-                          {Math.round((priorities.filter(p => p.status === 'complete').length / priorities.length) * 100)}%
+                          {Math.round((priorities.filter(p => p.status === 'complete' || p.status === 'completed' || p.progress === 100).length / priorities.length) * 100)}%
                         </span>
                         <p className="text-sm text-slate-600 font-medium">
-                          {priorities.filter(p => p.status === 'complete').length} of {priorities.length} complete
+                          {priorities.filter(p => p.status === 'complete' || p.status === 'completed' || p.progress === 100).length} of {priorities.length} complete
                         </p>
                       </div>
                     )}
