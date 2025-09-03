@@ -660,15 +660,14 @@ const IssuesListClean = ({
                             ${isTopThree ? 'shadow-lg' : ''}
                           `}
                           style={{
-                            backgroundColor: globalIndex === 0 ? hexToRgba(themeColors.primary, 0.08) : 
-                                          globalIndex === 1 ? hexToRgba(themeColors.secondary, 0.06) :
-                                          globalIndex === 2 ? hexToRgba(themeColors.accent, 0.04) :
+                            backgroundColor: showVoting && globalIndex === 0 ? hexToRgba(themeColors.primary, 0.08) : 
+                                          showVoting && globalIndex === 1 ? hexToRgba(themeColors.secondary, 0.06) :
+                                          showVoting && globalIndex === 2 ? hexToRgba(themeColors.accent, 0.04) :
                                           'rgba(255, 255, 255, 0.9)',
-                            borderColor: globalIndex === 0 ? themeColors.primary : 
-                                        globalIndex === 1 ? themeColors.secondary :
-                                        globalIndex === 2 ? themeColors.accent :
-                                        'rgba(255, 255, 255, 0.5)',
-                            borderWidth: isTopThree ? '2px' : '1px'
+                            borderColor: showVoting && globalIndex === 0 ? themeColors.primary : 
+                                        showVoting && globalIndex === 1 ? themeColors.secondary :
+                                        showVoting && globalIndex === 2 ? themeColors.accent :
+                                        'rgba(255, 255, 255, 0.5)'
                           }}
                           onDragOver={handleDragOver}
                           onDragEnter={(e) => handleDragEnter(e, globalIndex)}
