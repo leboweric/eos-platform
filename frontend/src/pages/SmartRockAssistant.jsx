@@ -80,7 +80,7 @@ const SmartRockAssistant = () => {
       
       return () => observer.disconnect();
     }
-  }, [themeColors, currentStep]);
+  }, [themeColors]);
 
   useEffect(() => {
     const loadTheme = async () => {
