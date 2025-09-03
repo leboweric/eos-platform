@@ -524,17 +524,18 @@ const QuarterlyPrioritiesPageClean = () => {
         setSelectedPriority(prev => updatePriorityWithProgress(prev));
       }
       
-      // If status changed, update it on the backend
+      // Update progress and status on the backend
       const currentPriority = companyPriorities.find(p => p.id === priorityId) || 
         Object.values(teamMemberPriorities).flatMap(m => m.priorities || []).find(p => p.id === priorityId);
       
       if (currentPriority) {
         const updatedPriority = updatePriorityWithProgress(currentPriority);
+        // Always update progress, and status if it changed
+        const updates = { progress: updatedPriority.progress };
         if (updatedPriority.status !== currentPriority.status) {
-          await quarterlyPrioritiesService.updatePriority(orgId, teamId, priorityId, { 
-            status: updatedPriority.status 
-          });
+          updates.status = updatedPriority.status;
         }
+        await quarterlyPrioritiesService.updatePriority(orgId, teamId, priorityId, updates);
       }
     } catch (err) {
       console.error('Failed to update milestone:', err);
@@ -595,6 +596,41 @@ const QuarterlyPrioritiesPageClean = () => {
           ...prev,
           milestones: [...(prev.milestones || []), newMilestone]
         }));
+      }
+      
+      // Calculate and update progress on the backend
+      const currentPriority = companyPriorities.find(p => p.id === priorityId) || 
+        Object.values(teamMemberPriorities).flatMap(m => m.priorities || []).find(p => p.id === priorityId);
+      
+      if (currentPriority) {
+        const allMilestones = [...(currentPriority.milestones || []), newMilestone];
+        const completedCount = allMilestones.filter(m => m.completed).length;
+        const totalCount = allMilestones.length;
+        const newProgress = totalCount > 0 ? Math.round((completedCount / totalCount) * 100) : 0;
+        
+        // Update progress on backend
+        await quarterlyPrioritiesService.updatePriority(orgId, teamId, priorityId, { progress: newProgress });
+        
+        // Update local state with new progress
+        setCompanyPriorities(prev => prev.map(p => 
+          p.id === priorityId ? { ...p, progress: newProgress } : p
+        ));
+        
+        setTeamMemberPriorities(prev => {
+          const updated = { ...prev };
+          Object.keys(updated).forEach(memberId => {
+            if (updated[memberId]?.priorities) {
+              updated[memberId].priorities = updated[memberId].priorities.map(p =>
+                p.id === priorityId ? { ...p, progress: newProgress } : p
+              );
+            }
+          });
+          return updated;
+        });
+        
+        if (selectedPriority?.id === priorityId) {
+          setSelectedPriority(prev => ({ ...prev, progress: newProgress }));
+        }
       }
       
       setSuccess('Milestone added successfully');
@@ -699,6 +735,52 @@ const QuarterlyPrioritiesPageClean = () => {
           ...prev,
           milestones: removeMilestone(prev.milestones)
         }));
+      }
+      
+      // Calculate and update progress on the backend
+      const currentPriority = companyPriorities.find(p => p.id === priorityId) || 
+        Object.values(teamMemberPriorities).flatMap(m => m.priorities || []).find(p => p.id === priorityId);
+      
+      if (currentPriority) {
+        const remainingMilestones = removeMilestone(currentPriority.milestones);
+        const completedCount = remainingMilestones.filter(m => m.completed).length;
+        const totalCount = remainingMilestones.length;
+        const newProgress = totalCount > 0 ? Math.round((completedCount / totalCount) * 100) : 0;
+        
+        // Determine status based on progress
+        let newStatus = currentPriority.status;
+        if (totalCount > 0 && currentPriority.status === 'complete' && newProgress < 100) {
+          // Was complete but now not all milestones are done
+          newStatus = 'on-track';
+        }
+        
+        // Update progress and possibly status on backend
+        const updates = { progress: newProgress };
+        if (newStatus !== currentPriority.status) {
+          updates.status = newStatus;
+        }
+        await quarterlyPrioritiesService.updatePriority(orgId, teamId, priorityId, updates);
+        
+        // Update local state with new progress and status
+        setCompanyPriorities(prev => prev.map(p => 
+          p.id === priorityId ? { ...p, progress: newProgress, status: newStatus } : p
+        ));
+        
+        setTeamMemberPriorities(prev => {
+          const updated = { ...prev };
+          Object.keys(updated).forEach(memberId => {
+            if (updated[memberId]?.priorities) {
+              updated[memberId].priorities = updated[memberId].priorities.map(p =>
+                p.id === priorityId ? { ...p, progress: newProgress, status: newStatus } : p
+              );
+            }
+          });
+          return updated;
+        });
+        
+        if (selectedPriority?.id === priorityId) {
+          setSelectedPriority(prev => ({ ...prev, progress: newProgress, status: newStatus }));
+        }
       }
       
       setSuccess('Milestone deleted successfully');
