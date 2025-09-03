@@ -53,10 +53,14 @@ class MeetingSocketService {
           // Determine initial route based on meeting type
           let initialRoute = '/';
           if (meetingCode.includes('-weekly-accountability')) {
-            const teamId = meetingCode.replace('-weekly-accountability', '');
+            // Extract teamId from meeting code format: orgId-teamId-weekly-accountability
+            const parts = meetingCode.split('-');
+            const teamId = parts[parts.length - 3]; // Get teamId (second to last before 'weekly-accountability')
             initialRoute = `/meetings/weekly-accountability/${teamId}`;
           } else if (meetingCode.includes('-quarterly-planning')) {
-            const teamId = meetingCode.replace('-quarterly-planning', '');
+            // Extract teamId from meeting code format: orgId-teamId-quarterly-planning
+            const parts = meetingCode.split('-');
+            const teamId = parts[parts.length - 3]; // Get teamId (second to last before 'quarterly-planning')
             initialRoute = `/meetings/quarterly-planning/${teamId}`;
           }
           

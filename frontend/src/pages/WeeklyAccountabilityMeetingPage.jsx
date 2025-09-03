@@ -281,7 +281,9 @@ const WeeklyAccountabilityMeetingPage = () => {
   
   useEffect(() => {
     if (teamId && isConnected && joinMeeting && !meetingCode && !hasJoinedRef.current) {
-      const meetingRoom = `${teamId}-weekly-accountability`;
+      // Include organization ID in meeting code to prevent cross-org collisions
+      const orgId = user?.organizationId || user?.organization_id || localStorage.getItem('organizationId');
+      const meetingRoom = `${orgId}-${teamId}-weekly-accountability`;
       
       // Wait a bit for active meetings to load if we haven't checked yet
       if (!hasCheckedMeetingsRef.current && (!activeMeetings || Object.keys(activeMeetings).length === 0)) {
@@ -316,7 +318,7 @@ const WeeklyAccountabilityMeetingPage = () => {
         joinMeeting(meetingRoom, !hasParticipants);
       }
     }
-  }, [teamId, isConnected, joinMeeting, meetingCode, activeMeetings]);
+  }, [teamId, isConnected, joinMeeting, meetingCode, activeMeetings, user]);
 
   useEffect(() => {
     fetchOrganizationTheme();
@@ -327,6 +329,13 @@ const WeeklyAccountabilityMeetingPage = () => {
     
     const handleOrgChange = () => {
       fetchOrganizationTheme();
+      // Leave current meeting when organization changes
+      if (meetingCode && leaveMeeting) {
+        console.log('🎬 Organization changed, leaving current meeting');
+        leaveMeeting();
+        hasJoinedRef.current = false;
+        hasCheckedMeetingsRef.current = false;
+      }
     };
     
     window.addEventListener('themeChanged', handleThemeChange);
@@ -336,7 +345,7 @@ const WeeklyAccountabilityMeetingPage = () => {
       window.removeEventListener('themeChanged', handleThemeChange);
       window.removeEventListener('organizationChanged', handleOrgChange);
     };
-  }, [user?.organizationId, user?.organization_id]);
+  }, [user?.organizationId, user?.organization_id, meetingCode, leaveMeeting]);
 
   const getStatusDotColor = (status) => {
     // Return inline style object for dynamic colors
