@@ -266,10 +266,6 @@ const templates = {
         <p>Hi Team,</p>
         <p>Here's a summary of your ${data.teamName} meeting on ${data.meetingDate}:</p>
         
-        <div style="background-color: #f8f9fa; padding: 15px; border-radius: 8px; margin: 20px 0;">
-          <p style="margin: 5px 0;"><strong>Meeting Rating:</strong> ${data.rating}/10</p>
-        </div>
-        
         ${data.openTodos && data.openTodos.length > 0 ? `
           <h3 style="color: #d97706; margin-top: 30px; border-bottom: 2px solid #f8f9fa; padding-bottom: 10px;">📋 Open To-Dos</h3>
           <ul style="color: #333; line-height: 1.8;">
@@ -291,8 +287,6 @@ const templates = {
       Hi Team,
       
       Here's a summary of your ${data.teamName} meeting on ${data.meetingDate}:
-      
-      Meeting Rating: ${data.rating}/10
       
       ${data.openTodos && data.openTodos.length > 0 ? `OPEN TO-DOS:\n${data.openTodos.map(t => `- ${t.title} - Assigned to: ${t.assignee}${t.dueDate !== 'No due date' ? `, Due: ${t.dueDate}` : ''}`).join('\n')}\n\n` : 'No open to-dos at this time.\n\n'}
       
