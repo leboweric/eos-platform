@@ -1347,9 +1347,9 @@ const QuarterlyPrioritiesPageClean = () => {
             ? `${priority.owner.firstName} ${priority.owner.lastName}`
             : 'Unassigned');
         
-        // Add status to title if off-track or at-risk
-        const statusSuffix = (priority.status === 'off-track' || priority.status === 'at-risk') 
-          ? ` - ${priority.status.replace('-', ' ').toUpperCase()}` 
+        // Add status to title if off-track
+        const statusSuffix = priority.status === 'off-track'
+          ? ' - OFF TRACK'
           : '';
         
         const dueDate = priority.dueDate || priority.due_date;

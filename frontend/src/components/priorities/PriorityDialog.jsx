@@ -128,7 +128,6 @@ const PriorityDialog = ({
     switch (status) {
       case 'complete': return '#10B981';
       case 'on-track': return themeColors.primary;
-      case 'at-risk': return '#F59E0B';
       case 'off-track': return '#EF4444';
       default: return '#6B7280';
     }
@@ -138,7 +137,6 @@ const PriorityDialog = ({
     switch (status) {
       case 'complete': return <CheckSquare className="h-4 w-4" />;
       case 'on-track': return <TrendingUp className="h-4 w-4" />;
-      case 'at-risk': return <AlertTriangle className="h-4 w-4" />;
       case 'off-track': return <TrendingDown className="h-4 w-4" />;
       default: return <Target className="h-4 w-4" />;
     }
@@ -287,7 +285,6 @@ const PriorityDialog = ({
                       </SelectTrigger>
                       <SelectContent>
                         <SelectItem value="on-track">On Track</SelectItem>
-                        <SelectItem value="at-risk">At Risk</SelectItem>
                         <SelectItem value="off-track">Off Track</SelectItem>
                         <SelectItem value="complete">Complete</SelectItem>
                       </SelectContent>
