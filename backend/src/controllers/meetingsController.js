@@ -34,14 +34,21 @@ export const concludeMeeting = async (req, res) => {
     );
     const organizationName = orgResult.rows[0]?.name || 'Your Organization';
 
+    // Validate teamId is a valid UUID format
+    const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+    const isValidUUID = teamId && uuidRegex.test(teamId);
+    
     // Get team/department name
     let teamName = 'Leadership Team'; // default for leadership team
-    if (teamId && teamId !== '00000000-0000-0000-0000-000000000000') {
+    if (isValidUUID && teamId !== '00000000-0000-0000-0000-000000000000') {
       const teamResult = await db.query(
         'SELECT name FROM teams WHERE id = $1',
         [teamId]
       );
       teamName = teamResult.rows[0]?.name || 'Team';
+    } else if (!isValidUUID && teamId) {
+      console.log('Warning: Invalid UUID format for teamId:', teamId);
+      teamName = 'Team'; // Fallback for invalid UUID
     }
 
     // Get user details
@@ -59,74 +66,90 @@ export const concludeMeeting = async (req, res) => {
     let attendeeEmails = [];
     let teamMembersCount = 0;
     
-    // Check if this is the leadership team
-    if (teamId === '00000000-0000-0000-0000-000000000000') {
-      // For leadership team, check team_members table first
-      const leadershipCheckResult = await db.query(
-        `SELECT COUNT(*) as count FROM team_members WHERE team_id = $1`,
-        [teamId]
-      );
-      const leadershipMembersCount = parseInt(leadershipCheckResult.rows[0].count);
-      console.log('Leadership team members count:', leadershipMembersCount);
-      
-      if (leadershipMembersCount > 0) {
-        // Use team_members table
-        const leadershipResult = await db.query(
-          `SELECT DISTINCT u.email, u.first_name, u.last_name 
-           FROM team_members tm
-           JOIN users u ON tm.user_id = u.id
-           WHERE tm.team_id = $1
-           AND u.email IS NOT NULL
-           AND u.email != ''`,
+    // Only query team members if we have a valid UUID
+    if (isValidUUID) {
+      // Check if this is the leadership team
+      if (teamId === '00000000-0000-0000-0000-000000000000') {
+        // For leadership team, check team_members table first
+        const leadershipCheckResult = await db.query(
+          `SELECT COUNT(*) as count FROM team_members WHERE team_id = $1`,
           [teamId]
         );
-        attendeeEmails = leadershipResult.rows.map(row => row.email);
-        console.log('Leadership team members from team_members table:', leadershipResult.rows);
+        const leadershipMembersCount = parseInt(leadershipCheckResult.rows[0].count);
+        console.log('Leadership team members count:', leadershipMembersCount);
+        
+        if (leadershipMembersCount > 0) {
+          // Use team_members table
+          const leadershipResult = await db.query(
+            `SELECT DISTINCT u.email, u.first_name, u.last_name 
+             FROM team_members tm
+             JOIN users u ON tm.user_id = u.id
+             WHERE tm.team_id = $1
+             AND u.email IS NOT NULL
+             AND u.email != ''`,
+            [teamId]
+          );
+          attendeeEmails = leadershipResult.rows.map(row => row.email);
+          console.log('Leadership team members from team_members table:', leadershipResult.rows);
+        } else {
+          // Fallback: For leadership team, get all users in the organization
+          console.log('No leadership team members in team_members table, using all org users');
+          const leadershipResult = await db.query(
+            `SELECT DISTINCT u.email, u.first_name, u.last_name 
+             FROM users u
+             WHERE u.organization_id = $1 
+             AND u.email IS NOT NULL
+             AND u.email != ''`,
+            [organizationId]
+          );
+          attendeeEmails = leadershipResult.rows.map(row => row.email);
+          console.log('All organization users:', leadershipResult.rows);
+        }
+        console.log('Leadership team emails:', attendeeEmails);
       } else {
-        // Fallback: For leadership team, get all users in the organization
-        console.log('No leadership team members in team_members table, using all org users');
-        const leadershipResult = await db.query(
-          `SELECT DISTINCT u.email, u.first_name, u.last_name 
-           FROM users u
-           WHERE u.organization_id = $1 
-           AND u.email IS NOT NULL
-           AND u.email != ''`,
-          [organizationId]
+        // For other teams, first check if team_members table has entries
+        const teamCheckResult = await db.query(
+          `SELECT COUNT(*) as count FROM team_members WHERE team_id = $1`,
+          [teamId]
         );
-        attendeeEmails = leadershipResult.rows.map(row => row.email);
-        console.log('All organization users:', leadershipResult.rows);
+        console.log('Team members count:', teamCheckResult.rows[0].count);
+        teamMembersCount = parseInt(teamCheckResult.rows[0].count);
+        
+        // If no team_members entries, we can't determine team membership
+        if (teamMembersCount === 0) {
+          console.log('No team members found in team_members table for team:', teamId);
+          // For now, we'll send to no one if team_members is empty
+          // You could alternatively send to all org members or implement a different strategy
+          attendeeEmails = [];
+        } else {
+          // Use team_members table
+          const teamMembersResult = await db.query(
+            `SELECT DISTINCT u.email, u.first_name, u.last_name 
+             FROM team_members tm
+             JOIN users u ON tm.user_id = u.id
+             WHERE tm.team_id = $1
+             AND u.email IS NOT NULL
+             AND u.email != ''`,
+            [teamId]
+          );
+          attendeeEmails = teamMembersResult.rows.map(row => row.email);
+          console.log('Team members query result:', teamMembersResult.rows);
+        }
+        console.log('Team member emails:', attendeeEmails);
       }
-      console.log('Leadership team emails:', attendeeEmails);
     } else {
-      // For other teams, first check if team_members table has entries
-      const teamCheckResult = await db.query(
-        `SELECT COUNT(*) as count FROM team_members WHERE team_id = $1`,
-        [teamId]
+      // If teamId is not a valid UUID, fall back to organization-wide emails
+      console.log('Invalid teamId UUID, using organization-wide emails as fallback');
+      const orgUsersResult = await db.query(
+        `SELECT DISTINCT u.email, u.first_name, u.last_name 
+         FROM users u
+         WHERE u.organization_id = $1 
+         AND u.email IS NOT NULL
+         AND u.email != ''`,
+        [organizationId]
       );
-      console.log('Team members count:', teamCheckResult.rows[0].count);
-      teamMembersCount = parseInt(teamCheckResult.rows[0].count);
-      
-      // If no team_members entries, we can't determine team membership
-      if (teamMembersCount === 0) {
-        console.log('No team members found in team_members table for team:', teamId);
-        // For now, we'll send to no one if team_members is empty
-        // You could alternatively send to all org members or implement a different strategy
-        attendeeEmails = [];
-      } else {
-        // Use team_members table
-        const teamMembersResult = await db.query(
-          `SELECT DISTINCT u.email, u.first_name, u.last_name 
-           FROM team_members tm
-           JOIN users u ON tm.user_id = u.id
-           WHERE tm.team_id = $1
-           AND u.email IS NOT NULL
-           AND u.email != ''`,
-          [teamId]
-        );
-        attendeeEmails = teamMembersResult.rows.map(row => row.email);
-        console.log('Team members query result:', teamMembersResult.rows);
-      }
-      console.log('Team member emails:', attendeeEmails);
+      attendeeEmails = orgUsersResult.rows.map(row => row.email);
+      console.log('Organization users:', orgUsersResult.rows);
     }
 
     console.log('Sending meeting summary to:', attendeeEmails);
