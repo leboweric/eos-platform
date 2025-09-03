@@ -187,6 +187,10 @@ const Layout = ({ children }) => {
   }
 
   const handleLogout = async () => {
+    // Clear any impersonation state on logout to prevent cross-contamination
+    localStorage.removeItem('consultantImpersonating');
+    localStorage.removeItem('impersonatedOrgId');
+    
     await logout();
     navigate('/login');
   };

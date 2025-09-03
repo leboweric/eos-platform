@@ -287,7 +287,8 @@ const WeeklyAccountabilityMeetingPage = () => {
   useEffect(() => {
     if (teamId && isConnected && joinMeeting && !meetingCode && !hasJoinedRef.current) {
       // Include organization ID in meeting code to prevent cross-org collisions
-      const orgId = user?.organizationId || user?.organization_id || localStorage.getItem('organizationId');
+      // CRITICAL: Must match the orgId logic used throughout the rest of the file
+      const orgId = localStorage.getItem('impersonatedOrgId') || user?.organizationId || user?.organization_id;
       const meetingRoom = `${orgId}-${teamId}-weekly-accountability`;
       
       // Wait a bit for active meetings to load if we haven't checked yet
@@ -413,7 +414,7 @@ const WeeklyAccountabilityMeetingPage = () => {
       }
     } catch (error) {
       console.error('Failed to fetch organization theme:', error);
-      const orgId = user?.organizationId || user?.organization_id || localStorage.getItem('organizationId');
+      const orgId = localStorage.getItem('impersonatedOrgId') || user?.organizationId || user?.organization_id;
       const savedTheme = getOrgTheme(orgId);
       if (savedTheme) {
         setThemeColors(savedTheme);
