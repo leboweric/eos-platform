@@ -1,9 +1,9 @@
-import React from 'react';
+import { lazy as reactLazy } from 'react';
 
 // Utility to handle lazy loading with retry on failure
 // This helps when assets change after deployment
 
-export function lazyWithRetry(componentImport) {
+function lazyWithRetry(componentImport) {
   return new Promise((resolve, reject) => {
     // Check if we've already failed to load this once
     const hasRefreshed = JSON.parse(
@@ -21,8 +21,10 @@ export function lazyWithRetry(componentImport) {
         if (!hasRefreshed && (
           error.message.includes('Failed to fetch dynamically imported module') ||
           error.message.includes('Loading CSS chunk') ||
-          error.message.includes('Loading chunk')
+          error.message.includes('Loading chunk') ||
+          error.message.includes('MIME type')
         )) {
+          console.log('Lazy loading failed, refreshing to get latest assets...');
           // Set flag to prevent infinite refresh loop
           window.sessionStorage.setItem('has_refreshed_for_lazy_load', 'true');
           // Refresh the page to get the latest assets
@@ -35,7 +37,7 @@ export function lazyWithRetry(componentImport) {
   });
 }
 
-// Wrapper for lazy function
+// Wrapper for lazy function that adds retry logic
 export const lazy = (importFunc) => {
-  return React.lazy(() => lazyWithRetry(importFunc));
+  return reactLazy(() => lazyWithRetry(importFunc));
 };

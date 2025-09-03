@@ -1,6 +1,7 @@
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { useAuthStore } from './stores/authStore';
-import { useEffect, useState, Suspense, lazy } from 'react';
+import { useEffect, useState, Suspense } from 'react';
+import { lazy } from './utils/lazyWithRetry';
 import { TeamProvider } from './contexts/TeamContext';
 import { DepartmentProvider } from './contexts/DepartmentContext';
 import { SelectedTodosProvider } from './contexts/SelectedTodosContext';
