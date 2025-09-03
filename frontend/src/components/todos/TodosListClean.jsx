@@ -267,7 +267,7 @@ const TodosListClean = ({
               onClick={() => onEdit && onEdit(todo)}
               className={`
                 group relative flex items-center gap-3 bg-white/90 backdrop-blur-sm rounded-xl border border-white/50 pl-3 pr-4 py-3 transition-all duration-200 cursor-pointer shadow-sm hover:shadow-md hover:scale-[1.01]
-                ${todo.status === 'complete' && !todo.archived ? 'opacity-60' : ''}
+                ${(todo.status === 'complete' || todo.status === 'completed') && !todo.archived ? 'opacity-60' : ''}
               `}
             >
               {/* Enhanced status indicator */}
@@ -279,25 +279,25 @@ const TodosListClean = ({
               {/* Enhanced checkbox */}
               <div className="relative">
                 <Checkbox
-                  checked={todo.status === 'complete'}
+                  checked={todo.status === 'complete' || todo.status === 'completed'}
                   onClick={(e) => e.stopPropagation()}
                   onCheckedChange={(checked) => {
                     if (onStatusChange) {
                       onStatusChange(todo.id, checked);
                     } else if (onUpdate) {
                       todosService.updateTodo(todo.id, { 
-                        status: checked ? 'complete' : 'incomplete' 
+                        status: checked ? 'completed' : 'pending' 
                       }).then(() => {
                         onUpdate();
                       });
                     }
                   }}
                   className={`h-5 w-5 rounded-lg border-2 transition-all duration-200 shadow-sm ${
-                    todo.status === 'complete' ? 'data-[state=checked]:text-white data-[state=checked]:border-transparent' : ''
+                    (todo.status === 'complete' || todo.status === 'completed') ? 'data-[state=checked]:text-white data-[state=checked]:border-transparent' : ''
                   }`}
                   style={{
-                    borderColor: todo.status === 'complete' ? themeColors.primary : '#D1D5DB',
-                    backgroundColor: todo.status === 'complete' ? themeColors.primary : 'transparent'
+                    borderColor: (todo.status === 'complete' || todo.status === 'completed') ? themeColors.primary : '#D1D5DB',
+                    backgroundColor: (todo.status === 'complete' || todo.status === 'completed') ? themeColors.primary : 'transparent'
                   }}
                 />
               </div>
@@ -305,7 +305,7 @@ const TodosListClean = ({
               {/* Title */}
               <h3 className={`
                 flex-1 text-sm font-medium
-                ${todo.status === 'complete' ? 'text-gray-400 line-through' : 'text-gray-900'}
+                ${(todo.status === 'complete' || todo.status === 'completed') ? 'text-gray-400 line-through' : 'text-gray-900'}
               `}>
                 {todo.title}
               </h3>
@@ -358,7 +358,7 @@ const TodosListClean = ({
                 <div className="pt-0.5">
                   <div className="relative">
                     <Checkbox
-                      checked={todo.status === 'complete'}
+                      checked={todo.status === 'complete' || todo.status === 'completed'}
                       onClick={(e) => e.stopPropagation()}
                       onCheckedChange={(checked) => {
                         if (onStatusChange) {
@@ -366,7 +366,7 @@ const TodosListClean = ({
                         } else if (onUpdate) {
                           // Fallback to onUpdate if onStatusChange not provided
                           todosService.updateTodo(todo.id, { 
-                            status: checked ? 'complete' : 'incomplete' 
+                            status: checked ? 'completed' : 'pending' 
                           }).then(() => {
                             onUpdate();
                           });
@@ -374,8 +374,8 @@ const TodosListClean = ({
                       }}
                       className="h-5 w-5 rounded-lg border-2 transition-all duration-200 data-[state=checked]:border-transparent shadow-sm"
                       style={{
-                        borderColor: todo.status === 'complete' ? themeColors.primary : '#D1D5DB',
-                        backgroundColor: todo.status === 'complete' ? `linear-gradient(135deg, ${themeColors.primary} 0%, ${themeColors.secondary} 100%)` : 'transparent'
+                        borderColor: (todo.status === 'complete' || todo.status === 'completed') ? themeColors.primary : '#D1D5DB',
+                        backgroundColor: (todo.status === 'complete' || todo.status === 'completed') ? `linear-gradient(135deg, ${themeColors.primary} 0%, ${themeColors.secondary} 100%)` : 'transparent'
                       }}
                     />
                   </div>
@@ -386,7 +386,7 @@ const TodosListClean = ({
                   {/* Title - smaller for compact view */}
                   <h3 className={`
                     text-sm font-medium leading-tight line-clamp-2
-                    ${todo.status === 'complete' ? 'text-gray-400 line-through' : 'text-gray-900'}
+                    ${(todo.status === 'complete' || todo.status === 'completed') ? 'text-gray-400 line-through' : 'text-gray-900'}
                   `}>
                     {todo.title}
                   </h3>
@@ -424,7 +424,7 @@ const TodosListClean = ({
                     
                     
                     {/* Enhanced done badge if completed */}
-                    {todo.status === 'complete' && (
+                    {(todo.status === 'complete' || todo.status === 'completed') && (
                       <>
                         <span className="text-gray-300">•</span>
                         <span className="flex items-center gap-1.5 px-2 py-1 rounded-full text-xs font-medium" style={{ backgroundColor: `${themeColors.primary}15`, color: themeColors.primary }}>
