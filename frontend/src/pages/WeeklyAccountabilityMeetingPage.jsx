@@ -283,7 +283,7 @@ const WeeklyAccountabilityMeetingPage = () => {
   // Load data when meeting is joined
   useEffect(() => {
     if (meetingCode) {
-      console.log('🔄 Meeting joined, loading data...');
+      console.log('🔄 Meeting joined, loading all data...');
       loadInitialData();
     }
   }, [meetingCode]);
@@ -1492,13 +1492,33 @@ const WeeklyAccountabilityMeetingPage = () => {
     setActiveSection(sectionId);
     setError(null);
     
-    // Load data if switching to scorecard or priorities and data hasn't been loaded
-    if (sectionId === 'scorecard' && scorecardMetrics.length === 0) {
-      console.log('📊 Loading scorecard data on section change...');
-      fetchScorecardData();
-    } else if (sectionId === 'priorities' && priorities.length === 0) {
-      console.log('🎯 Loading priorities data on section change...');
-      fetchPrioritiesData();
+    // Always fetch relevant data when switching sections to ensure fresh data
+    console.log(`📍 Switching to section: ${sectionId}, fetching relevant data...`);
+    
+    switch(sectionId) {
+      case 'scorecard':
+        fetchScorecardData();
+        break;
+      case 'priorities':
+        fetchPrioritiesData();
+        break;
+      case 'headlines':
+        fetchHeadlines();
+        break;
+      case 'todo-list':
+        fetchTodosData();
+        break;
+      case 'issues':
+        fetchIssuesData();
+        break;
+      case 'good-news':
+        // Good news is managed locally during the meeting
+        break;
+      case 'conclude':
+        // Conclude section doesn't need data fetch
+        break;
+      default:
+        break;
     }
     
     // Emit navigation event if leader
@@ -1515,20 +1535,32 @@ const WeeklyAccountabilityMeetingPage = () => {
         console.log('📍 Follower changing section to:', section);
         setActiveSection(section);
         
-        // Load data if needed when following leader's navigation
-        if (section === 'scorecard' && scorecardMetrics.length === 0) {
-          console.log('📊 Follower loading scorecard data...');
-          fetchScorecardData();
-        } else if (section === 'priorities' && priorities.length === 0) {
-          console.log('🎯 Follower loading priorities data...');
-          fetchPrioritiesData();
+        // Always fetch data when following leader's navigation
+        switch(section) {
+          case 'scorecard':
+            fetchScorecardData();
+            break;
+          case 'priorities':
+            fetchPrioritiesData();
+            break;
+          case 'headlines':
+            fetchHeadlines();
+            break;
+          case 'todo-list':
+            fetchTodosData();
+            break;
+          case 'issues':
+            fetchIssuesData();
+            break;
+          default:
+            break;
         }
       }
     };
     
     window.addEventListener('meeting-section-change', handleMeetingSectionChange);
     return () => window.removeEventListener('meeting-section-change', handleMeetingSectionChange);
-  }, [isLeader, scorecardMetrics.length, priorities.length]);
+  }, [isLeader]);
   
   // Listen for all meeting updates from other participants
   useEffect(() => {
