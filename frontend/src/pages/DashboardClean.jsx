@@ -11,7 +11,7 @@ import { quarterlyPrioritiesService } from '../services/quarterlyPrioritiesServi
 import { todosService } from '../services/todosService';
 import { issuesService } from '../services/issuesService';
 import { organizationService } from '../services/organizationService';
-import { getOrgTheme, saveOrgTheme } from '../utils/themeUtils';
+import { getOrgTheme, saveOrgTheme, hexToRgba } from '../utils/themeUtils';
 import { businessBlueprintService } from '../services/businessBlueprintService';
 import { getRevenueLabel } from '../utils/revenueUtils';
 import TodosList from '../components/todos/TodosListClean';
