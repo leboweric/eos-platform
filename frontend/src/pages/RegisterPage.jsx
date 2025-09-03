@@ -13,6 +13,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Badge } from '@/components/ui/badge';
 import LegalAgreement from '../components/legal/LegalAgreement';
+import { LogoText } from '../components/Logo';
 import { 
   Eye, 
   EyeOff, 
@@ -113,11 +114,9 @@ const RegisterPage = () => {
           {/* Logo and Tagline */}
           <div>
             <Link to="/" className="inline-block group mb-8">
-              <img 
-                src="/AXP_logo_upper_left_transparent.png?v=2" 
-                alt="AXP - Adaptive Execution Platform Logo" 
-                className="h-28 w-auto transition-all duration-300 group-hover:scale-105"
-              />
+              <div className="transition-all duration-300 group-hover:scale-105">
+                <LogoText useThemeColors={false} />
+              </div>
             </Link>
 
             <div className="inline-flex items-center gap-2 bg-blue-100 text-blue-700 px-4 py-2 rounded-full text-sm font-medium mb-6">
@@ -197,11 +196,9 @@ const RegisterPage = () => {
           {/* Mobile Logo */}
           <div className="lg:hidden text-center mb-8">
             <Link to="/" className="inline-block">
-              <img 
-                src="/AXP_logo_upper_left_transparent.png?v=2" 
-                alt="AXP - Adaptive Execution Platform Logo" 
-                className="h-20 w-auto mx-auto"
-              />
+              <div className="flex justify-center">
+                <LogoText useThemeColors={false} />
+              </div>
             </Link>
           </div>
 
