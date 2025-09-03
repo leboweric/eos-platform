@@ -280,6 +280,14 @@ const WeeklyAccountabilityMeetingPage = () => {
     loadInitialData();
   }, [teamId]);
 
+  // Load data when meeting is joined
+  useEffect(() => {
+    if (meetingCode) {
+      console.log('🔄 Meeting joined, loading data...');
+      loadInitialData();
+    }
+  }, [meetingCode]);
+
   // Join meeting when page loads
   const hasJoinedRef = useRef(false);
   const hasCheckedMeetingsRef = useRef(false);
@@ -1484,6 +1492,15 @@ const WeeklyAccountabilityMeetingPage = () => {
     setActiveSection(sectionId);
     setError(null);
     
+    // Load data if switching to scorecard or priorities and data hasn't been loaded
+    if (sectionId === 'scorecard' && scorecardMetrics.length === 0) {
+      console.log('📊 Loading scorecard data on section change...');
+      fetchScorecardData();
+    } else if (sectionId === 'priorities' && priorities.length === 0) {
+      console.log('🎯 Loading priorities data on section change...');
+      fetchPrioritiesData();
+    }
+    
     // Emit navigation event if leader
     if (isLeader && navigateToSection) {
       navigateToSection(sectionId);
@@ -1497,12 +1514,21 @@ const WeeklyAccountabilityMeetingPage = () => {
       if (section && !isLeader) {
         console.log('📍 Follower changing section to:', section);
         setActiveSection(section);
+        
+        // Load data if needed when following leader's navigation
+        if (section === 'scorecard' && scorecardMetrics.length === 0) {
+          console.log('📊 Follower loading scorecard data...');
+          fetchScorecardData();
+        } else if (section === 'priorities' && priorities.length === 0) {
+          console.log('🎯 Follower loading priorities data...');
+          fetchPrioritiesData();
+        }
       }
     };
     
     window.addEventListener('meeting-section-change', handleMeetingSectionChange);
     return () => window.removeEventListener('meeting-section-change', handleMeetingSectionChange);
-  }, [isLeader]);
+  }, [isLeader, scorecardMetrics.length, priorities.length]);
   
   // Listen for all meeting updates from other participants
   useEffect(() => {
