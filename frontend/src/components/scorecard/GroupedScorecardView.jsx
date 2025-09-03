@@ -51,16 +51,20 @@ const GroupedScorecardView = ({
   const [loading, setLoading] = useState(true);
   const [groupDialog, setGroupDialog] = useState({ isOpen: false, group: null });
   const [newGroupName, setNewGroupName] = useState('');
-  const [newGroupColor, setNewGroupColor] = useState('#3B82F6');
+  const [newGroupColor, setNewGroupColor] = useState('');
   const [expandedGroups, setExpandedGroups] = useState({});
   const [draggedMetric, setDraggedMetric] = useState(null);
   const [dragOverGroup, setDragOverGroup] = useState(null);
   const [draggedGroup, setDraggedGroup] = useState(null);
   const { user } = useAuthStore();
-  const [themeColors, setThemeColors] = useState({
-    primary: '#3B82F6',
-    secondary: '#1E40AF',
-    accent: '#60A5FA'
+  const [themeColors, setThemeColors] = useState(() => {
+    const currentOrgId = orgId || localStorage.getItem('organizationId');
+    const savedTheme = getOrgTheme(currentOrgId);
+    return savedTheme || {
+      primary: '#3B82F6',
+      secondary: '#1E40AF',
+      accent: '#60A5FA'
+    };
   });
   const [dragOverGroupIndex, setDragOverGroupIndex] = useState(null);
   const [draggedMetricIndex, setDraggedMetricIndex] = useState(null);
@@ -198,12 +202,12 @@ const GroupedScorecardView = ({
     try {
       const newGroup = await scorecardGroupsService.createGroup(orgId, teamId, {
         name: newGroupName,
-        color: newGroupColor,
+        color: newGroupColor || themeColors.primary,
         type: type || 'both'
       });
       setGroups([...groups, newGroup]);
       setNewGroupName('');
-      setNewGroupColor('#3B82F6');
+      setNewGroupColor('');
       setGroupDialog({ isOpen: false, group: null });
     } catch (error) {
       console.error('Failed to create group:', error);
@@ -645,7 +649,7 @@ const GroupedScorecardView = ({
           >
             <CardHeader 
               className="cursor-pointer bg-white border-b border-gray-200"
-              style={{ borderLeft: `4px solid ${group.color}` }}
+              style={{ borderLeft: `4px solid ${themeColors.primary}` }}
               onClick={() => toggleGroupExpanded(group.id)}
             >
               <div className="flex items-center justify-between">
@@ -663,7 +667,7 @@ const GroupedScorecardView = ({
                       e.stopPropagation();
                       setGroupDialog({ isOpen: true, group });
                       setNewGroupName(group.name);
-                      setNewGroupColor(group.color);
+                      setNewGroupColor(themeColors.primary);
                     }}
                   >
                     <Edit className="h-4 w-4" style={{ color: themeColors.primary }} />
@@ -766,14 +770,14 @@ const GroupedScorecardView = ({
                 <Input
                   id="group-color"
                   type="color"
-                  value={newGroupColor}
+                  value={newGroupColor || themeColors.primary}
                   onChange={(e) => setNewGroupColor(e.target.value)}
                   className="w-20"
                 />
                 <Input
-                  value={newGroupColor}
+                  value={newGroupColor || themeColors.primary}
                   onChange={(e) => setNewGroupColor(e.target.value)}
-                  placeholder="#3B82F6"
+                  placeholder={themeColors.primary}
                 />
               </div>
             </div>
