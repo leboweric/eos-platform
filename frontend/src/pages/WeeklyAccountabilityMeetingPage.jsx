@@ -35,11 +35,14 @@ import {
   Send,
   Star,
   Building2,
-  Users
+  Users,
+  User,
+  Calendar
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import ScorecardTableClean from '../components/scorecard/ScorecardTableClean';
-import PriorityCard from '../components/priorities/PriorityCardClean';
+import { Progress } from '@/components/ui/progress';
+import PriorityDialog from '../components/priorities/PriorityDialog';
 import IssuesListClean from '../components/issues/IssuesListClean';
 import IssueDialog from '../components/issues/IssueDialog';
 import { MoveIssueDialog } from '../components/issues/MoveIssueDialog';
@@ -135,6 +138,8 @@ const WeeklyAccountabilityMeetingPage = () => {
   const [selectedTeams, setSelectedTeams] = useState([]);
   const [chartModal, setChartModal] = useState({ isOpen: false, metric: null, metricId: null });
   const [showHeadlineDialog, setShowHeadlineDialog] = useState(false);
+  const [showPriorityDialog, setShowPriorityDialog] = useState(false);
+  const [selectedPriority, setSelectedPriority] = useState(null);
   
   // Collapsible sections state
   const [expandedSections, setExpandedSections] = useState({
@@ -332,6 +337,46 @@ const WeeklyAccountabilityMeetingPage = () => {
       window.removeEventListener('organizationChanged', handleOrgChange);
     };
   }, [user?.organizationId, user?.organization_id]);
+
+  const getStatusDotColor = (status) => {
+    // Return inline style object for dynamic colors
+    switch (status) {
+      case 'complete':
+        return { backgroundColor: '#10B981' }; // Keep green for complete
+      case 'on-track':
+        return { backgroundColor: themeColors.primary };
+      case 'off-track':
+        return { backgroundColor: '#EF4444' }; // Keep red for off-track
+      default:
+        return { backgroundColor: '#9CA3AF' };
+    }
+  };
+
+  const getDaysUntilDue = (dueDate) => {
+    if (!dueDate) return 0;
+    try {
+      const today = new Date();
+      today.setHours(0, 0, 0, 0); // Reset time to start of day
+      
+      let due;
+      // If the date string is in YYYY-MM-DD format, parse it as local date
+      if (typeof dueDate === 'string' && dueDate.match(/^\d{4}-\d{2}-\d{2}$/)) {
+        const [year, month, day] = dueDate.split('-').map(Number);
+        due = new Date(year, month - 1, day);
+      } else {
+        // Otherwise parse normally (handles ISO timestamps)
+        due = new Date(dueDate);
+      }
+      
+      due.setHours(0, 0, 0, 0); // Reset time to start of day
+      
+      const diff = due - today;
+      return Math.floor(diff / (1000 * 60 * 60 * 24));
+    } catch (error) {
+      console.error('Error calculating days until due:', error, 'for date:', dueDate);
+      return 0;
+    }
+  };
 
   const fetchOrganizationTheme = async () => {
     try {
@@ -1018,7 +1063,7 @@ const WeeklyAccountabilityMeetingPage = () => {
     }
   };
 
-  // Priority handlers for PriorityCard
+  // Priority handlers
   const handleUpdatePriority = async (priorityId, updates) => {
     try {
       const orgId = localStorage.getItem('impersonatedOrgId') || user?.organizationId || user?.organization_id;
@@ -1167,31 +1212,29 @@ const WeeklyAccountabilityMeetingPage = () => {
     }
   };
 
-  const handleCreateMilestone = async (priorityId, milestoneData) => {
+  const handleArchivePriority = async (priorityId) => {
     try {
       const orgId = localStorage.getItem('impersonatedOrgId') || user?.organizationId || user?.organization_id;
       const teamId = getEffectiveTeamId(null, user);
       
-      const newMilestone = await quarterlyPrioritiesService.createMilestone(orgId, teamId, priorityId, milestoneData);
+      await quarterlyPrioritiesService.archivePriority(orgId, teamId, priorityId);
       
-      // Update local state
-      setPriorities(prev => 
-        prev.map(p => {
-          if (p.id === priorityId) {
-            return {
-              ...p,
-              milestones: [...(p.milestones || []), newMilestone]
-            };
-          }
-          return p;
-        })
-      );
-      
-      setSuccess('Milestone added');
-      setTimeout(() => setSuccess(null), 3000);
+      // Remove from local state
+      setPriorities(prev => prev.filter(p => p.id !== priorityId));
     } catch (error) {
-      console.error('Failed to create milestone:', error);
-      setError('Failed to create milestone');
+      console.error('Failed to archive priority:', error);
+    }
+  };
+
+  const handleAddMilestone = async (priorityId, milestone) => {
+    try {
+      const orgId = localStorage.getItem('impersonatedOrgId') || user?.organizationId || user?.organization_id;
+      const teamId = getEffectiveTeamId(null, user);
+      
+      await quarterlyPrioritiesService.createMilestone(orgId, teamId, priorityId, milestone);
+      await fetchPrioritiesData();
+    } catch (error) {
+      console.error('Failed to add milestone:', error);
     }
   };
 
@@ -1201,27 +1244,9 @@ const WeeklyAccountabilityMeetingPage = () => {
       const teamId = getEffectiveTeamId(null, user);
       
       await quarterlyPrioritiesService.updateMilestone(orgId, teamId, priorityId, milestoneId, updates);
-      
-      // Update local state
-      setPriorities(prev => 
-        prev.map(p => {
-          if (p.id === priorityId) {
-            return {
-              ...p,
-              milestones: p.milestones.map(m => 
-                m.id === milestoneId ? { ...m, ...updates } : m
-              )
-            };
-          }
-          return p;
-        })
-      );
-      
-      setSuccess('Milestone updated');
-      setTimeout(() => setSuccess(null), 3000);
+      await fetchPrioritiesData();
     } catch (error) {
       console.error('Failed to edit milestone:', error);
-      setError('Failed to edit milestone');
     }
   };
 
@@ -1231,27 +1256,72 @@ const WeeklyAccountabilityMeetingPage = () => {
       const teamId = getEffectiveTeamId(null, user);
       
       await quarterlyPrioritiesService.deleteMilestone(orgId, teamId, priorityId, milestoneId);
-      
-      // Update local state
-      setPriorities(prev => 
-        prev.map(p => {
-          if (p.id === priorityId) {
-            return {
-              ...p,
-              milestones: p.milestones.filter(m => m.id !== milestoneId)
-            };
-          }
-          return p;
-        })
-      );
-      
-      setSuccess('Milestone deleted');
-      setTimeout(() => setSuccess(null), 3000);
+      await fetchPrioritiesData();
     } catch (error) {
       console.error('Failed to delete milestone:', error);
-      setError('Failed to delete milestone');
     }
   };
+
+  const handleAddUpdate = async (priorityId, updateText) => {
+    try {
+      const orgId = localStorage.getItem('impersonatedOrgId') || user?.organizationId || user?.organization_id;
+      const teamId = getEffectiveTeamId(null, user);
+      
+      await quarterlyPrioritiesService.createUpdate(orgId, teamId, priorityId, { text: updateText });
+      await fetchPrioritiesData();
+    } catch (error) {
+      console.error('Failed to add update:', error);
+    }
+  };
+
+  const handleEditUpdate = async (priorityId, updateId, newText) => {
+    try {
+      const orgId = localStorage.getItem('impersonatedOrgId') || user?.organizationId || user?.organization_id;
+      const teamId = getEffectiveTeamId(null, user);
+      
+      await quarterlyPrioritiesService.updateUpdate(orgId, teamId, priorityId, updateId, { text: newText });
+      await fetchPrioritiesData();
+    } catch (error) {
+      console.error('Failed to edit update:', error);
+    }
+  };
+
+  const handleDeleteUpdate = async (priorityId, updateId) => {
+    try {
+      const orgId = localStorage.getItem('impersonatedOrgId') || user?.organizationId || user?.organization_id;
+      const teamId = getEffectiveTeamId(null, user);
+      
+      await quarterlyPrioritiesService.deleteUpdate(orgId, teamId, priorityId, updateId);
+      await fetchPrioritiesData();
+    } catch (error) {
+      console.error('Failed to delete update:', error);
+    }
+  };
+
+  const handleUploadAttachment = async (priorityId, file) => {
+    try {
+      const orgId = localStorage.getItem('impersonatedOrgId') || user?.organizationId || user?.organization_id;
+      const teamId = getEffectiveTeamId(null, user);
+      
+      await quarterlyPrioritiesService.uploadAttachment(orgId, teamId, priorityId, file);
+      await fetchPrioritiesData();
+    } catch (error) {
+      console.error('Failed to upload attachment:', error);
+    }
+  };
+
+  const handleDeleteAttachment = async (priorityId, attachmentId) => {
+    try {
+      const orgId = localStorage.getItem('impersonatedOrgId') || user?.organizationId || user?.organization_id;
+      const teamId = getEffectiveTeamId(null, user);
+      
+      await quarterlyPrioritiesService.deleteAttachment(orgId, teamId, priorityId, attachmentId);
+      await fetchPrioritiesData();
+    } catch (error) {
+      console.error('Failed to delete attachment:', error);
+    }
+  };
+
 
   const handleIssueCheckboxChange = (issueId, checked) => {
     setSelectedIssueIds(prev => {
@@ -1902,20 +1972,81 @@ const WeeklyAccountabilityMeetingPage = () => {
                       </div>
                       {expandedSections.companyPriorities && (
                         <div className="space-y-4 ml-7 mt-4">
-                          {companyPriorities.map(priority => (
-                            <PriorityCard 
-                              key={priority.id} 
-                              priority={priority} 
-                              readOnly={false}
-                              onIssueCreated={(message) => {
-                                setSuccess(message);
-                                setTimeout(() => setSuccess(null), 3000);
-                              }}
-                              onStatusChange={handlePriorityStatusChange}
-                              onToggleMilestone={handleUpdateMilestone}
-                              onCreateDiscussionIssue={handleCreateDiscussionIssue}
-                            />
-                          ))}
+                          {companyPriorities.map(priority => {
+                            const isComplete = priority.status === 'complete' || priority.status === 'completed' || priority.progress === 100;
+                            const daysUntil = !isComplete ? getDaysUntilDue(priority.dueDate || priority.due_date) : null;
+                            const displayProgress = isComplete ? 100 : (priority.progress || 0);
+                            
+                            return (
+                              <Card 
+                                key={priority.id}
+                                className={`max-w-5xl transition-all duration-300 hover:shadow-lg hover:scale-[1.01] cursor-pointer ${
+                                  isComplete 
+                                    ? 'bg-gradient-to-r from-green-50/80 to-emerald-50/80 border-green-200' 
+                                    : 'bg-white/90 backdrop-blur-sm border-slate-200'
+                                }`}
+                                onClick={() => {
+                                  setSelectedPriority(priority);
+                                  setShowPriorityDialog(true);
+                                }}
+                              >
+                                <CardHeader className="pb-4">
+                                  <div className="flex items-start justify-between">
+                                    <div className="flex-1 min-w-0">
+                                      <div className="flex items-center gap-3">
+                                        {isComplete ? (
+                                          <CheckCircle className="h-5 w-5 text-green-600 flex-shrink-0" />
+                                        ) : (
+                                          <div className="w-2 h-2 rounded-full flex-shrink-0" style={getStatusDotColor(priority.status)} />
+                                        )}
+                                        <h3 className={`text-lg font-semibold break-words ${
+                                          isComplete 
+                                            ? 'text-green-900 line-through decoration-green-400' 
+                                            : 'text-gray-900'
+                                        }`}>
+                                          {priority.title}
+                                        </h3>
+                                      </div>
+                                      <div className="flex items-center gap-4 mt-2 text-sm text-gray-600">
+                                        <span className="flex items-center gap-1">
+                                          <User className="h-3 w-3" />
+                                          {priority.owner?.name || 'Unassigned'}
+                                        </span>
+                                        <span className="flex items-center gap-1">
+                                          <Calendar className="h-3 w-3" />
+                                          Due {priority.dueDate ? format(new Date(priority.dueDate), 'MMM d') : 'No date'}
+                                        </span>
+                                        {daysUntil !== null && (
+                                          <span className={`text-xs px-2 py-1 rounded-full font-medium ${
+                                            daysUntil < 0 ? 'bg-red-100 text-red-700' :
+                                            daysUntil <= 7 ? 'bg-yellow-100 text-yellow-700' :
+                                            'bg-green-100 text-green-700'
+                                          }`}>
+                                            {daysUntil < 0 ? `${Math.abs(daysUntil)} days overdue` :
+                                             daysUntil === 0 ? 'Due today' :
+                                             `${daysUntil} days left`}
+                                          </span>
+                                        )}
+                                      </div>
+                                    </div>
+                                    <div className="flex items-center gap-3">
+                                      <div className="text-right">
+                                        <div className="text-2xl font-bold" style={{ color: themeColors.primary }}>
+                                          {displayProgress}%
+                                        </div>
+                                        <Progress value={displayProgress} className="w-24 h-2" />
+                                      </div>
+                                      {isComplete && (
+                                        <Badge className="bg-green-100 text-green-800 border-green-200">
+                                          Complete
+                                        </Badge>
+                                      )}
+                                    </div>
+                                  </div>
+                                </CardHeader>
+                              </Card>
+                            );
+                          })}
                         </div>
                       )}
                     </div>
@@ -1978,20 +2109,77 @@ const WeeklyAccountabilityMeetingPage = () => {
                             </div>
                             {isExpanded && (
                               <div className="space-y-4 ml-7 mt-4">
-                                {ownerPriorities.map(priority => (
-                                  <PriorityCard 
-                                    key={priority.id} 
-                                    priority={priority} 
-                                    readOnly={false}
-                                    onIssueCreated={(message) => {
-                                      setSuccess(message);
-                                      setTimeout(() => setSuccess(null), 3000);
-                                    }}
-                                    onStatusChange={handlePriorityStatusChange}
-                                    onToggleMilestone={handleUpdateMilestone}
-                                    onCreateDiscussionIssue={handleCreateDiscussionIssue}
-                                  />
-                                ))}
+                                {ownerPriorities.map(priority => {
+                                  const isComplete = priority.status === 'complete' || priority.status === 'completed' || priority.progress === 100;
+                                  const daysUntil = !isComplete ? getDaysUntilDue(priority.dueDate || priority.due_date) : null;
+                                  const displayProgress = isComplete ? 100 : (priority.progress || 0);
+                                  
+                                  return (
+                                    <Card 
+                                      key={priority.id}
+                                      className={`max-w-5xl transition-all duration-300 hover:shadow-lg hover:scale-[1.01] cursor-pointer ${
+                                        isComplete 
+                                          ? 'bg-gradient-to-r from-green-50/80 to-emerald-50/80 border-green-200' 
+                                          : 'bg-white/90 backdrop-blur-sm border-slate-200'
+                                      }`}
+                                      onClick={() => {
+                                        setSelectedPriority(priority);
+                                        setShowPriorityDialog(true);
+                                      }}
+                                    >
+                                      <CardHeader className="pb-4">
+                                        <div className="flex items-start justify-between">
+                                          <div className="flex-1 min-w-0">
+                                            <div className="flex items-center gap-3">
+                                              {isComplete ? (
+                                                <CheckCircle className="h-5 w-5 text-green-600 flex-shrink-0" />
+                                              ) : (
+                                                <div className="w-2 h-2 rounded-full flex-shrink-0" style={getStatusDotColor(priority.status)} />
+                                              )}
+                                              <h3 className={`text-lg font-semibold break-words ${
+                                                isComplete 
+                                                  ? 'text-green-900 line-through decoration-green-400' 
+                                                  : 'text-gray-900'
+                                              }`}>
+                                                {priority.title}
+                                              </h3>
+                                            </div>
+                                            <div className="flex items-center gap-4 mt-2 text-sm text-gray-600">
+                                              <span className="flex items-center gap-1">
+                                                <Calendar className="h-3 w-3" />
+                                                Due {priority.dueDate ? format(new Date(priority.dueDate), 'MMM d') : 'No date'}
+                                              </span>
+                                              {daysUntil !== null && (
+                                                <span className={`text-xs px-2 py-1 rounded-full font-medium ${
+                                                  daysUntil < 0 ? 'bg-red-100 text-red-700' :
+                                                  daysUntil <= 7 ? 'bg-yellow-100 text-yellow-700' :
+                                                  'bg-green-100 text-green-700'
+                                                }`}>
+                                                  {daysUntil < 0 ? `${Math.abs(daysUntil)} days overdue` :
+                                                   daysUntil === 0 ? 'Due today' :
+                                                   `${daysUntil} days left`}
+                                                </span>
+                                              )}
+                                            </div>
+                                          </div>
+                                          <div className="flex items-center gap-3">
+                                            <div className="text-right">
+                                              <div className="text-2xl font-bold" style={{ color: themeColors.primary }}>
+                                                {displayProgress}%
+                                              </div>
+                                              <Progress value={displayProgress} className="w-24 h-2" />
+                                            </div>
+                                            {isComplete && (
+                                              <Badge className="bg-green-100 text-green-800 border-green-200">
+                                                Complete
+                                              </Badge>
+                                            )}
+                                          </div>
+                                        </div>
+                                      </CardHeader>
+                                    </Card>
+                                  );
+                                })}
                               </div>
                             )}
                           </div>
@@ -3091,6 +3279,28 @@ const WeeklyAccountabilityMeetingPage = () => {
         orgId={user?.organizationId}
         teamId={getEffectiveTeamId(teamId, user)}
       />
+      
+      {/* Priority Dialog */}
+      {showPriorityDialog && selectedPriority && (
+        <PriorityDialog
+          priority={selectedPriority}
+          open={showPriorityDialog}
+          onOpenChange={setShowPriorityDialog}
+          onUpdate={handleUpdatePriority}
+          onArchive={handleArchivePriority}
+          onAddMilestone={handleAddMilestone}
+          onEditMilestone={handleEditMilestone}
+          onDeleteMilestone={handleDeleteMilestone}
+          onToggleMilestone={handleUpdateMilestone}
+          onAddUpdate={handleAddUpdate}
+          onEditUpdate={handleEditUpdate}
+          onDeleteUpdate={handleDeleteUpdate}
+          onStatusChange={handlePriorityStatusChange}
+          onUploadAttachment={handleUploadAttachment}
+          onDeleteAttachment={handleDeleteAttachment}
+          teamMembers={teamMembers}
+        />
+      )}
       
       {/* Meeting Collaboration Bar */}
       <MeetingBar />
