@@ -3182,6 +3182,7 @@ const WeeklyAccountabilityMeetingPage = () => {
         issue={editingIssue}
         onSave={handleSaveIssue}
         teamMembers={teamMembers || []}
+        onTimelineChange={handleTimelineChange}
       />
 
       {/* Move Issue Dialog */}

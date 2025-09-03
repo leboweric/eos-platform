@@ -28,7 +28,8 @@ import {
   ListTodo,
   Send,
   MessageSquare,
-  Plus
+  Plus,
+  ArrowLeftRight
 } from 'lucide-react';
 import { issuesService } from '../../services/issuesService';
 import { getOrgTheme } from '../../utils/themeUtils';
@@ -43,7 +44,8 @@ const IssueDialog = ({
   timeline,
   onMoveToTeam,
   onCreateTodo,
-  onSendCascadingMessage
+  onSendCascadingMessage,
+  onTimelineChange
 }) => {
   const { user } = useAuthStore();
   const [formData, setFormData] = useState({
@@ -573,6 +575,22 @@ const IssueDialog = ({
           {/* Action Buttons for existing issues */}
           {issue && (
             <div className="flex flex-wrap gap-2 pb-4 border-b border-white/20">
+              {onTimelineChange && issue.timeline && (
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={() => {
+                    const newTimeline = issue.timeline === 'short_term' ? 'long_term' : 'short_term';
+                    onTimelineChange(issue.id, newTimeline);
+                    onClose();
+                  }}
+                  className="text-xs"
+                >
+                  <ArrowLeftRight className="mr-1 h-3 w-3" />
+                  Move to {issue.timeline === 'short_term' ? 'Long Term' : 'Short Term'}
+                </Button>
+              )}
               {onMoveToTeam && (
                 <Button
                   type="button"
