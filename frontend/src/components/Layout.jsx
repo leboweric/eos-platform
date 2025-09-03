@@ -11,6 +11,7 @@ import { organizationService } from '../services/organizationService';
 import DepartmentSelector from './DepartmentSelector';
 import DarkModeToggle from './DarkModeToggle';
 import HelpWidget from './help/HelpWidget';
+import { LogoText } from './Logo';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -190,7 +191,7 @@ const Layout = ({ children }) => {
               className="flex items-center"
               style={{ display: logoUrl ? 'none' : 'flex' }}
             >
-              <span className="text-5xl font-bold bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent">AXP</span>
+              <LogoText useThemeColors={true} />
             </div>
           </Link>
           <button
@@ -265,7 +266,7 @@ const Layout = ({ children }) => {
 
             {/* Center Logo */}
             <div className="absolute left-1/2 transform -translate-x-1/2 flex items-center">
-              <span className="text-5xl font-bold bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent">AXP</span>
+              <LogoText useThemeColors={true} />
             </div>
 
             <div className="flex items-center space-x-4">
