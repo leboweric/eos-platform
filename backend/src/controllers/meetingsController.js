@@ -23,7 +23,13 @@ export const concludeMeeting = async (req, res) => {
 
     const userId = req.user.id;
     const organizationId = req.user.organization_id || req.user.organizationId;
-    const teamId = req.params.teamId;
+    let teamId = req.params.teamId;
+    
+    // Handle "null" string or invalid team IDs - treat as leadership team
+    if (teamId === 'null' || teamId === 'undefined' || !teamId) {
+      console.log('Invalid team ID detected:', teamId, '- defaulting to leadership team');
+      teamId = '00000000-0000-0000-0000-000000000000'; // Leadership team placeholder
+    }
 
     console.log('Concluding meeting:', { meetingType, duration, rating, organizationId, teamId });
 
@@ -242,14 +248,14 @@ export const concludeMeeting = async (req, res) => {
       const todoQuery = teamId && teamId !== '00000000-0000-0000-0000-000000000000'
         ? `SELECT t.*, u.first_name, u.last_name 
            FROM todos t
-           LEFT JOIN users u ON t.assigned_to = u.id::text
+           LEFT JOIN users u ON t.assigned_to_id = u.id
            WHERE t.team_id = $1 
            AND t.status = 'incomplete' 
            AND t.deleted_at IS NULL
            ORDER BY t.due_date ASC NULLS LAST, t.created_at DESC`
         : `SELECT t.*, u.first_name, u.last_name 
            FROM todos t
-           LEFT JOIN users u ON t.assigned_to = u.id::text
+           LEFT JOIN users u ON t.assigned_to_id = u.id
            WHERE t.organization_id = $1 
            AND (t.team_id IS NULL OR t.team_id = '00000000-0000-0000-0000-000000000000')
            AND t.status = 'incomplete' 
