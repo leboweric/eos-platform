@@ -280,9 +280,8 @@ export const concludeMeeting = async (req, res) => {
     try {
       // Get today's cascading messages from this team
       const cascadeQuery = `
-        SELECT cm.*, u.first_name, u.last_name
+        SELECT cm.message
         FROM cascading_messages cm
-        JOIN users u ON cm.created_by = u.id
         WHERE cm.organization_id = $1
         AND cm.meeting_date = CURRENT_DATE
         ORDER BY cm.created_at DESC
@@ -293,8 +292,7 @@ export const concludeMeeting = async (req, res) => {
       console.log(`Found ${cascadeResult.rows.length} cascading messages from today`);
       
       cascadingMessages = cascadeResult.rows.map(msg => ({
-        message: msg.message,
-        createdBy: `${msg.first_name} ${msg.last_name}`.trim()
+        message: msg.message
       }));
     } catch (cascadeError) {
       console.error('Failed to fetch cascading messages:', cascadeError);
