@@ -1786,7 +1786,10 @@ const WeeklyAccountabilityMeetingPage = () => {
                     type="checkbox"
                     checked={showScorecardAverage}
                     onChange={(e) => setShowScorecardAverage(e.target.checked)}
-                    className="rounded border-gray-300 text-indigo-600 focus:ring-indigo-500"
+                    className="rounded border-gray-300"
+                    style={{
+                      accentColor: themeColors.primary
+                    }}
                   />
                   <span className="text-sm text-gray-600">Show Average</span>
                 </label>
@@ -1795,7 +1798,10 @@ const WeeklyAccountabilityMeetingPage = () => {
                     type="checkbox"
                     checked={showScorecardTotal}
                     onChange={(e) => setShowScorecardTotal(e.target.checked)}
-                    className="rounded border-gray-300 text-indigo-600 focus:ring-indigo-500"
+                    className="rounded border-gray-300"
+                    style={{
+                      accentColor: themeColors.primary
+                    }}
                   />
                   <span className="text-sm text-gray-600">Show Total</span>
                 </label>
@@ -1807,7 +1813,10 @@ const WeeklyAccountabilityMeetingPage = () => {
                       setIsRTL(e.target.checked);
                       localStorage.setItem('scorecardRTL', e.target.checked.toString());
                     }}
-                    className="rounded border-gray-300 text-indigo-600 focus:ring-indigo-500"
+                    className="rounded border-gray-300"
+                    style={{
+                      accentColor: themeColors.primary
+                    }}
                   />
                   <span className="text-sm text-gray-600">Right to Left</span>
                 </label>
@@ -1965,7 +1974,11 @@ const WeeklyAccountabilityMeetingPage = () => {
                           <h3 className="text-lg font-bold text-slate-900">
                             Company {labels.priorities_label || 'Priorities'}
                           </h3>
-                          <Badge className="bg-blue-100 text-blue-800 border-blue-200">
+                          <Badge className="border" style={{
+                            backgroundColor: `${themeColors.primary}15`,
+                            color: themeColors.primary,
+                            borderColor: `${themeColors.primary}30`
+                          }}>
                             {companyPriorities.length}
                           </Badge>
                         </div>
@@ -2265,7 +2278,10 @@ const WeeklyAccountabilityMeetingPage = () => {
                 
                 {/* Cascaded Messages Section */}
                 {cascadedMessages.length > 0 && (
-                  <div className="border border-blue-200 bg-blue-50 p-4 rounded-lg">
+                  <div className="border p-4 rounded-lg" style={{
+                    backgroundColor: `${themeColors.primary}10`,
+                    borderColor: `${themeColors.primary}30`
+                  }}>
                     <h4 className="font-medium mb-3 text-gray-900 flex items-center gap-2">
                       <MessageSquare className="h-4 w-4" style={{ color: themeColors.primary }} />
                       Cascaded Messages from Other Teams
@@ -2283,7 +2299,10 @@ const WeeklyAccountabilityMeetingPage = () => {
                               </span>
                             </div>
                             {!message.is_read && (
-                              <span className="text-xs bg-blue-100 text-blue-700 px-2 py-1 rounded-full">New</span>
+                              <span className="text-xs px-2 py-1 rounded-full" style={{
+                                backgroundColor: `${themeColors.primary}15`,
+                                color: themeColors.primary
+                              }}>New</span>
                             )}
                           </div>
                           <p className="text-sm text-gray-700 whitespace-pre-wrap">{message.message}</p>
@@ -2788,7 +2807,19 @@ const WeeklyAccountabilityMeetingPage = () => {
                     What key information needs to be communicated to other teams?
                   </p>
                   <textarea
-                    className="w-full p-3 border border-gray-300 rounded-lg resize-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 mb-4"
+                    className="w-full p-3 border border-gray-300 rounded-lg resize-none focus:ring-2 mb-4"
+                    style={{
+                      '--tw-ring-color': themeColors.primary,
+                      '--tw-border-opacity': 1
+                    }}
+                    onFocus={(e) => {
+                      e.target.style.borderColor = themeColors.primary;
+                      e.target.style.boxShadow = `0 0 0 3px ${themeColors.primary}20`;
+                    }}
+                    onBlur={(e) => {
+                      e.target.style.borderColor = '#d1d5db';
+                      e.target.style.boxShadow = 'none';
+                    }}
                     rows={3}
                     placeholder="Enter any messages to cascade to other teams..."
                     value={cascadingMessage}
@@ -2831,7 +2862,7 @@ const WeeklyAccountabilityMeetingPage = () => {
                                 <label htmlFor={`team-${team.id}`} className="text-sm text-gray-700">
                                   {team.name}
                                   {team.is_leadership_team && (
-                                    <span className="ml-2 text-xs text-blue-600">(Leadership)</span>
+                                    <span className="ml-2 text-xs" style={{ color: themeColors.primary }}>(Leadership)</span>
                                   )}
                                 </label>
                               </div>
@@ -2997,10 +3028,13 @@ const WeeklyAccountabilityMeetingPage = () => {
                 {participants.length > 0 && (
                   <>
                     <div className="relative group">
-                      <div className="bg-blue-50/80 backdrop-blur-sm px-4 py-2 rounded-xl border border-blue-200/50 shadow-sm cursor-pointer">
+                      <div className="backdrop-blur-sm px-4 py-2 rounded-xl border shadow-sm cursor-pointer" style={{
+                        backgroundColor: `${themeColors.primary}10`,
+                        borderColor: `${themeColors.primary}30`
+                      }}>
                         <div className="flex items-center gap-2">
-                          <Users className="h-4 w-4 text-blue-600" />
-                          <span className="text-sm font-medium text-blue-900">
+                          <Users className="h-4 w-4" style={{ color: themeColors.primary }} />
+                          <span className="text-sm font-medium" style={{ color: themeColors.primary }}>
                             {participants.length} participant{participants.length !== 1 ? 's' : ''}
                           </span>
                         </div>
@@ -3015,7 +3049,7 @@ const WeeklyAccountabilityMeetingPage = () => {
                               <div className="w-2 h-2 rounded-full bg-green-400" />
                               <span>{participant.name || 'Unknown'}</span>
                               {participant.id === currentLeader && (
-                                <span className="text-xs text-blue-600 font-medium">(Presenter)</span>
+                                <span className="text-xs font-medium" style={{ color: themeColors.primary }}>(Presenter)</span>
                               )}
                             </div>
                           ))}

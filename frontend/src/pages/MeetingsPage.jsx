@@ -265,9 +265,23 @@ const MeetingsPage = () => {
                   <Button
                     onClick={() => setShowJoinDialog(true)}
                     className={`flex items-center gap-2 text-white shadow-lg hover:shadow-xl transition-all duration-200 transform hover:scale-[1.02] ${
-                      hasActiveMeeting ? 'bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 animate-pulse' : 
-                      'bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700'
+                      hasActiveMeeting ? 'bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 animate-pulse' : ''
                     }`}
+                    style={{
+                      ...(!hasActiveMeeting ? {
+                        background: `linear-gradient(135deg, ${themeColors.primary} 0%, ${themeColors.secondary} 100%)`
+                      } : {})
+                    }}
+                    onMouseEnter={(e) => {
+                      if (!hasActiveMeeting) {
+                        e.currentTarget.style.filter = 'brightness(1.1)';
+                      }
+                    }}
+                    onMouseLeave={(e) => {
+                      if (!hasActiveMeeting) {
+                        e.currentTarget.style.filter = 'brightness(1)';
+                      }
+                    }}
                     disabled={!selectedTeamId}
                   >
                     {hasActiveMeeting && (
@@ -374,9 +388,23 @@ const MeetingsPage = () => {
                       disabled={meeting.comingSoon || !selectedTeamId || loadingTeams}
                       className={`w-full text-white transition-all duration-200 shadow-lg hover:shadow-xl transform hover:scale-[1.02] ${
                         meeting.comingSoon ? 'bg-gradient-to-r from-gray-400 to-gray-500 cursor-not-allowed' : 
-                        (isActive ? 'bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700' : 
-                        'bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700')
+                        (isActive ? 'bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700' : '')
                       }`}
+                      style={{
+                        ...((!meeting.comingSoon && !isActive) ? {
+                          background: `linear-gradient(135deg, ${themeColors.primary} 0%, ${themeColors.secondary} 100%)`
+                        } : {})
+                      }}
+                      onMouseEnter={(e) => {
+                        if (!meeting.comingSoon && !isActive) {
+                          e.currentTarget.style.filter = 'brightness(1.1)';
+                        }
+                      }}
+                      onMouseLeave={(e) => {
+                        if (!meeting.comingSoon && !isActive) {
+                          e.currentTarget.style.filter = 'brightness(1)';
+                        }
+                      }}
                     >
                       {meeting.comingSoon ? 'Coming Soon' : (isActive ? 'Join Meeting' : 'Start Meeting')}
                       {!meeting.comingSoon && <ChevronRight className="ml-2 h-4 w-4" />}
@@ -465,7 +493,16 @@ const MeetingsPage = () => {
               </Button>
               <Button
                 onClick={() => handleJoinMeeting(selectedMeetingType)}
-                className="flex-1 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white shadow-lg hover:shadow-xl transition-all duration-200 transform hover:scale-[1.02]"
+                className="flex-1 text-white shadow-lg hover:shadow-xl transition-all duration-200 transform hover:scale-[1.02]"
+                style={{
+                  background: `linear-gradient(135deg, ${themeColors.primary} 0%, ${themeColors.secondary} 100%)`
+                }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.filter = 'brightness(1.1)';
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.filter = 'brightness(1)';
+                }}
               >
                 Join Meeting
               </Button>
