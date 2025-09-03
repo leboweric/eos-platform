@@ -236,7 +236,12 @@ export const deleteHeadline = async (req, res) => {
 export const archiveHeadlines = async (req, res) => {
   try {
     const { orgId } = req.params;
-    const { teamId } = req.body;
+    let { teamId } = req.body;
+    
+    // Handle "null" string from frontend
+    if (teamId === 'null' || teamId === 'undefined' || teamId === '') {
+      teamId = null;
+    }
 
     let conditions = ['organization_id = $1', '(archived = false OR archived IS NULL)'];
     let params = [orgId];

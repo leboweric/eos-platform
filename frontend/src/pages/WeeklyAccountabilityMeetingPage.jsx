@@ -2479,7 +2479,9 @@ const WeeklyAccountabilityMeetingPage = () => {
                       size="sm"
                       onClick={async () => {
                         try {
-                          const effectiveTeamId = getEffectiveTeamId(teamId, user);
+                          // Handle "null" string from URL params
+                          const cleanTeamId = (teamId === 'null' || teamId === 'undefined') ? null : teamId;
+                          const effectiveTeamId = getEffectiveTeamId(cleanTeamId, user);
                           await headlinesService.archiveHeadlines(effectiveTeamId);
                           setSuccess('Headlines archived');
                           await fetchHeadlines(); // Refresh the headlines
