@@ -2429,7 +2429,7 @@ const QuarterlyPrioritiesPageClean = () => {
                                 ) : (
                                   <div className="w-2 h-2 rounded-full flex-shrink-0" style={getStatusDotColor(priority.status)} />
                                 )}
-                                <h3 className={`text-lg font-semibold truncate ${
+                                <h3 className={`text-lg font-semibold break-words ${
                                   isComplete 
                                     ? 'text-green-900 line-through decoration-green-400' 
                                     : 'text-gray-900'
@@ -2542,7 +2542,7 @@ const QuarterlyPrioritiesPageClean = () => {
                                     ) : (
                                       <div className="w-2 h-2 rounded-full flex-shrink-0" style={getStatusDotColor(priority.status)} />
                                     )}
-                                    <h3 className={`text-lg font-semibold truncate ${
+                                    <h3 className={`text-lg font-semibold break-words ${
                                       isComplete 
                                         ? 'text-green-900 line-through decoration-green-400' 
                                         : 'text-gray-900'
