@@ -330,11 +330,14 @@ export const concludeMeeting = async (req, res) => {
       } catch (emailError) {
         console.error('Failed to send meeting summary email:', emailError);
         console.error('Email error details:', emailError.message, emailError.stack);
-        // Return error info to frontend
-        return res.status(500).json({
-          success: false,
-          message: 'Meeting concluded but email failed to send',
-          error: emailError.message,
+        // Continue with successful conclusion even if email fails
+        // Record meeting conclusion for reminder scheduling
+        await recordMeetingConclusion(organizationId, teamId, meetingType);
+
+        return res.json({
+          success: true,
+          message: 'Meeting concluded successfully (email delivery failed)',
+          error: `Email failed: ${emailError.message}`,
           emailsSent: 0
         });
       }
