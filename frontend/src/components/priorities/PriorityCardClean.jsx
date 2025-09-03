@@ -88,6 +88,8 @@ const PriorityCardClean = ({
   const [updateText, setUpdateText] = useState('');
   const [editingMilestoneId, setEditingMilestoneId] = useState(null);
   const [editingMilestone, setEditingMilestone] = useState({ title: '', dueDate: '' });
+  const [editingUpdateId, setEditingUpdateId] = useState(null);
+  const [editingUpdateText, setEditingUpdateText] = useState('');
   const { labels } = useTerminology();
   const [themeColors, setThemeColors] = useState({
     primary: '#3B82F6',
@@ -834,21 +836,64 @@ const PriorityCardClean = ({
                     return (
                       <div key={update.id || index} className="group p-2 bg-gray-50 rounded-lg">
                         <div className="flex items-start gap-2">
-                          <div>
-                            <p className="text-sm text-gray-700">{update.text}</p>
-                            <div className="text-xs text-gray-500 mt-1">
-                              {update.createdBy} • {formatDate(update.createdAt)}
-                            </div>
+                          <div className="flex-1">
+                            {editingUpdateId === update.id ? (
+                              // Inline editing mode
+                              <div className="space-y-2">
+                                <Textarea
+                                  value={editingUpdateText}
+                                  onChange={(e) => setEditingUpdateText(e.target.value)}
+                                  className="text-sm min-h-[60px] w-full"
+                                  autoFocus
+                                />
+                                <div className="flex gap-2">
+                                  <Button
+                                    size="sm"
+                                    onClick={() => {
+                                      if (onEditUpdate && editingUpdateText.trim()) {
+                                        onEditUpdate(priority.id, update.id, editingUpdateText.trim());
+                                        setEditingUpdateId(null);
+                                        setEditingUpdateText('');
+                                      }
+                                    }}
+                                    style={{
+                                      background: `linear-gradient(135deg, ${themeColors.primary} 0%, ${themeColors.secondary} 100%)`
+                                    }}
+                                    className="text-white"
+                                  >
+                                    Save
+                                  </Button>
+                                  <Button
+                                    size="sm"
+                                    variant="outline"
+                                    onClick={() => {
+                                      setEditingUpdateId(null);
+                                      setEditingUpdateText('');
+                                    }}
+                                  >
+                                    Cancel
+                                  </Button>
+                                </div>
+                              </div>
+                            ) : (
+                              // Display mode
+                              <>
+                                <p className="text-sm text-gray-700">{update.text}</p>
+                                <div className="text-xs text-gray-500 mt-1">
+                                  {update.createdBy} • {formatDate(update.createdAt)}
+                                </div>
+                              </>
+                            )}
                           </div>
-                          {(onDeleteUpdate || onEditUpdate) && (
+                          {editingUpdateId !== update.id && (onDeleteUpdate || onEditUpdate) && (
                             <div className="opacity-0 group-hover:opacity-100 transition-opacity flex gap-1 ml-2">
                               {onEditUpdate && (
                                 <Button
                                   variant="ghost"
                                   size="sm"
                                   onClick={() => {
-                                    console.log('Edit update clicked:', { priorityId: priority.id, updateId: update.id, text: update.text });
-                                    onEditUpdate(priority.id, update.id, update.text);
+                                    setEditingUpdateId(update.id);
+                                    setEditingUpdateText(update.text);
                                   }}
                                   className="h-6 w-6 p-0 transition-colors"
                                   onMouseEnter={(e) => e.currentTarget.style.backgroundColor = themeColors.accent + '20'}
