@@ -826,6 +826,18 @@ const DashboardClean = () => {
                 </div>
                 <h2 className="text-xl font-semibold text-slate-900">
                   {viewMode === 'team-view' ? `All Team ${labels.priorities_label}` : `Your ${labels.priorities_label}`}
+                  {dashboardData.priorities.length > 0 && (() => {
+                    const completed = dashboardData.priorities.filter(p => 
+                      p.status === 'complete' || p.status === 'completed' || p.progress === 100
+                    ).length;
+                    const total = dashboardData.priorities.length;
+                    const percentage = Math.round((completed / total) * 100);
+                    return (
+                      <span className="ml-3 text-sm font-normal text-slate-600">
+                        {completed}/{total} ({percentage}%)
+                      </span>
+                    );
+                  })()}
                 </h2>
               </div>
               <Link 
