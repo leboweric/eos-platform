@@ -1861,8 +1861,11 @@ const WeeklyAccountabilityMeetingPage = () => {
               </Card>
             ) : (
               <div className="space-y-6">
-                <div className="bg-gradient-to-r from-blue-50/80 to-indigo-50/80 backdrop-blur-sm border border-blue-200/50 rounded-2xl p-4 shadow-lg">
-                  <p className="text-blue-800 text-center font-medium">
+                <div className="backdrop-blur-sm border border-opacity-50 rounded-2xl p-4 shadow-lg" style={{
+                  background: `linear-gradient(135deg, ${hexToRgba(themeColors.primary, 0.1)} 0%, ${hexToRgba(themeColors.secondary, 0.1)} 100%)`,
+                  borderColor: hexToRgba(themeColors.primary, 0.3)
+                }}>
+                  <p className="text-center font-medium" style={{ color: themeColors.primary }}>
                     <span className="font-bold">Quick Status Check:</span> Each priority owner reports "on-track" or "off-track" status
                   </p>
                 </div>
@@ -1884,7 +1887,9 @@ const WeeklyAccountabilityMeetingPage = () => {
                           ) : (
                             <ChevronRight className="h-5 w-5 text-slate-600" />
                           )}
-                          <div className="p-2 rounded-xl bg-gradient-to-br from-blue-50 to-indigo-50">
+                          <div className="p-2 rounded-xl" style={{
+                            background: `linear-gradient(135deg, ${hexToRgba(themeColors.primary, 0.1)} 0%, ${hexToRgba(themeColors.secondary, 0.1)} 100%)`
+                          }}>
                             <Building2 className="h-5 w-5" style={{ color: themeColors.primary }} />
                           </div>
                           <h3 className="text-lg font-bold text-slate-900">
@@ -1932,7 +1937,9 @@ const WeeklyAccountabilityMeetingPage = () => {
                   return Object.keys(groupedByOwner).length > 0 && (
                     <div className="space-y-4">
                       <div className="flex items-center gap-3 p-4 bg-white/80 backdrop-blur-sm border border-white/50 rounded-2xl shadow-md">
-                        <div className="p-2 rounded-xl bg-gradient-to-br from-indigo-50 to-purple-50">
+                        <div className="p-2 rounded-xl" style={{
+                          background: `linear-gradient(135deg, ${hexToRgba(themeColors.primary, 0.1)} 0%, ${hexToRgba(themeColors.secondary, 0.1)} 100%)`
+                        }}>
                           <Users className="h-5 w-5" style={{ color: themeColors.primary }} />
                         </div>
                         <h3 className="text-lg font-bold text-slate-900">
@@ -2218,7 +2225,19 @@ const WeeklyAccountabilityMeetingPage = () => {
                               setError('Failed to archive done to-dos');
                             }
                           }}
-                          className="bg-gradient-to-r from-purple-500 to-indigo-500 text-white hover:from-purple-600 hover:to-indigo-600 transition-all duration-200 shadow-md hover:shadow-lg rounded-lg"
+                          className="text-white transition-all duration-200 shadow-md hover:shadow-lg rounded-lg"
+                          style={{
+                            background: `linear-gradient(135deg, ${themeColors.primary} 0%, ${themeColors.secondary} 100%)`,
+                            ':hover': {
+                              filter: 'brightness(1.1)'
+                            }
+                          }}
+                          onMouseEnter={(e) => {
+                            e.currentTarget.style.filter = 'brightness(1.1)';
+                          }}
+                          onMouseLeave={(e) => {
+                            e.currentTarget.style.filter = 'brightness(1)';
+                          }}
                         >
                           <Archive className="mr-2 h-4 w-4" />
                           Archive Done ({doneTodosCount})
@@ -2375,7 +2394,19 @@ const WeeklyAccountabilityMeetingPage = () => {
                                   setError('Failed to archive closed issues');
                                 }
                               }}
-                              className="bg-gradient-to-r from-purple-500 to-indigo-500 text-white hover:from-purple-600 hover:to-indigo-600 transition-all duration-200 shadow-md hover:shadow-lg rounded-lg"
+                              className="text-white transition-all duration-200 shadow-md hover:shadow-lg rounded-lg"
+                          style={{
+                            background: `linear-gradient(135deg, ${themeColors.primary} 0%, ${themeColors.secondary} 100%)`,
+                            ':hover': {
+                              filter: 'brightness(1.1)'
+                            }
+                          }}
+                          onMouseEnter={(e) => {
+                            e.currentTarget.style.filter = 'brightness(1.1)';
+                          }}
+                          onMouseLeave={(e) => {
+                            e.currentTarget.style.filter = 'brightness(1)';
+                          }}
                             >
                               <Archive className="mr-2 h-4 w-4" />
                               Archive Solved ({closedIssuesCount})
@@ -2808,7 +2839,19 @@ const WeeklyAccountabilityMeetingPage = () => {
                             claimPresenter();
                           }
                         }}
-                        className="bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700 text-white shadow-lg hover:shadow-xl transition-all duration-200"
+                        className="text-white shadow-lg hover:shadow-xl transition-all duration-200"
+                        style={{
+                          background: `linear-gradient(135deg, ${themeColors.primary} 0%, ${themeColors.secondary} 100%)`,
+                          ':hover': {
+                            filter: 'brightness(1.1)'
+                          }
+                        }}
+                        onMouseEnter={(e) => {
+                          e.currentTarget.style.filter = 'brightness(1.1)';
+                        }}
+                        onMouseLeave={(e) => {
+                          e.currentTarget.style.filter = 'brightness(1)';
+                        }}
                         size="sm"
                       >
                         Claim Presenter
