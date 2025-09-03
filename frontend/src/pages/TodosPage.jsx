@@ -454,7 +454,7 @@ const TodosPage = () => {
                 onClick={handleArchiveDone}
                 className="text-white transition-all duration-200 shadow-md hover:shadow-lg rounded-lg"
                 style={{
-                  background: `linear-gradient(135deg, ${themeColors.primary} 0%, ${themeColors.secondary} 100%)`
+                  background: `linear-gradient(135deg, ${themeColors.accent} 0%, ${themeColors.primary} 100%)`
                 }}
                 onMouseEnter={(e) => {
                   e.currentTarget.style.filter = 'brightness(1.1)';
