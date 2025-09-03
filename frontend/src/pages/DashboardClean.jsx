@@ -1068,7 +1068,8 @@ const DashboardClean = () => {
                           onDelete={() => {}}
                           onUpdate={fetchDashboardData}
                           onStatusChange={async (todoId, isCompleted) => {
-                            const todo = todos.find(t => t.id === todoId);
+                            // Find the todo from all todos, not just the grouped subset
+                            const todo = dashboardData.todos.find(t => t.id === todoId) || todos.find(t => t.id === todoId);
                             if (todo) {
                               await handleTodoStatusChange(todo, isCompleted);
                             }
@@ -1090,6 +1091,12 @@ const DashboardClean = () => {
                 onEdit={handleEditTodo}
                 onDelete={() => {}}
                 onUpdate={fetchDashboardData}
+                onStatusChange={async (todoId, isCompleted) => {
+                  const todo = dashboardData.todos.find(t => t.id === todoId);
+                  if (todo) {
+                    await handleTodoStatusChange(todo, isCompleted);
+                  }
+                }}
                 showCompleted={false}
                 hideViewToggle={true}
                 hideSortOptions={true}
