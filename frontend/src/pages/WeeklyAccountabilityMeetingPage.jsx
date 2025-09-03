@@ -1607,7 +1607,10 @@ const WeeklyAccountabilityMeetingPage = () => {
                       setEditingTodo(null);
                       setShowTodoDialog(true);
                     }}
-                    className="bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white shadow-sm hover:shadow-md transition-all duration-200 text-xs"
+                    className="text-white shadow-sm hover:shadow-md transition-all duration-200 text-xs"
+                    style={{
+                      background: `linear-gradient(135deg, ${themeColors.primary} 0%, ${themeColors.secondary} 100%)`
+                    }}
                   >
                     <Plus className="h-3 w-3 mr-1" />
                     To Do
@@ -1618,7 +1621,10 @@ const WeeklyAccountabilityMeetingPage = () => {
                       setEditingIssue(null);
                       setShowIssueDialog(true);
                     }}
-                    className="bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white shadow-sm hover:shadow-md transition-all duration-200 text-xs"
+                    className="text-white shadow-sm hover:shadow-md transition-all duration-200 text-xs"
+                    style={{
+                      background: `linear-gradient(135deg, ${themeColors.primary} 0%, ${themeColors.secondary} 100%)`
+                    }}
                   >
                     <Plus className="h-3 w-3 mr-1" />
                     Add Issue
@@ -1672,7 +1678,10 @@ const WeeklyAccountabilityMeetingPage = () => {
                         setEditingTodo(null);
                         setShowTodoDialog(true);
                       }}
-                      className="bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white shadow-sm hover:shadow-md transition-all duration-200 text-xs"
+                      className="text-white shadow-sm hover:shadow-md transition-all duration-200 text-xs"
+                    style={{
+                      background: `linear-gradient(135deg, ${themeColors.primary} 0%, ${themeColors.secondary} 100%)`
+                    }}
                     >
                       <Plus className="h-3 w-3 mr-1" />
                       To Do
@@ -1683,7 +1692,10 @@ const WeeklyAccountabilityMeetingPage = () => {
                         setEditingIssue(null);
                         setShowIssueDialog(true);
                       }}
-                      className="bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white shadow-sm hover:shadow-md transition-all duration-200 text-xs"
+                      className="text-white shadow-sm hover:shadow-md transition-all duration-200 text-xs"
+                    style={{
+                      background: `linear-gradient(135deg, ${themeColors.primary} 0%, ${themeColors.secondary} 100%)`
+                    }}
                     >
                       <Plus className="h-3 w-3 mr-1" />
                       Add Issue
@@ -1805,7 +1817,10 @@ const WeeklyAccountabilityMeetingPage = () => {
                         setEditingTodo(null);
                         setShowTodoDialog(true);
                       }}
-                      className="bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white shadow-lg hover:shadow-xl transition-all duration-200"
+                      className="text-white shadow-lg hover:shadow-xl transition-all duration-200"
+                      style={{
+                        background: `linear-gradient(135deg, ${themeColors.primary} 0%, ${themeColors.secondary} 100%)`
+                      }}
                     >
                       <Plus className="h-4 w-4 mr-1" />
                       To Do
@@ -1816,7 +1831,10 @@ const WeeklyAccountabilityMeetingPage = () => {
                         setEditingIssue(null);
                         setShowIssueDialog(true);
                       }}
-                      className="bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white shadow-lg hover:shadow-xl transition-all duration-200"
+                      className="text-white shadow-lg hover:shadow-xl transition-all duration-200"
+                      style={{
+                        background: `linear-gradient(135deg, ${themeColors.primary} 0%, ${themeColors.secondary} 100%)`
+                      }}
                     >
                       <Plus className="h-4 w-4 mr-1" />
                       Add Issue
@@ -2001,7 +2019,10 @@ const WeeklyAccountabilityMeetingPage = () => {
                       setEditingTodo(null);
                       setShowTodoDialog(true);
                     }}
-                    className="bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white shadow-sm hover:shadow-md transition-all duration-200 text-xs"
+                    className="text-white shadow-sm hover:shadow-md transition-all duration-200 text-xs"
+                    style={{
+                      background: `linear-gradient(135deg, ${themeColors.primary} 0%, ${themeColors.secondary} 100%)`
+                    }}
                   >
                     <Plus className="h-3 w-3 mr-1" />
                     To Do
@@ -2012,7 +2033,10 @@ const WeeklyAccountabilityMeetingPage = () => {
                       setEditingIssue(null);
                       setShowIssueDialog(true);
                     }}
-                    className="bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white shadow-sm hover:shadow-md transition-all duration-200 text-xs"
+                    className="text-white shadow-sm hover:shadow-md transition-all duration-200 text-xs"
+                    style={{
+                      background: `linear-gradient(135deg, ${themeColors.primary} 0%, ${themeColors.secondary} 100%)`
+                    }}
                   >
                     <Plus className="h-3 w-3 mr-1" />
                     Add Issue
@@ -2020,7 +2044,10 @@ const WeeklyAccountabilityMeetingPage = () => {
                   <Button
                     size="sm"
                     onClick={() => setShowHeadlineDialog(true)}
-                    className="bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white shadow-sm hover:shadow-md transition-all duration-200 text-xs"
+                    className="text-white shadow-sm hover:shadow-md transition-all duration-200 text-xs"
+                    style={{
+                      background: `linear-gradient(135deg, ${themeColors.primary} 0%, ${themeColors.secondary} 100%)`
+                    }}
                   >
                     <Plus className="h-3 w-3 mr-1" />
                     Add Headline
@@ -2202,14 +2229,20 @@ const WeeklyAccountabilityMeetingPage = () => {
                   <div className="flex gap-2">
                     <Button 
                       onClick={handleAddTodo}
-                      className="bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white shadow-lg hover:shadow-xl transition-all duration-200"
+                      className="text-white shadow-lg hover:shadow-xl transition-all duration-200"
+                      style={{
+                        background: `linear-gradient(135deg, ${themeColors.primary} 0%, ${themeColors.secondary} 100%)`
+                      }}
                     >
                       <Plus className="mr-2 h-4 w-4" />
                       Add To-do
                     </Button>
                     <Button 
                       onClick={handleAddIssue}
-                      className="bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white shadow-lg hover:shadow-xl transition-all duration-200"
+                      className="text-white shadow-lg hover:shadow-xl transition-all duration-200"
+                      style={{
+                        background: `linear-gradient(135deg, ${themeColors.primary} 0%, ${themeColors.secondary} 100%)`
+                      }}
                     >
                       <Plus className="mr-2 h-4 w-4" />
                       Add Issue
@@ -2298,10 +2331,22 @@ const WeeklyAccountabilityMeetingPage = () => {
                   <Tabs value={issueTimeline} onValueChange={setIssueTimeline} className="w-full">
                     <div className="flex justify-between items-center mb-4">
                       <TabsList className="bg-white/80 backdrop-blur-sm border border-white/50 rounded-xl p-1">
-                        <TabsTrigger value="short_term" className="min-w-[120px] data-[state=active]:bg-gradient-to-r data-[state=active]:from-blue-600 data-[state=active]:to-indigo-600 data-[state=active]:text-white">
+                        <TabsTrigger 
+                          value="short_term" 
+                          className="min-w-[120px] data-[state=active]:text-white"
+                          style={{
+                            '--active-bg': `linear-gradient(135deg, ${themeColors.primary} 0%, ${themeColors.secondary} 100%)`
+                          }}
+                        >
                           Short Term ({shortTermIssues.length})
                         </TabsTrigger>
-                        <TabsTrigger value="long_term" className="min-w-[120px] data-[state=active]:bg-gradient-to-r data-[state=active]:from-blue-600 data-[state=active]:to-indigo-600 data-[state=active]:text-white">
+                        <TabsTrigger 
+                          value="long_term" 
+                          className="min-w-[120px] data-[state=active]:text-white"
+                          style={{
+                            '--active-bg': `linear-gradient(135deg, ${themeColors.primary} 0%, ${themeColors.secondary} 100%)`
+                          }}
+                        >
                           Long Term ({longTermIssues.length})
                         </TabsTrigger>
                       </TabsList>
@@ -2339,14 +2384,20 @@ const WeeklyAccountabilityMeetingPage = () => {
                         })()}
                         <Button 
                           onClick={handleAddTodo}
-                          className="bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white shadow-lg hover:shadow-xl transition-all duration-200"
+                          className="text-white shadow-lg hover:shadow-xl transition-all duration-200"
+                      style={{
+                        background: `linear-gradient(135deg, ${themeColors.primary} 0%, ${themeColors.secondary} 100%)`
+                      }}
                         >
                           <Plus className="mr-2 h-4 w-4" />
                           Add To Do
                         </Button>
                         <Button 
                           onClick={handleAddIssue}
-                          className="bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white shadow-lg hover:shadow-xl transition-all duration-200"
+                          className="text-white shadow-lg hover:shadow-xl transition-all duration-200"
+                      style={{
+                        background: `linear-gradient(135deg, ${themeColors.primary} 0%, ${themeColors.secondary} 100%)`
+                      }}
                         >
                           <Plus className="mr-2 h-4 w-4" />
                           Add Issue
@@ -2678,7 +2729,10 @@ const WeeklyAccountabilityMeetingPage = () => {
                   <Button
                     onClick={concludeMeeting}
                     size="lg"
-                    className="bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white shadow-lg hover:shadow-xl transition-all duration-200"
+                    className="text-white shadow-lg hover:shadow-xl transition-all duration-200"
+                    style={{
+                      background: `linear-gradient(135deg, ${themeColors.primary} 0%, ${themeColors.secondary} 100%)`
+                    }}
                   >
                     <Send className="mr-2 h-5 w-5" />
                     Conclude Meeting & Send Summary
@@ -2974,7 +3028,10 @@ const WeeklyAccountabilityMeetingPage = () => {
             </Button>
             <Button 
               onClick={handleSendCascade}
-              className="bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white shadow-lg hover:shadow-xl transition-all duration-200"
+              className="text-white shadow-lg hover:shadow-xl transition-all duration-200"
+              style={{
+                background: `linear-gradient(135deg, ${themeColors.primary} 0%, ${themeColors.secondary} 100%)`
+              }}
             >
               Send Message
             </Button>
