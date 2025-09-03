@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useAuthStore } from '../stores/authStore';
-import { useTerminology } from '../hooks/useTerminology';
+import { useTerminology } from '../contexts/TerminologyContext';
 import { aiRockAssistantService } from '../services/aiRockAssistantService';
 import { quarterlyPrioritiesService } from '../services/quarterlyPrioritiesService';
 import { teamsService } from '../services/teamsService';
