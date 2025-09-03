@@ -1945,7 +1945,7 @@ const WeeklyAccountabilityMeetingPage = () => {
                   borderColor: hexToRgba(themeColors.primary, 0.3)
                 }}>
                   <p className="text-center font-medium" style={{ color: themeColors.primary }}>
-                    <span className="font-bold">Quick Status Check:</span> Each priority owner reports "on-track" or "off-track" status
+                    <span className="font-bold">Quick Status Check:</span> Each Rock owner reports "on-track" or "off-track" status
                   </p>
                 </div>
                 {/* Company {labels.priorities_label || 'Priorities'} Section */}
