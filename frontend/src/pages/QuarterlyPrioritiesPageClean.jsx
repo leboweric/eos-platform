@@ -494,6 +494,11 @@ const QuarterlyPrioritiesPageClean = () => {
         });
         return updated;
       });
+      
+      // Update selectedPriority if this is the currently selected one
+      if (selectedPriority?.id === priorityId) {
+        setSelectedPriority(prev => updatePriorityWithProgress(prev));
+      }
     } catch (err) {
       console.error('Failed to update milestone:', err);
       if (err.status === 404) {
@@ -547,6 +552,14 @@ const QuarterlyPrioritiesPageClean = () => {
         return updated;
       });
       
+      // Update selectedPriority if this is the currently selected one
+      if (selectedPriority?.id === priorityId) {
+        setSelectedPriority(prev => ({
+          ...prev,
+          milestones: [...(prev.milestones || []), newMilestone]
+        }));
+      }
+      
       setSuccess('Milestone added successfully');
     } catch (err) {
       console.error('Failed to create milestone:', err);
@@ -566,8 +579,34 @@ const QuarterlyPrioritiesPageClean = () => {
       console.log('Updating milestone with:', { priorityId, milestoneId, updates });
       await quarterlyPrioritiesService.updateMilestone(orgId, teamId, priorityId, milestoneId, updates);
       
-      // Refresh data
-      await fetchQuarterlyData();
+      // Update local state
+      const updatePriorityMilestone = (p) => {
+        if (p.id !== priorityId) return p;
+        return {
+          ...p,
+          milestones: p.milestones?.map(m =>
+            m.id === milestoneId ? { ...m, ...updates } : m
+          ) || []
+        };
+      };
+      
+      setCompanyPriorities(prev => prev.map(updatePriorityMilestone));
+      setTeamMemberPriorities(prev => {
+        const updated = { ...prev };
+        Object.keys(updated).forEach(memberId => {
+          if (updated[memberId]?.priorities) {
+            updated[memberId].priorities = updated[memberId].priorities.map(updatePriorityMilestone);
+          }
+        });
+        return updated;
+      });
+      
+      // Update selectedPriority if this is the currently selected one
+      if (selectedPriority?.id === priorityId) {
+        setSelectedPriority(prev => updatePriorityMilestone(prev));
+      }
+      
+      setSuccess('Milestone updated successfully');
     } catch (err) {
       console.error('Failed to update milestone:', err);
       if (err.status === 404) {
@@ -616,6 +655,14 @@ const QuarterlyPrioritiesPageClean = () => {
         });
         return updated;
       });
+      
+      // Update selectedPriority if this is the currently selected one
+      if (selectedPriority?.id === priorityId) {
+        setSelectedPriority(prev => ({
+          ...prev,
+          milestones: removeMilestone(prev.milestones)
+        }));
+      }
       
       setSuccess('Milestone deleted successfully');
     } catch (err) {
