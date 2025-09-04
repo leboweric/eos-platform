@@ -3277,7 +3277,7 @@ const WeeklyAccountabilityMeetingPage = () => {
                                   // Also set the old meetingRating for backwards compatibility
                                   setMeetingRating(ratingValue);
                                 }}>
-                                  <SelectTrigger className="w-24">
+                                  <SelectTrigger className="w-24 bg-white">
                                     <SelectValue placeholder="Rate" />
                                   </SelectTrigger>
                                   <SelectContent>
@@ -3328,7 +3328,7 @@ const WeeklyAccountabilityMeetingPage = () => {
                           }
                         });
                       }}>
-                        <SelectTrigger className="w-32">
+                        <SelectTrigger className="w-32 bg-white">
                           <SelectValue placeholder="Select" />
                         </SelectTrigger>
                         <SelectContent>
