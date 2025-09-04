@@ -1176,22 +1176,64 @@ const WeeklyAccountabilityMeetingPage = () => {
       const orgId = user?.organizationId || user?.organization_id;
       const teamId = getEffectiveTeamId(null, user);
       
+      if (!orgId || !teamId) {
+        throw new Error('Organization or team not found');
+      }
+      
+      // First update the milestone
       await quarterlyPrioritiesService.updateMilestone(orgId, teamId, priorityId, milestoneId, { completed });
       
-      // Update local state
-      setPriorities(prev => 
-        prev.map(p => {
-          if (p.id === priorityId) {
-            return {
-              ...p,
-              milestones: p.milestones.map(m => 
-                m.id === milestoneId ? { ...m, completed } : m
-              )
-            };
+      // Update local state and recalculate progress
+      const updatePriorityWithProgress = (p) => {
+        if (p.id !== priorityId) return p;
+        
+        const updatedMilestones = p.milestones?.map(m => 
+          m.id === milestoneId ? { ...m, completed } : m
+        ) || [];
+        
+        // Calculate new progress based on completed milestones
+        const completedCount = updatedMilestones.filter(m => m.completed).length;
+        const totalCount = updatedMilestones.length;
+        const newProgress = totalCount > 0 ? Math.round((completedCount / totalCount) * 100) : 0;
+        
+        // Auto-update status based on milestone completion
+        let newStatus = p.status;
+        if (totalCount > 0) {
+          // Only set to complete if ALL milestones are actually checked
+          if (completedCount === totalCount && totalCount > 0) {
+            newStatus = 'complete';
+          } else if (newStatus === 'complete' && completedCount < totalCount) {
+            // Was complete but unchecked a milestone - revert to on-track
+            newStatus = 'on-track';
           }
-          return p;
-        })
-      );
+        }
+        
+        return { 
+          ...p, 
+          milestones: updatedMilestones,
+          progress: newProgress,
+          status: newStatus
+        };
+      };
+      
+      // Update priorities in state
+      setPriorities(prev => prev.map(updatePriorityWithProgress));
+      
+      // Update selectedPriority if this is the currently selected one
+      if (selectedPriority?.id === priorityId) {
+        setSelectedPriority(prev => updatePriorityWithProgress(prev));
+      }
+      
+      // Update progress and status on the backend
+      const currentPriority = priorities.find(p => p.id === priorityId);
+      if (currentPriority) {
+        const updatedPriority = updatePriorityWithProgress(currentPriority);
+        const updates = { progress: updatedPriority.progress };
+        if (updatedPriority.status !== currentPriority.status) {
+          updates.status = updatedPriority.status;
+        }
+        await quarterlyPrioritiesService.updatePriority(orgId, teamId, priorityId, updates);
+      }
       
       setSuccess('Milestone updated');
       setTimeout(() => setSuccess(null), 3000);
@@ -1259,15 +1301,75 @@ const WeeklyAccountabilityMeetingPage = () => {
     }
   };
 
-  const handleAddMilestone = async (priorityId, milestone) => {
+  const handleAddMilestone = async (priorityId, milestoneData) => {
     try {
       const orgId = user?.organizationId || user?.organization_id;
       const teamId = getEffectiveTeamId(null, user);
       
-      await quarterlyPrioritiesService.createMilestone(orgId, teamId, priorityId, milestone);
-      await fetchPrioritiesData();
+      if (!orgId || !teamId) {
+        throw new Error('Organization or team not found');
+      }
+      
+      const result = await quarterlyPrioritiesService.createMilestone(orgId, teamId, priorityId, milestoneData);
+      
+      // Update local state instead of refetching
+      const newMilestone = {
+        id: result?.id || Date.now().toString(),
+        title: milestoneData.title,
+        dueDate: milestoneData.dueDate,
+        completed: false
+      };
+      
+      // Update priorities
+      setPriorities(prev => prev.map(p => 
+        p.id === priorityId 
+          ? { ...p, milestones: [...(p.milestones || []), newMilestone] }
+          : p
+      ));
+      
+      // Update selectedPriority if this is the currently selected one
+      if (selectedPriority?.id === priorityId) {
+        setSelectedPriority(prev => ({
+          ...prev,
+          milestones: [...(prev.milestones || []), newMilestone]
+        }));
+      }
+      
+      // Calculate and update progress on the backend
+      const currentPriority = priorities.find(p => p.id === priorityId);
+      if (currentPriority) {
+        const allMilestones = [...(currentPriority.milestones || []), newMilestone];
+        const completedCount = allMilestones.filter(m => m.completed).length;
+        const totalCount = allMilestones.length;
+        const newProgress = totalCount > 0 ? Math.round((completedCount / totalCount) * 100) : 0;
+        
+        // Determine if status needs to change
+        let newStatus = currentPriority.status;
+        if (currentPriority.status === 'complete' && completedCount < totalCount) {
+          newStatus = 'on-track';
+        }
+        
+        const updates = { progress: newProgress };
+        if (newStatus !== currentPriority.status) {
+          updates.status = newStatus;
+        }
+        await quarterlyPrioritiesService.updatePriority(orgId, teamId, priorityId, updates);
+        
+        // Update local state with new progress and status
+        setPriorities(prev => prev.map(p => 
+          p.id === priorityId ? { ...p, progress: newProgress, status: newStatus } : p
+        ));
+        
+        if (selectedPriority?.id === priorityId) {
+          setSelectedPriority(prev => ({ ...prev, progress: newProgress, status: newStatus }));
+        }
+      }
+      
+      setSuccess('Milestone added successfully');
+      setTimeout(() => setSuccess(null), 3000);
     } catch (error) {
       console.error('Failed to add milestone:', error);
+      setError('Failed to add milestone');
     }
   };
 
@@ -1288,20 +1390,114 @@ const WeeklyAccountabilityMeetingPage = () => {
       const orgId = user?.organizationId || user?.organization_id;
       const teamId = getEffectiveTeamId(null, user);
       
+      if (!orgId || !teamId) {
+        throw new Error('Organization or team not found');
+      }
+      
       await quarterlyPrioritiesService.deleteMilestone(orgId, teamId, priorityId, milestoneId);
-      await fetchPrioritiesData();
+      
+      // Update local state instead of refetching
+      const removeMilestone = (milestones) => 
+        milestones?.filter(m => m.id !== milestoneId) || [];
+      
+      // Update priorities
+      setPriorities(prev => prev.map(p => 
+        p.id === priorityId 
+          ? { ...p, milestones: removeMilestone(p.milestones) }
+          : p
+      ));
+      
+      // Update selectedPriority if this is the currently selected one
+      if (selectedPriority?.id === priorityId) {
+        setSelectedPriority(prev => ({
+          ...prev,
+          milestones: removeMilestone(prev.milestones)
+        }));
+      }
+      
+      // Calculate and update progress on the backend
+      const currentPriority = priorities.find(p => p.id === priorityId);
+      if (currentPriority) {
+        const remainingMilestones = removeMilestone(currentPriority.milestones);
+        const completedCount = remainingMilestones.filter(m => m.completed).length;
+        const totalCount = remainingMilestones.length;
+        const newProgress = totalCount > 0 ? Math.round((completedCount / totalCount) * 100) : 0;
+        
+        // Determine status based on actual milestone completion
+        let newStatus = currentPriority.status;
+        if (totalCount > 0) {
+          if (currentPriority.status === 'complete' && completedCount < totalCount) {
+            newStatus = 'on-track';
+          } else if (completedCount === totalCount && totalCount > 0) {
+            newStatus = 'complete';
+          }
+        }
+        
+        const updates = { progress: newProgress };
+        if (newStatus !== currentPriority.status) {
+          updates.status = newStatus;
+        }
+        await quarterlyPrioritiesService.updatePriority(orgId, teamId, priorityId, updates);
+        
+        // Update local state with new progress and status
+        setPriorities(prev => prev.map(p => 
+          p.id === priorityId ? { ...p, progress: newProgress, status: newStatus } : p
+        ));
+        
+        if (selectedPriority?.id === priorityId) {
+          setSelectedPriority(prev => ({ ...prev, progress: newProgress, status: newStatus }));
+        }
+      }
+      
+      setSuccess('Milestone deleted successfully');
+      setTimeout(() => setSuccess(null), 3000);
     } catch (error) {
       console.error('Failed to delete milestone:', error);
+      setError('Failed to delete milestone');
     }
   };
 
-  const handleAddUpdate = async (priorityId, updateText) => {
+  const handleAddUpdate = async (priorityId, updateText, statusChange = null) => {
     try {
       const orgId = user?.organizationId || user?.organization_id;
       const teamId = getEffectiveTeamId(null, user);
       
-      await quarterlyPrioritiesService.createUpdate(orgId, teamId, priorityId, { text: updateText });
-      await fetchPrioritiesData();
+      if (!orgId || !teamId) {
+        throw new Error('Organization or team not found');
+      }
+      
+      // Fix: Use correct method name
+      const result = await quarterlyPrioritiesService.addPriorityUpdate(orgId, teamId, priorityId, updateText, statusChange);
+      
+      // Ensure we have a valid result
+      if (!result || !result.id) {
+        console.error('Invalid update response - missing ID:', result);
+        throw new Error('Failed to create update - no ID returned');
+      }
+      
+      // Update local state immediately
+      const newUpdate = {
+        id: result.id,
+        text: result.update_text || updateText,
+        createdAt: result.created_at || new Date().toISOString(),
+        createdBy: user?.firstName && user?.lastName ? `${user.firstName} ${user.lastName}` : user?.email || 'Unknown'
+      };
+      
+      // Update selected priority if it's the one being viewed
+      if (selectedPriority?.id === priorityId) {
+        setSelectedPriority(prev => ({
+          ...prev,
+          updates: [newUpdate, ...(prev.updates || [])],
+          status: statusChange || prev.status
+        }));
+      }
+      
+      // Update priorities in state
+      setPriorities(prev => prev.map(p => 
+        p.id === priorityId 
+          ? { ...p, updates: [newUpdate, ...(p.updates || [])], status: statusChange || p.status }
+          : p
+      ));
     } catch (error) {
       console.error('Failed to add update:', error);
     }
@@ -1309,11 +1505,39 @@ const WeeklyAccountabilityMeetingPage = () => {
 
   const handleEditUpdate = async (priorityId, updateId, newText) => {
     try {
+      const editText = window.prompt('Edit update:', newText);
+      if (!editText || editText === newText) {
+        return;
+      }
+      
       const orgId = user?.organizationId || user?.organization_id;
       const teamId = getEffectiveTeamId(null, user);
       
-      await quarterlyPrioritiesService.updateUpdate(orgId, teamId, priorityId, updateId, { text: newText });
-      await fetchPrioritiesData();
+      if (!orgId || !teamId) {
+        throw new Error('Organization or team not found');
+      }
+      
+      // Fix: Use correct method name
+      await quarterlyPrioritiesService.editPriorityUpdate(orgId, teamId, priorityId, updateId, editText);
+      
+      // Update local state immediately
+      const editUpdate = (updates) => 
+        updates?.map(u => u.id === updateId ? { ...u, text: editText } : u) || [];
+      
+      // Update selected priority if it's the one being viewed
+      if (selectedPriority?.id === priorityId) {
+        setSelectedPriority(prev => ({
+          ...prev,
+          updates: editUpdate(prev.updates)
+        }));
+      }
+      
+      // Update priorities in state
+      setPriorities(prev => prev.map(p => 
+        p.id === priorityId 
+          ? { ...p, updates: editUpdate(p.updates) }
+          : p
+      ));
     } catch (error) {
       console.error('Failed to edit update:', error);
     }
@@ -1321,11 +1545,38 @@ const WeeklyAccountabilityMeetingPage = () => {
 
   const handleDeleteUpdate = async (priorityId, updateId) => {
     try {
+      if (!window.confirm('Are you sure you want to delete this update?')) {
+        return;
+      }
+      
       const orgId = user?.organizationId || user?.organization_id;
       const teamId = getEffectiveTeamId(null, user);
       
-      await quarterlyPrioritiesService.deleteUpdate(orgId, teamId, priorityId, updateId);
-      await fetchPrioritiesData();
+      if (!orgId || !teamId) {
+        throw new Error('Organization or team not found');
+      }
+      
+      // Fix: Use correct method name
+      await quarterlyPrioritiesService.deletePriorityUpdate(orgId, teamId, priorityId, updateId);
+      
+      // Update local state immediately
+      const removeUpdate = (updates) => 
+        updates?.filter(u => u.id !== updateId) || [];
+      
+      // Update selected priority if it's the one being viewed
+      if (selectedPriority?.id === priorityId) {
+        setSelectedPriority(prev => ({
+          ...prev,
+          updates: removeUpdate(prev.updates)
+        }));
+      }
+      
+      // Update priorities in state
+      setPriorities(prev => prev.map(p => 
+        p.id === priorityId 
+          ? { ...p, updates: removeUpdate(p.updates) }
+          : p
+      ));
     } catch (error) {
       console.error('Failed to delete update:', error);
     }
