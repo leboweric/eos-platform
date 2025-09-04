@@ -219,8 +219,10 @@ const Layout = ({ children }) => {
       {/* Sidebar - Hidden when hideSidebar flag is set */}
       {!hideSidebar && (
         <div className={`
-        fixed inset-y-0 left-0 z-50 w-64 bg-white dark:bg-gray-800 shadow-lg dark:shadow-gray-900/50 transform transition-transform duration-300 ease-in-out lg:translate-x-0 lg:sticky lg:top-0 lg:h-screen lg:flex lg:flex-col overflow-y-auto
-        ${sidebarOpen ? 'translate-x-0' : '-translate-x-full'}
+        w-64 bg-white dark:bg-gray-800 shadow-lg dark:shadow-gray-900/50 
+        fixed inset-y-0 left-0 z-50 transform transition-transform duration-300 ease-in-out
+        lg:sticky lg:top-0 lg:h-screen lg:transform-none lg:transition-none lg:flex lg:flex-col overflow-y-auto
+        ${sidebarOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'}
       `}>
         <div className="flex items-center justify-between h-20 px-6 border-b">
           <Link to="/dashboard" className="flex items-center space-x-2">
