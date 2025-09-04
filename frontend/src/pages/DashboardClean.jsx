@@ -19,6 +19,7 @@ import TodoDialog from '../components/todos/TodoDialog';
 import IssueDialog from '../components/issues/IssueDialog';
 import HeadlineDialog from '../components/headlines/HeadlineDialog';
 import { headlinesService } from '../services/headlinesService';
+import { cascadingMessagesService } from '../services/cascadingMessagesService';
 import { useSelectedTodos } from '../contexts/SelectedTodosContext';
 import { useTerminology } from '../contexts/TerminologyContext';
 import { useDepartment } from '../contexts/DepartmentContext';
@@ -41,7 +42,8 @@ import {
   Users,
   ChartBar,
   User,
-  Users2
+  Users2,
+  MessageSquare
 } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { format } from 'date-fns';
@@ -103,6 +105,8 @@ const DashboardClean = () => {
       totalShortTermIssues: 0
     }
   });
+  const [headlines, setHeadlines] = useState({ customer: [], employee: [] });
+  const [cascadedMessages, setCascadedMessages] = useState([]);
   
   // Re-fetch data when view mode or department changes
   useEffect(() => {
@@ -118,6 +122,8 @@ const DashboardClean = () => {
     } else if (user) {
       fetchDashboardData();
       fetchOrganizationTheme();
+      fetchHeadlines();
+      fetchCascadedMessages();
       
       // Retry fetching business blueprint after a short delay if initial load fails
       // This helps with timing issues on initial login
@@ -487,6 +493,36 @@ const DashboardClean = () => {
       setEditingPredictions(false);
     } catch (err) {
       console.error('Failed to save predictions:', err);
+    }
+  };
+
+  const fetchHeadlines = async () => {
+    try {
+      const teamId = selectedDepartment?.id || getTeamId(user, viewMode === 'team-view' ? 'team' : 'individual');
+      const response = await headlinesService.getHeadlines(teamId, false); // false = don't include archived
+      
+      // Organize headlines by type
+      const customerHeadlines = response.filter(h => h.type === 'customer');
+      const employeeHeadlines = response.filter(h => h.type === 'employee');
+      
+      setHeadlines({
+        customer: customerHeadlines,
+        employee: employeeHeadlines
+      });
+    } catch (error) {
+      console.error('Failed to fetch headlines:', error);
+    }
+  };
+
+  const fetchCascadedMessages = async () => {
+    try {
+      const orgId = user?.organizationId || user?.organization_id;
+      const teamId = selectedDepartment?.id || getTeamId(user, viewMode === 'team-view' ? 'team' : 'individual');
+      
+      const response = await cascadingMessagesService.getCascadingMessages(orgId, teamId);
+      setCascadedMessages(response.data || []);
+    } catch (error) {
+      console.error('Failed to fetch cascaded messages:', error);
     }
   };
 
@@ -1215,6 +1251,87 @@ const DashboardClean = () => {
           </div>
         </div>
 
+        {/* Headlines & Messages Card */}
+        {(headlines.customer.length > 0 || headlines.employee.length > 0 || cascadedMessages.length > 0) && (
+          <div className="mt-8 bg-white/80 backdrop-blur-sm rounded-2xl p-6 shadow-sm border border-white/50">
+            <div className="flex items-center gap-3 mb-6">
+              <div className="w-10 h-10 rounded-lg flex items-center justify-center"
+                   style={{
+                     background: `linear-gradient(135deg, ${themeColors.primary} 0%, ${themeColors.secondary} 100%)`
+                   }}>
+                <MessageSquare className="h-5 w-5 text-white" />
+              </div>
+              <h2 className="text-xl font-semibold text-slate-900">Headlines & Messages</h2>
+            </div>
+
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+              {/* Customer Headlines */}
+              <div>
+                <h3 className="text-sm font-semibold text-slate-700 mb-3 flex items-center gap-2">
+                  <Users className="h-4 w-4" style={{ color: themeColors.primary }} />
+                  Customer Headlines ({headlines.customer.length})
+                </h3>
+                {headlines.customer.length > 0 ? (
+                  <div className="space-y-2">
+                    {headlines.customer.map(headline => (
+                      <div key={headline.id} className="p-3 bg-slate-50/50 rounded-lg border border-slate-200/50">
+                        <p className="text-sm text-slate-700">{headline.text}</p>
+                        <p className="text-xs text-slate-500 mt-1">
+                          {headline.created_by_name || 'Unknown'} • {format(new Date(headline.created_at), 'MMM d')}
+                        </p>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <p className="text-sm text-slate-500 italic">No customer headlines</p>
+                )}
+              </div>
+
+              {/* Employee Headlines */}
+              <div>
+                <h3 className="text-sm font-semibold text-slate-700 mb-3 flex items-center gap-2">
+                  <Users2 className="h-4 w-4" style={{ color: themeColors.primary }} />
+                  Employee Headlines ({headlines.employee.length})
+                </h3>
+                {headlines.employee.length > 0 ? (
+                  <div className="space-y-2">
+                    {headlines.employee.map(headline => (
+                      <div key={headline.id} className="p-3 bg-slate-50/50 rounded-lg border border-slate-200/50">
+                        <p className="text-sm text-slate-700">{headline.text}</p>
+                        <p className="text-xs text-slate-500 mt-1">
+                          {headline.created_by_name || 'Unknown'} • {format(new Date(headline.created_at), 'MMM d')}
+                        </p>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <p className="text-sm text-slate-500 italic">No employee headlines</p>
+                )}
+              </div>
+            </div>
+
+            {/* Cascaded Messages Section */}
+            {cascadedMessages.length > 0 && (
+              <div className="mt-6 pt-6 border-t border-slate-200">
+                <h3 className="text-sm font-semibold text-slate-700 mb-3 flex items-center gap-2">
+                  <MessageSquare className="h-4 w-4" style={{ color: themeColors.primary }} />
+                  Cascaded Messages from Other Teams ({cascadedMessages.length})
+                </h3>
+                <div className="space-y-2">
+                  {cascadedMessages.map(message => (
+                    <div key={message.id} className="p-3 bg-blue-50/50 rounded-lg border border-blue-200/50">
+                      <p className="text-sm text-slate-700">{message.message}</p>
+                      <p className="text-xs text-slate-500 mt-1">
+                        From {message.from_team_name || 'Unknown Team'} • {format(new Date(message.created_at), 'MMM d, h:mm a')}
+                      </p>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
+        )}
+
         {/* Enhanced Quick Actions */}
         <div className="mt-12 pt-8 border-t border-slate-200">
           <div className="flex items-center gap-2 mb-6">
@@ -1380,7 +1497,8 @@ const DashboardClean = () => {
               ...headlineData,
               teamId: userTeamId
             });
-            // Success is handled in the dialog component
+            // Refresh headlines after adding
+            await fetchHeadlines();
           }}
         />
 
