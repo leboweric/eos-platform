@@ -904,18 +904,16 @@ const DashboardClean = () => {
             ) : viewMode === 'team-view' ? (
               // Team View: Group by owner
               <div className="space-y-4 max-h-[600px] overflow-y-auto pr-2">
-                {(() => {
-                  // Group priorities by owner
-                  const groupedPriorities = dashboardData.priorities.reduce((groups, priority) => {
+                {Object.entries(
+                  dashboardData.priorities.reduce((groups, priority) => {
                     const ownerName = priority.owner?.name || 'Unassigned';
                     if (!groups[ownerName]) {
                       groups[ownerName] = [];
                     }
                     groups[ownerName].push(priority);
                     return groups;
-                  }, {});
-                  
-                  return Object.entries(groupedPriorities).map(([ownerName, priorities]) => (
+                  }, {})
+                ).map(([ownerName, priorities]) => (
                   <div key={ownerName} className="space-y-2">
                     <h3 className="text-sm font-semibold text-slate-700 px-2">
                       {ownerName} ({priorities.length})
@@ -1000,8 +998,7 @@ const DashboardClean = () => {
                           );
                     })}
                   </div>
-                  ));
-                })()}
+                ))}
               </div>
             ) : (
               // My Items View: Flat list
