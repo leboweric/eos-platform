@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Checkbox } from '@/components/ui/checkbox';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
@@ -408,12 +409,10 @@ const PriorityDialog = ({
                 </div>
                 
                 <div className="flex items-center gap-3 p-4 bg-blue-50/30 rounded-lg mt-4">
-                  <input
-                    type="checkbox"
+                  <Checkbox
                     id="isCompanyWide"
                     checked={formData.isCompanyPriority || false}
-                    onChange={(e) => setFormData({ ...formData, isCompanyPriority: e.target.checked })}
-                    className="rounded border-gray-300"
+                    onCheckedChange={(checked) => setFormData({ ...formData, isCompanyPriority: checked })}
                   />
                   <Label htmlFor="isCompanyWide" className="text-sm font-medium cursor-pointer">
                     This is a company-wide priority
@@ -462,12 +461,11 @@ const PriorityDialog = ({
                     </div>
                   ) : (
                     <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-3 ml-1">
-                        <input
-                          type="checkbox"
+                      <div className="flex items-center gap-3">
+                        <Checkbox
                           checked={milestone.completed}
-                          onChange={(e) => onToggleMilestone?.(priority.id, milestone.id, e.target.checked)}
-                          className="h-4 w-4 rounded flex-shrink-0"
+                          onCheckedChange={(checked) => onToggleMilestone?.(priority.id, milestone.id, checked)}
+                          className="flex-shrink-0"
                         />
                         <div>
                           <p className={`font-medium ${milestone.completed ? 'line-through text-gray-500' : ''}`}>
