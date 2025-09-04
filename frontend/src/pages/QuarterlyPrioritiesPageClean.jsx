@@ -861,6 +861,14 @@ const QuarterlyPrioritiesPageClean = () => {
         return updated;
       });
       
+      // Update selectedPriority if this is the currently selected one
+      if (selectedPriority?.id === priorityId) {
+        setSelectedPriority(prev => ({
+          ...prev,
+          updates: removeUpdate(prev.updates)
+        }));
+      }
+      
       setSuccess('Update deleted successfully');
     } catch (err) {
       console.error('Failed to delete update:', err);
@@ -911,6 +919,14 @@ const QuarterlyPrioritiesPageClean = () => {
         });
         return updated;
       });
+      
+      // Update selectedPriority if this is the currently selected one
+      if (selectedPriority?.id === priorityId) {
+        setSelectedPriority(prev => ({
+          ...prev,
+          updates: editUpdate(prev.updates)
+        }));
+      }
       
       setSuccess('Update edited successfully');
     } catch (err) {
@@ -967,6 +983,15 @@ const QuarterlyPrioritiesPageClean = () => {
         });
         return updated;
       });
+      
+      // Update selectedPriority if this is the currently selected one
+      if (selectedPriority?.id === priorityId) {
+        setSelectedPriority(prev => ({
+          ...prev,
+          updates: [newUpdate, ...(prev.updates || [])],
+          status: statusChange || prev.status
+        }));
+      }
       
       setSuccess('Update added successfully');
     } catch (err) {
