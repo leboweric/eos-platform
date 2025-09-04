@@ -878,6 +878,87 @@ const DashboardClean = () => {
           </div>
         </div>
 
+        {/* Headlines & Messages Card */}
+        <div className="mb-8 bg-white/80 backdrop-blur-sm rounded-2xl p-6 shadow-sm border border-white/50">
+            <div className="flex items-center gap-3 mb-6">
+              <div className="w-10 h-10 rounded-lg flex items-center justify-center"
+                   style={{
+                     background: `linear-gradient(135deg, ${themeColors.primary} 0%, ${themeColors.secondary} 100%)`
+                   }}>
+                <MessageSquare className="h-5 w-5 text-white" />
+              </div>
+              <h2 className="text-xl font-semibold text-slate-900">Headlines & Messages</h2>
+            </div>
+
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+              {/* Customer Headlines */}
+              <div>
+                <h3 className="text-sm font-semibold text-slate-700 mb-3 flex items-center gap-2">
+                  <Users className="h-4 w-4" style={{ color: themeColors.primary }} />
+                  Customer Headlines ({headlines.customer.length})
+                </h3>
+                {headlines.customer.length > 0 ? (
+                  <div className="space-y-2">
+                    {headlines.customer.map(headline => (
+                      <div key={headline.id} className="p-3 bg-slate-50/50 rounded-lg border border-slate-200/50">
+                        <p className="text-sm text-slate-700">{headline.text}</p>
+                        <p className="text-xs text-slate-500 mt-1">
+                          {headline.created_by_name || 'Unknown'} • {format(new Date(headline.created_at), 'MMM d')}
+                        </p>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <p className="text-sm text-slate-500 italic">No customer headlines</p>
+                )}
+              </div>
+
+              {/* Employee Headlines */}
+              <div>
+                <h3 className="text-sm font-semibold text-slate-700 mb-3 flex items-center gap-2">
+                  <Users2 className="h-4 w-4" style={{ color: themeColors.primary }} />
+                  Employee Headlines ({headlines.employee.length})
+                </h3>
+                {headlines.employee.length > 0 ? (
+                  <div className="space-y-2">
+                    {headlines.employee.map(headline => (
+                      <div key={headline.id} className="p-3 bg-slate-50/50 rounded-lg border border-slate-200/50">
+                        <p className="text-sm text-slate-700">{headline.text}</p>
+                        <p className="text-xs text-slate-500 mt-1">
+                          {headline.created_by_name || 'Unknown'} • {format(new Date(headline.created_at), 'MMM d')}
+                        </p>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <p className="text-sm text-slate-500 italic">No employee headlines</p>
+                )}
+              </div>
+            </div>
+
+            {/* Cascaded Messages Section */}
+            <div className="mt-6 pt-6 border-t border-slate-200">
+              <h3 className="text-sm font-semibold text-slate-700 mb-3 flex items-center gap-2">
+                <MessageSquare className="h-4 w-4" style={{ color: themeColors.primary }} />
+                Cascaded Messages from Other Teams ({cascadedMessages.length})
+              </h3>
+              {cascadedMessages.length > 0 ? (
+                <div className="space-y-2">
+                  {cascadedMessages.map(message => (
+                    <div key={message.id} className="p-3 bg-blue-50/50 rounded-lg border border-blue-200/50">
+                      <p className="text-sm text-slate-700">{message.message}</p>
+                      <p className="text-xs text-slate-500 mt-1">
+                        From {message.from_team_name || 'Unknown Team'} • {format(new Date(message.created_at), 'MMM d, h:mm a')}
+                      </p>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <p className="text-sm text-slate-500 italic">No cascaded messages from other teams</p>
+              )}
+            </div>
+          </div>
+
         {/* Main Content Grid */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
           {/* Enhanced Priorities Section */}
@@ -1250,87 +1331,6 @@ const DashboardClean = () => {
             )}
           </div>
         </div>
-
-        {/* Headlines & Messages Card */}
-        <div className="mt-8 bg-white/80 backdrop-blur-sm rounded-2xl p-6 shadow-sm border border-white/50">
-            <div className="flex items-center gap-3 mb-6">
-              <div className="w-10 h-10 rounded-lg flex items-center justify-center"
-                   style={{
-                     background: `linear-gradient(135deg, ${themeColors.primary} 0%, ${themeColors.secondary} 100%)`
-                   }}>
-                <MessageSquare className="h-5 w-5 text-white" />
-              </div>
-              <h2 className="text-xl font-semibold text-slate-900">Headlines & Messages</h2>
-            </div>
-
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-              {/* Customer Headlines */}
-              <div>
-                <h3 className="text-sm font-semibold text-slate-700 mb-3 flex items-center gap-2">
-                  <Users className="h-4 w-4" style={{ color: themeColors.primary }} />
-                  Customer Headlines ({headlines.customer.length})
-                </h3>
-                {headlines.customer.length > 0 ? (
-                  <div className="space-y-2">
-                    {headlines.customer.map(headline => (
-                      <div key={headline.id} className="p-3 bg-slate-50/50 rounded-lg border border-slate-200/50">
-                        <p className="text-sm text-slate-700">{headline.text}</p>
-                        <p className="text-xs text-slate-500 mt-1">
-                          {headline.created_by_name || 'Unknown'} • {format(new Date(headline.created_at), 'MMM d')}
-                        </p>
-                      </div>
-                    ))}
-                  </div>
-                ) : (
-                  <p className="text-sm text-slate-500 italic">No customer headlines</p>
-                )}
-              </div>
-
-              {/* Employee Headlines */}
-              <div>
-                <h3 className="text-sm font-semibold text-slate-700 mb-3 flex items-center gap-2">
-                  <Users2 className="h-4 w-4" style={{ color: themeColors.primary }} />
-                  Employee Headlines ({headlines.employee.length})
-                </h3>
-                {headlines.employee.length > 0 ? (
-                  <div className="space-y-2">
-                    {headlines.employee.map(headline => (
-                      <div key={headline.id} className="p-3 bg-slate-50/50 rounded-lg border border-slate-200/50">
-                        <p className="text-sm text-slate-700">{headline.text}</p>
-                        <p className="text-xs text-slate-500 mt-1">
-                          {headline.created_by_name || 'Unknown'} • {format(new Date(headline.created_at), 'MMM d')}
-                        </p>
-                      </div>
-                    ))}
-                  </div>
-                ) : (
-                  <p className="text-sm text-slate-500 italic">No employee headlines</p>
-                )}
-              </div>
-            </div>
-
-            {/* Cascaded Messages Section */}
-            <div className="mt-6 pt-6 border-t border-slate-200">
-              <h3 className="text-sm font-semibold text-slate-700 mb-3 flex items-center gap-2">
-                <MessageSquare className="h-4 w-4" style={{ color: themeColors.primary }} />
-                Cascaded Messages from Other Teams ({cascadedMessages.length})
-              </h3>
-              {cascadedMessages.length > 0 ? (
-                <div className="space-y-2">
-                  {cascadedMessages.map(message => (
-                    <div key={message.id} className="p-3 bg-blue-50/50 rounded-lg border border-blue-200/50">
-                      <p className="text-sm text-slate-700">{message.message}</p>
-                      <p className="text-xs text-slate-500 mt-1">
-                        From {message.from_team_name || 'Unknown Team'} • {format(new Date(message.created_at), 'MMM d, h:mm a')}
-                      </p>
-                    </div>
-                  ))}
-                </div>
-              ) : (
-                <p className="text-sm text-slate-500 italic">No cascaded messages from other teams</p>
-              )}
-            </div>
-          </div>
 
         {/* Enhanced Quick Actions */}
         <div className="mt-12 pt-8 border-t border-slate-200">
