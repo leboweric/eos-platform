@@ -6,7 +6,7 @@ import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import { Loader2, Save, AlertCircle, Calendar, User, Paperclip, X, Download, Link, Sparkles } from 'lucide-react';
+import { Loader2, Save, AlertCircle, Calendar, User, Paperclip, X, Download, Link, Sparkles, CheckSquare } from 'lucide-react';
 import { todosService } from '../../services/todosService';
 import { useAuthStore } from '../../stores/authStore';
 import { getDateDaysFromNow } from '../../utils/dateUtils';
@@ -218,7 +218,7 @@ const TodoDialog = ({ open, onOpenChange, todo, todoFromIssue, teamMembers, onSa
                   background: `linear-gradient(135deg, ${themeColors.primary} 0%, ${themeColors.secondary} 100%)`
                 }}
               >
-                <AlertTriangle className="h-5 w-5 text-white" />
+                <CheckSquare className="h-5 w-5 text-white" />
               </div>
               <div>
                 <DialogTitle className="text-2xl font-bold bg-gradient-to-r from-slate-900 to-slate-700 bg-clip-text text-transparent">
