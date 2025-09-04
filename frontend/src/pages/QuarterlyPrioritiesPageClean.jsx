@@ -1675,9 +1675,25 @@ const QuarterlyPrioritiesPageClean = () => {
                   )}
                   
                   {(() => {
+                    // Debug logging
+                    console.log('[QuarterlyPrioritiesPageClean] Checking overdue for:', priority.title);
+                    console.log('[QuarterlyPrioritiesPageClean] Milestones:', priority.milestones);
+                    
                     const overdueMilestones = (priority.milestones || []).filter(
-                      m => !m.completed && getDaysUntilDue(m.dueDate) < 0
+                      m => {
+                        const daysUntil = getDaysUntilDue(m.dueDate || m.due_date);
+                        console.log('[QuarterlyPrioritiesPageClean] Milestone:', {
+                          title: m.title,
+                          dueDate: m.dueDate || m.due_date,
+                          completed: m.completed,
+                          daysUntil,
+                          isOverdue: !m.completed && daysUntil < 0
+                        });
+                        return !m.completed && daysUntil < 0;
+                      }
                     );
+                    console.log('[QuarterlyPrioritiesPageClean] Overdue count:', overdueMilestones.length);
+                    
                     if (overdueMilestones.length > 0) {
                       return (
                         <Badge variant="outline" className="text-xs bg-red-50 text-red-700 border-red-200">
