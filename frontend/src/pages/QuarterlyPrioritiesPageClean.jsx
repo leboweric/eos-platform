@@ -1,6 +1,6 @@
 import { useState, useEffect, Component } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { format } from 'date-fns';
+import { format, addMonths, startOfQuarter, endOfQuarter } from 'date-fns';
 import { useAuthStore } from '../stores/authStore';
 import { quarterlyPrioritiesService } from '../services/quarterlyPrioritiesService';
 import { organizationService } from '../services/organizationService';
@@ -55,7 +55,6 @@ import {
   Activity,
   Zap
 } from 'lucide-react';
-import { format, addMonths, startOfQuarter, endOfQuarter } from 'date-fns';
 
 // Error Boundary Component
 class ErrorBoundary extends Component {
