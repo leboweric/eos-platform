@@ -149,7 +149,7 @@ const WeeklyAccountabilityMeetingPage = () => {
   // Collapsible sections state
   const [expandedSections, setExpandedSections] = useState({
     companyPriorities: false,
-    individualPriorities: {}
+    individualPriorities: {} // Will be populated with owners on load
   });
   const [isRTL, setIsRTL] = useState(() => {
     // Load RTL preference from localStorage
@@ -565,6 +565,19 @@ const WeeklyAccountabilityMeetingPage = () => {
       ];
       
       setPriorities(allPriorities);
+      
+      // Auto-expand all individual owner sections
+      const individualPriorities = allPriorities.filter(p => p.priority_type === 'individual');
+      const uniqueOwnerIds = [...new Set(individualPriorities.map(p => p.owner?.id || 'unassigned'))];
+      const expandedOwners = {};
+      uniqueOwnerIds.forEach(ownerId => {
+        expandedOwners[ownerId] = true;
+      });
+      
+      setExpandedSections(prev => ({
+        ...prev,
+        individualPriorities: expandedOwners
+      }));
     } catch (error) {
       console.error('Failed to fetch priorities:', error);
     }

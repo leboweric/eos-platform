@@ -314,6 +314,20 @@ const QuarterlyPlanningMeetingPage = () => {
       ];
       
       setPriorities(allPriorities);
+      
+      // Auto-expand all individual owner sections
+      const individualPriorities = allPriorities.filter(p => p.priority_type === 'individual');
+      const uniqueOwnerIds = [...new Set(individualPriorities.map(p => p.owner?.id || 'unassigned'))];
+      const expandedOwners = {};
+      uniqueOwnerIds.forEach(ownerId => {
+        expandedOwners[ownerId] = true;
+      });
+      
+      setExpandedSections(prev => ({
+        ...prev,
+        individualPriorities: expandedOwners
+      }));
+      
       setLoading(false);
     } catch (error) {
       console.error('Failed to fetch priorities:', error);

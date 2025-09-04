@@ -128,7 +128,7 @@ const QuarterlyPrioritiesPageClean = () => {
   // Expansion states for collapsible sections
   const [expandedSections, setExpandedSections] = useState({
     companyPriorities: false,
-    individualPriorities: {}
+    individualPriorities: {} // Will be populated with team members on load
   });
   
   // Editing states
@@ -221,6 +221,16 @@ const QuarterlyPrioritiesPageClean = () => {
         setCompanyPriorities(data.companyPriorities || []);
         setTeamMemberPriorities(data.teamMemberPriorities || {});
         setTeamMembers(data.teamMembers || []);
+        
+        // Automatically expand individual sections for all team members
+        const expandedIndividuals = {};
+        (data.teamMembers || []).forEach(member => {
+          expandedIndividuals[member.id] = true;
+        });
+        setExpandedSections(prev => ({
+          ...prev,
+          individualPriorities: expandedIndividuals
+        }));
         setArchivedQuarters({});
       }
     } catch (err) {
