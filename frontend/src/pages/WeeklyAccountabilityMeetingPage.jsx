@@ -3811,9 +3811,9 @@ const WeeklyAccountabilityMeetingPage = () => {
       {/* Meeting Collaboration Bar */}
       <MeetingBar />
       
-      {/* Floating Action Buttons - Aligned with main content */}
+      {/* Floating Action Buttons - Positioned to the right of main content */}
       <div className="fixed z-40 flex flex-col gap-3" style={{
-        right: 'max(1rem, calc((100vw - 80rem) / 2))',
+        right: 'max(1rem, calc((100vw - 80rem) / 2 - 5rem))',
         top: '12rem'
       }}>
         {/* Add To-Do Button */}
