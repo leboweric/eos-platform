@@ -416,6 +416,10 @@ const PriorityDialog = ({
                     checked={formData.isCompanyPriority || false}
                     onCheckedChange={(checked) => setFormData({ ...formData, isCompanyPriority: checked })}
                     className="bg-white border-gray-300"
+                    style={{
+                      backgroundColor: formData.isCompanyPriority ? themeColors.primary : undefined,
+                      borderColor: formData.isCompanyPriority ? themeColors.primary : undefined
+                    }}
                   />
                   <Label htmlFor="isCompanyWide" className="text-sm font-medium cursor-pointer">
                     This is a company-wide priority
