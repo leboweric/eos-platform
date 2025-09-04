@@ -71,7 +71,7 @@ const MeetingsPage = () => {
       duration: '2.5 hours',
       frequency: 'Quarterly',
       icon: Target,
-      getColor: () => themeColors.primary, // Use branded color
+      getColor: () => themeColors.secondary, // Use secondary color for quarterly
       getBgClass: () => 'bg-opacity-10',
       features: [
         'Review prior quarter performance',
@@ -87,7 +87,7 @@ const MeetingsPage = () => {
       duration: '2 days',
       frequency: 'Annually',
       icon: Calendar,
-      getColor: () => themeColors.secondary,
+      getColor: () => themeColors.accent, // Use accent color for annual
       getBgClass: () => 'bg-opacity-10',
       features: [
         'Vision refinement',
