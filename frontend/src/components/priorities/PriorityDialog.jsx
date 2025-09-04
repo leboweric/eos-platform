@@ -533,6 +533,10 @@ const PriorityDialog = ({
                           setShowAddMilestone(false);
                         }
                       }}
+                      className="text-white"
+                      style={{
+                        background: `linear-gradient(135deg, ${themeColors.primary} 0%, ${themeColors.secondary} 100%)`
+                      }}
                     >
                       Add
                     </Button>
@@ -644,6 +648,10 @@ const PriorityDialog = ({
                           setUpdateText('');
                           setShowAddUpdate(false);
                         }
+                      }}
+                      className="text-white"
+                      style={{
+                        background: `linear-gradient(135deg, ${themeColors.primary} 0%, ${themeColors.secondary} 100%)`
                       }}
                     >
                       Add
