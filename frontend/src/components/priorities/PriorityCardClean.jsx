@@ -73,20 +73,6 @@ const PriorityCardClean = ({
   });
   const [isExpanded, setIsExpanded] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
-  
-  // Debug logging for priority data
-  useEffect(() => {
-    if (priority) {
-      console.log('[PriorityCardClean] Priority data:', {
-        id: priority.id,
-        title: priority.title,
-        hasMilestones: !!priority.milestones,
-        milestoneCount: priority.milestones?.length || 0,
-        milestones: priority.milestones
-      });
-    }
-  }, [priority]);
-  
   const [editForm, setEditForm] = useState({
     title: priority.title || '',
     description: priority.description || '',
@@ -310,29 +296,9 @@ const PriorityCardClean = ({
                 )}
                 
                 {(() => {
-                  // Debug: Check what milestones we have
-                  console.log('[Debug] Checking overdue for priority:', priority.title);
-                  console.log('[Debug] Milestones:', priority.milestones);
-                  
-                  if (priority.milestones && priority.milestones.length > 0) {
-                    const milestoneDetails = priority.milestones.map(m => {
-                      const daysUntil = getDaysUntilDue(m.dueDate);
-                      return {
-                        title: m.title,
-                        dueDate: m.dueDate,
-                        completed: m.completed,
-                        daysUntil: daysUntil,
-                        isOverdue: !m.completed && daysUntil < 0
-                      };
-                    });
-                    console.log('[Debug] Milestone details:', milestoneDetails);
-                  }
-                  
                   const overdueMilestones = (priority.milestones || []).filter(
                     m => !m.completed && getDaysUntilDue(m.dueDate) < 0
                   );
-                  console.log('[Debug] Overdue milestones count:', overdueMilestones.length);
-                  
                   if (overdueMilestones.length > 0) {
                     return (
                       <Badge variant="outline" className="text-xs bg-gradient-to-r from-red-50 to-rose-50 text-red-700 border-red-200 shadow-sm">
