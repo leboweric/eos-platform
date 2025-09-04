@@ -48,6 +48,24 @@ import { format } from 'date-fns';
 
 const DashboardClean = () => {
   const { user, isOnLeadershipTeam } = useAuthStore();
+  
+  // Helper function to calculate days until due date
+  const getDaysUntilDue = (dueDate) => {
+    if (!dueDate) return null;
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const due = new Date(dueDate);
+    due.setHours(0, 0, 0, 0);
+    const diffTime = due - today;
+    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+    return diffDays;
+  };
+  
+  // Helper function to count overdue milestones
+  const countOverdueMilestones = (priority) => {
+    if (!priority.milestones || !Array.isArray(priority.milestones)) return 0;
+    return priority.milestones.filter(m => !m.completed && getDaysUntilDue(m.dueDate) < 0).length;
+  };
   const { labels } = useTerminology();
   const { selectedDepartment } = useDepartment();
   const navigate = useNavigate();
@@ -911,6 +929,7 @@ const DashboardClean = () => {
                         const isComplete = priority.status === 'complete' || 
                                          priority.status === 'completed' || 
                                          priority.progress === 100;
+                        const overdueCount = countOverdueMilestones(priority);
                         return (
                           <div 
                             key={priority.id} 
@@ -956,9 +975,16 @@ const DashboardClean = () => {
                                   <span className="text-xs text-green-600 font-medium">100%</span>
                                 </div>
                               ) : (
-                                <span className="text-xs font-medium" style={{ color: themeColors.primary }}>
-                                  {priority.progress || 0}%
-                                </span>
+                                <div className="flex items-center gap-1">
+                                  <span className="text-xs font-medium" style={{ color: themeColors.primary }}>
+                                    {priority.progress || 0}%
+                                  </span>
+                                  {overdueCount > 0 && (
+                                    <span className="text-xs text-red-600 font-medium">
+                                      ({overdueCount} overdue)
+                                    </span>
+                                  )}
+                                </div>
                               )}
                             </div>
                           </div>
@@ -976,6 +1002,7 @@ const DashboardClean = () => {
                   const isComplete = priority.status === 'complete' || 
                                      priority.status === 'completed' || 
                                      priority.progress === 100;
+                  const overdueCount = countOverdueMilestones(priority);
                   console.log('Priority status check:', { 
                     title: priority.title, 
                     status: priority.status, 
@@ -1029,9 +1056,16 @@ const DashboardClean = () => {
                             </div>
                           ) : (
                             <>
-                              <span className="text-sm font-medium" style={{ color: themeColors.primary }}>
-                                {priority.progress || 0}%
-                              </span>
+                              <div className="flex flex-col items-end">
+                                <span className="text-sm font-medium" style={{ color: themeColors.primary }}>
+                                  {priority.progress || 0}%
+                                </span>
+                                {overdueCount > 0 && (
+                                  <span className="text-xs text-red-600 font-medium">
+                                    {overdueCount} overdue
+                                  </span>
+                                )}
+                              </div>
                               {priority.progress > 0 && (
                                 <div className="w-16 h-1.5 bg-slate-100 rounded-full mt-1 overflow-hidden">
                                   <div 
