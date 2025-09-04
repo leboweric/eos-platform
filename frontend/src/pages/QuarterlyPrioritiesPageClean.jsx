@@ -2649,6 +2649,24 @@ const QuarterlyPrioritiesPageClean = () => {
               {expandedSections.companyPriorities && (
                 <div className="space-y-4 ml-8">
                   {(companyPriorities || []).map(priority => {
+                    // Calculate overdue milestones for this priority
+                    const overdueMilestones = (priority.milestones || []).filter(
+                      m => !m.completed && getDaysUntilDue(m.dueDate) < 0
+                    );
+                    
+                    console.log('[DEBUG] Rendering company priority:', {
+                      title: priority.title,
+                      milestones: priority.milestones,
+                      hasMilestones: !!priority.milestones,
+                      milestoneCount: priority.milestones?.length || 0,
+                      overdueMilestoneCount: overdueMilestones.length,
+                      overdueDetails: overdueMilestones.map(m => ({
+                        title: m.title,
+                        dueDate: m.dueDate,
+                        daysOverdue: Math.abs(getDaysUntilDue(m.dueDate))
+                      }))
+                    });
+                    
                     const isComplete = priority.status === 'complete' || priority.status === 'completed';
                     const daysUntil = !isComplete ? getDaysUntilDue(priority.dueDate || priority.due_date) : null;
                     // Always show actual progress, don't force 100% for complete status
@@ -2715,6 +2733,12 @@ const QuarterlyPrioritiesPageClean = () => {
                                 </div>
                                 <Progress value={displayProgress} className="w-24 h-2" />
                               </div>
+                              {/* Overdue milestone badge */}
+                              {overdueMilestones.length > 0 && (
+                                <Badge variant="destructive" className="bg-red-100 text-red-700 border-red-300">
+                                  {overdueMilestones.length} Overdue Milestone{overdueMilestones.length > 1 ? 's' : ''}
+                                </Badge>
+                              )}
                               {/* Status badge underneath progress bar */}
                               <Badge className={`${
                                 isComplete ? 'bg-green-100 text-green-800 border-green-200' :
@@ -2770,6 +2794,24 @@ const QuarterlyPrioritiesPageClean = () => {
                   {expandedSections.individualPriorities[member.id] && (
                     <div className="space-y-4 ml-16">
                       {memberPriorities.map(priority => {
+                        // Calculate overdue milestones for this priority
+                        const overdueMilestones = (priority.milestones || []).filter(
+                          m => !m.completed && getDaysUntilDue(m.dueDate) < 0
+                        );
+                        
+                        console.log('[DEBUG] Rendering individual priority:', {
+                          title: priority.title,
+                          milestones: priority.milestones,
+                          hasMilestones: !!priority.milestones,
+                          milestoneCount: priority.milestones?.length || 0,
+                          overdueMilestoneCount: overdueMilestones.length,
+                          overdueDetails: overdueMilestones.map(m => ({
+                            title: m.title,
+                            dueDate: m.dueDate,
+                            daysOverdue: Math.abs(getDaysUntilDue(m.dueDate))
+                          }))
+                        });
+                        
                         const isComplete = priority.status === 'complete' || priority.status === 'completed';
                         const daysUntil = !isComplete ? getDaysUntilDue(priority.dueDate || priority.due_date) : null;
                         // Always show actual progress, don't force 100% for complete status
@@ -2832,6 +2874,12 @@ const QuarterlyPrioritiesPageClean = () => {
                                     </div>
                                     <Progress value={displayProgress} className="w-24 h-2" />
                                   </div>
+                                  {/* Overdue milestone badge */}
+                                  {overdueMilestones.length > 0 && (
+                                    <Badge variant="destructive" className="bg-red-100 text-red-700 border-red-300">
+                                      {overdueMilestones.length} Overdue Milestone{overdueMilestones.length > 1 ? 's' : ''}
+                                    </Badge>
+                                  )}
                                   {/* Status badge underneath progress bar */}
                                   <Badge className={`${
                                     isComplete ? 'bg-green-100 text-green-800 border-green-200' :
