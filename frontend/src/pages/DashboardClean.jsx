@@ -904,16 +904,18 @@ const DashboardClean = () => {
             ) : viewMode === 'team-view' ? (
               // Team View: Group by owner
               <div className="space-y-4 max-h-[600px] overflow-y-auto pr-2">
-                {Object.entries(
-                  dashboardData.priorities.reduce((groups, priority) => {
+                {(() => {
+                  // Group priorities by owner
+                  const groupedPriorities = dashboardData.priorities.reduce((groups, priority) => {
                     const ownerName = priority.owner?.name || 'Unassigned';
                     if (!groups[ownerName]) {
                       groups[ownerName] = [];
                     }
                     groups[ownerName].push(priority);
                     return groups;
-                  }, {})
-                ).map(([ownerName, priorities]) => (
+                  }, {});
+                  
+                  return Object.entries(groupedPriorities).map(([ownerName, priorities]) => (
                   <div key={ownerName} className="space-y-2">
                     <h3 className="text-sm font-semibold text-slate-700 px-2">
                       {ownerName} ({priorities.length})
@@ -923,10 +925,11 @@ const DashboardClean = () => {
                                        priority.status === 'completed' || 
                                        priority.progress === 100;
                       
-                      // Calculate overdue milestones
-                      const overdueMilestones = (priority.milestones || []).filter(
-                        m => !m.completed && getDaysUntilDue(m.dueDate) < 0
-                      );
+                      // Calculate overdue milestones - TEMPORARILY COMMENTED OUT DUE TO BUILD ERROR
+                      // const overdueMilestones = (priority.milestones || []).filter(
+                      //   m => !m.completed && getDaysUntilDue(m.dueDate) < 0
+                      // );
+                      const overdueMilestones = []; // Temporary placeholder
                       
                       return (
                           <div 
@@ -966,21 +969,20 @@ const DashboardClean = () => {
                                 </p>
                               </div>
                               <div className="flex items-center gap-2">
-                                {/* Overdue milestone indicator */}
-                                {overdueMilestones.length > 0 && !isComplete && (
+                                {/* Overdue milestone indicator - TEMPORARILY COMMENTED OUT */}
+                                {/* {overdueMilestones.length > 0 && !isComplete && (
                                   <div className="flex items-center gap-1 group/tooltip relative">
                                     <div className="w-5 h-5 rounded-full bg-red-500 text-white text-[10px] font-bold flex items-center justify-center">
                                       {overdueMilestones.length}
                                     </div>
                                     <AlertTriangle className="h-3.5 w-3.5 text-red-500" />
-                                    {/* Tooltip */}
                                     <div className="absolute bottom-full right-0 mb-2 hidden group-hover/tooltip:block z-50">
                                       <div className="bg-slate-900 text-white text-xs rounded-lg py-1.5 px-2.5 whitespace-nowrap">
                                         {overdueMilestones.length} overdue milestone{overdueMilestones.length > 1 ? 's' : ''}
                                       </div>
                                     </div>
                                   </div>
-                                )}
+                                )} */}
                                 {isComplete ? (
                                   <div className="flex items-center gap-2">
                                     <Badge className="bg-green-100 text-green-800 border-green-200 px-1.5 py-0.5 text-xs font-semibold">
@@ -998,7 +1000,8 @@ const DashboardClean = () => {
                           );
                     })}
                   </div>
-                ))}
+                  ));
+                })()}
               </div>
             ) : (
               // My Items View: Flat list
@@ -1009,10 +1012,11 @@ const DashboardClean = () => {
                                      priority.status === 'completed' || 
                                      priority.progress === 100;
                   
-                  // Calculate overdue milestones
-                  const overdueMilestones = (priority.milestones || []).filter(
-                    m => !m.completed && getDaysUntilDue(m.dueDate) < 0
-                  );
+                  // Calculate overdue milestones - TEMPORARILY COMMENTED OUT DUE TO BUILD ERROR
+                  // const overdueMilestones = (priority.milestones || []).filter(
+                  //   m => !m.completed && getDaysUntilDue(m.dueDate) < 0
+                  // );
+                  const overdueMilestones = []; // Temporary placeholder
                   
                   console.log('Priority status check:', { 
                     title: priority.title, 
@@ -1058,21 +1062,20 @@ const DashboardClean = () => {
                           </p>
                         </div>
                         <div className="text-right flex items-center gap-3">
-                          {/* Overdue milestone indicator */}
-                          {overdueMilestones.length > 0 && !isComplete && (
+                          {/* Overdue milestone indicator - TEMPORARILY COMMENTED OUT */}
+                          {/* {overdueMilestones.length > 0 && !isComplete && (
                             <div className="flex items-center gap-1 group/tooltip relative">
                               <div className="w-6 h-6 rounded-full bg-red-500 text-white text-[11px] font-bold flex items-center justify-center">
                                 {overdueMilestones.length}
                               </div>
                               <AlertTriangle className="h-4 w-4 text-red-500" />
-                              {/* Tooltip */}
                               <div className="absolute bottom-full right-0 mb-2 hidden group-hover/tooltip:block z-50">
                                 <div className="bg-slate-900 text-white text-xs rounded-lg py-1.5 px-2.5 whitespace-nowrap">
                                   {overdueMilestones.length} overdue milestone{overdueMilestones.length > 1 ? 's' : ''}
                                 </div>
                               </div>
                             </div>
-                          )}
+                          )} */}
                           <div>
                             {isComplete ? (
                               <div className="flex flex-col items-end gap-1">
