@@ -2032,38 +2032,8 @@ const WeeklyAccountabilityMeetingPage = () => {
                   </CardTitle>
                   <CardDescription className="mt-2 text-slate-600 font-medium">Share personal and professional wins</CardDescription>
                 </div>
-                <div className="flex items-center gap-2">
-                  <Button
-                    size="sm"
-                    onClick={() => {
-                      setEditingTodo(null);
-                      setShowTodoDialog(true);
-                    }}
-                    className="text-white shadow-sm hover:shadow-md transition-all duration-200 text-xs"
-                    style={{
-                      background: `linear-gradient(135deg, ${themeColors.primary} 0%, ${themeColors.secondary} 100%)`
-                    }}
-                  >
-                    <Plus className="h-3 w-3 mr-1" />
-                    To Do
-                  </Button>
-                  <Button
-                    size="sm"
-                    onClick={() => {
-                      setEditingIssue(null);
-                      setShowIssueDialog(true);
-                    }}
-                    className="text-white shadow-sm hover:shadow-md transition-all duration-200 text-xs"
-                    style={{
-                      background: `linear-gradient(135deg, ${themeColors.primary} 0%, ${themeColors.secondary} 100%)`
-                    }}
-                  >
-                    <Plus className="h-3 w-3 mr-1" />
-                    Add Issue
-                  </Button>
-                  <div className="text-sm text-slate-600 bg-white/80 backdrop-blur-sm px-4 py-2 rounded-full border border-white/30 shadow-sm font-medium">
-                    5 minutes
-                  </div>
+                <div className="text-sm text-slate-600 bg-white/80 backdrop-blur-sm px-4 py-2 rounded-full border border-white/30 shadow-sm font-medium">
+                  5 minutes
                 </div>
               </div>
             </CardHeader>
@@ -2103,38 +2073,8 @@ const WeeklyAccountabilityMeetingPage = () => {
                     </CardTitle>
                     <CardDescription className="mt-1">Quick Status Update: Metric owners report "on-track" or "off-track" status</CardDescription>
                   </div>
-                  <div className="flex items-center gap-2">
-                    <Button
-                      size="sm"
-                      onClick={() => {
-                        setEditingTodo(null);
-                        setShowTodoDialog(true);
-                      }}
-                      className="text-white shadow-sm hover:shadow-md transition-all duration-200 text-xs"
-                    style={{
-                      background: `linear-gradient(135deg, ${themeColors.primary} 0%, ${themeColors.secondary} 100%)`
-                    }}
-                    >
-                      <Plus className="h-3 w-3 mr-1" />
-                      To Do
-                    </Button>
-                    <Button
-                      size="sm"
-                      onClick={() => {
-                        setEditingIssue(null);
-                        setShowIssueDialog(true);
-                      }}
-                      className="text-white shadow-sm hover:shadow-md transition-all duration-200 text-xs"
-                    style={{
-                      background: `linear-gradient(135deg, ${themeColors.primary} 0%, ${themeColors.secondary} 100%)`
-                    }}
-                    >
-                      <Plus className="h-3 w-3 mr-1" />
-                      Add Issue
-                    </Button>
-                    <div className="text-sm text-gray-500 bg-white px-3 py-1 rounded-full">
-                      5 minutes
-                    </div>
+                  <div className="text-sm text-gray-500 bg-white px-3 py-1 rounded-full">
+                    5 minutes
                   </div>
                 </div>
               </CardHeader>
@@ -2251,38 +2191,8 @@ const WeeklyAccountabilityMeetingPage = () => {
                       </div>
                     )}
                   </div>
-                  <div className="flex items-center gap-2">
-                    <Button
-                      size="sm"
-                      onClick={() => {
-                        setEditingTodo(null);
-                        setShowTodoDialog(true);
-                      }}
-                      className="text-white shadow-lg hover:shadow-xl transition-all duration-200"
-                      style={{
-                        background: `linear-gradient(135deg, ${themeColors.primary} 0%, ${themeColors.secondary} 100%)`
-                      }}
-                    >
-                      <Plus className="h-4 w-4 mr-1" />
-                      To Do
-                    </Button>
-                    <Button
-                      size="sm"
-                      onClick={() => {
-                        setEditingIssue(null);
-                        setShowIssueDialog(true);
-                      }}
-                      className="text-white shadow-lg hover:shadow-xl transition-all duration-200"
-                      style={{
-                        background: `linear-gradient(135deg, ${themeColors.primary} 0%, ${themeColors.secondary} 100%)`
-                      }}
-                    >
-                      <Plus className="h-4 w-4 mr-1" />
-                      Add Issue
-                    </Button>
-                    <div className="text-sm text-slate-600 bg-white/80 backdrop-blur-sm px-4 py-2 rounded-full border border-white/30 shadow-sm font-medium">
-                      5 minutes
-                    </div>
+                  <div className="text-sm text-slate-600 bg-white/80 backdrop-blur-sm px-4 py-2 rounded-full border border-white/30 shadow-sm font-medium">
+                    5 minutes
                   </div>
                 </div>
               </CardHeader>
@@ -2648,49 +2558,8 @@ const WeeklyAccountabilityMeetingPage = () => {
                   </CardTitle>
                   <CardDescription className="mt-1">Share important updates</CardDescription>
                 </div>
-                <div className="flex items-center gap-2">
-                  <Button
-                    size="sm"
-                    onClick={() => {
-                      setEditingTodo(null);
-                      setShowTodoDialog(true);
-                    }}
-                    className="text-white shadow-sm hover:shadow-md transition-all duration-200 text-xs"
-                    style={{
-                      background: `linear-gradient(135deg, ${themeColors.primary} 0%, ${themeColors.secondary} 100%)`
-                    }}
-                  >
-                    <Plus className="h-3 w-3 mr-1" />
-                    To Do
-                  </Button>
-                  <Button
-                    size="sm"
-                    onClick={() => {
-                      setEditingIssue(null);
-                      setShowIssueDialog(true);
-                    }}
-                    className="text-white shadow-sm hover:shadow-md transition-all duration-200 text-xs"
-                    style={{
-                      background: `linear-gradient(135deg, ${themeColors.primary} 0%, ${themeColors.secondary} 100%)`
-                    }}
-                  >
-                    <Plus className="h-3 w-3 mr-1" />
-                    Add Issue
-                  </Button>
-                  <Button
-                    size="sm"
-                    onClick={() => setShowHeadlineDialog(true)}
-                    className="text-white shadow-sm hover:shadow-md transition-all duration-200 text-xs"
-                    style={{
-                      background: `linear-gradient(135deg, ${themeColors.primary} 0%, ${themeColors.secondary} 100%)`
-                    }}
-                  >
-                    <Plus className="h-3 w-3 mr-1" />
-                    Add Headline
-                  </Button>
-                  <div className="text-sm text-gray-500 bg-white px-3 py-1 rounded-full">
-                    5 minutes
-                  </div>
+                <div className="text-sm text-gray-500 bg-white px-3 py-1 rounded-full">
+                  5 minutes
                 </div>
               </div>
             </CardHeader>
@@ -2876,28 +2745,7 @@ const WeeklyAccountabilityMeetingPage = () => {
                       );
                     })()}
                   </div>
-                  <div className="flex gap-2">
-                    <Button 
-                      onClick={handleAddTodo}
-                      className="text-white shadow-lg hover:shadow-xl transition-all duration-200"
-                      style={{
-                        background: `linear-gradient(135deg, ${themeColors.primary} 0%, ${themeColors.secondary} 100%)`
-                      }}
-                    >
-                      <Plus className="mr-2 h-4 w-4" />
-                      Add To-do
-                    </Button>
-                    <Button 
-                      onClick={handleAddIssue}
-                      className="text-white shadow-lg hover:shadow-xl transition-all duration-200"
-                      style={{
-                        background: `linear-gradient(135deg, ${themeColors.primary} 0%, ${themeColors.secondary} 100%)`
-                      }}
-                    >
-                      <Plus className="mr-2 h-4 w-4" />
-                      Add Issue
-                    </Button>
-                  </div>
+                  <div></div>
                 </div>
                 {todos.length === 0 ? (
                   <div className="text-center py-8">
@@ -3050,26 +2898,6 @@ const WeeklyAccountabilityMeetingPage = () => {
                             </Button>
                           );
                         })()}
-                        <Button 
-                          onClick={handleAddTodo}
-                          className="text-white shadow-lg hover:shadow-xl transition-all duration-200"
-                      style={{
-                        background: `linear-gradient(135deg, ${themeColors.primary} 0%, ${themeColors.secondary} 100%)`
-                      }}
-                        >
-                          <Plus className="mr-2 h-4 w-4" />
-                          Add To Do
-                        </Button>
-                        <Button 
-                          onClick={handleAddIssue}
-                          className="text-white shadow-lg hover:shadow-xl transition-all duration-200"
-                      style={{
-                        background: `linear-gradient(135deg, ${themeColors.primary} 0%, ${themeColors.secondary} 100%)`
-                      }}
-                        >
-                          <Plus className="mr-2 h-4 w-4" />
-                          Add Issue
-                        </Button>
                       </div>
                     </div>
                     
