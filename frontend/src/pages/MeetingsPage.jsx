@@ -71,7 +71,7 @@ const MeetingsPage = () => {
       duration: '2.5 hours',
       frequency: 'Quarterly',
       icon: Target,
-      getColor: () => '#10B981', // Keep green for growth/quarterly
+      getColor: () => themeColors.primary, // Use branded color
       getBgClass: () => 'bg-opacity-10',
       features: [
         'Review prior quarter performance',
