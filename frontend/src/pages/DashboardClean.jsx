@@ -31,6 +31,7 @@ import {
   Edit,
   X,
   ArrowRight,
+  ArrowDownLeft,
   Plus,
   Calendar,
   Loader2,
@@ -1269,17 +1270,23 @@ const DashboardClean = () => {
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
               {/* Customer Headlines */}
               <div>
-                <h3 className="text-sm font-semibold text-slate-700 mb-3 flex items-center gap-2">
-                  <Users className="h-4 w-4" style={{ color: themeColors.primary }} />
+                <h3 className="text-sm font-semibold text-slate-900 mb-3 flex items-center gap-2">
+                  <div className="p-1.5 rounded-lg" style={{ background: `linear-gradient(135deg, ${themeColors.primary}15 0%, ${themeColors.secondary}15 100%)` }}>
+                    <Users className="h-4 w-4" style={{ color: themeColors.primary }} />
+                  </div>
                   Customer Headlines ({headlines.customer.length})
                 </h3>
                 {headlines.customer.length > 0 ? (
                   <div className="space-y-2">
                     {headlines.customer.map(headline => (
-                      <div key={headline.id} className="p-3 bg-slate-50/50 rounded-lg border border-slate-200/50">
-                        <p className="text-sm text-slate-700">{headline.text}</p>
-                        <p className="text-xs text-slate-500 mt-1">
-                          {headline.createdBy || headline.created_by_name || 'Unknown'} • {format(new Date(headline.created_at), 'MMM d')}
+                      <div key={headline.id} className="p-4 bg-white rounded-lg border-l-4 shadow-sm hover:shadow-md transition-shadow" 
+                           style={{ borderLeftColor: themeColors.primary }}>
+                        <p className="text-sm font-medium text-slate-900 leading-relaxed">{headline.text}</p>
+                        <p className="text-xs text-slate-600 mt-2 flex items-center gap-1">
+                          <User className="h-3 w-3" />
+                          <span className="font-medium">{headline.createdBy || headline.created_by_name || 'Unknown'}</span>
+                          <span className="text-slate-400">•</span>
+                          <span>{format(new Date(headline.created_at), 'MMM d')}</span>
                         </p>
                       </div>
                     ))}
@@ -1291,17 +1298,23 @@ const DashboardClean = () => {
 
               {/* Employee Headlines */}
               <div>
-                <h3 className="text-sm font-semibold text-slate-700 mb-3 flex items-center gap-2">
-                  <Users2 className="h-4 w-4" style={{ color: themeColors.primary }} />
+                <h3 className="text-sm font-semibold text-slate-900 mb-3 flex items-center gap-2">
+                  <div className="p-1.5 rounded-lg" style={{ background: `linear-gradient(135deg, ${themeColors.primary}15 0%, ${themeColors.secondary}15 100%)` }}>
+                    <Users2 className="h-4 w-4" style={{ color: themeColors.primary }} />
+                  </div>
                   Employee Headlines ({headlines.employee.length})
                 </h3>
                 {headlines.employee.length > 0 ? (
                   <div className="space-y-2">
                     {headlines.employee.map(headline => (
-                      <div key={headline.id} className="p-3 bg-slate-50/50 rounded-lg border border-slate-200/50">
-                        <p className="text-sm text-slate-700">{headline.text}</p>
-                        <p className="text-xs text-slate-500 mt-1">
-                          {headline.createdBy || headline.created_by_name || 'Unknown'} • {format(new Date(headline.created_at), 'MMM d')}
+                      <div key={headline.id} className="p-4 bg-white rounded-lg border-l-4 shadow-sm hover:shadow-md transition-shadow" 
+                           style={{ borderLeftColor: themeColors.secondary }}>
+                        <p className="text-sm font-medium text-slate-900 leading-relaxed">{headline.text}</p>
+                        <p className="text-xs text-slate-600 mt-2 flex items-center gap-1">
+                          <User className="h-3 w-3" />
+                          <span className="font-medium">{headline.createdBy || headline.created_by_name || 'Unknown'}</span>
+                          <span className="text-slate-400">•</span>
+                          <span>{format(new Date(headline.created_at), 'MMM d')}</span>
                         </p>
                       </div>
                     ))}
@@ -1314,17 +1327,22 @@ const DashboardClean = () => {
 
             {/* Cascaded Messages Section */}
             <div className="mt-6 pt-6 border-t border-slate-200">
-              <h3 className="text-sm font-semibold text-slate-700 mb-3 flex items-center gap-2">
-                <MessageSquare className="h-4 w-4" style={{ color: themeColors.primary }} />
+              <h3 className="text-sm font-semibold text-slate-900 mb-3 flex items-center gap-2">
+                <div className="p-1.5 rounded-lg" style={{ background: `linear-gradient(135deg, ${themeColors.primary}15 0%, ${themeColors.secondary}15 100%)` }}>
+                  <MessageSquare className="h-4 w-4" style={{ color: themeColors.primary }} />
+                </div>
                 Cascaded Messages from Other Teams ({cascadedMessages.length})
               </h3>
               {cascadedMessages.length > 0 ? (
                 <div className="space-y-2">
                   {cascadedMessages.map(message => (
-                    <div key={message.id} className="p-3 bg-blue-50/50 rounded-lg border border-blue-200/50">
-                      <p className="text-sm text-slate-700">{message.message}</p>
-                      <p className="text-xs text-slate-500 mt-1">
-                        From {message.from_team_name || 'Unknown Team'} • {format(new Date(message.created_at), 'MMM d, h:mm a')}
+                    <div key={message.id} className="p-4 bg-gradient-to-r from-blue-50 to-indigo-50 rounded-lg border border-blue-200 shadow-sm hover:shadow-md transition-shadow">
+                      <p className="text-sm font-medium text-slate-900 leading-relaxed">{message.message}</p>
+                      <p className="text-xs text-slate-600 mt-2 flex items-center gap-1">
+                        <ArrowDownLeft className="h-3 w-3 text-blue-600" />
+                        <span className="font-medium text-blue-900">{message.from_team_name || 'Unknown Team'}</span>
+                        <span className="text-slate-400">•</span>
+                        <span>{format(new Date(message.created_at), 'MMM d, h:mm a')}</span>
                       </p>
                     </div>
                   ))}
