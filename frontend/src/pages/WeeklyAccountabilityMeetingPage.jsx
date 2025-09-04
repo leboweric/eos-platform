@@ -37,7 +37,8 @@ import {
   Building2,
   Users,
   User,
-  Calendar
+  Calendar,
+  ClipboardList
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import ScorecardTableClean from '../components/scorecard/ScorecardTableClean';
@@ -3809,6 +3810,51 @@ const WeeklyAccountabilityMeetingPage = () => {
       
       {/* Meeting Collaboration Bar */}
       <MeetingBar />
+      
+      {/* Floating Action Buttons */}
+      <div className="fixed right-6 bottom-24 z-40 flex flex-col gap-3">
+        {/* Add To-Do Button */}
+        <Button
+          onClick={() => {
+            setEditingTodo(null);
+            setShowTodoDialog(true);
+          }}
+          className="h-14 w-14 rounded-full shadow-lg hover:shadow-xl transition-all duration-200 hover:scale-110 text-white"
+          style={{
+            background: `linear-gradient(135deg, ${themeColors.primary} 0%, ${themeColors.secondary} 100%)`
+          }}
+          title="Add To-Do"
+        >
+          <ClipboardList className="h-6 w-6" />
+        </Button>
+        
+        {/* Add Issue Button */}
+        <Button
+          onClick={() => {
+            setEditingIssue(null);
+            setShowIssueDialog(true);
+          }}
+          className="h-14 w-14 rounded-full shadow-lg hover:shadow-xl transition-all duration-200 hover:scale-110 text-white"
+          style={{
+            background: `linear-gradient(135deg, ${themeColors.primary} 0%, ${themeColors.secondary} 100%)`
+          }}
+          title="Add Issue"
+        >
+          <AlertCircle className="h-6 w-6" />
+        </Button>
+        
+        {/* Add Headline Button */}
+        <Button
+          onClick={() => setShowHeadlineDialog(true)}
+          className="h-14 w-14 rounded-full shadow-lg hover:shadow-xl transition-all duration-200 hover:scale-110 text-white"
+          style={{
+            background: `linear-gradient(135deg, ${themeColors.primary} 0%, ${themeColors.secondary} 100%)`
+          }}
+          title="Add Headline"
+        >
+          <MessageSquare className="h-6 w-6" />
+        </Button>
+      </div>
     </div>
   );
 };
