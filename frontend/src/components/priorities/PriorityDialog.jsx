@@ -508,7 +508,7 @@ const PriorityDialog = ({
                             {milestone.title}
                           </p>
                           <div className="flex items-center gap-3 text-sm text-gray-500">
-                            {milestone.owner_name && (
+                            {milestone.owner_name && milestone.owner_id !== priority?.owner?.id && (
                               <span>
                                 Owner: {milestone.owner_name}
                               </span>
