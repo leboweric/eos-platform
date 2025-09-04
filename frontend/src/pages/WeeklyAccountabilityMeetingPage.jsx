@@ -3812,7 +3812,7 @@ const WeeklyAccountabilityMeetingPage = () => {
       <MeetingBar />
       
       {/* Floating Action Buttons */}
-      <div className="fixed right-6 bottom-24 z-40 flex flex-col gap-3">
+      <div className="fixed right-8 top-1/3 z-40 flex flex-col gap-3">
         {/* Add To-Do Button */}
         <Button
           onClick={() => {
