@@ -625,14 +625,10 @@ export const getUserDepartments = async (req, res) => {
     
     console.log('Available departments:', departments);
     
-    // If no departments found, provide default Leadership Team
+    // Don't add a fake Leadership Team - let frontend handle empty state
+    // This was causing duplicate "Leadership Team" entries in dropdowns
     if (departments.length === 0) {
-      console.log('No departments found, providing default Leadership Team');
-      departments.push({
-        id: '00000000-0000-0000-0000-000000000000',
-        name: 'Leadership Team',
-        is_leadership_team: true
-      });
+      console.log('No departments found for user');
     }
     
     res.json({
