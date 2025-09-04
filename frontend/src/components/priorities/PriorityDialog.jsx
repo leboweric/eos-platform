@@ -756,6 +756,18 @@ const PriorityDialog = ({
                     onArchive(priority.id);
                     onOpenChange(false);
                   }}
+                  className="border-2 hover:text-white transition-all"
+                  style={{
+                    borderColor: themeColors.primary,
+                    color: themeColors.primary
+                  }}
+                  onMouseEnter={(e) => {
+                    e.currentTarget.style.backgroundColor = themeColors.primary;
+                  }}
+                  onMouseLeave={(e) => {
+                    e.currentTarget.style.backgroundColor = 'transparent';
+                    e.currentTarget.style.color = themeColors.primary;
+                  }}
                 >
                   <Archive className="h-4 w-4 mr-2" />
                   Archive
@@ -767,6 +779,18 @@ const PriorityDialog = ({
                   onClick={() => {
                     onCreateLinkedIssue(priority);
                     onOpenChange(false);
+                  }}
+                  className="border-2 hover:text-white transition-all"
+                  style={{
+                    borderColor: themeColors.primary,
+                    color: themeColors.primary
+                  }}
+                  onMouseEnter={(e) => {
+                    e.currentTarget.style.backgroundColor = themeColors.primary;
+                  }}
+                  onMouseLeave={(e) => {
+                    e.currentTarget.style.backgroundColor = 'transparent';
+                    e.currentTarget.style.color = themeColors.primary;
                   }}
                 >
                   <Link className="h-4 w-4 mr-2" />
