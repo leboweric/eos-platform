@@ -30,22 +30,18 @@ export const teamsService = {
     const orgId = getOrgId();
     
     try {
-      // For now, since the teams endpoint returns "coming soon",
-      // we'll return a default team that should exist for every organization
-      return {
-        success: true,
-        data: {
-          teams: [{
-            id: 'default-team-' + orgId,
-            name: 'Leadership Team',
-            description: 'Default leadership team',
-            organization_id: orgId
-          }]
-        }
-      };
+      // Fetch actual teams from the backend
+      const response = await axios.get(`/organizations/${orgId}/teams`);
+      return response.data;
     } catch (error) {
       console.error('Failed to fetch teams:', error);
-      throw error;
+      // Return empty array instead of fake team if API fails
+      return {
+        success: false,
+        data: {
+          teams: []
+        }
+      };
     }
   },
 
