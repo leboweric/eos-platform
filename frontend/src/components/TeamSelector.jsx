@@ -51,19 +51,15 @@ const TeamSelector = ({ onTeamChange }) => {
           </SelectValue>
         </SelectTrigger>
         <SelectContent>
-          {/* Always show Leadership Team option first */}
-          <SelectItem value="00000000-0000-0000-0000-000000000000">
-            <div className="flex items-center space-x-2">
-              <Shield className="h-4 w-4 text-purple-600" />
-              <span>Leadership Team</span>
-            </div>
-          </SelectItem>
-          
-          {/* Show other teams */}
-          {(user.teams || []).filter(t => !t.is_leadership_team).map(team => (
+          {/* Show all teams - leadership teams first, then others */}
+          {(user.teams || []).map(team => (
             <SelectItem key={team.id} value={team.id}>
               <div className="flex items-center space-x-2">
-                <Building2 className="h-4 w-4 text-gray-600" />
+                {team.is_leadership_team ? (
+                  <Shield className="h-4 w-4 text-purple-600" />
+                ) : (
+                  <Building2 className="h-4 w-4 text-gray-600" />
+                )}
                 <span>{team.name}</span>
               </div>
             </SelectItem>
