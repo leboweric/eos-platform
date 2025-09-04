@@ -87,6 +87,11 @@ const PriorityDialog = ({
   const [updateText, setUpdateText] = useState('');
   const [editingUpdateId, setEditingUpdateId] = useState(null);
   const [editingUpdateText, setEditingUpdateText] = useState('');
+  
+  // Calculate actual progress from milestones
+  const calculatedProgress = priority?.milestones && priority.milestones.length > 0
+    ? Math.round((priority.milestones.filter(m => m.completed).length / priority.milestones.length) * 100)
+    : formData.progress;
 
   useEffect(() => {
     const fetchTheme = async () => {
@@ -159,8 +164,23 @@ const PriorityDialog = ({
     setError(null);
     
     try {
+      // Calculate current progress from milestones
+      let currentProgress = formData.progress;
+      if (priority?.milestones && priority.milestones.length > 0) {
+        const completedCount = priority.milestones.filter(m => m.completed).length;
+        const totalCount = priority.milestones.length;
+        currentProgress = Math.round((completedCount / totalCount) * 100);
+        console.log('Calculated progress from milestones:', {
+          completedCount,
+          totalCount,
+          currentProgress,
+          oldProgress: formData.progress
+        });
+      }
+      
       const priorityData = {
         ...formData,
+        progress: currentProgress, // Use calculated progress
         owner_id: formData.ownerId,
         due_date: formData.dueDate
       };
@@ -222,7 +242,7 @@ const PriorityDialog = ({
                 {formData.status.replace('-', ' ').replace(/\b\w/g, l => l.toUpperCase())}
               </Badge>
               <span className="text-sm text-gray-500">
-                Progress: {formData.progress}%
+                Progress: {calculatedProgress}%
               </span>
             </DialogDescription>
           )}
@@ -314,18 +334,20 @@ const PriorityDialog = ({
                   </div>
 
                   <div>
-                    <Label htmlFor="progress">Progress: {formData.progress}%</Label>
+                    <Label htmlFor="progress">Progress: {calculatedProgress}%</Label>
                     <div className="mt-3">
                       <input
                         type="range"
                         id="progress"
                         min="0"
                         max="100"
-                        value={formData.progress}
+                        value={calculatedProgress}
                         onChange={(e) => setFormData({ ...formData, progress: parseInt(e.target.value) })}
                         className="w-full"
+                        disabled={priority?.milestones && priority.milestones.length > 0}
+                        title={priority?.milestones && priority.milestones.length > 0 ? "Progress is calculated from milestone completion" : ""}
                       />
-                      <Progress value={formData.progress} className="mt-2" />
+                      <Progress value={calculatedProgress} className="mt-2" />
                     </div>
                   </div>
                 </div>
