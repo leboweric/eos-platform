@@ -2443,11 +2443,13 @@ const QuarterlyPrioritiesPageClean = () => {
                 <>
                   <Button 
                     variant="outline"
+                    disabled={true}
                     onClick={() => navigate(`/organizations/${organization?.id || localStorage.getItem('organizationId')}/smart-rock-assistant`)}
-                    className="bg-white/80 backdrop-blur-sm border border-slate-200 hover:shadow-md hover:scale-[1.02] transition-all rounded-lg"
+                    className="bg-gray-100 backdrop-blur-sm border border-gray-200 opacity-50 cursor-not-allowed rounded-lg"
+                    title="SMART Assistant - Coming Soon"
                   >
-                    <Brain className="mr-2 h-4 w-4" style={{ color: themeColors.primary }} />
-                    SMART Assistant
+                    <Brain className="mr-2 h-4 w-4 text-gray-400" />
+                    SMART Assistant (Testing)
                   </Button>
                   <Button 
                     onClick={() => {
