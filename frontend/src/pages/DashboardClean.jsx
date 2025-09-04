@@ -425,13 +425,13 @@ const DashboardClean = () => {
       case 'complete':
         return { backgroundColor: themeColors.primary };
       case 'on-track':
-        return { backgroundColor: themeColors.accent };
+        return { backgroundColor: themeColors.primary }; // Consistent with Quarterly Priorities page
       case 'at-risk':
         return { backgroundColor: '#FBBF24' }; // Keep yellow for warning
       case 'off-track':
         return { backgroundColor: '#EF4444' }; // Keep red for danger
       default:
-        return { backgroundColor: '#9CA3AF' };
+        return { backgroundColor: themeColors.primary }; // Default to primary for consistency
     }
   };
 
