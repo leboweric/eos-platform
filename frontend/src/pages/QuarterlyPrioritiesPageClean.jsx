@@ -1047,7 +1047,7 @@ const QuarterlyPrioritiesPageClean = () => {
       // Add milestones if any were created
       if (addPriorityMilestones.length > 0 && newPriority?.id) {
         for (const milestone of addPriorityMilestones) {
-          await quarterlyPrioritiesService.addMilestone(orgId, teamId, newPriority.id, milestone);
+          await quarterlyPrioritiesService.createMilestone(orgId, teamId, newPriority.id, milestone);
         }
       }
       
