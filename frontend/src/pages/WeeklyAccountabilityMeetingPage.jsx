@@ -1326,12 +1326,19 @@ const WeeklyAccountabilityMeetingPage = () => {
       
       const result = await quarterlyPrioritiesService.createMilestone(orgId, teamId, priorityId, milestoneData);
       
+      // Find the owner's name from teamMembers
+      const milestoneOwner = teamMembers?.find(member => member.id === milestoneData.ownerId);
+      const ownerName = milestoneOwner ? 
+        (milestoneOwner.name || `${milestoneOwner.first_name} ${milestoneOwner.last_name}`) : 
+        '';
+      
       // Update local state instead of refetching
       const newMilestone = {
         id: result?.id || Date.now().toString(),
         title: milestoneData.title,
         dueDate: milestoneData.dueDate,
-        ownerId: milestoneData.ownerId,
+        owner_id: milestoneData.ownerId,  // Use owner_id to match backend field
+        owner_name: ownerName,  // Include owner name for display
         completed: false
       };
       
