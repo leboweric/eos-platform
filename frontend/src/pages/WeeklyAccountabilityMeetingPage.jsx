@@ -3813,8 +3813,8 @@ const WeeklyAccountabilityMeetingPage = () => {
       
       {/* Floating Action Buttons - Positioned to the right of main content */}
       <div className="fixed z-40 flex flex-col gap-3" style={{
-        right: 'max(1rem, calc((100vw - 80rem) / 2 - 5rem))',
-        top: '12rem'
+        right: 'max(2rem, calc((100vw - 88rem) / 2))',
+        top: '16rem'
       }}>
         {/* Add To-Do Button */}
         <div className="relative group">
