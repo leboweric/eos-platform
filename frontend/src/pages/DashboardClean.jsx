@@ -501,9 +501,12 @@ const DashboardClean = () => {
       const teamId = selectedDepartment?.id || getTeamId(user, viewMode === 'team-view' ? 'team' : 'individual');
       const response = await headlinesService.getHeadlines(teamId, false); // false = don't include archived
       
+      // Access the data array from the response
+      const headlinesData = response.data || response || [];
+      
       // Organize headlines by type
-      const customerHeadlines = response.filter(h => h.type === 'customer');
-      const employeeHeadlines = response.filter(h => h.type === 'employee');
+      const customerHeadlines = headlinesData.filter(h => h.type === 'customer');
+      const employeeHeadlines = headlinesData.filter(h => h.type === 'employee');
       
       setHeadlines({
         customer: customerHeadlines,
