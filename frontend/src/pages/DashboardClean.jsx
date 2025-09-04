@@ -1279,7 +1279,7 @@ const DashboardClean = () => {
                       <div key={headline.id} className="p-3 bg-slate-50/50 rounded-lg border border-slate-200/50">
                         <p className="text-sm text-slate-700">{headline.text}</p>
                         <p className="text-xs text-slate-500 mt-1">
-                          {headline.created_by_name || 'Unknown'} • {format(new Date(headline.created_at), 'MMM d')}
+                          {headline.createdBy || headline.created_by_name || 'Unknown'} • {format(new Date(headline.created_at), 'MMM d')}
                         </p>
                       </div>
                     ))}
@@ -1301,7 +1301,7 @@ const DashboardClean = () => {
                       <div key={headline.id} className="p-3 bg-slate-50/50 rounded-lg border border-slate-200/50">
                         <p className="text-sm text-slate-700">{headline.text}</p>
                         <p className="text-xs text-slate-500 mt-1">
-                          {headline.created_by_name || 'Unknown'} • {format(new Date(headline.created_at), 'MMM d')}
+                          {headline.createdBy || headline.created_by_name || 'Unknown'} • {format(new Date(headline.created_at), 'MMM d')}
                         </p>
                       </div>
                     ))}
