@@ -1252,8 +1252,7 @@ const DashboardClean = () => {
         </div>
 
         {/* Headlines & Messages Card */}
-        {(headlines.customer.length > 0 || headlines.employee.length > 0 || cascadedMessages.length > 0) && (
-          <div className="mt-8 bg-white/80 backdrop-blur-sm rounded-2xl p-6 shadow-sm border border-white/50">
+        <div className="mt-8 bg-white/80 backdrop-blur-sm rounded-2xl p-6 shadow-sm border border-white/50">
             <div className="flex items-center gap-3 mb-6">
               <div className="w-10 h-10 rounded-lg flex items-center justify-center"
                    style={{
@@ -1330,7 +1329,6 @@ const DashboardClean = () => {
               </div>
             )}
           </div>
-        )}
 
         {/* Enhanced Quick Actions */}
         <div className="mt-12 pt-8 border-t border-slate-200">
