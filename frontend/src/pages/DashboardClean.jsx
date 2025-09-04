@@ -586,13 +586,14 @@ const DashboardClean = () => {
       const orgId = user?.organizationId || user?.organization_id;
       const teamId = getTeamId(user);
       
-      const response = await quarterlyPrioritiesService.createUpdate(orgId, teamId, priorityId, { text: updateText });
+      // Fix: Call the correct method name
+      const response = await quarterlyPrioritiesService.addPriorityUpdate(orgId, teamId, priorityId, updateText);
       
       // Update local state with the new update
       const newUpdate = {
         id: response.id || Date.now(),
-        text: updateText,
-        createdAt: new Date().toISOString(),
+        text: response.update_text || updateText,
+        createdAt: response.created_at || new Date().toISOString(),
         authorName: user?.name || 'You'
       };
       
@@ -622,8 +623,30 @@ const DashboardClean = () => {
       const orgId = user?.organizationId || user?.organization_id;
       const teamId = getTeamId(user);
       
-      await quarterlyPrioritiesService.updateUpdate(orgId, teamId, priorityId, updateId, { text: newText });
-      await fetchDashboardData();
+      // Fix: Call the correct method name
+      await quarterlyPrioritiesService.editPriorityUpdate(orgId, teamId, priorityId, updateId, newText);
+      
+      // Update local state immediately
+      if (selectedPriority?.id === priorityId) {
+        setSelectedPriority(prev => ({
+          ...prev,
+          updates: prev.updates?.map(u => 
+            u.id === updateId ? { ...u, text: newText } : u
+          ) || []
+        }));
+      }
+      
+      // Update the dashboardData priorities
+      setDashboardData(prev => ({
+        ...prev,
+        priorities: prev.priorities.map(p => 
+          p.id === priorityId 
+            ? { ...p, updates: p.updates?.map(u => 
+                u.id === updateId ? { ...u, text: newText } : u
+              ) || [] }
+            : p
+        )
+      }));
     } catch (error) {
       console.error('Failed to edit update:', error);
     }
@@ -631,11 +654,33 @@ const DashboardClean = () => {
 
   const handleDeleteUpdate = async (priorityId, updateId) => {
     try {
+      if (!window.confirm('Are you sure you want to delete this update?')) {
+        return;
+      }
+      
       const orgId = user?.organizationId || user?.organization_id;
       const teamId = getTeamId(user);
       
-      await quarterlyPrioritiesService.deleteUpdate(orgId, teamId, priorityId, updateId);
-      await fetchDashboardData();
+      // Fix: Call the correct method name
+      await quarterlyPrioritiesService.deletePriorityUpdate(orgId, teamId, priorityId, updateId);
+      
+      // Update local state to reflect deletion immediately
+      if (selectedPriority?.id === priorityId) {
+        setSelectedPriority(prev => ({
+          ...prev,
+          updates: prev.updates?.filter(u => u.id !== updateId) || []
+        }));
+      }
+      
+      // Update the dashboardData priorities
+      setDashboardData(prev => ({
+        ...prev,
+        priorities: prev.priorities.map(p => 
+          p.id === priorityId 
+            ? { ...p, updates: p.updates?.filter(u => u.id !== updateId) || [] }
+            : p
+        )
+      }));
     } catch (error) {
       console.error('Failed to delete update:', error);
     }
