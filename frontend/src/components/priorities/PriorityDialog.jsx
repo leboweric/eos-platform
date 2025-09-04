@@ -431,11 +431,13 @@ const PriorityDialog = ({
                         value={editingMilestone.title}
                         onChange={(e) => setEditingMilestone({ ...editingMilestone, title: e.target.value })}
                         placeholder="Milestone title"
+                        className="bg-white"
                       />
                       <Input
                         type="date"
                         value={editingMilestone.dueDate}
                         onChange={(e) => setEditingMilestone({ ...editingMilestone, dueDate: e.target.value })}
+                        className="bg-white"
                       />
                       <div className="flex gap-2">
                         <Button
@@ -506,17 +508,19 @@ const PriorityDialog = ({
               ))}
 
               {showAddMilestone ? (
-                <div className="p-3 bg-gray-50 rounded-lg space-y-2">
+                <div className="p-3 bg-blue-50/30 rounded-lg space-y-2">
                   <Input
                     value={newMilestone.title}
                     onChange={(e) => setNewMilestone({ ...newMilestone, title: e.target.value })}
                     placeholder="Milestone title"
                     autoFocus
+                    className="bg-white"
                   />
                   <Input
                     type="date"
                     value={newMilestone.dueDate}
                     onChange={(e) => setNewMilestone({ ...newMilestone, dueDate: e.target.value })}
+                    className="bg-white"
                   />
                   <div className="flex gap-2">
                     <Button
@@ -557,7 +561,7 @@ const PriorityDialog = ({
 
             <TabsContent value="updates" className="space-y-4">
               {priority?.updates?.map((update) => (
-                <div key={update.id} className="p-3 bg-gray-50 rounded-lg">
+                <div key={update.id} className="p-3 bg-blue-50/30 rounded-lg">
                   {editingUpdateId === update.id ? (
                     <div className="space-y-2">
                       <Textarea
@@ -565,6 +569,7 @@ const PriorityDialog = ({
                         onChange={(e) => setEditingUpdateText(e.target.value)}
                         rows={3}
                         autoFocus
+                        className="bg-white"
                       />
                       <div className="flex gap-2">
                         <Button
@@ -620,13 +625,14 @@ const PriorityDialog = ({
               ))}
 
               {showAddUpdate ? (
-                <div className="p-3 bg-gray-50 rounded-lg space-y-2">
+                <div className="p-3 bg-blue-50/30 rounded-lg space-y-2">
                   <Textarea
                     value={updateText}
                     onChange={(e) => setUpdateText(e.target.value)}
                     placeholder="Enter update..."
                     rows={3}
                     autoFocus
+                    className="bg-white"
                   />
                   <div className="flex gap-2">
                     <Button
