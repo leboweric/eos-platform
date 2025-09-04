@@ -373,7 +373,15 @@ const PriorityDialog = ({
                         disabled={priority?.milestones && priority.milestones.length > 0}
                         title={priority?.milestones && priority.milestones.length > 0 ? "Progress is calculated from milestone completion" : ""}
                       />
-                      <Progress value={calculatedProgress} className="mt-2" />
+                      <div className="mt-2 bg-gray-200 h-2 w-full overflow-hidden rounded-full">
+                        <div 
+                          className="h-full transition-all"
+                          style={{
+                            width: `${calculatedProgress}%`,
+                            backgroundColor: themeColors.primary
+                          }}
+                        />
+                      </div>
                     </div>
                   </div>
                 </div>
