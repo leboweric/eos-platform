@@ -3723,21 +3723,23 @@ const WeeklyAccountabilityMeetingPage = () => {
           onStatusChange={handlePriorityStatusChange}
           onCreateLinkedIssue={async (priority) => {
             try {
-              const orgId = user?.organizationId || user?.organization_id;
-              const teamId = getEffectiveTeamId(null, user);
+              const effectiveTeamId = getEffectiveTeamId(teamId, user);
               
-              if (!orgId || !teamId) {
-                throw new Error('Organization or team not found');
+              if (!effectiveTeamId) {
+                throw new Error('Team not found');
               }
               
-              // Create issue data with Rock context
+              // Create issue data with Rock context (matching the format of other issue creation)
               const issueData = {
-                organization_id: orgId,
-                team_id: teamId,
                 title: `Related to ${labels?.quarterly_priority_singular || 'Rock'}: ${priority.title}`,
-                meeting_date: new Date().toISOString(),
-                created_by: user?.id || 'Unknown',
-                owner: priority.owner || user?.name || 'Unassigned'
+                description: `This issue is linked to the ${labels?.quarterly_priority_singular || 'Rock'}: "${priority.title}"`,
+                timeline: 'short_term',
+                department_id: effectiveTeamId,
+                teamId: effectiveTeamId,
+                ownerId: priority.owner?.id || priority.owner_id || priority.ownerId || user?.id,
+                status: 'open',
+                priority_level: 'normal',
+                related_priority_id: priority.id
               };
               
               await issuesService.createIssue(issueData);
