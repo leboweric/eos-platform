@@ -41,13 +41,26 @@ import {
   Users,
   ChartBar,
   User,
-  Users2
+  Users2,
+  AlertTriangle
 } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { format } from 'date-fns';
 
 const DashboardClean = () => {
   const { user, isOnLeadershipTeam } = useAuthStore();
+  
+  // Utility function to calculate days until due
+  const getDaysUntilDue = (dueDate) => {
+    if (!dueDate) return null;
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const due = new Date(dueDate);
+    due.setHours(0, 0, 0, 0);
+    const diffTime = due - today;
+    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+    return diffDays;
+  };
   const { labels } = useTerminology();
   const { selectedDepartment } = useDepartment();
   const navigate = useNavigate();
@@ -911,6 +924,12 @@ const DashboardClean = () => {
                         const isComplete = priority.status === 'complete' || 
                                          priority.status === 'completed' || 
                                          priority.progress === 100;
+                        
+                        // Calculate overdue milestones
+                        const overdueMilestones = (priority.milestones || []).filter(
+                          m => !m.completed && getDaysUntilDue(m.dueDate) < 0
+                        );
+                        
                         return (
                           <div 
                             key={priority.id} 
@@ -948,18 +967,35 @@ const DashboardClean = () => {
                                   Due {priority.dueDate ? format(new Date(priority.dueDate), 'MMM d') : 'No date'}
                                 </p>
                               </div>
-                              {isComplete ? (
-                                <div className="flex items-center gap-2">
-                                  <Badge className="bg-green-100 text-green-800 border-green-200 px-1.5 py-0.5 text-xs font-semibold">
-                                    ✓
-                                  </Badge>
-                                  <span className="text-xs text-green-600 font-medium">100%</span>
-                                </div>
-                              ) : (
-                                <span className="text-xs font-medium" style={{ color: themeColors.primary }}>
-                                  {priority.progress || 0}%
-                                </span>
-                              )}
+                              <div className="flex items-center gap-2">
+                                {/* Overdue milestone indicator */}
+                                {overdueMilestones.length > 0 && !isComplete && (
+                                  <div className="flex items-center gap-1 group/tooltip relative">
+                                    <div className="w-5 h-5 rounded-full bg-red-500 text-white text-[10px] font-bold flex items-center justify-center">
+                                      {overdueMilestones.length}
+                                    </div>
+                                    <AlertTriangle className="h-3.5 w-3.5 text-red-500" />
+                                    {/* Tooltip */}
+                                    <div className="absolute bottom-full right-0 mb-2 hidden group-hover/tooltip:block z-50">
+                                      <div className="bg-slate-900 text-white text-xs rounded-lg py-1.5 px-2.5 whitespace-nowrap">
+                                        {overdueMilestones.length} overdue milestone{overdueMilestones.length > 1 ? 's' : ''}
+                                      </div>
+                                    </div>
+                                  </div>
+                                )}
+                                {isComplete ? (
+                                  <div className="flex items-center gap-2">
+                                    <Badge className="bg-green-100 text-green-800 border-green-200 px-1.5 py-0.5 text-xs font-semibold">
+                                      ✓
+                                    </Badge>
+                                    <span className="text-xs text-green-600 font-medium">100%</span>
+                                  </div>
+                                ) : (
+                                  <span className="text-xs font-medium" style={{ color: themeColors.primary }}>
+                                    {priority.progress || 0}%
+                                  </span>
+                                )}
+                              }
                             </div>
                           </div>
                         );
@@ -976,6 +1012,12 @@ const DashboardClean = () => {
                   const isComplete = priority.status === 'complete' || 
                                      priority.status === 'completed' || 
                                      priority.progress === 100;
+                  
+                  // Calculate overdue milestones
+                  const overdueMilestones = (priority.milestones || []).filter(
+                    m => !m.completed && getDaysUntilDue(m.dueDate) < 0
+                  );
+                  
                   console.log('Priority status check:', { 
                     title: priority.title, 
                     status: priority.status, 
@@ -1019,32 +1061,49 @@ const DashboardClean = () => {
                             {priority.owner?.name || 'Unassigned'} • Due {priority.dueDate ? format(new Date(priority.dueDate), 'MMM d') : 'No date'}
                           </p>
                         </div>
-                        <div className="text-right">
-                          {isComplete ? (
-                            <div className="flex flex-col items-end gap-1">
-                              <Badge className="bg-green-100 text-green-800 border-green-200 px-2 py-0.5 text-xs font-semibold">
-                                ✓ Complete
-                              </Badge>
-                              <span className="text-xs text-green-600 font-medium">100%</span>
-                            </div>
-                          ) : (
-                            <>
-                              <span className="text-sm font-medium" style={{ color: themeColors.primary }}>
-                                {priority.progress || 0}%
-                              </span>
-                              {priority.progress > 0 && (
-                                <div className="w-16 h-1.5 bg-slate-100 rounded-full mt-1 overflow-hidden">
-                                  <div 
-                                    className="h-full rounded-full transition-all"
-                                    style={{ 
-                                      width: `${priority.progress || 0}%`,
-                                      background: `linear-gradient(90deg, ${themeColors.primary} 0%, ${themeColors.secondary} 100%)`
-                                    }}
-                                  />
+                        <div className="text-right flex items-center gap-3">
+                          {/* Overdue milestone indicator */}
+                          {overdueMilestones.length > 0 && !isComplete && (
+                            <div className="flex items-center gap-1 group/tooltip relative">
+                              <div className="w-6 h-6 rounded-full bg-red-500 text-white text-[11px] font-bold flex items-center justify-center">
+                                {overdueMilestones.length}
+                              </div>
+                              <AlertTriangle className="h-4 w-4 text-red-500" />
+                              {/* Tooltip */}
+                              <div className="absolute bottom-full right-0 mb-2 hidden group-hover/tooltip:block z-50">
+                                <div className="bg-slate-900 text-white text-xs rounded-lg py-1.5 px-2.5 whitespace-nowrap">
+                                  {overdueMilestones.length} overdue milestone{overdueMilestones.length > 1 ? 's' : ''}
                                 </div>
-                              )}
-                            </>
+                              </div>
+                            </div>
                           )}
+                          <div>
+                            {isComplete ? (
+                              <div className="flex flex-col items-end gap-1">
+                                <Badge className="bg-green-100 text-green-800 border-green-200 px-2 py-0.5 text-xs font-semibold">
+                                  ✓ Complete
+                                </Badge>
+                                <span className="text-xs text-green-600 font-medium">100%</span>
+                              </div>
+                            ) : (
+                              <>
+                                <span className="text-sm font-medium" style={{ color: themeColors.primary }}>
+                                  {priority.progress || 0}%
+                                </span>
+                                {priority.progress > 0 && (
+                                  <div className="w-16 h-1.5 bg-slate-100 rounded-full mt-1 overflow-hidden">
+                                    <div 
+                                      className="h-full rounded-full transition-all"
+                                      style={{ 
+                                        width: `${priority.progress || 0}%`,
+                                        background: `linear-gradient(90deg, ${themeColors.primary} 0%, ${themeColors.secondary} 100%)`
+                                      }}
+                                    />
+                                  </div>
+                                )}
+                              </>
+                            )}
+                          </div>
                         </div>
                       </div>
                     </div>
