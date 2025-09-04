@@ -1,5 +1,6 @@
 import { useState, useEffect, Component } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { format } from 'date-fns';
 import { useAuthStore } from '../stores/authStore';
 import { quarterlyPrioritiesService } from '../services/quarterlyPrioritiesService';
 import { organizationService } from '../services/organizationService';
@@ -106,6 +107,9 @@ const QuarterlyPrioritiesPageClean = () => {
   const { labels } = useTerminology();
   const [showArchived, setShowArchived] = useState(false);
   const [showAddPriority, setShowAddPriority] = useState(false);
+  const [addPriorityMilestones, setAddPriorityMilestones] = useState([]);
+  const [showAddMilestoneInDialog, setShowAddMilestoneInDialog] = useState(false);
+  const [addMilestoneForm, setAddMilestoneForm] = useState({ title: '', dueDate: '' });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [success, setSuccess] = useState(null);
@@ -1021,7 +1025,14 @@ const QuarterlyPrioritiesPageClean = () => {
         year: currentYear
       };
       
-      await quarterlyPrioritiesService.createPriority(orgId, teamId, priorityData);
+      const newPriority = await quarterlyPrioritiesService.createPriority(orgId, teamId, priorityData);
+      
+      // Add milestones if any were created
+      if (addPriorityMilestones.length > 0 && newPriority?.id) {
+        for (const milestone of addPriorityMilestones) {
+          await quarterlyPrioritiesService.addMilestone(orgId, teamId, newPriority.id, milestone);
+        }
+      }
       
       setShowAddPriority(false);
       setPriorityForm({
@@ -1032,6 +1043,8 @@ const QuarterlyPrioritiesPageClean = () => {
         isCompanyPriority: false,
         milestones: []
       });
+      setAddPriorityMilestones([]);
+      setAddMilestoneForm({ title: '', dueDate: '' });
       setNewMilestoneForm({ title: '', dueDate: '' });
       
       // Refresh data
@@ -2830,9 +2843,9 @@ const QuarterlyPrioritiesPageClean = () => {
       
       </div>
       
-      {/* Add Priority Dialog */}
+      {/* Add Priority Dialog - Enhanced with Milestones */}
       <Dialog open={showAddPriority} onOpenChange={setShowAddPriority}>
-        <DialogContent className="max-w-2xl">
+        <DialogContent className="sm:max-w-[900px] max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>Add New Priority</DialogTitle>
             <DialogDescription>
@@ -2908,6 +2921,87 @@ const QuarterlyPrioritiesPageClean = () => {
                 className="rounded border-gray-300"
               />
               <Label htmlFor="isCompany" className="text-sm font-medium">This is a company-wide priority</Label>
+            </div>
+            
+            {/* Milestones Section */}
+            <div className="space-y-3">
+              <div className="flex items-center justify-between">
+                <Label className="text-sm font-medium">Milestones</Label>
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={() => setShowAddMilestoneInDialog(true)}
+                >
+                  <Plus className="h-4 w-4 mr-1" />
+                  Add Milestone
+                </Button>
+              </div>
+              
+              {addPriorityMilestones.length > 0 && (
+                <div className="space-y-2">
+                  {addPriorityMilestones.map((milestone, index) => (
+                    <div key={index} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                      <div>
+                        <p className="font-medium">{milestone.title}</p>
+                        {milestone.dueDate && (
+                          <p className="text-sm text-gray-500">
+                            Due: {format(new Date(milestone.dueDate), 'MMM d, yyyy')}
+                          </p>
+                        )}
+                      </div>
+                      <Button
+                        size="sm"
+                        variant="ghost"
+                        onClick={() => {
+                          setAddPriorityMilestones(prev => prev.filter((_, i) => i !== index));
+                        }}
+                      >
+                        <Trash2 className="h-3 w-3" />
+                      </Button>
+                    </div>
+                  ))}
+                </div>
+              )}
+              
+              {showAddMilestoneInDialog && (
+                <div className="p-3 bg-blue-50 rounded-lg space-y-2">
+                  <Input
+                    placeholder="Milestone title"
+                    value={addMilestoneForm.title}
+                    onChange={(e) => setAddMilestoneForm({ ...addMilestoneForm, title: e.target.value })}
+                    autoFocus
+                  />
+                  <Input
+                    type="date"
+                    value={addMilestoneForm.dueDate}
+                    onChange={(e) => setAddMilestoneForm({ ...addMilestoneForm, dueDate: e.target.value })}
+                  />
+                  <div className="flex gap-2">
+                    <Button
+                      size="sm"
+                      onClick={() => {
+                        if (addMilestoneForm.title.trim()) {
+                          setAddPriorityMilestones(prev => [...prev, { ...addMilestoneForm }]);
+                          setAddMilestoneForm({ title: '', dueDate: '' });
+                          setShowAddMilestoneInDialog(false);
+                        }
+                      }}
+                    >
+                      Add
+                    </Button>
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={() => {
+                        setAddMilestoneForm({ title: '', dueDate: '' });
+                        setShowAddMilestoneInDialog(false);
+                      }}
+                    >
+                      Cancel
+                    </Button>
+                  </div>
+                </div>
+              )}
             </div>
           </div>
           <DialogFooter>

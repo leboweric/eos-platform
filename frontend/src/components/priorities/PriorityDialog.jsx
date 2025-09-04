@@ -115,7 +115,8 @@ const PriorityDialog = ({
         status: priority.status || 'on-track',
         progress: priority.progress || 0,
         dueDate: priority.dueDate ? priority.dueDate.split('T')[0] : '',
-        ownerId: priority.owner?.id || priority.owner_id || ''
+        ownerId: priority.owner?.id || priority.owner_id || '',
+        isCompanyPriority: priority.isCompanyPriority || priority.is_company_priority || false
       });
     } else {
       setFormData({
@@ -124,7 +125,8 @@ const PriorityDialog = ({
         status: 'on-track',
         progress: 0,
         dueDate: '',
-        ownerId: ''
+        ownerId: '',
+        isCompanyPriority: false
       });
     }
     setFiles([]);
@@ -404,6 +406,19 @@ const PriorityDialog = ({
                     />
                   </div>
                 </div>
+                
+                <div className="flex items-center gap-3 p-4 bg-gray-50 rounded-lg mt-4">
+                  <input
+                    type="checkbox"
+                    id="isCompanyWide"
+                    checked={formData.isCompanyPriority || false}
+                    onChange={(e) => setFormData({ ...formData, isCompanyPriority: e.target.checked })}
+                    className="rounded border-gray-300"
+                  />
+                  <Label htmlFor="isCompanyWide" className="text-sm font-medium cursor-pointer">
+                    This is a company-wide priority
+                  </Label>
+                </div>
               </form>
             </TabsContent>
 
@@ -445,12 +460,12 @@ const PriorityDialog = ({
                     </div>
                   ) : (
                     <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-3">
+                      <div className="flex items-center gap-3 ml-1">
                         <input
                           type="checkbox"
                           checked={milestone.completed}
                           onChange={(e) => onToggleMilestone?.(priority.id, milestone.id, e.target.checked)}
-                          className="h-4 w-4 rounded"
+                          className="h-4 w-4 rounded flex-shrink-0"
                         />
                         <div>
                           <p className={`font-medium ${milestone.completed ? 'line-through text-gray-500' : ''}`}>
