@@ -1022,6 +1022,10 @@ const QuarterlyPrioritiesPageClean = () => {
   };
 
   const handleCreatePriority = async () => {
+    // Prevent multiple submissions
+    if (loading) return;
+    
+    setLoading(true);
     try {
       // Get current quarter and year
       const now = new Date();
@@ -1069,6 +1073,8 @@ const QuarterlyPrioritiesPageClean = () => {
     } catch (err) {
       console.error('Failed to create priority:', err);
       setError('Failed to create item');
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -3121,13 +3127,20 @@ const QuarterlyPrioritiesPageClean = () => {
             </Button>
             <Button 
               onClick={handleCreatePriority}
+              disabled={loading}
               className="text-white"
               style={{
                 background: `linear-gradient(135deg, ${themeColors.primary} 0%, ${themeColors.secondary} 100%)`
               }}
             >
-              <Plus className="mr-2 h-4 w-4" />
-              Create {labels.priority}
+              {loading ? (
+                <>Creating...</>
+              ) : (
+                <>
+                  <Plus className="mr-2 h-4 w-4" />
+                  Create {labels.priority}
+                </>
+              )}
             </Button>
           </DialogFooter>
         </DialogContent>
