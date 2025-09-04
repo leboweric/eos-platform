@@ -3023,7 +3023,7 @@ const WeeklyAccountabilityMeetingPage = () => {
                           <div key={todo.id} className="flex items-start gap-2 p-2 bg-gray-50 rounded-lg">
                             <div className="w-1 h-full rounded" style={{ 
                               backgroundColor: todo.priority === 'high' ? '#EF4444' : 
-                                             todo.priority === 'medium' ? '#F59E0B' : 
+                                             todo.priority === 'medium' ? themeColors.primary : 
                                              '#10B981',
                               minHeight: '40px'
                             }} />
