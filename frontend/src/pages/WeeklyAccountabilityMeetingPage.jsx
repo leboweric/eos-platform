@@ -3734,7 +3734,7 @@ const WeeklyAccountabilityMeetingPage = () => {
               const issueData = {
                 organization_id: orgId,
                 team_id: teamId,
-                issue: `Related to ${labels?.quarterly_priority_singular || 'Rock'}: ${priority.title}`,
+                title: `Related to ${labels?.quarterly_priority_singular || 'Rock'}: ${priority.title}`,
                 meeting_date: new Date().toISOString(),
                 created_by: user?.id || 'Unknown',
                 owner: priority.owner || user?.name || 'Unassigned'
