@@ -81,9 +81,9 @@ const PriorityDialog = ({
 
   // Milestone states
   const [showAddMilestone, setShowAddMilestone] = useState(false);
-  const [newMilestone, setNewMilestone] = useState({ title: '', dueDate: '' });
+  const [newMilestone, setNewMilestone] = useState({ title: '', dueDate: '', ownerId: '' });
   const [editingMilestoneId, setEditingMilestoneId] = useState(null);
-  const [editingMilestone, setEditingMilestone] = useState({ title: '', dueDate: '' });
+  const [editingMilestone, setEditingMilestone] = useState({ title: '', dueDate: '', ownerId: '' });
 
   // Update states
   const [showAddUpdate, setShowAddUpdate] = useState(false);
@@ -447,12 +447,29 @@ const PriorityDialog = ({
                         placeholder="Milestone title"
                         className="bg-white"
                       />
-                      <Input
-                        type="date"
-                        value={editingMilestone.dueDate}
-                        onChange={(e) => setEditingMilestone({ ...editingMilestone, dueDate: e.target.value })}
-                        className="bg-white"
-                      />
+                      <div className="flex gap-2">
+                        <Select
+                          value={editingMilestone.ownerId || milestone.owner_id || priority?.owner?.id}
+                          onValueChange={(value) => setEditingMilestone({ ...editingMilestone, ownerId: value })}
+                        >
+                          <SelectTrigger className="flex-1 bg-white">
+                            <SelectValue placeholder="Assign to..." />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {teamMembers?.map(member => (
+                              <SelectItem key={member.id} value={member.id}>
+                                {member.name || `${member.first_name} ${member.last_name}`}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                        <Input
+                          type="date"
+                          value={editingMilestone.dueDate}
+                          onChange={(e) => setEditingMilestone({ ...editingMilestone, dueDate: e.target.value })}
+                          className="bg-white flex-1"
+                        />
+                      </div>
                       <div className="flex gap-2">
                         <Button
                           size="sm"
@@ -487,9 +504,16 @@ const PriorityDialog = ({
                           }}
                         />
                         <div>
-                          <p className={`font-medium ${milestone.completed ? 'line-through text-gray-500' : ''}`}>
-                            {milestone.title}
-                          </p>
+                          <div className="flex items-center gap-2">
+                            <p className={`font-medium ${milestone.completed ? 'line-through text-gray-500' : ''}`}>
+                              {milestone.title}
+                            </p>
+                            {milestone.owner_name && milestone.owner_id !== priority?.owner?.id && (
+                              <Badge variant="secondary" className="text-xs">
+                                {milestone.owner_name}
+                              </Badge>
+                            )}
+                          </div>
                           {milestone.dueDate && (
                             <p className="text-sm text-gray-500">
                               Due: {format(new Date(milestone.dueDate), 'MMM d, yyyy')}
@@ -505,7 +529,8 @@ const PriorityDialog = ({
                             setEditingMilestoneId(milestone.id);
                             setEditingMilestone({
                               title: milestone.title,
-                              dueDate: milestone.dueDate?.split('T')[0] || ''
+                              dueDate: milestone.dueDate?.split('T')[0] || '',
+                              ownerId: milestone.owner_id || priority?.owner?.id || ''
                             });
                           }}
                         >
@@ -533,19 +558,36 @@ const PriorityDialog = ({
                     autoFocus
                     className="bg-white"
                   />
-                  <Input
-                    type="date"
-                    value={newMilestone.dueDate}
-                    onChange={(e) => setNewMilestone({ ...newMilestone, dueDate: e.target.value })}
-                    className="bg-white"
-                  />
+                  <div className="flex gap-2">
+                    <Select
+                      value={newMilestone.ownerId || priority?.owner?.id}
+                      onValueChange={(value) => setNewMilestone({ ...newMilestone, ownerId: value })}
+                    >
+                      <SelectTrigger className="flex-1 bg-white">
+                        <SelectValue placeholder="Assign to..." />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {teamMembers?.map(member => (
+                          <SelectItem key={member.id} value={member.id}>
+                            {member.name || `${member.first_name} ${member.last_name}`}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    <Input
+                      type="date"
+                      value={newMilestone.dueDate}
+                      onChange={(e) => setNewMilestone({ ...newMilestone, dueDate: e.target.value })}
+                      className="bg-white flex-1"
+                    />
+                  </div>
                   <div className="flex gap-2">
                     <Button
                       size="sm"
                       onClick={() => {
                         if (onAddMilestone && newMilestone.title) {
                           onAddMilestone(priority.id, newMilestone);
-                          setNewMilestone({ title: '', dueDate: '' });
+                          setNewMilestone({ title: '', dueDate: '', ownerId: '' });
                           setShowAddMilestone(false);
                         }
                       }}
@@ -561,7 +603,7 @@ const PriorityDialog = ({
                       variant="outline"
                       onClick={() => {
                         setShowAddMilestone(false);
-                        setNewMilestone({ title: '', dueDate: '' });
+                        setNewMilestone({ title: '', dueDate: '', ownerId: '' });
                       }}
                     >
                       Cancel
