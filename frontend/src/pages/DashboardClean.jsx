@@ -1310,12 +1310,12 @@ const DashboardClean = () => {
             </div>
 
             {/* Cascaded Messages Section */}
-            {cascadedMessages.length > 0 && (
-              <div className="mt-6 pt-6 border-t border-slate-200">
-                <h3 className="text-sm font-semibold text-slate-700 mb-3 flex items-center gap-2">
-                  <MessageSquare className="h-4 w-4" style={{ color: themeColors.primary }} />
-                  Cascaded Messages from Other Teams ({cascadedMessages.length})
-                </h3>
+            <div className="mt-6 pt-6 border-t border-slate-200">
+              <h3 className="text-sm font-semibold text-slate-700 mb-3 flex items-center gap-2">
+                <MessageSquare className="h-4 w-4" style={{ color: themeColors.primary }} />
+                Cascaded Messages from Other Teams ({cascadedMessages.length})
+              </h3>
+              {cascadedMessages.length > 0 ? (
                 <div className="space-y-2">
                   {cascadedMessages.map(message => (
                     <div key={message.id} className="p-3 bg-blue-50/50 rounded-lg border border-blue-200/50">
@@ -1326,8 +1326,10 @@ const DashboardClean = () => {
                     </div>
                   ))}
                 </div>
-              </div>
-            )}
+              ) : (
+                <p className="text-sm text-slate-500 italic">No cascaded messages from other teams</p>
+              )}
+            </div>
           </div>
 
         {/* Enhanced Quick Actions */}
