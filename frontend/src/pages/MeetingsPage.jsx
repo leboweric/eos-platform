@@ -472,13 +472,31 @@ const MeetingsPage = () => {
               <div 
                 className={`p-4 border-2 rounded-xl cursor-pointer transition-all duration-200 backdrop-blur-sm ${
                   selectedMeetingType === 'quarterly-planning' 
-                    ? 'border-green-500 bg-green-50/80 shadow-sm' 
-                    : 'border-white/50 bg-white/60 hover:border-green-300 hover:bg-green-50/40'
+                    ? 'shadow-sm' 
+                    : 'border-white/50 bg-white/60'
                 }`}
+                style={{
+                  borderColor: selectedMeetingType === 'quarterly-planning' ? themeColors.primary : undefined,
+                  backgroundColor: selectedMeetingType === 'quarterly-planning' 
+                    ? `${themeColors.primary}15` 
+                    : undefined
+                }}
                 onClick={() => setSelectedMeetingType('quarterly-planning')}
+                onMouseEnter={(e) => {
+                  if (selectedMeetingType !== 'quarterly-planning') {
+                    e.currentTarget.style.borderColor = `${themeColors.primary}80`;
+                    e.currentTarget.style.backgroundColor = `${themeColors.primary}08`;
+                  }
+                }}
+                onMouseLeave={(e) => {
+                  if (selectedMeetingType !== 'quarterly-planning') {
+                    e.currentTarget.style.borderColor = '';
+                    e.currentTarget.style.backgroundColor = '';
+                  }
+                }}
               >
                 <div className="flex items-center gap-3">
-                  <Target className="h-5 w-5 text-green-600" />
+                  <Target className="h-5 w-5" style={{ color: themeColors.primary }} />
                   <div>
                     <h4 className="font-medium">{labels.quarterly_meeting_label || 'Quarterly Planning Meeting'}</h4>
                     <p className="text-sm text-gray-600">Plan the upcoming quarter</p>
