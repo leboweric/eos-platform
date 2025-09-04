@@ -469,6 +469,10 @@ const PriorityDialog = ({
                           checked={milestone.completed}
                           onCheckedChange={(checked) => onToggleMilestone?.(priority.id, milestone.id, checked)}
                           className="flex-shrink-0 bg-white border-gray-300"
+                          style={{
+                            backgroundColor: milestone.completed ? themeColors.primary : undefined,
+                            borderColor: milestone.completed ? themeColors.primary : undefined
+                          }}
                         />
                         <div>
                           <p className={`font-medium ${milestone.completed ? 'line-through text-gray-500' : ''}`}>
