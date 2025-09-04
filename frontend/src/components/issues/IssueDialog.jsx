@@ -624,21 +624,6 @@ const IssueDialog = ({
                   Create To-Do
                 </Button>
               )}
-              {onSendCascadingMessage && (
-                <Button
-                  type="button"
-                  variant="outline"
-                  size="sm"
-                  onClick={() => {
-                    onSendCascadingMessage(issue);
-                    onClose();
-                  }}
-                  className="text-xs"
-                >
-                  <Send className="mr-1 h-3 w-3" />
-                  Send Message
-                </Button>
-              )}
             </div>
           )}
 

@@ -2710,10 +2710,7 @@ const WeeklyAccountabilityMeetingPage = () => {
                       </ul>
                     ) : (
                       <ul className="list-disc list-inside text-sm space-y-1 text-gray-500">
-                        <li>Major customer wins or losses</li>
-                        <li>Important customer feedback</li>
-                        <li>Market changes affecting customers</li>
-                        <li>Competitive developments</li>
+                        <li>Customer good or bad reports</li>
                       </ul>
                     )}
                   </div>
@@ -2735,10 +2732,7 @@ const WeeklyAccountabilityMeetingPage = () => {
                       </ul>
                     ) : (
                       <ul className="list-disc list-inside text-sm space-y-1 text-gray-500">
-                        <li>Team member updates</li>
-                        <li>Hiring or departures</li>
-                        <li>Important HR announcements</li>
-                        <li>Team achievements to celebrate</li>
+                        <li>Employee good or bad reports</li>
                       </ul>
                     )}
                   </div>
