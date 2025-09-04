@@ -296,6 +296,16 @@ const PriorityCardClean = ({
                 )}
                 
                 {(() => {
+                  // Debug: Check what milestones we have
+                  if (priority.milestones && priority.milestones.length > 0) {
+                    console.log('[Debug] Priority milestones:', priority.milestones.map(m => ({
+                      title: m.title,
+                      dueDate: m.dueDate,
+                      completed: m.completed,
+                      daysUntil: getDaysUntilDue(m.dueDate)
+                    })));
+                  }
+                  
                   const overdueMilestones = (priority.milestones || []).filter(
                     m => !m.completed && getDaysUntilDue(m.dueDate) < 0
                   );
