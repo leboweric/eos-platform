@@ -133,6 +133,13 @@ const PriorityDialog = ({
     // Don't reset when priority is just updated (milestones added/removed)
   }, [priority?.id]); // Only depend on ID, not the entire object
   
+  // Update status when milestones change (priority object updates)
+  useEffect(() => {
+    if (priority && priority.status !== formData.status) {
+      setFormData(prev => ({ ...prev, status: priority.status }));
+    }
+  }, [priority?.status]);
+  
   // Reset tab to details only when dialog opens/closes
   useEffect(() => {
     if (open) {
@@ -164,23 +171,37 @@ const PriorityDialog = ({
     setError(null);
     
     try {
-      // Calculate current progress from milestones
+      // Calculate current progress and status from milestones
       let currentProgress = formData.progress;
+      let currentStatus = formData.status;
+      
       if (priority?.milestones && priority.milestones.length > 0) {
         const completedCount = priority.milestones.filter(m => m.completed).length;
         const totalCount = priority.milestones.length;
         currentProgress = Math.round((completedCount / totalCount) * 100);
+        
+        // Auto-determine status based on milestone completion
+        if (completedCount === totalCount && totalCount > 0) {
+          currentStatus = 'complete';
+        } else if (formData.status === 'complete') {
+          // Don't keep complete status if not all milestones are done
+          currentStatus = 'on-track';
+        }
+        
         console.log('Calculated progress from milestones:', {
           completedCount,
           totalCount,
           currentProgress,
-          oldProgress: formData.progress
+          oldProgress: formData.progress,
+          currentStatus,
+          oldStatus: formData.status
         });
       }
       
       const priorityData = {
         ...formData,
         progress: currentProgress, // Use calculated progress
+        status: currentStatus, // Use calculated status
         owner_id: formData.ownerId,
         due_date: formData.dueDate
       };
