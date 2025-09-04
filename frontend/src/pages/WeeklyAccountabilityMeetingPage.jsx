@@ -3817,46 +3817,58 @@ const WeeklyAccountabilityMeetingPage = () => {
         top: '12rem'
       }}>
         {/* Add To-Do Button */}
-        <Button
-          onClick={() => {
-            setEditingTodo(null);
-            setShowTodoDialog(true);
-          }}
-          className="h-14 w-14 rounded-full shadow-lg hover:shadow-xl transition-all duration-200 hover:scale-110 text-white"
-          style={{
-            background: `linear-gradient(135deg, ${themeColors.primary} 0%, ${themeColors.secondary} 100%)`
-          }}
-          title="Add To-Do"
-        >
-          <ClipboardList className="h-6 w-6" />
-        </Button>
+        <div className="relative group">
+          <Button
+            onClick={() => {
+              setEditingTodo(null);
+              setShowTodoDialog(true);
+            }}
+            className="h-14 w-14 rounded-full shadow-lg hover:shadow-xl transition-all duration-200 hover:scale-110 text-white"
+            style={{
+              background: `linear-gradient(135deg, ${themeColors.primary} 0%, ${themeColors.secondary} 100%)`
+            }}
+          >
+            <ClipboardList className="h-6 w-6" />
+          </Button>
+          <div className="absolute right-full mr-2 top-1/2 -translate-y-1/2 px-2 py-1 bg-gray-900 text-white text-sm rounded whitespace-nowrap opacity-0 group-hover:opacity-100 pointer-events-none transition-opacity duration-100">
+            Add To-Do
+          </div>
+        </div>
         
         {/* Add Issue Button */}
-        <Button
-          onClick={() => {
-            setEditingIssue(null);
-            setShowIssueDialog(true);
-          }}
-          className="h-14 w-14 rounded-full shadow-lg hover:shadow-xl transition-all duration-200 hover:scale-110 text-white"
-          style={{
-            background: `linear-gradient(135deg, ${themeColors.primary} 0%, ${themeColors.secondary} 100%)`
-          }}
-          title="Add Issue"
-        >
-          <AlertCircle className="h-6 w-6" />
-        </Button>
+        <div className="relative group">
+          <Button
+            onClick={() => {
+              setEditingIssue(null);
+              setShowIssueDialog(true);
+            }}
+            className="h-14 w-14 rounded-full shadow-lg hover:shadow-xl transition-all duration-200 hover:scale-110 text-white"
+            style={{
+              background: `linear-gradient(135deg, ${themeColors.primary} 0%, ${themeColors.secondary} 100%)`
+            }}
+          >
+            <AlertCircle className="h-6 w-6" />
+          </Button>
+          <div className="absolute right-full mr-2 top-1/2 -translate-y-1/2 px-2 py-1 bg-gray-900 text-white text-sm rounded whitespace-nowrap opacity-0 group-hover:opacity-100 pointer-events-none transition-opacity duration-100">
+            Add Issue
+          </div>
+        </div>
         
         {/* Add Headline Button */}
-        <Button
-          onClick={() => setShowHeadlineDialog(true)}
-          className="h-14 w-14 rounded-full shadow-lg hover:shadow-xl transition-all duration-200 hover:scale-110 text-white"
-          style={{
-            background: `linear-gradient(135deg, ${themeColors.primary} 0%, ${themeColors.secondary} 100%)`
-          }}
-          title="Add Headline"
-        >
-          <MessageSquare className="h-6 w-6" />
-        </Button>
+        <div className="relative group">
+          <Button
+            onClick={() => setShowHeadlineDialog(true)}
+            className="h-14 w-14 rounded-full shadow-lg hover:shadow-xl transition-all duration-200 hover:scale-110 text-white"
+            style={{
+              background: `linear-gradient(135deg, ${themeColors.primary} 0%, ${themeColors.secondary} 100%)`
+            }}
+          >
+            <MessageSquare className="h-6 w-6" />
+          </Button>
+          <div className="absolute right-full mr-2 top-1/2 -translate-y-1/2 px-2 py-1 bg-gray-900 text-white text-sm rounded whitespace-nowrap opacity-0 group-hover:opacity-100 pointer-events-none transition-opacity duration-100">
+            Add Headline
+          </div>
+        </div>
       </div>
     </div>
   );
