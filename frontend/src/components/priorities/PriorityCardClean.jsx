@@ -324,7 +324,7 @@ const PriorityCardClean = ({
                         value={editForm.ownerId}
                         onValueChange={(value) => setEditForm({ ...editForm, ownerId: value })}
                       >
-                        <SelectTrigger className="w-[200px] h-8">
+                        <SelectTrigger className="w-[200px] h-8 bg-white">
                           <SelectValue placeholder="Select owner" />
                         </SelectTrigger>
                         <SelectContent>
@@ -343,7 +343,7 @@ const PriorityCardClean = ({
                         type="date"
                         value={editForm.dueDate}
                         onChange={(e) => setEditForm({ ...editForm, dueDate: e.target.value })}
-                        className="h-8 w-[150px]"
+                        className="h-8 w-[150px] bg-white"
                       />
                     </div>
                     

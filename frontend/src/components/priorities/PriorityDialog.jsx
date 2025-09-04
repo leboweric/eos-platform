@@ -311,7 +311,7 @@ const PriorityDialog = ({
                     onChange={(e) => setFormData({ ...formData, title: e.target.value })}
                     placeholder={`Enter ${labels?.priority_singular || 'priority'} title`}
                     required
-                    className="mt-1"
+                    className="mt-1 bg-white"
                   />
                 </div>
 
@@ -323,7 +323,7 @@ const PriorityDialog = ({
                     onChange={(e) => setFormData({ ...formData, description: e.target.value })}
                     placeholder="Enter description (optional)"
                     rows={3}
-                    className="mt-1"
+                    className="mt-1 bg-white"
                   />
                 </div>
 
@@ -345,7 +345,7 @@ const PriorityDialog = ({
                         setFormData({ ...formData, status: value });
                       }}
                     >
-                      <SelectTrigger id="status" className="mt-1">
+                      <SelectTrigger id="status" className="mt-1 bg-white">
                         <SelectValue />
                       </SelectTrigger>
                       <SelectContent>
@@ -382,7 +382,7 @@ const PriorityDialog = ({
                       value={formData.ownerId} 
                       onValueChange={(value) => setFormData({ ...formData, ownerId: value })}
                     >
-                      <SelectTrigger id="owner" className="mt-1">
+                      <SelectTrigger id="owner" className="mt-1 bg-white">
                         <SelectValue placeholder="Select owner" />
                       </SelectTrigger>
                       <SelectContent>
@@ -402,12 +402,12 @@ const PriorityDialog = ({
                       type="date"
                       value={formData.dueDate}
                       onChange={(e) => setFormData({ ...formData, dueDate: e.target.value })}
-                      className="mt-1"
+                      className="mt-1 bg-white"
                     />
                   </div>
                 </div>
                 
-                <div className="flex items-center gap-3 p-4 bg-gray-50 rounded-lg mt-4">
+                <div className="flex items-center gap-3 p-4 bg-blue-50/30 rounded-lg mt-4">
                   <input
                     type="checkbox"
                     id="isCompanyWide"
@@ -424,7 +424,7 @@ const PriorityDialog = ({
 
             <TabsContent value="milestones" className="space-y-4">
               {priority?.milestones?.map((milestone) => (
-                <div key={milestone.id} className="p-3 bg-gray-50 rounded-lg">
+                <div key={milestone.id} className="p-3 bg-blue-50/30 rounded-lg">
                   {editingMilestoneId === milestone.id ? (
                     <div className="space-y-2">
                       <Input

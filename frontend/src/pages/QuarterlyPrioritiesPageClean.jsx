@@ -1834,7 +1834,7 @@ const QuarterlyPrioritiesPageClean = () => {
                       value={editForm.ownerId}
                       onValueChange={(value) => setEditForm({ ...editForm, ownerId: value })}
                     >
-                      <SelectTrigger className="h-9">
+                      <SelectTrigger className="h-9 bg-white">
                         <SelectValue />
                       </SelectTrigger>
                       <SelectContent>
@@ -1884,7 +1884,7 @@ const QuarterlyPrioritiesPageClean = () => {
                       value={editForm.status}
                       onValueChange={(value) => setEditForm({ ...editForm, status: value })}
                     >
-                      <SelectTrigger className="h-9">
+                      <SelectTrigger className="h-9 bg-white">
                         <SelectValue />
                       </SelectTrigger>
                       <SelectContent>
@@ -2859,7 +2859,7 @@ const QuarterlyPrioritiesPageClean = () => {
                 value={priorityForm.title}
                 onChange={(e) => setPriorityForm({ ...priorityForm, title: e.target.value })}
                 placeholder="Enter priority title"
-                className="mt-2"
+                className="mt-2 bg-white"
               />
             </div>
             <div>
@@ -2870,7 +2870,7 @@ const QuarterlyPrioritiesPageClean = () => {
                 onChange={(e) => setPriorityForm({ ...priorityForm, description: e.target.value })}
                 placeholder="Describe what needs to be accomplished"
                 rows={3}
-                className="mt-2"
+                className="mt-2 bg-white"
               />
             </div>
             <div className="grid grid-cols-2 gap-6">
@@ -2880,7 +2880,7 @@ const QuarterlyPrioritiesPageClean = () => {
                   value={priorityForm.ownerId}
                   onValueChange={(value) => setPriorityForm({ ...priorityForm, ownerId: value })}
                 >
-                  <SelectTrigger className="mt-2">
+                  <SelectTrigger className="mt-2 bg-white">
                     <SelectValue placeholder="Select owner" />
                   </SelectTrigger>
                   <SelectContent>
@@ -2907,7 +2907,7 @@ const QuarterlyPrioritiesPageClean = () => {
                   type="date"
                   value={priorityForm.dueDate}
                   onChange={(e) => setPriorityForm({ ...priorityForm, dueDate: e.target.value })}
-                  className="mt-2"
+                  className="mt-2 bg-white"
                 />
               </div>
             </div>
