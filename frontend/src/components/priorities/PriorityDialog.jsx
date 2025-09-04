@@ -243,7 +243,7 @@ const PriorityDialog = ({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-4xl max-h-[90vh] overflow-hidden flex flex-col">
+      <DialogContent className="sm:max-w-[900px] w-full max-h-[90vh] overflow-hidden flex flex-col bg-white/95 backdrop-blur-sm border border-white/20 shadow-2xl">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <Target className="h-5 w-5" style={{ color: themeColors.primary }} />
@@ -269,7 +269,7 @@ const PriorityDialog = ({
           )}
         </DialogHeader>
 
-        <Tabs value={activeTab} onValueChange={setActiveTab} className="flex-1 overflow-hidden flex flex-col">
+        <Tabs value={activeTab} onValueChange={setActiveTab} className="flex-1 overflow-hidden flex flex-col min-h-[500px]">
           <TabsList className="grid w-full grid-cols-4">
             <TabsTrigger value="details">Details</TabsTrigger>
             <TabsTrigger value="milestones" className="flex items-center gap-1">
@@ -298,7 +298,7 @@ const PriorityDialog = ({
             </TabsTrigger>
           </TabsList>
 
-          <div className="flex-1 overflow-y-auto mt-4">
+          <div className="flex-1 overflow-y-auto mt-4 min-h-[400px]">
             <TabsContent value="details" className="space-y-4">
               <form onSubmit={handleSubmit} className="space-y-4">
                 <div>
