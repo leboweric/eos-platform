@@ -3721,6 +3721,45 @@ const WeeklyAccountabilityMeetingPage = () => {
           onEditUpdate={handleEditUpdate}
           onDeleteUpdate={handleDeleteUpdate}
           onStatusChange={handlePriorityStatusChange}
+          onCreateLinkedIssue={async (priority) => {
+            try {
+              const orgId = user?.organizationId || user?.organization_id;
+              const teamId = getEffectiveTeamId(null, user);
+              
+              if (!orgId || !teamId) {
+                throw new Error('Organization or team not found');
+              }
+              
+              // Create issue data with Rock context
+              const issueData = {
+                organization_id: orgId,
+                team_id: teamId,
+                issue: `Related to ${labels?.quarterly_priority_singular || 'Rock'}: ${priority.title}`,
+                meeting_date: new Date().toISOString(),
+                created_by: user?.id || 'Unknown',
+                owner: priority.owner || user?.name || 'Unassigned'
+              };
+              
+              await issuesService.createIssue(issueData);
+              
+              // Show success message with visual feedback
+              setSuccess(
+                <div className="flex items-center gap-2">
+                  <CheckCircle className="h-4 w-4" />
+                  <span>Linked issue created and added to Issues List</span>
+                </div>
+              );
+              
+              // Refresh issues data
+              await fetchIssuesData();
+              
+              // Clear success message after 3 seconds
+              setTimeout(() => setSuccess(null), 3000);
+            } catch (error) {
+              console.error('Failed to create linked issue:', error);
+              setError('Failed to create linked issue');
+            }
+          }}
           onUploadAttachment={handleUploadAttachment}
           onDeleteAttachment={handleDeleteAttachment}
           teamMembers={teamMembers}

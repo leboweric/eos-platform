@@ -28,7 +28,8 @@ import {
   Edit2,
   Archive,
   TrendingUp,
-  TrendingDown
+  TrendingDown,
+  Link
 } from 'lucide-react';
 import { quarterlyPrioritiesService } from '../../services/quarterlyPrioritiesService';
 import { useAuthStore } from '../../stores/authStore';
@@ -54,7 +55,8 @@ const PriorityDialog = ({
   onDeleteUpdate,
   onUploadAttachment,
   onDownloadAttachment,
-  onDeleteAttachment
+  onDeleteAttachment,
+  onCreateLinkedIssue
 }) => {
   const { user } = useAuthStore();
   const { labels } = useTerminology();
@@ -733,18 +735,33 @@ const PriorityDialog = ({
         )}
 
         <DialogFooter className="mt-4">
-          {priority && onArchive && (
-            <Button
-              variant="outline"
-              onClick={() => {
-                onArchive(priority.id);
-                onOpenChange(false);
-              }}
-              className="mr-auto"
-            >
-              <Archive className="h-4 w-4 mr-2" />
-              Archive
-            </Button>
+          {priority && (onArchive || onCreateLinkedIssue) && (
+            <div className="flex gap-2 mr-auto">
+              {onArchive && (
+                <Button
+                  variant="outline"
+                  onClick={() => {
+                    onArchive(priority.id);
+                    onOpenChange(false);
+                  }}
+                >
+                  <Archive className="h-4 w-4 mr-2" />
+                  Archive
+                </Button>
+              )}
+              {onCreateLinkedIssue && (
+                <Button
+                  variant="outline"
+                  onClick={() => {
+                    onCreateLinkedIssue(priority);
+                    onOpenChange(false);
+                  }}
+                >
+                  <Link className="h-4 w-4 mr-2" />
+                  Add Linked Issue
+                </Button>
+              )}
+            </div>
           )}
           <Button variant="outline" onClick={() => onOpenChange(false)}>
             Cancel
