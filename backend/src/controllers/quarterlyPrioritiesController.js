@@ -681,9 +681,9 @@ export const updatePredictions = async (req, res) => {
 export const createMilestone = async (req, res) => {
   try {
     const { orgId, teamId, priorityId } = req.params;
-    const { title, dueDate } = req.body;
+    const { title, dueDate, ownerId } = req.body;
     
-    console.log('Creating milestone with data:', { title, dueDate, body: req.body });
+    console.log('Creating milestone with data:', { title, dueDate, ownerId, body: req.body });
     
     // Validate required fields
     if (!title) {
@@ -693,12 +693,24 @@ export const createMilestone = async (req, res) => {
     // Convert empty string to null for date field
     const parsedDueDate = dueDate === '' ? null : dueDate;
     
+    // If no owner specified, get the Rock's owner as default
+    let milestoneOwnerId = ownerId;
+    if (!milestoneOwnerId) {
+      const priorityResult = await query(
+        'SELECT owner_id FROM quarterly_priorities WHERE id = $1',
+        [priorityId]
+      );
+      if (priorityResult.rows.length > 0) {
+        milestoneOwnerId = priorityResult.rows[0].owner_id;
+      }
+    }
+    
     const result = await query(
       `INSERT INTO priority_milestones 
-       (id, priority_id, title, due_date, completed)
-       VALUES ($1, $2, $3, $4, false)
+       (id, priority_id, title, due_date, owner_id, completed)
+       VALUES ($1, $2, $3, $4, $5, false)
        RETURNING *`,
-      [uuidv4(), priorityId, title, parsedDueDate]
+      [uuidv4(), priorityId, title, parsedDueDate, milestoneOwnerId]
     );
     
     // Update priority progress
