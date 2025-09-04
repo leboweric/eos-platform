@@ -504,21 +504,21 @@ const PriorityDialog = ({
                           }}
                         />
                         <div>
-                          <div className="flex items-center gap-2">
-                            <p className={`font-medium ${milestone.completed ? 'line-through text-gray-500' : ''}`}>
-                              {milestone.title}
-                            </p>
-                            {milestone.owner_name && milestone.owner_id !== priority?.owner?.id && (
-                              <Badge variant="secondary" className="text-xs">
-                                {milestone.owner_name}
-                              </Badge>
+                          <p className={`font-medium ${milestone.completed ? 'line-through text-gray-500' : ''}`}>
+                            {milestone.title}
+                          </p>
+                          <div className="flex items-center gap-3 text-sm text-gray-500">
+                            {milestone.owner_name && (
+                              <span>
+                                Owner: {milestone.owner_name}
+                              </span>
+                            )}
+                            {milestone.dueDate && (
+                              <span>
+                                Due: {format(new Date(milestone.dueDate), 'MMM d, yyyy')}
+                              </span>
                             )}
                           </div>
-                          {milestone.dueDate && (
-                            <p className="text-sm text-gray-500">
-                              Due: {format(new Date(milestone.dueDate), 'MMM d, yyyy')}
-                            </p>
-                          )}
                         </div>
                       </div>
                       <div className="flex gap-1">
