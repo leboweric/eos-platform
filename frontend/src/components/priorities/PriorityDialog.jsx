@@ -413,6 +413,7 @@ const PriorityDialog = ({
                     id="isCompanyWide"
                     checked={formData.isCompanyPriority || false}
                     onCheckedChange={(checked) => setFormData({ ...formData, isCompanyPriority: checked })}
+                    className="bg-white border-gray-300"
                   />
                   <Label htmlFor="isCompanyWide" className="text-sm font-medium cursor-pointer">
                     This is a company-wide priority
@@ -465,7 +466,7 @@ const PriorityDialog = ({
                         <Checkbox
                           checked={milestone.completed}
                           onCheckedChange={(checked) => onToggleMilestone?.(priority.id, milestone.id, checked)}
-                          className="flex-shrink-0"
+                          className="flex-shrink-0 bg-white border-gray-300"
                         />
                         <div>
                           <p className={`font-medium ${milestone.completed ? 'line-through text-gray-500' : ''}`}>
