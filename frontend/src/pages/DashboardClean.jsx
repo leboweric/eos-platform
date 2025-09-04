@@ -41,26 +41,13 @@ import {
   Users,
   ChartBar,
   User,
-  Users2,
-  AlertTriangle
+  Users2
 } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { format } from 'date-fns';
 
 const DashboardClean = () => {
   const { user, isOnLeadershipTeam } = useAuthStore();
-  
-  // Utility function to calculate days until due
-  const getDaysUntilDue = (dueDate) => {
-    if (!dueDate) return null;
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
-    const due = new Date(dueDate);
-    due.setHours(0, 0, 0, 0);
-    const diffTime = due - today;
-    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-    return diffDays;
-  };
   const { labels } = useTerminology();
   const { selectedDepartment } = useDepartment();
   const navigate = useNavigate();
@@ -902,12 +889,84 @@ const DashboardClean = () => {
                 </Button>
               </div>
             ) : viewMode === 'team-view' ? (
-              // Team View: TEMPORARILY SIMPLIFIED DUE TO BUILD ERROR
+              // Team View: Group by owner
               <div className="space-y-4 max-h-[600px] overflow-y-auto pr-2">
-                <div className="text-center text-gray-500 py-8">
-                  <p>Team view temporarily unavailable due to build error.</p>
-                  <p className="text-sm mt-2">Please use "My Items" view.</p>
-                </div>
+                {(() => {
+                  // Group priorities by owner
+                  const groupedPriorities = dashboardData.priorities.reduce((groups, priority) => {
+                    const ownerName = priority.owner?.name || 'Unassigned';
+                    if (!groups[ownerName]) {
+                      groups[ownerName] = [];
+                    }
+                    groups[ownerName].push(priority);
+                    return groups;
+                  }, {});
+                  
+                  return Object.entries(groupedPriorities).map(([ownerName, priorities]) => (
+                    <div key={ownerName} className="space-y-2">
+                      <h3 className="text-sm font-semibold text-slate-700 px-2">
+                        {ownerName} ({priorities.length})
+                      </h3>
+                      {priorities.map((priority) => {
+                        const isComplete = priority.status === 'complete' || 
+                                         priority.status === 'completed' || 
+                                         priority.progress === 100;
+                        return (
+                          <div 
+                            key={priority.id} 
+                            className={`group p-3 rounded-lg border transition-all cursor-pointer hover:scale-[1.01] ml-4 ${
+                              isComplete 
+                                ? 'bg-gradient-to-r from-green-50/80 to-emerald-50/80 border-green-200 hover:shadow-lg' 
+                                : priority.status === 'off-track'
+                                ? 'bg-white/60 border-red-200 hover:shadow-md'
+                                : 'bg-white/60 border-slate-200 hover:shadow-md'
+                            }`}
+                            onClick={() => {
+                              setSelectedPriority(priority);
+                              setShowPriorityDialog(true);
+                            }}
+                          >
+                            <div className="flex items-center gap-2">
+                              {isComplete ? (
+                                <div className="w-8 h-8 rounded-full bg-gradient-to-br from-green-500 to-emerald-600 flex items-center justify-center shadow-sm">
+                                  <CheckCircle className="h-4 w-4 text-white" />
+                                </div>
+                              ) : (
+                                <div className="w-1.5 h-8 rounded-full" style={getStatusStyle(priority.status)} />
+                              )}
+                              <div className="flex-1 min-w-0">
+                                <p className={`text-sm font-medium truncate ${
+                                  isComplete 
+                                    ? 'text-green-900 line-through decoration-green-400' 
+                                    : 'text-slate-900 group-hover:text-slate-950'
+                                }`}>
+                                  {priority.title}
+                                </p>
+                                <p className={`text-xs mt-0.5 ${
+                                  isComplete ? 'text-green-700' : 'text-slate-600'
+                                }`}>
+                                  Due {priority.dueDate ? format(new Date(priority.dueDate), 'MMM d') : 'No date'}
+                                </p>
+                              </div>
+                              {isComplete ? (
+                                <div className="flex items-center gap-2">
+                                  <Badge className="bg-green-100 text-green-800 border-green-200 px-1.5 py-0.5 text-xs font-semibold">
+                                    ✓
+                                  </Badge>
+                                  <span className="text-xs text-green-600 font-medium">100%</span>
+                                </div>
+                              ) : (
+                                <span className="text-xs font-medium" style={{ color: themeColors.primary }}>
+                                  {priority.progress || 0}%
+                                </span>
+                              )}
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  ));
+                })()}
               </div>
             ) : (
               // My Items View: Flat list
@@ -917,13 +976,6 @@ const DashboardClean = () => {
                   const isComplete = priority.status === 'complete' || 
                                      priority.status === 'completed' || 
                                      priority.progress === 100;
-                  
-                  // Calculate overdue milestones - TEMPORARILY COMMENTED OUT DUE TO BUILD ERROR
-                  // const overdueMilestones = (priority.milestones || []).filter(
-                  //   m => !m.completed && getDaysUntilDue(m.dueDate) < 0
-                  // );
-                  const overdueMilestones = []; // Temporary placeholder
-                  
                   console.log('Priority status check:', { 
                     title: priority.title, 
                     status: priority.status, 
@@ -967,48 +1019,32 @@ const DashboardClean = () => {
                             {priority.owner?.name || 'Unassigned'} • Due {priority.dueDate ? format(new Date(priority.dueDate), 'MMM d') : 'No date'}
                           </p>
                         </div>
-                        <div className="text-right flex items-center gap-3">
-                          {/* Overdue milestone indicator - TEMPORARILY COMMENTED OUT */}
-                          {/* {overdueMilestones.length > 0 && !isComplete && (
-                            <div className="flex items-center gap-1 group/tooltip relative">
-                              <div className="w-6 h-6 rounded-full bg-red-500 text-white text-[11px] font-bold flex items-center justify-center">
-                                {overdueMilestones.length}
-                              </div>
-                              <AlertTriangle className="h-4 w-4 text-red-500" />
-                              <div className="absolute bottom-full right-0 mb-2 hidden group-hover/tooltip:block z-50">
-                                <div className="bg-slate-900 text-white text-xs rounded-lg py-1.5 px-2.5 whitespace-nowrap">
-                                  {overdueMilestones.length} overdue milestone{overdueMilestones.length > 1 ? 's' : ''}
-                                </div>
-                              </div>
+                        <div className="text-right">
+                          {isComplete ? (
+                            <div className="flex flex-col items-end gap-1">
+                              <Badge className="bg-green-100 text-green-800 border-green-200 px-2 py-0.5 text-xs font-semibold">
+                                ✓ Complete
+                              </Badge>
+                              <span className="text-xs text-green-600 font-medium">100%</span>
                             </div>
-                          )} */}
-                          <div>
-                            {isComplete ? (
-                              <div className="flex flex-col items-end gap-1">
-                                <Badge className="bg-green-100 text-green-800 border-green-200 px-2 py-0.5 text-xs font-semibold">
-                                  ✓ Complete
-                                </Badge>
-                                <span className="text-xs text-green-600 font-medium">100%</span>
-                              </div>
-                            ) : (
-                              <>
-                                <span className="text-sm font-medium" style={{ color: themeColors.primary }}>
-                                  {priority.progress || 0}%
-                                </span>
-                                {priority.progress > 0 && (
-                                  <div className="w-16 h-1.5 bg-slate-100 rounded-full mt-1 overflow-hidden">
-                                    <div 
-                                      className="h-full rounded-full transition-all"
-                                      style={{ 
-                                        width: `${priority.progress || 0}%`,
-                                        background: `linear-gradient(90deg, ${themeColors.primary} 0%, ${themeColors.secondary} 100%)`
-                                      }}
-                                    />
-                                  </div>
-                                )}
-                              </>
-                            )}
-                          </div>
+                          ) : (
+                            <>
+                              <span className="text-sm font-medium" style={{ color: themeColors.primary }}>
+                                {priority.progress || 0}%
+                              </span>
+                              {priority.progress > 0 && (
+                                <div className="w-16 h-1.5 bg-slate-100 rounded-full mt-1 overflow-hidden">
+                                  <div 
+                                    className="h-full rounded-full transition-all"
+                                    style={{ 
+                                      width: `${priority.progress || 0}%`,
+                                      background: `linear-gradient(90deg, ${themeColors.primary} 0%, ${themeColors.secondary} 100%)`
+                                    }}
+                                  />
+                                </div>
+                              )}
+                            </>
+                          )}
                         </div>
                       </div>
                     </div>
