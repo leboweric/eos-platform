@@ -50,9 +50,7 @@ const Layout = ({ children }) => {
   const [logoUrl, setLogoUrl] = useState(null);
   const [logoKey] = useState(Date.now()); // Cache buster for logo
   const [hideSidebar, setHideSidebar] = useState(false);
-  const [logoSize, setLogoSize] = useState(() => {
-    return parseInt(localStorage.getItem('logoSize') || '100');
-  });
+  const [logoSize, setLogoSize] = useState(100); // Initialize with default, will be updated in useEffect
   const [themeColors, setThemeColors] = useState({
     primary: '#3B82F6',
     secondary: '#1E40AF',
@@ -116,10 +114,26 @@ const Layout = ({ children }) => {
     };
   }, [user]);
   
-  // Listen for logo size changes
+  // Listen for logo size changes and load org-specific size
   useEffect(() => {
+    // Load organization-specific logo size
+    const orgId = user?.organizationId || user?.organization_id;
+    if (orgId) {
+      const key = `logoSize_${orgId}`;
+      const savedSize = localStorage.getItem(key);
+      if (savedSize) {
+        setLogoSize(parseInt(savedSize));
+      }
+    }
+    
     const handleLogoSizeChange = (event) => {
-      setLogoSize(event.detail);
+      // Check if the event is for the current organization
+      const { size, orgId: eventOrgId } = typeof event.detail === 'object' ? event.detail : { size: event.detail, orgId: null };
+      const currentOrgId = user?.organizationId || user?.organization_id;
+      
+      if (!eventOrgId || eventOrgId === currentOrgId) {
+        setLogoSize(size);
+      }
     };
     
     window.addEventListener('logoSizeChanged', handleLogoSizeChange);
@@ -127,7 +141,7 @@ const Layout = ({ children }) => {
     return () => {
       window.removeEventListener('logoSizeChanged', handleLogoSizeChange);
     };
-  }, []);
+  }, [user]);
   
   // Check for temporary sidebar hide flag
   useEffect(() => {

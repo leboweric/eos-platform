@@ -36,8 +36,10 @@ const OrganizationSettings = () => {
   const [selectedFile, setSelectedFile] = useState(null);
   const [uploadingLogo, setUploadingLogo] = useState(false);
   const [logoSize, setLogoSize] = useState(() => {
-    // Get saved logo size from localStorage, default to 100%
-    return parseInt(localStorage.getItem('logoSize') || '100');
+    // Get saved logo size from localStorage (organization-specific), default to 100%
+    const orgId = user?.organizationId || user?.organization_id;
+    const key = orgId ? `logoSize_${orgId}` : 'logoSize';
+    return parseInt(localStorage.getItem(key) || '100');
   });
   const [demoResetStatus, setDemoResetStatus] = useState(null);
   const [resettingDemo, setResettingDemo] = useState(false);
@@ -223,9 +225,12 @@ const OrganizationSettings = () => {
   const handleLogoSizeChange = (value) => {
     const size = value[0]; // Slider returns array
     setLogoSize(size);
-    localStorage.setItem('logoSize', size.toString());
-    // Trigger a custom event to update logo size in Layout
-    window.dispatchEvent(new CustomEvent('logoSizeChanged', { detail: size }));
+    // Store with organization-specific key
+    const orgId = user?.organizationId || user?.organization_id;
+    const key = orgId ? `logoSize_${orgId}` : 'logoSize';
+    localStorage.setItem(key, size.toString());
+    // Trigger a custom event to update logo size in Layout (include orgId)
+    window.dispatchEvent(new CustomEvent('logoSizeChanged', { detail: { size, orgId } }));
   };
 
   const handleExportData = async () => {
