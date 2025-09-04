@@ -586,7 +586,12 @@ const PriorityDialog = ({
                       size="sm"
                       onClick={() => {
                         if (onAddMilestone && newMilestone.title) {
-                          onAddMilestone(priority.id, newMilestone);
+                          // Ensure ownerId is set - use selected value or default to Rock owner
+                          const milestoneToAdd = {
+                            ...newMilestone,
+                            ownerId: newMilestone.ownerId || priority?.owner?.id || ''
+                          };
+                          onAddMilestone(priority.id, milestoneToAdd);
                           setNewMilestone({ title: '', dueDate: '', ownerId: '' });
                           setShowAddMilestone(false);
                         }

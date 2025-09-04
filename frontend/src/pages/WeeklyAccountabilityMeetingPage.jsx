@@ -1331,6 +1331,7 @@ const WeeklyAccountabilityMeetingPage = () => {
         id: result?.id || Date.now().toString(),
         title: milestoneData.title,
         dueDate: milestoneData.dueDate,
+        ownerId: milestoneData.ownerId,
         completed: false
       };
       
