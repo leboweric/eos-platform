@@ -478,10 +478,11 @@ const QuarterlyPrioritiesPageClean = () => {
         // Auto-update status based on milestone completion
         let newStatus = p.status;
         if (totalCount > 0) {
-          if (newProgress === 100) {
+          // Only set to complete if ALL milestones are actually checked (not just 100% progress)
+          if (completedCount === totalCount && totalCount > 0) {
             // All milestones complete - mark as complete
             newStatus = 'complete';
-          } else if (newStatus === 'complete' && newProgress < 100) {
+          } else if (newStatus === 'complete' && completedCount < totalCount) {
             // Was complete but unchecked a milestone - revert to on-track
             newStatus = 'on-track';
           }
@@ -608,12 +609,23 @@ const QuarterlyPrioritiesPageClean = () => {
         const totalCount = allMilestones.length;
         const newProgress = totalCount > 0 ? Math.round((completedCount / totalCount) * 100) : 0;
         
-        // Update progress on backend
-        await quarterlyPrioritiesService.updatePriority(orgId, teamId, priorityId, { progress: newProgress });
+        // Determine if status needs to change
+        let newStatus = currentPriority.status;
+        if (currentPriority.status === 'complete' && completedCount < totalCount) {
+          // Was complete but added an incomplete milestone
+          newStatus = 'on-track';
+        }
         
-        // Update local state with new progress
+        // Update progress and possibly status on backend
+        const updates = { progress: newProgress };
+        if (newStatus !== currentPriority.status) {
+          updates.status = newStatus;
+        }
+        await quarterlyPrioritiesService.updatePriority(orgId, teamId, priorityId, updates);
+        
+        // Update local state with new progress and status
         setCompanyPriorities(prev => prev.map(p => 
-          p.id === priorityId ? { ...p, progress: newProgress } : p
+          p.id === priorityId ? { ...p, progress: newProgress, status: newStatus } : p
         ));
         
         setTeamMemberPriorities(prev => {
@@ -621,7 +633,7 @@ const QuarterlyPrioritiesPageClean = () => {
           Object.keys(updated).forEach(memberId => {
             if (updated[memberId]?.priorities) {
               updated[memberId].priorities = updated[memberId].priorities.map(p =>
-                p.id === priorityId ? { ...p, progress: newProgress } : p
+                p.id === priorityId ? { ...p, progress: newProgress, status: newStatus } : p
               );
             }
           });
@@ -629,7 +641,7 @@ const QuarterlyPrioritiesPageClean = () => {
         });
         
         if (selectedPriority?.id === priorityId) {
-          setSelectedPriority(prev => ({ ...prev, progress: newProgress }));
+          setSelectedPriority(prev => ({ ...prev, progress: newProgress, status: newStatus }));
         }
       }
       
@@ -747,11 +759,17 @@ const QuarterlyPrioritiesPageClean = () => {
         const totalCount = remainingMilestones.length;
         const newProgress = totalCount > 0 ? Math.round((completedCount / totalCount) * 100) : 0;
         
-        // Determine status based on progress
+        // Determine status based on actual milestone completion
         let newStatus = currentPriority.status;
-        if (totalCount > 0 && currentPriority.status === 'complete' && newProgress < 100) {
-          // Was complete but now not all milestones are done
-          newStatus = 'on-track';
+        if (totalCount > 0) {
+          // Only keep complete status if ALL remaining milestones are checked
+          if (currentPriority.status === 'complete' && completedCount < totalCount) {
+            // Was complete but now not all milestones are done
+            newStatus = 'on-track';
+          } else if (completedCount === totalCount && totalCount > 0) {
+            // All remaining milestones are complete
+            newStatus = 'complete';
+          }
         }
         
         // Update progress and possibly status on backend
