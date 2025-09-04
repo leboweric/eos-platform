@@ -2385,11 +2385,17 @@ const WeeklyAccountabilityMeetingPage = () => {
                                           Due {priority.dueDate ? format(new Date(priority.dueDate), 'MMM d') : 'No date'}
                                         </span>
                                         {daysUntil !== null && (
-                                          <span className={`text-xs px-2 py-1 rounded-full font-medium ${
-                                            daysUntil < 0 ? 'bg-red-100 text-red-700' :
-                                            daysUntil <= 7 ? 'bg-yellow-100 text-yellow-700' :
-                                            'bg-green-100 text-green-700'
-                                          }`}>
+                                          <span 
+                                            className={`text-xs px-2 py-1 rounded-full font-medium ${
+                                              daysUntil < 0 ? 'bg-red-100 text-red-700' :
+                                              daysUntil <= 7 ? 'bg-yellow-100 text-yellow-700' :
+                                              'text-white'
+                                            }`}
+                                            style={{
+                                              backgroundColor: daysUntil > 7 ? themeColors.primary : undefined,
+                                              opacity: daysUntil > 7 ? 0.9 : undefined
+                                            }}
+                                          >
                                             {daysUntil < 0 ? `${Math.abs(daysUntil)} days overdue` :
                                              daysUntil === 0 ? 'Due today' :
                                              `${daysUntil} days left`}
@@ -2411,11 +2417,18 @@ const WeeklyAccountabilityMeetingPage = () => {
                                         </Badge>
                                       )}
                                       {/* Status badge underneath progress bar */}
-                                      <Badge className={`${
-                                        isComplete ? 'bg-green-100 text-green-800 border-green-200' :
-                                        priority.status === 'off-track' ? 'bg-red-100 text-red-800 border-red-200' :
-                                        'bg-blue-100 text-blue-800 border-blue-200'
-                                      }`}>
+                                      <Badge 
+                                        className={`${
+                                          isComplete ? 'text-white' :
+                                          priority.status === 'off-track' ? 'bg-red-100 text-red-800 border-red-200' :
+                                          'text-white'
+                                        }`}
+                                        style={{
+                                          backgroundColor: isComplete || priority.status === 'on-track' ? themeColors.primary : undefined,
+                                          borderColor: isComplete || priority.status === 'on-track' ? themeColors.primary : undefined,
+                                          opacity: isComplete || priority.status === 'on-track' ? 0.9 : undefined
+                                        }}
+                                      >
                                         {isComplete ? 'Complete' :
                                          priority.status === 'off-track' ? 'Off Track' : 'On Track'}
                                       </Badge>
@@ -2535,11 +2548,17 @@ const WeeklyAccountabilityMeetingPage = () => {
                                                 Due {priority.dueDate ? format(new Date(priority.dueDate), 'MMM d') : 'No date'}
                                               </span>
                                               {daysUntil !== null && (
-                                                <span className={`text-xs px-2 py-1 rounded-full font-medium ${
-                                                  daysUntil < 0 ? 'bg-red-100 text-red-700' :
-                                                  daysUntil <= 7 ? 'bg-yellow-100 text-yellow-700' :
-                                                  'bg-green-100 text-green-700'
-                                                }`}>
+                                                <span 
+                                                  className={`text-xs px-2 py-1 rounded-full font-medium ${
+                                                    daysUntil < 0 ? 'bg-red-100 text-red-700' :
+                                                    daysUntil <= 7 ? 'bg-yellow-100 text-yellow-700' :
+                                                    'text-white'
+                                                  }`}
+                                                  style={{
+                                                    backgroundColor: daysUntil > 7 ? themeColors.primary : undefined,
+                                                    opacity: daysUntil > 7 ? 0.9 : undefined
+                                                  }}
+                                                >
                                                   {daysUntil < 0 ? `${Math.abs(daysUntil)} days overdue` :
                                                    daysUntil === 0 ? 'Due today' :
                                                    `${daysUntil} days left`}
@@ -2561,11 +2580,18 @@ const WeeklyAccountabilityMeetingPage = () => {
                                               </Badge>
                                             )}
                                             {/* Status badge underneath progress bar */}
-                                            <Badge className={`${
-                                              isComplete ? 'bg-green-100 text-green-800 border-green-200' :
-                                              priority.status === 'off-track' ? 'bg-red-100 text-red-800 border-red-200' :
-                                              'bg-blue-100 text-blue-800 border-blue-200'
-                                            }`}>
+                                            <Badge 
+                                              className={`${
+                                                isComplete ? 'text-white' :
+                                                priority.status === 'off-track' ? 'bg-red-100 text-red-800 border-red-200' :
+                                                'text-white'
+                                              }`}
+                                              style={{
+                                                backgroundColor: isComplete || priority.status === 'on-track' ? themeColors.primary : undefined,
+                                                borderColor: isComplete || priority.status === 'on-track' ? themeColors.primary : undefined,
+                                                opacity: isComplete || priority.status === 'on-track' ? 0.9 : undefined
+                                              }}
+                                            >
                                               {isComplete ? 'Complete' :
                                                priority.status === 'off-track' ? 'Off Track' : 'On Track'}
                                             </Badge>
