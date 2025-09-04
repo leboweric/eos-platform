@@ -2888,9 +2888,9 @@ const QuarterlyPrioritiesPageClean = () => {
       <Dialog open={showAddPriority} onOpenChange={setShowAddPriority}>
         <DialogContent className="sm:max-w-[900px] max-h-[90vh] overflow-y-auto bg-white/95 backdrop-blur-lg border border-white/50">
           <DialogHeader>
-            <DialogTitle>Add New Priority</DialogTitle>
+            <DialogTitle>Add New {labels.priority}</DialogTitle>
             <DialogDescription>
-              Create a new priority for {getCurrentPeriodDisplay()}
+              Create a new {labels.priority.toLowerCase()} for {getCurrentPeriodDisplay()}
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-6">
@@ -3057,7 +3057,7 @@ const QuarterlyPrioritiesPageClean = () => {
               }}
             >
               <Plus className="mr-2 h-4 w-4" />
-              Create Priority
+              Create {labels.priority}
             </Button>
           </DialogFooter>
         </DialogContent>
