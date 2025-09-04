@@ -2348,11 +2348,14 @@ const WeeklyAccountabilityMeetingPage = () => {
                                 key={priority.id}
                                 className={`max-w-5xl transition-all duration-300 shadow-md hover:shadow-xl hover:scale-[1.01] cursor-pointer ${
                                   isComplete 
-                                    ? 'bg-gradient-to-r from-green-50/80 to-emerald-50/80 border-green-200' 
+                                    ? 'border-slate-200' 
                                     : priority.status === 'off-track'
                                     ? 'bg-gradient-to-r from-red-50/80 to-rose-50/80 border-red-200'
                                     : 'bg-white border-slate-200'
                                 }`}
+                                style={{
+                                  backgroundColor: isComplete ? `${themeColors.primary}10` : undefined
+                                }}
                                 onClick={() => {
                                   setSelectedPriority(priority);
                                   setShowPriorityDialog(true);
@@ -2515,11 +2518,14 @@ const WeeklyAccountabilityMeetingPage = () => {
                                       key={priority.id}
                                       className={`max-w-5xl transition-all duration-300 shadow-md hover:shadow-xl hover:scale-[1.01] cursor-pointer ${
                                         isComplete 
-                                          ? 'bg-gradient-to-r from-green-50/80 to-emerald-50/80 border-green-200' 
+                                          ? 'border-slate-200' 
                                           : priority.status === 'off-track'
                                           ? 'bg-gradient-to-r from-red-50/80 to-rose-50/80 border-red-200'
                                           : 'bg-white border-slate-200'
                                       }`}
+                                      style={{
+                                        backgroundColor: isComplete ? `${themeColors.primary}10` : undefined
+                                      }}
                                       onClick={() => {
                                         setSelectedPriority(priority);
                                         setShowPriorityDialog(true);

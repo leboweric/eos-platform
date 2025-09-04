@@ -2515,9 +2515,12 @@ const QuarterlyPrioritiesPageClean = () => {
                               key={priority.id}
                               className={`max-w-5xl ${
                                 isComplete 
-                                  ? 'bg-gradient-to-r from-green-50/60 to-emerald-50/60 border-green-200' 
+                                  ? 'border-slate-200' 
                                   : 'bg-gray-50 border-gray-200'
                               }`}
+                              style={{
+                                backgroundColor: isComplete ? `${themeColors.primary}10` : undefined
+                              }}
                             >
                               <CardHeader className="pb-4">
                                 <div className="flex items-start justify-between">
@@ -2589,9 +2592,12 @@ const QuarterlyPrioritiesPageClean = () => {
                                   key={priority.id}
                                   className={`max-w-5xl ${
                                     isComplete 
-                                      ? 'bg-gradient-to-r from-green-50/60 to-emerald-50/60 border-green-200' 
+                                      ? 'border-slate-200' 
                                       : 'bg-gray-50 border-gray-200'
                                   }`}
+                                  style={{
+                                    backgroundColor: isComplete ? `${themeColors.primary}10` : undefined
+                                  }}
                                 >
                                   <CardHeader className="pb-4">
                                     <div className="flex items-start justify-between">
@@ -2681,11 +2687,14 @@ const QuarterlyPrioritiesPageClean = () => {
                         key={priority.id}
                         className={`max-w-5xl transition-all duration-300 hover:shadow-lg hover:scale-[1.01] cursor-pointer ${
                           isComplete 
-                            ? 'bg-gradient-to-r from-green-50/80 to-emerald-50/80 border-green-200' 
+                            ? 'border-slate-200' 
                             : priority.status === 'off-track'
                             ? 'bg-gradient-to-r from-red-50/80 to-rose-50/80 border-red-200'
                             : 'bg-white/90 backdrop-blur-sm border-slate-200'
                         }`}
+                        style={{
+                          backgroundColor: isComplete ? `${themeColors.primary}10` : undefined
+                        }}
                         onClick={() => {
                           setSelectedPriority(priority);
                           setShowPriorityDialog(true);
@@ -2827,11 +2836,14 @@ const QuarterlyPrioritiesPageClean = () => {
                             key={priority.id}
                             className={`max-w-5xl transition-all duration-300 hover:shadow-lg hover:scale-[1.01] cursor-pointer ${
                               isComplete 
-                                ? 'bg-gradient-to-r from-green-50/80 to-emerald-50/80 border-green-200' 
+                                ? 'border-slate-200' 
                                 : priority.status === 'off-track'
                                 ? 'bg-gradient-to-r from-red-50/80 to-rose-50/80 border-red-200'
                                 : 'bg-white/90 backdrop-blur-sm border-slate-200'
                             }`}
+                            style={{
+                              backgroundColor: isComplete ? `${themeColors.primary}10` : undefined
+                            }}
                             onClick={() => {
                               setSelectedPriority(priority);
                               setShowPriorityDialog(true);

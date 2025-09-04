@@ -935,11 +935,14 @@ const DashboardClean = () => {
                             key={priority.id} 
                             className={`group p-3 rounded-lg border transition-all cursor-pointer hover:scale-[1.01] ml-4 ${
                               isComplete 
-                                ? 'bg-gradient-to-r from-green-50/80 to-emerald-50/80 border-green-200 hover:shadow-lg' 
+                                ? 'border-slate-200 hover:shadow-lg' 
                                 : priority.status === 'off-track'
                                 ? 'bg-white/60 border-red-200 hover:shadow-md'
                                 : 'bg-white/60 border-slate-200 hover:shadow-md'
                             }`}
+                            style={{
+                              backgroundColor: isComplete ? `${themeColors.primary}10` : undefined
+                            }}
                             onClick={() => {
                               setSelectedPriority(priority);
                               setShowPriorityDialog(true);
@@ -1014,11 +1017,14 @@ const DashboardClean = () => {
                       key={priority.id} 
                       className={`group p-4 rounded-xl border transition-all cursor-pointer hover:scale-[1.01] ${
                         isComplete 
-                          ? 'bg-gradient-to-r from-green-50/80 to-emerald-50/80 border-green-200 hover:shadow-lg' 
+                          ? 'border-slate-200 hover:shadow-lg' 
                           : priority.status === 'off-track'
                           ? 'bg-white/60 border-red-200 hover:shadow-md'
                           : 'bg-white/60 border-slate-200 hover:shadow-md'
                       }`}
+                      style={{
+                        backgroundColor: isComplete ? `${themeColors.primary}10` : undefined
+                      }}
                       onClick={() => {
                         setSelectedPriority(priority);
                         setShowPriorityDialog(true);
