@@ -2442,7 +2442,7 @@ const QuarterlyPrioritiesPageClean = () => {
                       });
                       setShowAddPriority(true);
                     }}
-                    className="bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white rounded-lg transition-all transform hover:scale-[1.02]"
+                    className="text-white rounded-lg transition-all transform hover:scale-[1.02] hover:shadow-md"
                     style={{
                       background: `linear-gradient(135deg, ${themeColors.primary} 0%, ${themeColors.secondary} 100%)`
                     }}
@@ -2844,7 +2844,7 @@ const QuarterlyPrioritiesPageClean = () => {
       
       {/* Add Priority Dialog - Enhanced with Milestones */}
       <Dialog open={showAddPriority} onOpenChange={setShowAddPriority}>
-        <DialogContent className="sm:max-w-[900px] max-h-[90vh] overflow-y-auto">
+        <DialogContent className="sm:max-w-[900px] max-h-[90vh] overflow-y-auto bg-white/95 backdrop-blur-lg border border-white/50">
           <DialogHeader>
             <DialogTitle>Add New Priority</DialogTitle>
             <DialogDescription>
@@ -3007,7 +3007,14 @@ const QuarterlyPrioritiesPageClean = () => {
             <Button variant="outline" onClick={() => setShowAddPriority(false)}>
               Cancel
             </Button>
-            <Button onClick={handleCreatePriority}>
+            <Button 
+              onClick={handleCreatePriority}
+              className="text-white"
+              style={{
+                background: `linear-gradient(135deg, ${themeColors.primary} 0%, ${themeColors.secondary} 100%)`
+              }}
+            >
+              <Plus className="mr-2 h-4 w-4" />
               Create Priority
             </Button>
           </DialogFooter>
