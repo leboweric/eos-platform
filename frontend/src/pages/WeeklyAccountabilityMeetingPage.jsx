@@ -2338,6 +2338,11 @@ const WeeklyAccountabilityMeetingPage = () => {
                             const daysUntil = !isComplete ? getDaysUntilDue(priority.dueDate || priority.due_date) : null;
                             const displayProgress = isComplete ? 100 : (priority.progress || 0);
                             
+                            // Calculate overdue milestones for this priority
+                            const overdueMilestones = (priority.milestones || []).filter(
+                              m => !m.completed && getDaysUntilDue(m.dueDate) < 0
+                            );
+                            
                             return (
                               <Card 
                                 key={priority.id}
@@ -2399,6 +2404,12 @@ const WeeklyAccountabilityMeetingPage = () => {
                                         </div>
                                         <Progress value={displayProgress} className="w-24 h-2" />
                                       </div>
+                                      {/* Overdue milestone badge */}
+                                      {overdueMilestones.length > 0 && (
+                                        <Badge variant="destructive" className="bg-red-100 text-red-700 border-red-300">
+                                          {overdueMilestones.length} Overdue Milestone{overdueMilestones.length > 1 ? 's' : ''}
+                                        </Badge>
+                                      )}
                                       {/* Status badge underneath progress bar */}
                                       <Badge className={`${
                                         isComplete ? 'bg-green-100 text-green-800 border-green-200' :
@@ -2481,6 +2492,11 @@ const WeeklyAccountabilityMeetingPage = () => {
                                   const daysUntil = !isComplete ? getDaysUntilDue(priority.dueDate || priority.due_date) : null;
                                   const displayProgress = isComplete ? 100 : (priority.progress || 0);
                                   
+                                  // Calculate overdue milestones for this priority
+                                  const overdueMilestones = (priority.milestones || []).filter(
+                                    m => !m.completed && getDaysUntilDue(m.dueDate) < 0
+                                  );
+                                  
                                   return (
                                     <Card 
                                       key={priority.id}
@@ -2538,6 +2554,12 @@ const WeeklyAccountabilityMeetingPage = () => {
                                               </div>
                                               <Progress value={displayProgress} className="w-24 h-2" />
                                             </div>
+                                            {/* Overdue milestone badge */}
+                                            {overdueMilestones.length > 0 && (
+                                              <Badge variant="destructive" className="bg-red-100 text-red-700 border-red-300">
+                                                {overdueMilestones.length} Overdue Milestone{overdueMilestones.length > 1 ? 's' : ''}
+                                              </Badge>
+                                            )}
                                             {/* Status badge underneath progress bar */}
                                             <Badge className={`${
                                               isComplete ? 'bg-green-100 text-green-800 border-green-200' :

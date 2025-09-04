@@ -2654,18 +2654,6 @@ const QuarterlyPrioritiesPageClean = () => {
                       m => !m.completed && getDaysUntilDue(m.dueDate) < 0
                     );
                     
-                    console.log('[DEBUG] Rendering company priority:', {
-                      title: priority.title,
-                      milestones: priority.milestones,
-                      hasMilestones: !!priority.milestones,
-                      milestoneCount: priority.milestones?.length || 0,
-                      overdueMilestoneCount: overdueMilestones.length,
-                      overdueDetails: overdueMilestones.map(m => ({
-                        title: m.title,
-                        dueDate: m.dueDate,
-                        daysOverdue: Math.abs(getDaysUntilDue(m.dueDate))
-                      }))
-                    });
                     
                     const isComplete = priority.status === 'complete' || priority.status === 'completed';
                     const daysUntil = !isComplete ? getDaysUntilDue(priority.dueDate || priority.due_date) : null;
@@ -2799,18 +2787,6 @@ const QuarterlyPrioritiesPageClean = () => {
                           m => !m.completed && getDaysUntilDue(m.dueDate) < 0
                         );
                         
-                        console.log('[DEBUG] Rendering individual priority:', {
-                          title: priority.title,
-                          milestones: priority.milestones,
-                          hasMilestones: !!priority.milestones,
-                          milestoneCount: priority.milestones?.length || 0,
-                          overdueMilestoneCount: overdueMilestones.length,
-                          overdueDetails: overdueMilestones.map(m => ({
-                            title: m.title,
-                            dueDate: m.dueDate,
-                            daysOverdue: Math.abs(getDaysUntilDue(m.dueDate))
-                          }))
-                        });
                         
                         const isComplete = priority.status === 'complete' || priority.status === 'completed';
                         const daysUntil = !isComplete ? getDaysUntilDue(priority.dueDate || priority.due_date) : null;
