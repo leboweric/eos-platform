@@ -507,16 +507,24 @@ const PriorityDialog = ({
                           <p className={`font-medium ${milestone.completed ? 'line-through text-gray-500' : ''}`}>
                             {milestone.title}
                           </p>
-                          <div className="flex items-center gap-3 text-sm text-gray-500">
+                          <div className="flex items-center gap-3 text-sm">
                             {milestone.owner_name && milestone.owner_id !== priority?.owner?.id && (
-                              <span>
-                                Owner: {milestone.owner_name}
-                              </span>
+                              <div 
+                                className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full border"
+                                style={{
+                                  background: `linear-gradient(135deg, ${themeColors.primary}10 0%, ${themeColors.secondary}10 100%)`,
+                                  borderColor: `${themeColors.primary}30`
+                                }}
+                              >
+                                <User className="h-3 w-3" style={{ color: themeColors.primary }} />
+                                <span className="font-medium" style={{ color: themeColors.primary }}>{milestone.owner_name}</span>
+                              </div>
                             )}
                             {milestone.dueDate && (
-                              <span>
-                                Due: {format(new Date(milestone.dueDate), 'MMM d, yyyy')}
-                              </span>
+                              <div className="inline-flex items-center gap-1.5 text-gray-500">
+                                <Calendar className="h-3 w-3" />
+                                <span>{format(new Date(milestone.dueDate), 'MMM d, yyyy')}</span>
+                              </div>
                             )}
                           </div>
                         </div>
