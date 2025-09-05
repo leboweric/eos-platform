@@ -38,9 +38,10 @@ export const concludeMeeting = async (req, res) => {
       });
     }
     
-    // Handle "null" string or invalid team IDs
+    // CRITICAL VALIDATION: Team ID must NEVER be null or invalid
     if (teamId === 'null' || teamId === 'undefined' || !teamId) {
-      console.log('Invalid team ID detected:', teamId, '- attempting to find organization leadership team');
+      console.error('CRITICAL ERROR: Invalid team ID detected:', teamId);
+      console.error('Meeting conclusion BLOCKED to prevent email summaries going to wrong recipients');
       
       // Try to find the actual leadership team for this organization
       const leadershipResult = await db.query(
@@ -50,16 +51,40 @@ export const concludeMeeting = async (req, res) => {
       
       if (leadershipResult.rows.length > 0) {
         teamId = leadershipResult.rows[0].id;
-        console.log('Found organization leadership team:', teamId);
+        console.log('AUTO-RECOVERED: Found organization leadership team:', teamId);
       } else {
-        // CRITICAL: Do not default to zero UUID as it's shared across orgs!
-        console.error('No leadership team found for organization:', organizationId);
-        // Continue with null teamId rather than using shared UUID
-        teamId = null;
+        // CRITICAL: BLOCK the meeting conclusion entirely
+        console.error('FATAL: No valid team found for organization:', organizationId);
+        return res.status(400).json({ 
+          error: 'Invalid team context',
+          message: 'Cannot conclude meeting without a valid team. Please select a team and try again.',
+          details: 'This safety check prevents meeting summaries from being sent to the wrong recipients.'
+        });
       }
     }
+    
+    // Additional validation: Ensure teamId is a valid UUID
+    const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+    if (!uuidRegex.test(teamId)) {
+      console.error('CRITICAL ERROR: Team ID is not a valid UUID:', teamId);
+      return res.status(400).json({ 
+        error: 'Invalid team ID format',
+        message: 'Team ID must be a valid UUID. Please select a valid team.',
+        details: 'This safety check prevents meeting summaries from being sent to the wrong recipients.'
+      });
+    }
+    
+    // CRITICAL: Never allow zero UUID as it's shared across organizations
+    if (isZeroUUID(teamId)) {
+      console.error('CRITICAL ERROR: Attempted to use shared zero UUID:', teamId);
+      return res.status(400).json({ 
+        error: 'Invalid team ID',
+        message: 'This team ID is not valid. Please select a different team.',
+        details: 'The zero UUID cannot be used as it may send emails to wrong organizations.'
+      });
+    }
 
-    console.log('Concluding meeting:', { meetingType, duration, rating, organizationId, teamId });
+    console.log('Concluding meeting with VALIDATED teamId:', { meetingType, duration, rating, organizationId, teamId });
 
     // Get organization details
     const orgResult = await db.query(
@@ -68,22 +93,12 @@ export const concludeMeeting = async (req, res) => {
     );
     const organizationName = orgResult.rows[0]?.name || 'Your Organization';
 
-    // Validate teamId is a valid UUID format
-    const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
-    const isValidUUID = teamId && uuidRegex.test(teamId);
-    
-    // Get team/department name
-    let teamName = 'Leadership Team'; // default for leadership team
-    if (isValidUUID && teamId && !isZeroUUID(teamId)) {
-      const teamResult = await db.query(
-        'SELECT name FROM teams WHERE id = $1',
-        [teamId]
-      );
-      teamName = teamResult.rows[0]?.name || 'Team';
-    } else if (!isValidUUID && teamId) {
-      console.log('Warning: Invalid UUID format for teamId:', teamId);
-      teamName = 'Team'; // Fallback for invalid UUID
-    }
+    // Get team/department name (we know teamId is valid at this point)
+    const teamResult = await db.query(
+      'SELECT name FROM teams WHERE id = $1',
+      [teamId]
+    );
+    const teamName = teamResult.rows[0]?.name || 'Team';
 
     // Get user details
     const userResult = await db.query(
@@ -100,53 +115,58 @@ export const concludeMeeting = async (req, res) => {
     let attendeeEmails = [];
     let teamMembersCount = 0;
     
-    // Only query team members if we have a valid UUID
-    if (isValidUUID && teamId) {
-      // IMPORTANT: Never use the zero UUID - it's shared across orgs and causes data leakage
-      if (isZeroUUID(teamId)) {
-        console.error('CRITICAL: Attempted to use shared zero UUID for team lookups - this causes cross-org data leakage!');
-        // Fall back to organization-wide emails instead
-        const orgUsersResult = await db.query(
-          `SELECT DISTINCT u.email, u.first_name, u.last_name 
-           FROM users u
-           WHERE u.organization_id = $1 
-           AND u.email IS NOT NULL
-           AND u.email != ''`,
-          [organizationId]
-        );
-        attendeeEmails = orgUsersResult.rows.map(row => row.email);
-        console.log('Using organization users instead of zero UUID lookup:', attendeeEmails.length, 'users');
-      } else {
-        // For other teams, first check if team_members table has entries
-        const teamCheckResult = await db.query(
-          `SELECT COUNT(*) as count FROM team_members WHERE team_id = $1`,
-          [teamId]
-        );
-        console.log('Team members count:', teamCheckResult.rows[0].count);
-        teamMembersCount = parseInt(teamCheckResult.rows[0].count);
+    // Query team members (we know teamId is valid and not zero UUID at this point)
+    const teamCheckResult = await db.query(
+      `SELECT COUNT(*) as count FROM team_members WHERE team_id = $1`,
+      [teamId]
+    );
+    console.log('Team members count:', teamCheckResult.rows[0].count);
+    teamMembersCount = parseInt(teamCheckResult.rows[0].count);
+    
+    // If no team_members entries, DO NOT send to entire organization!
+    if (teamMembersCount === 0) {
+      const isLeadershipResult = await db.query(
+        'SELECT is_leadership_team FROM teams WHERE id = $1',
+        [teamId]
+      );
+      
+      if (isLeadershipResult.rows[0]?.is_leadership_team) {
+        console.log('WARNING: Leadership team has no explicit members');
+        console.log('SAFETY: Only sending to meeting concluder to prevent spam');
         
-        // If no team_members entries, we can't determine team membership
-        if (teamMembersCount === 0) {
-          console.log('No team members found in team_members table for team:', teamId);
-          // For now, we'll send to no one if team_members is empty
-          // You could alternatively send to all org members or implement a different strategy
-          attendeeEmails = [];
+        // CRITICAL CHANGE: Only send to the person who concluded the meeting
+        // This prevents accidentally emailing 100+ employees
+        const concluderResult = await db.query(
+          `SELECT email FROM users WHERE id = $1`,
+          [userId]
+        );
+        
+        if (concluderResult.rows[0]?.email) {
+          attendeeEmails = [concluderResult.rows[0].email];
+          console.log('Meeting summary will only be sent to concluder:', concluderResult.rows[0].email);
         } else {
-          // Use team_members table
-          const teamMembersResult = await db.query(
-            `SELECT DISTINCT u.email, u.first_name, u.last_name 
-             FROM team_members tm
-             JOIN users u ON tm.user_id = u.id
-             WHERE tm.team_id = $1
-             AND u.email IS NOT NULL
-             AND u.email != ''`,
-            [teamId]
-          );
-          attendeeEmails = teamMembersResult.rows.map(row => row.email);
-          console.log('Team members query result:', teamMembersResult.rows);
+          attendeeEmails = [];
+          console.log('No valid email for concluder, not sending summary');
         }
-        console.log('Team member emails:', attendeeEmails);
+      } else {
+        console.log('No team members found for team:', teamId);
+        console.log('SAFETY: Not sending email summary');
+        attendeeEmails = [];
       }
+    } else {
+      // Use team_members table
+      const teamMembersResult = await db.query(
+        `SELECT DISTINCT u.email, u.first_name, u.last_name 
+         FROM team_members tm
+         JOIN users u ON tm.user_id = u.id
+         WHERE tm.team_id = $1
+         AND u.email IS NOT NULL
+         AND u.email != ''`,
+        [teamId]
+      );
+      attendeeEmails = teamMembersResult.rows.map(row => row.email);
+      console.log('Team member emails:', attendeeEmails);
+    }
     } else {
       // If teamId is not a valid UUID, fall back to organization-wide emails
       console.log('Invalid teamId UUID, using organization-wide emails as fallback');
@@ -402,21 +422,36 @@ export const concludeMeeting = async (req, res) => {
       notes: notes || ''
     };
 
-    // Send email to all attendees
+    // SAFETY CHECK: Prevent mass email accidents
+    const MAX_SAFE_EMAIL_COUNT = 20; // Reasonable limit for a team meeting
+    
+    if (attendeeEmails.length > MAX_SAFE_EMAIL_COUNT) {
+      console.error(`SAFETY BLOCK: Attempted to send ${attendeeEmails.length} emails!`);
+      console.error('This exceeds the safety limit of', MAX_SAFE_EMAIL_COUNT);
+      console.error('Meeting summary blocked to prevent spam. Only sending to concluder.');
+      
+      // Override: Only send to the person who concluded the meeting
+      const concluderEmail = userEmail;
+      if (concluderEmail) {
+        attendeeEmails = [concluderEmail];
+        emailData.safetyNotice = `Note: Meeting summary was limited to prevent sending to ${attendeeEmails.length} recipients. Please configure team members properly.`;
+      } else {
+        attendeeEmails = [];
+      }
+    }
+    
+    // Send email to attendees (with safety limit applied)
     if (attendeeEmails.length > 0) {
       try {
-        console.log('Attempting to send email with data:', {
-          to: attendeeEmails,
-          subject: `${meetingType || 'Meeting'} Summary - ${organizationName}`,
-          template: 'meetingSummary'
-        });
+        console.log('Attempting to send email to', attendeeEmails.length, 'recipients');
+        console.log('Recipients:', attendeeEmails);
         
         // Send to each email address
         for (const email of attendeeEmails) {
           await emailService.sendEmail(email, 'meetingSummary', emailData);
         }
         
-        console.log('Meeting summary emails sent successfully to:', attendeeEmails);
+        console.log('Meeting summary emails sent successfully');
       } catch (emailError) {
         console.error('Failed to send meeting summary email:', emailError);
         console.error('Email error details:', emailError.message, emailError.stack);
