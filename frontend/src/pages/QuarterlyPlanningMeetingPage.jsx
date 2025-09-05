@@ -538,6 +538,17 @@ const QuarterlyPlanningMeetingPage = () => {
     }
   };
 
+  const handleTimelineChange = async (issueId, newTimeline) => {
+    try {
+      await issuesService.updateIssue(issueId, { timeline: newTimeline });
+      setSuccess(`Issue moved to ${newTimeline === 'short_term' ? 'Short Term' : 'Long Term'}`);
+      await fetchIssuesData();
+    } catch (error) {
+      console.error('Failed to update issue timeline:', error);
+      setError('Failed to move issue');
+    }
+  };
+
   const handleAddTodo = () => {
     setEditingTodo(null);
     setShowTodoDialog(true);
@@ -2008,6 +2019,7 @@ const QuarterlyPlanningMeetingPage = () => {
           }}
           issue={editingIssue}
           teamMembers={teamMembers || []}
+          onTimelineChange={handleTimelineChange}
         />
 
         {/* Todo Dialog */}
