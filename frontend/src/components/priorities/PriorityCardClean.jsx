@@ -171,9 +171,11 @@ const PriorityCardClean = ({
   };
 
   const getStatusDotColor = (status) => {
+    // For complete status, we'll use inline styles instead of classes
+    if (status === 'complete') {
+      return ''; // Return empty string, we'll handle with inline styles
+    }
     switch (status) {
-      case 'complete':
-        return 'bg-gradient-to-r from-green-400 to-emerald-500 shadow-sm';
       case 'on-track':
         return 'bg-gradient-to-r from-blue-400 to-indigo-500 shadow-sm';
       case 'off-track':
@@ -299,7 +301,13 @@ const PriorityCardClean = ({
                   />
                 )}
                 {!onStatusChange || readOnly || isEditing ? (
-                  <div className={`w-2.5 h-2.5 rounded-full flex-shrink-0 ${getStatusDotColor(isEditing ? editForm.status : priority.status)}`} />
+                  <div 
+                    className={`w-2.5 h-2.5 rounded-full flex-shrink-0 ${getStatusDotColor(isEditing ? editForm.status : priority.status)}`}
+                    style={(isEditing ? editForm.status : priority.status) === 'complete' ? {
+                      background: `linear-gradient(to right, ${themeColors.primary}, ${themeColors.secondary})`,
+                      boxShadow: '0 1px 2px 0 rgba(0, 0, 0, 0.05)'
+                    } : {}}
+                  />
                 ) : null}
                 {isEditing ? (
                   <Input
@@ -416,7 +424,13 @@ const PriorityCardClean = ({
                 )}
 
                 {/* Status indicator moved to below progress bar - keeping minimal dot indicator in header */}
-                <div className={`w-2.5 h-2.5 rounded-full ${getStatusDotColor(isEditing ? editForm.status : priority.status)}`} />
+                <div 
+                  className={`w-2.5 h-2.5 rounded-full ${getStatusDotColor(isEditing ? editForm.status : priority.status)}`}
+                  style={(isEditing ? editForm.status : priority.status) === 'complete' ? {
+                    background: `linear-gradient(to right, ${themeColors.primary}, ${themeColors.secondary})`,
+                    boxShadow: '0 1px 2px 0 rgba(0, 0, 0, 0.05)'
+                  } : {}}
+                />
                 
                 {/* Milestone indicator */}
                 {priority.milestones && priority.milestones.length > 0 && (
@@ -559,25 +573,42 @@ const PriorityCardClean = ({
                       priority.status === 'off-track' ? 
                       'border-red-300 bg-gradient-to-r from-red-50 to-rose-50 hover:from-red-100 hover:to-rose-100' :
                       priority.status === 'complete' ?
-                      'border-green-300 bg-gradient-to-r from-green-50 to-emerald-50 hover:from-green-100 hover:to-emerald-100' :
+                      '' :
                       'border-blue-300 bg-gradient-to-r from-blue-50 to-indigo-50 hover:from-blue-100 hover:to-indigo-100'
                     }`}
                   >
-                    <div className={`w-2.5 h-2.5 rounded-full ${getStatusDotColor(priority.status)}`} />
+                    <div 
+                      className={`w-2.5 h-2.5 rounded-full ${getStatusDotColor(priority.status)}`}
+                      style={priority.status === 'complete' ? {
+                        background: `linear-gradient(to right, ${themeColors.primary}, ${themeColors.secondary})`,
+                        boxShadow: '0 1px 2px 0 rgba(0, 0, 0, 0.05)'
+                      } : {}}
+                    />
                     <span className="capitalize font-medium">
                       {priority.status === 'complete' ? 'Complete' : 
                        priority.status === 'off-track' ? 'Off Track' : 'On Track'}
                     </span>
                   </Button>
                 ) : (
-                  <div className={`inline-flex items-center gap-2 px-3 py-1.5 rounded-lg shadow-sm ${
-                    priority.status === 'complete' ?
-                    'bg-gradient-to-r from-green-50 to-emerald-50 border border-green-200' :
-                    priority.status === 'off-track' ?
-                    'bg-gradient-to-r from-red-50 to-rose-50 border border-red-200' :
-                    'bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-200'
-                  }`}>
-                    <div className={`w-2.5 h-2.5 rounded-full ${getStatusDotColor(isEditing ? editForm.status : priority.status)}`} />
+                  <div 
+                    className={`inline-flex items-center gap-2 px-3 py-1.5 rounded-lg shadow-sm border ${
+                      priority.status === 'off-track' ?
+                      'bg-gradient-to-r from-red-50 to-rose-50 border-red-200' :
+                      priority.status === 'complete' ?
+                      '' :
+                      'bg-gradient-to-r from-blue-50 to-indigo-50 border-blue-200'
+                    }`}
+                    style={priority.status === 'complete' ? {
+                      background: `linear-gradient(to right, ${themeColors.primary}10, ${themeColors.secondary}10)`,
+                      borderColor: themeColors.primary + '33'
+                    } : {}}>
+                    <div 
+                      className={`w-2.5 h-2.5 rounded-full ${getStatusDotColor(isEditing ? editForm.status : priority.status)}`}
+                      style={(isEditing ? editForm.status : priority.status) === 'complete' ? {
+                        background: `linear-gradient(to right, ${themeColors.primary}, ${themeColors.secondary})`,
+                        boxShadow: '0 1px 2px 0 rgba(0, 0, 0, 0.05)'
+                      } : {}}
+                    />
                     <span 
                       className="capitalize font-medium text-sm"
                       style={{
