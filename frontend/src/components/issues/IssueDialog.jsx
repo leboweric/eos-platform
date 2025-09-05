@@ -594,17 +594,17 @@ const IssueDialog = ({
                   // If onTimelineChange is provided, use it. Otherwise, update directly.
                   if (onTimelineChange) {
                     onTimelineChange(issue.id, newTimeline);
+                    onClose();
                   } else {
-                    // Direct update using the service
+                    // Direct update using the service - just close dialog, don't reload
                     try {
                       await issuesService.updateIssue(issue.id, { timeline: newTimeline });
-                      // Refresh the page or show success message
-                      window.location.reload();
+                      // Just close the dialog - parent component will handle refresh if needed
+                      onClose();
                     } catch (error) {
                       console.error('Failed to update issue timeline:', error);
                     }
                   }
-                  onClose();
                 }}
                 className="text-sm whitespace-nowrap"
               >
