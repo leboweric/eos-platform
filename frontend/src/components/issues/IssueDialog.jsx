@@ -577,6 +577,12 @@ const IssueDialog = ({
           {/* Action Buttons for existing issues */}
           {issue && (
             <div className="flex flex-wrap gap-2 pb-4 border-b border-white/20">
+              {console.log('IssueDialog Debug:', { 
+                issue: issue, 
+                hasOnTimelineChange: !!onTimelineChange,
+                hasOnMoveToTeam: !!onMoveToTeam,
+                hasOnCreateTodo: !!onCreateTodo 
+              })}
               {onTimelineChange && (
                 <Button
                   type="button"
