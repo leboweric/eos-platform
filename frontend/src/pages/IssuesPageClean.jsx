@@ -221,8 +221,13 @@ const IssuesPageClean = () => {
   const handleSaveIssue = async (issueData) => {
     try {
       let savedIssue;
-      if (editingIssue) {
-        savedIssue = await issuesService.updateIssue(editingIssue.id, issueData);
+      
+      // Check if we're editing an existing issue (either from editingIssue state or if issueData has an id)
+      const isEditing = editingIssue || issueData.id;
+      const issueId = editingIssue?.id || issueData.id;
+      
+      if (isEditing && issueId) {
+        savedIssue = await issuesService.updateIssue(issueId, issueData);
         setSuccess('Issue updated successfully');
       } else {
         savedIssue = await issuesService.createIssue({

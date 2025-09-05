@@ -381,8 +381,12 @@ const WeeklyAccountabilityMeetingPage = () => {
 
   const handleSaveIssue = async (issueData) => {
     try {
-      if (editingIssue) {
-        await issuesService.updateIssue(editingIssue.id, issueData);
+      // Check if we're editing an existing issue (either from editingIssue state or if issueData has an id)
+      const isEditing = editingIssue || issueData.id;
+      const issueId = editingIssue?.id || issueData.id;
+      
+      if (isEditing && issueId) {
+        await issuesService.updateIssue(issueId, issueData);
         setSuccess('Issue updated successfully');
       } else {
         const effectiveTeamId = teamId || user?.teamId || '00000000-0000-0000-0000-000000000000';
