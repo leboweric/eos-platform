@@ -301,7 +301,7 @@ const IssueDialog = ({
         onClose();
       }
     }}>
-      <DialogContent className="sm:max-w-[625px] bg-white/95 backdrop-blur-sm border border-white/20 shadow-2xl">
+      <DialogContent className="sm:max-w-[900px] w-full max-h-[90vh] overflow-hidden flex flex-col bg-white/95 backdrop-blur-sm border border-white/20 shadow-2xl">
         <form onSubmit={handleSubmit}>
           <DialogHeader className="pb-6">
             <div className="flex items-center gap-3 mb-2">
@@ -329,9 +329,9 @@ const IssueDialog = ({
               </Alert>
             )}
 
-            {/* First row: Title and Owner side by side */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div className="grid gap-3">
+            {/* First row: Title takes 2/3, Owner takes 1/3 */}
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div className="grid gap-3 md:col-span-2">
                 <Label htmlFor="title" className="text-sm font-semibold text-slate-700">
                   Issue Title <span className="text-red-500">*</span>
                 </Label>
