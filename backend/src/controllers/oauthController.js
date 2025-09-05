@@ -130,12 +130,9 @@ export const handleGoogleCallback = async (req, res) => {
       
       user = newUserResult.rows[0];
       
-      // Add to default team (Leadership Team)
-      await db.query(
-        `INSERT INTO team_members (user_id, team_id, role, joined_at)
-         VALUES ($1, '00000000-0000-0000-0000-000000000000', 'member', NOW())`,
-        [user.id]
-      );
+      // NOTE: Team assignment should be handled by organization admin
+      // Not auto-assigning to any team for security reasons
+      // Previously this tried to assign to a hardcoded UUID that doesn't exist
     }
 
     // Update last login and track for daily active users
