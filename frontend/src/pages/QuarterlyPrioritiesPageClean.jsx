@@ -1957,8 +1957,8 @@ const QuarterlyPrioritiesPageClean = () => {
                         />
                       ) : (
                         <>
-                          <Progress value={priority.progress} className="h-2 max-w-[200px]" />
-                          <span className="text-sm font-medium text-gray-900">{priority.progress}%</span>
+                          <Progress value={(priority.status === 'complete' || priority.status === 'completed') ? 100 : priority.progress} className="h-2 max-w-[200px]" />
+                          <span className="text-sm font-medium text-gray-900">{(priority.status === 'complete' || priority.status === 'completed') ? 100 : priority.progress}%</span>
                         </>
                       )}
                     </div>
@@ -2568,7 +2568,7 @@ const QuarterlyPrioritiesPageClean = () => {
                                     </div>
                                     <p className="text-sm text-gray-600 mt-2">
                                       Owner: {priority.owner?.name || 'Unassigned'} • 
-                                      Progress: {priority.progress || 0}%
+                                      Progress: {isComplete ? 100 : (priority.progress || 0)}%
                                     </p>
                                   </div>
                                   {/* Always show status badge */}
@@ -2644,7 +2644,7 @@ const QuarterlyPrioritiesPageClean = () => {
                                           </h3>
                                         </div>
                                         <p className="text-sm text-gray-600 mt-2">
-                                          Progress: {priority.progress || 0}%
+                                          Progress: {isComplete ? 100 : (priority.progress || 0)}%
                                         </p>
                                       </div>
                                       {/* Always show status badge */}
@@ -2708,8 +2708,8 @@ const QuarterlyPrioritiesPageClean = () => {
                     
                     const isComplete = priority.status === 'complete' || priority.status === 'completed';
                     const daysUntil = !isComplete ? getDaysUntilDue(priority.dueDate || priority.due_date) : null;
-                    // Always show actual progress, don't force 100% for complete status
-                    const displayProgress = priority.progress || 0;
+                    // Show 100% for complete status, otherwise show actual progress
+                    const displayProgress = isComplete ? 100 : (priority.progress || 0);
                     
                     return (
                       <Card 
@@ -2857,8 +2857,8 @@ const QuarterlyPrioritiesPageClean = () => {
                         
                         const isComplete = priority.status === 'complete' || priority.status === 'completed';
                         const daysUntil = !isComplete ? getDaysUntilDue(priority.dueDate || priority.due_date) : null;
-                        // Always show actual progress, don't force 100% for complete status
-                        const displayProgress = priority.progress || 0;
+                        // Show 100% for complete status, otherwise show actual progress
+                        const displayProgress = isComplete ? 100 : (priority.progress || 0);
                         
                         return (
                           <Card 
