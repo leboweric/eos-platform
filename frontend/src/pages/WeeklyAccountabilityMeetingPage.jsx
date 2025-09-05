@@ -2479,9 +2479,9 @@ const WeeklyAccountabilityMeetingPage = () => {
                                               )}
                                               <h3 className={`text-lg font-semibold break-words ${
                                                 isComplete 
-                                                  ? 'text-green-900 line-through decoration-green-400' 
+                                                  ? 'line-through' 
                                                   : 'text-gray-900'
-                                              }`}>
+                                              }`} style={isComplete ? { color: themeColors.primary, textDecorationColor: themeColors.primary } : {}}>
                                                 {priority.title}
                                               </h3>
                                             </div>
