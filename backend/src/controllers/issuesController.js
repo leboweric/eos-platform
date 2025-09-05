@@ -1,7 +1,7 @@
 import db from '../config/database.js';
 import multer from 'multer';
 import { v4 as uuidv4 } from 'uuid';
-import { getUserTeamContext } from '../utils/teamUtils.js';
+import { getUserTeamContext, isZeroUUID } from '../utils/teamUtils.js';
 import { autoSaveToDocuments } from '../utils/documentAutoSave.js';
 
 // Configure multer for memory storage
@@ -92,8 +92,8 @@ export const getIssues = async (req, res) => {
     
     // Always filter by specific department if provided
     if (department_id) {
-      // For Leadership Team, include both the specific ID and NULL team_id
-      if (department_id === '00000000-0000-0000-0000-000000000000') {
+      // For Leadership Team (zero UUID), include both the specific ID and NULL team_id
+      if (isZeroUUID(department_id)) {
         query += ` AND (i.team_id = $${paramCount} OR i.team_id IS NULL)`;
         params.push(department_id);
         paramCount++;

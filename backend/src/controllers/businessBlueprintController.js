@@ -1,11 +1,12 @@
 import { query, beginTransaction, commitTransaction, rollbackTransaction } from '../config/database.js';
 import { v4 as uuidv4 } from 'uuid';
+import { isZeroUUID, isLeadershipTeam } from '../utils/teamUtils.js';
 
 // Helper function to get or create VTO
 const getOrCreateVTO = async (orgId, teamId) => {
   // Check if this is for a department (not leadership team)
   let isDepartment = false;
-  if (teamId && teamId !== '00000000-0000-0000-0000-000000000000') {
+  if (teamId && !isZeroUUID(teamId)) {
     // Check if it's actually a leadership team
     const teamResult = await query(
       'SELECT is_leadership_team FROM teams WHERE id = $1 AND organization_id = $2',
@@ -71,7 +72,7 @@ export const getVTO = async (req, res) => {
 
     // Check if this is for a department (not a leadership team)
     let isDepartment = false;
-    if (teamId && teamId !== '00000000-0000-0000-0000-000000000000') {
+    if (teamId && !isZeroUUID(teamId)) {
       // Check if this team is a leadership team
       const teamResult = await query(
         'SELECT is_leadership_team FROM teams WHERE id = $1 AND organization_id = $2',

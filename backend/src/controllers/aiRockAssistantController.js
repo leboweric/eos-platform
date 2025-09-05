@@ -1,5 +1,6 @@
 import { query } from '../config/database.js';
 import { v4 as uuidv4 } from 'uuid';
+import { isZeroUUID } from '../utils/teamUtils.js';
 import {
   analyzeRockSMART,
   generateMilestones,
@@ -179,14 +180,15 @@ export const checkAlignment = async (req, res) => {
     const currentYear = new Date().getFullYear();
 
     const companyRocksResult = await query(
-      `SELECT id, title, description 
-       FROM quarterly_priorities 
-       WHERE organization_id = $1 
-         AND quarter = $2 
-         AND year = $3 
-         AND team_id = '00000000-0000-0000-0000-000000000000'::uuid
-         AND deleted_at IS NULL
-       ORDER BY created_at`,
+      `SELECT qp.id, qp.title, qp.description 
+       FROM quarterly_priorities qp
+       LEFT JOIN teams t ON qp.team_id = t.id
+       WHERE qp.organization_id = $1 
+         AND qp.quarter = $2 
+         AND qp.year = $3 
+         AND (qp.team_id IS NULL OR t.is_leadership_team = true)
+         AND qp.deleted_at IS NULL
+       ORDER BY qp.created_at`,
       [orgId, currentQuarter, currentYear]
     );
 

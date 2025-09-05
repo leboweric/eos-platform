@@ -112,23 +112,6 @@ export const isUserOnLeadershipTeam = async (userId, organizationId) => {
   }
 };
 
-// Check if a team is a leadership team
-export const isLeadershipTeam = async (teamId) => {
-  try {
-    const query = `
-      SELECT is_leadership_team
-      FROM teams
-      WHERE id = $1
-    `;
-
-    const result = await db.query(query, [teamId]);
-    return result.rows.length > 0 && result.rows[0].is_leadership_team;
-  } catch (error) {
-    console.error('Error checking if team is leadership team:', error);
-    return false;
-  }
-};
-
 // Get all leadership teams for an organization
 export const getLeadershipTeams = async (organizationId) => {
   try {

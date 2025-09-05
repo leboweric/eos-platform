@@ -1,6 +1,7 @@
 import express from 'express';
 import { authenticate } from '../middleware/auth.js';
 import { sendTodoReminders, recordMeetingConclusion } from '../services/todoReminderService.js';
+import { getLeadershipTeamId } from '../utils/teamUtils.js';
 
 const router = express.Router();
 
@@ -46,7 +47,7 @@ router.post('/test-record', authenticate, async (req, res) => {
     
     const { daysAgo = 6 } = req.body;
     const organizationId = req.user.organization_id || req.user.organizationId;
-    const teamId = req.body.teamId || '00000000-0000-0000-0000-000000000000';
+    const teamId = req.body.teamId || await getLeadershipTeamId(organizationId);
     
     // Create a test meeting conclusion X days ago
     const testDate = new Date();

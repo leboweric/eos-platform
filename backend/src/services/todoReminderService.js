@@ -1,5 +1,6 @@
 import db from '../config/database.js';
 import { sendEmail } from './emailService.js';
+import { isZeroUUID } from '../utils/teamUtils.js';
 
 /**
  * Send todo reminders to teams that had meetings 6 days ago
@@ -50,27 +51,33 @@ export const sendTodoReminders = async () => {
         const effectiveTeamName = is_leadership_team || !team_name ? 'Leadership Team' : team_name;
         
         // Fetch open todos for the team
-        const todoQuery = team_id && team_id !== '00000000-0000-0000-0000-000000000000'
-          ? `SELECT t.*, u.first_name, u.last_name 
-             FROM todos t
-             LEFT JOIN users u ON t.assigned_to = u.id::text
-             WHERE t.team_id = $1 
-             AND t.status != 'complete' 
-             AND t.deleted_at IS NULL
-             ORDER BY t.due_date ASC NULLS LAST, t.created_at DESC`
-          : `SELECT t.*, u.first_name, u.last_name 
-             FROM todos t
-             LEFT JOIN users u ON t.assigned_to = u.id::text
-             WHERE t.organization_id = $1 
-             AND (t.team_id IS NULL OR t.team_id = '00000000-0000-0000-0000-000000000000')
-             AND t.status != 'complete' 
-             AND t.deleted_at IS NULL
-             ORDER BY t.due_date ASC NULLS LAST, t.created_at DESC`;
+        let todoQuery, todoParams;
         
-        const todoResult = await db.query(
-          todoQuery,
-          [team_id && team_id !== '00000000-0000-0000-0000-000000000000' ? team_id : organization_id]
-        );
+        if (team_id && !isZeroUUID(team_id)) {
+          // For non-leadership teams, get todos for that specific team
+          todoQuery = `SELECT t.*, u.first_name, u.last_name 
+                      FROM todos t
+                      LEFT JOIN users u ON t.assigned_to = u.id::text
+                      WHERE t.team_id = $1 
+                      AND t.status != 'complete' 
+                      AND t.deleted_at IS NULL
+                      ORDER BY t.due_date ASC NULLS LAST, t.created_at DESC`;
+          todoParams = [team_id];
+        } else {
+          // For leadership teams, get organization-level todos (team_id IS NULL or points to leadership team)
+          todoQuery = `SELECT t.*, u.first_name, u.last_name 
+                      FROM todos t
+                      LEFT JOIN users u ON t.assigned_to = u.id::text
+                      LEFT JOIN teams tm ON t.team_id = tm.id
+                      WHERE t.organization_id = $1 
+                      AND (t.team_id IS NULL OR tm.is_leadership_team = true OR ${isZeroUUID(team_id) ? 't.team_id = $2' : 'false'})
+                      AND t.status != 'complete' 
+                      AND t.deleted_at IS NULL
+                      ORDER BY t.due_date ASC NULLS LAST, t.created_at DESC`;
+          todoParams = isZeroUUID(team_id) ? [organization_id, team_id] : [organization_id];
+        }
+        
+        const todoResult = await db.query(todoQuery, todoParams);
         
         const openTodos = todoResult.rows.map(todo => ({
           title: todo.todo || 'Untitled',
@@ -83,7 +90,7 @@ export const sendTodoReminders = async () => {
         // Get team member emails
         let teamMemberEmails = [];
         
-        if (team_id === '00000000-0000-0000-0000-000000000000' || !team_id) {
+        if (isZeroUUID(team_id) || !team_id || is_leadership_team) {
           // Leadership team - get all org users
           const emailsResult = await db.query(
             `SELECT DISTINCT email FROM users 

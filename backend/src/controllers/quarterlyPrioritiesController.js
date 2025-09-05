@@ -1,6 +1,7 @@
 import { query } from '../config/database.js';
 import { v4 as uuidv4 } from 'uuid';
 import { isUserOnLeadershipTeam } from './teamsController.js';
+import { isZeroUUID, isLeadershipTeam } from '../utils/teamUtils.js';
 import fs from 'fs/promises';
 import path from 'path';
 import { fileURLToPath } from 'url';
@@ -162,7 +163,7 @@ export const getQuarterlyPriorities = async (req, res) => {
              -- NINETY.IO MODEL: Leadership sees ALL data, Departments see all departments (not Leadership)
              CASE
                WHEN $4 = true THEN true  -- Leadership sees everything
-               ELSE (p.team_id != '00000000-0000-0000-0000-000000000000'::uuid OR p.team_id IS NULL)  -- Departments exclude Leadership
+               ELSE (t.is_leadership_team IS NOT TRUE OR p.team_id IS NULL)  -- Departments exclude Leadership team priorities
              END
            )
          GROUP BY p.id, u.first_name, u.last_name, u.email, t.name, t.is_leadership_team
@@ -261,7 +262,7 @@ export const getQuarterlyPriorities = async (req, res) => {
       attachments: attachments[p.id] || [],
       // Removed publishing fields for Ninety.io model
       teamName: p.team_name || 'Unknown Team',
-      isFromLeadership: p.team_id === '00000000-0000-0000-0000-000000000000'
+      isFromLeadership: p.is_leadership_team === true || isZeroUUID(p.team_id)
     }));
     
     // Separate company and individual priorities based on is_company_priority flag
@@ -1164,9 +1165,8 @@ export const getArchivedPriorities = async (req, res) => {
         u.email as owner_email,
         t.is_leadership_team as priority_from_leadership_team,
         CASE 
-          WHEN p.team_id = '00000000-0000-0000-0000-000000000000'::uuid THEN true
-          WHEN p.team_id IS NULL THEN true
           WHEN t.is_leadership_team = true THEN true
+          WHEN p.team_id IS NULL THEN true
           ELSE false
         END as is_from_leadership,
         array_agg(
@@ -1188,7 +1188,7 @@ export const getArchivedPriorities = async (req, res) => {
            -- NINETY.IO MODEL: Leadership sees ALL data, Departments see all departments (not Leadership)
            CASE
              WHEN $2 = true THEN true  -- Leadership sees everything
-             ELSE (p.team_id != '00000000-0000-0000-0000-000000000000'::uuid OR p.team_id IS NULL)  -- Departments exclude Leadership
+             ELSE (t.is_leadership_team IS NOT TRUE OR p.team_id IS NULL)  -- Departments exclude Leadership team priorities
            END
          )
        GROUP BY p.id, u.first_name, u.last_name, u.email, t.is_leadership_team
@@ -1341,9 +1341,8 @@ export const getCurrentPriorities = async (req, res) => {
         u.last_name as owner_last_name,
         t.is_leadership_team as priority_from_leadership_team,
         CASE 
-          WHEN p.team_id = '00000000-0000-0000-0000-000000000000'::uuid THEN true
-          WHEN p.team_id IS NULL THEN true
           WHEN t.is_leadership_team = true THEN true
+          WHEN p.team_id IS NULL THEN true
           ELSE false
         END as is_from_leadership
       FROM quarterly_priorities p
@@ -1517,7 +1516,7 @@ export const getCurrentPriorities = async (req, res) => {
         attachments: attachmentsByPriority[priority.id] || [],
         isCompanyPriority: priority.is_company_priority || false,
         teamName: priority.team_name,
-        isFromLeadership: priority.team_id === '00000000-0000-0000-0000-000000000000'
+        isFromLeadership: priority.priority_from_leadership_team === true || isZeroUUID(priority.team_id)
       };
       
       console.log(`Processing priority: ${priority.title}, owner_id: ${priority.owner_id}, deleted_at: ${priority.deleted_at}`);
