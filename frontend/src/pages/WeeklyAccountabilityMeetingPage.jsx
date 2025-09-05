@@ -786,15 +786,20 @@ const WeeklyAccountabilityMeetingPage = () => {
     try {
       const effectiveTeamId = getEffectiveTeamId(teamId, user);
       let savedIssue;
-      if (editingIssue) {
-        savedIssue = await issuesService.updateIssue(editingIssue.id, issueData);
+      
+      // Check if we're editing an existing issue (either from editingIssue state or if issueData has an id)
+      const isEditing = editingIssue || issueData.id;
+      const issueId = editingIssue?.id || issueData.id;
+      
+      if (isEditing && issueId) {
+        savedIssue = await issuesService.updateIssue(issueId, issueData);
         setSuccess('Issue updated successfully');
         
         // Broadcast issue update to other participants
         if (meetingCode && broadcastIssueListUpdate) {
           broadcastIssueListUpdate({
             action: 'update',
-            issueId: editingIssue.id,
+            issueId: issueId,
             issue: savedIssue.data || savedIssue
           });
         }

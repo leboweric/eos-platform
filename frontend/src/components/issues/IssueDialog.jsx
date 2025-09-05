@@ -198,8 +198,9 @@ const IssueDialog = ({
     setError(null);
 
     try {
-      // Save the issue first
+      // Save the issue first - include the ID if editing an existing issue
       const savedIssue = await onSave({
+        ...(issue?.id ? { id: issue.id } : {}), // Include ID if editing
         title: formData.title,
         description: formData.description,
         ownerId: formData.ownerId === 'no-owner' ? null : (formData.ownerId || null),
