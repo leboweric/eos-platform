@@ -37,10 +37,25 @@ export const concludeMeeting = async (req, res) => {
       });
     }
     
-    // Handle "null" string or invalid team IDs - treat as leadership team
+    // Handle "null" string or invalid team IDs
     if (teamId === 'null' || teamId === 'undefined' || !teamId) {
-      console.log('Invalid team ID detected:', teamId, '- defaulting to leadership team');
-      teamId = '00000000-0000-0000-0000-000000000000'; // Leadership team placeholder
+      console.log('Invalid team ID detected:', teamId, '- attempting to find organization leadership team');
+      
+      // Try to find the actual leadership team for this organization
+      const leadershipResult = await db.query(
+        'SELECT id FROM teams WHERE organization_id = $1 AND is_leadership_team = true LIMIT 1',
+        [organizationId]
+      );
+      
+      if (leadershipResult.rows.length > 0) {
+        teamId = leadershipResult.rows[0].id;
+        console.log('Found organization leadership team:', teamId);
+      } else {
+        // CRITICAL: Do not default to zero UUID as it's shared across orgs!
+        console.error('No leadership team found for organization:', organizationId);
+        // Continue with null teamId rather than using shared UUID
+        teamId = null;
+      }
     }
 
     console.log('Concluding meeting:', { meetingType, duration, rating, organizationId, teamId });
@@ -58,7 +73,7 @@ export const concludeMeeting = async (req, res) => {
     
     // Get team/department name
     let teamName = 'Leadership Team'; // default for leadership team
-    if (isValidUUID && teamId !== '00000000-0000-0000-0000-000000000000') {
+    if (isValidUUID && teamId && teamId !== '00000000-0000-0000-0000-000000000000') {
       const teamResult = await db.query(
         'SELECT name FROM teams WHERE id = $1',
         [teamId]
@@ -85,45 +100,21 @@ export const concludeMeeting = async (req, res) => {
     let teamMembersCount = 0;
     
     // Only query team members if we have a valid UUID
-    if (isValidUUID) {
-      // Check if this is the leadership team
+    if (isValidUUID && teamId) {
+      // IMPORTANT: Never use the zero UUID - it's shared across orgs and causes data leakage
       if (teamId === '00000000-0000-0000-0000-000000000000') {
-        // For leadership team, check team_members table first
-        const leadershipCheckResult = await db.query(
-          `SELECT COUNT(*) as count FROM team_members WHERE team_id = $1`,
-          [teamId]
+        console.error('CRITICAL: Attempted to use shared zero UUID for team lookups - this causes cross-org data leakage!');
+        // Fall back to organization-wide emails instead
+        const orgUsersResult = await db.query(
+          `SELECT DISTINCT u.email, u.first_name, u.last_name 
+           FROM users u
+           WHERE u.organization_id = $1 
+           AND u.email IS NOT NULL
+           AND u.email != ''`,
+          [organizationId]
         );
-        const leadershipMembersCount = parseInt(leadershipCheckResult.rows[0].count);
-        console.log('Leadership team members count:', leadershipMembersCount);
-        
-        if (leadershipMembersCount > 0) {
-          // Use team_members table
-          const leadershipResult = await db.query(
-            `SELECT DISTINCT u.email, u.first_name, u.last_name 
-             FROM team_members tm
-             JOIN users u ON tm.user_id = u.id
-             WHERE tm.team_id = $1
-             AND u.email IS NOT NULL
-             AND u.email != ''`,
-            [teamId]
-          );
-          attendeeEmails = leadershipResult.rows.map(row => row.email);
-          console.log('Leadership team members from team_members table:', leadershipResult.rows);
-        } else {
-          // Fallback: For leadership team, get all users in the organization
-          console.log('No leadership team members in team_members table, using all org users');
-          const leadershipResult = await db.query(
-            `SELECT DISTINCT u.email, u.first_name, u.last_name 
-             FROM users u
-             WHERE u.organization_id = $1 
-             AND u.email IS NOT NULL
-             AND u.email != ''`,
-            [organizationId]
-          );
-          attendeeEmails = leadershipResult.rows.map(row => row.email);
-          console.log('All organization users:', leadershipResult.rows);
-        }
-        console.log('Leadership team emails:', attendeeEmails);
+        attendeeEmails = orgUsersResult.rows.map(row => row.email);
+        console.log('Using organization users instead of zero UUID lookup:', attendeeEmails.length, 'users');
       } else {
         // For other teams, first check if team_members table has entries
         const teamCheckResult = await db.query(
@@ -200,8 +191,8 @@ export const concludeMeeting = async (req, res) => {
 
     // Get team member names for the email - match the logic used for emails
     let attendeeNames = [];
-    if (teamId === '00000000-0000-0000-0000-000000000000') {
-      // For leadership team, use same logic as emails
+    if (!teamId || teamId === '00000000-0000-0000-0000-000000000000') {
+      // For org-wide or when zero UUID detected, get all org users
       const leadershipCheckResult = await db.query(
         `SELECT COUNT(*) as count FROM team_members WHERE team_id = $1`,
         [teamId]
@@ -324,7 +315,7 @@ export const concludeMeeting = async (req, res) => {
     // Fetch open todos from database
     let openTodos = [];
     try {
-      const todoQuery = teamId && teamId !== '00000000-0000-0000-0000-000000000000'
+      const todoQuery = teamId && teamId !== '00000000-0000-0000-0000-000000000000' && isValidUUID
         ? `SELECT t.*, u.first_name, u.last_name 
            FROM todos t
            LEFT JOIN users u ON t.assigned_to_id = u.id
@@ -336,14 +327,14 @@ export const concludeMeeting = async (req, res) => {
            FROM todos t
            LEFT JOIN users u ON t.assigned_to_id = u.id
            WHERE t.organization_id = $1 
-           AND (t.team_id IS NULL OR t.team_id = '00000000-0000-0000-0000-000000000000')
+           AND t.team_id IS NULL
            AND t.status = 'incomplete' 
            AND t.deleted_at IS NULL
            ORDER BY t.due_date ASC NULLS LAST, t.created_at DESC`;
       
       const todoResult = await db.query(
         todoQuery,
-        [teamId && teamId !== '00000000-0000-0000-0000-000000000000' ? teamId : organizationId]
+        [teamId && teamId !== '00000000-0000-0000-0000-000000000000' && isValidUUID ? teamId : organizationId]
       );
       
       console.log(`Found ${todoResult.rows.length} incomplete to-dos for team ${teamId}`);
