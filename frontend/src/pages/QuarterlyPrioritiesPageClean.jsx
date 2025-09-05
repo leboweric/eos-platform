@@ -1663,7 +1663,7 @@ const QuarterlyPrioritiesPageClean = () => {
                                 milestone.completed 
                                   ? 'text-gray-500 line-through' 
                                   : 'text-gray-700'
-                              }`}>
+                              }`} style={milestone.completed ? { textDecorationColor: themeColors.primary } : {}}>
                                 {milestone.title}
                               </span>
                               {milestone.dueDate && (
@@ -2060,7 +2060,8 @@ const QuarterlyPrioritiesPageClean = () => {
                           {!milestone.completed && getDaysUntilDue(milestone.dueDate) < 0 && (
                             <AlertCircle className="h-4 w-4 text-red-500 flex-shrink-0" />
                           )}
-                          <span className={`text-sm flex-1 ${milestone.completed ? 'line-through text-gray-500' : 'text-gray-900'}`}>
+                          <span className={`text-sm flex-1 ${milestone.completed ? 'line-through text-gray-500' : 'text-gray-900'}`}
+                            style={milestone.completed ? { textDecorationColor: themeColors.primary } : {}}>
                             {milestone.title}
                           </span>
                           <span className={`text-xs font-medium ${
@@ -2561,7 +2562,7 @@ const QuarterlyPrioritiesPageClean = () => {
                                       )}
                                       <h3 className={`text-lg font-semibold ${
                                         isComplete ? 'line-through' : 'text-gray-700'
-                                      }`}>
+                                      }`} style={isComplete ? { textDecorationColor: themeColors.primary } : {}}>
                                         {priority.title}
                                       </h3>
                                     </div>
@@ -2638,7 +2639,7 @@ const QuarterlyPrioritiesPageClean = () => {
                                           )}
                                           <h3 className={`text-lg font-semibold ${
                                             isComplete ? 'line-through' : 'text-gray-700'
-                                          }`}>
+                                          }`} style={isComplete ? { textDecorationColor: themeColors.primary } : {}}>
                                             {priority.title}
                                           </h3>
                                         </div>
@@ -2741,7 +2742,7 @@ const QuarterlyPrioritiesPageClean = () => {
                                   isComplete 
                                     ? 'line-through' 
                                     : 'text-gray-900'
-                                }`}>
+                                }`} style={isComplete ? { textDecorationColor: themeColors.primary } : {}}>
                                   {priority.title}
                                 </h3>
                               </div>
@@ -2890,7 +2891,7 @@ const QuarterlyPrioritiesPageClean = () => {
                                       isComplete 
                                         ? 'line-through' 
                                         : 'text-gray-900'
-                                    }`}>
+                                    }`} style={isComplete ? { textDecorationColor: themeColors.primary } : {}}>
                                       {priority.title}
                                     </h3>
                                   </div>
