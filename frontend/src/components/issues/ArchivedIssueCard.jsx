@@ -1,5 +1,6 @@
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
+import { stripHtml } from '../../utils/textUtils';
 import { Badge } from '@/components/ui/badge';
 import { 
   RotateCcw,
@@ -33,7 +34,7 @@ const ArchivedIssueCard = ({ issue, onUnarchive, getStatusColor, getStatusIcon }
                 
                 {issue.description && (
                   <p className="text-gray-600 mb-4 line-clamp-2">
-                    {issue.description}
+                    {stripHtml(issue.description)}
                   </p>
                 )}
 

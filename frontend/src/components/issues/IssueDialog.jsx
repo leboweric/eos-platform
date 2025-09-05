@@ -11,6 +11,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
+import RichTextEditor from '@/components/ui/RichTextEditor';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { 
@@ -343,14 +344,12 @@ const IssueDialog = ({
             </div>
 
             <div className="grid gap-3">
-              <Label htmlFor="description" className="text-sm font-semibold text-slate-700">Description</Label>
-              <Textarea
-                id="description"
+              <Label htmlFor="description" className="text-sm font-semibold text-slate-700">Details</Label>
+              <RichTextEditor
                 value={formData.description}
-                onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+                onChange={(value) => setFormData({ ...formData, description: value })}
                 placeholder="Provide more details about the issue..."
-                rows={4}
-                className="bg-white/80 backdrop-blur-sm border-white/20 rounded-xl shadow-sm transition-all duration-200"
+                className="shadow-sm"
               />
             </div>
 
