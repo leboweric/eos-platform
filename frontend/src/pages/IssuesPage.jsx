@@ -190,41 +190,48 @@ const IssuesPageClean = () => {
 
   const handleTimelineChange = async (issueId, newTimeline) => {
     try {
-      // First, mark the issue as "moving" to add visual feedback
-      const markAsMoving = (issue) => ({
-        ...issue,
-        isMoving: true
-      });
-      
-      if (newTimeline === 'long_term') {
-        // Moving from short to long
-        setShortTermIssues(prev => prev.map(issue => 
-          issue.id === issueId ? markAsMoving(issue) : issue
-        ));
-      } else {
-        // Moving from long to short
-        setLongTermIssues(prev => prev.map(issue => 
-          issue.id === issueId ? markAsMoving(issue) : issue
-        ));
-      }
-      
-      // Update the issue in the database
+      // Update the issue in the database first
       await issuesService.updateIssue(issueId, { timeline: newTimeline });
       
       // Show success message immediately
       setSuccess(`Issue moved to ${newTimeline === 'short_term' ? 'Short Term' : 'Long Term'} ✓`);
       
-      // Wait a moment for animation, then remove from list
-      setTimeout(() => {
-        if (newTimeline === 'long_term') {
-          setShortTermIssues(prev => prev.filter(issue => issue.id !== issueId));
-        } else {
-          setLongTermIssues(prev => prev.filter(issue => issue.id !== issueId));
-        }
-      }, 300);
+      // Find the issue in either list to animate it if visible
+      const shortTermIssue = shortTermIssues.find(issue => issue.id === issueId);
+      const longTermIssue = longTermIssues.find(issue => issue.id === issueId);
       
-      // Update the full lists after a delay
-      setTimeout(() => fetchIssues(), 1500);
+      if (shortTermIssue || longTermIssue) {
+        // Mark as moving for animation
+        const markAsMoving = (issue) => ({
+          ...issue,
+          isMoving: true
+        });
+        
+        if (newTimeline === 'long_term' && shortTermIssue) {
+          // Moving from short to long
+          setShortTermIssues(prev => prev.map(issue => 
+            issue.id === issueId ? markAsMoving(issue) : issue
+          ));
+          
+          // Remove after animation
+          setTimeout(() => {
+            setShortTermIssues(prev => prev.filter(issue => issue.id !== issueId));
+          }, 300);
+        } else if (newTimeline === 'short_term' && longTermIssue) {
+          // Moving from long to short
+          setLongTermIssues(prev => prev.map(issue => 
+            issue.id === issueId ? markAsMoving(issue) : issue
+          ));
+          
+          // Remove after animation
+          setTimeout(() => {
+            setLongTermIssues(prev => prev.filter(issue => issue.id !== issueId));
+          }, 300);
+        }
+      }
+      
+      // Always refresh the full lists to ensure accuracy
+      setTimeout(() => fetchIssues(), 500);
     } catch (error) {
       console.error('Failed to update issue timeline:', error);
       setError(`Failed to move issue: ${error.response?.data?.message || error.message}`);

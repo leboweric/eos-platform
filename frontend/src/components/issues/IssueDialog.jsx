@@ -593,7 +593,7 @@ const IssueDialog = ({
                   
                   // If onTimelineChange is provided, use it. Otherwise, update directly.
                   if (onTimelineChange) {
-                    onTimelineChange(issue.id, newTimeline);
+                    await onTimelineChange(issue.id, newTimeline);
                     onClose();
                   } else {
                     // Direct update using the service - just close dialog, don't reload
