@@ -2303,15 +2303,15 @@ const WeeklyAccountabilityMeetingPage = () => {
                                     <div className="flex-1 min-w-0">
                                       <div className="flex items-center gap-3">
                                         {isComplete ? (
-                                          <CheckCircle className="h-5 w-5 text-green-600 flex-shrink-0" />
+                                          <CheckCircle className="h-5 w-5 flex-shrink-0" style={{ color: themeColors.primary }} />
                                         ) : (
                                           <div className="w-2 h-2 rounded-full flex-shrink-0" style={getStatusDotColor(priority.status)} />
                                         )}
                                         <h3 className={`text-lg font-semibold break-words ${
                                           isComplete 
-                                            ? 'text-green-900 line-through decoration-green-400' 
+                                            ? 'line-through' 
                                             : 'text-gray-900'
-                                        }`}>
+                                        }`} style={isComplete ? { color: themeColors.primary, textDecorationColor: themeColors.primary } : {}}>
                                           {priority.title}
                                         </h3>
                                       </div>
@@ -2473,7 +2473,7 @@ const WeeklyAccountabilityMeetingPage = () => {
                                           <div className="flex-1 min-w-0">
                                             <div className="flex items-center gap-3">
                                               {isComplete ? (
-                                                <CheckCircle className="h-5 w-5 text-green-600 flex-shrink-0" />
+                                                <CheckCircle className="h-5 w-5 flex-shrink-0" style={{ color: themeColors.primary }} />
                                               ) : (
                                                 <div className="w-2 h-2 rounded-full flex-shrink-0" style={getStatusDotColor(priority.status)} />
                                               )}
@@ -3313,7 +3313,7 @@ const WeeklyAccountabilityMeetingPage = () => {
                         <div className="space-y-1">
                           {participants.map((participant, idx) => (
                             <div key={idx} className="flex items-center gap-2 text-sm text-gray-600">
-                              <div className="w-2 h-2 rounded-full bg-green-400" />
+                              <div className="w-2 h-2 rounded-full" style={{ backgroundColor: themeColors.primary }} />
                               <span>{participant.name || 'Unknown'}</span>
                               {participant.id === currentLeader && (
                                 <span className="text-xs font-medium" style={{ color: themeColors.primary }}>(Presenter)</span>
@@ -3353,10 +3353,10 @@ const WeeklyAccountabilityMeetingPage = () => {
                     
                     {/* Current presenter indicator */}
                     {isLeader && (
-                      <div className="bg-green-50/80 backdrop-blur-sm px-4 py-2 rounded-xl border border-green-200/50 shadow-sm">
+                      <div className="backdrop-blur-sm px-4 py-2 rounded-xl border shadow-sm" style={{ backgroundColor: `${themeColors.primary}10`, borderColor: `${themeColors.primary}30` }}>
                         <div className="flex items-center gap-2">
-                          <div className="w-2 h-2 rounded-full bg-green-400 animate-pulse" />
-                          <span className="text-sm font-medium text-green-900">You're Presenting</span>
+                          <div className="w-2 h-2 rounded-full animate-pulse" style={{ backgroundColor: themeColors.primary }} />
+                          <span className="text-sm font-medium" style={{ color: themeColors.primary }}>You're Presenting</span>
                         </div>
                       </div>
                     )}
@@ -3384,9 +3384,9 @@ const WeeklyAccountabilityMeetingPage = () => {
           )}
 
           {success && (
-            <Alert className="mb-4 border-green-200/50 bg-green-50/80 backdrop-blur-sm rounded-2xl shadow-sm">
-              <CheckCircle className="h-4 w-4 text-green-600" />
-              <AlertDescription className="text-green-800 font-medium">{success}</AlertDescription>
+            <Alert className="mb-4 backdrop-blur-sm rounded-2xl shadow-sm" style={{ borderColor: `${themeColors.primary}30`, backgroundColor: `${themeColors.primary}10` }}>
+              <CheckCircle className="h-4 w-4" style={{ color: themeColors.primary }} />
+              <AlertDescription className="font-medium" style={{ color: themeColors.primary }}>{success}</AlertDescription>
             </Alert>
           )}
         </div>
@@ -3413,12 +3413,12 @@ const WeeklyAccountabilityMeetingPage = () => {
                   }}
                 >
                   <Icon className={`h-5 w-5 ${
-                    isCompleted ? 'text-green-400' : isActive ? 'text-white' : 'text-slate-600'
-                  }`} />
+                    isActive ? 'text-white' : 'text-slate-600'
+                  }`} style={isCompleted && !isActive ? { color: themeColors.primary } : {}} />
                   <span className={`text-xs font-medium ${isActive ? 'text-white' : 'text-slate-700'}`}>{item.label}</span>
                   <span className={`text-xs ${isActive ? 'text-white/80' : 'text-slate-500'}`}>{item.duration}m</span>
                   {isCompleted && (
-                    <CheckCircle className="h-3 w-3 text-green-400" />
+                    <CheckCircle className="h-3 w-3" style={{ color: themeColors.primary }} />
                   )}
                 </TabsTrigger>
               );

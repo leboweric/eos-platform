@@ -990,7 +990,7 @@ const DashboardClean = () => {
                           >
                             <div className="flex items-center gap-2">
                               {isComplete ? (
-                                <div className="w-8 h-8 rounded-full bg-gradient-to-br from-green-500 to-emerald-600 flex items-center justify-center shadow-sm">
+                                <div className="w-8 h-8 rounded-full flex items-center justify-center shadow-sm" style={{ background: `linear-gradient(to bottom right, ${themeColors.primary}, ${themeColors.secondary})` }}>
                                   <CheckCircle className="h-4 w-4 text-white" />
                                 </div>
                               ) : (
@@ -999,23 +999,23 @@ const DashboardClean = () => {
                               <div className="flex-1 min-w-0">
                                 <p className={`text-sm font-medium truncate ${
                                   isComplete 
-                                    ? 'text-green-900 line-through decoration-green-400' 
+                                    ? 'line-through' 
                                     : 'text-slate-900 group-hover:text-slate-950'
-                                }`}>
+                                }`} style={isComplete ? { color: themeColors.primary, textDecorationColor: themeColors.primary } : {}}>
                                   {priority.title}
                                 </p>
                                 <p className={`text-xs mt-0.5 ${
-                                  isComplete ? 'text-green-700' : 'text-slate-600'
-                                }`}>
+                                  isComplete ? '' : 'text-slate-600'
+                                }`} style={isComplete ? { color: themeColors.primary } : {}}>
                                   Due {priority.dueDate ? format(new Date(priority.dueDate), 'MMM d') : 'No date'}
                                 </p>
                               </div>
                               {isComplete ? (
                                 <div className="flex items-center gap-2">
-                                  <Badge className="bg-green-100 text-green-800 border-green-200 px-1.5 py-0.5 text-xs font-semibold">
+                                  <Badge className="px-1.5 py-0.5 text-xs font-semibold text-white" style={{ backgroundColor: themeColors.primary, borderColor: themeColors.primary }}>
                                     ✓
                                   </Badge>
-                                  <span className="text-xs text-green-600 font-medium">100%</span>
+                                  <span className="text-xs font-medium" style={{ color: themeColors.primary }}>100%</span>
                                 </div>
                               ) : (
                                 <div className="flex items-center gap-1">
@@ -1072,7 +1072,7 @@ const DashboardClean = () => {
                     >
                       <div className="flex items-center gap-3">
                         {isComplete ? (
-                          <div className="w-10 h-10 rounded-full bg-gradient-to-br from-green-500 to-emerald-600 flex items-center justify-center shadow-sm">
+                          <div className="w-10 h-10 rounded-full flex items-center justify-center shadow-sm" style={{ background: `linear-gradient(to bottom right, ${themeColors.primary}, ${themeColors.secondary})` }}>
                             <CheckCircle className="h-5 w-5 text-white" />
                           </div>
                         ) : (
@@ -1081,24 +1081,24 @@ const DashboardClean = () => {
                         <div className="flex-1 min-w-0">
                           <p className={`font-medium truncate ${
                             isComplete 
-                              ? 'text-green-900 line-through decoration-green-400' 
+                              ? 'line-through' 
                               : 'text-slate-900 group-hover:text-slate-950'
-                          }`}>
+                          }`} style={isComplete ? { color: themeColors.primary, textDecorationColor: themeColors.primary } : {}}>
                             {priority.title}
                           </p>
                           <p className={`text-xs mt-1 ${
-                            isComplete ? 'text-green-700' : 'text-slate-600'
-                          }`}>
+                            isComplete ? '' : 'text-slate-600'
+                          }`} style={isComplete ? { color: themeColors.primary } : {}}>
                             {priority.owner?.name || 'Unassigned'} • Due {priority.dueDate ? format(new Date(priority.dueDate), 'MMM d') : 'No date'}
                           </p>
                         </div>
                         <div className="text-right">
                           {isComplete ? (
                             <div className="flex flex-col items-end gap-1">
-                              <Badge className="bg-green-100 text-green-800 border-green-200 px-2 py-0.5 text-xs font-semibold">
+                              <Badge className="px-2 py-0.5 text-xs font-semibold text-white" style={{ backgroundColor: themeColors.primary, borderColor: themeColors.primary }}>
                                 ✓ Complete
                               </Badge>
-                              <span className="text-xs text-green-600 font-medium">100%</span>
+                              <span className="text-xs font-medium" style={{ color: themeColors.primary }}>100%</span>
                             </div>
                           ) : (
                             <>
