@@ -329,33 +329,25 @@ const IssueDialog = ({
               </Alert>
             )}
 
-            <div className="grid gap-3">
-              <Label htmlFor="title" className="text-sm font-semibold text-slate-700">
-                Issue Title <span className="text-red-500">*</span>
-              </Label>
-              <Input
-                id="title"
-                value={formData.title}
-                onChange={(e) => setFormData({ ...formData, title: e.target.value })}
-                onFocus={(e) => e.target.setSelectionRange(e.target.value.length, e.target.value.length)}
-                placeholder="Brief description of the issue"
-                className="bg-white/80 backdrop-blur-sm border-white/20 rounded-xl shadow-sm transition-all duration-200"
-              />
-            </div>
+            {/* First row: Title and Owner side by side */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="grid gap-3">
+                <Label htmlFor="title" className="text-sm font-semibold text-slate-700">
+                  Issue Title <span className="text-red-500">*</span>
+                </Label>
+                <Input
+                  id="title"
+                  value={formData.title}
+                  onChange={(e) => setFormData({ ...formData, title: e.target.value })}
+                  onFocus={(e) => e.target.setSelectionRange(e.target.value.length, e.target.value.length)}
+                  placeholder="Brief description of the issue"
+                  className="bg-white/80 backdrop-blur-sm border-white/20 rounded-xl shadow-sm transition-all duration-200"
+                />
+              </div>
 
-            <div className="grid gap-3">
-              <Label htmlFor="description" className="text-sm font-semibold text-slate-700">Details</Label>
-              <RichTextEditor
-                value={formData.description}
-                onChange={(value) => setFormData({ ...formData, description: value })}
-                placeholder="Provide more details about the issue..."
-                className="shadow-sm"
-              />
-            </div>
-
-            <div className="grid gap-3">
-              <Label htmlFor="owner" className="text-sm font-semibold text-slate-700">Owner</Label>
-              <Select
+              <div className="grid gap-3">
+                <Label htmlFor="owner" className="text-sm font-semibold text-slate-700">Owner</Label>
+                <Select
                 value={formData.ownerId || 'no-owner'}
                 onValueChange={(userId) => {
                   if (userId === 'no-owner') {
@@ -386,8 +378,21 @@ const IssueDialog = ({
                   ))}
                 </SelectContent>
               </Select>
+              </div>
             </div>
 
+            {/* Second row: Details full width */}
+            <div className="grid gap-3">
+              <Label htmlFor="description" className="text-sm font-semibold text-slate-700">Details</Label>
+              <RichTextEditor
+                value={formData.description}
+                onChange={(value) => setFormData({ ...formData, description: value })}
+                placeholder="Provide more details about the issue..."
+                className="shadow-sm"
+              />
+            </div>
+
+            {/* Third row: Attachments */}
             <div className="grid gap-3">
               <Label htmlFor="attachments" className="text-sm font-semibold text-slate-700">Attachments</Label>
               <div className="space-y-2">
