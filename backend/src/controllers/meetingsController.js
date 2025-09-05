@@ -167,20 +167,6 @@ export const concludeMeeting = async (req, res) => {
       attendeeEmails = teamMembersResult.rows.map(row => row.email);
       console.log('Team member emails:', attendeeEmails);
     }
-    } else {
-      // If teamId is not a valid UUID, fall back to organization-wide emails
-      console.log('Invalid teamId UUID, using organization-wide emails as fallback');
-      const orgUsersResult = await db.query(
-        `SELECT DISTINCT u.email, u.first_name, u.last_name 
-         FROM users u
-         WHERE u.organization_id = $1 
-         AND u.email IS NOT NULL
-         AND u.email != ''`,
-        [organizationId]
-      );
-      attendeeEmails = orgUsersResult.rows.map(row => row.email);
-      console.log('Organization users:', orgUsersResult.rows);
-    }
 
     console.log('Sending meeting summary to:', attendeeEmails);
 
