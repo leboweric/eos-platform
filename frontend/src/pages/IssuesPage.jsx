@@ -449,6 +449,7 @@ const IssuesPageClean = () => {
           issue={editingIssue}
           teamMembers={teamMembers}
           timeline={activeTab}
+          onTimelineChange={handleTimelineChange}
         />
       </div>
     </div>
