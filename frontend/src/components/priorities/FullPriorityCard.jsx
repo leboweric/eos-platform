@@ -106,7 +106,14 @@ const FullPriorityCard = ({
     try {
       setLoadingAttachments(true);
       const orgId = user?.organizationId || user?.organization_id;
-      const teamId = priority.team_id || user?.teamId || '00000000-0000-0000-0000-000000000000';
+      // Get team ID from priority or user's first team
+      const userFirstTeamId = user?.teams?.[0]?.id;
+      const teamId = priority.team_id || userFirstTeamId;
+      
+      if (!teamId) {
+        console.error('No team ID found for priority attachments');
+        return;
+      }
       
       if (orgId && teamId) {
         const attachmentList = await quarterlyPrioritiesService.getAttachments(orgId, teamId, priority.id);
@@ -129,7 +136,14 @@ const FullPriorityCard = ({
       setAttachmentError(null);
       
       const orgId = user?.organizationId || user?.organization_id;
-      const teamId = priority.team_id || user?.teamId || '00000000-0000-0000-0000-000000000000';
+      // Get team ID from priority or user's first team
+      const userFirstTeamId = user?.teams?.[0]?.id;
+      const teamId = priority.team_id || userFirstTeamId;
+      
+      if (!teamId) {
+        console.error('No team ID found for priority attachments');
+        return;
+      }
       
       if (!orgId || !teamId) {
         throw new Error('Organization or team not found');
@@ -155,7 +169,14 @@ const FullPriorityCard = ({
 
     try {
       const orgId = user?.organizationId || user?.organization_id;
-      const teamId = priority.team_id || user?.teamId || '00000000-0000-0000-0000-000000000000';
+      // Get team ID from priority or user's first team
+      const userFirstTeamId = user?.teams?.[0]?.id;
+      const teamId = priority.team_id || userFirstTeamId;
+      
+      if (!teamId) {
+        console.error('No team ID found for priority attachments');
+        return;
+      }
       
       await quarterlyPrioritiesService.deleteAttachment(orgId, teamId, priority.id, attachmentId);
       await loadAttachments();
@@ -168,7 +189,14 @@ const FullPriorityCard = ({
   const handleDownloadAttachment = async (attachment) => {
     try {
       const orgId = user?.organizationId || user?.organization_id;
-      const teamId = priority.team_id || user?.teamId || '00000000-0000-0000-0000-000000000000';
+      // Get team ID from priority or user's first team
+      const userFirstTeamId = user?.teams?.[0]?.id;
+      const teamId = priority.team_id || userFirstTeamId;
+      
+      if (!teamId) {
+        console.error('No team ID found for priority attachments');
+        return;
+      }
       
       const blob = await quarterlyPrioritiesService.downloadAttachment(orgId, teamId, priority.id, attachment.id);
       

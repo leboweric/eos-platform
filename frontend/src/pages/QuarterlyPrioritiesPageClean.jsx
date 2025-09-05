@@ -1396,10 +1396,10 @@ const QuarterlyPrioritiesPageClean = () => {
     const priorities = memberData?.priorities || [];
     // Filter by team_id to ensure we only count the selected team's priorities
     return priorities.filter(p => {
-      // If viewing Leadership Team (id: 00000000-0000-0000-0000-000000000000)
-      if (selectedDepartment?.id === '00000000-0000-0000-0000-000000000000') {
+      // If viewing Leadership Team (check the is_leadership_team flag)
+      if (selectedDepartment?.is_leadership_team === true) {
         // Count priorities that belong to Leadership Team
-        return p.team_id === '00000000-0000-0000-0000-000000000000' || 
+        return p.team_id === selectedDepartment.id || 
                p.team_id === null || // Legacy priorities without team_id
                p.is_from_leadership === true;
       } else if (selectedDepartment?.id) {

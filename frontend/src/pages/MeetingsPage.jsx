@@ -144,31 +144,86 @@ const MeetingsPage = () => {
     try {
       setLoadingTeams(true);
       
-      // Use the selected department, or default to Leadership Team
-      const teamId = selectedDepartment?.id || user?.teamId || user?.team_id;
-      const teamName = selectedDepartment?.name || 'Leadership Team';
-      
-      if (!teamId) {
-        // If still no team ID, use a placeholder for Leadership Team
-        const defaultTeam = {
-          id: '00000000-0000-0000-0000-000000000000',
-          name: 'Leadership Team'
-        };
-        setTeams([defaultTeam]);
-        setSelectedTeamId(defaultTeam.id);
+      // First, check if user has teams from their auth data
+      if (user?.teams && user.teams.length > 0) {
+        setTeams(user.teams);
+        
+        // Try to select the appropriate team
+        let teamToSelect = null;
+        
+        // If there's a selected department, use it
+        if (selectedDepartment?.id) {
+          teamToSelect = user.teams.find(t => t.id === selectedDepartment.id);
+        }
+        
+        // Otherwise, look for the leadership team
+        if (!teamToSelect) {
+          teamToSelect = user.teams.find(t => t.is_leadership_team === true);
+        }
+        
+        // Fall back to first team if no leadership team found
+        if (!teamToSelect) {
+          teamToSelect = user.teams[0];
+        }
+        
+        setSelectedTeamId(teamToSelect.id);
         setLoadingTeams(false);
         return;
       }
       
-      const defaultTeam = {
-        id: teamId,
-        name: teamName
-      };
-      setTeams([defaultTeam]);
-      setSelectedTeamId(teamId);
+      // If no teams on user object, try to fetch all teams for the organization
+      try {
+        const response = await fetch(
+          `${import.meta.env.VITE_API_URL}/organizations/${organizationId}/teams`,
+          {
+            headers: {
+              'Authorization': `Bearer ${localStorage.getItem('token')}`
+            }
+          }
+        );
+        
+        if (response.ok) {
+          const teamsData = await response.json();
+          
+          // If we have teams data, use it
+          if (teamsData && teamsData.length > 0) {
+            setTeams(teamsData);
+            
+            // Try to select the appropriate team
+            let teamToSelect = null;
+            
+            // If there's a selected department, use it
+            if (selectedDepartment?.id) {
+              teamToSelect = teamsData.find(t => t.id === selectedDepartment.id);
+            }
+            
+            // Otherwise, look for the leadership team
+            if (!teamToSelect) {
+              teamToSelect = teamsData.find(t => t.is_leadership_team === true);
+            }
+            
+            // Fall back to first team if no leadership team found
+            if (!teamToSelect) {
+              teamToSelect = teamsData[0];
+            }
+            
+            setSelectedTeamId(teamToSelect.id);
+            setLoadingTeams(false);
+            return;
+          }
+        }
+      } catch (error) {
+        console.error('Failed to fetch teams from API:', error);
+      }
+      
+      // No teams found at all
+      console.error('No teams found for user');
+      setTeams([]);
+      setSelectedTeamId(null);
     } catch (error) {
       console.error('Failed to fetch teams:', error);
       setTeams([]);
+      setSelectedTeamId(null);
     } finally {
       setLoadingTeams(false);
     }
@@ -177,8 +232,18 @@ const MeetingsPage = () => {
   const handleStartMeeting = (meetingId) => {
     console.log('🎯 handleStartMeeting called with:', { meetingId, selectedTeamId });
     
-    if (!selectedTeamId) {
-      console.error('❌ No team selected');
+    // CRITICAL VALIDATION: Never allow meeting start without valid team ID
+    if (!selectedTeamId || selectedTeamId === 'null' || selectedTeamId === 'undefined') {
+      console.error('❌ BLOCKED: Invalid team ID detected:', selectedTeamId);
+      alert('Please select a valid team before starting a meeting. This prevents meeting summaries from being sent to the wrong recipients.');
+      return;
+    }
+    
+    // Additional UUID validation
+    const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+    if (!uuidRegex.test(selectedTeamId)) {
+      console.error('❌ BLOCKED: Team ID is not a valid UUID:', selectedTeamId);
+      alert('Invalid team ID format. Please select a valid team.');
       return;
     }
     
@@ -205,7 +270,20 @@ const MeetingsPage = () => {
   };
 
   const handleJoinMeeting = (meetingType) => {
-    if (!selectedTeamId) return;
+    // CRITICAL VALIDATION: Never allow meeting join without valid team ID
+    if (!selectedTeamId || selectedTeamId === 'null' || selectedTeamId === 'undefined') {
+      console.error('❌ BLOCKED: Invalid team ID detected:', selectedTeamId);
+      alert('Please select a valid team before joining a meeting.');
+      return;
+    }
+    
+    // Additional UUID validation
+    const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+    if (!uuidRegex.test(selectedTeamId)) {
+      console.error('❌ BLOCKED: Team ID is not a valid UUID:', selectedTeamId);
+      alert('Invalid team ID format. Please select a valid team.');
+      return;
+    }
     
     // Use team ID + meeting type as the meeting identifier
     const meetingRoom = `${selectedTeamId}-${meetingType}`;

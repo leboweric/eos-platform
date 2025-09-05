@@ -71,12 +71,31 @@ import { getEffectiveTeamId } from '../utils/teamUtils';
 const WeeklyAccountabilityMeetingPage = () => {
   const { user } = useAuthStore();
   const { teamId } = useParams();
+  const navigate = useNavigate();
+  
+  // CRITICAL VALIDATION: Prevent meeting page from loading with invalid team ID
+  useEffect(() => {
+    if (!teamId || teamId === 'null' || teamId === 'undefined') {
+      console.error('⚠️ CRITICAL: Invalid team ID detected in meeting URL:', teamId);
+      alert('Invalid team context. Please select a valid team from the meetings page.');
+      navigate('/meetings');
+      return;
+    }
+    
+    // Validate UUID format
+    const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+    if (!uuidRegex.test(teamId)) {
+      console.error('⚠️ CRITICAL: Team ID is not a valid UUID:', teamId);
+      alert('Invalid team ID format. Redirecting to meetings page.');
+      navigate('/meetings');
+      return;
+    }
+  }, [teamId, navigate]);
   
   // DEBUG: Log the raw teamId from URL params
   console.log('🐛 [WeeklyAccountabilityMeeting] Raw teamId from useParams:', teamId);
   console.log('🐛 [WeeklyAccountabilityMeeting] teamId length:', teamId?.length);
   console.log('🐛 [WeeklyAccountabilityMeeting] teamId type:', typeof teamId);
-  const navigate = useNavigate();
   const { 
     meetingCode, 
     participants, 
