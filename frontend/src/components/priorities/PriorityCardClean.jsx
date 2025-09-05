@@ -287,18 +287,26 @@ const PriorityCardClean = ({
             <div className="flex-1 min-w-0">
               <div className="flex items-center gap-3 mb-3">
                 {onStatusChange && !readOnly && !isEditing && (
-                  <Checkbox
-                    checked={priority.status === 'complete'}
-                    onCheckedChange={(checked) => {
-                      onStatusChange(priority.id, checked ? 'complete' : 'on-track');
-                    }}
-                    className="flex-shrink-0"
-                    style={priority.status === 'complete' ? {
-                      backgroundColor: themeColors.primary,
-                      borderColor: themeColors.primary,
-                      color: 'white'
-                    } : {}}
-                  />
+                  priority.status === 'complete' ? (
+                    <button
+                      onClick={() => onStatusChange(priority.id, 'on-track')}
+                      className="flex-shrink-0 h-4 w-4 rounded-[4px] flex items-center justify-center transition-all"
+                      style={{
+                        backgroundColor: themeColors.primary,
+                        border: `1px solid ${themeColors.primary}`
+                      }}
+                    >
+                      <CheckCircle className="h-3 w-3 text-white" />
+                    </button>
+                  ) : (
+                    <Checkbox
+                      checked={false}
+                      onCheckedChange={(checked) => {
+                        onStatusChange(priority.id, checked ? 'complete' : 'on-track');
+                      }}
+                      className="flex-shrink-0"
+                    />
+                  )
                 )}
                 {!onStatusChange || readOnly || isEditing ? (
                   <div 
@@ -317,10 +325,14 @@ const PriorityCardClean = ({
                   />
                 ) : (
                   <h3 
-                    className={`text-lg font-semibold flex-1 line-clamp-2 ${priority.status === 'complete' ? 'line-through' : ''}`}
-                    style={{
-                      color: priority.status === 'complete' ? themeColors.primary : '#111827',
-                      textDecorationColor: priority.status === 'complete' ? themeColors.primary : undefined
+                    className={`text-lg font-semibold flex-1 line-clamp-2`}
+                    style={priority.status === 'complete' ? {
+                      color: themeColors.primary,
+                      textDecoration: `line-through ${themeColors.primary}`,
+                      textDecorationColor: themeColors.primary,
+                      textDecorationThickness: '2px'
+                    } : {
+                      color: '#111827'
                     }}
                   >
                     {priority.title}
