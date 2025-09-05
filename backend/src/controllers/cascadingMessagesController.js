@@ -38,6 +38,14 @@ export const createCascadingMessage = async (req, res) => {
     const { message, recipientTeamIds, allTeams } = req.body;
     const userId = req.user.id;
 
+    // Validate teamId
+    if (!teamId || teamId === 'null' || teamId === 'undefined') {
+      return res.status(400).json({
+        success: false,
+        error: 'Valid team ID is required'
+      });
+    }
+
     // Start a transaction
     await query('BEGIN');
 
@@ -117,6 +125,14 @@ export const getCascadingMessages = async (req, res) => {
     const { orgId, teamId } = req.params;
     const { startDate, endDate } = req.query;
 
+    // Validate teamId
+    if (!teamId || teamId === 'null' || teamId === 'undefined') {
+      return res.status(400).json({
+        success: false,
+        error: 'Valid team ID is required'
+      });
+    }
+
     // Default to messages from the last 7 days if no date range specified
     const start = startDate || new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
     const end = endDate || new Date().toISOString().split('T')[0];
@@ -159,6 +175,14 @@ export const markMessageAsRead = async (req, res) => {
     const { teamId } = req.body;
     const userId = req.user.id;
 
+    // Validate teamId
+    if (!teamId || teamId === 'null' || teamId === 'undefined') {
+      return res.status(400).json({
+        success: false,
+        error: 'Valid team ID is required'
+      });
+    }
+
     await query(
       `UPDATE cascading_message_recipients
        SET is_read = true, read_at = CURRENT_TIMESTAMP, read_by = $1
@@ -185,12 +209,15 @@ export const getAvailableTeams = async (req, res) => {
     // This doesn't need the cascading_messages table, just teams table
     const { orgId, teamId } = req.params;
 
+    // Handle "null" string or missing teamId
+    const validTeamId = (teamId && teamId !== 'null' && teamId !== 'undefined') ? teamId : null;
+
     const result = await query(
       `SELECT id, name, is_leadership_team
        FROM teams
-       WHERE organization_id = $1 AND id != $2
+       WHERE organization_id = $1 ${validTeamId ? 'AND id != $2' : ''}
        ORDER BY is_leadership_team DESC, name ASC`,
-      [orgId, teamId]
+      validTeamId ? [orgId, validTeamId] : [orgId]
     );
 
     res.json({
