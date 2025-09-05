@@ -576,11 +576,11 @@ const IssueDialog = ({
 
           {/* Action Buttons for existing issues */}
           {issue && (
-            <div className="flex flex-wrap gap-2 pb-4 border-b border-white/20">
+            <div className="flex flex-row gap-2 pb-4 border-b border-white/20 overflow-x-auto">
               <Button
                 type="button"
                 variant="outline"
-                size="sm"
+                size="default"
                 onClick={async () => {
                   // Default to short_term if timeline is not set
                   const currentTimeline = issue.timeline || 'short_term';
@@ -601,7 +601,7 @@ const IssueDialog = ({
                   }
                   onClose();
                 }}
-                className="text-xs"
+                className="text-sm whitespace-nowrap"
               >
                 <ArrowLeftRight className="mr-1 h-3 w-3" />
                 Move to {(issue.timeline || 'short_term') === 'short_term' ? 'Long Term' : 'Short Term'}
@@ -610,12 +610,12 @@ const IssueDialog = ({
                 <Button
                   type="button"
                   variant="outline"
-                  size="sm"
+                  size="default"
                   onClick={() => {
                     onMoveToTeam(issue);
                     onClose();
                   }}
-                  className="text-xs"
+                  className="text-sm whitespace-nowrap"
                 >
                   <Users className="mr-1 h-3 w-3" />
                   Send to Team
@@ -625,12 +625,12 @@ const IssueDialog = ({
                 <Button
                   type="button"
                   variant="outline"
-                  size="sm"
+                  size="default"
                   onClick={() => {
                     onCreateTodo(issue);
                     onClose();
                   }}
-                  className="text-xs"
+                  className="text-sm whitespace-nowrap"
                 >
                   <ListTodo className="mr-1 h-3 w-3" />
                   Create To-Do
