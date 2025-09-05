@@ -814,6 +814,7 @@ const IssuesListClean = ({
           }
           setSelectedIssue(null);
         }}
+        onTimelineChange={onTimelineChange}
         onMoveToTeam={onMoveToTeam}
         onCreateTodo={onCreateTodo}
         onSendCascadingMessage={onSendCascadingMessage}
