@@ -591,18 +591,28 @@ const IssueDialog = ({
                   const currentTimeline = issue.timeline || 'short_term';
                   const newTimeline = currentTimeline === 'short_term' ? 'long_term' : 'short_term';
                   
+                  console.log('🔄 IssueDialog: Move button clicked');
+                  console.log('  - Issue ID:', issue.id);
+                  console.log('  - Current timeline:', currentTimeline);
+                  console.log('  - New timeline:', newTimeline);
+                  console.log('  - onTimelineChange available?', !!onTimelineChange);
+                  
                   try {
                     // If onTimelineChange is provided, use it (it handles the update and UI refresh)
                     if (onTimelineChange) {
+                      console.log('🎯 IssueDialog: Calling onTimelineChange...');
                       await onTimelineChange(issue.id, newTimeline);
+                      console.log('✅ IssueDialog: onTimelineChange completed');
                     } else {
+                      console.log('⚠️ IssueDialog: No onTimelineChange, using direct update');
                       // Fallback to direct update if no callback provided
                       await issuesService.updateIssue(issue.id, { timeline: newTimeline });
                     }
+                    console.log('🚪 IssueDialog: Closing dialog...');
                     // Close the dialog after successful update
                     onClose();
                   } catch (error) {
-                    console.error('Failed to update issue timeline:', error);
+                    console.error('❌ IssueDialog: Failed to update issue timeline:', error);
                   }
                 }}
                 className="text-sm whitespace-nowrap"

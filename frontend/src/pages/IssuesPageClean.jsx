@@ -154,6 +154,7 @@ const IssuesPageClean = () => {
   };
 
   const fetchIssues = async () => {
+    console.log('🔍 fetchIssues called - refreshing all issues...');
     try {
       setLoading(true);
       setError(null);
@@ -166,13 +167,17 @@ const IssuesPageClean = () => {
         issuesService.getIssues(null, true, selectedDepartment?.id) // Get all archived issues
       ]);
       
-      console.log('Issues Page - Short term response:', shortTermResponse.data);
-      console.log('Issues Page - Short term issues count:', shortTermResponse.data?.issues?.length);
-      console.log('Issues Page - Short term issue details:', shortTermResponse.data?.issues?.map(i => ({ 
+      console.log('📊 Fetch Results:');
+      console.log('  - Short term issues count:', shortTermResponse.data?.issues?.length);
+      console.log('  - Long term issues count:', longTermResponse.data?.issues?.length);
+      console.log('  - Short term issue details:', shortTermResponse.data?.issues?.map(i => ({ 
         id: i.id, 
         title: i.title, 
-        status: i.status, 
-        archived: i.archived,
+        timeline: i.timeline 
+      })));
+      console.log('  - Long term issue details:', longTermResponse.data?.issues?.map(i => ({ 
+        id: i.id, 
+        title: i.title, 
         timeline: i.timeline 
       })));
       
@@ -181,7 +186,7 @@ const IssuesPageClean = () => {
       const longTerm = Array.isArray(longTermResponse?.data?.issues) ? longTermResponse.data.issues : [];
       const archived = Array.isArray(archivedResponse?.data?.issues) ? archivedResponse.data.issues : [];
       
-      console.log('Issues loaded:', { shortTerm: shortTerm.length, longTerm: longTerm.length, archived: archived.length });
+      console.log('✅ Setting state with:', { shortTerm: shortTerm.length, longTerm: longTerm.length, archived: archived.length });
       
       setShortTermIssues(shortTerm);
       setLongTermIssues(longTerm);
@@ -190,7 +195,7 @@ const IssuesPageClean = () => {
       // Team members come from either response (they're the same)
       setTeamMembers(shortTermResponse.data.teamMembers || []);
     } catch (error) {
-      console.error('Failed to fetch issues:', error);
+      console.error('❌ Failed to fetch issues:', error);
       setError('Failed to load issues');
     } finally {
       setLoading(false);
@@ -203,6 +208,12 @@ const IssuesPageClean = () => {
   };
 
   const handleEditIssue = (issue) => {
+    console.log('🔧 handleEditIssue called with issue:', {
+      id: issue.id,
+      title: issue.title,
+      timeline: issue.timeline,
+      status: issue.status
+    });
     setEditingIssue(issue);
     setShowIssueDialog(true);
   };
@@ -258,47 +269,33 @@ const IssuesPageClean = () => {
   };
 
   const handleTimelineChange = async (issueId, newTimeline) => {
+    console.log('🚀 handleTimelineChange called');
+    console.log('  - Issue ID:', issueId);
+    console.log('  - New Timeline:', newTimeline);
+    console.log('  - Current Short Term Issues:', shortTermIssues.length);
+    console.log('  - Current Long Term Issues:', longTermIssues.length);
+    
     try {
-      console.log('Moving issue:', issueId, 'to timeline:', newTimeline);
-      
-      // Find the issue being moved in either list
-      let movingIssue = shortTermIssues.find(issue => issue.id === issueId) || 
-                       longTermIssues.find(issue => issue.id === issueId);
-      
-      if (!movingIssue) {
-        console.error('Issue not found in either list');
-        await fetchIssues();
-        return;
-      }
-      
-      // Determine current timeline from where we found the issue
-      const currentTimeline = shortTermIssues.find(issue => issue.id === issueId) ? 'short_term' : 'long_term';
-      
-      // Optimistically update by moving the issue between lists
-      if (currentTimeline === 'short_term' && newTimeline === 'long_term') {
-        // Moving from short to long
-        setShortTermIssues(prev => prev.filter(issue => issue.id !== issueId));
-        setLongTermIssues(prev => [...prev, { ...movingIssue, timeline: 'long_term' }]);
-      } else if (currentTimeline === 'long_term' && newTimeline === 'short_term') {
-        // Moving from long to short
-        setLongTermIssues(prev => prev.filter(issue => issue.id !== issueId));
-        setShortTermIssues(prev => [...prev, { ...movingIssue, timeline: 'short_term' }]);
-      }
-      
-      // Update the issue in the database
+      // Update the issue in the database FIRST
+      console.log('📡 Updating issue in database...');
       const response = await issuesService.updateIssue(issueId, { timeline: newTimeline });
-      console.log('Timeline update response:', response);
+      console.log('✅ Database update response:', response);
       
       // Show success message
       setSuccess(`Issue moved to ${newTimeline === 'short_term' ? 'Short Term' : 'Long Term'}`);
       
-      // Clear any success message after a few seconds
+      // FORCE A FULL REFRESH OF THE ISSUES
+      console.log('🔄 Fetching fresh issue data...');
+      await fetchIssues();
+      console.log('✅ Issues refreshed');
+      
+      // Clear success message after 3 seconds
       setTimeout(() => setSuccess(null), 3000);
     } catch (error) {
-      console.error('Failed to update issue timeline - Full error:', error);
+      console.error('❌ Failed to update issue timeline:', error);
       console.error('Error response:', error.response);
       setError(`Failed to move issue: ${error.response?.data?.message || error.message}`);
-      // On error, refetch to restore correct state
+      // On error, also refetch to restore correct state
       await fetchIssues();
     }
   };
@@ -817,7 +814,7 @@ const IssuesPageClean = () => {
           onSave={handleSaveIssue}
           issue={editingIssue}
           teamMembers={teamMembers}
-          timeline={activeTab}
+          timeline={editingIssue ? editingIssue.timeline : activeTab}
           onTimelineChange={handleTimelineChange}
         />
       </div>
