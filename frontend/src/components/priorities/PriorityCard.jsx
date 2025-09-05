@@ -118,24 +118,29 @@ const PriorityCard = ({
   const formatDate = (dateString) => {
     if (!dateString) return 'No date set';
     try {
-      if (typeof dateString === 'string' && dateString.match(/^\d{4}-\d{2}-\d{2}$/)) {
-        const [year, month, day] = dateString.split('-').map(Number);
-        const date = new Date(year, month - 1, day);
-        return format(date, 'MMM d, yyyy');
-      }
+      // Always extract just the date part if it exists (YYYY-MM-DD)
+      let datePart = dateString;
       
+      // If it's an ISO string with time, extract just the date part
       if (typeof dateString === 'string' && dateString.includes('T')) {
-        const datePart = dateString.split('T')[0];
+        datePart = dateString.split('T')[0];
+      }
+      
+      // If it's already in YYYY-MM-DD format or we extracted it
+      if (typeof datePart === 'string' && datePart.match(/^\d{4}-\d{2}-\d{2}$/)) {
         const [year, month, day] = datePart.split('-').map(Number);
-        const date = new Date(year, month - 1, day);
+        // Create date in local timezone to avoid shifts
+        const date = new Date(year, month - 1, day, 12, 0, 0); // Set to noon to avoid DST issues
         return format(date, 'MMM d, yyyy');
       }
       
+      // Fallback for other date formats
       const date = new Date(dateString);
       if (isNaN(date.getTime())) {
         return 'Invalid date';
       }
-      const localDate = new Date(date.getFullYear(), date.getMonth(), date.getDate());
+      // Create a local date to avoid timezone shifts
+      const localDate = new Date(date.getFullYear(), date.getMonth(), date.getDate(), 12, 0, 0);
       return format(localDate, 'MMM d, yyyy');
     } catch (error) {
       console.error('Error formatting date:', dateString, error);
@@ -145,6 +150,25 @@ const PriorityCard = ({
 
   const getDaysUntilDue = (dueDate) => {
     if (!dueDate) return null;
+    
+    // Extract just the date part if it has time
+    let datePart = dueDate;
+    if (typeof dueDate === 'string' && dueDate.includes('T')) {
+      datePart = dueDate.split('T')[0];
+    }
+    
+    // Parse the date components directly to avoid timezone issues
+    if (typeof datePart === 'string' && datePart.match(/^\d{4}-\d{2}-\d{2}$/)) {
+      const [year, month, day] = datePart.split('-').map(Number);
+      const due = new Date(year, month - 1, day, 12, 0, 0);
+      const today = new Date();
+      today.setHours(12, 0, 0, 0);
+      const diffTime = due - today;
+      const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+      return diffDays;
+    }
+    
+    // Fallback for other formats
     const due = new Date(dueDate);
     const today = new Date();
     today.setHours(0, 0, 0, 0);
