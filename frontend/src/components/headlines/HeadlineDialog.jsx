@@ -70,7 +70,7 @@ const HeadlineDialog = ({ open, onOpenChange, onSave }) => {
               <Megaphone className="h-5 w-5 text-white" />
             </div>
             <div>
-              <DialogTitle className="text-2xl font-bold bg-gradient-to-r from-slate-900 to-slate-700 bg-clip-text text-transparent">Add Headline</DialogTitle>
+              <DialogTitle className="text-3xl font-bold bg-gradient-to-r from-slate-900 to-slate-700 bg-clip-text text-transparent">Add Headline</DialogTitle>
             </div>
           </div>
         </DialogHeader>
