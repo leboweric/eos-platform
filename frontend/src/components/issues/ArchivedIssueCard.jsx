@@ -22,7 +22,7 @@ const ArchivedIssueCard = ({ issue, onUnarchive, getStatusColor, getStatusIcon }
   };
 
   return (
-    <Card className="hover:shadow-md transition-shadow opacity-75">
+    <Card className={`hover:shadow-md transition-all duration-300 ${issue.isMoving ? 'opacity-0 scale-95' : 'opacity-75'}`>
       <CardContent className="p-6">
         <div className="flex items-start justify-between">
           <div className="flex-1">

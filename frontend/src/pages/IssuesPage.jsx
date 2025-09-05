@@ -85,6 +85,16 @@ const IssuesPageClean = () => {
     fetchIssues();
   }, [selectedDepartment]);
 
+  // Clear success message after 3 seconds
+  useEffect(() => {
+    if (success) {
+      const timer = setTimeout(() => {
+        setSuccess(null);
+      }, 3000);
+      return () => clearTimeout(timer);
+    }
+  }, [success]);
+
   const fetchIssues = async () => {
     try {
       setLoading(true);
@@ -180,26 +190,44 @@ const IssuesPageClean = () => {
 
   const handleTimelineChange = async (issueId, newTimeline) => {
     try {
-      // Optimistically update by removing the issue from its current list
+      // First, mark the issue as "moving" to add visual feedback
+      const markAsMoving = (issue) => ({
+        ...issue,
+        isMoving: true
+      });
+      
       if (newTimeline === 'long_term') {
-        // Moving from short to long - remove from short term list
-        setShortTermIssues(prev => prev.filter(issue => issue.id !== issueId));
+        // Moving from short to long
+        setShortTermIssues(prev => prev.map(issue => 
+          issue.id === issueId ? markAsMoving(issue) : issue
+        ));
       } else {
-        // Moving from long to short - remove from long term list
-        setLongTermIssues(prev => prev.filter(issue => issue.id !== issueId));
+        // Moving from long to short
+        setLongTermIssues(prev => prev.map(issue => 
+          issue.id === issueId ? markAsMoving(issue) : issue
+        ));
       }
       
       // Update the issue in the database
       await issuesService.updateIssue(issueId, { timeline: newTimeline });
       
-      // Show success message
-      setSuccess(`Issue moved to ${newTimeline === 'short_term' ? 'Short Term' : 'Long Term'}`);
+      // Show success message immediately
+      setSuccess(`Issue moved to ${newTimeline === 'short_term' ? 'Short Term' : 'Long Term'} ✓`);
       
-      // Don't refetch - the optimistic update already removed it from view
-      // If user switches tabs, they'll see the updated data
+      // Wait a moment for animation, then remove from list
+      setTimeout(() => {
+        if (newTimeline === 'long_term') {
+          setShortTermIssues(prev => prev.filter(issue => issue.id !== issueId));
+        } else {
+          setLongTermIssues(prev => prev.filter(issue => issue.id !== issueId));
+        }
+      }, 300);
+      
+      // Update the full lists after a delay
+      setTimeout(() => fetchIssues(), 1500);
     } catch (error) {
       console.error('Failed to update issue timeline:', error);
-      setError('Failed to move issue');
+      setError(`Failed to move issue: ${error.response?.data?.message || error.message}`);
       // On error, refetch to restore correct state
       await fetchIssues();
     }
@@ -367,9 +395,9 @@ const IssuesPageClean = () => {
         )}
 
         {success && (
-          <Alert className="border-green-200 bg-green-50 mb-6">
+          <Alert className="border-green-200 bg-green-50 mb-6 animate-in fade-in slide-in-from-top-2 duration-300">
             <CheckSquare className="h-4 w-4 text-green-600" />
-            <AlertDescription className="text-green-800">{success}</AlertDescription>
+            <AlertDescription className="text-green-800 font-medium">{success}</AlertDescription>
           </Alert>
         )}
 

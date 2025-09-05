@@ -259,6 +259,8 @@ const IssuesPageClean = () => {
 
   const handleTimelineChange = async (issueId, newTimeline) => {
     try {
+      console.log('Moving issue:', issueId, 'to timeline:', newTimeline);
+      
       // Optimistically update by removing the issue from its current list
       if (newTimeline === 'long_term') {
         // Moving from short to long - remove from short term list
@@ -269,16 +271,18 @@ const IssuesPageClean = () => {
       }
       
       // Update the issue in the database
-      await issuesService.updateIssue(issueId, { timeline: newTimeline });
+      const response = await issuesService.updateIssue(issueId, { timeline: newTimeline });
+      console.log('Timeline update response:', response);
       
       // Show success message
       setSuccess(`Issue moved to ${newTimeline === 'short_term' ? 'Short Term' : 'Long Term'}`);
       
-      // Don't refetch - the optimistic update already removed it from view
-      // If user switches tabs, they'll see the updated data
+      // Fetch just to ensure the other list gets updated
+      setTimeout(() => fetchIssues(), 1000);
     } catch (error) {
-      console.error('Failed to update issue timeline:', error);
-      setError('Failed to move issue');
+      console.error('Failed to update issue timeline - Full error:', error);
+      console.error('Error response:', error.response);
+      setError(`Failed to move issue: ${error.response?.data?.message || error.message}`);
       // On error, refetch to restore correct state
       await fetchIssues();
     }

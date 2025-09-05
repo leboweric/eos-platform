@@ -65,7 +65,7 @@ const IssueCard = ({ issue, onEdit, onStatusChange, onTimelineChange, onVote, on
   ];
 
   return (
-    <Card className="hover:shadow-md transition-shadow">
+    <Card className={`hover:shadow-md transition-all duration-300 ${issue.isMoving ? 'opacity-0 scale-95' : 'opacity-100 scale-100'}`>
       <CardContent className="p-6">
         <div className="flex items-start justify-between">
           <div className="flex-1">
