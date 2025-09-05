@@ -332,7 +332,7 @@ const QuarterlyPrioritiesPageClean = () => {
   const getStatusIcon = (status) => {
     switch (status) {
       case 'complete':
-        return <CheckCircle className="h-4 w-4" />;
+        return <CheckCircle className="h-4 w-4" style={{ color: themeColors.primary }} />;
       case 'on-track':
         return <TrendingUp className="h-4 w-4" />;
       case 'off-track':
@@ -1654,11 +1654,11 @@ const QuarterlyPrioritiesPageClean = () => {
                             <div key={milestone.id} className="flex items-center gap-2 text-sm">
                               <div className={`w-1.5 h-1.5 rounded-full flex-shrink-0 ${
                                 milestone.completed 
-                                  ? 'bg-green-500' 
+                                  ? '' 
                                   : getDaysUntilDue(milestone.dueDate || milestone.due_date) < 0
                                   ? 'bg-red-500'
                                   : 'bg-gray-400'
-                              }`} />
+                              }`} style={milestone.completed ? { backgroundColor: themeColors.primary } : {}} />
                               <span className={`truncate ${
                                 milestone.completed 
                                   ? 'text-gray-500 line-through' 
@@ -1756,7 +1756,7 @@ const QuarterlyPrioritiesPageClean = () => {
                       }}
                       className={`flex items-center gap-2 ${
                         priority.status === 'off-track' ? 'border-red-300 bg-red-50 hover:bg-red-100' :
-                        'border-green-300 bg-green-50 hover:bg-green-100'
+                        'border-gray-300 bg-gray-50 hover:bg-gray-100'
                       }`}
                     >
                       <div className="w-2 h-2 rounded-full" style={getStatusDotColor(priority.status)} />
@@ -1805,9 +1805,9 @@ const QuarterlyPrioritiesPageClean = () => {
                       variant="ghost" 
                       size="sm" 
                       onClick={handleSave}
-                      className="h-8 w-8 p-0 hover:bg-green-100"
+                      className="h-8 w-8 p-0 hover:bg-gray-100"
                     >
-                      <Save className="h-4 w-4 text-green-600" />
+                      <Save className="h-4 w-4" style={{ color: themeColors.primary }} />
                     </Button>
                     <Button 
                       variant="ghost" 
@@ -2039,9 +2039,9 @@ const QuarterlyPrioritiesPageClean = () => {
                               setEditingMilestoneId(null);
                               setMilestoneForm({ title: '', dueDate: '' });
                             }}
-                            className="h-8 w-8 p-0 hover:bg-green-100"
+                            className="h-8 w-8 p-0 hover:bg-gray-100"
                           >
-                            <CheckSquare className="h-3 w-3 text-green-600" />
+                            <CheckSquare className="h-3 w-3" style={{ color: themeColors.primary }} />
                           </Button>
                           <Button
                             size="sm"
@@ -2133,9 +2133,9 @@ const QuarterlyPrioritiesPageClean = () => {
                           setShowAddMilestone(false);
                         }}
                         disabled={!milestoneForm.title || !milestoneForm.dueDate}
-                        className="h-8 w-8 p-0 hover:bg-green-100"
+                        className="h-8 w-8 p-0 hover:bg-gray-100"
                       >
-                        <CheckSquare className="h-3 w-3 text-green-600" />
+                        <CheckSquare className="h-3 w-3" style={{ color: themeColors.primary }} />
                       </Button>
                       <Button
                         size="sm"
@@ -2165,9 +2165,13 @@ const QuarterlyPrioritiesPageClean = () => {
                         onClick={handleCreateIssue}
                         disabled={creatingIssue || issueCreatedSuccess}
                         className={issueCreatedSuccess 
-                          ? "text-xs bg-green-600 hover:bg-green-700 text-white border-green-600" 
+                          ? "text-xs text-white" 
                           : "text-xs text-orange-600 border-orange-300 hover:bg-orange-50"
                         }
+                        style={issueCreatedSuccess ? { 
+                          backgroundColor: themeColors.primary,
+                          borderColor: themeColors.primary
+                        } : {}}
                       >
                         {creatingIssue ? (
                           <>
@@ -2551,12 +2555,12 @@ const QuarterlyPrioritiesPageClean = () => {
                                   <div className="flex-1">
                                     <div className="flex items-center gap-3">
                                       {isComplete ? (
-                                        <CheckCircle className="h-5 w-5 text-green-600" />
+                                        <CheckCircle className="h-5 w-5" style={{ color: themeColors.primary }} />
                                       ) : (
                                         <Archive className="h-5 w-5 text-gray-400" />
                                       )}
                                       <h3 className={`text-lg font-semibold ${
-                                        isComplete ? 'text-green-900 line-through' : 'text-gray-700'
+                                        isComplete ? 'line-through' : 'text-gray-700'
                                       }`}>
                                         {priority.title}
                                       </h3>
@@ -2628,12 +2632,12 @@ const QuarterlyPrioritiesPageClean = () => {
                                       <div className="flex-1">
                                         <div className="flex items-center gap-3">
                                           {isComplete ? (
-                                            <CheckCircle className="h-5 w-5 text-green-600" />
+                                            <CheckCircle className="h-5 w-5" style={{ color: themeColors.primary }} />
                                           ) : (
                                             <Archive className="h-5 w-5 text-gray-400" />
                                           )}
                                           <h3 className={`text-lg font-semibold ${
-                                            isComplete ? 'text-green-900 line-through' : 'text-gray-700'
+                                            isComplete ? 'line-through' : 'text-gray-700'
                                           }`}>
                                             {priority.title}
                                           </h3>
@@ -2729,13 +2733,13 @@ const QuarterlyPrioritiesPageClean = () => {
                             <div className="flex-1 min-w-0">
                               <div className="flex items-center gap-3">
                                 {isComplete ? (
-                                  <CheckCircle className="h-5 w-5 text-green-600 flex-shrink-0" />
+                                  <CheckCircle className="h-5 w-5 flex-shrink-0" style={{ color: themeColors.primary }} />
                                 ) : (
                                   <div className="w-2 h-2 rounded-full flex-shrink-0" style={getStatusDotColor(priority.status)} />
                                 )}
                                 <h3 className={`text-lg font-semibold break-words ${
                                   isComplete 
-                                    ? 'text-green-900 line-through decoration-green-400' 
+                                    ? 'line-through' 
                                     : 'text-gray-900'
                                 }`}>
                                   {priority.title}
@@ -2878,13 +2882,13 @@ const QuarterlyPrioritiesPageClean = () => {
                                 <div className="flex-1 min-w-0">
                                   <div className="flex items-center gap-3">
                                     {isComplete ? (
-                                      <CheckCircle className="h-5 w-5 text-green-600 flex-shrink-0" />
+                                      <CheckCircle className="h-5 w-5 flex-shrink-0" style={{ color: themeColors.primary }} />
                                     ) : (
                                       <div className="w-2 h-2 rounded-full flex-shrink-0" style={getStatusDotColor(priority.status)} />
                                     )}
                                     <h3 className={`text-lg font-semibold break-words ${
                                       isComplete 
-                                        ? 'text-green-900 line-through decoration-green-400' 
+                                        ? 'line-through' 
                                         : 'text-gray-900'
                                     }`}>
                                       {priority.title}
