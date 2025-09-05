@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -8,6 +8,8 @@ import { Textarea } from '@/components/ui/textarea';
 import { Progress } from '@/components/ui/progress';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { getOrgTheme } from '../../utils/themeUtils';
+import { organizationService } from '../../services/organizationService';
 import { 
   Calendar,
   ChevronDown,
@@ -83,6 +85,38 @@ const PriorityCard = ({
   const [updateText, setUpdateText] = useState('');
   const [editingMilestoneId, setEditingMilestoneId] = useState(null);
   const [editingMilestone, setEditingMilestone] = useState({ title: '', dueDate: '' });
+  const [themeColors, setThemeColors] = useState({
+    primary: '#3B82F6',
+    secondary: '#1E40AF',
+    accent: '#60A5FA'
+  });
+
+  useEffect(() => {
+    const fetchTheme = async () => {
+      try {
+        // First check localStorage
+        const orgId = localStorage.getItem('organizationId');
+        const savedTheme = getOrgTheme(orgId);
+        if (savedTheme) {
+          setThemeColors(savedTheme);
+          return;
+        }
+        
+        // If not in localStorage, fetch from API
+        if (orgId) {
+          const response = await organizationService.getOrganization(orgId);
+          const orgTheme = response.data?.theme_colors;
+          if (orgTheme && orgTheme.primary) {
+            setThemeColors(orgTheme);
+          }
+        }
+      } catch (error) {
+        console.error('Failed to fetch theme:', error);
+      }
+    };
+
+    fetchTheme();
+  }, []);
 
   const getStatusBorderColor = (status) => {
     switch (status) {
@@ -215,6 +249,11 @@ const PriorityCard = ({
                       onStatusChange(priority.id, checked ? 'complete' : 'on-track');
                     }}
                     className="flex-shrink-0"
+                    style={priority.status === 'complete' ? {
+                      backgroundColor: themeColors.primary,
+                      borderColor: themeColors.primary,
+                      color: 'white'
+                    } : {}}
                   />
                 )}
                 {!onStatusChange || readOnly || isEditing ? (
@@ -227,7 +266,13 @@ const PriorityCard = ({
                     className="flex-1 text-lg font-semibold border-0 p-0 focus:ring-0 shadow-none"
                   />
                 ) : (
-                  <h3 className={`text-lg font-semibold text-gray-900 flex-1 line-clamp-2 ${priority.status === 'complete' ? 'line-through text-gray-500' : ''}`}>
+                  <h3 
+                    className={`text-lg font-semibold flex-1 line-clamp-2 ${priority.status === 'complete' ? 'line-through' : ''}`}
+                    style={{
+                      color: priority.status === 'complete' ? themeColors.primary : '#111827',
+                      textDecorationColor: priority.status === 'complete' ? themeColors.primary : undefined
+                    }}
+                  >
                     {priority.title}
                   </h3>
                 )}

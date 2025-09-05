@@ -291,6 +291,11 @@ const PriorityCardClean = ({
                       onStatusChange(priority.id, checked ? 'complete' : 'on-track');
                     }}
                     className="flex-shrink-0"
+                    style={priority.status === 'complete' ? {
+                      backgroundColor: themeColors.primary,
+                      borderColor: themeColors.primary,
+                      color: 'white'
+                    } : {}}
                   />
                 )}
                 {!onStatusChange || readOnly || isEditing ? (
@@ -303,7 +308,13 @@ const PriorityCardClean = ({
                     className="flex-1 text-lg font-semibold border-0 p-0 focus:ring-0 shadow-none"
                   />
                 ) : (
-                  <h3 className={`text-lg font-semibold text-gray-900 flex-1 line-clamp-2 ${priority.status === 'complete' ? 'line-through text-gray-500' : ''}`}>
+                  <h3 
+                    className={`text-lg font-semibold flex-1 line-clamp-2 ${priority.status === 'complete' ? 'line-through' : ''}`}
+                    style={{
+                      color: priority.status === 'complete' ? themeColors.primary : '#111827',
+                      textDecorationColor: priority.status === 'complete' ? themeColors.primary : undefined
+                    }}
+                  >
                     {priority.title}
                   </h3>
                 )}
@@ -567,11 +578,14 @@ const PriorityCardClean = ({
                     'bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-200'
                   }`}>
                     <div className={`w-2.5 h-2.5 rounded-full ${getStatusDotColor(isEditing ? editForm.status : priority.status)}`} />
-                    <span className={`capitalize font-medium text-sm ${
-                      priority.status === 'complete' ? 'text-green-700' :
-                      priority.status === 'off-track' ? 'text-red-700' :
-                      'text-blue-700'
-                    }`}>
+                    <span 
+                      className="capitalize font-medium text-sm"
+                      style={{
+                        color: priority.status === 'complete' ? themeColors.primary :
+                               priority.status === 'off-track' ? '#b91c1c' :
+                               '#1e40af'
+                      }}
+                    >
                       {priority.status === 'complete' ? 'Complete' : 
                        priority.status === 'off-track' ? 'Off Track' : 'On Track'}
                     </span>
@@ -729,7 +743,13 @@ const PriorityCardClean = ({
                         </>
                       ) : (
                         <>
-                          <span className={`text-sm flex-1 ${milestone.completed ? 'line-through text-gray-400' : 'text-gray-700'}`}>
+                          <span 
+                            className={`text-sm flex-1 ${milestone.completed ? 'line-through' : ''}`}
+                            style={{
+                              color: milestone.completed ? themeColors.primary + '99' : '#374151',
+                              textDecorationColor: milestone.completed ? themeColors.primary : undefined
+                            }}
+                          >
                             {milestone.title}
                           </span>
                           {milestone.owner_name && milestone.owner_id !== priority.owner?.id && (
