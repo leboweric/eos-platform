@@ -577,30 +577,35 @@ const IssueDialog = ({
           {/* Action Buttons for existing issues */}
           {issue && (
             <div className="flex flex-wrap gap-2 pb-4 border-b border-white/20">
-              {console.log('IssueDialog Debug:', { 
-                issue: issue, 
-                hasOnTimelineChange: !!onTimelineChange,
-                hasOnMoveToTeam: !!onMoveToTeam,
-                hasOnCreateTodo: !!onCreateTodo 
-              })}
-              {onTimelineChange && (
-                <Button
-                  type="button"
-                  variant="outline"
-                  size="sm"
-                  onClick={() => {
-                    // Default to short_term if timeline is not set
-                    const currentTimeline = issue.timeline || 'short_term';
-                    const newTimeline = currentTimeline === 'short_term' ? 'long_term' : 'short_term';
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={async () => {
+                  // Default to short_term if timeline is not set
+                  const currentTimeline = issue.timeline || 'short_term';
+                  const newTimeline = currentTimeline === 'short_term' ? 'long_term' : 'short_term';
+                  
+                  // If onTimelineChange is provided, use it. Otherwise, update directly.
+                  if (onTimelineChange) {
                     onTimelineChange(issue.id, newTimeline);
-                    onClose();
-                  }}
-                  className="text-xs"
-                >
-                  <ArrowLeftRight className="mr-1 h-3 w-3" />
-                  Move to {(issue.timeline || 'short_term') === 'short_term' ? 'Long Term' : 'Short Term'}
-                </Button>
-              )}
+                  } else {
+                    // Direct update using the service
+                    try {
+                      await issuesService.updateIssue(issue.id, { timeline: newTimeline });
+                      // Refresh the page or show success message
+                      window.location.reload();
+                    } catch (error) {
+                      console.error('Failed to update issue timeline:', error);
+                    }
+                  }
+                  onClose();
+                }}
+                className="text-xs"
+              >
+                <ArrowLeftRight className="mr-1 h-3 w-3" />
+                Move to {(issue.timeline || 'short_term') === 'short_term' ? 'Long Term' : 'Short Term'}
+              </Button>
               {onMoveToTeam && (
                 <Button
                   type="button"
