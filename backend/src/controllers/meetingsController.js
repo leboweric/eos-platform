@@ -1,6 +1,7 @@
 import db from '../config/database.js';
 import emailService from '../services/emailService.js';
 import { recordMeetingConclusion } from '../services/todoReminderService.js';
+import { isZeroUUID, isLeadershipTeam } from '../utils/teamUtils.js';
 
 // Conclude a meeting and send summary email
 export const concludeMeeting = async (req, res) => {
@@ -73,7 +74,7 @@ export const concludeMeeting = async (req, res) => {
     
     // Get team/department name
     let teamName = 'Leadership Team'; // default for leadership team
-    if (isValidUUID && teamId && teamId !== '00000000-0000-0000-0000-000000000000') {
+    if (isValidUUID && teamId && !isZeroUUID(teamId)) {
       const teamResult = await db.query(
         'SELECT name FROM teams WHERE id = $1',
         [teamId]
@@ -102,7 +103,7 @@ export const concludeMeeting = async (req, res) => {
     // Only query team members if we have a valid UUID
     if (isValidUUID && teamId) {
       // IMPORTANT: Never use the zero UUID - it's shared across orgs and causes data leakage
-      if (teamId === '00000000-0000-0000-0000-000000000000') {
+      if (isZeroUUID(teamId)) {
         console.error('CRITICAL: Attempted to use shared zero UUID for team lookups - this causes cross-org data leakage!');
         // Fall back to organization-wide emails instead
         const orgUsersResult = await db.query(
@@ -191,7 +192,7 @@ export const concludeMeeting = async (req, res) => {
 
     // Get team member names for the email - match the logic used for emails
     let attendeeNames = [];
-    if (!teamId || teamId === '00000000-0000-0000-0000-000000000000') {
+    if (!teamId || isZeroUUID(teamId)) {
       // For org-wide or when zero UUID detected, get all org users
       const leadershipCheckResult = await db.query(
         `SELECT COUNT(*) as count FROM team_members WHERE team_id = $1`,
@@ -315,7 +316,7 @@ export const concludeMeeting = async (req, res) => {
     // Fetch open todos from database
     let openTodos = [];
     try {
-      const todoQuery = teamId && teamId !== '00000000-0000-0000-0000-000000000000' && isValidUUID
+      const todoQuery = teamId && !isZeroUUID(teamId) && isValidUUID
         ? `SELECT t.*, u.first_name, u.last_name 
            FROM todos t
            LEFT JOIN users u ON t.assigned_to_id = u.id
@@ -334,7 +335,7 @@ export const concludeMeeting = async (req, res) => {
       
       const todoResult = await db.query(
         todoQuery,
-        [teamId && teamId !== '00000000-0000-0000-0000-000000000000' && isValidUUID ? teamId : organizationId]
+        [teamId && !isZeroUUID(teamId) && isValidUUID ? teamId : organizationId]
       );
       
       console.log(`Found ${todoResult.rows.length} incomplete to-dos for team ${teamId}`);

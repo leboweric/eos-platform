@@ -1,5 +1,39 @@
 import db from '../config/database.js';
 
+// Check if a team ID is the legacy zero UUID (should not be used)
+export const isZeroUUID = (teamId) => {
+  return teamId === '00000000-0000-0000-0000-000000000000';
+};
+
+// Get the leadership team ID for an organization
+export const getLeadershipTeamId = async (organizationId) => {
+  try {
+    const result = await db.query(
+      'SELECT id FROM teams WHERE organization_id = $1 AND is_leadership_team = true LIMIT 1',
+      [organizationId]
+    );
+    return result.rows[0]?.id || null;
+  } catch (error) {
+    console.error('Error getting leadership team ID:', error);
+    return null;
+  }
+};
+
+// Check if a team is a leadership team
+export const isLeadershipTeam = async (teamId) => {
+  if (!teamId || isZeroUUID(teamId)) return false;
+  try {
+    const result = await db.query(
+      'SELECT is_leadership_team FROM teams WHERE id = $1',
+      [teamId]
+    );
+    return result.rows[0]?.is_leadership_team === true;
+  } catch (error) {
+    console.error('Error checking leadership team:', error);
+    return false;
+  }
+};
+
 // Get user's team context for Ninety.io model
 export const getUserTeamContext = async (userId, organizationId) => {
   try {
