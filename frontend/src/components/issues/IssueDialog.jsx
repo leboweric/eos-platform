@@ -591,19 +591,18 @@ const IssueDialog = ({
                   const currentTimeline = issue.timeline || 'short_term';
                   const newTimeline = currentTimeline === 'short_term' ? 'long_term' : 'short_term';
                   
-                  // If onTimelineChange is provided, use it. Otherwise, update directly.
-                  if (onTimelineChange) {
-                    await onTimelineChange(issue.id, newTimeline);
-                    onClose();
-                  } else {
-                    // Direct update using the service - just close dialog, don't reload
-                    try {
+                  try {
+                    // If onTimelineChange is provided, use it (it handles the update and UI refresh)
+                    if (onTimelineChange) {
+                      await onTimelineChange(issue.id, newTimeline);
+                    } else {
+                      // Fallback to direct update if no callback provided
                       await issuesService.updateIssue(issue.id, { timeline: newTimeline });
-                      // Just close the dialog - parent component will handle refresh if needed
-                      onClose();
-                    } catch (error) {
-                      console.error('Failed to update issue timeline:', error);
                     }
+                    // Close the dialog after successful update
+                    onClose();
+                  } catch (error) {
+                    console.error('Failed to update issue timeline:', error);
                   }
                 }}
                 className="text-sm whitespace-nowrap"

@@ -261,13 +261,28 @@ const IssuesPageClean = () => {
     try {
       console.log('Moving issue:', issueId, 'to timeline:', newTimeline);
       
-      // Optimistically update by removing the issue from its current list
-      if (newTimeline === 'long_term') {
-        // Moving from short to long - remove from short term list
+      // Find the issue being moved in either list
+      let movingIssue = shortTermIssues.find(issue => issue.id === issueId) || 
+                       longTermIssues.find(issue => issue.id === issueId);
+      
+      if (!movingIssue) {
+        console.error('Issue not found in either list');
+        await fetchIssues();
+        return;
+      }
+      
+      // Determine current timeline from where we found the issue
+      const currentTimeline = shortTermIssues.find(issue => issue.id === issueId) ? 'short_term' : 'long_term';
+      
+      // Optimistically update by moving the issue between lists
+      if (currentTimeline === 'short_term' && newTimeline === 'long_term') {
+        // Moving from short to long
         setShortTermIssues(prev => prev.filter(issue => issue.id !== issueId));
-      } else {
-        // Moving from long to short - remove from long term list
+        setLongTermIssues(prev => [...prev, { ...movingIssue, timeline: 'long_term' }]);
+      } else if (currentTimeline === 'long_term' && newTimeline === 'short_term') {
+        // Moving from long to short
         setLongTermIssues(prev => prev.filter(issue => issue.id !== issueId));
+        setShortTermIssues(prev => [...prev, { ...movingIssue, timeline: 'short_term' }]);
       }
       
       // Update the issue in the database
@@ -277,8 +292,8 @@ const IssuesPageClean = () => {
       // Show success message
       setSuccess(`Issue moved to ${newTimeline === 'short_term' ? 'Short Term' : 'Long Term'}`);
       
-      // Fetch just to ensure the other list gets updated
-      setTimeout(() => fetchIssues(), 1000);
+      // Clear any success message after a few seconds
+      setTimeout(() => setSuccess(null), 3000);
     } catch (error) {
       console.error('Failed to update issue timeline - Full error:', error);
       console.error('Error response:', error.response);
