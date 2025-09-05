@@ -23,8 +23,19 @@ export const concludeMeeting = async (req, res) => {
     } = req.body;
 
     const userId = req.user.id;
-    const organizationId = req.user.organization_id || req.user.organizationId;
+    // CRITICAL: Use organizationId from URL params, NOT from user's JWT token
+    // This ensures meeting summaries go to the correct organization
+    const organizationId = req.params.orgId;
     let teamId = req.params.teamId;
+    
+    // Validate organizationId is provided
+    if (!organizationId) {
+      console.error('CRITICAL: No organization ID provided in request params');
+      return res.status(400).json({ 
+        error: 'Organization ID is required',
+        message: 'Meeting cannot be concluded without organization context' 
+      });
+    }
     
     // Handle "null" string or invalid team IDs - treat as leadership team
     if (teamId === 'null' || teamId === 'undefined' || !teamId) {
