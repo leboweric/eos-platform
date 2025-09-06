@@ -1,29 +1,49 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { Moon, Sun } from 'lucide-react';
-import { useDarkMode } from '../contexts/DarkModeContext';
+import { Button } from './ui/button';
 
-const DarkModeToggle = ({ className = '' }) => {
-  const { darkMode, toggleDarkMode } = useDarkMode();
+export default function DarkModeToggle() {
+  const [isDark, setIsDark] = useState(false);
+
+  useEffect(() => {
+    // Check localStorage and system preference on mount
+    const stored = localStorage.getItem('theme');
+    const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+    
+    if (stored === 'dark' || (!stored && prefersDark)) {
+      setIsDark(true);
+      document.documentElement.classList.add('dark');
+    } else {
+      setIsDark(false);
+      document.documentElement.classList.remove('dark');
+    }
+  }, []);
+
+  const toggleDarkMode = () => {
+    if (isDark) {
+      document.documentElement.classList.remove('dark');
+      localStorage.setItem('theme', 'light');
+      setIsDark(false);
+    } else {
+      document.documentElement.classList.add('dark');
+      localStorage.setItem('theme', 'dark');
+      setIsDark(true);
+    }
+  };
 
   return (
-    <button
+    <Button
+      variant="ghost"
+      size="sm"
       onClick={toggleDarkMode}
-      className={`
-        p-2 rounded-lg transition-all duration-200
-        hover:bg-gray-100 dark:hover:bg-gray-800
-        text-gray-600 dark:text-gray-400
-        ${className}
-      `}
-      aria-label={darkMode ? 'Switch to light mode' : 'Switch to dark mode'}
-      title={darkMode ? 'Switch to light mode' : 'Switch to dark mode'}
+      className="h-8 w-8 p-0"
+      title={isDark ? 'Switch to light mode' : 'Switch to dark mode'}
     >
-      {darkMode ? (
-        <Sun className="h-5 w-5" />
+      {isDark ? (
+        <Sun className="h-4 w-4" />
       ) : (
-        <Moon className="h-5 w-5" />
+        <Moon className="h-4 w-4" />
       )}
-    </button>
+    </Button>
   );
-};
-
-export default DarkModeToggle;
+}
