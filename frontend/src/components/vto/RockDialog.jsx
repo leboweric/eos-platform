@@ -14,10 +14,20 @@ import { Badge } from '@/components/ui/badge';
 import { CalendarIcon, Brain, Sparkles, Loader2, AlertCircle } from 'lucide-react';
 import { format } from 'date-fns';
 import { aiRockAssistantService } from '../../services/aiRockAssistantService';
+import { useAuthStore } from '../../stores/authStore';
+import { getOrgTheme } from '../../utils/themeUtils';
 
 const RockDialog = ({ open, onOpenChange, rock, onSave }) => {
+  const { user } = useAuthStore();
   const navigate = useNavigate();
   const { orgId } = useParams();
+  
+  const [themeColors, setThemeColors] = useState({
+    primary: '#3B82F6',
+    secondary: '#1E40AF',
+    accent: '#60A5FA'
+  });
+  
   const [formData, setFormData] = useState({
     title: '',
     description: '',
@@ -33,6 +43,19 @@ const RockDialog = ({ open, onOpenChange, rock, onSave }) => {
   const [smartScore, setSmartScore] = useState(null);
   const [aiSuggestion, setAiSuggestion] = useState(null);
   const [showAiHelp, setShowAiHelp] = useState(false);
+
+  useEffect(() => {
+    const fetchTheme = async () => {
+      const orgId = user?.organizationId || user?.organization_id;
+      if (orgId) {
+        const theme = await getOrgTheme(orgId);
+        if (theme && theme.primary && theme.secondary) {
+          setThemeColors(theme);
+        }
+      }
+    };
+    fetchTheme();
+  }, [user]);
 
   useEffect(() => {
     if (rock) {
@@ -117,7 +140,9 @@ const RockDialog = ({ open, onOpenChange, rock, onSave }) => {
           <DialogHeader className="pb-6">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-3">
-                <div className="h-10 w-10 rounded-xl bg-gradient-to-br from-purple-500 to-indigo-600 flex items-center justify-center">
+                <div className="h-10 w-10 rounded-xl flex items-center justify-center" style={{
+                  background: `linear-gradient(135deg, ${themeColors.primary} 0%, ${themeColors.secondary} 100%)`
+                }}>
                   <Sparkles className="h-5 w-5 text-white" />
                 </div>
                 <div>
@@ -157,6 +182,9 @@ const RockDialog = ({ open, onOpenChange, rock, onSave }) => {
                 onChange={(e) => setFormData({ ...formData, title: e.target.value })}
                 placeholder="e.g., Launch new customer portal"
                 className="bg-white/80 backdrop-blur-sm border-white/20 rounded-xl shadow-sm transition-all duration-200"
+                style={{ '--focus-color': themeColors.primary }}
+                onFocus={(e) => e.target.style.borderColor = themeColors.primary}
+                onBlur={(e) => e.target.style.borderColor = ''}
                 required
               />
             </div>
@@ -187,6 +215,9 @@ const RockDialog = ({ open, onOpenChange, rock, onSave }) => {
                 placeholder="Describe what success looks like for this Priority..."
                 rows={3}
                 className="bg-white/80 backdrop-blur-sm border-white/20 rounded-xl shadow-sm transition-all duration-200"
+                style={{ '--focus-color': themeColors.primary }}
+                onFocus={(e) => e.target.style.borderColor = themeColors.primary}
+                onBlur={(e) => e.target.style.borderColor = ''}
               />
             </div>
 
@@ -212,7 +243,10 @@ const RockDialog = ({ open, onOpenChange, rock, onSave }) => {
                         type="button"
                         size="sm"
                         onClick={applySuggestion}
-                        className="bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white shadow-lg hover:shadow-xl transition-all duration-200"
+                        className="text-white shadow-lg hover:shadow-xl transition-all duration-200"
+                        style={{
+                          background: `linear-gradient(135deg, ${themeColors.primary} 0%, ${themeColors.secondary} 100%)`
+                        }}
                       >
                         Apply Suggestion
                       </Button>
@@ -263,6 +297,9 @@ const RockDialog = ({ open, onOpenChange, rock, onSave }) => {
                   onChange={(e) => setFormData({ ...formData, owner: e.target.value })}
                   placeholder="Who owns this Priority?"
                   className="bg-white/80 backdrop-blur-sm border-white/20 rounded-xl shadow-sm transition-all duration-200"
+                style={{ '--focus-color': themeColors.primary }}
+                onFocus={(e) => e.target.style.borderColor = themeColors.primary}
+                onBlur={(e) => e.target.style.borderColor = ''}
                   required
                 />
               </div>
@@ -275,6 +312,9 @@ const RockDialog = ({ open, onOpenChange, rock, onSave }) => {
                   onChange={(e) => setFormData({ ...formData, department: e.target.value })}
                   placeholder="e.g., Sales, Marketing"
                   className="bg-white/80 backdrop-blur-sm border-white/20 rounded-xl shadow-sm transition-all duration-200"
+                style={{ '--focus-color': themeColors.primary }}
+                onFocus={(e) => e.target.style.borderColor = themeColors.primary}
+                onBlur={(e) => e.target.style.borderColor = ''}
                 />
               </div>
             </div>
@@ -330,7 +370,10 @@ const RockDialog = ({ open, onOpenChange, rock, onSave }) => {
             </Button>
             <Button 
               type="submit"
-              className="bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700 text-white shadow-lg hover:shadow-xl transition-all duration-200 transform hover:scale-[1.02]"
+              className="text-white shadow-lg hover:shadow-xl transition-all duration-200 transform hover:scale-[1.02]"
+              style={{
+                background: `linear-gradient(135deg, ${themeColors.primary} 0%, ${themeColors.secondary} 100%)`
+              }}
             >
               {rock ? 'Save Priority' : 'Create Priority'}
             </Button>

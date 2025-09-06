@@ -4,12 +4,35 @@ import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Target } from 'lucide-react';
+import { useAuthStore } from '../../stores/authStore';
+import { getOrgTheme } from '../../utils/themeUtils';
 
 const CoreFocusDialog = ({ open, onOpenChange, data, onSave }) => {
+  const { user } = useAuthStore();
+  
+  const [themeColors, setThemeColors] = useState({
+    primary: '#3B82F6',
+    secondary: '#1E40AF',
+    accent: '#60A5FA'
+  });
+  
   const [formData, setFormData] = useState({
     purpose: '',
     niche: ''
   });
+
+  useEffect(() => {
+    const fetchTheme = async () => {
+      const orgId = user?.organizationId || user?.organization_id;
+      if (orgId) {
+        const theme = await getOrgTheme(orgId);
+        if (theme && theme.primary && theme.secondary) {
+          setThemeColors(theme);
+        }
+      }
+    };
+    fetchTheme();
+  }, [user]);
 
   useEffect(() => {
     if (data) {
@@ -32,7 +55,9 @@ const CoreFocusDialog = ({ open, onOpenChange, data, onSave }) => {
         <form onSubmit={handleSubmit}>
           <DialogHeader className="pb-6">
             <div className="flex items-center gap-3 mb-2">
-              <div className="h-10 w-10 rounded-xl bg-gradient-to-br from-amber-500 to-orange-600 flex items-center justify-center">
+              <div className="h-10 w-10 rounded-xl flex items-center justify-center" style={{
+                background: `linear-gradient(135deg, ${themeColors.primary} 0%, ${themeColors.secondary} 100%)`
+              }}>
                 <Target className="h-5 w-5 text-white" />
               </div>
               <div>
@@ -55,6 +80,9 @@ const CoreFocusDialog = ({ open, onOpenChange, data, onSave }) => {
                 placeholder="Why does your organization exist? What drives you?"
                 rows={3}
                 className="bg-white/80 backdrop-blur-sm border-white/20 rounded-xl shadow-sm transition-all duration-200"
+                style={{ '--focus-color': themeColors.primary }}
+                onFocus={(e) => e.target.style.borderColor = themeColors.primary}
+                onBlur={(e) => e.target.style.borderColor = ''}
                 required
               />
             </div>
@@ -69,6 +97,9 @@ const CoreFocusDialog = ({ open, onOpenChange, data, onSave }) => {
                 placeholder="What is your organization's 'sweet spot'? Where do you excel?"
                 rows={3}
                 className="bg-white/80 backdrop-blur-sm border-white/20 rounded-xl shadow-sm transition-all duration-200"
+                style={{ '--focus-color': themeColors.primary }}
+                onFocus={(e) => e.target.style.borderColor = themeColors.primary}
+                onBlur={(e) => e.target.style.borderColor = ''}
                 required
               />
             </div>
@@ -84,7 +115,10 @@ const CoreFocusDialog = ({ open, onOpenChange, data, onSave }) => {
             </Button>
             <Button 
               type="submit"
-              className="bg-gradient-to-r from-amber-600 to-orange-600 hover:from-amber-700 hover:to-orange-700 text-white shadow-lg hover:shadow-xl transition-all duration-200 transform hover:scale-[1.02]"
+              className="text-white shadow-lg hover:shadow-xl transition-all duration-200 transform hover:scale-[1.02]"
+              style={{
+                background: `linear-gradient(135deg, ${themeColors.primary} 0%, ${themeColors.secondary} 100%)`
+              }}
             >
               Save Core Focus
             </Button>

@@ -7,8 +7,12 @@ import { Input } from '@/components/ui/input';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Loader2, Save, AlertCircle, Plus, Trash2, Rocket } from 'lucide-react';
 import { getRevenueLabel, getRevenueLabelWithSuffix } from '../../utils/revenueUtils';
+import { useAuthStore } from '../../stores/authStore';
+import { getOrgTheme } from '../../utils/themeUtils';
 
 const ThreeYearPictureDialog = ({ open, onOpenChange, data, onSave, organization }) => {
+  const { user } = useAuthStore();
+  
   // Calculate default date without timezone conversion
   const getDefaultDate = () => {
     const date = new Date();
@@ -18,6 +22,12 @@ const ThreeYearPictureDialog = ({ open, onOpenChange, data, onSave, organization
     const day = String(date.getDate()).padStart(2, '0');
     return `${year}-${month}-${day}`;
   };
+  
+  const [themeColors, setThemeColors] = useState({
+    primary: '#3B82F6',
+    secondary: '#1E40AF',
+    accent: '#60A5FA'
+  });
   
   const [formData, setFormData] = useState({
     revenue: '',
@@ -29,6 +39,19 @@ const ThreeYearPictureDialog = ({ open, onOpenChange, data, onSave, organization
   });
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState(null);
+
+  useEffect(() => {
+    const fetchTheme = async () => {
+      const orgId = user?.organizationId || user?.organization_id;
+      if (orgId) {
+        const theme = await getOrgTheme(orgId);
+        if (theme && theme.primary && theme.secondary) {
+          setThemeColors(theme);
+        }
+      }
+    };
+    fetchTheme();
+  }, [user]);
 
   useEffect(() => {
     if (data) {
@@ -87,8 +110,10 @@ const ThreeYearPictureDialog = ({ open, onOpenChange, data, onSave, organization
         <form onSubmit={handleSubmit} className="flex flex-col h-full">
           <DialogHeader className="flex-shrink-0 p-6 pb-0">
             <div className="flex items-center gap-3 mb-2">
-              <div className="p-2 rounded-xl bg-gradient-to-br from-blue-500/20 to-purple-500/20">
-                <Rocket className="h-5 w-5 text-blue-600" />
+              <div className="h-10 w-10 rounded-xl flex items-center justify-center" style={{
+                background: `linear-gradient(135deg, ${themeColors.primary} 0%, ${themeColors.secondary} 100%)`
+              }}>
+                <Rocket className="h-5 w-5 text-white" />
               </div>
               <DialogTitle className="text-xl font-bold bg-gradient-to-r from-slate-900 to-slate-700 bg-clip-text text-transparent">
                 Long-term Vision (3 Years)
@@ -219,7 +244,10 @@ const ThreeYearPictureDialog = ({ open, onOpenChange, data, onSave, organization
                 value={formData.futureDate}
                 onChange={(e) => setFormData({ ...formData, futureDate: e.target.value })}
                 required
-                className="bg-white/80 backdrop-blur-sm border-white/20 rounded-xl shadow-sm transition-all duration-200 focus:border-blue-400"
+                className="bg-white/80 dark:bg-gray-700/50 backdrop-blur-sm border-white/20 dark:border-gray-600/50 rounded-xl shadow-sm transition-all duration-200"
+                style={{ '--focus-color': themeColors.primary }}
+                onFocus={(e) => e.target.style.borderColor = themeColors.primary}
+                onBlur={(e) => e.target.style.borderColor = ''}
               />
               <p className="text-xs text-gray-500">Select the date 3 years from now</p>
             </div>
@@ -320,7 +348,10 @@ const ThreeYearPictureDialog = ({ open, onOpenChange, data, onSave, organization
                         newItems[index] = e.target.value;
                         return { ...prev, lookLikeItems: newItems };
                       })}
-                      className="bg-white/80 backdrop-blur-sm border-white/20 rounded-xl shadow-sm transition-all duration-200 focus:border-blue-400"
+                      className="bg-white/80 dark:bg-gray-700/50 backdrop-blur-sm border-white/20 dark:border-gray-600/50 rounded-xl shadow-sm transition-all duration-200"
+                style={{ '--focus-color': themeColors.primary }}
+                onFocus={(e) => e.target.style.borderColor = themeColors.primary}
+                onBlur={(e) => e.target.style.borderColor = ''}
                     />
                     {formData.lookLikeItems.length > 1 && (
                       <Button
@@ -353,7 +384,10 @@ const ThreeYearPictureDialog = ({ open, onOpenChange, data, onSave, organization
             <Button 
               type="submit" 
               disabled={saving}
-              className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white rounded-xl shadow-lg hover:shadow-xl transition-all duration-200 transform hover:scale-[1.02] disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none"
+              className="text-white rounded-xl shadow-lg hover:shadow-xl transition-all duration-200 transform hover:scale-[1.02] disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none"
+              style={{
+                background: `linear-gradient(135deg, ${themeColors.primary} 0%, ${themeColors.secondary} 100%)`
+              }}
             >
               {saving ? (
                 <>

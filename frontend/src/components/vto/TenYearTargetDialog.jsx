@@ -5,15 +5,38 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Mountain } from 'lucide-react';
+import { useAuthStore } from '../../stores/authStore';
+import { getOrgTheme } from '../../utils/themeUtils';
 
 const TenYearTargetDialog = ({ open, onOpenChange, data, onSave }) => {
+  const { user } = useAuthStore();
   const currentYear = new Date().getFullYear();
+  
+  const [themeColors, setThemeColors] = useState({
+    primary: '#3B82F6',
+    secondary: '#1E40AF',
+    accent: '#60A5FA'
+  });
+  
   const [formData, setFormData] = useState({
     targetDescription: '',
     targetYear: currentYear + 10,
     runningTotalDescription: '',
     currentRunningTotal: ''
   });
+
+  useEffect(() => {
+    const fetchTheme = async () => {
+      const orgId = user?.organizationId || user?.organization_id;
+      if (orgId) {
+        const theme = await getOrgTheme(orgId);
+        if (theme && theme.primary && theme.secondary) {
+          setThemeColors(theme);
+        }
+      }
+    };
+    fetchTheme();
+  }, [user]);
 
   useEffect(() => {
     if (data) {
@@ -44,8 +67,10 @@ const TenYearTargetDialog = ({ open, onOpenChange, data, onSave }) => {
         <form onSubmit={handleSubmit}>
           <DialogHeader className="pb-4">
             <div className="flex items-center gap-3 mb-2">
-              <div className="p-2 rounded-xl bg-gradient-to-br from-emerald-500/20 to-green-500/20">
-                <Mountain className="h-5 w-5 text-emerald-600" />
+              <div className="h-10 w-10 rounded-xl flex items-center justify-center" style={{
+                background: `linear-gradient(135deg, ${themeColors.primary} 0%, ${themeColors.secondary} 100%)`
+              }}>
+                <Mountain className="h-5 w-5 text-white" />
               </div>
               <DialogTitle className="text-xl font-bold bg-gradient-to-r from-slate-900 to-slate-700 bg-clip-text text-transparent">
                 Edit 10-Year Target™
@@ -67,7 +92,10 @@ const TenYearTargetDialog = ({ open, onOpenChange, data, onSave }) => {
                 placeholder="What will your organization achieve in 10 years?"
                 rows={3}
                 required
-                className="bg-white/80 backdrop-blur-sm border-white/20 rounded-xl shadow-sm transition-all duration-200 focus:border-emerald-400"
+                className="bg-white/80 backdrop-blur-sm border-white/20 rounded-xl shadow-sm transition-all duration-200 "
+                style={{ '--focus-color': themeColors.primary }}
+                onFocus={(e) => e.target.style.borderColor = themeColors.primary}
+                onBlur={(e) => e.target.style.borderColor = ''}"
               />
             </div>
             <div className="grid grid-cols-2 gap-4">
@@ -82,7 +110,10 @@ const TenYearTargetDialog = ({ open, onOpenChange, data, onSave }) => {
                   onChange={(e) => setFormData({ ...formData, targetYear: e.target.value })}
                   min={currentYear + 1}
                   required
-                  className="bg-white/80 backdrop-blur-sm border-white/20 rounded-xl shadow-sm transition-all duration-200 focus:border-emerald-400"
+                  className="bg-white/80 backdrop-blur-sm border-white/20 rounded-xl shadow-sm transition-all duration-200 "
+                style={{ '--focus-color': themeColors.primary }}
+                onFocus={(e) => e.target.style.borderColor = themeColors.primary}
+                onBlur={(e) => e.target.style.borderColor = ''}"
                 />
               </div>
               <div className="space-y-2">
@@ -92,7 +123,10 @@ const TenYearTargetDialog = ({ open, onOpenChange, data, onSave }) => {
                   value={formData.currentRunningTotal}
                   onChange={(e) => setFormData({ ...formData, currentRunningTotal: e.target.value })}
                   placeholder="e.g., $10M ARR, 500 customers"
-                  className="bg-white/80 backdrop-blur-sm border-white/20 rounded-xl shadow-sm transition-all duration-200 focus:border-emerald-400"
+                  className="bg-white/80 backdrop-blur-sm border-white/20 rounded-xl shadow-sm transition-all duration-200 "
+                style={{ '--focus-color': themeColors.primary }}
+                onFocus={(e) => e.target.style.borderColor = themeColors.primary}
+                onBlur={(e) => e.target.style.borderColor = ''}"
                 />
               </div>
             </div>
@@ -103,7 +137,10 @@ const TenYearTargetDialog = ({ open, onOpenChange, data, onSave }) => {
                 value={formData.runningTotalDescription}
                 onChange={(e) => setFormData({ ...formData, runningTotalDescription: e.target.value })}
                 placeholder="What metric are you tracking? (e.g., Annual Revenue, Customer Count)"
-                className="bg-white/80 backdrop-blur-sm border-white/20 rounded-xl shadow-sm transition-all duration-200 focus:border-emerald-400"
+                className="bg-white/80 backdrop-blur-sm border-white/20 rounded-xl shadow-sm transition-all duration-200 "
+                style={{ '--focus-color': themeColors.primary }}
+                onFocus={(e) => e.target.style.borderColor = themeColors.primary}
+                onBlur={(e) => e.target.style.borderColor = ''}"
               />
             </div>
           </div>
@@ -118,7 +155,10 @@ const TenYearTargetDialog = ({ open, onOpenChange, data, onSave }) => {
             </Button>
             <Button 
               type="submit"
-              className="bg-gradient-to-r from-emerald-600 to-green-600 hover:from-emerald-700 hover:to-green-700 text-white rounded-xl shadow-lg hover:shadow-xl transition-all duration-200 transform hover:scale-[1.02]"
+              className="text-white rounded-xl shadow-lg hover:shadow-xl transition-all duration-200 transform hover:scale-[1.02]"
+              style={{
+                background: `linear-gradient(135deg, ${themeColors.primary} 0%, ${themeColors.secondary} 100%)`
+              }}
             >
               Save Target
             </Button>

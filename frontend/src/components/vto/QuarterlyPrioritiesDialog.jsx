@@ -8,8 +8,18 @@ import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Loader2, Save, AlertCircle, Plus, Trash2, Target } from 'lucide-react';
 import { getRevenueLabelWithSuffix } from '@/utils/revenueUtils';
+import { useAuthStore } from '../../stores/authStore';
+import { getOrgTheme } from '../../utils/themeUtils';
 
 const QuarterlyPrioritiesDialog = ({ open, onOpenChange, data, onSave, organization }) => {
+  const { user } = useAuthStore();
+  
+  const [themeColors, setThemeColors] = useState({
+    primary: '#3B82F6',
+    secondary: '#1E40AF',
+    accent: '#60A5FA'
+  });
+  
   const [formData, setFormData] = useState({
     quarter: '',
     year: new Date().getFullYear(),
@@ -21,6 +31,19 @@ const QuarterlyPrioritiesDialog = ({ open, onOpenChange, data, onSave, organizat
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState(null);
   const [newPriority, setNewPriority] = useState('');
+
+  useEffect(() => {
+    const fetchTheme = async () => {
+      const orgId = user?.organizationId || user?.organization_id;
+      if (orgId) {
+        const theme = await getOrgTheme(orgId);
+        if (theme && theme.primary && theme.secondary) {
+          setThemeColors(theme);
+        }
+      }
+    };
+    fetchTheme();
+  }, [user]);
 
   useEffect(() => {
     if (data) {
@@ -102,8 +125,10 @@ const QuarterlyPrioritiesDialog = ({ open, onOpenChange, data, onSave, organizat
         <form onSubmit={handleSubmit}>
           <DialogHeader className="pb-4">
             <div className="flex items-center gap-3 mb-2">
-              <div className="p-2 rounded-xl bg-gradient-to-br from-orange-500/20 to-red-500/20">
-                <Target className="h-5 w-5 text-orange-600" />
+              <div className="h-10 w-10 rounded-xl flex items-center justify-center" style={{
+                background: `linear-gradient(135deg, ${themeColors.primary} 0%, ${themeColors.secondary} 100%)`
+              }}>
+                <Target className="h-5 w-5 text-white" />
               </div>
               <DialogTitle className="text-xl font-bold bg-gradient-to-r from-slate-900 to-slate-700 bg-clip-text text-transparent">
                 Quarterly Priorities
@@ -150,7 +175,10 @@ const QuarterlyPrioritiesDialog = ({ open, onOpenChange, data, onSave, organizat
                   onChange={(e) => setFormData({ ...formData, year: parseInt(e.target.value) })}
                   min={new Date().getFullYear() - 1}
                   max={new Date().getFullYear() + 2}
-                  className="bg-white/80 backdrop-blur-sm border-white/20 rounded-xl shadow-sm transition-all duration-200 focus:border-orange-400"
+                  className="bg-white/80 backdrop-blur-sm border-white/20 rounded-xl shadow-sm transition-all duration-200 "
+                  style={{ '--focus-color': themeColors.primary }}
+                  onFocus={(e) => e.target.style.borderColor = themeColors.primary}
+                  onBlur={(e) => e.target.style.borderColor = ''}"
                 />
               </div>
             </div>
@@ -163,7 +191,10 @@ const QuarterlyPrioritiesDialog = ({ open, onOpenChange, data, onSave, organizat
                   value={formData.revenue}
                   onChange={(e) => setFormData({ ...formData, revenue: e.target.value })}
                   placeholder="e.g., $500K"
-                  className="bg-white/80 backdrop-blur-sm border-white/20 rounded-xl shadow-sm transition-all duration-200 focus:border-orange-400"
+                  className="bg-white/80 backdrop-blur-sm border-white/20 rounded-xl shadow-sm transition-all duration-200 "
+                  style={{ '--focus-color': themeColors.primary }}
+                  onFocus={(e) => e.target.style.borderColor = themeColors.primary}
+                  onBlur={(e) => e.target.style.borderColor = ''}"
                 />
               </div>
 
@@ -174,7 +205,10 @@ const QuarterlyPrioritiesDialog = ({ open, onOpenChange, data, onSave, organizat
                   value={formData.profit}
                   onChange={(e) => setFormData({ ...formData, profit: e.target.value })}
                   placeholder="e.g., $75K or 15%"
-                  className="bg-white/80 backdrop-blur-sm border-white/20 rounded-xl shadow-sm transition-all duration-200 focus:border-orange-400"
+                  className="bg-white/80 backdrop-blur-sm border-white/20 rounded-xl shadow-sm transition-all duration-200 "
+                  style={{ '--focus-color': themeColors.primary }}
+                  onFocus={(e) => e.target.style.borderColor = themeColors.primary}
+                  onBlur={(e) => e.target.style.borderColor = ''}"
                 />
               </div>
             </div>
@@ -199,7 +233,11 @@ const QuarterlyPrioritiesDialog = ({ open, onOpenChange, data, onSave, organizat
                   {formData.priorities.map((priority, index) => (
                     <div key={priority.id} className="flex items-center gap-2">
                       <span className="text-gray-400 w-6">{index + 1}.</span>
-                      <div className="flex-1 bg-gradient-to-r from-orange-50 to-amber-50 rounded-xl px-3 py-2 text-amber-900 font-medium border border-orange-200/50">
+                      <div className="flex-1 rounded-xl px-3 py-2 text-white font-medium" style={{
+                        background: `linear-gradient(135deg, ${themeColors.primary}20 0%, ${themeColors.secondary}20 100%)`,
+                        border: `1px solid ${themeColors.primary}30`,
+                        color: themeColors.primary
+                      }}>
                         {priority.text}
                       </div>
                       <Button
@@ -229,13 +267,19 @@ const QuarterlyPrioritiesDialog = ({ open, onOpenChange, data, onSave, organizat
                         handleAddPriority();
                       }
                     }}
-                    className="bg-white/80 backdrop-blur-sm border-white/20 rounded-xl shadow-sm transition-all duration-200 focus:border-orange-400"
+                    className="bg-white/80 backdrop-blur-sm border-white/20 rounded-xl shadow-sm transition-all duration-200 "
+                  style={{ '--focus-color': themeColors.primary }}
+                  onFocus={(e) => e.target.style.borderColor = themeColors.primary}
+                  onBlur={(e) => e.target.style.borderColor = ''}"
                   />
                   <Button
                     type="button"
                     onClick={handleAddPriority}
                     disabled={!newPriority.trim()}
-                    className="bg-gradient-to-r from-orange-600 to-red-600 hover:from-orange-700 hover:to-red-700 text-white rounded-xl shadow-lg hover:shadow-xl transition-all duration-200 transform hover:scale-[1.02] disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none"
+                    className="text-white rounded-xl shadow-lg hover:shadow-xl transition-all duration-200 transform hover:scale-[1.02] disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none"
+                    style={{
+                      background: `linear-gradient(135deg, ${themeColors.primary} 0%, ${themeColors.secondary} 100%)`
+                    }}
                   >
                     <Plus className="h-4 w-4" />
                   </Button>
@@ -251,7 +295,10 @@ const QuarterlyPrioritiesDialog = ({ open, onOpenChange, data, onSave, organizat
                 onChange={(e) => setFormData({ ...formData, rocks: e.target.value })}
                 placeholder="List your company rocks for this quarter..."
                 rows={4}
-                className="bg-white/80 backdrop-blur-sm border-white/20 rounded-xl shadow-sm transition-all duration-200 focus:border-orange-400"
+                className="bg-white/80 backdrop-blur-sm border-white/20 rounded-xl shadow-sm transition-all duration-200 "
+                  style={{ '--focus-color': themeColors.primary }}
+                  onFocus={(e) => e.target.style.borderColor = themeColors.primary}
+                  onBlur={(e) => e.target.style.borderColor = ''}"
               />
             </div>
           </div>
@@ -268,7 +315,10 @@ const QuarterlyPrioritiesDialog = ({ open, onOpenChange, data, onSave, organizat
             <Button 
               type="submit" 
               disabled={saving || formData.priorities.length < 3}
-              className="bg-gradient-to-r from-orange-600 to-red-600 hover:from-orange-700 hover:to-red-700 text-white rounded-xl shadow-lg hover:shadow-xl transition-all duration-200 transform hover:scale-[1.02] disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none"
+              className="text-white rounded-xl shadow-lg hover:shadow-xl transition-all duration-200 transform hover:scale-[1.02] disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none"
+              style={{
+                background: `linear-gradient(135deg, ${themeColors.primary} 0%, ${themeColors.secondary} 100%)`
+              }}
             >
               {saving ? (
                 <>

@@ -5,12 +5,35 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Heart } from 'lucide-react';
+import { useAuthStore } from '../../stores/authStore';
+import { getOrgTheme } from '../../utils/themeUtils';
 
 const CoreValueDialog = ({ open, onOpenChange, value, onSave }) => {
+  const { user } = useAuthStore();
+  
+  const [themeColors, setThemeColors] = useState({
+    primary: '#3B82F6',
+    secondary: '#1E40AF',
+    accent: '#60A5FA'
+  });
+  
   const [formData, setFormData] = useState({
     value: '',
     description: ''
   });
+
+  useEffect(() => {
+    const fetchTheme = async () => {
+      const orgId = user?.organizationId || user?.organization_id;
+      if (orgId) {
+        const theme = await getOrgTheme(orgId);
+        if (theme && theme.primary && theme.secondary) {
+          setThemeColors(theme);
+        }
+      }
+    };
+    fetchTheme();
+  }, [user]);
 
   useEffect(() => {
     if (value) {
@@ -43,7 +66,9 @@ const CoreValueDialog = ({ open, onOpenChange, value, onSave }) => {
         <form onSubmit={handleSubmit}>
           <DialogHeader className="pb-6">
             <div className="flex items-center gap-3 mb-2">
-              <div className="h-10 w-10 rounded-xl bg-gradient-to-br from-pink-500 to-rose-600 flex items-center justify-center">
+              <div className="h-10 w-10 rounded-xl flex items-center justify-center" style={{
+                background: `linear-gradient(135deg, ${themeColors.primary} 0%, ${themeColors.secondary} 100%)`
+              }}>
                 <Heart className="h-5 w-5 text-white" />
               </div>
               <div>
@@ -65,6 +90,9 @@ const CoreValueDialog = ({ open, onOpenChange, value, onSave }) => {
                 onChange={(e) => setFormData({ ...formData, value: e.target.value })}
                 placeholder="e.g., Integrity, Innovation, Excellence"
                 className="bg-white/80 backdrop-blur-sm border-white/20 rounded-xl shadow-sm transition-all duration-200"
+                style={{ '--focus-color': themeColors.primary }}
+                onFocus={(e) => e.target.style.borderColor = themeColors.primary}
+                onBlur={(e) => e.target.style.borderColor = ''}
                 required
               />
             </div>
@@ -77,6 +105,9 @@ const CoreValueDialog = ({ open, onOpenChange, value, onSave }) => {
                 placeholder="Describe what this value means for your organization..."
                 rows={3}
                 className="bg-white/80 backdrop-blur-sm border-white/20 rounded-xl shadow-sm transition-all duration-200"
+                style={{ '--focus-color': themeColors.primary }}
+                onFocus={(e) => e.target.style.borderColor = themeColors.primary}
+                onBlur={(e) => e.target.style.borderColor = ''}
               />
             </div>
           </div>
@@ -91,7 +122,10 @@ const CoreValueDialog = ({ open, onOpenChange, value, onSave }) => {
             </Button>
             <Button 
               type="submit"
-              className="bg-gradient-to-r from-pink-600 to-rose-600 hover:from-pink-700 hover:to-rose-700 text-white shadow-lg hover:shadow-xl transition-all duration-200 transform hover:scale-[1.02]"
+              className="text-white shadow-lg hover:shadow-xl transition-all duration-200 transform hover:scale-[1.02]"
+              style={{
+                background: `linear-gradient(135deg, ${themeColors.primary} 0%, ${themeColors.secondary} 100%)`
+              }}
             >
               {value ? 'Update' : 'Add'} Core Value
             </Button>

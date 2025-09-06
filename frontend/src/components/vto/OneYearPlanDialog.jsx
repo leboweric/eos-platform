@@ -8,8 +8,18 @@ import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Loader2, Save, AlertCircle, Plus, Trash2, Calendar } from 'lucide-react';
 import { getRevenueLabel, getRevenueLabelWithSuffix } from '../../utils/revenueUtils';
 import { formatDateLocal } from '../../utils/dateUtils';
+import { useAuthStore } from '../../stores/authStore';
+import { getOrgTheme } from '../../utils/themeUtils';
 
 const OneYearPlanDialog = ({ open, onOpenChange, data, onSave, organization }) => {
+  const { user } = useAuthStore();
+  
+  const [themeColors, setThemeColors] = useState({
+    primary: '#3B82F6',
+    secondary: '#1E40AF',
+    accent: '#60A5FA'
+  });
+  
   const [formData, setFormData] = useState({
     revenue: '',
     profit: '',
@@ -20,6 +30,19 @@ const OneYearPlanDialog = ({ open, onOpenChange, data, onSave, organization }) =
   });
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState(null);
+
+  useEffect(() => {
+    const fetchTheme = async () => {
+      const orgId = user?.organizationId || user?.organization_id;
+      if (orgId) {
+        const theme = await getOrgTheme(orgId);
+        if (theme && theme.primary && theme.secondary) {
+          setThemeColors(theme);
+        }
+      }
+    };
+    fetchTheme();
+  }, [user]);
 
   useEffect(() => {
     if (data) {
@@ -73,8 +96,10 @@ const OneYearPlanDialog = ({ open, onOpenChange, data, onSave, organization }) =
         <form onSubmit={handleSubmit} className="flex flex-col h-full">
           <DialogHeader className="flex-shrink-0 p-6 pb-0">
             <div className="flex items-center gap-3 mb-2">
-              <div className="p-2 rounded-xl bg-gradient-to-br from-indigo-500/20 to-purple-500/20">
-                <Calendar className="h-5 w-5 text-indigo-600" />
+              <div className="h-10 w-10 rounded-xl flex items-center justify-center" style={{
+                background: `linear-gradient(135deg, ${themeColors.primary} 0%, ${themeColors.secondary} 100%)`
+              }}>
+                <Calendar className="h-5 w-5 text-white" />
               </div>
               <DialogTitle className="text-xl font-bold bg-gradient-to-r from-slate-900 to-slate-700 bg-clip-text text-transparent">
                 Annual Goals
@@ -124,7 +149,10 @@ const OneYearPlanDialog = ({ open, onOpenChange, data, onSave, organization }) =
                           newStreams[index].name = e.target.value;
                           setFormData({ ...formData, revenueStreams: newStreams });
                         }}
-                        className="flex-1 bg-white/80 backdrop-blur-sm border-white/20 rounded-xl shadow-sm transition-all duration-200 focus:border-indigo-400"
+                        className="flex-1 bg-white/80 backdrop-blur-sm border-white/20 rounded-xl shadow-sm transition-all duration-200 "
+                        style={{ '--focus-color': themeColors.primary }}
+                        onFocus={(e) => e.target.style.borderColor = themeColors.primary}
+                        onBlur={(e) => e.target.style.borderColor = ''}"
                       />
                       <div className="relative w-32">
                         <span className="absolute left-2 top-1/2 -translate-y-1/2 text-gray-500 text-sm">$</span>
@@ -138,7 +166,10 @@ const OneYearPlanDialog = ({ open, onOpenChange, data, onSave, organization }) =
                             newStreams[index].revenue_target = e.target.value;
                             setFormData({ ...formData, revenueStreams: newStreams });
                           }}
-                          className="pl-6 pr-8 bg-white/80 backdrop-blur-sm border-white/20 rounded-xl shadow-sm transition-all duration-200 focus:border-indigo-400"
+                          className="pl-6 pr-8 bg-white/80 backdrop-blur-sm border-white/20 rounded-xl shadow-sm transition-all duration-200 "
+                        style={{ '--focus-color': themeColors.primary }}
+                        onFocus={(e) => e.target.style.borderColor = themeColors.primary}
+                        onBlur={(e) => e.target.style.borderColor = ''}"
                         />
                         <span className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-500 text-sm">M</span>
                       </div>
@@ -169,7 +200,10 @@ const OneYearPlanDialog = ({ open, onOpenChange, data, onSave, organization }) =
                       value={formData.revenue}
                       onChange={(e) => setFormData({ ...formData, revenue: e.target.value })}
                       placeholder="0.635"
-                      className="pl-8 bg-white/80 backdrop-blur-sm border-white/20 rounded-xl shadow-sm transition-all duration-200 focus:border-indigo-400"
+                      className="pl-8 bg-white/80 backdrop-blur-sm border-white/20 rounded-xl shadow-sm transition-all duration-200 "
+                        style={{ '--focus-color': themeColors.primary }}
+                        onFocus={(e) => e.target.style.borderColor = themeColors.primary}
+                        onBlur={(e) => e.target.style.borderColor = ''}"
                     />
                     <span className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500">M</span>
                   </div>
@@ -190,7 +224,10 @@ const OneYearPlanDialog = ({ open, onOpenChange, data, onSave, organization }) =
                   value={formData.profit}
                   onChange={(e) => setFormData({ ...formData, profit: e.target.value })}
                   placeholder="20"
-                  className="pr-8 bg-white/80 backdrop-blur-sm border-white/20 rounded-xl shadow-sm transition-all duration-200 focus:border-indigo-400"
+                  className="pr-8 bg-white/80 backdrop-blur-sm border-white/20 rounded-xl shadow-sm transition-all duration-200 "
+                        style={{ '--focus-color': themeColors.primary }}
+                        onFocus={(e) => e.target.style.borderColor = themeColors.primary}
+                        onBlur={(e) => e.target.style.borderColor = ''}"
                 />
                 <span className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500">%</span>
               </div>
@@ -205,7 +242,10 @@ const OneYearPlanDialog = ({ open, onOpenChange, data, onSave, organization }) =
                 value={formData.targetDate}
                 onChange={(e) => setFormData({ ...formData, targetDate: e.target.value })}
                 required
-                className="bg-white/80 backdrop-blur-sm border-white/20 rounded-xl shadow-sm transition-all duration-200 focus:border-indigo-400"
+                className="bg-white/80 backdrop-blur-sm border-white/20 rounded-xl shadow-sm transition-all duration-200 "
+                        style={{ '--focus-color': themeColors.primary }}
+                        onFocus={(e) => e.target.style.borderColor = themeColors.primary}
+                        onBlur={(e) => e.target.style.borderColor = ''}"
               />
               <p className="text-xs text-gray-500">Select the date 1 year from now</p>
             </div>
@@ -238,7 +278,10 @@ const OneYearPlanDialog = ({ open, onOpenChange, data, onSave, organization }) =
                         newItems[index] = { ...newItems[index], name: e.target.value };
                         return { ...prev, measurables: newItems };
                       })}
-                      className="flex-1 bg-white/80 backdrop-blur-sm border-white/20 rounded-xl shadow-sm transition-all duration-200 focus:border-indigo-400"
+                      className="flex-1 bg-white/80 backdrop-blur-sm border-white/20 rounded-xl shadow-sm transition-all duration-200 "
+                        style={{ '--focus-color': themeColors.primary }}
+                        onFocus={(e) => e.target.style.borderColor = themeColors.primary}
+                        onBlur={(e) => e.target.style.borderColor = ''}"
                     />
                     <Input
                       type="text"
@@ -249,7 +292,10 @@ const OneYearPlanDialog = ({ open, onOpenChange, data, onSave, organization }) =
                         newItems[index] = { ...newItems[index], value: e.target.value };
                         return { ...prev, measurables: newItems };
                       })}
-                      className="w-32 bg-white/80 backdrop-blur-sm border-white/20 rounded-xl shadow-sm transition-all duration-200 focus:border-indigo-400"
+                      className="w-32 bg-white/80 backdrop-blur-sm border-white/20 rounded-xl shadow-sm transition-all duration-200 "
+                        style={{ '--focus-color': themeColors.primary }}
+                        onFocus={(e) => e.target.style.borderColor = themeColors.primary}
+                        onBlur={(e) => e.target.style.borderColor = ''}"
                     />
                     <Button
                       type="button"
@@ -303,7 +349,10 @@ const OneYearPlanDialog = ({ open, onOpenChange, data, onSave, organization }) =
                           newGoals[index] = e.target.value;
                           return { ...prev, goals: newGoals };
                         })}
-                        className="bg-white/80 backdrop-blur-sm border-white/20 rounded-xl shadow-sm transition-all duration-200 focus:border-indigo-400"
+                        className="bg-white/80 backdrop-blur-sm border-white/20 rounded-xl shadow-sm transition-all duration-200 "
+                        style={{ '--focus-color': themeColors.primary }}
+                        onFocus={(e) => e.target.style.borderColor = themeColors.primary}
+                        onBlur={(e) => e.target.style.borderColor = ''}"
                       />
                       {showDeleteButton && (
                         <Button
@@ -337,7 +386,10 @@ const OneYearPlanDialog = ({ open, onOpenChange, data, onSave, organization }) =
             <Button 
               type="submit" 
               disabled={saving}
-              className="bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white rounded-xl shadow-lg hover:shadow-xl transition-all duration-200 transform hover:scale-[1.02] disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none"
+              className="text-white rounded-xl shadow-lg hover:shadow-xl transition-all duration-200 transform hover:scale-[1.02] disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none"
+              style={{
+                background: `linear-gradient(135deg, ${themeColors.primary} 0%, ${themeColors.secondary} 100%)`
+              }}
             >
               {saving ? (
                 <>
