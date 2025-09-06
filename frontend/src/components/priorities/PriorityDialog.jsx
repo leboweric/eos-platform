@@ -248,7 +248,7 @@ const PriorityDialog = ({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[900px] w-full max-h-[90vh] overflow-hidden flex flex-col bg-white/95 backdrop-blur-sm border border-white/20 shadow-2xl">
+      <DialogContent className="sm:max-w-[900px] w-full max-h-[90vh] overflow-hidden flex flex-col bg-white/95 dark:bg-gray-800/95 backdrop-blur-sm border border-white/20 dark:border-gray-700/50 shadow-2xl">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <Target className="h-5 w-5" style={{ color: themeColors.primary }} />
@@ -314,7 +314,7 @@ const PriorityDialog = ({
                     onChange={(e) => setFormData({ ...formData, title: e.target.value })}
                     placeholder={`Enter ${labels?.priority_singular || 'priority'} title`}
                     required
-                    className="mt-1 bg-white"
+                    className="mt-1 bg-transparent dark:bg-gray-700/50"
                   />
                 </div>
 
@@ -326,7 +326,7 @@ const PriorityDialog = ({
                     onChange={(e) => setFormData({ ...formData, description: e.target.value })}
                     placeholder="Enter description (optional)"
                     rows={3}
-                    className="mt-1 bg-white"
+                    className="mt-1 bg-transparent dark:bg-gray-700/50"
                   />
                 </div>
 
@@ -348,7 +348,7 @@ const PriorityDialog = ({
                         setFormData({ ...formData, status: value });
                       }}
                     >
-                      <SelectTrigger id="status" className="mt-1 bg-white">
+                      <SelectTrigger id="status" className="mt-1 bg-transparent dark:bg-gray-700/50">
                         <SelectValue />
                       </SelectTrigger>
                       <SelectContent>
@@ -393,7 +393,7 @@ const PriorityDialog = ({
                       value={formData.ownerId} 
                       onValueChange={(value) => setFormData({ ...formData, ownerId: value })}
                     >
-                      <SelectTrigger id="owner" className="mt-1 bg-white">
+                      <SelectTrigger id="owner" className="mt-1 bg-transparent dark:bg-gray-700/50">
                         <SelectValue placeholder="Select owner" />
                       </SelectTrigger>
                       <SelectContent>
@@ -413,7 +413,7 @@ const PriorityDialog = ({
                       type="date"
                       value={formData.dueDate}
                       onChange={(e) => setFormData({ ...formData, dueDate: e.target.value })}
-                      className="mt-1 bg-white"
+                      className="mt-1 bg-transparent dark:bg-gray-700/50"
                     />
                   </div>
                 </div>

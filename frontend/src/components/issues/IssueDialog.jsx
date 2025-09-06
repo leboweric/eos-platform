@@ -302,7 +302,7 @@ const IssueDialog = ({
         onClose();
       }
     }}>
-      <DialogContent className="sm:max-w-[900px] w-full max-h-[90vh] overflow-hidden flex flex-col bg-white/95 backdrop-blur-sm border border-white/20 shadow-2xl">
+      <DialogContent className="sm:max-w-[900px] w-full max-h-[90vh] overflow-hidden flex flex-col bg-white/95 dark:bg-gray-800/95 backdrop-blur-sm border border-white/20 dark:border-gray-700/50 shadow-2xl">
         <form onSubmit={handleSubmit}>
           <DialogHeader className="pb-6">
             <div className="flex items-center gap-3 mb-2">
@@ -315,7 +315,7 @@ const IssueDialog = ({
                 <Bug className="h-5 w-5 text-white" />
               </div>
               <div>
-                <DialogTitle className="text-2xl font-bold bg-gradient-to-r from-slate-900 to-slate-700 bg-clip-text text-transparent">
+                <DialogTitle className="text-2xl font-bold bg-gradient-to-r from-slate-900 to-slate-700 dark:from-slate-100 dark:to-slate-300 bg-clip-text text-transparent">
                   {issue ? 'Edit Issue' : 'Create New Issue'}
                 </DialogTitle>
               </div>
@@ -324,16 +324,16 @@ const IssueDialog = ({
 
           <div className="grid gap-6 py-6">
             {error && (
-              <Alert className="border-red-200 bg-red-50/80 backdrop-blur-sm rounded-xl">
+              <Alert className="border-red-200 dark:border-red-800 bg-red-50/80 dark:bg-red-900/20 backdrop-blur-sm rounded-xl">
                 <AlertCircle className="h-4 w-4 text-red-600" />
-                <AlertDescription className="text-red-800 font-medium">{error}</AlertDescription>
+                <AlertDescription className="text-red-800 dark:text-red-300 font-medium">{error}</AlertDescription>
               </Alert>
             )}
 
             {/* First row: Title takes 2/3, Owner takes 1/3 */}
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               <div className="grid gap-3 md:col-span-2">
-                <Label htmlFor="title" className="text-sm font-semibold text-slate-700">
+                <Label htmlFor="title" className="text-sm font-semibold text-slate-700 dark:text-slate-300">
                   Issue Title <span className="text-red-500">*</span>
                 </Label>
                 <Input
@@ -342,12 +342,12 @@ const IssueDialog = ({
                   onChange={(e) => setFormData({ ...formData, title: e.target.value })}
                   onFocus={(e) => e.target.setSelectionRange(e.target.value.length, e.target.value.length)}
                   placeholder="Brief description of the issue"
-                  className="bg-white/80 backdrop-blur-sm border-white/20 rounded-xl shadow-sm transition-all duration-200"
+                  className="bg-white/80 dark:bg-gray-700/50 backdrop-blur-sm border-white/20 dark:border-gray-600/50 rounded-xl shadow-sm transition-all duration-200"
                 />
               </div>
 
               <div className="grid gap-3">
-                <Label htmlFor="owner" className="text-sm font-semibold text-slate-700">Owner</Label>
+                <Label htmlFor="owner" className="text-sm font-semibold text-slate-700 dark:text-slate-300">Owner</Label>
                 <Select
                 value={formData.ownerId || 'no-owner'}
                 onValueChange={(userId) => {

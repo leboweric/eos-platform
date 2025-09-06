@@ -208,7 +208,7 @@ const TodoDialog = ({ open, onOpenChange, todo, todoFromIssue, teamMembers, onSa
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[600px] bg-white/95 backdrop-blur-sm border border-white/20 shadow-2xl">
+      <DialogContent className="sm:max-w-[600px] bg-white/95 dark:bg-gray-800/95 backdrop-blur-sm border border-white/20 dark:border-gray-700/50 shadow-2xl">
         <form onSubmit={handleSubmit}>
           <DialogHeader className="pb-6">
             <div className="flex items-center gap-3 mb-2">
@@ -221,10 +221,10 @@ const TodoDialog = ({ open, onOpenChange, todo, todoFromIssue, teamMembers, onSa
                 <CheckSquare className="h-5 w-5 text-white" />
               </div>
               <div>
-                <DialogTitle className="text-2xl font-bold bg-gradient-to-r from-slate-900 to-slate-700 bg-clip-text text-transparent">
+                <DialogTitle className="text-2xl font-bold bg-gradient-to-r from-slate-900 to-slate-700 dark:from-slate-100 dark:to-slate-300 bg-clip-text text-transparent">
                   {todo ? 'Edit To-Do' : 'Create To-Do'}
                 </DialogTitle>
-                <DialogDescription className="text-slate-600 mt-1">
+                <DialogDescription className="text-slate-600 dark:text-slate-400 mt-1">
                   {todo ? 'Update the to-do details below' : 'Create a new to-do item with automatic 7-day due date'}
                 </DialogDescription>
               </div>
@@ -233,14 +233,14 @@ const TodoDialog = ({ open, onOpenChange, todo, todoFromIssue, teamMembers, onSa
           
           <div className="space-y-6 py-6">
             {error && (
-              <Alert className="border-red-200 bg-red-50/80 backdrop-blur-sm rounded-xl">
+              <Alert className="border-red-200 dark:border-red-800 bg-red-50/80 dark:bg-red-900/20 backdrop-blur-sm rounded-xl">
                 <AlertCircle className="h-4 w-4 text-red-600" />
-                <AlertDescription className="text-red-800 font-medium">{error}</AlertDescription>
+                <AlertDescription className="text-red-800 dark:text-red-300 font-medium">{error}</AlertDescription>
               </Alert>
             )}
 
             <div className="space-y-3">
-              <Label htmlFor="title" className="text-sm font-semibold text-slate-700">Title *</Label>
+              <Label htmlFor="title" className="text-sm font-semibold text-slate-700 dark:text-slate-300">Title *</Label>
               <Input
                 id="title"
                 value={formData.title}
@@ -248,19 +248,19 @@ const TodoDialog = ({ open, onOpenChange, todo, todoFromIssue, teamMembers, onSa
                 onFocus={(e) => e.target.setSelectionRange(e.target.value.length, e.target.value.length)}
                 placeholder="Enter to-do title..."
                 required
-                className="bg-white/80 backdrop-blur-sm border-white/20 rounded-xl shadow-sm transition-all duration-200"
+                className="bg-white/80 dark:bg-gray-700/50 backdrop-blur-sm border-white/20 dark:border-gray-600/50 rounded-xl shadow-sm transition-all duration-200"
               />
             </div>
 
             <div className="space-y-3">
-              <Label htmlFor="description" className="text-sm font-semibold text-slate-700">Description</Label>
+              <Label htmlFor="description" className="text-sm font-semibold text-slate-700 dark:text-slate-300">Description</Label>
               <Textarea
                 id="description"
                 value={formData.description}
                 onChange={(e) => setFormData({ ...formData, description: e.target.value })}
                 placeholder="Provide additional details..."
                 rows={4}
-                className="bg-white/80 backdrop-blur-sm border-white/20 rounded-xl shadow-sm transition-all duration-200"
+                className="bg-white/80 dark:bg-gray-700/50 backdrop-blur-sm border-white/20 dark:border-gray-600/50 rounded-xl shadow-sm transition-all duration-200"
               />
             </div>
 
@@ -300,7 +300,7 @@ const TodoDialog = ({ open, onOpenChange, todo, todoFromIssue, teamMembers, onSa
                 value={formData.dueDate}
                 onChange={(e) => setFormData({ ...formData, dueDate: e.target.value })}
                 required
-                className="bg-white/80 backdrop-blur-sm border-white/20 rounded-xl shadow-sm transition-all duration-200"
+                className="bg-white/80 dark:bg-gray-700/50 backdrop-blur-sm border-white/20 dark:border-gray-600/50 rounded-xl shadow-sm transition-all duration-200"
               />
               <p className="text-xs text-slate-500">Defaults to 7 days from creation</p>
             </div>
