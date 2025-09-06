@@ -1535,7 +1535,7 @@ const BusinessBlueprintPage = () => {
                         {blueprintData.threeYearPicture.measurables.map((measurable, index) => (
                           <div key={index} className="p-3 bg-gray-50 border border-gray-200 rounded-lg hover:shadow-md transition-shadow">
                             <div className="flex items-start">
-                              <CheckCircle2 className="h-4 w-4 text-green-600 mr-2 mt-0.5 flex-shrink-0" />
+                              <CheckCircle2 className="h-4 w-4 mr-2 mt-0.5 flex-shrink-0" style={{ color: themeColors.accent }} />
                               <div className="flex-1">
                                 <p className="font-medium text-gray-900">{measurable.name}</p>
                                 {measurable.target_value && (
@@ -1837,20 +1837,20 @@ const BusinessBlueprintPage = () => {
                   {blueprintData.quarterlyPriorities.priorities.some(p => p.is_company_priority) && (
                     <div className="space-y-3">
                       <div className="flex items-center">
-                        <Building2 className="h-5 w-5 text-blue-600 mr-2" />
+                        <Building2 className="h-5 w-5 mr-2" style={{ color: themeColors.primary }} />
                         <h4 className="font-semibold text-gray-900 text-lg">Company Priorities</h4>
                       </div>
                       {blueprintData.quarterlyPriorities.priorities
                         .filter(p => p.is_company_priority)
                         .map((priority, index) => (
-                          <div key={priority.id} className="p-4 bg-blue-50 border-2 border-blue-200 rounded-lg hover:shadow-lg transition-shadow">
+                          <div key={priority.id} className="p-4 rounded-lg hover:shadow-lg transition-shadow" style={{ backgroundColor: `${themeColors.primary}10`, borderWidth: '2px', borderColor: `${themeColors.primary}30` }}>
                             <div className="flex items-start">
-                              <div className={`w-4 h-4 rounded-full mr-3 mt-1 flex-shrink-0 ${
-                                priority.status === 'complete' ? 'bg-green-600' :
-                                priority.status === 'on-track' ? 'bg-blue-600' :
-                                priority.status === 'off-track' ? 'bg-red-600' :
-                                'bg-gray-600'
-                              }`} />
+                              <div className="w-4 h-4 rounded-full mr-3 mt-1 flex-shrink-0" style={{
+                                backgroundColor: priority.status === 'complete' ? themeColors.accent :
+                                priority.status === 'on-track' ? themeColors.primary :
+                                priority.status === 'off-track' ? '#EF4444' :
+                                '#6B7280'
+                              }} />
                               <div className="flex-1">
                                 <p className="font-semibold text-gray-900 text-base">{priority.title || priority.text}</p>
                                 {priority.status && (
@@ -1885,12 +1885,12 @@ const BusinessBlueprintPage = () => {
                         .map((priority, index) => (
                           <div key={priority.id} className="p-4 bg-gray-50 border border-gray-200 rounded-lg hover:shadow-md transition-shadow">
                             <div className="flex items-start">
-                              <div className={`w-3 h-3 rounded-full mr-3 mt-1.5 flex-shrink-0 ${
-                                priority.status === 'complete' ? 'bg-green-500' :
-                                priority.status === 'on-track' ? 'bg-blue-500' :
-                                priority.status === 'off-track' ? 'bg-red-500' :
-                                'bg-gray-500'
-                              }`} />
+                              <div className="w-3 h-3 rounded-full mr-3 mt-1.5 flex-shrink-0" style={{
+                                backgroundColor: priority.status === 'complete' ? themeColors.accent :
+                                priority.status === 'on-track' ? themeColors.primary :
+                                priority.status === 'off-track' ? '#EF4444' :
+                                '#6B7280'
+                              }} />
                               <div className="flex-1">
                                 <p className="font-medium text-gray-900">{priority.title || priority.text}</p>
                                 {priority.owner_name && (
@@ -1982,12 +1982,12 @@ const BusinessBlueprintPage = () => {
                     {blueprintData.longTermIssues.map((issue, index) => (
                       <div key={issue.id || index} className="p-4 bg-gray-50 border border-gray-200 rounded-lg hover:shadow-md transition-shadow">
                         <div className="flex items-start">
-                          <div className={`w-3 h-3 rounded-full mr-3 mt-1.5 flex-shrink-0 ${
-                            issue.priority === 'high' ? 'bg-red-500' :
-                            issue.priority === 'medium' ? 'bg-yellow-500' :
-                            issue.priority === 'low' ? 'bg-green-500' :
-                            'bg-gray-500'
-                          }`} />
+                          <div className="w-3 h-3 rounded-full mr-3 mt-1.5 flex-shrink-0" style={{
+                            backgroundColor: issue.priority === 'high' ? '#EF4444' :
+                            issue.priority === 'medium' ? '#F59E0B' :
+                            issue.priority === 'low' ? themeColors.accent :
+                            '#6B7280'
+                          }} />
                           <div className="flex-1">
                             <p className="font-medium text-gray-900">{issue.title}</p>
                             {(issue.priority || issue.assigned_to_name) && (
