@@ -322,26 +322,18 @@ export const concludeMeeting = async (req, res) => {
     // Fetch open todos from database
     let openTodos = [];
     try {
-      const todoQuery = teamId && !isZeroUUID(teamId) && isValidUUID
-        ? `SELECT t.*, u.first_name, u.last_name 
-           FROM todos t
-           LEFT JOIN users u ON t.assigned_to_id = u.id
-           WHERE t.team_id = $1 
-           AND t.status = 'incomplete' 
-           AND t.deleted_at IS NULL
-           ORDER BY t.due_date ASC NULLS LAST, t.created_at DESC`
-        : `SELECT t.*, u.first_name, u.last_name 
-           FROM todos t
-           LEFT JOIN users u ON t.assigned_to_id = u.id
-           WHERE t.organization_id = $1 
-           AND t.team_id IS NULL
-           AND t.status = 'incomplete' 
-           AND t.deleted_at IS NULL
-           ORDER BY t.due_date ASC NULLS LAST, t.created_at DESC`;
+      // We already validated teamId earlier, so we know it's valid
+      const todoQuery = `SELECT t.*, u.first_name, u.last_name 
+         FROM todos t
+         LEFT JOIN users u ON t.assigned_to_id = u.id
+         WHERE t.team_id = $1 
+         AND t.status = 'incomplete' 
+         AND t.deleted_at IS NULL
+         ORDER BY t.due_date ASC NULLS LAST, t.created_at DESC`;
       
       const todoResult = await db.query(
         todoQuery,
-        [teamId && !isZeroUUID(teamId) && isValidUUID ? teamId : organizationId]
+        [teamId]
       );
       
       console.log(`Found ${todoResult.rows.length} incomplete to-dos for team ${teamId}`);
