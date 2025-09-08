@@ -3289,11 +3289,11 @@ const WeeklyAccountabilityMeetingPage = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50/30 to-indigo-50/30 relative">
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50/30 to-indigo-50/30">
       {/* Background Pattern */}
-      <div className="absolute inset-0 bg-grid-slate-100 [mask-image:linear-gradient(0deg,white,rgba(255,255,255,0.6))] -z-10"></div>
+      <div className="fixed inset-0 bg-grid-slate-100 [mask-image:linear-gradient(0deg,white,rgba(255,255,255,0.6))] -z-10"></div>
       
-      <div className="max-w-7xl mx-auto p-8">
+      <div className="relative max-w-7xl mx-auto p-8 pb-32">
         {/* Header */}
         <div className="mb-8">
           <div className="flex items-center justify-between mb-6">
@@ -3410,12 +3410,14 @@ const WeeklyAccountabilityMeetingPage = () => {
           )}
         </div>
 
-        {/* Tabs Navigation Container */}
-        <div className="relative">
-          {/* Fixed Menu Bar */}
-          <div id="meeting-menu" className="sticky top-0 z-50 -mx-8 px-8 pb-4 bg-gradient-to-br from-slate-50/98 via-blue-50/98 to-indigo-50/98 backdrop-blur-xl">
-            <Tabs value={activeSection} onValueChange={handleSectionChange}>
-              <TabsList className="w-full grid grid-cols-4 lg:grid-cols-8 gap-2 h-auto p-2 bg-white/95 backdrop-blur-md border border-white/50 rounded-2xl shadow-lg">
+        {/* Tabs Navigation */}
+        <Tabs value={activeSection} onValueChange={handleSectionChange} className="space-y-8">
+          <div className="sticky top-0 z-50 -mx-8 px-8 py-4 bg-gradient-to-br from-slate-50 via-blue-50/50 to-indigo-50/50" style={{
+            backdropFilter: 'blur(20px)',
+            WebkitBackdropFilter: 'blur(20px)',
+            borderBottom: '1px solid rgba(255,255,255,0.3)'
+          }}>
+            <TabsList className="w-full grid grid-cols-4 lg:grid-cols-8 gap-2 h-auto p-2 bg-white/95 backdrop-blur-md border border-white/50 rounded-2xl shadow-lg">
             {agendaItems.map((item) => {
               const Icon = item.icon;
               const currentIndex = agendaItems.findIndex(i => i.id === activeSection);
@@ -3445,17 +3447,14 @@ const WeeklyAccountabilityMeetingPage = () => {
                 </TabsTrigger>
               );
             })}
-              </TabsList>
-            </Tabs>
+            </TabsList>
           </div>
 
           {/* Tab Content */}
-          <Tabs value={activeSection} className="mt-4">
-            <div className="bg-white/80 backdrop-blur-sm rounded-2xl shadow-xl border border-white/50">
-              {renderContent()}
-            </div>
-          </Tabs>
-        </div>
+          <div className="bg-white/80 backdrop-blur-sm rounded-2xl shadow-xl border border-white/50 pb-8">
+            {renderContent()}
+          </div>
+        </Tabs>
 
       </div>
       
