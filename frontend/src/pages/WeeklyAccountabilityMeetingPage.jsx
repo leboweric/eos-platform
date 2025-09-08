@@ -41,7 +41,6 @@ import {
   ClipboardList
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
-import { format } from 'date-fns';
 import ScorecardTableClean from '../components/scorecard/ScorecardTableClean';
 import { Progress } from '@/components/ui/progress';
 import PriorityDialog from '../components/priorities/PriorityDialog';
