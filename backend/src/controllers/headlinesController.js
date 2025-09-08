@@ -20,15 +20,17 @@ export const getHeadlines = async (req, res) => {
       conditions.push('(h.archived = false OR h.archived IS NULL)');
     }
 
-    // Filter by team if provided
-    if (teamId) {
-      conditions.push(`h.team_id = $${paramIndex}`);
-      params.push(teamId);
-      paramIndex++;
-    } else {
-      // If no teamId provided, only show headlines without a team (org-level)
-      conditions.push('h.team_id IS NULL');
+    // Team ID is required for security and proper filtering
+    if (!teamId) {
+      return res.status(400).json({
+        success: false,
+        error: 'Team ID is required to fetch headlines'
+      });
     }
+    
+    conditions.push(`h.team_id = $${paramIndex}`);
+    params.push(teamId);
+    paramIndex++;
 
     // Get headlines with creator information
     const result = await query(
@@ -89,13 +91,21 @@ export const createHeadline = async (req, res) => {
       });
     }
 
+    // Validate team_id is provided
+    if (!teamId) {
+      return res.status(400).json({
+        success: false,
+        error: 'Team ID is required to create a headline'
+      });
+    }
+
     const headlineId = uuidv4();
     const result = await query(
       `INSERT INTO headlines (
         id, organization_id, team_id, type, text, created_by
       ) VALUES ($1, $2, $3, $4, $5, $6)
       RETURNING *`,
-      [headlineId, orgId, teamId || null, type, text.trim(), userId]
+      [headlineId, orgId, teamId, type, text.trim(), userId]
     );
 
     // Fetch the complete headline with user information
