@@ -3412,8 +3412,9 @@ const WeeklyAccountabilityMeetingPage = () => {
 
         {/* Tabs Navigation */}
         <Tabs value={activeSection} onValueChange={handleSectionChange} className="space-y-0">
-          <div className="sticky top-0 z-50 bg-gradient-to-br from-slate-50/98 via-blue-50/98 to-indigo-50/98 backdrop-blur-xl pt-2 pb-6 -mx-8 px-8 border-b border-white/20">
-            <TabsList className="w-full grid grid-cols-4 lg:grid-cols-8 gap-2 h-auto p-2 bg-white/95 backdrop-blur-md border border-white/50 rounded-2xl shadow-lg">
+          <div className="sticky top-0 z-50 pt-2 pb-6 -mx-8 px-8" style={{ position: 'sticky', WebkitPosition: 'sticky' }}>
+            <div className="absolute inset-0 bg-gradient-to-br from-slate-50/95 via-blue-50/95 to-indigo-50/95 backdrop-blur-xl border-b border-slate-200/50" />
+            <TabsList className="relative w-full grid grid-cols-4 lg:grid-cols-8 gap-2 h-auto p-2 bg-white/95 backdrop-blur-md border border-white/50 rounded-2xl shadow-lg">
             {agendaItems.map((item) => {
               const Icon = item.icon;
               const currentIndex = agendaItems.findIndex(i => i.id === activeSection);
