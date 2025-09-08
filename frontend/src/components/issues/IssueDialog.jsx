@@ -340,7 +340,6 @@ const IssueDialog = ({
                   id="title"
                   value={formData.title}
                   onChange={(e) => setFormData({ ...formData, title: e.target.value })}
-                  onFocus={(e) => e.target.setSelectionRange(e.target.value.length, e.target.value.length)}
                   placeholder="Brief description of the issue"
                   className="bg-white/80 dark:bg-gray-700/50 backdrop-blur-sm border-white/20 dark:border-gray-600/50 rounded-xl shadow-sm transition-all duration-200"
                 />
