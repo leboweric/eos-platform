@@ -245,7 +245,6 @@ const TodoDialog = ({ open, onOpenChange, todo, todoFromIssue, teamMembers, onSa
                 id="title"
                 value={formData.title}
                 onChange={(e) => setFormData({ ...formData, title: e.target.value })}
-                onFocus={(e) => e.target.setSelectionRange(e.target.value.length, e.target.value.length)}
                 placeholder="Enter to-do title..."
                 required
                 className="bg-white/80 dark:bg-gray-700/50 backdrop-blur-sm border-white/20 dark:border-gray-600/50 rounded-xl shadow-sm transition-all duration-200"
@@ -254,14 +253,16 @@ const TodoDialog = ({ open, onOpenChange, todo, todoFromIssue, teamMembers, onSa
 
             <div className="space-y-3">
               <Label htmlFor="description" className="text-sm font-semibold text-slate-700 dark:text-slate-300">Description</Label>
-              <Textarea
-                id="description"
-                value={formData.description}
-                onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-                placeholder="Provide additional details..."
-                rows={4}
-                className="bg-white/80 dark:bg-gray-700/50 backdrop-blur-sm border-white/20 dark:border-gray-600/50 rounded-xl shadow-sm transition-all duration-200"
-              />
+              <div className="max-h-[200px] overflow-y-auto border dark:border-gray-600/50 rounded-xl shadow-sm">
+                <Textarea
+                  id="description"
+                  value={formData.description}
+                  onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+                  placeholder="Provide additional details..."
+                  rows={4}
+                  className="bg-white/80 dark:bg-gray-700/50 backdrop-blur-sm border-0 rounded-xl shadow-none transition-all duration-200 resize-none min-h-[120px]"
+                />
+              </div>
             </div>
 
             <div className="grid grid-cols-1 gap-4">
