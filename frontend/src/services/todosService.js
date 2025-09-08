@@ -156,19 +156,22 @@ export const todosService = {
 
   // Todo Updates
   getTodoUpdates: async (todoId) => {
-    const response = await axios.get(`/api/v1/todos/${todoId}/updates`);
+    const orgId = getOrgId();
+    const response = await axios.get(`/organizations/${orgId}/todos/${todoId}/updates`);
     return response.data;
   },
 
   addTodoUpdate: async (todoId, updateText) => {
-    const response = await axios.post(`/api/v1/todos/${todoId}/updates`, {
+    const orgId = getOrgId();
+    const response = await axios.post(`/organizations/${orgId}/todos/${todoId}/updates`, {
       update_text: updateText
     });
     return response.data;
   },
 
   deleteTodoUpdate: async (todoId, updateId) => {
-    const response = await axios.delete(`/api/v1/todos/${todoId}/updates/${updateId}`);
+    const orgId = getOrgId();
+    const response = await axios.delete(`/organizations/${orgId}/todos/${todoId}/updates/${updateId}`);
     return response.data;
   }
 };
