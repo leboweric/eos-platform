@@ -15,7 +15,10 @@ import {
   uploadTodoAttachment,
   getTodoAttachments,
   deleteTodoAttachment,
-  downloadTodoAttachment
+  downloadTodoAttachment,
+  getTodoUpdates,
+  addTodoUpdate,
+  deleteTodoUpdate
 } from '../controllers/todosController.js';
 
 const router = express.Router({ mergeParams: true });
@@ -106,5 +109,20 @@ router.delete('/:todoId/attachments/:attachmentId', [
   param('todoId').isUUID(),
   param('attachmentId').isUUID()
 ], deleteTodoAttachment);
+
+// Todo updates routes
+router.get('/:todoId/updates', [
+  param('todoId').isUUID()
+], getTodoUpdates);
+
+router.post('/:todoId/updates', [
+  param('todoId').isUUID(),
+  body('update_text').notEmpty().withMessage('Update text is required')
+], addTodoUpdate);
+
+router.delete('/:todoId/updates/:updateId', [
+  param('todoId').isUUID(),
+  param('updateId').isUUID()
+], deleteTodoUpdate);
 
 export default router;

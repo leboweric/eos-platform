@@ -6,7 +6,7 @@ import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import { Loader2, Save, AlertCircle, Calendar, User, Paperclip, X, Download, Link, Sparkles, CheckSquare } from 'lucide-react';
+import { Loader2, Save, AlertCircle, Calendar, User, Paperclip, X, Download, Link, Sparkles, CheckSquare, MessageSquare, Plus, Trash2, Upload } from 'lucide-react';
 import { todosService } from '../../services/todosService';
 import { useAuthStore } from '../../stores/authStore';
 import { getDateDaysFromNow } from '../../utils/dateUtils';
@@ -31,6 +31,13 @@ const TodoDialog = ({ open, onOpenChange, todo, todoFromIssue, teamMembers, onSa
     secondary: '#1E40AF',
     accent: '#60A5FA'
   });
+  
+  // Updates state
+  const [updates, setUpdates] = useState([]);
+  const [updateText, setUpdateText] = useState('');
+  const [loadingUpdates, setLoadingUpdates] = useState(false);
+  const [savingUpdate, setSavingUpdate] = useState(false);
+  const [showAddUpdate, setShowAddUpdate] = useState(false);
 
   useEffect(() => {
     const fetchTheme = async () => {
@@ -55,9 +62,10 @@ const TodoDialog = ({ open, onOpenChange, todo, todoFromIssue, teamMembers, onSa
         dueDate: todo.due_date ? todo.due_date.split('T')[0] : '' // Use date string directly, don't convert
       });
       
-      // Load existing attachments
+      // Load existing attachments and updates
       if (todo.id) {
         loadAttachments(todo.id);
+        loadUpdates(todo.id);
       }
     } else {
       // Clear all fields and set default due date for new todos
@@ -94,6 +102,9 @@ const TodoDialog = ({ open, onOpenChange, todo, todoFromIssue, teamMembers, onSa
       }
       setFiles([]);
       setExistingAttachments([]);
+      setUpdates([]);
+      setUpdateText('');
+      setShowAddUpdate(false);
       setError(null);
     }
   }, [open, todo, todoFromIssue, user]);
@@ -205,6 +216,47 @@ const TodoDialog = ({ open, onOpenChange, todo, todoFromIssue, teamMembers, onSa
     }
   };
 
+  const loadUpdates = async (todoId) => {
+    try {
+      setLoadingUpdates(true);
+      const response = await todosService.getTodoUpdates(todoId);
+      setUpdates(response.data || []);
+    } catch (error) {
+      console.error('Failed to fetch updates:', error);
+      setUpdates([]);
+    } finally {
+      setLoadingUpdates(false);
+    }
+  };
+
+  const handleAddUpdate = async () => {
+    if (!updateText.trim() || !todo?.id) return;
+    
+    try {
+      setSavingUpdate(true);
+      const response = await todosService.addTodoUpdate(todo.id, updateText);
+      setUpdates([response.data, ...updates]);
+      setUpdateText('');
+      setShowAddUpdate(false);
+    } catch (error) {
+      console.error('Failed to add update:', error);
+      setError('Failed to add update');
+    } finally {
+      setSavingUpdate(false);
+    }
+  };
+
+  const handleDeleteUpdate = async (updateId) => {
+    if (!confirm('Are you sure you want to delete this update?')) return;
+    
+    try {
+      await todosService.deleteTodoUpdate(todo.id, updateId);
+      setUpdates(updates.filter(u => u.id !== updateId));
+    } catch (error) {
+      console.error('Failed to delete update:', error);
+    }
+  };
+
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -312,6 +364,109 @@ const TodoDialog = ({ open, onOpenChange, todo, todoFromIssue, teamMembers, onSa
               />
               <p className="text-xs text-slate-500">Defaults to 7 days from creation</p>
             </div>
+
+            {/* Updates section - only show for existing todos */}
+            {todo && (
+              <div className="space-y-3">
+                <div className="flex items-center justify-between">
+                  <Label className="text-sm font-semibold text-slate-700 dark:text-slate-300 flex items-center gap-2">
+                    <MessageSquare className="h-4 w-4" />
+                    Updates ({updates.length})
+                  </Label>
+                  {!showAddUpdate && (
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setShowAddUpdate(true)}
+                      className="text-xs"
+                    >
+                      <Plus className="h-3 w-3 mr-1" />
+                      Add Update
+                    </Button>
+                  )}
+                </div>
+
+                {/* Add Update Form */}
+                {showAddUpdate && (
+                  <div className="space-y-2">
+                    <Textarea
+                      value={updateText}
+                      onChange={(e) => setUpdateText(e.target.value)}
+                      placeholder="Add an update..."
+                      rows={3}
+                      className="bg-white dark:bg-gray-800 border border-slate-200 dark:border-gray-700 focus:border-blue-400 rounded-xl shadow-sm"
+                    />
+                    <div className="flex gap-2">
+                      <Button
+                        type="button"
+                        size="sm"
+                        onClick={handleAddUpdate}
+                        disabled={!updateText.trim() || savingUpdate}
+                        className="text-white"
+                        style={{
+                          background: `linear-gradient(135deg, ${themeColors.primary} 0%, ${themeColors.secondary} 100%)`
+                        }}
+                      >
+                        {savingUpdate ? (
+                          <>
+                            <Loader2 className="mr-1 h-3 w-3 animate-spin" />
+                            Saving...
+                          </>
+                        ) : (
+                          'Add Update'
+                        )}
+                      </Button>
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        onClick={() => {
+                          setShowAddUpdate(false);
+                          setUpdateText('');
+                        }}
+                      >
+                        Cancel
+                      </Button>
+                    </div>
+                  </div>
+                )}
+
+                {/* Updates List */}
+                {loadingUpdates ? (
+                  <div className="text-sm text-slate-500">Loading updates...</div>
+                ) : updates.length > 0 ? (
+                  <div className="space-y-2 max-h-32 overflow-y-auto p-1">
+                    {updates.map(update => (
+                      <div key={update.id} className="group bg-white dark:bg-gray-800 border border-slate-200 dark:border-gray-700 rounded-lg p-3 hover:shadow-md transition-shadow">
+                        <div className="flex items-start justify-between">
+                          <div className="flex-1">
+                            <p className="text-sm text-slate-800 dark:text-slate-200 font-medium whitespace-pre-wrap leading-relaxed">{update.update_text}</p>
+                            <div className="flex items-center gap-1 mt-2">
+                              <div className="w-1 h-1 rounded-full bg-slate-400"></div>
+                              <p className="text-xs text-slate-500 dark:text-slate-400">
+                                {update.created_by_name} • {new Date(update.created_at).toLocaleDateString()}
+                              </p>
+                            </div>
+                          </div>
+                          <Button
+                            type="button"
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => handleDeleteUpdate(update.id)}
+                            className="opacity-0 group-hover:opacity-100 transition-opacity h-6 w-6 p-0"
+                          >
+                            <Trash2 className="h-3 w-3 text-red-500" />
+                          </Button>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                ) : !showAddUpdate && (
+                  <p className="text-sm text-slate-500 dark:text-slate-400 text-center py-2">No updates yet</p>
+                )}
+              </div>
+            )}
 
             {/* Attachments section */}
             <div className="space-y-3">

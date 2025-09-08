@@ -557,6 +557,139 @@ export const archiveDoneTodos = async (req, res) => {
   }
 };
 
+// @desc    Get updates for a todo
+// @route   GET /api/v1/todos/:todoId/updates
+// @access  Private
+export const getTodoUpdates = async (req, res) => {
+  try {
+    const { todoId } = req.params;
+    
+    const result = await query(
+      `SELECT 
+        tu.id,
+        tu.update_text,
+        tu.created_at,
+        tu.created_by,
+        u.first_name || ' ' || u.last_name as created_by_name
+       FROM todo_updates tu
+       JOIN users u ON tu.created_by = u.id
+       WHERE tu.todo_id = $1
+       ORDER BY tu.created_at DESC`,
+      [todoId]
+    );
+    
+    res.json({
+      success: true,
+      data: result.rows
+    });
+  } catch (error) {
+    console.error('Error fetching todo updates:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Failed to fetch todo updates'
+    });
+  }
+};
+
+// @desc    Add update to a todo
+// @route   POST /api/v1/todos/:todoId/updates
+// @access  Private
+export const addTodoUpdate = async (req, res) => {
+  try {
+    const { todoId } = req.params;
+    const { update_text } = req.body;
+    const userId = req.user.id;
+    
+    if (!update_text || !update_text.trim()) {
+      return res.status(400).json({
+        success: false,
+        message: 'Update text is required'
+      });
+    }
+    
+    const result = await query(
+      `INSERT INTO todo_updates (todo_id, update_text, created_by)
+       VALUES ($1, $2, $3)
+       RETURNING id, update_text, created_at`,
+      [todoId, update_text.trim(), userId]
+    );
+    
+    // Get the created update with user info
+    const updateWithUser = await query(
+      `SELECT 
+        tu.id,
+        tu.update_text,
+        tu.created_at,
+        tu.created_by,
+        u.first_name || ' ' || u.last_name as created_by_name
+       FROM todo_updates tu
+       JOIN users u ON tu.created_by = u.id
+       WHERE tu.id = $1`,
+      [result.rows[0].id]
+    );
+    
+    res.json({
+      success: true,
+      data: updateWithUser.rows[0]
+    });
+  } catch (error) {
+    console.error('Error adding todo update:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Failed to add todo update'
+    });
+  }
+};
+
+// @desc    Delete a todo update
+// @route   DELETE /api/v1/todos/:todoId/updates/:updateId
+// @access  Private
+export const deleteTodoUpdate = async (req, res) => {
+  try {
+    const { todoId, updateId } = req.params;
+    const userId = req.user.id;
+    
+    // Check if user owns the update or is an admin
+    const updateCheck = await query(
+      `SELECT created_by FROM todo_updates WHERE id = $1 AND todo_id = $2`,
+      [updateId, todoId]
+    );
+    
+    if (updateCheck.rows.length === 0) {
+      return res.status(404).json({
+        success: false,
+        message: 'Update not found'
+      });
+    }
+    
+    const isOwner = updateCheck.rows[0].created_by === userId;
+    const isAdmin = req.user.role === 'admin';
+    
+    if (!isOwner && !isAdmin) {
+      return res.status(403).json({
+        success: false,
+        message: 'You can only delete your own updates'
+      });
+    }
+    
+    await query(
+      `DELETE FROM todo_updates WHERE id = $1 AND todo_id = $2`,
+      [updateId, todoId]
+    );
+    
+    res.json({
+      success: true,
+      message: 'Update deleted successfully'
+    });
+  } catch (error) {
+    console.error('Error deleting todo update:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Failed to delete todo update'
+    });
+  }
+};
+
 export default {
   getTodos,
   createTodo,
@@ -566,5 +699,8 @@ export default {
   uploadTodoAttachment,
   getTodoAttachments,
   downloadTodoAttachment,
-  deleteTodoAttachment
+  deleteTodoAttachment,
+  getTodoUpdates,
+  addTodoUpdate,
+  deleteTodoUpdate
 };

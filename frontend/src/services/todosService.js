@@ -152,5 +152,23 @@ export const todosService = {
       }
       throw new Error('Failed to download attachment. Please try again.');
     }
+  },
+
+  // Todo Updates
+  getTodoUpdates: async (todoId) => {
+    const response = await axios.get(`/api/v1/todos/${todoId}/updates`);
+    return response.data;
+  },
+
+  addTodoUpdate: async (todoId, updateText) => {
+    const response = await axios.post(`/api/v1/todos/${todoId}/updates`, {
+      update_text: updateText
+    });
+    return response.data;
+  },
+
+  deleteTodoUpdate: async (todoId, updateId) => {
+    const response = await axios.delete(`/api/v1/todos/${todoId}/updates/${updateId}`);
+    return response.data;
   }
 };
