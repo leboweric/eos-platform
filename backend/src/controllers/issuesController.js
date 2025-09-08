@@ -156,7 +156,7 @@ async function checkTimelineColumn() {
 export const createIssue = async (req, res) => {
   try {
     const { orgId } = req.params;
-    const { title, description, ownerId, timeline, teamId, related_todo_id, priority_level } = req.body;
+    const { title, description, ownerId, timeline, teamId, related_todo_id, related_headline_id, priority_level } = req.body;
     const createdById = req.user.id;
     
     // Check if timeline column exists
@@ -207,6 +207,19 @@ export const createIssue = async (req, res) => {
       columns.push('priority_level');
       values.push(priority_level);
       placeholders.push(`$${values.length}`);
+    }
+    
+    // Add related_headline_id if provided
+    if (related_headline_id) {
+      columns.push('related_headline_id');
+      values.push(related_headline_id);
+      placeholders.push(`$${values.length}`);
+      
+      // Also update the headline to mark it as having a related issue
+      await db.query(
+        'UPDATE headlines SET has_related_issue = true WHERE id = $1',
+        [related_headline_id]
+      );
     }
     
     const result = await db.query(

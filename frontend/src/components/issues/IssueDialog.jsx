@@ -205,7 +205,9 @@ const IssueDialog = ({
         description: formData.description,
         ownerId: formData.ownerId === 'no-owner' ? null : (formData.ownerId || null),
         status: formData.status,
-        timeline: issue ? issue.timeline : timeline
+        timeline: issue ? issue.timeline : timeline,
+        // Include headline ID if this issue is being created from a headline
+        ...(issue?.headlineId ? { related_headline_id: issue.headlineId } : {})
       });
       
       // Upload new attachments if any

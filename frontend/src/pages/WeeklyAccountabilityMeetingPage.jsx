@@ -2650,9 +2650,38 @@ const WeeklyAccountabilityMeetingPage = () => {
                     {headlines.customer.length > 0 ? (
                       <div className="space-y-2">
                         {headlines.customer.map(headline => (
-                          <div key={headline.id} className="p-4 bg-white rounded-lg border-l-4 shadow-sm hover:shadow-md transition-shadow" 
+                          <div key={headline.id} className="group relative p-4 bg-white rounded-lg border-l-4 shadow-sm hover:shadow-md transition-shadow" 
                                style={{ borderLeftColor: themeColors.primary }}>
-                            <p className="text-sm font-medium text-slate-900 leading-relaxed">{headline.text}</p>
+                            <p className="text-sm font-medium text-slate-900 leading-relaxed pr-8">{headline.text}</p>
+                            
+                            {/* Action button appears on hover */}
+                            {!headline.has_related_issue && (
+                              <button
+                                className="absolute top-3 right-3 opacity-0 group-hover:opacity-100 
+                                         transition-opacity p-1.5 rounded-lg hover:bg-gray-100"
+                                onClick={() => {
+                                  setEditingIssue({
+                                    fromHeadline: true,
+                                    headlineId: headline.id,
+                                    title: `Follow up: ${headline.text.substring(0, 100)}`,
+                                    description: `This issue was created from a customer headline reported in the Weekly Meeting:\n\n**Headline:** ${headline.text}\n**Type:** Customer\n**Reported by:** ${headline.created_by_name || headline.createdBy || 'Unknown'}\n**Date:** ${format(new Date(headline.created_at), 'MMM d, yyyy')}\n\n**Next steps:**\n- [ ] Investigate root cause\n- [ ] Determine action plan\n- [ ] Assign owner`,
+                                    timeline: 'short_term'
+                                  });
+                                  setShowIssueDialog(true);
+                                }}
+                                title="Create issue from headline"
+                              >
+                                <AlertTriangle className="h-4 w-4 text-gray-600" />
+                              </button>
+                            )}
+                            
+                            {/* If issue exists, show indicator */}
+                            {headline.has_related_issue && (
+                              <div className="absolute top-3 right-3 text-green-600" title="Issue already created">
+                                <CheckCircle className="h-4 w-4" />
+                              </div>
+                            )}
+                            
                             <p className="text-xs text-slate-600 mt-2 flex items-center gap-1">
                               <User className="h-3 w-3" />
                               <span className="font-medium">{headline.created_by_name || headline.createdBy || 'Unknown'}</span>
@@ -2678,9 +2707,38 @@ const WeeklyAccountabilityMeetingPage = () => {
                     {headlines.employee.length > 0 ? (
                       <div className="space-y-2">
                         {headlines.employee.map(headline => (
-                          <div key={headline.id} className="p-4 bg-white rounded-lg border-l-4 shadow-sm hover:shadow-md transition-shadow" 
+                          <div key={headline.id} className="group relative p-4 bg-white rounded-lg border-l-4 shadow-sm hover:shadow-md transition-shadow" 
                                style={{ borderLeftColor: themeColors.secondary }}>
-                            <p className="text-sm font-medium text-slate-900 leading-relaxed">{headline.text}</p>
+                            <p className="text-sm font-medium text-slate-900 leading-relaxed pr-8">{headline.text}</p>
+                            
+                            {/* Action button appears on hover */}
+                            {!headline.has_related_issue && (
+                              <button
+                                className="absolute top-3 right-3 opacity-0 group-hover:opacity-100 
+                                         transition-opacity p-1.5 rounded-lg hover:bg-gray-100"
+                                onClick={() => {
+                                  setEditingIssue({
+                                    fromHeadline: true,
+                                    headlineId: headline.id,
+                                    title: `Follow up: ${headline.text.substring(0, 100)}`,
+                                    description: `This issue was created from an employee headline reported in the Weekly Meeting:\n\n**Headline:** ${headline.text}\n**Type:** Employee\n**Reported by:** ${headline.created_by_name || headline.createdBy || 'Unknown'}\n**Date:** ${format(new Date(headline.created_at), 'MMM d, yyyy')}\n\n**Next steps:**\n- [ ] Investigate root cause\n- [ ] Determine action plan\n- [ ] Assign owner`,
+                                    timeline: 'short_term'
+                                  });
+                                  setShowIssueDialog(true);
+                                }}
+                                title="Create issue from headline"
+                              >
+                                <AlertTriangle className="h-4 w-4 text-gray-600" />
+                              </button>
+                            )}
+                            
+                            {/* If issue exists, show indicator */}
+                            {headline.has_related_issue && (
+                              <div className="absolute top-3 right-3 text-green-600" title="Issue already created">
+                                <CheckCircle className="h-4 w-4" />
+                              </div>
+                            )}
+                            
                             <p className="text-xs text-slate-600 mt-2 flex items-center gap-1">
                               <User className="h-3 w-3" />
                               <span className="font-medium">{headline.created_by_name || headline.createdBy || 'Unknown'}</span>
