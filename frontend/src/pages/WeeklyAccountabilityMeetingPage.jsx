@@ -3289,11 +3289,11 @@ const WeeklyAccountabilityMeetingPage = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50/30 to-indigo-50/30 relative">
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50/30 to-indigo-50/30 relative overflow-auto">
       {/* Background Pattern */}
       <div className="absolute inset-0 bg-grid-slate-100 [mask-image:linear-gradient(0deg,white,rgba(255,255,255,0.6))] -z-10"></div>
       
-      <div className="max-w-7xl mx-auto p-8">
+      <div className="max-w-7xl mx-auto p-8 relative">
         {/* Header */}
         <div className="mb-8">
           <div className="flex items-center justify-between mb-6">
@@ -3411,9 +3411,9 @@ const WeeklyAccountabilityMeetingPage = () => {
         </div>
 
         {/* Tabs Navigation */}
-        <Tabs value={activeSection} onValueChange={handleSectionChange} className="space-y-8">
-          <div className="sticky top-0 z-20 pb-4">
-            <TabsList className="w-full grid grid-cols-4 lg:grid-cols-8 gap-2 h-auto p-2 bg-white/90 backdrop-blur-md border border-white/50 rounded-2xl shadow-lg">
+        <Tabs value={activeSection} onValueChange={handleSectionChange} className="space-y-0">
+          <div className="sticky top-0 z-50 bg-gradient-to-br from-slate-50 via-blue-50/30 to-indigo-50/30 pt-2 pb-6 -mx-8 px-8">
+            <TabsList className="w-full grid grid-cols-4 lg:grid-cols-8 gap-2 h-auto p-2 bg-white/95 backdrop-blur-md border border-white/50 rounded-2xl shadow-lg">
             {agendaItems.map((item) => {
               const Icon = item.icon;
               const currentIndex = agendaItems.findIndex(i => i.id === activeSection);
@@ -3447,7 +3447,7 @@ const WeeklyAccountabilityMeetingPage = () => {
           </div>
 
           {/* Tab Content */}
-          <div className="bg-white/80 backdrop-blur-sm rounded-2xl shadow-xl border border-white/50">
+          <div className="bg-white/80 backdrop-blur-sm rounded-2xl shadow-xl border border-white/50 mt-4">
             {renderContent()}
           </div>
         </Tabs>

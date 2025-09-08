@@ -431,7 +431,7 @@ const IssueDialog = ({
                       onChange={(e) => setUpdateText(e.target.value)}
                       placeholder="Add an update..."
                       rows={3}
-                      className="bg-white/80 dark:bg-gray-700/50 backdrop-blur-sm border-white/20 dark:border-gray-600/50 focus:border-blue-400 rounded-xl shadow-sm"
+                      className="bg-white dark:bg-gray-800 border border-slate-200 dark:border-gray-700 focus:border-blue-400 rounded-xl shadow-sm"
                     />
                     <div className="flex gap-2">
                       <Button
@@ -472,15 +472,18 @@ const IssueDialog = ({
                 {loadingUpdates ? (
                   <div className="text-sm text-slate-500">Loading updates...</div>
                 ) : updates.length > 0 ? (
-                  <div className="space-y-2 max-h-32 overflow-y-auto">
+                  <div className="space-y-2 max-h-32 overflow-y-auto p-1">
                     {updates.map(update => (
-                      <div key={update.id} className="group bg-slate-50/80 dark:bg-gray-700/30 backdrop-blur-sm rounded-lg p-3">
+                      <div key={update.id} className="group bg-white dark:bg-gray-800 border border-slate-200 dark:border-gray-700 rounded-lg p-3 hover:shadow-md transition-shadow">
                         <div className="flex items-start justify-between">
                           <div className="flex-1">
-                            <p className="text-sm text-slate-700 dark:text-slate-300 whitespace-pre-wrap">{update.update_text}</p>
-                            <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
-                              {update.created_by_name} • {new Date(update.created_at).toLocaleDateString()}
-                            </p>
+                            <p className="text-sm text-slate-800 dark:text-slate-200 font-medium whitespace-pre-wrap leading-relaxed">{update.update_text}</p>
+                            <div className="flex items-center gap-1 mt-2">
+                              <div className="w-1 h-1 rounded-full bg-slate-400"></div>
+                              <p className="text-xs text-slate-500 dark:text-slate-400">
+                                {update.created_by_name} • {new Date(update.created_at).toLocaleDateString()}
+                              </p>
+                            </div>
                           </div>
                           <Button
                             type="button"
