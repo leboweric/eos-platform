@@ -20,11 +20,14 @@ export const getHeadlines = async (req, res) => {
       conditions.push('(h.archived = false OR h.archived IS NULL)');
     }
 
-    // Filter by team if provided - also include NULL team_id for backwards compatibility
+    // Filter by team if provided
     if (teamId) {
-      conditions.push(`(h.team_id = $${paramIndex} OR h.team_id IS NULL)`);
+      conditions.push(`h.team_id = $${paramIndex}`);
       params.push(teamId);
       paramIndex++;
+    } else {
+      // If no teamId provided, only show headlines without a team (org-level)
+      conditions.push('h.team_id IS NULL');
     }
 
     // Get headlines with creator information
