@@ -324,47 +324,6 @@ const TodoDialog = ({ open, onOpenChange, todo, todoFromIssue, teamMembers, onSa
               </div>
             </div>
 
-            <div className="grid grid-cols-1 gap-4">
-              <div className="space-y-3">
-                <Label htmlFor="assignedTo" className="text-sm font-semibold text-slate-700 flex items-center gap-2">
-                  <User className="h-4 w-4" />
-                  Assigned To
-                </Label>
-                <Select 
-                  value={formData.assignedToId} 
-                  onValueChange={(value) => setFormData({ ...formData, assignedToId: value })}
-                >
-                  <SelectTrigger className="bg-white/80 backdrop-blur-sm border-white/20 focus:border-blue-400 rounded-xl shadow-sm">
-                    <SelectValue placeholder="Select team member" />
-                  </SelectTrigger>
-                  <SelectContent className="bg-white/95 backdrop-blur-sm border-white/20 rounded-xl shadow-xl">
-                    {teamMembers.map(member => (
-                      <SelectItem key={member.id} value={member.id}>
-                        {member.first_name} {member.last_name}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-
-            </div>
-
-            <div className="space-y-3">
-              <Label htmlFor="dueDate" className="text-sm font-semibold text-slate-700 flex items-center gap-2">
-                <Calendar className="h-4 w-4" />
-                Due Date
-              </Label>
-              <Input
-                id="dueDate"
-                type="date"
-                value={formData.dueDate}
-                onChange={(e) => setFormData({ ...formData, dueDate: e.target.value })}
-                required
-                className="bg-white/80 dark:bg-gray-700/50 backdrop-blur-sm border-white/20 dark:border-gray-600/50 rounded-xl shadow-sm transition-all duration-200"
-              />
-              <p className="text-xs text-slate-500">Defaults to 7 days from creation</p>
-            </div>
-
             {/* Updates section - only show for existing todos */}
             {todo && (
               <div className="space-y-3">
@@ -467,6 +426,47 @@ const TodoDialog = ({ open, onOpenChange, todo, todoFromIssue, teamMembers, onSa
                 )}
               </div>
             )}
+
+            <div className="grid grid-cols-1 gap-4">
+              <div className="space-y-3">
+                <Label htmlFor="assignedTo" className="text-sm font-semibold text-slate-700 flex items-center gap-2">
+                  <User className="h-4 w-4" />
+                  Assigned To
+                </Label>
+                <Select 
+                  value={formData.assignedToId} 
+                  onValueChange={(value) => setFormData({ ...formData, assignedToId: value })}
+                >
+                  <SelectTrigger className="bg-white/80 backdrop-blur-sm border-white/20 focus:border-blue-400 rounded-xl shadow-sm">
+                    <SelectValue placeholder="Select team member" />
+                  </SelectTrigger>
+                  <SelectContent className="bg-white/95 backdrop-blur-sm border-white/20 rounded-xl shadow-xl">
+                    {teamMembers.map(member => (
+                      <SelectItem key={member.id} value={member.id}>
+                        {member.first_name} {member.last_name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
+            </div>
+
+            <div className="space-y-3">
+              <Label htmlFor="dueDate" className="text-sm font-semibold text-slate-700 flex items-center gap-2">
+                <Calendar className="h-4 w-4" />
+                Due Date
+              </Label>
+              <Input
+                id="dueDate"
+                type="date"
+                value={formData.dueDate}
+                onChange={(e) => setFormData({ ...formData, dueDate: e.target.value })}
+                required
+                className="bg-white/80 dark:bg-gray-700/50 backdrop-blur-sm border-white/20 dark:border-gray-600/50 rounded-xl shadow-sm transition-all duration-200"
+              />
+              <p className="text-xs text-slate-500">Defaults to 7 days from creation</p>
+            </div>
 
             {/* Attachments section */}
             <div className="space-y-3">
