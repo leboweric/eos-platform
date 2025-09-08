@@ -108,6 +108,54 @@ const DashboardClean = () => {
   });
   const [headlines, setHeadlines] = useState({ customer: [], employee: [] });
   const [cascadedMessages, setCascadedMessages] = useState([]);
+  const [creatingIssueFromHeadline, setCreatingIssueFromHeadline] = useState(null);
+  const [success, setSuccess] = useState(null);
+  const [error, setError] = useState(null);
+  
+  // Function to create issue directly from headline
+  const createIssueFromHeadline = async (headline, type) => {
+    try {
+      setCreatingIssueFromHeadline(headline.id);
+      
+      const orgId = user?.organizationId || user?.organization_id;
+      const teamId = selectedDepartment?.id || getTeamId(user, viewMode === 'team-view' ? 'team' : 'individual');
+      
+      const issueData = {
+        title: `Follow up: ${headline.text.substring(0, 100)}`,
+        description: `This issue was created from a ${type} headline reported in the Weekly Meeting:\n\n**Headline:** ${headline.text}\n**Type:** ${type}\n**Reported by:** ${headline.createdBy || headline.created_by_name || 'Unknown'}\n**Date:** ${format(new Date(headline.created_at), 'MMM d, yyyy')}\n\n**Next steps:**\n- [ ] Investigate root cause\n- [ ] Determine action plan\n- [ ] Assign owner`,
+        timeline: 'short_term',
+        organization_id: orgId,
+        department_id: teamId,
+        related_headline_id: headline.id
+      };
+      
+      await issuesService.createIssue(issueData);
+      
+      // Update the headline to show it has an issue
+      setHeadlines(prev => ({
+        customer: prev.customer.map(h => 
+          h.id === headline.id ? { ...h, has_related_issue: true } : h
+        ),
+        employee: prev.employee.map(h => 
+          h.id === headline.id ? { ...h, has_related_issue: true } : h
+        )
+      }));
+      
+      // Refresh data
+      await fetchDashboardData();
+      
+      // Show success message
+      setSuccess('Issue created successfully');
+      setTimeout(() => setSuccess(null), 3000);
+      
+    } catch (error) {
+      console.error('Failed to create issue from headline:', error);
+      setError('Failed to create issue from headline');
+      setTimeout(() => setError(null), 3000);
+    } finally {
+      setCreatingIssueFromHeadline(null);
+    }
+  };
   
   // Re-fetch data when view mode or department changes
   useEffect(() => {
@@ -835,6 +883,22 @@ const DashboardClean = () => {
       {/* Background Pattern */}
       <div className="absolute inset-0 bg-grid-slate-100 [mask-image:linear-gradient(0deg,white,rgba(255,255,255,0.6))] -z-10"></div>
       
+      {/* Success Message */}
+      {success && (
+        <div className="fixed top-4 right-4 z-50 bg-green-500 text-white px-6 py-3 rounded-lg shadow-lg flex items-center gap-2 animate-slide-in">
+          <CheckCircle className="h-5 w-5" />
+          {success}
+        </div>
+      )}
+      
+      {/* Error Message */}
+      {error && (
+        <div className="fixed top-4 right-4 z-50 bg-red-500 text-white px-6 py-3 rounded-lg shadow-lg flex items-center gap-2 animate-slide-in">
+          <AlertCircle className="h-5 w-5" />
+          {error}
+        </div>
+      )}
+      
       <div className="max-w-7xl mx-auto px-8 py-8">
         {/* Enhanced Welcome Section */}
         <div className="mb-8">
@@ -1291,20 +1355,16 @@ const DashboardClean = () => {
                         {!headline.has_related_issue && (
                           <button
                             className="absolute top-3 right-3 opacity-0 group-hover:opacity-100 
-                                     transition-opacity p-1.5 rounded-lg hover:bg-gray-100"
-                            onClick={() => {
-                              setEditingIssue({
-                                fromHeadline: true,
-                                headlineId: headline.id,
-                                title: `Follow up: ${headline.text.substring(0, 100)}`,
-                                description: `This issue was created from a customer headline reported in the Weekly Meeting:\n\n**Headline:** ${headline.text}\n**Type:** Customer\n**Reported by:** ${headline.createdBy || headline.created_by_name || 'Unknown'}\n**Date:** ${format(new Date(headline.created_at), 'MMM d, yyyy')}\n\n**Next steps:**\n- [ ] Investigate root cause\n- [ ] Determine action plan\n- [ ] Assign owner`,
-                                timeline: 'short_term'
-                              });
-                              setShowIssueDialog(true);
-                            }}
+                                     transition-opacity p-1.5 rounded-lg hover:bg-gray-100 disabled:opacity-50"
+                            onClick={() => createIssueFromHeadline(headline, 'Customer')}
+                            disabled={creatingIssueFromHeadline === headline.id}
                             title="Create issue from headline"
                           >
-                            <AlertCircle className="h-4 w-4 text-gray-600" />
+                            {creatingIssueFromHeadline === headline.id ? (
+                              <Loader2 className="h-4 w-4 text-gray-600 animate-spin" />
+                            ) : (
+                              <AlertCircle className="h-4 w-4 text-gray-600" />
+                            )}
                           </button>
                         )}
                         
@@ -1348,20 +1408,16 @@ const DashboardClean = () => {
                         {!headline.has_related_issue && (
                           <button
                             className="absolute top-3 right-3 opacity-0 group-hover:opacity-100 
-                                     transition-opacity p-1.5 rounded-lg hover:bg-gray-100"
-                            onClick={() => {
-                              setEditingIssue({
-                                fromHeadline: true,
-                                headlineId: headline.id,
-                                title: `Follow up: ${headline.text.substring(0, 100)}`,
-                                description: `This issue was created from an employee headline reported in the Weekly Meeting:\n\n**Headline:** ${headline.text}\n**Type:** Employee\n**Reported by:** ${headline.createdBy || headline.created_by_name || 'Unknown'}\n**Date:** ${format(new Date(headline.created_at), 'MMM d, yyyy')}\n\n**Next steps:**\n- [ ] Investigate root cause\n- [ ] Determine action plan\n- [ ] Assign owner`,
-                                timeline: 'short_term'
-                              });
-                              setShowIssueDialog(true);
-                            }}
+                                     transition-opacity p-1.5 rounded-lg hover:bg-gray-100 disabled:opacity-50"
+                            onClick={() => createIssueFromHeadline(headline, 'Employee')}
+                            disabled={creatingIssueFromHeadline === headline.id}
                             title="Create issue from headline"
                           >
-                            <AlertCircle className="h-4 w-4 text-gray-600" />
+                            {creatingIssueFromHeadline === headline.id ? (
+                              <Loader2 className="h-4 w-4 text-gray-600 animate-spin" />
+                            ) : (
+                              <AlertCircle className="h-4 w-4 text-gray-600" />
+                            )}
                           </button>
                         )}
                         

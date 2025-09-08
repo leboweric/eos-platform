@@ -38,7 +38,8 @@ import {
   Users,
   User,
   Calendar,
-  ClipboardList
+  ClipboardList,
+  Loader2
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import ScorecardTableClean from '../components/scorecard/ScorecardTableClean';
@@ -165,6 +166,51 @@ const WeeklyAccountabilityMeetingPage = () => {
   const [showHeadlineDialog, setShowHeadlineDialog] = useState(false);
   const [showPriorityDialog, setShowPriorityDialog] = useState(false);
   const [selectedPriority, setSelectedPriority] = useState(null);
+  const [creatingIssueFromHeadline, setCreatingIssueFromHeadline] = useState(null);
+  
+  // Function to create issue directly from headline
+  const createIssueFromHeadline = async (headline, type) => {
+    try {
+      setCreatingIssueFromHeadline(headline.id);
+      
+      const cleanTeamId = (teamId === 'null' || teamId === 'undefined') ? null : teamId;
+      const effectiveTeamId = getEffectiveTeamId(cleanTeamId, user);
+      
+      const issueData = {
+        title: `Follow up: ${headline.text.substring(0, 100)}`,
+        description: `This issue was created from a ${type.toLowerCase()} headline reported in the Weekly Meeting:\n\n**Headline:** ${headline.text}\n**Type:** ${type}\n**Reported by:** ${headline.created_by_name || headline.createdBy || 'Unknown'}\n**Date:** ${format(new Date(headline.created_at), 'MMM d, yyyy')}\n\n**Next steps:**\n- [ ] Investigate root cause\n- [ ] Determine action plan\n- [ ] Assign owner`,
+        timeline: 'short_term',
+        department_id: effectiveTeamId,
+        related_headline_id: headline.id
+      };
+      
+      await issuesService.createIssue(issueData);
+      
+      // Update the headline to show it has an issue
+      setHeadlines(prev => ({
+        customer: prev.customer.map(h => 
+          h.id === headline.id ? { ...h, has_related_issue: true } : h
+        ),
+        employee: prev.employee.map(h => 
+          h.id === headline.id ? { ...h, has_related_issue: true } : h
+        )
+      }));
+      
+      // Refresh issues
+      await fetchIssues();
+      
+      // Show success message
+      setSuccess('Issue created successfully');
+      setTimeout(() => setSuccess(null), 3000);
+      
+    } catch (error) {
+      console.error('Failed to create issue from headline:', error);
+      setError('Failed to create issue from headline');
+      setTimeout(() => setError(null), 3000);
+    } finally {
+      setCreatingIssueFromHeadline(null);
+    }
+  };
   
   // Collapsible sections state
   const [expandedSections, setExpandedSections] = useState({
@@ -2658,20 +2704,16 @@ const WeeklyAccountabilityMeetingPage = () => {
                             {!headline.has_related_issue && (
                               <button
                                 className="absolute top-3 right-3 opacity-0 group-hover:opacity-100 
-                                         transition-opacity p-1.5 rounded-lg hover:bg-gray-100"
-                                onClick={() => {
-                                  setEditingIssue({
-                                    fromHeadline: true,
-                                    headlineId: headline.id,
-                                    title: `Follow up: ${headline.text.substring(0, 100)}`,
-                                    description: `This issue was created from a customer headline reported in the Weekly Meeting:\n\n**Headline:** ${headline.text}\n**Type:** Customer\n**Reported by:** ${headline.created_by_name || headline.createdBy || 'Unknown'}\n**Date:** ${format(new Date(headline.created_at), 'MMM d, yyyy')}\n\n**Next steps:**\n- [ ] Investigate root cause\n- [ ] Determine action plan\n- [ ] Assign owner`,
-                                    timeline: 'short_term'
-                                  });
-                                  setShowIssueDialog(true);
-                                }}
+                                         transition-opacity p-1.5 rounded-lg hover:bg-gray-100 disabled:opacity-50"
+                                onClick={() => createIssueFromHeadline(headline, 'Customer')}
+                                disabled={creatingIssueFromHeadline === headline.id}
                                 title="Create issue from headline"
                               >
-                                <AlertTriangle className="h-4 w-4 text-gray-600" />
+                                {creatingIssueFromHeadline === headline.id ? (
+                                  <Loader2 className="h-4 w-4 text-gray-600 animate-spin" />
+                                ) : (
+                                  <AlertTriangle className="h-4 w-4 text-gray-600" />
+                                )}
                               </button>
                             )}
                             
@@ -2715,20 +2757,16 @@ const WeeklyAccountabilityMeetingPage = () => {
                             {!headline.has_related_issue && (
                               <button
                                 className="absolute top-3 right-3 opacity-0 group-hover:opacity-100 
-                                         transition-opacity p-1.5 rounded-lg hover:bg-gray-100"
-                                onClick={() => {
-                                  setEditingIssue({
-                                    fromHeadline: true,
-                                    headlineId: headline.id,
-                                    title: `Follow up: ${headline.text.substring(0, 100)}`,
-                                    description: `This issue was created from an employee headline reported in the Weekly Meeting:\n\n**Headline:** ${headline.text}\n**Type:** Employee\n**Reported by:** ${headline.created_by_name || headline.createdBy || 'Unknown'}\n**Date:** ${format(new Date(headline.created_at), 'MMM d, yyyy')}\n\n**Next steps:**\n- [ ] Investigate root cause\n- [ ] Determine action plan\n- [ ] Assign owner`,
-                                    timeline: 'short_term'
-                                  });
-                                  setShowIssueDialog(true);
-                                }}
+                                         transition-opacity p-1.5 rounded-lg hover:bg-gray-100 disabled:opacity-50"
+                                onClick={() => createIssueFromHeadline(headline, 'Employee')}
+                                disabled={creatingIssueFromHeadline === headline.id}
                                 title="Create issue from headline"
                               >
-                                <AlertTriangle className="h-4 w-4 text-gray-600" />
+                                {creatingIssueFromHeadline === headline.id ? (
+                                  <Loader2 className="h-4 w-4 text-gray-600 animate-spin" />
+                                ) : (
+                                  <AlertTriangle className="h-4 w-4 text-gray-600" />
+                                )}
                               </button>
                             )}
                             
