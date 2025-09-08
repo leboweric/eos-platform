@@ -114,6 +114,8 @@ const DashboardClean = () => {
     if (user && selectedDepartment) {
       console.log('Dashboard useEffect triggered - viewMode:', viewMode, 'selectedDepartment:', selectedDepartment?.id);
       fetchDashboardData();
+      fetchHeadlines();
+      fetchCascadedMessages();
     }
   }, [viewMode, selectedDepartment, user]);
   
@@ -121,10 +123,12 @@ const DashboardClean = () => {
     if (user?.isConsultant && localStorage.getItem('consultantImpersonating') !== 'true') {
       navigate('/consultant');
     } else if (user) {
-      fetchDashboardData();
       fetchOrganizationTheme();
-      fetchHeadlines();
-      fetchCascadedMessages();
+      // Only fetch dashboard data if selectedDepartment isn't loaded yet
+      // This provides initial data while waiting for department context
+      if (!selectedDepartment) {
+        fetchDashboardData();
+      }
       
       // Retry fetching business blueprint after a short delay if initial load fails
       // This helps with timing issues on initial login
