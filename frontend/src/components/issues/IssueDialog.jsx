@@ -385,12 +385,14 @@ const IssueDialog = ({
             {/* Second row: Details full width */}
             <div className="grid gap-3">
               <Label htmlFor="description" className="text-sm font-semibold text-slate-700">Details</Label>
-              <RichTextEditor
-                value={formData.description}
-                onChange={(value) => setFormData({ ...formData, description: value })}
-                placeholder="Provide more details about the issue..."
-                className="shadow-sm"
-              />
+              <div className="max-h-[200px] overflow-y-auto border rounded-xl shadow-sm">
+                <RichTextEditor
+                  value={formData.description}
+                  onChange={(value) => setFormData({ ...formData, description: value })}
+                  placeholder="Provide more details about the issue..."
+                  className="border-0 shadow-none"
+                />
+              </div>
             </div>
 
             {/* Third row: Attachments */}
