@@ -3293,9 +3293,11 @@ const WeeklyAccountabilityMeetingPage = () => {
       {/* Background Pattern */}
       <div className="fixed inset-0 bg-grid-slate-100 [mask-image:linear-gradient(0deg,white,rgba(255,255,255,0.6))] -z-10"></div>
       
-      <div className="relative max-w-7xl mx-auto p-8 pb-32">
-        {/* Header */}
-        <div className="mb-8">
+      {/* Fixed Header Section */}
+      <div className="fixed top-0 left-0 right-0 z-50 bg-gradient-to-br from-slate-50/98 via-blue-50/98 to-indigo-50/98 backdrop-blur-xl shadow-lg border-b border-white/20">
+        <div className="max-w-7xl mx-auto p-8 pb-4">
+          {/* Header */}
+          <div className="mb-6">
           <div className="flex items-center justify-between mb-6">
             <div>
               <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full text-sm font-medium mb-4"
@@ -3394,7 +3396,49 @@ const WeeklyAccountabilityMeetingPage = () => {
             {/* Meeting auto-starts - no start button needed */}
           </div>
 
-          {/* Alerts */}
+          {/* Tabs Navigation - Inside Fixed Header */}
+          <Tabs value={activeSection} onValueChange={handleSectionChange}>
+            <TabsList className="w-full grid grid-cols-4 lg:grid-cols-8 gap-2 h-auto p-2 bg-white/95 backdrop-blur-md border border-white/50 rounded-2xl shadow-lg">
+              {agendaItems.map((item) => {
+                const Icon = item.icon;
+                const currentIndex = agendaItems.findIndex(i => i.id === activeSection);
+                const itemIndex = agendaItems.findIndex(i => i.id === item.id);
+                const isCompleted = itemIndex < currentIndex;
+                const isActive = item.id === activeSection;
+                
+                return (
+                  <TabsTrigger
+                    key={item.id}
+                    value={item.id}
+                    className="flex flex-col items-center gap-1 py-3 px-2 rounded-xl transition-all duration-200 hover:scale-[1.02]"
+                    style={{
+                      background: isActive ? `linear-gradient(135deg, ${themeColors.primary} 0%, ${themeColors.secondary} 100%)` : 'transparent',
+                      color: isActive ? 'white' : 'inherit',
+                      boxShadow: isActive ? '0 8px 32px rgba(0,0,0,0.12)' : 'none'
+                    }}
+                  >
+                    <Icon className={`h-5 w-5 ${
+                      isActive ? 'text-white' : 'text-slate-600'
+                    }`} style={isCompleted && !isActive ? { color: themeColors.primary } : {}} />
+                    <span className={`text-xs font-medium ${isActive ? 'text-white' : 'text-slate-700'}`}>{item.label}</span>
+                    <span className={`text-xs ${isActive ? 'text-white/80' : 'text-slate-500'}`}>{item.duration}m</span>
+                    {isCompleted && (
+                      <CheckCircle className="h-3 w-3" style={{ color: themeColors.primary }} />
+                    )}
+                  </TabsTrigger>
+                );
+              })}
+            </TabsList>
+          </Tabs>
+        </div>
+      </div>
+
+      {/* Spacer for fixed header */}
+      <div style={{ height: '360px' }}></div>
+
+      {/* Main Content */}
+      <div className="relative max-w-7xl mx-auto p-8">
+        {/* Alerts */}
           {error && (
             <Alert className="mb-4 border-red-200/50 bg-red-50/80 backdrop-blur-sm rounded-2xl shadow-sm">
               <AlertCircle className="h-4 w-4 text-red-600" />
@@ -3410,48 +3454,9 @@ const WeeklyAccountabilityMeetingPage = () => {
           )}
         </div>
 
-        {/* Tabs Navigation */}
-        <Tabs value={activeSection} onValueChange={handleSectionChange} className="space-y-8">
-          <div className="sticky top-0 z-50 -mx-8 px-8 py-4 bg-gradient-to-br from-slate-50 via-blue-50/50 to-indigo-50/50" style={{
-            backdropFilter: 'blur(20px)',
-            WebkitBackdropFilter: 'blur(20px)',
-            borderBottom: '1px solid rgba(255,255,255,0.3)'
-          }}>
-            <TabsList className="w-full grid grid-cols-4 lg:grid-cols-8 gap-2 h-auto p-2 bg-white/95 backdrop-blur-md border border-white/50 rounded-2xl shadow-lg">
-            {agendaItems.map((item) => {
-              const Icon = item.icon;
-              const currentIndex = agendaItems.findIndex(i => i.id === activeSection);
-              const itemIndex = agendaItems.findIndex(i => i.id === item.id);
-              const isCompleted = itemIndex < currentIndex;
-              const isActive = item.id === activeSection;
-              
-              return (
-                <TabsTrigger
-                  key={item.id}
-                  value={item.id}
-                  className="flex flex-col items-center gap-1 py-3 px-2 rounded-xl transition-all duration-200 hover:scale-[1.02]"
-                  style={{
-                    background: isActive ? `linear-gradient(135deg, ${themeColors.primary} 0%, ${themeColors.secondary} 100%)` : 'transparent',
-                    color: isActive ? 'white' : 'inherit',
-                    boxShadow: isActive ? '0 8px 32px rgba(0,0,0,0.12)' : 'none'
-                  }}
-                >
-                  <Icon className={`h-5 w-5 ${
-                    isActive ? 'text-white' : 'text-slate-600'
-                  }`} style={isCompleted && !isActive ? { color: themeColors.primary } : {}} />
-                  <span className={`text-xs font-medium ${isActive ? 'text-white' : 'text-slate-700'}`}>{item.label}</span>
-                  <span className={`text-xs ${isActive ? 'text-white/80' : 'text-slate-500'}`}>{item.duration}m</span>
-                  {isCompleted && (
-                    <CheckCircle className="h-3 w-3" style={{ color: themeColors.primary }} />
-                  )}
-                </TabsTrigger>
-              );
-            })}
-            </TabsList>
-          </div>
-
-          {/* Tab Content */}
-          <div className="bg-white/80 backdrop-blur-sm rounded-2xl shadow-xl border border-white/50 pb-8">
+        {/* Tab Content */}
+        <Tabs value={activeSection} className="space-y-8">
+          <div className="bg-white/80 backdrop-blur-sm rounded-2xl shadow-xl border border-white/50">
             {renderContent()}
           </div>
         </Tabs>
