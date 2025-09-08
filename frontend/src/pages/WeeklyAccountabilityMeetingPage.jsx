@@ -38,8 +38,7 @@ import {
   Users,
   User,
   Calendar,
-  ClipboardList,
-  Loader2
+  ClipboardList
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import ScorecardTableClean from '../components/scorecard/ScorecardTableClean';
