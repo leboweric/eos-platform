@@ -1506,21 +1506,12 @@ const DashboardClean = () => {
           open={showHeadlineDialog}
           onOpenChange={setShowHeadlineDialog}
           onSave={async (headlineData) => {
-            // Get the user's actual department/team ID (same logic as fetchDashboardData)
-            let userTeamId = null;
-            if (user?.teams && user.teams.length > 0) {
-              const nonLeadershipTeam = user.teams.find(team => !team.is_leadership_team);
-              if (nonLeadershipTeam) {
-                userTeamId = nonLeadershipTeam.id;
-              } else {
-                const leadershipTeam = user.teams.find(team => team.is_leadership_team);
-                userTeamId = leadershipTeam ? leadershipTeam.id : user.teams[0].id;
-              }
-            }
+            // Use the same teamId that fetchHeadlines uses to ensure consistency
+            const teamId = selectedDepartment?.id || getTeamId(user, viewMode === 'team-view' ? 'team' : 'individual');
             
             await headlinesService.createHeadline({
               ...headlineData,
-              teamId: userTeamId
+              teamId: teamId
             });
             // Refresh headlines after adding
             await fetchHeadlines();
