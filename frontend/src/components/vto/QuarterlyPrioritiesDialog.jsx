@@ -178,7 +178,7 @@ const QuarterlyPrioritiesDialog = ({ open, onOpenChange, data, onSave, organizat
                   className="bg-white/80 backdrop-blur-sm border-white/20 rounded-xl shadow-sm transition-all duration-200 "
                   style={{ '--focus-color': themeColors.primary }}
                   onFocus={(e) => e.target.style.borderColor = themeColors.primary}
-                  onBlur={(e) => e.target.style.borderColor = ''}"
+                  onBlur={(e) => e.target.style.borderColor = ''}
                 />
               </div>
             </div>
@@ -194,7 +194,7 @@ const QuarterlyPrioritiesDialog = ({ open, onOpenChange, data, onSave, organizat
                   className="bg-white/80 backdrop-blur-sm border-white/20 rounded-xl shadow-sm transition-all duration-200 "
                   style={{ '--focus-color': themeColors.primary }}
                   onFocus={(e) => e.target.style.borderColor = themeColors.primary}
-                  onBlur={(e) => e.target.style.borderColor = ''}"
+                  onBlur={(e) => e.target.style.borderColor = ''}
                 />
               </div>
 
@@ -208,7 +208,7 @@ const QuarterlyPrioritiesDialog = ({ open, onOpenChange, data, onSave, organizat
                   className="bg-white/80 backdrop-blur-sm border-white/20 rounded-xl shadow-sm transition-all duration-200 "
                   style={{ '--focus-color': themeColors.primary }}
                   onFocus={(e) => e.target.style.borderColor = themeColors.primary}
-                  onBlur={(e) => e.target.style.borderColor = ''}"
+                  onBlur={(e) => e.target.style.borderColor = ''}
                 />
               </div>
             </div>
@@ -270,7 +270,7 @@ const QuarterlyPrioritiesDialog = ({ open, onOpenChange, data, onSave, organizat
                     className="bg-white/80 backdrop-blur-sm border-white/20 rounded-xl shadow-sm transition-all duration-200 "
                   style={{ '--focus-color': themeColors.primary }}
                   onFocus={(e) => e.target.style.borderColor = themeColors.primary}
-                  onBlur={(e) => e.target.style.borderColor = ''}"
+                  onBlur={(e) => e.target.style.borderColor = ''}
                   />
                   <Button
                     type="button"
@@ -298,7 +298,7 @@ const QuarterlyPrioritiesDialog = ({ open, onOpenChange, data, onSave, organizat
                 className="bg-white/80 backdrop-blur-sm border-white/20 rounded-xl shadow-sm transition-all duration-200 "
                   style={{ '--focus-color': themeColors.primary }}
                   onFocus={(e) => e.target.style.borderColor = themeColors.primary}
-                  onBlur={(e) => e.target.style.borderColor = ''}"
+                  onBlur={(e) => e.target.style.borderColor = ''}
               />
             </div>
           </div>

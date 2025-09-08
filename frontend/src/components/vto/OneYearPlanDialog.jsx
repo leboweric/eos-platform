@@ -152,7 +152,7 @@ const OneYearPlanDialog = ({ open, onOpenChange, data, onSave, organization }) =
                         className="flex-1 bg-white/80 backdrop-blur-sm border-white/20 rounded-xl shadow-sm transition-all duration-200 "
                         style={{ '--focus-color': themeColors.primary }}
                         onFocus={(e) => e.target.style.borderColor = themeColors.primary}
-                        onBlur={(e) => e.target.style.borderColor = ''}"
+                        onBlur={(e) => e.target.style.borderColor = ''}
                       />
                       <div className="relative w-32">
                         <span className="absolute left-2 top-1/2 -translate-y-1/2 text-gray-500 text-sm">$</span>
@@ -169,7 +169,7 @@ const OneYearPlanDialog = ({ open, onOpenChange, data, onSave, organization }) =
                           className="pl-6 pr-8 bg-white/80 backdrop-blur-sm border-white/20 rounded-xl shadow-sm transition-all duration-200 "
                         style={{ '--focus-color': themeColors.primary }}
                         onFocus={(e) => e.target.style.borderColor = themeColors.primary}
-                        onBlur={(e) => e.target.style.borderColor = ''}"
+                        onBlur={(e) => e.target.style.borderColor = ''}
                         />
                         <span className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-500 text-sm">M</span>
                       </div>
@@ -203,7 +203,7 @@ const OneYearPlanDialog = ({ open, onOpenChange, data, onSave, organization }) =
                       className="pl-8 bg-white/80 backdrop-blur-sm border-white/20 rounded-xl shadow-sm transition-all duration-200 "
                         style={{ '--focus-color': themeColors.primary }}
                         onFocus={(e) => e.target.style.borderColor = themeColors.primary}
-                        onBlur={(e) => e.target.style.borderColor = ''}"
+                        onBlur={(e) => e.target.style.borderColor = ''}
                     />
                     <span className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500">M</span>
                   </div>
@@ -227,7 +227,7 @@ const OneYearPlanDialog = ({ open, onOpenChange, data, onSave, organization }) =
                   className="pr-8 bg-white/80 backdrop-blur-sm border-white/20 rounded-xl shadow-sm transition-all duration-200 "
                         style={{ '--focus-color': themeColors.primary }}
                         onFocus={(e) => e.target.style.borderColor = themeColors.primary}
-                        onBlur={(e) => e.target.style.borderColor = ''}"
+                        onBlur={(e) => e.target.style.borderColor = ''}
                 />
                 <span className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500">%</span>
               </div>
@@ -245,7 +245,7 @@ const OneYearPlanDialog = ({ open, onOpenChange, data, onSave, organization }) =
                 className="bg-white/80 backdrop-blur-sm border-white/20 rounded-xl shadow-sm transition-all duration-200 "
                         style={{ '--focus-color': themeColors.primary }}
                         onFocus={(e) => e.target.style.borderColor = themeColors.primary}
-                        onBlur={(e) => e.target.style.borderColor = ''}"
+                        onBlur={(e) => e.target.style.borderColor = ''}
               />
               <p className="text-xs text-gray-500">Select the date 1 year from now</p>
             </div>
@@ -281,7 +281,7 @@ const OneYearPlanDialog = ({ open, onOpenChange, data, onSave, organization }) =
                       className="flex-1 bg-white/80 backdrop-blur-sm border-white/20 rounded-xl shadow-sm transition-all duration-200 "
                         style={{ '--focus-color': themeColors.primary }}
                         onFocus={(e) => e.target.style.borderColor = themeColors.primary}
-                        onBlur={(e) => e.target.style.borderColor = ''}"
+                        onBlur={(e) => e.target.style.borderColor = ''}
                     />
                     <Input
                       type="text"
@@ -295,7 +295,7 @@ const OneYearPlanDialog = ({ open, onOpenChange, data, onSave, organization }) =
                       className="w-32 bg-white/80 backdrop-blur-sm border-white/20 rounded-xl shadow-sm transition-all duration-200 "
                         style={{ '--focus-color': themeColors.primary }}
                         onFocus={(e) => e.target.style.borderColor = themeColors.primary}
-                        onBlur={(e) => e.target.style.borderColor = ''}"
+                        onBlur={(e) => e.target.style.borderColor = ''}
                     />
                     <Button
                       type="button"
@@ -352,7 +352,7 @@ const OneYearPlanDialog = ({ open, onOpenChange, data, onSave, organization }) =
                         className="bg-white/80 backdrop-blur-sm border-white/20 rounded-xl shadow-sm transition-all duration-200 "
                         style={{ '--focus-color': themeColors.primary }}
                         onFocus={(e) => e.target.style.borderColor = themeColors.primary}
-                        onBlur={(e) => e.target.style.borderColor = ''}"
+                        onBlur={(e) => e.target.style.borderColor = ''}
                       />
                       {showDeleteButton && (
                         <Button

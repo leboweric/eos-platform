@@ -95,7 +95,7 @@ const TenYearTargetDialog = ({ open, onOpenChange, data, onSave }) => {
                 className="bg-white/80 backdrop-blur-sm border-white/20 rounded-xl shadow-sm transition-all duration-200 "
                 style={{ '--focus-color': themeColors.primary }}
                 onFocus={(e) => e.target.style.borderColor = themeColors.primary}
-                onBlur={(e) => e.target.style.borderColor = ''}"
+                onBlur={(e) => e.target.style.borderColor = ''}
               />
             </div>
             <div className="grid grid-cols-2 gap-4">
@@ -113,7 +113,7 @@ const TenYearTargetDialog = ({ open, onOpenChange, data, onSave }) => {
                   className="bg-white/80 backdrop-blur-sm border-white/20 rounded-xl shadow-sm transition-all duration-200 "
                 style={{ '--focus-color': themeColors.primary }}
                 onFocus={(e) => e.target.style.borderColor = themeColors.primary}
-                onBlur={(e) => e.target.style.borderColor = ''}"
+                onBlur={(e) => e.target.style.borderColor = ''}
                 />
               </div>
               <div className="space-y-2">
@@ -126,7 +126,7 @@ const TenYearTargetDialog = ({ open, onOpenChange, data, onSave }) => {
                   className="bg-white/80 backdrop-blur-sm border-white/20 rounded-xl shadow-sm transition-all duration-200 "
                 style={{ '--focus-color': themeColors.primary }}
                 onFocus={(e) => e.target.style.borderColor = themeColors.primary}
-                onBlur={(e) => e.target.style.borderColor = ''}"
+                onBlur={(e) => e.target.style.borderColor = ''}
                 />
               </div>
             </div>
@@ -140,7 +140,7 @@ const TenYearTargetDialog = ({ open, onOpenChange, data, onSave }) => {
                 className="bg-white/80 backdrop-blur-sm border-white/20 rounded-xl shadow-sm transition-all duration-200 "
                 style={{ '--focus-color': themeColors.primary }}
                 onFocus={(e) => e.target.style.borderColor = themeColors.primary}
-                onBlur={(e) => e.target.style.borderColor = ''}"
+                onBlur={(e) => e.target.style.borderColor = ''}
               />
             </div>
           </div>
