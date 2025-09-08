@@ -245,6 +245,13 @@ const TodoDialog = ({ open, onOpenChange, todo, todoFromIssue, teamMembers, onSa
                 id="title"
                 value={formData.title}
                 onChange={(e) => setFormData({ ...formData, title: e.target.value })}
+                onFocus={(e) => {
+                  // Prevent text selection by immediately collapsing selection to cursor position
+                  setTimeout(() => {
+                    const length = e.target.value.length;
+                    e.target.setSelectionRange(length, length);
+                  }, 0);
+                }}
                 placeholder="Enter to-do title..."
                 required
                 className="bg-white/80 dark:bg-gray-700/50 backdrop-blur-sm border-white/20 dark:border-gray-600/50 rounded-xl shadow-sm transition-all duration-200"
