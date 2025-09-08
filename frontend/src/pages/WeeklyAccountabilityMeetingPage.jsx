@@ -41,6 +41,7 @@ import {
   ClipboardList
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
+import { format } from 'date-fns';
 import ScorecardTableClean from '../components/scorecard/ScorecardTableClean';
 import { Progress } from '@/components/ui/progress';
 import PriorityDialog from '../components/priorities/PriorityDialog';
@@ -2638,49 +2639,60 @@ const WeeklyAccountabilityMeetingPage = () => {
                   </div>
                 )}
                 
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div className="border border-white/30 p-4 rounded-xl bg-white/60 backdrop-blur-sm shadow-sm">
-                    <h4 className="font-medium mb-2 text-gray-900 flex items-center gap-2">
-                      <Users className="h-4 w-4" />
-                      Customer Headlines
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  {/* Customer Headlines */}
+                  <div>
+                    <h4 className="text-sm font-semibold text-slate-900 mb-3 flex items-center gap-2">
+                      <div className="p-1.5 rounded-lg" style={{ background: `linear-gradient(135deg, ${themeColors.primary}15 0%, ${themeColors.secondary}15 100%)` }}>
+                        <Users className="h-4 w-4" style={{ color: themeColors.primary }} />
+                      </div>
+                      Customer Headlines ({headlines.customer.length})
                     </h4>
                     {headlines.customer.length > 0 ? (
-                      <ul className="list-disc list-inside text-sm space-y-2">
-                        {headlines.customer.map((headline) => (
-                          <li key={headline.id} className="text-gray-700">
-                            {headline.text}
-                            <span className="text-xs text-gray-500 ml-2">
-                              - {headline.created_by_name || headline.createdBy || 'Unknown'}
-                            </span>
-                          </li>
+                      <div className="space-y-2">
+                        {headlines.customer.map(headline => (
+                          <div key={headline.id} className="p-4 bg-white rounded-lg border-l-4 shadow-sm hover:shadow-md transition-shadow" 
+                               style={{ borderLeftColor: themeColors.primary }}>
+                            <p className="text-sm font-medium text-slate-900 leading-relaxed">{headline.text}</p>
+                            <p className="text-xs text-slate-600 mt-2 flex items-center gap-1">
+                              <User className="h-3 w-3" />
+                              <span className="font-medium">{headline.created_by_name || headline.createdBy || 'Unknown'}</span>
+                              <span className="text-slate-400">•</span>
+                              <span>{format(new Date(headline.created_at), 'MMM d')}</span>
+                            </p>
+                          </div>
                         ))}
-                      </ul>
+                      </div>
                     ) : (
-                      <ul className="list-disc list-inside text-sm space-y-1 text-gray-500">
-                        <li>Customer good or bad reports</li>
-                      </ul>
+                      <p className="text-sm text-slate-500 italic">No customer headlines</p>
                     )}
                   </div>
-                  <div className="border border-white/30 p-4 rounded-xl bg-white/60 backdrop-blur-sm shadow-sm">
-                    <h4 className="font-medium mb-2 text-gray-900 flex items-center gap-2">
-                      <Building2 className="h-4 w-4" />
-                      Employee Headlines
+
+                  {/* Employee Headlines */}
+                  <div>
+                    <h4 className="text-sm font-semibold text-slate-900 mb-3 flex items-center gap-2">
+                      <div className="p-1.5 rounded-lg" style={{ background: `linear-gradient(135deg, ${themeColors.primary}15 0%, ${themeColors.secondary}15 100%)` }}>
+                        <Building2 className="h-4 w-4" style={{ color: themeColors.primary }} />
+                      </div>
+                      Employee Headlines ({headlines.employee.length})
                     </h4>
                     {headlines.employee.length > 0 ? (
-                      <ul className="list-disc list-inside text-sm space-y-2">
-                        {headlines.employee.map((headline) => (
-                          <li key={headline.id} className="text-gray-700">
-                            {headline.text}
-                            <span className="text-xs text-gray-500 ml-2">
-                              - {headline.created_by_name || headline.createdBy || 'Unknown'}
-                            </span>
-                          </li>
+                      <div className="space-y-2">
+                        {headlines.employee.map(headline => (
+                          <div key={headline.id} className="p-4 bg-white rounded-lg border-l-4 shadow-sm hover:shadow-md transition-shadow" 
+                               style={{ borderLeftColor: themeColors.secondary }}>
+                            <p className="text-sm font-medium text-slate-900 leading-relaxed">{headline.text}</p>
+                            <p className="text-xs text-slate-600 mt-2 flex items-center gap-1">
+                              <User className="h-3 w-3" />
+                              <span className="font-medium">{headline.created_by_name || headline.createdBy || 'Unknown'}</span>
+                              <span className="text-slate-400">•</span>
+                              <span>{format(new Date(headline.created_at), 'MMM d')}</span>
+                            </p>
+                          </div>
                         ))}
-                      </ul>
+                      </div>
                     ) : (
-                      <ul className="list-disc list-inside text-sm space-y-1 text-gray-500">
-                        <li>Employee good or bad reports</li>
-                      </ul>
+                      <p className="text-sm text-slate-500 italic">No employee headlines</p>
                     )}
                   </div>
                 </div>
