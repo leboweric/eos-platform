@@ -388,22 +388,122 @@ const IssueDialog = ({
               </div>
             </div>
 
-            {/* Second row: Details full width */}
+            {/* Second row: Summary full width */}
             <div className="grid gap-3">
-              <Label htmlFor="description" className="text-sm font-semibold text-slate-700">Details</Label>
+              <Label htmlFor="description" className="text-sm font-semibold text-slate-700 dark:text-slate-300">Summary</Label>
               <div className="max-h-[200px] overflow-y-auto border rounded-xl shadow-sm">
                 <RichTextEditor
                   value={formData.description}
                   onChange={(value) => setFormData({ ...formData, description: value })}
-                  placeholder="Provide more details about the issue..."
+                  placeholder="Provide a brief summary of the issue..."
                   className="border-0 shadow-none"
                 />
               </div>
             </div>
 
-            {/* Third row: Attachments */}
+            {/* Third row: Updates - only show for existing issues */}
+            {issue && (
+              <div className="grid gap-3">
+                <div className="flex items-center justify-between">
+                  <Label className="text-sm font-semibold text-slate-700 dark:text-slate-300 flex items-center gap-2">
+                    <MessageSquare className="h-4 w-4" />
+                    Updates ({updates.length})
+                  </Label>
+                  {!showAddUpdate && (
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setShowAddUpdate(true)}
+                      className="text-xs"
+                    >
+                      <Plus className="h-3 w-3 mr-1" />
+                      Add Update
+                    </Button>
+                  )}
+                </div>
+
+                {/* Add Update Form */}
+                {showAddUpdate && (
+                  <div className="space-y-2">
+                    <Textarea
+                      value={updateText}
+                      onChange={(e) => setUpdateText(e.target.value)}
+                      placeholder="Add an update..."
+                      rows={3}
+                      className="bg-white/80 dark:bg-gray-700/50 backdrop-blur-sm border-white/20 dark:border-gray-600/50 focus:border-blue-400 rounded-xl shadow-sm"
+                    />
+                    <div className="flex gap-2">
+                      <Button
+                        type="button"
+                        size="sm"
+                        onClick={handleAddUpdate}
+                        disabled={!updateText.trim() || savingUpdate}
+                        className="text-white"
+                        style={{
+                          background: `linear-gradient(135deg, ${themeColors.primary} 0%, ${themeColors.secondary} 100%)`
+                        }}
+                      >
+                        {savingUpdate ? (
+                          <>
+                            <Loader2 className="mr-1 h-3 w-3 animate-spin" />
+                            Saving...
+                          </>
+                        ) : (
+                          'Add Update'
+                        )}
+                      </Button>
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        onClick={() => {
+                          setShowAddUpdate(false);
+                          setUpdateText('');
+                        }}
+                      >
+                        Cancel
+                      </Button>
+                    </div>
+                  </div>
+                )}
+
+                {/* Updates List */}
+                {loadingUpdates ? (
+                  <div className="text-sm text-slate-500">Loading updates...</div>
+                ) : updates.length > 0 ? (
+                  <div className="space-y-2 max-h-32 overflow-y-auto">
+                    {updates.map(update => (
+                      <div key={update.id} className="group bg-slate-50/80 dark:bg-gray-700/30 backdrop-blur-sm rounded-lg p-3">
+                        <div className="flex items-start justify-between">
+                          <div className="flex-1">
+                            <p className="text-sm text-slate-700 dark:text-slate-300 whitespace-pre-wrap">{update.update_text}</p>
+                            <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
+                              {update.created_by_name} • {new Date(update.created_at).toLocaleDateString()}
+                            </p>
+                          </div>
+                          <Button
+                            type="button"
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => handleDeleteUpdate(update.id)}
+                            className="opacity-0 group-hover:opacity-100 transition-opacity h-6 w-6 p-0"
+                          >
+                            <Trash2 className="h-3 w-3 text-red-500" />
+                          </Button>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                ) : !showAddUpdate && (
+                  <p className="text-sm text-slate-500 dark:text-slate-400 text-center py-2">No updates yet</p>
+                )}
+              </div>
+            )}
+
+            {/* Fourth row: Attachments */}
             <div className="grid gap-3">
-              <Label htmlFor="attachments" className="text-sm font-semibold text-slate-700">Attachments</Label>
+              <Label htmlFor="attachments" className="text-sm font-semibold text-slate-700 dark:text-slate-300">Attachments</Label>
               <div className="space-y-2">
                 
                 {/* Existing attachments */}
@@ -487,105 +587,6 @@ const IssueDialog = ({
                 <p className="text-xs text-slate-500">Max file size: 10MB</p>
               </div>
             </div>
-            {/* Updates Section - only show for existing issues */}
-            {issue && (
-              <div className="grid gap-3">
-                <div className="flex items-center justify-between">
-                  <Label className="text-sm font-semibold text-slate-700 flex items-center gap-2">
-                    <MessageSquare className="h-4 w-4" />
-                    Updates ({updates.length})
-                  </Label>
-                  {!showAddUpdate && (
-                    <Button
-                      type="button"
-                      variant="outline"
-                      size="sm"
-                      onClick={() => setShowAddUpdate(true)}
-                      className="text-xs"
-                    >
-                      <Plus className="h-3 w-3 mr-1" />
-                      Add Update
-                    </Button>
-                  )}
-                </div>
-
-                {/* Add Update Form */}
-                {showAddUpdate && (
-                  <div className="space-y-2">
-                    <Textarea
-                      value={updateText}
-                      onChange={(e) => setUpdateText(e.target.value)}
-                      placeholder="Add an update..."
-                      rows={3}
-                      className="bg-white/80 backdrop-blur-sm border-white/20 focus:border-blue-400 rounded-xl shadow-sm"
-                    />
-                    <div className="flex gap-2">
-                      <Button
-                        type="button"
-                        size="sm"
-                        onClick={handleAddUpdate}
-                        disabled={!updateText.trim() || savingUpdate}
-                        className="text-white"
-                        style={{
-                          background: `linear-gradient(135deg, ${themeColors.primary} 0%, ${themeColors.secondary} 100%)`
-                        }}
-                      >
-                        {savingUpdate ? (
-                          <>
-                            <Loader2 className="mr-1 h-3 w-3 animate-spin" />
-                            Saving...
-                          </>
-                        ) : (
-                          'Add Update'
-                        )}
-                      </Button>
-                      <Button
-                        type="button"
-                        variant="outline"
-                        size="sm"
-                        onClick={() => {
-                          setShowAddUpdate(false);
-                          setUpdateText('');
-                        }}
-                      >
-                        Cancel
-                      </Button>
-                    </div>
-                  </div>
-                )}
-
-                {/* Updates List */}
-                {loadingUpdates ? (
-                  <div className="text-sm text-slate-500">Loading updates...</div>
-                ) : updates.length > 0 ? (
-                  <div className="space-y-2 max-h-32 overflow-y-auto">
-                    {updates.map(update => (
-                      <div key={update.id} className="group bg-slate-50/80 backdrop-blur-sm rounded-lg p-3">
-                        <div className="flex items-start justify-between">
-                          <div className="flex-1">
-                            <p className="text-sm text-slate-700 whitespace-pre-wrap">{update.update_text}</p>
-                            <p className="text-xs text-slate-500 mt-1">
-                              {update.created_by_name} • {new Date(update.created_at).toLocaleDateString()}
-                            </p>
-                          </div>
-                          <Button
-                            type="button"
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => handleDeleteUpdate(update.id)}
-                            className="opacity-0 group-hover:opacity-100 transition-opacity h-6 w-6 p-0"
-                          >
-                            <Trash2 className="h-3 w-3 text-red-500" />
-                          </Button>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                ) : !showAddUpdate && (
-                  <p className="text-sm text-slate-500 text-center py-2">No updates yet</p>
-                )}
-              </div>
-            )}
           </div>
 
           {/* Action Buttons for existing issues */}
