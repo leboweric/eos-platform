@@ -3412,7 +3412,8 @@ const WeeklyAccountabilityMeetingPage = () => {
 
         {/* Tabs Navigation */}
         <Tabs value={activeSection} onValueChange={handleSectionChange} className="space-y-8">
-          <TabsList className="w-full grid grid-cols-4 lg:grid-cols-8 gap-2 h-auto p-2 bg-white/80 backdrop-blur-sm border border-white/50 rounded-2xl shadow-lg">
+          <div className="sticky top-0 z-20 pb-4">
+            <TabsList className="w-full grid grid-cols-4 lg:grid-cols-8 gap-2 h-auto p-2 bg-white/90 backdrop-blur-md border border-white/50 rounded-2xl shadow-lg">
             {agendaItems.map((item) => {
               const Icon = item.icon;
               const currentIndex = agendaItems.findIndex(i => i.id === activeSection);
@@ -3442,7 +3443,8 @@ const WeeklyAccountabilityMeetingPage = () => {
                 </TabsTrigger>
               );
             })}
-          </TabsList>
+            </TabsList>
+          </div>
 
           {/* Tab Content */}
           <div className="bg-white/80 backdrop-blur-sm rounded-2xl shadow-xl border border-white/50">
