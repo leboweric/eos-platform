@@ -177,7 +177,7 @@ const WeeklyAccountabilityMeetingPage = () => {
       const orgId = user?.organizationId || user?.organization_id;
       
       const issueData = {
-        title: `Follow up: ${headline.text.substring(0, 100)}`,
+        title: `Headline Issue: ${headline.text.substring(0, 100)}`,
         description: `This issue was created from a ${type.toLowerCase()} headline reported in the Weekly Meeting:\n\n**Headline:** ${headline.text}\n**Type:** ${type}\n**Reported by:** ${headline.created_by_name || headline.createdBy || 'Unknown'}\n**Date:** ${format(new Date(headline.created_at), 'MMM d, yyyy')}\n\n**Next steps:**\n- [ ] Investigate root cause\n- [ ] Determine action plan\n- [ ] Assign owner`,
         timeline: 'short_term',
         organization_id: orgId,
