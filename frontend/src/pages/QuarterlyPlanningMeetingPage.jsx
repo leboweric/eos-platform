@@ -81,7 +81,24 @@ const QuarterlyPlanningMeetingPage = () => {
     }
   }, [teamId, navigate]);
   
-  const { meetingCode, participants } = useMeeting();
+  const { 
+    meetingCode, 
+    participants, 
+    joinMeeting,
+    leaveMeeting, 
+    isConnected, 
+    isLeader, 
+    currentLeader, 
+    navigateToSection, 
+    broadcastVote, 
+    broadcastIssueUpdate,
+    broadcastTodoUpdate,
+    broadcastIssueListUpdate,
+    syncTimer,
+    updateNotes,
+    claimPresenter,
+    activeMeetings 
+  } = useMeeting();
   const { labels } = useTerminology();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
@@ -250,6 +267,127 @@ const QuarterlyPlanningMeetingPage = () => {
     setMeetingStarted(true);
     setMeetingStartTime(Date.now());
   }, []);
+  
+  // Auto-join meeting when component mounts
+  useEffect(() => {
+    if (!teamId || teamId === 'null' || teamId === 'undefined') return;
+    
+    const meetingRoom = `${teamId}-quarterly`;
+    console.log('🚀 Quarterly Planning auto-joining meeting room:', meetingRoom);
+    
+    // Small delay to check if meeting exists
+    setTimeout(() => {
+      const existingMeeting = activeMeetings?.[meetingRoom];
+      const hasParticipants = existingMeeting?.participantCount > 0;
+      
+      // Join as leader if first person, otherwise as participant
+      joinMeeting(meetingRoom, !hasParticipants);
+    }, 500);
+    
+    // Cleanup - leave meeting when component unmounts
+    return () => {
+      if (leaveMeeting) {
+        console.log('🔚 Leaving quarterly planning meeting');
+        leaveMeeting();
+      }
+    };
+  }, [teamId, joinMeeting, leaveMeeting, activeMeetings]);
+  
+  // Listen for section changes from leader
+  useEffect(() => {
+    const handleMeetingSectionChange = (event) => {
+      const { section } = event.detail;
+      if (section && !isLeader) {
+        console.log('📍 Follower changing section to:', section);
+        setActiveSection(section);
+        
+        // Fetch data for the new section
+        switch(section) {
+          case 'review-quarterly-rocks':
+          case 'establish-quarterly-rocks':
+            fetchPrioritiesData();
+            break;
+          case 'ids':
+            fetchIssuesData();
+            break;
+          case 'vto':
+            fetchVtoData();
+            break;
+          case 'eos-tools':
+            fetchTeamMembers();
+            break;
+          default:
+            break;
+        }
+      }
+    };
+    
+    window.addEventListener('meeting-section-change', handleMeetingSectionChange);
+    return () => window.removeEventListener('meeting-section-change', handleMeetingSectionChange);
+  }, [isLeader]);
+  
+  // Listen for meeting updates from other participants
+  useEffect(() => {
+    const handleVoteUpdate = (event) => {
+      const { issueId, voteCount, voterId } = event.detail;
+      
+      // Don't update if this is our own vote
+      if (voterId === user?.id) return;
+      
+      console.log('📊 Received vote update for issue:', issueId, 'new count:', voteCount);
+      
+      const updateIssueVote = (issue) => {
+        if (issue.id === issueId) {
+          return {
+            ...issue,
+            vote_count: voteCount
+          };
+        }
+        return issue;
+      };
+      
+      setShortTermIssues(prev => prev.map(updateIssueVote));
+      setLongTermIssues(prev => prev.map(updateIssueVote));
+      setIssues(prev => prev.map(updateIssueVote));
+    };
+    
+    const handleIssueUpdate = (event) => {
+      const issueData = event.detail;
+      console.log('📊 Received issue update:', issueData);
+      fetchIssuesData();
+    };
+    
+    const handleTodoUpdate = (event) => {
+      const { action, todoId, todo, status, completed } = event.detail;
+      console.log('✅ Received todo update:', event.detail);
+      
+      if (action === 'create') {
+        setTodos(prev => [...prev, todo]);
+      } else if (action === 'update') {
+        // Handle todo edits - replace the entire todo with the updated one
+        setTodos(prev => prev.map(t => t.id === todoId ? (todo.id ? todo : { ...t, ...todo }) : t));
+      } else if (action === 'status') {
+        // Handle status changes
+        setTodos(prev => prev.map(t => 
+          t.id === todoId ? { ...t, status, completed } : t
+        ));
+      } else if (action === 'delete') {
+        setTodos(prev => prev.filter(t => t.id !== todoId));
+      } else if (action === 'archive-done') {
+        setTodos(prev => prev.filter(t => t.status !== 'complete' && t.status !== 'completed'));
+      }
+    };
+    
+    window.addEventListener('meeting-vote-update', handleVoteUpdate);
+    window.addEventListener('meeting-issue-update', handleIssueUpdate);
+    window.addEventListener('meeting-todo-update', handleTodoUpdate);
+    
+    return () => {
+      window.removeEventListener('meeting-vote-update', handleVoteUpdate);
+      window.removeEventListener('meeting-issue-update', handleIssueUpdate);
+      window.removeEventListener('meeting-todo-update', handleTodoUpdate);
+    };
+  }, [user?.id]);
 
   const formatTime = (seconds) => {
     const hours = Math.floor(seconds / 3600);
@@ -769,6 +907,14 @@ const QuarterlyPlanningMeetingPage = () => {
       } else {
         await issuesService.unvoteForIssue(issueId);
       }
+      
+      // Broadcast vote to other participants
+      if (meetingCode && broadcastVote) {
+        const updatedIssue = issues.find(i => i.id === issueId);
+        if (updatedIssue) {
+          broadcastVote(issueId, updatedIssue.vote_count, user?.id);
+        }
+      }
     } catch (error) {
       console.error('Failed to update vote:', error);
       // Revert on error
@@ -813,6 +959,11 @@ const QuarterlyPlanningMeetingPage = () => {
   const handleSectionChange = (sectionId) => {
     setActiveSection(sectionId);
     setError(null);
+    
+    // Emit navigation event if leader
+    if (isLeader && navigateToSection) {
+      navigateToSection(sectionId);
+    }
   };
 
   const getNextSection = () => {
@@ -2608,14 +2759,74 @@ const QuarterlyPlanningMeetingPage = () => {
             {meetingStarted && (
               <div className="flex items-center gap-4">
                 {participants.length > 0 && (
-                  <div className="bg-blue-50/80 backdrop-blur-sm px-4 py-2 rounded-xl border border-blue-200/50 shadow-sm">
-                    <div className="flex items-center gap-2">
-                      <Users className="h-4 w-4 text-blue-600" />
-                      <span className="text-sm font-medium text-blue-900">
-                        {participants.length} participant{participants.length !== 1 ? 's' : ''}
-                      </span>
+                  <>
+                    <div className="relative group">
+                      <div className="backdrop-blur-sm px-4 py-2 rounded-xl border shadow-sm cursor-pointer" style={{
+                        backgroundColor: `${themeColors.primary}10`,
+                        borderColor: `${themeColors.primary}30`
+                      }}>
+                        <div className="flex items-center gap-2">
+                          <Users className="h-4 w-4" style={{ color: themeColors.primary }} />
+                          <span className="text-sm font-medium" style={{ color: themeColors.primary }}>
+                            {participants.length} participant{participants.length !== 1 ? 's' : ''}
+                          </span>
+                        </div>
+                      </div>
+                      
+                      {/* Participant names tooltip */}
+                      <div className="absolute top-full mt-2 left-0 bg-white rounded-lg shadow-lg border border-gray-200 p-3 opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none z-50 min-w-[200px]">
+                        <div className="text-xs font-semibold text-gray-700 mb-2">Participants:</div>
+                        <div className="space-y-1">
+                          {participants.map((participant, idx) => (
+                            <div key={idx} className="flex items-center gap-2 text-sm text-gray-600">
+                              <div className="w-2 h-2 rounded-full" style={{ backgroundColor: themeColors.primary }} />
+                              <span>{participant.name || 'Unknown'}</span>
+                              {participant.id === currentLeader && (
+                                <span className="text-xs font-medium" style={{ color: themeColors.primary }}>(Presenter)</span>
+                              )}
+                            </div>
+                          ))}
+                        </div>
+                      </div>
                     </div>
-                  </div>
+                    
+                    {/* Claim Presenter button */}
+                    {!isLeader && meetingCode && (
+                      <Button
+                        onClick={() => {
+                          if (claimPresenter) {
+                            claimPresenter();
+                          }
+                        }}
+                        className="text-white shadow-lg hover:shadow-xl transition-all duration-200"
+                        style={{
+                          background: `linear-gradient(135deg, ${themeColors.primary} 0%, ${themeColors.secondary} 100%)`,
+                          ':hover': {
+                            filter: 'brightness(1.1)'
+                          }
+                        }}
+                        onMouseEnter={(e) => {
+                          e.currentTarget.style.filter = 'brightness(1.1)';
+                        }}
+                        onMouseLeave={(e) => {
+                          e.currentTarget.style.filter = 'brightness(1)';
+                        }}
+                        size="sm"
+                      >
+                        Claim Presenter
+                      </Button>
+                    )}
+                    
+                    {/* Current presenter indicator */}
+                    {isLeader && (
+                      <div className="backdrop-blur-sm px-4 py-2 rounded-xl border shadow-sm" style={{ backgroundColor: `${themeColors.primary}10`, borderColor: `${themeColors.primary}30` }}>
+                        <div className="flex items-center gap-2">
+                          <div className="w-2 h-2 rounded-full animate-pulse" style={{ backgroundColor: themeColors.primary }} />
+                          <span className="text-sm font-medium" style={{ color: themeColors.primary }}>You're Presenting</span>
+                        </div>
+                      </div>
+                    )}
+                  </>
                 )}
                 <div className="bg-white/80 backdrop-blur-sm px-4 py-2 rounded-xl shadow-lg border border-white/50">
                   <div className="flex items-center gap-2">
@@ -2628,7 +2839,16 @@ const QuarterlyPlanningMeetingPage = () => {
                 {activeSection === 'conclude' && (
                   <Button
                     onClick={concludeMeeting}
-                    className="bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 text-white shadow-lg hover:shadow-xl transition-all duration-200 transform hover:scale-[1.02]"
+                    className="text-white shadow-lg hover:shadow-xl transition-all duration-200 transform hover:scale-[1.02]"
+                    style={{
+                      background: `linear-gradient(135deg, ${themeColors.primary} 0%, ${themeColors.secondary} 100%)`
+                    }}
+                    onMouseEnter={(e) => {
+                      e.currentTarget.style.filter = 'brightness(1.1)';
+                    }}
+                    onMouseLeave={(e) => {
+                      e.currentTarget.style.filter = 'brightness(1)';
+                    }}
                   >
                     <Send className="h-4 w-4 mr-2" />
                     Conclude Meeting
