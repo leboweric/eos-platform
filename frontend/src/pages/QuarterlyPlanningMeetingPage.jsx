@@ -35,6 +35,7 @@ import {
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import PriorityCard from '../components/priorities/PriorityCardClean';
+import PriorityDialog from '../components/priorities/PriorityDialog';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
@@ -117,6 +118,10 @@ const QuarterlyPlanningMeetingPage = () => {
     companyPriorities: false,
     individualPriorities: {}
   });
+  
+  // Priority dialog states
+  const [selectedPriority, setSelectedPriority] = useState(null);
+  const [showPriorityDialog, setShowPriorityDialog] = useState(false);
   
   // Theme state
   const [themeColors, setThemeColors] = useState({
@@ -1307,7 +1312,10 @@ const QuarterlyPlanningMeetingPage = () => {
                                 style={{
                                   backgroundColor: isComplete ? `${themeColors.primary}10` : undefined
                                 }}
-                                // onClick handler removed - no priority dialog exists
+                                onClick={() => {
+                                  setSelectedPriority(priority);
+                                  setShowPriorityDialog(true);
+                                }}
                               >
                                 <CardHeader className="pb-4">
                                   <div className="flex items-start justify-between">
@@ -1458,7 +1466,10 @@ const QuarterlyPlanningMeetingPage = () => {
                                       style={{
                                         backgroundColor: isComplete ? `${themeColors.primary}10` : undefined
                                       }}
-                                      // onClick handler removed - no priority dialog exists
+                                      onClick={() => {
+                                  setSelectedPriority(priority);
+                                  setShowPriorityDialog(true);
+                                }}
                                     >
                                       <CardHeader className="pb-4">
                                         <div className="flex items-start justify-between">
@@ -1722,7 +1733,10 @@ const QuarterlyPlanningMeetingPage = () => {
                                 style={{
                                   backgroundColor: isComplete ? `${themeColors.primary}10` : undefined
                                 }}
-                                // No onClick handler - no priority dialog exists
+                                onClick={() => {
+                                  setSelectedPriority(priority);
+                                  setShowPriorityDialog(true);
+                                }}
                               >
                                 <CardHeader className="pb-4">
                                   <div className="flex items-start justify-between">
@@ -1873,7 +1887,10 @@ const QuarterlyPlanningMeetingPage = () => {
                                       style={{
                                         backgroundColor: isComplete ? `${themeColors.primary}10` : undefined
                                       }}
-                                      // onClick handler removed - no priority dialog exists
+                                      onClick={() => {
+                                  setSelectedPriority(priority);
+                                  setShowPriorityDialog(true);
+                                }}
                                     >
                                       <CardHeader className="pb-4">
                                         <div className="flex items-start justify-between">
@@ -2490,6 +2507,63 @@ const QuarterlyPlanningMeetingPage = () => {
             )}
           </div>
         )}
+
+        {/* Edit Priority Dialog */}
+        <PriorityDialog
+          open={showPriorityDialog}
+          onOpenChange={setShowPriorityDialog}
+          priority={selectedPriority}
+          teamMembers={teamMembers}
+          onUpdate={async (updatedPriority) => {
+            await fetchPrioritiesData();
+            setShowPriorityDialog(false);
+          }}
+          onArchive={async (priorityId) => {
+            const orgId = user?.organizationId || user?.organization_id;
+            const effectiveTeamId = teamId || getEffectiveTeamId(teamId, user);
+            await quarterlyPrioritiesService.archivePriority(orgId, effectiveTeamId, priorityId);
+            await fetchPrioritiesData();
+            setShowPriorityDialog(false);
+          }}
+          onDelete={async (priorityId) => {
+            const orgId = user?.organizationId || user?.organization_id;
+            const effectiveTeamId = teamId || getEffectiveTeamId(teamId, user);
+            await quarterlyPrioritiesService.deletePriority(orgId, effectiveTeamId, priorityId);
+            await fetchPrioritiesData();
+            setShowPriorityDialog(false);
+          }}
+          onAddMilestone={async (priorityId, milestone) => {
+            const orgId = user?.organizationId || user?.organization_id;
+            const effectiveTeamId = teamId || getEffectiveTeamId(teamId, user);
+            await quarterlyPrioritiesService.addMilestone(orgId, effectiveTeamId, priorityId, milestone);
+            await fetchPrioritiesData();
+          }}
+          onEditMilestone={async (priorityId, milestoneId, milestone) => {
+            const orgId = user?.organizationId || user?.organization_id;
+            const effectiveTeamId = teamId || getEffectiveTeamId(teamId, user);
+            await quarterlyPrioritiesService.updateMilestone(orgId, effectiveTeamId, priorityId, milestoneId, milestone);
+            await fetchPrioritiesData();
+          }}
+          onDeleteMilestone={async (priorityId, milestoneId) => {
+            const orgId = user?.organizationId || user?.organization_id;
+            const effectiveTeamId = teamId || getEffectiveTeamId(teamId, user);
+            await quarterlyPrioritiesService.deleteMilestone(orgId, effectiveTeamId, priorityId, milestoneId);
+            await fetchPrioritiesData();
+          }}
+          onToggleMilestone={async (priorityId, milestoneId, completed) => {
+            const orgId = user?.organizationId || user?.organization_id;
+            const effectiveTeamId = teamId || getEffectiveTeamId(teamId, user);
+            await quarterlyPrioritiesService.updateMilestone(orgId, effectiveTeamId, priorityId, milestoneId, { completed });
+            await fetchPrioritiesData();
+          }}
+          onCreateLinkedIssue={async (priorityId, issueData) => {
+            await issuesService.createIssue({
+              ...issueData,
+              linkedPriorityId: priorityId
+            });
+            setSuccess('Issue created successfully');
+          }}
+        />
 
         {/* Add Priority Dialog */}
         <Dialog open={showAddPriority} onOpenChange={setShowAddPriority}>
