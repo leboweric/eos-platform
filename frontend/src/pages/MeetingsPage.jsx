@@ -46,6 +46,9 @@ const MeetingsPage = () => {
     secondary: '#1E40AF',
     accent: '#60A5FA'
   });
+  const [showTeamSelectionDialog, setShowTeamSelectionDialog] = useState(false);
+  const [pendingMeetingId, setPendingMeetingId] = useState(null);
+  const [teamForMeeting, setTeamForMeeting] = useState(null);
 
   const meetings = [
     {
@@ -247,8 +250,22 @@ const MeetingsPage = () => {
       return;
     }
     
+    // Check if user is on multiple teams
+    if (teams && teams.length > 1) {
+      // Show team selection dialog for multi-team users
+      setPendingMeetingId(meetingId);
+      setTeamForMeeting(selectedTeamId);
+      setShowTeamSelectionDialog(true);
+      return;
+    }
+    
+    // If single team, proceed directly
+    proceedWithMeeting(meetingId, selectedTeamId);
+  };
+  
+  const proceedWithMeeting = (meetingId, teamId) => {
     // Use team ID as the meeting identifier (simpler - no codes needed!)
-    const meetingRoom = `${selectedTeamId}-${meetingId}`;
+    const meetingRoom = `${teamId}-${meetingId}`;
     console.log('🏠 Meeting room code:', meetingRoom);
     
     // Join the meeting as leader
@@ -262,11 +279,16 @@ const MeetingsPage = () => {
     // Navigate to the appropriate meeting page
     if (meetingId === 'weekly-accountability') {
       console.log('🧭 Navigating to weekly meeting');
-      navigate(`/meetings/weekly-accountability/${selectedTeamId}`);
+      navigate(`/meetings/weekly-accountability/${teamId}`);
     } else if (meetingId === 'quarterly-planning') {
       console.log('🧭 Navigating to quarterly meeting');
-      navigate(`/meetings/quarterly-planning/${selectedTeamId}`);
+      navigate(`/meetings/quarterly-planning/${teamId}`);
     }
+  };
+  
+  const handleConfirmTeamSelection = () => {
+    setShowTeamSelectionDialog(false);
+    proceedWithMeeting(pendingMeetingId, teamForMeeting);
   };
 
   const handleJoinMeeting = (meetingType) => {
@@ -608,6 +630,116 @@ const MeetingsPage = () => {
                 }}
               >
                 Join Meeting
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+      
+      {/* Team Selection Dialog for Multi-Team Users */}
+      <Dialog open={showTeamSelectionDialog} onOpenChange={setShowTeamSelectionDialog}>
+        <DialogContent className="bg-white/95 backdrop-blur-sm border border-white/20 shadow-2xl max-w-md">
+          <DialogHeader>
+            <DialogTitle>Which team meeting?</DialogTitle>
+            <DialogDescription>
+              You're a member of multiple teams. Please confirm which team's meeting you want to start.
+            </DialogDescription>
+          </DialogHeader>
+          
+          <div className="space-y-4 mt-4">
+            <div className="space-y-3">
+              {teams.map((team) => (
+                <div 
+                  key={team.id}
+                  className={`p-4 border-2 rounded-xl cursor-pointer transition-all duration-200 backdrop-blur-sm ${
+                    teamForMeeting === team.id 
+                      ? 'shadow-sm' 
+                      : 'border-white/50 bg-white/60 hover:border-blue-300 hover:bg-blue-50/40'
+                  }`}
+                  style={{
+                    borderColor: teamForMeeting === team.id ? themeColors.primary : undefined,
+                    backgroundColor: teamForMeeting === team.id 
+                      ? `${themeColors.primary}15` 
+                      : undefined
+                  }}
+                  onClick={() => setTeamForMeeting(team.id)}
+                >
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-3">
+                      <div className="p-2 rounded-lg" style={{ 
+                        backgroundColor: teamForMeeting === team.id 
+                          ? `${themeColors.primary}20` 
+                          : 'rgb(243 244 246)'
+                      }}>
+                        <Users className="h-4 w-4" style={{ 
+                          color: teamForMeeting === team.id 
+                            ? themeColors.primary 
+                            : 'rgb(107 114 128)'
+                        }} />
+                      </div>
+                      <div>
+                        <h4 className="font-medium">{team.name}</h4>
+                        {team.is_leadership_team && (
+                          <p className="text-xs text-gray-500">Leadership Team</p>
+                        )}
+                      </div>
+                    </div>
+                    <div className="flex items-center">
+                      <input
+                        type="radio"
+                        name="team-selection"
+                        checked={teamForMeeting === team.id}
+                        onChange={() => setTeamForMeeting(team.id)}
+                        className="h-4 w-4 text-blue-600 focus:ring-blue-500"
+                      />
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+            
+            <div className="pt-2">
+              <p className="text-sm text-gray-500">
+                {pendingMeetingId === 'weekly-accountability' 
+                  ? `Starting ${labels.weekly_meeting_label || 'Weekly Accountability Meeting'}`
+                  : `Starting ${labels.quarterly_meeting_label || 'Quarterly Planning Meeting'}`
+                }
+              </p>
+            </div>
+
+            <div className="flex gap-2">
+              <Button
+                variant="outline"
+                onClick={() => {
+                  setShowTeamSelectionDialog(false);
+                  setPendingMeetingId(null);
+                  setTeamForMeeting(null);
+                }}
+                className="flex-1 bg-white/80 backdrop-blur-sm border-white/20 hover:bg-white/90 shadow-sm transition-all duration-200"
+              >
+                Cancel
+              </Button>
+              <Button
+                onClick={handleConfirmTeamSelection}
+                disabled={!teamForMeeting}
+                className="flex-1 text-white shadow-lg hover:shadow-xl transition-all duration-200 transform hover:scale-[1.02]"
+                style={{
+                  background: teamForMeeting 
+                    ? `linear-gradient(135deg, ${themeColors.primary} 0%, ${themeColors.secondary} 100%)`
+                    : 'rgb(229 231 235)'
+                }}
+                onMouseEnter={(e) => {
+                  if (teamForMeeting) {
+                    e.currentTarget.style.filter = 'brightness(1.1)';
+                  }
+                }}
+                onMouseLeave={(e) => {
+                  if (teamForMeeting) {
+                    e.currentTarget.style.filter = 'brightness(1)';
+                  }
+                }}
+              >
+                Start {teams.find(t => t.id === teamForMeeting)?.name} Meeting
               </Button>
             </div>
           </div>

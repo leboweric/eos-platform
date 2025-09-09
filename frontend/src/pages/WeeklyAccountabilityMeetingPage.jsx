@@ -96,6 +96,34 @@ const WeeklyAccountabilityMeetingPage = () => {
   console.log('🐛 [WeeklyAccountabilityMeeting] Raw teamId from useParams:', teamId);
   console.log('🐛 [WeeklyAccountabilityMeeting] teamId length:', teamId?.length);
   console.log('🐛 [WeeklyAccountabilityMeeting] teamId type:', typeof teamId);
+  
+  // Fetch current team information on mount
+  useEffect(() => {
+    const fetchCurrentTeam = async () => {
+      if (!teamId || teamId === 'null' || teamId === 'undefined') return;
+      
+      try {
+        // First check if team info is in user.teams
+        if (user?.teams && user.teams.length > 0) {
+          const team = user.teams.find(t => t.id === teamId);
+          if (team) {
+            setCurrentTeam(team);
+            return;
+          }
+        }
+        
+        // If not found, fetch from API
+        const response = await teamsService.getTeam(teamId);
+        if (response?.data) {
+          setCurrentTeam(response.data);
+        }
+      } catch (error) {
+        console.error('Failed to fetch team information:', error);
+      }
+    };
+    
+    fetchCurrentTeam();
+  }, [teamId, user]);
   const { 
     meetingCode, 
     participants, 
@@ -166,6 +194,7 @@ const WeeklyAccountabilityMeetingPage = () => {
   const [showPriorityDialog, setShowPriorityDialog] = useState(false);
   const [selectedPriority, setSelectedPriority] = useState(null);
   const [creatingIssueFromHeadline, setCreatingIssueFromHeadline] = useState(null);
+  const [currentTeam, setCurrentTeam] = useState(null);
   
   // Function to create issue directly from headline
   const createIssueFromHeadline = async (headline, type) => {
@@ -3406,13 +3435,24 @@ const WeeklyAccountabilityMeetingPage = () => {
         <div className="mb-8">
           <div className="flex items-center justify-between mb-6">
             <div>
-              <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full text-sm font-medium mb-4"
-                   style={{
-                     background: `linear-gradient(135deg, ${themeColors.primary}15 0%, ${themeColors.secondary}15 100%)`,
-                     color: themeColors.primary
-                   }}>
-                <Users className="h-4 w-4" />
-                WEEKLY MEETING
+              <div className="flex items-center gap-3 mb-4">
+                <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full text-sm font-medium"
+                     style={{
+                       background: `linear-gradient(135deg, ${themeColors.primary}15 0%, ${themeColors.secondary}15 100%)`,
+                       color: themeColors.primary
+                     }}>
+                  <Users className="h-4 w-4" />
+                  WEEKLY MEETING
+                </div>
+                {currentTeam && user?.teams && user.teams.length > 1 && (
+                  <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full text-sm font-medium bg-white/80 backdrop-blur-sm border border-white/50 shadow-sm">
+                    <Building2 className="h-4 w-4 text-gray-600" />
+                    <span className="text-gray-700 font-semibold">{currentTeam.name}</span>
+                    {currentTeam.is_leadership_team && (
+                      <Badge variant="secondary" className="text-xs">Leadership</Badge>
+                    )}
+                  </div>
+                )}
               </div>
               <h1 className="text-4xl font-bold mb-2 bg-gradient-to-r from-slate-900 via-slate-800 to-slate-900 bg-clip-text text-transparent">{labels.weekly_meeting_label || 'Weekly Accountability Meeting'}</h1>
               <p className="text-lg text-slate-600">{getMeetingDescription()}</p>
