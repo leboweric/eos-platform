@@ -21,7 +21,8 @@ import {
   ListChecks,
   AlertTriangle,
   Building2,
-  Users
+  Users,
+  TrendingUp
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import PriorityCard from '../components/priorities/PriorityCardClean';
@@ -125,14 +126,14 @@ const QuarterlyPlanningMeetingPage = () => {
     if (isEOS) {
       // EOS Quarterly Pulsing Meeting
       return [
-        { id: 'check-in', label: 'Segue', duration: 5, icon: CheckSquare, description: 'Good news & expectations' },
-        { id: 'review-prior', label: 'Previous Quarter Review', duration: 45, icon: Calendar, description: 'Review V/TO, financials & Rocks' },
-        { id: '2-page-plan', label: 'V/TO Review', duration: 30, icon: ClipboardList, description: 'Review and update V/TO' },
-        { id: 'learning', label: 'Customer & Employee Headlines', duration: 30, icon: MessageSquare, description: 'Key feedback & insights' },
-        { id: 'quarterly-priorities', label: 'Establish Next 90-Day Rocks', duration: 120, icon: ListChecks, description: 'Set company and individual Rocks' },
-        { id: 'issues', label: 'IDS', duration: 180, icon: AlertTriangle, description: 'Identify, Discuss, Solve key issues' },
-        { id: 'next-steps', label: 'Next Steps', duration: 10, icon: ClipboardList, description: 'Who, what, when' },
-        { id: 'conclude', label: 'Conclude', duration: 10, icon: CheckSquare, description: 'Rate meeting & feedback' }
+        { id: 'check-in', label: 'Check-In', duration: 15, icon: CheckSquare, description: 'Good news & expectations' },
+        { id: 'review-quarterly-rocks', label: 'Review Prior Quarter', duration: 30, icon: Target, description: 'Review last quarter\'s Rocks completion' },
+        { id: 'vto', label: 'Review V/TO', duration: 60, icon: ClipboardList, description: 'Review and update Vision/Traction Organizer' },
+        { id: 'eos-tools', label: 'EOS Tools', duration: 60, icon: Building2, description: 'Review Accountability Chart & Scorecard' },
+        { id: 'establish-quarterly-rocks', label: 'Rocks', duration: 120, icon: ListChecks, description: 'Set company and individual Rocks for next quarter' },
+        { id: 'ids', label: 'IDS', duration: 180, icon: AlertTriangle, description: 'Identify, Discuss, Solve key issues' },
+        { id: 'next-steps', label: 'Next Steps', duration: 7, icon: ClipboardList, description: 'Who, what, when' },
+        { id: 'conclude', label: 'Conclude', duration: 8, icon: CheckSquare, description: 'Rate meeting & feedback' }
       ];
     } else if (isOKR) {
       // OKRs Quarterly Planning Session
@@ -279,15 +280,19 @@ const QuarterlyPlanningMeetingPage = () => {
   };
 
   useEffect(() => {
-    if (activeSection === 'review-prior' || activeSection === 'quarterly-priorities') {
+    if (activeSection === 'review-quarterly-rocks' || activeSection === 'establish-quarterly-rocks') {
       fetchPrioritiesData();
       fetchTeamMembers(); // Need team members for Add Priority dialog
-    } else if (activeSection === 'issues') {
+    } else if (activeSection === 'ids') {
       fetchIssuesData();
       fetchTeamMembers();
-    } else if (activeSection === '2-page-plan') {
+    } else if (activeSection === 'vto') {
       fetchVtoData();
       fetchTeamMembers(); // Need team members for Add Issue dialog
+    } else if (activeSection === 'eos-tools') {
+      // EOS Tools section - could load scorecard/accountability chart data here
+      fetchTeamMembers();
+      setLoading(false);
     } else if (activeSection === 'check-in') {
       fetchTeamMembers(); // Need team members for Add Issue dialog in Check-In
       setLoading(false);
@@ -706,6 +711,258 @@ const QuarterlyPlanningMeetingPage = () => {
     }
 
     switch (activeSection) {
+      case 'eos-tools':
+        return (
+          <Card className="border-0 shadow-sm">
+            <CardHeader className="rounded-t-lg" style={{ backgroundColor: hexToRgba(themeColors.accent, 0.05) }}>
+              <div className="flex items-center justify-between">
+                <div>
+                  <CardTitle className="flex items-center gap-2 text-xl">
+                    <Building2 className="h-5 w-5" style={{ color: themeColors.primary }} />
+                    EOS Tools
+                  </CardTitle>
+                  <CardDescription className="mt-1">Review Accountability Chart & Scorecard (1 hour)</CardDescription>
+                </div>
+                <div className="text-sm text-gray-500 bg-white px-3 py-1 rounded-full">
+                  1 hour
+                </div>
+              </div>
+            </CardHeader>
+            <CardContent className="pt-6">
+              <div className="space-y-6">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <div className="p-6 rounded-xl border" style={{ 
+                    backgroundColor: hexToRgba(themeColors.accent, 0.03),
+                    borderColor: hexToRgba(themeColors.accent, 0.15)
+                  }}>
+                    <h4 className="font-semibold text-lg mb-3 flex items-center gap-2">
+                      <Users className="h-5 w-5" style={{ color: themeColors.primary }} />
+                      Accountability Chart
+                    </h4>
+                    <p className="text-gray-600">Review your organizational structure and ensure everyone knows their role.</p>
+                    <Button 
+                      variant="outline" 
+                      className="mt-4"
+                      onClick={() => navigate('/accountability')}
+                    >
+                      View Accountability Chart
+                    </Button>
+                  </div>
+                  <div className="p-6 rounded-xl border" style={{ 
+                    backgroundColor: hexToRgba(themeColors.secondary, 0.03),
+                    borderColor: hexToRgba(themeColors.secondary, 0.15)
+                  }}>
+                    <h4 className="font-semibold text-lg mb-3 flex items-center gap-2">
+                      <TrendingUp className="h-5 w-5" style={{ color: themeColors.secondary }} />
+                      Scorecard
+                    </h4>
+                    <p className="text-gray-600">Review your weekly metrics and ensure they're tracking toward goals.</p>
+                    <Button 
+                      variant="outline" 
+                      className="mt-4"
+                      onClick={() => navigate('/scorecard')}
+                    >
+                      View Scorecard
+                    </Button>
+                  </div>
+                </div>
+                <div className="p-4 bg-blue-50/80 backdrop-blur-sm border border-blue-200/50 rounded-xl">
+                  <p className="text-blue-800 text-center">
+                    <span className="font-semibold">Key Questions:</span> Is everyone in the right seat? Are we measuring what matters?
+                  </p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        );
+
+      case 'ids':
+        if (loading) {
+          return (
+            <div className="flex items-center justify-center h-96">
+              <Loader2 className="h-8 w-8 animate-spin" />
+            </div>
+          );
+        }
+        return (
+          <div className="space-y-4">
+            <Card className="border-0 shadow-sm">
+              <CardHeader className="rounded-t-lg" style={{ backgroundColor: hexToRgba('#EF4444', 0.05) }}>
+                <div className="flex items-center justify-between">
+                  <div>
+                    <CardTitle className="flex items-center gap-2 text-xl">
+                      <AlertTriangle className="h-5 w-5 text-red-500" />
+                      IDS (Identify, Discuss, Solve)
+                    </CardTitle>
+                    <CardDescription className="mt-1">Work through your issues list (3 hours)</CardDescription>
+                  </div>
+                  <div className="flex gap-2">
+                    <Button
+                      onClick={() => {
+                        setEditingIssue(null);
+                        setShowIssueDialog(true);
+                      }}
+                      style={{ backgroundColor: themeColors.primary }}
+                      className="hover:opacity-90"
+                    >
+                      <Plus className="mr-2 h-4 w-4" />
+                      Add Issue
+                    </Button>
+                  </div>
+                </div>
+              </CardHeader>
+              <CardContent className="pt-6">
+                {issues.length === 0 ? (
+                  <div className="text-center py-12 bg-gray-50 rounded-lg">
+                    <AlertTriangle className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+                    <p className="text-gray-500 mb-4">No issues to discuss</p>
+                    <Button
+                      variant="outline"
+                      onClick={() => {
+                        setEditingIssue(null);
+                        setShowIssueDialog(true);
+                      }}
+                    >
+                      <Plus className="mr-2 h-4 w-4" />
+                      Add First Issue
+                    </Button>
+                  </div>
+                ) : (
+                  <div className="space-y-4">
+                    <div className="p-4 bg-amber-50/80 backdrop-blur-sm border border-amber-200/50 rounded-xl">
+                      <p className="text-amber-800 text-center">
+                        <span className="font-semibold">IDS Process:</span> Prioritize top issues, then for each: Identify (facts only), Discuss (all perspectives), Solve (action items)
+                      </p>
+                    </div>
+                    {issues.map((issue, index) => (
+                      <div key={issue.id} className="border rounded-lg p-4 hover:shadow-md transition-shadow">
+                        <div className="flex items-start justify-between">
+                          <div className="flex-1">
+                            <div className="flex items-center gap-2">
+                              <span className="text-lg font-semibold">#{index + 1}</span>
+                              <h4 className="text-lg font-medium">{issue.title}</h4>
+                              {issue.priority === 'high' && (
+                                <span className="px-2 py-1 bg-red-100 text-red-700 text-xs rounded-full">High Priority</span>
+                              )}
+                            </div>
+                            {issue.description && (
+                              <p className="text-gray-600 mt-2">{issue.description}</p>
+                            )}
+                            <div className="flex items-center gap-4 mt-3 text-sm text-gray-500">
+                              <span className="flex items-center gap-1">
+                                <User className="h-3 w-3" />
+                                {issue.owner?.first_name} {issue.owner?.last_name}
+                              </span>
+                              <span className="flex items-center gap-1">
+                                <Calendar className="h-3 w-3" />
+                                {new Date(issue.created_at).toLocaleDateString()}
+                              </span>
+                            </div>
+                          </div>
+                          <div className="flex gap-2">
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => {
+                                setEditingIssue(issue);
+                                setShowIssueDialog(true);
+                              }}
+                            >
+                              Edit
+                            </Button>
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => handleResolveIssue(issue.id)}
+                              className="text-green-600 hover:text-green-700"
+                            >
+                              Resolve
+                            </Button>
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          </div>
+        );
+
+      case 'next-steps':
+        return (
+          <Card className="border-0 shadow-sm">
+            <CardHeader className="rounded-t-lg" style={{ backgroundColor: hexToRgba(themeColors.accent, 0.05) }}>
+              <div className="flex items-center justify-between">
+                <div>
+                  <CardTitle className="flex items-center gap-2 text-xl">
+                    <ClipboardList className="h-5 w-5" style={{ color: themeColors.primary }} />
+                    Next Steps
+                  </CardTitle>
+                  <CardDescription className="mt-1">Who, what, when (7 minutes)</CardDescription>
+                </div>
+                <div className="text-sm text-gray-500 bg-white px-3 py-1 rounded-full">
+                  7 minutes
+                </div>
+              </div>
+            </CardHeader>
+            <CardContent className="pt-6">
+              <div className="space-y-6">
+                <div className="p-6 rounded-xl border" style={{ 
+                  backgroundColor: hexToRgba(themeColors.accent, 0.03),
+                  borderColor: hexToRgba(themeColors.accent, 0.15)
+                }}>
+                  <h4 className="font-semibold text-lg mb-4">Review Action Items:</h4>
+                  <ul className="space-y-3">
+                    <li className="flex items-start gap-3">
+                      <CheckCircle className="h-5 w-5 text-green-500 mt-0.5" />
+                      <span>Confirm all Quarterly Rocks are documented with clear ownership</span>
+                    </li>
+                    <li className="flex items-start gap-3">
+                      <CheckCircle className="h-5 w-5 text-green-500 mt-0.5" />
+                      <span>Review all To-Dos created during this meeting</span>
+                    </li>
+                    <li className="flex items-start gap-3">
+                      <CheckCircle className="h-5 w-5 text-green-500 mt-0.5" />
+                      <span>Schedule next Quarterly Planning Meeting</span>
+                    </li>
+                    <li className="flex items-start gap-3">
+                      <CheckCircle className="h-5 w-5 text-green-500 mt-0.5" />
+                      <span>Communicate priorities to the rest of the organization</span>
+                    </li>
+                  </ul>
+                </div>
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  <Button 
+                    variant="outline"
+                    className="flex items-center gap-2"
+                    onClick={() => navigate('/quarterly-priorities')}
+                  >
+                    <Target className="h-4 w-4" />
+                    View All Rocks
+                  </Button>
+                  <Button 
+                    variant="outline"
+                    className="flex items-center gap-2"
+                    onClick={() => navigate('/todos')}
+                  >
+                    <CheckSquare className="h-4 w-4" />
+                    View To-Dos
+                  </Button>
+                  <Button 
+                    variant="outline"
+                    className="flex items-center gap-2"
+                    onClick={() => navigate('/issues')}
+                  >
+                    <AlertTriangle className="h-4 w-4" />
+                    View Issues
+                  </Button>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        );
+
       case 'objectives':
         return (
           <Card className="border-0 shadow-sm">
@@ -788,7 +1045,7 @@ const QuarterlyPlanningMeetingPage = () => {
                   Add Issue
                 </Button>
               </CardTitle>
-              <CardDescription>Connect as a team before diving into business (10 minutes)</CardDescription>
+              <CardDescription>Connect as a team before diving into business (15 minutes)</CardDescription>
             </CardHeader>
             <CardContent>
               <div className="space-y-4">
@@ -814,7 +1071,7 @@ const QuarterlyPlanningMeetingPage = () => {
           </Card>
         );
 
-      case 'review-prior':
+      case 'review-quarterly-rocks':
         if (loading) {
           return (
             <div className="flex items-center justify-center h-96">
@@ -847,7 +1104,7 @@ const QuarterlyPlanningMeetingPage = () => {
                     </div>
                   )}
                 </CardTitle>
-                <CardDescription>Check progress on last quarter's priorities</CardDescription>
+                <CardDescription>Check progress on last quarter's priorities (30 minutes)</CardDescription>
               </CardHeader>
             </Card>
             {priorities.length === 0 ? (
@@ -1064,7 +1321,7 @@ const QuarterlyPlanningMeetingPage = () => {
           </div>
         );
 
-      case '2-page-plan':
+      case 'vto':
         if (loading) {
           return (
             <div className="flex items-center justify-center h-96">
@@ -1080,9 +1337,9 @@ const QuarterlyPlanningMeetingPage = () => {
                   <div>
                     <CardTitle className="flex items-center gap-2 text-xl">
                       <ClipboardList className="h-5 w-5" style={{ color: themeColors.primary }} />
-                      {labels?.business_blueprint_label || '2-Page Plan'}
+                      V/TO
                     </CardTitle>
-                    <CardDescription className="mt-1">Review and align your strategic vision</CardDescription>
+                    <CardDescription className="mt-1">Review and update Vision/Traction Organizer (1 hour)</CardDescription>
                   </div>
                   <Button onClick={() => {
                     setEditingIssue(null);
@@ -1102,7 +1359,7 @@ const QuarterlyPlanningMeetingPage = () => {
               ) : (
                 <Card>
                   <CardContent className="text-center py-8">
-                    <p className="text-gray-500">Loading {labels?.business_blueprint_label || '2-Page Plan'} data...</p>
+                    <p className="text-gray-500">Loading V/TO data...</p>
                   </CardContent>
                 </Card>
               )}
@@ -1110,7 +1367,7 @@ const QuarterlyPlanningMeetingPage = () => {
           </div>
         );
 
-      case 'quarterly-priorities':
+      case 'establish-quarterly-rocks':
         if (loading) {
           return (
             <div className="flex items-center justify-center h-96">
@@ -1128,7 +1385,7 @@ const QuarterlyPlanningMeetingPage = () => {
                       <ListChecks className="h-5 w-5" style={{ color: themeColors.primary }} />
                       Set {labels?.priorities_label || 'Quarterly Priorities'}
                     </CardTitle>
-                    <CardDescription>Define 3-7 priorities for the upcoming quarter (120 minutes)</CardDescription>
+                    <CardDescription>Define 3-7 priorities for the upcoming quarter (2 hours)</CardDescription>
                   </div>
                   <div className="flex gap-2">
                     <Button
@@ -1537,89 +1794,6 @@ const QuarterlyPlanningMeetingPage = () => {
           </div>
         );
 
-      case 'next-steps':
-        return (
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <ClipboardList className="h-5 w-5" style={{ color: themeColors.primary }} />
-                Next Steps
-              </CardTitle>
-              <CardDescription>Review open action items and responsibilities (7 minutes)</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-4">
-                <div className="flex items-center justify-between mb-4">
-                  <p className="text-gray-600">
-                    Review all open to-dos before concluding the meeting:
-                  </p>
-                  <Button
-                    onClick={handleAddTodo}
-                    size="sm"
-                    style={{ backgroundColor: themeColors.primary }}
-                    className="hover:opacity-90"
-                  >
-                    <Plus className="mr-2 h-4 w-4" />
-                    Add To-Do
-                  </Button>
-                </div>
-                
-                {loading ? (
-                  <div className="flex items-center justify-center py-8">
-                    <Loader2 className="h-6 w-6 animate-spin" />
-                  </div>
-                ) : !Array.isArray(todos) || todos.length === 0 ? (
-                  <div className="bg-white/40 backdrop-blur-sm p-6 rounded-xl text-center border border-white/30 shadow-sm">
-                    <CheckCircle className="h-12 w-12 text-green-500 mx-auto mb-3" />
-                    <p className="text-gray-600 font-medium">No open to-dos!</p>
-                    <p className="text-sm text-gray-500 mt-1">All action items have been completed.</p>
-                  </div>
-                ) : (
-                  <div className="space-y-3">
-                    <div className="rounded-lg p-3" style={{ 
-                      backgroundColor: hexToRgba(themeColors.accent, 0.05),
-                      borderWidth: '1px',
-                      borderColor: hexToRgba(themeColors.accent, 0.2)
-                    }}>
-                      <p className="text-sm" style={{ color: themeColors.secondary }}>
-                        <span className="font-semibold">{Array.isArray(todos) ? todos.length : 0} open to-do{Array.isArray(todos) && todos.length !== 1 ? 's' : ''}</span> to review
-                      </p>
-                    </div>
-                    <div className="space-y-2 max-h-96 overflow-y-auto">
-                      {Array.isArray(todos) && todos.map((todo) => (
-                        <div key={todo.id} className="relative bg-white border rounded-lg p-4 pl-6 hover:shadow-sm transition-shadow" 
-                          style={{ borderColor: hexToRgba(themeColors.accent, 0.3) }}>
-                          {/* Theme-colored left edge indicator */}
-                          <div className="absolute left-0 top-0 bottom-0 w-1 rounded-l-lg" 
-                            style={{ backgroundColor: themeColors.accent }} />
-                          <div className="flex items-start justify-between">
-                            <div className="flex-1">
-                              <h4 className="font-medium text-gray-900">{todo.title}</h4>
-                              {/* Description hidden from main view - only shown in edit dialog */}
-                              <div className="flex items-center gap-4 mt-2 text-sm text-gray-500">
-                                <span className="flex items-center gap-1">
-                                  <User className="h-3 w-3" />
-                                  {todo.assigned_to?.first_name} {todo.assigned_to?.last_name || 'Unassigned'}
-                                </span>
-                                {todo.due_date && (
-                                  <span className="flex items-center gap-1">
-                                    <Calendar className="h-3 w-3" />
-                                    {new Date(todo.due_date).toLocaleDateString()}
-                                  </span>
-                                )}
-                              </div>
-                            </div>
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                )}
-              </div>
-            </CardContent>
-          </Card>
-        );
-
       case 'conclude':
         return (
           <Card className="border-0 shadow-sm">
@@ -1630,7 +1804,7 @@ const QuarterlyPlanningMeetingPage = () => {
                     <CheckSquare className="h-5 w-5 text-green-600" />
                     Meeting Conclusion
                   </CardTitle>
-                  <CardDescription className="mt-1">Wrap up and capture key takeaways</CardDescription>
+                  <CardDescription className="mt-1">Wrap up and capture key takeaways (8 minutes)</CardDescription>
                 </div>
                 <div className="text-sm text-gray-500 bg-white px-3 py-1 rounded-full">
                   8 minutes
