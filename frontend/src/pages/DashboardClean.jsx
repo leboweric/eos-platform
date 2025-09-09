@@ -25,7 +25,7 @@ import { useTerminology } from '../contexts/TerminologyContext';
 import { useDepartment } from '../contexts/DepartmentContext';
 import PriorityDialog from '../components/priorities/PriorityDialog';
 import {
-  AlertCircle,
+  AlertTriangle,
   CheckSquare,
   CheckCircle,
   Edit,
@@ -1363,7 +1363,7 @@ const DashboardClean = () => {
                             {creatingIssueFromHeadline === headline.id ? (
                               <Loader2 className="h-4 w-4 text-gray-600 animate-spin" />
                             ) : (
-                              <AlertCircle className="h-4 w-4 text-gray-600" />
+                              <AlertTriangle className="h-4 w-4 text-gray-600" />
                             )}
                           </button>
                         )}
@@ -1416,7 +1416,7 @@ const DashboardClean = () => {
                             {creatingIssueFromHeadline === headline.id ? (
                               <Loader2 className="h-4 w-4 text-gray-600 animate-spin" />
                             ) : (
-                              <AlertCircle className="h-4 w-4 text-gray-600" />
+                              <AlertTriangle className="h-4 w-4 text-gray-600" />
                             )}
                           </button>
                         )}
