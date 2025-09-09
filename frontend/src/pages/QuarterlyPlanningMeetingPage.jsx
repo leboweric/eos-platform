@@ -32,7 +32,8 @@ import {
   Send,
   User,
   Plus,
-  Star
+  Star,
+  RefreshCw
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import PriorityCard from '../components/priorities/PriorityCardClean';
@@ -1128,15 +1129,36 @@ const QuarterlyPlanningMeetingPage = () => {
   const fetchTeams = async () => {
     try {
       const response = await teamsService.getTeams();
-      console.log('Teams response:', response);
+      console.log('Teams API response:', response);
       
-      // Extract teams array from response
-      const teams = response?.data?.teams || response?.teams || [];
-      console.log('Available teams:', teams);
+      // The API returns { success: true, data: [...teams] }
+      // The teamsService should return response.data which has the structure above
+      let teams = [];
       
-      setAvailableTeams(teams);
+      if (response?.success && response?.data) {
+        // This is the expected structure from the API
+        teams = response.data;
+      } else if (Array.isArray(response)) {
+        // Direct array of teams
+        teams = response;
+      } else if (response?.data && Array.isArray(response.data)) {
+        // response.data is the array
+        teams = response.data;
+      } else {
+        console.warn('Unexpected teams response structure:', response);
+      }
+      
+      console.log('Extracted teams:', teams);
+      console.log('Number of teams found:', teams.length);
+      
+      // Filter out null/undefined teams and ensure each team has required fields
+      const validTeams = teams.filter(team => team && team.id && team.name);
+      console.log('Valid teams after filtering:', validTeams);
+      
+      setAvailableTeams(validTeams);
     } catch (error) {
       console.error('Failed to fetch teams:', error);
+      console.error('Error details:', error.response?.data || error.message);
       setAvailableTeams([]);
     }
   };
@@ -2910,32 +2932,49 @@ const QuarterlyPlanningMeetingPage = () => {
                         </label>
                       </div>
                       
-                      {!cascadeToAll && availableTeams.length > 0 && (
+                      {!cascadeToAll && (
                         <div>
-                          <p className="text-sm text-gray-600 mb-2">Or select specific teams:</p>
-                          <div className="space-y-2 max-h-32 overflow-y-auto border border-gray-200 rounded-lg p-2">
-                            {availableTeams.map(team => (
-                              <div key={team.id} className="flex items-center gap-2">
-                                <Checkbox
-                                  id={`team-${team.id}`}
-                                  checked={selectedTeams.includes(team.id)}
-                                  onCheckedChange={(checked) => {
-                                    if (checked) {
-                                      setSelectedTeams([...selectedTeams, team.id]);
-                                    } else {
-                                      setSelectedTeams(selectedTeams.filter(id => id !== team.id));
-                                    }
-                                  }}
-                                />
-                                <label htmlFor={`team-${team.id}`} className="text-sm text-gray-700">
-                                  {team.name}
-                                  {team.is_leadership_team && (
-                                    <span className="ml-2 text-xs" style={{ color: themeColors.primary }}>(Leadership)</span>
-                                  )}
-                                </label>
+                          {availableTeams.length > 0 ? (
+                            <>
+                              <p className="text-sm text-gray-600 mb-2">Or select specific teams:</p>
+                              <div className="space-y-2 max-h-32 overflow-y-auto border border-gray-200 rounded-lg p-2">
+                                {availableTeams.map(team => (
+                                  <div key={team.id} className="flex items-center gap-2">
+                                    <Checkbox
+                                      id={`team-${team.id}`}
+                                      checked={selectedTeams.includes(team.id)}
+                                      onCheckedChange={(checked) => {
+                                        if (checked) {
+                                          setSelectedTeams([...selectedTeams, team.id]);
+                                        } else {
+                                          setSelectedTeams(selectedTeams.filter(id => id !== team.id));
+                                        }
+                                      }}
+                                    />
+                                    <label htmlFor={`team-${team.id}`} className="text-sm text-gray-700">
+                                      {team.name}
+                                      {team.is_leadership_team && (
+                                        <span className="ml-2 text-xs" style={{ color: themeColors.primary }}>(Leadership)</span>
+                                      )}
+                                    </label>
+                                  </div>
+                                ))}
                               </div>
-                            ))}
-                          </div>
+                            </>
+                          ) : (
+                            <div className="mt-2">
+                              <p className="text-sm text-gray-500 italic">No teams available</p>
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => fetchTeams()}
+                                className="mt-2 text-xs"
+                              >
+                                <RefreshCw className="h-3 w-3 mr-1" />
+                                Refresh Teams
+                              </Button>
+                            </div>
+                          )}
                         </div>
                       )}
                     </div>
