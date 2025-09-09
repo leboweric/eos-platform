@@ -290,6 +290,30 @@ const QuarterlyPlanningMeetingPage = () => {
     return () => clearInterval(interval);
   }, [meetingStarted, meetingStartTime]);
 
+  // Fetch teams function (filtering out current team - no need to cascade to yourself)
+  const fetchTeams = async () => {
+    try {
+      const response = await teamsService.getTeams();
+      console.log('Teams API response:', response);
+      
+      let teams = [];
+      if (response?.success && response?.data) {
+        teams = response.data;
+      } else if (Array.isArray(response)) {
+        teams = response;
+      }
+      
+      // Filter out the current team - it makes no sense to send cascading messages to yourself
+      const otherTeams = teams.filter(team => team.id !== teamId);
+      
+      console.log('Available teams for cascading (excluding current team):', otherTeams);
+      setAvailableTeams(otherTeams);
+    } catch (error) {
+      console.error('Failed to fetch teams:', error);
+      setAvailableTeams([]);
+    }
+  };
+
   // Auto-start meeting on component mount
   useEffect(() => {
     setMeetingStarted(true);
@@ -2834,7 +2858,7 @@ const QuarterlyPlanningMeetingPage = () => {
                   <CardDescription className="mt-1">Wrap up and cascade messages</CardDescription>
                 </div>
                 <div className="text-sm text-gray-500 bg-white px-3 py-1 rounded-full">
-                  8 minutes
+                  5 minutes
                 </div>
               </div>
             </CardHeader>
@@ -2932,49 +2956,29 @@ const QuarterlyPlanningMeetingPage = () => {
                         </label>
                       </div>
                       
-                      {!cascadeToAll && (
+                      {!cascadeToAll && availableTeams.length > 0 && (
                         <div>
-                          {availableTeams.length > 0 ? (
-                            <>
-                              <p className="text-sm text-gray-600 mb-2">Or select specific teams:</p>
-                              <div className="space-y-2 max-h-32 overflow-y-auto border border-gray-200 rounded-lg p-2">
-                                {availableTeams.map(team => (
-                                  <div key={team.id} className="flex items-center gap-2">
-                                    <Checkbox
-                                      id={`team-${team.id}`}
-                                      checked={selectedTeams.includes(team.id)}
-                                      onCheckedChange={(checked) => {
-                                        if (checked) {
-                                          setSelectedTeams([...selectedTeams, team.id]);
-                                        } else {
-                                          setSelectedTeams(selectedTeams.filter(id => id !== team.id));
-                                        }
-                                      }}
-                                    />
-                                    <label htmlFor={`team-${team.id}`} className="text-sm text-gray-700">
-                                      {team.name}
-                                      {team.is_leadership_team && (
-                                        <span className="ml-2 text-xs" style={{ color: themeColors.primary }}>(Leadership)</span>
-                                      )}
-                                    </label>
-                                  </div>
-                                ))}
+                          <p className="text-sm text-gray-600 mb-2">Or select specific teams:</p>
+                          <div className="space-y-2 max-h-32 overflow-y-auto border border-gray-200 rounded-lg p-2">
+                            {availableTeams.map(team => (
+                              <div key={team.id} className="flex items-center gap-2">
+                                <Checkbox
+                                  id={`team-${team.id}`}
+                                  checked={selectedTeams.includes(team.id)}
+                                  onCheckedChange={(checked) => {
+                                    if (checked) {
+                                      setSelectedTeams([...selectedTeams, team.id]);
+                                    } else {
+                                      setSelectedTeams(selectedTeams.filter(id => id !== team.id));
+                                    }
+                                  }}
+                                />
+                                <label htmlFor={`team-${team.id}`} className="text-sm text-gray-700">
+                                  {team.name}
+                                </label>
                               </div>
-                            </>
-                          ) : (
-                            <div className="mt-2">
-                              <p className="text-sm text-gray-500 italic">No teams available</p>
-                              <Button
-                                variant="outline"
-                                size="sm"
-                                onClick={() => fetchTeams()}
-                                className="mt-2 text-xs"
-                              >
-                                <RefreshCw className="h-3 w-3 mr-1" />
-                                Refresh Teams
-                              </Button>
-                            </div>
-                          )}
+                            ))}
+                          </div>
                         </div>
                       )}
                     </div>
@@ -3053,7 +3057,37 @@ const QuarterlyPlanningMeetingPage = () => {
                         </div>
                       )}
                     </div>
-                  ) : null}
+                  ) : (
+                    /* Fallback for single user (not in a meeting) */
+                    <div>
+                      <label className="text-sm font-medium text-gray-700 block mb-2">
+                        Your Rating:
+                      </label>
+                      <Select value={meetingRating?.toString()} onValueChange={(value) => {
+                        const rating = parseInt(value);
+                        setMeetingRating(rating);
+                        // Store as single participant rating
+                        setParticipantRatings({
+                          [user?.id]: {
+                            userId: user?.id,
+                            userName: `${user?.firstName || ''} ${user?.lastName || ''}`.trim() || 'You',
+                            rating: rating
+                          }
+                        });
+                      }}>
+                        <SelectTrigger className="w-32 bg-white">
+                          <SelectValue placeholder="Select" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {[...Array(10)].map((_, i) => (
+                            <SelectItem key={i + 1} value={(i + 1).toString()}>
+                              {i + 1}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  )}
                 </div>
 
                 <div className="text-center pt-4">
@@ -3240,118 +3274,6 @@ const QuarterlyPlanningMeetingPage = () => {
             {renderContent()}
           </div>
         </Tabs>
-
-        {/* Meeting Rating Dialog for Conclude */}
-        {activeSection === 'conclude' && (
-          <div className="mt-6 bg-white/80 backdrop-blur-sm rounded-2xl shadow-xl border border-white/50 p-6">
-            <h3 className="text-lg font-bold mb-4 text-slate-900">Rate This Meeting</h3>
-            
-            {/* Individual Participant Ratings */}
-            {participants.length > 0 ? (
-              <div>
-                <label className="text-sm font-medium text-gray-700 block mb-3">
-                  Each participant rates the meeting:
-                </label>
-                <div className="grid grid-cols-2 gap-3 mb-4">
-                  {participants.map(participant => {
-                    const isCurrentUser = participant.id === user?.id;
-                    const rating = participantRatings[participant.id];
-                    
-                    return (
-                      <div key={participant.id} className="flex items-center justify-between bg-gray-50 p-3 rounded-lg">
-                        <span className={`text-sm ${isCurrentUser ? 'font-medium text-gray-900' : 'text-gray-600'}`}>
-                          {participant.name}{isCurrentUser ? ' (You)' : ''}:
-                        </span>
-                        {isCurrentUser ? (
-                          <div className="flex gap-1">
-                            {[...Array(10)].map((_, i) => (
-                              <Button
-                                key={i + 1}
-                                variant={rating?.rating === i + 1 ? 'default' : 'outline'}
-                                size="sm"
-                                className="h-7 w-7 p-0"
-                                onClick={() => {
-                                  const ratingValue = i + 1;
-                                  setParticipantRatings(prev => ({
-                                    ...prev,
-                                    [user.id]: {
-                                      userId: user.id,
-                                      userName: participant.name,
-                                      rating: ratingValue
-                                    }
-                                  }));
-                                  // Also set the old meetingRating for backwards compatibility
-                                  setMeetingRating(ratingValue);
-                                }}
-                                style={rating?.rating === i + 1 ? {
-                                  backgroundColor: themeColors.primary,
-                                  color: 'white'
-                                } : {}}
-                              >
-                                {i + 1}
-                              </Button>
-                            ))}
-                          </div>
-                        ) : (
-                          <span className={`text-sm font-medium ${rating ? 'text-gray-900' : 'text-gray-400'}`}>
-                            {rating ? rating.rating : 'Waiting...'}
-                          </span>
-                        )}
-                      </div>
-                    );
-                  })}
-                </div>
-                
-                {/* Calculate and show average if there are ratings */}
-                {Object.keys(participantRatings).length > 0 && (
-                  <div className="bg-blue-50 p-3 rounded-lg">
-                    <div className="flex items-center justify-between">
-                      <span className="text-sm font-medium text-gray-700">Average Rating:</span>
-                      <span className="text-xl font-bold" style={{ color: themeColors.primary }}>
-                        {(Object.values(participantRatings).reduce((sum, r) => sum + r.rating, 0) / Object.values(participantRatings).length).toFixed(1)}
-                      </span>
-                    </div>
-                  </div>
-                )}
-              </div>
-            ) : (
-              /* Fallback for single user (not in a meeting) */
-              <div className="mb-6">
-                <label className="text-sm font-medium text-gray-700 block mb-2">
-                  Your Rating:
-                </label>
-                <div className="flex gap-2">
-                  {[...Array(10)].map((_, i) => (
-                    <Button
-                      key={i + 1}
-                      variant={meetingRating === i + 1 ? 'default' : 'outline'}
-                      size="sm"
-                      className="w-10 h-10"
-                      onClick={() => {
-                        const rating = i + 1;
-                        setMeetingRating(rating);
-                        // Store as single participant rating
-                        setParticipantRatings({
-                          [user?.id]: {
-                            userId: user?.id,
-                            userName: `${user?.firstName || ''} ${user?.lastName || ''}`.trim() || 'You',
-                            rating: rating
-                          }
-                        });
-                      }}
-                      style={meetingRating === i + 1 ? {
-                        backgroundColor: themeColors.primary,
-                        color: 'white'
-                      } : {}}
-                    >
-                      {i + 1}
-                    </Button>
-                  ))}
-                </div>
-              </div>
-            )}
-          </div>
-        )}
 
         {/* Edit Priority Dialog */}
         <PriorityDialog
