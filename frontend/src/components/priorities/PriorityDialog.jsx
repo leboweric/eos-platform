@@ -823,13 +823,14 @@ const PriorityDialog = ({
                     onArchive(priority.id);
                     onOpenChange(false);
                   }}
-                  className="border-2 hover:text-white transition-all"
+                  className="border-2 transition-all duration-200"
                   style={{
                     borderColor: themeColors.primary,
                     color: themeColors.primary
                   }}
                   onMouseEnter={(e) => {
                     e.currentTarget.style.backgroundColor = themeColors.primary;
+                    e.currentTarget.style.color = 'white';
                   }}
                   onMouseLeave={(e) => {
                     e.currentTarget.style.backgroundColor = 'transparent';
@@ -847,13 +848,14 @@ const PriorityDialog = ({
                     onCreateLinkedIssue(priority);
                     onOpenChange(false);
                   }}
-                  className="border-2 hover:text-white transition-all"
+                  className="border-2 transition-all duration-200"
                   style={{
                     borderColor: themeColors.primary,
                     color: themeColors.primary
                   }}
                   onMouseEnter={(e) => {
                     e.currentTarget.style.backgroundColor = themeColors.primary;
+                    e.currentTarget.style.color = 'white';
                   }}
                   onMouseLeave={(e) => {
                     e.currentTarget.style.backgroundColor = 'transparent';
