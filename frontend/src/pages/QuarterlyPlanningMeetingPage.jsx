@@ -64,7 +64,9 @@ const QuarterlyPlanningMeetingPage = () => {
   
   // Validate team ID (but don't redirect immediately to allow route to settle)
   useEffect(() => {
-    if (teamId && (teamId === 'null' || teamId === 'undefined')) {
+    // Only redirect if teamId is explicitly the string 'null' or 'undefined'
+    // Don't redirect for actual null/undefined as these are temporary during route transitions
+    if (teamId === 'null' || teamId === 'undefined') {
       console.warn('Invalid team ID detected in quarterly meeting URL:', teamId);
       // Don't immediately redirect - let the route settle first
       setTimeout(() => {
@@ -263,8 +265,13 @@ const QuarterlyPlanningMeetingPage = () => {
   // Auto-join meeting when component mounts
   useEffect(() => {
     // Validate teamId before attempting to join
+    // Check for actual null/undefined or string 'null'/'undefined'
     if (!teamId || teamId === 'null' || teamId === 'undefined') {
-      console.log('⏳ Waiting for valid team ID before joining meeting...');
+      if (teamId === 'null' || teamId === 'undefined') {
+        console.warn('Invalid team ID string detected:', teamId);
+      } else {
+        console.log('⏳ Waiting for valid team ID before joining meeting...');
+      }
       return;
     }
     
