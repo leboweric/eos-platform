@@ -3014,37 +3014,7 @@ const QuarterlyPlanningMeetingPage = () => {
                         </div>
                       )}
                     </div>
-                  ) : (
-                    /* Fallback for single user (not in a meeting) */
-                    <div>
-                      <label className="text-sm font-medium text-gray-700 block mb-2">
-                        Your Rating:
-                      </label>
-                      <Select value={meetingRating?.toString()} onValueChange={(value) => {
-                        const rating = parseInt(value);
-                        setMeetingRating(rating);
-                        // Store as single participant rating
-                        setParticipantRatings({
-                          [user?.id]: {
-                            userId: user?.id,
-                            userName: `${user?.firstName || ''} ${user?.lastName || ''}`.trim() || 'You',
-                            rating: rating
-                          }
-                        });
-                      }}>
-                        <SelectTrigger className="w-32 bg-white">
-                          <SelectValue placeholder="Select" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {[...Array(10)].map((_, i) => (
-                            <SelectItem key={i + 1} value={(i + 1).toString()}>
-                              {i + 1}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                    </div>
-                  )}
+                  ) : null}
                 </div>
 
                 <div className="text-center pt-4">
