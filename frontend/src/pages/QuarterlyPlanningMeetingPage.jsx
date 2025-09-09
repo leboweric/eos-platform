@@ -330,6 +330,16 @@ const QuarterlyPlanningMeetingPage = () => {
     }
   }, [success]);
 
+  // Update selectedPriority when priorities change
+  useEffect(() => {
+    if (selectedPriority && priorities.length > 0) {
+      const updatedPriority = priorities.find(p => p.id === selectedPriority.id);
+      if (updatedPriority) {
+        setSelectedPriority(updatedPriority);
+      }
+    }
+  }, [priorities]);
+
   const fetchPrioritiesData = async () => {
     try {
       setLoading(true);
@@ -2551,9 +2561,21 @@ const QuarterlyPlanningMeetingPage = () => {
             await fetchPrioritiesData();
           }}
           onToggleMilestone={async (priorityId, milestoneId, completed) => {
+            // Optimistically update the selectedPriority for immediate visual feedback
+            setSelectedPriority(prev => {
+              if (!prev || prev.id !== priorityId) return prev;
+              const updatedMilestones = prev.milestones?.map(m => 
+                m.id === milestoneId ? { ...m, completed, is_complete: completed } : m
+              ) || [];
+              return { ...prev, milestones: updatedMilestones };
+            });
+            
+            // Then update the backend
             const orgId = user?.organizationId || user?.organization_id;
             const effectiveTeamId = teamId || getEffectiveTeamId(teamId, user);
             await quarterlyPrioritiesService.updateMilestone(orgId, effectiveTeamId, priorityId, milestoneId, { completed });
+            
+            // Finally refresh all data
             await fetchPrioritiesData();
           }}
           onCreateLinkedIssue={async (priorityId, issueData) => {
