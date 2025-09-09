@@ -6,6 +6,8 @@ import useMeeting from '../hooks/useMeeting';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Alert, AlertDescription } from '@/components/ui/alert';
+import { Badge } from '@/components/ui/badge';
+import { Progress } from '@/components/ui/progress';
 import { 
   Clock,
   Loader2,
@@ -22,7 +24,12 @@ import {
   AlertTriangle,
   Building2,
   Users,
-  TrendingUp
+  TrendingUp,
+  Archive,
+  MessageSquare,
+  ListTodo,
+  Send,
+  User
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import PriorityCard from '../components/priorities/PriorityCardClean';
@@ -33,7 +40,7 @@ import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { meetingsService } from '../services/meetingsService';
-import { FileText, GitBranch, Smile, BarChart, Newspaper, ListTodo, ArrowLeftRight, Archive, Plus, MessageSquare, Send, Star, User } from 'lucide-react';
+import { FileText, GitBranch, Smile, BarChart, Newspaper, ArrowLeftRight, Star } from 'lucide-react';
 import { quarterlyPrioritiesService } from '../services/quarterlyPrioritiesService';
 import { issuesService } from '../services/issuesService';
 import { organizationService } from '../services/organizationService';
@@ -701,6 +708,30 @@ const QuarterlyPlanningMeetingPage = () => {
     return null;
   };
 
+  // Helper function for status dot color
+  const getStatusDotColor = (status) => {
+    switch (status) {
+      case 'on-track':
+        return { backgroundColor: themeColors.primary };
+      case 'off-track':
+        return { backgroundColor: '#EF4444' };
+      default:
+        return { backgroundColor: '#6B7280' };
+    }
+  };
+
+  // Helper function to calculate days until due
+  const getDaysUntilDue = (dueDate) => {
+    if (!dueDate) return null;
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const due = new Date(dueDate);
+    due.setHours(0, 0, 0, 0);
+    const diffTime = due - today;
+    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+    return diffDays;
+  };
+
   const renderContent = () => {
     if (loading) {
       return (
@@ -1080,40 +1111,44 @@ const QuarterlyPlanningMeetingPage = () => {
           );
         }
         return (
-          <div className="space-y-4">
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center justify-between">
-                  <div className="flex items-center gap-2">
-                    <Calendar className="h-5 w-5" style={{ color: themeColors.primary }} />
-                    Review Prior Quarter
-                  </div>
-                  {priorities.length > 0 && (
-                    <div className="text-sm font-normal">
-                      <span className={`text-2xl font-semibold ${
-                        Math.round((priorities.filter(p => p.status === 'complete').length / priorities.length) * 100) >= 85
-                          ? 'text-green-600'
-                          : 'text-red-600'
-                      }`}>
-                        {Math.round((priorities.filter(p => p.status === 'complete').length / priorities.length) * 100)}%
-                      </span>
-                      <span className="text-gray-500 ml-2">Complete</span>
-                      <span className="text-gray-400 ml-2">
-                        ({priorities.filter(p => p.status === 'complete').length}/{priorities.length})
-                      </span>
+          <div className="space-y-6">
+            <Card className="bg-white/80 backdrop-blur-sm border border-white/50 rounded-2xl shadow-xl hover:shadow-2xl transition-all duration-300">
+              <CardHeader className="bg-gradient-to-r from-white/90 to-white/70 backdrop-blur-sm border-b border-white/20 rounded-t-2xl">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-6 flex-1">
+                    <div>
+                      <CardTitle className="flex items-center gap-3 text-xl font-bold text-slate-900">
+                        <div className="p-2 rounded-xl" style={{ background: `linear-gradient(135deg, ${themeColors.primary}20 0%, ${themeColors.secondary}20 100%)` }}>
+                          <Target className="h-5 w-5" style={{ color: themeColors.primary }} />
+                        </div>
+                        Review Prior Quarter
+                      </CardTitle>
+                      <CardDescription className="mt-2 text-slate-600 font-medium">Check progress on last quarter's priorities (30 minutes)</CardDescription>
                     </div>
-                  )}
-                </CardTitle>
-                <CardDescription>Check progress on last quarter's priorities (30 minutes)</CardDescription>
+                    {priorities.length > 0 && (
+                      <div className="text-center bg-white/50 rounded-xl px-4 py-2 border border-white/30">
+                        <span className="text-3xl font-bold bg-gradient-to-r from-slate-900 to-slate-700 bg-clip-text text-transparent">
+                          {Math.round((priorities.filter(p => p.status === 'complete' || p.status === 'completed' || p.progress === 100).length / priorities.length) * 100)}%
+                        </span>
+                        <p className="text-sm text-slate-600 font-medium">
+                          {priorities.filter(p => p.status === 'complete' || p.status === 'completed' || p.progress === 100).length} of {priorities.length} complete
+                        </p>
+                      </div>
+                    )}
+                  </div>
+                  <div className="text-sm text-slate-600 bg-white/80 backdrop-blur-sm px-4 py-2 rounded-full border border-white/30 shadow-sm font-medium">
+                    30 minutes
+                  </div>
+                </div>
               </CardHeader>
             </Card>
             {priorities.length === 0 ? (
-              <Card>
+              <Card className="bg-white/80 backdrop-blur-sm border border-white/50 rounded-2xl shadow-xl">
                 <CardContent className="text-center py-8">
-                  <p className="text-gray-500">No priorities found for this quarter.</p>
+                  <p className="text-slate-500 font-medium">No priorities found for this quarter.</p>
                   <Button 
                     variant="outline" 
-                    className="mt-4"
+                    className="mt-4 bg-white/80 backdrop-blur-sm border-white/20 hover:bg-white/90 rounded-xl shadow-sm transition-all duration-200"
                     onClick={() => navigate('/quarterly-priorities')}
                   >
                     Go to {labels?.priorities_label || 'Quarterly Priorities'}
@@ -1122,9 +1157,12 @@ const QuarterlyPlanningMeetingPage = () => {
               </Card>
             ) : (
               <div className="space-y-6">
-                <div className="bg-blue-50/80 backdrop-blur-sm border border-blue-200/50 rounded-xl p-4 shadow-sm">
-                  <p className="text-blue-800 text-center">
-                    <span className="font-semibold">Status Check:</span> Review what was accomplished, what wasn't, and why. Be honest about successes and failures.
+                <div className="backdrop-blur-sm border border-opacity-50 rounded-2xl p-4 shadow-lg" style={{
+                  background: `linear-gradient(135deg, ${hexToRgba(themeColors.primary, 0.1)} 0%, ${hexToRgba(themeColors.secondary, 0.1)} 100%)`,
+                  borderColor: hexToRgba(themeColors.primary, 0.3)
+                }}>
+                  <p className="text-center font-medium" style={{ color: themeColors.primary }}>
+                    <span className="font-bold">Quick Status Check:</span> Each Rock owner reports "on-track" or "off-track" status
                   </p>
                 </div>
                 
@@ -2262,6 +2300,75 @@ const QuarterlyPlanningMeetingPage = () => {
             }
           }}
         />
+        
+        {/* Floating Action Buttons - Positioned to align with main content edge */}
+        <div className="fixed z-40 flex flex-col gap-4" style={{
+          right: 'calc((100vw - min(80rem, 100vw - 4rem)) / 2 - 11rem)',
+          top: '30rem'
+        }}>
+          {/* Add To-Do Button */}
+          <div className="relative group">
+            <Button
+              onClick={() => {
+                setEditingTodo(null);
+                setShowTodoDialog(true);
+              }}
+              className="h-14 w-14 rounded-full shadow-lg hover:shadow-xl transition-all duration-200 hover:scale-110 text-white"
+              style={{
+                background: `linear-gradient(135deg, ${themeColors.primary} 0%, ${themeColors.secondary} 100%)`
+              }}
+            >
+              <ClipboardList className="h-6 w-6" />
+            </Button>
+            <div className="absolute right-full mr-2 top-1/2 -translate-y-1/2 px-2 py-1 bg-gray-900 text-white text-sm rounded whitespace-nowrap opacity-0 group-hover:opacity-100 pointer-events-none transition-opacity duration-100">
+              Add To-Do
+            </div>
+          </div>
+          
+          {/* Add Issue Button */}
+          <div className="relative group">
+            <Button
+              onClick={() => {
+                setEditingIssue(null);
+                setShowIssueDialog(true);
+              }}
+              className="h-14 w-14 rounded-full shadow-lg hover:shadow-xl transition-all duration-200 hover:scale-110 text-white"
+              style={{
+                background: `linear-gradient(135deg, ${themeColors.primary} 0%, ${themeColors.secondary} 100%)`
+              }}
+            >
+              <AlertCircle className="h-6 w-6" />
+            </Button>
+            <div className="absolute right-full mr-2 top-1/2 -translate-y-1/2 px-2 py-1 bg-gray-900 text-white text-sm rounded whitespace-nowrap opacity-0 group-hover:opacity-100 pointer-events-none transition-opacity duration-100">
+              Add Issue
+            </div>
+          </div>
+          
+          {/* Add Priority Button */}
+          <div className="relative group">
+            <Button
+              onClick={() => {
+                setPriorityForm({
+                  title: '',
+                  description: '',
+                  ownerId: user?.id || '',
+                  dueDate: '',
+                  isCompanyPriority: false
+                });
+                setShowAddPriority(true);
+              }}
+              className="h-14 w-14 rounded-full shadow-lg hover:shadow-xl transition-all duration-200 hover:scale-110 text-white"
+              style={{
+                background: `linear-gradient(135deg, ${themeColors.primary} 0%, ${themeColors.secondary} 100%)`
+              }}
+            >
+              <Target className="h-6 w-6" />
+            </Button>
+            <div className="absolute right-full mr-2 top-1/2 -translate-y-1/2 px-2 py-1 bg-gray-900 text-white text-sm rounded whitespace-nowrap opacity-0 group-hover:opacity-100 pointer-events-none transition-opacity duration-100">
+              Add {labels?.priority_singular || 'Priority'}
+            </div>
+          </div>
+        </div>
         
         {/* Meeting Collaboration Bar */}
         <MeetingBar />
