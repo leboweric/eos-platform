@@ -341,7 +341,7 @@ const PriorityDialog = ({
                           const completedMilestones = priority?.milestones?.filter(m => m.completed).length || 0;
                           const totalMilestones = priority?.milestones?.length || 0;
                           if (totalMilestones > 0 && completedMilestones < totalMilestones) {
-                            alert(`Cannot mark as complete. Only ${completedMilestones} of ${totalMilestones} milestones are complete.`);
+                            alert(`Cannot mark as done. Only ${completedMilestones} of ${totalMilestones} milestones are complete.`);
                             return;
                           }
                         }
@@ -354,7 +354,7 @@ const PriorityDialog = ({
                       <SelectContent>
                         <SelectItem value="on-track">On Track</SelectItem>
                         <SelectItem value="off-track">Off Track</SelectItem>
-                        <SelectItem value="complete">Complete</SelectItem>
+                        <SelectItem value="complete">Done</SelectItem>
                       </SelectContent>
                     </Select>
                   </div>

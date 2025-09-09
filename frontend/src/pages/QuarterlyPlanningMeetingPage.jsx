@@ -1064,35 +1064,9 @@ const QuarterlyPlanningMeetingPage = () => {
         return (
           <Card>
             <CardHeader style={{ backgroundColor: hexToRgba(themeColors.accent, 0.03) }}>
-              <CardTitle className="flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <CheckSquare className="h-5 w-5" style={{ color: themeColors.primary }} />
-                  Team Check-In
-                </div>
-                <Button
-                  onClick={() => {
-                    setEditingIssue(null);
-                    setShowIssueDialog(true);
-                  }}
-                  size="sm"
-                  className="flex items-center gap-2"
-                  style={{
-                    backgroundColor: themeColors.primary,
-                    borderColor: themeColors.primary,
-                    color: 'white'
-                  }}
-                  onMouseEnter={(e) => {
-                    e.currentTarget.style.backgroundColor = themeColors.secondary;
-                    e.currentTarget.style.borderColor = themeColors.secondary;
-                  }}
-                  onMouseLeave={(e) => {
-                    e.currentTarget.style.backgroundColor = themeColors.primary;
-                    e.currentTarget.style.borderColor = themeColors.primary;
-                  }}
-                >
-                  <Plus className="h-4 w-4" />
-                  Add Issue
-                </Button>
+              <CardTitle className="flex items-center gap-2">
+                <CheckSquare className="h-5 w-5" style={{ color: themeColors.primary }} />
+                Team Check-In
               </CardTitle>
               <CardDescription>Connect as a team before diving into business (15 minutes)</CardDescription>
             </CardHeader>
@@ -1606,13 +1580,9 @@ const QuarterlyPlanningMeetingPage = () => {
                     </CardTitle>
                     <CardDescription className="mt-1">Review and update Vision/Traction Organizer (1 hour)</CardDescription>
                   </div>
-                  <Button onClick={() => {
-                    setEditingIssue(null);
-                    setShowIssueDialog(true);
-                  }} style={{ backgroundColor: themeColors.primary }} className="hover:opacity-90">
-                    <Plus className="mr-2 h-4 w-4" />
-                    Add Issue
-                  </Button>
+                  <div className="text-sm text-gray-500 bg-white px-3 py-1 rounded-full">
+                    60 minutes
+                  </div>
                 </div>
               </CardHeader>
             </Card>
@@ -2020,117 +1990,228 @@ const QuarterlyPlanningMeetingPage = () => {
                 </div>
               </CardHeader>
               <CardContent className="pt-6">
-                <div className="flex justify-between items-center mb-4">
-                  <div>
-                    {(() => {
-                      const closedIssuesCount = issues.filter(issue => issue.status === 'closed').length;
-                      return closedIssuesCount > 0 && (
-                        <Button 
-                          onClick={async () => {
-                            try {
-                              await issuesService.archiveClosedIssues();
-                              setSuccess(`${closedIssuesCount} closed issue${closedIssuesCount > 1 ? 's' : ''} archived`);
-                              await fetchIssuesData();
-                            } catch (error) {
-                              console.error('Failed to archive closed issues:', error);
-                              setError('Failed to archive closed issues');
-                            }
-                          }}
-                          variant="outline"
-                          className="text-gray-600 hover:text-gray-900"
-                        >
-                          <Archive className="mr-2 h-4 w-4" />
-                          Archive Solved ({closedIssuesCount})
-                        </Button>
-                      );
-                    })()}
-                  </div>
-                  <div>
-                  </div>
+                <div className="border border-white/30 bg-white/60 backdrop-blur-sm rounded-xl p-4 mb-4 shadow-sm">
+                  <p className="text-gray-700 text-center">
+                    <span className="font-semibold">Quick voting:</span> Everyone votes on the most important issues. Then discuss and solve the top-voted issues together.
+                  </p>
                 </div>
-                {issues.length === 0 ? (
-                  <div className="text-center py-8">
-                    <p className="text-gray-500">No issues found.</p>
-                  </div>
-                ) : null}
+                <div className="mb-4">
+                  <Tabs value={issueTimeline} onValueChange={setIssueTimeline} className="w-full">
+                    <div className="flex justify-between items-center mb-4">
+                      <TabsList className="bg-white/80 backdrop-blur-sm border border-white/50 rounded-xl p-1">
+                        <TabsTrigger 
+                          value="short_term" 
+                          className="min-w-[120px] relative z-10 data-[state=active]:text-white data-[state=active]:shadow-sm transition-all"
+                          data-state={issueTimeline === 'short_term' ? 'active' : 'inactive'}
+                          style={issueTimeline === 'short_term' ? {
+                            background: `linear-gradient(135deg, ${themeColors.primary} 0%, ${themeColors.secondary} 100%)`,
+                            color: 'white'
+                          } : {}}
+                        >
+                          Short Term ({issues.filter(i => i.timeline === 'short_term').length})
+                        </TabsTrigger>
+                        <TabsTrigger 
+                          value="long_term" 
+                          className="min-w-[120px] relative z-10 data-[state=active]:text-white data-[state=active]:shadow-sm transition-all"
+                          data-state={issueTimeline === 'long_term' ? 'active' : 'inactive'}
+                          style={issueTimeline === 'long_term' ? {
+                            background: `linear-gradient(135deg, ${themeColors.primary} 0%, ${themeColors.secondary} 100%)`,
+                            color: 'white'
+                          } : {}}
+                        >
+                          Long Term ({issues.filter(i => i.timeline === 'long_term').length})
+                        </TabsTrigger>
+                      </TabsList>
+                      
+                      <div className="flex gap-2">
+                        {(() => {
+                          const currentIssues = issues.filter(i => i.timeline === issueTimeline);
+                          const closedIssuesCount = currentIssues.filter(issue => issue.status === 'closed').length;
+                          return closedIssuesCount > 0 && (
+                            <Button 
+                              onClick={async () => {
+                                try {
+                                  await issuesService.archiveClosedIssues(issueTimeline);
+                                  setSuccess(`${closedIssuesCount} closed issue${closedIssuesCount > 1 ? 's' : ''} archived`);
+                                  await fetchIssuesData();
+                                } catch (error) {
+                                  console.error('Failed to archive closed issues:', error);
+                                  setError('Failed to archive closed issues');
+                                }
+                              }}
+                              className="text-white transition-all duration-200 shadow-md hover:shadow-lg rounded-lg"
+                              style={{
+                                background: `linear-gradient(135deg, ${themeColors.primary} 0%, ${themeColors.secondary} 100%)`,
+                                ':hover': {
+                                  filter: 'brightness(1.1)'
+                                }
+                              }}
+                              onMouseEnter={(e) => {
+                                e.currentTarget.style.filter = 'brightness(1.1)';
+                              }}
+                              onMouseLeave={(e) => {
+                                e.currentTarget.style.filter = 'brightness(1)';
+                              }}
+                            >
+                              <Archive className="mr-2 h-4 w-4" />
+                              Archive Solved ({closedIssuesCount})
+                            </Button>
+                          );
+                        })()}
+                      </div>
+                    </div>
+                    
+                    <TabsContent value="short_term" className="mt-0">
+                      {(() => {
+                        const shortTermIssues = issues.filter(i => i.timeline === 'short_term');
+                        return shortTermIssues.length === 0 ? (
+                          <div className="text-center py-8">
+                            <p className="text-gray-500">No short-term issues found.</p>
+                          </div>
+                        ) : (
+                          <IssuesListClean
+                            issues={shortTermIssues}
+                            onEdit={(issue) => {
+                              setEditingIssue(issue);
+                              setShowIssueDialog(true);
+                            }}
+                            onStatusChange={async (issueId, newStatus) => {
+                              try {
+                                setIssues(prev => 
+                                  prev.map(issue => 
+                                    issue.id === issueId ? { ...issue, status: newStatus } : issue
+                                  )
+                                );
+                                await issuesService.updateIssue(issueId, { status: newStatus });
+                              } catch (error) {
+                                console.error('Failed to update status:', error);
+                                await fetchIssuesData();
+                              }
+                            }}
+                            onTimelineChange={async (issueId, newTimeline) => {
+                              try {
+                                setIssues(prev => 
+                                  prev.map(issue => 
+                                    issue.id === issueId ? { ...issue, timeline: newTimeline } : issue
+                                  )
+                                );
+                                await issuesService.updateIssue(issueId, { timeline: newTimeline });
+                                setSuccess(`Issue moved to ${newTimeline === 'short_term' ? 'Short Term' : 'Long Term'}`);
+                              } catch (error) {
+                                console.error('Failed to update timeline:', error);
+                                setError('Failed to move issue');
+                                await fetchIssuesData();
+                              }
+                            }}
+                            onArchive={async (issueId) => {
+                              try {
+                                setIssues(prev => prev.filter(issue => issue.id !== issueId));
+                                await issuesService.archiveIssue(issueId);
+                                setSuccess('Issue archived');
+                              } catch (error) {
+                                console.error('Failed to archive:', error);
+                                setError('Failed to archive issue');
+                                await fetchIssuesData();
+                              }
+                            }}
+                            onVote={handleVote}
+                            teamMembers={teamMembers}
+                            getStatusColor={(status) => {
+                              switch (status) {
+                                case 'open':
+                                  return 'bg-yellow-100 text-yellow-800';
+                                case 'closed':
+                                  return 'bg-gray-100 text-gray-800';
+                                default:
+                                  return 'bg-gray-100 text-gray-800';
+                              }
+                            }}
+                            getStatusIcon={(status) => null}
+                            readOnly={false}
+                            showVoting={true}
+                            compactGrid={false}
+                          />
+                        );
+                      })()}
+                    </TabsContent>
+                    
+                    <TabsContent value="long_term" className="mt-0">
+                      {(() => {
+                        const longTermIssues = issues.filter(i => i.timeline === 'long_term');
+                        return longTermIssues.length === 0 ? (
+                          <div className="text-center py-8">
+                            <p className="text-gray-500">No long-term issues found.</p>
+                          </div>
+                        ) : (
+                          <IssuesListClean
+                            issues={longTermIssues}
+                            onEdit={(issue) => {
+                              setEditingIssue(issue);
+                              setShowIssueDialog(true);
+                            }}
+                            onStatusChange={async (issueId, newStatus) => {
+                              try {
+                                setIssues(prev => 
+                                  prev.map(issue => 
+                                    issue.id === issueId ? { ...issue, status: newStatus } : issue
+                                  )
+                                );
+                                await issuesService.updateIssue(issueId, { status: newStatus });
+                              } catch (error) {
+                                console.error('Failed to update status:', error);
+                                await fetchIssuesData();
+                              }
+                            }}
+                            onTimelineChange={async (issueId, newTimeline) => {
+                              try {
+                                setIssues(prev => 
+                                  prev.map(issue => 
+                                    issue.id === issueId ? { ...issue, timeline: newTimeline } : issue
+                                  )
+                                );
+                                await issuesService.updateIssue(issueId, { timeline: newTimeline });
+                                setSuccess(`Issue moved to ${newTimeline === 'short_term' ? 'Short Term' : 'Long Term'}`);
+                              } catch (error) {
+                                console.error('Failed to update timeline:', error);
+                                setError('Failed to move issue');
+                                await fetchIssuesData();
+                              }
+                            }}
+                            onArchive={async (issueId) => {
+                              try {
+                                setIssues(prev => prev.filter(issue => issue.id !== issueId));
+                                await issuesService.archiveIssue(issueId);
+                                setSuccess('Issue archived');
+                              } catch (error) {
+                                console.error('Failed to archive:', error);
+                                setError('Failed to archive issue');
+                                await fetchIssuesData();
+                              }
+                            }}
+                            onVote={handleVote}
+                            teamMembers={teamMembers}
+                            getStatusColor={(status) => {
+                              switch (status) {
+                                case 'open':
+                                  return 'bg-yellow-100 text-yellow-800';
+                                case 'closed':
+                                  return 'bg-gray-100 text-gray-800';
+                                default:
+                                  return 'bg-gray-100 text-gray-800';
+                              }
+                            }}
+                            getStatusIcon={(status) => null}
+                            readOnly={false}
+                            showVoting={true}
+                            compactGrid={false}
+                          />
+                        );
+                      })()}
+                    </TabsContent>
+                  </Tabs>
+                </div>
               </CardContent>
             </Card>
-            
-            {/* Embedded Issues List */}
-            <div className="bg-white/80 backdrop-blur-sm rounded-2xl shadow-xl border border-white/50 p-6">
-              <IssuesListClean 
-                issues={issues || []}
-                compactGrid={false}
-                maxColumns={1}
-                columnBreakpoint={50}
-                onEdit={(issue) => {
-                  setEditingIssue(issue);
-                  setShowIssueDialog(true);
-                }}
-                onStatusChange={async (issueId, newStatus) => {
-                  try {
-                    // Optimistic update
-                    setIssues(prev => 
-                      prev.map(issue => 
-                        issue.id === issueId ? { ...issue, status: newStatus } : issue
-                      )
-                    );
-                    
-                    await issuesService.updateIssue(issueId, { status: newStatus });
-                  } catch (error) {
-                    console.error('Failed to update status:', error);
-                    // Revert on error
-                    await fetchIssuesData();
-                  }
-                }}
-                onTimelineChange={async (issueId, newTimeline) => {
-                  try {
-                    // Optimistic update
-                    setIssues(prev => 
-                      prev.map(issue => 
-                        issue.id === issueId ? { ...issue, timeline: newTimeline } : issue
-                      )
-                    );
-                    
-                    await issuesService.updateIssue(issueId, { timeline: newTimeline });
-                    setSuccess(`Issue moved to ${newTimeline === 'short_term' ? 'Short Term' : 'Long Term'}`);
-                  } catch (error) {
-                    console.error('Failed to update timeline:', error);
-                    setError('Failed to move issue');
-                    // Revert on error
-                    await fetchIssuesData();
-                  }
-                }}
-                onArchive={async (issueId) => {
-                  try {
-                    // Optimistic update - remove from list
-                    setIssues(prev => prev.filter(issue => issue.id !== issueId));
-                    
-                    await issuesService.archiveIssue(issueId);
-                    setSuccess('Issue archived');
-                  } catch (error) {
-                    console.error('Failed to archive:', error);
-                    setError('Failed to archive issue');
-                    // Revert on error
-                    await fetchIssuesData();
-                  }
-                }}
-                onVote={handleVote}
-                getStatusColor={(status) => {
-                  switch (status) {
-                    case 'open':
-                      return 'bg-yellow-100 text-yellow-800';
-                    case 'closed':
-                      return 'bg-gray-100 text-gray-800';
-                    default:
-                      return 'bg-gray-100 text-gray-800';
-                  }
-                }}
-                getStatusIcon={(status) => null}
-                readOnly={false}
-                showVoting={true}
-              />
-            </div>
             
             {/* Add Priority Dialog */}
             <Dialog open={showAddPriority} onOpenChange={setShowAddPriority}>
