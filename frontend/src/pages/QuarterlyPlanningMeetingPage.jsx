@@ -62,14 +62,29 @@ const QuarterlyPlanningMeetingPage = () => {
   const { teamId } = useParams();
   const navigate = useNavigate();
   
+  // Debug mount/unmount
+  useEffect(() => {
+    console.log('🎯 QuarterlyPlanningMeetingPage MOUNTED with teamId:', teamId);
+    return () => {
+      console.log('🔚 QuarterlyPlanningMeetingPage UNMOUNTING with teamId:', teamId);
+    };
+  }, []);
+  
   // Validate team ID (but don't redirect immediately to allow route to settle)
   useEffect(() => {
+    // Debug logging to understand what's happening
+    console.log('🔍 QuarterlyPlanningMeetingPage - teamId from useParams:', teamId);
+    console.log('🔍 Type of teamId:', typeof teamId);
+    console.log('🔍 Window location:', window.location.pathname);
+    
     // Only redirect if teamId is explicitly the string 'null' or 'undefined'
     // Don't redirect for actual null/undefined as these are temporary during route transitions
     if (teamId === 'null' || teamId === 'undefined') {
       console.warn('Invalid team ID detected in quarterly meeting URL:', teamId);
+      console.warn('Will redirect to /meetings in 100ms');
       // Don't immediately redirect - let the route settle first
       setTimeout(() => {
+        console.log('Redirecting to /meetings due to invalid teamId');
         navigate('/meetings');
       }, 100);
     }
