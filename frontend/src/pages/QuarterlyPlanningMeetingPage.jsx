@@ -968,40 +968,36 @@ const QuarterlyPlanningMeetingPage = () => {
     try {
       const updateVote = (issue) => {
         if (issue.id === issueId) {
+          const newVoteCount = shouldVote 
+            ? (issue.vote_count || 0) + 1 
+            : Math.max(0, (issue.vote_count || 0) - 1);
+          
+          // Broadcast vote to other meeting participants
+          if (meetingCode && broadcastVote) {
+            broadcastVote(issueId, newVoteCount, shouldVote);
+          }
+          
           return {
             ...issue,
             user_has_voted: shouldVote,
-            vote_count: shouldVote 
-              ? (issue.vote_count || 0) + 1 
-              : Math.max(0, (issue.vote_count || 0) - 1)
+            vote_count: newVoteCount
           };
         }
         return issue;
       };
       
-      // Update and sort issues by vote count
-      setIssues(prevIssues => {
-        const updated = prevIssues.map(updateVote);
-        return updated.sort((a, b) => (b.vote_count || 0) - (a.vote_count || 0));
-      });
+      // Update the appropriate issues list based on current timeline
+      // Don't re-sort - preserve the drag-and-drop order
+      setShortTermIssues(prev => prev.map(updateVote));
+      setLongTermIssues(prev => prev.map(updateVote));
       
-      // Make API call to toggle vote
       if (shouldVote) {
         await issuesService.voteForIssue(issueId);
       } else {
         await issuesService.unvoteForIssue(issueId);
       }
-      
-      // Broadcast vote to other participants
-      if (meetingCode && broadcastVote) {
-        const updatedIssue = issues.find(i => i.id === issueId);
-        if (updatedIssue) {
-          broadcastVote(issueId, updatedIssue.vote_count, user?.id);
-        }
-      }
     } catch (error) {
-      console.error('Failed to update vote:', error);
-      // Revert on error
+      console.error('Failed to vote:', error);
       await fetchIssuesData();
     }
   };
@@ -1577,7 +1573,7 @@ const QuarterlyPlanningMeetingPage = () => {
                   borderColor: hexToRgba(themeColors.primary, 0.3)
                 }}>
                   <p className="text-center font-medium" style={{ color: themeColors.primary }}>
-                    <span className="font-bold">Quick Status Check:</span> Each Rock owner reports "on-track" or "off-track" status
+                    <span className="font-bold">Quick Status Check:</span> Each Rock owner reports "Done" or "Not Done"
                   </p>
                 </div>
                 
@@ -1712,14 +1708,15 @@ const QuarterlyPlanningMeetingPage = () => {
                                 key={priority.id}
                                 className={`max-w-5xl transition-all duration-300 shadow-md hover:shadow-xl hover:scale-[1.01] cursor-pointer ${
                                   isComplete 
-                                    ? 'border-slate-200' 
+                                    ? '' 
                                     : priority.status === 'off-track'
                                     ? 'bg-gradient-to-r from-red-50/80 to-rose-50/80 border-red-200'
                                     : 'bg-white border-slate-200'
                                 }`}
-                                style={{
-                                  backgroundColor: isComplete ? `${themeColors.primary}10` : undefined
-                                }}
+                                style={isComplete ? {
+                                  background: `linear-gradient(to right, ${themeColors.primary}10, ${themeColors.secondary}10)`,
+                                  borderColor: themeColors.primary + '33'
+                                } : {}}
                                 onClick={() => {
                                   setSelectedPriority(priority);
                                   setShowPriorityDialog(true);
@@ -1732,13 +1729,23 @@ const QuarterlyPlanningMeetingPage = () => {
                                         {isComplete ? (
                                           <CheckCircle className="h-5 w-5 flex-shrink-0" style={{ color: themeColors.primary }} />
                                         ) : (
-                                          <div className="w-2 h-2 rounded-full flex-shrink-0" style={getStatusDotColor(priority.status)} />
+                                          <div 
+                                            className="w-2.5 h-2.5 rounded-full flex-shrink-0" 
+                                            style={priority.status === 'complete' ? {
+                                              background: `linear-gradient(to right, ${themeColors.primary}, ${themeColors.secondary})`,
+                                              boxShadow: '0 1px 2px 0 rgba(0, 0, 0, 0.05)'
+                                            } : getStatusDotColor(priority.status)} 
+                                          />
                                         )}
-                                        <h3 className={`text-lg font-semibold break-words ${
-                                          isComplete 
-                                            ? 'line-through' 
-                                            : 'text-gray-900'
-                                        }`} style={isComplete ? { color: themeColors.primary, textDecorationColor: themeColors.primary } : {}}>
+                                        <h3 
+                                          className="text-lg font-semibold break-words flex-1" 
+                                          style={isComplete ? {
+                                            color: themeColors.primary,
+                                            textDecoration: `line-through ${themeColors.primary}`,
+                                            textDecorationColor: themeColors.primary,
+                                            textDecorationThickness: '2px'
+                                          } : { color: '#1f2937' }}
+                                        >
                                           {priority.title}
                                         </h3>
                                       </div>
@@ -2080,7 +2087,7 @@ const QuarterlyPlanningMeetingPage = () => {
               <div className="space-y-6">
                 <div className="bg-blue-50/80 backdrop-blur-sm border border-blue-200/50 rounded-xl p-4 shadow-sm">
                   <p className="text-blue-800 text-center">
-                    <span className="font-semibold">Priority Setting:</span> Each priority should be SMART (Specific, Measurable, Achievable, Relevant, Time-bound). Limit to 3-7 priorities total.
+                    <span className="font-semibold">Rock Setting:</span> Each Rock should be SMART (Specific, Measurable, Achievable, Relevant, Time-bound). Limit to 3-7 Company Rocks and 3-7 Individual Rocks.
                   </p>
                 </div>
                 {/* Company {labels?.priorities_label || 'Priorities'} Section */}
@@ -2141,13 +2148,23 @@ const QuarterlyPlanningMeetingPage = () => {
                                         {isComplete ? (
                                           <CheckCircle className="h-5 w-5 flex-shrink-0" style={{ color: themeColors.primary }} />
                                         ) : (
-                                          <div className="w-2 h-2 rounded-full flex-shrink-0" style={getStatusDotColor(priority.status)} />
+                                          <div 
+                                            className="w-2.5 h-2.5 rounded-full flex-shrink-0" 
+                                            style={priority.status === 'complete' ? {
+                                              background: `linear-gradient(to right, ${themeColors.primary}, ${themeColors.secondary})`,
+                                              boxShadow: '0 1px 2px 0 rgba(0, 0, 0, 0.05)'
+                                            } : getStatusDotColor(priority.status)} 
+                                          />
                                         )}
-                                        <h3 className={`text-lg font-semibold break-words ${
-                                          isComplete 
-                                            ? 'line-through' 
-                                            : 'text-gray-900'
-                                        }`} style={isComplete ? { color: themeColors.primary, textDecorationColor: themeColors.primary } : {}}>
+                                        <h3 
+                                          className="text-lg font-semibold break-words flex-1" 
+                                          style={isComplete ? {
+                                            color: themeColors.primary,
+                                            textDecoration: `line-through ${themeColors.primary}`,
+                                            textDecorationColor: themeColors.primary,
+                                            textDecorationThickness: '2px'
+                                          } : { color: '#1f2937' }}
+                                        >
                                           {priority.title}
                                         </h3>
                                       </div>
@@ -3215,7 +3232,7 @@ const QuarterlyPlanningMeetingPage = () => {
             <DialogHeader>
               <DialogTitle>Add New {labels?.priority_singular || 'Priority'}</DialogTitle>
               <DialogDescription>
-                Create a new quarterly priority. Make it SMART: Specific, Measurable, Achievable, Relevant, and Time-bound.
+                Create a new quarterly Rock. Make it SMART: Specific, Measurable, Achievable, Relevant, and Time-bound.
               </DialogDescription>
             </DialogHeader>
             <div className="space-y-4 py-4">
