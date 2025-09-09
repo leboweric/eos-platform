@@ -1040,9 +1040,12 @@ const QuarterlyPlanningMeetingPage = () => {
     setActiveSection(sectionId);
     setError(null);
     
-    // Remove navigation event emission to match working Weekly meeting pattern
-    // Navigation should be handled by local state only, not socket events
     console.log(`📍 Switching to section: ${sectionId}`);
+    
+    // Emit navigation event if leader (matches Weekly meeting pattern)
+    if (isLeader && navigateToSection) {
+      navigateToSection(sectionId);
+    }
   };
 
   const getNextSection = () => {
