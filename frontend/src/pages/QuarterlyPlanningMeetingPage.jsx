@@ -1149,44 +1149,6 @@ const QuarterlyPlanningMeetingPage = () => {
     return diffDays;
   };
 
-  // Fetch available teams for cascading messages
-  const fetchTeams = async () => {
-    try {
-      const response = await teamsService.getTeams();
-      console.log('Teams API response:', response);
-      
-      // The API returns { success: true, data: [...teams] }
-      // The teamsService should return response.data which has the structure above
-      let teams = [];
-      
-      if (response?.success && response?.data) {
-        // This is the expected structure from the API
-        teams = response.data;
-      } else if (Array.isArray(response)) {
-        // Direct array of teams
-        teams = response;
-      } else if (response?.data && Array.isArray(response.data)) {
-        // response.data is the array
-        teams = response.data;
-      } else {
-        console.warn('Unexpected teams response structure:', response);
-      }
-      
-      console.log('Extracted teams:', teams);
-      console.log('Number of teams found:', teams.length);
-      
-      // Filter out null/undefined teams and ensure each team has required fields
-      const validTeams = teams.filter(team => team && team.id && team.name);
-      console.log('Valid teams after filtering:', validTeams);
-      
-      setAvailableTeams(validTeams);
-    } catch (error) {
-      console.error('Failed to fetch teams:', error);
-      console.error('Error details:', error.response?.data || error.message);
-      setAvailableTeams([]);
-    }
-  };
-
   const renderContent = () => {
     if (loading) {
       return (
