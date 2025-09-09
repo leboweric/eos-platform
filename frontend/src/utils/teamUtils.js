@@ -82,27 +82,37 @@ export const getUserTeamId = (user) => {
  * @returns {string|null} The effective team ID
  */
 export const getEffectiveTeamId = (preferredTeamId, user) => {
+  console.log('🔍 getEffectiveTeamId called with:', {
+    preferredTeamId,
+    userTeams: user?.teams?.map(t => ({ id: t.id, name: t.name, is_leadership: t.is_leadership_team }))
+  });
+  
   // Clean the preferred team ID
   const cleanId = (preferredTeamId === 'null' || preferredTeamId === 'undefined' || preferredTeamId === null) 
     ? null 
     : preferredTeamId;
     
+  console.log('🧹 Cleaned ID:', cleanId);
+    
   // If we have a valid preferred team ID (not null and not the placeholder), use it
   // This includes Leadership Team IDs - we should trust the URL parameter
   if (cleanId && cleanId !== LEADERSHIP_TEAM_ID) {
-    console.log('📍 Using preferred team ID from URL:', cleanId);
+    console.log('📍 Have valid cleanId, checking if team exists for user');
     // Verify the team exists for the user
     const teamExists = user?.teams?.some(t => t.id === cleanId);
     if (teamExists) {
-      console.log('✅ Team verified for user');
+      const selectedTeam = user?.teams?.find(t => t.id === cleanId);
+      console.log('✅ Team verified for user:', selectedTeam);
       return cleanId;
     } else {
-      console.log('⚠️ Team ID not found in user teams, falling back');
+      console.log('⚠️ Team ID not found in user teams, user teams are:', user?.teams);
     }
+  } else {
+    console.log('❌ No valid cleanId. cleanId:', cleanId, 'LEADERSHIP_TEAM_ID:', LEADERSHIP_TEAM_ID);
   }
 
   // Otherwise get the user's actual team
-  console.log('⚠️ Falling back to getUserTeamId because preferredTeamId is:', preferredTeamId);
+  console.log('⚠️ Falling back to getUserTeamId');
   const fallbackId = getUserTeamId(user);
   console.log('📍 Fallback team ID:', fallbackId);
   return fallbackId;

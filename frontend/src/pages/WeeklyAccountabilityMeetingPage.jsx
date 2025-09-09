@@ -372,7 +372,12 @@ const WeeklyAccountabilityMeetingPage = () => {
   };
 
   useEffect(() => {
-    loadInitialData();
+    console.log('🚀 teamId changed, reloading data. New teamId:', teamId);
+    if (teamId && teamId !== 'null' && teamId !== 'undefined') {
+      loadInitialData();
+    } else {
+      console.warn('⚠️ Invalid teamId, not loading data:', teamId);
+    }
   }, [teamId]);
 
   // Load data when meeting is joined
