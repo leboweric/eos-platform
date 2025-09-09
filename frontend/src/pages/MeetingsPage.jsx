@@ -116,6 +116,11 @@ const MeetingsPage = () => {
     return () => window.removeEventListener('themeChanged', handleThemeChange);
   }, [selectedDepartment]);
   
+  // Debug: Monitor teamForMeeting state changes
+  useEffect(() => {
+    console.log('🔄 teamForMeeting state changed to:', teamForMeeting);
+  }, [teamForMeeting]);
+  
   const fetchOrganizationTheme = async () => {
     try {
       // First check localStorage
@@ -272,7 +277,11 @@ const MeetingsPage = () => {
       
       console.log('🎯 Initial team selection for modal:', initialTeamSelection);
       setTeamForMeeting(initialTeamSelection);
-      setShowTeamSelectionDialog(true);
+      // Small delay to ensure state is set before showing dialog
+      setTimeout(() => {
+        console.log('🎭 Opening team selection dialog');
+        setShowTeamSelectionDialog(true);
+      }, 50);
       return;
     }
     
@@ -318,20 +327,38 @@ const MeetingsPage = () => {
     console.log('🎯 Confirming team selection:', { 
       teamForMeeting, 
       selectedTeam: teams.find(t => t.id === teamForMeeting),
-      pendingMeetingId 
+      pendingMeetingId,
+      showDialog: showTeamSelectionDialog
     });
     
     // Extra validation to ensure we have a valid team
     if (!teamForMeeting) {
       console.error('❌ No team selected in modal');
+      console.error('Current state:', { teamForMeeting, teams, pendingMeetingId });
       alert('Please select a team before continuing');
       return;
     }
     
+    if (!pendingMeetingId) {
+      console.error('❌ No pending meeting ID');
+      alert('Meeting type not set. Please try again.');
+      return;
+    }
+    
+    // Store values before clearing state
+    const meetingToStart = pendingMeetingId;
+    const teamToUse = teamForMeeting;
+    
+    console.log('✅ Proceeding with:', { meetingToStart, teamToUse });
+    
+    // Close dialog first
     setShowTeamSelectionDialog(false);
-    // Reset the team selection after closing modal
-    proceedWithMeeting(pendingMeetingId, teamForMeeting);
-    setTeamForMeeting(null); // Clear for next time
+    // Clear state
+    setTeamForMeeting(null);
+    setPendingMeetingId(null);
+    
+    // Proceed with the stored values
+    proceedWithMeeting(meetingToStart, teamToUse);
   };
 
   const handleJoinMeeting = (meetingType) => {
@@ -705,7 +732,12 @@ const MeetingsPage = () => {
                       ? `${themeColors.primary}15` 
                       : undefined
                   }}
-                  onClick={() => setTeamForMeeting(team.id)}
+                  onClick={() => {
+                    console.log('🖱️ Team clicked:', team.name, team.id);
+                    console.log('📍 Previous teamForMeeting:', teamForMeeting);
+                    setTeamForMeeting(team.id);
+                    console.log('📍 Setting teamForMeeting to:', team.id);
+                  }}
                 >
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-3">
