@@ -1307,10 +1307,7 @@ const QuarterlyPlanningMeetingPage = () => {
                                 style={{
                                   backgroundColor: isComplete ? `${themeColors.primary}10` : undefined
                                 }}
-                                onClick={() => {
-                                  setSelectedPriority(priority);
-                                  setShowPriorityDialog(true);
-                                }}
+                                // onClick handler removed - no priority dialog exists
                               >
                                 <CardHeader className="pb-4">
                                   <div className="flex items-start justify-between">
@@ -1439,89 +1436,107 @@ const QuarterlyPlanningMeetingPage = () => {
                             {isExpanded && (
                               <div className="space-y-4 ml-7 mt-4">
                                 {ownerPriorities.map(priority => {
-                                  const isComplete = priority.status === 'complete';
-                                  const isOffTrack = priority.status === 'off-track';
-                                  const daysUntilDue = getDaysUntilDue(priority.due_date);
+                                  const isComplete = priority.status === 'complete' || priority.status === 'completed' || priority.progress === 100;
+                                  const daysUntil = !isComplete ? getDaysUntilDue(priority.dueDate || priority.due_date) : null;
+                                  const displayProgress = isComplete ? 100 : (priority.progress || 0);
+                                  
+                                  // Calculate overdue milestones for this priority
+                                  const overdueMilestones = (priority.milestones || []).filter(
+                                    m => !m.completed && !m.is_complete && getDaysUntilDue(m.dueDate || m.due_date) < 0
+                                  );
                                   
                                   return (
                                     <Card 
                                       key={priority.id}
                                       className={`max-w-5xl transition-all duration-300 shadow-md hover:shadow-xl hover:scale-[1.01] cursor-pointer ${
-                                        isComplete ? 'border-slate-200' : 
-                                        isOffTrack ? 'bg-gradient-to-r from-red-50/80 to-rose-50/80 border-red-200' : 
-                                        'bg-white border-slate-200'
+                                        isComplete 
+                                          ? 'border-slate-200' 
+                                          : priority.status === 'off-track'
+                                          ? 'bg-gradient-to-r from-red-50/80 to-rose-50/80 border-red-200'
+                                          : 'bg-white border-slate-200'
                                       }`}
-                                      onClick={() => handlePriorityClick(priority)}
+                                      style={{
+                                        backgroundColor: isComplete ? `${themeColors.primary}10` : undefined
+                                      }}
+                                      // onClick handler removed - no priority dialog exists
                                     >
-                                      <CardContent className="p-6">
-                                        <div className="flex items-start justify-between gap-4">
-                                          <div className="flex items-start gap-4 flex-1">
-                                            <div className="mt-1">
+                                      <CardHeader className="pb-4">
+                                        <div className="flex items-start justify-between">
+                                          <div className="flex-1 min-w-0">
+                                            <div className="flex items-center gap-3">
                                               {isComplete ? (
-                                                <CheckCircle2 className="h-5 w-5 text-green-600" />
+                                                <CheckCircle className="h-5 w-5 flex-shrink-0" style={{ color: themeColors.primary }} />
                                               ) : (
-                                                <div className={`h-2.5 w-2.5 rounded-full ${getStatusDotColor(priority.status)}`} />
+                                                <div className="w-2 h-2 rounded-full flex-shrink-0" style={getStatusDotColor(priority.status)} />
                                               )}
+                                              <h3 className={`text-lg font-semibold break-words ${
+                                                isComplete 
+                                                  ? 'line-through' 
+                                                  : 'text-gray-900'
+                                              }`} style={isComplete ? { color: themeColors.primary, textDecorationColor: themeColors.primary } : {}}>
+                                                {priority.title}
+                                              </h3>
                                             </div>
-                                            <div className="space-y-2 flex-1">
-                                              <div className="flex items-start justify-between">
-                                                <div>
-                                                  <h3 className={`font-semibold text-base leading-tight ${isComplete ? 'text-slate-500 line-through' : ''}`}>
-                                                    {priority.title}
-                                                  </h3>
-                                                  {priority.description && (
-                                                    <p className={`mt-1 text-sm leading-relaxed ${isComplete ? 'text-slate-400' : 'text-slate-600'}`}>
-                                                      {priority.description}
-                                                    </p>
-                                                  )}
-                                                  <div className="flex items-center gap-3 mt-2 text-xs text-slate-500">
-                                                    <span className="flex items-center gap-1">
-                                                      <User className="h-3 w-3" />
-                                                      {priority.owner?.name || priority.owner_name || 'Unassigned'}
-                                                    </span>
-                                                    {priority.due_date && (
-                                                      <span className="flex items-center gap-1">
-                                                        <Calendar className="h-3 w-3" />
-                                                        {format(new Date(priority.due_date), 'MMM d')}
-                                                        {daysUntilDue !== null && !isComplete && (
-                                                          <span className={`ml-1 ${daysUntilDue < 0 ? 'text-red-600' : daysUntilDue <= 7 ? 'text-amber-600' : ''}`}>
-                                                            ({daysUntilDue < 0 ? `${Math.abs(daysUntilDue)}d overdue` : `${daysUntilDue}d left`})
-                                                          </span>
-                                                        )}
-                                                      </span>
-                                                    )}
-                                                  </div>
-                                                </div>
-                                              </div>
-                                              
-                                              {priority.milestones && priority.milestones.length > 0 && (
-                                                <div className="mt-3">
-                                                  <Progress 
-                                                    value={priority.milestones.filter(m => m.is_complete).length / priority.milestones.length * 100} 
-                                                    className="h-1.5"
-                                                  />
-                                                  <div className="text-xs text-slate-500 mt-1">
-                                                    {priority.milestones.filter(m => m.is_complete).length} of {priority.milestones.length} milestones complete
-                                                  </div>
-                                                </div>
+                                            <div className="flex items-center gap-4 mt-2 text-sm text-gray-600">
+                                              <span className="flex items-center gap-1">
+                                                <User className="h-3 w-3" />
+                                                {priority.owner?.name || 'Unassigned'}
+                                              </span>
+                                              <span className="flex items-center gap-1">
+                                                <Calendar className="h-3 w-3" />
+                                                Due {priority.dueDate || priority.due_date ? format(new Date(priority.dueDate || priority.due_date), 'MMM d') : 'No date'}
+                                              </span>
+                                              {daysUntil !== null && (
+                                                <span 
+                                                  className={`text-xs px-2 py-1 rounded-full font-medium ${
+                                                    daysUntil < 0 ? 'bg-red-100 text-red-700' :
+                                                    daysUntil <= 7 ? 'bg-yellow-100 text-yellow-700' :
+                                                    'text-white'
+                                                  }`}
+                                                  style={{
+                                                    backgroundColor: daysUntil > 7 ? themeColors.primary : undefined,
+                                                    opacity: daysUntil > 7 ? 0.9 : undefined
+                                                  }}
+                                                >
+                                                  {daysUntil < 0 ? `${Math.abs(daysUntil)} days overdue` :
+                                                   daysUntil === 0 ? 'Due today' :
+                                                   `${daysUntil} days left`}
+                                                </span>
                                               )}
-                                              
-                                              <div className="flex gap-2 mt-3">
-                                                {priority.is_key && (
-                                                  <Badge variant="outline" className="text-xs px-2 py-0.5 bg-amber-50 text-amber-700 border-amber-200">
-                                                    Key {labels?.priority_singular || 'Priority'}
-                                                  </Badge>
-                                                )}
-                                                {priority.created_at && new Date(priority.created_at) > new Date(Date.now() - 7 * 24 * 60 * 60 * 1000) && (
-                                                  <Badge variant="outline" className="text-xs px-2 py-0.5 bg-blue-50 text-blue-700 border-blue-200">
-                                                    New
-                                                  </Badge>
-                                                )}
-                                              </div>
                                             </div>
                                           </div>
+                                          <div className="flex flex-col items-end gap-2">
+                                            <div className="text-right">
+                                              <div className="text-2xl font-bold" style={{ color: themeColors.primary }}>
+                                                {displayProgress}%
+                                              </div>
+                                              <Progress value={displayProgress} className="w-24 h-2" />
+                                            </div>
+                                            {/* Overdue milestone badge */}
+                                            {overdueMilestones.length > 0 && (
+                                              <Badge variant="destructive" className="bg-red-100 text-red-700 border-red-300">
+                                                {overdueMilestones.length} Overdue Milestone{overdueMilestones.length > 1 ? 's' : ''}
+                                              </Badge>
+                                            )}
+                                            {/* Status badge underneath progress bar */}
+                                            <Badge 
+                                              className={`${
+                                                isComplete ? 'text-white' :
+                                                priority.status === 'off-track' ? 'bg-red-100 text-red-800 border-red-200' :
+                                                'text-white'
+                                              }`}
+                                              style={{
+                                                backgroundColor: isComplete || priority.status === 'on-track' ? themeColors.primary : undefined,
+                                                borderColor: isComplete || priority.status === 'on-track' ? themeColors.primary : undefined,
+                                                opacity: isComplete || priority.status === 'on-track' ? 0.9 : undefined
+                                              }}
+                                            >
+                                              {isComplete ? 'Complete' :
+                                               priority.status === 'off-track' ? 'Off Track' : 'On Track'}
+                                            </Badge>
+                                          </div>
                                         </div>
-                                      </CardContent>
+                                      </CardHeader>
                                     </Card>
                                   );
                                 })}
@@ -1685,89 +1700,107 @@ const QuarterlyPlanningMeetingPage = () => {
                       {expandedSections.companyPriorities && (
                         <div className="space-y-4 ml-7 mt-4">
                           {(companyPriorities || []).map(priority => {
-                            const isComplete = priority.status === 'complete';
-                            const isOffTrack = priority.status === 'off-track';
-                            const daysUntilDue = getDaysUntilDue(priority.due_date);
+                            const isComplete = priority.status === 'complete' || priority.status === 'completed' || priority.progress === 100;
+                            const daysUntil = !isComplete ? getDaysUntilDue(priority.dueDate || priority.due_date) : null;
+                            const displayProgress = isComplete ? 100 : (priority.progress || 0);
+                            
+                            // Calculate overdue milestones for this priority
+                            const overdueMilestones = (priority.milestones || []).filter(
+                              m => !m.completed && !m.is_complete && getDaysUntilDue(m.dueDate || m.due_date) < 0
+                            );
                             
                             return (
                               <Card 
                                 key={priority.id}
-                                className={`max-w-5xl transition-all duration-300 shadow-md hover:shadow-xl hover:scale-[1.01] cursor-pointer ${
-                                  isComplete ? 'border-slate-200' : 
-                                  isOffTrack ? 'bg-gradient-to-r from-red-50/80 to-rose-50/80 border-red-200' : 
-                                  'bg-white border-slate-200'
+                                className={`max-w-5xl transition-all duration-300 shadow-md hover:shadow-xl hover:scale-[1.01] ${
+                                  isComplete 
+                                    ? 'border-slate-200' 
+                                    : priority.status === 'off-track'
+                                    ? 'bg-gradient-to-r from-red-50/80 to-rose-50/80 border-red-200'
+                                    : 'bg-white border-slate-200'
                                 }`}
-                                onClick={() => handlePriorityClick(priority)}
+                                style={{
+                                  backgroundColor: isComplete ? `${themeColors.primary}10` : undefined
+                                }}
+                                // No onClick handler - no priority dialog exists
                               >
-                                <CardContent className="p-6">
-                                  <div className="flex items-start justify-between gap-4">
-                                    <div className="flex items-start gap-4 flex-1">
-                                      <div className="mt-1">
+                                <CardHeader className="pb-4">
+                                  <div className="flex items-start justify-between">
+                                    <div className="flex-1 min-w-0">
+                                      <div className="flex items-center gap-3">
                                         {isComplete ? (
-                                          <CheckCircle2 className="h-5 w-5 text-green-600" />
+                                          <CheckCircle className="h-5 w-5 flex-shrink-0" style={{ color: themeColors.primary }} />
                                         ) : (
-                                          <div className={`h-2.5 w-2.5 rounded-full ${getStatusDotColor(priority.status)}`} />
+                                          <div className="w-2 h-2 rounded-full flex-shrink-0" style={getStatusDotColor(priority.status)} />
                                         )}
+                                        <h3 className={`text-lg font-semibold break-words ${
+                                          isComplete 
+                                            ? 'line-through' 
+                                            : 'text-gray-900'
+                                        }`} style={isComplete ? { color: themeColors.primary, textDecorationColor: themeColors.primary } : {}}>
+                                          {priority.title}
+                                        </h3>
                                       </div>
-                                      <div className="space-y-2 flex-1">
-                                        <div className="flex items-start justify-between">
-                                          <div>
-                                            <h3 className={`font-semibold text-base leading-tight ${isComplete ? 'text-slate-500 line-through' : ''}`}>
-                                              {priority.title}
-                                            </h3>
-                                            {priority.description && (
-                                              <p className={`mt-1 text-sm leading-relaxed ${isComplete ? 'text-slate-400' : 'text-slate-600'}`}>
-                                                {priority.description}
-                                              </p>
-                                            )}
-                                            <div className="flex items-center gap-3 mt-2 text-xs text-slate-500">
-                                              <span className="flex items-center gap-1">
-                                                <User className="h-3 w-3" />
-                                                {priority.owner?.name || priority.owner_name || 'Unassigned'}
-                                              </span>
-                                              {priority.due_date && (
-                                                <span className="flex items-center gap-1">
-                                                  <Calendar className="h-3 w-3" />
-                                                  {format(new Date(priority.due_date), 'MMM d')}
-                                                  {daysUntilDue !== null && !isComplete && (
-                                                    <span className={`ml-1 ${daysUntilDue < 0 ? 'text-red-600' : daysUntilDue <= 7 ? 'text-amber-600' : ''}`}>
-                                                      ({daysUntilDue < 0 ? `${Math.abs(daysUntilDue)}d overdue` : `${daysUntilDue}d left`})
-                                                    </span>
-                                                  )}
-                                                </span>
-                                              )}
-                                            </div>
-                                          </div>
-                                        </div>
-                                        
-                                        {priority.milestones && priority.milestones.length > 0 && (
-                                          <div className="mt-3">
-                                            <Progress 
-                                              value={priority.milestones.filter(m => m.is_complete).length / priority.milestones.length * 100} 
-                                              className="h-1.5"
-                                            />
-                                            <div className="text-xs text-slate-500 mt-1">
-                                              {priority.milestones.filter(m => m.is_complete).length} of {priority.milestones.length} milestones complete
-                                            </div>
-                                          </div>
+                                      <div className="flex items-center gap-4 mt-2 text-sm text-gray-600">
+                                        <span className="flex items-center gap-1">
+                                          <User className="h-3 w-3" />
+                                          {priority.owner?.name || 'Unassigned'}
+                                        </span>
+                                        <span className="flex items-center gap-1">
+                                          <Calendar className="h-3 w-3" />
+                                          Due {priority.dueDate || priority.due_date ? format(new Date(priority.dueDate || priority.due_date), 'MMM d') : 'No date'}
+                                        </span>
+                                        {daysUntil !== null && (
+                                          <span 
+                                            className={`text-xs px-2 py-1 rounded-full font-medium ${
+                                              daysUntil < 0 ? 'bg-red-100 text-red-700' :
+                                              daysUntil <= 7 ? 'bg-yellow-100 text-yellow-700' :
+                                              'text-white'
+                                            }`}
+                                            style={{
+                                              backgroundColor: daysUntil > 7 ? themeColors.primary : undefined,
+                                              opacity: daysUntil > 7 ? 0.9 : undefined
+                                            }}
+                                          >
+                                            {daysUntil < 0 ? `${Math.abs(daysUntil)} days overdue` :
+                                             daysUntil === 0 ? 'Due today' :
+                                             `${daysUntil} days left`}
+                                          </span>
                                         )}
-                                        
-                                        <div className="flex gap-2 mt-3">
-                                          {priority.is_key && (
-                                            <Badge variant="outline" className="text-xs px-2 py-0.5 bg-amber-50 text-amber-700 border-amber-200">
-                                              Key {labels?.priority_singular || 'Priority'}
-                                            </Badge>
-                                          )}
-                                          {priority.created_at && new Date(priority.created_at) > new Date(Date.now() - 7 * 24 * 60 * 60 * 1000) && (
-                                            <Badge variant="outline" className="text-xs px-2 py-0.5 bg-blue-50 text-blue-700 border-blue-200">
-                                              New
-                                            </Badge>
-                                          )}
-                                        </div>
                                       </div>
                                     </div>
+                                    <div className="flex flex-col items-end gap-2">
+                                      <div className="text-right">
+                                        <div className="text-2xl font-bold" style={{ color: themeColors.primary }}>
+                                          {displayProgress}%
+                                        </div>
+                                        <Progress value={displayProgress} className="w-24 h-2" />
+                                      </div>
+                                      {/* Overdue milestone badge */}
+                                      {overdueMilestones.length > 0 && (
+                                        <Badge variant="destructive" className="bg-red-100 text-red-700 border-red-300">
+                                          {overdueMilestones.length} Overdue Milestone{overdueMilestones.length > 1 ? 's' : ''}
+                                        </Badge>
+                                      )}
+                                      {/* Status badge underneath progress bar */}
+                                      <Badge 
+                                        className={`${
+                                          isComplete ? 'text-white' :
+                                          priority.status === 'off-track' ? 'bg-red-100 text-red-800 border-red-200' :
+                                          'text-white'
+                                        }`}
+                                        style={{
+                                          backgroundColor: isComplete || priority.status === 'on-track' ? themeColors.primary : undefined,
+                                          borderColor: isComplete || priority.status === 'on-track' ? themeColors.primary : undefined,
+                                          opacity: isComplete || priority.status === 'on-track' ? 0.9 : undefined
+                                        }}
+                                      >
+                                        {isComplete ? 'Complete' :
+                                         priority.status === 'off-track' ? 'Off Track' : 'On Track'}
+                                      </Badge>
+                                    </div>
                                   </div>
-                                </CardContent>
+                                </CardHeader>
                               </Card>
                             );
                           })}
@@ -1818,89 +1851,107 @@ const QuarterlyPlanningMeetingPage = () => {
                             {isExpanded && (
                               <div className="space-y-4 ml-7 mt-4">
                                 {ownerPriorities.map(priority => {
-                                  const isComplete = priority.status === 'complete';
-                                  const isOffTrack = priority.status === 'off-track';
-                                  const daysUntilDue = getDaysUntilDue(priority.due_date);
+                                  const isComplete = priority.status === 'complete' || priority.status === 'completed' || priority.progress === 100;
+                                  const daysUntil = !isComplete ? getDaysUntilDue(priority.dueDate || priority.due_date) : null;
+                                  const displayProgress = isComplete ? 100 : (priority.progress || 0);
+                                  
+                                  // Calculate overdue milestones for this priority
+                                  const overdueMilestones = (priority.milestones || []).filter(
+                                    m => !m.completed && !m.is_complete && getDaysUntilDue(m.dueDate || m.due_date) < 0
+                                  );
                                   
                                   return (
                                     <Card 
                                       key={priority.id}
                                       className={`max-w-5xl transition-all duration-300 shadow-md hover:shadow-xl hover:scale-[1.01] cursor-pointer ${
-                                        isComplete ? 'border-slate-200' : 
-                                        isOffTrack ? 'bg-gradient-to-r from-red-50/80 to-rose-50/80 border-red-200' : 
-                                        'bg-white border-slate-200'
+                                        isComplete 
+                                          ? 'border-slate-200' 
+                                          : priority.status === 'off-track'
+                                          ? 'bg-gradient-to-r from-red-50/80 to-rose-50/80 border-red-200'
+                                          : 'bg-white border-slate-200'
                                       }`}
-                                      onClick={() => handlePriorityClick(priority)}
+                                      style={{
+                                        backgroundColor: isComplete ? `${themeColors.primary}10` : undefined
+                                      }}
+                                      // onClick handler removed - no priority dialog exists
                                     >
-                                      <CardContent className="p-6">
-                                        <div className="flex items-start justify-between gap-4">
-                                          <div className="flex items-start gap-4 flex-1">
-                                            <div className="mt-1">
+                                      <CardHeader className="pb-4">
+                                        <div className="flex items-start justify-between">
+                                          <div className="flex-1 min-w-0">
+                                            <div className="flex items-center gap-3">
                                               {isComplete ? (
-                                                <CheckCircle2 className="h-5 w-5 text-green-600" />
+                                                <CheckCircle className="h-5 w-5 flex-shrink-0" style={{ color: themeColors.primary }} />
                                               ) : (
-                                                <div className={`h-2.5 w-2.5 rounded-full ${getStatusDotColor(priority.status)}`} />
+                                                <div className="w-2 h-2 rounded-full flex-shrink-0" style={getStatusDotColor(priority.status)} />
                                               )}
+                                              <h3 className={`text-lg font-semibold break-words ${
+                                                isComplete 
+                                                  ? 'line-through' 
+                                                  : 'text-gray-900'
+                                              }`} style={isComplete ? { color: themeColors.primary, textDecorationColor: themeColors.primary } : {}}>
+                                                {priority.title}
+                                              </h3>
                                             </div>
-                                            <div className="space-y-2 flex-1">
-                                              <div className="flex items-start justify-between">
-                                                <div>
-                                                  <h3 className={`font-semibold text-base leading-tight ${isComplete ? 'text-slate-500 line-through' : ''}`}>
-                                                    {priority.title}
-                                                  </h3>
-                                                  {priority.description && (
-                                                    <p className={`mt-1 text-sm leading-relaxed ${isComplete ? 'text-slate-400' : 'text-slate-600'}`}>
-                                                      {priority.description}
-                                                    </p>
-                                                  )}
-                                                  <div className="flex items-center gap-3 mt-2 text-xs text-slate-500">
-                                                    <span className="flex items-center gap-1">
-                                                      <User className="h-3 w-3" />
-                                                      {priority.owner?.name || priority.owner_name || 'Unassigned'}
-                                                    </span>
-                                                    {priority.due_date && (
-                                                      <span className="flex items-center gap-1">
-                                                        <Calendar className="h-3 w-3" />
-                                                        {format(new Date(priority.due_date), 'MMM d')}
-                                                        {daysUntilDue !== null && !isComplete && (
-                                                          <span className={`ml-1 ${daysUntilDue < 0 ? 'text-red-600' : daysUntilDue <= 7 ? 'text-amber-600' : ''}`}>
-                                                            ({daysUntilDue < 0 ? `${Math.abs(daysUntilDue)}d overdue` : `${daysUntilDue}d left`})
-                                                          </span>
-                                                        )}
-                                                      </span>
-                                                    )}
-                                                  </div>
-                                                </div>
-                                              </div>
-                                              
-                                              {priority.milestones && priority.milestones.length > 0 && (
-                                                <div className="mt-3">
-                                                  <Progress 
-                                                    value={priority.milestones.filter(m => m.is_complete).length / priority.milestones.length * 100} 
-                                                    className="h-1.5"
-                                                  />
-                                                  <div className="text-xs text-slate-500 mt-1">
-                                                    {priority.milestones.filter(m => m.is_complete).length} of {priority.milestones.length} milestones complete
-                                                  </div>
-                                                </div>
+                                            <div className="flex items-center gap-4 mt-2 text-sm text-gray-600">
+                                              <span className="flex items-center gap-1">
+                                                <User className="h-3 w-3" />
+                                                {priority.owner?.name || 'Unassigned'}
+                                              </span>
+                                              <span className="flex items-center gap-1">
+                                                <Calendar className="h-3 w-3" />
+                                                Due {priority.dueDate || priority.due_date ? format(new Date(priority.dueDate || priority.due_date), 'MMM d') : 'No date'}
+                                              </span>
+                                              {daysUntil !== null && (
+                                                <span 
+                                                  className={`text-xs px-2 py-1 rounded-full font-medium ${
+                                                    daysUntil < 0 ? 'bg-red-100 text-red-700' :
+                                                    daysUntil <= 7 ? 'bg-yellow-100 text-yellow-700' :
+                                                    'text-white'
+                                                  }`}
+                                                  style={{
+                                                    backgroundColor: daysUntil > 7 ? themeColors.primary : undefined,
+                                                    opacity: daysUntil > 7 ? 0.9 : undefined
+                                                  }}
+                                                >
+                                                  {daysUntil < 0 ? `${Math.abs(daysUntil)} days overdue` :
+                                                   daysUntil === 0 ? 'Due today' :
+                                                   `${daysUntil} days left`}
+                                                </span>
                                               )}
-                                              
-                                              <div className="flex gap-2 mt-3">
-                                                {priority.is_key && (
-                                                  <Badge variant="outline" className="text-xs px-2 py-0.5 bg-amber-50 text-amber-700 border-amber-200">
-                                                    Key {labels?.priority_singular || 'Priority'}
-                                                  </Badge>
-                                                )}
-                                                {priority.created_at && new Date(priority.created_at) > new Date(Date.now() - 7 * 24 * 60 * 60 * 1000) && (
-                                                  <Badge variant="outline" className="text-xs px-2 py-0.5 bg-blue-50 text-blue-700 border-blue-200">
-                                                    New
-                                                  </Badge>
-                                                )}
-                                              </div>
                                             </div>
                                           </div>
+                                          <div className="flex flex-col items-end gap-2">
+                                            <div className="text-right">
+                                              <div className="text-2xl font-bold" style={{ color: themeColors.primary }}>
+                                                {displayProgress}%
+                                              </div>
+                                              <Progress value={displayProgress} className="w-24 h-2" />
+                                            </div>
+                                            {/* Overdue milestone badge */}
+                                            {overdueMilestones.length > 0 && (
+                                              <Badge variant="destructive" className="bg-red-100 text-red-700 border-red-300">
+                                                {overdueMilestones.length} Overdue Milestone{overdueMilestones.length > 1 ? 's' : ''}
+                                              </Badge>
+                                            )}
+                                            {/* Status badge underneath progress bar */}
+                                            <Badge 
+                                              className={`${
+                                                isComplete ? 'text-white' :
+                                                priority.status === 'off-track' ? 'bg-red-100 text-red-800 border-red-200' :
+                                                'text-white'
+                                              }`}
+                                              style={{
+                                                backgroundColor: isComplete || priority.status === 'on-track' ? themeColors.primary : undefined,
+                                                borderColor: isComplete || priority.status === 'on-track' ? themeColors.primary : undefined,
+                                                opacity: isComplete || priority.status === 'on-track' ? 0.9 : undefined
+                                              }}
+                                            >
+                                              {isComplete ? 'Complete' :
+                                               priority.status === 'off-track' ? 'Off Track' : 'On Track'}
+                                            </Badge>
+                                          </div>
                                         </div>
-                                      </CardContent>
+                                      </CardHeader>
                                     </Card>
                                   );
                                 })}
