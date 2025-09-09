@@ -37,6 +37,7 @@ import {
 import { useNavigate } from 'react-router-dom';
 import PriorityCard from '../components/priorities/PriorityCardClean';
 import PriorityDialog from '../components/priorities/PriorityDialog';
+import IssuesListClean from '../components/issues/IssuesListClean';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
@@ -51,7 +52,6 @@ import { organizationService } from '../services/organizationService';
 import { getOrgTheme, saveOrgTheme, hexToRgba } from '../utils/themeUtils';
 import { useTerminology } from '../contexts/TerminologyContext';
 import { getEffectiveTeamId } from '../utils/teamUtils';
-import IssuesListClean from '../components/issues/IssuesListClean';
 import IssueDialog from '../components/issues/IssueDialog';
 import TodoDialog from '../components/todos/TodoDialog';
 import { todosService } from '../services/todosService';
@@ -91,6 +91,9 @@ const QuarterlyPlanningMeetingPage = () => {
   // Meeting data
   const [priorities, setPriorities] = useState([]);
   const [issues, setIssues] = useState([]);
+  const [shortTermIssues, setShortTermIssues] = useState([]);
+  const [longTermIssues, setLongTermIssues] = useState([]);
+  const [issueTimeline, setIssueTimeline] = useState('short_term');
   const [todos, setTodos] = useState([]);
   const [vtoData, setVtoData] = useState(null);
   const [meetingStarted, setMeetingStarted] = useState(false);
@@ -552,6 +555,13 @@ const QuarterlyPlanningMeetingPage = () => {
         (b.vote_count || 0) - (a.vote_count || 0)
       );
       setIssues(sortedIssues);
+      
+      // Split into short-term and long-term
+      const shortTerm = sortedIssues.filter(issue => issue.timeline === 'short_term');
+      const longTerm = sortedIssues.filter(issue => issue.timeline === 'long_term');
+      setShortTermIssues(shortTerm);
+      setLongTermIssues(longTerm);
+      
       setLoading(false);
     } catch (error) {
       console.error('Failed to fetch issues:', error);
@@ -567,6 +577,101 @@ const QuarterlyPlanningMeetingPage = () => {
       setTeamMembers(response.data.teamMembers || []);
     } catch (error) {
       console.error('Failed to fetch team members:', error);
+    }
+  };
+  
+  // Issue handlers
+  const handleEditIssue = (issue) => {
+    setEditingIssue(issue);
+    setShowIssueDialog(true);
+  };
+  
+  const handleSaveIssue = async (issueData) => {
+    try {
+      if (editingIssue) {
+        await issuesService.updateIssue(editingIssue.id, issueData);
+      } else {
+        await issuesService.createIssue(issueData);
+      }
+      await fetchIssuesData();
+      setShowIssueDialog(false);
+      setEditingIssue(null);
+      setSuccess('Issue saved successfully');
+    } catch (error) {
+      console.error('Failed to save issue:', error);
+      setError('Failed to save issue');
+    }
+  };
+  
+  const handleStatusChange = async (issueId, newStatus) => {
+    try {
+      await issuesService.updateIssue(issueId, { status: newStatus });
+      await fetchIssuesData();
+    } catch (error) {
+      console.error('Failed to update issue status:', error);
+    }
+  };
+  
+  const handleArchive = async (issueId) => {
+    try {
+      await issuesService.archiveIssue(issueId);
+      await fetchIssuesData();
+      setSuccess('Issue archived');
+    } catch (error) {
+      console.error('Failed to archive issue:', error);
+      setError('Failed to archive issue');
+    }
+  };
+  
+  const handleMoveToTeam = async (issueId, newTeamId) => {
+    try {
+      await issuesService.updateIssue(issueId, { department_id: newTeamId });
+      await fetchIssuesData();
+      setSuccess('Issue moved to another team');
+    } catch (error) {
+      console.error('Failed to move issue:', error);
+      setError('Failed to move issue to team');
+    }
+  };
+  
+  const handleCreateTodoFromIssue = async (issue) => {
+    try {
+      const todoData = {
+        title: issue.title,
+        description: issue.description,
+        priority: issue.priority_level || 'medium',
+        assigned_to_id: issue.owner_id,
+        due_date: null,
+        status: 'pending'
+      };
+      await todosService.createTodo(todoData);
+      await fetchTodosData();
+      setSuccess('To-Do created from issue');
+    } catch (error) {
+      console.error('Failed to create todo from issue:', error);
+      setError('Failed to create to-do');
+    }
+  };
+  
+  const handleSendCascadingMessage = async (issueId, message) => {
+    try {
+      // Implementation for cascading messages if needed
+      console.log('Cascading message for issue:', issueId, message);
+    } catch (error) {
+      console.error('Failed to send cascading message:', error);
+    }
+  };
+  
+  const handleReorderIssues = async (reorderedIssues) => {
+    try {
+      if (issueTimeline === 'short_term') {
+        setShortTermIssues(reorderedIssues);
+      } else {
+        setLongTermIssues(reorderedIssues);
+      }
+      // Optionally persist the order to backend
+    } catch (error) {
+      console.error('Failed to reorder issues:', error);
     }
   };
 
@@ -826,113 +931,174 @@ const QuarterlyPlanningMeetingPage = () => {
         );
 
       case 'ids':
-        if (loading) {
-          return (
-            <div className="flex items-center justify-center h-96">
-              <Loader2 className="h-8 w-8 animate-spin" />
-            </div>
-          );
-        }
         return (
           <div className="space-y-4">
             <Card className="border-0 shadow-sm">
-              <CardHeader className="rounded-t-lg" style={{ backgroundColor: hexToRgba('#EF4444', 0.05) }}>
+              <CardHeader className="rounded-t-lg" style={{ 
+                background: `linear-gradient(to right, ${hexToRgba(themeColors.accent, 0.1)}, ${hexToRgba(themeColors.primary, 0.1)})`
+              }}>
                 <div className="flex items-center justify-between">
                   <div>
                     <CardTitle className="flex items-center gap-2 text-xl">
-                      <AlertTriangle className="h-5 w-5 text-red-500" />
-                      IDS (Identify, Discuss, Solve)
+                      <AlertTriangle className="h-5 w-5" style={{ color: themeColors.primary }} />
+                      Identify Discuss Solve
                     </CardTitle>
-                    <CardDescription className="mt-1">Work through your issues list (3 hours)</CardDescription>
+                    <CardDescription className="mt-1">Solve the most important Issue(s) (3 hours)</CardDescription>
                   </div>
-                  <div className="flex gap-2">
-                    <Button
-                      onClick={() => {
-                        setEditingIssue(null);
-                        setShowIssueDialog(true);
-                      }}
-                      style={{ backgroundColor: themeColors.primary }}
-                      className="hover:opacity-90"
-                    >
-                      <Plus className="mr-2 h-4 w-4" />
-                      Add Issue
-                    </Button>
+                  <div className="text-sm text-gray-500 bg-white px-3 py-1 rounded-full">
+                    3 hours
                   </div>
                 </div>
               </CardHeader>
               <CardContent className="pt-6">
-                {issues.length === 0 ? (
-                  <div className="text-center py-12 bg-gray-50 rounded-lg">
-                    <AlertTriangle className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-                    <p className="text-gray-500 mb-4">No issues to discuss</p>
-                    <Button
-                      variant="outline"
-                      onClick={() => {
-                        setEditingIssue(null);
-                        setShowIssueDialog(true);
-                      }}
-                    >
-                      <Plus className="mr-2 h-4 w-4" />
-                      Add First Issue
-                    </Button>
-                  </div>
-                ) : (
-                  <div className="space-y-4">
-                    <div className="p-4 bg-amber-50/80 backdrop-blur-sm border border-amber-200/50 rounded-xl">
-                      <p className="text-amber-800 text-center">
-                        <span className="font-semibold">IDS Process:</span> Prioritize top issues, then for each: Identify (facts only), Discuss (all perspectives), Solve (action items)
-                      </p>
-                    </div>
-                    {issues.map((issue, index) => (
-                      <div key={issue.id} className="border rounded-lg p-4 hover:shadow-md transition-shadow">
-                        <div className="flex items-start justify-between">
-                          <div className="flex-1">
-                            <div className="flex items-center gap-2">
-                              <span className="text-lg font-semibold">#{index + 1}</span>
-                              <h4 className="text-lg font-medium">{issue.title}</h4>
-                              {issue.priority === 'high' && (
-                                <span className="px-2 py-1 bg-red-100 text-red-700 text-xs rounded-full">High Priority</span>
-                              )}
-                            </div>
-                            {issue.description && (
-                              <p className="text-gray-600 mt-2">{issue.description}</p>
-                            )}
-                            <div className="flex items-center gap-4 mt-3 text-sm text-gray-500">
-                              <span className="flex items-center gap-1">
-                                <User className="h-3 w-3" />
-                                {issue.owner?.first_name} {issue.owner?.last_name}
-                              </span>
-                              <span className="flex items-center gap-1">
-                                <Calendar className="h-3 w-3" />
-                                {new Date(issue.created_at).toLocaleDateString()}
-                              </span>
-                            </div>
-                          </div>
-                          <div className="flex gap-2">
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              onClick={() => {
-                                setEditingIssue(issue);
-                                setShowIssueDialog(true);
+                <div className="border border-white/30 bg-white/60 backdrop-blur-sm rounded-xl p-4 mb-4 shadow-sm">
+                  <p className="text-gray-700 text-center">
+                    <span className="font-semibold">Quick voting:</span> Everyone votes on the most important issues. Then discuss and solve the top-voted issues together.
+                  </p>
+                </div>
+                <div className="mb-4">
+                  <Tabs value={issueTimeline} onValueChange={setIssueTimeline} className="w-full">
+                    <div className="flex justify-between items-center mb-4">
+                      <TabsList className="bg-white/80 backdrop-blur-sm border border-white/50 rounded-xl p-1">
+                        <TabsTrigger 
+                          value="short_term" 
+                          className="min-w-[120px] relative z-10 data-[state=active]:text-white data-[state=active]:shadow-sm transition-all"
+                          data-state={issueTimeline === 'short_term' ? 'active' : 'inactive'}
+                          style={issueTimeline === 'short_term' ? {
+                            background: `linear-gradient(135deg, ${themeColors.primary} 0%, ${themeColors.secondary} 100%)`,
+                            color: 'white'
+                          } : {}}
+                        >
+                          Short Term ({shortTermIssues.length})
+                        </TabsTrigger>
+                        <TabsTrigger 
+                          value="long_term" 
+                          className="min-w-[120px] relative z-10 data-[state=active]:text-white data-[state=active]:shadow-sm transition-all"
+                          data-state={issueTimeline === 'long_term' ? 'active' : 'inactive'}
+                          style={issueTimeline === 'long_term' ? {
+                            background: `linear-gradient(135deg, ${themeColors.primary} 0%, ${themeColors.secondary} 100%)`,
+                            color: 'white'
+                          } : {}}
+                        >
+                          Long Term ({longTermIssues.length})
+                        </TabsTrigger>
+                      </TabsList>
+                      
+                      <div className="flex gap-2">
+                        {(() => {
+                          const currentIssues = issueTimeline === 'short_term' ? shortTermIssues : longTermIssues;
+                          const closedIssuesCount = currentIssues.filter(issue => issue.status === 'closed').length;
+                          return closedIssuesCount > 0 && (
+                            <Button 
+                              onClick={async () => {
+                                try {
+                                  await issuesService.archiveClosedIssues(issueTimeline);
+                                  setSuccess(`${closedIssuesCount} closed issue${closedIssuesCount > 1 ? 's' : ''} archived`);
+                                  await fetchIssuesData();
+                                } catch (error) {
+                                  console.error('Failed to archive closed issues:', error);
+                                  setError('Failed to archive closed issues');
+                                }
+                              }}
+                              className="text-white transition-all duration-200 shadow-md hover:shadow-lg rounded-lg"
+                              style={{
+                                background: `linear-gradient(135deg, ${themeColors.primary} 0%, ${themeColors.secondary} 100%)`,
+                                ':hover': {
+                                  filter: 'brightness(1.1)'
+                                }
+                              }}
+                              onMouseEnter={(e) => {
+                                e.currentTarget.style.filter = 'brightness(1.1)';
+                              }}
+                              onMouseLeave={(e) => {
+                                e.currentTarget.style.filter = 'brightness(1)';
                               }}
                             >
-                              Edit
+                              <Archive className="mr-2 h-4 w-4" />
+                              Archive Solved ({closedIssuesCount})
                             </Button>
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              onClick={() => handleResolveIssue(issue.id)}
-                              className="text-green-600 hover:text-green-700"
-                            >
-                              Resolve
-                            </Button>
-                          </div>
-                        </div>
+                          );
+                        })()}
                       </div>
-                    ))}
-                  </div>
-                )}
+                    </div>
+                    
+                    <TabsContent value="short_term" className="mt-0">
+                      {shortTermIssues.length === 0 ? (
+                        <div className="text-center py-8">
+                          <p className="text-gray-500">No short-term issues found.</p>
+                        </div>
+                      ) : (
+                        <IssuesListClean
+                          issues={shortTermIssues || []}
+                          onEdit={handleEditIssue}
+                          onSave={handleSaveIssue}
+                          teamMembers={teamMembers}
+                          onStatusChange={handleStatusChange}
+                          onTimelineChange={handleTimelineChange}
+                          onArchive={handleArchive}
+                          onVote={handleVote}
+                          onMoveToTeam={handleMoveToTeam}
+                          onCreateTodo={handleCreateTodoFromIssue}
+                          onSendCascadingMessage={handleSendCascadingMessage}
+                          onReorder={handleReorderIssues}
+                          enableDragDrop={true}
+                          getStatusColor={(status) => {
+                            switch (status) {
+                              case 'open':
+                                return 'bg-yellow-100 text-yellow-800';
+                              case 'closed':
+                                return 'bg-gray-100 text-gray-800';
+                              default:
+                                return 'bg-gray-100 text-gray-800';
+                            }
+                          }}
+                          getStatusIcon={(status) => null}
+                          readOnly={false}
+                          showVoting={true}
+                          compactGrid={false}
+                        />
+                      )}
+                    </TabsContent>
+                    
+                    <TabsContent value="long_term" className="mt-0">
+                      {longTermIssues.length === 0 ? (
+                        <div className="text-center py-8">
+                          <p className="text-gray-500">No long-term issues found.</p>
+                        </div>
+                      ) : (
+                        <IssuesListClean
+                          issues={longTermIssues || []}
+                          onEdit={handleEditIssue}
+                          onSave={handleSaveIssue}
+                          teamMembers={teamMembers}
+                          onStatusChange={handleStatusChange}
+                          onTimelineChange={handleTimelineChange}
+                          onArchive={handleArchive}
+                          onVote={handleVote}
+                          onMoveToTeam={handleMoveToTeam}
+                          onCreateTodo={handleCreateTodoFromIssue}
+                          onSendCascadingMessage={handleSendCascadingMessage}
+                          onReorder={handleReorderIssues}
+                          enableDragDrop={true}
+                          getStatusColor={(status) => {
+                            switch (status) {
+                              case 'open':
+                                return 'bg-yellow-100 text-yellow-800';
+                              case 'closed':
+                                return 'bg-gray-100 text-gray-800';
+                              default:
+                                return 'bg-gray-100 text-gray-800';
+                            }
+                          }}
+                          getStatusIcon={(status) => null}
+                          readOnly={false}
+                          showVoting={true}
+                          compactGrid={false}
+                        />
+                      )}
+                    </TabsContent>
+                  </Tabs>
+                </div>
               </CardContent>
             </Card>
           </div>
@@ -2647,7 +2813,14 @@ const QuarterlyPlanningMeetingPage = () => {
           onOpenChange={setShowPriorityDialog}
           priority={selectedPriority}
           teamMembers={teamMembers}
-          onUpdate={async (updatedPriority) => {
+          onUpdate={async (priorityId, updatedData) => {
+            const orgId = user?.organizationId || user?.organization_id;
+            const effectiveTeamId = teamId || getEffectiveTeamId(teamId, user);
+            
+            // Update the priority in the backend
+            await quarterlyPrioritiesService.updatePriority(orgId, effectiveTeamId, priorityId, updatedData);
+            
+            // Refresh the priorities data
             await fetchPrioritiesData();
             setShowPriorityDialog(false);
           }}
