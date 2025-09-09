@@ -313,7 +313,10 @@ const QuarterlyPlanningMeetingPage = () => {
       return;
     }
     
-    const meetingRoom = `${teamId}-quarterly-planning`;
+    // Include organization ID in meeting code to prevent cross-org collisions
+    // CRITICAL: Must match the orgId logic used throughout the rest of the file
+    const orgId = user?.organizationId || user?.organization_id;
+    const meetingRoom = `${orgId}-${teamId}-quarterly-planning`;
     
     // Wait a bit for active meetings to load if we haven't checked yet
     if (!hasCheckedMeetingsRef.current && (!activeMeetings || Object.keys(activeMeetings).length === 0)) {
@@ -357,8 +360,9 @@ const QuarterlyPlanningMeetingPage = () => {
         console.log('📍 Follower changing section to:', section);
         setActiveSection(section);
         
-        // Fetch data for the new section
+        // Always fetch data when following leader's navigation
         switch(section) {
+          case 'objectives':
           case 'review-quarterly-rocks':
           case 'establish-quarterly-rocks':
             fetchPrioritiesData();
@@ -1040,9 +1044,29 @@ const QuarterlyPlanningMeetingPage = () => {
     setActiveSection(sectionId);
     setError(null);
     
-    console.log(`📍 Switching to section: ${sectionId}`);
+    // Always fetch relevant data when switching sections to ensure fresh data
+    console.log(`📍 Switching to section: ${sectionId}, fetching relevant data...`);
     
-    // Emit navigation event if leader (matches Weekly meeting pattern)
+    switch(sectionId) {
+      case 'objectives':
+      case 'review-quarterly-rocks':
+      case 'establish-quarterly-rocks':
+        fetchPrioritiesData();
+        break;
+      case 'ids':
+        fetchIssuesData();
+        break;
+      case 'vto':
+        fetchVtoData();
+        break;
+      case 'eos-tools':
+        fetchTeamMembers();
+        break;
+      default:
+        break;
+    }
+    
+    // Emit navigation event if leader
     if (isLeader && navigateToSection) {
       navigateToSection(sectionId);
     }
