@@ -29,7 +29,8 @@ import {
   MessageSquare,
   ListTodo,
   Send,
-  User
+  User,
+  Plus
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import PriorityCard from '../components/priorities/PriorityCardClean';
