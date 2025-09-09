@@ -73,24 +73,23 @@ const WeeklyAccountabilityMeetingPage = () => {
   const { teamId } = useParams();
   const navigate = useNavigate();
   
-  // CRITICAL VALIDATION: Prevent meeting page from loading with invalid team ID
+  // Team validation - now handled by team selection modal in MeetingsPage
+  // Keeping validation but removing aggressive redirects since users now explicitly select teams
   useEffect(() => {
     if (!teamId || teamId === 'null' || teamId === 'undefined') {
-      console.error('⚠️ CRITICAL: Invalid team ID detected in meeting URL:', teamId);
-      alert('Invalid team context. Please select a valid team from the meetings page.');
-      navigate('/meetings');
+      console.warn('⚠️ Warning: Invalid team ID detected in meeting URL:', teamId);
+      // Don't redirect - let the user see the page but functionality may be limited
       return;
     }
     
     // Validate UUID format
     const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
     if (!uuidRegex.test(teamId)) {
-      console.error('⚠️ CRITICAL: Team ID is not a valid UUID:', teamId);
-      alert('Invalid team ID format. Redirecting to meetings page.');
-      navigate('/meetings');
+      console.warn('⚠️ Warning: Team ID is not a valid UUID:', teamId);
+      // Don't redirect - let the user see the page but functionality may be limited
       return;
     }
-  }, [teamId, navigate]);
+  }, [teamId]);
   
   // DEBUG: Log the raw teamId from URL params
   console.log('🐛 [WeeklyAccountabilityMeeting] Raw teamId from useParams:', teamId);
