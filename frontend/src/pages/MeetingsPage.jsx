@@ -301,26 +301,43 @@ const MeetingsPage = () => {
       return;
     }
     
+    // Extra validation to ensure teamId is a valid UUID
+    const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+    if (!uuidRegex.test(teamId)) {
+      console.error('❌ Team ID is not a valid UUID:', teamId);
+      alert('Invalid team ID format. Please select a valid team.');
+      return;
+    }
+    
     // Use team ID as the meeting identifier (simpler - no codes needed!)
     const meetingRoom = `${teamId}-${meetingId}`;
     console.log('🏠 Meeting room code:', meetingRoom);
     
     // Join the meeting as leader
-    if (joinMeeting) {
+    if (joinMeeting && isEnabled) {
       console.log('📞 Calling joinMeeting function with teamId:', teamId);
       joinMeeting(meetingRoom, true);
+    } else if (!isEnabled) {
+      console.log('⚠️ Meeting features disabled - skipping socket connection');
     } else {
       console.error('❌ joinMeeting function not available');
     }
     
-    // Navigate to the appropriate meeting page
-    if (meetingId === 'weekly-accountability') {
-      console.log('🧭 Navigating to weekly meeting with teamId:', teamId);
-      navigate(`/meetings/weekly-accountability/${teamId}`);
-    } else if (meetingId === 'quarterly-planning') {
-      console.log('🧭 Navigating to quarterly meeting with teamId:', teamId);
-      navigate(`/meetings/quarterly-planning/${teamId}`);
-    }
+    // Navigate to the appropriate meeting page with a small delay to ensure state is ready
+    setTimeout(() => {
+      if (meetingId === 'weekly-accountability') {
+        const targetPath = `/meetings/weekly-accountability/${teamId}`;
+        console.log('🧭 Navigating to weekly meeting with path:', targetPath);
+        console.log('🆔 Team ID being passed:', teamId);
+        console.log('🔍 Team ID type:', typeof teamId);
+        navigate(targetPath);
+      } else if (meetingId === 'quarterly-planning') {
+        const targetPath = `/meetings/quarterly-planning/${teamId}`;
+        console.log('🧭 Navigating to quarterly meeting with path:', targetPath);
+        console.log('🆔 Team ID being passed:', teamId);
+        navigate(targetPath);
+      }
+    }, 100);
   };
   
   const handleConfirmTeamSelection = () => {
@@ -345,17 +362,32 @@ const MeetingsPage = () => {
       return;
     }
     
+    // Validate teamForMeeting is a valid UUID
+    const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+    if (!uuidRegex.test(teamForMeeting)) {
+      console.error('❌ Invalid team ID format in modal:', teamForMeeting);
+      alert('Invalid team selection. Please try again.');
+      return;
+    }
+    
     // Store values before clearing state
     const meetingToStart = pendingMeetingId;
     const teamToUse = teamForMeeting;
     
-    console.log('✅ Proceeding with:', { meetingToStart, teamToUse });
+    console.log('✅ Proceeding with:', { 
+      meetingToStart, 
+      teamToUse,
+      teamToUseType: typeof teamToUse,
+      teamToUseLength: teamToUse?.length 
+    });
     
     // Close dialog first
     setShowTeamSelectionDialog(false);
-    // Clear state
-    setTeamForMeeting(null);
-    setPendingMeetingId(null);
+    // Clear state after a small delay to avoid race conditions
+    setTimeout(() => {
+      setTeamForMeeting(null);
+      setPendingMeetingId(null);
+    }, 200);
     
     // Proceed with the stored values
     proceedWithMeeting(meetingToStart, teamToUse);
