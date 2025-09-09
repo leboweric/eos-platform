@@ -62,22 +62,14 @@ const QuarterlyPlanningMeetingPage = () => {
   const { teamId } = useParams();
   const navigate = useNavigate();
   
-  // CRITICAL VALIDATION: Prevent meeting page from loading with invalid team ID
+  // Validate team ID (but don't redirect immediately to allow route to settle)
   useEffect(() => {
-    if (!teamId || teamId === 'null' || teamId === 'undefined') {
-      console.error('⚠️ CRITICAL: Invalid team ID detected in quarterly meeting URL:', teamId);
-      alert('Invalid team context. Please select a valid team from the meetings page.');
-      navigate('/meetings');
-      return;
-    }
-    
-    // Validate UUID format
-    const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
-    if (!uuidRegex.test(teamId)) {
-      console.error('⚠️ CRITICAL: Team ID is not a valid UUID:', teamId);
-      alert('Invalid team ID format. Redirecting to meetings page.');
-      navigate('/meetings');
-      return;
+    if (teamId && (teamId === 'null' || teamId === 'undefined')) {
+      console.warn('Invalid team ID detected in quarterly meeting URL:', teamId);
+      // Don't immediately redirect - let the route settle first
+      setTimeout(() => {
+        navigate('/meetings');
+      }, 100);
     }
   }, [teamId, navigate]);
   
@@ -270,22 +262,36 @@ const QuarterlyPlanningMeetingPage = () => {
   
   // Auto-join meeting when component mounts
   useEffect(() => {
-    if (!teamId || teamId === 'null' || teamId === 'undefined') return;
+    // Validate teamId before attempting to join
+    if (!teamId || teamId === 'null' || teamId === 'undefined') {
+      console.log('⏳ Waiting for valid team ID before joining meeting...');
+      return;
+    }
+    
+    // Validate UUID format
+    const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+    if (!uuidRegex.test(teamId)) {
+      console.warn('Invalid team ID format, not joining meeting:', teamId);
+      return;
+    }
     
     const meetingRoom = `${teamId}-quarterly`;
     console.log('🚀 Quarterly Planning auto-joining meeting room:', meetingRoom);
     
     // Small delay to check if meeting exists
-    setTimeout(() => {
+    const joinTimeout = setTimeout(() => {
       const existingMeeting = activeMeetings?.[meetingRoom];
       const hasParticipants = existingMeeting?.participantCount > 0;
       
       // Join as leader if first person, otherwise as participant
-      joinMeeting(meetingRoom, !hasParticipants);
+      if (joinMeeting) {
+        joinMeeting(meetingRoom, !hasParticipants);
+      }
     }, 500);
     
     // Cleanup - leave meeting when component unmounts
     return () => {
+      clearTimeout(joinTimeout);
       if (leaveMeeting) {
         console.log('🔚 Leaving quarterly planning meeting');
         leaveMeeting();
