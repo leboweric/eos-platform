@@ -3165,24 +3165,6 @@ const QuarterlyPlanningMeetingPage = () => {
                     </span>
                   </div>
                 </div>
-                {activeSection === 'conclude' && (
-                  <Button
-                    onClick={concludeMeeting}
-                    className="text-white shadow-lg hover:shadow-xl transition-all duration-200 transform hover:scale-[1.02]"
-                    style={{
-                      background: `linear-gradient(135deg, ${themeColors.primary} 0%, ${themeColors.secondary} 100%)`
-                    }}
-                    onMouseEnter={(e) => {
-                      e.currentTarget.style.filter = 'brightness(1.1)';
-                    }}
-                    onMouseLeave={(e) => {
-                      e.currentTarget.style.filter = 'brightness(1)';
-                    }}
-                  >
-                    <Send className="h-4 w-4 mr-2" />
-                    Conclude Meeting
-                  </Button>
-                )}
               </div>
             )}
             {/* Meeting auto-starts - no start button needed */}
