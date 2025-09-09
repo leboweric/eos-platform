@@ -2884,11 +2884,11 @@ const QuarterlyPlanningMeetingPage = () => {
                     }}
                     rows={3}
                     placeholder="Enter any messages to cascade to other teams..."
-                    value={cascadingMessage}
-                    onChange={(e) => setCascadingMessage(e.target.value)}
+                    value={cascadeMessage}
+                    onChange={(e) => setCascadeMessage(e.target.value)}
                   />
                   
-                  {cascadingMessage.trim() && (
+                  {cascadeMessage.trim() && (
                     <div className="space-y-3">
                       <div className="flex items-center gap-2">
                         <Checkbox
