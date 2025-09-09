@@ -451,24 +451,20 @@ const MeetingsPage = () => {
             </div>
             <div className="flex items-start gap-4">
               {(() => {
-                // Check if any meetings are in progress for this team
+                // Check if any meetings are in progress for any team the user is part of
                 console.log('Socket connection status:', { isEnabled, isConnected });
                 if (!isEnabled) console.warn('⚠️ Meetings are disabled! Set VITE_ENABLE_MEETINGS=true');
                 if (!isConnected) console.warn('⚠️ Socket not connected!');
                 console.log('Active meetings:', activeMeetings);
                 console.log('Active meetings entries:', Object.entries(activeMeetings || {}));
-                console.log('Selected team ID:', selectedTeamId);
                 
-                // Log each meeting's teamId for debugging
-                Object.values(activeMeetings || {}).forEach(meeting => {
-                  console.log(`Meeting ${meeting.code}: teamId=${meeting.teamId}, type=${meeting.type}`);
-                });
-                
-                const teamMeetings = Object.values(activeMeetings || {}).filter(
-                  m => m.teamId === selectedTeamId
+                // Check if there are any active meetings for ANY of the user's teams
+                const userTeamIds = teams.map(t => t.id);
+                const userActiveMeetings = Object.values(activeMeetings || {}).filter(
+                  m => userTeamIds.some(teamId => m.code?.includes(teamId))
                 );
-                console.log('Team meetings found:', teamMeetings);
-                const hasActiveMeeting = teamMeetings.length > 0;
+                console.log('User active meetings found:', userActiveMeetings);
+                const hasActiveMeeting = userActiveMeetings.length > 0;
                 
                 return (
                   <Button
@@ -491,7 +487,7 @@ const MeetingsPage = () => {
                         e.currentTarget.style.filter = 'brightness(1)';
                       }
                     }}
-                    disabled={!selectedTeamId}
+                    disabled={teams.length === 0}
                   >
                     {hasActiveMeeting && (
                       <span className="relative flex h-3 w-3">
@@ -504,23 +500,6 @@ const MeetingsPage = () => {
                   </Button>
                 );
               })()}
-              {teams.length > 1 && (
-                <div className="space-y-2">
-                  <label className="text-sm font-medium">Select Team</label>
-                  <Select value={selectedTeamId} onValueChange={setSelectedTeamId}>
-                    <SelectTrigger className="w-[250px] bg-white/80 backdrop-blur-sm border-white/20 shadow-sm">
-                      <SelectValue placeholder="Choose a team" />
-                    </SelectTrigger>
-                    <SelectContent className="bg-white/95 backdrop-blur-sm border-white/20 rounded-xl shadow-xl">
-                      {teams.map(team => (
-                        <SelectItem key={team.id} value={team.id}>
-                          {team.name}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-              )}
             </div>
           </div>
         </div>
@@ -648,13 +627,65 @@ const MeetingsPage = () => {
           <DialogHeader>
             <DialogTitle>Join Team Meeting</DialogTitle>
             <DialogDescription>
-              Select which meeting you want to join for the {teams.find(t => t.id === selectedTeamId)?.name || 'selected'} team.
+              {teams.length > 1 
+                ? 'Select which team and meeting type you want to join.'
+                : 'Select which meeting type you want to join.'}
             </DialogDescription>
           </DialogHeader>
           
           <div className="space-y-4 mt-4">
-            <div className="space-y-3">
-              <div 
+            {/* Team Selection (only if multiple teams) */}
+            {teams.length > 1 && (
+              <div className="space-y-2">
+                <label className="text-sm font-medium text-gray-700">Select Team</label>
+                <div className="space-y-2">
+                  {teams.map(team => (
+                    <div
+                      key={team.id}
+                      className={`p-4 rounded-xl cursor-pointer transition-all duration-200 border-2 ${
+                        selectedTeamId === team.id 
+                          ? 'border-blue-500 bg-blue-50/80' 
+                          : 'border-gray-200 bg-white/60 hover:border-blue-300 hover:bg-blue-50/40'
+                      }`}
+                      onClick={() => setSelectedTeamId(team.id)}
+                    >
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-3">
+                          <div className={`p-2 rounded-lg ${
+                            selectedTeamId === team.id ? 'bg-blue-100' : 'bg-gray-100'
+                          }`}>
+                            <Users className={`h-4 w-4 ${
+                              selectedTeamId === team.id ? 'text-blue-600' : 'text-gray-600'
+                            }`} />
+                          </div>
+                          <div>
+                            <h4 className="font-medium">{team.name}</h4>
+                            {team.is_leadership_team && (
+                              <p className="text-xs text-gray-500">Leadership Team</p>
+                            )}
+                          </div>
+                        </div>
+                        <div className="flex items-center">
+                          <input
+                            type="radio"
+                            name="join-team-selection"
+                            checked={selectedTeamId === team.id}
+                            onChange={() => setSelectedTeamId(team.id)}
+                            className="h-4 w-4 text-blue-600 focus:ring-blue-500"
+                          />
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+            
+            {/* Meeting Type Selection */}
+            <div className="space-y-2">
+              <label className="text-sm font-medium text-gray-700">Select Meeting Type</label>
+              <div className="space-y-3">
+                <div 
                 className={`p-4 border-2 rounded-xl cursor-pointer transition-all duration-200 backdrop-blur-sm ${
                   selectedMeetingType === 'weekly-accountability' 
                     ? 'border-blue-500 bg-blue-50/80 shadow-sm' 
@@ -705,6 +736,7 @@ const MeetingsPage = () => {
                   </div>
                 </div>
               </div>
+            </div>
             </div>
 
             <div className="flex gap-2">
