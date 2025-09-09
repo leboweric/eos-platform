@@ -31,7 +31,8 @@ import {
   ListTodo,
   Send,
   User,
-  Plus
+  Plus,
+  Star
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import PriorityCard from '../components/priorities/PriorityCardClean';
@@ -1651,40 +1652,21 @@ const QuarterlyPlanningMeetingPage = () => {
                     </CardTitle>
                     <CardDescription>Define 3-7 priorities for the upcoming quarter (2 hours)</CardDescription>
                   </div>
-                  <div className="flex gap-2">
-                    <Button
-                      onClick={() => {
-                        const orgId = user?.organizationId || user?.organization_id;
-                        window.open(`/organizations/${orgId}/smart-rock-assistant`, '_blank');
-                      }}
-                      variant="outline"
-                      style={{ 
-                        color: themeColors.secondary,
-                        borderColor: hexToRgba(themeColors.secondary, 0.3)
-                      }}
-                      className="hover:opacity-80"
-                    >
-                      <MessageSquare className="mr-2 h-4 w-4" />
-                      SMART Assistant
-                    </Button>
-                    <Button
-                      onClick={() => {
-                        setPriorityForm({
-                          title: '',
-                          description: '',
-                          ownerId: user?.id || '',
-                          dueDate: '',
-                          isCompanyPriority: false
-                        });
-                        setShowAddPriority(true);
-                      }}
-                      style={{ backgroundColor: themeColors.primary }}
-                      className="hover:opacity-90"
-                    >
-                      <Plus className="mr-2 h-4 w-4" />
-                      Add {labels?.priority_singular || 'Priority'}
-                    </Button>
-                  </div>
+                  <Button
+                    onClick={() => {
+                      const orgId = user?.organizationId || user?.organization_id;
+                      window.open(`/organizations/${orgId}/smart-rock-assistant`, '_blank');
+                    }}
+                    variant="outline"
+                    style={{ 
+                      color: themeColors.secondary,
+                      borderColor: hexToRgba(themeColors.secondary, 0.3)
+                    }}
+                    className="hover:opacity-80"
+                  >
+                    <MessageSquare className="mr-2 h-4 w-4" />
+                    SMART Assistant
+                  </Button>
                 </div>
               </CardHeader>
             </Card>
@@ -2018,24 +2000,19 @@ const QuarterlyPlanningMeetingPage = () => {
         );
 
       case 'issues':
-        if (loading) {
-          return (
-            <div className="flex items-center justify-center h-96">
-              <Loader2 className="h-8 w-8 animate-spin" />
-            </div>
-          );
-        }
         return (
           <div className="space-y-4">
             <Card className="border-0 shadow-sm">
-              <CardHeader className="rounded-t-lg" style={{ backgroundColor: hexToRgba('#EF4444', 0.05) }}>
+              <CardHeader className="rounded-t-lg" style={{ 
+                background: `linear-gradient(to right, ${hexToRgba(themeColors.accent, 0.1)}, ${hexToRgba(themeColors.primary, 0.1)})`
+              }}>
                 <div className="flex items-center justify-between">
                   <div>
                     <CardTitle className="flex items-center gap-2 text-xl">
-                      <AlertTriangle className="h-5 w-5 text-red-600" />
-                      Issues & Problem Solving
+                      <AlertTriangle className="h-5 w-5" style={{ color: themeColors.primary }} />
+                      Identify Discuss Solve
                     </CardTitle>
-                    <CardDescription className="mt-1">Review and resolve important issues</CardDescription>
+                    <CardDescription className="mt-1">Solve the most important Issue(s)</CardDescription>
                   </div>
                   <div className="text-sm text-gray-500 bg-white px-3 py-1 rounded-full">
                     180 minutes
@@ -2043,11 +2020,6 @@ const QuarterlyPlanningMeetingPage = () => {
                 </div>
               </CardHeader>
               <CardContent className="pt-6">
-                <div className="border border-white/30 bg-white/60 backdrop-blur-sm rounded-xl p-4 mb-4 shadow-sm">
-                  <p className="text-gray-700 text-center">
-                    <span className="font-semibold">Quick voting:</span> Everyone votes on the most important issues. Then discuss and solve the top-voted issues together.
-                  </p>
-                </div>
                 <div className="flex justify-between items-center mb-4">
                   <div>
                     {(() => {
@@ -2073,18 +2045,7 @@ const QuarterlyPlanningMeetingPage = () => {
                       );
                     })()}
                   </div>
-                  <div className="flex gap-2">
-                    <Button onClick={handleAddTodo} style={{ backgroundColor: themeColors.primary }} className="hover:opacity-90">
-                      <Plus className="mr-2 h-4 w-4" />
-                      Add To Do
-                    </Button>
-                    <Button onClick={() => {
-                      setEditingIssue(null);
-                      setShowIssueDialog(true);
-                    }} style={{ backgroundColor: themeColors.primary }} className="hover:opacity-90">
-                      <Plus className="mr-2 h-4 w-4" />
-                      Add Issue
-                    </Button>
+                  <div>
                   </div>
                 </div>
                 {issues.length === 0 ? (
@@ -2256,14 +2217,16 @@ const QuarterlyPlanningMeetingPage = () => {
       case 'conclude':
         return (
           <Card className="border-0 shadow-sm">
-            <CardHeader className="rounded-t-lg" style={{ backgroundColor: hexToRgba('#10B981', 0.05) }}>
+            <CardHeader className="rounded-t-lg" style={{ 
+              background: `linear-gradient(to right, ${hexToRgba(themeColors.accent, 0.1)}, ${hexToRgba(themeColors.primary, 0.1)})`
+            }}>
               <div className="flex items-center justify-between">
                 <div>
                   <CardTitle className="flex items-center gap-2 text-xl">
-                    <CheckSquare className="h-5 w-5 text-green-600" />
-                    Meeting Conclusion
+                    <CheckSquare className="h-5 w-5" style={{ color: themeColors.primary }} />
+                    Conclude Meeting
                   </CardTitle>
-                  <CardDescription className="mt-1">Wrap up and capture key takeaways (8 minutes)</CardDescription>
+                  <CardDescription className="mt-1">Wrap up and cascade messages</CardDescription>
                 </div>
                 <div className="text-sm text-gray-500 bg-white px-3 py-1 rounded-full">
                   8 minutes
@@ -2272,40 +2235,97 @@ const QuarterlyPlanningMeetingPage = () => {
             </CardHeader>
             <CardContent className="pt-6">
               <div className="space-y-6">
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                  <div className="p-4 rounded-xl border" style={{ 
-                    backgroundColor: hexToRgba(themeColors.accent, 0.03),
-                    borderColor: hexToRgba(themeColors.accent, 0.15)
-                  }}>
-                    <h4 className="font-semibold text-gray-900 mb-2 flex items-center gap-2">
-                      <MessageSquare className="h-4 w-4" style={{ color: themeColors.primary }} />
-                      Feedback
-                    </h4>
-                    <p className="text-sm text-gray-600">Where's your head? How are you feeling?</p>
-                  </div>
-                  <div className="bg-gradient-to-br from-green-50 to-emerald-50 p-4 rounded-xl border border-green-100">
-                    <h4 className="font-semibold text-gray-900 mb-2 flex items-center gap-2">
-                      <Target className="h-4 w-4 text-green-600" />
-                      Expectations
-                    </h4>
-                    <p className="text-sm text-gray-600">Were your expectations met?</p>
-                  </div>
-                  <div className="p-4 rounded-xl border" style={{ 
-                    backgroundColor: hexToRgba(themeColors.secondary, 0.03),
-                    borderColor: hexToRgba(themeColors.secondary, 0.15)
-                  }}>
-                    <h4 className="font-semibold text-gray-900 mb-2 flex items-center gap-2">
-                      <Star className="h-4 w-4" style={{ color: themeColors.secondary }} />
-                      Session Rating
-                    </h4>
-                    <p className="text-sm text-gray-600">Rate effectiveness (1-10)</p>
-                  </div>
+                {/* Open To-Dos Summary */}
+                <div className="border border-gray-200 p-4 rounded-lg bg-white">
+                  <h4 className="font-medium mb-3 text-gray-900 flex items-center gap-2">
+                    <ListTodo className="h-4 w-4" />
+                    Open To-Dos Summary
+                  </h4>
+                  <p className="text-sm text-gray-600 mb-3">
+                    Review all open action items before concluding the meeting:
+                  </p>
+                  {todos.filter(todo => todo.status !== 'complete' && todo.status !== 'completed' && todo.status !== 'cancelled').length === 0 ? (
+                    <p className="text-gray-500 text-sm">No open to-dos</p>
+                  ) : (
+                    <div className="space-y-2 max-h-64 overflow-y-auto">
+                      {todos
+                        .filter(todo => todo.status !== 'complete' && todo.status !== 'completed' && todo.status !== 'cancelled')
+                        .map(todo => (
+                          <div key={todo.id} className="flex items-start gap-2 p-2 bg-gray-50 rounded-lg">
+                            <div className="w-1 h-full rounded" style={{ 
+                              backgroundColor: todo.priority === 'high' ? '#EF4444' : 
+                                             todo.priority === 'medium' ? themeColors.primary : 
+                                             '#10B981',
+                              minHeight: '40px'
+                            }} />
+                            <div className="flex-1 min-w-0">
+                              <p className="text-sm font-medium text-gray-900 truncate">{todo.title}</p>
+                              <div className="flex items-center gap-2 mt-1">
+                                {todo.assigned_to && (
+                                  <span className="text-xs text-gray-600">
+                                    {todo.assigned_to.first_name} {todo.assigned_to.last_name}
+                                  </span>
+                                )}
+                                {todo.due_date && (
+                                  <>
+                                    {todo.assigned_to && <span className="text-xs text-gray-400">•</span>}
+                                    <span className="text-xs text-gray-600">
+                                      Due: {new Date(todo.due_date).toLocaleDateString()}
+                                    </span>
+                                  </>
+                                )}
+                              </div>
+                            </div>
+                          </div>
+                        ))}
+                    </div>
+                  )}
                 </div>
-                
-                <div className="text-center py-8 border-t border-gray-100">
-                  <CheckCircle className="h-12 w-12 text-green-500 mx-auto mb-4" />
-                  <h3 className="text-2xl font-bold text-gray-900 mb-2">Great Planning Session!</h3>
-                  <p className="text-gray-600">Your quarterly priorities are set and the team is aligned.</p>
+
+                {/* Cascading Messages */}
+                <div className="border border-gray-200 p-4 rounded-lg bg-white">
+                  <h4 className="font-medium mb-2 text-gray-900 flex items-center gap-2">
+                    <MessageSquare className="h-4 w-4" />
+                    Cascading Messages
+                  </h4>
+                  <p className="text-sm text-gray-600 mb-3">
+                    What key information needs to be communicated to other teams?
+                  </p>
+                  <textarea
+                    className="w-full p-3 border border-gray-300 rounded-lg resize-none focus:ring-2 mb-4"
+                    style={{
+                      '--tw-ring-color': themeColors.primary,
+                      '--tw-border-opacity': 1
+                    }}
+                    rows="4"
+                    placeholder="Enter key messages to cascade..."
+                  />
+                </div>
+
+                {/* Meeting Rating */}
+                <div className="border border-gray-200 p-4 rounded-lg bg-white">
+                  <h4 className="font-medium mb-3 text-gray-900 flex items-center gap-2">
+                    <Star className="h-4 w-4" />
+                    Rate This Meeting
+                  </h4>
+                  <p className="text-sm text-gray-600 mb-3">
+                    How effective was this meeting? (1-10)
+                  </p>
+                </div>
+
+                {/* Conclude Button */}
+                <div className="flex justify-center pt-4">
+                  <Button 
+                    onClick={concludeMeeting}
+                    size="lg"
+                    className="px-8 shadow-lg hover:shadow-xl transition-all duration-200"
+                    style={{
+                      background: `linear-gradient(135deg, ${themeColors.primary} 0%, ${themeColors.secondary} 100%)`
+                    }}
+                  >
+                    <CheckCircle className="mr-2 h-5 w-5" />
+                    Conclude Quarterly Planning
+                  </Button>
                 </div>
               </div>
             </CardContent>
