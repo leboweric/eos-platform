@@ -19,6 +19,7 @@ import { Switch } from '@/components/ui/switch';
 import CoreValueDialog from '../components/vto/CoreValueDialog';
 import ThreeYearPictureDialog from '../components/vto/ThreeYearPictureDialog';
 import OneYearPlanDialog from '../components/vto/OneYearPlanDialog';
+import TwoPagePlanView from '../components/vto/TwoPagePlanView';
 import { 
   Target, 
   Save,
@@ -41,7 +42,9 @@ import {
   CheckSquare,
   Clock,
   Building2,
-  MessageSquare
+  MessageSquare,
+  FileText,
+  PenTool
 } from 'lucide-react';
 
 const BusinessBlueprintPage = () => {
@@ -177,6 +180,7 @@ const BusinessBlueprintPage = () => {
   const [error, setError] = useState(null);
   const [success, setSuccess] = useState(null);
   const [activeTab, setActiveTab] = useState('vision');
+  const [viewMode, setViewMode] = useState(true); // Default to view mode for cleaner presentation
   const [organization, setOrganization] = useState(null);
   
   // Check if viewing department-level plan
@@ -656,6 +660,37 @@ const BusinessBlueprintPage = () => {
             </h1>
             <p className="text-lg text-slate-600">Define your organization's vision and strategy for success</p>
           </div>
+          {/* View/Edit Mode Toggle */}
+          <div className="bg-white/80 backdrop-blur-sm rounded-xl border border-white/50 shadow-lg p-1 flex items-center">
+            <Button
+              variant={viewMode ? "default" : "ghost"}
+              size="sm"
+              onClick={() => setViewMode(true)}
+              className={`px-4 py-2 rounded-lg transition-all duration-200 ${
+                viewMode ? 'text-white shadow-md' : 'text-slate-600 hover:text-slate-900'
+              }`}
+              style={{
+                backgroundColor: viewMode ? themeColors.primary : 'transparent'
+              }}
+            >
+              <Eye className="h-4 w-4 mr-2" />
+              View
+            </Button>
+            <Button
+              variant={!viewMode ? "default" : "ghost"}
+              size="sm"
+              onClick={() => setViewMode(false)}
+              className={`px-4 py-2 rounded-lg transition-all duration-200 ${
+                !viewMode ? 'text-white shadow-md' : 'text-slate-600 hover:text-slate-900'
+              }`}
+              style={{
+                backgroundColor: !viewMode ? themeColors.primary : 'transparent'
+              }}
+            >
+              <PenTool className="h-4 w-4 mr-2" />
+              Edit
+            </Button>
+          </div>
         </div>
 
         {error && (
@@ -672,7 +707,15 @@ const BusinessBlueprintPage = () => {
           </Alert>
         )}
 
-        <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-8">
+        {/* Conditionally render View Mode or Edit Mode */}
+        {viewMode ? (
+          /* View Mode - Clean presentation using TwoPagePlanView */
+          <div className="bg-white rounded-2xl shadow-xl border border-gray-100 p-8">
+            <TwoPagePlanView hideIssuesAndPriorities={false} />
+          </div>
+        ) : (
+          /* Edit Mode - Existing tabbed interface with glass-morphism */
+          <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-8">
           <TabsList className="grid w-full grid-cols-2 h-16 bg-white/80 backdrop-blur-sm border border-white/50 rounded-2xl shadow-lg">
             <TabsTrigger 
               value="vision" 
@@ -2045,8 +2088,11 @@ const BusinessBlueprintPage = () => {
           )}
         </TabsContent>
       </Tabs>
+        )}
 
-      {/* Core Value Edit Dialog */}
+      {/* Core Value Edit Dialog - Only show in edit mode */}
+      {!viewMode && (
+        <>
       <CoreValueDialog
         open={showCoreValueDialog}
         onOpenChange={setShowCoreValueDialog}
@@ -2071,6 +2117,8 @@ const BusinessBlueprintPage = () => {
         onSave={handleSaveOneYearPlan}
         organization={organization}
       />
+        </>
+      )}
 
       </div>
     </div>
