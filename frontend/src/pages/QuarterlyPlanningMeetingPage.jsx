@@ -81,12 +81,19 @@ const QuarterlyPlanningMeetingPage = () => {
     // Don't redirect for actual null/undefined as these are temporary during route transitions
     if (teamId === 'null' || teamId === 'undefined') {
       console.warn('Invalid team ID detected in quarterly meeting URL:', teamId);
-      console.warn('Will redirect to /meetings in 100ms');
-      // Don't immediately redirect - let the route settle first
+      console.warn('Will redirect to /meetings in 1000ms to avoid race condition');
+      
+      // Longer delay to avoid race conditions with socket navigation updates
       setTimeout(() => {
-        console.log('Redirecting to /meetings due to invalid teamId');
-        navigate('/meetings');
-      }, 100);
+        // Double-check that we still have an invalid teamId before redirecting
+        const currentTeamId = new URLSearchParams(window.location.pathname.split('/').pop()).get('teamId') || window.location.pathname.split('/').pop();
+        if (currentTeamId === 'null' || currentTeamId === 'undefined') {
+          console.log('Redirecting to /meetings due to invalid teamId');
+          navigate('/meetings');
+        } else {
+          console.log('TeamId recovered, not redirecting');
+        }
+      }, 1000);
     }
   }, [teamId, navigate]);
   

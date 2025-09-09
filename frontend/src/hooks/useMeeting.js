@@ -113,6 +113,11 @@ const useMeeting = () => {
         
         // Only navigate to a different route if needed
         if (data.route && data.route !== window.location.pathname) {
+          // Defensive check: Don't navigate to routes with null parameters
+          if (data.route.includes('/null') || data.route.includes('/undefined')) {
+            console.warn('🚫 Refusing to navigate to route with invalid parameter:', data.route);
+            return;
+          }
           console.log('📍 Navigating to new route:', data.route);
           navigationLock.current = true;
           navigate(data.route);
@@ -358,6 +363,14 @@ const useMeeting = () => {
     if (!isLeader || !socket || !meetingCode) return;
     
     console.log('📍 Leader navigating to section:', section);
+    console.log('📍 Current location.pathname:', location.pathname);
+    
+    // Defensive check: Don't emit navigation with invalid routes
+    if (location.pathname.includes('/null') || location.pathname.includes('/undefined')) {
+      console.warn('🚫 Refusing to emit navigation with invalid route:', location.pathname);
+      return;
+    }
+    
     socket.emit('navigate', {
       route: location.pathname,
       section,
