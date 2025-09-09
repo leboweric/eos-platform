@@ -10,6 +10,7 @@ import { getRevenueLabel, getRevenueLabelWithSuffix } from '../utils/revenueUtil
 import { useDepartment } from '../contexts/DepartmentContext';
 import { useTerminology } from '../contexts/TerminologyContext';
 import { getEffectiveTeamId } from '../utils/teamUtils';
+import '../styles/print.css';
 import PriorityDialog from '../components/priorities/PriorityDialog';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -2435,7 +2436,7 @@ const QuarterlyPrioritiesPageClean = () => {
                 </p>
               )}
             </div>
-            <div className="flex items-center gap-3">
+            <div className="flex items-center gap-3 no-print">
               {!showArchived && (
                 <>
                   <Button 
@@ -2455,6 +2456,14 @@ const QuarterlyPrioritiesPageClean = () => {
                   >
                     <ChevronRight className="mr-2 h-4 w-4" style={{ color: themeColors.primary }} />
                     Collapse All
+                  </Button>
+                  <Button 
+                    variant="outline"
+                    onClick={() => window.print()}
+                    className="bg-white/80 backdrop-blur-sm border border-slate-200 hover:shadow-md hover:scale-[1.02] transition-all rounded-lg"
+                  >
+                    <Download className="mr-2 h-4 w-4" style={{ color: themeColors.primary }} />
+                    Download PDF
                   </Button>
                 </>
               )}
