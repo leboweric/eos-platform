@@ -252,10 +252,17 @@ const MeetingsPage = () => {
     
     // Check if user is on multiple teams
     if (teams && teams.length > 1) {
+      console.log('🎭 Multiple teams detected, showing selection modal');
+      console.log('📋 Available teams:', teams);
+      console.log('📍 Currently selected team ID:', selectedTeamId);
+      
       // Show team selection dialog for multi-team users
       setPendingMeetingId(meetingId);
       // Pre-select the currently selected team but user can change it
-      setTeamForMeeting(selectedTeamId);
+      // If no team is selected, default to the first team
+      const initialTeamSelection = selectedTeamId || teams[0]?.id;
+      console.log('🎯 Initial team selection for modal:', initialTeamSelection);
+      setTeamForMeeting(initialTeamSelection);
       setShowTeamSelectionDialog(true);
       return;
     }
@@ -268,9 +275,11 @@ const MeetingsPage = () => {
     console.log('🚀 proceedWithMeeting called with:', { meetingId, teamId });
     
     // Validate the teamId before proceeding
-    if (!teamId || teamId === 'null' || teamId === 'undefined') {
+    if (!teamId || teamId === 'null' || teamId === 'undefined' || teamId === null) {
       console.error('❌ Invalid teamId in proceedWithMeeting:', teamId);
-      alert('Invalid team selected. Please try again.');
+      console.error('📋 Available teams:', teams);
+      console.error('🎯 Selected team was:', teamForMeeting);
+      alert('No team selected. Please select a team before starting the meeting.');
       return;
     }
     
