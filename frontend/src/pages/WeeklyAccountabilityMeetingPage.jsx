@@ -601,8 +601,16 @@ const WeeklyAccountabilityMeetingPage = () => {
       // Handle "null" string from URL params
       const cleanTeamId = (teamId === 'null' || teamId === 'undefined') ? null : teamId;
       const effectiveTeamId = getEffectiveTeamId(cleanTeamId, user);
-      const departmentId = cleanTeamId || user?.teamId;
+      const departmentId = effectiveTeamId;
       
+      console.log('🔍 WeeklyMeeting - Team ID debugging:', { 
+        rawTeamIdFromURL: teamId,
+        cleanTeamId,
+        effectiveTeamId,
+        userTeams: user?.teams,
+        currentTeamFromState: currentTeam,
+        teamFromEffectiveId: user?.teams?.find(t => t.id === effectiveTeamId)
+      });
       console.log('WeeklyMeeting - Fetching scorecard data for:', { orgId, effectiveTeamId, departmentId });
       
       const response = await scorecardService.getScorecard(orgId, effectiveTeamId, departmentId);

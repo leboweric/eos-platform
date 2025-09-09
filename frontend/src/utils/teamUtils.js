@@ -82,11 +82,28 @@ export const getUserTeamId = (user) => {
  * @returns {string|null} The effective team ID
  */
 export const getEffectiveTeamId = (preferredTeamId, user) => {
-  // If we have a valid preferred team ID (not the placeholder), use it
-  if (preferredTeamId && preferredTeamId !== LEADERSHIP_TEAM_ID) {
-    return preferredTeamId;
+  // Clean the preferred team ID
+  const cleanId = (preferredTeamId === 'null' || preferredTeamId === 'undefined' || preferredTeamId === null) 
+    ? null 
+    : preferredTeamId;
+    
+  // If we have a valid preferred team ID (not null and not the placeholder), use it
+  // This includes Leadership Team IDs - we should trust the URL parameter
+  if (cleanId && cleanId !== LEADERSHIP_TEAM_ID) {
+    console.log('📍 Using preferred team ID from URL:', cleanId);
+    // Verify the team exists for the user
+    const teamExists = user?.teams?.some(t => t.id === cleanId);
+    if (teamExists) {
+      console.log('✅ Team verified for user');
+      return cleanId;
+    } else {
+      console.log('⚠️ Team ID not found in user teams, falling back');
+    }
   }
 
   // Otherwise get the user's actual team
-  return getUserTeamId(user);
+  console.log('⚠️ Falling back to getUserTeamId because preferredTeamId is:', preferredTeamId);
+  const fallbackId = getUserTeamId(user);
+  console.log('📍 Fallback team ID:', fallbackId);
+  return fallbackId;
 };

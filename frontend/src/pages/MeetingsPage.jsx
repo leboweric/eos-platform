@@ -254,6 +254,7 @@ const MeetingsPage = () => {
     if (teams && teams.length > 1) {
       // Show team selection dialog for multi-team users
       setPendingMeetingId(meetingId);
+      // Pre-select the currently selected team but user can change it
       setTeamForMeeting(selectedTeamId);
       setShowTeamSelectionDialog(true);
       return;
@@ -264,13 +265,22 @@ const MeetingsPage = () => {
   };
   
   const proceedWithMeeting = (meetingId, teamId) => {
+    console.log('🚀 proceedWithMeeting called with:', { meetingId, teamId });
+    
+    // Validate the teamId before proceeding
+    if (!teamId || teamId === 'null' || teamId === 'undefined') {
+      console.error('❌ Invalid teamId in proceedWithMeeting:', teamId);
+      alert('Invalid team selected. Please try again.');
+      return;
+    }
+    
     // Use team ID as the meeting identifier (simpler - no codes needed!)
     const meetingRoom = `${teamId}-${meetingId}`;
     console.log('🏠 Meeting room code:', meetingRoom);
     
     // Join the meeting as leader
     if (joinMeeting) {
-      console.log('📞 Calling joinMeeting function');
+      console.log('📞 Calling joinMeeting function with teamId:', teamId);
       joinMeeting(meetingRoom, true);
     } else {
       console.error('❌ joinMeeting function not available');
@@ -278,15 +288,20 @@ const MeetingsPage = () => {
     
     // Navigate to the appropriate meeting page
     if (meetingId === 'weekly-accountability') {
-      console.log('🧭 Navigating to weekly meeting');
+      console.log('🧭 Navigating to weekly meeting with teamId:', teamId);
       navigate(`/meetings/weekly-accountability/${teamId}`);
     } else if (meetingId === 'quarterly-planning') {
-      console.log('🧭 Navigating to quarterly meeting');
+      console.log('🧭 Navigating to quarterly meeting with teamId:', teamId);
       navigate(`/meetings/quarterly-planning/${teamId}`);
     }
   };
   
   const handleConfirmTeamSelection = () => {
+    console.log('🎯 Confirming team selection:', { 
+      teamForMeeting, 
+      selectedTeam: teams.find(t => t.id === teamForMeeting),
+      pendingMeetingId 
+    });
     setShowTeamSelectionDialog(false);
     proceedWithMeeting(pendingMeetingId, teamForMeeting);
   };
