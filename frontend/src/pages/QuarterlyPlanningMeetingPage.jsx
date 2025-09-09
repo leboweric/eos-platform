@@ -1438,22 +1438,93 @@ const QuarterlyPlanningMeetingPage = () => {
                             </div>
                             {isExpanded && (
                               <div className="space-y-4 ml-7 mt-4">
-                                {ownerPriorities.map(priority => (
-                                  <PriorityCard 
-                                    key={priority.id} 
-                                    priority={priority} 
-                                    readOnly={false}
-                                    onUpdate={handleUpdatePriority}
-                                    onIssueCreated={(message) => {
-                                      setSuccess(message);
-                                      setTimeout(() => setSuccess(null), 3000);
-                                    }}
-                                    onStatusChange={handlePriorityStatusChange}
-                                    onToggleMilestone={handleUpdateMilestone}
-                                    onEditMilestone={handleEditMilestone}
-                                    teamMembers={teamMembers}
-                                  />
-                                ))}
+                                {ownerPriorities.map(priority => {
+                                  const isComplete = priority.status === 'complete';
+                                  const isOffTrack = priority.status === 'off-track';
+                                  const daysUntilDue = getDaysUntilDue(priority.due_date);
+                                  
+                                  return (
+                                    <Card 
+                                      key={priority.id}
+                                      className={`max-w-5xl transition-all duration-300 shadow-md hover:shadow-xl hover:scale-[1.01] cursor-pointer ${
+                                        isComplete ? 'border-slate-200' : 
+                                        isOffTrack ? 'bg-gradient-to-r from-red-50/80 to-rose-50/80 border-red-200' : 
+                                        'bg-white border-slate-200'
+                                      }`}
+                                      onClick={() => handlePriorityClick(priority)}
+                                    >
+                                      <CardContent className="p-6">
+                                        <div className="flex items-start justify-between gap-4">
+                                          <div className="flex items-start gap-4 flex-1">
+                                            <div className="mt-1">
+                                              {isComplete ? (
+                                                <CheckCircle2 className="h-5 w-5 text-green-600" />
+                                              ) : (
+                                                <div className={`h-2.5 w-2.5 rounded-full ${getStatusDotColor(priority.status)}`} />
+                                              )}
+                                            </div>
+                                            <div className="space-y-2 flex-1">
+                                              <div className="flex items-start justify-between">
+                                                <div>
+                                                  <h3 className={`font-semibold text-base leading-tight ${isComplete ? 'text-slate-500 line-through' : ''}`}>
+                                                    {priority.title}
+                                                  </h3>
+                                                  {priority.description && (
+                                                    <p className={`mt-1 text-sm leading-relaxed ${isComplete ? 'text-slate-400' : 'text-slate-600'}`}>
+                                                      {priority.description}
+                                                    </p>
+                                                  )}
+                                                  <div className="flex items-center gap-3 mt-2 text-xs text-slate-500">
+                                                    <span className="flex items-center gap-1">
+                                                      <User className="h-3 w-3" />
+                                                      {priority.owner?.name || priority.owner_name || 'Unassigned'}
+                                                    </span>
+                                                    {priority.due_date && (
+                                                      <span className="flex items-center gap-1">
+                                                        <Calendar className="h-3 w-3" />
+                                                        {format(new Date(priority.due_date), 'MMM d')}
+                                                        {daysUntilDue !== null && !isComplete && (
+                                                          <span className={`ml-1 ${daysUntilDue < 0 ? 'text-red-600' : daysUntilDue <= 7 ? 'text-amber-600' : ''}`}>
+                                                            ({daysUntilDue < 0 ? `${Math.abs(daysUntilDue)}d overdue` : `${daysUntilDue}d left`})
+                                                          </span>
+                                                        )}
+                                                      </span>
+                                                    )}
+                                                  </div>
+                                                </div>
+                                              </div>
+                                              
+                                              {priority.milestones && priority.milestones.length > 0 && (
+                                                <div className="mt-3">
+                                                  <Progress 
+                                                    value={priority.milestones.filter(m => m.is_complete).length / priority.milestones.length * 100} 
+                                                    className="h-1.5"
+                                                  />
+                                                  <div className="text-xs text-slate-500 mt-1">
+                                                    {priority.milestones.filter(m => m.is_complete).length} of {priority.milestones.length} milestones complete
+                                                  </div>
+                                                </div>
+                                              )}
+                                              
+                                              <div className="flex gap-2 mt-3">
+                                                {priority.is_key && (
+                                                  <Badge variant="outline" className="text-xs px-2 py-0.5 bg-amber-50 text-amber-700 border-amber-200">
+                                                    Key {labels?.priority_singular || 'Priority'}
+                                                  </Badge>
+                                                )}
+                                                {priority.created_at && new Date(priority.created_at) > new Date(Date.now() - 7 * 24 * 60 * 60 * 1000) && (
+                                                  <Badge variant="outline" className="text-xs px-2 py-0.5 bg-blue-50 text-blue-700 border-blue-200">
+                                                    New
+                                                  </Badge>
+                                                )}
+                                              </div>
+                                            </div>
+                                          </div>
+                                        </div>
+                                      </CardContent>
+                                    </Card>
+                                  );
+                                })}
                               </div>
                             )}
                           </div>
@@ -1613,22 +1684,93 @@ const QuarterlyPlanningMeetingPage = () => {
                       </div>
                       {expandedSections.companyPriorities && (
                         <div className="space-y-4 ml-7 mt-4">
-                          {(companyPriorities || []).map(priority => (
-                            <PriorityCard 
-                              key={priority.id} 
-                              priority={priority} 
-                              readOnly={false}
-                              onUpdate={handleUpdatePriority}
-                              onIssueCreated={(message) => {
-                                setSuccess(message);
-                                setTimeout(() => setSuccess(null), 3000);
-                              }}
-                              onStatusChange={handlePriorityStatusChange}
-                              onToggleMilestone={handleUpdateMilestone}
-                              onEditMilestone={handleEditMilestone}
-                              teamMembers={teamMembers}
-                            />
-                          ))}
+                          {(companyPriorities || []).map(priority => {
+                            const isComplete = priority.status === 'complete';
+                            const isOffTrack = priority.status === 'off-track';
+                            const daysUntilDue = getDaysUntilDue(priority.due_date);
+                            
+                            return (
+                              <Card 
+                                key={priority.id}
+                                className={`max-w-5xl transition-all duration-300 shadow-md hover:shadow-xl hover:scale-[1.01] cursor-pointer ${
+                                  isComplete ? 'border-slate-200' : 
+                                  isOffTrack ? 'bg-gradient-to-r from-red-50/80 to-rose-50/80 border-red-200' : 
+                                  'bg-white border-slate-200'
+                                }`}
+                                onClick={() => handlePriorityClick(priority)}
+                              >
+                                <CardContent className="p-6">
+                                  <div className="flex items-start justify-between gap-4">
+                                    <div className="flex items-start gap-4 flex-1">
+                                      <div className="mt-1">
+                                        {isComplete ? (
+                                          <CheckCircle2 className="h-5 w-5 text-green-600" />
+                                        ) : (
+                                          <div className={`h-2.5 w-2.5 rounded-full ${getStatusDotColor(priority.status)}`} />
+                                        )}
+                                      </div>
+                                      <div className="space-y-2 flex-1">
+                                        <div className="flex items-start justify-between">
+                                          <div>
+                                            <h3 className={`font-semibold text-base leading-tight ${isComplete ? 'text-slate-500 line-through' : ''}`}>
+                                              {priority.title}
+                                            </h3>
+                                            {priority.description && (
+                                              <p className={`mt-1 text-sm leading-relaxed ${isComplete ? 'text-slate-400' : 'text-slate-600'}`}>
+                                                {priority.description}
+                                              </p>
+                                            )}
+                                            <div className="flex items-center gap-3 mt-2 text-xs text-slate-500">
+                                              <span className="flex items-center gap-1">
+                                                <User className="h-3 w-3" />
+                                                {priority.owner?.name || priority.owner_name || 'Unassigned'}
+                                              </span>
+                                              {priority.due_date && (
+                                                <span className="flex items-center gap-1">
+                                                  <Calendar className="h-3 w-3" />
+                                                  {format(new Date(priority.due_date), 'MMM d')}
+                                                  {daysUntilDue !== null && !isComplete && (
+                                                    <span className={`ml-1 ${daysUntilDue < 0 ? 'text-red-600' : daysUntilDue <= 7 ? 'text-amber-600' : ''}`}>
+                                                      ({daysUntilDue < 0 ? `${Math.abs(daysUntilDue)}d overdue` : `${daysUntilDue}d left`})
+                                                    </span>
+                                                  )}
+                                                </span>
+                                              )}
+                                            </div>
+                                          </div>
+                                        </div>
+                                        
+                                        {priority.milestones && priority.milestones.length > 0 && (
+                                          <div className="mt-3">
+                                            <Progress 
+                                              value={priority.milestones.filter(m => m.is_complete).length / priority.milestones.length * 100} 
+                                              className="h-1.5"
+                                            />
+                                            <div className="text-xs text-slate-500 mt-1">
+                                              {priority.milestones.filter(m => m.is_complete).length} of {priority.milestones.length} milestones complete
+                                            </div>
+                                          </div>
+                                        )}
+                                        
+                                        <div className="flex gap-2 mt-3">
+                                          {priority.is_key && (
+                                            <Badge variant="outline" className="text-xs px-2 py-0.5 bg-amber-50 text-amber-700 border-amber-200">
+                                              Key {labels?.priority_singular || 'Priority'}
+                                            </Badge>
+                                          )}
+                                          {priority.created_at && new Date(priority.created_at) > new Date(Date.now() - 7 * 24 * 60 * 60 * 1000) && (
+                                            <Badge variant="outline" className="text-xs px-2 py-0.5 bg-blue-50 text-blue-700 border-blue-200">
+                                              New
+                                            </Badge>
+                                          )}
+                                        </div>
+                                      </div>
+                                    </div>
+                                  </div>
+                                </CardContent>
+                              </Card>
+                            );
+                          })}
                         </div>
                       )}
                     </div>
@@ -1675,22 +1817,93 @@ const QuarterlyPlanningMeetingPage = () => {
                             </div>
                             {isExpanded && (
                               <div className="space-y-4 ml-7 mt-4">
-                                {ownerPriorities.map(priority => (
-                                  <PriorityCard 
-                                    key={priority.id} 
-                                    priority={priority} 
-                                    readOnly={false}
-                                    onUpdate={handleUpdatePriority}
-                                    onIssueCreated={(message) => {
-                                      setSuccess(message);
-                                      setTimeout(() => setSuccess(null), 3000);
-                                    }}
-                                    onStatusChange={handlePriorityStatusChange}
-                                    onToggleMilestone={handleUpdateMilestone}
-                                    onEditMilestone={handleEditMilestone}
-                                    teamMembers={teamMembers}
-                                  />
-                                ))}
+                                {ownerPriorities.map(priority => {
+                                  const isComplete = priority.status === 'complete';
+                                  const isOffTrack = priority.status === 'off-track';
+                                  const daysUntilDue = getDaysUntilDue(priority.due_date);
+                                  
+                                  return (
+                                    <Card 
+                                      key={priority.id}
+                                      className={`max-w-5xl transition-all duration-300 shadow-md hover:shadow-xl hover:scale-[1.01] cursor-pointer ${
+                                        isComplete ? 'border-slate-200' : 
+                                        isOffTrack ? 'bg-gradient-to-r from-red-50/80 to-rose-50/80 border-red-200' : 
+                                        'bg-white border-slate-200'
+                                      }`}
+                                      onClick={() => handlePriorityClick(priority)}
+                                    >
+                                      <CardContent className="p-6">
+                                        <div className="flex items-start justify-between gap-4">
+                                          <div className="flex items-start gap-4 flex-1">
+                                            <div className="mt-1">
+                                              {isComplete ? (
+                                                <CheckCircle2 className="h-5 w-5 text-green-600" />
+                                              ) : (
+                                                <div className={`h-2.5 w-2.5 rounded-full ${getStatusDotColor(priority.status)}`} />
+                                              )}
+                                            </div>
+                                            <div className="space-y-2 flex-1">
+                                              <div className="flex items-start justify-between">
+                                                <div>
+                                                  <h3 className={`font-semibold text-base leading-tight ${isComplete ? 'text-slate-500 line-through' : ''}`}>
+                                                    {priority.title}
+                                                  </h3>
+                                                  {priority.description && (
+                                                    <p className={`mt-1 text-sm leading-relaxed ${isComplete ? 'text-slate-400' : 'text-slate-600'}`}>
+                                                      {priority.description}
+                                                    </p>
+                                                  )}
+                                                  <div className="flex items-center gap-3 mt-2 text-xs text-slate-500">
+                                                    <span className="flex items-center gap-1">
+                                                      <User className="h-3 w-3" />
+                                                      {priority.owner?.name || priority.owner_name || 'Unassigned'}
+                                                    </span>
+                                                    {priority.due_date && (
+                                                      <span className="flex items-center gap-1">
+                                                        <Calendar className="h-3 w-3" />
+                                                        {format(new Date(priority.due_date), 'MMM d')}
+                                                        {daysUntilDue !== null && !isComplete && (
+                                                          <span className={`ml-1 ${daysUntilDue < 0 ? 'text-red-600' : daysUntilDue <= 7 ? 'text-amber-600' : ''}`}>
+                                                            ({daysUntilDue < 0 ? `${Math.abs(daysUntilDue)}d overdue` : `${daysUntilDue}d left`})
+                                                          </span>
+                                                        )}
+                                                      </span>
+                                                    )}
+                                                  </div>
+                                                </div>
+                                              </div>
+                                              
+                                              {priority.milestones && priority.milestones.length > 0 && (
+                                                <div className="mt-3">
+                                                  <Progress 
+                                                    value={priority.milestones.filter(m => m.is_complete).length / priority.milestones.length * 100} 
+                                                    className="h-1.5"
+                                                  />
+                                                  <div className="text-xs text-slate-500 mt-1">
+                                                    {priority.milestones.filter(m => m.is_complete).length} of {priority.milestones.length} milestones complete
+                                                  </div>
+                                                </div>
+                                              )}
+                                              
+                                              <div className="flex gap-2 mt-3">
+                                                {priority.is_key && (
+                                                  <Badge variant="outline" className="text-xs px-2 py-0.5 bg-amber-50 text-amber-700 border-amber-200">
+                                                    Key {labels?.priority_singular || 'Priority'}
+                                                  </Badge>
+                                                )}
+                                                {priority.created_at && new Date(priority.created_at) > new Date(Date.now() - 7 * 24 * 60 * 60 * 1000) && (
+                                                  <Badge variant="outline" className="text-xs px-2 py-0.5 bg-blue-50 text-blue-700 border-blue-200">
+                                                    New
+                                                  </Badge>
+                                                )}
+                                              </div>
+                                            </div>
+                                          </div>
+                                        </div>
+                                      </CardContent>
+                                    </Card>
+                                  );
+                                })}
                               </div>
                             )}
                           </div>
