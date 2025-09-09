@@ -1427,11 +1427,22 @@ const QuarterlyPlanningMeetingPage = () => {
                   
                   return Object.keys(groupedByOwner).length > 0 && (
                     <div className="space-y-4">
-                      <div className="flex items-center gap-3 p-4 bg-white/60 backdrop-blur-sm border border-white/30 rounded-xl shadow-sm">
-                        <Users className="h-5 w-5 text-purple-600" />
-                        <h3 className="text-lg font-semibold">
-                          Individual {labels?.priorities_label || 'Priorities'} ({individualPriorities.length})
+                      <div className="flex items-center gap-3 p-4 bg-white/80 backdrop-blur-sm border border-white/50 rounded-2xl shadow-md">
+                        <div className="p-2 rounded-xl" style={{
+                          background: `linear-gradient(135deg, ${hexToRgba(themeColors.primary, 0.1)} 0%, ${hexToRgba(themeColors.secondary, 0.1)} 100%)`
+                        }}>
+                          <Users className="h-5 w-5" style={{ color: themeColors.primary }} />
+                        </div>
+                        <h3 className="text-lg font-bold text-slate-900">
+                          Individual {labels?.priorities_label || 'Priorities'}
                         </h3>
+                        <Badge className="border" style={{
+                          backgroundColor: `${themeColors.primary}15`,
+                          color: themeColors.primary,
+                          borderColor: `${themeColors.primary}30`
+                        }}>
+                          {individualPriorities.length}
+                        </Badge>
                       </div>
                       {Object.entries(groupedByOwner).map(([ownerId, ownerPriorities]) => {
                         const owner = ownerPriorities[0]?.owner;
@@ -1848,11 +1859,22 @@ const QuarterlyPlanningMeetingPage = () => {
                   
                   return Object.keys(groupedByOwner).length > 0 && (
                     <div className="space-y-4">
-                      <div className="flex items-center gap-3 p-4 bg-white/60 backdrop-blur-sm border border-white/30 rounded-xl shadow-sm">
-                        <Users className="h-5 w-5 text-purple-600" />
-                        <h3 className="text-lg font-semibold">
-                          Individual {labels?.priorities_label || 'Priorities'} ({individualPriorities.length})
+                      <div className="flex items-center gap-3 p-4 bg-white/80 backdrop-blur-sm border border-white/50 rounded-2xl shadow-md">
+                        <div className="p-2 rounded-xl" style={{
+                          background: `linear-gradient(135deg, ${hexToRgba(themeColors.primary, 0.1)} 0%, ${hexToRgba(themeColors.secondary, 0.1)} 100%)`
+                        }}>
+                          <Users className="h-5 w-5" style={{ color: themeColors.primary }} />
+                        </div>
+                        <h3 className="text-lg font-bold text-slate-900">
+                          Individual {labels?.priorities_label || 'Priorities'}
                         </h3>
+                        <Badge className="border" style={{
+                          backgroundColor: `${themeColors.primary}15`,
+                          color: themeColors.primary,
+                          borderColor: `${themeColors.primary}30`
+                        }}>
+                          {individualPriorities.length}
+                        </Badge>
                       </div>
                       {Object.entries(groupedByOwner).map(([ownerId, ownerPriorities]) => {
                         const owner = ownerPriorities[0]?.owner;
