@@ -198,7 +198,7 @@ const WeeklyAccountabilityMeetingPage = () => {
       }));
       
       // Refresh issues
-      await fetchIssues();
+      await fetchIssuesData();
       
       // Show success message
       setSuccess('Issue created successfully');
