@@ -1,0 +1,153 @@
+/* Print styles for VTO/Business Blueprint PDF export */
+
+@media print {
+  /* Hide navigation and controls */
+  nav,
+  .sidebar,
+  .no-print,
+  button,
+  .bg-white\/80.backdrop-blur-sm.rounded-xl.border.border-white\/50.shadow-lg.p-1.flex.items-center,
+  div:has(> button) {
+    display: none !important;
+  }
+
+  /* Keep the main content visible */
+  .bg-white.rounded-2xl.shadow-xl.border.border-gray-100.p-8 {
+    display: block !important;
+    box-shadow: none !important;
+    border: none !important;
+    padding: 0 !important;
+  }
+
+  /* Page setup */
+  @page {
+    size: letter;
+    margin: 0.5in;
+  }
+
+  /* Reset backgrounds for better printing */
+  body {
+    background: white !important;
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+    color-adjust: exact !important;
+  }
+
+  /* Ensure content fits on page */
+  * {
+    overflow: visible !important;
+  }
+
+  /* Maintain card styling but optimize for print */
+  .shadow-lg {
+    box-shadow: none !important;
+    border: 1px solid #e5e7eb !important;
+  }
+
+  /* Ensure text is black for better readability */
+  h1, h2, h3, h4, h5, h6, p, span, div {
+    color: black !important;
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+  }
+
+  /* Keep colored elements that are meaningful */
+  .text-gray-600,
+  .text-gray-500,
+  .text-slate-600,
+  .text-slate-500 {
+    color: #4b5563 !important;
+  }
+
+  /* Page breaks */
+  .page-break-before {
+    page-break-before: always;
+  }
+
+  .page-break-after {
+    page-break-after: always;
+  }
+
+  /* Avoid breaking inside cards */
+  .Card,
+  [class*="Card"] {
+    page-break-inside: avoid;
+  }
+
+  /* Keep background colors for important elements */
+  .bg-gray-50,
+  .bg-white\/60 {
+    background-color: #f9fafb !important;
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+  }
+
+  /* Ensure icons print */
+  svg {
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+  }
+
+  /* Hide interactive elements */
+  input[type="checkbox"],
+  .cursor-pointer {
+    cursor: default !important;
+  }
+
+  /* Format the header nicely for print */
+  .text-4xl.font-bold.bg-gradient-to-r {
+    background: none !important;
+    color: black !important;
+    font-size: 28px !important;
+  }
+
+  /* Ensure proper spacing */
+  .space-y-8 > * + * {
+    margin-top: 1.5rem !important;
+  }
+
+  .space-y-6 > * + * {
+    margin-top: 1rem !important;
+  }
+
+  .space-y-4 > * + * {
+    margin-top: 0.75rem !important;
+  }
+
+  .space-y-3 > * + * {
+    margin-top: 0.5rem !important;
+  }
+
+  /* Make sure the content is visible */
+  .min-h-screen {
+    min-height: auto !important;
+  }
+
+  /* Remove gradient backgrounds */
+  .bg-gradient-to-br,
+  .bg-gradient-to-r,
+  [class*="bg-gradient"] {
+    background: white !important;
+  }
+
+  /* Ensure the TwoPagePlanView content prints properly */
+  .grid.grid-cols-1.lg\\:grid-cols-2.gap-8 {
+    display: grid !important;
+    grid-template-columns: 1fr 1fr !important;
+    gap: 1rem !important;
+  }
+
+  /* Format cards for print */
+  .overflow-hidden {
+    overflow: visible !important;
+  }
+
+  /* Remove hover effects */
+  .hover\\:shadow-md,
+  .hover\\:shadow-lg,
+  .hover\\:shadow-xl,
+  .hover\\:shadow-2xl,
+  [class*="hover\\:"]:hover {
+    box-shadow: none !important;
+  }
+}

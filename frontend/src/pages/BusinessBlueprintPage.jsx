@@ -7,6 +7,7 @@ import { getOrgTheme, saveOrgTheme } from '../utils/themeUtils';
 import { getRevenueLabel, getRevenueLabelWithSuffix } from '../utils/revenueUtils';
 import { useDepartment } from '../contexts/DepartmentContext';
 import { useTerminology } from '../contexts/TerminologyContext';
+import '../styles/print.css';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -44,7 +45,8 @@ import {
   Building2,
   MessageSquare,
   FileText,
-  PenTool
+  PenTool,
+  Download
 } from 'lucide-react';
 
 const BusinessBlueprintPage = () => {
@@ -660,8 +662,9 @@ const BusinessBlueprintPage = () => {
             </h1>
             <p className="text-lg text-slate-600">Define your organization's vision and strategy for success</p>
           </div>
-          {/* View/Edit Mode Toggle */}
-          <div className="bg-white/80 backdrop-blur-sm rounded-xl border border-white/50 shadow-lg p-1 flex items-center">
+          {/* View/Edit Mode Toggle and Actions */}
+          <div className="flex items-center gap-3 no-print">
+            <div className="bg-white/80 backdrop-blur-sm rounded-xl border border-white/50 shadow-lg p-1 flex items-center">
             <Button
               variant={viewMode ? "default" : "ghost"}
               size="sm"
@@ -690,6 +693,17 @@ const BusinessBlueprintPage = () => {
               <PenTool className="h-4 w-4 mr-2" />
               Edit
             </Button>
+            </div>
+            {viewMode && (
+              <Button
+                onClick={() => window.print()}
+                className="bg-white/80 backdrop-blur-sm border border-white/50 shadow-lg hover:shadow-xl transition-all duration-200 text-slate-700 hover:text-slate-900"
+                variant="outline"
+              >
+                <Download className="h-4 w-4 mr-2" />
+                Download PDF
+              </Button>
+            )}
           </div>
         </div>
 
