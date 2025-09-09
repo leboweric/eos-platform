@@ -258,9 +258,18 @@ const MeetingsPage = () => {
       
       // Show team selection dialog for multi-team users
       setPendingMeetingId(meetingId);
-      // Pre-select the currently selected team but user can change it
-      // If no team is selected, default to the first team
-      const initialTeamSelection = selectedTeamId || teams[0]?.id;
+      
+      // Pre-select a team for the modal
+      // Priority: 1) Currently selected team, 2) Leadership team, 3) First team
+      let initialTeamSelection = selectedTeamId;
+      
+      // Validate the selected team ID is valid
+      if (!initialTeamSelection || !teams.find(t => t.id === initialTeamSelection)) {
+        // Try to find leadership team
+        const leadershipTeam = teams.find(t => t.is_leadership_team);
+        initialTeamSelection = leadershipTeam ? leadershipTeam.id : teams[0]?.id;
+      }
+      
       console.log('🎯 Initial team selection for modal:', initialTeamSelection);
       setTeamForMeeting(initialTeamSelection);
       setShowTeamSelectionDialog(true);
@@ -311,8 +320,18 @@ const MeetingsPage = () => {
       selectedTeam: teams.find(t => t.id === teamForMeeting),
       pendingMeetingId 
     });
+    
+    // Extra validation to ensure we have a valid team
+    if (!teamForMeeting) {
+      console.error('❌ No team selected in modal');
+      alert('Please select a team before continuing');
+      return;
+    }
+    
     setShowTeamSelectionDialog(false);
+    // Reset the team selection after closing modal
     proceedWithMeeting(pendingMeetingId, teamForMeeting);
+    setTeamForMeeting(null); // Clear for next time
   };
 
   const handleJoinMeeting = (meetingType) => {
@@ -735,6 +754,7 @@ const MeetingsPage = () => {
               <Button
                 variant="outline"
                 onClick={() => {
+                  console.log('❌ Team selection cancelled');
                   setShowTeamSelectionDialog(false);
                   setPendingMeetingId(null);
                   setTeamForMeeting(null);
