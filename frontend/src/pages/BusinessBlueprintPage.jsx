@@ -711,7 +711,7 @@ const BusinessBlueprintPage = () => {
         {viewMode ? (
           /* View Mode - Clean presentation using TwoPagePlanView */
           <div className="bg-white rounded-2xl shadow-xl border border-gray-100 p-8">
-            <TwoPagePlanView hideIssuesAndPriorities={false} />
+            <TwoPagePlanView hideIssuesAndPriorities={true} />
           </div>
         ) : (
           /* Edit Mode - Existing tabbed interface with glass-morphism */
