@@ -2648,9 +2648,9 @@ const QuarterlyPlanningMeetingPage = () => {
           )}
 
           {success && (
-            <Alert className="mb-4 border-green-200/50 bg-green-50/80 backdrop-blur-sm rounded-2xl shadow-sm">
-              <CheckCircle className="h-4 w-4 text-green-600" />
-              <AlertDescription className="text-green-800 font-medium">{success}</AlertDescription>
+            <Alert className="mb-4 backdrop-blur-sm rounded-2xl shadow-sm" style={{ borderColor: `${themeColors.primary}30`, backgroundColor: `${themeColors.primary}10` }}>
+              <CheckCircle className="h-4 w-4" style={{ color: themeColors.primary }} />
+              <AlertDescription className="font-medium" style={{ color: themeColors.primary }}>{success}</AlertDescription>
             </Alert>
           )}
         </div>
@@ -2676,13 +2676,13 @@ const QuarterlyPlanningMeetingPage = () => {
                     boxShadow: isActive ? '0 8px 32px rgba(0,0,0,0.12)' : 'none'
                   }}
                 >
-                  <Icon className="h-5 w-5" style={{
-                    color: isCompleted ? '#10B981' : (activeSection === item.id ? themeColors.primary : undefined)
-                  }} />
+                  <Icon className={`h-5 w-5 ${
+                    isActive ? 'text-white' : 'text-slate-600'
+                  }`} style={isCompleted && !isActive ? { color: themeColors.primary } : {}} />
                   <span className={`text-xs font-medium ${isActive ? 'text-white' : 'text-slate-700'}`}>{item.label}</span>
                   {item.duration && <span className={`text-xs ${isActive ? 'text-white/80' : 'text-slate-500'}`}>{item.duration}m</span>}
                   {isCompleted && (
-                    <CheckCircle className="h-3 w-3 text-green-400" />
+                    <CheckCircle className="h-3 w-3" style={{ color: themeColors.primary }} />
                   )}
                 </TabsTrigger>
               );
