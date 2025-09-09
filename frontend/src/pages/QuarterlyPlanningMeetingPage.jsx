@@ -275,7 +275,7 @@ const QuarterlyPlanningMeetingPage = () => {
       return;
     }
     
-    const meetingRoom = `${teamId}-quarterly`;
+    const meetingRoom = `${teamId}-quarterly-planning`;
     console.log('🚀 Quarterly Planning auto-joining meeting room:', meetingRoom);
     
     // Small delay to check if meeting exists
