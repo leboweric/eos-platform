@@ -277,6 +277,10 @@ const QuarterlyPlanningMeetingPage = () => {
     setMeetingStartTime(Date.now());
   }, []);
   
+  // Join meeting when page loads
+  const hasJoinedRef = useRef(false);
+  const hasCheckedMeetingsRef = useRef(false);
+  
   // Auto-join meeting when component mounts
   useEffect(() => {
     // Validate teamId before attempting to join
@@ -297,29 +301,46 @@ const QuarterlyPlanningMeetingPage = () => {
       return;
     }
     
-    const meetingRoom = `${teamId}-quarterly-planning`;
-    console.log('🚀 Quarterly Planning auto-joining meeting room:', meetingRoom);
+    // Only join if we haven't already joined and are connected
+    if (!isConnected || !joinMeeting || meetingCode || hasJoinedRef.current) {
+      return;
+    }
     
-    // Small delay to check if meeting exists
-    const joinTimeout = setTimeout(() => {
-      const existingMeeting = activeMeetings?.[meetingRoom];
+    const meetingRoom = `${teamId}-quarterly-planning`;
+    
+    // Wait a bit for active meetings to load if we haven't checked yet
+    if (!hasCheckedMeetingsRef.current && (!activeMeetings || Object.keys(activeMeetings).length === 0)) {
+      console.log('🎬 Waiting for active meetings to load...');
+      hasCheckedMeetingsRef.current = true;
+      // Wait 500ms for active meetings to populate
+      setTimeout(() => {
+        if (!hasJoinedRef.current && !meetingCode) {
+          const existingMeeting = activeMeetings?.[meetingRoom];
+          const hasParticipants = existingMeeting?.participantCount > 0;
+          
+          console.log('🚀 Quarterly Planning auto-joining meeting room after delay:', meetingRoom);
+          console.log('📡 Active meetings:', activeMeetings);
+          console.log('📡 Existing meeting:', existingMeeting);
+          console.log('👥 Existing meeting found:', hasParticipants ? 'Yes, joining as participant' : 'No, joining as leader');
+          
+          hasJoinedRef.current = true;
+          joinMeeting(meetingRoom, !hasParticipants);
+        }
+      }, 500);
+    } else if (activeMeetings && Object.keys(activeMeetings).length > 0) {
+      // Active meetings loaded, check immediately
+      const existingMeeting = activeMeetings[meetingRoom];
       const hasParticipants = existingMeeting?.participantCount > 0;
       
-      // Join as leader if first person, otherwise as participant
-      if (joinMeeting) {
-        joinMeeting(meetingRoom, !hasParticipants);
-      }
-    }, 500);
-    
-    // Cleanup - leave meeting when component unmounts
-    return () => {
-      clearTimeout(joinTimeout);
-      if (leaveMeeting) {
-        console.log('🔚 Leaving quarterly planning meeting');
-        leaveMeeting();
-      }
-    };
-  }, [teamId, joinMeeting, leaveMeeting, activeMeetings]);
+      console.log('🚀 Quarterly Planning auto-joining meeting room on page load:', meetingRoom);
+      console.log('📡 Active meetings:', activeMeetings);
+      console.log('📡 Existing meeting:', existingMeeting);
+      console.log('👥 Existing meeting found:', hasParticipants ? 'Yes, joining as participant' : 'No, joining as leader');
+      
+      hasJoinedRef.current = true;
+      joinMeeting(meetingRoom, !hasParticipants);
+    }
+  }, [teamId, isConnected, joinMeeting, meetingCode, activeMeetings]);
   
   // Listen for section changes from leader
   useEffect(() => {
@@ -353,6 +374,30 @@ const QuarterlyPlanningMeetingPage = () => {
     window.addEventListener('meeting-section-change', handleMeetingSectionChange);
     return () => window.removeEventListener('meeting-section-change', handleMeetingSectionChange);
   }, [isLeader]);
+  
+  // Handle organization changes and component unmount
+  useEffect(() => {
+    const handleOrgChange = () => {
+      // Leave current meeting when organization changes
+      if (meetingCode && leaveMeeting) {
+        console.log('🎬 Organization changed, leaving current meeting');
+        leaveMeeting();
+        hasJoinedRef.current = false;
+        hasCheckedMeetingsRef.current = false;
+      }
+    };
+    
+    window.addEventListener('organizationChanged', handleOrgChange);
+    
+    // Cleanup - leave meeting when component unmounts
+    return () => {
+      window.removeEventListener('organizationChanged', handleOrgChange);
+      if (meetingCode && leaveMeeting) {
+        console.log('🔚 Leaving quarterly planning meeting on unmount');
+        leaveMeeting();
+      }
+    };
+  }, [meetingCode, leaveMeeting]);
   
   // Listen for meeting updates from other participants
   useEffect(() => {
