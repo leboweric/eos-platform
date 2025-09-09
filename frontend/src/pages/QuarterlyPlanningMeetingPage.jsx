@@ -293,6 +293,8 @@ const QuarterlyPlanningMeetingPage = () => {
   useEffect(() => {
     setMeetingStarted(true);
     setMeetingStartTime(Date.now());
+    // Load teams on mount so they're ready for conclude section
+    fetchTeams();
   }, []);
   
   // Join meeting when page loads
@@ -1125,13 +1127,17 @@ const QuarterlyPlanningMeetingPage = () => {
   // Fetch available teams for cascading messages
   const fetchTeams = async () => {
     try {
-      const orgId = user?.organizationId || user?.organization_id;
-      if (!orgId) return;
+      const response = await teamsService.getTeams();
+      console.log('Teams response:', response);
       
-      const response = await teamsService.getTeams(orgId);
-      setAvailableTeams(response || []);
+      // Extract teams array from response
+      const teams = response?.data?.teams || response?.teams || [];
+      console.log('Available teams:', teams);
+      
+      setAvailableTeams(teams);
     } catch (error) {
       console.error('Failed to fetch teams:', error);
+      setAvailableTeams([]);
     }
   };
 
