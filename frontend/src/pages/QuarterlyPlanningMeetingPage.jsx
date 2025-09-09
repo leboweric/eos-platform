@@ -56,6 +56,9 @@ import IssueDialog from '../components/issues/IssueDialog';
 import TodoDialog from '../components/todos/TodoDialog';
 import { todosService } from '../services/todosService';
 import TwoPagePlanView from '../components/vto/TwoPagePlanView';
+import { Checkbox } from '@/components/ui/checkbox';
+import { cascadingMessagesService } from '../services/cascadingMessagesService';
+import { teamsService } from '../services/teamsService';
 
 const QuarterlyPlanningMeetingPage = () => {
   const { user } = useAuthStore();
@@ -134,6 +137,14 @@ const QuarterlyPlanningMeetingPage = () => {
   const [elapsedTime, setElapsedTime] = useState(0);
   const [meetingRating, setMeetingRating] = useState(null);
   const [participantRatings, setParticipantRatings] = useState({}); // Store ratings by participant
+  
+  // Cascading message states
+  const [showCascadeDialog, setShowCascadeDialog] = useState(false);
+  const [cascadeFromIssue, setCascadeFromIssue] = useState(null);
+  const [cascadeMessage, setCascadeMessage] = useState('');
+  const [cascadeToAll, setCascadeToAll] = useState(false);
+  const [availableTeams, setAvailableTeams] = useState([]);
+  const [selectedTeams, setSelectedTeams] = useState([]);
   
   // Dialog states for issues and todos
   const [showIssueDialog, setShowIssueDialog] = useState(false);
@@ -539,6 +550,9 @@ const QuarterlyPlanningMeetingPage = () => {
     } else if (activeSection === 'next-steps') {
       fetchTodosData();
       fetchTeamMembers(); // Need team members for todos
+    } else if (activeSection === 'conclude') {
+      fetchTeams(); // Load teams for cascading messages
+      setLoading(false);
     } else {
       // For non-data sections, ensure loading is false
       setLoading(false);
@@ -1106,6 +1120,19 @@ const QuarterlyPlanningMeetingPage = () => {
     const diffTime = due - today;
     const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
     return diffDays;
+  };
+
+  // Fetch available teams for cascading messages
+  const fetchTeams = async () => {
+    try {
+      const orgId = user?.organizationId || user?.organization_id;
+      if (!orgId) return;
+      
+      const response = await teamsService.getTeams(orgId);
+      setAvailableTeams(response || []);
+    } catch (error) {
+      console.error('Failed to fetch teams:', error);
+    }
   };
 
   const renderContent = () => {
@@ -1864,8 +1891,18 @@ const QuarterlyPlanningMeetingPage = () => {
                                 <ChevronRight className="h-4 w-4 text-gray-600" />
                               )}
                               <h4 className="text-md font-medium">
-                                {owner?.name || 'Unassigned'} ({ownerPriorities.length})
+                                {owner?.name || 'Unassigned'}
                               </h4>
+                              <Badge 
+                                className="ml-2 text-xs"
+                                style={{ 
+                                  backgroundColor: `${themeColors.primary}20`,
+                                  color: themeColors.primary,
+                                  borderColor: `${themeColors.primary}30`
+                                }}
+                              >
+                                {ownerPriorities.length}
+                              </Badge>
                             </div>
                             {isExpanded && (
                               <div className="space-y-4 ml-7 mt-4">
@@ -2105,10 +2142,19 @@ const QuarterlyPlanningMeetingPage = () => {
                           ) : (
                             <ChevronRight className="h-5 w-5 text-gray-600" />
                           )}
-                          <Building2 className="h-5 w-5 text-blue-600" />
+                          <Building2 className="h-5 w-5" style={{ color: themeColors.primary }} />
                           <h3 className="text-lg font-semibold">
-                            Company {labels?.priorities_label || 'Priorities'} ({companyPriorities.length})
+                            Company {labels?.priorities_label || 'Priorities'}
                           </h3>
+                          <Badge 
+                            className="ml-2 text-white"
+                            style={{ 
+                              backgroundColor: themeColors.primary,
+                              borderColor: themeColors.primary
+                            }}
+                          >
+                            {companyPriorities.length}
+                          </Badge>
                         </div>
                       </div>
                       {expandedSections.companyPriorities && (
@@ -2283,8 +2329,18 @@ const QuarterlyPlanningMeetingPage = () => {
                                 <ChevronRight className="h-4 w-4 text-gray-600" />
                               )}
                               <h4 className="text-md font-medium">
-                                {owner?.name || 'Unassigned'} ({ownerPriorities.length})
+                                {owner?.name || 'Unassigned'}
                               </h4>
+                              <Badge 
+                                className="ml-2 text-xs"
+                                style={{ 
+                                  backgroundColor: `${themeColors.primary}20`,
+                                  color: themeColors.primary,
+                                  borderColor: `${themeColors.primary}30`
+                                }}
+                              >
+                                {ownerPriorities.length}
+                              </Badge>
                             </div>
                             {isExpanded && (
                               <div className="space-y-4 ml-7 mt-4">
@@ -2818,34 +2874,184 @@ const QuarterlyPlanningMeetingPage = () => {
                       '--tw-ring-color': themeColors.primary,
                       '--tw-border-opacity': 1
                     }}
-                    rows="4"
-                    placeholder="Enter key messages to cascade..."
+                    onFocus={(e) => {
+                      e.target.style.borderColor = themeColors.primary;
+                      e.target.style.boxShadow = `0 0 0 3px ${themeColors.primary}20`;
+                    }}
+                    onBlur={(e) => {
+                      e.target.style.borderColor = '#d1d5db';
+                      e.target.style.boxShadow = 'none';
+                    }}
+                    rows={3}
+                    placeholder="Enter any messages to cascade to other teams..."
+                    value={cascadingMessage}
+                    onChange={(e) => setCascadingMessage(e.target.value)}
                   />
+                  
+                  {cascadingMessage.trim() && (
+                    <div className="space-y-3">
+                      <div className="flex items-center gap-2">
+                        <Checkbox
+                          id="cascade-all"
+                          checked={cascadeToAll}
+                          onCheckedChange={(checked) => {
+                            setCascadeToAll(checked);
+                            if (checked) setSelectedTeams([]);
+                          }}
+                        />
+                        <label htmlFor="cascade-all" className="text-sm font-medium text-gray-700">
+                          Send to all teams
+                        </label>
+                      </div>
+                      
+                      {!cascadeToAll && availableTeams.length > 0 && (
+                        <div>
+                          <p className="text-sm text-gray-600 mb-2">Or select specific teams:</p>
+                          <div className="space-y-2 max-h-32 overflow-y-auto border border-gray-200 rounded-lg p-2">
+                            {availableTeams.map(team => (
+                              <div key={team.id} className="flex items-center gap-2">
+                                <Checkbox
+                                  id={`team-${team.id}`}
+                                  checked={selectedTeams.includes(team.id)}
+                                  onCheckedChange={(checked) => {
+                                    if (checked) {
+                                      setSelectedTeams([...selectedTeams, team.id]);
+                                    } else {
+                                      setSelectedTeams(selectedTeams.filter(id => id !== team.id));
+                                    }
+                                  }}
+                                />
+                                <label htmlFor={`team-${team.id}`} className="text-sm text-gray-700">
+                                  {team.name}
+                                  {team.is_leadership_team && (
+                                    <span className="ml-2 text-xs" style={{ color: themeColors.primary }}>(Leadership)</span>
+                                  )}
+                                </label>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  )}
                 </div>
 
-                {/* Meeting Rating */}
                 <div className="border border-gray-200 p-4 rounded-lg bg-white">
-                  <h4 className="font-medium mb-3 text-gray-900 flex items-center gap-2">
+                  <h4 className="font-medium mb-2 text-gray-900 flex items-center gap-2">
                     <Star className="h-4 w-4" />
-                    Rate This Meeting
+                    Meeting Rating
                   </h4>
                   <p className="text-sm text-gray-600 mb-3">
-                    How effective was this meeting? (1-10)
+                    Rate this meeting's effectiveness (1-10)
                   </p>
+                  
+                  {/* Individual Participant Ratings */}
+                  {participants.length > 0 ? (
+                    <div>
+                      <label className="text-sm font-medium text-gray-700 block mb-3">
+                        Each participant rates the meeting:
+                      </label>
+                      <div className="space-y-3">
+                        {participants.map(participant => {
+                          const isCurrentUser = participant.id === user?.id;
+                          const rating = participantRatings[participant.id];
+                          
+                          return (
+                            <div key={participant.id} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                              <span className={`text-sm ${isCurrentUser ? 'font-medium text-gray-900' : 'text-gray-600'}`}>
+                                {participant.name}{isCurrentUser ? ' (You)' : ''}:
+                              </span>
+                              {isCurrentUser ? (
+                                <Select value={rating?.rating?.toString() || ''} onValueChange={(value) => {
+                                  const ratingValue = parseInt(value);
+                                  setParticipantRatings(prev => ({
+                                    ...prev,
+                                    [user.id]: {
+                                      userId: user.id,
+                                      userName: participant.name,
+                                      rating: ratingValue
+                                    }
+                                  }));
+                                  // Also set the old meetingRating for backwards compatibility
+                                  setMeetingRating(ratingValue);
+                                }}>
+                                  <SelectTrigger className="w-24 bg-white">
+                                    <SelectValue placeholder="Rate" />
+                                  </SelectTrigger>
+                                  <SelectContent>
+                                    {[...Array(10)].map((_, i) => (
+                                      <SelectItem key={i + 1} value={(i + 1).toString()}>
+                                        {i + 1}
+                                      </SelectItem>
+                                    ))}
+                                  </SelectContent>
+                                </Select>
+                              ) : (
+                                <span className={`font-medium ${rating ? 'text-gray-900' : 'text-gray-400'}`}>
+                                  {rating ? rating.rating : 'Waiting...'}
+                                </span>
+                              )}
+                            </div>
+                          );
+                        })}
+                      </div>
+                      
+                      {/* Calculate and show average if there are ratings */}
+                      {Object.keys(participantRatings).length > 0 && (
+                        <div className="border-t pt-2 mt-2">
+                          <div className="flex items-center justify-between text-sm font-medium">
+                            <span className="text-gray-700">Average Rating:</span>
+                            <span className="text-lg" style={{ color: themeColors.primary }}>
+                              {(Object.values(participantRatings).reduce((sum, r) => sum + r.rating, 0) / Object.values(participantRatings).length).toFixed(1)}
+                            </span>
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  ) : (
+                    /* Fallback for single user (not in a meeting) */
+                    <div>
+                      <label className="text-sm font-medium text-gray-700 block mb-2">
+                        Your Rating:
+                      </label>
+                      <Select value={meetingRating?.toString()} onValueChange={(value) => {
+                        const rating = parseInt(value);
+                        setMeetingRating(rating);
+                        // Store as single participant rating
+                        setParticipantRatings({
+                          [user?.id]: {
+                            userId: user?.id,
+                            userName: `${user?.firstName || ''} ${user?.lastName || ''}`.trim() || 'You',
+                            rating: rating
+                          }
+                        });
+                      }}>
+                        <SelectTrigger className="w-32 bg-white">
+                          <SelectValue placeholder="Select" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {[...Array(10)].map((_, i) => (
+                            <SelectItem key={i + 1} value={(i + 1).toString()}>
+                              {i + 1}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  )}
                 </div>
 
-                {/* Conclude Button */}
-                <div className="flex justify-center pt-4">
-                  <Button 
+                <div className="text-center pt-4">
+                  <Button
                     onClick={concludeMeeting}
                     size="lg"
-                    className="px-8 shadow-lg hover:shadow-xl transition-all duration-200"
+                    className="text-white shadow-lg hover:shadow-xl transition-all duration-200"
                     style={{
                       background: `linear-gradient(135deg, ${themeColors.primary} 0%, ${themeColors.secondary} 100%)`
                     }}
                   >
-                    <CheckCircle className="mr-2 h-5 w-5" />
-                    Conclude Quarterly Planning
+                    <Send className="mr-2 h-5 w-5" />
+                    Conclude Meeting & Send Summary
                   </Button>
                 </div>
               </div>
