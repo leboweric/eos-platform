@@ -57,9 +57,26 @@ const OneYearPlanDialog = ({ open, onOpenChange, data, onSave, organization }) =
           })
         : ['', '', ''];
       
+      // Format profit field for display
+      let profitDisplay = '';
+      if (data.profit_amount) {
+        const amount = Number(data.profit_amount);
+        if (amount >= 1000000) {
+          profitDisplay = `$${(amount / 1000000).toFixed(1)}M`;
+        } else if (amount >= 1000) {
+          profitDisplay = `$${(amount / 1000).toFixed(0)}K`;
+        } else {
+          profitDisplay = `$${amount}`;
+        }
+      } else if (data.profit_percentage) {
+        profitDisplay = `${data.profit_percentage}%`;
+      } else if (data.profit) {
+        profitDisplay = data.profit;
+      }
+      
       setFormData({
         revenue: data.revenue || '',
-        profit: data.profit || '',
+        profit: profitDisplay,
         revenueStreams: data.revenueStreams && data.revenueStreams.length > 0 
           ? data.revenueStreams.map(s => ({ name: s.name || '', revenue_target: s.revenue_target || '' }))
           : [],

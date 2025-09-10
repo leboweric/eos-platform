@@ -489,8 +489,22 @@ const TwoPagePlanView = ({ hideIssuesAndPriorities = false }) => {
                         }
                       }
                       // Then check for percentage
-                      else if (blueprintData.threeYearPicture.profit_percentage || blueprintData.threeYearPicture.profit_target || blueprintData.threeYearPicture.profit) {
-                        return `${Number(blueprintData.threeYearPicture.profit_percentage || blueprintData.threeYearPicture.profit_target || blueprintData.threeYearPicture.profit).toFixed(1)}%`;
+                      else if (blueprintData.threeYearPicture.profit_percentage || blueprintData.threeYearPicture.profit_target) {
+                        const value = blueprintData.threeYearPicture.profit_percentage || blueprintData.threeYearPicture.profit_target;
+                        return `${Number(value).toFixed(1)}%`;
+                      }
+                      // Handle legacy profit field that might contain raw string
+                      else if (blueprintData.threeYearPicture.profit) {
+                        const profitStr = blueprintData.threeYearPicture.profit.toString();
+                        // If it's already formatted (contains $ or %), return as-is
+                        if (profitStr.includes('$') || profitStr.includes('%')) {
+                          return profitStr;
+                        }
+                        // Otherwise, assume it's a percentage
+                        const numValue = Number(profitStr);
+                        if (!isNaN(numValue)) {
+                          return `${numValue.toFixed(1)}%`;
+                        }
                       }
                       return 'Not set';
                     })()}
@@ -595,7 +609,21 @@ const TwoPagePlanView = ({ hideIssuesAndPriorities = false }) => {
                       }
                       // Then check for percentage
                       else if (blueprintData.oneYearPlan.profit_percentage || blueprintData.oneYearPlan.profit_target) {
-                        return `${Number(blueprintData.oneYearPlan.profit_percentage || blueprintData.oneYearPlan.profit_target).toFixed(1)}%`;
+                        const value = blueprintData.oneYearPlan.profit_percentage || blueprintData.oneYearPlan.profit_target;
+                        return `${Number(value).toFixed(1)}%`;
+                      }
+                      // Handle legacy profit field that might contain raw string
+                      else if (blueprintData.oneYearPlan.profit) {
+                        const profitStr = blueprintData.oneYearPlan.profit.toString();
+                        // If it's already formatted (contains $ or %), return as-is
+                        if (profitStr.includes('$') || profitStr.includes('%')) {
+                          return profitStr;
+                        }
+                        // Otherwise, assume it's a percentage
+                        const numValue = Number(profitStr);
+                        if (!isNaN(numValue)) {
+                          return `${numValue.toFixed(1)}%`;
+                        }
                       }
                       return 'Not set';
                     })()}
