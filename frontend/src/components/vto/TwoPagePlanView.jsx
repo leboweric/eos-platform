@@ -388,21 +388,23 @@ const TwoPagePlanView = ({ hideIssuesAndPriorities = false }) => {
                   <p className="text-gray-500">No differentiators defined</p>
                 )}
               </div>
-              {(blueprintData.marketingStrategy.provenProcessExists || blueprintData.marketingStrategy.provenProcess) && (
-                <div>
-                  <h4 className="font-semibold text-sm text-gray-700">Proven Process</h4>
+              <div>
+                <h4 className="font-semibold text-sm text-gray-700">Proven Process</h4>
+                {(blueprintData.marketingStrategy.provenProcessExists || blueprintData.marketingStrategy.provenProcess) ? (
                   <div className="flex items-center gap-2">
                     <span className="text-green-600">✓</span>
                     <span className="text-sm text-gray-600">
                       {blueprintData.marketingStrategy.provenProcess || 'Yes, we have a proven process'}
                     </span>
                   </div>
-                </div>
-              )}
-              {(blueprintData.marketingStrategy.guaranteeExists || blueprintData.marketingStrategy.guarantee || blueprintData.marketingStrategy.guaranteeDescription) && (
-                <div>
-                  <h4 className="font-semibold text-sm text-gray-700">Guarantee</h4>
-                  {blueprintData.marketingStrategy.guaranteeDescription || blueprintData.marketingStrategy.guarantee ? (
+                ) : (
+                  <p className="text-gray-500">Not defined</p>
+                )}
+              </div>
+              <div>
+                <h4 className="font-semibold text-sm text-gray-700">Guarantee</h4>
+                {(blueprintData.marketingStrategy.guaranteeExists || blueprintData.marketingStrategy.guarantee || blueprintData.marketingStrategy.guaranteeDescription) ? (
+                  blueprintData.marketingStrategy.guaranteeDescription || blueprintData.marketingStrategy.guarantee ? (
                     <p className="text-gray-600">
                       {blueprintData.marketingStrategy.guaranteeDescription || blueprintData.marketingStrategy.guarantee}
                     </p>
@@ -411,9 +413,11 @@ const TwoPagePlanView = ({ hideIssuesAndPriorities = false }) => {
                       <span className="text-green-600">✓</span>
                       <span className="text-sm text-gray-600">We offer a guarantee</span>
                     </div>
-                  )}
-                </div>
-              )}
+                  )
+                ) : (
+                  <p className="text-gray-500">Not defined</p>
+                )}
+              </div>
             </div>
           </CardContent>
         </Card>
@@ -451,11 +455,22 @@ const TwoPagePlanView = ({ hideIssuesAndPriorities = false }) => {
                 <div>
                   <h4 className="font-semibold text-sm text-gray-700">Revenue Target</h4>
                   <p className="text-gray-600">
-                    {(blueprintData.threeYearPicture.revenue_target || blueprintData.threeYearPicture.revenue) ? (
-                      `$${Number(blueprintData.threeYearPicture.revenue_target || blueprintData.threeYearPicture.revenue) < 1 
-                        ? `${(Number(blueprintData.threeYearPicture.revenue_target || blueprintData.threeYearPicture.revenue) * 1000).toFixed(0)}K`
-                        : `${Number(blueprintData.threeYearPicture.revenue_target || blueprintData.threeYearPicture.revenue).toFixed(1)}M`}`
-                    ) : 'Not set'}
+                    {(() => {
+                      const revenue = Number(blueprintData.threeYearPicture.revenue_target || blueprintData.threeYearPicture.revenue);
+                      if (!revenue) return 'Not set';
+                      
+                      // Format the revenue properly
+                      if (revenue >= 1000000) {
+                        // Millions
+                        return `$${(revenue / 1000000).toFixed(1)}M`;
+                      } else if (revenue >= 1000) {
+                        // Thousands
+                        return `$${(revenue / 1000).toFixed(0)}K`;
+                      } else {
+                        // Less than 1000
+                        return `$${revenue.toFixed(0)}`;
+                      }
+                    })()}
                   </p>
                 </div>
                 <div>
@@ -530,11 +545,22 @@ const TwoPagePlanView = ({ hideIssuesAndPriorities = false }) => {
                 <div>
                   <h4 className="font-semibold text-sm text-gray-700">Revenue Target</h4>
                   <p className="text-gray-600">
-                    {(blueprintData.oneYearPlan.revenue_target || blueprintData.oneYearPlan.revenue) ? (
-                      `$${Number(blueprintData.oneYearPlan.revenue_target || blueprintData.oneYearPlan.revenue) < 1 
-                        ? `${(Number(blueprintData.oneYearPlan.revenue_target || blueprintData.oneYearPlan.revenue) * 1000).toFixed(0)}K`
-                        : `${Number(blueprintData.oneYearPlan.revenue_target || blueprintData.oneYearPlan.revenue).toFixed(1)}M`}`
-                    ) : 'Not set'}
+                    {(() => {
+                      const revenue = Number(blueprintData.oneYearPlan.revenue_target || blueprintData.oneYearPlan.revenue);
+                      if (!revenue) return 'Not set';
+                      
+                      // Format the revenue properly
+                      if (revenue >= 1000000) {
+                        // Millions
+                        return `$${(revenue / 1000000).toFixed(1)}M`;
+                      } else if (revenue >= 1000) {
+                        // Thousands
+                        return `$${(revenue / 1000).toFixed(0)}K`;
+                      } else {
+                        // Less than 1000
+                        return `$${revenue.toFixed(0)}`;
+                      }
+                    })()}
                   </p>
                 </div>
                 <div>
