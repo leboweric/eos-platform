@@ -461,7 +461,7 @@ const TwoPagePlanView = ({ hideIssuesAndPriorities = false }) => {
                 <div>
                   <h4 className="font-semibold text-sm text-gray-700">Profit Target</h4>
                   <p className="text-gray-600">
-                    {blueprintData.threeYearPicture.profit || 'Not set'}
+                    {blueprintData.threeYearPicture.profit_target || blueprintData.threeYearPicture.profit || 'Not set'}
                   </p>
                 </div>
                 {(() => {
@@ -534,7 +534,7 @@ const TwoPagePlanView = ({ hideIssuesAndPriorities = false }) => {
                 <div>
                   <h4 className="font-semibold text-sm text-gray-700">Profit Target</h4>
                   <p className="text-gray-600">
-                    {blueprintData.oneYearPlan.profit || 'Not set'}
+                    {blueprintData.oneYearPlan.profit_percentage || blueprintData.oneYearPlan.profit || 'Not set'}
                   </p>
                 </div>
                 {blueprintData.oneYearPlan?.goals?.length > 0 && (
