@@ -360,8 +360,15 @@ export const createPriority = async (req, res) => {
       return res.status(400).json({ error: 'Owner ID is required' });
     }
     
-    // Convert empty string to null for date field
-    const parsedDueDate = dueDate === '' ? null : dueDate;
+    // Validate that due date is provided
+    if (!dueDate || dueDate === '') {
+      return res.status(400).json({ 
+        error: 'Due date is required for creating a priority',
+        details: 'Please select a due date for this priority'
+      });
+    }
+    
+    const parsedDueDate = dueDate;
     
     const priorityId = uuidv4();
     

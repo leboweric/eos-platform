@@ -630,23 +630,16 @@ const QuarterlyPrioritiesPageClean = () => {
         const totalCount = allMilestones.length;
         const newProgress = totalCount > 0 ? Math.round((completedCount / totalCount) * 100) : 0;
         
-        // Determine if status needs to change
-        let newStatus = currentPriority.status;
-        if (currentPriority.status === 'complete' && completedCount < totalCount) {
-          // Was complete but added an incomplete milestone
-          newStatus = 'on-track';
-        }
+        // Only update progress based on milestones, NOT status
+        // Status should be controlled manually by the user
         
-        // Update progress and possibly status on backend
+        // Update only progress on backend
         const updates = { progress: newProgress };
-        if (newStatus !== currentPriority.status) {
-          updates.status = newStatus;
-        }
         await quarterlyPrioritiesService.updatePriority(orgId, teamId, priorityId, updates);
         
-        // Update local state with new progress and status
+        // Update local state with new progress only (keep existing status)
         setCompanyPriorities(prev => prev.map(p => 
-          p.id === priorityId ? { ...p, progress: newProgress, status: newStatus } : p
+          p.id === priorityId ? { ...p, progress: newProgress } : p
         ));
         
         setTeamMemberPriorities(prev => {
@@ -654,7 +647,7 @@ const QuarterlyPrioritiesPageClean = () => {
           Object.keys(updated).forEach(memberId => {
             if (updated[memberId]?.priorities) {
               updated[memberId].priorities = updated[memberId].priorities.map(p =>
-                p.id === priorityId ? { ...p, progress: newProgress, status: newStatus } : p
+                p.id === priorityId ? { ...p, progress: newProgress } : p
               );
             }
           });
@@ -662,7 +655,7 @@ const QuarterlyPrioritiesPageClean = () => {
         });
         
         if (selectedPriority?.id === priorityId) {
-          setSelectedPriority(prev => ({ ...prev, progress: newProgress, status: newStatus }));
+          setSelectedPriority(prev => ({ ...prev, progress: newProgress }));
         }
       }
       
@@ -780,29 +773,16 @@ const QuarterlyPrioritiesPageClean = () => {
         const totalCount = remainingMilestones.length;
         const newProgress = totalCount > 0 ? Math.round((completedCount / totalCount) * 100) : 0;
         
-        // Determine status based on actual milestone completion
-        let newStatus = currentPriority.status;
-        if (totalCount > 0) {
-          // Only keep complete status if ALL remaining milestones are checked
-          if (currentPriority.status === 'complete' && completedCount < totalCount) {
-            // Was complete but now not all milestones are done
-            newStatus = 'on-track';
-          } else if (completedCount === totalCount && totalCount > 0) {
-            // All remaining milestones are complete
-            newStatus = 'complete';
-          }
-        }
+        // Only update progress based on milestones, NOT status
+        // Status should be controlled manually by the user
         
-        // Update progress and possibly status on backend
+        // Update only progress on backend
         const updates = { progress: newProgress };
-        if (newStatus !== currentPriority.status) {
-          updates.status = newStatus;
-        }
         await quarterlyPrioritiesService.updatePriority(orgId, teamId, priorityId, updates);
         
-        // Update local state with new progress and status
+        // Update local state with new progress only (keep existing status)
         setCompanyPriorities(prev => prev.map(p => 
-          p.id === priorityId ? { ...p, progress: newProgress, status: newStatus } : p
+          p.id === priorityId ? { ...p, progress: newProgress } : p
         ));
         
         setTeamMemberPriorities(prev => {
@@ -810,7 +790,7 @@ const QuarterlyPrioritiesPageClean = () => {
           Object.keys(updated).forEach(memberId => {
             if (updated[memberId]?.priorities) {
               updated[memberId].priorities = updated[memberId].priorities.map(p =>
-                p.id === priorityId ? { ...p, progress: newProgress, status: newStatus } : p
+                p.id === priorityId ? { ...p, progress: newProgress } : p
               );
             }
           });
@@ -818,7 +798,7 @@ const QuarterlyPrioritiesPageClean = () => {
         });
         
         if (selectedPriority?.id === priorityId) {
-          setSelectedPriority(prev => ({ ...prev, progress: newProgress, status: newStatus }));
+          setSelectedPriority(prev => ({ ...prev, progress: newProgress }));
         }
       }
       

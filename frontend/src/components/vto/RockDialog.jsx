@@ -33,7 +33,7 @@ const RockDialog = ({ open, onOpenChange, rock, onSave }) => {
     description: '',
     type: 'individual', // 'company' or 'individual'
     owner: '',
-    dueDate: new Date(),
+    dueDate: null,
     department: '',
     status: 'on-track'
   });
@@ -59,23 +59,34 @@ const RockDialog = ({ open, onOpenChange, rock, onSave }) => {
 
   useEffect(() => {
     if (rock) {
+      // Parse the date properly - if it's already in YYYY-MM-DD format, parse it correctly
+      let parsedDate = new Date();
+      if (rock.dueDate) {
+        // If the date is in YYYY-MM-DD format, add time to avoid timezone issues
+        if (typeof rock.dueDate === 'string' && rock.dueDate.match(/^\d{4}-\d{2}-\d{2}$/)) {
+          parsedDate = new Date(rock.dueDate + 'T12:00:00');
+        } else {
+          parsedDate = new Date(rock.dueDate);
+        }
+      }
+      
       setFormData({
         title: rock.title || '',
         description: rock.description || '',
         type: rock.type || 'individual',
         owner: rock.owner || '',
-        dueDate: rock.dueDate ? new Date(rock.dueDate) : new Date(),
+        dueDate: parsedDate,
         department: rock.department || '',
         status: rock.status || 'on-track'
       });
     } else {
-      // Reset form for new priority
+      // Reset form for new priority - no default date, user must select
       setFormData({
         title: '',
         description: '',
         type: 'individual',
         owner: '',
-        dueDate: new Date(),
+        dueDate: null,
         department: '',
         status: 'on-track'
       });
@@ -84,10 +95,24 @@ const RockDialog = ({ open, onOpenChange, rock, onSave }) => {
 
   const handleSubmit = (e) => {
     e.preventDefault();
+    
+    // Validate that due date is selected
+    if (!formData.dueDate) {
+      // Show error - you could also set a state variable to show an error message
+      alert('Please select a due date for this priority');
+      return;
+    }
+    
+    // Format date as YYYY-MM-DD to preserve the user's selected date without timezone conversion
+    const year = formData.dueDate.getFullYear();
+    const month = String(formData.dueDate.getMonth() + 1).padStart(2, '0');
+    const day = String(formData.dueDate.getDate()).padStart(2, '0');
+    const formattedDate = `${year}-${month}-${day}`;
+    
     onSave({
       ...rock,
       ...formData,
-      dueDate: formData.dueDate.toISOString()
+      dueDate: formattedDate
     });
     onOpenChange(false);
   };
@@ -321,12 +346,19 @@ const RockDialog = ({ open, onOpenChange, rock, onSave }) => {
 
             <div className="grid grid-cols-2 gap-4">
               <div className="grid gap-3">
-                <Label className="text-sm font-semibold text-slate-700">Due Date</Label>
+                <Label className="text-sm font-semibold text-slate-700">
+                  Due Date <span className="text-red-500">*</span>
+                </Label>
                 <Popover>
                   <PopoverTrigger asChild>
-                    <Button variant="outline" className="w-full justify-start text-left font-normal bg-white/80 backdrop-blur-sm border-white/20 rounded-xl shadow-sm transition-all duration-200">
+                    <Button 
+                      variant="outline" 
+                      className={`w-full justify-start text-left font-normal bg-white/80 backdrop-blur-sm border-white/20 rounded-xl shadow-sm transition-all duration-200 ${
+                        !formData.dueDate ? 'border-red-300 hover:border-red-400' : ''
+                      }`}
+                    >
                       <CalendarIcon className="mr-2 h-4 w-4" />
-                      {formData.dueDate ? format(formData.dueDate, 'PPP') : 'Select date'}
+                      {formData.dueDate ? format(formData.dueDate, 'PPP') : 'Select date (required)'}
                     </Button>
                   </PopoverTrigger>
                   <PopoverContent className="w-auto p-0 bg-white/95 backdrop-blur-sm border-white/20 rounded-xl shadow-xl" align="start">
