@@ -476,44 +476,7 @@ const TwoPagePlanView = ({ hideIssuesAndPriorities = false }) => {
                 <div>
                   <h4 className="font-semibold text-sm text-gray-700">Profit Target</h4>
                   <p className="text-gray-600">
-                    {(() => {
-                      // Check for profit_amount first (dollar value)
-                      if (blueprintData.threeYearPicture.profit_amount) {
-                        const amount = Number(blueprintData.threeYearPicture.profit_amount);
-                        if (amount >= 1000000) {
-                          return `$${(amount / 1000000).toFixed(1)}M`;
-                        } else if (amount >= 1000) {
-                          return `$${(amount / 1000).toFixed(0)}K`;
-                        } else {
-                          return `$${amount.toFixed(0)}`;
-                        }
-                      }
-                      // Then check for percentage
-                      else if (blueprintData.threeYearPicture.profit_percentage || blueprintData.threeYearPicture.profit_target) {
-                        const value = blueprintData.threeYearPicture.profit_percentage || blueprintData.threeYearPicture.profit_target;
-                        const numValue = Number(value);
-                        if (!isNaN(numValue)) {
-                          return `${numValue.toFixed(1)}%`;
-                        }
-                      }
-                      // Handle legacy profit field that might contain raw string
-                      else if (blueprintData.threeYearPicture.profit) {
-                        const profitStr = blueprintData.threeYearPicture.profit.toString();
-                        // If it's already formatted (contains $ or %), return as-is
-                        if (profitStr.includes('$') || profitStr.includes('%')) {
-                          return profitStr;
-                        }
-                        // Otherwise, try to parse as a number
-                        const numValue = Number(profitStr);
-                        if (!isNaN(numValue)) {
-                          // If it's a valid number, assume it's a percentage
-                          return `${numValue.toFixed(1)}%`;
-                        }
-                        // If we can't parse it, return the original string
-                        return profitStr || 'Not set';
-                      }
-                      return 'Not set';
-                    })()}
+                    {blueprintData.threeYearPicture.profit || 'Not set'}
                   </p>
                 </div>
                 {(() => {
@@ -601,44 +564,7 @@ const TwoPagePlanView = ({ hideIssuesAndPriorities = false }) => {
                 <div>
                   <h4 className="font-semibold text-sm text-gray-700">Profit Target</h4>
                   <p className="text-gray-600">
-                    {(() => {
-                      // Check for profit_amount first (dollar value)
-                      if (blueprintData.oneYearPlan.profit_amount) {
-                        const amount = Number(blueprintData.oneYearPlan.profit_amount);
-                        if (amount >= 1000000) {
-                          return `$${(amount / 1000000).toFixed(1)}M`;
-                        } else if (amount >= 1000) {
-                          return `$${(amount / 1000).toFixed(0)}K`;
-                        } else {
-                          return `$${amount.toFixed(0)}`;
-                        }
-                      }
-                      // Then check for percentage
-                      else if (blueprintData.oneYearPlan.profit_percentage || blueprintData.oneYearPlan.profit_target) {
-                        const value = blueprintData.oneYearPlan.profit_percentage || blueprintData.oneYearPlan.profit_target;
-                        const numValue = Number(value);
-                        if (!isNaN(numValue)) {
-                          return `${numValue.toFixed(1)}%`;
-                        }
-                      }
-                      // Handle legacy profit field that might contain raw string
-                      else if (blueprintData.oneYearPlan.profit) {
-                        const profitStr = blueprintData.oneYearPlan.profit.toString();
-                        // If it's already formatted (contains $ or %), return as-is
-                        if (profitStr.includes('$') || profitStr.includes('%')) {
-                          return profitStr;
-                        }
-                        // Otherwise, try to parse as a number
-                        const numValue = Number(profitStr);
-                        if (!isNaN(numValue)) {
-                          // If it's a valid number, assume it's a percentage
-                          return `${numValue.toFixed(1)}%`;
-                        }
-                        // If we can't parse it, return the original string
-                        return profitStr || 'Not set';
-                      }
-                      return 'Not set';
-                    })()}
+                    {blueprintData.oneYearPlan.profit || 'Not set'}
                   </p>
                 </div>
                 {blueprintData.oneYearPlan?.goals?.length > 0 && (
