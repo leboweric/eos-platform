@@ -9,6 +9,7 @@ import { Button } from '@/components/ui/button';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { 
   Clock,
   Loader2,
@@ -137,6 +138,8 @@ const QuarterlyPlanningMeetingPage = () => {
   const [meetingStartTime, setMeetingStartTime] = useState(null);
   const [elapsedTime, setElapsedTime] = useState(0);
   const [meetingRating, setMeetingRating] = useState(null);
+  const [expandedSections, setExpandedSections] = useState({ companyPriorities: false, teamPriorities: false });
+  const [reviewConfirmDialog, setReviewConfirmDialog] = useState(false);
   const [participantRatings, setParticipantRatings] = useState({}); // Store ratings by participant
   
   // Cascading message states
@@ -803,6 +806,24 @@ const QuarterlyPlanningMeetingPage = () => {
       console.error('Failed to update priority:', error);
       setError('Failed to update priority');
       setTimeout(() => setError(null), 3000);
+    }
+  };
+
+  const fetchPrioritiesData = async () => {
+    try {
+      setLoading(true);
+      setError(null);
+      const orgId = user?.organizationId || user?.organization_id;
+      const effectiveTeamId = teamId || getEffectiveTeamId(teamId, user);
+      
+      const response = await quarterlyPrioritiesService.getCurrentPriorities(orgId, effectiveTeamId);
+      setPriorities(response.data || []);
+      
+      setLoading(false);
+    } catch (error) {
+      console.error('Failed to fetch priorities:', error);
+      setError('Failed to load priorities');
+      setLoading(false);
     }
   };
 
@@ -1618,81 +1639,15 @@ const QuarterlyPlanningMeetingPage = () => {
                   </p>
                 </div>
                 
-                {/* Action Buttons */}
-                <div className="flex gap-3 justify-center">
-                  {priorities.filter(p => p.status === 'complete').length > 0 && (
+                {/* Action Button */}
+                <div className="flex justify-center">
+                  {priorities.length > 0 && (
                     <Button
-                      onClick={async () => {
-                        try {
-                          const orgId = user?.organizationId || user?.organization_id;
-                          const effectiveTeamId = teamId || getEffectiveTeamId(teamId, user);
-                          
-                          // Archive completed priorities
-                          const completedPriorities = priorities.filter(p => p.status === 'complete');
-                          for (const priority of completedPriorities) {
-                            await quarterlyPrioritiesService.archivePriority(orgId, effectiveTeamId, priority.id);
-                          }
-                          
-                          setSuccess(`${completedPriorities.length} completed priorities archived`);
-                          fetchPrioritiesData(); // Refresh the list
-                        } catch (error) {
-                          console.error('Failed to archive priorities:', error);
-                          setError('Failed to archive completed priorities');
-                        }
-                      }}
-                      variant="outline"
-                      className="text-gray-600 hover:text-gray-900"
+                      onClick={() => setReviewConfirmDialog(true)}
+                      className="bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white shadow-lg hover:shadow-xl transition-all duration-200"
                     >
-                      <Archive className="mr-2 h-4 w-4" />
-                      Archive Complete Priorities ({priorities.filter(p => p.status === 'complete').length})
-                    </Button>
-                  )}
-                  
-                  {priorities.filter(p => p.status !== 'complete').length > 0 && (
-                    <Button
-                      onClick={async () => {
-                        try {
-                          const orgId = user?.organizationId || user?.organization_id;
-                          const effectiveTeamId = teamId || getEffectiveTeamId(teamId, user);
-                          
-                          // Add incomplete priorities to issues list
-                          const incompletePriorities = priorities.filter(p => p.status !== 'complete');
-                          let issuesCreated = 0;
-                          
-                          for (const priority of incompletePriorities) {
-                            try {
-                              await issuesService.createIssue({
-                                title: `Incomplete Priority: ${priority.title || priority.name}`,
-                                description: `This priority was not completed last quarter and needs attention.\n\nOriginal Description: ${priority.description || 'No description'}\nOwner: ${priority.owner?.name || 'Unassigned'}\nStatus: ${priority.status || 'incomplete'}`,
-                                timeline: 'short_term',
-                                ownerId: priority.owner?.id || priority.owner_id || null,
-                                department_id: effectiveTeamId,
-                                status: 'open',
-                                priority_level: 'high',
-                                related_priority_id: priority.id
-                              });
-                              issuesCreated++;
-                            } catch (error) {
-                              // Skip if duplicate or other error
-                              console.log(`Could not create issue for priority: ${priority.title}`, error);
-                            }
-                          }
-                          
-                          if (issuesCreated > 0) {
-                            setSuccess(`${issuesCreated} issue(s) created from incomplete priorities`);
-                          } else {
-                            setError('Issues may already exist for these priorities');
-                          }
-                        } catch (error) {
-                          console.error('Failed to create issues:', error);
-                          setError('Failed to create issues from incomplete priorities');
-                        }
-                      }}
-                      variant="outline"
-                      className="text-gray-600 hover:text-gray-900"
-                    >
-                      <AlertTriangle className="mr-2 h-4 w-4" />
-                      Add Incomplete Priorities to Issues List ({priorities.filter(p => p.status !== 'complete').length})
+                      <CheckCircle className="mr-2 h-4 w-4" />
+                      Complete Quarter Review
                     </Button>
                   )}
                 </div>
@@ -3567,6 +3522,98 @@ const QuarterlyPlanningMeetingPage = () => {
         {/* Meeting Collaboration Bar */}
         <MeetingBar />
       </div>
+
+      {/* Review Confirmation Dialog */}
+      <Dialog open={reviewConfirmDialog} onOpenChange={setReviewConfirmDialog}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>Complete Quarter Review</DialogTitle>
+            <DialogDescription>
+              This will process all {labels?.priorities_label?.toLowerCase() || 'priorities'} from the current quarter:
+            </DialogDescription>
+          </DialogHeader>
+          
+          <div className="space-y-4 py-4">
+            <div className="p-4 bg-green-50 rounded-lg border border-green-200">
+              <div className="flex items-center gap-2 text-green-700 font-medium">
+                <CheckCircle className="h-5 w-5" />
+                <span>{priorities.filter(p => p.status === 'complete').length} Completed {labels?.priorities_label || 'Priorities'}</span>
+              </div>
+              <p className="text-sm text-green-600 mt-1">Will be archived and removed from the active list</p>
+            </div>
+            
+            <div className="p-4 bg-amber-50 rounded-lg border border-amber-200">
+              <div className="flex items-center gap-2 text-amber-700 font-medium">
+                <AlertTriangle className="h-5 w-5" />
+                <span>{priorities.filter(p => p.status !== 'complete').length} Incomplete {labels?.priorities_label || 'Priorities'}</span>
+              </div>
+              <p className="text-sm text-amber-600 mt-1">Will be archived AND converted to issues for follow-up</p>
+            </div>
+            
+            <p className="text-sm text-gray-600">
+              All {labels?.priorities_label?.toLowerCase() || 'priorities'} will be cleared from the current quarter's list to make room for new ones.
+            </p>
+          </div>
+          
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setReviewConfirmDialog(false)}>
+              Cancel
+            </Button>
+            <Button
+              onClick={async () => {
+                try {
+                  const orgId = user?.organizationId || user?.organization_id;
+                  const effectiveTeamId = teamId || getEffectiveTeamId(teamId, user);
+                  
+                  const completedPriorities = priorities.filter(p => p.status === 'complete');
+                  const incompletePriorities = priorities.filter(p => p.status !== 'complete');
+                  let issuesCreated = 0;
+                  
+                  // Convert incomplete priorities to issues first
+                  for (const priority of incompletePriorities) {
+                    try {
+                      await issuesService.createIssue({
+                        title: `Incomplete Priority: ${priority.title || priority.name}`,
+                        description: `This priority was not completed last quarter and needs attention.\n\nOriginal Description: ${priority.description || 'No description'}\nOwner: ${priority.owner?.name || 'Unassigned'}\nStatus: ${priority.status || 'incomplete'}`,
+                        timeline: 'short_term',
+                        ownerId: priority.owner?.id || priority.owner_id || null,
+                        department_id: effectiveTeamId,
+                        status: 'open',
+                        priority_level: 'high',
+                        related_priority_id: priority.id
+                      });
+                      issuesCreated++;
+                    } catch (error) {
+                      console.log(`Could not create issue for priority: ${priority.title}`, error);
+                    }
+                  }
+                  
+                  // Archive ALL priorities (both complete and incomplete)
+                  for (const priority of priorities) {
+                    await quarterlyPrioritiesService.archivePriority(orgId, effectiveTeamId, priority.id);
+                  }
+                  
+                  let successMessage = `${priorities.length} ${priorities.length === 1 ? 'priority' : 'priorities'} archived`;
+                  if (issuesCreated > 0) {
+                    successMessage += ` and ${issuesCreated} issue${issuesCreated === 1 ? '' : 's'} created`;
+                  }
+                  
+                  setSuccess(successMessage);
+                  setReviewConfirmDialog(false);
+                  fetchPrioritiesData(); // Refresh the list
+                } catch (error) {
+                  console.error('Failed to complete quarter review:', error);
+                  setError('Failed to complete quarter review');
+                  setReviewConfirmDialog(false);
+                }
+              }}
+              className="bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white"
+            >
+              Complete Review
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
