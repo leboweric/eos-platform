@@ -155,25 +155,20 @@ const OneYearPlanDialog = ({ open, onOpenChange, data, onSave, organization }) =
                         onFocus={(e) => e.target.style.borderColor = themeColors.primary}
                         onBlur={(e) => e.target.style.borderColor = ''}
                       />
-                      <div className="relative w-32">
-                        <span className="absolute left-2 top-1/2 -translate-y-1/2 text-gray-500 text-sm">$</span>
-                        <Input
-                          type="number"
-                          step="0.001"
-                          placeholder="0.635"
-                          value={stream.revenue_target}
-                          onChange={(e) => {
-                            const newStreams = [...formData.revenueStreams];
-                            newStreams[index].revenue_target = e.target.value;
-                            setFormData({ ...formData, revenueStreams: newStreams });
-                          }}
-                          className="pl-6 pr-8 bg-white/80 backdrop-blur-sm border-white/20 rounded-xl shadow-sm transition-all duration-200 "
+                      <Input
+                        type="text"
+                        placeholder="e.g., $635K"
+                        value={stream.revenue_target}
+                        onChange={(e) => {
+                          const newStreams = [...formData.revenueStreams];
+                          newStreams[index].revenue_target = e.target.value;
+                          setFormData({ ...formData, revenueStreams: newStreams });
+                        }}
+                        className="w-32 bg-white/80 backdrop-blur-sm border-white/20 rounded-xl shadow-sm transition-all duration-200 "
                         style={{ '--focus-color': themeColors.primary }}
                         onFocus={(e) => e.target.style.borderColor = themeColors.primary}
                         onBlur={(e) => e.target.style.borderColor = ''}
-                        />
-                        <span className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-500 text-sm">M</span>
-                      </div>
+                      />
                       <Button
                         type="button"
                         variant="ghost"
@@ -187,28 +182,23 @@ const OneYearPlanDialog = ({ open, onOpenChange, data, onSave, organization }) =
                       </Button>
                     </div>
                   ))}
-                  <p className="text-xs text-gray-500">Enter revenue targets in millions (e.g., 0.635 for $635K)</p>
+                  <p className="text-xs text-gray-500">Enter revenue targets in any format</p>
                 </div>
               ) : (
                 <div className="space-y-2">
-                  <Label htmlFor="revenue">{getRevenueLabelWithSuffix(organization, 'Target')} (in millions)</Label>
-                  <div className="relative">
-                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500">$</span>
-                    <Input
-                      id="revenue"
-                      type="number"
-                      step="0.001"
-                      value={formData.revenue}
-                      onChange={(e) => setFormData({ ...formData, revenue: e.target.value })}
-                      placeholder="0.635"
-                      className="pl-8 bg-white/80 backdrop-blur-sm border-white/20 rounded-xl shadow-sm transition-all duration-200 "
-                        style={{ '--focus-color': themeColors.primary }}
-                        onFocus={(e) => e.target.style.borderColor = themeColors.primary}
-                        onBlur={(e) => e.target.style.borderColor = ''}
-                    />
-                    <span className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500">M</span>
-                  </div>
-                  <p className="text-xs text-gray-500">Enter value in millions (e.g., 0.635 for $635K, 10 for $10M)</p>
+                  <Label htmlFor="revenue">{getRevenueLabelWithSuffix(organization, 'Target')}</Label>
+                  <Input
+                    id="revenue"
+                    type="text"
+                    value={formData.revenue}
+                    onChange={(e) => setFormData({ ...formData, revenue: e.target.value })}
+                    placeholder="e.g., $635K, $10M, or 2.5M"
+                    className="bg-white/80 backdrop-blur-sm border-white/20 rounded-xl shadow-sm transition-all duration-200 "
+                    style={{ '--focus-color': themeColors.primary }}
+                    onFocus={(e) => e.target.style.borderColor = themeColors.primary}
+                    onBlur={(e) => e.target.style.borderColor = ''}
+                  />
+                  <p className="text-xs text-gray-500">Enter in any format (e.g., $635K, $10M, 2.5M)</p>
                 </div>
               )}
             </div>

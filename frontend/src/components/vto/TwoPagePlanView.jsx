@@ -455,22 +455,7 @@ const TwoPagePlanView = ({ hideIssuesAndPriorities = false }) => {
                 <div>
                   <h4 className="font-semibold text-sm text-gray-700">Revenue Target</h4>
                   <p className="text-gray-600">
-                    {(() => {
-                      const revenue = Number(blueprintData.threeYearPicture.revenue_target || blueprintData.threeYearPicture.revenue);
-                      if (!revenue) return 'Not set';
-                      
-                      // Format the revenue properly
-                      if (revenue >= 1000000) {
-                        // Millions
-                        return `$${(revenue / 1000000).toFixed(1)}M`;
-                      } else if (revenue >= 1000) {
-                        // Thousands
-                        return `$${(revenue / 1000).toFixed(0)}K`;
-                      } else {
-                        // Less than 1000
-                        return `$${revenue.toFixed(0)}`;
-                      }
-                    })()}
+                    {blueprintData.threeYearPicture.revenue || blueprintData.threeYearPicture.revenue_target || 'Not set'}
                   </p>
                 </div>
                 <div>
@@ -543,22 +528,7 @@ const TwoPagePlanView = ({ hideIssuesAndPriorities = false }) => {
                 <div>
                   <h4 className="font-semibold text-sm text-gray-700">Revenue Target</h4>
                   <p className="text-gray-600">
-                    {(() => {
-                      const revenue = Number(blueprintData.oneYearPlan.revenue_target || blueprintData.oneYearPlan.revenue);
-                      if (!revenue) return 'Not set';
-                      
-                      // Format the revenue properly
-                      if (revenue >= 1000000) {
-                        // Millions
-                        return `$${(revenue / 1000000).toFixed(1)}M`;
-                      } else if (revenue >= 1000) {
-                        // Thousands
-                        return `$${(revenue / 1000).toFixed(0)}K`;
-                      } else {
-                        // Less than 1000
-                        return `$${revenue.toFixed(0)}`;
-                      }
-                    })()}
+                    {blueprintData.oneYearPlan.revenue || blueprintData.oneYearPlan.revenue_target || 'Not set'}
                   </p>
                 </div>
                 <div>
