@@ -449,7 +449,7 @@ const PriorityDialog = ({
                       />
                       <div className="flex gap-2">
                         <Select
-                          value={editingMilestone.ownerId || milestone.owner_id || priority?.owner?.id}
+                          value={editingMilestone.ownerId || milestone.owner_id || formData.ownerId || priority?.owner?.id}
                           onValueChange={(value) => setEditingMilestone({ ...editingMilestone, ownerId: value })}
                         >
                           <SelectTrigger className="flex-1 bg-white">
@@ -568,7 +568,7 @@ const PriorityDialog = ({
                   />
                   <div className="flex gap-2">
                     <Select
-                      value={newMilestone.ownerId || priority?.owner?.id}
+                      value={newMilestone.ownerId || formData.ownerId || priority?.owner?.id}
                       onValueChange={(value) => setNewMilestone({ ...newMilestone, ownerId: value })}
                     >
                       <SelectTrigger className="flex-1 bg-white">
@@ -594,10 +594,10 @@ const PriorityDialog = ({
                       size="sm"
                       onClick={() => {
                         if (onAddMilestone && newMilestone.title) {
-                          // Ensure ownerId is set - use selected value or default to Rock owner
+                          // Ensure ownerId is set - use selected value or default to form's current owner
                           const milestoneToAdd = {
                             ...newMilestone,
-                            ownerId: newMilestone.ownerId || priority?.owner?.id || ''
+                            ownerId: newMilestone.ownerId || formData.ownerId || priority?.owner?.id || ''
                           };
                           onAddMilestone(priority.id, milestoneToAdd);
                           setNewMilestone({ title: '', dueDate: '', ownerId: '' });
