@@ -1624,7 +1624,10 @@ const QuarterlyPlanningMeetingPage = () => {
                   {priorities.length > 0 && (
                     <Button
                       onClick={() => setReviewConfirmDialog(true)}
-                      className="bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white shadow-lg hover:shadow-xl transition-all duration-200"
+                      className="text-white shadow-lg hover:shadow-xl transition-all duration-200 transform hover:scale-[1.02]"
+                      style={{
+                        background: `linear-gradient(135deg, ${themeColors.primary} 0%, ${themeColors.secondary} 100%)`
+                      }}
                     >
                       <CheckCircle className="mr-2 h-4 w-4" />
                       Complete Quarter Review
@@ -3514,20 +3517,26 @@ const QuarterlyPlanningMeetingPage = () => {
           </DialogHeader>
           
           <div className="space-y-4 py-4">
-            <div className="p-4 bg-green-50 rounded-lg border border-green-200">
-              <div className="flex items-center gap-2 text-green-700 font-medium">
+            <div className="p-4 rounded-lg border" style={{
+              backgroundColor: hexToRgba(themeColors.primary, 0.05),
+              borderColor: hexToRgba(themeColors.primary, 0.2)
+            }}>
+              <div className="flex items-center gap-2 font-medium" style={{ color: themeColors.primary }}>
                 <CheckCircle className="h-5 w-5" />
                 <span>{priorities.filter(p => p.status === 'complete').length} Completed {labels?.priorities_label || 'Priorities'}</span>
               </div>
-              <p className="text-sm text-green-600 mt-1">Will be archived and removed from the active list</p>
+              <p className="text-sm mt-1" style={{ color: hexToRgba(themeColors.primary, 0.8) }}>Will be archived and removed from the active list</p>
             </div>
             
-            <div className="p-4 bg-amber-50 rounded-lg border border-amber-200">
-              <div className="flex items-center gap-2 text-amber-700 font-medium">
+            <div className="p-4 rounded-lg border" style={{
+              backgroundColor: hexToRgba(themeColors.secondary, 0.05),
+              borderColor: hexToRgba(themeColors.secondary, 0.2)
+            }}>
+              <div className="flex items-center gap-2 font-medium" style={{ color: themeColors.secondary }}>
                 <AlertTriangle className="h-5 w-5" />
                 <span>{priorities.filter(p => p.status !== 'complete').length} Incomplete {labels?.priorities_label || 'Priorities'}</span>
               </div>
-              <p className="text-sm text-amber-600 mt-1">Will be archived AND converted to issues for follow-up</p>
+              <p className="text-sm mt-1" style={{ color: hexToRgba(themeColors.secondary, 0.8) }}>Will be archived AND converted to issues for follow-up</p>
             </div>
             
             <p className="text-sm text-gray-600">
@@ -3587,7 +3596,10 @@ const QuarterlyPlanningMeetingPage = () => {
                   setReviewConfirmDialog(false);
                 }
               }}
-              className="bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white"
+              className="text-white shadow-md hover:shadow-lg transition-all duration-200"
+              style={{
+                background: `linear-gradient(135deg, ${themeColors.primary} 0%, ${themeColors.secondary} 100%)`
+              }}
             >
               Complete Review
             </Button>
