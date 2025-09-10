@@ -665,25 +665,8 @@ export const updateThreeYearPicture = async (req, res) => {
     const { orgId, teamId } = req.params;
     let { revenue, profit, measurables, lookLikeItems, futureDate, revenueStreams } = req.body;
     
-    // Parse revenue - handle formatted strings like "$550M" or "550K"
-    if (revenue && typeof revenue === 'string') {
-      // Remove currency symbols and spaces
-      let cleanRevenue = revenue.replace(/[$,\s]/g, '');
-      
-      // Check for M (millions) or K (thousands) suffix
-      if (cleanRevenue.toUpperCase().endsWith('M')) {
-        revenue = parseFloat(cleanRevenue.slice(0, -1));
-      } else if (cleanRevenue.toUpperCase().endsWith('K')) {
-        revenue = parseFloat(cleanRevenue.slice(0, -1)) / 1000; // Convert K to millions
-      } else {
-        revenue = parseFloat(cleanRevenue);
-      }
-    } else {
-      revenue = revenue ? parseFloat(revenue) : null;
-    }
-    
-    // Convert profit to number if it's a string
-    profit = profit ? parseFloat(profit) : null;
+    // Keep revenue and profit as freeform text - users can enter any format they prefer
+    // This allows $25M, 25%, $25,000,000 or any other format
     
     // Validate futureDate
     if (!futureDate) {
@@ -808,25 +791,8 @@ export const updateOneYearPlan = async (req, res) => {
     console.log('Backend - Goals type:', typeof goals);
     console.log('Backend - Goals is array:', Array.isArray(goals));
     
-    // Parse revenue - handle formatted strings like "$550M" or "550K"
-    if (revenue && typeof revenue === 'string') {
-      // Remove currency symbols and spaces
-      let cleanRevenue = revenue.replace(/[$,\s]/g, '');
-      
-      // Check for M (millions) or K (thousands) suffix
-      if (cleanRevenue.toUpperCase().endsWith('M')) {
-        revenue = parseFloat(cleanRevenue.slice(0, -1));
-      } else if (cleanRevenue.toUpperCase().endsWith('K')) {
-        revenue = parseFloat(cleanRevenue.slice(0, -1)) / 1000; // Convert K to millions
-      } else {
-        revenue = parseFloat(cleanRevenue);
-      }
-    } else {
-      revenue = revenue ? parseFloat(revenue) : null;
-    }
-    
-    // Convert profit to number if it's a string
-    profit = profit ? parseFloat(profit) : null;
+    // Keep revenue and profit as freeform text - users can enter any format they prefer
+    // This allows $25M, 25%, $25,000,000 or any other format
     
     // Validate targetDate
     if (!targetDate) {
@@ -856,7 +822,7 @@ export const updateOneYearPlan = async (req, res) => {
       // Update
       planResult = await query(
         `UPDATE one_year_plans 
-         SET revenue_target = $1, profit_percentage = $2, future_date = $3, updated_at = NOW()
+         SET revenue = $1, profit = $2, future_date = $3, updated_at = NOW()
          WHERE vto_id = $4
          RETURNING *`,
         [revenue, profit, targetDate, vtoId]
