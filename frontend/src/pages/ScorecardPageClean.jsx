@@ -524,7 +524,7 @@ const ScorecardPageClean = () => {
       <div className="max-w-full mx-auto p-6 space-y-6">
         {/* Enhanced Header */}
         <div className="mb-8">
-          <div className="flex items-center justify-between mb-6">
+          <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4 mb-6">
             <div>
               <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full text-sm font-medium mb-4"
                    style={{
@@ -534,12 +534,12 @@ const ScorecardPageClean = () => {
                 <Activity className="h-4 w-4" />
                 PERFORMANCE TRACKING
               </div>
-              <h1 className="text-4xl font-bold mb-2 bg-gradient-to-r from-slate-900 via-slate-800 to-slate-900 bg-clip-text text-transparent">
+              <h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold mb-2 bg-gradient-to-r from-slate-900 via-slate-800 to-slate-900 bg-clip-text text-transparent">
                 {selectedDepartment?.name || ''} Scorecard
               </h1>
-              <p className="text-lg text-slate-600">Track your key metrics and measurables</p>
+              <p className="text-base sm:text-lg text-slate-600">Track your key metrics and measurables</p>
             </div>
-            <div className="flex items-center gap-3">
+            <div className="flex flex-wrap items-center gap-2 sm:gap-3">
               <div className="relative">
                 <Button 
                   onClick={() => setShowOptions(!showOptions)}
@@ -547,7 +547,8 @@ const ScorecardPageClean = () => {
                   className="bg-white/80 backdrop-blur-sm border-white/20 hover:bg-white/90 shadow-sm transition-all duration-200"
                 >
                   <Filter className="h-4 w-4 mr-2" />
-                  View Options
+                  <span className="hidden sm:inline">View Options</span>
+                  <span className="sm:hidden">Options</span>
                   <ChevronDown className="h-4 w-4 ml-2" />
                 </Button>
                 {showOptions && (
@@ -609,7 +610,8 @@ const ScorecardPageClean = () => {
                   }}
                 >
                   <Plus className="mr-2 h-4 w-4" />
-                  Add Metric
+                  <span className="hidden sm:inline">Add Metric</span>
+                  <span className="sm:hidden">Add</span>
                 </Button>
               </div>
             </div>

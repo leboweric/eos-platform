@@ -340,6 +340,24 @@ class MeetingSocketService {
         console.log('👑 Presenter changed in meeting:', meetingCode, 'new presenter:', userId);
       });
       
+      // Handle participant rating submission
+      socket.on('submit-rating', (data) => {
+        const userData = userSocketMap.get(socket.id);
+        
+        if (!userData) return;
+        
+        const { meetingCode } = userData;
+        
+        // Broadcast rating to all participants
+        socket.to(meetingCode).emit('participant-rating', {
+          userId: data.userId,
+          userName: data.userName,
+          rating: data.rating
+        });
+        
+        console.log('⭐ Broadcasting rating from:', data.userName, 'Rating:', data.rating, 'to meeting:', meetingCode);
+      });
+      
       // Handle disconnect
       socket.on('disconnect', () => {
         this.handleUserDisconnect(socket);

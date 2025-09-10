@@ -2396,7 +2396,7 @@ const QuarterlyPrioritiesPageClean = () => {
       <div className="max-w-7xl mx-auto px-8 py-8 space-y-8">
         {/* Enhanced Header */}
         <div className="bg-white/80 backdrop-blur-sm rounded-2xl p-6 shadow-sm border border-white/50">
-          <div className="flex items-center justify-between">
+          <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
             <div>
               <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full text-sm font-medium mb-4"
                    style={{
@@ -2406,7 +2406,7 @@ const QuarterlyPrioritiesPageClean = () => {
                 <Sparkles className="h-4 w-4" />
                 QUARTERLY EXECUTION
               </div>
-              <h1 className="text-4xl font-bold bg-gradient-to-r from-slate-900 via-blue-900 to-indigo-900 bg-clip-text text-transparent">
+              <h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold bg-gradient-to-r from-slate-900 via-blue-900 to-indigo-900 bg-clip-text text-transparent">
                 {selectedDepartment.name} {labels.priorities_label}
               </h1>
               {showArchived && (
@@ -2415,7 +2415,7 @@ const QuarterlyPrioritiesPageClean = () => {
                 </p>
               )}
             </div>
-            <div className="flex items-center gap-3">
+            <div className="flex flex-wrap items-center gap-2 sm:gap-3">
               {!showArchived && (
                 <>
                   <Button 

@@ -337,7 +337,7 @@ const TodosPage = () => {
       <div className="max-w-6xl mx-auto px-8 py-8">
         {/* Enhanced Header */}
         <div className="mb-8">
-          <div className="flex items-center justify-between mb-6">
+          <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4 mb-6">
             <div>
               <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full text-sm font-medium mb-4"
                    style={{
@@ -347,12 +347,12 @@ const TodosPage = () => {
                 <Activity className="h-4 w-4" />
                 TASK MANAGEMENT
               </div>
-              <h1 className="text-4xl font-bold mb-2 bg-gradient-to-r from-slate-900 via-slate-800 to-slate-900 bg-clip-text text-transparent">
+              <h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold mb-2 bg-gradient-to-r from-slate-900 via-slate-800 to-slate-900 bg-clip-text text-transparent">
                 {labels.todos_label}{selectedDepartment ? ` - ${selectedDepartment.name}` : ''}
               </h1>
-              <p className="text-lg text-slate-600">Manage and track your action items</p>
+              <p className="text-base sm:text-lg text-slate-600">Manage and track your action items</p>
             </div>
-            <div className="flex items-center gap-3">
+            <div className="flex flex-wrap items-center gap-2 sm:gap-3">
             {selectedTodoIds.length > 0 && (
               <Button 
                 onClick={handleMarkComplete}
@@ -362,7 +362,8 @@ const TodosPage = () => {
                 onMouseLeave={(e) => e.currentTarget.style.color = ''}
               >
                 <CheckSquare className="mr-2 h-4 w-4" />
-                Mark Done ({selectedTodoIds.length})
+                <span className="hidden sm:inline">Mark Done</span>
+                <span className="sm:hidden">Done</span> ({selectedTodoIds.length})
               </Button>
             )}
             <Button
@@ -377,7 +378,8 @@ const TodosPage = () => {
               className="bg-white/80 backdrop-blur-sm border-white/20 hover:bg-white/90 shadow-sm transition-all duration-200"
             >
               <Download className="mr-2 h-4 w-4" />
-              Export to Excel
+              <span className="hidden sm:inline">Export to Excel</span>
+              <span className="sm:hidden">Export</span>
             </Button>
             <Button 
               onClick={handleCreateTodo} 
@@ -393,7 +395,8 @@ const TodosPage = () => {
               }}
             >
               <Plus className="mr-2 h-4 w-4" />
-              New {labels.todos_label.slice(0, -1)}
+              <span className="hidden sm:inline">New {labels.todos_label.slice(0, -1)}</span>
+              <span className="sm:hidden">Add</span>
             </Button>
             </div>
           </div>
@@ -415,7 +418,7 @@ const TodosPage = () => {
 
         {/* Enhanced Filters Bar */}
         <div className="bg-white/80 backdrop-blur-sm rounded-2xl p-6 shadow-sm border border-white/50 mb-6">
-          <div className="flex items-center justify-between">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
             <div className="bg-white/80 backdrop-blur-sm rounded-2xl p-2 inline-flex shadow-sm">
               <Tabs value={activeTab} onValueChange={setActiveTab} className="border-0">
                 <TabsList className="bg-transparent border-0 p-0 h-auto gap-1">

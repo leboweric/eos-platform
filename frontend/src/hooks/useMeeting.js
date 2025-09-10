@@ -246,6 +246,15 @@ const useMeeting = () => {
       window.dispatchEvent(presenterEvent);
     });
     
+    // Handle participant ratings
+    newSocket.on('participant-rating', (data) => {
+      console.log('⭐ Received participant rating:', data);
+      const ratingEvent = new CustomEvent('meeting-rating-update', { 
+        detail: data 
+      });
+      window.dispatchEvent(ratingEvent);
+    });
+    
     // Handle errors
     newSocket.on('error', (data) => {
       console.error('❌ Meeting error:', data.message);
@@ -430,6 +439,18 @@ const useMeeting = () => {
     socket.emit('update-notes', notesData);
   }, [socket, meetingCode]);
   
+  // Broadcast rating
+  const broadcastRating = useCallback((ratingData) => {
+    if (!socket || !meetingCode) return;
+    
+    console.log('⭐ Broadcasting rating:', ratingData);
+    socket.emit('submit-rating', {
+      userId: ratingData.userId,
+      userName: ratingData.userName,
+      rating: ratingData.rating
+    });
+  }, [socket, meetingCode]);
+  
   // Claim presenter role
   const claimPresenter = useCallback(() => {
     if (!socket || !meetingCode) return;
@@ -465,6 +486,7 @@ const useMeeting = () => {
     broadcastIssueUpdate,
     broadcastTodoUpdate,
     broadcastIssueListUpdate,
+    broadcastRating,
     syncTimer,
     updateNotes,
     claimPresenter

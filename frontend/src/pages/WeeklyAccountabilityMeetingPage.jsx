@@ -136,6 +136,7 @@ const WeeklyAccountabilityMeetingPage = () => {
     broadcastIssueUpdate,
     broadcastTodoUpdate,
     broadcastIssueListUpdate,
+    broadcastRating,
     syncTimer,
     updateNotes,
     claimPresenter,
@@ -2093,6 +2094,27 @@ const WeeklyAccountabilityMeetingPage = () => {
       setSuccess(`${presenterName} is now presenting`);
     };
     
+    const handleRatingUpdate = (event) => {
+      const { userId, userName, rating } = event.detail;
+      console.log('⭐ Received rating from:', userName, 'Rating:', rating);
+      
+      // Validate the rating is a valid number between 1 and 10
+      const validRating = parseInt(rating);
+      if (isNaN(validRating) || validRating < 1 || validRating > 10) {
+        console.error('Invalid rating received:', rating);
+        return;
+      }
+      
+      setParticipantRatings(prev => ({
+        ...prev,
+        [userId]: {
+          userId,
+          userName,
+          rating: validRating
+        }
+      }));
+    };
+    
     window.addEventListener('meeting-vote-update', handleVoteUpdate);
     window.addEventListener('meeting-issue-update', handleIssueUpdate);
     window.addEventListener('meeting-todo-update', handleTodoUpdate);
@@ -2100,6 +2122,7 @@ const WeeklyAccountabilityMeetingPage = () => {
     window.addEventListener('meeting-timer-update', handleTimerUpdate);
     window.addEventListener('meeting-notes-update', handleNotesUpdate);
     window.addEventListener('meeting-presenter-changed', handlePresenterChange);
+    window.addEventListener('meeting-rating-update', handleRatingUpdate);
     
     return () => {
       window.removeEventListener('meeting-vote-update', handleVoteUpdate);
@@ -2109,6 +2132,7 @@ const WeeklyAccountabilityMeetingPage = () => {
       window.removeEventListener('meeting-timer-update', handleTimerUpdate);
       window.removeEventListener('meeting-notes-update', handleNotesUpdate);
       window.removeEventListener('meeting-presenter-changed', handlePresenterChange);
+      window.removeEventListener('meeting-rating-update', handleRatingUpdate);
     };
   }, [user?.id]);
 
@@ -3337,14 +3361,23 @@ const WeeklyAccountabilityMeetingPage = () => {
                               {isCurrentUser ? (
                                 <Select value={rating?.rating?.toString() || ''} onValueChange={(value) => {
                                   const ratingValue = parseInt(value);
+                                  const ratingData = {
+                                    userId: user.id,
+                                    userName: participant.name,
+                                    rating: ratingValue
+                                  };
+                                  
+                                  // Update local state
                                   setParticipantRatings(prev => ({
                                     ...prev,
-                                    [user.id]: {
-                                      userId: user.id,
-                                      userName: participant.name,
-                                      rating: ratingValue
-                                    }
+                                    [user.id]: ratingData
                                   }));
+                                  
+                                  // Broadcast to other participants
+                                  if (broadcastRating) {
+                                    broadcastRating(ratingData);
+                                  }
+                                  
                                   // Also set the old meetingRating for backwards compatibility
                                   setMeetingRating(ratingValue);
                                 }}>
@@ -3370,16 +3403,49 @@ const WeeklyAccountabilityMeetingPage = () => {
                       </div>
                       
                       {/* Calculate and show average if there are ratings */}
-                      {Object.keys(participantRatings).length > 0 && (
-                        <div className="border-t pt-2 mt-2">
-                          <div className="flex items-center justify-between text-sm font-medium">
-                            <span className="text-gray-700">Average Rating:</span>
-                            <span className="text-lg" style={{ color: themeColors.primary }}>
-                              {(Object.values(participantRatings).reduce((sum, r) => sum + r.rating, 0) / Object.values(participantRatings).length).toFixed(1)}
-                            </span>
+                      {Object.keys(participantRatings).length > 0 && (() => {
+                        // Filter out any invalid ratings and calculate average
+                        const validRatings = Object.values(participantRatings).filter(r => r && typeof r.rating === 'number' && r.rating > 0);
+                        const ratingsCount = validRatings.length;
+                        
+                        if (ratingsCount === 0) return null;
+                        
+                        const sum = validRatings.reduce((total, r) => total + r.rating, 0);
+                        const average = (sum / ratingsCount).toFixed(1);
+                        
+                        return (
+                          <div className="border-t pt-3 mt-3">
+                            <div className="flex items-center justify-between">
+                              <div>
+                                <span className="text-sm font-medium text-gray-700">Average Rating:</span>
+                                <span className="text-xs text-gray-500 ml-2">({ratingsCount} of {participants.length} rated)</span>
+                              </div>
+                              <span className="text-xl font-bold" style={{ color: themeColors.primary }}>
+                                {average}
+                              </span>
+                            </div>
+                            {/* Visual indicator of rating quality */}
+                            <div className="mt-2">
+                              <div className="w-full bg-gray-200 rounded-full h-2">
+                                <div 
+                                  className="h-2 rounded-full transition-all duration-500"
+                                  style={{ 
+                                    width: `${(parseFloat(average) / 10) * 100}%`,
+                                    backgroundColor: parseFloat(average) >= 8 ? '#10B981' : 
+                                                     parseFloat(average) >= 6 ? themeColors.primary : 
+                                                     '#EF4444'
+                                  }}
+                                />
+                              </div>
+                              <div className="flex justify-between text-xs text-gray-500 mt-1">
+                                <span>1</span>
+                                <span>5</span>
+                                <span>10</span>
+                              </div>
+                            </div>
                           </div>
-                        </div>
-                      )}
+                        );
+                      })()}
                     </div>
                   ) : (
                     /* Fallback for single user (not in a meeting) */
