@@ -116,25 +116,29 @@ const ThreeYearPictureDialog = ({ open, onOpenChange, data, onSave, organization
       const profitValue = formData.profit?.toString().trim();
       
       if (profitValue) {
-        // Remove common formatting characters and spaces
-        const cleanValue = profitValue.replace(/[$,\s]/g, '');
+        // First check what the user explicitly indicated
+        const hasPercentSign = profitValue.includes('%');
+        const hasDollarSign = profitValue.includes('$');
         
-        if (profitValue.includes('%')) {
-          // It's a percentage - store as profit_percentage
-          const percentValue = parseFloat(cleanValue.replace('%', ''));
+        // Remove common formatting characters and spaces for parsing
+        const cleanValue = profitValue.replace(/[$,\s%]/g, '');
+        
+        if (hasPercentSign) {
+          // User explicitly indicated percentage with %
+          const percentValue = parseFloat(cleanValue);
           if (!isNaN(percentValue)) {
             profitData.profit_percentage = percentValue;
             profitData.profit_amount = null;
-            profitData.profit = `${percentValue}%`; // Store clean format
+            profitData.profit = `${percentValue}%`;
           }
-        } else if (profitValue.includes('$')) {
-          // Explicitly marked as dollar amount
-          // Extract the numeric part before M/K suffix
+        } else if (hasDollarSign) {
+          // User explicitly indicated dollar amount with $
+          // Extract the numeric part, handling M/K suffixes
           let baseValue = cleanValue.replace(/[mMkK]/g, '');
           let amount = parseFloat(baseValue);
           
           if (!isNaN(amount)) {
-            // Check for M or K suffix
+            // Check for M or K suffix in original value
             if (profitValue.toLowerCase().includes('m')) {
               amount = amount * 1000000;
             } else if (profitValue.toLowerCase().includes('k')) {
@@ -153,17 +157,30 @@ const ThreeYearPictureDialog = ({ open, onOpenChange, data, onSave, organization
             }
           }
         } else {
-          // No $ or % - try to determine intent
+          // No explicit $ or % sign
+          // For plain numbers, default to dollar amount unless it's clearly a percentage (< 100)
           let amount = parseFloat(cleanValue);
           
           if (!isNaN(amount)) {
-            // If the number is less than 100 and no explicit $ sign, assume it's meant as percentage
-            if (amount < 100) {
+            if (amount <= 100 && amount.toString().includes('.')) {
+              // Decimal number <= 100, likely a percentage (e.g., 15.5)
+              profitData.profit_percentage = amount;
+              profitData.profit_amount = null;
+              profitData.profit = `${amount}%`;
+            } else if (amount < 100 && !profitValue.toLowerCase().includes('k') && !profitValue.toLowerCase().includes('m')) {
+              // Small whole number < 100 without K or M, likely a percentage
               profitData.profit_percentage = amount;
               profitData.profit_amount = null;
               profitData.profit = `${amount}%`;
             } else {
-              // Large number without $ - treat as dollar amount
+              // Treat as dollar amount
+              // Check for M or K suffix in original value
+              if (profitValue.toLowerCase().includes('m')) {
+                amount = amount * 1000000;
+              } else if (profitValue.toLowerCase().includes('k')) {
+                amount = amount * 1000;
+              }
+              
               profitData.profit_amount = amount;
               profitData.profit_percentage = null;
               // Store formatted version
