@@ -73,8 +73,8 @@ const ThreeYearPictureDialog = ({ open, onOpenChange, data, onSave, organization
       }
       
       setFormData({
-        revenue: data.revenue || '',
-        profit: data.profit || '',
+        revenue: data.revenue_target || data.revenue || '',
+        profit: data.profit_target || data.profit || '',
         revenueStreams: data.revenueStreams && data.revenueStreams.length > 0 
           ? data.revenueStreams.map(s => ({ name: s.name || '', revenue_target: s.revenue_target || '' }))
           : [],

@@ -331,16 +331,12 @@ const BusinessBlueprintPage = () => {
         },
         threeYearPicture: data.threeYearPicture ? {
           ...data.threeYearPicture,
-          revenue: data.threeYearPicture.revenue_target || '',
-          profit: data.threeYearPicture.profit_target || '',
           lookLikeItems: data.threeYearPicture.what_does_it_look_like ? 
             JSON.parse(data.threeYearPicture.what_does_it_look_like) : [],
           completions: data.threeYearPicture.what_does_it_look_like_completions || {}
         } : null,
         oneYearPlan: data.oneYearPlan ? {
           ...data.oneYearPlan,
-          revenue: data.oneYearPlan.revenue_target || '',
-          profit: data.oneYearPlan.profit_percentage || '',
           goals: data.oneYearPlan.goals && Array.isArray(data.oneYearPlan.goals) ? 
             data.oneYearPlan.goals : []
         } : null,
@@ -534,8 +530,6 @@ const BusinessBlueprintPage = () => {
       // Transform the saved data to match frontend structure
       const transformedData = savedData ? {
         ...savedData,
-        revenue: savedData.revenue_target || '',
-        profit: savedData.profit_target || '',
         lookLikeItems: savedData.what_does_it_look_like ? 
           JSON.parse(savedData.what_does_it_look_like) : [],
         completions: savedData.what_does_it_look_like_completions || {}
@@ -1520,7 +1514,7 @@ const BusinessBlueprintPage = () => {
                     )}
                     
                     {/* Financial Goals */}
-                    {(blueprintData.threeYearPicture.revenue || blueprintData.threeYearPicture.profit || 
+                    {(blueprintData.threeYearPicture.revenue_target || blueprintData.threeYearPicture.profit_target || 
                       (blueprintData.threeYearPicture.revenueStreams && blueprintData.threeYearPicture.revenueStreams.length > 0)) && (
                       <div className="p-4 bg-gray-50 border border-gray-200 rounded-lg hover:shadow-md transition-shadow">
                         <div className="flex items-start">
@@ -1545,24 +1539,22 @@ const BusinessBlueprintPage = () => {
                                   {/* Total calculation removed - can't sum freeform text values */}
                                 </div>
                               </div>
-                            ) : blueprintData.threeYearPicture.revenue ? (
+                            ) : blueprintData.threeYearPicture.revenue_target ? (
                               <div>
                                 <p className="text-sm font-medium text-gray-700">
                                   {getRevenueLabelWithSuffix(organization, 'Target')}
                                 </p>
                                 <p className="text-lg font-semibold text-gray-900">
-                                  ${Number(blueprintData.threeYearPicture.revenue) < 1 
-                                    ? `${(Number(blueprintData.threeYearPicture.revenue) * 1000).toFixed(0)}K`
-                                    : `${Number(blueprintData.threeYearPicture.revenue).toFixed(1)}M`}
+                                  {blueprintData.threeYearPicture.revenue_target}
                                 </p>
                               </div>
                             ) : null}
                             
-                            {blueprintData.threeYearPicture.profit && (
+                            {blueprintData.threeYearPicture.profit_target && (
                               <div>
                                 <p className="text-sm font-medium text-gray-700">Profit Target</p>
                                 <p className="text-lg font-semibold text-gray-900">
-                                  {blueprintData.threeYearPicture.profit}%
+                                  {blueprintData.threeYearPicture.profit_target}
                                 </p>
                               </div>
                             )}
@@ -1697,7 +1689,7 @@ const BusinessBlueprintPage = () => {
                   )}
                   
                   {/* Financial Goals */}
-                  {(blueprintData.oneYearPlan.revenue || blueprintData.oneYearPlan.profit || 
+                  {(blueprintData.oneYearPlan.revenue_target || blueprintData.oneYearPlan.profit_percentage || 
                     (blueprintData.oneYearPlan.revenueStreams && blueprintData.oneYearPlan.revenueStreams.length > 0)) && (
                     <div className="p-4 bg-white/60 backdrop-blur-sm border border-white/30 rounded-xl hover:shadow-lg hover:scale-[1.01] transition-all duration-200">
                       <div className="flex items-start">
@@ -1724,24 +1716,22 @@ const BusinessBlueprintPage = () => {
                                 {/* Total calculation removed - can't sum freeform text values */}
                               </div>
                             </div>
-                          ) : blueprintData.oneYearPlan.revenue ? (
+                          ) : blueprintData.oneYearPlan.revenue_target ? (
                             <div>
                               <p className="text-sm font-medium text-gray-700">
                                 {getRevenueLabelWithSuffix(organization, 'Target')}
                               </p>
                               <p className="text-lg font-semibold text-gray-900">
-                                ${Number(blueprintData.oneYearPlan.revenue) < 1 
-                                  ? `${(Number(blueprintData.oneYearPlan.revenue) * 1000).toFixed(0)}K`
-                                  : `${Number(blueprintData.oneYearPlan.revenue).toFixed(1)}M`}
+                                {blueprintData.oneYearPlan.revenue_target}
                               </p>
                             </div>
                           ) : null}
                           
-                          {blueprintData.oneYearPlan.profit && (
+                          {blueprintData.oneYearPlan.profit_percentage && (
                             <div>
                               <p className="text-sm font-medium text-gray-700">Profit Target</p>
                               <p className="text-lg font-semibold text-gray-900">
-                                {blueprintData.oneYearPlan.profit}%
+                                {blueprintData.oneYearPlan.profit_percentage}
                               </p>
                             </div>
                           )}
