@@ -2115,6 +2115,16 @@ const WeeklyAccountabilityMeetingPage = () => {
       }));
     };
     
+    const handleSectionChangeFromLeader = (event) => {
+      const { section } = event.detail;
+      console.log('📍 Received section change from leader:', section);
+      
+      // Only follow if not the leader
+      if (!isLeader) {
+        setActiveSection(section);
+      }
+    };
+    
     window.addEventListener('meeting-vote-update', handleVoteUpdate);
     window.addEventListener('meeting-issue-update', handleIssueUpdate);
     window.addEventListener('meeting-todo-update', handleTodoUpdate);
@@ -2123,6 +2133,7 @@ const WeeklyAccountabilityMeetingPage = () => {
     window.addEventListener('meeting-notes-update', handleNotesUpdate);
     window.addEventListener('meeting-presenter-changed', handlePresenterChange);
     window.addEventListener('meeting-rating-update', handleRatingUpdate);
+    window.addEventListener('meeting-section-change', handleSectionChangeFromLeader);
     
     return () => {
       window.removeEventListener('meeting-vote-update', handleVoteUpdate);
@@ -2133,8 +2144,9 @@ const WeeklyAccountabilityMeetingPage = () => {
       window.removeEventListener('meeting-notes-update', handleNotesUpdate);
       window.removeEventListener('meeting-presenter-changed', handlePresenterChange);
       window.removeEventListener('meeting-rating-update', handleRatingUpdate);
+      window.removeEventListener('meeting-section-change', handleSectionChangeFromLeader);
     };
-  }, [user?.id]);
+  }, [user?.id, isLeader]);
 
   const getNextSection = () => {
     const currentIndex = agendaItems.findIndex(item => item.id === activeSection);
@@ -2150,6 +2162,17 @@ const WeeklyAccountabilityMeetingPage = () => {
       return agendaItems[currentIndex - 1].id;
     }
     return null;
+  };
+  
+  // Handle section changes (called when tabs are clicked)
+  const handleSectionChange = (newSection) => {
+    console.log('📍 Section changed to:', newSection);
+    setActiveSection(newSection);
+    
+    // If leader, broadcast the section change to followers
+    if (isLeader && navigateToSection) {
+      navigateToSection(newSection);
+    }
   };
 
   const renderContent = () => {
