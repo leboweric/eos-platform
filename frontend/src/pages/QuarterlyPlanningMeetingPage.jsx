@@ -42,7 +42,6 @@ import PriorityDialog from '../components/priorities/PriorityDialog';
 import IssuesListClean from '../components/issues/IssuesListClean';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
@@ -138,7 +137,6 @@ const QuarterlyPlanningMeetingPage = () => {
   const [meetingStartTime, setMeetingStartTime] = useState(null);
   const [elapsedTime, setElapsedTime] = useState(0);
   const [meetingRating, setMeetingRating] = useState(null);
-  const [expandedSections, setExpandedSections] = useState({ companyPriorities: false, teamPriorities: false });
   const [reviewConfirmDialog, setReviewConfirmDialog] = useState(false);
   const [participantRatings, setParticipantRatings] = useState({}); // Store ratings by participant
   
@@ -806,24 +804,6 @@ const QuarterlyPlanningMeetingPage = () => {
       console.error('Failed to update priority:', error);
       setError('Failed to update priority');
       setTimeout(() => setError(null), 3000);
-    }
-  };
-
-  const fetchPrioritiesData = async () => {
-    try {
-      setLoading(true);
-      setError(null);
-      const orgId = user?.organizationId || user?.organization_id;
-      const effectiveTeamId = teamId || getEffectiveTeamId(teamId, user);
-      
-      const response = await quarterlyPrioritiesService.getCurrentPriorities(orgId, effectiveTeamId);
-      setPriorities(response.data || []);
-      
-      setLoading(false);
-    } catch (error) {
-      console.error('Failed to fetch priorities:', error);
-      setError('Failed to load priorities');
-      setLoading(false);
     }
   };
 
