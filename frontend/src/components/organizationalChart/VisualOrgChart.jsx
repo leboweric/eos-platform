@@ -371,17 +371,12 @@ const OrgNode = ({ position, isExpanded, onToggle, expandedNodes, toggleNode, on
           <div className="space-y-2">
             <h4 className="text-sm font-medium text-gray-600">Roles and Responsibilities</h4>
             <ul className="text-sm text-gray-700 space-y-1">
-              {position.responsibilities.slice(0, 5).map((resp, idx) => (
+              {position.responsibilities.map((resp, idx) => (
                 <li key={idx} className="flex items-start">
                   <span className="mr-2">•</span>
                   <span>{resp.responsibility}</span>
                 </li>
               ))}
-              {position.responsibilities.length > 5 && (
-                <li className="text-gray-400 italic">
-                  +{position.responsibilities.length - 5} more...
-                </li>
-              )}
             </ul>
           </div>
         )}

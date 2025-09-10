@@ -21,11 +21,12 @@ import {
   CheckCircle
 } from 'lucide-react';
 
-const AddPositionDialog = ({ open, onClose, onCreate, parentPosition, skills }) => {
+const AddPositionDialog = ({ open, onClose, onCreate, parentPosition, skills, teamMembers = [] }) => {
   const [formData, setFormData] = useState({
     title: '',
     positionType: 'individual_contributor',
-    responsibilities: []
+    responsibilities: [],
+    holderId: ''
   });
   const [newResponsibility, setNewResponsibility] = useState('');
   const [loading, setLoading] = useState(false);
@@ -41,8 +42,8 @@ const AddPositionDialog = ({ open, onClose, onCreate, parentPosition, skills }) 
     
     if (formData.responsibilities.length < 1) {
       errors.responsibilities = 'Please add at least 1 role/responsibility';
-    } else if (formData.responsibilities.length > 7) {
-      errors.responsibilities = 'Maximum 7 roles/responsibilities allowed';
+    } else if (formData.responsibilities.length > 8) {
+      errors.responsibilities = 'Maximum 8 roles/responsibilities allowed';
     }
     
     setValidationErrors(errors);
@@ -112,7 +113,7 @@ const AddPositionDialog = ({ open, onClose, onCreate, parentPosition, skills }) 
   const getResponsibilityCountColor = () => {
     const count = formData.responsibilities.length;
     if (count < 1) return 'text-red-600';
-    if (count > 7) return 'text-orange-600';
+    if (count > 8) return 'text-orange-600';
     return 'text-green-600';
   };
 
@@ -172,12 +173,33 @@ const AddPositionDialog = ({ open, onClose, onCreate, parentPosition, skills }) 
             </div>
 
             <div className="grid gap-2">
+              <Label htmlFor="owner">Seat Owner (Optional)</Label>
+              <Select
+                value={formData.holderId}
+                onValueChange={(value) => setFormData({ ...formData, holderId: value })}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Select a team member..." />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="">Unassigned</SelectItem>
+                  {teamMembers.map((member) => (
+                    <SelectItem key={member.id} value={member.id}>
+                      {member.first_name} {member.last_name}
+                      {member.email && ` (${member.email})`}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div className="grid gap-2">
               <div className="flex items-center justify-between">
                 <Label>
                   Roles & Responsibilities <span className="text-red-500">*</span>
                 </Label>
                 <span className={`text-sm font-medium ${getResponsibilityCountColor()}`}>
-                  {formData.responsibilities.length}/7 
+                  {formData.responsibilities.length}/8 
                   {formData.responsibilities.length < 1 && ' (min 1 required)'}
                 </span>
               </div>
@@ -187,7 +209,7 @@ const AddPositionDialog = ({ open, onClose, onCreate, parentPosition, skills }) 
                 <div className="flex items-start">
                   <AlertCircle className="h-4 w-4 text-blue-600 mt-0.5 mr-2 flex-shrink-0" />
                   <div className="text-blue-800">
-                    Each seat must have <strong>1-7 clear accountabilities</strong>. These are the key roles and responsibilities that this seat owns.
+                    Each seat must have <strong>1-8 clear accountabilities</strong>. These are the key roles and responsibilities that this seat owns.
                   </div>
                 </div>
               </div>
@@ -216,7 +238,7 @@ const AddPositionDialog = ({ open, onClose, onCreate, parentPosition, skills }) 
               )}
 
               {/* Add new responsibility */}
-              {formData.responsibilities.length < 7 && (
+              {formData.responsibilities.length < 8 && (
                 <div className="flex space-x-2">
                   <Input
                     placeholder="Enter a role or responsibility..."
@@ -246,7 +268,7 @@ const AddPositionDialog = ({ open, onClose, onCreate, parentPosition, skills }) 
 
               {/* Progress indicator */}
               <div className="flex items-center space-x-2 mt-2">
-                {[1, 2, 3, 4, 5, 6, 7].map((num) => (
+                {[1, 2, 3, 4, 5, 6, 7, 8].map((num) => (
                   <div
                     key={num}
                     className={`h-2 flex-1 rounded-full transition-colors ${

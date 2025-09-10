@@ -403,7 +403,7 @@ const AccountabilityChart = () => {
                 </div>
               ))}
             </div>
-            {responsibilities.length < 7 && (
+            {responsibilities.length < 8 && (
               <div className="flex items-center space-x-2">
                 <Input
                   placeholder="Add a responsibility..."

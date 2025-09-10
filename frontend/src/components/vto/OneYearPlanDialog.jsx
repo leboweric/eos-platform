@@ -79,9 +79,46 @@ const OneYearPlanDialog = ({ open, onOpenChange, data, onSave, organization }) =
     setError(null);
     
     try {
-      console.log('OneYearPlanDialog - Saving formData:', formData);
-      console.log('OneYearPlanDialog - Goals being saved:', formData.goals);
-      await onSave(formData);
+      // Parse the profit value to determine if it's percentage or dollar amount
+      let profitData = { ...formData };
+      const profitValue = formData.profit?.toString().trim();
+      
+      if (profitValue) {
+        // Remove common formatting characters
+        const cleanValue = profitValue.replace(/[$,]/g, '');
+        
+        if (profitValue.includes('%')) {
+          // It's a percentage - store as profit_percentage
+          profitData.profit_percentage = parseFloat(cleanValue.replace('%', ''));
+          profitData.profit_amount = null;
+        } else {
+          // It's a dollar amount
+          let amount = parseFloat(cleanValue);
+          
+          // Check for M or K suffix
+          if (profitValue.toLowerCase().includes('m')) {
+            amount = amount * 1000000;
+          } else if (profitValue.toLowerCase().includes('k')) {
+            amount = amount * 1000;
+          }
+          
+          // If the number is less than 100 and no % sign, assume it's meant as percentage
+          if (amount < 100 && !profitValue.includes('$')) {
+            profitData.profit_percentage = amount;
+            profitData.profit_amount = null;
+          } else {
+            profitData.profit_amount = amount;
+            profitData.profit_percentage = null;
+          }
+        }
+        
+        // Keep original for display
+        profitData.profit = profitValue;
+      }
+      
+      console.log('OneYearPlanDialog - Saving formData:', profitData);
+      console.log('OneYearPlanDialog - Goals being saved:', profitData.goals);
+      await onSave(profitData);
       onOpenChange(false);
     } catch (error) {
       setError(error.message || 'Failed to save Annual Goals');
@@ -213,25 +250,23 @@ const OneYearPlanDialog = ({ open, onOpenChange, data, onSave, organization }) =
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="profit">Profit Target (%)</Label>
-              <div className="relative">
-                <Input
-                  id="profit"
-                  type="number"
-                  step="0.1"
-                  min="0"
-                  max="100"
-                  value={formData.profit}
-                  onChange={(e) => setFormData({ ...formData, profit: e.target.value })}
-                  placeholder="20"
-                  className="pr-8 bg-white/80 backdrop-blur-sm border-white/20 rounded-xl shadow-sm transition-all duration-200 "
-                        style={{ '--focus-color': themeColors.primary }}
-                        onFocus={(e) => e.target.style.borderColor = themeColors.primary}
-                        onBlur={(e) => e.target.style.borderColor = ''}
-                />
-                <span className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500">%</span>
-              </div>
-              <p className="text-xs text-gray-500">Enter profit margin as a percentage</p>
+              <Label htmlFor="profit">Profit Target</Label>
+              <Input
+                id="profit"
+                type="text"
+                value={formData.profit}
+                onChange={(e) => {
+                  const value = e.target.value;
+                  // Allow user to type freely - we'll parse on save
+                  setFormData({ ...formData, profit: value });
+                }}
+                placeholder="e.g., 15% or $1,500,000"
+                className="bg-white/80 backdrop-blur-sm border-white/20 rounded-xl shadow-sm transition-all duration-200"
+                style={{ '--focus-color': themeColors.primary }}
+                onFocus={(e) => e.target.style.borderColor = themeColors.primary}
+                onBlur={(e) => e.target.style.borderColor = ''}
+              />
+              <p className="text-xs text-gray-500">Enter as percentage (15%) or dollar amount ($1.5M)</p>
             </div>
 
             <div className="space-y-2">

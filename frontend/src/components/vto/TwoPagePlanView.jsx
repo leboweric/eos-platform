@@ -476,9 +476,24 @@ const TwoPagePlanView = ({ hideIssuesAndPriorities = false }) => {
                 <div>
                   <h4 className="font-semibold text-sm text-gray-700">Profit Target</h4>
                   <p className="text-gray-600">
-                    {(blueprintData.threeYearPicture.profit_percentage || blueprintData.threeYearPicture.profit_target || blueprintData.threeYearPicture.profit) ? 
-                      `${Number(blueprintData.threeYearPicture.profit_percentage || blueprintData.threeYearPicture.profit_target || blueprintData.threeYearPicture.profit).toFixed(2)}%`
-                      : 'Not set'}
+                    {(() => {
+                      // Check for profit_amount first (dollar value)
+                      if (blueprintData.threeYearPicture.profit_amount) {
+                        const amount = Number(blueprintData.threeYearPicture.profit_amount);
+                        if (amount >= 1000000) {
+                          return `$${(amount / 1000000).toFixed(1)}M`;
+                        } else if (amount >= 1000) {
+                          return `$${(amount / 1000).toFixed(0)}K`;
+                        } else {
+                          return `$${amount.toFixed(0)}`;
+                        }
+                      }
+                      // Then check for percentage
+                      else if (blueprintData.threeYearPicture.profit_percentage || blueprintData.threeYearPicture.profit_target || blueprintData.threeYearPicture.profit) {
+                        return `${Number(blueprintData.threeYearPicture.profit_percentage || blueprintData.threeYearPicture.profit_target || blueprintData.threeYearPicture.profit).toFixed(1)}%`;
+                      }
+                      return 'Not set';
+                    })()}
                   </p>
                 </div>
                 {(() => {
@@ -566,9 +581,24 @@ const TwoPagePlanView = ({ hideIssuesAndPriorities = false }) => {
                 <div>
                   <h4 className="font-semibold text-sm text-gray-700">Profit Target</h4>
                   <p className="text-gray-600">
-                    {(blueprintData.oneYearPlan.profit_percentage || blueprintData.oneYearPlan.profit_target) ? (
-                      `${Number(blueprintData.oneYearPlan.profit_percentage || blueprintData.oneYearPlan.profit_target).toFixed(2)}%`
-                    ) : 'Not set'}
+                    {(() => {
+                      // Check for profit_amount first (dollar value)
+                      if (blueprintData.oneYearPlan.profit_amount) {
+                        const amount = Number(blueprintData.oneYearPlan.profit_amount);
+                        if (amount >= 1000000) {
+                          return `$${(amount / 1000000).toFixed(1)}M`;
+                        } else if (amount >= 1000) {
+                          return `$${(amount / 1000).toFixed(0)}K`;
+                        } else {
+                          return `$${amount.toFixed(0)}`;
+                        }
+                      }
+                      // Then check for percentage
+                      else if (blueprintData.oneYearPlan.profit_percentage || blueprintData.oneYearPlan.profit_target) {
+                        return `${Number(blueprintData.oneYearPlan.profit_percentage || blueprintData.oneYearPlan.profit_target).toFixed(1)}%`;
+                      }
+                      return 'Not set';
+                    })()}
                   </p>
                 </div>
                 {blueprintData.oneYearPlan?.goals?.length > 0 && (
@@ -592,6 +622,18 @@ const TwoPagePlanView = ({ hideIssuesAndPriorities = false }) => {
                           </li>
                         );
                       })}
+                    </ul>
+                  </div>
+                )}
+                {blueprintData.oneYearPlan?.measurables?.length > 0 && (
+                  <div>
+                    <h4 className="font-semibold text-sm text-gray-700">Key Measurables</h4>
+                    <ul className="list-disc pl-5 text-gray-600 space-y-1">
+                      {(blueprintData.oneYearPlan.measurables || []).map((m, index) => (
+                        <li key={m.id || index}>
+                          {typeof m === 'string' ? m : `${m.name || m.metric_name || ''}: ${m.value || m.target_value || ''}`}
+                        </li>
+                      ))}
                     </ul>
                   </div>
                 )}
