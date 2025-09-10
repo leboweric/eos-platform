@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
+import RichTextEditor from '@/components/ui/RichTextEditor';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -309,13 +310,11 @@ const PriorityDialog = ({
 
                 <div>
                   <Label htmlFor="description">Description</Label>
-                  <Textarea
-                    id="description"
+                  <RichTextEditor
                     value={formData.description}
-                    onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+                    onChange={(content) => setFormData({ ...formData, description: content })}
                     placeholder="Enter description (optional)"
-                    rows={3}
-                    className="mt-1 bg-transparent dark:bg-gray-700/50"
+                    className="mt-1"
                   />
                 </div>
 

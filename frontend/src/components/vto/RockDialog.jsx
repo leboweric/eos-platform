@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
+import RichTextEditor from '@/components/ui/RichTextEditor';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Calendar } from '@/components/ui/calendar';
@@ -233,16 +234,11 @@ const RockDialog = ({ open, onOpenChange, rock, onSave }) => {
                   Get AI Help
                 </Button>
               </div>
-              <Textarea
-                id="description"
+              <RichTextEditor
                 value={formData.description}
-                onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+                onChange={(content) => setFormData({ ...formData, description: content })}
                 placeholder="Describe what success looks like for this Priority..."
-                rows={3}
-                className="bg-white/80 backdrop-blur-sm border-white/20 rounded-xl shadow-sm transition-all duration-200"
-                style={{ '--focus-color': themeColors.primary }}
-                onFocus={(e) => e.target.style.borderColor = themeColors.primary}
-                onBlur={(e) => e.target.style.borderColor = ''}
+                className="bg-white/80 backdrop-blur-sm border-white/20 rounded-xl shadow-sm"
               />
             </div>
 
