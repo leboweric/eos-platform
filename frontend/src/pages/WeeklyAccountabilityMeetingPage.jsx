@@ -3575,19 +3575,26 @@ const WeeklyAccountabilityMeetingPage = () => {
                         </div>
                       </div>
                       
-                      {/* Participant names tooltip */}
-                      <div className="absolute top-full mt-2 left-0 bg-white rounded-lg shadow-lg border border-gray-200 p-3 opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none z-50 min-w-[200px]">
-                        <div className="text-xs font-semibold text-gray-700 mb-2">Participants:</div>
-                        <div className="space-y-1">
-                          {participants.map((participant, idx) => (
-                            <div key={idx} className="flex items-center gap-2 text-sm text-gray-600">
-                              <div className="w-2 h-2 rounded-full" style={{ backgroundColor: themeColors.primary }} />
-                              <span>{participant.name || 'Unknown'}</span>
-                              {participant.id === currentLeader && (
-                                <span className="text-xs font-medium" style={{ color: themeColors.primary }}>(Presenter)</span>
-                              )}
+                      {/* Participant names tooltip - positioned to avoid going off-screen */}
+                      <div className="absolute top-full mt-2 right-0 lg:left-0 lg:right-auto bg-white rounded-lg shadow-xl border border-gray-200 opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none z-[100] min-w-[200px] max-w-[300px]">
+                        <div className="p-3">
+                          <div className="text-xs font-semibold text-gray-700 mb-2">Participants:</div>
+                          <div className="space-y-1 max-h-[300px] overflow-y-auto pr-2">
+                            {participants.map((participant, idx) => (
+                              <div key={idx} className="flex items-center gap-2 text-sm text-gray-600">
+                                <div className="w-2 h-2 rounded-full flex-shrink-0" style={{ backgroundColor: themeColors.primary }} />
+                                <span className="truncate flex-1">{participant.name || 'Unknown'}</span>
+                                {participant.id === currentLeader && (
+                                  <span className="text-xs font-medium flex-shrink-0" style={{ color: themeColors.primary }}>(Presenter)</span>
+                                )}
+                              </div>
+                            ))}
+                          </div>
+                          {participants.length > 10 && (
+                            <div className="text-xs text-gray-500 mt-2 pt-2 border-t border-gray-200">
+                              Scroll to see all participants
                             </div>
-                          ))}
+                          )}
                         </div>
                       </div>
                     </div>
