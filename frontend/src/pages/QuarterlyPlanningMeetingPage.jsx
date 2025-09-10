@@ -3523,7 +3523,7 @@ const QuarterlyPlanningMeetingPage = () => {
             }}>
               <div className="flex items-center gap-2 font-medium" style={{ color: themeColors.primary }}>
                 <CheckCircle className="h-5 w-5" />
-                <span>{priorities.filter(p => p.status === 'complete').length} Completed {labels?.priorities_label || 'Priorities'}</span>
+                <span>{priorities.filter(p => p.status === 'complete' || p.status === 'completed' || p.progress === 100).length} Completed {labels?.priorities_label || 'Priorities'}</span>
               </div>
               <p className="text-sm mt-1" style={{ color: hexToRgba(themeColors.primary, 0.8) }}>Will be archived and removed from the active list</p>
             </div>
@@ -3534,7 +3534,7 @@ const QuarterlyPlanningMeetingPage = () => {
             }}>
               <div className="flex items-center gap-2 font-medium" style={{ color: themeColors.secondary }}>
                 <AlertTriangle className="h-5 w-5" />
-                <span>{priorities.filter(p => p.status !== 'complete').length} Incomplete {labels?.priorities_label || 'Priorities'}</span>
+                <span>{priorities.filter(p => !(p.status === 'complete' || p.status === 'completed' || p.progress === 100)).length} Incomplete {labels?.priorities_label || 'Priorities'}</span>
               </div>
               <p className="text-sm mt-1" style={{ color: hexToRgba(themeColors.secondary, 0.8) }}>Will be archived AND converted to issues for follow-up</p>
             </div>
@@ -3554,8 +3554,8 @@ const QuarterlyPlanningMeetingPage = () => {
                   const orgId = user?.organizationId || user?.organization_id;
                   const effectiveTeamId = teamId || getEffectiveTeamId(teamId, user);
                   
-                  const completedPriorities = priorities.filter(p => p.status === 'complete');
-                  const incompletePriorities = priorities.filter(p => p.status !== 'complete');
+                  const completedPriorities = priorities.filter(p => p.status === 'complete' || p.status === 'completed' || p.progress === 100);
+                  const incompletePriorities = priorities.filter(p => !(p.status === 'complete' || p.status === 'completed' || p.progress === 100));
                   let issuesCreated = 0;
                   
                   // Convert incomplete priorities to issues first
