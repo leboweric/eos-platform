@@ -491,7 +491,10 @@ const TwoPagePlanView = ({ hideIssuesAndPriorities = false }) => {
                       // Then check for percentage
                       else if (blueprintData.threeYearPicture.profit_percentage || blueprintData.threeYearPicture.profit_target) {
                         const value = blueprintData.threeYearPicture.profit_percentage || blueprintData.threeYearPicture.profit_target;
-                        return `${Number(value).toFixed(1)}%`;
+                        const numValue = Number(value);
+                        if (!isNaN(numValue)) {
+                          return `${numValue.toFixed(1)}%`;
+                        }
                       }
                       // Handle legacy profit field that might contain raw string
                       else if (blueprintData.threeYearPicture.profit) {
@@ -500,11 +503,14 @@ const TwoPagePlanView = ({ hideIssuesAndPriorities = false }) => {
                         if (profitStr.includes('$') || profitStr.includes('%')) {
                           return profitStr;
                         }
-                        // Otherwise, assume it's a percentage
+                        // Otherwise, try to parse as a number
                         const numValue = Number(profitStr);
                         if (!isNaN(numValue)) {
+                          // If it's a valid number, assume it's a percentage
                           return `${numValue.toFixed(1)}%`;
                         }
+                        // If we can't parse it, return the original string
+                        return profitStr || 'Not set';
                       }
                       return 'Not set';
                     })()}
@@ -610,7 +616,10 @@ const TwoPagePlanView = ({ hideIssuesAndPriorities = false }) => {
                       // Then check for percentage
                       else if (blueprintData.oneYearPlan.profit_percentage || blueprintData.oneYearPlan.profit_target) {
                         const value = blueprintData.oneYearPlan.profit_percentage || blueprintData.oneYearPlan.profit_target;
-                        return `${Number(value).toFixed(1)}%`;
+                        const numValue = Number(value);
+                        if (!isNaN(numValue)) {
+                          return `${numValue.toFixed(1)}%`;
+                        }
                       }
                       // Handle legacy profit field that might contain raw string
                       else if (blueprintData.oneYearPlan.profit) {
@@ -619,11 +628,14 @@ const TwoPagePlanView = ({ hideIssuesAndPriorities = false }) => {
                         if (profitStr.includes('$') || profitStr.includes('%')) {
                           return profitStr;
                         }
-                        // Otherwise, assume it's a percentage
+                        // Otherwise, try to parse as a number
                         const numValue = Number(profitStr);
                         if (!isNaN(numValue)) {
+                          // If it's a valid number, assume it's a percentage
                           return `${numValue.toFixed(1)}%`;
                         }
+                        // If we can't parse it, return the original string
+                        return profitStr || 'Not set';
                       }
                       return 'Not set';
                     })()}
