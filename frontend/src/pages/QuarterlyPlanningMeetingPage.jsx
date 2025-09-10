@@ -1581,10 +1581,10 @@ const QuarterlyPlanningMeetingPage = () => {
                     {priorities.length > 0 && (
                       <div className="text-center bg-white/50 rounded-xl px-4 py-2 border border-white/30">
                         <span className="text-3xl font-bold bg-gradient-to-r from-slate-900 to-slate-700 bg-clip-text text-transparent">
-                          {Math.round((priorities.filter(p => p.status === 'complete' || p.status === 'completed' || p.progress === 100).length / priorities.length) * 100)}%
+                          {Math.round((priorities.filter(p => p.status === 'complete').length / priorities.length) * 100)}%
                         </span>
                         <p className="text-sm text-slate-600 font-medium">
-                          {priorities.filter(p => p.status === 'complete' || p.status === 'completed' || p.progress === 100).length} of {priorities.length} complete
+                          {priorities.filter(p => p.status === 'complete').length} of {priorities.length} complete
                         </p>
                       </div>
                     )}
@@ -3523,7 +3523,7 @@ const QuarterlyPlanningMeetingPage = () => {
             }}>
               <div className="flex items-center gap-2 font-medium" style={{ color: themeColors.primary }}>
                 <CheckCircle className="h-5 w-5" />
-                <span>{priorities.filter(p => p.status === 'complete' || p.status === 'completed' || p.progress === 100).length} Completed {labels?.priorities_label || 'Priorities'}</span>
+                <span>{priorities.filter(p => p.status === 'complete').length} Completed {labels?.priorities_label || 'Priorities'}</span>
               </div>
               <p className="text-sm mt-1" style={{ color: hexToRgba(themeColors.primary, 0.8) }}>Will be archived and removed from the active list</p>
             </div>
@@ -3534,7 +3534,7 @@ const QuarterlyPlanningMeetingPage = () => {
             }}>
               <div className="flex items-center gap-2 font-medium" style={{ color: themeColors.secondary }}>
                 <AlertTriangle className="h-5 w-5" />
-                <span>{priorities.filter(p => !(p.status === 'complete' || p.status === 'completed' || p.progress === 100)).length} Incomplete {labels?.priorities_label || 'Priorities'}</span>
+                <span>{priorities.filter(p => p.status !== 'complete').length} Incomplete {labels?.priorities_label || 'Priorities'}</span>
               </div>
               <p className="text-sm mt-1" style={{ color: hexToRgba(themeColors.secondary, 0.8) }}>Will be archived AND converted to issues for follow-up</p>
             </div>
@@ -3554,8 +3554,8 @@ const QuarterlyPlanningMeetingPage = () => {
                   const orgId = user?.organizationId || user?.organization_id;
                   const effectiveTeamId = teamId || getEffectiveTeamId(teamId, user);
                   
-                  const completedPriorities = priorities.filter(p => p.status === 'complete' || p.status === 'completed' || p.progress === 100);
-                  const incompletePriorities = priorities.filter(p => !(p.status === 'complete' || p.status === 'completed' || p.progress === 100));
+                  const completedPriorities = priorities.filter(p => p.status === 'complete');
+                  const incompletePriorities = priorities.filter(p => p.status !== 'complete');
                   let issuesCreated = 0;
                   
                   // Convert incomplete priorities to issues first
