@@ -464,6 +464,18 @@ const TwoPagePlanView = ({ hideIssuesAndPriorities = false }) => {
                     {blueprintData.threeYearPicture.profit_target || blueprintData.threeYearPicture.profit || 'Not set'}
                   </p>
                 </div>
+                {blueprintData.threeYearPicture?.measurables?.length > 0 && (
+                  <div>
+                    <h4 className="font-semibold text-sm text-gray-700">Key Measurables</h4>
+                    <ul className="list-disc pl-5 text-gray-600 space-y-1">
+                      {(blueprintData.threeYearPicture.measurables || []).map((m, index) => (
+                        <li key={m.id || index}>
+                          {typeof m === 'string' ? m : `${m.name || m.metric_name || ''}: ${m.value || m.target_value || ''}`}
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
                 {(() => {
                   const lookLikeData = blueprintData.threeYearPicture?.lookLikeItems || 
                     (blueprintData.threeYearPicture?.what_does_it_look_like && 
@@ -495,18 +507,6 @@ const TwoPagePlanView = ({ hideIssuesAndPriorities = false }) => {
                     </div>
                   );
                 })()}
-                {blueprintData.threeYearPicture?.measurables?.length > 0 && (
-                  <div>
-                    <h4 className="font-semibold text-sm text-gray-700">Key Measurables</h4>
-                    <ul className="list-disc pl-5 text-gray-600 space-y-1">
-                      {(blueprintData.threeYearPicture.measurables || []).map((m, index) => (
-                        <li key={m.id || index}>
-                          {typeof m === 'string' ? m : `${m.name || m.metric_name || ''}: ${m.value || m.target_value || ''}`}
-                        </li>
-                      ))}
-                    </ul>
-                  </div>
-                )}
               </div>
             ) : (
               <p className="text-gray-500">Not defined yet</p>
@@ -537,6 +537,18 @@ const TwoPagePlanView = ({ hideIssuesAndPriorities = false }) => {
                     {blueprintData.oneYearPlan.profit_percentage || blueprintData.oneYearPlan.profit || 'Not set'}
                   </p>
                 </div>
+                {blueprintData.oneYearPlan?.measurables?.length > 0 && (
+                  <div>
+                    <h4 className="font-semibold text-sm text-gray-700">Key Measurables</h4>
+                    <ul className="list-disc pl-5 text-gray-600 space-y-1">
+                      {(blueprintData.oneYearPlan.measurables || []).map((m, index) => (
+                        <li key={m.id || index}>
+                          {typeof m === 'string' ? m : `${m.name || m.metric_name || ''}: ${m.value || m.target_value || ''}`}
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
                 {blueprintData.oneYearPlan?.goals?.length > 0 && (
                   <div>
                     <h4 className="font-semibold text-sm text-gray-700">Goals</h4>
@@ -558,18 +570,6 @@ const TwoPagePlanView = ({ hideIssuesAndPriorities = false }) => {
                           </li>
                         );
                       })}
-                    </ul>
-                  </div>
-                )}
-                {blueprintData.oneYearPlan?.measurables?.length > 0 && (
-                  <div>
-                    <h4 className="font-semibold text-sm text-gray-700">Key Measurables</h4>
-                    <ul className="list-disc pl-5 text-gray-600 space-y-1">
-                      {(blueprintData.oneYearPlan.measurables || []).map((m, index) => (
-                        <li key={m.id || index}>
-                          {typeof m === 'string' ? m : `${m.name || m.metric_name || ''}: ${m.value || m.target_value || ''}`}
-                        </li>
-                      ))}
                     </ul>
                   </div>
                 )}
