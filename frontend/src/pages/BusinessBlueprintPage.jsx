@@ -1558,33 +1558,23 @@ const BusinessBlueprintPage = () => {
                                 </p>
                               </div>
                             )}
-                          </div>
-                        </div>
-                      </div>
-                    )}
-                    
-                    {/* Key Measurables */}
-                    {blueprintData.threeYearPicture.measurables && blueprintData.threeYearPicture.measurables.length > 0 && (
-                      <div className="space-y-2">
-                        <div className="flex items-center mb-2">
-                          <BarChart3 className="h-5 w-5 mr-2" style={{ color: themeColors.primary }} />
-                          <h4 className="font-semibold text-gray-900">Key Measurables</h4>
-                        </div>
-                        {blueprintData.threeYearPicture.measurables.map((measurable, index) => (
-                          <div key={index} className="p-3 bg-gray-50 border border-gray-200 rounded-lg hover:shadow-md transition-shadow">
-                            <div className="flex items-start">
-                              <CheckCircle2 className="h-4 w-4 mr-2 mt-0.5 flex-shrink-0" style={{ color: themeColors.accent }} />
-                              <div className="flex-1">
-                                <p className="font-medium text-gray-900">{measurable.name}</p>
-                                {measurable.target_value && (
-                                  <p className="text-sm text-gray-600 mt-0.5">
-                                    Target: <span className="font-semibold">{measurable.target_value}</span>
-                                  </p>
-                                )}
+                            
+                            {/* Key Measurables */}
+                            {blueprintData.threeYearPicture.measurables && blueprintData.threeYearPicture.measurables.length > 0 && (
+                              <div className="mt-3">
+                                <p className="text-sm font-medium text-gray-700 mb-2">Key Measurables</p>
+                                {blueprintData.threeYearPicture.measurables.map((measurable, index) => (
+                                  <div key={index} className="ml-2 mb-1">
+                                    <span className="text-sm text-gray-600">• {measurable.name}:</span>
+                                    <span className="text-sm font-semibold text-gray-900 ml-2">
+                                      {measurable.target_value || 'Not set'}
+                                    </span>
+                                  </div>
+                                ))}
                               </div>
-                            </div>
+                            )}
                           </div>
-                        ))}
+                        </div>
                       </div>
                     )}
                     
@@ -1735,33 +1725,23 @@ const BusinessBlueprintPage = () => {
                               </p>
                             </div>
                           )}
-                        </div>
-                      </div>
-                    </div>
-                  )}
-                  
-                  {/* Key Measurables */}
-                  {blueprintData.oneYearPlan.measurables && blueprintData.oneYearPlan.measurables.length > 0 && (
-                    <div className="space-y-2">
-                      <div className="flex items-center mb-2">
-                        <BarChart3 className="h-5 w-5 mr-2" style={{ color: themeColors.primary }} />
-                        <h4 className="font-semibold text-gray-900">Key Measurables</h4>
-                      </div>
-                      {blueprintData.oneYearPlan.measurables.map((measurable, index) => (
-                        <div key={index} className="p-3 bg-gray-50 border border-gray-200 rounded-lg hover:shadow-md transition-shadow">
-                          <div className="flex items-start">
-                            <CheckCircle2 className="h-4 w-4 text-green-600 mr-2 mt-0.5 flex-shrink-0" />
-                            <div className="flex-1">
-                              <p className="font-medium text-gray-900">{measurable.name}</p>
-                              {measurable.target_value && (
-                                <p className="text-sm text-gray-600 mt-0.5">
-                                  Target: <span className="font-semibold">{measurable.target_value}</span>
-                                </p>
-                              )}
+                          
+                          {/* Key Measurables */}
+                          {blueprintData.oneYearPlan.measurables && blueprintData.oneYearPlan.measurables.length > 0 && (
+                            <div className="mt-3">
+                              <p className="text-sm font-medium text-gray-700 mb-2">Key Measurables</p>
+                              {blueprintData.oneYearPlan.measurables.map((measurable, index) => (
+                                <div key={index} className="ml-2 mb-1">
+                                  <span className="text-sm text-gray-600">• {measurable.name}:</span>
+                                  <span className="text-sm font-semibold text-gray-900 ml-2">
+                                    {measurable.target_value || 'Not set'}
+                                  </span>
+                                </div>
+                              ))}
                             </div>
-                          </div>
+                          )}
                         </div>
-                      ))}
+                      </div>
                     </div>
                   )}
                   
