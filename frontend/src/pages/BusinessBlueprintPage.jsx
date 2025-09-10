@@ -1536,24 +1536,13 @@ const BusinessBlueprintPage = () => {
                                   <div key={index} className="ml-2 mb-1">
                                     <span className="text-sm text-gray-600">{stream.name}:</span>
                                     <span className="text-sm font-semibold text-gray-900 ml-2">
-                                      ${Number(stream.revenue_target) < 1 
-                                        ? `${(Number(stream.revenue_target) * 1000).toFixed(0)}K`
-                                        : `${Number(stream.revenue_target).toFixed(1)}M`}
+                                      {stream.revenue_target || 'Not set'}
                                     </span>
                                   </div>
                                 ))}
                                 <div className="mt-2 pt-2 border-t border-gray-200">
                                   <span className="text-sm font-medium text-gray-700">Total Revenue:</span>
-                                  <span className="text-lg font-semibold text-gray-900 ml-2">
-                                    ${(() => {
-                                      const total = blueprintData.threeYearPicture.revenueStreams.reduce((sum, stream) => 
-                                        sum + (Number(stream.revenue_target) || 0), 0
-                                      );
-                                      return total < 1 
-                                        ? `${(total * 1000).toFixed(0)}K`
-                                        : `${total.toFixed(1)}M`;
-                                    })()}
-                                  </span>
+                                  {/* Total calculation removed - can't sum freeform text values */}
                                 </div>
                               </div>
                             ) : blueprintData.threeYearPicture.revenue ? (
@@ -1730,18 +1719,9 @@ const BusinessBlueprintPage = () => {
                                   </span>
                                 </div>
                               ))}
-                              <div className="mt-2 pt-2 border-t border-gray-200">
-                                <span className="text-sm font-medium text-gray-700">Total Revenue:</span>
-                                <span className="text-lg font-semibold text-gray-900 ml-2">
-                                  ${(() => {
-                                    const total = blueprintData.oneYearPlan.revenueStreams.reduce((sum, stream) => 
-                                      sum + (Number(stream.revenue_target) || 0), 0
-                                    );
-                                    return total < 1 
-                                      ? `${(total * 1000).toFixed(0)}K`
-                                      : `${total.toFixed(1)}M`;
-                                  })()}
-                                </span>
+                              {/* Total section removed - can't sum freeform text values */}
+                              <div className="mt-2 pt-2 border-t border-gray-200 hidden">
+                                {/* Total calculation removed - can't sum freeform text values */}
                               </div>
                             </div>
                           ) : blueprintData.oneYearPlan.revenue ? (
