@@ -176,37 +176,26 @@ const PriorityDialog = ({
     setError(null);
     
     try {
-      // Calculate current progress and status from milestones
+      // Calculate current progress from milestones (but NOT status - keep them decoupled)
       let currentProgress = formData.progress;
-      let currentStatus = formData.status;
       
       if (priority?.milestones && priority.milestones.length > 0) {
         const completedCount = priority.milestones.filter(m => m.completed).length;
         const totalCount = priority.milestones.length;
         currentProgress = Math.round((completedCount / totalCount) * 100);
         
-        // Auto-determine status based on milestone completion
-        if (completedCount === totalCount && totalCount > 0) {
-          currentStatus = 'complete';
-        } else if (formData.status === 'complete') {
-          // Don't keep complete status if not all milestones are done
-          currentStatus = 'on-track';
-        }
-        
         console.log('Calculated progress from milestones:', {
           completedCount,
           totalCount,
           currentProgress,
-          oldProgress: formData.progress,
-          currentStatus,
-          oldStatus: formData.status
+          oldProgress: formData.progress
         });
       }
       
       const priorityData = {
         ...formData,
         progress: currentProgress, // Use calculated progress
-        status: currentStatus, // Use calculated status
+        status: formData.status, // Use user-selected status (NOT calculated)
         owner_id: formData.ownerId,
         due_date: formData.dueDate
       };
@@ -336,15 +325,7 @@ const PriorityDialog = ({
                     <Select 
                       value={formData.status} 
                       onValueChange={(value) => {
-                        // Don't allow setting to complete unless all milestones are done
-                        if (value === 'complete') {
-                          const completedMilestones = priority?.milestones?.filter(m => m.completed).length || 0;
-                          const totalMilestones = priority?.milestones?.length || 0;
-                          if (totalMilestones > 0 && completedMilestones < totalMilestones) {
-                            alert(`Cannot mark as done. Only ${completedMilestones} of ${totalMilestones} milestones are complete.`);
-                            return;
-                          }
-                        }
+                        // Allow any status change - milestones only affect progress, not status
                         setFormData({ ...formData, status: value });
                       }}
                     >
