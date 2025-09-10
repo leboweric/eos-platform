@@ -1673,7 +1673,7 @@ const QuarterlyPlanningMeetingPage = () => {
                       {expandedSections.companyPriorities && (
                         <div className="space-y-4 ml-7 mt-4 p-4 bg-slate-50/50 rounded-xl">
                           {companyPriorities.map(priority => {
-                            const isComplete = priority.status === 'complete' || priority.status === 'completed' || priority.progress === 100;
+                            const isComplete = priority.status === 'complete' || priority.status === 'completed';
                             const daysUntil = !isComplete ? getDaysUntilDue(priority.dueDate || priority.due_date) : null;
                             const displayProgress = isComplete ? 100 : (priority.progress || 0);
                             
@@ -1859,7 +1859,7 @@ const QuarterlyPlanningMeetingPage = () => {
                             {isExpanded && (
                               <div className="space-y-4 ml-7 mt-4">
                                 {ownerPriorities.map(priority => {
-                                  const isComplete = priority.status === 'complete' || priority.status === 'completed' || priority.progress === 100;
+                                  const isComplete = priority.status === 'complete' || priority.status === 'completed';
                                   const daysUntil = !isComplete ? getDaysUntilDue(priority.dueDate || priority.due_date) : null;
                                   const displayProgress = isComplete ? 100 : (priority.progress || 0);
                                   
@@ -2112,7 +2112,7 @@ const QuarterlyPlanningMeetingPage = () => {
                       {expandedSections.companyPriorities && (
                         <div className="space-y-4 ml-7 mt-4">
                           {(companyPriorities || []).map(priority => {
-                            const isComplete = priority.status === 'complete' || priority.status === 'completed' || priority.progress === 100;
+                            const isComplete = priority.status === 'complete' || priority.status === 'completed';
                             const daysUntil = !isComplete ? getDaysUntilDue(priority.dueDate || priority.due_date) : null;
                             const displayProgress = isComplete ? 100 : (priority.progress || 0);
                             
@@ -2297,7 +2297,7 @@ const QuarterlyPlanningMeetingPage = () => {
                             {isExpanded && (
                               <div className="space-y-4 ml-7 mt-4">
                                 {ownerPriorities.map(priority => {
-                                  const isComplete = priority.status === 'complete' || priority.status === 'completed' || priority.progress === 100;
+                                  const isComplete = priority.status === 'complete' || priority.status === 'completed';
                                   const daysUntil = !isComplete ? getDaysUntilDue(priority.dueDate || priority.due_date) : null;
                                   const displayProgress = isComplete ? 100 : (priority.progress || 0);
                                   
