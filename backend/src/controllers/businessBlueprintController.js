@@ -822,7 +822,7 @@ export const updateOneYearPlan = async (req, res) => {
       // Update
       planResult = await query(
         `UPDATE one_year_plans 
-         SET revenue = $1, profit = $2, future_date = $3, updated_at = NOW()
+         SET revenue_target = $1, profit_percentage = $2, future_date = $3, updated_at = NOW()
          WHERE vto_id = $4
          RETURNING *`,
         [revenue, profit, targetDate, vtoId]
