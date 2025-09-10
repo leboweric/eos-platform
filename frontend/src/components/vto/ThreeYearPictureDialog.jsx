@@ -116,36 +116,67 @@ const ThreeYearPictureDialog = ({ open, onOpenChange, data, onSave, organization
       const profitValue = formData.profit?.toString().trim();
       
       if (profitValue) {
-        // Remove common formatting characters
-        const cleanValue = profitValue.replace(/[$,]/g, '');
+        // Remove common formatting characters and spaces
+        const cleanValue = profitValue.replace(/[$,\s]/g, '');
         
         if (profitValue.includes('%')) {
           // It's a percentage - store as profit_percentage
-          profitData.profit_percentage = parseFloat(cleanValue.replace('%', ''));
-          profitData.profit_amount = null;
-        } else {
-          // It's a dollar amount
-          let amount = parseFloat(cleanValue);
-          
-          // Check for M or K suffix
-          if (profitValue.toLowerCase().includes('m')) {
-            amount = amount * 1000000;
-          } else if (profitValue.toLowerCase().includes('k')) {
-            amount = amount * 1000;
-          }
-          
-          // If the number is less than 100 and no % sign, assume it's meant as percentage
-          if (amount < 100 && !profitValue.includes('$')) {
-            profitData.profit_percentage = amount;
+          const percentValue = parseFloat(cleanValue.replace('%', ''));
+          if (!isNaN(percentValue)) {
+            profitData.profit_percentage = percentValue;
             profitData.profit_amount = null;
-          } else {
+            profitData.profit = `${percentValue}%`; // Store clean format
+          }
+        } else if (profitValue.includes('$')) {
+          // Explicitly marked as dollar amount
+          // Extract the numeric part before M/K suffix
+          let baseValue = cleanValue.replace(/[mMkK]/g, '');
+          let amount = parseFloat(baseValue);
+          
+          if (!isNaN(amount)) {
+            // Check for M or K suffix
+            if (profitValue.toLowerCase().includes('m')) {
+              amount = amount * 1000000;
+            } else if (profitValue.toLowerCase().includes('k')) {
+              amount = amount * 1000;
+            }
+            
             profitData.profit_amount = amount;
             profitData.profit_percentage = null;
+            // Store formatted version
+            if (amount >= 1000000) {
+              profitData.profit = `$${(amount / 1000000).toFixed(1)}M`;
+            } else if (amount >= 1000) {
+              profitData.profit = `$${(amount / 1000).toFixed(0)}K`;
+            } else {
+              profitData.profit = `$${amount}`;
+            }
+          }
+        } else {
+          // No $ or % - try to determine intent
+          let amount = parseFloat(cleanValue);
+          
+          if (!isNaN(amount)) {
+            // If the number is less than 100 and no explicit $ sign, assume it's meant as percentage
+            if (amount < 100) {
+              profitData.profit_percentage = amount;
+              profitData.profit_amount = null;
+              profitData.profit = `${amount}%`;
+            } else {
+              // Large number without $ - treat as dollar amount
+              profitData.profit_amount = amount;
+              profitData.profit_percentage = null;
+              // Store formatted version
+              if (amount >= 1000000) {
+                profitData.profit = `$${(amount / 1000000).toFixed(1)}M`;
+              } else if (amount >= 1000) {
+                profitData.profit = `$${(amount / 1000).toFixed(0)}K`;
+              } else {
+                profitData.profit = `$${amount}`;
+              }
+            }
           }
         }
-        
-        // Keep original for display
-        profitData.profit = profitValue;
       }
       
       // Send the date as-is, let the backend handle timezone
