@@ -41,7 +41,8 @@ import {
   Activity,
   Check,
   X,
-  MoreHorizontal
+  MoreHorizontal,
+  Edit
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import PriorityCard from '../components/priorities/PriorityCardClean';
@@ -184,6 +185,9 @@ const QuarterlyPlanningMeetingPage = () => {
     companyPriorities: false,
     individualPriorities: {}
   });
+  
+  // Track which priorities are expanded in the inline view
+  const [expandedPriorities, setExpandedPriorities] = useState({});
   
   // Priority dialog states
   const [selectedPriority, setSelectedPriority] = useState(null);
@@ -1879,6 +1883,15 @@ const QuarterlyPlanningMeetingPage = () => {
                 
                 {/* Employee-Centric Rock View (Ninety.io Style) */}
                 {(() => {
+                  // Toggle expansion for a priority
+                  const togglePriorityExpansion = (priorityId, e) => {
+                    e.stopPropagation();
+                    setExpandedPriorities(prev => ({
+                      ...prev,
+                      [priorityId]: !prev[priorityId]
+                    }));
+                  };
+                  
                   // Group all priorities by owner
                   const prioritiesByOwner = priorities.reduce((acc, priority) => {
                     const ownerId = priority.owner?.id || 'unassigned';
@@ -1939,19 +1952,24 @@ const QuarterlyPlanningMeetingPage = () => {
                                 const isOnTrack = priority.status === 'on-track';
                                 const completedMilestones = (priority.milestones || []).filter(m => m.completed).length;
                                 const totalMilestones = (priority.milestones || []).length;
+                                const isExpanded = expandedPriorities[priority.id];
                                 
                                 return (
-                                  <div 
-                                    key={priority.id} 
-                                    className="flex items-center px-3 py-3 hover:bg-slate-50 rounded-lg cursor-pointer transition-colors group"
-                                    onClick={() => {
-                                      setSelectedPriority(priority);
-                                      setShowPriorityDialog(true);
-                                    }}
-                                  >
-                                    {/* Expand Arrow */}
-                                    <div className="w-8 flex items-center justify-center">
-                                      <ChevronRight className="h-4 w-4 text-slate-400 group-hover:text-slate-600" />
+                                  <div key={priority.id} className="border-b border-slate-100 last:border-0">
+                                    {/* Main Rock Row */}
+                                    <div 
+                                      className="flex items-center px-3 py-3 hover:bg-slate-50 rounded-lg transition-colors group"
+                                    >
+                                      {/* Expand Arrow */}
+                                      <div 
+                                        className="w-8 flex items-center justify-center cursor-pointer"
+                                        onClick={(e) => togglePriorityExpansion(priority.id, e)}
+                                      >
+                                        <ChevronRight 
+                                          className={`h-4 w-4 text-slate-400 group-hover:text-slate-600 transition-transform duration-200 ${
+                                            isExpanded ? 'rotate-90' : ''
+                                          }`} 
+                                        />
                                     </div>
                                     
                                     {/* Status Indicator */}
@@ -2015,6 +2033,125 @@ const QuarterlyPlanningMeetingPage = () => {
                                         <MoreHorizontal className="h-4 w-4 text-slate-500" />
                                       </button>
                                     </div>
+                                  </div>
+                                    
+                                    {/* Expandable Content */}
+                                    {isExpanded && (
+                                      <div className="ml-12 mt-3 p-4 bg-slate-50 rounded-lg border-l-4" style={{ borderColor: themeColors.primary + '40' }}>
+                                        {/* Description */}
+                                        {priority.description && (
+                                          <div className="mb-4">
+                                            <h4 className="text-xs font-semibold uppercase text-slate-500 mb-2">Description</h4>
+                                            <p className="text-sm text-slate-700">{priority.description}</p>
+                                          </div>
+                                        )}
+                                        
+                                        {/* Milestones */}
+                                        <div className="mb-4">
+                                          <div className="flex items-center justify-between mb-2">
+                                            <h4 className="text-xs font-semibold uppercase text-slate-500">Milestones</h4>
+                                            <span className="text-xs text-slate-500">
+                                              {completedMilestones} of {totalMilestones} complete
+                                            </span>
+                                          </div>
+                                          {priority.milestones && priority.milestones.length > 0 ? (
+                                            <div className="space-y-2">
+                                              {priority.milestones.map((milestone, idx) => (
+                                                <div key={milestone.id || idx} className="flex items-start gap-3">
+                                                  <div className="mt-0.5">
+                                                    <div 
+                                                      className="w-4 h-4 rounded border-2 flex items-center justify-center cursor-pointer hover:bg-slate-100"
+                                                      style={{
+                                                        borderColor: milestone.completed ? themeColors.primary : '#CBD5E1',
+                                                        backgroundColor: milestone.completed ? themeColors.primary : 'white'
+                                                      }}
+                                                    >
+                                                      {milestone.completed && (
+                                                        <Check className="h-3 w-3 text-white" />
+                                                      )}
+                                                    </div>
+                                                  </div>
+                                                  <div className="flex-1">
+                                                    <p className={`text-sm ${milestone.completed ? 'line-through text-slate-400' : 'text-slate-700'}`}>
+                                                      {milestone.title}
+                                                    </p>
+                                                    {milestone.dueDate && (
+                                                      <p className="text-xs text-slate-500 mt-1">
+                                                        Due {format(new Date(milestone.dueDate), 'MMM d, yyyy')}
+                                                      </p>
+                                                    )}
+                                                  </div>
+                                                </div>
+                                              ))}
+                                            </div>
+                                          ) : (
+                                            <p className="text-sm text-slate-500 italic">No milestones added</p>
+                                          )}
+                                        </div>
+                                        
+                                        {/* Updates */}
+                                        {priority.updates && priority.updates.length > 0 && (
+                                          <div className="mb-4">
+                                            <h4 className="text-xs font-semibold uppercase text-slate-500 mb-2">Recent Updates</h4>
+                                            <div className="space-y-2">
+                                              {priority.updates.slice(0, 2).map((update, idx) => (
+                                                <div key={idx} className="text-sm">
+                                                  <p className="text-slate-700">{update.content}</p>
+                                                  <p className="text-xs text-slate-500 mt-1">
+                                                    {update.author} • {format(new Date(update.createdAt), 'MMM d, h:mm a')}
+                                                  </p>
+                                                </div>
+                                              ))}
+                                            </div>
+                                          </div>
+                                        )}
+                                        
+                                        {/* Action Buttons */}
+                                        <div className="flex items-center gap-2 pt-3 border-t border-slate-200">
+                                          <Button 
+                                            size="sm" 
+                                            variant="outline"
+                                            onClick={(e) => {
+                                              e.stopPropagation();
+                                              setSelectedPriority(priority);
+                                              setShowPriorityDialog(true);
+                                            }}
+                                          >
+                                            <Edit className="h-3 w-3 mr-1" />
+                                            Edit Rock
+                                          </Button>
+                                          {isComplete ? (
+                                            <Badge className="bg-green-100 text-green-700 border-green-300">
+                                              <CheckCircle className="h-3 w-3 mr-1" />
+                                              Completed
+                                            </Badge>
+                                          ) : (
+                                            <Button 
+                                              size="sm" 
+                                              variant="outline"
+                                              onClick={async (e) => {
+                                                e.stopPropagation();
+                                                try {
+                                                  await quarterlyPrioritiesService.updatePriority(
+                                                    user?.organizationId,
+                                                    teamId,
+                                                    priority.id,
+                                                    { status: 'complete' }
+                                                  );
+                                                  await fetchPrioritiesData();
+                                                  setSuccess('Rock marked as complete');
+                                                } catch (error) {
+                                                  setError('Failed to mark as complete');
+                                                }
+                                              }}
+                                            >
+                                              <CheckCircle className="h-3 w-3 mr-1" />
+                                              Mark Complete
+                                            </Button>
+                                          )}
+                                        </div>
+                                      </div>
+                                    )}
                                   </div>
                                 );
                               })}
