@@ -213,21 +213,21 @@ function QuarterlyPlanningMeetingPage() {
     return () => document.removeEventListener('click', handleClickOutside);
   }, [openStatusDropdown]);
   
-  // Close context menu when clicking outside
-  useEffect(() => {
-    const handleClick = () => setContextMenu(null);
-    const handleScroll = () => setContextMenu(null);
-    
-    if (contextMenu) {
-      document.addEventListener('click', handleClick);
-      document.addEventListener('scroll', handleScroll);
-    }
-    
-    return () => {
-      document.removeEventListener('click', handleClick);
-      document.removeEventListener('scroll', handleScroll);
-    };
-  }, [contextMenu]);
+  // Close context menu when clicking outside - TEMPORARILY DISABLED
+  // useEffect(() => {
+  //   const handleClick = () => setContextMenu(null);
+  //   const handleScroll = () => setContextMenu(null);
+  //   
+  //   if (contextMenu) {
+  //     document.addEventListener('click', handleClick);
+  //     document.addEventListener('scroll', handleScroll);
+  //   }
+  //   
+  //   return () => {
+  //     document.removeEventListener('click', handleClick);
+  //     document.removeEventListener('scroll', handleScroll);
+  //   };
+  // }, [contextMenu]);
   
   // Priority dialog states
   const [selectedPriority, setSelectedPriority] = useState(null);
@@ -240,10 +240,10 @@ function QuarterlyPlanningMeetingPage() {
   const [addingMilestoneFor, setAddingMilestoneFor] = useState(null);
   const [newMilestone, setNewMilestone] = useState({ title: '', dueDate: '' });
   
-  // Context menu state
-  const [contextMenu, setContextMenu] = useState(null);
-  const [linkedIssueDialog, setLinkedIssueDialog] = useState(null);
-  const [linkedHeadlineDialog, setLinkedHeadlineDialog] = useState(null);
+  // Context menu state - TEMPORARILY DISABLED
+  // const [contextMenu, setContextMenu] = useState(null);
+  // const [linkedIssueDialog, setLinkedIssueDialog] = useState(null);
+  // const [linkedHeadlineDialog, setLinkedHeadlineDialog] = useState(null);
   
   // Theme state
   const [themeColors, setThemeColors] = useState({
@@ -2020,14 +2020,15 @@ function QuarterlyPlanningMeetingPage() {
                                     {/* Main Rock Row */}
                                     <div 
                                       className="flex items-center px-3 py-3 hover:bg-slate-50 rounded-lg transition-colors group"
-                                      onContextMenu={(e) => {
-                                        e.preventDefault();
-                                        setContextMenu({
-                                          x: e.clientX,
-                                          y: e.clientY,
-                                          priority: priority
-                                        });
-                                      }}
+                                      // TEMPORARILY DISABLED: onContextMenu
+                                      // onContextMenu={(e) => {
+                                      //   e.preventDefault();
+                                      //   setContextMenu({
+                                      //     x: e.clientX,
+                                      //     y: e.clientY,
+                                      //     priority: priority
+                                      //   });
+                                      // }}
                                     >
                                       {/* Expand Arrow */}
                                       <div 
@@ -4563,8 +4564,8 @@ function QuarterlyPlanningMeetingPage() {
         </DialogContent>
       </Dialog>
       
-      {/* Context Menu */}
-      {contextMenu && (
+      {/* Context Menu - TEMPORARILY DISABLED */}
+      {/* {contextMenu && (
         <div
           className="fixed z-50 bg-white rounded-lg shadow-lg border border-slate-200 py-2 min-w-[180px]"
           style={{
@@ -4616,10 +4617,10 @@ function QuarterlyPlanningMeetingPage() {
             Archive
           </button>
         </div>
-      )}
+      )} */}
       
-      {/* Linked Issue Dialog */}
-      {linkedIssueDialog && (
+      {/* Linked Issue Dialog - TEMPORARILY DISABLED */}
+      {/* {linkedIssueDialog && (
         <Dialog open={true} onOpenChange={() => setLinkedIssueDialog(null)}>
           <DialogContent>
             <DialogHeader>
@@ -4683,10 +4684,10 @@ function QuarterlyPlanningMeetingPage() {
             </DialogFooter>
           </DialogContent>
         </Dialog>
-      )}
+      )} */}
       
-      {/* Linked Headline Dialog */}
-      {linkedHeadlineDialog && (
+      {/* Linked Headline Dialog - TEMPORARILY DISABLED */}
+      {/* {linkedHeadlineDialog && (
         <Dialog open={true} onOpenChange={() => setLinkedHeadlineDialog(null)}>
           <DialogContent>
             <DialogHeader>
@@ -4739,10 +4740,10 @@ function QuarterlyPlanningMeetingPage() {
             </DialogFooter>
           </DialogContent>
         </Dialog>
-      )}
+      )} */}
       
-      {/* Rock Side Panel */}
-      <RockSidePanel
+      {/* Rock Side Panel - TEMPORARILY DISABLED */}
+      {/* <RockSidePanel
         isOpen={!!sidePanelRock}
         onClose={() => setSidePanelRock(null)}
         rock={sidePanelRock}
@@ -4754,7 +4755,7 @@ function QuarterlyPlanningMeetingPage() {
           ));
         }}
         themeColors={themeColors}
-      />
+      /> */}
     </div>
   );
 };
