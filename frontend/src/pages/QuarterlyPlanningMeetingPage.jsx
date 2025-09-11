@@ -812,17 +812,11 @@ const QuarterlyPlanningMeetingPage = () => {
       const orgId = user?.organizationId || user?.organization_id;
       const effectiveTeamId = teamId || getEffectiveTeamId(teamId, user);
       
-      // Get current quarter and year
+      // Get current quarter and year - matching QuarterlyPrioritiesPageClean logic
       const now = new Date();
-      const currentMonth = now.getMonth(); // 0-11
+      const currentQuarter = Math.floor((now.getMonth() / 3)) + 1;
       const currentYear = now.getFullYear();
-      
-      // Calculate quarter from month (0-11 -> Q1-Q4)
-      let quarter;
-      if (currentMonth < 3) quarter = 'Q1';
-      else if (currentMonth < 6) quarter = 'Q2';
-      else if (currentMonth < 9) quarter = 'Q3';
-      else quarter = 'Q4';
+      const quarter = `Q${currentQuarter}`;
       
       const priorityData = {
         title: priorityForm.title,
@@ -830,11 +824,8 @@ const QuarterlyPlanningMeetingPage = () => {
         ownerId: priorityForm.ownerId,
         dueDate: priorityForm.dueDate,
         isCompanyPriority: priorityForm.isCompanyPriority,
-        quarter: quarter, // Use string format like 'Q3'
-        year: currentYear,
-        status: 'on-track',
-        priority_type: priorityForm.isCompanyPriority ? 'company' : 'individual',
-        team_id: effectiveTeamId
+        quarter: quarter,
+        year: currentYear
       };
       
       await quarterlyPrioritiesService.createPriority(orgId, effectiveTeamId, priorityData);
