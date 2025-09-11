@@ -53,7 +53,9 @@ const IssuesListClean = ({
   enableDragDrop = false,  // New prop to enable drag-and-drop
   compactGrid = false,  // New prop for compact grid view in meetings
   maxColumns = 3,  // Maximum number of columns for list view
-  columnBreakpoint = 20  // Number of items before adding another column
+  columnBreakpoint = 20,  // Number of items before adding another column
+  onConvertToRock,  // Function to convert issue to Rock (for Quarterly Planning Meeting)
+  isQuarterlyMeeting = false  // Flag to indicate if this is being used in Quarterly Planning Meeting
 }) => {
   const { user } = useAuthStore();
   const [selectedIssue, setSelectedIssue] = useState(null);
@@ -850,6 +852,8 @@ const IssuesListClean = ({
         onMoveToTeam={onMoveToTeam}
         onCreateTodo={onCreateTodo}
         onSendCascadingMessage={onSendCascadingMessage}
+        onConvertToRock={onConvertToRock}
+        isQuarterlyMeeting={isQuarterlyMeeting}
       />
     </>
   );

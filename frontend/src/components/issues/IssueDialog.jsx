@@ -46,7 +46,9 @@ const IssueDialog = ({
   onMoveToTeam,
   onCreateTodo,
   onSendCascadingMessage,
-  onTimelineChange
+  onTimelineChange,
+  onConvertToRock,
+  isQuarterlyMeeting = false
 }) => {
   const { user } = useAuthStore();
   const [formData, setFormData] = useState({
@@ -663,6 +665,21 @@ const IssueDialog = ({
                 >
                   <ListTodo className="mr-1 h-3 w-3" />
                   Create To-Do
+                </Button>
+              )}
+              {isQuarterlyMeeting && onConvertToRock && (
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="default"
+                  onClick={() => {
+                    onConvertToRock(issue);
+                    onClose();
+                  }}
+                  className="text-sm whitespace-nowrap"
+                >
+                  <Sparkles className="mr-1 h-3 w-3" />
+                  Convert to Rock
                 </Button>
               )}
             </div>

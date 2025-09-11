@@ -863,6 +863,51 @@ const QuarterlyPlanningMeetingPage = () => {
     }
   };
 
+  // Handle converting an issue to a Rock/Priority
+  const handleConvertIssueToRock = async (issue) => {
+    try {
+      const orgId = user?.organizationId || user?.organization_id;
+      const effectiveTeamId = teamId || getEffectiveTeamId(teamId, user);
+      
+      // Get current quarter and year
+      const now = new Date();
+      const currentQuarter = Math.floor((now.getMonth() / 3)) + 1;
+      const currentYear = now.getFullYear();
+      const quarter = `Q${currentQuarter}`;
+      
+      // Calculate due date as end of quarter
+      const quarterEndMonth = currentQuarter * 3 - 1; // March = 2, June = 5, Sept = 8, Dec = 11
+      const dueDate = new Date(currentYear, quarterEndMonth + 1, 0); // Last day of quarter
+      const dueDateString = dueDate.toISOString().split('T')[0];
+      
+      const priorityData = {
+        title: issue.title,
+        description: issue.description || '',
+        ownerId: issue.owner_id || '',
+        dueDate: dueDateString,
+        isCompanyPriority: false,
+        quarter: quarter,
+        year: currentYear
+      };
+      
+      await quarterlyPrioritiesService.createPriority(orgId, effectiveTeamId, priorityData);
+      
+      // Archive the issue after converting to Rock
+      if (issue.id) {
+        await issuesService.archiveIssue(issue.id);
+      }
+      
+      // Refresh both priorities and issues
+      await fetchPrioritiesData();
+      await fetchIssuesData();
+      
+      setSuccess(`Issue converted to ${labels?.priority_singular || 'Priority'} successfully`);
+    } catch (error) {
+      console.error('Failed to convert issue to priority:', error);
+      setError(error.response?.data?.error || 'Failed to convert issue to priority');
+    }
+  };
+
   const fetchIssuesData = async () => {
     try {
       setLoading(true);
@@ -1787,7 +1832,8 @@ const QuarterlyPlanningMeetingPage = () => {
                     <strong>Tip:</strong> Review your quarterly targets from the 1-Year Plan before marking each metric.
                   </p>
                 </div>
-              </CardContent>
+                </CardContent>
+              )}
             </Card>
             {priorities.length === 0 ? (
               <Card className="bg-white/80 backdrop-blur-sm border border-white/50 rounded-2xl shadow-xl">
@@ -1827,6 +1873,140 @@ const QuarterlyPlanningMeetingPage = () => {
                   </div>
                 )}
                 
+                {/* Employee-Centric Rock View (Ninety.io Style) */}
+                {(() => {
+                  // Group all priorities by owner
+                  const prioritiesByOwner = priorities.reduce((acc, priority) => {
+                    const ownerId = priority.owner?.id || 'unassigned';
+                    const ownerName = priority.owner?.name || 'Unassigned';
+                    if (!acc[ownerId]) {
+                      acc[ownerId] = {
+                        id: ownerId,
+                        name: ownerName,
+                        priorities: []
+                      };
+                    }
+                    acc[ownerId].priorities.push(priority);
+                    return acc;
+                  }, {});
+                  
+                  // Convert to array and sort by name
+                  const owners = Object.values(prioritiesByOwner).sort((a, b) => {
+                    if (a.id === 'unassigned') return 1;
+                    if (b.id === 'unassigned') return -1;
+                    return a.name.localeCompare(b.name);
+                  });
+                  
+                  return (
+                    <div className="space-y-6">
+                      {owners.map(owner => (
+                        <Card key={owner.id} className="bg-white border-slate-200 shadow-md hover:shadow-lg transition-shadow">
+                          <CardHeader className="pb-3">
+                            <div className="flex items-center justify-between">
+                              <div className="flex items-center gap-3">
+                                <Avatar className="h-10 w-10 border-2 border-slate-100">
+                                  <AvatarFallback className="bg-gradient-to-br from-slate-100 to-slate-200 text-slate-700 font-semibold">
+                                    {owner.name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2)}
+                                  </AvatarFallback>
+                                </Avatar>
+                                <div>
+                                  <h3 className="text-lg font-bold text-slate-900">{owner.name}</h3>
+                                  <p className="text-sm text-slate-500">{owner.priorities.length} {labels?.priority_singular || 'Rock'}{owner.priorities.length !== 1 ? 's' : ''}</p>
+                                </div>
+                              </div>
+                              <ChevronDown className="h-5 w-5 text-slate-400" />
+                            </div>
+                          </CardHeader>
+                          <CardContent className="pt-0">
+                            <div className="space-y-2">
+                              <div className="grid grid-cols-[auto,1fr,200px,100px,auto] gap-4 px-2 pb-2 text-xs font-medium text-slate-500 uppercase tracking-wider border-b border-slate-100">
+                                <div className="w-8">Status</div>
+                                <div>Title</div>
+                                <div>Milestone Progress</div>
+                                <div className="text-right">Due By</div>
+                                <div className="w-8"></div>
+                              </div>
+                              {owner.priorities.map(priority => {
+                                const isComplete = priority.status === 'complete' || priority.status === 'completed';
+                                const isOnTrack = priority.status === 'on-track';
+                                const completedMilestones = (priority.milestones || []).filter(m => m.completed).length;
+                                const totalMilestones = (priority.milestones || []).length;
+                                
+                                return (
+                                  <div 
+                                    key={priority.id} 
+                                    className="grid grid-cols-[auto,1fr,200px,100px,auto] gap-4 items-center px-2 py-3 hover:bg-slate-50 rounded-lg cursor-pointer transition-colors"
+                                    onClick={() => {
+                                      setSelectedPriority(priority);
+                                      setShowPriorityDialog(true);
+                                    }}
+                                  >
+                                    <div className="w-8">
+                                      <ChevronRight className="h-4 w-4 text-slate-400" />
+                                    </div>
+                                    <div className="flex items-center gap-3">
+                                      <div className="flex items-center justify-center w-8 h-8 rounded-full" style={{
+                                        backgroundColor: isComplete ? themeColors.primary + '20' : (isOnTrack ? '#3B82F620' : '#EF444420'),
+                                        border: `2px solid ${isComplete ? themeColors.primary : (isOnTrack ? '#3B82F6' : '#EF4444')}`
+                                      }}>
+                                        {isComplete ? (
+                                          <CheckCircle className="h-4 w-4" style={{ color: themeColors.primary }} />
+                                        ) : (
+                                          <div className="text-xs font-bold" style={{
+                                            color: isOnTrack ? '#3B82F6' : '#EF4444'
+                                          }}>
+                                            {isOnTrack ? '✓' : '!'}
+                                          </div>
+                                        )}
+                                      </div>
+                                      <span className={`text-sm font-medium ${isComplete ? 'line-through text-slate-400' : 'text-slate-900'}`}>
+                                        {priority.title}
+                                      </span>
+                                    </div>
+                                    <div className="flex items-center gap-2">
+                                      {totalMilestones > 0 && (
+                                        <>
+                                          <div className="flex-1 bg-slate-100 rounded-full h-2 overflow-hidden">
+                                            <div 
+                                              className="h-full rounded-full transition-all"
+                                              style={{
+                                                width: `${(completedMilestones / totalMilestones) * 100}%`,
+                                                backgroundColor: themeColors.primary
+                                              }}
+                                            />
+                                          </div>
+                                          <span className="text-xs text-slate-500 font-medium">
+                                            {completedMilestones}/{totalMilestones}
+                                          </span>
+                                        </>
+                                      )}
+                                    </div>
+                                    <div className="text-right text-sm text-slate-600">
+                                      {priority.dueDate ? format(new Date(priority.dueDate), 'MMM d') : '-'}
+                                    </div>
+                                    <div className="w-8 flex justify-end">
+                                      <button className="p-1 hover:bg-slate-100 rounded" onClick={(e) => {
+                                        e.stopPropagation();
+                                        // Menu would go here
+                                      }}>
+                                        <svg className="w-4 h-4 text-slate-400" fill="currentColor" viewBox="0 0 20 20">
+                                          <path d="M6 10a2 2 0 11-4 0 2 2 0 014 0zM12 10a2 2 0 11-4 0 2 2 0 014 0zM16 12a2 2 0 100-4 2 2 0 000 4z" />
+                                        </svg>
+                                      </button>
+                                    </div>
+                                  </div>
+                                );
+                              })}
+                            </div>
+                          </CardContent>
+                        </Card>
+                      ))}
+                    </div>
+                  );
+                })()}
+                
+                {/* Hidden Original Sections - Comment out after testing */}
+                <div style={{ display: 'none' }}>
                 {/* Company {labels?.priorities_label || 'Priorities'} Section */}
                 {(() => {
                   const companyPriorities = priorities.filter(p => p.priority_type === 'company');
@@ -2166,6 +2346,7 @@ const QuarterlyPlanningMeetingPage = () => {
                     </div>
                   );
                 })()}
+                </div> {/* End of hidden original sections */}
               </div>
             )}
             
@@ -2891,6 +3072,8 @@ const QuarterlyPlanningMeetingPage = () => {
                             }}
                             onVote={handleVote}
                             teamMembers={teamMembers}
+                            onConvertToRock={handleConvertIssueToRock}
+                            isQuarterlyMeeting={true}
                             getStatusColor={(status) => {
                               switch (status) {
                                 case 'open':
@@ -2965,6 +3148,8 @@ const QuarterlyPlanningMeetingPage = () => {
                             }}
                             onVote={handleVote}
                             teamMembers={teamMembers}
+                            onConvertToRock={handleConvertIssueToRock}
+                            isQuarterlyMeeting={true}
                             getStatusColor={(status) => {
                               switch (status) {
                                 case 'open':
@@ -3654,6 +3839,35 @@ const QuarterlyPlanningMeetingPage = () => {
         {/* Issue Dialog - Shared across all sections */}
         <IssueDialog
           open={showIssueDialog}
+          isQuarterlyMeeting={true}
+          onConvertToRock={async (issue) => {
+            // Convert issue to rock/priority
+            const priorityData = {
+              title: issue.title,
+              description: issue.description || '',
+              ownerId: issue.owner_id || issue.ownerId,
+              dueDate: getQuarterEndDate(), // Use end of current quarter
+              isCompanyPriority: false,
+              priority_type: 'individual',
+              status: 'on-track'
+            };
+            
+            try {
+              await handleCreatePriority(priorityData);
+              // Archive the issue after converting to rock
+              if (issue.id) {
+                await issuesService.archiveIssue(issue.id);
+              }
+              setShowIssueDialog(false);
+              setEditingIssue(null);
+              setSuccess(`Issue converted to ${labels?.priority_singular || 'Rock'} successfully`);
+              await fetchIssuesData();
+              await fetchPrioritiesData();
+            } catch (error) {
+              console.error('Failed to convert issue to rock:', error);
+              setError(`Failed to convert to ${labels?.priority_singular || 'Rock'}`);
+            }
+          }}
           onClose={() => {
             setShowIssueDialog(false);
             setEditingIssue(null);
