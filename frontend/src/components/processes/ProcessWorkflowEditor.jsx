@@ -433,10 +433,10 @@ const ProcessWorkflowEditor = ({ process, onSave, onCancel, templates = [], team
     // Focus the textarea to ensure selection is active
     textarea.focus();
 
-    const start = textarea.selectionStart;
-    const end = textarea.selectionEnd;
+    let start = textarea.selectionStart;
+    let end = textarea.selectionEnd;
     const text = textarea.value;
-    const selectedText = text.substring(start, end);
+    let selectedText = text.substring(start, end);
     
     let newText = '';
     let newCursorPos = start;
