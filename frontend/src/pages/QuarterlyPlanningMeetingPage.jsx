@@ -207,6 +207,22 @@ const QuarterlyPlanningMeetingPage = () => {
     return () => document.removeEventListener('click', handleClickOutside);
   }, [openStatusDropdown]);
   
+  // Close context menu when clicking outside
+  useEffect(() => {
+    const handleClick = () => setContextMenu(null);
+    const handleScroll = () => setContextMenu(null);
+    
+    if (contextMenu) {
+      document.addEventListener('click', handleClick);
+      document.addEventListener('scroll', handleScroll);
+    }
+    
+    return () => {
+      document.removeEventListener('click', handleClick);
+      document.removeEventListener('scroll', handleScroll);
+    };
+  }, [contextMenu]);
+  
   // Priority dialog states
   const [selectedPriority, setSelectedPriority] = useState(null);
   const [showPriorityDialog, setShowPriorityDialog] = useState(false);
@@ -214,6 +230,11 @@ const QuarterlyPlanningMeetingPage = () => {
   // Inline milestone creation states
   const [addingMilestoneFor, setAddingMilestoneFor] = useState(null);
   const [newMilestone, setNewMilestone] = useState({ title: '', dueDate: '' });
+  
+  // Context menu state
+  const [contextMenu, setContextMenu] = useState(null);
+  const [linkedIssueDialog, setLinkedIssueDialog] = useState(null);
+  const [linkedHeadlineDialog, setLinkedHeadlineDialog] = useState(null);
   
   // Theme state
   const [themeColors, setThemeColors] = useState({
@@ -1994,6 +2015,14 @@ const QuarterlyPlanningMeetingPage = () => {
                                     {/* Main Rock Row */}
                                     <div 
                                       className="flex items-center px-3 py-3 hover:bg-slate-50 rounded-lg transition-colors group"
+                                      onContextMenu={(e) => {
+                                        e.preventDefault();
+                                        setContextMenu({
+                                          x: e.clientX,
+                                          y: e.clientY,
+                                          priority: priority
+                                        });
+                                      }}
                                     >
                                       {/* Expand Arrow */}
                                       <div 
@@ -4522,6 +4551,184 @@ const QuarterlyPlanningMeetingPage = () => {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+      
+      {/* Context Menu */}
+      {contextMenu && (
+        <div
+          className="fixed z-50 bg-white rounded-lg shadow-lg border border-slate-200 py-2 min-w-[180px]"
+          style={{
+            left: `${contextMenu.x}px`,
+            top: `${contextMenu.y}px`,
+          }}
+          onClick={(e) => e.stopPropagation()}
+        >
+          <button
+            className="w-full px-4 py-2 text-left text-sm hover:bg-slate-50 flex items-center gap-2"
+            onClick={() => {
+              setLinkedIssueDialog(contextMenu.priority);
+              setContextMenu(null);
+            }}
+          >
+            <AlertCircle className="h-4 w-4 text-slate-500" />
+            Create Linked Issue
+          </button>
+          <button
+            className="w-full px-4 py-2 text-left text-sm hover:bg-slate-50 flex items-center gap-2"
+            onClick={() => {
+              setLinkedHeadlineDialog(contextMenu.priority);
+              setContextMenu(null);
+            }}
+          >
+            <MessageSquare className="h-4 w-4 text-slate-500" />
+            Create Linked Headline
+          </button>
+          <div className="border-t border-slate-100 my-1"></div>
+          <button
+            className="w-full px-4 py-2 text-left text-sm hover:bg-slate-50 flex items-center gap-2 text-red-600"
+            onClick={async () => {
+              try {
+                await quarterlyPrioritiesService.archivePriority(
+                  user?.organizationId,
+                  teamId,
+                  contextMenu.priority.id
+                );
+                await fetchPrioritiesData();
+                setSuccess('Rock archived successfully');
+              } catch (error) {
+                console.error('Failed to archive Rock:', error);
+                setError('Failed to archive Rock');
+              }
+              setContextMenu(null);
+            }}
+          >
+            <Archive className="h-4 w-4" />
+            Archive
+          </button>
+        </div>
+      )}
+      
+      {/* Linked Issue Dialog */}
+      {linkedIssueDialog && (
+        <Dialog open={true} onOpenChange={() => setLinkedIssueDialog(null)}>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>Create Linked Issue</DialogTitle>
+              <DialogDescription>
+                Create an issue linked to: {linkedIssueDialog.title}
+              </DialogDescription>
+            </DialogHeader>
+            <div className="space-y-4">
+              <div>
+                <label className="text-sm font-medium">Issue Title</label>
+                <input
+                  type="text"
+                  className="w-full mt-1 px-3 py-2 border border-slate-200 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  placeholder="Enter issue title..."
+                  id="linked-issue-title"
+                  autoFocus
+                />
+              </div>
+              <div>
+                <label className="text-sm font-medium">Description (optional)</label>
+                <textarea
+                  className="w-full mt-1 px-3 py-2 border border-slate-200 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  placeholder="Enter issue description..."
+                  rows={3}
+                  id="linked-issue-description"
+                />
+              </div>
+            </div>
+            <DialogFooter>
+              <Button variant="outline" onClick={() => setLinkedIssueDialog(null)}>
+                Cancel
+              </Button>
+              <Button
+                onClick={async () => {
+                  const title = document.getElementById('linked-issue-title').value;
+                  const description = document.getElementById('linked-issue-description').value;
+                  
+                  if (title.trim()) {
+                    try {
+                      await issuesService.createIssue({
+                        title: title,
+                        description: description || `Related to Rock: ${linkedIssueDialog.title}`,
+                        ownerId: linkedIssueDialog.ownerId,
+                        organizationId: user?.organizationId,
+                        teamId: teamId,
+                        relatedRockId: linkedIssueDialog.id
+                      });
+                      await fetchIssues();
+                      setSuccess('Linked issue created successfully');
+                      setLinkedIssueDialog(null);
+                    } catch (error) {
+                      console.error('Failed to create linked issue:', error);
+                      setError('Failed to create linked issue');
+                    }
+                  }
+                }}
+              >
+                Create Issue
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+      )}
+      
+      {/* Linked Headline Dialog */}
+      {linkedHeadlineDialog && (
+        <Dialog open={true} onOpenChange={() => setLinkedHeadlineDialog(null)}>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>Create Linked Headline</DialogTitle>
+              <DialogDescription>
+                Create a headline linked to: {linkedHeadlineDialog.title}
+              </DialogDescription>
+            </DialogHeader>
+            <div className="space-y-4">
+              <div>
+                <label className="text-sm font-medium">Headline Message</label>
+                <textarea
+                  className="w-full mt-1 px-3 py-2 border border-slate-200 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  placeholder="Enter headline message..."
+                  rows={4}
+                  id="linked-headline-message"
+                  autoFocus
+                />
+              </div>
+            </div>
+            <DialogFooter>
+              <Button variant="outline" onClick={() => setLinkedHeadlineDialog(null)}>
+                Cancel
+              </Button>
+              <Button
+                onClick={async () => {
+                  const message = document.getElementById('linked-headline-message').value;
+                  
+                  if (message.trim()) {
+                    try {
+                      // Create a cascading message/headline
+                      await cascadingMessagesService.createMessage({
+                        message: message,
+                        fromRockId: linkedHeadlineDialog.id,
+                        fromRockTitle: linkedHeadlineDialog.title,
+                        teamId: teamId,
+                        organizationId: user?.organizationId
+                      });
+                      setSuccess('Headline created successfully');
+                      setLinkedHeadlineDialog(null);
+                    } catch (error) {
+                      console.error('Failed to create headline:', error);
+                      setError('Failed to create headline');
+                    }
+                  }
+                }}
+              >
+                Create Headline
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+      )}
     </div>
   );
 };
