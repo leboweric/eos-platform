@@ -47,6 +47,7 @@ import {
 import { useNavigate } from 'react-router-dom';
 import PriorityCard from '../components/priorities/PriorityCardClean';
 import PriorityDialog from '../components/priorities/PriorityDialog';
+import RockSidePanel from '../components/priorities/RockSidePanel';
 import IssuesListClean from '../components/issues/IssuesListClean';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -226,6 +227,9 @@ const QuarterlyPlanningMeetingPage = () => {
   // Priority dialog states
   const [selectedPriority, setSelectedPriority] = useState(null);
   const [showPriorityDialog, setShowPriorityDialog] = useState(false);
+  
+  // Side panel state
+  const [sidePanelRock, setSidePanelRock] = useState(null);
   
   // Inline milestone creation states
   const [addingMilestoneFor, setAddingMilestoneFor] = useState(null);
@@ -2156,7 +2160,13 @@ const QuarterlyPlanningMeetingPage = () => {
                                     </div>
                                     
                                     {/* Title */}
-                                    <div className="flex-1 ml-3">
+                                    <div 
+                                      className="flex-1 ml-3 cursor-pointer hover:opacity-80"
+                                      onClick={(e) => {
+                                        e.stopPropagation();
+                                        setSidePanelRock(priority);
+                                      }}
+                                    >
                                       <span className={`text-sm font-medium ${
                                         priority.status === 'cancelled' ? 'line-through text-slate-400' :
                                         isComplete ? 'line-through text-slate-400' : 
@@ -4729,6 +4739,21 @@ const QuarterlyPlanningMeetingPage = () => {
           </DialogContent>
         </Dialog>
       )}
+      
+      {/* Rock Side Panel */}
+      <RockSidePanel
+        isOpen={!!sidePanelRock}
+        onClose={() => setSidePanelRock(null)}
+        rock={sidePanelRock}
+        teamId={teamId}
+        onUpdate={(updatedRock) => {
+          // Update the rock in the priorities list
+          setPriorities(prev => prev.map(p => 
+            p.id === updatedRock.id ? updatedRock : p
+          ));
+        }}
+        themeColors={themeColors}
+      />
     </div>
   );
 };
