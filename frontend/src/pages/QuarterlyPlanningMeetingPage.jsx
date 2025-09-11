@@ -51,6 +51,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { meetingsService } from '../services/meetingsService';
 import { FileText, GitBranch, Smile, BarChart, Newspaper, ArrowLeftRight } from 'lucide-react';
 import { quarterlyPrioritiesService } from '../services/quarterlyPrioritiesService';
+import { businessBlueprintService } from '../services/businessBlueprintService';
 import { issuesService } from '../services/issuesService';
 import { organizationService } from '../services/organizationService';
 import { getOrgTheme, saveOrgTheme, hexToRgba } from '../utils/themeUtils';
@@ -136,6 +137,7 @@ const QuarterlyPlanningMeetingPage = () => {
   const [issueTimeline, setIssueTimeline] = useState('short_term');
   const [todos, setTodos] = useState([]);
   const [vtoData, setVtoData] = useState(null);
+  const [blueprintData, setBlueprintData] = useState(null);
   const [metricsStatus, setMetricsStatus] = useState({
     revenue: null, // 'on-track' or 'off-track'
     profit: null,
@@ -569,6 +571,7 @@ const QuarterlyPlanningMeetingPage = () => {
   useEffect(() => {
     if (activeSection === 'review-quarterly-rocks' || activeSection === 'establish-quarterly-rocks') {
       fetchPrioritiesData();
+      fetchBlueprintData(); // Get 1-year plan targets
       fetchTeamMembers(); // Need team members for Add Priority dialog
     } else if (activeSection === 'ids') {
       fetchIssuesData();
@@ -1076,6 +1079,16 @@ const QuarterlyPlanningMeetingPage = () => {
       console.error('Failed to fetch VTO data:', error);
       setError(`Failed to load ${labels?.business_blueprint_label || '2-Page Plan'}`);
       setLoading(false);
+    }
+  };
+
+  const fetchBlueprintData = async () => {
+    try {
+      const data = await businessBlueprintService.getBusinessBlueprint();
+      setBlueprintData(data);
+    } catch (error) {
+      console.error('Failed to fetch business blueprint:', error);
+      // Don't show error - this is optional data
     }
   };
 
@@ -1633,6 +1646,13 @@ const QuarterlyPlanningMeetingPage = () => {
                       <h4 className="font-medium text-gray-900">Revenue</h4>
                       <TrendingUp className="h-4 w-4 text-gray-400" />
                     </div>
+                    {blueprintData?.oneYearPlan?.revenue_target && (
+                      <p className="text-sm text-gray-600 mb-2">
+                        Target: {typeof blueprintData.oneYearPlan.revenue_target === 'number' 
+                          ? `$${(blueprintData.oneYearPlan.revenue_target / 1000000).toFixed(1)}M`
+                          : blueprintData.oneYearPlan.revenue_target}
+                      </p>
+                    )}
                     <div className="flex gap-2">
                       <Button
                         size="sm"
@@ -1669,6 +1689,11 @@ const QuarterlyPlanningMeetingPage = () => {
                       <h4 className="font-medium text-gray-900">Profit</h4>
                       <Activity className="h-4 w-4 text-gray-400" />
                     </div>
+                    {blueprintData?.oneYearPlan?.profit_target && (
+                      <p className="text-sm text-gray-600 mb-2">
+                        Target: {blueprintData.oneYearPlan.profit_target}%
+                      </p>
+                    )}
                     <div className="flex gap-2">
                       <Button
                         size="sm"
@@ -1705,6 +1730,16 @@ const QuarterlyPlanningMeetingPage = () => {
                       <h4 className="font-medium text-gray-900">Key Measurables</h4>
                       <BarChart className="h-4 w-4 text-gray-400" />
                     </div>
+                    {blueprintData?.oneYearPlan?.measurables && blueprintData.oneYearPlan.measurables.length > 0 && (
+                      <div className="text-sm text-gray-600 mb-2">
+                        {blueprintData.oneYearPlan.measurables.slice(0, 3).map((measurable, index) => (
+                          <p key={index} className="truncate">• {measurable}</p>
+                        ))}
+                        {blueprintData.oneYearPlan.measurables.length > 3 && (
+                          <p className="text-xs text-gray-500">+{blueprintData.oneYearPlan.measurables.length - 3} more</p>
+                        )}
+                      </div>
+                    )}
                     <div className="flex gap-2">
                       <Button
                         size="sm"
