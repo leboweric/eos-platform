@@ -4657,7 +4657,7 @@ const QuarterlyPlanningMeetingPage = () => {
                         teamId: teamId,
                         relatedRockId: linkedIssueDialog.id
                       });
-                      await fetchIssues();
+                      // Issues will be refreshed when navigating to IDS section
                       setSuccess('Linked issue created successfully');
                       setLinkedIssueDialog(null);
                     } catch (error) {
