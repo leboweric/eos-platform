@@ -71,7 +71,7 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { cascadingMessagesService } from '../services/cascadingMessagesService';
 import { teamsService } from '../services/teamsService';
 
-const QuarterlyPlanningMeetingPage = () => {
+function QuarterlyPlanningMeetingPage() {
   const { user } = useAuthStore();
   const { teamId } = useParams();
   const navigate = useNavigate();
@@ -248,7 +248,7 @@ const QuarterlyPlanningMeetingPage = () => {
   });
 
   // Get framework-specific quarterly planning agenda
-  const getQuarterlyAgendaItems = () => {
+  function getQuarterlyAgendaItems() {
     const isEOS = labels?.priorities_label === 'Rocks';
     const isOKR = labels?.priorities_label === 'Objectives';
     const isScalingUp = labels?.business_blueprint_label === 'One-Page Strategic Plan';
@@ -579,7 +579,7 @@ const QuarterlyPlanningMeetingPage = () => {
     };
   }, [user?.id]);
 
-  const formatTime = (seconds) => {
+  function formatTime(seconds) {
     const hours = Math.floor(seconds / 3600);
     const minutes = Math.floor((seconds % 3600) / 60);
     const secs = seconds % 60;
@@ -1001,7 +1001,7 @@ const QuarterlyPlanningMeetingPage = () => {
   }
   
   // Issue handlers
-  const handleEditIssue = (issue) => {
+  function handleEditIssue(issue) {
     setEditingIssue(issue);
     setShowIssueDialog(true);
   };
@@ -1137,7 +1137,7 @@ const QuarterlyPlanningMeetingPage = () => {
     }
   };
 
-  const handleAddTodo = () => {
+  function handleAddTodo() {
     setEditingTodo(null);
     setShowTodoDialog(true);
   };
@@ -1209,14 +1209,14 @@ const QuarterlyPlanningMeetingPage = () => {
 
 
   // Toggle functions for collapsible sections
-  const toggleCompanyPriorities = () => {
+  function toggleCompanyPriorities() {
     setExpandedSections(prev => ({
       ...prev,
       companyPriorities: !prev.companyPriorities
     }));
   };
 
-  const toggleIndividualPriorities = (memberId) => {
+  function toggleIndividualPriorities(memberId) {
     setExpandedSections(prev => ({
       ...prev,
       individualPriorities: {
@@ -1226,7 +1226,7 @@ const QuarterlyPlanningMeetingPage = () => {
     }));
   };
 
-  const handleSectionChange = (sectionId) => {
+  function handleSectionChange(sectionId) {
     setActiveSection(sectionId);
     setError(null);
     
