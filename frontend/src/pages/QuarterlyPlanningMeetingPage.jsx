@@ -2929,7 +2929,7 @@ const QuarterlyPlanningMeetingPage = () => {
                            quarterGrade === 'B' ? 'Good job this quarter, room for improvement.' :
                            quarterGrade === 'C' ? 'Average performance, let\'s identify areas to improve.' :
                            quarterGrade === 'D' ? 'Below expectations, significant improvement needed.' :
-                           quarterGrade === 'F' ? 'Major issues need to be addressed immediately.'}
+                           quarterGrade === 'F' ? 'Major issues need to be addressed immediately.' : ''}
                         </p>
                       </div>
                     )}
