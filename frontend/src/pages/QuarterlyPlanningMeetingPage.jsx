@@ -3219,7 +3219,7 @@ const QuarterlyPlanningMeetingPage = () => {
           onAddMilestone={async (priorityId, milestone) => {
             const orgId = user?.organizationId || user?.organization_id;
             const effectiveTeamId = teamId || getEffectiveTeamId(teamId, user);
-            await quarterlyPrioritiesService.addMilestone(orgId, effectiveTeamId, priorityId, milestone);
+            await quarterlyPrioritiesService.createMilestone(orgId, effectiveTeamId, priorityId, milestone);
             await fetchPrioritiesData();
           }}
           onEditMilestone={async (priorityId, milestoneId, milestone) => {
