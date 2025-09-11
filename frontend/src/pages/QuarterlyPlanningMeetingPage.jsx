@@ -189,6 +189,21 @@ const QuarterlyPlanningMeetingPage = () => {
   // Track which priorities are expanded in the inline view
   const [expandedPriorities, setExpandedPriorities] = useState({});
   
+  // Track which status dropdown is open
+  const [openStatusDropdown, setOpenStatusDropdown] = useState(null);
+  
+  // Close dropdown when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (e) => {
+      if (openStatusDropdown && !e.target.closest('.status-dropdown')) {
+        setOpenStatusDropdown(null);
+      }
+    };
+    
+    document.addEventListener('click', handleClickOutside);
+    return () => document.removeEventListener('click', handleClickOutside);
+  }, [openStatusDropdown]);
+  
   // Priority dialog states
   const [selectedPriority, setSelectedPriority] = useState(null);
   const [showPriorityDialog, setShowPriorityDialog] = useState(false);
@@ -1972,13 +1987,29 @@ const QuarterlyPlanningMeetingPage = () => {
                                         />
                                     </div>
                                     
-                                    {/* Status Indicator */}
-                                    <div className="w-10 ml-2 flex items-center">
-                                      <div className="flex items-center justify-center w-7 h-7 rounded-full" style={{
-                                        backgroundColor: isComplete ? themeColors.primary + '20' : (isOnTrack ? '#10B98120' : '#EF444420'),
-                                        border: `2px solid ${isComplete ? themeColors.primary : (isOnTrack ? '#10B981' : '#EF4444')}`
-                                      }}>
-                                        {isComplete ? (
+                                    {/* Status Indicator with Dropdown */}
+                                    <div className="w-10 ml-2 flex items-center relative status-dropdown">
+                                      <div 
+                                        className="flex items-center justify-center w-7 h-7 rounded-full cursor-pointer hover:scale-110 transition-transform"
+                                        style={{
+                                          backgroundColor: 
+                                            priority.status === 'cancelled' ? '#6B728020' :
+                                            isComplete ? themeColors.primary + '20' : 
+                                            (isOnTrack ? '#10B98120' : '#EF444420'),
+                                          border: `2px solid ${
+                                            priority.status === 'cancelled' ? '#6B7280' :
+                                            isComplete ? themeColors.primary : 
+                                            (isOnTrack ? '#10B981' : '#EF4444')
+                                          }`
+                                        }}
+                                        onClick={(e) => {
+                                          e.stopPropagation();
+                                          setOpenStatusDropdown(openStatusDropdown === priority.id ? null : priority.id);
+                                        }}
+                                      >
+                                        {priority.status === 'cancelled' ? (
+                                          <X className="h-4 w-4 text-gray-500" />
+                                        ) : isComplete ? (
                                           <CheckCircle className="h-4 w-4" style={{ color: themeColors.primary }} />
                                         ) : isOnTrack ? (
                                           <Check className="h-4 w-4 text-green-600" />
@@ -1986,11 +2017,102 @@ const QuarterlyPlanningMeetingPage = () => {
                                           <X className="h-4 w-4 text-red-600" />
                                         )}
                                       </div>
+                                      
+                                      {/* Status Dropdown */}
+                                      {openStatusDropdown === priority.id && (
+                                        <div className="absolute top-8 left-0 z-50 bg-white rounded-lg shadow-lg border border-slate-200 py-1 min-w-[140px]">
+                                          <button
+                                            className="w-full px-3 py-2 text-left text-sm hover:bg-slate-50 flex items-center gap-2"
+                                            onClick={async (e) => {
+                                              e.stopPropagation();
+                                              await quarterlyPrioritiesService.updatePriority(
+                                                user?.organizationId,
+                                                teamId,
+                                                priority.id,
+                                                { status: 'on-track' }
+                                              );
+                                              await fetchPrioritiesData();
+                                              setOpenStatusDropdown(null);
+                                            }}
+                                          >
+                                            <div className="w-4 h-4 rounded-full bg-green-100 border-2 border-green-500 flex items-center justify-center">
+                                              {priority.status === 'on-track' && <Check className="h-3 w-3 text-green-600" />}
+                                            </div>
+                                            <span className={priority.status === 'on-track' ? 'font-medium' : ''}>On Track</span>
+                                          </button>
+                                          
+                                          <button
+                                            className="w-full px-3 py-2 text-left text-sm hover:bg-slate-50 flex items-center gap-2"
+                                            onClick={async (e) => {
+                                              e.stopPropagation();
+                                              await quarterlyPrioritiesService.updatePriority(
+                                                user?.organizationId,
+                                                teamId,
+                                                priority.id,
+                                                { status: 'off-track' }
+                                              );
+                                              await fetchPrioritiesData();
+                                              setOpenStatusDropdown(null);
+                                            }}
+                                          >
+                                            <div className="w-4 h-4 rounded-full bg-red-100 border-2 border-red-500 flex items-center justify-center">
+                                              {priority.status === 'off-track' && <X className="h-3 w-3 text-red-600" />}
+                                            </div>
+                                            <span className={priority.status === 'off-track' ? 'font-medium' : ''}>Off Track</span>
+                                          </button>
+                                          
+                                          <button
+                                            className="w-full px-3 py-2 text-left text-sm hover:bg-slate-50 flex items-center gap-2"
+                                            onClick={async (e) => {
+                                              e.stopPropagation();
+                                              await quarterlyPrioritiesService.updatePriority(
+                                                user?.organizationId,
+                                                teamId,
+                                                priority.id,
+                                                { status: 'complete' }
+                                              );
+                                              await fetchPrioritiesData();
+                                              setOpenStatusDropdown(null);
+                                            }}
+                                          >
+                                            <div className="w-4 h-4 rounded-full bg-green-100 border-2 border-green-600 flex items-center justify-center">
+                                              {(priority.status === 'complete' || priority.status === 'completed') && <CheckCircle className="h-3 w-3 text-green-600" />}
+                                            </div>
+                                            <span className={(priority.status === 'complete' || priority.status === 'completed') ? 'font-medium' : ''}>Complete</span>
+                                          </button>
+                                          
+                                          <div className="border-t border-slate-100 my-1"></div>
+                                          
+                                          <button
+                                            className="w-full px-3 py-2 text-left text-sm hover:bg-slate-50 flex items-center gap-2"
+                                            onClick={async (e) => {
+                                              e.stopPropagation();
+                                              await quarterlyPrioritiesService.updatePriority(
+                                                user?.organizationId,
+                                                teamId,
+                                                priority.id,
+                                                { status: 'cancelled' }
+                                              );
+                                              await fetchPrioritiesData();
+                                              setOpenStatusDropdown(null);
+                                            }}
+                                          >
+                                            <div className="w-4 h-4 rounded-full bg-gray-100 border-2 border-gray-500 flex items-center justify-center">
+                                              {priority.status === 'cancelled' && <X className="h-3 w-3 text-gray-600" />}
+                                            </div>
+                                            <span className={priority.status === 'cancelled' ? 'font-medium' : ''}>Cancelled</span>
+                                          </button>
+                                        </div>
+                                      )}
                                     </div>
                                     
                                     {/* Title */}
                                     <div className="flex-1 ml-3">
-                                      <span className={`text-sm font-medium ${isComplete ? 'line-through text-slate-400' : 'text-slate-900'}`}>
+                                      <span className={`text-sm font-medium ${
+                                        priority.status === 'cancelled' ? 'line-through text-slate-400' :
+                                        isComplete ? 'line-through text-slate-400' : 
+                                        'text-slate-900'
+                                      }`}>
                                         {priority.title}
                                       </span>
                                     </div>
