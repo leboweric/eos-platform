@@ -82,6 +82,8 @@ const IssuesListClean = ({
   const [draggedIssueIndex, setDraggedIssueIndex] = useState(null);
   const [dragOverIssueIndex, setDragOverIssueIndex] = useState(null);
   const [isDragging, setIsDragging] = useState(false);
+  const [itemsPerPage, setItemsPerPage] = useState(25);
+  const [currentPage, setCurrentPage] = useState(1);
 
   // Sort issues whenever issues prop or sort settings change
   useEffect(() => {
@@ -621,25 +623,19 @@ const IssuesListClean = ({
         // Default view - List or Grid based on showListView
         (() => {
           if (showListView) {
-            // Multi-column list view logic
+            // Pagination logic
             const issueCount = sortedIssues.length;
-            const columnCount = Math.min(maxColumns, Math.ceil(issueCount / columnBreakpoint));
-            const issuesPerColumn = Math.ceil(issueCount / columnCount);
+            const totalPages = Math.ceil(issueCount / itemsPerPage);
+            const startIndex = (currentPage - 1) * itemsPerPage;
+            const endIndex = Math.min(startIndex + itemsPerPage, issueCount);
+            const paginatedIssues = sortedIssues.slice(startIndex, endIndex);
             
-            // Split issues into columns
-            const columns = [];
-            for (let i = 0; i < columnCount; i++) {
-              const start = i * issuesPerColumn;
-              const end = Math.min(start + issuesPerColumn, issueCount);
-              columns.push(sortedIssues.slice(start, end));
-            }
+            // Single column for paginated view
+            const columns = [paginatedIssues];
             
             return (
-              <div className={`grid gap-4 ${
-                columnCount === 1 ? 'grid-cols-1' : 
-                columnCount === 2 ? 'grid-cols-1 lg:grid-cols-2' : 
-                'grid-cols-1 lg:grid-cols-2 xl:grid-cols-3'
-              }`}>
+              <>
+              <div className="grid gap-4 grid-cols-1">
                 {columns.map((columnIssues, colIndex) => (
                   <div key={colIndex} className="space-y-2">
                     {columnIssues.map((issue) => {
@@ -660,14 +656,8 @@ const IssuesListClean = ({
                             ${isTopThree ? 'shadow-lg' : ''}
                           `}
                           style={{
-                            backgroundColor: showVoting && globalIndex === 0 ? hexToRgba(themeColors.primary, 0.08) : 
-                                          showVoting && globalIndex === 1 ? hexToRgba(themeColors.secondary, 0.06) :
-                                          showVoting && globalIndex === 2 ? hexToRgba(themeColors.accent, 0.04) :
-                                          'rgba(255, 255, 255, 0.9)',
-                            borderColor: showVoting && globalIndex === 0 ? themeColors.primary : 
-                                        showVoting && globalIndex === 1 ? themeColors.secondary :
-                                        showVoting && globalIndex === 2 ? themeColors.accent :
-                                        'rgba(255, 255, 255, 0.5)'
+                            backgroundColor: 'rgba(255, 255, 255, 0.9)',
+                            borderColor: 'rgba(255, 255, 255, 0.5)'
                           }}
                           onDragOver={handleDragOver}
                           onDragEnter={(e) => handleDragEnter(e, globalIndex)}
@@ -722,19 +712,11 @@ const IssuesListClean = ({
                 </div>
                 
                 {/* Issue number with priority colors */}
-                <span className="text-sm font-semibold min-w-[2rem]" style={{
-                  color: showVoting && globalIndex === 0 ? themeColors.primary : 
-                         showVoting && globalIndex === 1 ? themeColors.secondary :
-                         showVoting && globalIndex === 2 ? themeColors.accent :
-                         '#6B7280'
-                }}>
+                <span className="text-sm font-semibold min-w-[2rem] text-gray-500">
                   #{globalIndex + 1}
                 </span>
                 
-                {/* Medal emojis for top 3 - only during meetings */}
-                {showVoting && globalIndex === 0 && <span className="text-xs" title="#1 Priority">🥇</span>}
-                {showVoting && globalIndex === 1 && <span className="text-xs" title="#2 Priority">🥈</span>}
-                {showVoting && globalIndex === 2 && <span className="text-xs" title="#3 Priority">🥉</span>}
+                {/* Removed medal emojis for cleaner look */}
                 
                 {/* Title */}
                 <h3 className={`
@@ -784,6 +766,56 @@ const IssuesListClean = ({
                   </div>
                 ))}
               </div>
+              
+              {/* Pagination Controls */}
+              {issueCount > itemsPerPage && (
+                <div className="mt-4 flex items-center justify-between p-4 bg-white/80 backdrop-blur-sm rounded-xl border border-white/20 shadow-sm">
+                  <div className="flex items-center gap-2">
+                    <span className="text-sm text-gray-600">Items per page:</span>
+                    <select 
+                      value={itemsPerPage}
+                      onChange={(e) => {
+                        setItemsPerPage(Number(e.target.value));
+                        setCurrentPage(1);
+                      }}
+                      className="px-2 py-1 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    >
+                      <option value={25}>25</option>
+                      <option value={50}>50</option>
+                      <option value={100}>100</option>
+                      <option value={issueCount}>All</option>
+                    </select>
+                  </div>
+                  
+                  <div className="flex items-center gap-4">
+                    <span className="text-sm text-gray-600">
+                      {startIndex + 1}-{endIndex} of {issueCount}
+                    </span>
+                    
+                    <div className="flex gap-2">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
+                        disabled={currentPage === 1}
+                        className="h-8 px-3"
+                      >
+                        Previous
+                      </Button>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => setCurrentPage(prev => Math.min(totalPages, prev + 1))}
+                        disabled={currentPage === totalPages}
+                        className="h-8 px-3"
+                      >
+                        Next
+                      </Button>
+                    </div>
+                  </div>
+                </div>
+              )}
+              </>
             );
           } else {
             // Compact Grid View - Default

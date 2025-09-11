@@ -925,10 +925,23 @@ const QuarterlyPlanningMeetingPage = () => {
   
   const handleStatusChange = async (issueId, newStatus) => {
     try {
+      // Optimistically update the UI first
+      setShortTermIssues(prev => prev.map(issue => 
+        issue.id === issueId ? { ...issue, status: newStatus } : issue
+      ));
+      setLongTermIssues(prev => prev.map(issue => 
+        issue.id === issueId ? { ...issue, status: newStatus } : issue
+      ));
+      
+      // Then update the backend
       await issuesService.updateIssue(issueId, { status: newStatus });
-      await fetchIssuesData();
+      
+      // Don't refetch - preserve the current order and just keep the optimistic update
+      // Only refetch if there's an error
     } catch (error) {
       console.error('Failed to update issue status:', error);
+      // On error, revert the optimistic update by refetching
+      await fetchIssuesData();
     }
   };
   
