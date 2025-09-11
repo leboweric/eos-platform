@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { useParams } from 'react-router-dom';
 import { useAuthStore } from '../stores/authStore';
-import { format } from 'date-fns';
+import { format, addDays } from 'date-fns';
 import MeetingBar from '../components/meeting/MeetingBar';
 import useMeeting from '../hooks/useMeeting';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -207,6 +207,10 @@ const QuarterlyPlanningMeetingPage = () => {
   // Priority dialog states
   const [selectedPriority, setSelectedPriority] = useState(null);
   const [showPriorityDialog, setShowPriorityDialog] = useState(false);
+  
+  // Inline milestone creation states
+  const [addingMilestoneFor, setAddingMilestoneFor] = useState(null);
+  const [newMilestone, setNewMilestone] = useState({ title: '', dueDate: '' });
   
   // Theme state
   const [themeColors, setThemeColors] = useState({
@@ -2238,47 +2242,106 @@ const QuarterlyPlanningMeetingPage = () => {
                                           </div>
                                         )}
                                         
-                                        {/* Action Buttons */}
-                                        <div className="flex items-center gap-2 pt-3 border-t border-slate-200">
-                                          <Button 
-                                            size="sm" 
-                                            variant="outline"
-                                            onClick={(e) => {
-                                              e.stopPropagation();
-                                              setSelectedPriority(priority);
-                                              setShowPriorityDialog(true);
-                                            }}
-                                          >
-                                            <Edit className="h-3 w-3 mr-1" />
-                                            Edit Rock
-                                          </Button>
-                                          {isComplete ? (
-                                            <Badge className="bg-green-100 text-green-700 border-green-300">
-                                              <CheckCircle className="h-3 w-3 mr-1" />
-                                              Completed
-                                            </Badge>
+                                        {/* Add Milestone Section */}
+                                        <div className="pt-3 border-t border-slate-200">
+                                          {addingMilestoneFor === priority.id ? (
+                                            // Inline milestone creation form
+                                            <div className="space-y-2">
+                                              <input
+                                                type="text"
+                                                placeholder="Milestone description..."
+                                                value={newMilestone.title}
+                                                onChange={(e) => setNewMilestone(prev => ({ ...prev, title: e.target.value }))}
+                                                className="w-full px-3 py-2 text-sm border border-slate-200 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                                autoFocus
+                                                onKeyDown={async (e) => {
+                                                  if (e.key === 'Escape') {
+                                                    setAddingMilestoneFor(null);
+                                                    setNewMilestone({ title: '', dueDate: '' });
+                                                  } else if (e.key === 'Enter' && newMilestone.title.trim()) {
+                                                    e.preventDefault();
+                                                    try {
+                                                      await quarterlyPrioritiesService.createMilestone(
+                                                        user?.organizationId,
+                                                        priority.id,
+                                                        {
+                                                          title: newMilestone.title,
+                                                          dueDate: newMilestone.dueDate
+                                                        }
+                                                      );
+                                                      await fetchPrioritiesData();
+                                                      setAddingMilestoneFor(null);
+                                                      setNewMilestone({ title: '', dueDate: '' });
+                                                    } catch (error) {
+                                                      console.error('Failed to create milestone:', error);
+                                                    }
+                                                  }
+                                                }}
+                                              />
+                                              <div className="flex items-center gap-2">
+                                                <input
+                                                  type="date"
+                                                  value={newMilestone.dueDate}
+                                                  onChange={(e) => setNewMilestone(prev => ({ ...prev, dueDate: e.target.value }))}
+                                                  className="flex-1 px-3 py-2 text-sm border border-slate-200 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                                />
+                                                <Button
+                                                  size="sm"
+                                                  variant="default"
+                                                  className="bg-green-600 hover:bg-green-700"
+                                                  onClick={async (e) => {
+                                                    e.stopPropagation();
+                                                    if (newMilestone.title.trim()) {
+                                                      try {
+                                                        await quarterlyPrioritiesService.createMilestone(
+                                                          user?.organizationId,
+                                                          priority.id,
+                                                          {
+                                                            title: newMilestone.title,
+                                                            dueDate: newMilestone.dueDate
+                                                          }
+                                                        );
+                                                        await fetchPrioritiesData();
+                                                        setAddingMilestoneFor(null);
+                                                        setNewMilestone({ title: '', dueDate: '' });
+                                                      } catch (error) {
+                                                        console.error('Failed to create milestone:', error);
+                                                      }
+                                                    }
+                                                  }}
+                                                >
+                                                  <Check className="h-4 w-4" />
+                                                </Button>
+                                                <Button
+                                                  size="sm"
+                                                  variant="outline"
+                                                  onClick={(e) => {
+                                                    e.stopPropagation();
+                                                    setAddingMilestoneFor(null);
+                                                    setNewMilestone({ title: '', dueDate: '' });
+                                                  }}
+                                                >
+                                                  <X className="h-4 w-4" />
+                                                </Button>
+                                              </div>
+                                            </div>
                                           ) : (
+                                            // Add Milestone button
                                             <Button 
                                               size="sm" 
                                               variant="outline"
-                                              onClick={async (e) => {
+                                              className="w-full"
+                                              onClick={(e) => {
                                                 e.stopPropagation();
-                                                try {
-                                                  await quarterlyPrioritiesService.updatePriority(
-                                                    user?.organizationId,
-                                                    teamId,
-                                                    priority.id,
-                                                    { status: 'complete' }
-                                                  );
-                                                  await fetchPrioritiesData();
-                                                  setSuccess('Rock marked as complete');
-                                                } catch (error) {
-                                                  setError('Failed to mark as complete');
-                                                }
+                                                setAddingMilestoneFor(priority.id);
+                                                setNewMilestone({
+                                                  title: '',
+                                                  dueDate: format(addDays(new Date(), 30), 'yyyy-MM-dd')
+                                                });
                                               }}
                                             >
-                                              <CheckCircle className="h-3 w-3 mr-1" />
-                                              Mark Complete
+                                              <Plus className="h-3 w-3 mr-1" />
+                                              Add Milestone
                                             </Button>
                                           )}
                                         </div>
