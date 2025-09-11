@@ -3265,6 +3265,41 @@ const QuarterlyPlanningMeetingPage = () => {
             });
             setSuccess('Issue created successfully');
           }}
+          onAddUpdate={async (priorityId, updateText, statusChange) => {
+            const orgId = user?.organizationId || user?.organization_id;
+            const effectiveTeamId = teamId || getEffectiveTeamId(teamId, user);
+            await quarterlyPrioritiesService.addPriorityUpdate(orgId, effectiveTeamId, priorityId, updateText, statusChange);
+            await fetchPrioritiesData();
+          }}
+          onEditUpdate={async (priorityId, updateId, updateText) => {
+            const orgId = user?.organizationId || user?.organization_id;
+            const effectiveTeamId = teamId || getEffectiveTeamId(teamId, user);
+            await quarterlyPrioritiesService.editPriorityUpdate(orgId, effectiveTeamId, priorityId, updateId, updateText);
+            await fetchPrioritiesData();
+          }}
+          onDeleteUpdate={async (priorityId, updateId) => {
+            const orgId = user?.organizationId || user?.organization_id;
+            const effectiveTeamId = teamId || getEffectiveTeamId(teamId, user);
+            await quarterlyPrioritiesService.deletePriorityUpdate(orgId, effectiveTeamId, priorityId, updateId);
+            await fetchPrioritiesData();
+          }}
+          onUploadAttachment={async (priorityId, file) => {
+            const orgId = user?.organizationId || user?.organization_id;
+            const effectiveTeamId = teamId || getEffectiveTeamId(teamId, user);
+            await quarterlyPrioritiesService.uploadAttachment(orgId, effectiveTeamId, priorityId, file);
+            await fetchPrioritiesData();
+          }}
+          onDownloadAttachment={async (priorityId, attachmentId, fileName) => {
+            const orgId = user?.organizationId || user?.organization_id;
+            const effectiveTeamId = teamId || getEffectiveTeamId(teamId, user);
+            await quarterlyPrioritiesService.downloadAttachment(orgId, effectiveTeamId, priorityId, attachmentId, fileName);
+          }}
+          onDeleteAttachment={async (priorityId, attachmentId) => {
+            const orgId = user?.organizationId || user?.organization_id;
+            const effectiveTeamId = teamId || getEffectiveTeamId(teamId, user);
+            await quarterlyPrioritiesService.deleteAttachment(orgId, effectiveTeamId, priorityId, attachmentId);
+            await fetchPrioritiesData();
+          }}
         />
 
         {/* Add Priority Dialog */}
