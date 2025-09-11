@@ -96,6 +96,7 @@ const AddPositionDialog = ({ open, onClose, onCreate, parentPosition, skills, te
     try {
       await onCreate({
         ...formData,
+        holderId: formData.holderId === 'unassigned' ? null : formData.holderId,
         responsibilities: formData.responsibilities.map((r, index) => ({
           responsibility: r.responsibility,
           priority: r.priority,
@@ -182,7 +183,7 @@ const AddPositionDialog = ({ open, onClose, onCreate, parentPosition, skills, te
                   <SelectValue placeholder="Select a team member..." />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">Unassigned</SelectItem>
+                  <SelectItem value="unassigned">Unassigned</SelectItem>
                   {teamMembers.map((member) => (
                     <SelectItem key={member.id} value={member.id}>
                       {member.first_name} {member.last_name}
