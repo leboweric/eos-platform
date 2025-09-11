@@ -1810,22 +1810,6 @@ const QuarterlyPlanningMeetingPage = () => {
                   </p>
                 </div>
                 
-                {/* Action Button */}
-                <div className="flex justify-center">
-                  {priorities.length > 0 && (
-                    <Button
-                      onClick={() => setReviewConfirmDialog(true)}
-                      className="text-white shadow-lg hover:shadow-xl transition-all duration-200 transform hover:scale-[1.02]"
-                      style={{
-                        background: `linear-gradient(135deg, ${themeColors.primary} 0%, ${themeColors.secondary} 100%)`
-                      }}
-                    >
-                      <CheckCircle className="mr-2 h-4 w-4" />
-                      Complete Quarter Review
-                    </Button>
-                  )}
-                </div>
-                
                 {/* Company {labels?.priorities_label || 'Priorities'} Section */}
                 {(() => {
                   const companyPriorities = priorities.filter(p => p.priority_type === 'company');
@@ -2285,6 +2269,23 @@ const QuarterlyPlanningMeetingPage = () => {
                 </div>
               </CardContent>
             </Card>
+            
+            {/* Complete Quarter Review Button */}
+            <div className="flex justify-center mt-6">
+              {priorities.length > 0 && (
+                <Button
+                  onClick={() => setReviewConfirmDialog(true)}
+                  className="text-white shadow-lg hover:shadow-xl transition-all duration-200 transform hover:scale-[1.02]"
+                  size="lg"
+                  style={{
+                    background: `linear-gradient(135deg, ${themeColors.primary} 0%, ${themeColors.secondary} 100%)`
+                  }}
+                >
+                  <CheckCircle className="mr-2 h-5 w-5" />
+                  Complete Quarter Review
+                </Button>
+              )}
+            </div>
           </div>
         );
 
