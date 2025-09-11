@@ -1613,16 +1613,6 @@ const QuarterlyPlanningMeetingPage = () => {
                       </CardTitle>
                       <CardDescription className="mt-2 text-slate-600 font-medium">Check progress on last quarter's priorities (30 minutes)</CardDescription>
                     </div>
-                    {priorities.length > 0 && (
-                      <div className="text-center bg-white/50 rounded-xl px-4 py-2 border border-white/30">
-                        <span className="text-3xl font-bold bg-gradient-to-r from-slate-900 to-slate-700 bg-clip-text text-transparent">
-                          {Math.round((priorities.filter(p => p.status === 'complete').length / priorities.length) * 100)}%
-                        </span>
-                        <p className="text-sm text-slate-600 font-medium">
-                          {priorities.filter(p => p.status === 'complete').length} of {priorities.length} Rocks complete
-                        </p>
-                      </div>
-                    )}
                   </div>
                   <div className="text-sm text-slate-600 bg-white/80 backdrop-blur-sm px-4 py-2 rounded-full border border-white/30 shadow-sm font-medium">
                     30 minutes
@@ -1809,6 +1799,20 @@ const QuarterlyPlanningMeetingPage = () => {
                     <span className="font-bold">Quick Status Check:</span> Each Rock owner reports "Done" or "Not Done"
                   </p>
                 </div>
+                
+                {/* Rock Completion Status */}
+                {priorities.length > 0 && (
+                  <div className="flex justify-center">
+                    <div className="text-center bg-white/80 backdrop-blur-sm rounded-2xl px-8 py-4 border border-white/50 shadow-lg">
+                      <span className="text-4xl font-bold bg-gradient-to-r from-slate-900 to-slate-700 bg-clip-text text-transparent">
+                        {Math.round((priorities.filter(p => p.status === 'complete').length / priorities.length) * 100)}%
+                      </span>
+                      <p className="text-sm text-slate-600 font-medium mt-1">
+                        {priorities.filter(p => p.status === 'complete').length} of {priorities.length} Rocks complete
+                      </p>
+                    </div>
+                  </div>
+                )}
                 
                 {/* Company {labels?.priorities_label || 'Priorities'} Section */}
                 {(() => {
