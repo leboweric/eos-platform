@@ -807,6 +807,57 @@ const QuarterlyPlanningMeetingPage = () => {
     }
   };
 
+  const handleCreatePriority = async () => {
+    try {
+      const orgId = user?.organizationId || user?.organization_id;
+      const effectiveTeamId = teamId || getEffectiveTeamId(teamId, user);
+      
+      // Get current quarter and year
+      const now = new Date();
+      const currentMonth = now.getMonth(); // 0-11
+      const currentYear = now.getFullYear();
+      
+      // Calculate quarter from month (0-11 -> Q1-Q4)
+      let quarter;
+      if (currentMonth < 3) quarter = 'Q1';
+      else if (currentMonth < 6) quarter = 'Q2';
+      else if (currentMonth < 9) quarter = 'Q3';
+      else quarter = 'Q4';
+      
+      const priorityData = {
+        title: priorityForm.title,
+        description: priorityForm.description || '',
+        ownerId: priorityForm.ownerId,
+        dueDate: priorityForm.dueDate,
+        isCompanyPriority: priorityForm.isCompanyPriority,
+        quarter: quarter, // Use string format like 'Q3'
+        year: currentYear,
+        status: 'on-track',
+        priority_type: priorityForm.isCompanyPriority ? 'company' : 'individual',
+        team_id: effectiveTeamId
+      };
+      
+      await quarterlyPrioritiesService.createPriority(orgId, effectiveTeamId, priorityData);
+      
+      // Refresh priorities
+      await fetchPrioritiesData();
+      
+      // Reset form and close dialog
+      setPriorityForm({
+        title: '',
+        description: '',
+        ownerId: '',
+        dueDate: '',
+        isCompanyPriority: false
+      });
+      setShowAddPriority(false);
+      setSuccess('Priority created successfully');
+    } catch (error) {
+      console.error('Failed to create priority:', error);
+      setError(error.response?.data?.error || 'Failed to create priority');
+    }
+  };
+
   const fetchIssuesData = async () => {
     try {
       setLoading(true);
