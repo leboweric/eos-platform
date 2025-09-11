@@ -1244,7 +1244,7 @@ const QuarterlyPlanningMeetingPage = () => {
                     <Button 
                       variant="outline" 
                       className="mt-4"
-                      onClick={() => navigate('/scorecard')}
+                      onClick={() => window.open('/scorecard', '_blank')}
                     >
                       View Scorecard
                     </Button>
