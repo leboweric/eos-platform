@@ -47,7 +47,7 @@ import {
 import { useNavigate } from 'react-router-dom';
 import PriorityCard from '../components/priorities/PriorityCardClean';
 import PriorityDialog from '../components/priorities/PriorityDialog';
-import RockSidePanel from '../components/priorities/RockSidePanel';
+// TEMPORARILY DISABLED: import RockSidePanel from '../components/priorities/RockSidePanel';
 import IssuesListClean from '../components/issues/IssuesListClean';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
