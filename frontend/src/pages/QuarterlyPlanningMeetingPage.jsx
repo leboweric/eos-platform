@@ -3004,78 +3004,62 @@ const QuarterlyPlanningMeetingPage = () => {
                   )}
                 </div>
 
-                {/* Cascading Messages */}
+                {/* Feedback */}
                 <div className="border border-gray-200 p-4 rounded-lg bg-white">
-                  <h4 className="font-medium mb-2 text-gray-900 flex items-center gap-2">
+                  <h4 className="font-medium mb-3 text-gray-900 flex items-center gap-2">
                     <MessageSquare className="h-4 w-4" />
-                    Cascading Messages
+                    Feedback
                   </h4>
-                  <p className="text-sm text-gray-600 mb-3">
-                    What key information needs to be communicated to other teams?
-                  </p>
-                  <textarea
-                    className="w-full p-3 border border-gray-300 rounded-lg resize-none focus:ring-2 mb-4"
-                    style={{
-                      '--tw-ring-color': themeColors.primary,
-                      '--tw-border-opacity': 1
-                    }}
-                    onFocus={(e) => {
-                      e.target.style.borderColor = themeColors.primary;
-                      e.target.style.boxShadow = `0 0 0 3px ${themeColors.primary}20`;
-                    }}
-                    onBlur={(e) => {
-                      e.target.style.borderColor = '#d1d5db';
-                      e.target.style.boxShadow = 'none';
-                    }}
-                    rows={3}
-                    placeholder="Enter any messages to cascade to other teams..."
-                    value={cascadeMessage}
-                    onChange={(e) => setCascadeMessage(e.target.value)}
-                  />
                   
-                  {cascadeMessage.trim() && (
-                    <div className="space-y-3">
-                      <div className="flex items-center gap-2">
-                        <Checkbox
-                          id="cascade-all"
-                          checked={cascadeToAll}
-                          onCheckedChange={(checked) => {
-                            setCascadeToAll(checked);
-                            if (checked) setSelectedTeams([]);
-                          }}
-                        />
-                        <label htmlFor="cascade-all" className="text-sm font-medium text-gray-700">
-                          Send to all teams
-                        </label>
-                      </div>
-                      
-                      {!cascadeToAll && availableTeams.length > 0 && (
-                        <div>
-                          <p className="text-sm text-gray-600 mb-2">Or select specific teams:</p>
-                          <div className="space-y-2 max-h-32 overflow-y-auto border border-gray-200 rounded-lg p-2">
-                            {availableTeams.map(team => (
-                              <div key={team.id} className="flex items-center gap-2">
-                                <Checkbox
-                                  id={`team-${team.id}`}
-                                  checked={selectedTeams.includes(team.id)}
-                                  onCheckedChange={(checked) => {
-                                    if (checked) {
-                                      setSelectedTeams([...selectedTeams, team.id]);
-                                    } else {
-                                      setSelectedTeams(selectedTeams.filter(id => id !== team.id));
-                                    }
-                                  }}
-                                />
-                                <label htmlFor={`team-${team.id}`} className="text-sm text-gray-700">
-                                  {team.name}
-                                </label>
-                              </div>
-                            ))}
-                          </div>
-                        </div>
-                      )}
+                  <div className="space-y-4">
+                    {/* Where's your head? How are you feeling? */}
+                    <div>
+                      <label className="text-sm font-medium text-gray-700 block mb-2">
+                        Where's your head? How are you feeling?
+                      </label>
+                      <textarea
+                        className="w-full p-3 border border-gray-300 rounded-lg resize-none focus:ring-2"
+                        style={{
+                          '--tw-ring-color': themeColors.primary,
+                          '--tw-border-opacity': 1
+                        }}
+                        onFocus={(e) => {
+                          e.target.style.borderColor = themeColors.primary;
+                          e.target.style.boxShadow = `0 0 0 3px ${themeColors.primary}20`;
+                        }}
+                        onBlur={(e) => {
+                          e.target.style.borderColor = '#d1d5db';
+                          e.target.style.boxShadow = 'none';
+                        }}
+                        rows={2}
+                        placeholder="Share your thoughts and feelings about the meeting..."
+                      />
                     </div>
-                  )}
+                    
+                    {/* Were your expectations met? */}
+                    <div>
+                      <label className="text-sm font-medium text-gray-700 block mb-2">
+                        Were your expectations met?
+                      </label>
+                      <textarea
+                        className="w-full p-3 border border-gray-300 rounded-lg resize-none focus:ring-2"
+                        style={{
+                          '--tw-ring-color': themeColors.primary,
+                          '--tw-border-opacity': 1
+                        }}
+                        onFocus={(e) => {
+                          e.target.style.borderColor = themeColors.primary;
+                          e.target.style.boxShadow = `0 0 0 3px ${themeColors.primary}20`;
+                        }}
+                        onBlur={(e) => {
+                          e.target.style.borderColor = '#d1d5db';
+                          e.target.style.boxShadow = 'none';
+                        }}
+                        rows={2}
+                        placeholder="Did the meeting meet your expectations?"
+                      />
+                    </div>
+                  </div>
                 </div>
 
                 <div className="border border-gray-200 p-4 rounded-lg bg-white">
