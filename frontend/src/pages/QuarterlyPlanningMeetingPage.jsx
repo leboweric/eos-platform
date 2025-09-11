@@ -3131,54 +3131,13 @@ const QuarterlyPlanningMeetingPage = () => {
                     Feedback
                   </h4>
                   
-                  <div className="space-y-4">
-                    {/* Where's your head? How are you feeling? */}
-                    <div>
-                      <label className="text-sm font-medium text-gray-700 block mb-2">
-                        Where's your head? How are you feeling?
-                      </label>
-                      <textarea
-                        className="w-full p-3 border border-gray-300 rounded-lg resize-none focus:ring-2"
-                        style={{
-                          '--tw-ring-color': themeColors.primary,
-                          '--tw-border-opacity': 1
-                        }}
-                        onFocus={(e) => {
-                          e.target.style.borderColor = themeColors.primary;
-                          e.target.style.boxShadow = `0 0 0 3px ${themeColors.primary}20`;
-                        }}
-                        onBlur={(e) => {
-                          e.target.style.borderColor = '#d1d5db';
-                          e.target.style.boxShadow = 'none';
-                        }}
-                        rows={2}
-                        placeholder="Share your thoughts and feelings about the meeting..."
-                      />
-                    </div>
-                    
-                    {/* Were your expectations met? */}
-                    <div>
-                      <label className="text-sm font-medium text-gray-700 block mb-2">
-                        Were your expectations met?
-                      </label>
-                      <textarea
-                        className="w-full p-3 border border-gray-300 rounded-lg resize-none focus:ring-2"
-                        style={{
-                          '--tw-ring-color': themeColors.primary,
-                          '--tw-border-opacity': 1
-                        }}
-                        onFocus={(e) => {
-                          e.target.style.borderColor = themeColors.primary;
-                          e.target.style.boxShadow = `0 0 0 3px ${themeColors.primary}20`;
-                        }}
-                        onBlur={(e) => {
-                          e.target.style.borderColor = '#d1d5db';
-                          e.target.style.boxShadow = 'none';
-                        }}
-                        rows={2}
-                        placeholder="Did the meeting meet your expectations?"
-                      />
-                    </div>
+                  <div className="space-y-3">
+                    <p className="text-sm text-gray-700">
+                      • Where's your head? How are you feeling?
+                    </p>
+                    <p className="text-sm text-gray-700">
+                      • Were your expectations met?
+                    </p>
                   </div>
                 </div>
 
