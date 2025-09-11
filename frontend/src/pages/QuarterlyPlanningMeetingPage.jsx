@@ -1693,7 +1693,9 @@ const QuarterlyPlanningMeetingPage = () => {
                     </div>
                     {blueprintData?.oneYearPlan?.profit && (
                       <p className="text-sm text-gray-600 mb-2">
-                        Target: {blueprintData.oneYearPlan.profit}%
+                        Target: {typeof blueprintData.oneYearPlan.profit === 'number' 
+                          ? `$${(blueprintData.oneYearPlan.profit / 1000000).toFixed(1)}M`
+                          : blueprintData.oneYearPlan.profit}
                       </p>
                     )}
                     <div className="flex gap-2">
