@@ -579,6 +579,7 @@ const QuarterlyPlanningMeetingPage = () => {
       fetchTodosData();
       fetchTeamMembers(); // Need team members for todos
     } else if (activeSection === 'conclude') {
+      fetchTodosData(); // Load open todos for review
       fetchTeams(); // Load teams for cascading messages
       setLoading(false);
     } else {
