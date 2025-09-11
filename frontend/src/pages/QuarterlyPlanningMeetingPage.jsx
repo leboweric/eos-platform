@@ -192,6 +192,9 @@ const QuarterlyPlanningMeetingPage = () => {
   // Track which status dropdown is open
   const [openStatusDropdown, setOpenStatusDropdown] = useState(null);
   
+  // Quarterly Numbers Review collapse state
+  const [isNumbersReviewCollapsed, setIsNumbersReviewCollapsed] = useState(true);
+  
   // Close dropdown when clicking outside
   useEffect(() => {
     const handleClickOutside = (e) => {
@@ -1708,14 +1711,27 @@ const QuarterlyPlanningMeetingPage = () => {
             
             {/* Quarterly Numbers Review - Simple On Track/Off Track */}
             <Card className="bg-white/80 backdrop-blur-sm border border-white/50 rounded-2xl shadow-xl">
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2 text-lg">
-                  <DollarSign className="h-5 w-5" style={{ color: themeColors.primary }} />
-                  Quarterly Numbers Review
-                </CardTitle>
-                <CardDescription>Are your key metrics on track or off track?</CardDescription>
+              <CardHeader 
+                className="cursor-pointer"
+                onClick={() => setIsNumbersReviewCollapsed(!isNumbersReviewCollapsed)}
+              >
+                <div className="flex items-center justify-between">
+                  <div>
+                    <CardTitle className="flex items-center gap-2 text-lg">
+                      <DollarSign className="h-5 w-5" style={{ color: themeColors.primary }} />
+                      Quarterly Numbers Review
+                    </CardTitle>
+                    <CardDescription>Are your key metrics on track or off track?</CardDescription>
+                  </div>
+                  <ChevronDown 
+                    className={`h-5 w-5 text-gray-500 transition-transform duration-200 ${
+                      isNumbersReviewCollapsed ? '' : 'rotate-180'
+                    }`}
+                  />
+                </div>
               </CardHeader>
-              <CardContent>
+              {!isNumbersReviewCollapsed && (
+                <CardContent>
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                   {/* Revenue */}
                   <div className="p-4 bg-gray-50 rounded-lg">
@@ -1860,6 +1876,7 @@ const QuarterlyPlanningMeetingPage = () => {
                   </p>
                 </div>
               </CardContent>
+              )}
             </Card>
             {priorities.length === 0 ? (
               <Card className="bg-white/80 backdrop-blur-sm border border-white/50 rounded-2xl shadow-xl">
