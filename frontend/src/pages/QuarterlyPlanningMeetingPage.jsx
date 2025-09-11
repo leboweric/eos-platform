@@ -2263,6 +2263,7 @@ const QuarterlyPlanningMeetingPage = () => {
                                                     try {
                                                       await quarterlyPrioritiesService.createMilestone(
                                                         user?.organizationId,
+                                                        teamId,
                                                         priority.id,
                                                         {
                                                           title: newMilestone.title,
@@ -2295,6 +2296,7 @@ const QuarterlyPlanningMeetingPage = () => {
                                                       try {
                                                         await quarterlyPrioritiesService.createMilestone(
                                                           user?.organizationId,
+                                                          teamId,
                                                           priority.id,
                                                           {
                                                             title: newMilestone.title,
