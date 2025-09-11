@@ -327,7 +327,7 @@ const QuarterlyPlanningMeetingPage = () => {
     return () => window.removeEventListener('themeChanged', handleThemeChange);
   }, [user?.organizationId]);
   
-  const fetchOrganizationTheme = async () => {
+  async function fetchOrganizationTheme() {
     try {
       const orgId = user?.organizationId || user?.organization_id || localStorage.getItem('organizationId');
       const orgData = await organizationService.getOrganization();
@@ -359,7 +359,7 @@ const QuarterlyPlanningMeetingPage = () => {
   }, [meetingStarted, meetingStartTime]);
 
   // Fetch teams function (filtering out current team - no need to cascade to yourself)
-  const fetchTeams = async () => {
+  async function fetchTeams() {
     try {
       const response = await teamsService.getTeams();
       console.log('Teams API response:', response);
@@ -990,7 +990,7 @@ const QuarterlyPlanningMeetingPage = () => {
     }
   };
 
-  const fetchTeamMembers = async () => {
+  async function fetchTeamMembers() {
     try {
       const effectiveTeamId = teamId || getEffectiveTeamId(teamId, user);
       const response = await todosService.getTodos(null, null, true, effectiveTeamId);
@@ -998,7 +998,7 @@ const QuarterlyPlanningMeetingPage = () => {
     } catch (error) {
       console.error('Failed to fetch team members:', error);
     }
-  };
+  }
   
   // Issue handlers
   const handleEditIssue = (issue) => {
