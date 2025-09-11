@@ -1646,11 +1646,11 @@ const QuarterlyPlanningMeetingPage = () => {
                       <h4 className="font-medium text-gray-900">Revenue</h4>
                       <TrendingUp className="h-4 w-4 text-gray-400" />
                     </div>
-                    {blueprintData?.oneYearPlan?.revenue_target && (
+                    {blueprintData?.oneYearPlan?.revenue && (
                       <p className="text-sm text-gray-600 mb-2">
-                        Target: {typeof blueprintData.oneYearPlan.revenue_target === 'number' 
-                          ? `$${(blueprintData.oneYearPlan.revenue_target / 1000000).toFixed(1)}M`
-                          : blueprintData.oneYearPlan.revenue_target}
+                        Target: {typeof blueprintData.oneYearPlan.revenue === 'number' 
+                          ? `$${(blueprintData.oneYearPlan.revenue / 1000000).toFixed(1)}M`
+                          : blueprintData.oneYearPlan.revenue}
                       </p>
                     )}
                     <div className="flex gap-2">
@@ -1689,9 +1689,9 @@ const QuarterlyPlanningMeetingPage = () => {
                       <h4 className="font-medium text-gray-900">Profit</h4>
                       <Activity className="h-4 w-4 text-gray-400" />
                     </div>
-                    {blueprintData?.oneYearPlan?.profit_target && (
+                    {blueprintData?.oneYearPlan?.profit && (
                       <p className="text-sm text-gray-600 mb-2">
-                        Target: {blueprintData.oneYearPlan.profit_target}%
+                        Target: {blueprintData.oneYearPlan.profit}%
                       </p>
                     )}
                     <div className="flex gap-2">
