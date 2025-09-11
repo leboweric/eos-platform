@@ -149,6 +149,8 @@ const QuarterlyPlanningMeetingPage = () => {
   const [meetingRating, setMeetingRating] = useState(null);
   const [reviewConfirmDialog, setReviewConfirmDialog] = useState(false);
   const [participantRatings, setParticipantRatings] = useState({}); // Store ratings by participant
+  const [quarterGrade, setQuarterGrade] = useState('');
+  const [quarterFeedback, setQuarterFeedback] = useState('');
   
   // Cascading message states
   const [showCascadeDialog, setShowCascadeDialog] = useState(false);
@@ -2844,6 +2846,124 @@ const QuarterlyPlanningMeetingPage = () => {
                       })()}
                     </TabsContent>
                   </Tabs>
+                </div>
+              </CardContent>
+            </Card>
+            
+            {/* Quarter Evaluation Card */}
+            <Card className="mt-6 shadow-lg border-0 overflow-hidden">
+              <CardHeader className="bg-gradient-to-r from-indigo-50 to-blue-50 border-b">
+                <CardTitle className="flex items-center gap-2 text-xl text-gray-900">
+                  <Star className="h-5 w-5 text-indigo-600" />
+                  Quarter Evaluation
+                </CardTitle>
+                <CardDescription>
+                  Grade the quarter and provide feedback for the leadership team
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="pt-6">
+                <div className="space-y-4">
+                  <div>
+                    <Label htmlFor="letter-grade" className="text-sm font-medium text-gray-700">
+                      Letter Grade for the Quarter
+                    </Label>
+                    <Select
+                      value={quarterGrade}
+                      onValueChange={setQuarterGrade}
+                    >
+                      <SelectTrigger 
+                        id="letter-grade"
+                        className="w-32 mt-2"
+                        style={{
+                          backgroundColor: quarterGrade === 'A' ? '#10B98120' :
+                                         quarterGrade === 'B' ? '#3B82F620' :
+                                         quarterGrade === 'C' ? '#EAB30820' :
+                                         quarterGrade === 'D' ? '#F9731620' :
+                                         quarterGrade === 'F' ? '#EF444420' : 'white',
+                          borderColor: quarterGrade === 'A' ? '#10B981' :
+                                      quarterGrade === 'B' ? '#3B82F6' :
+                                      quarterGrade === 'C' ? '#EAB308' :
+                                      quarterGrade === 'D' ? '#F97316' :
+                                      quarterGrade === 'F' ? '#EF4444' : undefined
+                        }}
+                      >
+                        <SelectValue placeholder="Select grade" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="A">
+                          <span className="flex items-center gap-2">
+                            <span className="font-bold text-green-600">A</span>
+                            <span className="text-sm text-gray-600">Excellent</span>
+                          </span>
+                        </SelectItem>
+                        <SelectItem value="B">
+                          <span className="flex items-center gap-2">
+                            <span className="font-bold text-blue-600">B</span>
+                            <span className="text-sm text-gray-600">Good</span>
+                          </span>
+                        </SelectItem>
+                        <SelectItem value="C">
+                          <span className="flex items-center gap-2">
+                            <span className="font-bold text-yellow-600">C</span>
+                            <span className="text-sm text-gray-600">Average</span>
+                          </span>
+                        </SelectItem>
+                        <SelectItem value="D">
+                          <span className="flex items-center gap-2">
+                            <span className="font-bold text-orange-600">D</span>
+                            <span className="text-sm text-gray-600">Below Average</span>
+                          </span>
+                        </SelectItem>
+                        <SelectItem value="F">
+                          <span className="flex items-center gap-2">
+                            <span className="font-bold text-red-600">F</span>
+                            <span className="text-sm text-gray-600">Poor</span>
+                          </span>
+                        </SelectItem>
+                      </SelectContent>
+                    </Select>
+                    {quarterGrade && (
+                      <div className="mt-2">
+                        <p className="text-sm text-gray-600">
+                          {quarterGrade === 'A' ? 'Outstanding performance this quarter!' :
+                           quarterGrade === 'B' ? 'Good job this quarter, room for improvement.' :
+                           quarterGrade === 'C' ? 'Average performance, let\'s identify areas to improve.' :
+                           quarterGrade === 'D' ? 'Below expectations, significant improvement needed.' :
+                           quarterGrade === 'F' ? 'Major issues need to be addressed immediately.'}
+                        </p>
+                      </div>
+                    )}
+                  </div>
+                  
+                  <div>
+                    <Label htmlFor="quarter-feedback" className="text-sm font-medium text-gray-700">
+                      Why did you give this grade? (Feedback for the team)
+                    </Label>
+                    <Textarea
+                      id="quarter-feedback"
+                      className="mt-2"
+                      rows={4}
+                      placeholder="Please explain your rating. What went well? What could be improved? What specific actions should we take next quarter?"
+                      value={quarterFeedback}
+                      onChange={(e) => setQuarterFeedback(e.target.value)}
+                      style={{
+                        borderColor: quarterGrade && !quarterFeedback ? '#EF4444' : undefined
+                      }}
+                    />
+                    {quarterGrade && !quarterFeedback && (
+                      <p className="text-xs text-red-600 mt-1">Please provide feedback to explain your grade</p>
+                    )}
+                  </div>
+                  
+                  {/* Visual indicator */}
+                  {quarterGrade && quarterFeedback && (
+                    <div className="bg-green-50 border border-green-200 rounded-lg p-3 flex items-center gap-2">
+                      <CheckCircle className="h-5 w-5 text-green-600" />
+                      <span className="text-sm text-green-800">
+                        Quarter evaluation complete: Grade <strong>{quarterGrade}</strong> with feedback
+                      </span>
+                    </div>
+                  )}
                 </div>
               </CardContent>
             </Card>
