@@ -404,26 +404,20 @@ const IssuesListClean = ({
           ${draggedIssueIndex === index ? 'opacity-50' : ''}
         `}
         style={{
-          backgroundColor: showVoting && index === 0 ? hexToRgba(themeColors.primary, 0.08) : 
-                          showVoting && index === 1 ? hexToRgba(themeColors.secondary, 0.06) :
-                          showVoting && index === 2 ? hexToRgba(themeColors.accent, 0.04) :
-                          'rgba(255, 255, 255, 0.9)',
-          borderColor: showVoting && index === 0 ? themeColors.primary : 
-                      showVoting && index === 1 ? themeColors.secondary :
-                      showVoting && index === 2 ? themeColors.accent :
-                      hexToRgba(themeColors.accent, 0.3)
+          backgroundColor: 'rgba(255, 255, 255, 0.9)',
+          borderColor: hexToRgba(themeColors.accent, 0.3)
         }}
         onDragOver={handleDragOver}
         onDragEnter={(e) => handleDragEnter(e, index)}
         onDragLeave={handleDragLeave}
         onDrop={(e) => handleDrop(e, index)}
         onMouseEnter={(e) => {
-          if (!isTopIssue && issue.status !== 'closed') {
+          if (issue.status !== 'closed') {
             e.currentTarget.style.borderColor = hexToRgba(themeColors.accent, 0.6);
           }
         }}
         onMouseLeave={(e) => {
-          if (!isTopIssue && issue.status !== 'closed') {
+          if (issue.status !== 'closed') {
             e.currentTarget.style.borderColor = hexToRgba(themeColors.accent, 0.3);
           }
         }}
@@ -459,10 +453,7 @@ const IssuesListClean = ({
                 </div>
               )}
               <span className="text-xs font-bold" style={{
-                color: showVoting && index === 0 ? themeColors.primary : 
-                       showVoting && index === 1 ? themeColors.secondary :
-                       showVoting && index === 2 ? themeColors.accent :
-                       '#6B7280'
+                color: '#6B7280'
               }}>
                 #{index + 1}
               </span>
@@ -485,9 +476,6 @@ const IssuesListClean = ({
                   )}
                 </Button>
               )}
-              {showVoting && index === 0 && <span className="text-xs" title="#1 Priority">🥇</span>}
-              {showVoting && index === 1 && <span className="text-xs" title="#2 Priority">🥈</span>}
-              {showVoting && index === 2 && <span className="text-xs" title="#3 Priority">🥉</span>}
             </div>
             <div onClick={(e) => e.stopPropagation()}>
               <div className="relative">
