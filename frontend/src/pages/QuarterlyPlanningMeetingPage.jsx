@@ -1733,7 +1733,11 @@ const QuarterlyPlanningMeetingPage = () => {
                     {blueprintData?.oneYearPlan?.measurables && blueprintData.oneYearPlan.measurables.length > 0 && (
                       <div className="text-sm text-gray-600 mb-2">
                         {blueprintData.oneYearPlan.measurables.slice(0, 3).map((measurable, index) => (
-                          <p key={index} className="truncate">• {measurable}</p>
+                          <p key={index} className="truncate">
+                            • {typeof measurable === 'object' 
+                              ? `${measurable.name || measurable.title || ''} ${measurable.target_value ? `(${measurable.target_value}${measurable.unit || ''})` : ''}`
+                              : measurable}
+                          </p>
                         ))}
                         {blueprintData.oneYearPlan.measurables.length > 3 && (
                           <p className="text-xs text-gray-500">+{blueprintData.oneYearPlan.measurables.length - 3} more</p>
