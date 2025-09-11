@@ -677,7 +677,7 @@ const QuarterlyPlanningMeetingPage = () => {
     }
   }, [priorities]);
 
-  const fetchPrioritiesData = async () => {
+  async function fetchPrioritiesData() {
     try {
       setLoading(true);
       setError(null);
@@ -963,7 +963,7 @@ const QuarterlyPlanningMeetingPage = () => {
     }
   };
 
-  const fetchIssuesData = async () => {
+  async function fetchIssuesData() {
     try {
       setLoading(true);
       setError(null);
@@ -1108,7 +1108,7 @@ const QuarterlyPlanningMeetingPage = () => {
     }
   };
 
-  const fetchTodosData = async () => {
+  async function fetchTodosData() {
     try {
       setLoading(true);
       const effectiveTeamId = teamId || getEffectiveTeamId(teamId, user);
@@ -1181,7 +1181,7 @@ const QuarterlyPlanningMeetingPage = () => {
     }
   };
 
-  const fetchVtoData = async () => {
+  async function fetchVtoData() {
     try {
       setLoading(true);
       setError(null);
@@ -1197,7 +1197,7 @@ const QuarterlyPlanningMeetingPage = () => {
     }
   };
 
-  const fetchBlueprintData = async () => {
+  async function fetchBlueprintData() {
     try {
       const data = await businessBlueprintService.getBusinessBlueprint();
       setBlueprintData(data);
