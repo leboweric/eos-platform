@@ -6,14 +6,14 @@ import { format, addDays } from 'date-fns';
 import { useAuthStore } from '../../stores/authStore';
 import { quarterlyPrioritiesService } from '../../services/quarterlyPrioritiesService';
 
-const RockSidePanel = ({ 
+function RockSidePanel({ 
   isOpen, 
   onClose, 
   rock, 
   teamId,
   onUpdate,
   themeColors = { primary: '#3B82F6', secondary: '#1E40AF' }
-}) => {
+}) {
   const { user } = useAuthStore();
   const [editedRock, setEditedRock] = useState(null);
   const [isAddingMilestone, setIsAddingMilestone] = useState(false);
@@ -55,7 +55,7 @@ const RockSidePanel = ({
   }, [isOpen, onClose]);
 
   // Auto-save with debounce
-  const handleFieldChange = (field, value) => {
+  function handleFieldChange(field, value) {
     const updated = { ...editedRock, [field]: value };
     setEditedRock(updated);
     
@@ -84,7 +84,7 @@ const RockSidePanel = ({
   };
 
   // Add milestone
-  const handleAddMilestone = async () => {
+  async function handleAddMilestone() {
     if (newMilestone.title.trim()) {
       try {
         const milestone = await quarterlyPrioritiesService.createMilestone(
@@ -112,7 +112,7 @@ const RockSidePanel = ({
   };
 
   // Toggle milestone completion
-  const handleToggleMilestone = async (milestone) => {
+  async function handleToggleMilestone(milestone) {
     try {
       const newCompletedState = !milestone.completed;
       await quarterlyPrioritiesService.updateMilestone(
@@ -137,7 +137,7 @@ const RockSidePanel = ({
   };
 
   // Add comment/update
-  const handleAddComment = async () => {
+  async function handleAddComment() {
     if (comment.trim()) {
       try {
         await quarterlyPrioritiesService.addPriorityUpdate(
