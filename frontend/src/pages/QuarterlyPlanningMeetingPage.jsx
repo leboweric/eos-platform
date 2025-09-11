@@ -1192,7 +1192,7 @@ const QuarterlyPlanningMeetingPage = () => {
                     <Button 
                       variant="outline" 
                       className="mt-4"
-                      onClick={() => navigate('/accountability')}
+                      onClick={() => window.open('/organizational-chart', '_blank')}
                     >
                       View Accountability Chart
                     </Button>
