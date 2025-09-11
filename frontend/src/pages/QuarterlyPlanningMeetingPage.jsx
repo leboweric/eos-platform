@@ -1015,38 +1015,6 @@ const QuarterlyPlanningMeetingPage = () => {
     setShowTodoDialog(true);
   };
 
-  const handleCreatePriority = async () => {
-    try {
-      const orgId = user?.organizationId || user?.organization_id;
-      const effectiveTeamId = teamId || getEffectiveTeamId(teamId, user);
-      
-      const priorityData = {
-        ...priorityForm,
-        quarter: Math.ceil((new Date().getMonth() + 1) / 3),
-        year: new Date().getFullYear(),
-        status: 'on-track',
-        priority_type: priorityForm.isCompanyPriority ? 'company' : 'individual',
-        team_id: effectiveTeamId
-      };
-      
-      await quarterlyPrioritiesService.createPriority(orgId, effectiveTeamId, priorityData);
-      
-      setShowAddPriority(false);
-      setPriorityForm({
-        title: '',
-        description: '',
-        ownerId: '',
-        dueDate: '',
-        isCompanyPriority: false
-      });
-      setSuccess(`${labels?.priority_singular || 'Priority'} created successfully`);
-      // Refresh priorities
-      await fetchPrioritiesData();
-    } catch (error) {
-      console.error('Failed to create priority:', error);
-      setError('Failed to create priority');
-    }
-  };
 
   const handleVote = async (issueId, shouldVote) => {
     try {

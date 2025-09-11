@@ -2163,17 +2163,6 @@ const WeeklyAccountabilityMeetingPage = () => {
     }
     return null;
   };
-  
-  // Handle section changes (called when tabs are clicked)
-  const handleSectionChange = (newSection) => {
-    console.log('📍 Section changed to:', newSection);
-    setActiveSection(newSection);
-    
-    // If leader, broadcast the section change to followers
-    if (isLeader && navigateToSection) {
-      navigateToSection(newSection);
-    }
-  };
 
   const renderContent = () => {
     if (loading) {
