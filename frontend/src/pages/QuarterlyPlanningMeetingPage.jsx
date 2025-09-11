@@ -2201,21 +2201,39 @@ const QuarterlyPlanningMeetingPage = () => {
                                                       }}
                                                       onClick={async (e) => {
                                                         e.stopPropagation();
+                                                        const newCompletedState = !milestone.completed;
+                                                        
+                                                        // Optimistically update the UI
+                                                        setPriorities(prevPriorities => 
+                                                          prevPriorities.map(p => 
+                                                            p.id === priority.id 
+                                                              ? {
+                                                                  ...p,
+                                                                  milestones: p.milestones.map(m =>
+                                                                    m.id === milestone.id
+                                                                      ? { ...m, completed: newCompletedState }
+                                                                      : m
+                                                                  )
+                                                                }
+                                                              : p
+                                                          )
+                                                        );
+                                                        
                                                         try {
-                                                          // Toggle milestone completion
+                                                          // Update on the server
                                                           await quarterlyPrioritiesService.updateMilestone(
                                                             user?.organizationId,
                                                             teamId,
                                                             priority.id,
                                                             milestone.id,
-                                                            { completed: !milestone.completed }
+                                                            { completed: newCompletedState }
                                                           );
-                                                          // Refresh data to update UI
-                                                          await fetchPrioritiesData();
-                                                          setSuccess(`Milestone ${!milestone.completed ? 'completed' : 'uncompleted'}`);
+                                                          setSuccess(`Milestone ${newCompletedState ? 'completed' : 'uncompleted'}`);
                                                         } catch (error) {
                                                           console.error('Failed to update milestone:', error);
                                                           setError('Failed to update milestone');
+                                                          // Revert the optimistic update on error
+                                                          await fetchPrioritiesData();
                                                         }
                                                       }}
                                                     >
