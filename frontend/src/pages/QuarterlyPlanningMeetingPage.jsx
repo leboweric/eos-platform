@@ -34,7 +34,10 @@ import {
   User,
   Plus,
   Star,
-  RefreshCw
+  RefreshCw,
+  DollarSign,
+  TrendingDown,
+  Activity
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import PriorityCard from '../components/priorities/PriorityCardClean';
@@ -133,6 +136,11 @@ const QuarterlyPlanningMeetingPage = () => {
   const [issueTimeline, setIssueTimeline] = useState('short_term');
   const [todos, setTodos] = useState([]);
   const [vtoData, setVtoData] = useState(null);
+  const [metricsStatus, setMetricsStatus] = useState({
+    revenue: null, // 'on-track' or 'off-track'
+    profit: null,
+    measurables: null
+  });
   const [meetingStarted, setMeetingStarted] = useState(false);
   const [meetingStartTime, setMeetingStartTime] = useState(null);
   const [elapsedTime, setElapsedTime] = useState(0);
@@ -1071,6 +1079,7 @@ const QuarterlyPlanningMeetingPage = () => {
     }
   };
 
+
   // Toggle functions for collapsible sections
   const toggleCompanyPriorities = () => {
     setExpandedSections(prev => ({
@@ -1595,7 +1604,7 @@ const QuarterlyPlanningMeetingPage = () => {
                           {Math.round((priorities.filter(p => p.status === 'complete').length / priorities.length) * 100)}%
                         </span>
                         <p className="text-sm text-slate-600 font-medium">
-                          {priorities.filter(p => p.status === 'complete').length} of {priorities.length} complete
+                          {priorities.filter(p => p.status === 'complete').length} of {priorities.length} Rocks complete
                         </p>
                       </div>
                     )}
@@ -1605,6 +1614,134 @@ const QuarterlyPlanningMeetingPage = () => {
                   </div>
                 </div>
               </CardHeader>
+            </Card>
+            
+            {/* Quarterly Numbers Review - Simple On Track/Off Track */}
+            <Card className="bg-white/80 backdrop-blur-sm border border-white/50 rounded-2xl shadow-xl">
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2 text-lg">
+                  <DollarSign className="h-5 w-5" style={{ color: themeColors.primary }} />
+                  Quarterly Numbers Review
+                </CardTitle>
+                <CardDescription>Are your key metrics on track or off track?</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  {/* Revenue */}
+                  <div className="p-4 bg-gray-50 rounded-lg">
+                    <div className="flex items-center justify-between mb-3">
+                      <h4 className="font-medium text-gray-900">Revenue</h4>
+                      <TrendingUp className="h-4 w-4 text-gray-400" />
+                    </div>
+                    <div className="flex gap-2">
+                      <Button
+                        size="sm"
+                        variant={metricsStatus.revenue === 'on-track' ? 'default' : 'outline'}
+                        className="flex-1"
+                        onClick={() => setMetricsStatus(prev => ({ ...prev, revenue: 'on-track' }))}
+                        style={metricsStatus.revenue === 'on-track' ? {
+                          backgroundColor: '#10B981',
+                          color: 'white',
+                          borderColor: '#10B981'
+                        } : {}}
+                      >
+                        On Track
+                      </Button>
+                      <Button
+                        size="sm"
+                        variant={metricsStatus.revenue === 'off-track' ? 'default' : 'outline'}
+                        className="flex-1"
+                        onClick={() => setMetricsStatus(prev => ({ ...prev, revenue: 'off-track' }))}
+                        style={metricsStatus.revenue === 'off-track' ? {
+                          backgroundColor: '#EF4444',
+                          color: 'white',
+                          borderColor: '#EF4444'
+                        } : {}}
+                      >
+                        Off Track
+                      </Button>
+                    </div>
+                  </div>
+
+                  {/* Profit */}
+                  <div className="p-4 bg-gray-50 rounded-lg">
+                    <div className="flex items-center justify-between mb-3">
+                      <h4 className="font-medium text-gray-900">Profit</h4>
+                      <Activity className="h-4 w-4 text-gray-400" />
+                    </div>
+                    <div className="flex gap-2">
+                      <Button
+                        size="sm"
+                        variant={metricsStatus.profit === 'on-track' ? 'default' : 'outline'}
+                        className="flex-1"
+                        onClick={() => setMetricsStatus(prev => ({ ...prev, profit: 'on-track' }))}
+                        style={metricsStatus.profit === 'on-track' ? {
+                          backgroundColor: '#10B981',
+                          color: 'white',
+                          borderColor: '#10B981'
+                        } : {}}
+                      >
+                        On Track
+                      </Button>
+                      <Button
+                        size="sm"
+                        variant={metricsStatus.profit === 'off-track' ? 'default' : 'outline'}
+                        className="flex-1"
+                        onClick={() => setMetricsStatus(prev => ({ ...prev, profit: 'off-track' }))}
+                        style={metricsStatus.profit === 'off-track' ? {
+                          backgroundColor: '#EF4444',
+                          color: 'white',
+                          borderColor: '#EF4444'
+                        } : {}}
+                      >
+                        Off Track
+                      </Button>
+                    </div>
+                  </div>
+
+                  {/* Key Measurables */}
+                  <div className="p-4 bg-gray-50 rounded-lg">
+                    <div className="flex items-center justify-between mb-3">
+                      <h4 className="font-medium text-gray-900">Key Measurables</h4>
+                      <BarChart className="h-4 w-4 text-gray-400" />
+                    </div>
+                    <div className="flex gap-2">
+                      <Button
+                        size="sm"
+                        variant={metricsStatus.measurables === 'on-track' ? 'default' : 'outline'}
+                        className="flex-1"
+                        onClick={() => setMetricsStatus(prev => ({ ...prev, measurables: 'on-track' }))}
+                        style={metricsStatus.measurables === 'on-track' ? {
+                          backgroundColor: '#10B981',
+                          color: 'white',
+                          borderColor: '#10B981'
+                        } : {}}
+                      >
+                        On Track
+                      </Button>
+                      <Button
+                        size="sm"
+                        variant={metricsStatus.measurables === 'off-track' ? 'default' : 'outline'}
+                        className="flex-1"
+                        onClick={() => setMetricsStatus(prev => ({ ...prev, measurables: 'off-track' }))}
+                        style={metricsStatus.measurables === 'off-track' ? {
+                          backgroundColor: '#EF4444',
+                          color: 'white',
+                          borderColor: '#EF4444'
+                        } : {}}
+                      >
+                        Off Track
+                      </Button>
+                    </div>
+                  </div>
+                </div>
+                
+                <div className="mt-4 p-3 bg-blue-50 rounded-lg">
+                  <p className="text-sm text-blue-800">
+                    <strong>Tip:</strong> Review your quarterly targets from the 1-Year Plan before marking each metric.
+                  </p>
+                </div>
+              </CardContent>
             </Card>
             {priorities.length === 0 ? (
               <Card className="bg-white/80 backdrop-blur-sm border border-white/50 rounded-2xl shadow-xl">
