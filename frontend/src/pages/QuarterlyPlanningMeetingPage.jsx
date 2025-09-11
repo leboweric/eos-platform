@@ -3663,10 +3663,8 @@ const QuarterlyPlanningMeetingPage = () => {
                 console.log('Issue created successfully:', response);
               }
               
-              // Only refresh issues data if we're on the issues section
-              if (activeSection === 'issues') {
-                await fetchIssuesData();
-              }
+              // Always refresh issues data after creating/updating
+              await fetchIssuesData();
               
               setShowIssueDialog(false);
               setEditingIssue(null);
