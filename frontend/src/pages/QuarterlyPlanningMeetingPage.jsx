@@ -2744,8 +2744,14 @@ const QuarterlyPlanningMeetingPage = () => {
                   <Button variant="outline" onClick={() => setShowAddPriority(false)}>
                     Cancel
                   </Button>
-                  <Button onClick={handleCreatePriority}>
-                    Create Priority
+                  <Button 
+                    onClick={handleCreatePriority}
+                    className="text-white"
+                    style={{
+                      background: `linear-gradient(135deg, ${themeColors.primary} 0%, ${themeColors.secondary} 100%)`
+                    }}
+                  >
+                    Create {labels?.priority_singular || 'Priority'}
                   </Button>
                 </DialogFooter>
               </DialogContent>
@@ -3339,9 +3345,12 @@ const QuarterlyPlanningMeetingPage = () => {
               <Button
                 onClick={handleCreatePriority}
                 disabled={!priorityForm.title || !priorityForm.ownerId || !priorityForm.dueDate}
-                className="bg-indigo-600 hover:bg-indigo-700"
+                className="text-white"
+                style={{
+                  background: `linear-gradient(135deg, ${themeColors.primary} 0%, ${themeColors.secondary} 100%)`
+                }}
               >
-                Create Priority
+                Create {labels?.priority_singular || 'Priority'}
               </Button>
             </DialogFooter>
           </DialogContent>
