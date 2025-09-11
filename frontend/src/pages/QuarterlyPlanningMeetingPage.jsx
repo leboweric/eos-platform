@@ -38,7 +38,10 @@ import {
   RefreshCw,
   DollarSign,
   TrendingDown,
-  Activity
+  Activity,
+  Check,
+  X,
+  MoreHorizontal
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import PriorityCard from '../components/priorities/PriorityCardClean';
@@ -1919,14 +1922,18 @@ const QuarterlyPlanningMeetingPage = () => {
                             </div>
                           </CardHeader>
                           <CardContent className="pt-0">
-                            <div className="space-y-2">
-                              <div className="grid grid-cols-[auto,1fr,200px,100px,auto] gap-4 px-2 pb-2 text-xs font-medium text-slate-500 uppercase tracking-wider border-b border-slate-100">
-                                <div className="w-8">Status</div>
-                                <div>Title</div>
-                                <div>Milestone Progress</div>
-                                <div className="text-right">Due By</div>
+                            <div className="space-y-1">
+                              {/* Header Row */}
+                              <div className="flex items-center px-3 py-2 text-xs font-medium text-slate-500 uppercase tracking-wider border-b border-slate-100">
+                                <div className="w-8"></div>
+                                <div className="w-10 ml-2">Status</div>
+                                <div className="flex-1 ml-3">Title</div>
+                                <div className="w-40 text-center">Milestone Progress</div>
+                                <div className="w-20 text-right">Due By</div>
                                 <div className="w-8"></div>
                               </div>
+                              
+                              {/* Rock Rows */}
                               {owner.priorities.map(priority => {
                                 const isComplete = priority.status === 'complete' || priority.status === 'completed';
                                 const isOnTrack = priority.status === 'on-track';
@@ -1936,63 +1943,76 @@ const QuarterlyPlanningMeetingPage = () => {
                                 return (
                                   <div 
                                     key={priority.id} 
-                                    className="grid grid-cols-[auto,1fr,200px,100px,auto] gap-4 items-center px-2 py-3 hover:bg-slate-50 rounded-lg cursor-pointer transition-colors"
+                                    className="flex items-center px-3 py-3 hover:bg-slate-50 rounded-lg cursor-pointer transition-colors group"
                                     onClick={() => {
                                       setSelectedPriority(priority);
                                       setShowPriorityDialog(true);
                                     }}
                                   >
-                                    <div className="w-8">
-                                      <ChevronRight className="h-4 w-4 text-slate-400" />
+                                    {/* Expand Arrow */}
+                                    <div className="w-8 flex items-center justify-center">
+                                      <ChevronRight className="h-4 w-4 text-slate-400 group-hover:text-slate-600" />
                                     </div>
-                                    <div className="flex items-center gap-3">
-                                      <div className="flex items-center justify-center w-8 h-8 rounded-full" style={{
-                                        backgroundColor: isComplete ? themeColors.primary + '20' : (isOnTrack ? '#3B82F620' : '#EF444420'),
-                                        border: `2px solid ${isComplete ? themeColors.primary : (isOnTrack ? '#3B82F6' : '#EF4444')}`
+                                    
+                                    {/* Status Indicator */}
+                                    <div className="w-10 ml-2 flex items-center">
+                                      <div className="flex items-center justify-center w-7 h-7 rounded-full" style={{
+                                        backgroundColor: isComplete ? themeColors.primary + '20' : (isOnTrack ? '#10B98120' : '#EF444420'),
+                                        border: `2px solid ${isComplete ? themeColors.primary : (isOnTrack ? '#10B981' : '#EF4444')}`
                                       }}>
                                         {isComplete ? (
                                           <CheckCircle className="h-4 w-4" style={{ color: themeColors.primary }} />
+                                        ) : isOnTrack ? (
+                                          <Check className="h-4 w-4 text-green-600" />
                                         ) : (
-                                          <div className="text-xs font-bold" style={{
-                                            color: isOnTrack ? '#3B82F6' : '#EF4444'
-                                          }}>
-                                            {isOnTrack ? '✓' : '!'}
-                                          </div>
+                                          <X className="h-4 w-4 text-red-600" />
                                         )}
                                       </div>
+                                    </div>
+                                    
+                                    {/* Title */}
+                                    <div className="flex-1 ml-3">
                                       <span className={`text-sm font-medium ${isComplete ? 'line-through text-slate-400' : 'text-slate-900'}`}>
                                         {priority.title}
                                       </span>
                                     </div>
-                                    <div className="flex items-center gap-2">
-                                      {totalMilestones > 0 && (
-                                        <>
-                                          <div className="flex-1 bg-slate-100 rounded-full h-2 overflow-hidden">
+                                    
+                                    {/* Milestone Progress */}
+                                    <div className="w-40 flex items-center justify-center px-2">
+                                      {totalMilestones > 0 ? (
+                                        <div className="flex items-center gap-2 w-full">
+                                          <div className="flex-1 bg-slate-200 rounded-full h-2 overflow-hidden">
                                             <div 
-                                              className="h-full rounded-full transition-all"
+                                              className="h-full bg-green-500 rounded-full transition-all"
                                               style={{
-                                                width: `${(completedMilestones / totalMilestones) * 100}%`,
-                                                backgroundColor: themeColors.primary
+                                                width: `${(completedMilestones / totalMilestones) * 100}%`
                                               }}
                                             />
                                           </div>
-                                          <span className="text-xs text-slate-500 font-medium">
+                                          <span className="text-xs text-slate-600 font-medium whitespace-nowrap">
                                             {completedMilestones}/{totalMilestones}
                                           </span>
-                                        </>
+                                        </div>
+                                      ) : (
+                                        <span className="text-xs text-slate-400">-</span>
                                       )}
                                     </div>
-                                    <div className="text-right text-sm text-slate-600">
+                                    
+                                    {/* Due Date */}
+                                    <div className="w-20 text-right text-sm text-slate-600">
                                       {priority.dueDate ? format(new Date(priority.dueDate), 'MMM d') : '-'}
                                     </div>
-                                    <div className="w-8 flex justify-end">
-                                      <button className="p-1 hover:bg-slate-100 rounded" onClick={(e) => {
-                                        e.stopPropagation();
-                                        // Menu would go here
-                                      }}>
-                                        <svg className="w-4 h-4 text-slate-400" fill="currentColor" viewBox="0 0 20 20">
-                                          <path d="M6 10a2 2 0 11-4 0 2 2 0 014 0zM12 10a2 2 0 11-4 0 2 2 0 014 0zM16 12a2 2 0 100-4 2 2 0 000 4z" />
-                                        </svg>
+                                    
+                                    {/* Menu */}
+                                    <div className="w-8 flex items-center justify-center">
+                                      <button 
+                                        className="p-1 hover:bg-slate-200 rounded opacity-0 group-hover:opacity-100 transition-opacity" 
+                                        onClick={(e) => {
+                                          e.stopPropagation();
+                                          // Menu would go here
+                                        }}
+                                      >
+                                        <MoreHorizontal className="h-4 w-4 text-slate-500" />
                                       </button>
                                     </div>
                                   </div>
