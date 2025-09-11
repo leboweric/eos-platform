@@ -130,6 +130,11 @@ function QuarterlyPlanningMeetingPage() {
     activeMeetings 
   } = useMeeting();
   const { labels } = useTerminology();
+  
+  // Refs - declare early to avoid initialization issues
+  const hasJoinedRef = useRef(false);
+  const hasCheckedMeetingsRef = useRef(false);
+  
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [activeSection, setActiveSection] = useState('objectives');
@@ -389,10 +394,6 @@ function QuarterlyPlanningMeetingPage() {
     // Load teams on mount so they're ready for conclude section
     fetchTeams();
   }, []);
-  
-  // Join meeting when page loads
-  const hasJoinedRef = useRef(false);
-  const hasCheckedMeetingsRef = useRef(false);
   
   // Auto-join meeting when component mounts
   useEffect(() => {
