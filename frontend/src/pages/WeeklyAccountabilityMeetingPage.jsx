@@ -3162,7 +3162,6 @@ const WeeklyAccountabilityMeetingPage = () => {
                               <div className="w-10 ml-2">Status</div>
                               <div className="flex-1 ml-3">Issue</div>
                               <div className="w-20 text-center">Votes</div>
-                              <div className="w-20 text-right">Created</div>
                               <div className="w-8"></div>
                             </div>
                             
@@ -3192,9 +3191,8 @@ const WeeklyAccountabilityMeetingPage = () => {
                                       <div 
                                         className="flex items-center justify-center w-7 h-7 rounded-full cursor-pointer hover:scale-110 transition-transform"
                                         style={{
-                                          backgroundColor: isSolved ? '#10B981' : 
-                                                         issue.status === 'in-progress' ? themeColors.primary : 
-                                                         '#EF4444'
+                                          backgroundColor: isSolved ? '#10B981' : 'transparent',
+                                          border: isSolved ? 'none' : '2px solid #E2E8F0'
                                         }}
                                         onClick={async () => {
                                           try {
@@ -3207,9 +3205,7 @@ const WeeklyAccountabilityMeetingPage = () => {
                                       >
                                         {isSolved ? (
                                           <Check className="h-4 w-4 text-white" />
-                                        ) : (
-                                          <div className="w-3 h-3 rounded-full bg-white/80" />
-                                        )}
+                                        ) : null}
                                       </div>
                                     </div>
                                     
@@ -3229,7 +3225,7 @@ const WeeklyAccountabilityMeetingPage = () => {
                                     <div className="w-20 text-center">
                                       <button
                                         className="flex items-center gap-1 px-2 py-1 rounded-full bg-slate-100 hover:bg-slate-200 transition-colors"
-                                        onClick={() => handleVote(issue.id)}
+                                        onClick={() => handleVote(issue.id, !issue.user_has_voted)}
                                       >
                                         <ThumbsUp className="h-3 w-3 text-slate-600" />
                                         <span className="text-xs font-medium text-slate-700">
@@ -3238,14 +3234,6 @@ const WeeklyAccountabilityMeetingPage = () => {
                                       </button>
                                     </div>
                                     
-                                    {/* Created Date */}
-                                    <div className="w-20 text-right">
-                                      {issue.created_at && (
-                                        <span className="text-sm text-slate-600">
-                                          {format(new Date(issue.created_at), 'MMM d')}
-                                        </span>
-                                      )}
-                                    </div>
                                     
                                     {/* Actions */}
                                     <div className="w-8 flex items-center justify-center">
