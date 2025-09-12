@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { format, addDays } from 'date-fns';
 import { useAuthStore } from '../../stores/authStore';
 import { organizationService } from '../../services/organizationService';
 import { getOrgTheme, saveOrgTheme, hexToRgba } from '../../utils/themeUtils';
@@ -756,7 +757,10 @@ const IssuesListClean = ({
                           </ContextMenuTrigger>
                           <ContextMenuContent className="w-48">
                             <ContextMenuItem 
-                              onClick={() => onCreateTodo && onCreateTodo(issue)}
+                              onClick={() => onCreateTodo && onCreateTodo({
+                                ...issue,
+                                due_date: format(addDays(new Date(), 7), 'yyyy-MM-dd')
+                              })}
                             >
                               <ListTodo className="mr-2 h-4 w-4" />
                               Create Linked To-Do

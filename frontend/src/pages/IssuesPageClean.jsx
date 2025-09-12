@@ -1,4 +1,5 @@
 import { useState, useEffect, Component } from 'react';
+import { format, addDays } from 'date-fns';
 import { useAuthStore } from '../stores/authStore';
 import { issuesService } from '../services/issuesService';
 import { organizationService } from '../services/organizationService';
@@ -719,7 +720,8 @@ const IssuesPageClean = () => {
           todo={todoFromIssue ? {
             title: `Follow up: ${todoFromIssue.title}`,
             description: `Related to issue: ${todoFromIssue.title}`,
-            assigned_to_id: todoFromIssue.owner_id || user?.id
+            assigned_to_id: todoFromIssue.owner_id || user?.id,
+            due_date: todoFromIssue.due_date || format(addDays(new Date(), 7), 'yyyy-MM-dd')
           } : null}
         />
 

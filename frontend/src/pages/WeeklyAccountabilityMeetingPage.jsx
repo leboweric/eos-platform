@@ -3357,7 +3357,10 @@ const WeeklyAccountabilityMeetingPage = () => {
                                   <ContextMenuContent className="w-48">
                                     <ContextMenuItem 
                                       onClick={() => {
-                                        setEditingTodo({ title: issue.title });
+                                        setEditingTodo({ 
+                                          title: issue.title,
+                                          due_date: format(addDays(new Date(), 7), 'yyyy-MM-dd')
+                                        });
                                         setShowTodoDialog(true);
                                       }}
                                     >
