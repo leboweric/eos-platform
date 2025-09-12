@@ -3507,8 +3507,11 @@ const WeeklyAccountabilityMeetingPage = () => {
         {/* Main Content */}
         {renderContent()}
         
-        {/* Floating Action Buttons */}
-        <div className="fixed bottom-4 right-4 flex flex-col gap-3 z-50">
+        {/* Floating Action Buttons - Positioned to align with main content edge */}
+        <div className="fixed z-40 flex flex-col gap-4" style={{
+          right: 'calc((100vw - min(80rem, 100vw - 4rem)) / 2 - 11rem)',
+          top: '30rem'
+        }}>
           {/* Add Issue Button */}
           <div className="relative group">
             <Button
