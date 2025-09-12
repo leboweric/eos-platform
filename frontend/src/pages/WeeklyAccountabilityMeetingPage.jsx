@@ -78,6 +78,8 @@ const WeeklyAccountabilityMeetingPage = () => {
   const { teamId } = useParams();
   const navigate = useNavigate();
   
+  console.log('🎯 WeeklyAccountabilityMeetingPage MOUNTED - user:', user, 'teamId:', teamId);
+  
   // Team validation - redirect to meetings page if no valid team selected
   useEffect(() => {
     if (!teamId || teamId === 'null' || teamId === 'undefined') {
@@ -563,8 +565,10 @@ const WeeklyAccountabilityMeetingPage = () => {
   };
 
   const loadInitialData = async () => {
+    console.log('🚀 loadInitialData called!');
     try {
       setLoading(true);
+      console.log('📊 About to fetch all data...');
       await Promise.all([
         fetchScorecardData(),
         fetchPrioritiesData(),
@@ -572,6 +576,7 @@ const WeeklyAccountabilityMeetingPage = () => {
         fetchTodosData(),
         fetchHeadlines()
       ]);
+      console.log('✅ All data fetched successfully');
     } catch (error) {
       console.error('Failed to load initial data:', error);
       setError('Failed to load meeting data');
@@ -582,14 +587,19 @@ const WeeklyAccountabilityMeetingPage = () => {
 
   // Load data on mount and when teamId changes
   useEffect(() => {
+    console.log('📌 First useEffect - user:', user, 'teamId:', teamId);
     if (user && teamId) {
+      console.log('✅ Calling loadInitialData from first useEffect');
       loadInitialData();
+    } else {
+      console.log('❌ NOT calling loadInitialData - missing user or teamId');
     }
   }, [teamId, user]);
 
   useEffect(() => {
-    console.log('🚀 teamId changed, reloading data. New teamId:', teamId);
+    console.log('🚀 Second useEffect - teamId changed:', teamId);
     if (teamId && teamId !== 'null' && teamId !== 'undefined') {
+      console.log('✅ Calling loadInitialData from second useEffect');
       loadInitialData();
     } else {
       console.warn('⚠️ Invalid teamId, not loading data:', teamId);
