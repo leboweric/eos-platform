@@ -901,36 +901,25 @@ const DashboardClean = () => {
       )}
       
       <div className="max-w-7xl mx-auto px-8 py-8">
-        {/* Enhanced Welcome Section */}
+        {/* Clean Welcome Section */}
         <div className="mb-8">
           <div className="flex items-center justify-between">
             <div>
-              <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full text-sm font-medium mb-4"
-                   style={{
-                     background: `linear-gradient(135deg, ${themeColors.primary}15 0%, ${themeColors.secondary}15 100%)`,
-                     color: themeColors.primary
-                   }}>
-                <Sparkles className="h-4 w-4" />
-                ADAPTIVE EXECUTION PLATFORM
-              </div>
-              <h1 className="text-4xl font-bold bg-gradient-to-r from-slate-900 via-blue-900 to-indigo-900 bg-clip-text text-transparent">
+              <h1 className="text-3xl font-bold text-slate-900">
                 Welcome back, {user?.firstName}
               </h1>
-              <p className="text-slate-600 mt-2">
+              <p className="text-slate-600 mt-1">
                 {format(new Date(), 'EEEE, MMMM d')}
               </p>
             </div>
             
-            {/* View Mode Toggle */}
-            <div className="flex items-center gap-2 bg-white/80 backdrop-blur-sm rounded-xl p-1 shadow-sm border border-white/50">
+            {/* Clean View Mode Toggle */}
+            <div className="flex items-center gap-1 bg-white/80 backdrop-blur-sm rounded-lg p-1 border border-white/50">
               <Button
                 variant={viewMode === 'my-items' ? 'default' : 'ghost'}
                 size="sm"
                 onClick={() => setViewMode('my-items')}
-                className={`rounded-lg transition-all ${viewMode === 'my-items' ? '' : 'hover:bg-slate-100'}`}
-                style={viewMode === 'my-items' ? {
-                  background: `linear-gradient(135deg, ${themeColors.primary} 0%, ${themeColors.secondary} 100%)`
-                } : {}}
+                className={`rounded-md transition-all ${viewMode === 'my-items' ? 'bg-slate-900 text-white' : 'hover:bg-slate-100'}`}
               >
                 <User className="h-4 w-4 mr-2" />
                 My Items
@@ -939,10 +928,7 @@ const DashboardClean = () => {
                 variant={viewMode === 'team-view' ? 'default' : 'ghost'}
                 size="sm"
                 onClick={() => setViewMode('team-view')}
-                className={`rounded-lg transition-all ${viewMode === 'team-view' ? '' : 'hover:bg-slate-100'}`}
-                style={viewMode === 'team-view' ? {
-                  background: `linear-gradient(135deg, ${themeColors.primary} 0%, ${themeColors.secondary} 100%)`
-                } : {}}
+                className={`rounded-md transition-all ${viewMode === 'team-view' ? 'bg-slate-900 text-white' : 'hover:bg-slate-100'}`}
               >
                 <Users2 className="h-4 w-4 mr-2" />
                 Team View
@@ -953,18 +939,17 @@ const DashboardClean = () => {
 
         {/* Main Content Grid */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-          {/* Enhanced Priorities Section */}
+          {/* Clean Priorities Section */}
           <div className="bg-white/80 backdrop-blur-sm rounded-2xl p-6 shadow-sm border border-white/50">
             <div className="flex items-center justify-between mb-6">
               <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-lg flex items-center justify-center"
-                     style={{
-                       background: `linear-gradient(135deg, ${themeColors.primary} 0%, ${themeColors.secondary} 100%)`
-                     }}>
-                  <Target className="h-5 w-5 text-white" />
+                <div className="p-2 rounded-xl" style={{ background: `${themeColors.primary}20` }}>
+                  <Target className="h-5 w-5" style={{ color: themeColors.primary }} />
                 </div>
-                <h2 className="text-xl font-semibold text-slate-900">
-                  {viewMode === 'team-view' ? `All Team ${labels.priorities_label}` : `Your ${labels.priorities_label}`}
+                <div>
+                  <h2 className="text-xl font-bold text-slate-900">
+                    {viewMode === 'team-view' ? `Team ${labels.priorities_label}` : `My ${labels.priorities_label}`}
+                  </h2>
                   {dashboardData.priorities.length > 0 && (() => {
                     const completed = dashboardData.priorities.filter(p => 
                       p.status === 'complete' || p.status === 'completed' || p.progress === 100
@@ -972,46 +957,34 @@ const DashboardClean = () => {
                     const total = dashboardData.priorities.length;
                     const percentage = Math.round((completed / total) * 100);
                     return (
-                      <span className="ml-3 text-sm font-normal text-slate-600">
-                        {completed}/{total} ({percentage}%)
-                      </span>
+                      <p className="text-sm text-slate-600">
+                        {completed} of {total} complete • {percentage}%
+                      </p>
                     );
                   })()}
-                </h2>
+                </div>
               </div>
               <Link 
                 to="/quarterly-priorities" 
-                className="text-sm font-medium flex items-center gap-1 transition-all rounded-lg px-3 py-1.5 hover:bg-slate-100"
-                style={{ color: themeColors.primary }}
+                className="text-sm text-slate-600 hover:text-slate-900 transition-colors"
               >
-                View all
-                <ArrowRight className="h-3 w-3" />
+                View all →
               </Link>
             </div>
             
             {dashboardData.priorities.length === 0 ? (
-              <div className="text-center py-8 px-4 rounded-xl border border-slate-200" style={{
-                background: `linear-gradient(135deg, ${hexToRgba(themeColors.primary, 0.05)} 0%, ${hexToRgba(themeColors.secondary, 0.05)} 100%)`
-              }}>
-                <p className="text-slate-600 mb-3">No priorities assigned</p>
+              <div className="text-center py-12">
+                <p className="text-slate-500 mb-4">No priorities assigned yet</p>
                 <Button 
-                  className="text-white rounded-lg transition-all transform hover:scale-[1.02]"
+                  variant="outline"
                   size="sm"
-                  style={{
-                    background: `linear-gradient(135deg, ${themeColors.primary} 0%, ${themeColors.secondary} 100%)`
-                  }}
-                  onMouseEnter={(e) => {
-                    e.currentTarget.style.filter = 'brightness(1.1)';
-                  }}
-                  onMouseLeave={(e) => {
-                    e.currentTarget.style.filter = 'brightness(1)';
-                  }}
+                  className="border-slate-300 hover:bg-slate-50"
                   onClick={() => {
                     setSelectedPriority(null);
                     setShowPriorityDialog(true);
                   }}
                 >
-                  <Plus className="mr-1 h-3 w-3" />
+                  <Plus className="h-4 w-4 mr-2" />
                   Add {labels.priority_singular}
                 </Button>
               </div>
@@ -1030,171 +1003,123 @@ const DashboardClean = () => {
                   }, {});
                   
                   return Object.entries(groupedPriorities).map(([ownerName, priorities]) => (
-                    <div key={ownerName} className="space-y-2">
-                      <h3 className="text-sm font-semibold text-slate-700 px-2">
-                        {ownerName} ({priorities.length})
-                      </h3>
+                    <div key={ownerName} className="bg-white border border-slate-200 rounded-xl p-4 shadow-sm">
+                      <div className="flex items-center gap-3 mb-3">
+                        <div className="h-10 w-10 rounded-full bg-slate-100 flex items-center justify-center">
+                          <span className="text-sm font-semibold text-slate-700">
+                            {ownerName.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2)}
+                          </span>
+                        </div>
+                        <div>
+                          <h3 className="text-sm font-bold text-slate-900">{ownerName}</h3>
+                          <p className="text-xs text-slate-500">{priorities.length} {labels?.priority_singular || 'Rock'}{priorities.length !== 1 ? 's' : ''}</p>
+                        </div>
+                      </div>
+                      <div className="space-y-2">
                       {priorities.map((priority) => {
                         const isComplete = priority.status === 'complete' || 
                                          priority.status === 'completed' || 
                                          priority.progress === 100;
                         const overdueCount = countOverdueMilestones(priority);
+                        const completedMilestones = (priority.milestones || []).filter(m => m.completed).length;
+                        const totalMilestones = (priority.milestones || []).length;
                         return (
                           <div 
                             key={priority.id} 
-                            className={`group p-3 rounded-lg border transition-all cursor-pointer hover:scale-[1.01] ml-4 ${
-                              isComplete 
-                                ? 'border-slate-200 hover:shadow-lg' 
-                                : priority.status === 'off-track'
-                                ? 'bg-white/60 border-red-200 hover:shadow-md'
-                                : 'bg-white/60 border-slate-200 hover:shadow-md'
-                            }`}
-                            style={{
-                              backgroundColor: isComplete ? `${themeColors.primary}10` : undefined
-                            }}
+                            className="group p-3 rounded-lg border border-slate-100 hover:bg-slate-50 cursor-pointer transition-colors"
                             onClick={() => {
                               setSelectedPriority(priority);
                               setShowPriorityDialog(true);
                             }}
                           >
-                            <div className="flex items-center gap-2">
-                              {isComplete ? (
-                                <div className="w-8 h-8 rounded-full flex items-center justify-center shadow-sm" style={{ background: `linear-gradient(to bottom right, ${themeColors.primary}, ${themeColors.secondary})` }}>
-                                  <CheckCircle className="h-4 w-4 text-white" />
-                                </div>
-                              ) : (
-                                <div className="w-1.5 h-8 rounded-full" style={getStatusStyle(priority.status)} />
-                              )}
+                            <div className="flex items-center gap-3">
+                              <div className={`w-2 h-2 rounded-full ${
+                                isComplete ? 'bg-green-500' : 
+                                priority.status === 'off-track' ? 'bg-red-500' : 'bg-slate-400'
+                              }`} />
                               <div className="flex-1 min-w-0">
                                 <p className={`text-sm font-medium truncate ${
-                                  isComplete 
-                                    ? 'line-through' 
-                                    : 'text-slate-900 group-hover:text-slate-950'
-                                }`} style={isComplete ? { color: themeColors.primary, textDecorationColor: themeColors.primary } : {}}>
+                                  isComplete ? 'line-through text-slate-400' : 'text-slate-900'
+                                }`}>
                                   {priority.title}
                                 </p>
-                                <p className={`text-xs mt-0.5 ${
-                                  isComplete ? '' : 'text-slate-600'
-                                }`} style={isComplete ? { color: themeColors.primary } : {}}>
-                                  Due {priority.dueDate ? format(new Date(priority.dueDate), 'MMM d') : 'No date'}
+                                <p className="text-xs text-slate-500 mt-0.5">
+                                  {priority.dueDate ? format(new Date(priority.dueDate), 'MMM d') : 'No date'}
                                 </p>
                               </div>
-                              {isComplete ? (
-                                <div className="flex items-center gap-2">
-                                  <Badge className="px-1.5 py-0.5 text-xs font-semibold text-white" style={{ backgroundColor: themeColors.primary, borderColor: themeColors.primary }}>
-                                    ✓
-                                  </Badge>
-                                  <span className="text-xs font-medium" style={{ color: themeColors.primary }}>100%</span>
-                                </div>
-                              ) : (
-                                <div className="flex items-center gap-1">
-                                  <span className="text-xs font-medium" style={{ color: themeColors.primary }}>
-                                    {priority.progress || 0}%
-                                  </span>
-                                  {overdueCount > 0 && (
-                                    <span className="text-xs text-red-600 font-medium">
-                                      ({overdueCount} overdue)
+                              <div className="text-right">
+                                {totalMilestones > 0 ? (
+                                  <div className="flex items-center gap-2">
+                                    <div className="w-20 bg-slate-200 rounded-full h-1.5 overflow-hidden">
+                                      <div 
+                                        className="h-full bg-green-500 rounded-full transition-all"
+                                        style={{ width: `${(completedMilestones / totalMilestones) * 100}%` }}
+                                      />
+                                    </div>
+                                    <span className="text-xs text-slate-600">
+                                      {completedMilestones}/{totalMilestones}
                                     </span>
-                                  )}
-                                </div>
-                              )}
+                                  </div>
+                                ) : (
+                                  <span className="text-xs text-slate-400">No milestones</span>
+                                )}
+                              </div>
                             </div>
                           </div>
                         );
                       })}
+                      </div>
                     </div>
                   ));
                 })()}
               </div>
             ) : (
-              // My Items View: Flat list
-              <div className="space-y-3">
+              // My Items View: Clean list
+              <div className="space-y-2">
                 {dashboardData.priorities.map((priority) => {
-                  // Check multiple ways a priority might be marked as complete
                   const isComplete = priority.status === 'complete' || 
                                      priority.status === 'completed' || 
                                      priority.progress === 100;
-                  const overdueCount = countOverdueMilestones(priority);
-                  console.log('Priority status check:', { 
-                    title: priority.title, 
-                    status: priority.status, 
-                    progress: priority.progress, 
-                    isComplete 
-                  });
+                  const completedMilestones = (priority.milestones || []).filter(m => m.completed).length;
+                  const totalMilestones = (priority.milestones || []).length;
+                  
                   return (
                     <div 
                       key={priority.id} 
-                      className={`group p-4 rounded-xl border transition-all cursor-pointer hover:scale-[1.01] ${
-                        isComplete 
-                          ? 'border-slate-200 hover:shadow-lg' 
-                          : priority.status === 'off-track'
-                          ? 'bg-white/60 border-red-200 hover:shadow-md'
-                          : 'bg-white/60 border-slate-200 hover:shadow-md'
-                      }`}
-                      style={{
-                        backgroundColor: isComplete ? `${themeColors.primary}10` : undefined
-                      }}
+                      className="group p-4 rounded-lg border border-slate-200 hover:bg-slate-50 cursor-pointer transition-colors"
                       onClick={() => {
                         setSelectedPriority(priority);
                         setShowPriorityDialog(true);
                       }}
                     >
-                      <div className="flex items-center gap-3">
-                        {isComplete ? (
-                          <div className="w-10 h-10 rounded-full flex items-center justify-center shadow-sm" style={{ background: `linear-gradient(to bottom right, ${themeColors.primary}, ${themeColors.secondary})` }}>
-                            <CheckCircle className="h-5 w-5 text-white" />
-                          </div>
-                        ) : (
-                          <div className="w-2 h-12 rounded-full" style={getStatusStyle(priority.status)} />
-                        )}
+                      <div className="flex items-center gap-4">
+                        <div className={`w-3 h-3 rounded-full flex-shrink-0 ${
+                          isComplete ? 'bg-green-500' : 
+                          priority.status === 'off-track' ? 'bg-red-500' : 'bg-slate-400'
+                        }`} />
                         <div className="flex-1 min-w-0">
-                          <p className={`font-medium truncate ${
-                            isComplete 
-                              ? 'line-through' 
-                              : 'text-slate-900 group-hover:text-slate-950'
-                          }`} style={isComplete ? { color: themeColors.primary, textDecorationColor: themeColors.primary } : {}}>
+                          <p className={`font-medium ${
+                            isComplete ? 'line-through text-slate-400' : 'text-slate-900'
+                          }`}>
                             {priority.title}
                           </p>
-                          <p className={`text-xs mt-1 ${
-                            isComplete ? '' : 'text-slate-600'
-                          }`} style={isComplete ? { color: themeColors.primary } : {}}>
+                          <p className="text-sm text-slate-500 mt-1">
                             {priority.owner?.name || 'Unassigned'} • Due {priority.dueDate ? format(new Date(priority.dueDate), 'MMM d') : 'No date'}
                           </p>
                         </div>
-                        <div className="text-right">
-                          {isComplete ? (
-                            <div className="flex flex-col items-end gap-1">
-                              <Badge className="px-2 py-0.5 text-xs font-semibold text-white" style={{ backgroundColor: themeColors.primary, borderColor: themeColors.primary }}>
-                                ✓ Complete
-                              </Badge>
-                              <span className="text-xs font-medium" style={{ color: themeColors.primary }}>100%</span>
+                        {totalMilestones > 0 && (
+                          <div className="flex items-center gap-3">
+                            <div className="w-24 bg-slate-200 rounded-full h-2 overflow-hidden">
+                              <div 
+                                className="h-full bg-green-500 rounded-full transition-all"
+                                style={{ width: `${(completedMilestones / totalMilestones) * 100}%` }}
+                              />
                             </div>
-                          ) : (
-                            <>
-                              <div className="flex flex-col items-end">
-                                <span className="text-sm font-medium" style={{ color: themeColors.primary }}>
-                                  {priority.progress || 0}%
-                                </span>
-                                {overdueCount > 0 && (
-                                  <span className="text-xs text-red-600 font-medium">
-                                    {overdueCount} overdue
-                                  </span>
-                                )}
-                              </div>
-                              {priority.progress > 0 && (
-                                <div className="w-16 h-1.5 bg-slate-100 rounded-full mt-1 overflow-hidden">
-                                  <div 
-                                    className="h-full rounded-full transition-all"
-                                    style={{ 
-                                      width: `${priority.progress || 0}%`,
-                                      background: `linear-gradient(90deg, ${themeColors.primary} 0%, ${themeColors.secondary} 100%)`
-                                    }}
-                                  />
-                                </div>
-                              )}
-                            </>
-                          )}
-                        </div>
+                            <span className="text-sm text-slate-600">
+                              {completedMilestones}/{totalMilestones}
+                            </span>
+                          </div>
+                        )}
                       </div>
                     </div>
                   );
@@ -1203,50 +1128,42 @@ const DashboardClean = () => {
             )}
           </div>
 
-          {/* Enhanced To-Dos Section */}
+          {/* Clean To-Dos Section */}
           <div className="bg-white/80 backdrop-blur-sm rounded-2xl p-6 shadow-sm border border-white/50">
             <div className="flex items-center justify-between mb-6">
               <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-lg flex items-center justify-center"
-                     style={{
-                       background: `linear-gradient(135deg, ${themeColors.primary} 0%, ${themeColors.secondary} 100%)`
-                     }}>
-                  <CheckSquare className="h-5 w-5 text-white" />
+                <div className="p-2 rounded-xl" style={{ background: `${themeColors.primary}20` }}>
+                  <CheckSquare className="h-5 w-5" style={{ color: themeColors.primary }} />
                 </div>
-                <h2 className="text-xl font-semibold text-slate-900">
-                  {viewMode === 'team-view' ? `All Team ${labels.todos_label}` : `Your ${labels.todos_label}`}
-                </h2>
+                <div>
+                  <h2 className="text-xl font-bold text-slate-900">
+                    {viewMode === 'team-view' ? `Team ${labels.todos_label}` : `My ${labels.todos_label}`}
+                  </h2>
+                  {dashboardData.todos.length > 0 && (
+                    <p className="text-sm text-slate-600">
+                      {dashboardData.todos.filter(t => t.status === 'complete').length} of {dashboardData.todos.length} complete
+                    </p>
+                  )}
+                </div>
               </div>
               <Link 
                 to="/todos" 
-                className="text-sm font-medium flex items-center gap-1 transition-all rounded-lg px-3 py-1.5 hover:bg-slate-100"
-                style={{ color: themeColors.primary }}
+                className="text-sm text-slate-600 hover:text-slate-900 transition-colors"
               >
-                View all
-                <ArrowRight className="h-3 w-3" />
+                View all →
               </Link>
             </div>
             
             {dashboardData.todos.length === 0 ? (
-              <div className="text-center py-8 px-4 rounded-xl border border-slate-200" style={{
-                background: `linear-gradient(135deg, ${hexToRgba(themeColors.primary, 0.05)} 0%, ${hexToRgba(themeColors.secondary, 0.05)} 100%)`
-              }}>
-                <p className="text-slate-600 mb-3">No to-dos assigned</p>
+              <div className="text-center py-12">
+                <p className="text-slate-500 mb-4">No to-dos assigned yet</p>
                 <Button 
-                  className="text-white rounded-lg transition-all transform hover:scale-[1.02]"
-                  size="sm" 
-                  style={{
-                    background: `linear-gradient(135deg, ${themeColors.primary} 0%, ${themeColors.secondary} 100%)`
-                  }}
-                  onMouseEnter={(e) => {
-                    e.currentTarget.style.filter = 'brightness(1.1)';
-                  }}
-                  onMouseLeave={(e) => {
-                    e.currentTarget.style.filter = 'brightness(1)';
-                  }}
+                  variant="outline"
+                  size="sm"
+                  className="border-slate-300 hover:bg-slate-50"
                   onClick={handleCreateTodo}
                 >
-                  <Plus className="h-3 w-3 mr-1" />
+                  <Plus className="h-4 w-4 mr-2" />
                   Create To-Do
                 </Button>
               </div>
@@ -1276,11 +1193,19 @@ const DashboardClean = () => {
                   }, {});
                   
                   return Object.entries(groupedTodos).map(([assigneeName, todos]) => (
-                    <div key={assigneeName} className="space-y-2">
-                      <h3 className="text-sm font-semibold text-slate-700 px-2">
-                        {assigneeName} ({todos.length})
-                      </h3>
-                      <div className="ml-4">
+                    <div key={assigneeName} className="bg-white border border-slate-200 rounded-xl p-4 shadow-sm">
+                      <div className="flex items-center gap-3 mb-3">
+                        <div className="h-10 w-10 rounded-full bg-slate-100 flex items-center justify-center">
+                          <span className="text-sm font-semibold text-slate-700">
+                            {assigneeName.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2)}
+                          </span>
+                        </div>
+                        <div>
+                          <h3 className="text-sm font-bold text-slate-900">{assigneeName}</h3>
+                          <p className="text-xs text-slate-500">{todos.length} {labels?.todo_singular || 'To-Do'}{todos.length !== 1 ? 's' : ''}</p>
+                        </div>
+                      </div>
+                      <div>
                         <TodosList
                           todos={todos}
                           onEdit={handleEditTodo}
@@ -1324,25 +1249,20 @@ const DashboardClean = () => {
           </div>
         </div>
 
-        {/* Headlines & Messages Card */}
+        {/* Clean Headlines & Messages Section */}
         <div className="mt-8 bg-white/80 backdrop-blur-sm rounded-2xl p-6 shadow-sm border border-white/50">
             <div className="flex items-center gap-3 mb-6">
-              <div className="w-10 h-10 rounded-lg flex items-center justify-center"
-                   style={{
-                     background: `linear-gradient(135deg, ${themeColors.primary} 0%, ${themeColors.secondary} 100%)`
-                   }}>
-                <MessageSquare className="h-5 w-5 text-white" />
+              <div className="p-2 rounded-xl" style={{ background: `${themeColors.primary}20` }}>
+                <MessageSquare className="h-5 w-5" style={{ color: themeColors.primary }} />
               </div>
-              <h2 className="text-xl font-semibold text-slate-900">Headlines & Messages</h2>
+              <h2 className="text-xl font-bold text-slate-900">Headlines & Messages</h2>
             </div>
 
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
               {/* Customer Headlines */}
               <div>
                 <h3 className="text-sm font-semibold text-slate-900 mb-3 flex items-center gap-2">
-                  <div className="p-1.5 rounded-lg" style={{ background: `linear-gradient(135deg, ${themeColors.primary}15 0%, ${themeColors.secondary}15 100%)` }}>
-                    <Users className="h-4 w-4" style={{ color: themeColors.primary }} />
-                  </div>
+                  <Users className="h-4 w-4 text-slate-600" />
                   Customer Headlines ({headlines.customer.length})
                 </h3>
                 {headlines.customer.length > 0 ? (
@@ -1393,9 +1313,7 @@ const DashboardClean = () => {
               {/* Employee Headlines */}
               <div>
                 <h3 className="text-sm font-semibold text-slate-900 mb-3 flex items-center gap-2">
-                  <div className="p-1.5 rounded-lg" style={{ background: `linear-gradient(135deg, ${themeColors.primary}15 0%, ${themeColors.secondary}15 100%)` }}>
-                    <Users2 className="h-4 w-4" style={{ color: themeColors.primary }} />
-                  </div>
+                  <Users2 className="h-4 w-4 text-slate-600" />
                   Employee Headlines ({headlines.employee.length})
                 </h3>
                 {headlines.employee.length > 0 ? (
