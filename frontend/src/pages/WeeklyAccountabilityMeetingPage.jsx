@@ -3247,6 +3247,7 @@ const WeeklyAccountabilityMeetingPage = () => {
                           <div className="flex items-center px-3 py-2 text-xs font-medium text-slate-500 uppercase tracking-wider border-b border-slate-100 bg-slate-50/50">
                             <div className="w-8">Drag</div>
                             <div className="w-10 ml-2">Status</div>
+                            <div className="w-8 ml-2">#</div>
                             <div className="flex-1 ml-3">Issue</div>
                             <div className="w-20 text-center">Votes</div>
                             <div className="w-8"></div>
@@ -3301,6 +3302,11 @@ const WeeklyAccountabilityMeetingPage = () => {
                                         <Check className="h-4 w-4 text-white" />
                                       ) : null}
                                     </div>
+                                  </div>
+                                  
+                                  {/* Issue Number */}
+                                  <div className="w-8 ml-2 text-sm font-medium text-slate-600">
+                                    {index + 1}.
                                   </div>
                                   
                                   {/* Issue Title */}

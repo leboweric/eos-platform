@@ -703,7 +703,7 @@ const IssuesListClean = ({
                 
                 {/* Issue number with priority colors */}
                 <span className="text-sm font-semibold min-w-[2rem] text-gray-500">
-                  #{globalIndex + 1}
+                  {globalIndex + 1}.
                 </span>
                 
                 {/* Removed medal emojis for cleaner look */}
