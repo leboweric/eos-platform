@@ -3387,6 +3387,29 @@ function QuarterlyPlanningMeetingPage() {
                                             </div>
                                           ))}
                                           
+                                          {/* Milestones Section with Elegant Design */}
+                                          {(priority.milestones || []).length === 0 && addingMilestoneFor !== priority.id ? (
+                                            <div className="space-y-3">
+                                              <div className="border border-slate-200 rounded-lg p-4 bg-white/50">
+                                                <p className="text-sm text-slate-500 text-center mb-3">No milestones added</p>
+                                                <Button
+                                                  variant="outline"
+                                                  className="w-full border-slate-300 hover:border-slate-400 hover:bg-slate-50"
+                                                  onClick={() => {
+                                                    setAddingMilestoneFor(priority.id);
+                                                    setNewMilestone({ 
+                                                      title: '', 
+                                                      dueDate: format(addDays(new Date(), 30), 'yyyy-MM-dd')
+                                                    });
+                                                  }}
+                                                >
+                                                  <Plus className="h-4 w-4 mr-2" />
+                                                  Add Milestone
+                                                </Button>
+                                              </div>
+                                            </div>
+                                          ) : null}
+                                          
                                           {/* Add Milestone Inline */}
                                           {addingMilestoneFor === priority.id ? (
                                             <div className="flex items-center gap-2 mt-2">
@@ -3432,7 +3455,7 @@ function QuarterlyPlanningMeetingPage() {
                                                 <X className="h-4 w-4 text-red-600" />
                                               </Button>
                                             </div>
-                                          ) : (
+                                          ) : (priority.milestones || []).length > 0 ? (
                                             <button
                                               className="text-sm text-slate-500 hover:text-slate-700 flex items-center gap-1 mt-2"
                                               onClick={() => {
@@ -3446,7 +3469,7 @@ function QuarterlyPlanningMeetingPage() {
                                               <Plus className="h-3 w-3" />
                                               Add Milestone
                                             </button>
-                                          )}
+                                          ) : null}
                                         </div>
                                       </div>
                                     )}

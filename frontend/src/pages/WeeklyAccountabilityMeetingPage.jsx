@@ -2802,7 +2802,7 @@ const WeeklyAccountabilityMeetingPage = () => {
       <div className="fixed inset-0 bg-grid-slate-100 [mask-image:linear-gradient(0deg,white,rgba(255,255,255,0.6))] -z-10"></div>
       
       <div className="relative max-w-7xl mx-auto p-8 pb-32">
-        {renderSection()}
+        {renderContent()}
         
         {/* Floating Action Buttons */}
         <div className="fixed bottom-4 right-4 flex flex-col gap-3 z-50">

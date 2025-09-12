@@ -3125,6 +3125,15 @@ const QuarterlyPrioritiesPageClean = () => {
             // Employee-Centric Rock View - combining all priorities by owner
             const allPriorities = [...companyPriorities, ...Object.values(teamMemberPriorities).flatMap(m => m?.priorities || [])];
             
+            // Toggle function for priority expansion
+            const togglePriorityExpansion = (priorityId, e) => {
+              if (e) e.stopPropagation();
+              setExpandedPriorities(prev => ({
+                ...prev,
+                [priorityId]: !prev[priorityId]
+              }));
+            };
+            
             // Group all priorities by owner
             const prioritiesByOwner = allPriorities.reduce((acc, priority) => {
               const ownerId = priority.owner?.id || 'unassigned';
