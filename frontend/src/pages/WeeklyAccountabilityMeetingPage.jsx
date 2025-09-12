@@ -532,10 +532,10 @@ const WeeklyAccountabilityMeetingPage = () => {
       const cleanTeamId = (teamId === 'null' || teamId === 'undefined') ? null : teamId;
       const effectiveTeamId = getEffectiveTeamId(cleanTeamId, user);
       
-      // Fetch both short-term and long-term issues (include archived to prevent disappearing issues)
+      // Fetch both short-term and long-term issues (active issues only, not archived)
       const [shortTermResponse, longTermResponse] = await Promise.all([
-        issuesService.getIssues('short_term', true, effectiveTeamId),
-        issuesService.getIssues('long_term', true, effectiveTeamId)
+        issuesService.getIssues('short_term', false, effectiveTeamId),
+        issuesService.getIssues('long_term', false, effectiveTeamId)
       ]);
       
       console.log('📋 ISSUES RESPONSE:', shortTermResponse, longTermResponse);
