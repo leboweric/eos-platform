@@ -42,7 +42,8 @@ import {
   Check,
   Edit,
   X,
-  ThumbsUp
+  ThumbsUp,
+  GripVertical
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import ScorecardTableClean from '../components/scorecard/ScorecardTableClean';
@@ -3076,20 +3077,229 @@ const WeeklyAccountabilityMeetingPage = () => {
                   <span className="font-semibold">Quick voting:</span> Everyone votes on the most important issues. Then discuss and solve the top-voted issues together.
                 </p>
               </div>
-              <IssuesListClean
-                issues={shortTermIssues || []}
-                onEdit={handleEditIssue}
-                onSave={handleSaveIssue}
-                teamMembers={teamMembers}
-                onStatusChange={handleStatusChange}
-                onTimelineChange={handleTimelineChange}
-                onArchive={handleArchive}
-                onVote={handleVote}
-                onReorder={handleReorderIssues}
-                enableDragDrop={true}
-                readOnly={false}
-                showVoting={true}
-              />
+{(() => {
+                const issues = shortTermIssues || [];
+                const [draggedIssue, setDraggedIssue] = useState(null);
+                const [draggedIndex, setDraggedIndex] = useState(null);
+                const [dragOverIndex, setDragOverIndex] = useState(null);
+
+                const handleDragStart = (e, issue, index) => {
+                  setDraggedIssue(issue);
+                  setDraggedIndex(index);
+                  e.dataTransfer.effectAllowed = 'move';
+                };
+
+                const handleDragEnd = () => {
+                  setDraggedIssue(null);
+                  setDraggedIndex(null);
+                  setDragOverIndex(null);
+                };
+
+                const handleDragOver = (e) => {
+                  e.preventDefault();
+                  e.dataTransfer.dropEffect = 'move';
+                };
+
+                const handleDragEnter = (e, index) => {
+                  e.preventDefault();
+                  setDragOverIndex(index);
+                };
+
+                const handleDrop = async (e, dropIndex) => {
+                  e.preventDefault();
+                  
+                  if (draggedIndex === null || draggedIndex === dropIndex || !draggedIssue) {
+                    return;
+                  }
+
+                  // Reorder the issues
+                  const newIssues = [...issues];
+                  const [movedIssue] = newIssues.splice(draggedIndex, 1);
+                  newIssues.splice(dropIndex, 0, movedIssue);
+
+                  // Update priority ranks
+                  const updatedIssues = newIssues.map((issue, index) => ({
+                    ...issue,
+                    priority_rank: index
+                  }));
+
+                  // Update state optimistically
+                  setShortTermIssues(updatedIssues);
+                  
+                  // Reset drag state
+                  setDraggedIssue(null);
+                  setDraggedIndex(null);
+                  setDragOverIndex(null);
+
+                  // Call reorder handler
+                  if (handleReorderIssues) {
+                    try {
+                      await handleReorderIssues(updatedIssues);
+                    } catch (error) {
+                      console.error('Failed to reorder issues:', error);
+                      // Revert on error
+                      setShortTermIssues(issues);
+                    }
+                  }
+                };
+
+                if (issues.length === 0) {
+                  return (
+                    <Card className="bg-white/80 backdrop-blur-sm border border-white/50 rounded-2xl shadow-xl">
+                      <CardContent className="text-center py-8">
+                        <p className="text-slate-500 font-medium">No issues found for this team.</p>
+                        <Button 
+                          variant="outline" 
+                          className="mt-4"
+                          onClick={() => setShowIssueDialog(true)}
+                        >
+                          <Plus className="mr-2 h-4 w-4" />
+                          Add Issue
+                        </Button>
+                      </CardContent>
+                    </Card>
+                  );
+                }
+
+                return (
+                  <div className="space-y-4">
+                    <div className="flex justify-between items-center">
+                      <p className="text-sm text-slate-600">
+                        <GripVertical className="h-4 w-4 inline mr-2 text-slate-400" />
+                        Drag to reorder by priority
+                      </p>
+                      <Button 
+                        variant="outline" 
+                        className="bg-white/80 backdrop-blur-sm border-white/20 hover:bg-white/90"
+                        onClick={() => setShowIssueDialog(true)}
+                      >
+                        <Plus className="mr-2 h-4 w-4" />
+                        Add Issue
+                      </Button>
+                    </div>
+                    
+                    <Card className="bg-white border-slate-200 shadow-md hover:shadow-lg transition-shadow">
+                      <CardContent className="p-0">
+                        <div className="space-y-1">
+                          {/* Header Row */}
+                          <div className="flex items-center px-3 py-2 text-xs font-medium text-slate-500 uppercase tracking-wider border-b border-slate-100 bg-slate-50/50">
+                            <div className="w-8">Drag</div>
+                            <div className="w-10 ml-2">Status</div>
+                            <div className="flex-1 ml-3">Issue</div>
+                            <div className="w-20 text-center">Votes</div>
+                            <div className="w-8"></div>
+                          </div>
+                          
+                          {/* Issue Rows */}
+                          {issues.map((issue, index) => {
+                            const isSolved = issue.status === 'solved' || issue.status === 'completed';
+                            const isExpanded = expandedPriorities[issue.id];
+                            const isDragging = draggedIndex === index;
+                            const isDragOver = dragOverIndex === index;
+                            
+                            return (
+                              <div key={issue.id} className="border-b border-slate-100 last:border-0">
+                                {/* Main Issue Row */}
+                                <div 
+                                  className={`flex items-center px-3 py-3 hover:bg-slate-50 rounded-lg transition-colors group ${
+                                    isDragging ? 'opacity-50' : ''
+                                  } ${isDragOver ? 'ring-2 ring-blue-400' : ''}`}
+                                  onDragOver={handleDragOver}
+                                  onDragEnter={(e) => handleDragEnter(e, index)}
+                                  onDrop={(e) => handleDrop(e, index)}
+                                >
+                                  {/* Drag Handle */}
+                                  <div 
+                                    className="w-8 flex items-center justify-center cursor-move opacity-0 group-hover:opacity-100 transition-opacity"
+                                    draggable="true"
+                                    onDragStart={(e) => handleDragStart(e, issue, index)}
+                                    onDragEnd={handleDragEnd}
+                                  >
+                                    <GripVertical className="h-4 w-4 text-slate-400" />
+                                  </div>
+                                  
+                                  {/* Status Checkbox */}
+                                  <div className="w-10 ml-2 flex items-center relative">
+                                    <div 
+                                      className="flex items-center justify-center w-7 h-7 rounded-full cursor-pointer hover:scale-110 transition-transform"
+                                      style={{
+                                        backgroundColor: isSolved ? '#10B981' : 'transparent',
+                                        border: isSolved ? 'none' : '2px solid #E2E8F0'
+                                      }}
+                                      onClick={async () => {
+                                        try {
+                                          const newStatus = isSolved ? 'open' : 'solved';
+                                          await handleStatusChange(issue.id, newStatus);
+                                        } catch (error) {
+                                          console.error('Failed to update issue status:', error);
+                                        }
+                                      }}
+                                    >
+                                      {isSolved ? (
+                                        <Check className="h-4 w-4 text-white" />
+                                      ) : null}
+                                    </div>
+                                  </div>
+                                  
+                                  {/* Issue Title */}
+                                  <div className="flex-1 ml-3">
+                                    <div 
+                                      className={`font-semibold text-slate-900 leading-tight cursor-pointer ${
+                                        isSolved ? 'line-through opacity-75' : ''
+                                      }`}
+                                      onClick={(e) => togglePriorityExpansion(issue.id, e)}
+                                    >
+                                      {issue.title}
+                                      {issue.description && !isExpanded && (
+                                        <ChevronRight className="h-4 w-4 inline ml-2 text-slate-400" />
+                                      )}
+                                      {isExpanded && (
+                                        <ChevronRight className="h-4 w-4 inline ml-2 text-slate-400 rotate-90" />
+                                      )}
+                                    </div>
+                                  </div>
+                                  
+                                  {/* Voting */}
+                                  <div className="w-20 text-center">
+                                    <button
+                                      className="flex items-center gap-1 px-2 py-1 rounded-full bg-slate-100 hover:bg-slate-200 transition-colors mx-auto"
+                                      onClick={() => handleVote(issue.id, !issue.user_has_voted)}
+                                    >
+                                      <ThumbsUp className="h-3 w-3 text-slate-600" />
+                                      <span className="text-xs font-medium text-slate-700">
+                                        {issue.vote_count || 0}
+                                      </span>
+                                    </button>
+                                  </div>
+                                  
+                                  {/* Actions */}
+                                  <div className="w-8 flex items-center justify-center">
+                                    <button
+                                      className="opacity-0 group-hover:opacity-100 transition-opacity p-1 hover:bg-slate-200 rounded"
+                                      onClick={() => handleEditIssue(issue)}
+                                    >
+                                      <Edit className="h-3 w-3 text-slate-600" />
+                                    </button>
+                                  </div>
+                                </div>
+                                
+                                {/* Expanded Details */}
+                                {isExpanded && issue.description && (
+                                  <div className="px-16 pb-3">
+                                    <p className="text-sm text-slate-700 bg-slate-50 p-3 rounded-lg">
+                                      {issue.description}
+                                    </p>
+                                  </div>
+                                )}
+                              </div>
+                            );
+                          })}
+                        </div>
+                      </CardContent>
+                    </Card>
+                  </div>
+                );
+              })()}
             </CardContent>
           </Card>
         );
