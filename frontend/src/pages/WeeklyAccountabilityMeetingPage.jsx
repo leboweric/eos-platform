@@ -1344,26 +1344,6 @@ const WeeklyAccountabilityMeetingPage = () => {
   };
 
   // Priority handlers
-  const handleUpdatePriority = async (priorityId, updates) => {
-    try {
-      const orgId = user?.organizationId || user?.organization_id;
-      const teamId = getEffectiveTeamId(null, user);
-      
-      await quarterlyPrioritiesService.updatePriority(orgId, teamId, priorityId, updates);
-      
-      // Update local state
-      setPriorities(prev => 
-        prev.map(p => 
-          p.id === priorityId ? { ...p, ...updates } : p
-        )
-      );
-      
-      // {labels.priority_singular || 'Priority'} updated silently - no success message to avoid screen jumping
-    } catch (error) {
-      console.error('Failed to update priority:', error);
-      setError('Failed to update priority');
-    }
-  };
 
   const handlePriorityStatusChange = async (priorityId, newStatus) => {
     // First update the priority status
@@ -1548,85 +1528,6 @@ const WeeklyAccountabilityMeetingPage = () => {
     }
   };
 
-  const handleAddMilestone = async (priorityId, milestoneData) => {
-    try {
-      const orgId = user?.organizationId || user?.organization_id;
-      const teamId = getEffectiveTeamId(null, user);
-      
-      if (!orgId || !teamId) {
-        throw new Error('Organization or team not found');
-      }
-      
-      const result = await quarterlyPrioritiesService.createMilestone(orgId, teamId, priorityId, milestoneData);
-      
-      // Find the owner's name from teamMembers
-      const milestoneOwner = teamMembers?.find(member => member.id === milestoneData.ownerId);
-      const ownerName = milestoneOwner ? 
-        (milestoneOwner.name || `${milestoneOwner.first_name} ${milestoneOwner.last_name}`) : 
-        '';
-      
-      // Update local state instead of refetching
-      const newMilestone = {
-        id: result?.id || Date.now().toString(),
-        title: milestoneData.title,
-        dueDate: milestoneData.dueDate,
-        owner_id: milestoneData.ownerId,  // Use owner_id to match backend field
-        owner_name: ownerName,  // Include owner name for display
-        completed: false
-      };
-      
-      // Update priorities
-      setPriorities(prev => prev.map(p => 
-        p.id === priorityId 
-          ? { ...p, milestones: [...(p.milestones || []), newMilestone] }
-          : p
-      ));
-      
-      // Update selectedPriority if this is the currently selected one
-      if (selectedPriority?.id === priorityId) {
-        setSelectedPriority(prev => ({
-          ...prev,
-          milestones: [...(prev.milestones || []), newMilestone]
-        }));
-      }
-      
-      // Calculate and update progress on the backend
-      const currentPriority = priorities.find(p => p.id === priorityId);
-      if (currentPriority) {
-        const allMilestones = [...(currentPriority.milestones || []), newMilestone];
-        const completedCount = allMilestones.filter(m => m.completed).length;
-        const totalCount = allMilestones.length;
-        const newProgress = totalCount > 0 ? Math.round((completedCount / totalCount) * 100) : 0;
-        
-        // Determine if status needs to change
-        let newStatus = currentPriority.status;
-        if (currentPriority.status === 'complete' && completedCount < totalCount) {
-          newStatus = 'on-track';
-        }
-        
-        const updates = { progress: newProgress };
-        if (newStatus !== currentPriority.status) {
-          updates.status = newStatus;
-        }
-        await quarterlyPrioritiesService.updatePriority(orgId, teamId, priorityId, updates);
-        
-        // Update local state with new progress and status
-        setPriorities(prev => prev.map(p => 
-          p.id === priorityId ? { ...p, progress: newProgress, status: newStatus } : p
-        ));
-        
-        if (selectedPriority?.id === priorityId) {
-          setSelectedPriority(prev => ({ ...prev, progress: newProgress, status: newStatus }));
-        }
-      }
-      
-      setSuccess('Milestone added successfully');
-      setTimeout(() => setSuccess(null), 3000);
-    } catch (error) {
-      console.error('Failed to add milestone:', error);
-      setError('Failed to add milestone');
-    }
-  };
 
   const handleEditMilestone = async (priorityId, milestoneId, updates) => {
     try {

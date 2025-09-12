@@ -1434,41 +1434,6 @@ const QuarterlyPrioritiesPageClean = () => {
     offTrack: allPriorities.filter(p => p.status === 'off-track').length
   };
 
-  // Handler for updating priority status
-  const handleUpdatePriority = async (priorityId, updates) => {
-    try {
-      const orgId = user?.organizationId;
-      const teamId = selectedDepartment?.id;
-      
-      if (!orgId || !teamId) return;
-      
-      await quarterlyPrioritiesService.updatePriority(orgId, teamId, priorityId, updates);
-      
-      // Update local state
-      setCompanyPriorities(prev => prev.map(p => 
-        p.id === priorityId ? { ...p, ...updates } : p
-      ));
-      
-      setTeamMemberPriorities(prev => {
-        const updated = { ...prev };
-        Object.keys(updated).forEach(memberId => {
-          if (updated[memberId]?.priorities) {
-            updated[memberId].priorities = updated[memberId].priorities.map(p =>
-              p.id === priorityId ? { ...p, ...updates } : p
-            );
-          }
-        });
-        return updated;
-      });
-      
-      setSuccess('Priority updated');
-      setTimeout(() => setSuccess(null), 3000);
-    } catch (error) {
-      console.error('Failed to update priority:', error);
-      setError('Failed to update priority');
-      setTimeout(() => setError(null), 3000);
-    }
-  };
 
   // Handler for toggling milestone completion
   const handleToggleMilestone = async (priorityId, milestoneId, completed) => {
@@ -3160,11 +3125,62 @@ const QuarterlyPrioritiesPageClean = () => {
               </div>
             );
           })()}
-                      </h3>
+          
+          {/* Individual Priorities by Person */}
+          <div className="mt-8">
+            <h3 className="text-lg font-semibold mb-6 flex items-center gap-3">
+              <Users className="h-5 w-5" style={{ color: themeColors.primary }} />
+              Individual {labels?.priorities_label || 'Priorities'}
+              <Badge 
+                className="ml-2 text-white"
+                style={{ 
+                  backgroundColor: themeColors.primary,
+                  borderColor: themeColors.primary
+                }}
+              >
+                {individualPriorities.length}
+              </Badge>
+            </h3>
+            
+            {Object.entries(groupedByOwner).map(([ownerId, { member, priorities: memberPriorities }]) => (
+              <Card key={ownerId} className="mb-6 bg-white/80 backdrop-blur-sm rounded-2xl shadow-sm border border-white/50">
+                <CardHeader className="pb-4">
+                  <div className="flex items-center gap-4 cursor-pointer" onClick={() => toggleIndividualPriorities(ownerId)}>
+                    <Avatar className="h-12 w-12 ring-2 ring-white">
+                      <AvatarImage src={member.avatar_url} />
+                      <AvatarFallback 
+                        className="text-white font-semibold"
+                        style={{ backgroundColor: themeColors.primary }}
+                      >
+                        {member.first_name?.[0]}{member.last_name?.[0]}
+                      </AvatarFallback>
+                    </Avatar>
+                    <div className="flex-1">
+                      <h4 className="font-semibold text-gray-900">{member.first_name} {member.last_name}</h4>
                       <p className="text-sm text-gray-600">{member.role} • {member.department}</p>
                     </div>
+                    <div className="flex items-center gap-4">
+                      <Badge variant="outline" className="text-xs">
+                        {memberPriorities.length} {memberPriorities.length === 1 ? 'priority' : 'priorities'}
+                      </Badge>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          toggleIndividualPriorities(ownerId);
+                        }}
+                      >
+                        {expandedSections.individualPriorities[ownerId] ? (
+                          <ChevronUp className="h-4 w-4" />
+                        ) : (
+                          <ChevronDown className="h-4 w-4" />
+                        )}
+                      </Button>
+                    </div>
                   </div>
-                  {expandedSections.individualPriorities[member.id] && (
+                </CardHeader>
+                {expandedSections.individualPriorities[ownerId] && (
                     <div className="space-y-4 ml-16">
                       {memberPriorities.map(priority => {
                         // Calculate overdue milestones for this priority
@@ -3274,9 +3290,9 @@ const QuarterlyPrioritiesPageClean = () => {
                       })}
                     </div>
                   )}
-                </div>
-              );
-            })}
+                </Card>
+              ))
+            }
           </div>
         </div>
       )}
