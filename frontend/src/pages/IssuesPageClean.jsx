@@ -7,6 +7,7 @@ import { getOrgTheme, saveOrgTheme } from '../utils/themeUtils';
 import { exportIssuesToExcel } from '../utils/excelExport';
 import { useDepartment } from '../contexts/DepartmentContext';
 import { useTerminology } from '../contexts/TerminologyContext';
+import { getEffectiveTeamId } from '../utils/teamUtils';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Alert, AlertDescription } from '@/components/ui/alert';
@@ -235,10 +236,13 @@ const IssuesPageClean = () => {
         savedIssue = await issuesService.updateIssue(issueId, issueData);
         setSuccess('Issue updated successfully');
       } else {
+        // Get effective team ID for creating the issue
+        const effectiveTeamId = getEffectiveTeamId(selectedDepartment?.id, user);
+        
         savedIssue = await issuesService.createIssue({
           ...issueData,
           timeline: activeTab,
-          department_id: selectedDepartment?.id
+          department_id: effectiveTeamId  // This will be handled by issuesService
         });
         setSuccess('Issue created successfully');
       }

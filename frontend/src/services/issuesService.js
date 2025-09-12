@@ -13,7 +13,12 @@ const getOrgId = () => {
 
 const getTeamId = () => {
   const user = useAuthStore.getState().user;
-  return user?.teamId;
+  // First check for teams array and get the first team's ID
+  if (user?.teams && user.teams.length > 0) {
+    return user.teams[0].id;
+  }
+  // Fallback to teamId or team_id on user object
+  return user?.teamId || user?.team_id || null;
 };
 
 /**
@@ -46,13 +51,16 @@ export const issuesService = {
     const orgId = getOrgId();
     const teamId = getTeamId();
     
-    // Use department_id if provided, otherwise use user's teamId
-    const finalTeamId = issueData.department_id || issueData.teamId || teamId || null;
+    // Use department_id if provided, otherwise use teamId from issueData, otherwise use user's teamId
+    const finalTeamId = issueData.department_id || issueData.teamId || issueData.team_id || teamId || null;
+    
+    // Remove the department_id and team_id fields as we'll use teamId
+    const { department_id, team_id, ...cleanedData } = issueData;
     
     const response = await axios.post(
       `/organizations/${orgId}/issues`,
       {
-        ...issueData,
+        ...cleanedData,
         teamId: finalTeamId
       }
     );
