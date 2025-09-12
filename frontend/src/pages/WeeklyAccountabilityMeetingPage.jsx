@@ -41,7 +41,8 @@ import {
   ClipboardList,
   Check,
   Edit,
-  X
+  X,
+  ThumbsUp
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import ScorecardTableClean from '../components/scorecard/ScorecardTableClean';
@@ -2873,41 +2874,217 @@ const WeeklyAccountabilityMeetingPage = () => {
               </div>
             </CardHeader>
             <CardContent className="pt-6 px-6 pb-6">
-              {todos.length === 0 ? (
-                <div className="text-center py-8">
-                  <p className="text-slate-500">No to-dos found for this week.</p>
-                </div>
-              ) : (
-                <TodosListClean 
-                  todos={todos}
-                  onEdit={(todo) => {
-                    setEditingTodo(todo);
-                    setShowTodoDialog(true);
-                  }}
-                  onStatusChange={async (todoId, completed) => {
-                    try {
-                      await todosService.updateTodo(todoId, { 
-                        status: completed ? 'complete' : 'incomplete' 
-                      });
-                      await fetchTodosData();
-                    } catch (error) {
-                      console.error('Failed to update todo:', error);
-                    }
-                  }}
-                  onDelete={async (todoId) => {
-                    try {
-                      await todosService.deleteTodo(todoId);
-                      await fetchTodosData();
-                      setSuccess('To-do deleted');
-                    } catch (error) {
-                      console.error('Failed to delete todo:', error);
-                      setError('Failed to delete to-do');
-                    }
-                  }}
-                  readOnly={false}
-                  showCheckboxes={true}
-                />
-              )}
+              {(() => {
+                // Group todos by assignee like priorities are grouped by owner
+                const todosByAssignee = {};
+                
+                todos.forEach(todo => {
+                  const assigneeId = todo.assigned_to?.id || 'unassigned';
+                  const assigneeName = todo.assigned_to ? 
+                    `${todo.assigned_to.first_name} ${todo.assigned_to.last_name}` : 
+                    'Unassigned';
+                  
+                  if (!todosByAssignee[assigneeId]) {
+                    todosByAssignee[assigneeId] = {
+                      id: assigneeId,
+                      name: assigneeName,
+                      todos: []
+                    };
+                  }
+                  todosByAssignee[assigneeId].todos.push(todo);
+                });
+                
+                // Convert to array and sort by name
+                const assignees = Object.values(todosByAssignee).sort((a, b) => {
+                  if (a.id === 'unassigned') return 1;
+                  if (b.id === 'unassigned') return -1;
+                  return a.name.localeCompare(b.name);
+                });
+                
+                if (todos.length === 0) {
+                  return (
+                    <Card className="bg-white/80 backdrop-blur-sm border border-white/50 rounded-2xl shadow-xl">
+                      <CardContent className="text-center py-8">
+                        <p className="text-slate-500 font-medium">No to-dos found for this week.</p>
+                        <Button 
+                          variant="outline" 
+                          className="mt-4"
+                          onClick={() => setShowTodoDialog(true)}
+                        >
+                          <Plus className="mr-2 h-4 w-4" />
+                          Add To-Do
+                        </Button>
+                      </CardContent>
+                    </Card>
+                  );
+                }
+                
+                return (
+                  <div className="space-y-6">
+                    <div className="flex justify-end">
+                      <Button 
+                        variant="outline" 
+                        className="bg-white/80 backdrop-blur-sm border-white/20 hover:bg-white/90"
+                        onClick={() => setShowTodoDialog(true)}
+                      >
+                        <Plus className="mr-2 h-4 w-4" />
+                        Add To-Do
+                      </Button>
+                    </div>
+                    
+                    {assignees.map(assignee => (
+                      <Card key={assignee.id} className="bg-white border-slate-200 shadow-md hover:shadow-lg transition-shadow">
+                        <CardHeader className="pb-3">
+                          <div className="flex items-center justify-between">
+                            <div className="flex items-center gap-3">
+                              <Avatar className="h-10 w-10 border-2 border-slate-100">
+                                <AvatarFallback className="bg-gradient-to-br from-slate-100 to-slate-200 text-slate-700 font-semibold">
+                                  {assignee.name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2)}
+                                </AvatarFallback>
+                              </Avatar>
+                              <div>
+                                <h3 className="text-lg font-bold text-slate-900">{assignee.name}</h3>
+                                <p className="text-sm text-slate-500">{assignee.todos.length} To-Do{assignee.todos.length !== 1 ? 's' : ''}</p>
+                              </div>
+                            </div>
+                            <ChevronDown className="h-5 w-5 text-slate-400" />
+                          </div>
+                        </CardHeader>
+                        <CardContent className="pt-0">
+                          <div className="space-y-1">
+                            {/* Header Row */}
+                            <div className="flex items-center px-3 py-2 text-xs font-medium text-slate-500 uppercase tracking-wider border-b border-slate-100">
+                              <div className="w-8"></div>
+                              <div className="w-10 ml-2">Status</div>
+                              <div className="flex-1 ml-3">Title</div>
+                              <div className="w-32 text-center">Priority</div>
+                              <div className="w-20 text-right">Due Date</div>
+                              <div className="w-8"></div>
+                            </div>
+                            
+                            {/* To-Do Rows */}
+                            {assignee.todos.map(todo => {
+                              const isComplete = todo.status === 'complete' || todo.status === 'completed';
+                              const isExpanded = expandedPriorities[todo.id]; // Reuse expansion state
+                              
+                              return (
+                                <div key={todo.id} className="border-b border-slate-100 last:border-0">
+                                  {/* Main To-Do Row */}
+                                  <div className="flex items-center px-3 py-3 hover:bg-slate-50 rounded-lg transition-colors group">
+                                    {/* Expand Arrow */}
+                                    <div 
+                                      className="w-8 flex items-center justify-center cursor-pointer"
+                                      onClick={(e) => togglePriorityExpansion(todo.id, e)}
+                                    >
+                                      <ChevronRight 
+                                        className={`h-4 w-4 text-slate-400 group-hover:text-slate-600 transition-transform duration-200 ${
+                                          isExpanded ? 'rotate-90' : ''
+                                        }`} 
+                                      />
+                                    </div>
+                                    
+                                    {/* Status Indicator with Dropdown */}
+                                    <div className="w-10 ml-2 flex items-center relative">
+                                      <div 
+                                        className="flex items-center justify-center w-7 h-7 rounded-full cursor-pointer hover:scale-110 transition-transform"
+                                        style={{
+                                          backgroundColor: isComplete ? '#10B981' : 
+                                                         todo.status === 'in-progress' ? themeColors.primary : 
+                                                         '#6B7280'
+                                        }}
+                                        onClick={async () => {
+                                          try {
+                                            const newStatus = isComplete ? 'incomplete' : 'complete';
+                                            await todosService.updateTodo(todo.id, { status: newStatus });
+                                            await fetchTodosData();
+                                          } catch (error) {
+                                            console.error('Failed to update todo status:', error);
+                                          }
+                                        }}
+                                      >
+                                        {isComplete ? (
+                                          <Check className="h-4 w-4 text-white" />
+                                        ) : (
+                                          <div className="w-3 h-3 rounded-full bg-white/80" />
+                                        )}
+                                      </div>
+                                    </div>
+                                    
+                                    {/* Title */}
+                                    <div className="flex-1 ml-3">
+                                      <div className={`font-semibold text-slate-900 leading-tight ${isComplete ? 'line-through opacity-75' : ''}`}>
+                                        {todo.title}
+                                      </div>
+                                      {todo.description && (
+                                        <p className="text-sm text-slate-600 mt-1 line-clamp-1">
+                                          {todo.description}
+                                        </p>
+                                      )}
+                                    </div>
+                                    
+                                    {/* Priority */}
+                                    <div className="w-32 text-center">
+                                      <Badge 
+                                        variant={todo.priority === 'high' ? 'destructive' : 
+                                               todo.priority === 'medium' ? 'default' : 'secondary'}
+                                        className="text-xs"
+                                      >
+                                        {todo.priority || 'Normal'}
+                                      </Badge>
+                                    </div>
+                                    
+                                    {/* Due Date */}
+                                    <div className="w-20 text-right">
+                                      {todo.due_date && (
+                                        <span className="text-sm text-slate-600">
+                                          {format(new Date(todo.due_date), 'MMM d')}
+                                        </span>
+                                      )}
+                                    </div>
+                                    
+                                    {/* Actions */}
+                                    <div className="w-8 flex items-center justify-center">
+                                      <button
+                                        className="opacity-0 group-hover:opacity-100 transition-opacity p-1 hover:bg-slate-200 rounded"
+                                        onClick={() => {
+                                          setEditingTodo(todo);
+                                          setShowTodoDialog(true);
+                                        }}
+                                      >
+                                        <Edit className="h-3 w-3 text-slate-600" />
+                                      </button>
+                                    </div>
+                                  </div>
+                                  
+                                  {/* Expanded Details */}
+                                  {isExpanded && (
+                                    <div className="px-16 pb-3 space-y-2">
+                                      {todo.description && (
+                                        <p className="text-sm text-slate-700 bg-slate-50 p-3 rounded-lg">
+                                          {todo.description}
+                                        </p>
+                                      )}
+                                      
+                                      <div className="flex gap-2 text-xs text-slate-500">
+                                        {todo.created_at && (
+                                          <span>Created {format(new Date(todo.created_at), 'MMM d, yyyy')}</span>
+                                        )}
+                                        {todo.updated_at && todo.created_at !== todo.updated_at && (
+                                          <span>• Updated {format(new Date(todo.updated_at), 'MMM d, yyyy')}</span>
+                                        )}
+                                      </div>
+                                    </div>
+                                  )}
+                                </div>
+                              );
+                            })}
+                          </div>
+                        </CardContent>
+                      </Card>
+                    ))}
+                  </div>
+                );
+              })()}
             </CardContent>
           </Card>
         );
@@ -2937,18 +3114,235 @@ const WeeklyAccountabilityMeetingPage = () => {
                   <span className="font-semibold">Quick voting:</span> Everyone votes on the most important issues. Then discuss and solve the top-voted issues together.
                 </p>
               </div>
-              <IssuesListClean
-                issues={shortTermIssues || []}
-                onEdit={handleEditIssue}
-                onSave={handleSaveIssue}
-                teamMembers={teamMembers}
-                onStatusChange={handleStatusChange}
-                onTimelineChange={handleTimelineChange}
-                onArchive={handleArchive}
-                onVote={handleVote}
-                readOnly={false}
-                showVoting={true}
-              />
+              
+              {(() => {
+                // Group issues by assignee like todos
+                const issuesByAssignee = {};
+                const issues = shortTermIssues || [];
+                
+                issues.forEach(issue => {
+                  const assigneeId = issue.assigned_to?.id || 'unassigned';
+                  const assigneeName = issue.assigned_to ? 
+                    `${issue.assigned_to.first_name} ${issue.assigned_to.last_name}` : 
+                    'Unassigned';
+                  
+                  if (!issuesByAssignee[assigneeId]) {
+                    issuesByAssignee[assigneeId] = {
+                      id: assigneeId,
+                      name: assigneeName,
+                      issues: []
+                    };
+                  }
+                  issuesByAssignee[assigneeId].issues.push(issue);
+                });
+                
+                // Convert to array and sort by name
+                const assignees = Object.values(issuesByAssignee).sort((a, b) => {
+                  if (a.id === 'unassigned') return 1;
+                  if (b.id === 'unassigned') return -1;
+                  return a.name.localeCompare(b.name);
+                });
+                
+                if (issues.length === 0) {
+                  return (
+                    <Card className="bg-white/80 backdrop-blur-sm border border-white/50 rounded-2xl shadow-xl">
+                      <CardContent className="text-center py-8">
+                        <p className="text-slate-500 font-medium">No issues found for this team.</p>
+                        <Button 
+                          variant="outline" 
+                          className="mt-4"
+                          onClick={() => setShowIssueDialog(true)}
+                        >
+                          <Plus className="mr-2 h-4 w-4" />
+                          Add Issue
+                        </Button>
+                      </CardContent>
+                    </Card>
+                  );
+                }
+                
+                return (
+                  <div className="space-y-6">
+                    <div className="flex justify-end">
+                      <Button 
+                        variant="outline" 
+                        className="bg-white/80 backdrop-blur-sm border-white/20 hover:bg-white/90"
+                        onClick={() => setShowIssueDialog(true)}
+                      >
+                        <Plus className="mr-2 h-4 w-4" />
+                        Add Issue
+                      </Button>
+                    </div>
+                    
+                    {assignees.map(assignee => (
+                      <Card key={assignee.id} className="bg-white border-slate-200 shadow-md hover:shadow-lg transition-shadow">
+                        <CardHeader className="pb-3">
+                          <div className="flex items-center justify-between">
+                            <div className="flex items-center gap-3">
+                              <Avatar className="h-10 w-10 border-2 border-slate-100">
+                                <AvatarFallback className="bg-gradient-to-br from-slate-100 to-slate-200 text-slate-700 font-semibold">
+                                  {assignee.name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2)}
+                                </AvatarFallback>
+                              </Avatar>
+                              <div>
+                                <h3 className="text-lg font-bold text-slate-900">{assignee.name}</h3>
+                                <p className="text-sm text-slate-500">{assignee.issues.length} Issue{assignee.issues.length !== 1 ? 's' : ''}</p>
+                              </div>
+                            </div>
+                            <ChevronDown className="h-5 w-5 text-slate-400" />
+                          </div>
+                        </CardHeader>
+                        <CardContent className="pt-0">
+                          <div className="space-y-1">
+                            {/* Header Row */}
+                            <div className="flex items-center px-3 py-2 text-xs font-medium text-slate-500 uppercase tracking-wider border-b border-slate-100">
+                              <div className="w-8"></div>
+                              <div className="w-10 ml-2">Status</div>
+                              <div className="flex-1 ml-3">Issue</div>
+                              <div className="w-20 text-center">Votes</div>
+                              <div className="w-20 text-right">Created</div>
+                              <div className="w-8"></div>
+                            </div>
+                            
+                            {/* Issue Rows */}
+                            {assignee.issues.map(issue => {
+                              const isSolved = issue.status === 'solved' || issue.status === 'completed';
+                              const isExpanded = expandedPriorities[issue.id]; // Reuse expansion state
+                              
+                              return (
+                                <div key={issue.id} className="border-b border-slate-100 last:border-0">
+                                  {/* Main Issue Row */}
+                                  <div className="flex items-center px-3 py-3 hover:bg-slate-50 rounded-lg transition-colors group">
+                                    {/* Expand Arrow */}
+                                    <div 
+                                      className="w-8 flex items-center justify-center cursor-pointer"
+                                      onClick={(e) => togglePriorityExpansion(issue.id, e)}
+                                    >
+                                      <ChevronRight 
+                                        className={`h-4 w-4 text-slate-400 group-hover:text-slate-600 transition-transform duration-200 ${
+                                          isExpanded ? 'rotate-90' : ''
+                                        }`} 
+                                      />
+                                    </div>
+                                    
+                                    {/* Status Indicator with Dropdown */}
+                                    <div className="w-10 ml-2 flex items-center relative">
+                                      <div 
+                                        className="flex items-center justify-center w-7 h-7 rounded-full cursor-pointer hover:scale-110 transition-transform"
+                                        style={{
+                                          backgroundColor: isSolved ? '#10B981' : 
+                                                         issue.status === 'in-progress' ? themeColors.primary : 
+                                                         '#EF4444'
+                                        }}
+                                        onClick={async () => {
+                                          try {
+                                            const newStatus = isSolved ? 'open' : 'solved';
+                                            await handleStatusChange(issue.id, newStatus);
+                                          } catch (error) {
+                                            console.error('Failed to update issue status:', error);
+                                          }
+                                        }}
+                                      >
+                                        {isSolved ? (
+                                          <Check className="h-4 w-4 text-white" />
+                                        ) : (
+                                          <div className="w-3 h-3 rounded-full bg-white/80" />
+                                        )}
+                                      </div>
+                                    </div>
+                                    
+                                    {/* Title */}
+                                    <div className="flex-1 ml-3">
+                                      <div className={`font-semibold text-slate-900 leading-tight ${isSolved ? 'line-through opacity-75' : ''}`}>
+                                        {issue.title}
+                                      </div>
+                                      {issue.description && (
+                                        <p className="text-sm text-slate-600 mt-1 line-clamp-1">
+                                          {issue.description}
+                                        </p>
+                                      )}
+                                    </div>
+                                    
+                                    {/* Votes */}
+                                    <div className="w-20 text-center">
+                                      <button
+                                        className="flex items-center gap-1 px-2 py-1 rounded-full bg-slate-100 hover:bg-slate-200 transition-colors"
+                                        onClick={() => handleVote(issue.id)}
+                                      >
+                                        <ThumbsUp className="h-3 w-3 text-slate-600" />
+                                        <span className="text-xs font-medium text-slate-700">
+                                          {issue.vote_count || 0}
+                                        </span>
+                                      </button>
+                                    </div>
+                                    
+                                    {/* Created Date */}
+                                    <div className="w-20 text-right">
+                                      {issue.created_at && (
+                                        <span className="text-sm text-slate-600">
+                                          {format(new Date(issue.created_at), 'MMM d')}
+                                        </span>
+                                      )}
+                                    </div>
+                                    
+                                    {/* Actions */}
+                                    <div className="w-8 flex items-center justify-center">
+                                      <button
+                                        className="opacity-0 group-hover:opacity-100 transition-opacity p-1 hover:bg-slate-200 rounded"
+                                        onClick={() => handleEditIssue(issue)}
+                                      >
+                                        <Edit className="h-3 w-3 text-slate-600" />
+                                      </button>
+                                    </div>
+                                  </div>
+                                  
+                                  {/* Expanded Details */}
+                                  {isExpanded && (
+                                    <div className="px-16 pb-3 space-y-2">
+                                      {issue.description && (
+                                        <p className="text-sm text-slate-700 bg-slate-50 p-3 rounded-lg">
+                                          {issue.description}
+                                        </p>
+                                      )}
+                                      
+                                      <div className="flex gap-2 text-xs text-slate-500">
+                                        {issue.created_at && (
+                                          <span>Created {format(new Date(issue.created_at), 'MMM d, yyyy')}</span>
+                                        )}
+                                        {issue.updated_at && issue.created_at !== issue.updated_at && (
+                                          <span>• Updated {format(new Date(issue.updated_at), 'MMM d, yyyy')}</span>
+                                        )}
+                                      </div>
+                                      
+                                      {/* Quick Actions */}
+                                      <div className="flex gap-2 pt-2">
+                                        <Button 
+                                          variant="outline" 
+                                          size="sm"
+                                          onClick={async () => {
+                                            try {
+                                              await handleArchive([issue.id]);
+                                            } catch (error) {
+                                              console.error('Failed to archive issue:', error);
+                                            }
+                                          }}
+                                        >
+                                          <Archive className="h-3 w-3 mr-1" />
+                                          Archive
+                                        </Button>
+                                      </div>
+                                    </div>
+                                  )}
+                                </div>
+                              );
+                            })}
+                          </div>
+                        </CardContent>
+                      </Card>
+                    ))}
+                  </div>
+                );
+              })()}
             </CardContent>
           </Card>
         );
