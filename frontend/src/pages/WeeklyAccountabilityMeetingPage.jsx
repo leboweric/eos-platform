@@ -3525,6 +3525,22 @@ const WeeklyAccountabilityMeetingPage = () => {
             </div>
           </div>
           
+          {/* Add To-Do Button */}
+          <div className="relative group">
+            <Button
+              onClick={() => setShowTodoDialog(true)}
+              className="h-14 w-14 rounded-full shadow-lg hover:shadow-xl transition-all duration-200 hover:scale-110 text-white"
+              style={{
+                background: `linear-gradient(135deg, ${themeColors.primary} 0%, ${themeColors.secondary} 100%)`
+              }}
+            >
+              <ListTodo className="h-6 w-6" />
+            </Button>
+            <div className="absolute right-full mr-2 top-1/2 -translate-y-1/2 px-2 py-1 bg-gray-900 text-white text-sm rounded whitespace-nowrap opacity-0 group-hover:opacity-100 pointer-events-none transition-opacity duration-100">
+              Add To-Do
+            </div>
+          </div>
+          
           {/* Add Headline Button */}
           <div className="relative group">
             <Button
