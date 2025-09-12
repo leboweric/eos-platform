@@ -2791,6 +2791,283 @@ const WeeklyAccountabilityMeetingPage = () => {
             )}
           </div>
         );
+
+      case 'headlines':
+        return (
+          <Card className="bg-white/80 backdrop-blur-sm border border-white/50 rounded-2xl shadow-xl hover:shadow-2xl transition-all duration-300">
+            <CardHeader className="bg-gradient-to-r from-white/90 to-white/70 backdrop-blur-sm border-b border-white/20 rounded-t-2xl">
+              <div className="flex items-center justify-between">
+                <div>
+                  <CardTitle className="flex items-center gap-3 text-xl font-bold text-slate-900">
+                    <div className="p-2 rounded-xl" style={{ background: `linear-gradient(135deg, ${themeColors.primary}20 0%, ${themeColors.secondary}20 100%)` }}>
+                      <Newspaper className="h-5 w-5" style={{ color: themeColors.primary }} />
+                    </div>
+                    Customer & Employee Headlines
+                  </CardTitle>
+                  <CardDescription className="mt-2 text-slate-600 font-medium">Share important updates</CardDescription>
+                </div>
+                <div className="text-sm text-slate-600 bg-white/80 backdrop-blur-sm px-4 py-2 rounded-full border border-white/30 shadow-sm font-medium">
+                  5 minutes
+                </div>
+              </div>
+            </CardHeader>
+            <CardContent className="pt-6 px-6 pb-6">
+              <div className="space-y-4">
+                <p className="text-slate-600 text-lg leading-relaxed">
+                  Share critical information about customers and employees that the team needs to know.
+                </p>
+                
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  {/* Customer Headlines */}
+                  <div>
+                    <h4 className="text-sm font-semibold text-slate-900 mb-3 flex items-center gap-2">
+                      <div className="p-1.5 rounded-lg" style={{ background: `linear-gradient(135deg, ${themeColors.primary}15 0%, ${themeColors.secondary}15 100%)` }}>
+                        <Users className="h-4 w-4" style={{ color: themeColors.primary }} />
+                      </div>
+                      Customer Headlines ({headlines.customer.length})
+                    </h4>
+                    {headlines.customer.length > 0 ? (
+                      <div className="space-y-2">
+                        {headlines.customer.map(headline => (
+                          <div key={headline.id} className="p-4 bg-white rounded-lg border-l-4 shadow-sm hover:shadow-md transition-shadow" 
+                               style={{ borderLeftColor: themeColors.primary }}>
+                            <p className="text-sm font-medium text-slate-900 leading-relaxed">{headline.text}</p>
+                            <p className="text-xs text-slate-600 mt-2">
+                              {headline.created_by_name || 'Unknown'} • {format(new Date(headline.created_at), 'MMM d')}
+                            </p>
+                          </div>
+                        ))}
+                      </div>
+                    ) : (
+                      <p className="text-sm text-slate-500 italic">No customer headlines</p>
+                    )}
+                  </div>
+
+                  {/* Employee Headlines */}
+                  <div>
+                    <h4 className="text-sm font-semibold text-slate-900 mb-3 flex items-center gap-2">
+                      <div className="p-1.5 rounded-lg" style={{ background: `linear-gradient(135deg, ${themeColors.primary}15 0%, ${themeColors.secondary}15 100%)` }}>
+                        <Building2 className="h-4 w-4" style={{ color: themeColors.primary }} />
+                      </div>
+                      Employee Headlines ({headlines.employee.length})
+                    </h4>
+                    {headlines.employee.length > 0 ? (
+                      <div className="space-y-2">
+                        {headlines.employee.map(headline => (
+                          <div key={headline.id} className="p-4 bg-white rounded-lg border-l-4 shadow-sm hover:shadow-md transition-shadow" 
+                               style={{ borderLeftColor: themeColors.secondary }}>
+                            <p className="text-sm font-medium text-slate-900 leading-relaxed">{headline.text}</p>
+                            <p className="text-xs text-slate-600 mt-2">
+                              {headline.created_by_name || 'Unknown'} • {format(new Date(headline.created_at), 'MMM d')}
+                            </p>
+                          </div>
+                        ))}
+                      </div>
+                    ) : (
+                      <p className="text-sm text-slate-500 italic">No employee headlines</p>
+                    )}
+                  </div>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        );
+
+      case 'todos':
+        return (
+          <Card className="bg-white/80 backdrop-blur-sm border border-white/50 rounded-2xl shadow-xl hover:shadow-2xl transition-all duration-300">
+            <CardHeader className="bg-gradient-to-r from-white/90 to-white/70 backdrop-blur-sm border-b border-white/20 rounded-t-2xl">
+              <div className="flex items-center justify-between">
+                <div>
+                  <CardTitle className="flex items-center gap-3 text-xl font-bold text-slate-900">
+                    <div className="p-2 rounded-xl" style={{ background: `linear-gradient(135deg, ${themeColors.primary}20 0%, ${themeColors.secondary}20 100%)` }}>
+                      <ListTodo className="h-5 w-5" style={{ color: themeColors.primary }} />
+                    </div>
+                    To-do List Review
+                  </CardTitle>
+                  <CardDescription className="mt-2 text-slate-600 font-medium">Review action items</CardDescription>
+                </div>
+                <div className="text-sm text-slate-600 bg-white/80 backdrop-blur-sm px-4 py-2 rounded-full border border-white/30 shadow-sm font-medium">
+                  5 minutes
+                </div>
+              </div>
+            </CardHeader>
+            <CardContent className="pt-6 px-6 pb-6">
+              {todos.length === 0 ? (
+                <div className="text-center py-8">
+                  <p className="text-slate-500">No to-dos found for this week.</p>
+                </div>
+              ) : (
+                <TodosListClean 
+                  todos={todos}
+                  onEdit={(todo) => {
+                    setEditingTodo(todo);
+                    setShowTodoDialog(true);
+                  }}
+                  onStatusChange={async (todoId, completed) => {
+                    try {
+                      await todosService.updateTodo(todoId, { 
+                        status: completed ? 'complete' : 'incomplete' 
+                      });
+                      await fetchTodosData();
+                    } catch (error) {
+                      console.error('Failed to update todo:', error);
+                    }
+                  }}
+                  onDelete={async (todoId) => {
+                    try {
+                      await todosService.deleteTodo(todoId);
+                      await fetchTodosData();
+                      setSuccess('To-do deleted');
+                    } catch (error) {
+                      console.error('Failed to delete todo:', error);
+                      setError('Failed to delete to-do');
+                    }
+                  }}
+                  readOnly={false}
+                  showCheckboxes={true}
+                />
+              )}
+            </CardContent>
+          </Card>
+        );
+
+      case 'ids':
+        return (
+          <Card className="bg-white/80 backdrop-blur-sm border border-white/50 rounded-2xl shadow-xl hover:shadow-2xl transition-all duration-300">
+            <CardHeader className="bg-gradient-to-r from-white/90 to-white/70 backdrop-blur-sm border-b border-white/20 rounded-t-2xl">
+              <div className="flex items-center justify-between">
+                <div>
+                  <CardTitle className="flex items-center gap-3 text-xl font-bold text-slate-900">
+                    <div className="p-2 rounded-xl" style={{ background: `linear-gradient(135deg, ${themeColors.primary}20 0%, ${themeColors.secondary}20 100%)` }}>
+                      <AlertTriangle className="h-5 w-5" style={{ color: themeColors.primary }} />
+                    </div>
+                    Identify Discuss Solve
+                  </CardTitle>
+                  <CardDescription className="mt-2 text-slate-600 font-medium">Solve the most important issues</CardDescription>
+                </div>
+                <div className="text-sm text-slate-600 bg-white/80 backdrop-blur-sm px-4 py-2 rounded-full border border-white/30 shadow-sm font-medium">
+                  60 minutes
+                </div>
+              </div>
+            </CardHeader>
+            <CardContent className="pt-6 px-6 pb-6">
+              <div className="border border-white/30 bg-white/60 backdrop-blur-sm rounded-xl p-4 mb-4 shadow-sm">
+                <p className="text-slate-700 text-center">
+                  <span className="font-semibold">Quick voting:</span> Everyone votes on the most important issues. Then discuss and solve the top-voted issues together.
+                </p>
+              </div>
+              <IssuesListClean
+                issues={shortTermIssues || []}
+                onEdit={handleEditIssue}
+                onSave={handleSaveIssue}
+                teamMembers={teamMembers}
+                onStatusChange={handleStatusChange}
+                onTimelineChange={handleTimelineChange}
+                onArchive={handleArchive}
+                onVote={handleVote}
+                readOnly={false}
+                showVoting={true}
+              />
+            </CardContent>
+          </Card>
+        );
+
+      case 'conclude':
+        return (
+          <Card className="bg-white/80 backdrop-blur-sm border border-white/50 rounded-2xl shadow-xl hover:shadow-2xl transition-all duration-300">
+            <CardHeader className="bg-gradient-to-r from-white/90 to-white/70 backdrop-blur-sm border-b border-white/20 rounded-t-2xl">
+              <div className="flex items-center justify-between">
+                <div>
+                  <CardTitle className="flex items-center gap-3 text-xl font-bold text-slate-900">
+                    <div className="p-2 rounded-xl" style={{ background: `linear-gradient(135deg, ${themeColors.primary}20 0%, ${themeColors.secondary}20 100%)` }}>
+                      <CheckSquare className="h-5 w-5" style={{ color: themeColors.primary }} />
+                    </div>
+                    Conclude Meeting
+                  </CardTitle>
+                  <CardDescription className="mt-2 text-slate-600 font-medium">Wrap up and cascade messages</CardDescription>
+                </div>
+                <div className="text-sm text-slate-600 bg-white/80 backdrop-blur-sm px-4 py-2 rounded-full border border-white/30 shadow-sm font-medium">
+                  5 minutes
+                </div>
+              </div>
+            </CardHeader>
+            <CardContent className="pt-6 px-6 pb-6">
+              <div className="space-y-6">
+                {/* Open To-Dos Summary */}
+                <div className="border border-white/30 p-4 rounded-xl bg-white/60 backdrop-blur-sm shadow-sm">
+                  <h4 className="font-medium mb-3 text-slate-900 flex items-center gap-2">
+                    <ListTodo className="h-4 w-4" style={{ color: themeColors.primary }} />
+                    Open To-Dos Summary
+                  </h4>
+                  <p className="text-sm text-slate-600 mb-3">
+                    Review all open action items before concluding the meeting:
+                  </p>
+                  {todos.filter(todo => todo.status !== 'complete' && todo.status !== 'completed' && todo.status !== 'cancelled').length === 0 ? (
+                    <p className="text-slate-500 text-sm">No open to-dos</p>
+                  ) : (
+                    <div className="space-y-2 max-h-64 overflow-y-auto">
+                      {todos
+                        .filter(todo => todo.status !== 'complete' && todo.status !== 'completed' && todo.status !== 'cancelled')
+                        .map(todo => (
+                          <div key={todo.id} className="flex items-start gap-2 p-2 bg-slate-50 rounded-lg">
+                            <div className="w-1 h-full rounded" style={{ 
+                              backgroundColor: todo.priority === 'high' ? '#EF4444' : 
+                                             todo.priority === 'medium' ? themeColors.primary : 
+                                             '#10B981',
+                              minHeight: '40px'
+                            }} />
+                            <div className="flex-1 min-w-0">
+                              <p className="text-sm font-medium text-slate-900 truncate">{todo.title}</p>
+                              <div className="flex items-center gap-2 mt-1">
+                                {todo.assigned_to && (
+                                  <span className="text-xs text-slate-600">
+                                    {todo.assigned_to.first_name} {todo.assigned_to.last_name}
+                                  </span>
+                                )}
+                                {todo.due_date && (
+                                  <>
+                                    {todo.assigned_to && <span className="text-xs text-slate-400">•</span>}
+                                    <span className="text-xs text-slate-600">
+                                      Due: {new Date(todo.due_date).toLocaleDateString()}
+                                    </span>
+                                  </>
+                                )}
+                              </div>
+                            </div>
+                          </div>
+                        ))}
+                    </div>
+                  )}
+                </div>
+
+                {/* Meeting Rating */}
+                <div className="border border-white/30 p-4 rounded-xl bg-white/60 backdrop-blur-sm shadow-sm">
+                  <h4 className="font-medium mb-2 text-slate-900">Rate this meeting</h4>
+                  <p className="text-sm text-slate-600 mb-3">How productive was this meeting?</p>
+                  <div className="flex gap-2 justify-center">
+                    {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map((rating) => (
+                      <button
+                        key={rating}
+                        onClick={() => setMeetingRating(rating)}
+                        className={`px-3 py-2 rounded-lg font-medium transition-all ${
+                          meetingRating === rating
+                            ? 'text-white shadow-md'
+                            : 'bg-white text-slate-600 hover:bg-slate-100'
+                        }`}
+                        style={meetingRating === rating ? {
+                          background: `linear-gradient(135deg, ${themeColors.primary} 0%, ${themeColors.secondary} 100%)`
+                        } : {}}
+                      >
+                        {rating}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        );
         
       default:
         return null;

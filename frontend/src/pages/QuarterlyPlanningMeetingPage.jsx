@@ -3823,45 +3823,41 @@ function QuarterlyPlanningMeetingPage() {
           )}
         </div>
 
-        {/* Tabs Navigation */}
-        <Tabs value={activeSection} onValueChange={handleSectionChange} className="space-y-8">
-          <TabsList className="w-full grid grid-cols-4 lg:grid-cols-8 gap-2 h-auto p-2 bg-white/80 backdrop-blur-sm border border-white/50 rounded-2xl shadow-lg">
+        {/* Navigation Tabs - Level 10 Style */}
+        <div className="mb-8 bg-white/80 backdrop-blur-sm rounded-2xl border border-white/50 shadow-sm p-2">
+          <div className="flex space-x-1 overflow-x-auto">
             {agendaItems.map((item) => {
               const Icon = item.icon;
-              const currentIndex = agendaItems.findIndex(i => i.id === activeSection);
-              const itemIndex = agendaItems.findIndex(i => i.id === item.id);
-              const isCompleted = itemIndex < currentIndex;
               const isActive = activeSection === item.id;
-              
               return (
-                <TabsTrigger
+                <button
                   key={item.id}
-                  value={item.id}
-                  className="flex flex-col items-center gap-1 py-3 px-2 rounded-xl transition-all duration-200 hover:scale-[1.02]"
-                  style={{
-                    background: isActive ? `linear-gradient(135deg, ${themeColors.primary} 0%, ${themeColors.secondary} 100%)` : 'transparent',
-                    color: isActive ? 'white' : 'inherit',
-                    boxShadow: isActive ? '0 8px 32px rgba(0,0,0,0.12)' : 'none'
-                  }}
+                  onClick={() => handleSectionChange(item.id)}
+                  className={`
+                    flex items-center gap-2 px-4 py-2 rounded-lg font-medium text-sm transition-all whitespace-nowrap
+                    ${isActive 
+                      ? 'bg-gradient-to-r from-blue-500 to-indigo-500 text-white shadow-md' 
+                      : 'text-slate-600 hover:bg-slate-100'
+                    }
+                  `}
                 >
-                  <Icon className={`h-5 w-5 ${
-                    isActive ? 'text-white' : 'text-slate-600'
-                  }`} style={isCompleted && !isActive ? { color: themeColors.primary } : {}} />
-                  <span className={`text-xs font-medium ${isActive ? 'text-white' : 'text-slate-700'}`}>{item.label}</span>
-                  {item.duration && <span className={`text-xs ${isActive ? 'text-white/80' : 'text-slate-500'}`}>{item.duration}m</span>}
-                  {isCompleted && (
-                    <CheckCircle className="h-3 w-3" style={{ color: themeColors.primary }} />
+                  <Icon className="h-4 w-4" />
+                  <span>{item.label}</span>
+                  {item.duration && (
+                    <span className={`text-xs ${isActive ? 'text-white/80' : 'text-slate-400'}`}>
+                      {item.duration}m
+                    </span>
                   )}
-                </TabsTrigger>
+                </button>
               );
             })}
-          </TabsList>
-
-          {/* Tab Content */}
-          <div className="bg-white/80 backdrop-blur-sm rounded-2xl shadow-xl border border-white/50">
-            {renderContent()}
           </div>
-        </Tabs>
+        </div>
+
+        {/* Main Content */}
+        <div className="bg-white/80 backdrop-blur-sm rounded-2xl shadow-xl border border-white/50">
+          {renderContent()}
+        </div>
 
         {/* Edit Priority Dialog */}
         <PriorityDialog
