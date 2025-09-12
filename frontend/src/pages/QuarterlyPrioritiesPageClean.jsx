@@ -2780,6 +2780,15 @@ const QuarterlyPrioritiesPageClean = () => {
               ...Object.values(teamMemberPriorities).flatMap(member => member?.priorities || [])
             ];
             
+            // Toggle function for priority expansion
+            const togglePriorityExpansion = (priorityId, e) => {
+              if (e) e.stopPropagation();
+              setExpandedPriorities(prev => ({
+                ...prev,
+                [priorityId]: !prev[priorityId]
+              }));
+            };
+            
             // Group all priorities by owner
             const prioritiesByOwner = allPriorities.reduce((acc, priority) => {
               const ownerId = priority.owner?.id || 'unassigned';
