@@ -743,7 +743,8 @@ const IssuesPageClean = () => {
             if (!open) setHeadlineFromIssue(null);
           }}
           headline={headlineFromIssue ? {
-            headline: headlineFromIssue.title
+            headline: headlineFromIssue.title,
+            description: headlineFromIssue.title
           } : null}
           onSave={async (headlineData) => {
             try {

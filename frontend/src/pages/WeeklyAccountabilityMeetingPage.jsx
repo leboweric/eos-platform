@@ -3371,7 +3371,8 @@ const WeeklyAccountabilityMeetingPage = () => {
                                     <ContextMenuItem 
                                       onClick={() => {
                                         setEditingHeadline({ 
-                                          headline: issue.title
+                                          headline: issue.title,
+                                          description: issue.title
                                         });
                                         setShowHeadlineDialog(true);
                                       }}
