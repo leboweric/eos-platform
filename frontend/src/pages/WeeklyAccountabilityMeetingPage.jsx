@@ -2960,10 +2960,8 @@ const WeeklyAccountabilityMeetingPage = () => {
                           <div className="space-y-1">
                             {/* Header Row */}
                             <div className="flex items-center px-3 py-2 text-xs font-medium text-slate-500 uppercase tracking-wider border-b border-slate-100">
-                              <div className="w-8"></div>
-                              <div className="w-10 ml-2">Status</div>
+                              <div className="w-10">Status</div>
                               <div className="flex-1 ml-3">Title</div>
-                              <div className="w-32 text-center">Priority</div>
                               <div className="w-20 text-right">Due Date</div>
                               <div className="w-8"></div>
                             </div>
@@ -2977,20 +2975,8 @@ const WeeklyAccountabilityMeetingPage = () => {
                                 <div key={todo.id} className="border-b border-slate-100 last:border-0">
                                   {/* Main To-Do Row */}
                                   <div className="flex items-center px-3 py-3 hover:bg-slate-50 rounded-lg transition-colors group">
-                                    {/* Expand Arrow */}
-                                    <div 
-                                      className="w-8 flex items-center justify-center cursor-pointer"
-                                      onClick={(e) => togglePriorityExpansion(todo.id, e)}
-                                    >
-                                      <ChevronRight 
-                                        className={`h-4 w-4 text-slate-400 group-hover:text-slate-600 transition-transform duration-200 ${
-                                          isExpanded ? 'rotate-90' : ''
-                                        }`} 
-                                      />
-                                    </div>
-                                    
-                                    {/* Status Indicator with Dropdown */}
-                                    <div className="w-10 ml-2 flex items-center relative">
+                                    {/* Status Indicator */}
+                                    <div className="w-10 flex items-center relative">
                                       <div 
                                         className="flex items-center justify-center w-7 h-7 rounded-full cursor-pointer hover:scale-110 transition-transform"
                                         style={{
@@ -3028,17 +3014,6 @@ const WeeklyAccountabilityMeetingPage = () => {
                                       )}
                                     </div>
                                     
-                                    {/* Priority */}
-                                    <div className="w-32 text-center">
-                                      <Badge 
-                                        variant={todo.priority === 'high' ? 'destructive' : 
-                                               todo.priority === 'medium' ? 'default' : 'secondary'}
-                                        className="text-xs"
-                                      >
-                                        {todo.priority || 'Normal'}
-                                      </Badge>
-                                    </div>
-                                    
                                     {/* Due Date */}
                                     <div className="w-20 text-right">
                                       {todo.due_date && (
@@ -3061,26 +3036,6 @@ const WeeklyAccountabilityMeetingPage = () => {
                                       </button>
                                     </div>
                                   </div>
-                                  
-                                  {/* Expanded Details */}
-                                  {isExpanded && (
-                                    <div className="px-16 pb-3 space-y-2">
-                                      {todo.description && (
-                                        <p className="text-sm text-slate-700 bg-slate-50 p-3 rounded-lg">
-                                          {todo.description}
-                                        </p>
-                                      )}
-                                      
-                                      <div className="flex gap-2 text-xs text-slate-500">
-                                        {todo.created_at && (
-                                          <span>Created {format(new Date(todo.created_at), 'MMM d, yyyy')}</span>
-                                        )}
-                                        {todo.updated_at && todo.created_at !== todo.updated_at && (
-                                          <span>• Updated {format(new Date(todo.updated_at), 'MMM d, yyyy')}</span>
-                                        )}
-                                      </div>
-                                    </div>
-                                  )}
                                 </div>
                               );
                             })}
