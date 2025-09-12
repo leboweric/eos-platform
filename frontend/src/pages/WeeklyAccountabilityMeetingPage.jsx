@@ -3380,6 +3380,13 @@ const WeeklyAccountabilityMeetingPage = () => {
                                       <Newspaper className="mr-2 h-4 w-4" />
                                       Create Linked Headline
                                     </ContextMenuItem>
+                                    <ContextMenuItem 
+                                      onClick={() => handleArchive(issue.id)}
+                                      className="text-red-600 focus:text-red-600"
+                                    >
+                                      <Archive className="mr-2 h-4 w-4" />
+                                      Archive Issue
+                                    </ContextMenuItem>
                                   </ContextMenuContent>
                                 </ContextMenu>
                                 

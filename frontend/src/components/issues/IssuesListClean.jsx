@@ -775,6 +775,15 @@ const IssuesListClean = ({
                                 Create Linked Headline
                               </ContextMenuItem>
                             )}
+                            {onArchive && (
+                              <ContextMenuItem 
+                                onClick={() => onArchive(issue.id)}
+                                className="text-red-600 focus:text-red-600"
+                              >
+                                <Archive className="mr-2 h-4 w-4" />
+                                Archive Issue
+                              </ContextMenuItem>
+                            )}
                           </ContextMenuContent>
                         </ContextMenu>
                       );
