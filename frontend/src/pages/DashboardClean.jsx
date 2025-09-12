@@ -1112,22 +1112,28 @@ const DashboardClean = () => {
                     <div key={priority.id} className="border-b border-slate-100 last:border-0">
                       {/* Main Priority Row */}
                       <div className="flex items-center px-3 py-3 hover:bg-slate-50 rounded-lg transition-colors group">
-                        {/* Expand Arrow */}
-                        <div 
-                          className="w-8 flex items-center justify-center cursor-pointer"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            setExpandedPriorities(prev => ({
-                              ...prev,
-                              [priority.id]: !prev[priority.id]
-                            }));
-                          }}
-                        >
-                          <ChevronRight 
-                            className={`h-4 w-4 text-slate-400 group-hover:text-slate-600 transition-transform duration-200 ${
-                              isExpanded ? 'rotate-90' : ''
-                            }`} 
-                          />
+                        {/* Expand Arrow - Only show if there are milestones */}
+                        <div className="w-8 flex items-center justify-center">
+                          {totalMilestones > 0 ? (
+                            <div 
+                              className="cursor-pointer"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                setExpandedPriorities(prev => ({
+                                  ...prev,
+                                  [priority.id]: !prev[priority.id]
+                                }));
+                              }}
+                            >
+                              <ChevronRight 
+                                className={`h-4 w-4 text-slate-400 group-hover:text-slate-600 transition-transform duration-200 ${
+                                  isExpanded ? 'rotate-90' : ''
+                                }`} 
+                              />
+                            </div>
+                          ) : (
+                            <div className="w-4 h-4" /> /* Empty space to maintain alignment */
+                          )}
                         </div>
                         
                         {/* Status Indicator with Dropdown */}
