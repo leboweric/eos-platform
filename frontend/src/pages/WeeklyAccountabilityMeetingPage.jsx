@@ -497,6 +497,7 @@ const WeeklyAccountabilityMeetingPage = () => {
 
   // Data fetching functions
   const fetchTodosData = async () => {
+    console.log('🔥 FETCHING TODOS - teamId:', teamId);
     try {
       const cleanTeamId = (teamId === 'null' || teamId === 'undefined') ? null : teamId;
       const effectiveTeamId = getEffectiveTeamId(cleanTeamId, user);
@@ -508,14 +509,17 @@ const WeeklyAccountabilityMeetingPage = () => {
         effectiveTeamId // department filter
       );
       
+      console.log('📋 TODOS RESPONSE:', response);
       const fetchedTodos = response.data?.todos || [];
+      console.log('✅ SETTING TODOS:', fetchedTodos.length, 'todos');
       setTodos(fetchedTodos);
     } catch (error) {
-      console.error('Failed to fetch todos:', error);
+      console.error('❌ Failed to fetch todos:', error);
     }
   };
 
   const fetchIssuesData = async () => {
+    console.log('🔥 FETCHING ISSUES - teamId:', teamId);
     try {
       const cleanTeamId = (teamId === 'null' || teamId === 'undefined') ? null : teamId;
       const effectiveTeamId = getEffectiveTeamId(cleanTeamId, user);
@@ -526,11 +530,16 @@ const WeeklyAccountabilityMeetingPage = () => {
         issuesService.getIssues('long_term', false, effectiveTeamId)
       ]);
       
-      setShortTermIssues(shortTermResponse.data?.issues || []);
-      setLongTermIssues(longTermResponse.data?.issues || []);
+      console.log('📋 ISSUES RESPONSE:', shortTermResponse, longTermResponse);
+      const shortTermList = shortTermResponse.data?.issues || [];
+      const longTermList = longTermResponse.data?.issues || [];
+      console.log('✅ SETTING ISSUES:', shortTermList.length, 'short-term,', longTermList.length, 'long-term');
+      
+      setShortTermIssues(shortTermList);
+      setLongTermIssues(longTermList);
       setTeamMembers(shortTermResponse.data?.teamMembers || []);
     } catch (error) {
-      console.error('Failed to fetch issues:', error);
+      console.error('❌ Failed to fetch issues:', error);
     }
   };
 
@@ -564,6 +573,97 @@ const WeeklyAccountabilityMeetingPage = () => {
       setError('Failed to load meeting data');
     } finally {
       setLoading(false);
+    }
+  };
+
+  const fetchScorecardData = async () => {
+    try {
+      const orgId = user?.organizationId || user?.organization_id;
+      // Handle "null" string from URL params
+      const cleanTeamId = (teamId === 'null' || teamId === 'undefined') ? null : teamId;
+      const effectiveTeamId = getEffectiveTeamId(cleanTeamId, user);
+      const departmentId = effectiveTeamId;
+      
+      console.log('🔍 WeeklyMeeting - Team ID debugging:', { 
+        rawTeamIdFromURL: teamId,
+        cleanTeamId,
+        effectiveTeamId,
+        userTeams: user?.teams,
+        currentTeamFromState: currentTeam,
+        teamFromEffectiveId: user?.teams?.find(t => t.id === effectiveTeamId)
+      });
+      console.log('WeeklyMeeting - Fetching scorecard data for:', { orgId, effectiveTeamId, departmentId });
+      
+      const response = await scorecardService.getScorecard(orgId, effectiveTeamId, departmentId);
+      
+      console.log('WeeklyMeeting - Scorecard response:', response);
+      console.log('WeeklyMeeting - Response structure:', {
+        hasData: !!response?.data,
+        metricsCount: response?.data?.metrics?.length || response?.metrics?.length || 0,
+        weeklyScoresKeys: Object.keys(response?.data?.weeklyScores || response?.weeklyScores || {}),
+        sampleScores: response?.data?.weeklyScores || response?.weeklyScores || {}
+      });
+      
+      if (response && response.data) {
+        // Filter to only show weekly metrics
+        const weeklyMetrics = (response.data.metrics || []).filter(m => m.type === 'weekly');
+        console.log('Weekly metrics found:', weeklyMetrics.length, weeklyMetrics);
+        setScorecardMetrics(weeklyMetrics);
+        setWeeklyScores(response.data.weeklyScores || {});
+        setMonthlyScores(response.data.monthlyScores || {});
+        setWeeklyNotes(response.data.weeklyNotes || {});
+        setMonthlyNotes(response.data.monthlyNotes || {});
+      } else if (response) {
+        // Filter to only show weekly metrics
+        const weeklyMetrics = (response.metrics || []).filter(m => m.type === 'weekly');
+        console.log('Weekly metrics found (no data wrapper):', weeklyMetrics.length, weeklyMetrics);
+        setScorecardMetrics(weeklyMetrics);
+        setWeeklyScores(response.weeklyScores || {});
+        setMonthlyScores(response.monthlyScores || {});
+        setWeeklyNotes(response.weeklyNotes || {});
+        setMonthlyNotes(response.monthlyNotes || {});
+      }
+    } catch (error) {
+      console.error('Failed to fetch scorecard:', error);
+    }
+  };
+
+  const fetchPrioritiesData = async () => {
+    try {
+      const orgId = user?.organizationId || user?.organization_id;
+      // Handle "null" string from URL params
+      const cleanTeamId = (teamId === 'null' || teamId === 'undefined') ? null : teamId;
+      const effectiveTeamId = getEffectiveTeamId(cleanTeamId, user);
+      
+      const response = await quarterlyPrioritiesService.getCurrentPriorities(orgId, effectiveTeamId);
+      
+      // Extract and flatten priorities
+      const companyPriorities = response.companyPriorities || [];
+      const teamMemberPriorities = response.teamMemberPriorities || {};
+      
+      const allPriorities = [
+        ...companyPriorities.map(p => ({ ...p, priority_type: 'company' })),
+        ...Object.values(teamMemberPriorities).flatMap(memberData => 
+          (memberData.priorities || []).map(p => ({ ...p, priority_type: 'individual' }))
+        )
+      ];
+      
+      setPriorities(allPriorities);
+      
+      // Auto-expand all individual owner sections
+      const individualPriorities = allPriorities.filter(p => p.priority_type === 'individual');
+      const uniqueOwnerIds = [...new Set(individualPriorities.map(p => p.owner?.id || 'unassigned'))];
+      const expandedOwners = {};
+      uniqueOwnerIds.forEach(ownerId => {
+        expandedOwners[ownerId] = true;
+      });
+      
+      setExpandedSections(prev => ({
+        ...prev,
+        individualPriorities: expandedOwners
+      }));
+    } catch (error) {
+      console.error('Failed to fetch priorities:', error);
     }
   };
 
@@ -773,97 +873,6 @@ const WeeklyAccountabilityMeetingPage = () => {
       if (timer) clearInterval(timer);
     };
   }, [meetingStarted, meetingStartTime]);
-
-  const fetchScorecardData = async () => {
-    try {
-      const orgId = user?.organizationId || user?.organization_id;
-      // Handle "null" string from URL params
-      const cleanTeamId = (teamId === 'null' || teamId === 'undefined') ? null : teamId;
-      const effectiveTeamId = getEffectiveTeamId(cleanTeamId, user);
-      const departmentId = effectiveTeamId;
-      
-      console.log('🔍 WeeklyMeeting - Team ID debugging:', { 
-        rawTeamIdFromURL: teamId,
-        cleanTeamId,
-        effectiveTeamId,
-        userTeams: user?.teams,
-        currentTeamFromState: currentTeam,
-        teamFromEffectiveId: user?.teams?.find(t => t.id === effectiveTeamId)
-      });
-      console.log('WeeklyMeeting - Fetching scorecard data for:', { orgId, effectiveTeamId, departmentId });
-      
-      const response = await scorecardService.getScorecard(orgId, effectiveTeamId, departmentId);
-      
-      console.log('WeeklyMeeting - Scorecard response:', response);
-      console.log('WeeklyMeeting - Response structure:', {
-        hasData: !!response?.data,
-        metricsCount: response?.data?.metrics?.length || response?.metrics?.length || 0,
-        weeklyScoresKeys: Object.keys(response?.data?.weeklyScores || response?.weeklyScores || {}),
-        sampleScores: response?.data?.weeklyScores || response?.weeklyScores || {}
-      });
-      
-      if (response && response.data) {
-        // Filter to only show weekly metrics
-        const weeklyMetrics = (response.data.metrics || []).filter(m => m.type === 'weekly');
-        console.log('Weekly metrics found:', weeklyMetrics.length, weeklyMetrics);
-        setScorecardMetrics(weeklyMetrics);
-        setWeeklyScores(response.data.weeklyScores || {});
-        setMonthlyScores(response.data.monthlyScores || {});
-        setWeeklyNotes(response.data.weeklyNotes || {});
-        setMonthlyNotes(response.data.monthlyNotes || {});
-      } else if (response) {
-        // Filter to only show weekly metrics
-        const weeklyMetrics = (response.metrics || []).filter(m => m.type === 'weekly');
-        console.log('Weekly metrics found (no data wrapper):', weeklyMetrics.length, weeklyMetrics);
-        setScorecardMetrics(weeklyMetrics);
-        setWeeklyScores(response.weeklyScores || {});
-        setMonthlyScores(response.monthlyScores || {});
-        setWeeklyNotes(response.weeklyNotes || {});
-        setMonthlyNotes(response.monthlyNotes || {});
-      }
-    } catch (error) {
-      console.error('Failed to fetch scorecard:', error);
-    }
-  };
-
-  const fetchPrioritiesData = async () => {
-    try {
-      const orgId = user?.organizationId || user?.organization_id;
-      // Handle "null" string from URL params
-      const cleanTeamId = (teamId === 'null' || teamId === 'undefined') ? null : teamId;
-      const effectiveTeamId = getEffectiveTeamId(cleanTeamId, user);
-      
-      const response = await quarterlyPrioritiesService.getCurrentPriorities(orgId, effectiveTeamId);
-      
-      // Extract and flatten priorities
-      const companyPriorities = response.companyPriorities || [];
-      const teamMemberPriorities = response.teamMemberPriorities || {};
-      
-      const allPriorities = [
-        ...companyPriorities.map(p => ({ ...p, priority_type: 'company' })),
-        ...Object.values(teamMemberPriorities).flatMap(memberData => 
-          (memberData.priorities || []).map(p => ({ ...p, priority_type: 'individual' }))
-        )
-      ];
-      
-      setPriorities(allPriorities);
-      
-      // Auto-expand all individual owner sections
-      const individualPriorities = allPriorities.filter(p => p.priority_type === 'individual');
-      const uniqueOwnerIds = [...new Set(individualPriorities.map(p => p.owner?.id || 'unassigned'))];
-      const expandedOwners = {};
-      uniqueOwnerIds.forEach(ownerId => {
-        expandedOwners[ownerId] = true;
-      });
-      
-      setExpandedSections(prev => ({
-        ...prev,
-        individualPriorities: expandedOwners
-      }));
-    } catch (error) {
-      console.error('Failed to fetch priorities:', error);
-    }
-  };
 
   const fetchTodaysTodos = async () => {
     try {
