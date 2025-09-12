@@ -2853,7 +2853,7 @@ const WeeklyAccountabilityMeetingPage = () => {
           </Card>
         );
 
-      case 'todos':
+      case 'todo-list':
         return (
           <Card className="bg-white/80 backdrop-blur-sm border border-white/50 rounded-2xl shadow-xl hover:shadow-2xl transition-all duration-300">
             <CardHeader className="bg-gradient-to-r from-white/90 to-white/70 backdrop-blur-sm border-b border-white/20 rounded-t-2xl">
@@ -2912,7 +2912,7 @@ const WeeklyAccountabilityMeetingPage = () => {
           </Card>
         );
 
-      case 'ids':
+      case 'issues':
         return (
           <Card className="bg-white/80 backdrop-blur-sm border border-white/50 rounded-2xl shadow-xl hover:shadow-2xl transition-all duration-300">
             <CardHeader className="bg-gradient-to-r from-white/90 to-white/70 backdrop-blur-sm border-b border-white/20 rounded-t-2xl">
