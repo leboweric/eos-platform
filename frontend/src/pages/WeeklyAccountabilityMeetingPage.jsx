@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { useParams } from 'react-router-dom';
 import { useAuthStore } from '../stores/authStore';
-import { format } from 'date-fns';
+import { format, addDays } from 'date-fns';
 import { meetingsService } from '../services/meetingsService';
 import { organizationService } from '../services/organizationService';
 import MeetingBar from '../components/meeting/MeetingBar';
@@ -38,7 +38,10 @@ import {
   Users,
   User,
   Calendar,
-  ClipboardList
+  ClipboardList,
+  Check,
+  Edit,
+  X
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import ScorecardTableClean from '../components/scorecard/ScorecardTableClean';
@@ -66,6 +69,8 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { DialogFooter } from '@/components/ui/dialog';
+import { Input } from '@/components/ui/input';
+import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { getEffectiveTeamId } from '../utils/teamUtils';
 
 const WeeklyAccountabilityMeetingPage = () => {
@@ -247,6 +252,121 @@ const WeeklyAccountabilityMeetingPage = () => {
     companyPriorities: false,
     individualPriorities: {} // Will be populated with owners on load
   });
+  
+  // Employee-centric priorities state
+  const [expandedPriorities, setExpandedPriorities] = useState({});
+  const [openStatusDropdown, setOpenStatusDropdown] = useState(null);
+  const [addingMilestoneFor, setAddingMilestoneFor] = useState(null);
+  const [newMilestone, setNewMilestone] = useState({ title: '', dueDate: '' });
+  
+  // Close dropdown when clicking outside
+  useEffect(() => {
+    const handleClickOutside = () => setOpenStatusDropdown(null);
+    if (openStatusDropdown) {
+      document.addEventListener('click', handleClickOutside);
+    }
+    return () => document.removeEventListener('click', handleClickOutside);
+  }, [openStatusDropdown]);
+
+  // Priority update handlers
+  async function handleUpdatePriority(priorityId, updates) {
+    try {
+      const orgId = user?.organizationId || user?.organization_id;
+      const cleanTeamId = (teamId === 'null' || teamId === 'undefined') ? null : teamId;
+      const effectiveTeamId = getEffectiveTeamId(cleanTeamId, user);
+      
+      await quarterlyPrioritiesService.updatePriority(orgId, effectiveTeamId, priorityId, updates);
+      
+      // Update local state
+      setPriorities(prev => prev.map(p => p.id === priorityId ? { ...p, ...updates } : p));
+      
+      // Broadcast update to meeting participants
+      if (broadcastIssueListUpdate) {
+        broadcastIssueListUpdate({
+          action: 'priority-updated',
+          priorityId,
+          updates
+        });
+      }
+    } catch (error) {
+      console.error('Failed to update priority:', error);
+    }
+  }
+
+  async function handleToggleMilestone(priorityId, milestoneId, completed) {
+    try {
+      const orgId = user?.organizationId || user?.organization_id;
+      const cleanTeamId = (teamId === 'null' || teamId === 'undefined') ? null : teamId;
+      const effectiveTeamId = getEffectiveTeamId(cleanTeamId, user);
+      
+      await quarterlyPrioritiesService.updateMilestone(orgId, effectiveTeamId, priorityId, milestoneId, { completed });
+      
+      // Update local state
+      setPriorities(prev => prev.map(priority => 
+        priority.id === priorityId 
+          ? {
+              ...priority,
+              milestones: (priority.milestones || []).map(milestone =>
+                milestone.id === milestoneId ? { ...milestone, completed } : milestone
+              )
+            }
+          : priority
+      ));
+      
+      // Broadcast update to meeting participants
+      if (broadcastIssueListUpdate) {
+        broadcastIssueListUpdate({
+          action: 'milestone-toggled',
+          priorityId,
+          milestoneId,
+          completed
+        });
+      }
+    } catch (error) {
+      console.error('Failed to toggle milestone:', error);
+    }
+  }
+
+  async function handleAddMilestone(priorityId) {
+    if (!newMilestone.title.trim()) return;
+    
+    try {
+      const orgId = user?.organizationId || user?.organization_id;
+      const cleanTeamId = (teamId === 'null' || teamId === 'undefined') ? null : teamId;
+      const effectiveTeamId = getEffectiveTeamId(cleanTeamId, user);
+      
+      const milestone = await quarterlyPrioritiesService.createMilestone(orgId, effectiveTeamId, priorityId, {
+        title: newMilestone.title,
+        dueDate: newMilestone.dueDate || format(addDays(new Date(), 30), 'yyyy-MM-dd')
+      });
+      
+      // Update local state
+      setPriorities(prev => prev.map(priority => 
+        priority.id === priorityId 
+          ? {
+              ...priority,
+              milestones: [...(priority.milestones || []), milestone]
+            }
+          : priority
+      ));
+      
+      // Reset form
+      setNewMilestone({ title: '', dueDate: '' });
+      setAddingMilestoneFor(null);
+      
+      // Broadcast update to meeting participants
+      if (broadcastIssueListUpdate) {
+        broadcastIssueListUpdate({
+          action: 'milestone-added',
+          priorityId,
+          milestone
+        });
+      }
+    } catch (error) {
+      console.error('Failed to add milestone:', error);
+    }
+  }
+
   const [isRTL, setIsRTL] = useState(() => {
     // Load RTL preference from localStorage
     const saved = localStorage.getItem('scorecardRTL');
@@ -2376,10 +2496,43 @@ const WeeklyAccountabilityMeetingPage = () => {
                     <span className="font-bold">Quick Status Check:</span> Each Rock owner reports "on-track" or "off-track" status
                   </p>
                 </div>
-                {/* Company {labels.priorities_label || 'Priorities'} Section */}
+                {/* Employee-Centric Rock View */}
                 {(() => {
-                  const companyPriorities = priorities.filter(p => p.priority_type === 'company');
-                  return companyPriorities.length > 0 && (
+                  // Combine all priorities (company and individual)
+                  const allPriorities = priorities;
+                  
+                  // Toggle expansion for a priority
+                  const togglePriorityExpansion = (priorityId, e) => {
+                    e.stopPropagation();
+                    setExpandedPriorities(prev => ({
+                      ...prev,
+                      [priorityId]: !prev[priorityId]
+                    }));
+                  };
+                  
+                  // Group all priorities by owner
+                  const prioritiesByOwner = allPriorities.reduce((acc, priority) => {
+                    const ownerId = priority.owner?.id || 'unassigned';
+                    const ownerName = priority.owner?.name || 'Unassigned';
+                    if (!acc[ownerId]) {
+                      acc[ownerId] = {
+                        id: ownerId,
+                        name: ownerName,
+                        priorities: []
+                      };
+                    }
+                    acc[ownerId].priorities.push(priority);
+                    return acc;
+                  }, {});
+                  
+                  // Convert to array and sort by name
+                  const owners = Object.values(prioritiesByOwner).sort((a, b) => {
+                    if (a.id === 'unassigned') return 1;
+                    if (b.id === 'unassigned') return -1;
+                    return a.name.localeCompare(b.name);
+                  });
+                  
+                  return (
                     <div>
                       <div 
                         className="flex items-center justify-between p-4 bg-white/80 backdrop-blur-sm border border-white/50 rounded-2xl cursor-pointer hover:bg-white/90 hover:shadow-lg transition-all duration-200 shadow-md"
