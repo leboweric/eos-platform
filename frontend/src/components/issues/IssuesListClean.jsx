@@ -28,7 +28,8 @@ import {
   ArrowUp,
   ArrowDown,
   List,
-  GripVertical
+  GripVertical,
+  Newspaper
 } from 'lucide-react';
 import { Textarea } from '@/components/ui/textarea';
 import { ContextMenu, ContextMenuContent, ContextMenuItem, ContextMenuTrigger } from '@/components/ui/context-menu';
@@ -44,6 +45,7 @@ const IssuesListClean = ({
   onVote,
   onMoveToTeam,
   onCreateTodo,
+  onCreateHeadline,
   onSendCascadingMessage,
   onReorder,  // New prop for handling reordering
   onSave,  // Callback for saving issue changes
@@ -765,6 +767,14 @@ const IssuesListClean = ({
                               <ListTodo className="mr-2 h-4 w-4" />
                               Create Linked To-Do
                             </ContextMenuItem>
+                            {onCreateHeadline && (
+                              <ContextMenuItem 
+                                onClick={() => onCreateHeadline(issue)}
+                              >
+                                <Newspaper className="mr-2 h-4 w-4" />
+                                Create Linked Headline
+                              </ContextMenuItem>
+                            )}
                           </ContextMenuContent>
                         </ContextMenu>
                       );

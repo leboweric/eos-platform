@@ -29,6 +29,8 @@ import IssuesListClean from '../components/issues/IssuesListClean';
 import ArchivedIssuesList from '../components/issues/ArchivedIssuesList';
 import { MoveIssueDialog } from '../components/issues/MoveIssueDialog';
 import TodoDialog from '../components/todos/TodoDialog';
+import HeadlineDialog from '../components/headlines/HeadlineDialog';
+import { headlinesService } from '../services/headlinesService';
 import { todosService } from '../services/todosService';
 import { cascadingMessagesService } from '../services/cascadingMessagesService';
 import { teamsService } from '../services/teamsService';
@@ -107,6 +109,8 @@ const IssuesPageClean = () => {
   const [movingIssue, setMovingIssue] = useState(null);
   const [showTodoDialog, setShowTodoDialog] = useState(false);
   const [todoFromIssue, setTodoFromIssue] = useState(null);
+  const [showHeadlineDialog, setShowHeadlineDialog] = useState(false);
+  const [headlineFromIssue, setHeadlineFromIssue] = useState(null);
   const [showCascadeDialog, setShowCascadeDialog] = useState(false);
   const [cascadeFromIssue, setCascadeFromIssue] = useState(null);
   const [cascadeMessage, setCascadeMessage] = useState('');
@@ -425,6 +429,11 @@ const IssuesPageClean = () => {
     setShowTodoDialog(true);
   };
 
+  const handleCreateHeadlineFromIssue = (issue) => {
+    setHeadlineFromIssue(issue);
+    setShowHeadlineDialog(true);
+  };
+
   const handleSaveTodo = async (todoData) => {
     try {
       // Add reference to the issue in the description
@@ -682,6 +691,7 @@ const IssuesPageClean = () => {
                       onVote={handleVote}
                       onMoveToTeam={handleMoveToTeam}
                       onCreateTodo={handleCreateTodoFromIssue}
+                      onCreateHeadline={handleCreateHeadlineFromIssue}
                       onSendCascadingMessage={handleSendCascadingMessage}
                       getStatusColor={getStatusColor}
                       getStatusIcon={getStatusIcon}
@@ -723,6 +733,32 @@ const IssuesPageClean = () => {
             assigned_to_id: todoFromIssue.owner_id || user?.id,
             due_date: todoFromIssue.due_date || format(addDays(new Date(), 7), 'yyyy-MM-dd')
           } : null}
+        />
+
+        {/* Headline Dialog */}
+        <HeadlineDialog
+          open={showHeadlineDialog}
+          onOpenChange={(open) => {
+            setShowHeadlineDialog(open);
+            if (!open) setHeadlineFromIssue(null);
+          }}
+          headline={headlineFromIssue ? {
+            headline: headlineFromIssue.title
+          } : null}
+          onSave={async (headlineData) => {
+            try {
+              await headlinesService.createHeadline({
+                ...headlineData,
+                team_id: selectedDepartment?.id || null
+              });
+              setShowHeadlineDialog(false);
+              setHeadlineFromIssue(null);
+              setSuccess('Headline created successfully');
+            } catch (error) {
+              console.error('Failed to create headline:', error);
+              setError('Failed to create headline');
+            }
+          }}
         />
 
         {/* Cascading Message Dialog */}

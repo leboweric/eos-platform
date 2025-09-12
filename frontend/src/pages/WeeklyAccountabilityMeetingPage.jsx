@@ -205,6 +205,7 @@ const WeeklyAccountabilityMeetingPage = () => {
   const [selectedTeams, setSelectedTeams] = useState([]);
   const [chartModal, setChartModal] = useState({ isOpen: false, metric: null, metricId: null });
   const [showHeadlineDialog, setShowHeadlineDialog] = useState(false);
+  const [editingHeadline, setEditingHeadline] = useState(null);
   const [showPriorityDialog, setShowPriorityDialog] = useState(false);
   const [selectedPriority, setSelectedPriority] = useState(null);
   const [creatingIssueFromHeadline, setCreatingIssueFromHeadline] = useState(null);
@@ -3367,6 +3368,17 @@ const WeeklyAccountabilityMeetingPage = () => {
                                       <ListTodo className="mr-2 h-4 w-4" />
                                       Create Linked To-Do
                                     </ContextMenuItem>
+                                    <ContextMenuItem 
+                                      onClick={() => {
+                                        setEditingHeadline({ 
+                                          headline: issue.title
+                                        });
+                                        setShowHeadlineDialog(true);
+                                      }}
+                                    >
+                                      <Newspaper className="mr-2 h-4 w-4" />
+                                      Create Linked Headline
+                                    </ContextMenuItem>
                                   </ContextMenuContent>
                                 </ContextMenu>
                                 
@@ -3711,7 +3723,11 @@ const WeeklyAccountabilityMeetingPage = () => {
         
         <HeadlineDialog
           open={showHeadlineDialog}
-          onOpenChange={setShowHeadlineDialog}
+          onOpenChange={(open) => {
+            setShowHeadlineDialog(open);
+            if (!open) setEditingHeadline(null);
+          }}
+          headline={editingHeadline}
           onSave={async (headlineData) => {
             try {
               await headlinesService.createHeadline({
@@ -3720,6 +3736,7 @@ const WeeklyAccountabilityMeetingPage = () => {
               });
               await fetchHeadlines();
               setShowHeadlineDialog(false);
+              setEditingHeadline(null);
               setSuccess('Headline saved successfully');
             } catch (error) {
               console.error('Failed to save headline:', error);
