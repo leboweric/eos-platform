@@ -2997,7 +2997,7 @@ const WeeklyAccountabilityMeetingPage = () => {
                                         {isComplete ? (
                                           <Check className="h-4 w-4 text-white" />
                                         ) : (
-                                          <div className="w-3 h-3 rounded-full bg-white/80" />
+                                          <div className="w-4 h-4" /> /* Empty space - just the circle border */
                                         )}
                                       </div>
                                     </div>
