@@ -7,6 +7,8 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Badge } from '@/components/ui/badge';
+import { Avatar, AvatarFallback } from '@/components/ui/avatar';
+import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import { quarterlyPrioritiesService } from '../services/quarterlyPrioritiesService';
 import { todosService } from '../services/todosService';
 import { issuesService } from '../services/issuesService';
@@ -45,7 +47,10 @@ import {
   ChartBar,
   User,
   Users2,
-  MessageSquare
+  MessageSquare,
+  ChevronDown,
+  ChevronRight,
+  Check
 } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { format } from 'date-fns';
@@ -94,6 +99,8 @@ const DashboardClean = () => {
     secondary: '#1E40AF',
     accent: '#60A5FA'
   });
+  const [expandedPriorities, setExpandedPriorities] = useState({});
+  const [openStatusDropdown, setOpenStatusDropdown] = useState(null);
   const [dashboardData, setDashboardData] = useState({
     priorities: [],
     todos: [],
@@ -1003,18 +1010,24 @@ const DashboardClean = () => {
                   }, {});
                   
                   return Object.entries(groupedPriorities).map(([ownerName, priorities]) => (
-                    <div key={ownerName} className="bg-white border border-slate-200 rounded-xl p-4 shadow-sm">
-                      <div className="flex items-center gap-3 mb-3">
-                        <div className="h-10 w-10 rounded-full bg-slate-100 flex items-center justify-center">
-                          <span className="text-sm font-semibold text-slate-700">
-                            {ownerName.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2)}
-                          </span>
+                    <Card key={ownerName} className="bg-white border-slate-200 shadow-md hover:shadow-lg transition-shadow">
+                      <CardHeader className="pb-3">
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center gap-3">
+                            <Avatar className="h-10 w-10 border-2 border-slate-100">
+                              <AvatarFallback className="bg-gradient-to-br from-slate-100 to-slate-200 text-slate-700 font-semibold">
+                                {ownerName.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2)}
+                              </AvatarFallback>
+                            </Avatar>
+                            <div>
+                              <h3 className="text-lg font-bold text-slate-900">{ownerName}</h3>
+                              <p className="text-sm text-slate-500">{priorities.length} {labels?.priority_singular || 'Rock'}{priorities.length !== 1 ? 's' : ''}</p>
+                            </div>
+                          </div>
+                          <ChevronDown className="h-5 w-5 text-slate-400" />
                         </div>
-                        <div>
-                          <h3 className="text-sm font-bold text-slate-900">{ownerName}</h3>
-                          <p className="text-xs text-slate-500">{priorities.length} {labels?.priority_singular || 'Rock'}{priorities.length !== 1 ? 's' : ''}</p>
-                        </div>
-                      </div>
+                      </CardHeader>
+                      <CardContent className="pt-0">
                       <div className="space-y-2">
                       {priorities.map((priority) => {
                         const isComplete = priority.status === 'complete' || 
@@ -1069,58 +1082,217 @@ const DashboardClean = () => {
                         );
                       })}
                       </div>
-                    </div>
+                      </CardContent>
+                    </Card>
                   ));
                 })()}
               </div>
             ) : (
-              // My Items View: Clean list
-              <div className="space-y-2">
+              // My Items View: Match Rock page design exactly
+              <div className="space-y-1">
+                {/* Header Row */}
+                <div className="flex items-center px-3 py-2 text-xs font-medium text-slate-500 uppercase tracking-wider border-b border-slate-100">
+                  <div className="w-8"></div>
+                  <div className="w-10 ml-2">Status</div>
+                  <div className="flex-1 ml-3">Title</div>
+                  <div className="w-40 text-center">Milestone Progress</div>
+                  <div className="w-20 text-right">Due By</div>
+                  <div className="w-8"></div>
+                </div>
+                
+                {/* Priority Rows */}
                 {dashboardData.priorities.map((priority) => {
-                  const isComplete = priority.status === 'complete' || 
-                                     priority.status === 'completed' || 
-                                     priority.progress === 100;
+                  const isComplete = priority.status === 'complete' || priority.status === 'completed';
+                  const isOnTrack = priority.status === 'on-track';
                   const completedMilestones = (priority.milestones || []).filter(m => m.completed).length;
                   const totalMilestones = (priority.milestones || []).length;
+                  const isExpanded = expandedPriorities[priority.id];
                   
                   return (
-                    <div 
-                      key={priority.id} 
-                      className="group p-4 rounded-lg border border-slate-200 hover:bg-slate-50 cursor-pointer transition-colors"
-                      onClick={() => {
-                        setSelectedPriority(priority);
-                        setShowPriorityDialog(true);
-                      }}
-                    >
-                      <div className="flex items-center gap-4">
-                        <div className={`w-3 h-3 rounded-full flex-shrink-0 ${
-                          isComplete ? 'bg-green-500' : 
-                          priority.status === 'off-track' ? 'bg-red-500' : 'bg-slate-400'
-                        }`} />
-                        <div className="flex-1 min-w-0">
-                          <p className={`font-medium ${
-                            isComplete ? 'line-through text-slate-400' : 'text-slate-900'
-                          }`}>
-                            {priority.title}
-                          </p>
-                          <p className="text-sm text-slate-500 mt-1">
-                            {priority.owner?.name || 'Unassigned'} • Due {priority.dueDate ? format(new Date(priority.dueDate), 'MMM d') : 'No date'}
-                          </p>
+                    <div key={priority.id} className="border-b border-slate-100 last:border-0">
+                      {/* Main Priority Row */}
+                      <div className="flex items-center px-3 py-3 hover:bg-slate-50 rounded-lg transition-colors group">
+                        {/* Expand Arrow */}
+                        <div 
+                          className="w-8 flex items-center justify-center cursor-pointer"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setExpandedPriorities(prev => ({
+                              ...prev,
+                              [priority.id]: !prev[priority.id]
+                            }));
+                          }}
+                        >
+                          <ChevronRight 
+                            className={`h-4 w-4 text-slate-400 group-hover:text-slate-600 transition-transform duration-200 ${
+                              isExpanded ? 'rotate-90' : ''
+                            }`} 
+                          />
                         </div>
-                        {totalMilestones > 0 && (
-                          <div className="flex items-center gap-3">
-                            <div className="w-24 bg-slate-200 rounded-full h-2 overflow-hidden">
-                              <div 
-                                className="h-full bg-green-500 rounded-full transition-all"
-                                style={{ width: `${(completedMilestones / totalMilestones) * 100}%` }}
-                              />
-                            </div>
-                            <span className="text-sm text-slate-600">
-                              {completedMilestones}/{totalMilestones}
-                            </span>
+                        
+                        {/* Status Indicator with Dropdown */}
+                        <div className="w-10 ml-2 flex items-center relative">
+                          <div 
+                            className="flex items-center justify-center w-7 h-7 rounded-full cursor-pointer hover:scale-110 transition-transform"
+                            style={{
+                              backgroundColor: 
+                                priority.status === 'cancelled' ? '#6B728020' :
+                                isComplete ? themeColors.primary + '20' : 
+                                (isOnTrack ? '#10B98120' : '#EF444420'),
+                              border: `2px solid ${
+                                priority.status === 'cancelled' ? '#6B7280' :
+                                isComplete ? themeColors.primary : 
+                                (isOnTrack ? '#10B981' : '#EF4444')
+                              }`
+                            }}
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setOpenStatusDropdown(openStatusDropdown === priority.id ? null : priority.id);
+                            }}
+                          >
+                            {priority.status === 'cancelled' ? (
+                              <X className="h-4 w-4 text-gray-500" />
+                            ) : isComplete ? (
+                              <CheckCircle className="h-4 w-4" style={{ color: themeColors.primary }} />
+                            ) : isOnTrack ? (
+                              <Check className="h-4 w-4 text-green-600" />
+                            ) : (
+                              <X className="h-4 w-4 text-red-600" />
+                            )}
                           </div>
-                        )}
+                          
+                          {/* Status Dropdown */}
+                          {openStatusDropdown === priority.id && (
+                            <div className="absolute top-8 left-0 z-50 bg-white rounded-lg shadow-lg border border-slate-200 py-1 min-w-[140px]">
+                              <button
+                                className="w-full px-3 py-2 text-left text-sm hover:bg-slate-50 flex items-center gap-2"
+                                onClick={async (e) => {
+                                  e.stopPropagation();
+                                  await handleUpdatePriority(priority.id, { status: 'on-track' });
+                                  setOpenStatusDropdown(null);
+                                }}
+                              >
+                                <div className="w-4 h-4 rounded-full bg-green-100 border-2 border-green-500 flex items-center justify-center">
+                                  {priority.status === 'on-track' && <Check className="h-3 w-3 text-green-600" />}
+                                </div>
+                                <span className={priority.status === 'on-track' ? 'font-medium' : ''}>On Track</span>
+                              </button>
+                              
+                              <button
+                                className="w-full px-3 py-2 text-left text-sm hover:bg-slate-50 flex items-center gap-2"
+                                onClick={async (e) => {
+                                  e.stopPropagation();
+                                  await handleUpdatePriority(priority.id, { status: 'off-track' });
+                                  setOpenStatusDropdown(null);
+                                }}
+                              >
+                                <div className="w-4 h-4 rounded-full bg-red-100 border-2 border-red-500 flex items-center justify-center">
+                                  {priority.status === 'off-track' && <X className="h-3 w-3 text-red-600" />}
+                                </div>
+                                <span className={priority.status === 'off-track' ? 'font-medium' : ''}>Off Track</span>
+                              </button>
+                              
+                              <button
+                                className="w-full px-3 py-2 text-left text-sm hover:bg-slate-50 flex items-center gap-2"
+                                onClick={async (e) => {
+                                  e.stopPropagation();
+                                  await handleUpdatePriority(priority.id, { status: 'complete' });
+                                  setOpenStatusDropdown(null);
+                                }}
+                              >
+                                <div className="w-4 h-4 rounded-full border-2 flex items-center justify-center"
+                                     style={{ 
+                                       backgroundColor: themeColors.primary + '20',
+                                       borderColor: themeColors.primary 
+                                     }}>
+                                  {priority.status === 'complete' && <CheckCircle className="h-3 w-3" style={{ color: themeColors.primary }} />}
+                                </div>
+                                <span className={priority.status === 'complete' ? 'font-medium' : ''}>Complete</span>
+                              </button>
+                            </div>
+                          )}
+                        </div>
+                        
+                        {/* Title */}
+                        <div 
+                          className="flex-1 ml-3 cursor-pointer"
+                          onClick={() => {
+                            setSelectedPriority(priority);
+                            setShowPriorityDialog(true);
+                          }}
+                        >
+                          <span className={`font-medium ${isComplete ? 'line-through text-slate-400' : 'text-slate-900'}`}>
+                            {priority.title}
+                          </span>
+                        </div>
+                        
+                        {/* Milestone Progress */}
+                        <div className="w-40 flex items-center justify-center px-2">
+                          {totalMilestones > 0 ? (
+                            <div className="flex items-center gap-2 w-full">
+                              <div className="flex-1 bg-slate-200 rounded-full h-2 overflow-hidden">
+                                <div 
+                                  className="h-full bg-green-500 rounded-full transition-all"
+                                  style={{ width: `${(completedMilestones / totalMilestones) * 100}%` }}
+                                />
+                              </div>
+                              <span className="text-xs text-slate-600 font-medium whitespace-nowrap">
+                                {completedMilestones}/{totalMilestones}
+                              </span>
+                            </div>
+                          ) : (
+                            <span className="text-sm text-slate-400">-</span>
+                          )}
+                        </div>
+                        
+                        {/* Due Date */}
+                        <div className="w-20 text-right">
+                          <span className="text-sm text-slate-600">
+                            {priority.dueDate ? format(new Date(priority.dueDate), 'MMM d') : '-'}
+                          </span>
+                        </div>
+                        
+                        {/* Actions */}
+                        <div className="w-8 flex items-center justify-center">
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className="opacity-0 group-hover:opacity-100 transition-opacity"
+                            onClick={() => {
+                              setSelectedPriority(priority);
+                              setShowPriorityDialog(true);
+                            }}
+                          >
+                            <Edit className="h-4 w-4 text-slate-400" />
+                          </Button>
+                        </div>
                       </div>
+                      
+                      {/* Expanded Milestones Section */}
+                      {isExpanded && priority.milestones && priority.milestones.length > 0 && (
+                        <div className="ml-12 mr-4 mb-3 p-3 bg-slate-50 rounded-lg">
+                          <div className="space-y-2">
+                            {priority.milestones.map(milestone => (
+                              <div key={milestone.id} className="flex items-center gap-3">
+                                <input
+                                  type="checkbox"
+                                  checked={milestone.completed}
+                                  onChange={async () => {
+                                    await handleToggleMilestone(priority.id, milestone.id, !milestone.completed);
+                                  }}
+                                  className="rounded border-slate-300 text-green-600 focus:ring-green-500"
+                                />
+                                <span className={`text-sm flex-1 ${milestone.completed ? 'line-through text-slate-400' : 'text-slate-700'}`}>
+                                  {milestone.title}
+                                </span>
+                                <span className="text-xs text-slate-500">
+                                  {milestone.dueDate ? format(new Date(milestone.dueDate), 'MMM d') : ''}
+                                </span>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      )}
                     </div>
                   );
                 })}
