@@ -43,7 +43,8 @@ import {
   Edit,
   X,
   ThumbsUp,
-  GripVertical
+  GripVertical,
+  TrendingUp
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import ScorecardTableClean from '../components/scorecard/ScorecardTableClean';
@@ -3160,8 +3161,49 @@ const WeeklyAccountabilityMeetingPage = () => {
                   <span className="font-semibold">Quick voting:</span> Everyone votes on the most important issues. Then discuss and solve the top-voted issues together.
                 </p>
               </div>
+              
+              {/* Timeline Tabs */}
+              <div className="bg-white/80 backdrop-blur-sm rounded-xl p-2 inline-flex shadow-sm mb-4">
+                <div className="flex gap-1">
+                  <button
+                    onClick={() => setIssueTimeline('short_term')}
+                    className={`px-4 py-2 rounded-lg font-medium transition-all duration-200 flex items-center gap-2 ${
+                      issueTimeline === 'short_term'
+                        ? 'text-white shadow-lg'
+                        : 'text-slate-600 hover:bg-slate-100'
+                    }`}
+                    style={{
+                      ...(issueTimeline === 'short_term' ? {
+                        background: `linear-gradient(135deg, ${themeColors.primary} 0%, ${themeColors.secondary} 100%)`
+                      } : {})
+                    }}
+                  >
+                    <Target className="h-4 w-4" />
+                    Short Term
+                    <span className="text-sm opacity-80">({shortTermIssues?.length || 0})</span>
+                  </button>
+                  <button
+                    onClick={() => setIssueTimeline('long_term')}
+                    className={`px-4 py-2 rounded-lg font-medium transition-all duration-200 flex items-center gap-2 ${
+                      issueTimeline === 'long_term'
+                        ? 'text-white shadow-lg'
+                        : 'text-slate-600 hover:bg-slate-100'
+                    }`}
+                    style={{
+                      ...(issueTimeline === 'long_term' ? {
+                        background: `linear-gradient(135deg, ${themeColors.primary} 0%, ${themeColors.accent} 100%)`
+                      } : {})
+                    }}
+                  >
+                    <TrendingUp className="h-4 w-4" />
+                    Long Term
+                    <span className="text-sm opacity-80">({longTermIssues?.length || 0})</span>
+                  </button>
+                </div>
+              </div>
+
 {(() => {
-                const issues = shortTermIssues || [];
+                const issues = issueTimeline === 'short_term' ? (shortTermIssues || []) : (longTermIssues || []);
 
                 if (issues.length === 0) {
                   return (
