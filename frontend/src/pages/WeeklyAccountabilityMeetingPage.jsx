@@ -2056,7 +2056,23 @@ const WeeklyAccountabilityMeetingPage = () => {
     const handleIssueUpdate = (event) => {
       const issueData = event.detail;
       console.log('📊 Received issue update:', issueData);
-      fetchIssuesData();
+      
+      // Update the specific issue in both short-term and long-term lists
+      if (issueData.issueId && issueData.status !== undefined) {
+        setShortTermIssues(prev => 
+          prev.map(issue => 
+            issue.id === issueData.issueId ? { ...issue, status: issueData.status } : issue
+          )
+        );
+        setLongTermIssues(prev => 
+          prev.map(issue => 
+            issue.id === issueData.issueId ? { ...issue, status: issueData.status } : issue
+          )
+        );
+      } else {
+        // Fallback to full refetch if issueData is incomplete
+        fetchIssuesData();
+      }
     };
     
     const handleTodoUpdate = (event) => {
@@ -3196,7 +3212,7 @@ const WeeklyAccountabilityMeetingPage = () => {
                           
                           {/* Issue Rows */}
                           {issues.map((issue, index) => {
-                            const isSolved = issue.status === 'solved' || issue.status === 'completed';
+                            const isSolved = issue.status === 'solved' || issue.status === 'completed' || issue.status === 'closed' || issue.status === 'resolved';
                             const isExpanded = expandedPriorities[issue.id];
                             const isDragging = draggedIndex === index;
                             const isDragOver = dragOverIndex === index;
@@ -3232,7 +3248,7 @@ const WeeklyAccountabilityMeetingPage = () => {
                                       }}
                                       onClick={async () => {
                                         try {
-                                          const newStatus = isSolved ? 'open' : 'solved';
+                                          const newStatus = isSolved ? 'open' : 'closed';
                                           await handleStatusChange(issue.id, newStatus);
                                         } catch (error) {
                                           console.error('Failed to update issue status:', error);
