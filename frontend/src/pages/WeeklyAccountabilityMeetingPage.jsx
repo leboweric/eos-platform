@@ -177,6 +177,11 @@ const WeeklyAccountabilityMeetingPage = () => {
   const [todos, setTodos] = useState([]);
   const { selectedTodoIds } = useSelectedTodos();
   const [teamMembers, setTeamMembers] = useState([]);
+  
+  // Drag and drop state for issues
+  const [draggedIssue, setDraggedIssue] = useState(null);
+  const [draggedIndex, setDraggedIndex] = useState(null);
+  const [dragOverIndex, setDragOverIndex] = useState(null);
   const [todaysTodos, setTodaysTodos] = useState([]);
   const [goodNews, setGoodNews] = useState([]);
   const [headlines, setHeadlines] = useState({ customer: [], employee: [] });
@@ -1248,6 +1253,68 @@ const WeeklyAccountabilityMeetingPage = () => {
     // Don't set editingTodo for new todos - that's only for existing todos
     setEditingTodo(null);
     setShowTodoDialog(true);
+  };
+
+  // Drag and drop handlers for issues
+  const handleDragStart = (e, issue, index) => {
+    setDraggedIssue(issue);
+    setDraggedIndex(index);
+    e.dataTransfer.effectAllowed = 'move';
+  };
+
+  const handleDragEnd = () => {
+    setDraggedIssue(null);
+    setDraggedIndex(null);
+    setDragOverIndex(null);
+  };
+
+  const handleDragOver = (e) => {
+    e.preventDefault();
+    e.dataTransfer.dropEffect = 'move';
+  };
+
+  const handleDragEnter = (e, index) => {
+    e.preventDefault();
+    setDragOverIndex(index);
+  };
+
+  const handleDrop = async (e, dropIndex) => {
+    e.preventDefault();
+    
+    if (draggedIndex === null || draggedIndex === dropIndex || !draggedIssue) {
+      return;
+    }
+
+    const issues = shortTermIssues || [];
+    // Reorder the issues
+    const newIssues = [...issues];
+    const [movedIssue] = newIssues.splice(draggedIndex, 1);
+    newIssues.splice(dropIndex, 0, movedIssue);
+
+    // Update priority ranks
+    const updatedIssues = newIssues.map((issue, index) => ({
+      ...issue,
+      priority_rank: index
+    }));
+
+    // Update state optimistically
+    setShortTermIssues(updatedIssues);
+    
+    // Reset drag state
+    setDraggedIssue(null);
+    setDraggedIndex(null);
+    setDragOverIndex(null);
+
+    // Call reorder handler
+    if (handleReorderIssues) {
+      try {
+        await handleReorderIssues(updatedIssues);
+      } catch (error) {
+        console.error('Failed to reorder issues:', error);
+        // Revert on error
+        setShortTermIssues(issues);
+      }
+    }
   };
 
   // Create Issue from To-Do
@@ -3079,69 +3146,6 @@ const WeeklyAccountabilityMeetingPage = () => {
               </div>
 {(() => {
                 const issues = shortTermIssues || [];
-                const [draggedIssue, setDraggedIssue] = useState(null);
-                const [draggedIndex, setDraggedIndex] = useState(null);
-                const [dragOverIndex, setDragOverIndex] = useState(null);
-
-                const handleDragStart = (e, issue, index) => {
-                  setDraggedIssue(issue);
-                  setDraggedIndex(index);
-                  e.dataTransfer.effectAllowed = 'move';
-                };
-
-                const handleDragEnd = () => {
-                  setDraggedIssue(null);
-                  setDraggedIndex(null);
-                  setDragOverIndex(null);
-                };
-
-                const handleDragOver = (e) => {
-                  e.preventDefault();
-                  e.dataTransfer.dropEffect = 'move';
-                };
-
-                const handleDragEnter = (e, index) => {
-                  e.preventDefault();
-                  setDragOverIndex(index);
-                };
-
-                const handleDrop = async (e, dropIndex) => {
-                  e.preventDefault();
-                  
-                  if (draggedIndex === null || draggedIndex === dropIndex || !draggedIssue) {
-                    return;
-                  }
-
-                  // Reorder the issues
-                  const newIssues = [...issues];
-                  const [movedIssue] = newIssues.splice(draggedIndex, 1);
-                  newIssues.splice(dropIndex, 0, movedIssue);
-
-                  // Update priority ranks
-                  const updatedIssues = newIssues.map((issue, index) => ({
-                    ...issue,
-                    priority_rank: index
-                  }));
-
-                  // Update state optimistically
-                  setShortTermIssues(updatedIssues);
-                  
-                  // Reset drag state
-                  setDraggedIssue(null);
-                  setDraggedIndex(null);
-                  setDragOverIndex(null);
-
-                  // Call reorder handler
-                  if (handleReorderIssues) {
-                    try {
-                      await handleReorderIssues(updatedIssues);
-                    } catch (error) {
-                      console.error('Failed to reorder issues:', error);
-                      // Revert on error
-                      setShortTermIssues(issues);
-                    }
-                  }
-                };
 
                 if (issues.length === 0) {
                   return (
