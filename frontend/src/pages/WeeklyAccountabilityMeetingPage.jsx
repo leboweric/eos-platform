@@ -495,6 +495,85 @@ const WeeklyAccountabilityMeetingPage = () => {
     }
   };
 
+  // Data fetching functions
+  const fetchTodosData = async () => {
+    try {
+      const cleanTeamId = (teamId === 'null' || teamId === 'undefined') ? null : teamId;
+      const effectiveTeamId = getEffectiveTeamId(cleanTeamId, user);
+      
+      const response = await todosService.getTodos(
+        null, // status filter
+        null, // assignee filter
+        true, // include completed - show all todos
+        effectiveTeamId // department filter
+      );
+      const fetchedTodos = response.data?.todos || [];
+      
+      setTodos(fetchedTodos);
+    } catch (error) {
+      console.error('Failed to fetch todos:', error);
+    }
+  };
+
+  const fetchIssuesData = async () => {
+    try {
+      const cleanTeamId = (teamId === 'null' || teamId === 'undefined') ? null : teamId;
+      const effectiveTeamId = getEffectiveTeamId(cleanTeamId, user);
+      
+      // Fetch both short-term and long-term issues
+      const [shortTermResponse, longTermResponse] = await Promise.all([
+        issuesService.getIssues('short_term', false, effectiveTeamId),
+        issuesService.getIssues('long_term', false, effectiveTeamId)
+      ]);
+      
+      setShortTermIssues(shortTermResponse.data.issues || []);
+      setLongTermIssues(longTermResponse.data.issues || []);
+      setTeamMembers(shortTermResponse.data.teamMembers || []);
+    } catch (error) {
+      console.error('Failed to fetch issues:', error);
+    }
+  };
+
+  const fetchHeadlines = async () => {
+    try {
+      const cleanTeamId = (teamId === 'null' || teamId === 'undefined') ? null : teamId;
+      const effectiveTeamId = getEffectiveTeamId(cleanTeamId, user);
+      
+      const response = await headlinesService.getHeadlines(effectiveTeamId);
+      setHeadlines({
+        customer: response.data.customerHeadlines || [],
+        employee: response.data.employeeHeadlines || []
+      });
+    } catch (error) {
+      console.error('Failed to fetch headlines:', error);
+    }
+  };
+
+  const loadInitialData = async () => {
+    try {
+      setLoading(true);
+      await Promise.all([
+        fetchScorecardData(),
+        fetchPrioritiesData(),
+        fetchIssuesData(),
+        fetchTodosData(),
+        fetchHeadlines()
+      ]);
+    } catch (error) {
+      console.error('Failed to load initial data:', error);
+      setError('Failed to load meeting data');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Load data on mount and when teamId changes
+  useEffect(() => {
+    if (user && teamId) {
+      loadInitialData();
+    }
+  }, [teamId, user]);
+
   useEffect(() => {
     console.log('🚀 teamId changed, reloading data. New teamId:', teamId);
     if (teamId && teamId !== 'null' && teamId !== 'undefined') {
@@ -707,23 +786,6 @@ const WeeklyAccountabilityMeetingPage = () => {
     };
   }, [meetingStarted, meetingStartTime]);
 
-  const loadInitialData = async () => {
-    try {
-      setLoading(true);
-      await Promise.all([
-        fetchScorecardData(),
-        fetchPrioritiesData(),
-        fetchIssuesData(),
-        fetchTodosData()
-      ]);
-    } catch (error) {
-      console.error('Failed to load initial data:', error);
-      setError('Failed to load meeting data');
-    } finally {
-      setLoading(false);
-    }
-  };
-
   const fetchScorecardData = async () => {
     try {
       const orgId = user?.organizationId || user?.organization_id;
@@ -815,60 +877,6 @@ const WeeklyAccountabilityMeetingPage = () => {
     }
   };
 
-  const fetchIssuesData = async () => {
-    try {
-      // Handle "null" string from URL params
-      const cleanTeamId = (teamId === 'null' || teamId === 'undefined') ? null : teamId;
-      const effectiveTeamId = getEffectiveTeamId(cleanTeamId, user);
-      
-      // Fetch both short-term and long-term issues
-      const [shortTermResponse, longTermResponse] = await Promise.all([
-        issuesService.getIssues('short_term', false, effectiveTeamId),
-        issuesService.getIssues('long_term', false, effectiveTeamId)
-      ]);
-      
-      // Don't re-sort issues - they come from backend already sorted by priority_rank
-      // This preserves the drag-and-drop order
-      setShortTermIssues(shortTermResponse.data.issues || []);
-      setLongTermIssues(longTermResponse.data.issues || []);
-      setTeamMembers(shortTermResponse.data.teamMembers || []);
-    } catch (error) {
-      console.error('Failed to fetch issues:', error);
-    }
-  };
-
-  // Helper function to check if a todo is overdue
-  const isOverdue = (todo) => {
-    if (!todo.due_date || todo.status === 'complete' || todo.status === 'cancelled') {
-      return false;
-    }
-    const dueDate = new Date(todo.due_date);
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
-    dueDate.setHours(0, 0, 0, 0);
-    return dueDate < today;
-  };
-
-  const fetchTodosData = async () => {
-    try {
-      // Handle "null" string from URL params
-      const cleanTeamId = (teamId === 'null' || teamId === 'undefined') ? null : teamId;
-      const effectiveTeamId = getEffectiveTeamId(cleanTeamId, user);
-      
-      const response = await todosService.getTodos(
-        null, // status filter
-        null, // assignee filter
-        true, // include completed - show all todos
-        effectiveTeamId // department filter
-      );
-      const fetchedTodos = response.data?.todos || [];
-      
-      setTodos(fetchedTodos);
-    } catch (error) {
-      console.error('Failed to fetch todos:', error);
-    }
-  };
-
   const fetchTodaysTodos = async () => {
     try {
       const effectiveTeamId = getEffectiveTeamId(teamId, user);
@@ -915,34 +923,6 @@ const WeeklyAccountabilityMeetingPage = () => {
       fetchHeadlines();
     }
   }, [activeSection]);
-
-  const fetchHeadlines = async () => {
-    try {
-      // Handle "null" string from URL params
-      const cleanTeamId = (teamId === 'null' || teamId === 'undefined') ? null : teamId;
-      const effectiveTeamId = getEffectiveTeamId(cleanTeamId, user);
-      console.log('Fetching headlines for teamId:', effectiveTeamId);
-      
-      // Fetch headlines for this team
-      const response = await headlinesService.getHeadlines(effectiveTeamId);
-      console.log('Headlines response:', response);
-      
-      // Group headlines by type
-      const grouped = { customer: [], employee: [] };
-      response.data.forEach(headline => {
-        if (headline.type === 'customer') {
-          grouped.customer.push(headline);
-        } else if (headline.type === 'employee') {
-          grouped.employee.push(headline);
-        }
-      });
-      
-      console.log('Grouped headlines:', grouped);
-      setHeadlines(grouped);
-    } catch (error) {
-      console.error('Failed to fetch headlines:', error);
-    }
-  };
 
   const handleAddIssue = () => {
     setEditingIssue(null);
@@ -2629,13 +2609,24 @@ const WeeklyAccountabilityMeetingPage = () => {
                                       </div>
                                       
                                       {/* Milestone Progress */}
-                                      <div className="w-40 text-center">
-                                        <div className="flex items-center justify-center gap-2">
-                                          <span className="text-sm text-slate-600">
-                                            {completedMilestones}/{totalMilestones}
-                                          </span>
-                                          <Progress value={totalMilestones > 0 ? (completedMilestones / totalMilestones) * 100 : 0} className="w-16 h-2" />
-                                        </div>
+                                      <div className="w-40 flex items-center justify-center px-2">
+                                        {totalMilestones > 0 ? (
+                                          <div className="flex items-center gap-2 w-full">
+                                            <div className="flex-1 bg-slate-200 rounded-full h-2 overflow-hidden">
+                                              <div 
+                                                className="h-full bg-green-500 rounded-full transition-all"
+                                                style={{
+                                                  width: `${(completedMilestones / totalMilestones) * 100}%`
+                                                }}
+                                              />
+                                            </div>
+                                            <span className="text-xs text-slate-600 font-medium whitespace-nowrap">
+                                              {completedMilestones}/{totalMilestones}
+                                            </span>
+                                          </div>
+                                        ) : (
+                                          <span className="text-sm text-slate-400">-</span>
+                                        )}
                                       </div>
                                       
                                       {/* Due Date */}
