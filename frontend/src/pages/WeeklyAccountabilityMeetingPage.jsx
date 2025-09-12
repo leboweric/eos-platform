@@ -501,13 +501,16 @@ const WeeklyAccountabilityMeetingPage = () => {
       const cleanTeamId = (teamId === 'null' || teamId === 'undefined') ? null : teamId;
       const effectiveTeamId = getEffectiveTeamId(cleanTeamId, user);
       
+      console.log('Fetching todos with effectiveTeamId:', effectiveTeamId);
       const response = await todosService.getTodos(
         null, // status filter
         null, // assignee filter
         true, // include completed - show all todos
         effectiveTeamId // department filter
       );
-      const fetchedTodos = response.data?.todos || [];
+      // Handle both response.data.todos and response.todos formats
+      const fetchedTodos = response.data?.todos || response.todos || response.data || [];
+      console.log('Fetched todos:', fetchedTodos.length, fetchedTodos);
       
       setTodos(fetchedTodos);
     } catch (error) {
@@ -520,15 +523,25 @@ const WeeklyAccountabilityMeetingPage = () => {
       const cleanTeamId = (teamId === 'null' || teamId === 'undefined') ? null : teamId;
       const effectiveTeamId = getEffectiveTeamId(cleanTeamId, user);
       
+      console.log('Fetching issues with effectiveTeamId:', effectiveTeamId);
       // Fetch both short-term and long-term issues
       const [shortTermResponse, longTermResponse] = await Promise.all([
         issuesService.getIssues('short_term', false, effectiveTeamId),
         issuesService.getIssues('long_term', false, effectiveTeamId)
       ]);
       
-      setShortTermIssues(shortTermResponse.data.issues || []);
-      setLongTermIssues(longTermResponse.data.issues || []);
-      setTeamMembers(shortTermResponse.data.teamMembers || []);
+      console.log('Short-term issues response:', shortTermResponse);
+      console.log('Long-term issues response:', longTermResponse);
+      
+      const shortTermIssuesList = shortTermResponse.data?.issues || shortTermResponse.issues || [];
+      const longTermIssuesList = longTermResponse.data?.issues || longTermResponse.issues || [];
+      
+      console.log('Setting short-term issues:', shortTermIssuesList.length, shortTermIssuesList);
+      console.log('Setting long-term issues:', longTermIssuesList.length, longTermIssuesList);
+      
+      setShortTermIssues(shortTermIssuesList);
+      setLongTermIssues(longTermIssuesList);
+      setTeamMembers(shortTermResponse.data?.teamMembers || shortTermResponse.teamMembers || []);
     } catch (error) {
       console.error('Failed to fetch issues:', error);
     }
