@@ -78,8 +78,6 @@ const WeeklyAccountabilityMeetingPage = () => {
   const { teamId } = useParams();
   const navigate = useNavigate();
   
-  console.log('🎯 WeeklyAccountabilityMeetingPage MOUNTED - user:', user, 'teamId:', teamId);
-  
   // Team validation - redirect to meetings page if no valid team selected
   useEffect(() => {
     if (!teamId || teamId === 'null' || teamId === 'undefined') {
@@ -503,17 +501,14 @@ const WeeklyAccountabilityMeetingPage = () => {
       const cleanTeamId = (teamId === 'null' || teamId === 'undefined') ? null : teamId;
       const effectiveTeamId = getEffectiveTeamId(cleanTeamId, user);
       
-      console.log('Fetching todos with effectiveTeamId:', effectiveTeamId);
       const response = await todosService.getTodos(
         null, // status filter
         null, // assignee filter
         true, // include completed - show all todos
         effectiveTeamId // department filter
       );
-      // Handle both response.data.todos and response.todos formats
-      const fetchedTodos = response.data?.todos || response.todos || response.data || [];
-      console.log('Fetched todos:', fetchedTodos.length, fetchedTodos);
       
+      const fetchedTodos = response.data?.todos || [];
       setTodos(fetchedTodos);
     } catch (error) {
       console.error('Failed to fetch todos:', error);
@@ -525,25 +520,15 @@ const WeeklyAccountabilityMeetingPage = () => {
       const cleanTeamId = (teamId === 'null' || teamId === 'undefined') ? null : teamId;
       const effectiveTeamId = getEffectiveTeamId(cleanTeamId, user);
       
-      console.log('Fetching issues with effectiveTeamId:', effectiveTeamId);
       // Fetch both short-term and long-term issues
       const [shortTermResponse, longTermResponse] = await Promise.all([
         issuesService.getIssues('short_term', false, effectiveTeamId),
         issuesService.getIssues('long_term', false, effectiveTeamId)
       ]);
       
-      console.log('Short-term issues response:', shortTermResponse);
-      console.log('Long-term issues response:', longTermResponse);
-      
-      const shortTermIssuesList = shortTermResponse.data?.issues || shortTermResponse.issues || [];
-      const longTermIssuesList = longTermResponse.data?.issues || longTermResponse.issues || [];
-      
-      console.log('Setting short-term issues:', shortTermIssuesList.length, shortTermIssuesList);
-      console.log('Setting long-term issues:', longTermIssuesList.length, longTermIssuesList);
-      
-      setShortTermIssues(shortTermIssuesList);
-      setLongTermIssues(longTermIssuesList);
-      setTeamMembers(shortTermResponse.data?.teamMembers || shortTermResponse.teamMembers || []);
+      setShortTermIssues(shortTermResponse.data?.issues || []);
+      setLongTermIssues(longTermResponse.data?.issues || []);
+      setTeamMembers(shortTermResponse.data?.teamMembers || []);
     } catch (error) {
       console.error('Failed to fetch issues:', error);
     }
@@ -565,10 +550,8 @@ const WeeklyAccountabilityMeetingPage = () => {
   };
 
   const loadInitialData = async () => {
-    console.log('🚀 loadInitialData called!');
     try {
       setLoading(true);
-      console.log('📊 About to fetch all data...');
       await Promise.all([
         fetchScorecardData(),
         fetchPrioritiesData(),
@@ -576,7 +559,6 @@ const WeeklyAccountabilityMeetingPage = () => {
         fetchTodosData(),
         fetchHeadlines()
       ]);
-      console.log('✅ All data fetched successfully');
     } catch (error) {
       console.error('Failed to load initial data:', error);
       setError('Failed to load meeting data');
@@ -585,34 +567,17 @@ const WeeklyAccountabilityMeetingPage = () => {
     }
   };
 
-  // Load data on mount and when teamId changes
+  // Load data on mount and when teamId changes - SIMPLIFIED
   useEffect(() => {
-    console.log('📌 First useEffect - user:', user, 'teamId:', teamId);
-    if (user && teamId) {
-      console.log('✅ Calling loadInitialData from first useEffect');
-      loadInitialData();
-    } else {
-      console.log('❌ NOT calling loadInitialData - missing user or teamId');
-    }
-  }, [teamId, user]);
-
-  useEffect(() => {
-    console.log('🚀 Second useEffect - teamId changed:', teamId);
-    if (teamId && teamId !== 'null' && teamId !== 'undefined') {
-      console.log('✅ Calling loadInitialData from second useEffect');
-      loadInitialData();
-    } else {
-      console.warn('⚠️ Invalid teamId, not loading data:', teamId);
+    // Just call it if we have teamId, don't overcomplicate
+    if (teamId) {
+      fetchTodosData();
+      fetchIssuesData();
+      fetchScorecardData();
+      fetchPrioritiesData();
+      fetchHeadlines();
     }
   }, [teamId]);
-
-  // Load data when meeting is joined
-  useEffect(() => {
-    if (meetingCode) {
-      console.log('🔄 Meeting joined, loading all data...');
-      loadInitialData();
-    }
-  }, [meetingCode]);
 
   // Join meeting when page loads
   const hasJoinedRef = useRef(false);
