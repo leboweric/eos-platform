@@ -394,6 +394,7 @@ const WeeklyAccountabilityMeetingPage = () => {
   // Scorecard display options
   const [showScorecardAverage, setShowScorecardAverage] = useState(false);
   const [showScorecardTotal, setShowScorecardTotal] = useState(false);
+  const [showScorecardThirteenWeeks, setShowScorecardThirteenWeeks] = useState(false);
 
   // Reference dialogs
   const [showBusinessBlueprint, setShowBusinessBlueprint] = useState(false);
@@ -2802,6 +2803,80 @@ const WeeklyAccountabilityMeetingPage = () => {
       <div className="fixed inset-0 bg-grid-slate-100 [mask-image:linear-gradient(0deg,white,rgba(255,255,255,0.6))] -z-10"></div>
       
       <div className="relative max-w-7xl mx-auto p-8 pb-32">
+        {/* Meeting Header */}
+        <div className="mb-6">
+          <div className="flex items-center justify-between">
+            <div>
+              <h1 className="text-3xl font-bold text-slate-900">
+                {labels?.weekly_meeting_label || 'Level 10 Meeting'}
+              </h1>
+              <p className="text-slate-600 mt-1">{getMeetingDescription()}</p>
+            </div>
+            {currentTeam && (
+              <div className="text-right">
+                <p className="text-sm text-slate-600">Team</p>
+                <p className="font-semibold text-slate-900">{currentTeam.name}</p>
+              </div>
+            )}
+          </div>
+        </div>
+
+        {/* Meeting Bar - for collaborative meetings */}
+        {meetingCode && (
+          <MeetingBar
+            meetingCode={meetingCode}
+            participants={participants}
+            onLeave={leaveMeeting}
+            isLeader={isLeader}
+            currentLeader={currentLeader}
+            onNavigate={navigateToSection}
+            currentSection={activeSection}
+            agendaItems={agendaItems}
+            onSyncTimer={syncTimer}
+            onUpdateNotes={updateNotes}
+            sectionNotes={sectionNotes}
+            onClaimPresenter={claimPresenter}
+            onBroadcastRating={broadcastRating}
+            meetingStartTime={meetingStartTime}
+            meetingStarted={meetingStarted}
+          />
+        )}
+
+        {/* Navigation Tabs */}
+        <div className="mb-8 bg-white/80 backdrop-blur-sm rounded-2xl border border-white/50 shadow-sm p-2">
+          <div className="flex space-x-1 overflow-x-auto">
+            {agendaItems.map((item) => {
+              const Icon = item.icon;
+              const isActive = activeSection === item.id;
+              return (
+                <button
+                  key={item.id}
+                  onClick={() => {
+                    setActiveSection(item.id);
+                    if (isLeader && navigateToSection) {
+                      navigateToSection(item.id);
+                    }
+                  }}
+                  className={`
+                    flex items-center gap-2 px-4 py-2 rounded-lg font-medium text-sm transition-all whitespace-nowrap
+                    ${isActive 
+                      ? 'bg-gradient-to-r from-blue-500 to-indigo-500 text-white shadow-md' 
+                      : 'text-slate-600 hover:bg-slate-100'
+                    }
+                  `}
+                >
+                  <Icon className="h-4 w-4" />
+                  <span>{item.label}</span>
+                  <span className={`text-xs ${isActive ? 'text-white/80' : 'text-slate-400'}`}>
+                    {item.duration}m
+                  </span>
+                </button>
+              );
+            })}
+          </div>
+        </div>
+
+        {/* Main Content */}
         {renderContent()}
         
         {/* Floating Action Buttons */}
