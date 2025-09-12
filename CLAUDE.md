@@ -30,6 +30,42 @@ const express = require('express');
 module.exports = router;
 ```
 
+### ⚠️ MANDATORY Rock/Priority Display Design
+**ALL Rock-related pages MUST follow the elegant "Review Prior Quarter" design pattern**
+
+The template is found in `QuarterlyPlanningMeetingPage.jsx` case 'review-quarterly-rocks' (lines ~1783-2855).
+
+**Required Features:**
+- **Employee-centric grouping** - Group by person, NOT company/individual split
+- **Table layout** with columns: Expand Arrow | Status | Title | Milestone Progress | Due Date | Actions
+- **Elegant milestone editing**:
+  - Full-width "Add Milestone" button with `className="w-full"` for better UX
+  - Inline form with text input + date field
+  - Green check button (✓) and red X button for save/cancel
+- **Clean expansion** - No modals, all inline editing
+- **Company rock badges** - Small badge indicator for company-wide rocks
+- **Polished styling** - bg-slate-50 for expanded sections, prominent hover states
+- **Visual hierarchy** - Larger touch targets, clear separation between sections
+
+**Pages that MUST follow this design:**
+1. `QuarterlyPrioritiesPageClean.jsx` - Main Rocks page
+2. `QuarterlyPlanningMeetingPage.jsx` - Review Prior Quarter section (the template)
+3. `WeeklyAccountabilityMeetingPage.jsx` - Rock Review section
+4. `DepartmentPrioritiesPage.jsx` - Department-level rocks
+5. Any future Rock/Priority display components
+
+**Design Philosophy:**
+- Elegance over minimalism
+- User-friendly with prominent, accessible buttons
+- Clear visual hierarchy with full-width interactive elements
+- Professional polish with proper spacing and breathing room
+
+**DO NOT USE:**
+- Small, subtle inline buttons for important actions
+- Cramped layouts
+- Modal dialogs for milestone editing
+- Separate company/individual priority sections
+
 ## Technology Stack
 - **Backend**: Node.js with Express (ES6 modules)
 - **Frontend**: React with Vite

@@ -46,6 +46,9 @@ import {
 import { useNavigate } from 'react-router-dom';
 import ScorecardTableClean from '../components/scorecard/ScorecardTableClean';
 import { Progress } from '@/components/ui/progress';
+import { Avatar, AvatarFallback } from '@/components/ui/avatar';
+import { Checkbox } from '@/components/ui/checkbox';
+import { Input } from '@/components/ui/input';
 import PriorityDialog from '../components/priorities/PriorityDialog';
 import IssuesListClean from '../components/issues/IssuesListClean';
 import IssueDialog from '../components/issues/IssueDialog';
@@ -65,12 +68,9 @@ import { useSelectedTodos } from '../contexts/SelectedTodosContext';
 import { cascadingMessagesService } from '../services/cascadingMessagesService';
 import { teamsService } from '../services/teamsService';
 import { useTerminology } from '../contexts/TerminologyContext';
-import { Checkbox } from '@/components/ui/checkbox';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { DialogFooter } from '@/components/ui/dialog';
-import { Input } from '@/components/ui/input';
-import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { getEffectiveTeamId } from '../utils/teamUtils';
 
 const WeeklyAccountabilityMeetingPage = () => {
@@ -201,6 +201,13 @@ const WeeklyAccountabilityMeetingPage = () => {
   const [creatingIssueFromHeadline, setCreatingIssueFromHeadline] = useState(null);
   const [currentTeam, setCurrentTeam] = useState(null);
   
+  // Additional state for new priorities display pattern
+  const [expandedPriorities, setExpandedPriorities] = useState({});
+  const [openStatusDropdown, setOpenStatusDropdown] = useState(null);
+  const [addingMilestoneFor, setAddingMilestoneFor] = useState(null);
+  const [newMilestone, setNewMilestone] = useState({ title: '', dueDate: '' });
+  const [showAddPriority, setShowAddPriority] = useState(false);
+  
   // Function to create issue directly from headline
   const createIssueFromHeadline = async (headline, type) => {
     try {
@@ -253,11 +260,6 @@ const WeeklyAccountabilityMeetingPage = () => {
     individualPriorities: {} // Will be populated with owners on load
   });
   
-  // Employee-centric priorities state
-  const [expandedPriorities, setExpandedPriorities] = useState({});
-  const [openStatusDropdown, setOpenStatusDropdown] = useState(null);
-  const [addingMilestoneFor, setAddingMilestoneFor] = useState(null);
-  const [newMilestone, setNewMilestone] = useState({ title: '', dueDate: '' });
   
   // Close dropdown when clicking outside
   useEffect(() => {
@@ -1470,6 +1472,7 @@ const WeeklyAccountabilityMeetingPage = () => {
     }
   };
 
+
   const handleCreateDiscussionIssue = async (priority) => {
     try {
       const orgId = user?.organizationId || user?.organization_id;
@@ -2397,7 +2400,6 @@ const WeeklyAccountabilityMeetingPage = () => {
                     <span className="font-bold">Quick Status Check:</span> Each Rock owner reports "on-track" or "off-track" status
                   </p>
                 </div>
-                {/* Employee-Centric Rock View */}
                 {(() => {
                   // Combine all priorities (company and individual)
                   const allPriorities = priorities;
@@ -2433,319 +2435,354 @@ const WeeklyAccountabilityMeetingPage = () => {
                     return a.name.localeCompare(b.name);
                   });
                   
-                  return (
-                    <div>
-                      <div 
-                        className="flex items-center justify-between p-4 bg-white/80 backdrop-blur-sm border border-white/50 rounded-2xl cursor-pointer hover:bg-white/90 hover:shadow-lg transition-all duration-200 shadow-md"
-                        onClick={() => setExpandedSections(prev => ({ 
-                          ...prev, 
-                          companyPriorities: !prev.companyPriorities 
-                        }))}
-                      >
-                        <div className="flex items-center gap-3">
-                          {expandedSections.companyPriorities ? (
-                            <ChevronDown className="h-5 w-5 text-slate-600" />
-                          ) : (
-                            <ChevronRight className="h-5 w-5 text-slate-600" />
-                          )}
-                          <div className="p-2 rounded-xl" style={{
-                            background: `linear-gradient(135deg, ${hexToRgba(themeColors.primary, 0.1)} 0%, ${hexToRgba(themeColors.secondary, 0.1)} 100%)`
-                          }}>
-                            <Building2 className="h-5 w-5" style={{ color: themeColors.primary }} />
-                          </div>
-                          <h3 className="text-lg font-bold text-slate-900">
-                            Company {labels.priorities_label || 'Priorities'}
-                          </h3>
-                          <Badge className="border" style={{
-                            backgroundColor: `${themeColors.primary}15`,
-                            color: themeColors.primary,
-                            borderColor: `${themeColors.primary}30`
-                          }}>
-                            {companyPriorities.length}
-                          </Badge>
-                        </div>
-                      </div>
-                      {expandedSections.companyPriorities && (
-                        <div className="space-y-4 ml-7 mt-4 p-4 bg-slate-50/50 rounded-xl">
-                          {companyPriorities.map(priority => {
-                            const isComplete = priority.status === 'complete' || priority.status === 'completed';
-                            const daysUntil = !isComplete ? getDaysUntilDue(priority.dueDate || priority.due_date) : null;
-                            const displayProgress = isComplete ? 100 : (priority.progress || 0);
-                            
-                            // Calculate overdue milestones for this priority
-                            const overdueMilestones = (priority.milestones || []).filter(
-                              m => !m.completed && getDaysUntilDue(m.dueDate) < 0
-                            );
-                            
-                            return (
-                              <Card 
-                                key={priority.id}
-                                className={`max-w-5xl transition-all duration-300 shadow-md hover:shadow-xl hover:scale-[1.01] cursor-pointer ${
-                                  isComplete 
-                                    ? 'border-slate-200' 
-                                    : priority.status === 'off-track'
-                                    ? 'bg-gradient-to-r from-red-50/80 to-rose-50/80 border-red-200'
-                                    : 'bg-white border-slate-200'
-                                }`}
-                                style={{
-                                  backgroundColor: isComplete ? `${themeColors.primary}10` : undefined
-                                }}
-                                onClick={() => {
-                                  setSelectedPriority(priority);
-                                  setShowPriorityDialog(true);
-                                }}
-                              >
-                                <CardHeader className="pb-4">
-                                  <div className="flex items-start justify-between">
-                                    <div className="flex-1 min-w-0">
-                                      <div className="flex items-center gap-3">
-                                        {isComplete ? (
-                                          <CheckCircle className="h-5 w-5 flex-shrink-0" style={{ color: themeColors.primary }} />
-                                        ) : (
-                                          <div className="w-2 h-2 rounded-full flex-shrink-0" style={getStatusDotColor(priority.status)} />
-                                        )}
-                                        <h3 className={`text-lg font-semibold break-words ${
-                                          isComplete 
-                                            ? 'line-through' 
-                                            : 'text-gray-900'
-                                        }`} style={isComplete ? { color: themeColors.primary, textDecorationColor: themeColors.primary } : {}}>
-                                          {priority.title}
-                                        </h3>
-                                      </div>
-                                      <div className="flex items-center gap-4 mt-2 text-sm text-gray-600">
-                                        <span className="flex items-center gap-1">
-                                          <User className="h-3 w-3" />
-                                          {priority.owner?.name || 'Unassigned'}
-                                        </span>
-                                        <span className="flex items-center gap-1">
-                                          <Calendar className="h-3 w-3" />
-                                          Due {priority.dueDate ? format(new Date(priority.dueDate), 'MMM d') : 'No date'}
-                                        </span>
-                                        {daysUntil !== null && (
-                                          <span 
-                                            className={`text-xs px-2 py-1 rounded-full font-medium ${
-                                              daysUntil < 0 ? 'bg-red-100 text-red-700' :
-                                              daysUntil <= 7 ? 'bg-yellow-100 text-yellow-700' :
-                                              'text-white'
-                                            }`}
-                                            style={{
-                                              backgroundColor: daysUntil > 7 ? themeColors.primary : undefined,
-                                              opacity: daysUntil > 7 ? 0.9 : undefined
-                                            }}
-                                          >
-                                            {daysUntil < 0 ? `${Math.abs(daysUntil)} days overdue` :
-                                             daysUntil === 0 ? 'Due today' :
-                                             `${daysUntil} days left`}
-                                          </span>
-                                        )}
-                                      </div>
-                                    </div>
-                                    <div className="flex flex-col items-end gap-2">
-                                      <div className="text-right">
-                                        <div className="text-2xl font-bold" style={{ color: themeColors.primary }}>
-                                          {displayProgress}%
-                                        </div>
-                                        <Progress value={displayProgress} className="w-24 h-2" />
-                                      </div>
-                                      {/* Overdue milestone badge */}
-                                      {overdueMilestones.length > 0 && (
-                                        <Badge variant="destructive" className="bg-red-100 text-red-700 border-red-300">
-                                          {overdueMilestones.length} Overdue Milestone{overdueMilestones.length > 1 ? 's' : ''}
-                                        </Badge>
-                                      )}
-                                      {/* Status badge underneath progress bar */}
-                                      <Badge 
-                                        className={`${
-                                          isComplete ? 'text-white' :
-                                          priority.status === 'off-track' ? 'bg-red-100 text-red-800 border-red-200' :
-                                          'text-white'
-                                        }`}
-                                        style={{
-                                          backgroundColor: isComplete || priority.status === 'on-track' ? themeColors.primary : undefined,
-                                          borderColor: isComplete || priority.status === 'on-track' ? themeColors.primary : undefined,
-                                          opacity: isComplete || priority.status === 'on-track' ? 0.9 : undefined
-                                        }}
-                                      >
-                                        {isComplete ? 'Complete' :
-                                         priority.status === 'off-track' ? 'Off Track' : 'On Track'}
-                                      </Badge>
-                                    </div>
-                                  </div>
-                                </CardHeader>
-                              </Card>
-                            );
-                          })}
-                        </div>
-                      )}
-                    </div>
-                  );
-                })()}
-                
-                {/* Individual {labels.priorities_label || 'Priorities'} Section */}
-                {(() => {
-                  const individualPriorities = priorities.filter(p => p.priority_type !== 'company');
-                  const groupedByOwner = individualPriorities.reduce((acc, priority) => {
-                    const ownerId = priority.owner?.id || 'unassigned';
-                    if (!acc[ownerId]) {
-                      acc[ownerId] = [];
-                    }
-                    acc[ownerId].push(priority);
-                    return acc;
-                  }, {});
+                  if (allPriorities.length === 0) {
+                    return (
+                      <Card className="bg-white/80 backdrop-blur-sm border border-white/50 rounded-2xl shadow-xl">
+                        <CardContent className="text-center py-8">
+                          <p className="text-slate-500 font-medium">No {labels.priorities_label?.toLowerCase() || 'priorities'} found for this quarter.</p>
+                          <Button 
+                            variant="outline" 
+                            className="mt-4"
+                            onClick={() => setShowAddPriority(true)}
+                          >
+                            <Plus className="mr-2 h-4 w-4" />
+                            Add {labels.priority || 'Priority'}
+                          </Button>
+                        </CardContent>
+                      </Card>
+                    );
+                  }
                   
-                  return Object.keys(groupedByOwner).length > 0 && (
-                    <div className="space-y-4">
-                      <div className="flex items-center gap-3 p-4 bg-white/80 backdrop-blur-sm border border-white/50 rounded-2xl shadow-md">
-                        <div className="p-2 rounded-xl" style={{
-                          background: `linear-gradient(135deg, ${hexToRgba(themeColors.primary, 0.1)} 0%, ${hexToRgba(themeColors.secondary, 0.1)} 100%)`
-                        }}>
-                          <Users className="h-5 w-5" style={{ color: themeColors.primary }} />
-                        </div>
-                        <h3 className="text-lg font-bold text-slate-900">
-                          Individual {labels.priorities_label || 'Priorities'}
-                        </h3>
-                        <Badge className="bg-indigo-100 text-indigo-800 border-indigo-200">
-                          {individualPriorities.length}
-                        </Badge>
+                  return (
+                    <div className="space-y-6">
+                      <div className="flex justify-end">
+                        <Button 
+                          variant="outline" 
+                          className="bg-white/80 backdrop-blur-sm border-white/20 hover:bg-white/90"
+                          onClick={() => setShowAddPriority(true)}
+                        >
+                          <Plus className="mr-2 h-4 w-4" />
+                          Add {labels.priority || 'Priority'}
+                        </Button>
                       </div>
-                      {Object.entries(groupedByOwner).map(([ownerId, ownerPriorities]) => {
-                        const owner = ownerPriorities[0]?.owner;
-                        const isExpanded = expandedSections.individualPriorities[ownerId];
-                        return (
-                          <div key={ownerId} className="ml-7">
-                            <div 
-                              className="flex items-center gap-3 p-3 bg-white/70 backdrop-blur-sm border border-white/40 rounded-xl cursor-pointer hover:bg-white/90 transition-all duration-200 hover:scale-[1.01] hover:shadow-lg shadow-sm"
-                              onClick={() => setExpandedSections(prev => ({ 
-                                ...prev, 
-                                individualPriorities: {
-                                  ...prev.individualPriorities,
-                                  [ownerId]: !prev.individualPriorities[ownerId]
-                                }
-                              }))}
-                            >
-                              {isExpanded ? (
-                                <ChevronDown className="h-4 w-4 text-slate-600" />
-                              ) : (
-                                <ChevronRight className="h-4 w-4 text-slate-600" />
-                              )}
-                              <h4 className="text-md font-semibold text-slate-800">
-                                {owner?.name || 'Unassigned'}
-                              </h4>
-                              <Badge variant="secondary" className="bg-slate-100 text-slate-700 border-slate-200">
-                                {ownerPriorities.length}
-                              </Badge>
+                      
+                      {owners.map(owner => (
+                        <Card key={owner.id} className="bg-white border-slate-200 shadow-md hover:shadow-lg transition-shadow">
+                          <CardHeader className="pb-3">
+                            <div className="flex items-center justify-between">
+                              <div className="flex items-center gap-3">
+                                <Avatar className="h-10 w-10 border-2 border-slate-100">
+                                  <AvatarFallback className="bg-gradient-to-br from-slate-100 to-slate-200 text-slate-700 font-semibold">
+                                    {owner.name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2)}
+                                  </AvatarFallback>
+                                </Avatar>
+                                <div>
+                                  <h3 className="text-lg font-bold text-slate-900">{owner.name}</h3>
+                                  <p className="text-sm text-slate-500">{owner.priorities.length} {labels?.priority_singular || 'Rock'}{owner.priorities.length !== 1 ? 's' : ''}</p>
+                                </div>
+                              </div>
+                              <ChevronDown className="h-5 w-5 text-slate-400" />
                             </div>
-                            {isExpanded && (
-                              <div className="space-y-4 ml-7 mt-4 p-4 bg-slate-50/50 rounded-xl">
-                                {ownerPriorities.map(priority => {
-                                  const isComplete = priority.status === 'complete' || priority.status === 'completed';
-                                  const daysUntil = !isComplete ? getDaysUntilDue(priority.dueDate || priority.due_date) : null;
-                                  const displayProgress = isComplete ? 100 : (priority.progress || 0);
-                                  
-                                  // Calculate overdue milestones for this priority
-                                  const overdueMilestones = (priority.milestones || []).filter(
-                                    m => !m.completed && getDaysUntilDue(m.dueDate) < 0
-                                  );
-                                  
-                                  return (
-                                    <Card 
-                                      key={priority.id}
-                                      className={`max-w-5xl transition-all duration-300 shadow-md hover:shadow-xl hover:scale-[1.01] cursor-pointer ${
-                                        isComplete 
-                                          ? 'border-slate-200' 
-                                          : priority.status === 'off-track'
-                                          ? 'bg-gradient-to-r from-red-50/80 to-rose-50/80 border-red-200'
-                                          : 'bg-white border-slate-200'
-                                      }`}
-                                      style={{
-                                        backgroundColor: isComplete ? `${themeColors.primary}10` : undefined
-                                      }}
-                                      onClick={() => {
-                                        setSelectedPriority(priority);
-                                        setShowPriorityDialog(true);
-                                      }}
-                                    >
-                                      <CardHeader className="pb-4">
-                                        <div className="flex items-start justify-between">
-                                          <div className="flex-1 min-w-0">
-                                            <div className="flex items-center gap-3">
-                                              {isComplete ? (
-                                                <CheckCircle className="h-5 w-5 flex-shrink-0" style={{ color: themeColors.primary }} />
-                                              ) : (
-                                                <div className="w-2 h-2 rounded-full flex-shrink-0" style={getStatusDotColor(priority.status)} />
-                                              )}
-                                              <h3 className={`text-lg font-semibold break-words ${
-                                                isComplete 
-                                                  ? 'line-through' 
-                                                  : 'text-gray-900'
-                                              }`} style={isComplete ? { color: themeColors.primary, textDecorationColor: themeColors.primary } : {}}>
-                                                {priority.title}
-                                              </h3>
-                                            </div>
-                                            <div className="flex items-center gap-4 mt-2 text-sm text-gray-600">
-                                              <span className="flex items-center gap-1">
-                                                <Calendar className="h-3 w-3" />
-                                                Due {priority.dueDate ? format(new Date(priority.dueDate), 'MMM d') : 'No date'}
-                                              </span>
-                                              {daysUntil !== null && (
-                                                <span 
-                                                  className={`text-xs px-2 py-1 rounded-full font-medium ${
-                                                    daysUntil < 0 ? 'bg-red-100 text-red-700' :
-                                                    daysUntil <= 7 ? 'bg-yellow-100 text-yellow-700' :
-                                                    'text-white'
-                                                  }`}
-                                                  style={{
-                                                    backgroundColor: daysUntil > 7 ? themeColors.primary : undefined,
-                                                    opacity: daysUntil > 7 ? 0.9 : undefined
-                                                  }}
-                                                >
-                                                  {daysUntil < 0 ? `${Math.abs(daysUntil)} days overdue` :
-                                                   daysUntil === 0 ? 'Due today' :
-                                                   `${daysUntil} days left`}
-                                                </span>
-                                              )}
-                                            </div>
-                                          </div>
-                                          <div className="flex flex-col items-end gap-2">
-                                            <div className="text-right">
-                                              <div className="text-2xl font-bold" style={{ color: themeColors.primary }}>
-                                                {displayProgress}%
-                                              </div>
-                                              <Progress value={displayProgress} className="w-24 h-2" />
-                                            </div>
-                                            {/* Overdue milestone badge */}
-                                            {overdueMilestones.length > 0 && (
-                                              <Badge variant="destructive" className="bg-red-100 text-red-700 border-red-300">
-                                                {overdueMilestones.length} Overdue Milestone{overdueMilestones.length > 1 ? 's' : ''}
-                                              </Badge>
-                                            )}
-                                            {/* Status badge underneath progress bar */}
-                                            <Badge 
-                                              className={`${
-                                                isComplete ? 'text-white' :
-                                                priority.status === 'off-track' ? 'bg-red-100 text-red-800 border-red-200' :
-                                                'text-white'
-                                              }`}
-                                              style={{
-                                                backgroundColor: isComplete || priority.status === 'on-track' ? themeColors.primary : undefined,
-                                                borderColor: isComplete || priority.status === 'on-track' ? themeColors.primary : undefined,
-                                                opacity: isComplete || priority.status === 'on-track' ? 0.9 : undefined
+                          </CardHeader>
+                          <CardContent className="pt-0">
+                            <div className="space-y-1">
+                              {/* Header Row */}
+                              <div className="flex items-center px-3 py-2 text-xs font-medium text-slate-500 uppercase tracking-wider border-b border-slate-100">
+                                <div className="w-8"></div>
+                                <div className="w-10 ml-2">Status</div>
+                                <div className="flex-1 ml-3">Title</div>
+                                <div className="w-40 text-center">Milestone Progress</div>
+                                <div className="w-20 text-right">Due By</div>
+                                <div className="w-8"></div>
+                              </div>
+                              
+                              {/* Rock Rows */}
+                              {owner.priorities.map(priority => {
+                                const isComplete = priority.status === 'complete' || priority.status === 'completed';
+                                const isOnTrack = priority.status === 'on-track';
+                                const completedMilestones = (priority.milestones || []).filter(m => m.completed).length;
+                                const totalMilestones = (priority.milestones || []).length;
+                                const isExpanded = expandedPriorities[priority.id];
+                                
+                                return (
+                                  <div key={priority.id} className="border-b border-slate-100 last:border-0">
+                                    {/* Main Rock Row */}
+                                    <div className="flex items-center px-3 py-3 hover:bg-slate-50 rounded-lg transition-colors group">
+                                      {/* Expand Arrow */}
+                                      <div 
+                                        className="w-8 flex items-center justify-center cursor-pointer"
+                                        onClick={(e) => togglePriorityExpansion(priority.id, e)}
+                                      >
+                                        <ChevronRight 
+                                          className={`h-4 w-4 text-slate-400 group-hover:text-slate-600 transition-transform duration-200 ${
+                                            isExpanded ? 'rotate-90' : ''
+                                          }`} 
+                                        />
+                                      </div>
+                                      
+                                      {/* Status Indicator with Dropdown */}
+                                      <div className="w-10 ml-2 flex items-center relative status-dropdown">
+                                        <div 
+                                          className="flex items-center justify-center w-7 h-7 rounded-full cursor-pointer hover:scale-110 transition-transform"
+                                          style={{
+                                            backgroundColor: 
+                                              priority.status === 'cancelled' ? '#6B728020' :
+                                              isComplete ? themeColors.primary + '20' : 
+                                              (isOnTrack ? '#10B98120' : '#EF444420'),
+                                            border: `2px solid ${
+                                              priority.status === 'cancelled' ? '#6B7280' :
+                                              isComplete ? themeColors.primary : 
+                                              (isOnTrack ? '#10B981' : '#EF4444')
+                                            }`
+                                          }}
+                                          onClick={(e) => {
+                                            e.stopPropagation();
+                                            setOpenStatusDropdown(openStatusDropdown === priority.id ? null : priority.id);
+                                          }}
+                                        >
+                                          {priority.status === 'cancelled' ? (
+                                            <X className="h-4 w-4 text-gray-500" />
+                                          ) : isComplete ? (
+                                            <CheckCircle className="h-4 w-4" style={{ color: themeColors.primary }} />
+                                          ) : isOnTrack ? (
+                                            <Check className="h-4 w-4 text-green-600" />
+                                          ) : (
+                                            <X className="h-4 w-4 text-red-600" />
+                                          )}
+                                        </div>
+                                        
+                                        {/* Status Dropdown */}
+                                        {openStatusDropdown === priority.id && (
+                                          <div className="absolute top-8 left-0 z-50 bg-white rounded-lg shadow-lg border border-slate-200 py-1 min-w-[140px]">
+                                            <button
+                                              className="w-full px-3 py-2 text-left text-sm hover:bg-slate-50 flex items-center gap-2"
+                                              onClick={async (e) => {
+                                                e.stopPropagation();
+                                                await handleUpdatePriority(priority.id, { status: 'on-track' });
+                                                setOpenStatusDropdown(null);
                                               }}
                                             >
-                                              {isComplete ? 'Complete' :
-                                               priority.status === 'off-track' ? 'Off Track' : 'On Track'}
-                                            </Badge>
+                                              <div className="w-4 h-4 rounded-full bg-green-100 border-2 border-green-500 flex items-center justify-center">
+                                                {priority.status === 'on-track' && <Check className="h-3 w-3 text-green-600" />}
+                                              </div>
+                                              <span className={priority.status === 'on-track' ? 'font-medium' : ''}>On Track</span>
+                                            </button>
+                                            
+                                            <button
+                                              className="w-full px-3 py-2 text-left text-sm hover:bg-slate-50 flex items-center gap-2"
+                                              onClick={async (e) => {
+                                                e.stopPropagation();
+                                                await handleUpdatePriority(priority.id, { status: 'off-track' });
+                                                setOpenStatusDropdown(null);
+                                              }}
+                                            >
+                                              <div className="w-4 h-4 rounded-full bg-red-100 border-2 border-red-500 flex items-center justify-center">
+                                                {priority.status === 'off-track' && <X className="h-3 w-3 text-red-600" />}
+                                              </div>
+                                              <span className={priority.status === 'off-track' ? 'font-medium' : ''}>Off Track</span>
+                                            </button>
+                                            
+                                            <button
+                                              className="w-full px-3 py-2 text-left text-sm hover:bg-slate-50 flex items-center gap-2"
+                                              onClick={async (e) => {
+                                                e.stopPropagation();
+                                                await handleUpdatePriority(priority.id, { status: 'complete' });
+                                                setOpenStatusDropdown(null);
+                                              }}
+                                            >
+                                              <div className="w-4 h-4 rounded-full border-2 flex items-center justify-center"
+                                                   style={{ 
+                                                     backgroundColor: themeColors.primary + '20',
+                                                     borderColor: themeColors.primary 
+                                                   }}>
+                                                {priority.status === 'complete' && <CheckCircle className="h-3 w-3" style={{ color: themeColors.primary }} />}
+                                              </div>
+                                              <span className={priority.status === 'complete' ? 'font-medium' : ''}>Complete</span>
+                                            </button>
+                                            
+                                            <div className="border-t border-slate-100 my-1"></div>
+                                            
+                                            <button
+                                              className="w-full px-3 py-2 text-left text-sm hover:bg-slate-50 flex items-center gap-2"
+                                              onClick={async (e) => {
+                                                e.stopPropagation();
+                                                await handleUpdatePriority(priority.id, { status: 'cancelled' });
+                                                setOpenStatusDropdown(null);
+                                              }}
+                                            >
+                                              <div className="w-4 h-4 rounded-full bg-gray-100 border-2 border-gray-500 flex items-center justify-center">
+                                                {priority.status === 'cancelled' && <X className="h-3 w-3 text-gray-500" />}
+                                              </div>
+                                              <span className={priority.status === 'cancelled' ? 'font-medium' : ''}>Cancelled</span>
+                                            </button>
                                           </div>
+                                        )}
+                                      </div>
+                                      
+                                      {/* Title */}
+                                      <div 
+                                        className="flex-1 ml-3 cursor-pointer"
+                                        onClick={() => {
+                                          setSelectedPriority(priority);
+                                          setShowPriorityDialog(true);
+                                        }}
+                                      >
+                                        <span className={`font-medium ${isComplete ? 'line-through text-slate-400' : 'text-slate-900'}`}>
+                                          {priority.title}
+                                        </span>
+                                        {priority.priority_type === 'company' && (
+                                          <Badge variant="outline" className="ml-2 text-xs">Company</Badge>
+                                        )}
+                                      </div>
+                                      
+                                      {/* Milestone Progress */}
+                                      <div className="w-40 text-center">
+                                        <div className="flex items-center justify-center gap-2">
+                                          <span className="text-sm text-slate-600">
+                                            {completedMilestones}/{totalMilestones}
+                                          </span>
+                                          <Progress value={totalMilestones > 0 ? (completedMilestones / totalMilestones) * 100 : 0} className="w-16 h-2" />
                                         </div>
-                                      </CardHeader>
-                                    </Card>
-                                  );
-                                })}
-                              </div>
-                            )}
-                          </div>
-                        );
-                      })}
+                                      </div>
+                                      
+                                      {/* Due Date */}
+                                      <div className="w-20 text-right">
+                                        <span className="text-sm text-slate-600">
+                                          {priority.dueDate ? format(new Date(priority.dueDate), 'MMM d') : '-'}
+                                        </span>
+                                      </div>
+                                      
+                                      {/* Actions */}
+                                      <div className="w-8 flex items-center justify-center">
+                                        <Button
+                                          variant="ghost"
+                                          size="sm"
+                                          className="opacity-0 group-hover:opacity-100 transition-opacity"
+                                          onClick={() => {
+                                            setSelectedPriority(priority);
+                                            setShowPriorityDialog(true);
+                                          }}
+                                        >
+                                          <Edit className="h-4 w-4 text-slate-400" />
+                                        </Button>
+                                      </div>
+                                    </div>
+                                    
+                                    {/* Expanded Milestones Section */}
+                                    {isExpanded && (
+                                      <div className="ml-12 mr-4 mb-3 p-3 bg-slate-50 rounded-lg">
+                                        <div className="space-y-2">
+                                          {(priority.milestones || []).map(milestone => (
+                                            <div key={milestone.id} className="flex items-center gap-3">
+                                              <Checkbox
+                                                checked={milestone.completed}
+                                                onCheckedChange={async (checked) => {
+                                                  await handleToggleMilestone(priority.id, milestone.id, checked);
+                                                }}
+                                                className="data-[state=checked]:bg-green-600 data-[state=checked]:border-green-600"
+                                              />
+                                              <span className={`text-sm flex-1 ${milestone.completed ? 'line-through text-slate-400' : 'text-slate-700'}`}>
+                                                {milestone.title}
+                                              </span>
+                                              <span className="text-xs text-slate-500">
+                                                {milestone.dueDate ? format(new Date(milestone.dueDate), 'MMM d') : ''}
+                                              </span>
+                                            </div>
+                                          ))}
+                                          
+                                          {/* Milestones Section with Elegant Design */}
+                                          {(priority.milestones || []).length === 0 && addingMilestoneFor !== priority.id ? (
+                                            <div className="space-y-3">
+                                              <div className="border border-slate-200 rounded-lg p-4 bg-white/50">
+                                                <p className="text-sm text-slate-500 text-center mb-3">No milestones added</p>
+                                                <Button
+                                                  variant="outline"
+                                                  className="w-full border-slate-300 hover:border-slate-400 hover:bg-slate-50"
+                                                  onClick={() => {
+                                                    setAddingMilestoneFor(priority.id);
+                                                    setNewMilestone({ 
+                                                      title: '', 
+                                                      dueDate: format(addDays(new Date(), 30), 'yyyy-MM-dd')
+                                                    });
+                                                  }}
+                                                >
+                                                  <Plus className="h-4 w-4 mr-2" />
+                                                  Add Milestone
+                                                </Button>
+                                              </div>
+                                            </div>
+                                          ) : null}
+                                          
+                                          {/* Add Milestone Inline */}
+                                          {addingMilestoneFor === priority.id ? (
+                                            <div className="flex items-center gap-2 mt-2">
+                                              <Input
+                                                value={newMilestone.title}
+                                                onChange={(e) => setNewMilestone(prev => ({ ...prev, title: e.target.value }))}
+                                                placeholder="Milestone description..."
+                                                className="flex-1 h-8 text-sm"
+                                                autoFocus
+                                                onKeyDown={(e) => {
+                                                  if (e.key === 'Enter' && newMilestone.title.trim()) {
+                                                    handleAddMilestone(priority.id);
+                                                  }
+                                                  if (e.key === 'Escape') {
+                                                    setAddingMilestoneFor(null);
+                                                    setNewMilestone({ title: '', dueDate: '' });
+                                                  }
+                                                }}
+                                              />
+                                              <Input
+                                                type="date"
+                                                value={newMilestone.dueDate}
+                                                onChange={(e) => setNewMilestone(prev => ({ ...prev, dueDate: e.target.value }))}
+                                                className="w-32 h-8 text-sm"
+                                              />
+                                              <Button
+                                                size="sm"
+                                                variant="ghost"
+                                                className="h-8 w-8 p-0 hover:bg-green-100"
+                                                onClick={() => handleAddMilestone(priority.id)}
+                                              >
+                                                <Check className="h-4 w-4 text-green-600" />
+                                              </Button>
+                                              <Button
+                                                size="sm"
+                                                variant="ghost"
+                                                className="h-8 w-8 p-0 hover:bg-red-100"
+                                                onClick={() => {
+                                                  setAddingMilestoneFor(null);
+                                                  setNewMilestone({ title: '', dueDate: '' });
+                                                }}
+                                              >
+                                                <X className="h-4 w-4 text-red-600" />
+                                              </Button>
+                                            </div>
+                                          ) : (priority.milestones || []).length > 0 ? (
+                                            <button
+                                              className="text-sm text-slate-500 hover:text-slate-700 flex items-center gap-1 mt-2"
+                                              onClick={() => {
+                                                setAddingMilestoneFor(priority.id);
+                                                setNewMilestone({ 
+                                                  title: '', 
+                                                  dueDate: format(addDays(new Date(), 30), 'yyyy-MM-dd')
+                                                });
+                                              }}
+                                            >
+                                              <Plus className="h-3 w-3" />
+                                              Add Milestone
+                                            </button>
+                                          ) : null}
+                                        </div>
+                                      </div>
+                                    )}
+                                  </div>
+                                );
+                              })}
+                            </div>
+                          </CardContent>
+                        </Card>
+                      ))}
                     </div>
                   );
                 })()}
@@ -2753,817 +2790,7 @@ const WeeklyAccountabilityMeetingPage = () => {
             )}
           </div>
         );
-
-      case 'headlines':
-        return (
-          <Card className="border-0 shadow-sm">
-            <CardHeader className="rounded-t-lg" style={{ 
-              background: `linear-gradient(to right, ${hexToRgba(themeColors.accent, 0.1)}, ${hexToRgba(themeColors.primary, 0.1)})`
-            }}>
-              <div className="flex items-center justify-between">
-                <div>
-                  <CardTitle className="flex items-center gap-2 text-xl">
-                    <Newspaper className="h-5 w-5" style={{ color: themeColors.primary }} />
-                    Customer & Employee Headlines
-                  </CardTitle>
-                  <CardDescription className="mt-1">Share important updates</CardDescription>
-                </div>
-                <div className="text-sm text-gray-500 bg-white px-3 py-1 rounded-full">
-                  5 minutes
-                </div>
-              </div>
-            </CardHeader>
-            <CardContent className="pt-6">
-              <div className="space-y-4">
-                <p className="text-gray-600">
-                  Share critical information about customers and employees that the team needs to know.
-                </p>
-                
-                {/* Cascaded Messages Section */}
-                {cascadedMessages.length > 0 && (
-                  <div className="border p-4 rounded-lg" style={{
-                    backgroundColor: `${themeColors.primary}10`,
-                    borderColor: `${themeColors.primary}30`
-                  }}>
-                    <h4 className="font-medium mb-3 text-gray-900 flex items-center gap-2">
-                      <MessageSquare className="h-4 w-4" style={{ color: themeColors.primary }} />
-                      Cascaded Messages from Other Teams
-                    </h4>
-                    <div className="space-y-3">
-                      {cascadedMessages.map((message) => (
-                        <div key={message.id} className="bg-white p-3 rounded-lg border border-blue-100">
-                          <div className="flex items-start justify-between mb-2">
-                            <div className="flex items-center gap-2">
-                              <span className="text-sm font-semibold text-gray-900">
-                                From: {message.from_team_name}
-                              </span>
-                              <span className="text-xs text-gray-500">
-                                {new Date(message.created_at).toLocaleDateString()}
-                              </span>
-                            </div>
-                            {!message.is_read && (
-                              <span className="text-xs px-2 py-1 rounded-full" style={{
-                                backgroundColor: `${themeColors.primary}15`,
-                                color: themeColors.primary
-                              }}>New</span>
-                            )}
-                          </div>
-                          <p className="text-sm text-gray-700 whitespace-pre-wrap">{message.message}</p>
-                          <p className="text-xs text-gray-500 mt-2">Sent by: {message.created_by_name}</p>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                )}
-                
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  {/* Customer Headlines */}
-                  <div>
-                    <h4 className="text-sm font-semibold text-slate-900 mb-3 flex items-center gap-2">
-                      <div className="p-1.5 rounded-lg" style={{ background: `linear-gradient(135deg, ${themeColors.primary}15 0%, ${themeColors.secondary}15 100%)` }}>
-                        <Users className="h-4 w-4" style={{ color: themeColors.primary }} />
-                      </div>
-                      Customer Headlines ({headlines.customer.length})
-                    </h4>
-                    {headlines.customer.length > 0 ? (
-                      <div className="space-y-2">
-                        {headlines.customer.map(headline => (
-                          <div key={headline.id} className="group relative p-4 bg-white rounded-lg border-l-4 shadow-sm hover:shadow-md transition-shadow" 
-                               style={{ borderLeftColor: themeColors.primary }}>
-                            <p className="text-sm font-medium text-slate-900 leading-relaxed pr-8">{headline.text}</p>
-                            
-                            {/* Action button appears on hover */}
-                            {!headline.has_related_issue && (
-                              <button
-                                className="absolute top-3 right-3 opacity-0 group-hover:opacity-100 
-                                         transition-opacity p-1.5 rounded-lg hover:bg-gray-100 disabled:opacity-50"
-                                onClick={() => createIssueFromHeadline(headline, 'Customer')}
-                                disabled={creatingIssueFromHeadline === headline.id}
-                                title="Create issue from headline"
-                              >
-                                {creatingIssueFromHeadline === headline.id ? (
-                                  <Loader2 className="h-4 w-4 text-gray-600 animate-spin" />
-                                ) : (
-                                  <AlertTriangle className="h-4 w-4 text-gray-600" />
-                                )}
-                              </button>
-                            )}
-                            
-                            {/* If issue exists, show indicator */}
-                            {headline.has_related_issue && (
-                              <div className="absolute top-3 right-3 text-green-600" title="Issue already created">
-                                <CheckCircle className="h-4 w-4" />
-                              </div>
-                            )}
-                            
-                            <p className="text-xs text-slate-600 mt-2 flex items-center gap-1">
-                              <User className="h-3 w-3" />
-                              <span className="font-medium">{headline.created_by_name || headline.createdBy || 'Unknown'}</span>
-                              <span className="text-slate-400">•</span>
-                              <span>{format(new Date(headline.created_at), 'MMM d')}</span>
-                            </p>
-                          </div>
-                        ))}
-                      </div>
-                    ) : (
-                      <p className="text-sm text-slate-500 italic">No customer headlines</p>
-                    )}
-                  </div>
-
-                  {/* Employee Headlines */}
-                  <div>
-                    <h4 className="text-sm font-semibold text-slate-900 mb-3 flex items-center gap-2">
-                      <div className="p-1.5 rounded-lg" style={{ background: `linear-gradient(135deg, ${themeColors.primary}15 0%, ${themeColors.secondary}15 100%)` }}>
-                        <Building2 className="h-4 w-4" style={{ color: themeColors.primary }} />
-                      </div>
-                      Employee Headlines ({headlines.employee.length})
-                    </h4>
-                    {headlines.employee.length > 0 ? (
-                      <div className="space-y-2">
-                        {headlines.employee.map(headline => (
-                          <div key={headline.id} className="group relative p-4 bg-white rounded-lg border-l-4 shadow-sm hover:shadow-md transition-shadow" 
-                               style={{ borderLeftColor: themeColors.secondary }}>
-                            <p className="text-sm font-medium text-slate-900 leading-relaxed pr-8">{headline.text}</p>
-                            
-                            {/* Action button appears on hover */}
-                            {!headline.has_related_issue && (
-                              <button
-                                className="absolute top-3 right-3 opacity-0 group-hover:opacity-100 
-                                         transition-opacity p-1.5 rounded-lg hover:bg-gray-100 disabled:opacity-50"
-                                onClick={() => createIssueFromHeadline(headline, 'Employee')}
-                                disabled={creatingIssueFromHeadline === headline.id}
-                                title="Create issue from headline"
-                              >
-                                {creatingIssueFromHeadline === headline.id ? (
-                                  <Loader2 className="h-4 w-4 text-gray-600 animate-spin" />
-                                ) : (
-                                  <AlertTriangle className="h-4 w-4 text-gray-600" />
-                                )}
-                              </button>
-                            )}
-                            
-                            {/* If issue exists, show indicator */}
-                            {headline.has_related_issue && (
-                              <div className="absolute top-3 right-3 text-green-600" title="Issue already created">
-                                <CheckCircle className="h-4 w-4" />
-                              </div>
-                            )}
-                            
-                            <p className="text-xs text-slate-600 mt-2 flex items-center gap-1">
-                              <User className="h-3 w-3" />
-                              <span className="font-medium">{headline.created_by_name || headline.createdBy || 'Unknown'}</span>
-                              <span className="text-slate-400">•</span>
-                              <span>{format(new Date(headline.created_at), 'MMM d')}</span>
-                            </p>
-                          </div>
-                        ))}
-                      </div>
-                    ) : (
-                      <p className="text-sm text-slate-500 italic">No employee headlines</p>
-                    )}
-                  </div>
-                </div>
-                
-                {/* Archive Headlines Button - shown only when there are headlines */}
-                {(headlines.customer.length > 0 || headlines.employee.length > 0) && (
-                  <div className="mt-4 text-center">
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={async () => {
-                        try {
-                          // Handle "null" string from URL params
-                          const cleanTeamId = (teamId === 'null' || teamId === 'undefined') ? null : teamId;
-                          const effectiveTeamId = getEffectiveTeamId(cleanTeamId, user);
-                          await headlinesService.archiveHeadlines(effectiveTeamId);
-                          setSuccess('Headlines archived');
-                          await fetchHeadlines(); // Refresh the headlines
-                        } catch (error) {
-                          console.error('Failed to archive headlines:', error);
-                          setError('Failed to archive headlines');
-                        }
-                      }}
-                    >
-                      Archive All Headlines
-                    </Button>
-                  </div>
-                )}
-              </div>
-            </CardContent>
-          </Card>
-        );
-
-      case 'todo-list':
-        return (
-          <div className="space-y-4">
-            <Card className="border-0 shadow-sm">
-              <CardHeader className="rounded-t-lg" style={{ 
-                background: `linear-gradient(to right, ${hexToRgba(themeColors.accent, 0.1)}, ${hexToRgba(themeColors.primary, 0.1)})`
-              }}>
-                <div className="flex items-center justify-between">
-                  <div>
-                    <CardTitle className="flex items-center gap-2 text-xl">
-                      <ListTodo className="h-5 w-5" style={{ color: themeColors.primary }} />
-                      To-do List Review
-                    </CardTitle>
-                    <CardDescription className="mt-1">Review action items</CardDescription>
-                  </div>
-                  <div className="text-sm text-gray-500 bg-white px-3 py-1 rounded-full">
-                    5 minutes
-                  </div>
-                </div>
-              </CardHeader>
-              <CardContent className="pt-6">
-                <div className="flex justify-between mb-4">
-                  <div>
-                    {(() => {
-                      const doneTodosCount = todos.filter(t => t.status === 'complete' && !t.archived).length;
-                      return doneTodosCount > 0 && (
-                        <Button 
-                          onClick={async () => {
-                            try {
-                              const result = await todosService.archiveDoneTodos();
-                              setSuccess(`${result.data.archivedCount} done to-do(s) archived`);
-                              await fetchTodosData();
-                              
-                              // Broadcast archive action to other meeting participants
-                              broadcastTodoUpdate({
-                                action: 'archive-done',
-                                archivedCount: result.data.archivedCount
-                              });
-                            } catch (error) {
-                              console.error('Failed to archive done todos:', error);
-                              setError('Failed to archive done to-dos');
-                            }
-                          }}
-                          className="text-white transition-all duration-200 shadow-md hover:shadow-lg rounded-lg"
-                          style={{
-                            background: `linear-gradient(135deg, ${themeColors.primary} 0%, ${themeColors.secondary} 100%)`,
-                            ':hover': {
-                              filter: 'brightness(1.1)'
-                            }
-                          }}
-                          onMouseEnter={(e) => {
-                            e.currentTarget.style.filter = 'brightness(1.1)';
-                          }}
-                          onMouseLeave={(e) => {
-                            e.currentTarget.style.filter = 'brightness(1)';
-                          }}
-                        >
-                          <Archive className="mr-2 h-4 w-4" />
-                          Archive Done ({doneTodosCount})
-                        </Button>
-                      );
-                    })()}
-                  </div>
-                  <div></div>
-                </div>
-                {todos.length === 0 ? (
-                  <div className="text-center py-8">
-                    <p className="text-gray-500">No to-dos found for this week.</p>
-                  </div>
-                ) : (
-                  <TodosListClean 
-                    todos={todos}
-                    onEdit={(todo) => {
-                      setEditingTodo(todo);
-                      setShowTodoDialog(true);
-                    }}
-                    onStatusChange={async (todoId, completed) => {
-                      try {
-                        await todosService.updateTodo(todoId, { 
-                          status: completed ? 'complete' : 'incomplete' 
-                        });
-                        await fetchTodosData();
-                        
-                        // Broadcast todo status change to other meeting participants
-                        broadcastTodoUpdate({
-                          action: 'status',
-                          todoId,
-                          completed,
-                          status: completed ? 'complete' : 'incomplete'
-                        });
-                      } catch (error) {
-                        console.error('Failed to update todo:', error);
-                      }
-                    }}
-                    onDelete={async (todoId) => {
-                      try {
-                        await todosService.deleteTodo(todoId);
-                        await fetchTodosData();
-                        setSuccess('To-do deleted');
-                        
-                        // Broadcast todo deletion/archive to other meeting participants
-                        broadcastTodoUpdate({
-                          action: 'delete',
-                          todoId
-                        });
-                      } catch (error) {
-                        console.error('Failed to delete todo:', error);
-                        setError('Failed to delete to-do');
-                      }
-                    }}
-                    readOnly={false}
-                    showCheckboxes={true}
-                  />
-                )}
-              </CardContent>
-            </Card>
-          </div>
-        );
-
-      case 'issues':
-        return (
-          <div className="space-y-4">
-            <Card className="border-0 shadow-sm">
-              <CardHeader className="rounded-t-lg" style={{ 
-                background: `linear-gradient(to right, ${hexToRgba(themeColors.accent, 0.1)}, ${hexToRgba(themeColors.primary, 0.1)})`
-              }}>
-                <div className="flex items-center justify-between">
-                  <div>
-                    <CardTitle className="flex items-center gap-2 text-xl">
-                      <AlertTriangle className="h-5 w-5" style={{ color: themeColors.primary }} />
-                      Identify Discuss Solve
-                    </CardTitle>
-                    <CardDescription className="mt-1">Solve the most important Issue(s)</CardDescription>
-                  </div>
-                  <div className="text-sm text-gray-500 bg-white px-3 py-1 rounded-full">
-                    60 minutes
-                  </div>
-                </div>
-              </CardHeader>
-              <CardContent className="pt-6">
-                <div className="border border-white/30 bg-white/60 backdrop-blur-sm rounded-xl p-4 mb-4 shadow-sm">
-                  <p className="text-gray-700 text-center">
-                    <span className="font-semibold">Quick voting:</span> Everyone votes on the most important issues. Then discuss and solve the top-voted issues together.
-                  </p>
-                </div>
-                <div className="mb-4">
-                  <Tabs value={issueTimeline} onValueChange={setIssueTimeline} className="w-full">
-                    <div className="flex justify-between items-center mb-4">
-                      <TabsList className="bg-white/80 backdrop-blur-sm border border-white/50 rounded-xl p-1">
-                        <TabsTrigger 
-                          value="short_term" 
-                          className="min-w-[120px] relative z-10 data-[state=active]:text-white data-[state=active]:shadow-sm transition-all"
-                          data-state={issueTimeline === 'short_term' ? 'active' : 'inactive'}
-                          style={issueTimeline === 'short_term' ? {
-                            background: `linear-gradient(135deg, ${themeColors.primary} 0%, ${themeColors.secondary} 100%)`,
-                            color: 'white'
-                          } : {}}
-                        >
-                          Short Term ({shortTermIssues.length})
-                        </TabsTrigger>
-                        <TabsTrigger 
-                          value="long_term" 
-                          className="min-w-[120px] relative z-10 data-[state=active]:text-white data-[state=active]:shadow-sm transition-all"
-                          data-state={issueTimeline === 'long_term' ? 'active' : 'inactive'}
-                          style={issueTimeline === 'long_term' ? {
-                            background: `linear-gradient(135deg, ${themeColors.primary} 0%, ${themeColors.secondary} 100%)`,
-                            color: 'white'
-                          } : {}}
-                        >
-                          Long Term ({longTermIssues.length})
-                        </TabsTrigger>
-                      </TabsList>
-                      
-                      <div className="flex gap-2">
-                        {(() => {
-                          const closedIssuesCount = currentIssues.filter(issue => issue.status === 'closed').length;
-                          return closedIssuesCount > 0 && (
-                            <Button 
-                              onClick={async () => {
-                                try {
-                                  await issuesService.archiveClosedIssues(issueTimeline);
-                                  setSuccess(`${closedIssuesCount} closed issue${closedIssuesCount > 1 ? 's' : ''} archived`);
-                                  await fetchIssuesData();
-                                  
-                                  // Broadcast archive closed issues to other participants
-                                  if (meetingCode && broadcastIssueListUpdate) {
-                                    broadcastIssueListUpdate({
-                                      action: 'archive-closed',
-                                      timeline: issueTimeline,
-                                      archivedCount: closedIssuesCount
-                                    });
-                                  }
-                                } catch (error) {
-                                  console.error('Failed to archive closed issues:', error);
-                                  setError('Failed to archive closed issues');
-                                }
-                              }}
-                              className="text-white transition-all duration-200 shadow-md hover:shadow-lg rounded-lg"
-                          style={{
-                            background: `linear-gradient(135deg, ${themeColors.primary} 0%, ${themeColors.secondary} 100%)`,
-                            ':hover': {
-                              filter: 'brightness(1.1)'
-                            }
-                          }}
-                          onMouseEnter={(e) => {
-                            e.currentTarget.style.filter = 'brightness(1.1)';
-                          }}
-                          onMouseLeave={(e) => {
-                            e.currentTarget.style.filter = 'brightness(1)';
-                          }}
-                            >
-                              <Archive className="mr-2 h-4 w-4" />
-                              Archive Solved ({closedIssuesCount})
-                            </Button>
-                          );
-                        })()}
-                      </div>
-                    </div>
-                    
-                    <TabsContent value="short_term" className="mt-0">
-                      {shortTermIssues.length === 0 ? (
-                        <div className="text-center py-8">
-                          <p className="text-gray-500">No short-term issues found.</p>
-                        </div>
-                      ) : (
-                        <IssuesListClean
-                          issues={shortTermIssues || []}
-                          onEdit={handleEditIssue}
-                          onSave={handleSaveIssue}
-                          teamMembers={teamMembers}
-                          onStatusChange={handleStatusChange}
-                          onTimelineChange={handleTimelineChange}
-                          onArchive={handleArchive}
-                          onVote={handleVote}
-                          onMoveToTeam={handleMoveToTeam}
-                          onCreateTodo={handleCreateTodoFromIssue}
-                          onSendCascadingMessage={handleSendCascadingMessage}
-                          onReorder={handleReorderIssues}
-                          enableDragDrop={true}
-                          getStatusColor={(status) => {
-                            switch (status) {
-                              case 'open':
-                                return 'bg-yellow-100 text-yellow-800';
-                              case 'closed':
-                                return 'bg-gray-100 text-gray-800';
-                              default:
-                                return 'bg-gray-100 text-gray-800';
-                            }
-                          }}
-                          getStatusIcon={(status) => null}
-                          readOnly={false}
-                          showVoting={true}
-                          compactGrid={false}  // Allow toggle between grid and list views
-                        />
-                      )}
-                    </TabsContent>
-                    
-                    <TabsContent value="long_term" className="mt-0">
-                      {longTermIssues.length === 0 ? (
-                        <div className="text-center py-8">
-                          <p className="text-gray-500">No long-term issues found.</p>
-                        </div>
-                      ) : (
-                        <IssuesListClean
-                          issues={longTermIssues || []}
-                          onEdit={handleEditIssue}
-                          onSave={handleSaveIssue}
-                          teamMembers={teamMembers}
-                          onStatusChange={handleStatusChange}
-                          onTimelineChange={handleTimelineChange}
-                          onArchive={handleArchive}
-                          onVote={handleVote}
-                          onMoveToTeam={handleMoveToTeam}
-                          onCreateTodo={handleCreateTodoFromIssue}
-                          onSendCascadingMessage={handleSendCascadingMessage}
-                          onReorder={handleReorderIssues}
-                          enableDragDrop={true}
-                          getStatusColor={(status) => {
-                            switch (status) {
-                              case 'open':
-                                return 'bg-yellow-100 text-yellow-800';
-                              case 'closed':
-                                return 'bg-gray-100 text-gray-800';
-                              default:
-                                return 'bg-gray-100 text-gray-800';
-                            }
-                          }}
-                          getStatusIcon={(status) => null}
-                          readOnly={false}
-                          showVoting={true}
-                          compactGrid={false}  // Allow toggle between grid and list views
-                        />
-                      )}
-                    </TabsContent>
-                  </Tabs>
-                </div>
-              </CardContent>
-            </Card>
-          </div>
-        );
-
-      case 'conclude':
-        return (
-          <Card className="border-0 shadow-sm">
-            <CardHeader className="rounded-t-lg" style={{ 
-              background: `linear-gradient(to right, ${hexToRgba(themeColors.accent, 0.1)}, ${hexToRgba(themeColors.primary, 0.1)})`
-            }}>
-              <div className="flex items-center justify-between">
-                <div>
-                  <CardTitle className="flex items-center gap-2 text-xl">
-                    <CheckSquare className="h-5 w-5" style={{ color: themeColors.primary }} />
-                    Conclude Meeting
-                  </CardTitle>
-                  <CardDescription className="mt-1">Wrap up and cascade messages</CardDescription>
-                </div>
-                <div className="text-sm text-gray-500 bg-white px-3 py-1 rounded-full">
-                  5 minutes
-                </div>
-              </div>
-            </CardHeader>
-            <CardContent className="pt-6">
-              <div className="space-y-6">
-                {/* Open To-Dos Summary */}
-                <div className="border border-gray-200 p-4 rounded-lg bg-white">
-                  <h4 className="font-medium mb-3 text-gray-900 flex items-center gap-2">
-                    <ListTodo className="h-4 w-4" />
-                    Open To-Dos Summary
-                  </h4>
-                  <p className="text-sm text-gray-600 mb-3">
-                    Review all open action items before concluding the meeting:
-                  </p>
-                  {todos.filter(todo => todo.status !== 'complete' && todo.status !== 'completed' && todo.status !== 'cancelled').length === 0 ? (
-                    <p className="text-gray-500 text-sm">No open to-dos</p>
-                  ) : (
-                    <div className="space-y-2 max-h-64 overflow-y-auto">
-                      {todos
-                        .filter(todo => todo.status !== 'complete' && todo.status !== 'completed' && todo.status !== 'cancelled')
-                        .map(todo => (
-                          <div key={todo.id} className="flex items-start gap-2 p-2 bg-gray-50 rounded-lg">
-                            <div className="w-1 h-full rounded" style={{ 
-                              backgroundColor: todo.priority === 'high' ? '#EF4444' : 
-                                             todo.priority === 'medium' ? themeColors.primary : 
-                                             '#10B981',
-                              minHeight: '40px'
-                            }} />
-                            <div className="flex-1 min-w-0">
-                              <p className="text-sm font-medium text-gray-900 truncate">{todo.title}</p>
-                              <div className="flex items-center gap-2 mt-1">
-                                {todo.assigned_to && (
-                                  <span className="text-xs text-gray-600">
-                                    {todo.assigned_to.first_name} {todo.assigned_to.last_name}
-                                  </span>
-                                )}
-                                {todo.due_date && (
-                                  <>
-                                    {todo.assigned_to && <span className="text-xs text-gray-400">•</span>}
-                                    <span className="text-xs text-gray-600">
-                                      Due: {new Date(todo.due_date).toLocaleDateString()}
-                                    </span>
-                                  </>
-                                )}
-                              </div>
-                            </div>
-                          </div>
-                        ))}
-                    </div>
-                  )}
-                </div>
-
-                {/* Cascading Messages */}
-                <div className="border border-gray-200 p-4 rounded-lg bg-white">
-                  <h4 className="font-medium mb-2 text-gray-900 flex items-center gap-2">
-                    <MessageSquare className="h-4 w-4" />
-                    Cascading Messages
-                  </h4>
-                  <p className="text-sm text-gray-600 mb-3">
-                    What key information needs to be communicated to other teams?
-                  </p>
-                  <textarea
-                    className="w-full p-3 border border-gray-300 rounded-lg resize-none focus:ring-2 mb-4"
-                    style={{
-                      '--tw-ring-color': themeColors.primary,
-                      '--tw-border-opacity': 1
-                    }}
-                    onFocus={(e) => {
-                      e.target.style.borderColor = themeColors.primary;
-                      e.target.style.boxShadow = `0 0 0 3px ${themeColors.primary}20`;
-                    }}
-                    onBlur={(e) => {
-                      e.target.style.borderColor = '#d1d5db';
-                      e.target.style.boxShadow = 'none';
-                    }}
-                    rows={3}
-                    placeholder="Enter any messages to cascade to other teams..."
-                    value={cascadingMessage}
-                    onChange={(e) => setCascadingMessage(e.target.value)}
-                  />
-                  
-                  {cascadingMessage.trim() && (
-                    <div className="space-y-3">
-                      <div className="flex items-center gap-2">
-                        <Checkbox
-                          id="cascade-all"
-                          checked={cascadeToAll}
-                          onCheckedChange={(checked) => {
-                            setCascadeToAll(checked);
-                            if (checked) setSelectedTeams([]);
-                          }}
-                        />
-                        <label htmlFor="cascade-all" className="text-sm font-medium text-gray-700">
-                          Send to all teams
-                        </label>
-                      </div>
-                      
-                      {!cascadeToAll && availableTeams.length > 0 && (
-                        <div>
-                          <p className="text-sm text-gray-600 mb-2">Or select specific teams:</p>
-                          <div className="space-y-2 max-h-32 overflow-y-auto border border-gray-200 rounded-lg p-2">
-                            {availableTeams.map(team => (
-                              <div key={team.id} className="flex items-center gap-2">
-                                <Checkbox
-                                  id={`team-${team.id}`}
-                                  checked={selectedTeams.includes(team.id)}
-                                  onCheckedChange={(checked) => {
-                                    if (checked) {
-                                      setSelectedTeams([...selectedTeams, team.id]);
-                                    } else {
-                                      setSelectedTeams(selectedTeams.filter(id => id !== team.id));
-                                    }
-                                  }}
-                                />
-                                <label htmlFor={`team-${team.id}`} className="text-sm text-gray-700">
-                                  {team.name}
-                                  {team.is_leadership_team && (
-                                    <span className="ml-2 text-xs" style={{ color: themeColors.primary }}>(Leadership)</span>
-                                  )}
-                                </label>
-                              </div>
-                            ))}
-                          </div>
-                        </div>
-                      )}
-                    </div>
-                  )}
-                </div>
-
-                <div className="border border-gray-200 p-4 rounded-lg bg-white">
-                  <h4 className="font-medium mb-2 text-gray-900 flex items-center gap-2">
-                    <Star className="h-4 w-4" />
-                    Meeting Rating
-                  </h4>
-                  <p className="text-sm text-gray-600 mb-3">
-                    Rate this meeting's effectiveness (1-10)
-                  </p>
-                  
-                  {/* Individual Participant Ratings */}
-                  {participants.length > 0 ? (
-                    <div>
-                      <label className="text-sm font-medium text-gray-700 block mb-3">
-                        Each participant rates the meeting:
-                      </label>
-                      <div className="space-y-3">
-                        {participants.map(participant => {
-                          const isCurrentUser = participant.id === user?.id;
-                          const rating = participantRatings[participant.id];
-                          
-                          return (
-                            <div key={participant.id} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
-                              <span className={`text-sm ${isCurrentUser ? 'font-medium text-gray-900' : 'text-gray-600'}`}>
-                                {participant.name}{isCurrentUser ? ' (You)' : ''}:
-                              </span>
-                              {isCurrentUser ? (
-                                <Select value={rating?.rating?.toString() || ''} onValueChange={(value) => {
-                                  const ratingValue = parseInt(value);
-                                  const ratingData = {
-                                    userId: user.id,
-                                    userName: participant.name,
-                                    rating: ratingValue
-                                  };
-                                  
-                                  // Update local state
-                                  setParticipantRatings(prev => ({
-                                    ...prev,
-                                    [user.id]: ratingData
-                                  }));
-                                  
-                                  // Broadcast to other participants
-                                  if (broadcastRating) {
-                                    broadcastRating(ratingData);
-                                  }
-                                  
-                                  // Also set the old meetingRating for backwards compatibility
-                                  setMeetingRating(ratingValue);
-                                }}>
-                                  <SelectTrigger className="w-24 bg-white">
-                                    <SelectValue placeholder="Rate" />
-                                  </SelectTrigger>
-                                  <SelectContent>
-                                    {[...Array(10)].map((_, i) => (
-                                      <SelectItem key={i + 1} value={(i + 1).toString()}>
-                                        {i + 1}
-                                      </SelectItem>
-                                    ))}
-                                  </SelectContent>
-                                </Select>
-                              ) : (
-                                <span className={`font-medium ${rating ? 'text-gray-900' : 'text-gray-400'}`}>
-                                  {rating ? rating.rating : 'Waiting...'}
-                                </span>
-                              )}
-                            </div>
-                          );
-                        })}
-                      </div>
-                      
-                      {/* Calculate and show average if there are ratings */}
-                      {Object.keys(participantRatings).length > 0 && (() => {
-                        // Filter out any invalid ratings and calculate average
-                        const validRatings = Object.values(participantRatings).filter(r => r && typeof r.rating === 'number' && r.rating > 0);
-                        const ratingsCount = validRatings.length;
-                        
-                        if (ratingsCount === 0) return null;
-                        
-                        const sum = validRatings.reduce((total, r) => total + r.rating, 0);
-                        const average = (sum / ratingsCount).toFixed(1);
-                        
-                        return (
-                          <div className="border-t pt-3 mt-3">
-                            <div className="flex items-center justify-between">
-                              <div>
-                                <span className="text-sm font-medium text-gray-700">Average Rating:</span>
-                                <span className="text-xs text-gray-500 ml-2">({ratingsCount} of {participants.length} rated)</span>
-                              </div>
-                              <span className="text-xl font-bold" style={{ color: themeColors.primary }}>
-                                {average}
-                              </span>
-                            </div>
-                            {/* Visual indicator of rating quality */}
-                            <div className="mt-2">
-                              <div className="w-full bg-gray-200 rounded-full h-2">
-                                <div 
-                                  className="h-2 rounded-full transition-all duration-500"
-                                  style={{ 
-                                    width: `${(parseFloat(average) / 10) * 100}%`,
-                                    backgroundColor: parseFloat(average) >= 8 ? '#10B981' : 
-                                                     parseFloat(average) >= 6 ? themeColors.primary : 
-                                                     '#EF4444'
-                                  }}
-                                />
-                              </div>
-                              <div className="flex justify-between text-xs text-gray-500 mt-1">
-                                <span>1</span>
-                                <span>5</span>
-                                <span>10</span>
-                              </div>
-                            </div>
-                          </div>
-                        );
-                      })()}
-                    </div>
-                  ) : (
-                    /* Fallback for single user (not in a meeting) */
-                    <div>
-                      <label className="text-sm font-medium text-gray-700 block mb-2">
-                        Your Rating:
-                      </label>
-                      <Select value={meetingRating?.toString()} onValueChange={(value) => {
-                        const rating = parseInt(value);
-                        setMeetingRating(rating);
-                        // Store as single participant rating
-                        setParticipantRatings({
-                          [user?.id]: {
-                            userId: user?.id,
-                            userName: `${user?.firstName || ''} ${user?.lastName || ''}`.trim() || 'You',
-                            rating: rating
-                          }
-                        });
-                      }}>
-                        <SelectTrigger className="w-32 bg-white">
-                          <SelectValue placeholder="Select" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {[...Array(10)].map((_, i) => (
-                            <SelectItem key={i + 1} value={(i + 1).toString()}>
-                              {i + 1}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                    </div>
-                  )}
-                </div>
-
-                <div className="text-center pt-4">
-                  <Button
-                    onClick={concludeMeeting}
-                    size="lg"
-                    className="text-white shadow-lg hover:shadow-xl transition-all duration-200"
-                    style={{
-                      background: `linear-gradient(135deg, ${themeColors.primary} 0%, ${themeColors.secondary} 100%)`
-                    }}
-                  >
-                    <Send className="mr-2 h-5 w-5" />
-                    Conclude Meeting & Send Summary
-                  </Button>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        );
-
+        
       default:
         return null;
     }
@@ -3575,468 +2802,45 @@ const WeeklyAccountabilityMeetingPage = () => {
       <div className="fixed inset-0 bg-grid-slate-100 [mask-image:linear-gradient(0deg,white,rgba(255,255,255,0.6))] -z-10"></div>
       
       <div className="relative max-w-7xl mx-auto p-8 pb-32">
-        {/* Header */}
-        <div className="mb-8">
-          <div className="flex items-center justify-between mb-6">
-            <div>
-              <div className="flex items-center gap-3 mb-4">
-                <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full text-sm font-medium"
-                     style={{
-                       background: `linear-gradient(135deg, ${themeColors.primary}15 0%, ${themeColors.secondary}15 100%)`,
-                       color: themeColors.primary
-                     }}>
-                  <Users className="h-4 w-4" />
-                  WEEKLY MEETING
-                </div>
-                {currentTeam && user?.teams && user.teams.length > 1 && (
-                  <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full text-sm font-medium bg-white/80 backdrop-blur-sm border border-white/50 shadow-sm">
-                    <Building2 className="h-4 w-4 text-gray-600" />
-                    <span className="text-gray-700 font-semibold">{currentTeam.name}</span>
-                    {currentTeam.is_leadership_team && (
-                      <Badge variant="secondary" className="text-xs">Leadership</Badge>
-                    )}
-                  </div>
-                )}
-              </div>
-              <h1 className="text-4xl font-bold mb-2 bg-gradient-to-r from-slate-900 via-slate-800 to-slate-900 bg-clip-text text-transparent">{labels.weekly_meeting_label || 'Weekly Accountability Meeting'}</h1>
-              <p className="text-lg text-slate-600">{getMeetingDescription()}</p>
-            </div>
-            {meetingStarted && (
-              <div className="flex items-center gap-4">
-                {participants.length > 0 && (
-                  <>
-                    <div className="relative group">
-                      <div className="backdrop-blur-sm px-4 py-2 rounded-xl border shadow-sm cursor-pointer" style={{
-                        backgroundColor: `${themeColors.primary}10`,
-                        borderColor: `${themeColors.primary}30`
-                      }}>
-                        <div className="flex items-center gap-2">
-                          <Users className="h-4 w-4" style={{ color: themeColors.primary }} />
-                          <span className="text-sm font-medium" style={{ color: themeColors.primary }}>
-                            {participants.length} participant{participants.length !== 1 ? 's' : ''}
-                          </span>
-                        </div>
-                      </div>
-                      
-                      {/* Participant names tooltip - positioned to avoid going off-screen */}
-                      <div className="absolute top-full mt-2 right-0 lg:left-0 lg:right-auto bg-white rounded-lg shadow-xl border border-gray-200 opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none z-[100] min-w-[200px] max-w-[300px]">
-                        <div className="p-3">
-                          <div className="text-xs font-semibold text-gray-700 mb-2">Participants:</div>
-                          <div className="space-y-1 max-h-[300px] overflow-y-auto pr-2">
-                            {participants.map((participant, idx) => (
-                              <div key={idx} className="flex items-center gap-2 text-sm text-gray-600">
-                                <div className="w-2 h-2 rounded-full flex-shrink-0" style={{ backgroundColor: themeColors.primary }} />
-                                <span className="truncate flex-1">{participant.name || 'Unknown'}</span>
-                                {participant.id === currentLeader && (
-                                  <span className="text-xs font-medium flex-shrink-0" style={{ color: themeColors.primary }}>(Presenter)</span>
-                                )}
-                              </div>
-                            ))}
-                          </div>
-                          {participants.length > 10 && (
-                            <div className="text-xs text-gray-500 mt-2 pt-2 border-t border-gray-200">
-                              Scroll to see all participants
-                            </div>
-                          )}
-                        </div>
-                      </div>
-                    </div>
-                    
-                    {/* Claim Presenter button */}
-                    {!isLeader && meetingCode && (
-                      <Button
-                        onClick={() => {
-                          if (claimPresenter) {
-                            claimPresenter();
-                          }
-                        }}
-                        className="text-white shadow-lg hover:shadow-xl transition-all duration-200"
-                        style={{
-                          background: `linear-gradient(135deg, ${themeColors.primary} 0%, ${themeColors.secondary} 100%)`,
-                          ':hover': {
-                            filter: 'brightness(1.1)'
-                          }
-                        }}
-                        onMouseEnter={(e) => {
-                          e.currentTarget.style.filter = 'brightness(1.1)';
-                        }}
-                        onMouseLeave={(e) => {
-                          e.currentTarget.style.filter = 'brightness(1)';
-                        }}
-                        size="sm"
-                      >
-                        Claim Presenter
-                      </Button>
-                    )}
-                    
-                    {/* Current presenter indicator */}
-                    {isLeader && (
-                      <div className="backdrop-blur-sm px-4 py-2 rounded-xl border shadow-sm" style={{ backgroundColor: `${themeColors.primary}10`, borderColor: `${themeColors.primary}30` }}>
-                        <div className="flex items-center gap-2">
-                          <div className="w-2 h-2 rounded-full animate-pulse" style={{ backgroundColor: themeColors.primary }} />
-                          <span className="text-sm font-medium" style={{ color: themeColors.primary }}>You're Presenting</span>
-                        </div>
-                      </div>
-                    )}
-                  </>
-                )}
-                <div className="bg-white/80 backdrop-blur-sm px-4 py-2 rounded-xl shadow-lg border border-white/50">
-                  <div className="flex items-center gap-2">
-                    <Clock className="h-4 w-4 text-slate-500" />
-                    <span className={`text-lg font-mono font-semibold ${getTimerColor()}`}>
-                      {formatTimer(elapsedTime)}
-                    </span>
-                  </div>
-                </div>
-              </div>
-            )}
-            {/* Meeting auto-starts - no start button needed */}
-          </div>
-
-          {/* Alerts */}
-          {error && (
-            <Alert className="mb-4 border-red-200/50 bg-red-50/80 backdrop-blur-sm rounded-2xl shadow-sm">
-              <AlertCircle className="h-4 w-4 text-red-600" />
-              <AlertDescription className="text-red-800 font-medium">{error}</AlertDescription>
-            </Alert>
-          )}
-
-          {success && (
-            <Alert className="mb-4 backdrop-blur-sm rounded-2xl shadow-sm" style={{ borderColor: `${themeColors.primary}30`, backgroundColor: `${themeColors.primary}10` }}>
-              <CheckCircle className="h-4 w-4" style={{ color: themeColors.primary }} />
-              <AlertDescription className="font-medium" style={{ color: themeColors.primary }}>{success}</AlertDescription>
-            </Alert>
-          )}
-        </div>
-
-        {/* Tabs Navigation */}
-        <Tabs value={activeSection} onValueChange={handleSectionChange} className="space-y-8">
-          <div className="sticky top-0 z-50 -mx-8 px-8 py-4 bg-gradient-to-br from-slate-50 via-blue-50/50 to-indigo-50/50" style={{
-            backdropFilter: 'blur(20px)',
-            WebkitBackdropFilter: 'blur(20px)',
-            borderBottom: '1px solid rgba(255,255,255,0.3)'
-          }}>
-            <TabsList className="w-full grid grid-cols-4 lg:grid-cols-8 gap-2 h-auto p-2 bg-white/95 backdrop-blur-md border border-white/50 rounded-2xl shadow-lg">
-            {agendaItems.map((item) => {
-              const Icon = item.icon;
-              const currentIndex = agendaItems.findIndex(i => i.id === activeSection);
-              const itemIndex = agendaItems.findIndex(i => i.id === item.id);
-              const isCompleted = itemIndex < currentIndex;
-              const isActive = item.id === activeSection;
-              
-              return (
-                <TabsTrigger
-                  key={item.id}
-                  value={item.id}
-                  className="flex flex-col items-center gap-1 py-3 px-2 rounded-xl transition-all duration-200 hover:scale-[1.02]"
-                  style={{
-                    background: isActive ? `linear-gradient(135deg, ${themeColors.primary} 0%, ${themeColors.secondary} 100%)` : 'transparent',
-                    color: isActive ? 'white' : 'inherit',
-                    boxShadow: isActive ? '0 8px 32px rgba(0,0,0,0.12)' : 'none'
-                  }}
-                >
-                  <Icon className={`h-5 w-5 ${
-                    isActive ? 'text-white' : 'text-slate-600'
-                  }`} style={isCompleted && !isActive ? { color: themeColors.primary } : {}} />
-                  <span className={`text-xs font-medium ${isActive ? 'text-white' : 'text-slate-700'}`}>{item.label}</span>
-                  <span className={`text-xs ${isActive ? 'text-white/80' : 'text-slate-500'}`}>{item.duration}m</span>
-                  {isCompleted && (
-                    <CheckCircle className="h-3 w-3" style={{ color: themeColors.primary }} />
-                  )}
-                </TabsTrigger>
-              );
-            })}
-            </TabsList>
-          </div>
-
-          {/* Tab Content */}
-          <div className="bg-white/80 backdrop-blur-sm rounded-2xl shadow-xl border border-white/50 pb-8">
-            {renderContent()}
-          </div>
-        </Tabs>
-
-      </div>
-      
-      {/* Issue Edit Dialog */}
-      <IssueDialog
-        open={showIssueDialog}
-        onClose={() => {
-          setShowIssueDialog(false);
-          setEditingIssue(null);
-        }}
-        issue={editingIssue}
-        onSave={handleSaveIssue}
-        teamMembers={teamMembers || []}
-        onTimelineChange={handleTimelineChange}
-      />
-
-      {/* Move Issue Dialog */}
-      <MoveIssueDialog
-        isOpen={showMoveDialog}
-        onClose={() => {
-          setShowMoveDialog(false);
-          setMovingIssue(null);
-        }}
-        issue={movingIssue}
-        onSuccess={handleMoveSuccess}
-      />
-      
-      {/* Todo Dialog */}
-      <TodoDialog
-        open={showTodoDialog}
-        onOpenChange={(open) => {
-          if (!open) {
-            setShowTodoDialog(false);
-            setEditingTodo(null);
-            setTodoFromIssue(null);
-          }
-        }}
-        todo={editingTodo}
-        todoFromIssue={todoFromIssue}
-        onSave={handleSaveTodo}
-        onCreateIssue={handleCreateIssueFromTodo}
-        teamMembers={teamMembers || []}
-      />
-
-      {/* Headline Dialog */}
-      <HeadlineDialog
-        open={showHeadlineDialog}
-        onOpenChange={setShowHeadlineDialog}
-        onSave={async (headlineData) => {
-          const effectiveTeamId = getEffectiveTeamId(teamId, user);
-          await headlinesService.createHeadline({
-            ...headlineData,
-            teamId: effectiveTeamId
-          });
-          await fetchHeadlines();
-        }}
-      />
-
-      {/* Cascading Message Dialog */}
-      <Dialog open={showCascadeDialog} onOpenChange={(open) => {
-        if (!open) {
-          setShowCascadeDialog(false);
-          setCascadeFromIssue(null);
-          setCascadeMessage('');
-          setSelectedTeams([]);
-          setCascadeToAll(false);
-        }
-      }}>
-        <DialogContent className="max-w-2xl">
-          <DialogHeader>
-            <DialogTitle>Send Cascading Message</DialogTitle>
-          </DialogHeader>
-          <div className="space-y-4">
-            <div>
-              <Label>Message</Label>
-              <Textarea
-                value={cascadeMessage}
-                onChange={(e) => setCascadeMessage(e.target.value)}
-                rows={6}
-                className="mt-1"
-                placeholder="Enter your message..."
-              />
-            </div>
-            
-            <div>
-              <Label>Select Teams</Label>
-              <div className="mt-2 space-y-2">
-                <div className="flex items-center space-x-2">
-                  <Checkbox
-                    id="cascade-all"
-                    checked={cascadeToAll}
-                    onCheckedChange={setCascadeToAll}
-                  />
-                  <label htmlFor="cascade-all" className="text-sm font-medium">
-                    Send to all teams
-                  </label>
-                </div>
-                
-                {!cascadeToAll && (
-                  <div className="space-y-2 ml-6">
-                    {availableTeams.map(team => (
-                      <div key={team.id} className="flex items-center space-x-2">
-                        <Checkbox
-                          id={`team-${team.id}`}
-                          checked={selectedTeams.includes(team.id)}
-                          onCheckedChange={(checked) => {
-                            if (checked) {
-                              setSelectedTeams([...selectedTeams, team.id]);
-                            } else {
-                              setSelectedTeams(selectedTeams.filter(id => id !== team.id));
-                            }
-                          }}
-                        />
-                        <label htmlFor={`team-${team.id}`} className="text-sm">
-                          {team.name}
-                        </label>
-                      </div>
-                    ))}
-                  </div>
-                )}
-              </div>
-            </div>
-          </div>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => {
-              setShowCascadeDialog(false);
-              setCascadeFromIssue(null);
-              setCascadeMessage('');
-              setSelectedTeams([]);
-              setCascadeToAll(false);
-            }}>
-              Cancel
-            </Button>
-            <Button 
-              onClick={handleSendCascade}
-              className="text-white shadow-lg hover:shadow-xl transition-all duration-200"
+        {renderSection()}
+        
+        {/* Floating Action Buttons */}
+        <div className="fixed bottom-4 right-4 flex flex-col gap-3 z-50">
+          {/* Add Issue Button */}
+          <div className="relative group">
+            <Button
+              onClick={() => setShowIssueDialog(true)}
+              className="h-14 w-14 rounded-full shadow-lg hover:shadow-xl transition-all duration-200 hover:scale-110 text-white"
               style={{
                 background: `linear-gradient(135deg, ${themeColors.primary} 0%, ${themeColors.secondary} 100%)`
               }}
             >
-              Send Message
+              <AlertTriangle className="h-6 w-6" />
             </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-      
-      {/* Metric Trend Chart Modal */}
-      <MetricTrendChart
-        isOpen={chartModal.isOpen}
-        onClose={() => setChartModal({ isOpen: false, metric: null, metricId: null })}
-        metric={chartModal.metric}
-        metricId={chartModal.metricId}
-        orgId={user?.organizationId}
-        teamId={getEffectiveTeamId(teamId, user)}
-      />
-      
-      {/* Priority Dialog */}
-      {showPriorityDialog && selectedPriority && (
-        <PriorityDialog
-          priority={selectedPriority}
-          open={showPriorityDialog}
-          onOpenChange={setShowPriorityDialog}
-          onUpdate={handleUpdatePriority}
-          onArchive={handleArchivePriority}
-          onAddMilestone={handleAddMilestone}
-          onEditMilestone={handleEditMilestone}
-          onDeleteMilestone={handleDeleteMilestone}
-          onToggleMilestone={handleUpdateMilestone}
-          onAddUpdate={handleAddUpdate}
-          onEditUpdate={handleEditUpdate}
-          onDeleteUpdate={handleDeleteUpdate}
-          onStatusChange={handlePriorityStatusChange}
-          onCreateLinkedIssue={async (priority) => {
-            try {
-              const effectiveTeamId = getEffectiveTeamId(teamId, user);
-              
-              if (!effectiveTeamId) {
-                throw new Error('Team not found');
-              }
-              
-              // Create issue data with Rock context (matching the format of other issue creation)
-              const issueData = {
-                title: `Related to ${labels?.quarterly_priority_singular || 'Rock'}: ${priority.title}`,
-                description: `This issue is linked to the ${labels?.quarterly_priority_singular || 'Rock'}: "${priority.title}"`,
-                timeline: 'short_term',
-                department_id: effectiveTeamId,
-                teamId: effectiveTeamId,
-                ownerId: priority.owner?.id || priority.owner_id || priority.ownerId || user?.id,
-                status: 'open',
-                priority_level: 'normal',
-                related_priority_id: priority.id
-              };
-              
-              await issuesService.createIssue(issueData);
-              
-              // Show success message with visual feedback
-              setSuccess(
-                <div className="flex items-center gap-2">
-                  <CheckCircle className="h-4 w-4" />
-                  <span>Linked issue created and added to Issues List</span>
-                </div>
-              );
-              
-              // Refresh issues data
-              await fetchIssuesData();
-              
-              // Clear success message after 3 seconds
-              setTimeout(() => setSuccess(null), 3000);
-            } catch (error) {
-              console.error('Failed to create linked issue:', error);
-              setError('Failed to create linked issue');
-            }
-          }}
-          onUploadAttachment={handleUploadAttachment}
-          onDeleteAttachment={handleDeleteAttachment}
-          teamMembers={teamMembers}
-        />
-      )}
-      
-      {/* Meeting Collaboration Bar */}
-      <MeetingBar />
-      
-      {/* Floating Action Buttons - Positioned to align with main content edge */}
-      <div className="fixed z-40 flex flex-col gap-4" style={{
-        right: 'calc((100vw - min(80rem, 100vw - 4rem)) / 2 - 11rem)',
-        top: '30rem'
-      }}>
-        {/* Add To-Do Button */}
-        <div className="relative group">
-          <Button
-            onClick={() => {
-              setEditingTodo(null);
-              setShowTodoDialog(true);
-            }}
-            className="h-14 w-14 rounded-full shadow-lg hover:shadow-xl transition-all duration-200 hover:scale-110 text-white"
-            style={{
-              background: `linear-gradient(135deg, ${themeColors.primary} 0%, ${themeColors.secondary} 100%)`
-            }}
-          >
-            <ClipboardList className="h-6 w-6" />
-          </Button>
-          <div className="absolute right-full mr-2 top-1/2 -translate-y-1/2 px-2 py-1 bg-gray-900 text-white text-sm rounded whitespace-nowrap opacity-0 group-hover:opacity-100 pointer-events-none transition-opacity duration-100">
-            Add To-Do
+            <div className="absolute right-full mr-2 top-1/2 -translate-y-1/2 px-2 py-1 bg-gray-900 text-white text-sm rounded whitespace-nowrap opacity-0 group-hover:opacity-100 pointer-events-none transition-opacity duration-100">
+              Add Issue
+            </div>
           </div>
-        </div>
-        
-        {/* Add Issue Button */}
-        <div className="relative group">
-          <Button
-            onClick={() => {
-              setEditingIssue(null);
-              setShowIssueDialog(true);
-            }}
-            className="h-14 w-14 rounded-full shadow-lg hover:shadow-xl transition-all duration-200 hover:scale-110 text-white"
-            style={{
-              background: `linear-gradient(135deg, ${themeColors.primary} 0%, ${themeColors.secondary} 100%)`
-            }}
-          >
-            <AlertCircle className="h-6 w-6" />
-          </Button>
-          <div className="absolute right-full mr-2 top-1/2 -translate-y-1/2 px-2 py-1 bg-gray-900 text-white text-sm rounded whitespace-nowrap opacity-0 group-hover:opacity-100 pointer-events-none transition-opacity duration-100">
-            Add Issue
-          </div>
-        </div>
-        
-        {/* Add Headline Button */}
-        <div className="relative group">
-          <Button
-            onClick={() => setShowHeadlineDialog(true)}
-            className="h-14 w-14 rounded-full shadow-lg hover:shadow-xl transition-all duration-200 hover:scale-110 text-white"
-            style={{
-              background: `linear-gradient(135deg, ${themeColors.primary} 0%, ${themeColors.secondary} 100%)`
-            }}
-          >
-            <MessageSquare className="h-6 w-6" />
-          </Button>
-          <div className="absolute right-full mr-2 top-1/2 -translate-y-1/2 px-2 py-1 bg-gray-900 text-white text-sm rounded whitespace-nowrap opacity-0 group-hover:opacity-100 pointer-events-none transition-opacity duration-100">
-            Add Headline
+          
+          {/* Add Headline Button */}
+          <div className="relative group">
+            <Button
+              onClick={() => setShowHeadlineDialog(true)}
+              className="h-14 w-14 rounded-full shadow-lg hover:shadow-xl transition-all duration-200 hover:scale-110 text-white"
+              style={{
+                background: `linear-gradient(135deg, ${themeColors.primary} 0%, ${themeColors.secondary} 100%)`
+              }}
+            >
+              <MessageSquare className="h-6 w-6" />
+            </Button>
+            <div className="absolute right-full mr-2 top-1/2 -translate-y-1/2 px-2 py-1 bg-gray-900 text-white text-sm rounded whitespace-nowrap opacity-0 group-hover:opacity-100 pointer-events-none transition-opacity duration-100">
+              Add Headline
+            </div>
           </div>
         </div>
       </div>
     </div>
   );
-};
+}; 
 
 export default WeeklyAccountabilityMeetingPage;
