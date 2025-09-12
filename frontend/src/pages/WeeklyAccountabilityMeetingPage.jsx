@@ -2982,7 +2982,8 @@ const WeeklyAccountabilityMeetingPage = () => {
                                         style={{
                                           backgroundColor: isComplete ? '#10B981' : 
                                                          todo.status === 'in-progress' ? themeColors.primary : 
-                                                         '#6B7280'
+                                                         'transparent',
+                                          border: isComplete ? 'none' : '2px solid #E2E8F0' // Light border for incomplete
                                         }}
                                         onClick={async () => {
                                           try {
