@@ -2393,14 +2393,6 @@ const WeeklyAccountabilityMeetingPage = () => {
               </Card>
             ) : (
               <div className="space-y-6">
-                <div className="backdrop-blur-sm border border-opacity-50 rounded-2xl p-4 shadow-lg" style={{
-                  background: `linear-gradient(135deg, ${hexToRgba(themeColors.primary, 0.1)} 0%, ${hexToRgba(themeColors.secondary, 0.1)} 100%)`,
-                  borderColor: hexToRgba(themeColors.primary, 0.3)
-                }}>
-                  <p className="text-center font-medium" style={{ color: themeColors.primary }}>
-                    <span className="font-bold">Quick Status Check:</span> Each Rock owner reports "on-track" or "off-track" status
-                  </p>
-                </div>
                 {(() => {
                   // Combine all priorities (company and individual)
                   const allPriorities = priorities;
