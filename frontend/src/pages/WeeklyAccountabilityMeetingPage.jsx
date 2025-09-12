@@ -1317,6 +1317,89 @@ const WeeklyAccountabilityMeetingPage = () => {
     }
   };
 
+  // Save handlers for dialogs
+  const handleSaveIssue = async (issueData) => {
+    try {
+      if (editingIssue) {
+        // Update existing issue
+        await issuesService.updateIssue(editingIssue.id, issueData);
+      } else {
+        // Create new issue
+        await issuesService.createIssue({
+          ...issueData,
+          teamId: teamId === 'null' || teamId === 'undefined' ? null : teamId
+        });
+      }
+      await fetchIssuesData();
+      setShowIssueDialog(false);
+      setEditingIssue(null);
+      setSuccess('Issue saved successfully');
+    } catch (error) {
+      console.error('Failed to save issue:', error);
+      setError('Failed to save issue');
+    }
+  };
+
+  const handleSaveTodo = async (todoData) => {
+    try {
+      if (editingTodo) {
+        // Update existing todo
+        await todosService.updateTodo(editingTodo.id, todoData);
+      } else {
+        // Create new todo
+        await todosService.createTodo({
+          ...todoData,
+          teamId: teamId === 'null' || teamId === 'undefined' ? null : teamId
+        });
+      }
+      await fetchTodosData();
+      setShowTodoDialog(false);
+      setEditingTodo(null);
+      setTodoFromIssue(null);
+      setSuccess('To-Do saved successfully');
+    } catch (error) {
+      console.error('Failed to save todo:', error);
+      setError('Failed to save to-do');
+    }
+  };
+
+  const handleSaveHeadline = async (headlineData) => {
+    try {
+      await headlinesService.createHeadline({
+        ...headlineData,
+        teamId: teamId === 'null' || teamId === 'undefined' ? null : teamId
+      });
+      await fetchHeadlines();
+      setShowHeadlineDialog(false);
+      setSuccess('Headline saved successfully');
+    } catch (error) {
+      console.error('Failed to save headline:', error);
+      setError('Failed to save headline');
+    }
+  };
+
+  const handleSavePriority = async (priorityData) => {
+    try {
+      if (selectedPriority) {
+        // Update existing priority
+        await quarterlyPrioritiesService.updatePriority(selectedPriority.id, priorityData);
+      } else {
+        // Create new priority
+        await quarterlyPrioritiesService.createPriority({
+          ...priorityData,
+          teamId: teamId === 'null' || teamId === 'undefined' ? null : teamId
+        });
+      }
+      await fetchPrioritiesData();
+      setShowPriorityDialog(false);
+      setSelectedPriority(null);
+      setSuccess('Priority saved successfully');
+    } catch (error) {
+      console.error('Failed to save priority:', error);
+      setError('Failed to save priority');
+    }
+  };
+
   // Create Issue from To-Do
   const handleCreateIssueFromTodo = async (todo) => {
     try {
@@ -3560,6 +3643,69 @@ const WeeklyAccountabilityMeetingPage = () => {
             </div>
           </div>
         </div>
+        
+        {/* Dialog Components */}
+        {showIssueDialog && (
+          <IssueDialog
+            isOpen={showIssueDialog}
+            onClose={() => {
+              setShowIssueDialog(false);
+              setEditingIssue(null);
+            }}
+            issue={editingIssue}
+            teamMembers={teamMembers}
+            onSave={handleSaveIssue}
+          />
+        )}
+        
+        {showTodoDialog && (
+          <TodoDialog
+            isOpen={showTodoDialog}
+            onClose={() => {
+              setShowTodoDialog(false);
+              setEditingTodo(null);
+              setTodoFromIssue(null);
+            }}
+            todo={editingTodo}
+            fromIssue={todoFromIssue}
+            teamMembers={teamMembers}
+            onSave={handleSaveTodo}
+          />
+        )}
+        
+        {showHeadlineDialog && (
+          <HeadlineDialog
+            isOpen={showHeadlineDialog}
+            onClose={() => setShowHeadlineDialog(false)}
+            onSave={handleSaveHeadline}
+          />
+        )}
+        
+        {showPriorityDialog && (
+          <PriorityDialog
+            isOpen={showPriorityDialog}
+            onClose={() => {
+              setShowPriorityDialog(false);
+              setSelectedPriority(null);
+            }}
+            priority={selectedPriority}
+            teamMembers={teamMembers}
+            onSave={handleSavePriority}
+          />
+        )}
+        
+        {showMoveDialog && movingIssue && (
+          <MoveIssueDialog
+            isOpen={showMoveDialog}
+            onClose={() => {
+              setShowMoveDialog(false);
+              setMovingIssue(null);
+            }}
+            issue={movingIssue}
+            currentTeamId={teamId}
+            onMove={handleMoveToTeam}
+          />
+        )}
       </div>
     </div>
   );
