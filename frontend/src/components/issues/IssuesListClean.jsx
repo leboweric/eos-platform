@@ -30,6 +30,7 @@ import {
   GripVertical
 } from 'lucide-react';
 import { Textarea } from '@/components/ui/textarea';
+import { ContextMenu, ContextMenuContent, ContextMenuItem, ContextMenuTrigger } from '@/components/ui/context-menu';
 import { issuesService } from '../../services/issuesService';
 import IssueDialog from './IssueDialog';
 
@@ -636,30 +637,31 @@ const IssuesListClean = ({
                       const isTopThree = showVoting && globalIndex < 3;  // Only highlight top 3 during meetings
                       
                       return (
-                        <div
-                          key={issue.id}
-                          className={`
-                            group relative flex items-center gap-3 backdrop-blur-sm rounded-xl border pl-3 pr-4 py-3 transition-shadow duration-200 cursor-pointer shadow-sm hover:shadow-md
-                            ${issue.status === 'closed' ? 'opacity-60' : ''}
-                            ${isDragOver ? 'ring-2 ring-blue-400' : ''}
-                            ${draggedIssueIndex === globalIndex ? 'opacity-50' : ''}
-                            ${isTopThree ? 'shadow-lg' : ''}
-                          `}
-                          style={{
-                            backgroundColor: 'rgba(255, 255, 255, 0.9)',
-                            borderColor: 'rgba(255, 255, 255, 0.5)'
-                          }}
-                          onDragOver={handleDragOver}
-                          onDragEnter={(e) => handleDragEnter(e, globalIndex)}
-                          onDragLeave={handleDragLeave}
-                          onDrop={(e) => handleDrop(e, globalIndex)}
-                          onClick={(e) => {
-                            // Open modal unless clicking on drag handle or interactive elements
-                            if (!e.target.closest('.drag-handle') && !e.target.closest('button') && !e.target.closest('input')) {
-                              setSelectedIssue(issue);
-                            }
-                          }}
-              >
+                        <ContextMenu key={issue.id}>
+                          <ContextMenuTrigger>
+                            <div
+                              className={`
+                                group relative flex items-center gap-3 backdrop-blur-sm rounded-xl border pl-3 pr-4 py-3 transition-shadow duration-200 cursor-pointer shadow-sm hover:shadow-md
+                                ${issue.status === 'closed' ? 'opacity-60' : ''}
+                                ${isDragOver ? 'ring-2 ring-blue-400' : ''}
+                                ${draggedIssueIndex === globalIndex ? 'opacity-50' : ''}
+                                ${isTopThree ? 'shadow-lg' : ''}
+                              `}
+                              style={{
+                                backgroundColor: 'rgba(255, 255, 255, 0.9)',
+                                borderColor: 'rgba(255, 255, 255, 0.5)'
+                              }}
+                              onDragOver={handleDragOver}
+                              onDragEnter={(e) => handleDragEnter(e, globalIndex)}
+                              onDragLeave={handleDragLeave}
+                              onDrop={(e) => handleDrop(e, globalIndex)}
+                              onClick={(e) => {
+                                // Open modal unless clicking on drag handle or interactive elements
+                                if (!e.target.closest('.drag-handle') && !e.target.closest('button') && !e.target.closest('input')) {
+                                  setSelectedIssue(issue);
+                                }
+                              }}
+                            >
                 {/* Enhanced status indicator */}
                 <div 
                   className="absolute left-0 top-0 bottom-0 w-1 rounded-l-xl"
@@ -750,7 +752,17 @@ const IssuesListClean = ({
                     </Button>
                   </div>
                 )}
-              </div>
+                            </div>
+                          </ContextMenuTrigger>
+                          <ContextMenuContent className="w-48">
+                            <ContextMenuItem 
+                              onClick={() => onCreateTodo && onCreateTodo(issue)}
+                            >
+                              <ListTodo className="mr-2 h-4 w-4" />
+                              Create Linked To-Do
+                            </ContextMenuItem>
+                          </ContextMenuContent>
+                        </ContextMenu>
                       );
                     })}
                   </div>

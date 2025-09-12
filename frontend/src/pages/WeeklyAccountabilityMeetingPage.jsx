@@ -66,6 +66,7 @@ import { todosService } from '../services/todosService';
 import { headlinesService } from '../services/headlinesService';
 import HeadlineDialog from '../components/headlines/HeadlineDialog';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { ContextMenu, ContextMenuContent, ContextMenuItem, ContextMenuTrigger } from '@/components/ui/context-menu';
 import { FileText, GitBranch } from 'lucide-react';
 import { useSelectedTodos } from '../contexts/SelectedTodosContext';
 import { cascadingMessagesService } from '../services/cascadingMessagesService';
@@ -3262,15 +3263,17 @@ const WeeklyAccountabilityMeetingPage = () => {
                             
                             return (
                               <div key={issue.id} className="border-b border-slate-100 last:border-0">
-                                {/* Main Issue Row */}
-                                <div 
-                                  className={`flex items-center px-3 py-3 hover:bg-slate-50 rounded-lg transition-colors group ${
-                                    isDragging ? 'opacity-50' : ''
-                                  } ${isDragOver ? 'ring-2 ring-blue-400' : ''}`}
-                                  onDragOver={handleDragOver}
-                                  onDragEnter={(e) => handleDragEnter(e, index)}
-                                  onDrop={(e) => handleDrop(e, index)}
-                                >
+                                {/* Main Issue Row with Context Menu */}
+                                <ContextMenu>
+                                  <ContextMenuTrigger>
+                                    <div 
+                                      className={`flex items-center px-3 py-3 hover:bg-slate-50 rounded-lg transition-colors group ${
+                                        isDragging ? 'opacity-50' : ''
+                                      } ${isDragOver ? 'ring-2 ring-blue-400' : ''}`}
+                                      onDragOver={handleDragOver}
+                                      onDragEnter={(e) => handleDragEnter(e, index)}
+                                      onDrop={(e) => handleDrop(e, index)}
+                                    >
                                   {/* Drag Handle */}
                                   <div 
                                     className="w-8 flex items-center justify-center cursor-move opacity-0 group-hover:opacity-100 transition-opacity"
@@ -3349,7 +3352,20 @@ const WeeklyAccountabilityMeetingPage = () => {
                                       <Edit className="h-3 w-3 text-slate-600" />
                                     </button>
                                   </div>
-                                </div>
+                                    </div>
+                                  </ContextMenuTrigger>
+                                  <ContextMenuContent className="w-48">
+                                    <ContextMenuItem 
+                                      onClick={() => {
+                                        setEditingTodo({ title: issue.title });
+                                        setShowTodoDialog(true);
+                                      }}
+                                    >
+                                      <ListTodo className="mr-2 h-4 w-4" />
+                                      Create Linked To-Do
+                                    </ContextMenuItem>
+                                  </ContextMenuContent>
+                                </ContextMenu>
                                 
                                 {/* Expanded Details */}
                                 {isExpanded && issue.description && (
