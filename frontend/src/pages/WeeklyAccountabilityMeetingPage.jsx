@@ -739,6 +739,14 @@ const WeeklyAccountabilityMeetingPage = () => {
               setMeetingStartTime(now);
               setMeetingStarted(true);
               console.log('⏱️ Starting timer as leader at:', now);
+              
+              // Sync timer with other participants
+              if (syncTimer) {
+                syncTimer({
+                  startTime: now,
+                  isPaused: false
+                });
+              }
             }
           }
         }, 500);
@@ -761,10 +769,18 @@ const WeeklyAccountabilityMeetingPage = () => {
           setMeetingStartTime(now);
           setMeetingStarted(true);
           console.log('⏱️ Starting timer as leader at:', now);
+          
+          // Sync timer with other participants
+          if (syncTimer) {
+            syncTimer({
+              startTime: now,
+              isPaused: false
+            });
+          }
         }
       }
     }
-  }, [teamId, isConnected, joinMeeting, meetingCode, activeMeetings, user, meetingStartTime]);
+  }, [teamId, isConnected, joinMeeting, meetingCode, activeMeetings, user, meetingStartTime, syncTimer]);
 
   useEffect(() => {
     fetchOrganizationTheme();
@@ -3888,12 +3904,25 @@ const WeeklyAccountabilityMeetingPage = () => {
               </h1>
               <p className="text-slate-600 mt-1">{getMeetingDescription()}</p>
             </div>
-            {currentTeam && (
-              <div className="text-right">
-                <p className="text-sm text-slate-600">Team</p>
-                <p className="font-semibold text-slate-900">{currentTeam.name}</p>
-              </div>
-            )}
+            <div className="flex items-center gap-4">
+              {/* Timer display */}
+              {meetingCode && meetingStarted && (
+                <div className="bg-white/80 backdrop-blur-sm px-4 py-2 rounded-xl shadow-lg border border-white/50">
+                  <div className="flex items-center gap-2">
+                    <Clock className="h-4 w-4 text-slate-500" />
+                    <span className={`text-lg font-mono font-semibold ${getTimerColor()}`}>
+                      {formatTimer(elapsedTime)}
+                    </span>
+                  </div>
+                </div>
+              )}
+              {currentTeam && (
+                <div className="text-right">
+                  <p className="text-sm text-slate-600">Team</p>
+                  <p className="font-semibold text-slate-900">{currentTeam.name}</p>
+                </div>
+              )}
+            </div>
           </div>
         </div>
 
