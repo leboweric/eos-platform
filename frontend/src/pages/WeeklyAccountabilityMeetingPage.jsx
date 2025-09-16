@@ -3452,6 +3452,7 @@ const WeeklyAccountabilityMeetingPage = () => {
                             <div className="w-10 ml-2">Status</div>
                             <div className="w-8 ml-2">#</div>
                             <div className="flex-1 ml-3">Issue</div>
+                            <div className="w-32 text-center">Owner</div>
                             <div className="w-20 text-center">Votes</div>
                             <div className="w-8"></div>
                           </div>
@@ -3533,6 +3534,13 @@ const WeeklyAccountabilityMeetingPage = () => {
                                         <ChevronRight className="h-4 w-4 inline ml-2 text-slate-400 rotate-90" />
                                       )}
                                     </div>
+                                  </div>
+                                  
+                                  {/* Owner */}
+                                  <div className="w-32 text-center">
+                                    <span className="text-sm text-slate-600">
+                                      {issue.owner_name || issue.owner || 'Unassigned'}
+                                    </span>
                                   </div>
                                   
                                   {/* Voting */}
