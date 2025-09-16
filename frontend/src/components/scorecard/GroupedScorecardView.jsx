@@ -102,16 +102,22 @@ const GroupedScorecardView = ({
 
   // Format value based on type
   const formatValue = (value, valueType) => {
+    // Check for null, undefined, or empty string - but allow 0
     if (value === null || value === undefined || value === '') return '-';
+    
+    // Convert to number and check if it's valid (0 is valid)
+    const numValue = typeof value === 'number' ? value : parseFloat(value);
+    if (isNaN(numValue)) return '-';
+    
     switch (valueType) {
       case 'percentage':
-        return `${Math.round(value)}%`;
+        return `${Math.round(numValue)}%`;
       case 'currency':
-        return `$${Math.round(value).toLocaleString()}`;
+        return `$${Math.round(numValue).toLocaleString()}`;
       case 'decimal':
-        return parseFloat(value).toFixed(2);
+        return numValue.toFixed(2);
       default:
-        return Math.round(value);
+        return Math.round(numValue);
     }
   };
 

@@ -255,11 +255,15 @@ const ScorecardTableClean = ({
 
   // Helper functions for value formatting and goal achievement
   const formatValue = (value, valueType) => {
+    // Check for null, undefined, or empty string - but allow 0
     if (value === null || value === undefined || value === '') return '-';
     
     // Make absolutely sure we have a number
     const numValue = typeof value === 'number' ? value : parseFloat(value);
+    
+    // Only return '-' if it's truly not a number (but 0 is a valid number)
     if (isNaN(numValue)) return '-';
+    
     switch (valueType) {
       case 'currency':
         return new Intl.NumberFormat('en-US', {
