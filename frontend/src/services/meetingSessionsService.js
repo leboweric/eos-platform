@@ -9,6 +9,14 @@ class MeetingSessionsService {
   getAuthHeaders() {
     // Check both possible token keys (OAuth uses 'token', regular login uses 'accessToken')
     const token = localStorage.getItem('token') || localStorage.getItem('accessToken');
+    
+    if (!token) {
+      console.error('🔴 No authentication token found in localStorage');
+      console.log('Available keys:', Object.keys(localStorage));
+    } else {
+      console.log('✅ Token found, length:', token.length);
+    }
+    
     return {
       'Authorization': `Bearer ${token}`,
       'Content-Type': 'application/json'
@@ -45,7 +53,15 @@ class MeetingSessionsService {
           statusText: response.statusText,
           error: errorText
         });
-        throw new Error(`Failed to start session: ${response.status} ${response.statusText} - ${errorText}`);
+        
+        // Provide clearer error messages
+        if (response.status === 401) {
+          throw new Error('Authentication failed. Please log in again.');
+        } else if (response.status === 403) {
+          throw new Error('You do not have permission to start meetings for this team.');
+        } else {
+          throw new Error(`Failed to start session: ${response.statusText}`);
+        }
       }
 
       const data = await response.json();
@@ -117,7 +133,14 @@ class MeetingSessionsService {
           statusText: response.statusText,
           body: errorText
         });
-        throw new Error(`Failed to pause session: ${response.statusText} - ${errorText}`);
+        
+        if (response.status === 401) {
+          throw new Error('Authentication failed. Please log in again.');
+        } else if (response.status === 404) {
+          throw new Error('Meeting session not found. Please refresh the page.');
+        } else {
+          throw new Error(`Failed to pause session: ${response.statusText}`);
+        }
       }
 
       const data = await response.json();
@@ -159,7 +182,14 @@ class MeetingSessionsService {
           statusText: response.statusText,
           body: errorText
         });
-        throw new Error(`Failed to resume session: ${response.statusText} - ${errorText}`);
+        
+        if (response.status === 401) {
+          throw new Error('Authentication failed. Please log in again.');
+        } else if (response.status === 404) {
+          throw new Error('Meeting session not found. Please refresh the page.');
+        } else {
+          throw new Error(`Failed to resume session: ${response.statusText}`);
+        }
       }
 
       const data = await response.json();
