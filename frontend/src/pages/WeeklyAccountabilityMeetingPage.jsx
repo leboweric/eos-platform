@@ -405,7 +405,7 @@ const WeeklyAccountabilityMeetingPage = () => {
   const [cascadingMessage, setCascadingMessage] = useState('');
   
   // Scorecard display options
-  const [showScorecardAverage, setShowScorecardAverage] = useState(false);
+  const [showScorecardAverage, setShowScorecardAverage] = useState(true);
   const [showScorecardTotal, setShowScorecardTotal] = useState(false);
   const [showScorecardThirteenWeeks, setShowScorecardThirteenWeeks] = useState(false);
 
