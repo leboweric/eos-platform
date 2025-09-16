@@ -35,6 +35,8 @@ import {
   MessageSquare,
   Send,
   Star,
+  Paperclip,
+  Edit3,
   Building2,
   Users,
   User,
@@ -1352,6 +1354,24 @@ const WeeklyAccountabilityMeetingPage = () => {
     } catch (error) {
       console.error('Failed to create issue from priority:', error);
       setError('Failed to create issue from priority');
+    }
+  };
+
+  // Create To-Do from Priority/Rock
+  const handleCreateTodoFromPriority = async (priority) => {
+    try {
+      await todosService.createTodo({
+        title: priority.title,
+        description: `Related to ${labels.priority_singular || 'Rock'}: ${priority.title}`,
+        due_date: format(addDays(new Date(), 7), 'yyyy-MM-dd'),
+        assigned_to: user.id
+      });
+      
+      setSuccess(`To-Do created successfully from ${labels.priority_singular || 'Rock'}`);
+      await fetchTodosData();
+    } catch (error) {
+      console.error('Failed to create to-do from priority:', error);
+      setError('Failed to create to-do from priority');
     }
   };
 
@@ -2798,13 +2818,7 @@ const WeeklyAccountabilityMeetingPage = () => {
                                           <Newspaper className="mr-2 h-4 w-4" />
                                           Create Linked Headline
                                         </ContextMenuItem>
-                                        <ContextMenuItem onClick={() => {
-                                          setEditingTodo({ 
-                                            title: priority.title,
-                                            due_date: format(addDays(new Date(), 7), 'yyyy-MM-dd')
-                                          });
-                                          setShowTodoDialog(true);
-                                        }}>
+                                        <ContextMenuItem onClick={() => handleCreateTodoFromPriority(priority)}>
                                           <ListTodo className="mr-2 h-4 w-4" />
                                           Create Linked To-Do
                                         </ContextMenuItem>
@@ -3198,7 +3212,13 @@ const WeeklyAccountabilityMeetingPage = () => {
                                     </div>
                                     
                                     {/* Title */}
-                                    <div className="flex-1 ml-3">
+                                    <div 
+                                      className="flex-1 ml-3 cursor-pointer"
+                                      onClick={() => {
+                                        setEditingTodo(todo);
+                                        setShowTodoDialog(true);
+                                      }}
+                                    >
                                       <div className={`font-semibold text-slate-900 leading-tight ${isComplete ? 'line-through opacity-75' : ''}`}>
                                         {todo.title}
                                       </div>
@@ -3395,7 +3415,7 @@ const WeeklyAccountabilityMeetingPage = () => {
                           }}
                         >
                           <Archive className="mr-2 h-4 w-4" />
-                          Archive Closed ({closedCount})
+                          Archive Solved ({closedCount})
                         </Button>
                       )}
                     </div>
@@ -3480,6 +3500,9 @@ const WeeklyAccountabilityMeetingPage = () => {
                                       onClick={(e) => togglePriorityExpansion(issue.id, e)}
                                     >
                                       {issue.title}
+                                      {issue.attachments && issue.attachments.length > 0 && (
+                                        <Paperclip className="h-4 w-4 inline ml-2 text-slate-400" />
+                                      )}
                                       {issue.description && !isExpanded && (
                                         <ChevronRight className="h-4 w-4 inline ml-2 text-slate-400" />
                                       )}
@@ -3514,6 +3537,15 @@ const WeeklyAccountabilityMeetingPage = () => {
                                     </div>
                                   </ContextMenuTrigger>
                                   <ContextMenuContent className="w-48">
+                                    <ContextMenuItem 
+                                      onClick={() => {
+                                        setEditingIssue(issue);
+                                        setShowIssueDialog(true);
+                                      }}
+                                    >
+                                      <Edit3 className="mr-2 h-4 w-4" />
+                                      Edit Issue
+                                    </ContextMenuItem>
                                     <ContextMenuItem 
                                       onClick={() => {
                                         setEditingTodo({ 
