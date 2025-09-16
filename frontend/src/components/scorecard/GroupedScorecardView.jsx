@@ -102,8 +102,6 @@ const GroupedScorecardView = ({
 
   // Format value based on type
   const formatValue = (value, valueType) => {
-    console.log('GroupedScorecardView formatValue - input:', value, 'type:', typeof value, 'valueType:', valueType);
-    
     // Check for null, undefined, or empty string - but allow 0
     if (value === null || value === undefined || value === '') return '-';
     
@@ -111,25 +109,16 @@ const GroupedScorecardView = ({
     const numValue = typeof value === 'number' ? value : parseFloat(value);
     if (isNaN(numValue)) return '-';
     
-    console.log('GroupedScorecardView formatValue - numValue:', numValue);
-    
-    let result;
     switch (valueType) {
       case 'percentage':
-        result = `${Math.round(numValue)}%`;
-        break;
+        return `${Math.round(numValue)}%`;
       case 'currency':
-        result = `$${Math.round(numValue).toLocaleString()}`;
-        break;
+        return `$${Math.round(numValue).toLocaleString()}`;
       case 'decimal':
-        result = numValue.toFixed(2);
-        break;
+        return numValue.toFixed(2);
       default:
-        result = Math.round(numValue).toString();
+        return Math.round(numValue).toString();
     }
-    
-    console.log('GroupedScorecardView formatValue - returning:', result);
-    return result;
   };
 
   // Format goal with comparison operator
@@ -150,8 +139,9 @@ const GroupedScorecardView = ({
 
   // Check if goal is met based on comparison operator
   const isGoalMet = (actual, goal, comparisonOperator) => {
-    const actualVal = parseFloat(actual) || 0;
-    const goalVal = parseFloat(goal) || 0;
+    // Handle null/undefined as 0, but preserve actual 0 values
+    const actualVal = actual !== null && actual !== undefined ? parseFloat(actual) : 0;
+    const goalVal = goal !== null && goal !== undefined ? parseFloat(goal) : 0;
     
     switch (comparisonOperator) {
       case 'less_equal':
