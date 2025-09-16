@@ -1360,11 +1360,15 @@ const WeeklyAccountabilityMeetingPage = () => {
   // Create To-Do from Priority/Rock
   const handleCreateTodoFromPriority = async (priority) => {
     try {
+      const effectiveTeamId = getEffectiveTeamId(teamId, user);
+      
       await todosService.createTodo({
         title: priority.title,
         description: `Related to ${labels.priority_singular || 'Rock'}: ${priority.title}`,
-        due_date: format(addDays(new Date(), 7), 'yyyy-MM-dd'),
-        assigned_to: user.id
+        dueDate: format(addDays(new Date(), 7), 'yyyy-MM-dd'),
+        assignedToId: user.id,
+        teamId: effectiveTeamId,
+        department_id: effectiveTeamId
       });
       
       setSuccess(`To-Do created successfully from ${labels.priority_singular || 'Rock'}`);
