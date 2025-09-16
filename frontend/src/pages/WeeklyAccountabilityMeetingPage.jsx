@@ -1092,9 +1092,22 @@ const WeeklyAccountabilityMeetingPage = () => {
 
   // Initialize database session when meeting starts (fallback for non-collaborative meetings)
   useEffect(() => {
+    console.log('📍 Session init check:', {
+      meetingStarted,
+      sessionId,
+      sessionLoading,
+      hasUser: !!user,
+      hasTeamId: !!teamId
+    });
+    
     if (meetingStarted && !sessionId && !sessionLoading && user && teamId) {
       const orgId = user?.organizationId || user?.organization_id;
       const effectiveTeamId = getEffectiveTeamId(teamId, user);
+      
+      console.log('📍 Session init IDs:', {
+        orgId,
+        effectiveTeamId
+      });
       
       if (orgId && effectiveTeamId) {
         console.log('🚀 Initializing session for non-collaborative meeting');
@@ -1128,6 +1141,47 @@ const WeeklyAccountabilityMeetingPage = () => {
       }
     }
   }, [meetingStarted, sessionId, sessionLoading, user, teamId]);
+
+  // IMMEDIATE session initialization - don't wait for meeting to start
+  useEffect(() => {
+    if (user && teamId && !sessionId && !sessionLoading) {
+      const orgId = user?.organizationId || user?.organization_id;
+      const effectiveTeamId = getEffectiveTeamId(teamId, user);
+      
+      if (orgId && effectiveTeamId) {
+        console.log('🔥 IMMEDIATE session initialization on mount');
+        setSessionLoading(true);
+        (async () => {
+          try {
+            const activeSession = await meetingSessionsService.getActiveSession(orgId, effectiveTeamId, 'weekly');
+            
+            if (activeSession) {
+              console.log('📊 Found existing session (immediate mount):', activeSession.id);
+              setSessionId(activeSession.id);
+              setIsPaused(activeSession.is_paused);
+              setTotalPausedTime(activeSession.total_paused_duration || 0);
+              
+              // If there's an active session, the meeting was likely already started
+              if (activeSession.is_active && !meetingStarted) {
+                const sessionStartTime = new Date(activeSession.start_time).getTime();
+                setMeetingStartTime(sessionStartTime);
+                setMeetingStarted(true);
+                const elapsed = activeSession.active_duration_seconds || 0;
+                setElapsedTime(elapsed);
+              }
+            } else {
+              // Don't create a new session yet - wait for meeting to actually start
+              console.log('📊 No active session found, will create when meeting starts');
+            }
+          } catch (err) {
+            console.error('Failed to check for existing session:', err);
+          } finally {
+            setSessionLoading(false);
+          }
+        })();
+      }
+    }
+  }, [user, teamId]); // Minimal dependencies to run ASAP
 
   // Clear success messages after 3 seconds
   useEffect(() => {
@@ -1200,8 +1254,27 @@ const WeeklyAccountabilityMeetingPage = () => {
       setMeetingStarted(true);
       setElapsedTime(0);
       
-      // Note: Database session is started in the joinMeeting callback
-      // to avoid duplicate sessions from multiple useEffect hooks
+      // Create session if needed when starting as leader
+      if (!sessionId && !sessionLoading) {
+        const orgId = user?.organizationId || user?.organization_id;
+        const effectiveTeamId = getEffectiveTeamId(teamId, user);
+        
+        if (orgId && effectiveTeamId) {
+          console.log('🎯 Creating session for leader start');
+          setSessionLoading(true);
+          (async () => {
+            try {
+              const result = await meetingSessionsService.startSession(orgId, effectiveTeamId, 'weekly');
+              console.log('📊 Session created for leader:', result.session.id);
+              setSessionId(result.session.id);
+            } catch (err) {
+              console.error('Failed to create session for leader:', err);
+            } finally {
+              setSessionLoading(false);
+            }
+          })();
+        }
+      }
       
       // Sync timer with other participants
       if (syncTimer) {
@@ -1217,7 +1290,7 @@ const WeeklyAccountabilityMeetingPage = () => {
     
     // Fetch today's todos for the conclude section
     fetchTodaysTodos();
-  }, [isLeader, syncTimer, user, teamId]);
+  }, [isLeader, syncTimer, user, teamId, sessionId, sessionLoading]);
 
   // Fetch data based on active section
   useEffect(() => {
