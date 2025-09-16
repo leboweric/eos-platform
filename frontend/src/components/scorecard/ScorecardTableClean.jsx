@@ -164,16 +164,35 @@ const ScorecardTableClean = ({
       
       console.log(`Showing Q${Math.floor(today.getMonth() / 3) + 1} weeks:`, weekDates);
     } else {
-      // Meeting mode - show last N weeks as before
+      // Meeting mode - Use actual dates from the data instead of generating them
       const weeksToShow = Math.min(maxPeriods, 10);
       
-      for (let i = weeksToShow - 1; i >= 0; i--) {
-        const weekStart = new Date(today);
-        weekStart.setDate(today.getDate() - (i * 7));
-        const mondayOfWeek = getWeekStartDate(weekStart);
+      // Get dates from the first metric that has data
+      const firstMetricWithData = metrics?.find(m => weeklyScores?.[m.id] && Object.keys(weeklyScores[m.id]).length > 0);
+      
+      if (firstMetricWithData && weeklyScores[firstMetricWithData.id]) {
+        // Use actual dates from the scores data
+        const allDates = Object.keys(weeklyScores[firstMetricWithData.id]).sort();
+        const datesToShow = allDates.slice(-weeksToShow); // Get last N dates
         
-        labels.push(formatWeekLabel(mondayOfWeek));
-        weekDates.push(mondayOfWeek.toISOString().split('T')[0]);
+        datesToShow.forEach(dateStr => {
+          const date = new Date(dateStr + 'T12:00:00'); // Add time to avoid timezone issues
+          labels.push(formatWeekLabel(date));
+          weekDates.push(dateStr);
+        });
+        
+        console.log('Meeting mode - Using actual dates from data:', weekDates);
+      } else {
+        // Fallback to generated dates if no data
+        for (let i = weeksToShow - 1; i >= 0; i--) {
+          const weekStart = new Date(today);
+          weekStart.setDate(today.getDate() - (i * 7));
+          const mondayOfWeek = getWeekStartDate(weekStart);
+          
+          labels.push(formatWeekLabel(mondayOfWeek));
+          weekDates.push(mondayOfWeek.toISOString().split('T')[0]);
+        }
+        console.log('Meeting mode - No data found, using generated dates:', weekDates);
       }
     }
     
