@@ -45,13 +45,13 @@ const HeadlineDialog = ({ open, onOpenChange, onSave, headline }) => {
 
   const fetchTeams = async () => {
     try {
-      const orgId = user?.organizationId || user?.organization_id;
-      const response = await teamsService.getTeams(orgId);
-      setTeams(response.teams || []);
+      const response = await teamsService.getTeams();
+      const teamsList = response.data?.teams || response.teams || [];
+      setTeams(teamsList);
       // Set default team if not already set
-      if (!selectedTeam && response.teams.length > 0) {
+      if (!selectedTeam && teamsList.length > 0) {
         const userTeam = user?.teams?.[0]?.id;
-        setSelectedTeam(userTeam || response.teams[0].id);
+        setSelectedTeam(userTeam || teamsList[0].id);
       }
     } catch (error) {
       console.error('Failed to fetch teams:', error);

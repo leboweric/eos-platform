@@ -30,11 +30,12 @@ const CascadingMessageDialog = ({ open, onOpenChange, onSave }) => {
 
   const fetchTeams = async () => {
     try {
-      const orgId = user?.organizationId || user?.organization_id;
-      const response = await teamsService.getTeams(orgId);
+      const response = await teamsService.getTeams();
+      // Get teams from response data structure
+      const allTeams = response.data?.teams || response.teams || [];
       // Filter out the current user's team to show only other teams
       const currentTeamId = user?.teams?.[0]?.id;
-      const otherTeams = response.teams.filter(t => t.id !== currentTeamId);
+      const otherTeams = allTeams.filter(t => t.id !== currentTeamId);
       setTeams(otherTeams);
     } catch (error) {
       console.error('Failed to fetch teams:', error);
