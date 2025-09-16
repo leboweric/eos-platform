@@ -45,8 +45,14 @@ const HeadlineDialog = ({ open, onOpenChange, onSave, headline }) => {
 
   const fetchTeams = async () => {
     try {
+      console.log('Fetching teams...');
       const response = await teamsService.getTeams();
-      const teamsList = response.data?.teams || response.teams || [];
+      console.log('Teams response:', response);
+      
+      // The backend returns { success: true, data: [...] } where data is the array directly
+      const teamsList = response?.data || response?.teams || [];
+      console.log('Teams list:', teamsList);
+      
       setTeams(teamsList);
       // Set default team if not already set
       if (!selectedTeam && teamsList.length > 0) {
@@ -55,6 +61,14 @@ const HeadlineDialog = ({ open, onOpenChange, onSave, headline }) => {
       }
     } catch (error) {
       console.error('Failed to fetch teams:', error);
+      // If the teams endpoint fails, try using the user's teams as fallback
+      if (user?.teams) {
+        console.log('Using user teams as fallback:', user.teams);
+        setTeams(user.teams);
+        if (!selectedTeam && user.teams.length > 0) {
+          setSelectedTeam(user.teams[0].id);
+        }
+      }
     }
   };
 

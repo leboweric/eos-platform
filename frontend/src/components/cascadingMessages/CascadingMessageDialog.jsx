@@ -31,8 +31,8 @@ const CascadingMessageDialog = ({ open, onOpenChange, onSave }) => {
   const fetchTeams = async () => {
     try {
       const response = await teamsService.getTeams();
-      // Get teams from response data structure
-      const allTeams = response.data?.teams || response.teams || [];
+      // The backend returns { success: true, data: [...] } where data is the array directly
+      const allTeams = response?.data || [];
       // Filter out the current user's team to show only other teams
       const currentTeamId = user?.teams?.[0]?.id;
       const otherTeams = allTeams.filter(t => t.id !== currentTeamId);
