@@ -223,6 +223,57 @@ export const markMessageAsRead = async (req, res) => {
   }
 };
 
+// Archive cascading messages for a team
+export const archiveCascadingMessages = async (req, res) => {
+  try {
+    // Check if cascading_messages table exists
+    const tableReady = await tableExists('cascading_messages');
+    if (!tableReady) {
+      return res.status(200).json({
+        success: true,
+        message: 'No messages to archive'
+      });
+    }
+
+    const { orgId, teamId } = req.params;
+
+    // Validate teamId
+    if (!teamId || teamId === 'null' || teamId === 'undefined') {
+      return res.status(400).json({
+        success: false,
+        error: 'Valid team ID is required'
+      });
+    }
+
+    // Mark all unread messages for this team as read (which archives them)
+    const result = await query(
+      `UPDATE cascading_message_recipients
+       SET is_read = true, 
+           read_at = CURRENT_TIMESTAMP
+       WHERE to_team_id = $1 
+         AND (is_read = false OR is_read IS NULL)
+         AND message_id IN (
+           SELECT id FROM cascading_messages 
+           WHERE organization_id = $2
+         )
+       RETURNING *`,
+      [teamId, orgId]
+    );
+
+    res.json({
+      success: true,
+      message: `Archived ${result.rowCount} cascading message(s)`,
+      archivedCount: result.rowCount
+    });
+  } catch (error) {
+    console.error('Error archiving cascading messages:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Failed to archive cascading messages'
+    });
+  }
+};
+
 // Get all teams for selection
 export const getAvailableTeams = async (req, res) => {
   try {
