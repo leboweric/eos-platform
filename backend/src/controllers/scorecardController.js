@@ -110,6 +110,16 @@ export const getScorecard = async (req, res) => {
       // ALWAYS send just the number value
       const numericValue = score.value !== null ? Number(score.value) : null;
       
+      // LOG ZEROS EXPLICITLY
+      if (numericValue === 0) {
+        console.log('🎯 ZERO FOUND IN DATABASE:', {
+          metric_id: score.metric_id,
+          date: scoreDate,
+          value: score.value,
+          numericValue: numericValue,
+          type: score.type
+        });
+      }
       
       // Determine if this is a monthly score based on metric type
       if (score.type === 'monthly') {
@@ -144,6 +154,22 @@ export const getScorecard = async (req, res) => {
     // Get team members for the organization
     const teamMembers = await getTeamMembers(orgId);
     
+    // LOG WHAT WE'RE SENDING TO FRONTEND
+    console.log('📤 SENDING TO FRONTEND - Zero check:');
+    Object.keys(weeklyScores).forEach(metricId => {
+      Object.keys(weeklyScores[metricId]).forEach(date => {
+        if (weeklyScores[metricId][date] === 0) {
+          console.log(`  Weekly: metric ${metricId}, date ${date}, value: 0`);
+        }
+      });
+    });
+    Object.keys(monthlyScores).forEach(metricId => {
+      Object.keys(monthlyScores[metricId]).forEach(date => {
+        if (monthlyScores[metricId][date] === 0) {
+          console.log(`  Monthly: metric ${metricId}, date ${date}, value: 0`);
+        }
+      });
+    });
     
     res.json({
       success: true,
@@ -367,6 +393,8 @@ export const updateScore = async (req, res) => {
     `;
     
     const result = await db.query(query, [metricId, scoreDate, scoreValue, notes || null]);
+    
+    console.log('Backend updateScore - Database returned:', result.rows[0]);
     
     res.json({
       success: true,
