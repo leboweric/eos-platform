@@ -185,7 +185,7 @@ export const getSessionStatus = async (req, res) => {
       SELECT 
         ms.*,
         calculate_active_duration(ms.id) as active_duration_seconds,
-        u.full_name as facilitator_name,
+        CONCAT(u.first_name, ' ', u.last_name) as facilitator_name,
         (
           SELECT COUNT(*) 
           FROM meeting_pause_events 
@@ -204,8 +204,8 @@ export const getSessionStatus = async (req, res) => {
     const pauseHistory = await client.query(`
       SELECT 
         mpe.*,
-        pu.full_name as paused_by_name,
-        ru.full_name as resumed_by_name
+        CONCAT(pu.first_name, ' ', pu.last_name) as paused_by_name,
+        CONCAT(ru.first_name, ' ', ru.last_name) as resumed_by_name
       FROM meeting_pause_events mpe
       LEFT JOIN users pu ON mpe.paused_by = pu.id
       LEFT JOIN users ru ON mpe.resumed_by = ru.id
@@ -307,7 +307,7 @@ export const getActiveSession = async (req, res) => {
       SELECT 
         ms.*,
         calculate_active_duration(ms.id) as active_duration_seconds,
-        u.full_name as facilitator_name
+        CONCAT(u.first_name, ' ', u.last_name) as facilitator_name
       FROM meeting_sessions ms
       LEFT JOIN users u ON ms.facilitator_id = u.id
       WHERE ms.team_id = $1 
