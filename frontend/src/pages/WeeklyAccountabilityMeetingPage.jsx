@@ -772,19 +772,25 @@ const WeeklyAccountabilityMeetingPage = () => {
               setMeetingStarted(true);
               console.log('⏱️ Starting timer as leader at:', now);
               
-              // Start or resume database session
+              // Start or resume database session immediately
               const orgId = user?.organizationId || user?.organization_id;
               const effectiveTeamId = getEffectiveTeamId(teamId, user);
-              meetingSessionsService.startSession(orgId, effectiveTeamId, 'weekly').then(result => {
-                setSessionId(result.session.id);
-                if (result.session.is_paused) {
-                  setIsPaused(true);
-                  setTotalPausedTime(result.session.total_paused_duration || 0);
+              
+              // Start session immediately and await result
+              (async () => {
+                try {
+                  const result = await meetingSessionsService.startSession(orgId, effectiveTeamId, 'weekly');
+                  setSessionId(result.session.id);
+                  if (result.session.is_paused) {
+                    setIsPaused(true);
+                    setTotalPausedTime(result.session.total_paused_duration || 0);
+                  }
+                  console.log('📊 Meeting session started:', result.session.id);
+                } catch (err) {
+                  console.error('Failed to start meeting session:', err);
+                  setError('Failed to start meeting session. Please refresh the page.');
                 }
-                console.log('📊 Meeting session started:', result.session.id);
-              }).catch(err => {
-                console.error('Failed to start meeting session:', err);
-              });
+              })();
               
               // Sync timer with other participants
               if (syncTimer) {
@@ -1047,6 +1053,26 @@ const WeeklyAccountabilityMeetingPage = () => {
       setMeetingStartTime(now);
       setMeetingStarted(true);
       setElapsedTime(0);
+      
+      // Start database session for timer persistence
+      const orgId = user?.organizationId || user?.organization_id;
+      const effectiveTeamId = getEffectiveTeamId(teamId, user);
+      
+      if (orgId && effectiveTeamId) {
+        (async () => {
+          try {
+            const result = await meetingSessionsService.startSession(orgId, effectiveTeamId, 'weekly');
+            setSessionId(result.session.id);
+            if (result.session.is_paused) {
+              setIsPaused(true);
+              setTotalPausedTime(result.session.total_paused_duration || 0);
+            }
+            console.log('📊 Meeting session started (auto-start):', result.session.id);
+          } catch (err) {
+            console.error('Failed to start meeting session (auto-start):', err);
+          }
+        })();
+      }
       
       // Sync timer with other participants
       if (syncTimer) {
@@ -2108,8 +2134,23 @@ const WeeklyAccountabilityMeetingPage = () => {
 
   // Pause/Resume handlers
   const handlePauseResume = async () => {
+    // Check if sessionId exists
+    if (!sessionId) {
+      console.error('No session ID available for pause/resume');
+      setError('Meeting session not found. Please refresh the page.');
+      return;
+    }
+    
     const orgId = user?.organizationId || user?.organization_id;
     const effectiveTeamId = getEffectiveTeamId(teamId, user);
+    
+    console.log('Pause/Resume Debug:', {
+      sessionId,
+      orgId,
+      effectiveTeamId,
+      isPaused,
+      user
+    });
     
     try {
       if (isPaused) {
@@ -2146,6 +2187,12 @@ const WeeklyAccountabilityMeetingPage = () => {
       }
     } catch (error) {
       console.error('Error toggling pause state:', error);
+      console.error('Error details:', {
+        message: error.message,
+        sessionId,
+        orgId,
+        effectiveTeamId
+      });
       setError('Failed to ' + (isPaused ? 'resume' : 'pause') + ' meeting');
     }
   };
