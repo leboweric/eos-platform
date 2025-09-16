@@ -1,5 +1,4 @@
 import pool from '../config/database.js';
-import { verifyToken } from '../middleware/auth.js';
 
 // Start a new meeting session
 export const startSession = async (req, res) => {

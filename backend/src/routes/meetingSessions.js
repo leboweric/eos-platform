@@ -1,5 +1,5 @@
 import express from 'express';
-import { verifyToken } from '../middleware/auth.js';
+import { authenticate } from '../middleware/auth.js';
 import {
   startSession,
   pauseSession,
@@ -14,7 +14,7 @@ import {
 const router = express.Router();
 
 // All routes require authentication
-router.use(verifyToken);
+router.use(authenticate);
 
 // Start a new meeting session
 router.post('/start', startSession);
