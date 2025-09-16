@@ -77,6 +77,7 @@ import { FileText, GitBranch } from 'lucide-react';
 import { useSelectedTodos } from '../contexts/SelectedTodosContext';
 import { cascadingMessagesService } from '../services/cascadingMessagesService';
 import { teamsService } from '../services/teamsService';
+import { meetingsService } from '../services/meetingsService';
 import { useTerminology } from '../contexts/TerminologyContext';
 import { getEffectiveTeamId } from '../utils/teamUtils';
 
@@ -3773,42 +3774,66 @@ const WeeklyAccountabilityMeetingPage = () => {
                           </div>
                         </div>
                       )}
-                      
-                      <Button
-                        onClick={handleSendCascade}
-                        disabled={!cascadeMessage.trim() || (!cascadeToAll && selectedTeams.length === 0)}
-                        className="w-full"
-                        style={{
-                          background: cascadeMessage.trim() && (cascadeToAll || selectedTeams.length > 0) 
-                            ? `linear-gradient(135deg, ${themeColors.primary} 0%, ${themeColors.secondary} 100%)`
-                            : '#e5e7eb'
-                        }}
-                      >
-                        <Send className="mr-2 h-4 w-4" />
-                        Send Message
-                      </Button>
                     </div>
                   )}
                 </div>
 
-                {/* Conclude and Send Email Button */}
+                {/* Conclude Meeting Button */}
                 <Button
                   className="w-full shadow-lg hover:shadow-xl transition-all duration-200 text-white font-medium py-3"
                   style={{
                     background: `linear-gradient(135deg, ${themeColors.primary} 0%, ${themeColors.secondary} 100%)`
                   }}
                   onClick={async () => {
-                    if (window.confirm('Are you ready to conclude the meeting and send the summary email?')) {
-                      // TODO: Implement email summary functionality
-                      setSuccess('Meeting concluded successfully! Summary email will be sent to all participants.');
-                      if (meetingCode && concludeMeeting) {
-                        concludeMeeting();
+                    if (window.confirm('Are you ready to conclude the meeting?')) {
+                      try {
+                        // Send cascading message if there is one
+                        if (cascadeMessage.trim() && (cascadeToAll || selectedTeams.length > 0)) {
+                          const orgId = user?.organizationId || user?.organization_id;
+                          const effectiveTeamId = getEffectiveTeamId(teamId, user);
+                          const teamIds = cascadeToAll ? availableTeams.map(t => t.id) : selectedTeams;
+                          
+                          await cascadingMessagesService.createCascadingMessage(orgId, effectiveTeamId, {
+                            message: cascadeMessage,
+                            recipientTeamIds: teamIds,
+                            allTeams: cascadeToAll
+                          });
+                        }
+                        
+                        // Conclude the meeting and send email summary
+                        const orgId = user?.organizationId || user?.organization_id;
+                        const effectiveTeamId = getEffectiveTeamId(teamId, user);
+                        
+                        await meetingsService.concludeMeeting(orgId, effectiveTeamId, {
+                          meetingType: 'weekly',
+                          rating: meetingRating,
+                          todos: todos.filter(t => t.status !== 'complete' && t.status !== 'completed'),
+                          issues: issues.filter(i => !i.is_solved),
+                          headlines: headlines,
+                          cascadeMessage: cascadeMessage.trim() ? cascadeMessage : null
+                        });
+                        
+                        setSuccess('Meeting concluded successfully! Summary email sent to all participants.');
+                        
+                        // Clear form after success
+                        setCascadeMessage('');
+                        setSelectedTeams([]);
+                        setCascadeToAll(false);
+                        setMeetingRating(null);
+                        
+                        // Conclude collaborative meeting if active
+                        if (meetingCode && concludeMeeting) {
+                          concludeMeeting();
+                        }
+                      } catch (error) {
+                        console.error('Failed to conclude meeting:', error);
+                        setError('Failed to conclude meeting. Please try again.');
                       }
                     }
                   }}
                 >
-                  <Mail className="mr-2 h-5 w-5" />
-                  Conclude and Send Email Summary
+                  <CheckSquare className="mr-2 h-5 w-5" />
+                  Conclude Meeting
                 </Button>
               </div>
             </CardContent>
