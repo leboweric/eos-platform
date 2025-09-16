@@ -7,7 +7,8 @@ class MeetingSessionsService {
   }
 
   getAuthHeaders() {
-    const token = localStorage.getItem('token');
+    // Check both possible token keys (OAuth uses 'token', regular login uses 'accessToken')
+    const token = localStorage.getItem('token') || localStorage.getItem('accessToken');
     return {
       'Authorization': `Bearer ${token}`,
       'Content-Type': 'application/json'
