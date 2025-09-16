@@ -78,7 +78,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogD
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { ContextMenu, ContextMenuContent, ContextMenuItem, ContextMenuTrigger } from '@/components/ui/context-menu';
-import { FileText, GitBranch } from 'lucide-react';
+import { FileText, GitBranch, MessageSquare } from 'lucide-react';
 import { useSelectedTodos } from '../contexts/SelectedTodosContext';
 import { cascadingMessagesService } from '../services/cascadingMessagesService';
 import { teamsService } from '../services/teamsService';
@@ -2560,6 +2560,7 @@ const WeeklyAccountabilityMeetingPage = () => {
         break;
       case 'headlines':
         fetchHeadlines();
+        fetchCascadedMessages();
         break;
       case 'todo-list':
         fetchTodosData();
@@ -2601,6 +2602,7 @@ const WeeklyAccountabilityMeetingPage = () => {
             break;
           case 'headlines':
             fetchHeadlines();
+            fetchCascadedMessages();
             break;
           case 'todo-list':
             fetchTodosData();
@@ -3595,6 +3597,33 @@ const WeeklyAccountabilityMeetingPage = () => {
                     )}
                   </div>
                 </div>
+                
+                {/* Cascaded Messages from Other Teams */}
+                {cascadedMessages.length > 0 && (
+                  <div className="mt-6 pt-6 border-t border-slate-200">
+                    <h4 className="text-sm font-semibold text-slate-900 mb-3 flex items-center gap-2">
+                      <div className="p-1.5 rounded-lg" style={{ background: `linear-gradient(135deg, ${themeColors.primary}15 0%, ${themeColors.secondary}15 100%)` }}>
+                        <MessageSquare className="h-4 w-4" style={{ color: themeColors.primary }} />
+                      </div>
+                      Cascaded Messages from Other Teams ({cascadedMessages.length})
+                    </h4>
+                    <div className="space-y-2">
+                      {cascadedMessages.map(message => (
+                        <div key={message.id} className="p-4 bg-gradient-to-r from-blue-50 to-indigo-50 rounded-lg border border-blue-200 shadow-sm hover:shadow-md transition-shadow">
+                          <p className="text-sm font-medium text-slate-900 leading-relaxed">{message.message}</p>
+                          <div className="mt-2 flex items-center justify-between">
+                            <p className="text-xs text-slate-600">
+                              From: {message.sender_team_name || 'Unknown Team'}
+                            </p>
+                            <p className="text-xs text-slate-500">
+                              {format(new Date(message.created_at), 'MMM d')}
+                            </p>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
               </div>
             </CardContent>
           </Card>
