@@ -9,20 +9,23 @@ export const startSession = async (req, res) => {
 
     // Check if there's already an active session for this team
     const existingSession = await client.query(`
-      SELECT id, is_paused, calculate_active_duration(id) as active_duration_seconds
-      FROM meeting_sessions
-      WHERE team_id = $1 
-        AND meeting_type = $2 
-        AND is_active = true
-      ORDER BY created_at DESC
+      SELECT 
+        ms.*,
+        calculate_active_duration(ms.id) as active_duration_seconds
+      FROM meeting_sessions ms
+      WHERE ms.team_id = $1 
+        AND ms.meeting_type = $2 
+        AND ms.is_active = true
+      ORDER BY ms.created_at DESC
       LIMIT 1
     `, [team_id, meeting_type]);
 
     if (existingSession.rows.length > 0) {
-      // Return existing session
+      // Return existing session with full details
       return res.json({
         session: existingSession.rows[0],
-        message: 'Resuming existing session'
+        message: 'Resuming existing session',
+        resumed: true
       });
     }
 
@@ -34,14 +37,17 @@ export const startSession = async (req, res) => {
         meeting_type,
         facilitator_id,
         start_time,
-        is_active
-      ) VALUES ($1, $2, $3, $4, NOW(), true)
+        is_active,
+        is_paused,
+        total_paused_duration
+      ) VALUES ($1, $2, $3, $4, NOW(), true, false, 0)
       RETURNING *
     `, [organization_id, team_id, meeting_type, user_id]);
 
     res.status(201).json({
       session: result.rows[0],
-      message: 'Meeting session started'
+      message: 'Meeting session started',
+      resumed: false
     });
   } catch (error) {
     console.error('Error starting meeting session:', error);

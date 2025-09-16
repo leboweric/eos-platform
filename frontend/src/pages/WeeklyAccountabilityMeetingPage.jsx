@@ -777,21 +777,33 @@ const WeeklyAccountabilityMeetingPage = () => {
               const orgId = user?.organizationId || user?.organization_id;
               const effectiveTeamId = getEffectiveTeamId(teamId, user);
               
-              // Start session immediately and await result
+              // Start session immediately and await result (only if not already loading)
               if (orgId && effectiveTeamId && !sessionId && !sessionLoading) {
                 setSessionLoading(true);
                 (async () => {
                   try {
-                    const result = await meetingSessionsService.startSession(orgId, effectiveTeamId, 'weekly');
-                    setSessionId(result.session.id);
-                    if (result.session.is_paused) {
-                      setIsPaused(true);
-                      setTotalPausedTime(result.session.total_paused_duration || 0);
+                    // First check if there's already an active session to avoid duplicates
+                    const activeSession = await meetingSessionsService.getActiveSession(orgId, effectiveTeamId, 'weekly');
+                    
+                    if (activeSession) {
+                      // Use the existing session
+                      setSessionId(activeSession.id);
+                      setIsPaused(activeSession.is_paused);
+                      setTotalPausedTime(activeSession.total_paused_duration || 0);
+                      console.log('📊 Resuming existing meeting session:', activeSession.id);
+                    } else {
+                      // Create a new session
+                      const result = await meetingSessionsService.startSession(orgId, effectiveTeamId, 'weekly');
+                      setSessionId(result.session.id);
+                      if (result.session.is_paused) {
+                        setIsPaused(true);
+                        setTotalPausedTime(result.session.total_paused_duration || 0);
+                      }
+                      console.log('📊 New meeting session started:', result.session.id);
                     }
-                    console.log('📊 Meeting session started:', result.session.id);
                   } catch (err) {
-                    console.error('Failed to start meeting session:', err);
-                    console.error('Session start error details:', {
+                    console.error('Failed to start/resume meeting session:', err);
+                    console.error('Session error details:', {
                       orgId,
                       effectiveTeamId,
                       user,
@@ -809,6 +821,10 @@ const WeeklyAccountabilityMeetingPage = () => {
                   user,
                   teamId
                 });
+              } else if (sessionId) {
+                console.log('Session already exists:', sessionId);
+              } else if (sessionLoading) {
+                console.log('Session is already being loaded');
               }
               
               // Sync timer with other participants
@@ -1073,31 +1089,8 @@ const WeeklyAccountabilityMeetingPage = () => {
       setMeetingStarted(true);
       setElapsedTime(0);
       
-      // Start database session for timer persistence
-      const orgId = user?.organizationId || user?.organization_id;
-      const effectiveTeamId = getEffectiveTeamId(teamId, user);
-      
-      if (orgId && effectiveTeamId && !sessionId && !sessionLoading) {
-        setSessionLoading(true);
-        (async () => {
-          try {
-            const result = await meetingSessionsService.startSession(orgId, effectiveTeamId, 'weekly');
-            setSessionId(result.session.id);
-            if (result.session.is_paused) {
-              setIsPaused(true);
-              setTotalPausedTime(result.session.total_paused_duration || 0);
-            }
-            console.log('📊 Meeting session started (auto-start):', result.session.id);
-          } catch (err) {
-            console.error('Failed to start meeting session (auto-start):', err);
-            // Don't show error to user here as the timer still works without persistence
-          } finally {
-            setSessionLoading(false);
-          }
-        })();
-      } else if (!orgId || !effectiveTeamId) {
-        console.warn('Cannot start session - missing orgId or teamId:', { orgId, effectiveTeamId });
-      }
+      // Note: Database session is started in the joinMeeting callback
+      // to avoid duplicate sessions from multiple useEffect hooks
       
       // Sync timer with other participants
       if (syncTimer) {
@@ -1113,7 +1106,7 @@ const WeeklyAccountabilityMeetingPage = () => {
     
     // Fetch today's todos for the conclude section
     fetchTodaysTodos();
-  }, [isLeader, syncTimer, user, teamId, sessionId, sessionLoading]);
+  }, [isLeader, syncTimer, user, teamId]);
 
   // Fetch data based on active section
   useEffect(() => {
