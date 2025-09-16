@@ -255,6 +255,11 @@ const ScorecardTableClean = ({
 
   // Helper functions for value formatting and goal achievement
   const formatValue = (value, valueType) => {
+    // Debug log for zero values
+    if (value === 0 || value === "0") {
+      console.log('formatValue called with zero - value:', value, 'type:', typeof value, 'valueType:', valueType);
+    }
+    
     // Check for null, undefined, or empty string - but allow 0
     if (value === null || value === undefined || value === '') return '-';
     
@@ -264,19 +269,28 @@ const ScorecardTableClean = ({
     // Only return '-' if it's truly not a number (but 0 is a valid number)
     if (isNaN(numValue)) return '-';
     
-    switch (valueType) {
-      case 'currency':
-        return new Intl.NumberFormat('en-US', {
-          style: 'currency',
-          currency: 'USD',
-          minimumFractionDigits: 0,
-          maximumFractionDigits: 0
-        }).format(numValue);
-      case 'percentage':
-        return `${Math.round(numValue)}%`;
-      default:
-        return Math.round(numValue).toString();
+    const result = (() => {
+      switch (valueType) {
+        case 'currency':
+          return new Intl.NumberFormat('en-US', {
+            style: 'currency',
+            currency: 'USD',
+            minimumFractionDigits: 0,
+            maximumFractionDigits: 0
+          }).format(numValue);
+        case 'percentage':
+          return `${Math.round(numValue)}%`;
+        default:
+          return Math.round(numValue).toString();
+      }
+    })();
+    
+    // Debug log the result for zero values
+    if (value === 0 || value === "0") {
+      console.log('formatValue returning for zero:', result);
     }
+    
+    return result;
   };
 
   const formatGoal = (goal, valueType, comparisonOperator) => {
@@ -478,8 +492,11 @@ const ScorecardTableClean = ({
                       const scoreValue = scores[metric.id]?.[periodDate];
                       
                       // Debug logging for zero values
-                      if (scores[metric.id] && periodDate in scores[metric.id] && scores[metric.id][periodDate] === 0) {
-                        console.log('Found zero value for metric:', metric.id, 'date:', periodDate, 'value:', scores[metric.id][periodDate], 'scoreValue:', scoreValue);
+                      if (scores[metric.id] && periodDate in scores[metric.id]) {
+                        const rawValue = scores[metric.id][periodDate];
+                        if (rawValue === 0 || rawValue === "0") {
+                          console.log('Zero check - Metric:', metric.id, 'Date:', periodDate, 'Raw value:', rawValue, 'Type:', typeof rawValue, 'scoreValue:', scoreValue, 'scoreValue type:', typeof scoreValue);
+                        }
                       }
                       
                       // Notes are stored separately
