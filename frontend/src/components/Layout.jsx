@@ -171,6 +171,7 @@ const Layout = ({ children }) => {
     { name: labels?.priorities || 'Quarterly Priorities', href: '/quarterly-priorities', icon: CheckSquare },
     { name: labels?.scorecard || 'Scorecard', href: '/scorecard', icon: BarChart3 },
     { name: labels?.todos || 'To-Dos', href: '/todos', icon: ClipboardList },
+    { name: 'Headlines', href: '/headlines', icon: TrendingUp },
     { name: labels?.issues || 'Issues', href: '/issues', icon: MessageSquare },
     { name: 'Meetings', href: '/meetings', icon: Calendar },
     { name: labels?.processes || 'Processes', href: '/processes', icon: FileText },

@@ -55,6 +55,7 @@ const WeeklyAccountabilityMeetingPage = lazy(() => import('./pages/WeeklyAccount
 const WeeklyAccountabilityMeetingPageOriginal = lazy(() => import('./pages/WeeklyAccountabilityMeetingPageOriginal'));
 const QuarterlyPlanningMeetingPage = lazy(() => import('./pages/QuarterlyPlanningMeetingPage'));
 const DocumentRepositoryPage = lazy(() => import('./pages/DocumentRepositoryPage'));
+const HeadlinesPage = lazy(() => import('./pages/HeadlinesPage'));
 const NotFound = lazy(() => import('./pages/NotFound'));
 const SmartRockAssistant = lazy(() => import('./pages/SmartRockAssistant'));
 const ScorecardDebug = lazy(() => import('./pages/ScorecardDebug'));
@@ -213,6 +214,7 @@ function App() {
           <Route path="/meetings/weekly-accountability-original/:teamId" element={user ? <Layout><WeeklyAccountabilityMeetingPageOriginal /></Layout> : <Navigate to="/login" />} />
           <Route path="/meetings/quarterly-planning/:teamId" element={user ? <Layout><QuarterlyPlanningMeetingPage /></Layout> : <Navigate to="/login" />} />
           <Route path="/todos" element={user ? <Layout><TodosPage /></Layout> : <Navigate to="/login" />} />
+          <Route path="/headlines" element={user ? <Layout><HeadlinesPage /></Layout> : <Navigate to="/login" />} />
           <Route path="/issues" element={user ? <Layout><IssuesPage /></Layout> : <Navigate to="/login" />} />
           <Route path="/issues-original" element={user ? <Layout><IssuesPageOriginal /></Layout> : <Navigate to="/login" />} />
           <Route path="/processes" element={user ? <Layout><ProcessDocumentationPage /></Layout> : <Navigate to="/login" />} />

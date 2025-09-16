@@ -4,10 +4,11 @@ import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
-import { AlertCircle, Megaphone } from 'lucide-react';
+import { AlertCircle, Megaphone, Users } from 'lucide-react';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { getOrgTheme } from '../../utils/themeUtils';
 import { useAuthStore } from '../../stores/authStore';
+import { teamsService } from '../../services/teamsService';
 
 const HeadlineDialog = ({ open, onOpenChange, onSave, headline }) => {
   const { user } = useAuthStore();
@@ -20,14 +21,20 @@ const HeadlineDialog = ({ open, onOpenChange, onSave, headline }) => {
   };
   const [headlineType, setHeadlineType] = useState('customer');
   const [headlineText, setHeadlineText] = useState('');
+  const [selectedTeam, setSelectedTeam] = useState('');
+  const [teams, setTeams] = useState([]);
   const [error, setError] = useState(null);
   const [saving, setSaving] = useState(false);
 
-  // Reset form when dialog opens or closes
+  // Fetch teams when dialog opens
   useEffect(() => {
     if (open) {
+      fetchTeams();
       setHeadlineType(headline?.type || 'customer');
       setHeadlineText(headline?.headline || headline?.text || '');
+      // Default to user's first team
+      const userTeam = user?.teams?.[0]?.id;
+      setSelectedTeam(headline?.teamId || userTeam || '');
       setError(null);
       setSaving(false);
     } else {
@@ -35,6 +42,21 @@ const HeadlineDialog = ({ open, onOpenChange, onSave, headline }) => {
       setSaving(false);
     }
   }, [open, headline]);
+
+  const fetchTeams = async () => {
+    try {
+      const orgId = user?.organizationId || user?.organization_id;
+      const response = await teamsService.getTeams(orgId);
+      setTeams(response.teams || []);
+      // Set default team if not already set
+      if (!selectedTeam && response.teams.length > 0) {
+        const userTeam = user?.teams?.[0]?.id;
+        setSelectedTeam(userTeam || response.teams[0].id);
+      }
+    } catch (error) {
+      console.error('Failed to fetch teams:', error);
+    }
+  };
 
   const handleSave = async () => {
     if (!headlineText.trim()) {
@@ -48,7 +70,8 @@ const HeadlineDialog = ({ open, onOpenChange, onSave, headline }) => {
     try {
       await onSave({
         type: headlineType,
-        text: headlineText.trim()
+        text: headlineText.trim(),
+        teamId: selectedTeam
       });
       setSaving(false);
       onOpenChange(false);
@@ -92,6 +115,30 @@ const HeadlineDialog = ({ open, onOpenChange, onSave, headline }) => {
               <SelectContent className="bg-white/95 backdrop-blur-sm border-white/20 rounded-xl shadow-xl">
                 <SelectItem value="customer">Customer Headline</SelectItem>
                 <SelectItem value="employee">Employee Headline</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+
+          <div className="grid gap-3">
+            <Label htmlFor="team" className="text-sm font-semibold text-slate-700 flex items-center gap-2">
+              <Users className="h-4 w-4" />
+              Team
+            </Label>
+            <Select value={selectedTeam} onValueChange={setSelectedTeam}>
+              <SelectTrigger id="team" className="bg-white/80 backdrop-blur-sm border-white/20 rounded-xl shadow-sm transition-all duration-200">
+                <SelectValue placeholder="Select a team" />
+              </SelectTrigger>
+              <SelectContent className="bg-white/95 backdrop-blur-sm border-white/20 rounded-xl shadow-xl">
+                {teams.map(team => (
+                  <SelectItem key={team.id} value={team.id}>
+                    {team.name}
+                    {team.is_leadership_team && (
+                      <span className="ml-2 text-xs bg-blue-100 text-blue-700 px-2 py-0.5 rounded">
+                        Leadership
+                      </span>
+                    )}
+                  </SelectItem>
+                ))}
               </SelectContent>
             </Select>
           </div>
