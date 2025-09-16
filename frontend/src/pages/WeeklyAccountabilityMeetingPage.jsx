@@ -2455,6 +2455,14 @@ const WeeklyAccountabilityMeetingPage = () => {
                 </CardContent>
               </Card>
             ) : (
+              <>
+              {console.log('Level 10 Scorecard - Passing data to ScorecardTableClean:', {
+                metricsCount: scorecardMetrics.length,
+                weeklyScoresKeys: Object.keys(weeklyScores),
+                weeklyScoresData: weeklyScores,
+                sampleMetricId: scorecardMetrics[0]?.id,
+                sampleMetricScores: scorecardMetrics[0]?.id ? weeklyScores[scorecardMetrics[0].id] : 'No metrics'
+              })}
               <ScorecardTableClean 
                   metrics={scorecardMetrics} 
                   weeklyScores={weeklyScores}
@@ -2476,6 +2484,7 @@ const WeeklyAccountabilityMeetingPage = () => {
                   maxPeriods={4}
                   meetingMode={true}
                 />
+              </>
             )}
           </div>
         );
