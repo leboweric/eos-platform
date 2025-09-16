@@ -1358,27 +1358,6 @@ const WeeklyAccountabilityMeetingPage = () => {
     }
   };
 
-  // Create To-Do from Priority/Rock
-  const handleCreateTodoFromPriority = async (priority) => {
-    try {
-      const effectiveTeamId = getEffectiveTeamId(teamId, user);
-      
-      await todosService.createTodo({
-        title: priority.title,
-        description: `Related to ${labels.priority_singular || 'Rock'}: ${priority.title}`,
-        dueDate: format(addDays(new Date(), 7), 'yyyy-MM-dd'),
-        assignedToId: user.id,
-        teamId: effectiveTeamId,
-        department_id: effectiveTeamId
-      });
-      
-      setSuccess(`To-Do created successfully from ${labels.priority_singular || 'Rock'}`);
-      await fetchTodosData();
-    } catch (error) {
-      console.error('Failed to create to-do from priority:', error);
-      setError('Failed to create to-do from priority');
-    }
-  };
 
   // Create Issue from To-Do
   const handleCreateIssueFromTodo = async (todo) => {
@@ -2823,7 +2802,15 @@ const WeeklyAccountabilityMeetingPage = () => {
                                           <Newspaper className="mr-2 h-4 w-4" />
                                           Create Linked Headline
                                         </ContextMenuItem>
-                                        <ContextMenuItem onClick={() => handleCreateTodoFromPriority(priority)}>
+                                        <ContextMenuItem onClick={() => {
+                                          setEditingTodo({ 
+                                            title: priority.title,
+                                            description: `Related to ${labels.priority_singular || 'Rock'}: ${priority.title}`,
+                                            dueDate: format(addDays(new Date(), 7), 'yyyy-MM-dd'),
+                                            assignedToId: user.id
+                                          });
+                                          setShowTodoDialog(true);
+                                        }}>
                                           <ListTodo className="mr-2 h-4 w-4" />
                                           Create Linked To-Do
                                         </ContextMenuItem>
