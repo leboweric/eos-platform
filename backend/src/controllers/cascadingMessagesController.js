@@ -151,10 +151,11 @@ export const getCascadingMessages = async (req, res) => {
        WHERE cmr.to_team_id = $1
          AND cm.organization_id = $2
          AND cm.meeting_date BETWEEN $3 AND $4
+         AND cmr.deleted_at IS NULL
        ORDER BY cm.created_at DESC`;
       queryParams = [teamId, orgId, startDate, endDate];
     } else {
-      // If no date range, get recent unread messages (last 30 days)
+      // If no date range, get recent non-deleted messages (last 30 days)
       queryText = `SELECT 
         cm.*,
         cmr.is_read,
@@ -167,6 +168,7 @@ export const getCascadingMessages = async (req, res) => {
        JOIN users u ON cm.created_by = u.id
        WHERE cmr.to_team_id = $1
          AND cm.organization_id = $2
+         AND cmr.deleted_at IS NULL
          AND (cmr.is_read = false OR cm.created_at > NOW() - INTERVAL '30 days')
        ORDER BY cm.created_at DESC
        LIMIT 20`;
@@ -245,13 +247,12 @@ export const archiveCascadingMessages = async (req, res) => {
       });
     }
 
-    // Mark all unread messages for this team as read (which archives them)
+    // Soft delete all non-deleted messages for this team
     const result = await query(
       `UPDATE cascading_message_recipients
-       SET is_read = true, 
-           read_at = CURRENT_TIMESTAMP
+       SET deleted_at = CURRENT_TIMESTAMP
        WHERE to_team_id = $1 
-         AND (is_read = false OR is_read IS NULL)
+         AND deleted_at IS NULL
          AND message_id IN (
            SELECT id FROM cascading_messages 
            WHERE organization_id = $2
