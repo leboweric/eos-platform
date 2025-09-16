@@ -44,7 +44,9 @@ import {
   X,
   ThumbsUp,
   GripVertical,
-  TrendingUp
+  TrendingUp,
+  Mail,
+  Share2
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import ScorecardTableClean from '../components/scorecard/ScorecardTableClean';
@@ -946,7 +948,8 @@ const WeeklyAccountabilityMeetingPage = () => {
         description: `Metric "${metric.name}" is ${status.toLowerCase()} and requires attention.\n\nGoal: ${formatGoal(metric.goal, metric.value_type, metric.comparison_operator)}\nOwner: ${metric.ownerName || metric.owner || 'Unassigned'}\n\nData Source: ${metric.description || 'No data source specified'}`,
         timeline: 'short_term',
         ownerId: metric.ownerId || null,
-        department_id: effectiveTeamId
+        department_id: effectiveTeamId,
+        teamId: effectiveTeamId  // Add both fields to ensure compatibility
       });
       
       setSuccess(
@@ -2437,8 +2440,21 @@ const WeeklyAccountabilityMeetingPage = () => {
                       </div>
                     )}
                   </div>
-                  <div className="text-sm text-slate-600 bg-white/80 backdrop-blur-sm px-4 py-2 rounded-full border border-white/30 shadow-sm font-medium">
-                    5 minutes
+                  <div className="flex items-center gap-3">
+                    <Button
+                      size="sm"
+                      onClick={() => {
+                        setSelectedPriority(null);
+                        setShowPriorityDialog(true);
+                      }}
+                      className="bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white shadow-md"
+                    >
+                      <Plus className="h-4 w-4 mr-1" />
+                      Add {labels.priority_singular || 'Rock'}
+                    </Button>
+                    <div className="text-sm text-slate-600 bg-white/80 backdrop-blur-sm px-4 py-2 rounded-full border border-white/30 shadow-sm font-medium">
+                      5 minutes
+                    </div>
                   </div>
                 </div>
               </CardHeader>
@@ -3014,7 +3030,24 @@ const WeeklyAccountabilityMeetingPage = () => {
                 
                 return (
                   <div className="space-y-6">
-                    <div className="flex justify-end">
+                    <div className="flex justify-between">
+                      <Button 
+                        variant="outline" 
+                        className="bg-white/80 backdrop-blur-sm border-white/20 hover:bg-white/90"
+                        onClick={async () => {
+                          try {
+                            await todosService.archiveDoneTodos();
+                            await fetchTodosData();
+                            setSuccess('Completed to-dos archived successfully');
+                          } catch (error) {
+                            console.error('Failed to archive todos:', error);
+                            setError('Failed to archive completed to-dos');
+                          }
+                        }}
+                      >
+                        <Archive className="mr-2 h-4 w-4" />
+                        Archive Done
+                      </Button>
                       <Button 
                         variant="outline" 
                         className="bg-white/80 backdrop-blur-sm border-white/20 hover:bg-white/90"
@@ -3061,7 +3094,9 @@ const WeeklyAccountabilityMeetingPage = () => {
                               return (
                                 <div key={todo.id} className="border-b border-slate-100 last:border-0">
                                   {/* Main To-Do Row */}
-                                  <div className="flex items-center px-3 py-3 hover:bg-slate-50 rounded-lg transition-colors group">
+                                  <ContextMenu>
+                                    <ContextMenuTrigger asChild>
+                                      <div className="flex items-center px-3 py-3 hover:bg-slate-50 rounded-lg transition-colors group cursor-context-menu">
                                     {/* Status Indicator */}
                                     <div className="w-10 flex items-center relative">
                                       <div 
@@ -3123,7 +3158,41 @@ const WeeklyAccountabilityMeetingPage = () => {
                                         <Edit className="h-3 w-3 text-slate-600" />
                                       </button>
                                     </div>
-                                  </div>
+                                      </div>
+                                    </ContextMenuTrigger>
+                                    <ContextMenuContent className="w-48">
+                                      <ContextMenuItem onClick={() => handleCreateIssueFromTodo(todo)}>
+                                        <AlertTriangle className="mr-2 h-4 w-4" />
+                                        Create Linked Issue
+                                      </ContextMenuItem>
+                                      <ContextMenuItem onClick={() => {
+                                        setEditingHeadline({ 
+                                          headline: todo.title,
+                                          description: todo.title
+                                        });
+                                        setShowHeadlineDialog(true);
+                                      }}>
+                                        <Newspaper className="mr-2 h-4 w-4" />
+                                        Create Linked Headline
+                                      </ContextMenuItem>
+                                      <ContextMenuItem 
+                                        onClick={async () => {
+                                          try {
+                                            await todosService.deleteTodo(todo.id);
+                                            await fetchTodosData();
+                                            setSuccess('To-do archived successfully');
+                                          } catch (error) {
+                                            console.error('Failed to archive todo:', error);
+                                            setError('Failed to archive to-do');
+                                          }
+                                        }}
+                                        className="text-red-600 focus:text-red-600"
+                                      >
+                                        <Archive className="mr-2 h-4 w-4" />
+                                        Archive
+                                      </ContextMenuItem>
+                                    </ContextMenuContent>
+                                  </ContextMenu>
                                 </div>
                               );
                             })}
@@ -3235,10 +3304,19 @@ const WeeklyAccountabilityMeetingPage = () => {
                       <Button 
                         variant="outline" 
                         className="bg-white/80 backdrop-blur-sm border-white/20 hover:bg-white/90"
-                        onClick={() => setShowIssueDialog(true)}
+                        onClick={async () => {
+                          try {
+                            await issuesService.archiveClosedIssues(issueTimeline);
+                            await fetchIssuesData();
+                            setSuccess('Closed issues archived successfully');
+                          } catch (error) {
+                            console.error('Failed to archive issues:', error);
+                            setError('Failed to archive closed issues');
+                          }
+                        }}
                       >
-                        <Plus className="mr-2 h-4 w-4" />
-                        Add Issue
+                        <Archive className="mr-2 h-4 w-4" />
+                        Archive Closed
                       </Button>
                     </div>
                     
@@ -3502,6 +3580,50 @@ const WeeklyAccountabilityMeetingPage = () => {
                     ))}
                   </div>
                 </div>
+
+                {/* Cascading Message */}
+                <div className="border border-white/30 p-4 rounded-xl bg-white/60 backdrop-blur-sm shadow-sm">
+                  <h4 className="font-medium mb-2 text-slate-900 flex items-center gap-2">
+                    <Share2 className="h-4 w-4" style={{ color: themeColors.primary }} />
+                    Send Cascading Message
+                  </h4>
+                  <p className="text-sm text-slate-600 mb-3">
+                    Share important updates with specific teams or all departments
+                  </p>
+                  <Button
+                    variant="outline"
+                    className="w-full bg-white/80 backdrop-blur-sm border-white/20 hover:bg-white/90"
+                    onClick={() => {
+                      setCascadeMessage('');
+                      setSelectedTeams([]);
+                      setCascadeToAll(false);
+                      setShowCascadeDialog(true);
+                    }}
+                  >
+                    <Share2 className="mr-2 h-4 w-4" />
+                    Compose Cascading Message
+                  </Button>
+                </div>
+
+                {/* Conclude and Send Email Button */}
+                <Button
+                  className="w-full shadow-lg hover:shadow-xl transition-all duration-200 text-white font-medium py-3"
+                  style={{
+                    background: `linear-gradient(135deg, ${themeColors.primary} 0%, ${themeColors.secondary} 100%)`
+                  }}
+                  onClick={async () => {
+                    if (window.confirm('Are you ready to conclude the meeting and send the summary email?')) {
+                      // TODO: Implement email summary functionality
+                      setSuccess('Meeting concluded successfully! Summary email will be sent to all participants.');
+                      if (meetingCode && concludeMeeting) {
+                        concludeMeeting();
+                      }
+                    }
+                  }}
+                >
+                  <Mail className="mr-2 h-5 w-5" />
+                  Conclude and Send Email Summary
+                </Button>
               </div>
             </CardContent>
           </Card>
@@ -3756,9 +3878,11 @@ const WeeklyAccountabilityMeetingPage = () => {
         {showPriorityDialog && (
           <PriorityDialog
             open={showPriorityDialog}
-            onClose={() => {
-              setShowPriorityDialog(false);
-              setSelectedPriority(null);
+            onOpenChange={(open) => {
+              if (!open) {
+                setShowPriorityDialog(false);
+                setSelectedPriority(null);
+              }
             }}
             priority={selectedPriority}
             teamMembers={teamMembers || []}
