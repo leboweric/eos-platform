@@ -3863,6 +3863,11 @@ const WeeklyAccountabilityMeetingPage = () => {
                         if (meetingCode && leaveMeeting) {
                           leaveMeeting();
                         }
+                        
+                        // Navigate to Dashboard after concluding meeting
+                        setTimeout(() => {
+                          navigate('/dashboard');
+                        }, 1500); // Brief delay to show success message
                       } catch (error) {
                         console.error('Failed to conclude meeting:', error);
                         setError('Failed to conclude meeting. Please try again.');
