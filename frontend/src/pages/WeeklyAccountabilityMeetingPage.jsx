@@ -52,8 +52,6 @@ import {
   Share2,
   Pause,
   Play,
-  Maximize2,
-  Minimize2
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import meetingSessionsService from '../services/meetingSessionsService';
@@ -4582,20 +4580,6 @@ const WeeklyAccountabilityMeetingPage = () => {
                         )}
                       </Button>
                     )}
-                    {/* Full-screen toggle button */}
-                    <Button
-                      size="sm"
-                      variant="ghost"
-                      onClick={toggleFullScreen}
-                      className="h-8 w-8 p-0"
-                      title={isFullScreen ? 'Exit full screen' : 'Enter full screen'}
-                    >
-                      {isFullScreen ? (
-                        <Minimize2 className="h-4 w-4" />
-                      ) : (
-                        <Maximize2 className="h-4 w-4" />
-                      )}
-                    </Button>
                   </div>
                 </div>
               )}
