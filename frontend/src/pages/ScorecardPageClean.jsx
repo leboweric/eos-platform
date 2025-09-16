@@ -405,12 +405,15 @@ const ScorecardPageClean = () => {
         return;
       }
       
+      const valueToSave = scoreInputValue === '' ? null : parseFloat(scoreInputValue);
+      console.log('Saving score - Input value:', scoreInputValue, 'Value to save:', valueToSave, 'Type:', typeof valueToSave);
+      
       await scorecardService.updateScore(
         orgId, 
         teamId, 
         scoreDialogData.metricId, 
         scoreDialogData.weekDate, 
-        scoreInputValue === '' ? null : scoreInputValue,
+        valueToSave,
         scoreDialogData.scoreType || 'weekly',
         scoreNotesValue || null
       );
