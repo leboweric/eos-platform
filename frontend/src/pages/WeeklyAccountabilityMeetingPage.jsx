@@ -475,6 +475,7 @@ const WeeklyAccountabilityMeetingPage = () => {
         { id: 'good-news', label: 'Segue (Good News)', icon: Smile, duration: 5 },
         { id: 'scorecard', label: 'Scorecard Review', icon: BarChart, duration: 5 },
         { id: 'priorities', label: 'Rock Review', icon: Target, duration: 5 },
+        { id: 'cascading-messages', label: 'Cascading Messages', icon: MessageSquare, duration: 5 },
         { id: 'headlines', label: 'Headlines', icon: Newspaper, duration: 5 },
         { id: 'todo-list', label: 'To-Do List', icon: ListTodo, duration: 5 },
         { id: 'issues', label: 'IDS', icon: AlertTriangle, duration: 60 },
@@ -516,6 +517,7 @@ const WeeklyAccountabilityMeetingPage = () => {
         { id: 'good-news', label: 'Good News', icon: Smile, duration: 5 },
         { id: 'scorecard', label: labels.scorecard_label || 'Scorecard', icon: BarChart, duration: 5 },
         { id: 'priorities', label: labels.priorities_label || 'Priorities', icon: Target, duration: 5 },
+        { id: 'cascading-messages', label: 'Cascading Messages', icon: MessageSquare, duration: 5 },
         { id: 'headlines', label: 'Headlines', icon: Newspaper, duration: 5 },
         { id: 'todo-list', label: labels.todos_label || 'To-Do List', icon: ListTodo, duration: 5 },
         { id: 'issues', label: labels.issues_label || 'Issues', icon: AlertTriangle, duration: 60 },
@@ -1334,8 +1336,9 @@ const WeeklyAccountabilityMeetingPage = () => {
     if (activeSection === 'conclude') {
       fetchAvailableTeams();
     } else if (activeSection === 'headlines') {
-      fetchCascadedMessages();
       fetchHeadlines();
+    } else if (activeSection === 'cascading-messages') {
+      fetchCascadedMessages();
     }
   }, [activeSection]);
 
@@ -2574,9 +2577,11 @@ const WeeklyAccountabilityMeetingPage = () => {
       case 'priorities':
         fetchPrioritiesData();
         break;
+      case 'cascading-messages':
+        fetchCascadedMessages();
+        break;
       case 'headlines':
         fetchHeadlines();
-        fetchCascadedMessages();
         break;
       case 'todo-list':
         fetchTodosData();
@@ -2616,9 +2621,11 @@ const WeeklyAccountabilityMeetingPage = () => {
           case 'priorities':
             fetchPrioritiesData();
             break;
+          case 'cascading-messages':
+            fetchCascadedMessages();
+            break;
           case 'headlines':
             fetchHeadlines();
-            fetchCascadedMessages();
             break;
           case 'todo-list':
             fetchTodosData();
@@ -3514,6 +3521,66 @@ const WeeklyAccountabilityMeetingPage = () => {
           </div>
         );
 
+      case 'cascading-messages':
+        return (
+          <Card className="bg-white/80 backdrop-blur-sm border border-white/50 rounded-2xl shadow-xl hover:shadow-2xl transition-all duration-300">
+            <CardHeader className="bg-gradient-to-r from-white/90 to-white/70 backdrop-blur-sm border-b border-white/20 rounded-t-2xl">
+              <div className="flex items-center justify-between">
+                <div>
+                  <CardTitle className="flex items-center gap-3 text-xl font-bold text-slate-900">
+                    <div className="p-2 rounded-xl" style={{ background: `linear-gradient(135deg, ${themeColors.primary}20 0%, ${themeColors.secondary}20 100%)` }}>
+                      <MessageSquare className="h-5 w-5" style={{ color: themeColors.primary }} />
+                    </div>
+                    Cascading Messages
+                  </CardTitle>
+                  <CardDescription className="mt-2 text-slate-600 font-medium">Messages from other teams</CardDescription>
+                </div>
+                <div className="text-sm text-slate-600 bg-white/80 backdrop-blur-sm px-4 py-2 rounded-full border border-white/30 shadow-sm font-medium">
+                  5 minutes
+                </div>
+              </div>
+            </CardHeader>
+            <CardContent className="pt-6 px-6 pb-6">
+              <div className="space-y-4">
+                <p className="text-slate-600 text-lg leading-relaxed">
+                  Review important updates and messages cascaded from other teams in the organization.
+                </p>
+                
+                {cascadedMessages.length > 0 ? (
+                  <div className="space-y-3">
+                    {cascadedMessages.map(message => (
+                      <div key={message.id} className="p-4 bg-gradient-to-r from-blue-50 to-indigo-50 rounded-lg border border-blue-200 shadow-sm hover:shadow-md transition-shadow">
+                        <p className="text-sm font-medium text-slate-900 leading-relaxed">{message.message}</p>
+                        <div className="mt-3 flex items-center justify-between">
+                          <div className="flex items-center gap-2">
+                            <div className="p-1 rounded-lg bg-blue-100">
+                              <Users className="h-3 w-3 text-blue-700" />
+                            </div>
+                            <p className="text-xs font-medium text-blue-900">
+                              From: {message.from_team_name || 'Unknown Team'}
+                            </p>
+                          </div>
+                          <p className="text-xs text-slate-500">
+                            {format(new Date(message.created_at), 'MMM d, h:mm a')}
+                          </p>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <Card className="bg-white/80 backdrop-blur-sm border border-white/50 rounded-xl">
+                    <CardContent className="text-center py-12">
+                      <MessageSquare className="h-12 w-12 mx-auto mb-4 text-slate-400" />
+                      <p className="text-slate-500 font-medium">No cascading messages from other teams.</p>
+                      <p className="text-sm text-slate-400 mt-2">Messages will appear here when other teams share updates.</p>
+                    </CardContent>
+                  </Card>
+                )}
+              </div>
+            </CardContent>
+          </Card>
+        );
+
       case 'headlines':
         return (
           <Card className="bg-white/80 backdrop-blur-sm border border-white/50 rounded-2xl shadow-xl hover:shadow-2xl transition-all duration-300">
@@ -3613,33 +3680,6 @@ const WeeklyAccountabilityMeetingPage = () => {
                     )}
                   </div>
                 </div>
-                
-                {/* Cascaded Messages from Other Teams */}
-                {cascadedMessages.length > 0 && (
-                  <div className="mt-6 pt-6 border-t border-slate-200">
-                    <h4 className="text-sm font-semibold text-slate-900 mb-3 flex items-center gap-2">
-                      <div className="p-1.5 rounded-lg" style={{ background: `linear-gradient(135deg, ${themeColors.primary}15 0%, ${themeColors.secondary}15 100%)` }}>
-                        <MessageSquare className="h-4 w-4" style={{ color: themeColors.primary }} />
-                      </div>
-                      Cascaded Messages from Other Teams ({cascadedMessages.length})
-                    </h4>
-                    <div className="space-y-2">
-                      {cascadedMessages.map(message => (
-                        <div key={message.id} className="p-4 bg-gradient-to-r from-blue-50 to-indigo-50 rounded-lg border border-blue-200 shadow-sm hover:shadow-md transition-shadow">
-                          <p className="text-sm font-medium text-slate-900 leading-relaxed">{message.message}</p>
-                          <div className="mt-2 flex items-center justify-between">
-                            <p className="text-xs text-slate-600">
-                              From: {message.from_team_name || 'Unknown Team'}
-                            </p>
-                            <p className="text-xs text-slate-500">
-                              {format(new Date(message.created_at), 'MMM d')}
-                            </p>
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                )}
               </div>
             </CardContent>
           </Card>
