@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import {
@@ -17,11 +17,12 @@ import {
   EyeOff,
   Video,
   VideoOff,
-  X
+  X,
+  Clock
 } from 'lucide-react';
 import useMeeting from '../../hooks/useMeeting';
 
-const MeetingBar = () => {
+const MeetingBar = ({ meetingStartTime, meetingStarted }) => {
   const {
     isEnabled,
     isConnected,
@@ -39,6 +40,34 @@ const MeetingBar = () => {
   const [joinCode, setJoinCode] = useState('');
   const [joinAsLeader, setJoinAsLeader] = useState(false);
   const [isExpanded, setIsExpanded] = useState(true);
+  const [elapsedTime, setElapsedTime] = useState(0);
+
+  // Update timer
+  useEffect(() => {
+    let timer;
+    if (meetingStarted && meetingStartTime) {
+      timer = setInterval(() => {
+        const now = Date.now();
+        const elapsed = Math.floor((now - meetingStartTime) / 1000);
+        setElapsedTime(elapsed);
+      }, 1000);
+    }
+    return () => {
+      if (timer) clearInterval(timer);
+    };
+  }, [meetingStarted, meetingStartTime]);
+
+  // Format elapsed time
+  const formatTime = (seconds) => {
+    const hours = Math.floor(seconds / 3600);
+    const minutes = Math.floor((seconds % 3600) / 60);
+    const secs = seconds % 60;
+    
+    if (hours > 0) {
+      return `${hours}:${minutes.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+    }
+    return `${minutes}:${secs.toString().padStart(2, '0')}`;
+  };
 
   // Don't render if feature is disabled
   if (!isEnabled) return null;
@@ -80,6 +109,19 @@ const MeetingBar = () => {
           {isExpanded && (
             <>
               <div className="h-6 w-px bg-gray-300" />
+              
+              {/* Timer */}
+              {meetingStarted && meetingStartTime && (
+                <>
+                  <div className="flex items-center gap-2">
+                    <Clock className="h-4 w-4 text-blue-600" />
+                    <span className="text-sm font-medium text-blue-600">
+                      {formatTime(elapsedTime)}
+                    </span>
+                  </div>
+                  <div className="h-6 w-px bg-gray-300" />
+                </>
+              )}
               
               {/* Participants */}
               <div className="flex items-center gap-2">

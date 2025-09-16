@@ -3808,9 +3808,9 @@ const WeeklyAccountabilityMeetingPage = () => {
                         setCascadeToAll(false);
                         setMeetingRating(null);
                         
-                        // Conclude collaborative meeting if active
-                        if (meetingCode && concludeMeeting) {
-                          concludeMeeting();
+                        // Leave the collaborative meeting if active
+                        if (meetingCode && leaveMeeting) {
+                          leaveMeeting();
                         }
                       } catch (error) {
                         console.error('Failed to conclude meeting:', error);

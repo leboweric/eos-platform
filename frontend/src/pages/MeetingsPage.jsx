@@ -36,6 +36,16 @@ const MeetingsPage = () => {
   const { selectedDepartment } = useDepartment();
   const { labels } = useTerminology();
   const { joinMeeting, activeMeetings, isConnected, isEnabled } = useMeeting();
+  
+  // Debug socket connection status
+  useEffect(() => {
+    console.log('🔌 Meeting Socket Status:', {
+      isEnabled,
+      isConnected,
+      activeMeetings,
+      activeMeetingCount: Object.keys(activeMeetings || {}).length
+    });
+  }, [isEnabled, isConnected, activeMeetings]);
   const [teams, setTeams] = useState([]);
   const [selectedTeamId, setSelectedTeamId] = useState(null);
   const [loadingTeams, setLoadingTeams] = useState(true);
@@ -525,9 +535,10 @@ const MeetingsPage = () => {
                         <Icon className="h-6 w-6" style={{ color: meeting.getColor() }} />
                       </div>
                       {isActive && (
-                        <span className="absolute -top-1 -right-1 flex h-3 w-3">
+                        <span className="absolute -top-2 -right-2 flex h-4 w-4">
                           <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span>
-                          <span className="relative inline-flex rounded-full h-3 w-3 bg-green-500"></span>
+                          <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-50 animation-delay-500"></span>
+                          <span className="relative inline-flex rounded-full h-4 w-4 bg-green-500 shadow-lg"></span>
                         </span>
                       )}
                     </div>
@@ -576,7 +587,7 @@ const MeetingsPage = () => {
                       disabled={meeting.comingSoon || !selectedTeamId || loadingTeams}
                       className={`w-full text-white transition-all duration-200 shadow-lg hover:shadow-xl transform hover:scale-[1.02] ${
                         meeting.comingSoon ? 'bg-gradient-to-r from-gray-400 to-gray-500 cursor-not-allowed' : 
-                        (isActive ? 'bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700' : '')
+                        (isActive ? 'bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 animate-pulse ring-2 ring-green-400 ring-offset-2' : '')
                       }`}
                       style={{
                         ...((!meeting.comingSoon && !isActive) ? {
@@ -594,7 +605,7 @@ const MeetingsPage = () => {
                         }
                       }}
                     >
-                      {meeting.comingSoon ? 'Coming Soon' : (isActive ? 'Join Meeting' : 'Start Meeting')}
+                      {meeting.comingSoon ? 'Coming Soon' : (isActive ? '🟢 Join Meeting' : 'Start Meeting')}
                       {!meeting.comingSoon && <ChevronRight className="ml-2 h-4 w-4" />}
                     </Button>
                   </div>
