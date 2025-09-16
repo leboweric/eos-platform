@@ -351,6 +351,12 @@ export const updateScore = async (req, res) => {
     // Convert week/month to proper date format
     const scoreDate = new Date(week).toISOString().split('T')[0];
     
+    // CRITICAL FIX: Allow zero as a valid value
+    // Only use null if value is actually null or undefined
+    const scoreValue = (value === null || value === undefined) ? null : value;
+    
+    console.log('Backend updateScore - Received value:', value, 'Saving value:', scoreValue, 'Type:', typeof scoreValue);
+    
     // Upsert the score with notes
     const query = `
       INSERT INTO scorecard_scores (metric_id, week_date, value, notes)
@@ -360,7 +366,7 @@ export const updateScore = async (req, res) => {
       RETURNING metric_id, week_date, value, notes
     `;
     
-    const result = await db.query(query, [metricId, scoreDate, value || null, notes || null]);
+    const result = await db.query(query, [metricId, scoreDate, scoreValue, notes || null]);
     
     res.json({
       success: true,
