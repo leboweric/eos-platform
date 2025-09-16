@@ -77,7 +77,6 @@ import { FileText, GitBranch } from 'lucide-react';
 import { useSelectedTodos } from '../contexts/SelectedTodosContext';
 import { cascadingMessagesService } from '../services/cascadingMessagesService';
 import { teamsService } from '../services/teamsService';
-import { meetingsService } from '../services/meetingsService';
 import { useTerminology } from '../contexts/TerminologyContext';
 import { getEffectiveTeamId } from '../utils/teamUtils';
 
