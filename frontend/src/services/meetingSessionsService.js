@@ -1,26 +1,9 @@
-const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3001/api/v1';
+import axios from './axiosConfig';
 
 class MeetingSessionsService {
   constructor() {
     this.sessionCache = null;
     this.autoSaveInterval = null;
-  }
-
-  getAuthHeaders() {
-    // Check both possible token keys (OAuth uses 'token', regular login uses 'accessToken')
-    const token = localStorage.getItem('token') || localStorage.getItem('accessToken');
-    
-    if (!token) {
-      console.error('🔴 No authentication token found in localStorage');
-      console.log('Available keys:', Object.keys(localStorage));
-    } else {
-      console.log('✅ Token found, length:', token.length);
-    }
-    
-    return {
-      'Authorization': `Bearer ${token}`,
-      'Content-Type': 'application/json'
-    };
   }
 
   // Start a new meeting session or resume existing
@@ -30,77 +13,61 @@ class MeetingSessionsService {
         orgId,
         teamId,
         meetingType,
-        url: `${API_BASE_URL}/organizations/${orgId}/teams/${teamId}/meeting-sessions/start`
+        url: `/organizations/${orgId}/teams/${teamId}/meeting-sessions/start`
       });
 
-      const response = await fetch(
-        `${API_BASE_URL}/organizations/${orgId}/teams/${teamId}/meeting-sessions/start`,
+      const response = await axios.post(
+        `/organizations/${orgId}/teams/${teamId}/meeting-sessions/start`,
         {
-          method: 'POST',
-          headers: this.getAuthHeaders(),
-          body: JSON.stringify({
-            organization_id: orgId,
-            team_id: teamId,
-            meeting_type: meetingType
-          })
+          organization_id: orgId,
+          team_id: teamId,
+          meeting_type: meetingType
         }
       );
 
-      if (!response.ok) {
-        const errorText = await response.text();
-        console.error('Session start failed:', {
-          status: response.status,
-          statusText: response.statusText,
-          error: errorText
-        });
-        
-        // Provide clearer error messages
-        if (response.status === 401) {
-          throw new Error('Authentication failed. Please log in again.');
-        } else if (response.status === 403) {
-          throw new Error('You do not have permission to start meetings for this team.');
-        } else {
-          throw new Error(`Failed to start session: ${response.statusText}`);
-        }
-      }
-
-      const data = await response.json();
-      this.sessionCache = data.session;
+      this.sessionCache = response.data.session;
       this.startAutoSave(orgId, teamId);
-      return data;
+      return response.data;
     } catch (error) {
       console.error('Error starting meeting session:', error);
       console.error('Error details:', {
         message: error.message,
+        response: error.response?.data,
+        status: error.response?.status,
         orgId,
         teamId,
         meetingType
       });
-      throw error;
+      
+      // Provide clearer error messages
+      if (error.response?.status === 401) {
+        throw new Error('Authentication failed. Please log in again.');
+      } else if (error.response?.status === 403) {
+        throw new Error('You do not have permission to start meetings for this team.');
+      } else {
+        throw new Error(error.response?.data?.error || error.message || 'Failed to start session');
+      }
     }
   }
 
   // Get active session for a team
   async getActiveSession(orgId, teamId, meetingType = 'weekly') {
     try {
-      const response = await fetch(
-        `${API_BASE_URL}/organizations/${orgId}/teams/${teamId}/meeting-sessions/active?team_id=${teamId}&meeting_type=${meetingType}`,
+      const response = await axios.get(
+        `/organizations/${orgId}/teams/${teamId}/meeting-sessions/active`,
         {
-          method: 'GET',
-          headers: this.getAuthHeaders()
+          params: {
+            team_id: teamId,
+            meeting_type: meetingType
+          }
         }
       );
 
-      if (!response.ok) {
-        throw new Error(`Failed to get active session: ${response.statusText}`);
-      }
-
-      const data = await response.json();
-      if (data.session) {
-        this.sessionCache = data.session;
+      if (response.data.session) {
+        this.sessionCache = response.data.session;
         this.startAutoSave(orgId, teamId);
       }
-      return data.session;
+      return response.data.session;
     } catch (error) {
       console.error('Error getting active session:', error);
       return null;
@@ -111,47 +78,33 @@ class MeetingSessionsService {
   async pauseSession(orgId, teamId, sessionId, reason = null) {
     console.log('🟦🟦🟦 PAUSE API CALL START 🟦🟦🟦');
     console.log('Request params:', { orgId, teamId, sessionId, reason });
-    console.log('URL:', `${API_BASE_URL}/organizations/${orgId}/teams/${teamId}/meeting-sessions/${sessionId}/pause`);
-    console.log('Headers:', this.getAuthHeaders());
+    console.log('URL:', `/organizations/${orgId}/teams/${teamId}/meeting-sessions/${sessionId}/pause`);
     
     try {
-      const response = await fetch(
-        `${API_BASE_URL}/organizations/${orgId}/teams/${teamId}/meeting-sessions/${sessionId}/pause`,
-        {
-          method: 'POST',
-          headers: this.getAuthHeaders(),
-          body: JSON.stringify({ reason })
-        }
+      const response = await axios.post(
+        `/organizations/${orgId}/teams/${teamId}/meeting-sessions/${sessionId}/pause`,
+        { reason }
       );
 
-      console.log('Response status:', response.status, response.statusText);
-      
-      if (!response.ok) {
-        const errorText = await response.text();
-        console.error('❌ Pause API failed:', {
-          status: response.status,
-          statusText: response.statusText,
-          body: errorText
-        });
-        
-        if (response.status === 401) {
-          throw new Error('Authentication failed. Please log in again.');
-        } else if (response.status === 404) {
-          throw new Error('Meeting session not found. Please refresh the page.');
-        } else {
-          throw new Error(`Failed to pause session: ${response.statusText}`);
-        }
-      }
-
-      const data = await response.json();
-      console.log('✅ Pause API success:', data);
-      this.sessionCache = data.session;
-      return data;
+      console.log('✅ Pause API success:', response.data);
+      this.sessionCache = response.data.session;
+      return response.data;
     } catch (error) {
       console.error('❌❌ Error pausing session:', error);
       console.error('Error type:', error.constructor.name);
-      console.error('Full error:', { message: error.message, stack: error.stack });
-      throw error;
+      console.error('Full error:', { 
+        message: error.message, 
+        response: error.response?.data,
+        status: error.response?.status 
+      });
+      
+      if (error.response?.status === 401) {
+        throw new Error('Authentication failed. Please log in again.');
+      } else if (error.response?.status === 404) {
+        throw new Error('Meeting session not found. Please refresh the page.');
+      } else {
+        throw new Error(error.response?.data?.error || error.message || 'Failed to pause session');
+      }
     } finally {
       console.log('🟦🟦🟦 PAUSE API CALL END 🟦🟦🟦');
     }
@@ -161,46 +114,32 @@ class MeetingSessionsService {
   async resumeSession(orgId, teamId, sessionId) {
     console.log('🟩🟩🟩 RESUME API CALL START 🟩🟩🟩');
     console.log('Request params:', { orgId, teamId, sessionId });
-    console.log('URL:', `${API_BASE_URL}/organizations/${orgId}/teams/${teamId}/meeting-sessions/${sessionId}/resume`);
-    console.log('Headers:', this.getAuthHeaders());
+    console.log('URL:', `/organizations/${orgId}/teams/${teamId}/meeting-sessions/${sessionId}/resume`);
     
     try {
-      const response = await fetch(
-        `${API_BASE_URL}/organizations/${orgId}/teams/${teamId}/meeting-sessions/${sessionId}/resume`,
-        {
-          method: 'POST',
-          headers: this.getAuthHeaders()
-        }
+      const response = await axios.post(
+        `/organizations/${orgId}/teams/${teamId}/meeting-sessions/${sessionId}/resume`
       );
 
-      console.log('Response status:', response.status, response.statusText);
-      
-      if (!response.ok) {
-        const errorText = await response.text();
-        console.error('❌ Resume API failed:', {
-          status: response.status,
-          statusText: response.statusText,
-          body: errorText
-        });
-        
-        if (response.status === 401) {
-          throw new Error('Authentication failed. Please log in again.');
-        } else if (response.status === 404) {
-          throw new Error('Meeting session not found. Please refresh the page.');
-        } else {
-          throw new Error(`Failed to resume session: ${response.statusText}`);
-        }
-      }
-
-      const data = await response.json();
-      console.log('✅ Resume API success:', data);
-      this.sessionCache = data.session;
-      return data;
+      console.log('✅ Resume API success:', response.data);
+      this.sessionCache = response.data.session;
+      return response.data;
     } catch (error) {
       console.error('❌❌ Error resuming session:', error);
       console.error('Error type:', error.constructor.name);
-      console.error('Full error:', { message: error.message, stack: error.stack });
-      throw error;
+      console.error('Full error:', { 
+        message: error.message, 
+        response: error.response?.data,
+        status: error.response?.status 
+      });
+      
+      if (error.response?.status === 401) {
+        throw new Error('Authentication failed. Please log in again.');
+      } else if (error.response?.status === 404) {
+        throw new Error('Meeting session not found. Please refresh the page.');
+      } else {
+        throw new Error(error.response?.data?.error || error.message || 'Failed to resume session');
+      }
     } finally {
       console.log('🟩🟩🟩 RESUME API CALL END 🟩🟩🟩');
     }
@@ -209,21 +148,12 @@ class MeetingSessionsService {
   // Get session status with pause history
   async getSessionStatus(orgId, teamId, sessionId) {
     try {
-      const response = await fetch(
-        `${API_BASE_URL}/organizations/${orgId}/teams/${teamId}/meeting-sessions/${sessionId}/status`,
-        {
-          method: 'GET',
-          headers: this.getAuthHeaders()
-        }
+      const response = await axios.get(
+        `/organizations/${orgId}/teams/${teamId}/meeting-sessions/${sessionId}/status`
       );
 
-      if (!response.ok) {
-        throw new Error(`Failed to get session status: ${response.statusText}`);
-      }
-
-      const data = await response.json();
-      this.sessionCache = data.session;
-      return data;
+      this.sessionCache = response.data.session;
+      return response.data;
     } catch (error) {
       console.error('Error getting session status:', error);
       throw error;
@@ -233,22 +163,13 @@ class MeetingSessionsService {
   // Update the current section
   async updateSection(orgId, teamId, sessionId, section) {
     try {
-      const response = await fetch(
-        `${API_BASE_URL}/organizations/${orgId}/teams/${teamId}/meeting-sessions/${sessionId}/section`,
-        {
-          method: 'PATCH',
-          headers: this.getAuthHeaders(),
-          body: JSON.stringify({ section })
-        }
+      const response = await axios.patch(
+        `/organizations/${orgId}/teams/${teamId}/meeting-sessions/${sessionId}/section`,
+        { section }
       );
 
-      if (!response.ok) {
-        throw new Error(`Failed to update section: ${response.statusText}`);
-      }
-
-      const data = await response.json();
-      this.sessionCache = data.session;
-      return data;
+      this.sessionCache = response.data.session;
+      return response.data;
     } catch (error) {
       console.error('Error updating section:', error);
       throw error;
@@ -258,18 +179,10 @@ class MeetingSessionsService {
   // Save timer state (called periodically)
   async saveTimerState(orgId, teamId, sessionId, elapsedSeconds) {
     try {
-      const response = await fetch(
-        `${API_BASE_URL}/organizations/${orgId}/teams/${teamId}/meeting-sessions/${sessionId}/save-state`,
-        {
-          method: 'POST',
-          headers: this.getAuthHeaders(),
-          body: JSON.stringify({ elapsed_seconds: elapsedSeconds })
-        }
+      await axios.post(
+        `/organizations/${orgId}/teams/${teamId}/meeting-sessions/${sessionId}/save-state`,
+        { elapsed_seconds: elapsedSeconds }
       );
-
-      if (!response.ok) {
-        console.warn('Failed to save timer state:', response.statusText);
-      }
     } catch (error) {
       console.warn('Error saving timer state:', error);
       // Don't throw - this is a background operation
@@ -281,21 +194,12 @@ class MeetingSessionsService {
     try {
       this.stopAutoSave();
       
-      const response = await fetch(
-        `${API_BASE_URL}/organizations/${orgId}/teams/${teamId}/meeting-sessions/${sessionId}/end`,
-        {
-          method: 'POST',
-          headers: this.getAuthHeaders()
-        }
+      const response = await axios.post(
+        `/organizations/${orgId}/teams/${teamId}/meeting-sessions/${sessionId}/end`
       );
 
-      if (!response.ok) {
-        throw new Error(`Failed to end session: ${response.statusText}`);
-      }
-
-      const data = await response.json();
       this.sessionCache = null;
-      return data;
+      return response.data;
     } catch (error) {
       console.error('Error ending session:', error);
       throw error;
