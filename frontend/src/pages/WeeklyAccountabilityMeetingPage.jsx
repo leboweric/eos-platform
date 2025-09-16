@@ -78,7 +78,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogD
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { ContextMenu, ContextMenuContent, ContextMenuItem, ContextMenuTrigger } from '@/components/ui/context-menu';
-import { FileText, GitBranch, MessageSquare } from 'lucide-react';
+import { FileText, GitBranch } from 'lucide-react';
 import { useSelectedTodos } from '../contexts/SelectedTodosContext';
 import { cascadingMessagesService } from '../services/cascadingMessagesService';
 import { teamsService } from '../services/teamsService';
