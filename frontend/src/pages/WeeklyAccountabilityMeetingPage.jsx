@@ -67,16 +67,15 @@ import { issuesService } from '../services/issuesService';
 import { todosService } from '../services/todosService';
 import { headlinesService } from '../services/headlinesService';
 import HeadlineDialog from '../components/headlines/HeadlineDialog';
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from '@/components/ui/dialog';
+import { Label } from '@/components/ui/label';
+import { Textarea } from '@/components/ui/textarea';
 import { ContextMenu, ContextMenuContent, ContextMenuItem, ContextMenuTrigger } from '@/components/ui/context-menu';
 import { FileText, GitBranch } from 'lucide-react';
 import { useSelectedTodos } from '../contexts/SelectedTodosContext';
 import { cascadingMessagesService } from '../services/cascadingMessagesService';
 import { teamsService } from '../services/teamsService';
 import { useTerminology } from '../contexts/TerminologyContext';
-import { Label } from '@/components/ui/label';
-import { Textarea } from '@/components/ui/textarea';
-import { DialogFooter } from '@/components/ui/dialog';
 import { getEffectiveTeamId } from '../utils/teamUtils';
 
 const WeeklyAccountabilityMeetingPage = () => {
@@ -937,6 +936,36 @@ const WeeklyAccountabilityMeetingPage = () => {
     setEditingIssue(null);
     setShowIssueDialog(true);
   };
+
+  // Helper function for formatting goal - moved before usage
+  const formatGoal = (goal, valueType, comparisonOperator) => {
+    if (!goal && goal !== 0) return 'No goal';
+    
+    let formattedValue;
+    if (valueType === 'currency') {
+      formattedValue = new Intl.NumberFormat('en-US', {
+        style: 'currency',
+        currency: 'USD',
+        minimumFractionDigits: 0,
+        maximumFractionDigits: 0
+      }).format(parseFloat(goal));
+    } else if (valueType === 'percentage') {
+      formattedValue = `${Math.round(parseFloat(goal))}%`;
+    } else {
+      formattedValue = Math.round(parseFloat(goal)).toString();
+    }
+    
+    switch (comparisonOperator) {
+      case 'greater_equal':
+        return `≥ ${formattedValue}`;
+      case 'less_equal':
+        return `≤ ${formattedValue}`;
+      case 'equal':
+        return `= ${formattedValue}`;
+      default:
+        return `≥ ${formattedValue}`;
+    }
+  };
   
   const handleAddIssueFromMetric = async (metric, isOffTrack) => {
     try {
@@ -965,36 +994,6 @@ const WeeklyAccountabilityMeetingPage = () => {
     } catch (error) {
       console.error('Failed to create issue from metric:', error);
       setError('Failed to create issue from metric');
-    }
-  };
-  
-  // Helper function for formatting goal
-  const formatGoal = (goal, valueType, comparisonOperator) => {
-    if (!goal && goal !== 0) return 'No goal';
-    
-    let formattedValue;
-    if (valueType === 'currency') {
-      formattedValue = new Intl.NumberFormat('en-US', {
-        style: 'currency',
-        currency: 'USD',
-        minimumFractionDigits: 0,
-        maximumFractionDigits: 0
-      }).format(parseFloat(goal));
-    } else if (valueType === 'percentage') {
-      formattedValue = `${Math.round(parseFloat(goal))}%`;
-    } else {
-      formattedValue = Math.round(parseFloat(goal)).toString();
-    }
-    
-    switch (comparisonOperator) {
-      case 'greater_equal':
-        return `≥ ${formattedValue}`;
-      case 'less_equal':
-        return `≤ ${formattedValue}`;
-      case 'equal':
-        return `= ${formattedValue}`;
-      default:
-        return `≥ ${formattedValue}`;
     }
   };
 
@@ -3593,11 +3592,19 @@ const WeeklyAccountabilityMeetingPage = () => {
                   <Button
                     variant="outline"
                     className="w-full bg-white/80 backdrop-blur-sm border-white/20 hover:bg-white/90"
-                    onClick={() => {
-                      setCascadeMessage('');
-                      setSelectedTeams([]);
-                      setCascadeToAll(false);
-                      setShowCascadeDialog(true);
+                    onClick={async () => {
+                      try {
+                        const response = await teamsService.getTeams();
+                        const teams = response.data || response;
+                        setAvailableTeams(Array.isArray(teams) ? teams.filter(t => !t.is_leadership_team) : []);
+                        setCascadeMessage('');
+                        setSelectedTeams([]);
+                        setCascadeToAll(false);
+                        setShowCascadeDialog(true);
+                      } catch (error) {
+                        console.error('Failed to fetch teams:', error);
+                        setError('Failed to load teams');
+                      }
                     }}
                   >
                     <Share2 className="mr-2 h-4 w-4" />
@@ -3875,6 +3882,71 @@ const WeeklyAccountabilityMeetingPage = () => {
           }}
         />
         
+        {/* Cascading Message Dialog */}
+        <Dialog open={showCascadeDialog} onOpenChange={setShowCascadeDialog}>
+          <DialogContent className="max-w-lg">
+            <DialogHeader>
+              <DialogTitle>Send Cascading Message</DialogTitle>
+              <DialogDescription>
+                Share important updates with teams across the organization
+              </DialogDescription>
+            </DialogHeader>
+            <div className="space-y-4 py-4">
+              <div>
+                <Label htmlFor="cascade-message">Message</Label>
+                <Textarea
+                  id="cascade-message"
+                  value={cascadeMessage}
+                  onChange={(e) => setCascadeMessage(e.target.value)}
+                  placeholder="Enter your message to cascade to teams..."
+                  className="min-h-[120px] mt-2"
+                />
+              </div>
+              <div className="space-y-3">
+                <div className="flex items-center space-x-2">
+                  <Checkbox
+                    id="cascade-all"
+                    checked={cascadeToAll}
+                    onCheckedChange={setCascadeToAll}
+                  />
+                  <Label htmlFor="cascade-all">Send to all teams</Label>
+                </div>
+                {!cascadeToAll && availableTeams.length > 0 && (
+                  <div>
+                    <Label>Select Teams</Label>
+                    <div className="space-y-2 mt-2 max-h-48 overflow-y-auto border rounded-md p-3">
+                      {availableTeams.map((team) => (
+                        <div key={team.id} className="flex items-center space-x-2">
+                          <Checkbox
+                            id={`team-${team.id}`}
+                            checked={selectedTeams.includes(team.id)}
+                            onCheckedChange={(checked) => {
+                              if (checked) {
+                                setSelectedTeams([...selectedTeams, team.id]);
+                              } else {
+                                setSelectedTeams(selectedTeams.filter(id => id !== team.id));
+                              }
+                            }}
+                          />
+                          <Label htmlFor={`team-${team.id}`}>{team.name}</Label>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </div>
+            </div>
+            <DialogFooter>
+              <Button variant="outline" onClick={() => setShowCascadeDialog(false)}>
+                Cancel
+              </Button>
+              <Button onClick={handleSendCascade} disabled={!cascadeMessage || (!cascadeToAll && selectedTeams.length === 0)}>
+                Send Message
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+
         {showPriorityDialog && (
           <PriorityDialog
             open={showPriorityDialog}
