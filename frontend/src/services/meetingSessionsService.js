@@ -17,6 +17,13 @@ class MeetingSessionsService {
   // Start a new meeting session or resume existing
   async startSession(orgId, teamId, meetingType = 'weekly') {
     try {
+      console.log('Starting meeting session with:', {
+        orgId,
+        teamId,
+        meetingType,
+        url: `${API_BASE_URL}/organizations/${orgId}/teams/${teamId}/meeting-sessions/start`
+      });
+
       const response = await fetch(
         `${API_BASE_URL}/organizations/${orgId}/teams/${teamId}/meeting-sessions/start`,
         {
@@ -31,7 +38,13 @@ class MeetingSessionsService {
       );
 
       if (!response.ok) {
-        throw new Error(`Failed to start session: ${response.statusText}`);
+        const errorText = await response.text();
+        console.error('Session start failed:', {
+          status: response.status,
+          statusText: response.statusText,
+          error: errorText
+        });
+        throw new Error(`Failed to start session: ${response.status} ${response.statusText} - ${errorText}`);
       }
 
       const data = await response.json();
@@ -40,6 +53,12 @@ class MeetingSessionsService {
       return data;
     } catch (error) {
       console.error('Error starting meeting session:', error);
+      console.error('Error details:', {
+        message: error.message,
+        orgId,
+        teamId,
+        meetingType
+      });
       throw error;
     }
   }

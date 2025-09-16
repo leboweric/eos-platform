@@ -777,20 +777,35 @@ const WeeklyAccountabilityMeetingPage = () => {
               const effectiveTeamId = getEffectiveTeamId(teamId, user);
               
               // Start session immediately and await result
-              (async () => {
-                try {
-                  const result = await meetingSessionsService.startSession(orgId, effectiveTeamId, 'weekly');
-                  setSessionId(result.session.id);
-                  if (result.session.is_paused) {
-                    setIsPaused(true);
-                    setTotalPausedTime(result.session.total_paused_duration || 0);
+              if (orgId && effectiveTeamId) {
+                (async () => {
+                  try {
+                    const result = await meetingSessionsService.startSession(orgId, effectiveTeamId, 'weekly');
+                    setSessionId(result.session.id);
+                    if (result.session.is_paused) {
+                      setIsPaused(true);
+                      setTotalPausedTime(result.session.total_paused_duration || 0);
+                    }
+                    console.log('📊 Meeting session started:', result.session.id);
+                  } catch (err) {
+                    console.error('Failed to start meeting session:', err);
+                    console.error('Session start error details:', {
+                      orgId,
+                      effectiveTeamId,
+                      user,
+                      teamId
+                    });
+                    // Don't show error immediately, timer still works locally
                   }
-                  console.log('📊 Meeting session started:', result.session.id);
-                } catch (err) {
-                  console.error('Failed to start meeting session:', err);
-                  setError('Failed to start meeting session. Please refresh the page.');
-                }
-              })();
+                })();
+              } else {
+                console.warn('Cannot start session - missing required IDs:', {
+                  orgId,
+                  effectiveTeamId,
+                  user,
+                  teamId
+                });
+              }
               
               // Sync timer with other participants
               if (syncTimer) {
@@ -1048,7 +1063,7 @@ const WeeklyAccountabilityMeetingPage = () => {
   useEffect(() => {
     // Only start timer if we're the leader (first to join)
     // Otherwise, timer will be synced from meeting-joined event
-    if (isLeader && !meetingStartTime) {
+    if (isLeader && !meetingStartTime && user && teamId) {
       const now = Date.now();
       setMeetingStartTime(now);
       setMeetingStarted(true);
@@ -1070,8 +1085,11 @@ const WeeklyAccountabilityMeetingPage = () => {
             console.log('📊 Meeting session started (auto-start):', result.session.id);
           } catch (err) {
             console.error('Failed to start meeting session (auto-start):', err);
+            // Don't show error to user here as the timer still works without persistence
           }
         })();
+      } else {
+        console.warn('Cannot start session - missing orgId or teamId:', { orgId, effectiveTeamId });
       }
       
       // Sync timer with other participants
@@ -1088,7 +1106,7 @@ const WeeklyAccountabilityMeetingPage = () => {
     
     // Fetch today's todos for the conclude section
     fetchTodaysTodos();
-  }, [isLeader, syncTimer]);
+  }, [isLeader, syncTimer, user, teamId]);
 
   // Fetch data based on active section
   useEffect(() => {
