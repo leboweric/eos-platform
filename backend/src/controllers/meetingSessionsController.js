@@ -154,10 +154,14 @@ export const resumeSession = async (req, res) => {
         resume_time = NOW(),
         resumed_by = $1,
         duration_seconds = $2
-      WHERE session_id = $3
-        AND resume_time IS NULL
-      ORDER BY pause_time DESC
-      LIMIT 1
+      WHERE id = (
+        SELECT id 
+        FROM meeting_pause_events 
+        WHERE session_id = $3
+          AND resume_time IS NULL
+        ORDER BY pause_time DESC
+        LIMIT 1
+      )
     `, [user_id, pauseDuration, id]);
 
     await client.query('COMMIT');
