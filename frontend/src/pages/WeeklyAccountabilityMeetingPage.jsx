@@ -629,7 +629,8 @@ const WeeklyAccountabilityMeetingPage = () => {
         fetchPrioritiesData(),
         fetchIssuesData(),
         fetchTodosData(),
-        fetchHeadlines()
+        fetchHeadlines(),
+        fetchCascadedMessages()
       ]);
     } catch (error) {
       console.error('Failed to load initial data:', error);
