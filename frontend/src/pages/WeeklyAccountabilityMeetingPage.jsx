@@ -2272,9 +2272,25 @@ const WeeklyAccountabilityMeetingPage = () => {
   const fetchCascadedMessages = async () => {
     try {
       const orgId = user?.organizationId || user?.organization_id;
-      const effectiveTeamId = getEffectiveTeamId(teamId, user);
+      
+      // Use same logic as Dashboard - if no valid teamId from URL, fall back to user's first team
+      let effectiveTeamId;
+      if (!teamId || teamId === 'null' || teamId === 'undefined') {
+        // No team in URL, use user's first team (same as Dashboard with no selectedDepartment)
+        effectiveTeamId = user?.teams?.[0]?.id || getTeamId(user, 'individual');
+      } else {
+        effectiveTeamId = getEffectiveTeamId(teamId, user);
+      }
+      
+      console.log('🔍 Fetching cascaded messages with:', {
+        orgId,
+        rawTeamId: teamId,
+        effectiveTeamId,
+        userTeams: user?.teams
+      });
       
       const response = await cascadingMessagesService.getCascadingMessages(orgId, effectiveTeamId);
+      console.log('📬 Cascaded messages response:', response);
       setCascadedMessages(response.data || []);
     } catch (error) {
       console.error('Failed to fetch cascaded messages:', error);
