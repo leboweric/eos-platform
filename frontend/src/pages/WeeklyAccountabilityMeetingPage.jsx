@@ -925,19 +925,44 @@ const WeeklyAccountabilityMeetingPage = () => {
   };
 
   useEffect(() => {
-    const isActive = sessionStorage.getItem('meetingActive');
-    const startTime = sessionStorage.getItem('meetingStartTime');
-    
-    if (isActive === 'true' && startTime) {
-      setMeetingStarted(true);
-      setMeetingStartTime(parseInt(startTime));
+    const checkExistingSession = async () => {
+      const isActive = sessionStorage.getItem('meetingActive');
+      const startTime = sessionStorage.getItem('meetingStartTime');
       
-      // Calculate elapsed time
-      const now = Date.now();
-      const elapsed = Math.floor((now - parseInt(startTime)) / 1000);
-      setElapsedTime(elapsed);
-    }
-  }, []);
+      if (isActive === 'true' && startTime) {
+        // Check if there's an active database session
+        const orgId = user?.organizationId || user?.organization_id;
+        const effectiveTeamId = getEffectiveTeamId(teamId, user);
+        
+        if (orgId && effectiveTeamId) {
+          const activeSession = await meetingSessionsService.getActiveSession(orgId, effectiveTeamId, 'weekly');
+          
+          if (activeSession) {
+            // Resume the existing session
+            setSessionId(activeSession.id);
+            setMeetingStarted(true);
+            setMeetingStartTime(parseInt(startTime));
+            setIsPaused(activeSession.is_paused);
+            setTotalPausedTime(activeSession.total_paused_duration || 0);
+            
+            // Calculate elapsed time
+            const now = Date.now();
+            const elapsed = Math.floor((now - parseInt(startTime)) / 1000) - (activeSession.total_paused_duration || 0);
+            setElapsedTime(elapsed);
+          } else {
+            // No active session, clear stale sessionStorage
+            sessionStorage.removeItem('meetingActive');
+            sessionStorage.removeItem('meetingStartTime');
+            setMeetingStarted(false);
+            setMeetingStartTime(null);
+            setElapsedTime(0);
+          }
+        }
+      }
+    };
+    
+    checkExistingSession();
+  }, [user, teamId]);
 
   // Store meeting state in sessionStorage
   useEffect(() => {
@@ -993,6 +1018,14 @@ const WeeklyAccountabilityMeetingPage = () => {
     
     return () => clearInterval(interval);
   }, [sessionId, meetingStarted, isPaused, elapsedTime, teamId, user]);
+  
+  // Cleanup on unmount - preserve session for return but clear if navigating away
+  useEffect(() => {
+    return () => {
+      // Clear the service cache when leaving the page
+      meetingSessionsService.clearCache();
+    };
+  }, []);
 
   const fetchTodaysTodos = async () => {
     try {
@@ -3971,13 +4004,23 @@ const WeeklyAccountabilityMeetingPage = () => {
                           leaveMeeting();
                         }
                         
-                        // End the database session
+                        // End the database session and wait for completion
                         if (sessionId) {
                           const orgId = user?.organizationId || user?.organization_id;
                           const effectiveTeamId = getEffectiveTeamId(teamId, user);
-                          meetingSessionsService.endSession(orgId, effectiveTeamId, sessionId)
+                          await meetingSessionsService.endSession(orgId, effectiveTeamId, sessionId)
                             .catch(err => console.error('Failed to end meeting session:', err));
                         }
+                        
+                        // Clear meeting state
+                        setSessionId(null);
+                        setMeetingStartTime(null);
+                        setMeetingStarted(false);
+                        setElapsedTime(0);
+                        setIsPaused(false);
+                        setTotalPausedTime(0);
+                        sessionStorage.removeItem('meetingActive');
+                        sessionStorage.removeItem('meetingStartTime');
                         
                         // Navigate to Dashboard after concluding meeting
                         setTimeout(() => {
