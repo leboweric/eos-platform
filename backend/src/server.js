@@ -44,6 +44,7 @@ import dailyActiveUsersRoutes from './routes/dailyActiveUsers.js';
 import processDocumentationRoutes from './routes/processDocumentation.js';
 import healthRoutes from './routes/healthRoutes.js';
 import todoReminderRoutes from './routes/todoReminders.js';
+import meetingSessionsRoutes from './routes/meetingSessions.js';
 
 // Import middleware
 import { errorHandler } from './middleware/errorHandler.js';
@@ -213,6 +214,7 @@ app.use('/api/v1/organizations/:orgId/teams/:teamId/business-blueprint', busines
 app.use('/api/v1/organizations/:orgId/teams/:teamId/quarterly-priorities', quarterlyPrioritiesRoutes);
 app.use('/api/v1/organizations/:orgId/teams/:teamId/scorecard', scorecardRoutes);
 app.use('/api/v1/organizations/:orgId/teams/:teamId/meetings', meetingRoutes);
+app.use('/api/v1/organizations/:orgId/teams/:teamId/meeting-sessions', meetingSessionsRoutes);
 app.use('/api/v1/organizations/:orgId/teams/:teamId/cascading-messages', cascadingMessagesRoutes);
 app.use('/api/v1/organizations/:orgId/teams/:teamId/issues', issueRoutes);
 app.use('/api/v1/organizations/:orgId/todos', todoRoutes);

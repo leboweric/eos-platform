@@ -49,9 +49,12 @@ import {
   GripVertical,
   TrendingUp,
   Mail,
-  Share2
+  Share2,
+  Pause,
+  Play
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
+import meetingSessionsService from '../services/meetingSessionsService';
 import ScorecardTableClean from '../components/scorecard/ScorecardTableClean';
 import { Progress } from '@/components/ui/progress';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
@@ -162,6 +165,30 @@ const WeeklyAccountabilityMeetingPage = () => {
     console.log('📊 Is Leader:', isLeader);
     console.log('📊 Current Leader:', currentLeader);
   }, [participants, isLeader, currentLeader]);
+  
+  // Listen for timer pause/resume events from other participants
+  useEffect(() => {
+    const handleBroadcast = (event) => {
+      if (event.detail) {
+        const { action, pausedBy, resumedBy, timestamp } = event.detail;
+        
+        if (action === 'timer-paused' && !isLeader) {
+          setIsPaused(true);
+          setSuccess(`Meeting paused by ${pausedBy}`);
+        } else if (action === 'timer-resumed' && !isLeader) {
+          setIsPaused(false);
+          setSuccess(`Meeting resumed by ${resumedBy}`);
+        }
+      }
+    };
+    
+    // Listen for broadcast events
+    window.addEventListener('meeting-broadcast', handleBroadcast);
+    
+    return () => {
+      window.removeEventListener('meeting-broadcast', handleBroadcast);
+    };
+  }, [isLeader]);
   const { labels } = useTerminology();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
@@ -403,6 +430,11 @@ const WeeklyAccountabilityMeetingPage = () => {
   const [meetingRating, setMeetingRating] = useState(null);
   const [participantRatings, setParticipantRatings] = useState({}); // Store ratings by participant
   const [cascadingMessage, setCascadingMessage] = useState('');
+  
+  // Pause/Resume state
+  const [sessionId, setSessionId] = useState(null);
+  const [isPaused, setIsPaused] = useState(false);
+  const [totalPausedTime, setTotalPausedTime] = useState(0);
   
   // Scorecard display options
   const [showScorecardAverage, setShowScorecardAverage] = useState(true);
@@ -740,6 +772,20 @@ const WeeklyAccountabilityMeetingPage = () => {
               setMeetingStarted(true);
               console.log('⏱️ Starting timer as leader at:', now);
               
+              // Start or resume database session
+              const orgId = user?.organizationId || user?.organization_id;
+              const effectiveTeamId = getEffectiveTeamId(teamId, user);
+              meetingSessionsService.startSession(orgId, effectiveTeamId, 'weekly').then(result => {
+                setSessionId(result.session.id);
+                if (result.session.is_paused) {
+                  setIsPaused(true);
+                  setTotalPausedTime(result.session.total_paused_duration || 0);
+                }
+                console.log('📊 Meeting session started:', result.session.id);
+              }).catch(err => {
+                console.error('Failed to start meeting session:', err);
+              });
+              
               // Sync timer with other participants
               if (syncTimer) {
                 syncTimer({
@@ -919,17 +965,34 @@ const WeeklyAccountabilityMeetingPage = () => {
   // Timer effect for meeting duration
   useEffect(() => {
     let timer;
-    if (meetingStarted && meetingStartTime) {
+    if (meetingStarted && meetingStartTime && !isPaused) {
       timer = setInterval(() => {
         const now = Date.now();
-        const elapsed = Math.floor((now - meetingStartTime) / 1000);
-        setElapsedTime(elapsed);
+        const totalElapsed = Math.floor((now - meetingStartTime) / 1000);
+        // Subtract total paused time to get active duration
+        const activeElapsed = totalElapsed - totalPausedTime;
+        setElapsedTime(activeElapsed);
       }, 1000);
     }
     return () => {
       if (timer) clearInterval(timer);
     };
-  }, [meetingStarted, meetingStartTime]);
+  }, [meetingStarted, meetingStartTime, isPaused, totalPausedTime]);
+  
+  // Auto-save timer state every 30 seconds
+  useEffect(() => {
+    if (!sessionId || !meetingStarted || isPaused) return;
+    
+    const interval = setInterval(() => {
+      const orgId = user?.organizationId || user?.organization_id;
+      const effectiveTeamId = getEffectiveTeamId(teamId, user);
+      
+      meetingSessionsService.saveTimerState(orgId, effectiveTeamId, sessionId, elapsedTime)
+        .catch(err => console.warn('Failed to auto-save timer state:', err));
+    }, 30000); // Save every 30 seconds
+    
+    return () => clearInterval(interval);
+  }, [sessionId, meetingStarted, isPaused, elapsedTime, teamId, user]);
 
   const fetchTodaysTodos = async () => {
     try {
@@ -2007,6 +2070,50 @@ const WeeklyAccountabilityMeetingPage = () => {
     } catch (error) {
       console.error('Failed to finish meeting:', error);
       setError('Failed to generate meeting summary');
+    }
+  };
+
+  // Pause/Resume handlers
+  const handlePauseResume = async () => {
+    const orgId = user?.organizationId || user?.organization_id;
+    const effectiveTeamId = getEffectiveTeamId(teamId, user);
+    
+    try {
+      if (isPaused) {
+        // Resume the session
+        const result = await meetingSessionsService.resumeSession(orgId, effectiveTeamId, sessionId);
+        setIsPaused(false);
+        setTotalPausedTime(result.session.total_paused_duration || 0);
+        
+        // Broadcast resume to all participants
+        if (broadcastIssueListUpdate) {
+          broadcastIssueListUpdate({
+            action: 'timer-resumed',
+            resumedBy: user?.full_name || user?.email,
+            timestamp: Date.now()
+          });
+        }
+        
+        setSuccess('Meeting resumed');
+      } else {
+        // Pause the session
+        const result = await meetingSessionsService.pauseSession(orgId, effectiveTeamId, sessionId);
+        setIsPaused(true);
+        
+        // Broadcast pause to all participants
+        if (broadcastIssueListUpdate) {
+          broadcastIssueListUpdate({
+            action: 'timer-paused',
+            pausedBy: user?.full_name || user?.email,
+            timestamp: Date.now()
+          });
+        }
+        
+        setSuccess('Meeting paused');
+      }
+    } catch (error) {
+      console.error('Error toggling pause state:', error);
+      setError('Failed to ' + (isPaused ? 'resume' : 'pause') + ' meeting');
     }
   };
 
@@ -3864,6 +3971,14 @@ const WeeklyAccountabilityMeetingPage = () => {
                           leaveMeeting();
                         }
                         
+                        // End the database session
+                        if (sessionId) {
+                          const orgId = user?.organizationId || user?.organization_id;
+                          const effectiveTeamId = getEffectiveTeamId(teamId, user);
+                          meetingSessionsService.endSession(orgId, effectiveTeamId, sessionId)
+                            .catch(err => console.error('Failed to end meeting session:', err));
+                        }
+                        
                         // Navigate to Dashboard after concluding meeting
                         setTimeout(() => {
                           navigate('/dashboard');
@@ -3930,11 +4045,33 @@ const WeeklyAccountabilityMeetingPage = () => {
               {/* Timer display */}
               {meetingCode && meetingStarted && (
                 <div className="bg-white/80 backdrop-blur-sm px-4 py-2 rounded-xl shadow-lg border border-white/50">
-                  <div className="flex items-center gap-2">
-                    <Clock className="h-4 w-4 text-slate-500" />
-                    <span className={`text-lg font-mono font-semibold ${getTimerColor()}`}>
-                      {formatTimer(elapsedTime)}
-                    </span>
+                  <div className="flex items-center gap-3">
+                    <div className="flex items-center gap-2">
+                      <Clock className="h-4 w-4 text-slate-500" />
+                      <span className={`text-lg font-mono font-semibold ${getTimerColor()}`}>
+                        {formatTimer(elapsedTime)}
+                      </span>
+                      {isPaused && (
+                        <Badge variant="secondary" className="ml-2 text-xs">
+                          PAUSED
+                        </Badge>
+                      )}
+                    </div>
+                    {isLeader && (
+                      <Button
+                        size="sm"
+                        variant="ghost"
+                        onClick={handlePauseResume}
+                        className="h-8 w-8 p-0"
+                        title={isPaused ? 'Resume meeting' : 'Pause meeting'}
+                      >
+                        {isPaused ? (
+                          <Play className="h-4 w-4" />
+                        ) : (
+                          <Pause className="h-4 w-4" />
+                        )}
+                      </Button>
+                    )}
                   </div>
                 </div>
               )}
