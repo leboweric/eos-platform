@@ -779,6 +779,7 @@ const WeeklyAccountabilityMeetingPage = () => {
               
               // Start session immediately and await result (only if not already loading)
               if (orgId && effectiveTeamId && !sessionId && !sessionLoading) {
+                console.log('🟡 Setting sessionLoading to true, starting session creation...');
                 setSessionLoading(true);
                 (async () => {
                   try {
@@ -787,6 +788,7 @@ const WeeklyAccountabilityMeetingPage = () => {
                     
                     if (activeSession) {
                       // Use the existing session
+                      console.log('📊 Found existing session, setting sessionId:', activeSession.id);
                       setSessionId(activeSession.id);
                       setIsPaused(activeSession.is_paused);
                       setTotalPausedTime(activeSession.total_paused_duration || 0);
@@ -794,6 +796,7 @@ const WeeklyAccountabilityMeetingPage = () => {
                     } else {
                       // Create a new session
                       const result = await meetingSessionsService.startSession(orgId, effectiveTeamId, 'weekly');
+                      console.log('📊 Created new session, setting sessionId:', result.session.id);
                       setSessionId(result.session.id);
                       if (result.session.is_paused) {
                         setIsPaused(true);
@@ -811,6 +814,7 @@ const WeeklyAccountabilityMeetingPage = () => {
                     });
                     // Don't show error immediately, timer still works locally
                   } finally {
+                    console.log('🟡 Setting sessionLoading to false, session creation complete');
                     setSessionLoading(false);
                   }
                 })();
@@ -2152,6 +2156,13 @@ const WeeklyAccountabilityMeetingPage = () => {
 
   // Pause/Resume handlers
   const handlePauseResume = async () => {
+    console.log('🔵 Pause button clicked!', {
+      sessionId,
+      sessionLoading,
+      isPaused,
+      meetingStarted
+    });
+    
     // Check if sessionId exists
     if (!sessionId) {
       console.error('No session ID available for pause/resume');
@@ -4169,7 +4180,15 @@ const WeeklyAccountabilityMeetingPage = () => {
                       <Button
                         size="sm"
                         variant="ghost"
-                        onClick={handlePauseResume}
+                        onClick={() => {
+                          console.log('🟢 Button onClick triggered!', {
+                            isLeader,
+                            sessionId,
+                            sessionLoading,
+                            isPaused
+                          });
+                          handlePauseResume();
+                        }}
                         className="h-8 w-8 p-0"
                         disabled={sessionLoading || !sessionId}
                         title={
