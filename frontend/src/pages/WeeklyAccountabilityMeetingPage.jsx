@@ -773,64 +773,6 @@ const WeeklyAccountabilityMeetingPage = () => {
               setMeetingStarted(true);
               console.log('⏱️ Starting timer as leader at:', now);
               
-              // Start or resume database session immediately
-              const orgId = user?.organizationId || user?.organization_id;
-              const effectiveTeamId = getEffectiveTeamId(teamId, user);
-              
-              // Start session immediately and await result (only if not already loading)
-              if (orgId && effectiveTeamId && !sessionId && !sessionLoading) {
-                console.log('🟡 Setting sessionLoading to true, starting session creation...');
-                setSessionLoading(true);
-                (async () => {
-                  try {
-                    // First check if there's already an active session to avoid duplicates
-                    const activeSession = await meetingSessionsService.getActiveSession(orgId, effectiveTeamId, 'weekly');
-                    
-                    if (activeSession) {
-                      // Use the existing session
-                      console.log('📊 Found existing session, setting sessionId:', activeSession.id);
-                      setSessionId(activeSession.id);
-                      setIsPaused(activeSession.is_paused);
-                      setTotalPausedTime(activeSession.total_paused_duration || 0);
-                      console.log('📊 Resuming existing meeting session:', activeSession.id);
-                    } else {
-                      // Create a new session
-                      const result = await meetingSessionsService.startSession(orgId, effectiveTeamId, 'weekly');
-                      console.log('📊 Created new session, setting sessionId:', result.session.id);
-                      setSessionId(result.session.id);
-                      if (result.session.is_paused) {
-                        setIsPaused(true);
-                        setTotalPausedTime(result.session.total_paused_duration || 0);
-                      }
-                      console.log('📊 New meeting session started:', result.session.id);
-                    }
-                  } catch (err) {
-                    console.error('Failed to start/resume meeting session:', err);
-                    console.error('Session error details:', {
-                      orgId,
-                      effectiveTeamId,
-                      user,
-                      teamId
-                    });
-                    // Don't show error immediately, timer still works locally
-                  } finally {
-                    console.log('🟡 Setting sessionLoading to false, session creation complete');
-                    setSessionLoading(false);
-                  }
-                })();
-              } else if (!orgId || !effectiveTeamId) {
-                console.warn('Cannot start session - missing required IDs:', {
-                  orgId,
-                  effectiveTeamId,
-                  user,
-                  teamId
-                });
-              } else if (sessionId) {
-                console.log('Session already exists:', sessionId);
-              } else if (sessionLoading) {
-                console.log('Session is already being loaded');
-              }
-              
               // Sync timer with other participants
               if (syncTimer) {
                 syncTimer({
@@ -838,6 +780,64 @@ const WeeklyAccountabilityMeetingPage = () => {
                   isPaused: false
                 });
               }
+            }
+            
+            // Initialize database session for ALL users (both leaders and participants)
+            const orgId = user?.organizationId || user?.organization_id;
+            const effectiveTeamId = getEffectiveTeamId(teamId, user);
+            
+            // Start session immediately and await result (only if not already loading)
+            if (orgId && effectiveTeamId && !sessionId && !sessionLoading) {
+              console.log('🟡 Setting sessionLoading to true, starting session creation...');
+              setSessionLoading(true);
+              (async () => {
+                try {
+                  // First check if there's already an active session to avoid duplicates
+                  const activeSession = await meetingSessionsService.getActiveSession(orgId, effectiveTeamId, 'weekly');
+                  
+                  if (activeSession) {
+                    // Use the existing session
+                    console.log('📊 Found existing session, setting sessionId:', activeSession.id);
+                    setSessionId(activeSession.id);
+                    setIsPaused(activeSession.is_paused);
+                    setTotalPausedTime(activeSession.total_paused_duration || 0);
+                    console.log('📊 Resuming existing meeting session:', activeSession.id);
+                  } else {
+                    // Create a new session
+                    const result = await meetingSessionsService.startSession(orgId, effectiveTeamId, 'weekly');
+                    console.log('📊 Created new session, setting sessionId:', result.session.id);
+                    setSessionId(result.session.id);
+                    if (result.session.is_paused) {
+                      setIsPaused(true);
+                      setTotalPausedTime(result.session.total_paused_duration || 0);
+                    }
+                    console.log('📊 New meeting session started:', result.session.id);
+                  }
+                } catch (err) {
+                  console.error('Failed to start/resume meeting session:', err);
+                  console.error('Session error details:', {
+                    orgId,
+                    effectiveTeamId,
+                    user,
+                    teamId
+                  });
+                  // Don't show error immediately, timer still works locally
+                } finally {
+                  console.log('🟡 Setting sessionLoading to false, session creation complete');
+                  setSessionLoading(false);
+                }
+              })();
+            } else if (!orgId || !effectiveTeamId) {
+              console.warn('Cannot start session - missing required IDs:', {
+                orgId,
+                effectiveTeamId,
+                user,
+                teamId
+              });
+            } else if (sessionId) {
+              console.log('Session already exists:', sessionId);
+            } else if (sessionLoading) {
+              console.log('Session is already being loaded');
             }
           }
         }, 500);
@@ -869,9 +869,67 @@ const WeeklyAccountabilityMeetingPage = () => {
             });
           }
         }
+        
+        // Initialize database session for ALL users (both leaders and participants)
+        const orgId = user?.organizationId || user?.organization_id;
+        const effectiveTeamId = getEffectiveTeamId(teamId, user);
+        
+        // Start session immediately and await result (only if not already loading)
+        if (orgId && effectiveTeamId && !sessionId && !sessionLoading) {
+          console.log('🟡 Setting sessionLoading to true (immediate path), starting session creation...');
+          setSessionLoading(true);
+          (async () => {
+            try {
+              // First check if there's already an active session to avoid duplicates
+              const activeSession = await meetingSessionsService.getActiveSession(orgId, effectiveTeamId, 'weekly');
+              
+              if (activeSession) {
+                // Use the existing session
+                console.log('📊 Found existing session (immediate), setting sessionId:', activeSession.id);
+                setSessionId(activeSession.id);
+                setIsPaused(activeSession.is_paused);
+                setTotalPausedTime(activeSession.total_paused_duration || 0);
+                console.log('📊 Resuming existing meeting session:', activeSession.id);
+              } else {
+                // Create a new session
+                const result = await meetingSessionsService.startSession(orgId, effectiveTeamId, 'weekly');
+                console.log('📊 Created new session (immediate), setting sessionId:', result.session.id);
+                setSessionId(result.session.id);
+                if (result.session.is_paused) {
+                  setIsPaused(true);
+                  setTotalPausedTime(result.session.total_paused_duration || 0);
+                }
+                console.log('📊 New meeting session started:', result.session.id);
+              }
+            } catch (err) {
+              console.error('Failed to start/resume meeting session (immediate):', err);
+              console.error('Session error details:', {
+                orgId,
+                effectiveTeamId,
+                user,
+                teamId
+              });
+              // Don't show error immediately, timer still works locally
+            } finally {
+              console.log('🟡 Setting sessionLoading to false (immediate), session creation complete');
+              setSessionLoading(false);
+            }
+          })();
+        } else if (!orgId || !effectiveTeamId) {
+          console.warn('Cannot start session (immediate) - missing required IDs:', {
+            orgId,
+            effectiveTeamId,
+            user,
+            teamId
+          });
+        } else if (sessionId) {
+          console.log('Session already exists (immediate):', sessionId);
+        } else if (sessionLoading) {
+          console.log('Session is already being loaded (immediate)');
+        }
       }
     }
-  }, [teamId, isConnected, joinMeeting, meetingCode, activeMeetings, user, meetingStartTime, syncTimer]);
+  }, [teamId, isConnected, joinMeeting, meetingCode, activeMeetings, user, meetingStartTime, syncTimer, sessionId, sessionLoading]);
 
   useEffect(() => {
     fetchOrganizationTheme();
