@@ -146,17 +146,23 @@ const Layout = ({ children }) => {
   // Check for temporary sidebar hide flag
   useEffect(() => {
     const checkHideSidebar = () => {
-      setHideSidebar(sessionStorage.getItem('hideSidebarTemp') === 'true');
+      const shouldHide = sessionStorage.getItem('hideSidebarTemp') === 'true';
+      console.log('Layout: Checking hideSidebar:', shouldHide);
+      setHideSidebar(shouldHide);
     };
     
     // Check on mount and path changes
     checkHideSidebar();
     
-    // Listen for storage events (fired by other components)
-    window.addEventListener('storage', checkHideSidebar);
+    // Listen for custom toggle event (storage event doesn't fire in same window)
+    const handleToggle = () => {
+      checkHideSidebar();
+    };
+    
+    window.addEventListener('toggleSidebar', handleToggle);
     
     return () => {
-      window.removeEventListener('storage', checkHideSidebar);
+      window.removeEventListener('toggleSidebar', handleToggle);
     };
   }, [location.pathname]);
 

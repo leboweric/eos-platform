@@ -791,7 +791,7 @@ const WeeklyAccountabilityMeetingPage = () => {
               // Enter full-screen mode
               sessionStorage.setItem('hideSidebarTemp', 'true');
               setIsFullScreen(true);
-              window.dispatchEvent(new Event('storage'));
+              window.dispatchEvent(new Event('toggleSidebar'));
               
               // Sync timer with other participants
               if (syncTimer) {
@@ -883,7 +883,8 @@ const WeeklyAccountabilityMeetingPage = () => {
           
           // Enter full-screen mode
           sessionStorage.setItem('hideSidebarTemp', 'true');
-          window.dispatchEvent(new Event('storage'));
+          setIsFullScreen(true);
+          window.dispatchEvent(new Event('toggleSidebar'));
           
           // Sync timer with other participants
           if (syncTimer) {
@@ -1073,7 +1074,7 @@ const WeeklyAccountabilityMeetingPage = () => {
             // Enter full-screen mode when resuming
             sessionStorage.setItem('hideSidebarTemp', 'true');
             setIsFullScreen(true);
-            window.dispatchEvent(new Event('storage'));
+            window.dispatchEvent(new Event('toggleSidebar'));
             setIsPaused(activeSession.is_paused);
             setTotalPausedTime(activeSession.total_paused_duration || 0);
             
@@ -1190,7 +1191,8 @@ const WeeklyAccountabilityMeetingPage = () => {
                 
                 // Enter full-screen mode
                 sessionStorage.setItem('hideSidebarTemp', 'true');
-                window.dispatchEvent(new Event('storage'));
+                setIsFullScreen(true);
+                window.dispatchEvent(new Event('toggleSidebar'));
               }
             } else {
               // Don't create a new session yet - wait for meeting to actually start
@@ -1257,7 +1259,7 @@ const WeeklyAccountabilityMeetingPage = () => {
       // Exit full-screen mode when leaving the meeting page
       sessionStorage.removeItem('hideSidebarTemp');
       setIsFullScreen(false);
-      window.dispatchEvent(new Event('storage'));
+      window.dispatchEvent(new Event('toggleSidebar'));
     };
   }, []);
 
@@ -1286,7 +1288,7 @@ const WeeklyAccountabilityMeetingPage = () => {
       sessionStorage.setItem('hideSidebarTemp', 'true');
       setIsFullScreen(true);
       // Trigger a re-render of Layout component
-      window.dispatchEvent(new Event('storage'));
+      window.dispatchEvent(new Event('toggleSidebar'));
       
       // Create session if needed when starting as leader
       if (!sessionId && !sessionLoading) {
@@ -2331,7 +2333,7 @@ const WeeklyAccountabilityMeetingPage = () => {
       // Exit full-screen mode when meeting ends
       sessionStorage.removeItem('hideSidebarTemp');
       setIsFullScreen(false);
-      window.dispatchEvent(new Event('storage'));
+      window.dispatchEvent(new Event('toggleSidebar'));
       
       // Broadcast meeting end to all participants
       if (meetingCode) {
@@ -2523,13 +2525,15 @@ const WeeklyAccountabilityMeetingPage = () => {
       // Exit full-screen
       sessionStorage.removeItem('hideSidebarTemp');
       setIsFullScreen(false);
+      console.log('Exiting full-screen mode');
     } else {
       // Enter full-screen
       sessionStorage.setItem('hideSidebarTemp', 'true');
       setIsFullScreen(true);
+      console.log('Entering full-screen mode');
     }
-    // Trigger a re-render of Layout component
-    window.dispatchEvent(new Event('storage'));
+    // Trigger a re-render of Layout component (custom event, not storage)
+    window.dispatchEvent(new Event('toggleSidebar'));
   };
 
   const getTimerColor = () => {
