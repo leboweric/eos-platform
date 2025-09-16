@@ -3617,12 +3617,34 @@ const WeeklyAccountabilityMeetingPage = () => {
                 {/* Cascading Messages from Other Teams */}
                 {cascadedMessages.length > 0 && (
                   <div className="mt-6 pt-6 border-t border-slate-200">
-                    <h4 className="text-sm font-semibold text-slate-900 mb-3 flex items-center gap-2">
-                      <div className="p-1.5 rounded-lg" style={{ background: `linear-gradient(135deg, ${themeColors.primary}15 0%, ${themeColors.secondary}15 100%)` }}>
-                        <MessageSquare className="h-4 w-4" style={{ color: themeColors.primary }} />
-                      </div>
-                      Cascading Messages from Other Teams ({cascadedMessages.length})
-                    </h4>
+                    <div className="flex items-center justify-between mb-3">
+                      <h4 className="text-sm font-semibold text-slate-900 flex items-center gap-2">
+                        <div className="p-1.5 rounded-lg" style={{ background: `linear-gradient(135deg, ${themeColors.primary}15 0%, ${themeColors.secondary}15 100%)` }}>
+                          <MessageSquare className="h-4 w-4" style={{ color: themeColors.primary }} />
+                        </div>
+                        Cascading Messages from Other Teams ({cascadedMessages.length})
+                      </h4>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="bg-white/80 backdrop-blur-sm border-white/20 hover:bg-white/90"
+                        onClick={async () => {
+                          try {
+                            const orgId = user?.organizationId || user?.organization_id;
+                            const effectiveTeamId = getEffectiveTeamId(teamId, user);
+                            await cascadingMessagesService.archiveCascadingMessages(orgId, effectiveTeamId);
+                            await fetchCascadedMessages();
+                            setSuccess(`Successfully archived ${cascadedMessages.length} cascading message${cascadedMessages.length !== 1 ? 's' : ''}`);
+                          } catch (error) {
+                            console.error('Failed to archive cascading messages:', error);
+                            setError('Failed to archive cascading messages');
+                          }
+                        }}
+                      >
+                        <Archive className="mr-2 h-4 w-4" />
+                        Archive Messages ({cascadedMessages.length})
+                      </Button>
+                    </div>
                     <div className="space-y-2">
                       {cascadedMessages.map(message => (
                         <div key={message.id} className="p-4 bg-gradient-to-r from-blue-50 to-indigo-50 rounded-lg border border-blue-200 shadow-sm hover:shadow-md transition-shadow">
