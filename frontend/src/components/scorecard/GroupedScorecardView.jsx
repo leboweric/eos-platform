@@ -518,10 +518,10 @@ const GroupedScorecardView = ({
               <button
                 onClick={() => onScoreUpdate(metric, period.value, value)}
                 className={`w-full px-2 py-1 rounded text-sm font-medium transition-colors relative
-                  ${value ? (isOnTrack ? 'bg-green-50 text-green-700 border border-green-200' : 'bg-red-50 text-red-700 border border-red-200') : (isCurrentPeriod ? 'bg-gray-100 text-gray-700 hover:bg-gray-200' : 'bg-white border border-gray-200 text-gray-600 hover:bg-gray-50')}`}
+                  ${value !== null && value !== undefined ? (isOnTrack ? 'bg-green-50 text-green-700 border border-green-200' : 'bg-red-50 text-red-700 border border-red-200') : (isCurrentPeriod ? 'bg-gray-100 text-gray-700 hover:bg-gray-200' : 'bg-white border border-gray-200 text-gray-600 hover:bg-gray-50')}`}
                 title={hasNotes ? `Score: ${value}\nNotes: ${noteValue}` : ''}
               >
-                <span>{value ? formatValue(value, metric.value_type) : '-'}</span>
+                <span>{value !== null && value !== undefined ? formatValue(value, metric.value_type) : '-'}</span>
                 {hasNotes && (
                   <MessageSquare className="inline-block ml-1 h-3 w-3 opacity-60" />
                 )}
