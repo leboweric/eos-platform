@@ -145,7 +145,19 @@ const Layout = ({ children }) => {
   
   // Check for temporary sidebar hide flag
   useEffect(() => {
-    setHideSidebar(sessionStorage.getItem('hideSidebarTemp') === 'true');
+    const checkHideSidebar = () => {
+      setHideSidebar(sessionStorage.getItem('hideSidebarTemp') === 'true');
+    };
+    
+    // Check on mount and path changes
+    checkHideSidebar();
+    
+    // Listen for storage events (fired by other components)
+    window.addEventListener('storage', checkHideSidebar);
+    
+    return () => {
+      window.removeEventListener('storage', checkHideSidebar);
+    };
   }, [location.pathname]);
 
   const baseNavigation = [
