@@ -387,7 +387,7 @@ const ScorecardPageClean = () => {
         teamId, 
         scoreDialogData.metricId, 
         scoreDialogData.weekDate, 
-        scoreInputValue || null,
+        scoreInputValue === '' ? null : scoreInputValue,
         scoreDialogData.scoreType || 'weekly',
         scoreNotesValue || null
       );
