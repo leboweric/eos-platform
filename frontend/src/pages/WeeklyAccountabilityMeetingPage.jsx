@@ -742,11 +742,21 @@ const WeeklyAccountabilityMeetingPage = () => {
   const hasCheckedMeetingsRef = useRef(false);
   
   useEffect(() => {
+    console.log('🔍 Meeting auto-join check:', {
+      teamId: !!teamId,
+      isConnected,
+      hasJoinMeeting: !!joinMeeting,
+      meetingCode,
+      hasJoined: hasJoinedRef.current,
+      user: !!user
+    });
+    
     if (teamId && isConnected && joinMeeting && !meetingCode && !hasJoinedRef.current) {
       // Include organization ID in meeting code to prevent cross-org collisions
       // CRITICAL: Must match the orgId logic used throughout the rest of the file
       const orgId = user?.organizationId || user?.organization_id;
       const meetingRoom = `${orgId}-${teamId}-weekly-accountability`;
+      console.log('📝 Meeting room:', meetingRoom, 'OrgId:', orgId);
       
       // Wait a bit for active meetings to load if we haven't checked yet
       if (!hasCheckedMeetingsRef.current && (!activeMeetings || Object.keys(activeMeetings).length === 0)) {
@@ -1079,6 +1089,45 @@ const WeeklyAccountabilityMeetingPage = () => {
       sessionStorage.removeItem('meetingStartTime');
     }
   }, [meetingStarted, meetingStartTime]);
+
+  // Initialize database session when meeting starts (fallback for non-collaborative meetings)
+  useEffect(() => {
+    if (meetingStarted && !sessionId && !sessionLoading && user && teamId) {
+      const orgId = user?.organizationId || user?.organization_id;
+      const effectiveTeamId = getEffectiveTeamId(teamId, user);
+      
+      if (orgId && effectiveTeamId) {
+        console.log('🚀 Initializing session for non-collaborative meeting');
+        setSessionLoading(true);
+        (async () => {
+          try {
+            // Check for existing session first
+            const activeSession = await meetingSessionsService.getActiveSession(orgId, effectiveTeamId, 'weekly');
+            
+            if (activeSession) {
+              console.log('📊 Found existing session (fallback):', activeSession.id);
+              setSessionId(activeSession.id);
+              setIsPaused(activeSession.is_paused);
+              setTotalPausedTime(activeSession.total_paused_duration || 0);
+            } else {
+              // Create new session
+              const result = await meetingSessionsService.startSession(orgId, effectiveTeamId, 'weekly');
+              console.log('📊 Created new session (fallback):', result.session.id);
+              setSessionId(result.session.id);
+              if (result.session.is_paused) {
+                setIsPaused(true);
+                setTotalPausedTime(result.session.total_paused_duration || 0);
+              }
+            }
+          } catch (err) {
+            console.error('Failed to initialize session (fallback):', err);
+          } finally {
+            setSessionLoading(false);
+          }
+        })();
+      }
+    }
+  }, [meetingStarted, sessionId, sessionLoading, user, teamId]);
 
   // Clear success messages after 3 seconds
   useEffect(() => {
