@@ -476,6 +476,12 @@ const ScorecardTableClean = ({
                     {periodDates.map((periodDate, index) => {
                       // Scores are now always raw numbers
                       const scoreValue = scores[metric.id]?.[periodDate];
+                      
+                      // Debug logging for zero values
+                      if (scores[metric.id] && periodDate in scores[metric.id] && scores[metric.id][periodDate] === 0) {
+                        console.log('Found zero value for metric:', metric.id, 'date:', periodDate, 'value:', scores[metric.id][periodDate], 'scoreValue:', scoreValue);
+                      }
+                      
                       // Notes are stored separately
                       const noteValue = notes[metric.id]?.[periodDate];
                       const hasNotes = noteValue && noteValue.length > 0;

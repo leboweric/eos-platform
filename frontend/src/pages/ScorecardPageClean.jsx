@@ -142,7 +142,20 @@ const ScorecardPageClean = () => {
       
       const response = await scorecardService.getScorecard(orgId, teamId, departmentId);
       
+      // Debug: Check for zero values in the response
+      console.log('Scorecard response:', response);
+      
       if (response && response.data) {
+        // Check for zero values in scores
+        const scores = response.data.weeklyScores || {};
+        Object.keys(scores).forEach(metricId => {
+          Object.keys(scores[metricId]).forEach(date => {
+            if (scores[metricId][date] === 0) {
+              console.log('Found zero value from backend - metricId:', metricId, 'date:', date, 'value:', scores[metricId][date]);
+            }
+          });
+        });
+        
         setMetrics(response.data.metrics || []);
         setWeeklyScores(response.data.weeklyScores || {});
         setMonthlyScores(response.data.monthlyScores || {});
@@ -150,6 +163,16 @@ const ScorecardPageClean = () => {
         setMonthlyNotes(response.data.monthlyNotes || {}); // Load notes
         setUsers(response.data.teamMembers || []);
       } else if (response) {
+        // Check for zero values in scores
+        const scores = response.weeklyScores || {};
+        Object.keys(scores).forEach(metricId => {
+          Object.keys(scores[metricId]).forEach(date => {
+            if (scores[metricId][date] === 0) {
+              console.log('Found zero value from backend - metricId:', metricId, 'date:', date, 'value:', scores[metricId][date]);
+            }
+          });
+        });
+        
         setMetrics(response.metrics || []);
         setWeeklyScores(response.weeklyScores || {});
         setMonthlyScores(response.monthlyScores || {});
