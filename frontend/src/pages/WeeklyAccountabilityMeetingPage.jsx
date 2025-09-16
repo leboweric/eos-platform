@@ -4271,6 +4271,16 @@ const WeeklyAccountabilityMeetingPage = () => {
             onMove={handleMoveToTeam}
           />
         )}
+        
+        {/* Metric Trend Chart Modal */}
+        <MetricTrendChart
+          isOpen={chartModal.isOpen}
+          onClose={() => setChartModal({ isOpen: false, metric: null, metricId: null })}
+          metric={chartModal.metric}
+          metricId={chartModal.metricId}
+          orgId={user?.organizationId || user?.organization_id}
+          teamId={getEffectiveTeamId(teamId, user)}
+        />
       </div>
     </div>
   );
