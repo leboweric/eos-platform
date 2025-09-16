@@ -732,6 +732,14 @@ const WeeklyAccountabilityMeetingPage = () => {
             
             hasJoinedRef.current = true;
             joinMeeting(meetingRoom, !hasParticipants);
+            
+            // Start the timer if joining as leader
+            if (!hasParticipants && !meetingStartTime) {
+              const now = Date.now();
+              setMeetingStartTime(now);
+              setMeetingStarted(true);
+              console.log('⏱️ Starting timer as leader at:', now);
+            }
           }
         }, 500);
       } else if (activeMeetings && Object.keys(activeMeetings).length > 0) {
@@ -746,9 +754,17 @@ const WeeklyAccountabilityMeetingPage = () => {
         
         hasJoinedRef.current = true;
         joinMeeting(meetingRoom, !hasParticipants);
+        
+        // Start the timer if joining as leader
+        if (!hasParticipants && !meetingStartTime) {
+          const now = Date.now();
+          setMeetingStartTime(now);
+          setMeetingStarted(true);
+          console.log('⏱️ Starting timer as leader at:', now);
+        }
       }
     }
-  }, [teamId, isConnected, joinMeeting, meetingCode, activeMeetings, user]);
+  }, [teamId, isConnected, joinMeeting, meetingCode, activeMeetings, user, meetingStartTime]);
 
   useEffect(() => {
     fetchOrganizationTheme();
@@ -3790,11 +3806,14 @@ const WeeklyAccountabilityMeetingPage = () => {
                         const orgId = user?.organizationId || user?.organization_id;
                         const effectiveTeamId = getEffectiveTeamId(teamId, user);
                         
+                        // Combine all issues for the meeting summary
+                        const allIssues = [...(shortTermIssues || []), ...(longTermIssues || [])];
+                        
                         await meetingsService.concludeMeeting(orgId, effectiveTeamId, {
                           meetingType: 'weekly',
                           rating: meetingRating,
                           todos: todos.filter(t => t.status !== 'complete' && t.status !== 'completed'),
-                          issues: issues.filter(i => !i.is_solved),
+                          issues: allIssues.filter(i => !i.is_solved),
                           headlines: headlines,
                           cascadeMessage: cascadeMessage.trim() ? cascadeMessage : null
                         });
