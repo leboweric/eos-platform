@@ -10,6 +10,7 @@ import { getOrgTheme, saveOrgTheme, hexToRgba } from '../utils/themeUtils';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
+import { Checkbox } from '@/components/ui/checkbox';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -52,7 +53,6 @@ import { useNavigate } from 'react-router-dom';
 import ScorecardTableClean from '../components/scorecard/ScorecardTableClean';
 import { Progress } from '@/components/ui/progress';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
-import { Checkbox } from '@/components/ui/checkbox';
 import { Input } from '@/components/ui/input';
 import PriorityDialog from '../components/priorities/PriorityDialog';
 import IssuesListClean from '../components/issues/IssuesListClean';
@@ -559,10 +559,22 @@ const WeeklyAccountabilityMeetingPage = () => {
       const cleanTeamId = (teamId === 'null' || teamId === 'undefined') ? null : teamId;
       const effectiveTeamId = getEffectiveTeamId(cleanTeamId, user);
       
-      const response = await headlinesService.getHeadlines(effectiveTeamId);
+      const response = await headlinesService.getHeadlines(effectiveTeamId, false); // false = don't include archived
+      
+      // Access the data array from the response
+      const headlinesData = response.data || response || [];
+      
+      // Organize headlines by type
+      const customerHeadlines = Array.isArray(headlinesData) 
+        ? headlinesData.filter(h => h.type === 'customer')
+        : headlinesData.customerHeadlines || [];
+      const employeeHeadlines = Array.isArray(headlinesData)
+        ? headlinesData.filter(h => h.type === 'employee')
+        : headlinesData.employeeHeadlines || [];
+      
       setHeadlines({
-        customer: response.data.customerHeadlines || [],
-        employee: response.data.employeeHeadlines || []
+        customer: customerHeadlines,
+        employee: employeeHeadlines
       });
     } catch (error) {
       console.error('Failed to fetch headlines:', error);
@@ -3027,35 +3039,32 @@ const WeeklyAccountabilityMeetingPage = () => {
                   );
                 }
                 
+                const completedCount = todos.filter(todo => todo.status === 'complete' || todo.status === 'completed').length;
+                
                 return (
                   <div className="space-y-6">
-                    <div className="flex justify-between">
-                      <Button 
-                        variant="outline" 
-                        className="bg-white/80 backdrop-blur-sm border-white/20 hover:bg-white/90"
-                        onClick={async () => {
-                          try {
-                            await todosService.archiveDoneTodos();
-                            await fetchTodosData();
-                            setSuccess('Completed to-dos archived successfully');
-                          } catch (error) {
-                            console.error('Failed to archive todos:', error);
-                            setError('Failed to archive completed to-dos');
-                          }
-                        }}
-                      >
-                        <Archive className="mr-2 h-4 w-4" />
-                        Archive Done
-                      </Button>
-                      <Button 
-                        variant="outline" 
-                        className="bg-white/80 backdrop-blur-sm border-white/20 hover:bg-white/90"
-                        onClick={() => setShowTodoDialog(true)}
-                      >
-                        <Plus className="mr-2 h-4 w-4" />
-                        Add To-Do
-                      </Button>
-                    </div>
+                    {completedCount > 0 && (
+                      <div className="flex justify-end">
+                        <Button 
+                          variant="outline" 
+                          className="bg-white/80 backdrop-blur-sm border-white/20 hover:bg-white/90"
+                          onClick={async () => {
+                            try {
+                              const count = completedCount;
+                              await todosService.archiveDoneTodos();
+                              await fetchTodosData();
+                              setSuccess(`Successfully archived ${count} completed to-do${count !== 1 ? 's' : ''}`);
+                            } catch (error) {
+                              console.error('Failed to archive todos:', error);
+                              setError('Failed to archive completed to-dos');
+                            }
+                          }}
+                        >
+                          <Archive className="mr-2 h-4 w-4" />
+                          Archive Done ({completedCount})
+                        </Button>
+                      </div>
+                    )}
                     
                     {assignees.map(assignee => (
                       <Card key={assignee.id} className="bg-white border-slate-200 shadow-md hover:shadow-lg transition-shadow">
@@ -3293,6 +3302,11 @@ const WeeklyAccountabilityMeetingPage = () => {
                   );
                 }
 
+                const closedCount = issues.filter(issue => 
+                  issue.status === 'solved' || issue.status === 'completed' || 
+                  issue.status === 'closed' || issue.status === 'resolved'
+                ).length;
+                
                 return (
                   <div className="space-y-4">
                     <div className="flex justify-between items-center">
@@ -3300,23 +3314,26 @@ const WeeklyAccountabilityMeetingPage = () => {
                         <GripVertical className="h-4 w-4 inline mr-2 text-slate-400" />
                         Drag to reorder by priority
                       </p>
-                      <Button 
-                        variant="outline" 
-                        className="bg-white/80 backdrop-blur-sm border-white/20 hover:bg-white/90"
-                        onClick={async () => {
-                          try {
-                            await issuesService.archiveClosedIssues(issueTimeline);
-                            await fetchIssuesData();
-                            setSuccess('Closed issues archived successfully');
-                          } catch (error) {
-                            console.error('Failed to archive issues:', error);
-                            setError('Failed to archive closed issues');
-                          }
-                        }}
-                      >
-                        <Archive className="mr-2 h-4 w-4" />
-                        Archive Closed
-                      </Button>
+                      {closedCount > 0 && (
+                        <Button 
+                          variant="outline" 
+                          className="bg-white/80 backdrop-blur-sm border-white/20 hover:bg-white/90"
+                          onClick={async () => {
+                            try {
+                              const count = closedCount;
+                              await issuesService.archiveClosedIssues(issueTimeline);
+                              await fetchIssuesData();
+                              setSuccess(`Successfully archived ${count} closed issue${count !== 1 ? 's' : ''}`);
+                            } catch (error) {
+                              console.error('Failed to archive issues:', error);
+                              setError('Failed to archive closed issues');
+                            }
+                          }}
+                        >
+                          <Archive className="mr-2 h-4 w-4" />
+                          Archive Closed ({closedCount})
+                        </Button>
+                      )}
                     </div>
                     
                     <Card className="bg-white border-slate-200 shadow-md hover:shadow-lg transition-shadow">
@@ -3580,36 +3597,98 @@ const WeeklyAccountabilityMeetingPage = () => {
                   </div>
                 </div>
 
-                {/* Cascading Message */}
+                {/* Cascading Messages */}
                 <div className="border border-white/30 p-4 rounded-xl bg-white/60 backdrop-blur-sm shadow-sm">
                   <h4 className="font-medium mb-2 text-slate-900 flex items-center gap-2">
                     <Share2 className="h-4 w-4" style={{ color: themeColors.primary }} />
-                    Send Cascading Message
+                    Cascading Messages
                   </h4>
                   <p className="text-sm text-slate-600 mb-3">
-                    Share important updates with specific teams or all departments
+                    What key information needs to be communicated to other teams?
                   </p>
-                  <Button
-                    variant="outline"
-                    className="w-full bg-white/80 backdrop-blur-sm border-white/20 hover:bg-white/90"
-                    onClick={async () => {
-                      try {
-                        const response = await teamsService.getTeams();
-                        const teams = response.data || response;
-                        setAvailableTeams(Array.isArray(teams) ? teams.filter(t => !t.is_leadership_team) : []);
-                        setCascadeMessage('');
-                        setSelectedTeams([]);
-                        setCascadeToAll(false);
-                        setShowCascadeDialog(true);
-                      } catch (error) {
-                        console.error('Failed to fetch teams:', error);
-                        setError('Failed to load teams');
+                  <textarea
+                    className="w-full p-3 border border-slate-200 rounded-lg resize-none focus:ring-2 focus:border-transparent mb-4"
+                    style={{ 
+                      focusRingColor: themeColors.primary,
+                      focusBorderColor: themeColors.primary
+                    }}
+                    rows={3}
+                    placeholder="Enter any messages to cascade to other teams..."
+                    value={cascadeMessage}
+                    onChange={(e) => {
+                      setCascadeMessage(e.target.value);
+                      // Load teams if not already loaded
+                      if (e.target.value && availableTeams.length === 0) {
+                        teamsService.getTeams().then(response => {
+                          const teams = response.data || response;
+                          setAvailableTeams(Array.isArray(teams) ? teams.filter(t => !t.is_leadership_team) : []);
+                        }).catch(error => {
+                          console.error('Failed to load teams:', error);
+                        });
                       }
                     }}
-                  >
-                    <Share2 className="mr-2 h-4 w-4" />
-                    Compose Cascading Message
-                  </Button>
+                  />
+                  
+                  {cascadeMessage.trim() && (
+                    <div className="space-y-3 animate-in fade-in slide-in-from-top-2 duration-200">
+                      <div className="flex items-center gap-2">
+                        <Checkbox
+                          id="cascade-all"
+                          checked={cascadeToAll}
+                          onCheckedChange={(checked) => {
+                            setCascadeToAll(checked);
+                            if (checked) setSelectedTeams([]);
+                          }}
+                        />
+                        <label htmlFor="cascade-all" className="text-sm font-medium text-slate-700 cursor-pointer">
+                          Send to all teams
+                        </label>
+                      </div>
+                      
+                      {!cascadeToAll && availableTeams.length > 0 && (
+                        <div className="animate-in fade-in duration-200">
+                          <p className="text-sm text-slate-600 mb-2">Or select specific teams:</p>
+                          <div className="space-y-2 max-h-32 overflow-y-auto border border-slate-200 rounded-lg p-3 bg-white/50">
+                            {availableTeams.map(team => (
+                              <div key={team.id} className="flex items-center gap-2">
+                                <Checkbox
+                                  id={`team-${team.id}`}
+                                  checked={selectedTeams.includes(team.id)}
+                                  onCheckedChange={(checked) => {
+                                    if (checked) {
+                                      setSelectedTeams([...selectedTeams, team.id]);
+                                    } else {
+                                      setSelectedTeams(selectedTeams.filter(id => id !== team.id));
+                                    }
+                                  }}
+                                />
+                                <label htmlFor={`team-${team.id}`} className="text-sm text-slate-700 cursor-pointer">
+                                  {team.name}
+                                  {team.is_leadership_team && (
+                                    <span className="ml-2 text-xs text-blue-600">(Leadership)</span>
+                                  )}
+                                </label>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+                      
+                      <Button
+                        onClick={handleSendCascade}
+                        disabled={!cascadeMessage.trim() || (!cascadeToAll && selectedTeams.length === 0)}
+                        className="w-full"
+                        style={{
+                          background: cascadeMessage.trim() && (cascadeToAll || selectedTeams.length > 0) 
+                            ? `linear-gradient(135deg, ${themeColors.primary} 0%, ${themeColors.secondary} 100%)`
+                            : '#e5e7eb'
+                        }}
+                      >
+                        <Send className="mr-2 h-4 w-4" />
+                        Send Message
+                      </Button>
+                    </div>
+                  )}
                 </div>
 
                 {/* Conclude and Send Email Button */}
@@ -3645,6 +3724,29 @@ const WeeklyAccountabilityMeetingPage = () => {
     <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50/30 to-indigo-50/30">
       {/* Background Pattern */}
       <div className="fixed inset-0 bg-grid-slate-100 [mask-image:linear-gradient(0deg,white,rgba(255,255,255,0.6))] -z-10"></div>
+      
+      {/* Success and Error Alerts */}
+      {success && (
+        <div className="fixed top-4 right-4 z-50 animate-in fade-in slide-in-from-top-2">
+          <Alert className="bg-green-50 border-green-200 max-w-md">
+            <CheckCircle className="h-4 w-4 text-green-600" />
+            <AlertDescription className="text-green-800">
+              {success}
+            </AlertDescription>
+          </Alert>
+        </div>
+      )}
+      
+      {error && (
+        <div className="fixed top-4 right-4 z-50 animate-in fade-in slide-in-from-top-2">
+          <Alert className="bg-red-50 border-red-200 max-w-md">
+            <AlertCircle className="h-4 w-4 text-red-600" />
+            <AlertDescription className="text-red-800">
+              {error}
+            </AlertDescription>
+          </Alert>
+        </div>
+      )}
       
       <div className="relative max-w-7xl mx-auto p-8 pb-32">
         {/* Meeting Header */}
@@ -3867,9 +3969,10 @@ const WeeklyAccountabilityMeetingPage = () => {
           headline={editingHeadline}
           onSave={async (headlineData) => {
             try {
+              const effectiveTeamId = getEffectiveTeamId(teamId, user);
               await headlinesService.createHeadline({
                 ...headlineData,
-                teamId: teamId === 'null' || teamId === 'undefined' ? null : teamId
+                teamId: effectiveTeamId
               });
               await fetchHeadlines();
               setShowHeadlineDialog(false);
