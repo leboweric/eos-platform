@@ -1334,6 +1334,27 @@ const WeeklyAccountabilityMeetingPage = () => {
     }
   };
 
+  // Create Issue from Priority/Rock
+  const handleCreateIssueFromPriority = async (priority) => {
+    try {
+      const effectiveTeamId = getEffectiveTeamId(teamId, user);
+      
+      await issuesService.createIssue({
+        title: priority.title,
+        description: `Related to ${labels.priority_singular || 'Rock'}: ${priority.title}`,
+        timeline: 'short_term',
+        teamId: effectiveTeamId,
+        department_id: effectiveTeamId
+      });
+      
+      setSuccess(`Issue created successfully from ${labels.priority_singular || 'Rock'}`);
+      await fetchIssuesData();
+    } catch (error) {
+      console.error('Failed to create issue from priority:', error);
+      setError('Failed to create issue from priority');
+    }
+  };
+
   // Create Issue from To-Do
   const handleCreateIssueFromTodo = async (todo) => {
     try {
@@ -2451,21 +2472,8 @@ const WeeklyAccountabilityMeetingPage = () => {
                       </div>
                     )}
                   </div>
-                  <div className="flex items-center gap-3">
-                    <Button
-                      size="sm"
-                      onClick={() => {
-                        setSelectedPriority(null);
-                        setShowPriorityDialog(true);
-                      }}
-                      className="bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white shadow-md"
-                    >
-                      <Plus className="h-4 w-4 mr-1" />
-                      Add {labels.priority_singular || 'Rock'}
-                    </Button>
-                    <div className="text-sm text-slate-600 bg-white/80 backdrop-blur-sm px-4 py-2 rounded-full border border-white/30 shadow-sm font-medium">
-                      5 minutes
-                    </div>
+                  <div className="text-sm text-slate-600 bg-white/80 backdrop-blur-sm px-4 py-2 rounded-full border border-white/30 shadow-sm font-medium">
+                    5 minutes
                   </div>
                 </div>
               </CardHeader>
@@ -2544,10 +2552,13 @@ const WeeklyAccountabilityMeetingPage = () => {
                         <Button 
                           variant="outline" 
                           className="bg-white/80 backdrop-blur-sm border-white/20 hover:bg-white/90"
-                          onClick={() => setShowAddPriority(true)}
+                          onClick={() => {
+                            setSelectedPriority(null);
+                            setShowPriorityDialog(true);
+                          }}
                         >
                           <Plus className="mr-2 h-4 w-4" />
-                          Add {labels.priority || 'Priority'}
+                          Add {labels.priority_singular || 'Rock'}
                         </Button>
                       </div>
                       
@@ -2592,7 +2603,9 @@ const WeeklyAccountabilityMeetingPage = () => {
                                 return (
                                   <div key={priority.id} className="border-b border-slate-100 last:border-0">
                                     {/* Main Rock Row */}
-                                    <div className="flex items-center px-3 py-3 hover:bg-slate-50 rounded-lg transition-colors group">
+                                    <ContextMenu>
+                                      <ContextMenuTrigger asChild>
+                                        <div className="flex items-center px-3 py-3 hover:bg-slate-50 rounded-lg transition-colors group cursor-context-menu">
                                       {/* Expand Arrow - Only show if there are milestones */}
                                       <div className="w-8 flex items-center justify-center">
                                         {totalMilestones > 0 ? (
@@ -2768,7 +2781,35 @@ const WeeklyAccountabilityMeetingPage = () => {
                                           <Edit className="h-4 w-4 text-slate-400" />
                                         </Button>
                                       </div>
-                                    </div>
+                                        </div>
+                                      </ContextMenuTrigger>
+                                      <ContextMenuContent className="w-48">
+                                        <ContextMenuItem onClick={() => handleCreateIssueFromPriority(priority)}>
+                                          <AlertTriangle className="mr-2 h-4 w-4" />
+                                          Create Linked Issue
+                                        </ContextMenuItem>
+                                        <ContextMenuItem onClick={() => {
+                                          setEditingHeadline({ 
+                                            headline: priority.title,
+                                            description: priority.title
+                                          });
+                                          setShowHeadlineDialog(true);
+                                        }}>
+                                          <Newspaper className="mr-2 h-4 w-4" />
+                                          Create Linked Headline
+                                        </ContextMenuItem>
+                                        <ContextMenuItem onClick={() => {
+                                          setEditingTodo({ 
+                                            title: priority.title,
+                                            due_date: format(addDays(new Date(), 7), 'yyyy-MM-dd')
+                                          });
+                                          setShowTodoDialog(true);
+                                        }}>
+                                          <ListTodo className="mr-2 h-4 w-4" />
+                                          Create Linked To-Do
+                                        </ContextMenuItem>
+                                      </ContextMenuContent>
+                                    </ContextMenu>
                                     
                                     {/* Expanded Milestones Section */}
                                     {isExpanded && (
@@ -2914,9 +2955,32 @@ const WeeklyAccountabilityMeetingPage = () => {
             </CardHeader>
             <CardContent className="pt-6 px-6 pb-6">
               <div className="space-y-4">
-                <p className="text-slate-600 text-lg leading-relaxed">
-                  Share critical information about customers and employees that the team needs to know.
-                </p>
+                <div className="flex justify-between items-start">
+                  <p className="text-slate-600 text-lg leading-relaxed">
+                    Share critical information about customers and employees that the team needs to know.
+                  </p>
+                  {(headlines.customer.length > 0 || headlines.employee.length > 0) && (
+                    <Button
+                      variant="outline"
+                      className="bg-white/80 backdrop-blur-sm border-white/20 hover:bg-white/90"
+                      onClick={async () => {
+                        try {
+                          const totalCount = headlines.customer.length + headlines.employee.length;
+                          const effectiveTeamId = getEffectiveTeamId(teamId, user);
+                          await headlinesService.archiveHeadlines(effectiveTeamId);
+                          await fetchHeadlines();
+                          setSuccess(`Successfully archived ${totalCount} headline${totalCount !== 1 ? 's' : ''}`);
+                        } catch (error) {
+                          console.error('Failed to archive headlines:', error);
+                          setError('Failed to archive headlines');
+                        }
+                      }}
+                    >
+                      <Archive className="mr-2 h-4 w-4" />
+                      Archive Headlines ({headlines.customer.length + headlines.employee.length})
+                    </Button>
+                  )}
+                </div>
                 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   {/* Customer Headlines */}
