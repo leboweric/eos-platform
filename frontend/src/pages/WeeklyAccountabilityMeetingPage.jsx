@@ -433,6 +433,7 @@ const WeeklyAccountabilityMeetingPage = () => {
   
   // Pause/Resume state
   const [sessionId, setSessionId] = useState(null);
+  const [sessionLoading, setSessionLoading] = useState(false);
   const [isPaused, setIsPaused] = useState(false);
   const [totalPausedTime, setTotalPausedTime] = useState(0);
   
@@ -777,7 +778,8 @@ const WeeklyAccountabilityMeetingPage = () => {
               const effectiveTeamId = getEffectiveTeamId(teamId, user);
               
               // Start session immediately and await result
-              if (orgId && effectiveTeamId) {
+              if (orgId && effectiveTeamId && !sessionId && !sessionLoading) {
+                setSessionLoading(true);
                 (async () => {
                   try {
                     const result = await meetingSessionsService.startSession(orgId, effectiveTeamId, 'weekly');
@@ -796,9 +798,11 @@ const WeeklyAccountabilityMeetingPage = () => {
                       teamId
                     });
                     // Don't show error immediately, timer still works locally
+                  } finally {
+                    setSessionLoading(false);
                   }
                 })();
-              } else {
+              } else if (!orgId || !effectiveTeamId) {
                 console.warn('Cannot start session - missing required IDs:', {
                   orgId,
                   effectiveTeamId,
@@ -1073,7 +1077,8 @@ const WeeklyAccountabilityMeetingPage = () => {
       const orgId = user?.organizationId || user?.organization_id;
       const effectiveTeamId = getEffectiveTeamId(teamId, user);
       
-      if (orgId && effectiveTeamId) {
+      if (orgId && effectiveTeamId && !sessionId && !sessionLoading) {
+        setSessionLoading(true);
         (async () => {
           try {
             const result = await meetingSessionsService.startSession(orgId, effectiveTeamId, 'weekly');
@@ -1086,9 +1091,11 @@ const WeeklyAccountabilityMeetingPage = () => {
           } catch (err) {
             console.error('Failed to start meeting session (auto-start):', err);
             // Don't show error to user here as the timer still works without persistence
+          } finally {
+            setSessionLoading(false);
           }
         })();
-      } else {
+      } else if (!orgId || !effectiveTeamId) {
         console.warn('Cannot start session - missing orgId or teamId:', { orgId, effectiveTeamId });
       }
       
@@ -1106,7 +1113,7 @@ const WeeklyAccountabilityMeetingPage = () => {
     
     // Fetch today's todos for the conclude section
     fetchTodaysTodos();
-  }, [isLeader, syncTimer, user, teamId]);
+  }, [isLeader, syncTimer, user, teamId, sessionId, sessionLoading]);
 
   // Fetch data based on active section
   useEffect(() => {
@@ -4171,9 +4178,20 @@ const WeeklyAccountabilityMeetingPage = () => {
                         variant="ghost"
                         onClick={handlePauseResume}
                         className="h-8 w-8 p-0"
-                        title={isPaused ? 'Resume meeting' : 'Pause meeting'}
+                        disabled={sessionLoading || !sessionId}
+                        title={
+                          sessionLoading 
+                            ? 'Starting session...' 
+                            : !sessionId 
+                            ? 'Session not ready'
+                            : isPaused 
+                            ? 'Resume meeting' 
+                            : 'Pause meeting'
+                        }
                       >
-                        {isPaused ? (
+                        {sessionLoading ? (
+                          <Loader2 className="h-4 w-4 animate-spin" />
+                        ) : isPaused ? (
                           <Play className="h-4 w-4" />
                         ) : (
                           <Pause className="h-4 w-4" />
