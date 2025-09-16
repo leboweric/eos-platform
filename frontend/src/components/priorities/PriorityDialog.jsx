@@ -120,7 +120,7 @@ const PriorityDialog = ({
         progress: priority.progress || 0,
         dueDate: priority.dueDate ? priority.dueDate.split('T')[0] : '',
         ownerId: priority.owner?.id || priority.owner_id || '',
-        isCompanyPriority: priority.isCompanyPriority || priority.is_company_priority || false
+        isCompanyPriority: priority.isCompanyPriority || priority.is_company_priority || priority.priority_type === 'company' || false
       });
     } else {
       setFormData({
@@ -198,7 +198,9 @@ const PriorityDialog = ({
         progress: currentProgress, // Use calculated progress
         status: formData.status, // Use user-selected status (NOT calculated)
         owner_id: formData.ownerId,
-        due_date: formData.dueDate
+        due_date: formData.dueDate,
+        is_company_priority: formData.isCompanyPriority || false,
+        priority_type: formData.isCompanyPriority ? 'company' : 'individual'
       };
 
       if (onSave) {
