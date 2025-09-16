@@ -2336,37 +2336,71 @@ const WeeklyAccountabilityMeetingPage = () => {
 
   // Pause/Resume handlers
   const handlePauseResume = async () => {
-    console.log('🔵 Pause button clicked!', {
+    console.log('🔴🔴🔴 PAUSE BUTTON CLICKED - DEEP DEBUG START 🔴🔴🔴');
+    console.log('1️⃣ Initial State:', {
       sessionId,
       sessionLoading,
       isPaused,
-      meetingStarted
+      meetingStarted,
+      loading,
+      elapsedTime,
+      meetingStartTime
+    });
+    
+    console.log('2️⃣ User & Team Info:', {
+      user: user ? {
+        id: user.id,
+        email: user.email,
+        organizationId: user.organizationId || user.organization_id
+      } : 'NO USER',
+      teamId,
+      effectiveTeamId: teamId ? getEffectiveTeamId(teamId, user) : 'NO TEAM'
     });
     
     // Check if sessionId exists
     if (!sessionId) {
-      console.error('No session ID available for pause/resume');
+      console.error('❌ NO SESSION ID - Cannot pause/resume');
+      console.log('Session state:', { 
+        sessionId, 
+        sessionLoading,
+        meetingStarted,
+        'sessionStorage.meetingActive': sessionStorage.getItem('meetingActive'),
+        'sessionStorage.meetingStartTime': sessionStorage.getItem('meetingStartTime')
+      });
       setError('Meeting session not found. Please refresh the page.');
+      return;
+    }
+    
+    if (sessionLoading) {
+      console.warn('⚠️ Session is still loading, cannot pause/resume yet');
       return;
     }
     
     const orgId = user?.organizationId || user?.organization_id;
     const effectiveTeamId = getEffectiveTeamId(teamId, user);
     
-    console.log('Pause/Resume Debug:', {
+    console.log('3️⃣ About to call API:', {
+      action: isPaused ? 'RESUME' : 'PAUSE',
       sessionId,
       orgId,
       effectiveTeamId,
       isPaused,
-      user
+      API_URL: import.meta.env.VITE_API_URL
     });
+    
+    console.log('4️⃣ Setting loading to true...');
+    setLoading(true);
     
     try {
       if (isPaused) {
+        console.log('5️⃣ Calling RESUME API...');
         // Resume the session
         const result = await meetingSessionsService.resumeSession(orgId, effectiveTeamId, sessionId);
+        console.log('✅ Resume API Response:', result);
+        
         setIsPaused(false);
         setTotalPausedTime(result.session.total_paused_duration || 0);
+        console.log('6️⃣ State updated after resume:', { isPaused: false, totalPausedTime: result.session.total_paused_duration });
         
         // Broadcast resume to all participants
         if (broadcastIssueListUpdate) {
@@ -2378,10 +2412,16 @@ const WeeklyAccountabilityMeetingPage = () => {
         }
         
         setSuccess('Meeting resumed');
+        console.log('7️⃣ Resume complete, setting loading to false');
+        setLoading(false);
       } else {
+        console.log('5️⃣ Calling PAUSE API...');
         // Pause the session
         const result = await meetingSessionsService.pauseSession(orgId, effectiveTeamId, sessionId);
+        console.log('✅ Pause API Response:', result);
+        
         setIsPaused(true);
+        console.log('6️⃣ State updated after pause:', { isPaused: true });
         
         // Broadcast pause to all participants
         if (broadcastIssueListUpdate) {
@@ -2393,17 +2433,27 @@ const WeeklyAccountabilityMeetingPage = () => {
         }
         
         setSuccess('Meeting paused');
+        console.log('7️⃣ Pause complete, setting loading to false');
+        setLoading(false);
       }
     } catch (error) {
-      console.error('Error toggling pause state:', error);
+      console.error('❌❌❌ API CALL FAILED ❌❌❌');
+      console.error('Full error object:', error);
       console.error('Error details:', {
         message: error.message,
+        stack: error.stack,
         sessionId,
         orgId,
-        effectiveTeamId
+        effectiveTeamId,
+        isPaused,
+        API_URL: import.meta.env.VITE_API_URL
       });
       setError('Failed to ' + (isPaused ? 'resume' : 'pause') + ' meeting');
+      console.log('8️⃣ Error occurred, setting loading to false');
+      setLoading(false);
     }
+    
+    console.log('🔴🔴🔴 PAUSE BUTTON HANDLER END 🔴🔴🔴');
   };
 
   const formatTimer = (seconds) => {
@@ -4361,19 +4411,24 @@ const WeeklyAccountabilityMeetingPage = () => {
                         size="sm"
                         variant="ghost"
                         onClick={() => {
-                          console.log('🟢 Button onClick triggered!', {
+                          console.log('🟢🟢🟢 BUTTON RENDER STATE 🟢🟢🟢', {
                             isLeader,
                             sessionId,
                             sessionLoading,
-                            isPaused
+                            isPaused,
+                            loading,
+                            disabled: sessionLoading || !sessionId || loading,
+                            buttonIcon: sessionLoading ? 'SPINNER' : loading ? 'SPINNER' : isPaused ? 'PLAY' : 'PAUSE'
                           });
                           handlePauseResume();
                         }}
                         className="h-8 w-8 p-0"
-                        disabled={sessionLoading || !sessionId}
+                        disabled={sessionLoading || !sessionId || loading}
                         title={
                           sessionLoading 
                             ? 'Starting session...' 
+                            : loading
+                            ? 'Processing...'
                             : !sessionId 
                             ? 'Session not ready'
                             : isPaused 
@@ -4381,7 +4436,7 @@ const WeeklyAccountabilityMeetingPage = () => {
                             : 'Pause meeting'
                         }
                       >
-                        {sessionLoading ? (
+                        {sessionLoading || loading ? (
                           <Loader2 className="h-4 w-4 animate-spin" />
                         ) : isPaused ? (
                           <Play className="h-4 w-4" />

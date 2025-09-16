@@ -92,6 +92,11 @@ class MeetingSessionsService {
 
   // Pause the current session
   async pauseSession(orgId, teamId, sessionId, reason = null) {
+    console.log('🟦🟦🟦 PAUSE API CALL START 🟦🟦🟦');
+    console.log('Request params:', { orgId, teamId, sessionId, reason });
+    console.log('URL:', `${API_BASE_URL}/organizations/${orgId}/teams/${teamId}/meeting-sessions/${sessionId}/pause`);
+    console.log('Headers:', this.getAuthHeaders());
+    
     try {
       const response = await fetch(
         `${API_BASE_URL}/organizations/${orgId}/teams/${teamId}/meeting-sessions/${sessionId}/pause`,
@@ -102,21 +107,39 @@ class MeetingSessionsService {
         }
       );
 
+      console.log('Response status:', response.status, response.statusText);
+      
       if (!response.ok) {
-        throw new Error(`Failed to pause session: ${response.statusText}`);
+        const errorText = await response.text();
+        console.error('❌ Pause API failed:', {
+          status: response.status,
+          statusText: response.statusText,
+          body: errorText
+        });
+        throw new Error(`Failed to pause session: ${response.statusText} - ${errorText}`);
       }
 
       const data = await response.json();
+      console.log('✅ Pause API success:', data);
       this.sessionCache = data.session;
       return data;
     } catch (error) {
-      console.error('Error pausing session:', error);
+      console.error('❌❌ Error pausing session:', error);
+      console.error('Error type:', error.constructor.name);
+      console.error('Full error:', { message: error.message, stack: error.stack });
       throw error;
+    } finally {
+      console.log('🟦🟦🟦 PAUSE API CALL END 🟦🟦🟦');
     }
   }
 
   // Resume a paused session
   async resumeSession(orgId, teamId, sessionId) {
+    console.log('🟩🟩🟩 RESUME API CALL START 🟩🟩🟩');
+    console.log('Request params:', { orgId, teamId, sessionId });
+    console.log('URL:', `${API_BASE_URL}/organizations/${orgId}/teams/${teamId}/meeting-sessions/${sessionId}/resume`);
+    console.log('Headers:', this.getAuthHeaders());
+    
     try {
       const response = await fetch(
         `${API_BASE_URL}/organizations/${orgId}/teams/${teamId}/meeting-sessions/${sessionId}/resume`,
@@ -126,16 +149,29 @@ class MeetingSessionsService {
         }
       );
 
+      console.log('Response status:', response.status, response.statusText);
+      
       if (!response.ok) {
-        throw new Error(`Failed to resume session: ${response.statusText}`);
+        const errorText = await response.text();
+        console.error('❌ Resume API failed:', {
+          status: response.status,
+          statusText: response.statusText,
+          body: errorText
+        });
+        throw new Error(`Failed to resume session: ${response.statusText} - ${errorText}`);
       }
 
       const data = await response.json();
+      console.log('✅ Resume API success:', data);
       this.sessionCache = data.session;
       return data;
     } catch (error) {
-      console.error('Error resuming session:', error);
+      console.error('❌❌ Error resuming session:', error);
+      console.error('Error type:', error.constructor.name);
+      console.error('Full error:', { message: error.message, stack: error.stack });
       throw error;
+    } finally {
+      console.log('🟩🟩🟩 RESUME API CALL END 🟩🟩🟩');
     }
   }
 
