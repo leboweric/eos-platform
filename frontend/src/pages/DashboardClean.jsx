@@ -1096,7 +1096,6 @@ const DashboardClean = () => {
                   <div className="w-10 ml-2">Status</div>
                   <div className="flex-1 ml-3">Title</div>
                   <div className="w-40 text-center">Milestone Progress</div>
-                  <div className="w-20 text-right">Due By</div>
                   <div className="w-8"></div>
                 </div>
                 
@@ -1249,13 +1248,6 @@ const DashboardClean = () => {
                           ) : (
                             <span className="text-sm text-slate-400">-</span>
                           )}
-                        </div>
-                        
-                        {/* Due Date */}
-                        <div className="w-20 text-right">
-                          <span className="text-sm text-slate-600">
-                            {priority.dueDate ? format(new Date(priority.dueDate), 'MMM d') : '-'}
-                          </span>
                         </div>
                         
                         {/* Actions */}
