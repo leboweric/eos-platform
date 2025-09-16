@@ -491,6 +491,12 @@ const ScorecardTableClean = ({
                       // Scores are now always raw numbers
                       const scoreValue = scores[metric.id]?.[periodDate];
                       
+                      // Debug: Log what dates we're checking for the first metric
+                      if (index === 0 && metrics.indexOf(metric) === 0) {
+                        console.log('Table checking dates for metric:', metric.id, 'Available dates in scores:', scores[metric.id] ? Object.keys(scores[metric.id]) : 'No scores for this metric');
+                        console.log('Checking for periodDate:', periodDate, 'Found value:', scoreValue);
+                      }
+                      
                       // Debug logging for zero values
                       if (scores[metric.id] && periodDate in scores[metric.id]) {
                         const rawValue = scores[metric.id][periodDate];
