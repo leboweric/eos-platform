@@ -102,6 +102,8 @@ const GroupedScorecardView = ({
 
   // Format value based on type
   const formatValue = (value, valueType) => {
+    console.log('GroupedScorecardView formatValue - input:', value, 'type:', typeof value, 'valueType:', valueType);
+    
     // Check for null, undefined, or empty string - but allow 0
     if (value === null || value === undefined || value === '') return '-';
     
@@ -109,16 +111,25 @@ const GroupedScorecardView = ({
     const numValue = typeof value === 'number' ? value : parseFloat(value);
     if (isNaN(numValue)) return '-';
     
+    console.log('GroupedScorecardView formatValue - numValue:', numValue);
+    
+    let result;
     switch (valueType) {
       case 'percentage':
-        return `${Math.round(numValue)}%`;
+        result = `${Math.round(numValue)}%`;
+        break;
       case 'currency':
-        return `$${Math.round(numValue).toLocaleString()}`;
+        result = `$${Math.round(numValue).toLocaleString()}`;
+        break;
       case 'decimal':
-        return numValue.toFixed(2);
+        result = numValue.toFixed(2);
+        break;
       default:
-        return Math.round(numValue);
+        result = Math.round(numValue).toString();
     }
+    
+    console.log('GroupedScorecardView formatValue - returning:', result);
+    return result;
   };
 
   // Format goal with comparison operator
@@ -501,11 +512,11 @@ const GroupedScorecardView = ({
           })()}
         </td>
         {periods.map((period, periodIndex) => {
-          const value = scores[period.value] || '';
+          const value = scores[period.value];  // Don't use || '' as it converts 0 to empty string
           const noteValue = notes[period.value] || '';
           const hasNotes = noteValue && noteValue.length > 0;
           const goal = parseFloat(metric.goal) || 0;
-          const actual = parseFloat(value) || 0;
+          const actual = value !== null && value !== undefined ? parseFloat(value) : null;
           const isOnTrack = isGoalMet(actual, metric.goal, metric.comparison_operator);
           
           // Check if this is the current period based on original order
