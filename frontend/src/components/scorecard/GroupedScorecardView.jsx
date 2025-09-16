@@ -487,7 +487,8 @@ const GroupedScorecardView = ({
         {/* Average column */}
         <td className="p-2 text-center bg-white border-l border-gray-200 font-semibold text-sm w-20">
           {(() => {
-            const scoreValues = Object.values(scores).filter(v => v !== '' && v !== null && v !== undefined);
+            // Include zeros in average calculation
+            const scoreValues = Object.values(scores).filter(v => v !== '' && v !== null && v !== undefined && (v === 0 || v === '0' || v));
             if (scoreValues.length === 0) return '-';
             const average = scoreValues.reduce((sum, val) => sum + parseFloat(val), 0) / scoreValues.length;
             const avgGoalMet = isGoalMet(average, metric.goal, metric.comparison_operator);
@@ -502,11 +503,13 @@ const GroupedScorecardView = ({
           })()}
         </td>
         {periods.map((period, periodIndex) => {
-          const value = scores[period.value];  // Don't use || '' as it converts 0 to empty string
+          const rawValue = scores[period.value];
+          // Explicitly handle 0 as a valid value
+          const value = rawValue === 0 || rawValue === '0' ? 0 : (rawValue || null);
           const noteValue = notes[period.value] || '';
           const hasNotes = noteValue && noteValue.length > 0;
           const goal = parseFloat(metric.goal) || 0;
-          const actual = value !== null && value !== undefined ? parseFloat(value) : null;
+          const actual = value === 0 ? 0 : (value !== null && value !== undefined ? parseFloat(value) : null);
           const isOnTrack = isGoalMet(actual, metric.goal, metric.comparison_operator);
           
           // Check if this is the current period based on original order
@@ -522,7 +525,7 @@ const GroupedScorecardView = ({
                   ${value !== null && value !== undefined ? (isOnTrack ? 'bg-green-50 text-green-700 border border-green-200' : 'bg-red-50 text-red-700 border border-red-200') : (isCurrentPeriod ? 'bg-gray-100 text-gray-700 hover:bg-gray-200' : 'bg-white border border-gray-200 text-gray-600 hover:bg-gray-50')}`}
                 title={hasNotes ? `Score: ${value}\nNotes: ${noteValue}` : ''}
               >
-                <span>{value !== null && value !== undefined ? formatValue(value, metric.value_type) : '-'}</span>
+                <span>{value === 0 ? formatValue(0, metric.value_type) : (value !== null && value !== undefined ? formatValue(value, metric.value_type) : '-')}</span>
                 {hasNotes && (
                   <MessageSquare className="inline-block ml-1 h-3 w-3 opacity-60" />
                 )}
@@ -532,7 +535,11 @@ const GroupedScorecardView = ({
         })}
         {showTotal && (
           <td className="p-2 text-center font-semibold w-20 bg-white border-l border-gray-200">
-            {Math.round(Object.values(scores).reduce((sum, val) => sum + (parseFloat(val) || 0), 0))}
+            {Math.round(Object.values(scores).reduce((sum, val) => {
+              // Explicitly handle 0 as valid value in sum
+              const numVal = val === 0 || val === '0' ? 0 : parseFloat(val);
+              return sum + (isNaN(numVal) ? 0 : numVal);
+            }, 0))}
           </td>
         )}
         <td className="text-center p-2 w-12">
