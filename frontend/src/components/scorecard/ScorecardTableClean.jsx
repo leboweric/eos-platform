@@ -491,10 +491,18 @@ const ScorecardTableClean = ({
                       // Scores are now always raw numbers
                       const scoreValue = scores[metric.id]?.[periodDate];
                       
-                      // Debug: Log what dates we're checking for the first metric
-                      if (index === 0 && metrics.indexOf(metric) === 0) {
-                        console.log('Table checking dates for metric:', metric.id, 'Available dates in scores:', scores[metric.id] ? Object.keys(scores[metric.id]) : 'No scores for this metric');
-                        console.log('Checking for periodDate:', periodDate, 'Found value:', scoreValue);
+                      // DEBUG: Enhanced date matching diagnostics for Level 10 Meeting
+                      if (metrics.indexOf(metric) === 0) {
+                        console.log(`📊 LEVEL 10 DATE CHECK [${index}]:`, {
+                          metricId: metric.id,
+                          metricName: metric.name,
+                          periodDate: periodDate,
+                          scoreValue: scoreValue,
+                          allScoreDates: scores[metric.id] ? Object.keys(scores[metric.id]) : [],
+                          scoresForThisMetric: scores[metric.id],
+                          readOnly: readOnly,
+                          meetingMode: meetingMode
+                        });
                       }
                       
                       // Debug logging for zero values
