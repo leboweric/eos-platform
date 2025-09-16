@@ -102,23 +102,52 @@ const GroupedScorecardView = ({
 
   // Format value based on type
   const formatValue = (value, valueType) => {
+    console.log(`🎨 formatValue called:`, {
+      inputValue: value,
+      inputType: typeof value,
+      valueType: valueType,
+      isZero: value === 0,
+      isNull: value === null,
+      isUndefined: value === undefined,
+      isEmpty: value === ''
+    });
+    
     // Check for null, undefined, or empty string - but allow 0
-    if (value === null || value === undefined || value === '') return '-';
+    if (value === null || value === undefined || value === '') {
+      console.log(`🎨 formatValue returning dash for null/undefined/empty`);
+      return '-';
+    }
     
     // Convert to number and check if it's valid (0 is valid)
     const numValue = typeof value === 'number' ? value : parseFloat(value);
-    if (isNaN(numValue)) return '-';
+    console.log(`🎨 formatValue converted to number:`, {
+      numValue,
+      isNaN: isNaN(numValue),
+      isZero: numValue === 0
+    });
     
+    if (isNaN(numValue)) {
+      console.log(`🎨 formatValue returning dash for NaN`);
+      return '-';
+    }
+    
+    let result;
     switch (valueType) {
       case 'percentage':
-        return `${Math.round(numValue)}%`;
+        result = `${Math.round(numValue)}%`;
+        break;
       case 'currency':
-        return `$${Math.round(numValue).toLocaleString()}`;
+        result = `$${Math.round(numValue).toLocaleString()}`;
+        break;
       case 'decimal':
-        return numValue.toFixed(2);
+        result = numValue.toFixed(2);
+        break;
       default:
-        return Math.round(numValue).toString();
+        result = Math.round(numValue).toString();
     }
+    
+    console.log(`🎨 formatValue returning: "${result}" for valueType: ${valueType}`);
+    return result;
   };
 
   // Format goal with comparison operator
@@ -452,6 +481,17 @@ const GroupedScorecardView = ({
     const periodsOriginal = isWeekly ? selectedWeeks : selectedMonths;
     const periods = isRTL ? [...periodsOriginal].reverse() : periodsOriginal;
     
+    // LOG SCORES FROM PROPS
+    console.log(`📊 SCORES FROM PROPS [${metric.name}]:`, {
+      metricId: metric.id,
+      isWeekly,
+      scoresObject: scores,
+      weeklyScores: weeklyScores[metric.id],
+      monthlyScores: monthlyScores[metric.id],
+      hasZeros: Object.values(scores).some(v => v === 0 || v === '0'),
+      allValues: Object.entries(scores).map(([k, v]) => ({ period: k, value: v, type: typeof v }))
+    });
+    
     return (
       <tr 
         key={metric.id} 
@@ -504,8 +544,27 @@ const GroupedScorecardView = ({
         </td>
         {periods.map((period, periodIndex) => {
           const rawValue = scores[period.value];
+          
+          // DEEP LOGGING FOR ZERO TRACKING
+          console.log(`🔍 ZERO DEBUG [${metric.name}][${period.value}]:`, {
+            rawValue,
+            rawValueType: typeof rawValue,
+            isZero: rawValue === 0,
+            isStringZero: rawValue === '0',
+            isNull: rawValue === null,
+            isUndefined: rawValue === undefined,
+            scores: scores
+          });
+          
           // Explicitly handle 0 as a valid value
           const value = rawValue === 0 || rawValue === '0' ? 0 : (rawValue || null);
+          
+          console.log(`🔍 ZERO DEBUG - After processing:`, {
+            value,
+            valueType: typeof value,
+            willDisplay: value === 0 ? 'YES - ZERO' : (value !== null && value !== undefined ? 'YES - OTHER' : 'NO - DASH')
+          });
+          
           const noteValue = notes[period.value] || '';
           const hasNotes = noteValue && noteValue.length > 0;
           const goal = parseFloat(metric.goal) || 0;
@@ -517,6 +576,15 @@ const GroupedScorecardView = ({
           const currentValue = originalOptions && originalOptions.length > 0 ? originalOptions[originalOptions.length - 1].value : null;
           const isCurrentPeriod = currentValue && period.value === currentValue;
           
+          // Calculate what will be displayed
+          const displayValue = value === 0 ? formatValue(0, metric.value_type) : (value !== null && value !== undefined ? formatValue(value, metric.value_type) : '-');
+          
+          console.log(`🔍 ZERO DEBUG - Final display:`, {
+            displayValue,
+            formatted: displayValue,
+            metricValueType: metric.value_type
+          });
+          
           return (
             <td key={period.value} className={`p-2 text-center w-20 ${isCurrentPeriod ? 'bg-gray-50 border-2 border-gray-300' : ''}`}>
               <button
@@ -525,7 +593,7 @@ const GroupedScorecardView = ({
                   ${value !== null && value !== undefined ? (isOnTrack ? 'bg-green-50 text-green-700 border border-green-200' : 'bg-red-50 text-red-700 border border-red-200') : (isCurrentPeriod ? 'bg-gray-100 text-gray-700 hover:bg-gray-200' : 'bg-white border border-gray-200 text-gray-600 hover:bg-gray-50')}`}
                 title={hasNotes ? `Score: ${value}\nNotes: ${noteValue}` : ''}
               >
-                <span>{value === 0 ? formatValue(0, metric.value_type) : (value !== null && value !== undefined ? formatValue(value, metric.value_type) : '-')}</span>
+                <span>{displayValue}</span>
                 {hasNotes && (
                   <MessageSquare className="inline-block ml-1 h-3 w-3 opacity-60" />
                 )}
