@@ -2400,7 +2400,19 @@ const WeeklyAccountabilityMeetingPage = () => {
         
         setIsPaused(false);
         setTotalPausedTime(result.session.total_paused_duration || 0);
-        console.log('6️⃣ State updated after resume:', { isPaused: false, totalPausedTime: result.session.total_paused_duration });
+        
+        // Update elapsed time to the backend's calculated active duration
+        // This ensures we continue from the correct time after resume
+        if (result.session.active_duration_seconds !== undefined) {
+          setElapsedTime(result.session.active_duration_seconds);
+          console.log('⏱️ Resetting timer to active duration:', result.session.active_duration_seconds);
+        }
+        
+        console.log('6️⃣ State updated after resume:', { 
+          isPaused: false, 
+          totalPausedTime: result.session.total_paused_duration,
+          elapsedTime: result.session.active_duration_seconds 
+        });
         
         // Broadcast resume to all participants
         if (broadcastIssueListUpdate) {
