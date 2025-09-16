@@ -133,12 +133,12 @@ export const getCascadingMessages = async (req, res) => {
       });
     }
 
-    // Default to messages from the last 7 days if no date range specified
-    const start = startDate || new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
-    const end = endDate || new Date().toISOString().split('T')[0];
-
-    const result = await query(
-      `SELECT 
+    let queryText;
+    let queryParams;
+    
+    if (startDate && endDate) {
+      // If date range provided, filter by meeting_date
+      queryText = `SELECT 
         cm.*,
         cmr.is_read,
         cmr.read_at,
@@ -151,9 +151,29 @@ export const getCascadingMessages = async (req, res) => {
        WHERE cmr.to_team_id = $1
          AND cm.organization_id = $2
          AND cm.meeting_date BETWEEN $3 AND $4
-       ORDER BY cm.created_at DESC`,
-      [teamId, orgId, start, end]
-    );
+       ORDER BY cm.created_at DESC`;
+      queryParams = [teamId, orgId, startDate, endDate];
+    } else {
+      // If no date range, get recent unread messages (last 30 days)
+      queryText = `SELECT 
+        cm.*,
+        cmr.is_read,
+        cmr.read_at,
+        t.name as from_team_name,
+        u.first_name || ' ' || u.last_name as created_by_name
+       FROM cascading_message_recipients cmr
+       JOIN cascading_messages cm ON cmr.message_id = cm.id
+       JOIN teams t ON cm.from_team_id = t.id
+       JOIN users u ON cm.created_by = u.id
+       WHERE cmr.to_team_id = $1
+         AND cm.organization_id = $2
+         AND (cmr.is_read = false OR cm.created_at > NOW() - INTERVAL '30 days')
+       ORDER BY cm.created_at DESC
+       LIMIT 20`;
+      queryParams = [teamId, orgId];
+    }
+
+    const result = await query(queryText, queryParams);
 
     res.json({
       success: true,

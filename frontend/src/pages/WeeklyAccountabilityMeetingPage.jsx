@@ -3613,7 +3613,7 @@ const WeeklyAccountabilityMeetingPage = () => {
                           <p className="text-sm font-medium text-slate-900 leading-relaxed">{message.message}</p>
                           <div className="mt-2 flex items-center justify-between">
                             <p className="text-xs text-slate-600">
-                              From: {message.sender_team_name || 'Unknown Team'}
+                              From: {message.from_team_name || 'Unknown Team'}
                             </p>
                             <p className="text-xs text-slate-500">
                               {format(new Date(message.created_at), 'MMM d')}
