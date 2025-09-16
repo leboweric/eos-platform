@@ -9,7 +9,7 @@ import { Alert, AlertDescription } from '@/components/ui/alert';
 import { getOrgTheme } from '../../utils/themeUtils';
 import { useAuthStore } from '../../stores/authStore';
 
-const HeadlineDialog = ({ open, onOpenChange, onSave }) => {
+const HeadlineDialog = ({ open, onOpenChange, onSave, headline }) => {
   const { user } = useAuthStore();
   const orgId = user?.organizationId || user?.organization_id;
   const savedTheme = getOrgTheme(orgId);
@@ -26,15 +26,15 @@ const HeadlineDialog = ({ open, onOpenChange, onSave }) => {
   // Reset form when dialog opens or closes
   useEffect(() => {
     if (open) {
-      setHeadlineType('customer');
-      setHeadlineText('');
+      setHeadlineType(headline?.type || 'customer');
+      setHeadlineText(headline?.headline || headline?.text || '');
       setError(null);
       setSaving(false);
     } else {
       // Reset saving state when dialog closes
       setSaving(false);
     }
-  }, [open]);
+  }, [open, headline]);
 
   const handleSave = async () => {
     if (!headlineText.trim()) {
