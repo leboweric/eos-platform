@@ -447,21 +447,6 @@ const WeeklyAccountabilityMeetingPage = () => {
   const [showFloatingTimer, setShowFloatingTimer] = useState(true);
   const [sectionConfig, setSectionConfig] = useState(null);
   
-  // Debug effect to monitor sectionConfig changes
-  useEffect(() => {
-    console.log('🔍 sectionConfig changed:', {
-      sectionConfig,
-      hasConfig: !!sectionConfig,
-      activeSection,
-      meetingStarted,
-      details: sectionConfig ? {
-        id: sectionConfig.id,
-        name: sectionConfig.name,
-        duration: sectionConfig.duration
-      } : 'null'
-    });
-  }, [sectionConfig, activeSection, meetingStarted]);
-  
   // Full-screen mode state
   const [isFullScreen, setIsFullScreen] = useState(false);
   
@@ -814,18 +799,7 @@ const WeeklyAccountabilityMeetingPage = () => {
               
               // Initialize section config for the first section (Phase 2)
               const firstSection = agendaItems.find(item => item.id === 'good-news') || agendaItems[0];
-              console.log('🎯 Auto-join leader - Initializing section config:', {
-                firstSection,
-                activeSection,
-                agendaItems,
-                agendaItemsLength: agendaItems?.length,
-                hasName: firstSection?.name,
-                hasDuration: firstSection?.duration,
-                labels,
-                hasLabels: !!labels
-              });
               if (firstSection) {
-                console.log('🔥 Setting section config NOW in auto-join:', firstSection);
                 setSectionConfig(firstSection);
                 setActiveSection(firstSection.id); // Ensure activeSection matches
                 setCurrentSectionStartTime(now);
@@ -837,10 +811,6 @@ const WeeklyAccountabilityMeetingPage = () => {
                     allocated: firstSection.duration * 60
                   }
                 });
-                // Log state after a short delay to verify it was set
-                setTimeout(() => {
-                  console.log('✅ Checking section state after 50ms delay');
-                }, 50);
               }
               
               // Enter full-screen mode
@@ -938,18 +908,7 @@ const WeeklyAccountabilityMeetingPage = () => {
           
           // Initialize section config for the first section (Phase 2)
           const firstSection = agendaItems.find(item => item.id === 'good-news') || agendaItems[0];
-          console.log('🎯 Auto-join leader (immediate) - Initializing section config:', {
-            firstSection,
-            activeSection,
-            agendaItems,
-            agendaItemsLength: agendaItems?.length,
-            hasName: firstSection?.name,
-            hasDuration: firstSection?.duration,
-            labels,
-            hasLabels: !!labels
-          });
           if (firstSection) {
-            console.log('🔥 Setting section config NOW in immediate auto-join:', firstSection);
             setSectionConfig(firstSection);
             setActiveSection(firstSection.id); // Ensure activeSection matches
             setCurrentSectionStartTime(now);
@@ -961,10 +920,6 @@ const WeeklyAccountabilityMeetingPage = () => {
                 allocated: firstSection.duration * 60
               }
             });
-            // Log state after a short delay to verify it was set  
-            setTimeout(() => {
-              console.log('✅ Checking section state after 50ms delay (immediate path)');
-            }, 50);
           }
           
           // Enter full-screen mode
@@ -1421,18 +1376,7 @@ const WeeklyAccountabilityMeetingPage = () => {
       
       // Initialize section config for the first section (Phase 2)
       const firstSection = agendaItems.find(item => item.id === 'good-news') || agendaItems[0];
-      console.log('🎯 Leader starting - Initializing section config:', {
-        firstSection,
-        activeSection,
-        agendaItems
-      });
       if (firstSection) {
-        console.log('🚀 About to set section config:', {
-          firstSection,
-          hasName: !!firstSection.name,
-          hasDuration: !!firstSection.duration,
-          fullObject: JSON.stringify(firstSection)
-        });
         setSectionConfig(firstSection);
         setCurrentSectionStartTime(now);
         setSectionElapsedTime(0);
@@ -1443,12 +1387,6 @@ const WeeklyAccountabilityMeetingPage = () => {
             allocated: firstSection.duration * 60
           }
         });
-        // Verify it was set
-        setTimeout(() => {
-          console.log('✅ Section config after 100ms - checking if it stuck');
-        }, 100);
-      } else {
-        console.error('❌ No first section found to initialize!');
       }
       
       // Enter full-screen mode when meeting starts
@@ -5163,21 +5101,7 @@ const WeeklyAccountabilityMeetingPage = () => {
       
       {/* Floating Timer Widget (Phase 2) - Now the primary timer */}
       {meetingStarted && showFloatingTimer && (
-        <>
-          {console.log('📍 Passing to FloatingTimer:', {
-            meetingStarted,
-            showFloatingTimer,
-            activeSection,
-            sectionConfig,
-            sectionConfigExists: !!sectionConfig,
-            sectionConfigDetails: sectionConfig ? {
-              id: sectionConfig.id,
-              name: sectionConfig.name,
-              duration: sectionConfig.duration
-            } : 'NULL',
-            willShowSectionProgress: !!(activeSection && sectionConfig)
-          })}
-          <FloatingTimer
+        <FloatingTimer
             elapsed={elapsedTime}
             sectionElapsed={sectionElapsedTime}
             isPaused={isPaused}
