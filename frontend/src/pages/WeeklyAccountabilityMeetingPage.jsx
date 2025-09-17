@@ -447,6 +447,21 @@ const WeeklyAccountabilityMeetingPage = () => {
   const [showFloatingTimer, setShowFloatingTimer] = useState(true);
   const [sectionConfig, setSectionConfig] = useState(null);
   
+  // Debug effect to monitor sectionConfig changes
+  useEffect(() => {
+    console.log('🔍 sectionConfig changed:', {
+      sectionConfig,
+      hasConfig: !!sectionConfig,
+      activeSection,
+      meetingStarted,
+      details: sectionConfig ? {
+        id: sectionConfig.id,
+        name: sectionConfig.name,
+        duration: sectionConfig.duration
+      } : 'null'
+    });
+  }, [sectionConfig, activeSection, meetingStarted]);
+  
   // Full-screen mode state
   const [isFullScreen, setIsFullScreen] = useState(false);
   
@@ -802,10 +817,17 @@ const WeeklyAccountabilityMeetingPage = () => {
               console.log('🎯 Auto-join leader - Initializing section config:', {
                 firstSection,
                 activeSection,
-                agendaItems
+                agendaItems,
+                agendaItemsLength: agendaItems?.length,
+                hasName: firstSection?.name,
+                hasDuration: firstSection?.duration,
+                labels,
+                hasLabels: !!labels
               });
               if (firstSection) {
+                console.log('🔥 Setting section config NOW in auto-join:', firstSection);
                 setSectionConfig(firstSection);
+                setActiveSection(firstSection.id); // Ensure activeSection matches
                 setCurrentSectionStartTime(now);
                 setSectionElapsedTime(0);
                 setSectionCumulativeTimes({}); // Reset cumulative times for new meeting
@@ -815,6 +837,10 @@ const WeeklyAccountabilityMeetingPage = () => {
                     allocated: firstSection.duration * 60
                   }
                 });
+                // Log state after a short delay to verify it was set
+                setTimeout(() => {
+                  console.log('✅ Checking section state after 50ms delay');
+                }, 50);
               }
               
               // Enter full-screen mode
@@ -915,10 +941,17 @@ const WeeklyAccountabilityMeetingPage = () => {
           console.log('🎯 Auto-join leader (immediate) - Initializing section config:', {
             firstSection,
             activeSection,
-            agendaItems
+            agendaItems,
+            agendaItemsLength: agendaItems?.length,
+            hasName: firstSection?.name,
+            hasDuration: firstSection?.duration,
+            labels,
+            hasLabels: !!labels
           });
           if (firstSection) {
+            console.log('🔥 Setting section config NOW in immediate auto-join:', firstSection);
             setSectionConfig(firstSection);
+            setActiveSection(firstSection.id); // Ensure activeSection matches
             setCurrentSectionStartTime(now);
             setSectionElapsedTime(0);
             setSectionCumulativeTimes({}); // Reset cumulative times for new meeting
@@ -928,6 +961,10 @@ const WeeklyAccountabilityMeetingPage = () => {
                 allocated: firstSection.duration * 60
               }
             });
+            // Log state after a short delay to verify it was set  
+            setTimeout(() => {
+              console.log('✅ Checking section state after 50ms delay (immediate path)');
+            }, 50);
           }
           
           // Enter full-screen mode
@@ -5137,7 +5174,8 @@ const WeeklyAccountabilityMeetingPage = () => {
               id: sectionConfig.id,
               name: sectionConfig.name,
               duration: sectionConfig.duration
-            } : 'NULL'
+            } : 'NULL',
+            willShowSectionProgress: !!(activeSection && sectionConfig)
           })}
           <FloatingTimer
             elapsed={elapsedTime}
