@@ -176,6 +176,13 @@ const FloatingTimer = ({
         </div>
 
         {/* Current Section */}
+        {console.log('🔍 FloatingTimer section check:', { 
+          section, 
+          sectionConfig,
+          hasSection: !!section,
+          hasSectionConfig: !!sectionConfig,
+          willShowProgress: !!(section && sectionConfig)
+        })}
         {section && sectionConfig && (
           <div className="p-4">
             <div 

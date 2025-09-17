@@ -1350,6 +1350,12 @@ const WeeklyAccountabilityMeetingPage = () => {
         agendaItems
       });
       if (firstSection) {
+        console.log('🚀 About to set section config:', {
+          firstSection,
+          hasName: !!firstSection.name,
+          hasDuration: !!firstSection.duration,
+          fullObject: JSON.stringify(firstSection)
+        });
         setSectionConfig(firstSection);
         setCurrentSectionStartTime(now);
         setSectionElapsedTime(0);
@@ -1360,7 +1366,10 @@ const WeeklyAccountabilityMeetingPage = () => {
             allocated: firstSection.duration * 60
           }
         });
-        console.log('✅ Section config set to:', firstSection);
+        // Verify it was set
+        setTimeout(() => {
+          console.log('✅ Section config after 100ms - checking if it stuck');
+        }, 100);
       } else {
         console.error('❌ No first section found to initialize!');
       }
@@ -5077,12 +5086,25 @@ const WeeklyAccountabilityMeetingPage = () => {
       
       {/* Floating Timer Widget (Phase 2) - Now the primary timer */}
       {meetingStarted && showFloatingTimer && (
-        <FloatingTimer
-          elapsed={elapsedTime}
-          sectionElapsed={sectionElapsedTime}
-          isPaused={isPaused}
-          section={activeSection}
-          sectionConfig={sectionConfig}
+        <>
+          {console.log('📍 Passing to FloatingTimer:', {
+            meetingStarted,
+            showFloatingTimer,
+            activeSection,
+            sectionConfig,
+            sectionConfigExists: !!sectionConfig,
+            sectionConfigDetails: sectionConfig ? {
+              id: sectionConfig.id,
+              name: sectionConfig.name,
+              duration: sectionConfig.duration
+            } : 'NULL'
+          })}
+          <FloatingTimer
+            elapsed={elapsedTime}
+            sectionElapsed={sectionElapsedTime}
+            isPaused={isPaused}
+            section={activeSection}
+            sectionConfig={sectionConfig}
           meetingPace={meetingPace}
           isLeader={isLeader}
           onPauseResume={handlePauseResume}
@@ -5092,7 +5114,8 @@ const WeeklyAccountabilityMeetingPage = () => {
             // Scroll to the section
             document.getElementById(`section-${sectionId}`)?.scrollIntoView({ behavior: 'smooth' });
           }}
-        />
+          />
+        </>
       )}
     </div>
   );
