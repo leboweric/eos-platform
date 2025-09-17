@@ -257,6 +257,67 @@ class MeetingSessionsService {
     this.sessionCache = null;
     this.stopAutoSave();
   }
+
+  // Section timing methods (Phase 2)
+  async startSection(orgId, teamId, sessionId, sectionId) {
+    try {
+      const response = await axios.post(
+        `/organizations/${orgId}/teams/${teamId}/meeting-sessions/${sessionId}/sections/start`,
+        { 
+          session_id: sessionId,
+          section_id: sectionId 
+        }
+      );
+      return response.data;
+    } catch (error) {
+      console.error('Error starting section:', error);
+      throw error;
+    }
+  }
+
+  async endSection(orgId, teamId, sessionId, sectionId) {
+    try {
+      const response = await axios.post(
+        `/organizations/${orgId}/teams/${teamId}/meeting-sessions/${sessionId}/sections/end`,
+        { 
+          session_id: sessionId,
+          section_id: sectionId 
+        }
+      );
+      return response.data;
+    } catch (error) {
+      console.error('Error ending section:', error);
+      throw error;
+    }
+  }
+
+  async updateSectionPause(orgId, teamId, sessionId, isPaused) {
+    try {
+      const response = await axios.post(
+        `/organizations/${orgId}/teams/${teamId}/meeting-sessions/${sessionId}/sections/pause-update`,
+        { 
+          session_id: sessionId,
+          is_paused: isPaused 
+        }
+      );
+      return response.data;
+    } catch (error) {
+      console.error('Error updating section pause state:', error);
+      throw error;
+    }
+  }
+
+  async getSectionConfig(orgId, teamId) {
+    try {
+      const response = await axios.get(
+        `/organizations/${orgId}/teams/${teamId}/meeting-sessions/config/${orgId}/${teamId}`
+      );
+      return response.data;
+    } catch (error) {
+      console.error('Error fetching section config:', error);
+      throw error;
+    }
+  }
 }
 
 export default new MeetingSessionsService();

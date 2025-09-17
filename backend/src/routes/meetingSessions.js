@@ -10,6 +10,12 @@ import {
   getActiveSession,
   saveTimerState
 } from '../controllers/meetingSessionsController.js';
+import {
+  startSection,
+  endSection,
+  updateSectionPause,
+  getSectionConfig
+} from '../controllers/meetingSessionController.js';
 
 const router = express.Router();
 
@@ -36,6 +42,14 @@ router.patch('/:id/section', updateSessionSection);
 
 // Auto-save timer state
 router.post('/:id/save-state', saveTimerState);
+
+// Section timing endpoints (Phase 2)
+router.post('/:id/sections/start', startSection);
+router.post('/:id/sections/end', endSection);
+router.post('/:id/sections/pause-update', updateSectionPause);
+
+// Get section configuration
+router.get('/config/:organizationId/:teamId', getSectionConfig);
 
 // End a session
 router.post('/:id/end', endSession);

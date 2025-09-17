@@ -82,6 +82,8 @@ import { cascadingMessagesService } from '../services/cascadingMessagesService';
 import { teamsService } from '../services/teamsService';
 import { useTerminology } from '../contexts/TerminologyContext';
 import { getEffectiveTeamId } from '../utils/teamUtils';
+import SectionTimer from '../components/meetings/SectionTimer';
+import FloatingTimer from '../components/meetings/FloatingTimer';
 
 const WeeklyAccountabilityMeetingPage = () => {
   const { user } = useAuthStore();
@@ -436,6 +438,14 @@ const WeeklyAccountabilityMeetingPage = () => {
   const [sessionLoading, setSessionLoading] = useState(false);
   const [isPaused, setIsPaused] = useState(false);
   const [totalPausedTime, setTotalPausedTime] = useState(0);
+  
+  // Section timing state (Phase 2)
+  const [sectionTimings, setSectionTimings] = useState({});
+  const [currentSectionStartTime, setCurrentSectionStartTime] = useState(null);
+  const [sectionElapsedTime, setSectionElapsedTime] = useState(0);
+  const [meetingPace, setMeetingPace] = useState('on-track');
+  const [showFloatingTimer, setShowFloatingTimer] = useState(true);
+  const [sectionConfig, setSectionConfig] = useState(null);
   
   // Full-screen mode state
   const [isFullScreen, setIsFullScreen] = useState(false);
@@ -1217,7 +1227,7 @@ const WeeklyAccountabilityMeetingPage = () => {
     }
   }, [success]);
 
-  // Timer effect for meeting duration
+  // Timer effect for meeting duration and section timing (Phase 2)
   useEffect(() => {
     let timer;
     if (meetingStarted && meetingStartTime && !isPaused) {
@@ -1227,12 +1237,51 @@ const WeeklyAccountabilityMeetingPage = () => {
         // Subtract total paused time to get active duration
         const activeElapsed = totalElapsed - totalPausedTime;
         setElapsedTime(activeElapsed);
+        
+        // Update section elapsed time (Phase 2)
+        if (currentSectionStartTime) {
+          const sectionElapsed = Math.floor((now - currentSectionStartTime) / 1000);
+          setSectionElapsedTime(sectionElapsed);
+          
+          // Calculate meeting pace based on accumulated timing
+          const currentSectionConfig = agendaItems.find(item => item.id === activeSection);
+          if (currentSectionConfig) {
+            // Calculate expected vs actual progress
+            const sectionIndex = agendaItems.findIndex(item => item.id === activeSection);
+            const expectedTimeByNow = agendaItems
+              .slice(0, sectionIndex + 1)
+              .reduce((sum, item) => sum + (item.duration * 60), 0);
+            
+            const actualTimeSpent = activeElapsed;
+            const deviation = actualTimeSpent - expectedTimeByNow;
+            const totalMeetingTime = agendaItems.reduce((sum, item) => sum + (item.duration * 60), 0);
+            const deviationPercentage = (Math.abs(deviation) / totalMeetingTime) * 100;
+            
+            if (deviation > 0) {
+              // Running behind
+              if (deviationPercentage > 20) {
+                setMeetingPace('critical');
+              } else if (deviationPercentage > 10) {
+                setMeetingPace('behind');
+              } else {
+                setMeetingPace('on-track');
+              }
+            } else {
+              // Running ahead or on time
+              if (deviationPercentage > 5) {
+                setMeetingPace('ahead');
+              } else {
+                setMeetingPace('on-track');
+              }
+            }
+          }
+        }
       }, 1000);
     }
     return () => {
       if (timer) clearInterval(timer);
     };
-  }, [meetingStarted, meetingStartTime, isPaused, totalPausedTime]);
+  }, [meetingStarted, meetingStartTime, isPaused, totalPausedTime, currentSectionStartTime, activeSection, agendaItems]);
   
   // Auto-save timer state every 30 seconds
   useEffect(() => {
@@ -2558,9 +2607,67 @@ const WeeklyAccountabilityMeetingPage = () => {
     return 'text-gray-600';
   };
 
-  const handleSectionChange = (sectionId) => {
+  const handleSectionChange = async (sectionId) => {
+    // Track section transition timing (Phase 2)
+    if (sessionId && currentSectionStartTime && activeSection !== sectionId) {
+      // End the current section
+      const currentSectionData = sectionTimings[activeSection] || {};
+      const sectionDuration = Math.floor((Date.now() - currentSectionStartTime) / 1000);
+      const currentSectionConfig = agendaItems.find(item => item.id === activeSection);
+      
+      setSectionTimings(prev => ({
+        ...prev,
+        [activeSection]: {
+          ...currentSectionData,
+          ended_at: new Date().toISOString(),
+          actual: sectionDuration,
+          allocated: currentSectionConfig?.duration * 60 || 300,
+          overrun: sectionDuration > (currentSectionConfig?.duration * 60 || 300) 
+            ? sectionDuration - (currentSectionConfig?.duration * 60 || 300) 
+            : 0
+        }
+      }));
+      
+      // Report section end to backend
+      try {
+        const orgId = user?.organizationId || user?.organization_id;
+        const effectiveTeamId = getEffectiveTeamId(teamId, user);
+        await meetingSessionsService.endSection(orgId, effectiveTeamId, sessionId, activeSection);
+      } catch (error) {
+        console.warn('Failed to record section end:', error);
+      }
+    }
+    
+    // Start the new section
     setActiveSection(sectionId);
     setError(null);
+    setCurrentSectionStartTime(Date.now());
+    setSectionElapsedTime(0);
+    
+    // Initialize section timing data
+    const newSectionConfig = agendaItems.find(item => item.id === sectionId);
+    if (newSectionConfig) {
+      setSectionConfig(newSectionConfig);
+      setSectionTimings(prev => ({
+        ...prev,
+        [sectionId]: {
+          ...prev[sectionId],
+          started_at: new Date().toISOString(),
+          allocated: newSectionConfig.duration * 60
+        }
+      }));
+    }
+    
+    // Report section start to backend
+    if (sessionId) {
+      try {
+        const orgId = user?.organizationId || user?.organization_id;
+        const effectiveTeamId = getEffectiveTeamId(teamId, user);
+        await meetingSessionsService.startSection(orgId, effectiveTeamId, sessionId, sectionId);
+      } catch (error) {
+        console.warn('Failed to record section start:', error);
+      }
+    }
     
     // Always fetch relevant data when switching sections to ensure fresh data
     console.log(`📍 Switching to section: ${sectionId}, fetching relevant data...`);
@@ -4526,6 +4633,35 @@ const WeeklyAccountabilityMeetingPage = () => {
               <p className="text-slate-600 mt-1">{getMeetingDescription()}</p>
             </div>
             <div className="flex items-center gap-4">
+              {/* Section Timer Component (Phase 2) */}
+              {meetingCode && meetingStarted && sectionConfig && (
+                <div className="mr-4">
+                  <SectionTimer
+                    section={activeSection}
+                    sectionConfig={sectionConfig}
+                    currentDuration={sectionElapsedTime}
+                    isPaused={isPaused}
+                    meetingPace={meetingPace}
+                    onNextSection={() => {
+                      const nextSection = getNextSection();
+                      if (nextSection) {
+                        handleSectionChange(nextSection);
+                      }
+                    }}
+                    onExtendTime={(minutes) => {
+                      // Update the current section's allocated time
+                      setSectionTimings(prev => ({
+                        ...prev,
+                        [activeSection]: {
+                          ...prev[activeSection],
+                          allocated: (prev[activeSection]?.allocated || 0) + (minutes * 60)
+                        }
+                      }));
+                    }}
+                  />
+                </div>
+              )}
+              
               {/* Timer display */}
               {meetingCode && meetingStarted && (
                 <div className="bg-white/80 backdrop-blur-sm px-4 py-2 rounded-xl shadow-lg border border-white/50">
@@ -4932,6 +5068,25 @@ const WeeklyAccountabilityMeetingPage = () => {
           teamId={getEffectiveTeamId(teamId, user)}
         />
       </div>
+      
+      {/* Floating Timer Widget (Phase 2) */}
+      {meetingStarted && showFloatingTimer && (
+        <FloatingTimer
+          elapsed={elapsedTime}
+          sectionElapsed={sectionElapsedTime}
+          isPaused={isPaused}
+          section={activeSection}
+          sectionConfig={sectionConfig}
+          meetingPace={meetingPace}
+          onPauseResume={handlePauseResume}
+          onClose={() => setShowFloatingTimer(false)}
+          onSectionClick={(sectionId) => {
+            handleSectionChange(sectionId);
+            // Scroll to the section
+            document.getElementById(`section-${sectionId}`)?.scrollIntoView({ behavior: 'smooth' });
+          }}
+        />
+      )}
     </div>
   );
 }; 
