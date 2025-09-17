@@ -4834,12 +4834,13 @@ const WeeklyAccountabilityMeetingPage = () => {
                 </div>
 
                 {/* Conclude Meeting Button */}
-                <Button
-                  className="w-full shadow-lg hover:shadow-xl transition-all duration-200 text-white font-medium py-3"
-                  style={{
-                    background: `linear-gradient(135deg, ${themeColors.primary} 0%, ${themeColors.secondary} 100%)`
-                  }}
-                  onClick={async () => {
+                <div className="flex justify-center">
+                  <Button
+                    className="shadow-lg hover:shadow-xl transition-all duration-200 text-white font-medium py-3 px-6"
+                    style={{
+                      background: `linear-gradient(135deg, ${themeColors.primary} 0%, ${themeColors.secondary} 100%)`
+                    }}
+                    onClick={async () => {
                     if (window.confirm('Are you ready to conclude the meeting?')) {
                       try {
                         // Send cascading message if there is one
@@ -4942,10 +4943,11 @@ const WeeklyAccountabilityMeetingPage = () => {
                       }
                     }
                   }}
-                >
-                  <CheckSquare className="mr-2 h-5 w-5" />
-                  Conclude Meeting
-                </Button>
+                  >
+                    <CheckSquare className="mr-2 h-5 w-5" />
+                    Conclude Meeting
+                  </Button>
+                </div>
               </div>
             </CardContent>
           </Card>
