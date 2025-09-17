@@ -3931,7 +3931,7 @@ const WeeklyAccountabilityMeetingPage = () => {
                       }
                       todosByAssignee[assigneeId].todos.push({
                         ...todo,
-                        isMultiAssignee: true,
+                        isMultiAssignee: todo.assignees.length > 1,
                         allAssignees: todo.assignees
                       });
                     });
