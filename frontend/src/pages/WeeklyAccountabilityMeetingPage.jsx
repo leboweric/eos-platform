@@ -82,7 +82,6 @@ import { cascadingMessagesService } from '../services/cascadingMessagesService';
 import { teamsService } from '../services/teamsService';
 import { useTerminology } from '../contexts/TerminologyContext';
 import { getEffectiveTeamId } from '../utils/teamUtils';
-import SectionTimer from '../components/meetings/SectionTimer';
 import FloatingTimer from '../components/meetings/FloatingTimer';
 
 const WeeklyAccountabilityMeetingPage = () => {
@@ -4685,110 +4684,7 @@ const WeeklyAccountabilityMeetingPage = () => {
               <p className="text-slate-600 mt-1">{getMeetingDescription()}</p>
             </div>
             <div className="flex items-center gap-4">
-              {/* Section Timer Component (Phase 2) */}
-              {console.log('🎯 Section Timer Debug:', {
-                meetingStarted,
-                sectionConfig,
-                activeSection,
-                sectionElapsedTime,
-                isPaused,
-                meetingPace,
-                agendaItems: agendaItems.length,
-                shouldShow: !!(meetingStarted && sectionConfig),
-                sectionConfigDetails: sectionConfig ? {
-                  id: sectionConfig.id,
-                  label: sectionConfig.label,
-                  duration: sectionConfig.duration,
-                  icon: sectionConfig.icon ? 'Present' : 'Missing',
-                  name: sectionConfig.name,
-                  description: sectionConfig.description
-                } : null
-              })}
-              {meetingStarted && sectionConfig && (
-                <div className="mr-4">
-                  <SectionTimer
-                    section={activeSection}
-                    sectionConfig={sectionConfig}
-                    currentDuration={sectionElapsedTime}
-                    isPaused={isPaused}
-                    meetingPace={meetingPace}
-                    onNextSection={() => {
-                      const nextSection = getNextSection();
-                      if (nextSection) {
-                        handleSectionChange(nextSection);
-                      }
-                    }}
-                    onExtendTime={(minutes) => {
-                      // Update the current section's allocated time
-                      setSectionTimings(prev => ({
-                        ...prev,
-                        [activeSection]: {
-                          ...prev[activeSection],
-                          allocated: (prev[activeSection]?.allocated || 0) + (minutes * 60)
-                        }
-                      }));
-                    }}
-                  />
-                </div>
-              )}
-              
-              {/* Timer display */}
-              {meetingCode && meetingStarted && (
-                <div className="bg-white/80 backdrop-blur-sm px-4 py-2 rounded-xl shadow-lg border border-white/50">
-                  <div className="flex items-center gap-3">
-                    <div className="flex items-center gap-2">
-                      <Clock className="h-4 w-4 text-slate-500" />
-                      <span className={`text-lg font-mono font-semibold ${getTimerColor()}`}>
-                        {formatTimer(elapsedTime)}
-                      </span>
-                      {isPaused && (
-                        <Badge variant="secondary" className="ml-2 text-xs">
-                          PAUSED
-                        </Badge>
-                      )}
-                    </div>
-                    {isLeader && (
-                      <Button
-                        size="sm"
-                        variant="ghost"
-                        onClick={() => {
-                          console.log('🟢🟢🟢 BUTTON RENDER STATE 🟢🟢🟢', {
-                            isLeader,
-                            sessionId,
-                            sessionLoading,
-                            isPaused,
-                            loading,
-                            disabled: sessionLoading || !sessionId || loading,
-                            buttonIcon: sessionLoading ? 'SPINNER' : loading ? 'SPINNER' : isPaused ? 'PLAY' : 'PAUSE'
-                          });
-                          handlePauseResume();
-                        }}
-                        className="h-8 w-8 p-0"
-                        disabled={sessionLoading || !sessionId || loading}
-                        title={
-                          sessionLoading 
-                            ? 'Starting session...' 
-                            : loading
-                            ? 'Processing...'
-                            : !sessionId 
-                            ? 'Session not ready'
-                            : isPaused 
-                            ? 'Resume meeting' 
-                            : 'Pause meeting'
-                        }
-                      >
-                        {sessionLoading || loading ? (
-                          <Loader2 className="h-4 w-4 animate-spin" />
-                        ) : isPaused ? (
-                          <Play className="h-4 w-4" />
-                        ) : (
-                          <Pause className="h-4 w-4" />
-                        )}
-                      </Button>
-                    )}
-                  </div>
-                </div>
-              )}
+              {/* Removed redundant timers - using FloatingTimer only */}
               {currentTeam && (
                 <div className="text-right">
                   <p className="text-sm text-slate-600">Team</p>
@@ -4830,10 +4726,8 @@ const WeeklyAccountabilityMeetingPage = () => {
                 <button
                   key={item.id}
                   onClick={() => {
-                    setActiveSection(item.id);
-                    if (isLeader && navigateToSection) {
-                      navigateToSection(item.id);
-                    }
+                    // Handle section change with timing updates
+                    handleSectionChange(item.id);
                   }}
                   className={`
                     flex items-center gap-2 px-4 py-2 rounded-lg font-medium text-sm transition-all whitespace-nowrap
@@ -5139,7 +5033,7 @@ const WeeklyAccountabilityMeetingPage = () => {
         />
       </div>
       
-      {/* Floating Timer Widget (Phase 2) */}
+      {/* Floating Timer Widget (Phase 2) - Now the primary timer */}
       {meetingStarted && showFloatingTimer && (
         <FloatingTimer
           elapsed={elapsedTime}
@@ -5148,6 +5042,7 @@ const WeeklyAccountabilityMeetingPage = () => {
           section={activeSection}
           sectionConfig={sectionConfig}
           meetingPace={meetingPace}
+          isLeader={isLeader}
           onPauseResume={handlePauseResume}
           onClose={() => setShowFloatingTimer(false)}
           onSectionClick={(sectionId) => {

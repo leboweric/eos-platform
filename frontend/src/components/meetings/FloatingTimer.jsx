@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { 
   Clock, 
@@ -7,7 +7,8 @@ import {
   X,
   Minimize2,
   Maximize2,
-  AlertTriangle
+  AlertTriangle,
+  Move
 } from 'lucide-react';
 
 const FloatingTimer = ({ 
@@ -19,9 +20,21 @@ const FloatingTimer = ({
   meetingPace = 'on-track',
   onPauseResume,
   onClose,
-  onSectionClick
+  onSectionClick,
+  isLeader = false
 }) => {
   const [isMinimized, setIsMinimized] = useState(false);
+  const [dockPosition, setDockPosition] = useState(() => {
+    return localStorage.getItem('timerDockPosition') || 'bottom-right';
+  });
+
+  useEffect(() => {
+    localStorage.setItem('timerDockPosition', dockPosition);
+  }, [dockPosition]);
+
+  const toggleDockPosition = () => {
+    setDockPosition(prev => prev === 'bottom-right' ? 'top-right' : 'bottom-right');
+  };
 
   const formatTime = (seconds) => {
     const hours = Math.floor(seconds / 3600);
@@ -57,9 +70,13 @@ const FloatingTimer = ({
 
   const isOvertime = sectionConfig && sectionElapsed > (sectionConfig.duration * 60);
 
+  const positionClasses = dockPosition === 'top-right' 
+    ? 'fixed top-4 right-4 z-50'
+    : 'fixed bottom-4 right-4 z-50';
+
   if (isMinimized) {
     return (
-      <div className="fixed bottom-4 right-4 z-50">
+      <div className={positionClasses}>
         <div className={`${getPaceColor()} rounded-full p-3 shadow-lg cursor-pointer border-2`}
           onClick={() => setIsMinimized(false)}>
           <div className="flex items-center gap-2 text-white">
@@ -73,7 +90,7 @@ const FloatingTimer = ({
   }
 
   return (
-    <div className="fixed bottom-4 right-4 z-50 w-80">
+    <div className={`${positionClasses} w-80`}>
       <div className="bg-white/95 backdrop-blur-sm rounded-lg shadow-xl border border-gray-200">
         {/* Header */}
         <div className={`${getPaceColor()} text-white px-4 py-2 rounded-t-lg`}>
@@ -84,14 +101,23 @@ const FloatingTimer = ({
             </div>
             <div className="flex items-center gap-1">
               <button
+                onClick={toggleDockPosition}
+                className="p-1 hover:bg-white/20 rounded transition-colors"
+                title={dockPosition === 'top-right' ? 'Move to bottom' : 'Move to top'}
+              >
+                <Move className="w-4 h-4" />
+              </button>
+              <button
                 onClick={() => setIsMinimized(true)}
                 className="p-1 hover:bg-white/20 rounded transition-colors"
+                title="Minimize"
               >
                 <Minimize2 className="w-4 h-4" />
               </button>
               <button
                 onClick={onClose}
                 className="p-1 hover:bg-white/20 rounded transition-colors"
+                title="Close timer"
               >
                 <X className="w-4 h-4" />
               </button>
@@ -110,24 +136,26 @@ const FloatingTimer = ({
                 <span className="text-xs text-orange-600 font-medium">PAUSED</span>
               )}
             </div>
-            <Button
-              size="sm"
-              variant={isPaused ? "default" : "outline"}
-              onClick={onPauseResume}
-              className="ml-2"
-            >
-              {isPaused ? (
-                <>
-                  <Play className="w-4 h-4 mr-1" />
-                  Resume
-                </>
-              ) : (
-                <>
-                  <Pause className="w-4 h-4 mr-1" />
-                  Pause
-                </>
-              )}
-            </Button>
+            {isLeader && (
+              <Button
+                size="sm"
+                variant={isPaused ? "default" : "outline"}
+                onClick={onPauseResume}
+                className="ml-2"
+              >
+                {isPaused ? (
+                  <>
+                    <Play className="w-4 h-4 mr-1" />
+                    Resume
+                  </>
+                ) : (
+                  <>
+                    <Pause className="w-4 h-4 mr-1" />
+                    Pause
+                  </>
+                )}
+              </Button>
+            )}
           </div>
 
           {/* Pace Indicator */}
