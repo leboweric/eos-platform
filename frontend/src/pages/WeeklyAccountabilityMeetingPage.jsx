@@ -235,6 +235,8 @@ const WeeklyAccountabilityMeetingPage = () => {
   const [cascadeToAll, setCascadeToAll] = useState(false);
   const [availableTeams, setAvailableTeams] = useState([]);
   const [selectedTeams, setSelectedTeams] = useState([]);
+  const [sendSummaryEmail, setSendSummaryEmail] = useState(true); // Default to sending email
+  const [archiveCompleted, setArchiveCompleted] = useState(true); // Default to archiving
   const [chartModal, setChartModal] = useState({ isOpen: false, metric: null, metricId: null });
   const [showHeadlineDialog, setShowHeadlineDialog] = useState(false);
   const [editingHeadline, setEditingHeadline] = useState(null);
@@ -4780,6 +4782,35 @@ const WeeklyAccountabilityMeetingPage = () => {
                   )}
                 </div>
 
+                {/* Conclude Options */}
+                <div className="border border-white/30 p-4 rounded-xl bg-white/60 backdrop-blur-sm shadow-sm space-y-3">
+                  <h4 className="font-medium text-slate-900 mb-3">Meeting Conclusion Options</h4>
+                  
+                  <div className="flex items-center gap-3">
+                    <Checkbox
+                      id="send-email"
+                      checked={sendSummaryEmail}
+                      onCheckedChange={(checked) => setSendSummaryEmail(checked)}
+                      className="h-5 w-5"
+                    />
+                    <label htmlFor="send-email" className="text-sm text-slate-700 cursor-pointer select-none">
+                      Send summary email to all team members
+                    </label>
+                  </div>
+                  
+                  <div className="flex items-center gap-3">
+                    <Checkbox
+                      id="archive-completed"
+                      checked={archiveCompleted}
+                      onCheckedChange={(checked) => setArchiveCompleted(checked)}
+                      className="h-5 w-5"
+                    />
+                    <label htmlFor="archive-completed" className="text-sm text-slate-700 cursor-pointer select-none">
+                      Archive all completed To-Dos and solved Issues
+                    </label>
+                  </div>
+                </div>
+
                 {/* Conclude Meeting Button */}
                 <Button
                   className="w-full shadow-lg hover:shadow-xl transition-all duration-200 text-white font-medium py-3"
@@ -4802,23 +4833,52 @@ const WeeklyAccountabilityMeetingPage = () => {
                           });
                         }
                         
-                        // Conclude the meeting and send email summary
-                        const orgId = user?.organizationId || user?.organization_id;
-                        const effectiveTeamId = getEffectiveTeamId(teamId, user);
+                        // Archive completed items if requested
+                        if (archiveCompleted) {
+                          const orgId = user?.organizationId || user?.organization_id;
+                          const effectiveTeamId = getEffectiveTeamId(teamId, user);
+                          
+                          // Archive completed todos
+                          try {
+                            await todosService.archiveDoneTodos();
+                          } catch (error) {
+                            console.error('Failed to archive todos:', error);
+                          }
+                          
+                          // Archive solved issues
+                          const solvedIssues = [...(shortTermIssues || []), ...(longTermIssues || [])]
+                            .filter(i => i.is_solved);
+                          for (const issue of solvedIssues) {
+                            try {
+                              await issuesService.archiveIssue(issue.id);
+                            } catch (error) {
+                              console.error('Failed to archive issue:', error);
+                            }
+                          }
+                        }
                         
-                        // Combine all issues for the meeting summary
-                        const allIssues = [...(shortTermIssues || []), ...(longTermIssues || [])];
+                        // Send email summary if requested
+                        if (sendSummaryEmail) {
+                          const orgId = user?.organizationId || user?.organization_id;
+                          const effectiveTeamId = getEffectiveTeamId(teamId, user);
+                          
+                          // Combine all issues for the meeting summary
+                          const allIssues = [...(shortTermIssues || []), ...(longTermIssues || [])];
+                          
+                          await meetingsService.concludeMeeting(orgId, effectiveTeamId, {
+                            meetingType: 'weekly',
+                            rating: meetingRating,
+                            todos: todos.filter(t => t.status !== 'complete' && t.status !== 'completed'),
+                            issues: allIssues.filter(i => !i.is_solved),
+                            headlines: headlines,
+                            cascadeMessage: cascadeMessage.trim() ? cascadeMessage : null
+                          });
+                        }
                         
-                        await meetingsService.concludeMeeting(orgId, effectiveTeamId, {
-                          meetingType: 'weekly',
-                          rating: meetingRating,
-                          todos: todos.filter(t => t.status !== 'complete' && t.status !== 'completed'),
-                          issues: allIssues.filter(i => !i.is_solved),
-                          headlines: headlines,
-                          cascadeMessage: cascadeMessage.trim() ? cascadeMessage : null
-                        });
-                        
-                        setSuccess('Meeting concluded successfully! Summary email sent to all participants.');
+                        const emailMessage = sendSummaryEmail ? 'Summary email sent to all participants.' : '';
+                        const archiveMessage = archiveCompleted ? 'Completed items archived.' : '';
+                        const successMessage = `Meeting concluded successfully! ${emailMessage} ${archiveMessage}`.trim();
+                        setSuccess(successMessage);
                         
                         // Clear form after success
                         setCascadeMessage('');
