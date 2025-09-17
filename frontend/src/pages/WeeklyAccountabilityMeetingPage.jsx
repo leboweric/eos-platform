@@ -4387,21 +4387,31 @@ const WeeklyAccountabilityMeetingPage = () => {
                                   
                                   {/* Issue Title */}
                                   <div className="flex-1 ml-3">
-                                    <div 
-                                      className={`font-semibold text-slate-900 leading-tight cursor-pointer ${
-                                        isSolved ? 'line-through opacity-75' : ''
-                                      }`}
-                                      onClick={(e) => togglePriorityExpansion(issue.id, e)}
-                                    >
-                                      {issue.title}
-                                      {issue.attachments && issue.attachments.length > 0 && (
-                                        <Paperclip className="h-4 w-4 inline ml-2 text-slate-400" />
-                                      )}
-                                      {issue.description && !isExpanded && (
-                                        <ChevronRight className="h-4 w-4 inline ml-2 text-slate-400" />
-                                      )}
-                                      {isExpanded && (
-                                        <ChevronRight className="h-4 w-4 inline ml-2 text-slate-400 rotate-90" />
+                                    <div className="flex items-center">
+                                      <div 
+                                        className={`flex-1 font-semibold text-slate-900 leading-tight cursor-pointer hover:text-blue-600 transition-colors ${
+                                          isSolved ? 'line-through opacity-75' : ''
+                                        }`}
+                                        onClick={() => {
+                                          setEditingIssue(issue);
+                                          setShowIssueDialog(true);
+                                        }}
+                                      >
+                                        {issue.title}
+                                        {issue.attachments && issue.attachments.length > 0 && (
+                                          <Paperclip className="h-4 w-4 inline ml-2 text-slate-400" />
+                                        )}
+                                      </div>
+                                      {issue.description && (
+                                        <button
+                                          onClick={(e) => {
+                                            e.stopPropagation();
+                                            togglePriorityExpansion(issue.id, e);
+                                          }}
+                                          className="ml-2 p-1 hover:bg-slate-100 rounded transition-colors"
+                                        >
+                                          <ChevronRight className={`h-4 w-4 text-slate-400 transition-transform ${isExpanded ? 'rotate-90' : ''}`} />
+                                        </button>
                                       )}
                                     </div>
                                   </div>
