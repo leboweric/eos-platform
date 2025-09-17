@@ -301,7 +301,7 @@ export const updateCascadingMessage = async (req, res) => {
     // Update the message
     const result = await query(
       `UPDATE cascading_messages 
-       SET message = $1, updated_at = CURRENT_TIMESTAMP
+       SET message = $1
        WHERE id = $2
        RETURNING *`,
       [message, messageId]
