@@ -47,6 +47,23 @@ export const cascadingMessagesService = {
     return response.data;
   },
 
+  // Update a cascading message
+  async updateCascadingMessage(orgId, teamId, messageId, message) {
+    const response = await axios.put(
+      `/organizations/${orgId}/teams/${teamId}/cascading-messages/${messageId}`,
+      { message }
+    );
+    return response.data;
+  },
+
+  // Delete a cascading message
+  async deleteCascadingMessage(orgId, teamId, messageId) {
+    const response = await axios.delete(
+      `/organizations/${orgId}/teams/${teamId}/cascading-messages/${messageId}`
+    );
+    return response.data;
+  },
+
   // LEGACY: Create message (old endpoint structure)
   async createMessage(orgId, data) {
     const response = await axios.post(
