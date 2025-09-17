@@ -25,7 +25,7 @@ const FloatingTimer = ({
 }) => {
   const [isMinimized, setIsMinimized] = useState(false);
   const [dockPosition, setDockPosition] = useState(() => {
-    return localStorage.getItem('timerDockPosition') || 'bottom-right';
+    return localStorage.getItem('timerDockPosition') || 'bottom-left';
   });
 
   useEffect(() => {
@@ -33,7 +33,7 @@ const FloatingTimer = ({
   }, [dockPosition]);
 
   const toggleDockPosition = () => {
-    setDockPosition(prev => prev === 'bottom-right' ? 'top-right' : 'bottom-right');
+    setDockPosition(prev => prev === 'bottom-left' ? 'top-left' : 'bottom-left');
   };
 
   const formatTime = (seconds) => {
@@ -70,9 +70,9 @@ const FloatingTimer = ({
 
   const isOvertime = sectionConfig && sectionElapsed > (sectionConfig.duration * 60);
 
-  const positionClasses = dockPosition === 'top-right' 
-    ? 'fixed top-20 right-4 z-50'  // Moved from top-4 to top-20 to clear the header/dropdown
-    : 'fixed bottom-4 right-4 z-50';
+  const positionClasses = dockPosition === 'top-left' 
+    ? 'fixed top-20 left-4 z-50'  // Top-left position, clears header
+    : 'fixed bottom-4 left-4 z-50';  // Bottom-left position
 
   if (isMinimized) {
     return (
@@ -103,7 +103,7 @@ const FloatingTimer = ({
               <button
                 onClick={toggleDockPosition}
                 className="p-1 hover:bg-white/20 rounded transition-colors"
-                title={dockPosition === 'top-right' ? 'Move to bottom' : 'Move to top'}
+                title={dockPosition === 'top-left' ? 'Move to bottom' : 'Move to top'}
               >
                 <Move className="w-4 h-4" />
               </button>
