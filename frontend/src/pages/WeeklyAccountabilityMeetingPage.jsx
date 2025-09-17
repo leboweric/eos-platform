@@ -4485,7 +4485,6 @@ const WeeklyAccountabilityMeetingPage = () => {
                       >
                         <option value="due_date">Due Date</option>
                         <option value="assignee">Assignee</option>
-                        <option value="priority">Priority</option>
                       </select>
                     </div>
                   </div>
@@ -4506,9 +4505,6 @@ const WeeklyAccountabilityMeetingPage = () => {
                         const aName = a.assigned_to ? `${a.assigned_to.first_name} ${a.assigned_to.last_name}` : 'Unassigned';
                         const bName = b.assigned_to ? `${b.assigned_to.first_name} ${b.assigned_to.last_name}` : 'Unassigned';
                         return aName.localeCompare(bName);
-                      } else if (todoSortBy === 'priority') {
-                        const priorityOrder = { high: 0, medium: 1, low: 2 };
-                        return (priorityOrder[a.priority] || 3) - (priorityOrder[b.priority] || 3);
                       }
                       return 0;
                     });
@@ -4537,12 +4533,6 @@ const WeeklyAccountabilityMeetingPage = () => {
                               </h5>
                               {assigneeTodos.map(todo => (
                                 <div key={todo.id} className="flex items-start gap-2 p-2 bg-slate-50 rounded-lg ml-2">
-                                  <div className="w-1 h-full rounded" style={{ 
-                                    backgroundColor: todo.priority === 'high' ? '#EF4444' : 
-                                                   todo.priority === 'medium' ? themeColors.primary : 
-                                                   '#10B981',
-                                    minHeight: '40px'
-                                  }} />
                                   <div className="flex-1 min-w-0">
                                     <p className="text-sm font-medium text-slate-900">{todo.title}</p>
                                     <div className="flex items-center gap-3 mt-1">
@@ -4554,15 +4544,6 @@ const WeeklyAccountabilityMeetingPage = () => {
                                         }`}>
                                           Due: {format(new Date(todo.due_date), 'MMM d, yyyy')}
                                           {new Date(todo.due_date) < new Date() && ' (Overdue)'}
-                                        </span>
-                                      )}
-                                      {todo.priority && (
-                                        <span className={`text-xs px-2 py-0.5 rounded-full ${
-                                          todo.priority === 'high' ? 'bg-red-100 text-red-700' :
-                                          todo.priority === 'medium' ? 'bg-yellow-100 text-yellow-700' :
-                                          'bg-green-100 text-green-700'
-                                        }`}>
-                                          {todo.priority}
                                         </span>
                                       )}
                                     </div>
@@ -4582,12 +4563,6 @@ const WeeklyAccountabilityMeetingPage = () => {
                       <div className="space-y-2 max-h-64 overflow-y-auto">
                         {sortedTodos.map(todo => (
                           <div key={todo.id} className="flex items-start gap-2 p-2 bg-slate-50 rounded-lg">
-                            <div className="w-1 h-full rounded" style={{ 
-                              backgroundColor: todo.priority === 'high' ? '#EF4444' : 
-                                             todo.priority === 'medium' ? themeColors.primary : 
-                                             '#10B981',
-                              minHeight: '40px'
-                            }} />
                             <div className="flex-1 min-w-0">
                               <p className="text-sm font-medium text-slate-900">{todo.title}</p>
                               <div className="flex items-center gap-3 mt-1">
@@ -4604,15 +4579,6 @@ const WeeklyAccountabilityMeetingPage = () => {
                                   }`}>
                                     Due: {format(new Date(todo.due_date), 'MMM d, yyyy')}
                                     {new Date(todo.due_date) < new Date() && ' (Overdue)'}
-                                  </span>
-                                )}
-                                {todo.priority && (
-                                  <span className={`text-xs px-2 py-0.5 rounded-full ${
-                                    todo.priority === 'high' ? 'bg-red-100 text-red-700' :
-                                    todo.priority === 'medium' ? 'bg-yellow-100 text-yellow-700' :
-                                    'bg-green-100 text-green-700'
-                                  }`}>
-                                    {todo.priority}
                                   </span>
                                 )}
                               </div>
