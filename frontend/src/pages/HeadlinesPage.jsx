@@ -335,7 +335,7 @@ const HeadlinesPage = () => {
                           {headline.text}
                         </p>
                         <div className="mt-2 flex items-center gap-2 text-xs text-slate-500">
-                          <span>{headline.created_by_name || 'Unknown'}</span>
+                          <span>{headline.createdBy || headline.created_by_name || 'Unknown'}</span>
                           <span>•</span>
                           <span>{format(new Date(headline.created_at), 'MMM d, yyyy')}</span>
                         </div>
@@ -463,7 +463,7 @@ const HeadlinesPage = () => {
                           {headline.text}
                         </p>
                         <div className="mt-2 flex items-center gap-2 text-xs text-slate-500">
-                          <span>{headline.created_by_name || 'Unknown'}</span>
+                          <span>{headline.createdBy || headline.created_by_name || 'Unknown'}</span>
                           <span>•</span>
                           <span>{format(new Date(headline.created_at), 'MMM d, yyyy')}</span>
                         </div>
