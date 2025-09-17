@@ -71,7 +71,7 @@ const FloatingTimer = ({
   const isOvertime = sectionConfig && sectionElapsed > (sectionConfig.duration * 60);
 
   const positionClasses = dockPosition === 'top-right' 
-    ? 'fixed top-4 right-4 z-50'
+    ? 'fixed top-20 right-4 z-50'  // Moved from top-4 to top-20 to clear the header/dropdown
     : 'fixed bottom-4 right-4 z-50';
 
   if (isMinimized) {
