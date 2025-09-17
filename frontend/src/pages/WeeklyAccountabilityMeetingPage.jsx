@@ -5240,11 +5240,11 @@ const WeeklyAccountabilityMeetingPage = () => {
       {/* Floating Timer Widget (Phase 2) - Now the primary timer */}
       {meetingStarted && showFloatingTimer && (
         <FloatingTimer
-            elapsed={elapsedTime}
-            sectionElapsed={sectionElapsedTime}
-            isPaused={isPaused}
-            section={activeSection}
-            sectionConfig={sectionConfig}
+          elapsed={elapsedTime}
+          sectionElapsed={sectionElapsedTime}
+          isPaused={isPaused}
+          section={activeSection}
+          sectionConfig={sectionConfig}
           meetingPace={meetingPace}
           isLeader={isLeader}
           onPauseResume={handlePauseResume}
@@ -5254,8 +5254,7 @@ const WeeklyAccountabilityMeetingPage = () => {
             // Scroll to the section
             document.getElementById(`section-${sectionId}`)?.scrollIntoView({ behavior: 'smooth' });
           }}
-          />
-        </>
+        />
       )}
     </div>
   );
