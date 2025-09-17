@@ -3915,19 +3915,42 @@ const WeeklyAccountabilityMeetingPage = () => {
                 const todosByAssignee = {};
                 
                 todos.forEach(todo => {
-                  const assigneeId = todo.assigned_to?.id || 'unassigned';
-                  const assigneeName = todo.assigned_to ? 
-                    `${todo.assigned_to.first_name} ${todo.assigned_to.last_name}` : 
-                    'Unassigned';
-                  
-                  if (!todosByAssignee[assigneeId]) {
-                    todosByAssignee[assigneeId] = {
-                      id: assigneeId,
-                      name: assigneeName,
-                      todos: []
-                    };
+                  // Handle multi-assignee todos
+                  if (todo.assignees && todo.assignees.length > 0) {
+                    // For multi-assignee todos, add to each assignee's group
+                    todo.assignees.forEach(assignee => {
+                      const assigneeId = assignee.user_id || assignee.id;
+                      const assigneeName = `${assignee.first_name} ${assignee.last_name}`;
+                      
+                      if (!todosByAssignee[assigneeId]) {
+                        todosByAssignee[assigneeId] = {
+                          id: assigneeId,
+                          name: assigneeName,
+                          todos: []
+                        };
+                      }
+                      todosByAssignee[assigneeId].todos.push({
+                        ...todo,
+                        isMultiAssignee: true,
+                        allAssignees: todo.assignees
+                      });
+                    });
+                  } else {
+                    // Handle single assignee todos (backward compatibility)
+                    const assigneeId = todo.assigned_to?.id || 'unassigned';
+                    const assigneeName = todo.assigned_to ? 
+                      `${todo.assigned_to.first_name} ${todo.assigned_to.last_name}` : 
+                      'Unassigned';
+                    
+                    if (!todosByAssignee[assigneeId]) {
+                      todosByAssignee[assigneeId] = {
+                        id: assigneeId,
+                        name: assigneeName,
+                        todos: []
+                      };
+                    }
+                    todosByAssignee[assigneeId].todos.push(todo);
                   }
-                  todosByAssignee[assigneeId].todos.push(todo);
                 });
                 
                 // Convert to array and sort by name
@@ -4059,6 +4082,14 @@ const WeeklyAccountabilityMeetingPage = () => {
                                     >
                                       <div className={`font-semibold text-slate-900 leading-tight ${isComplete ? 'line-through opacity-75' : ''}`}>
                                         {todo.title}
+                                        {todo.isMultiAssignee && (
+                                          <span className="ml-2 text-xs bg-blue-100 text-blue-700 px-2 py-0.5 rounded-full">
+                                            Also: {todo.allAssignees
+                                              .filter(a => (a.user_id || a.id) !== assignee.id)
+                                              .map(a => `${a.first_name} ${a.last_name[0]}.`)
+                                              .join(', ')}
+                                          </span>
+                                        )}
                                       </div>
                                       {todo.description && (
                                         <p className="text-sm text-slate-600 mt-1 line-clamp-1">
@@ -4512,13 +4543,29 @@ const WeeklyAccountabilityMeetingPage = () => {
                     // Group by assignee if sorting by assignee
                     if (todoSortBy === 'assignee') {
                       const todosByAssignee = sortedTodos.reduce((acc, todo) => {
-                        const assigneeName = todo.assigned_to ? 
-                          `${todo.assigned_to.first_name} ${todo.assigned_to.last_name}` : 
-                          'Unassigned';
-                        if (!acc[assigneeName]) {
-                          acc[assigneeName] = [];
+                        // Handle multi-assignee todos
+                        if (todo.assignees && todo.assignees.length > 0) {
+                          todo.assignees.forEach(assignee => {
+                            const assigneeName = `${assignee.first_name} ${assignee.last_name}`;
+                            if (!acc[assigneeName]) {
+                              acc[assigneeName] = [];
+                            }
+                            acc[assigneeName].push({
+                              ...todo,
+                              isMultiAssignee: todo.assignees.length > 1,
+                              allAssignees: todo.assignees
+                            });
+                          });
+                        } else {
+                          // Handle single assignee todos (backward compatibility)
+                          const assigneeName = todo.assigned_to ? 
+                            `${todo.assigned_to.first_name} ${todo.assigned_to.last_name}` : 
+                            'Unassigned';
+                          if (!acc[assigneeName]) {
+                            acc[assigneeName] = [];
+                          }
+                          acc[assigneeName].push(todo);
                         }
-                        acc[assigneeName].push(todo);
                         return acc;
                       }, {});
                       
@@ -4534,7 +4581,17 @@ const WeeklyAccountabilityMeetingPage = () => {
                               {assigneeTodos.map(todo => (
                                 <div key={todo.id} className="flex items-start gap-2 p-2 bg-slate-50 rounded-lg ml-2">
                                   <div className="flex-1 min-w-0">
-                                    <p className="text-sm font-medium text-slate-900">{todo.title}</p>
+                                    <p className="text-sm font-medium text-slate-900">
+                                      {todo.title}
+                                      {todo.isMultiAssignee && (
+                                        <span className="ml-2 text-xs bg-blue-100 text-blue-700 px-2 py-0.5 rounded-full">
+                                          Also: {todo.allAssignees
+                                            .filter(a => `${a.first_name} ${a.last_name}` !== assignee)
+                                            .map(a => `${a.first_name} ${a.last_name[0]}.`)
+                                            .join(', ')}
+                                        </span>
+                                      )}
+                                    </p>
                                     <div className="flex items-center gap-3 mt-1">
                                       {todo.due_date && (
                                         <span className={`text-xs font-medium ${
@@ -4566,7 +4623,12 @@ const WeeklyAccountabilityMeetingPage = () => {
                             <div className="flex-1 min-w-0">
                               <p className="text-sm font-medium text-slate-900">{todo.title}</p>
                               <div className="flex items-center gap-3 mt-1">
-                                {todo.assigned_to && (
+                                {/* Handle multi-assignee display */}
+                                {todo.assignees && todo.assignees.length > 0 ? (
+                                  <span className="text-xs text-slate-600 font-medium">
+                                    {todo.assignees.map(a => `${a.first_name} ${a.last_name}`).join(', ')}
+                                  </span>
+                                ) : todo.assigned_to && (
                                   <span className="text-xs text-slate-600 font-medium">
                                     {todo.assigned_to.first_name} {todo.assigned_to.last_name}
                                   </span>

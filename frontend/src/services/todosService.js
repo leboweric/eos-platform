@@ -47,6 +47,7 @@ export const todosService = {
       title: todoData.title,
       description: todoData.description,
       assignedToId: todoData.assignedToId,
+      assignedToIds: todoData.assignedToIds, // For multi-assignee support
       dueDate: todoData.dueDate,
       teamId: todoData.department_id || todoData.teamId || null
     };
@@ -62,9 +63,15 @@ export const todosService = {
   updateTodo: async (todoId, todoData) => {
     const orgId = getOrgId();
     
+    // Include assignedToIds if present for multi-assignee support
+    const updateData = {
+      ...todoData,
+      ...(todoData.assignedToIds && { assignedToIds: todoData.assignedToIds })
+    };
+    
     const response = await axios.put(
       `/organizations/${orgId}/todos/${todoId}`,
-      todoData
+      updateData
     );
     return response.data.data;
   },

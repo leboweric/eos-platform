@@ -81,6 +81,35 @@ export const getTodos = async (req, res) => {
     console.log('Todos query conditions:', conditions.join(' AND '));
     console.log('Todos query params:', params);
     console.log(`Found ${todosResult.rows.length} todos for org ${orgId}`);
+    
+    // Fetch multi-assignees for todos that have them
+    const multiAssigneeTodoIds = todosResult.rows
+      .filter(todo => todo.is_multi_assignee)
+      .map(todo => todo.id);
+    
+    let multiAssigneesMap = {};
+    if (multiAssigneeTodoIds.length > 0) {
+      const multiAssigneesResult = await query(
+        `SELECT ta.todo_id, u.id, u.first_name, u.last_name, u.email
+         FROM todo_assignees ta
+         JOIN users u ON ta.user_id = u.id
+         WHERE ta.todo_id = ANY($1)`,
+        [multiAssigneeTodoIds]
+      );
+      
+      // Group assignees by todo_id
+      multiAssigneesResult.rows.forEach(row => {
+        if (!multiAssigneesMap[row.todo_id]) {
+          multiAssigneesMap[row.todo_id] = [];
+        }
+        multiAssigneesMap[row.todo_id].push({
+          id: row.id,
+          first_name: row.first_name,
+          last_name: row.last_name,
+          email: row.email
+        });
+      });
+    }
 
     // Get team members for the dropdown
     const teamMembersResult = await query(
@@ -102,7 +131,8 @@ export const getTodos = async (req, res) => {
             first_name: todo.assignee_first_name,
             last_name: todo.assignee_last_name,
             email: todo.assignee_email
-          } : null
+          } : null,
+          assignees: multiAssigneesMap[todo.id] || [] // Add multi-assignees
         })),
         teamMembers: teamMembersResult.rows
       }
@@ -122,24 +152,46 @@ export const getTodos = async (req, res) => {
 export const createTodo = async (req, res) => {
   try {
     const { orgId } = req.params;
-    const { title, description, assignedToId, dueDate, teamId } = req.body;
+    const { title, description, assignedToId, assignedToIds, dueDate, teamId } = req.body;
     const userId = req.user.id;
 
     // Calculate default due date (7 days from now) if not provided
     const finalDueDate = dueDate || getDateDaysFromNow(7);
 
     const todoId = uuidv4();
+    
+    // Handle multi-assignees
+    const isMultiAssignee = assignedToIds && assignedToIds.length > 0;
+    const singleAssignee = isMultiAssignee ? null : (assignedToId || userId);
+    
     const result = await query(
       `INSERT INTO todos (
         id, organization_id, team_id, owner_id, assigned_to_id, 
-        title, description, due_date, priority, status
-      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
+        title, description, due_date, priority, status, is_multi_assignee
+      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
       RETURNING *`,
       [
-        todoId, orgId, teamId || null, userId, assignedToId || userId,
-        title, description, finalDueDate, 'medium', 'incomplete'
+        todoId, orgId, teamId || null, userId, singleAssignee,
+        title, description, finalDueDate, 'medium', 'incomplete', isMultiAssignee
       ]
     );
+    
+    // If multi-assignee, insert into junction table
+    if (isMultiAssignee && assignedToIds.length > 0) {
+      const assigneeValues = assignedToIds.map((assigneeId, index) => 
+        `($${index * 3 + 1}, $${index * 3 + 2}, $${index * 3 + 3})`
+      ).join(', ');
+      
+      const assigneeParams = assignedToIds.flatMap(assigneeId => 
+        [todoId, assigneeId, userId]
+      );
+      
+      await query(
+        `INSERT INTO todo_assignees (todo_id, user_id, assigned_by) 
+         VALUES ${assigneeValues}`,
+        assigneeParams
+      );
+    }
 
     // Fetch the complete todo with user information
     const todoResult = await query(
@@ -159,6 +211,19 @@ export const createTodo = async (req, res) => {
       WHERE t.id = $1`,
       [todoId]
     );
+    
+    // If multi-assignee, fetch all assignees
+    let multiAssignees = [];
+    if (isMultiAssignee) {
+      const assigneesResult = await query(
+        `SELECT u.id, u.first_name, u.last_name, u.email
+         FROM todo_assignees ta
+         JOIN users u ON ta.user_id = u.id
+         WHERE ta.todo_id = $1`,
+        [todoId]
+      );
+      multiAssignees = assigneesResult.rows;
+    }
 
     const todo = todoResult.rows[0];
     res.status(201).json({
@@ -170,7 +235,8 @@ export const createTodo = async (req, res) => {
           first_name: todo.assignee_first_name,
           last_name: todo.assignee_last_name,
           email: todo.assignee_email
-        } : null
+        } : null,
+        assignees: multiAssignees // New field for multi-assignees
       }
     });
   } catch (error) {
@@ -188,7 +254,7 @@ export const createTodo = async (req, res) => {
 export const updateTodo = async (req, res) => {
   try {
     const { orgId, todoId } = req.params;
-    const { title, description, assignedToId, dueDate, status } = req.body;
+    const { title, description, assignedToId, assignedToIds, dueDate, status } = req.body;
     const userId = req.user.id;
 
     // Check if todo exists and belongs to the organization
@@ -221,10 +287,21 @@ export const updateTodo = async (req, res) => {
       paramIndex++;
     }
 
-    if (assignedToId !== undefined) {
+    // Handle assignee updates
+    const isMultiAssignee = assignedToIds !== undefined && assignedToIds.length > 0;
+    
+    if (assignedToIds !== undefined) {
+      // Switching to multi-assignee mode
+      updates.push(`assigned_to_id = NULL`);
+      updates.push(`is_multi_assignee = TRUE`);
+      
+      // We'll handle the junction table after the main update
+    } else if (assignedToId !== undefined) {
+      // Single assignee mode
       updates.push(`assigned_to_id = $${paramIndex}`);
       values.push(assignedToId);
       paramIndex++;
+      updates.push(`is_multi_assignee = FALSE`);
     }
 
     if (dueDate !== undefined) {
@@ -265,6 +342,29 @@ export const updateTodo = async (req, res) => {
        RETURNING *`,
       values
     );
+    
+    // Handle multi-assignee updates
+    if (isMultiAssignee) {
+      // Clear existing assignees
+      await query('DELETE FROM todo_assignees WHERE todo_id = $1', [todoId]);
+      
+      // Add new assignees
+      if (assignedToIds && assignedToIds.length > 0) {
+        const assigneeValues = assignedToIds.map((assigneeId, index) => 
+          `($${index * 3 + 1}, $${index * 3 + 2}, $${index * 3 + 3})`
+        ).join(', ');
+        
+        const assigneeParams = assignedToIds.flatMap(assigneeId => 
+          [todoId, assigneeId, userId]
+        );
+        
+        await query(
+          `INSERT INTO todo_assignees (todo_id, user_id, assigned_by) 
+           VALUES ${assigneeValues}`,
+          assigneeParams
+        );
+      }
+    }
 
     // Fetch the complete todo with user information
     const todoResult = await query(
@@ -286,6 +386,19 @@ export const updateTodo = async (req, res) => {
       [todoId]
     );
 
+    // Fetch multi-assignees if applicable
+    let multiAssignees = [];
+    if (result.rows[0]?.is_multi_assignee) {
+      const assigneesResult = await query(
+        `SELECT u.id, u.first_name, u.last_name, u.email
+         FROM todo_assignees ta
+         JOIN users u ON ta.user_id = u.id
+         WHERE ta.todo_id = $1`,
+        [todoId]
+      );
+      multiAssignees = assigneesResult.rows;
+    }
+    
     const todo = todoResult.rows[0];
     res.json({
       success: true,
@@ -296,7 +409,8 @@ export const updateTodo = async (req, res) => {
           first_name: todo.assignee_first_name,
           last_name: todo.assignee_last_name,
           email: todo.assignee_email
-        } : null
+        } : null,
+        assignees: multiAssignees
       }
     });
   } catch (error) {

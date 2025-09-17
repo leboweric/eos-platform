@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
@@ -6,7 +6,7 @@ import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import { Loader2, Save, AlertCircle, Calendar, User, Paperclip, X, Download, Link, Sparkles, CheckSquare, MessageSquare, Plus, Trash2, Upload } from 'lucide-react';
+import { Loader2, Save, AlertCircle, Calendar, User, Users, Paperclip, X, Download, Link, Sparkles, CheckSquare, MessageSquare, Plus, Trash2, Upload, Check, ChevronDown } from 'lucide-react';
 import { todosService } from '../../services/todosService';
 import { useAuthStore } from '../../stores/authStore';
 import { getDateDaysFromNow } from '../../utils/dateUtils';
@@ -18,8 +18,12 @@ const TodoDialog = ({ open, onOpenChange, todo, todoFromIssue, teamMembers, onSa
     title: '',
     description: '',
     assignedToId: '',
+    assignedToIds: [], // For multi-assignment
+    isMultiAssignee: false,
     dueDate: ''
   });
+  const [showAssigneeDropdown, setShowAssigneeDropdown] = useState(false);
+  const dropdownRef = useRef(null);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState(null);
   const [files, setFiles] = useState([]);
@@ -53,12 +57,34 @@ const TodoDialog = ({ open, onOpenChange, todo, todoFromIssue, teamMembers, onSa
     fetchTheme();
   }, [user]);
 
+  // Close dropdown when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
+        setShowAssigneeDropdown(false);
+      }
+    };
+
+    if (showAssigneeDropdown) {
+      document.addEventListener('mousedown', handleClickOutside);
+      return () => {
+        document.removeEventListener('mousedown', handleClickOutside);
+      };
+    }
+  }, [showAssigneeDropdown]);
+
   useEffect(() => {
     if (todo) {
+      // Check if it's a multi-assignee todo
+      const isMulti = todo.is_multi_assignee || (todo.assignees && todo.assignees.length > 0);
+      const assigneeIds = todo.assignees ? todo.assignees.map(a => a.user_id || a.id) : [];
+      
       setFormData({
         title: todo.title || '',
         description: todo.description || '',
-        assignedToId: todo.assigned_to_id || todo.assignee_id || todo.assignedToId || '',
+        assignedToId: !isMulti ? (todo.assigned_to_id || todo.assignee_id || todo.assignedToId || '') : '',
+        assignedToIds: isMulti ? assigneeIds : [],
+        isMultiAssignee: isMulti,
         dueDate: todo.due_date ? todo.due_date.split('T')[0] : '' // Use date string directly, don't convert
       });
       
@@ -73,6 +99,8 @@ const TodoDialog = ({ open, onOpenChange, todo, todoFromIssue, teamMembers, onSa
         title: '',
         description: '',
         assignedToId: '',
+        assignedToIds: [],
+        isMultiAssignee: false,
         dueDate: getDateDaysFromNow(7)
       });
       setExistingAttachments([]);
@@ -89,6 +117,8 @@ const TodoDialog = ({ open, onOpenChange, todo, todoFromIssue, teamMembers, onSa
           title: `Follow up: ${todoFromIssue.title}`,
           description: `Related to issue: ${todoFromIssue.title}`,
           assignedToId: todoFromIssue.owner_id || user?.id || '',
+          assignedToIds: [],
+          isMultiAssignee: false,
           dueDate: getDateDaysFromNow(7)
         });
       } else {
@@ -97,6 +127,8 @@ const TodoDialog = ({ open, onOpenChange, todo, todoFromIssue, teamMembers, onSa
           title: '',
           description: '',
           assignedToId: '',
+          assignedToIds: [],
+          isMultiAssignee: false,
           dueDate: getDateDaysFromNow(7)
         });
       }
@@ -129,7 +161,13 @@ const TodoDialog = ({ open, onOpenChange, todo, todoFromIssue, teamMembers, onSa
     setError(null);
     
     try {
-      const savedTodo = await onSave(formData);
+      // Pass the appropriate assignee data based on multi-assignee mode
+      const submitData = {
+        ...formData,
+        // Include assignedToIds only if multi-assignee mode is enabled
+        ...(formData.isMultiAssignee && { assignedToIds: formData.assignedToIds })
+      };
+      const savedTodo = await onSave(submitData);
       
       // Upload any new files
       if (savedTodo && savedTodo.id && files.length > 0) {
@@ -429,27 +467,108 @@ const TodoDialog = ({ open, onOpenChange, todo, todoFromIssue, teamMembers, onSa
 
             <div className="grid grid-cols-1 gap-4">
               <div className="space-y-3">
-                <Label htmlFor="assignedTo" className="text-sm font-semibold text-slate-700 flex items-center gap-2">
-                  <User className="h-4 w-4" />
-                  Assigned To
-                </Label>
-                <Select 
-                  value={formData.assignedToId} 
-                  onValueChange={(value) => setFormData({ ...formData, assignedToId: value })}
-                >
-                  <SelectTrigger className="bg-white/80 backdrop-blur-sm border-white/20 focus:border-blue-400 rounded-xl shadow-sm">
-                    <SelectValue placeholder="Select team member" />
-                  </SelectTrigger>
-                  <SelectContent className="bg-white/95 backdrop-blur-sm border-white/20 rounded-xl shadow-xl">
-                    {teamMembers.map(member => (
-                      <SelectItem key={member.id} value={member.id}>
-                        {member.first_name} {member.last_name}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                <div className="flex items-center justify-between">
+                  <Label htmlFor="assignedTo" className="text-sm font-semibold text-slate-700 flex items-center gap-2">
+                    {formData.isMultiAssignee ? <Users className="h-4 w-4" /> : <User className="h-4 w-4" />}
+                    Assigned To
+                  </Label>
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => {
+                      setFormData({ 
+                        ...formData, 
+                        isMultiAssignee: !formData.isMultiAssignee,
+                        assignedToIds: formData.isMultiAssignee ? [] : (formData.assignedToId ? [formData.assignedToId] : []),
+                        assignedToId: !formData.isMultiAssignee ? '' : formData.assignedToIds[0] || ''
+                      });
+                    }}
+                    className="text-xs"
+                  >
+                    {formData.isMultiAssignee ? 'Switch to Single' : 'Switch to Multiple'}
+                  </Button>
+                </div>
+                
+                {formData.isMultiAssignee ? (
+                  <div className="relative" ref={dropdownRef}>
+                    <div 
+                      className="bg-white/80 backdrop-blur-sm border border-white/20 focus-within:border-blue-400 rounded-xl shadow-sm p-2 min-h-[40px] cursor-pointer flex flex-wrap items-center gap-1"
+                      onClick={() => setShowAssigneeDropdown(!showAssigneeDropdown)}
+                    >
+                      {formData.assignedToIds.length > 0 ? (
+                        formData.assignedToIds.map(id => {
+                          const member = teamMembers.find(m => m.id === id);
+                          return member ? (
+                            <div key={id} className="inline-flex items-center gap-1 bg-blue-100 text-blue-800 px-2 py-1 rounded-lg text-sm">
+                              <span>{member.first_name} {member.last_name}</span>
+                              <button
+                                type="button"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  setFormData({
+                                    ...formData,
+                                    assignedToIds: formData.assignedToIds.filter(aid => aid !== id)
+                                  });
+                                }}
+                                className="hover:text-red-600"
+                              >
+                                <X className="h-3 w-3" />
+                              </button>
+                            </div>
+                          ) : null;
+                        })
+                      ) : (
+                        <span className="text-gray-400">Select team members...</span>
+                      )}
+                      <ChevronDown className="h-4 w-4 text-gray-400 ml-auto" />
+                    </div>
+                    
+                    {showAssigneeDropdown && (
+                      <div className="absolute z-50 w-full mt-1 bg-white border border-gray-200 rounded-xl shadow-xl max-h-60 overflow-y-auto">
+                        {teamMembers.map(member => {
+                          const isSelected = formData.assignedToIds.includes(member.id);
+                          return (
+                            <div
+                              key={member.id}
+                              className="px-3 py-2 hover:bg-gray-50 cursor-pointer flex items-center justify-between"
+                              onClick={() => {
+                                setFormData({
+                                  ...formData,
+                                  assignedToIds: isSelected
+                                    ? formData.assignedToIds.filter(id => id !== member.id)
+                                    : [...formData.assignedToIds, member.id]
+                                });
+                              }}
+                            >
+                              <span className="text-sm">
+                                {member.first_name} {member.last_name}
+                              </span>
+                              {isSelected && <Check className="h-4 w-4 text-blue-600" />}
+                            </div>
+                          );
+                        })}
+                      </div>
+                    )}
+                  </div>
+                ) : (
+                  <Select 
+                    value={formData.assignedToId} 
+                    onValueChange={(value) => setFormData({ ...formData, assignedToId: value })}
+                  >
+                    <SelectTrigger className="bg-white/80 backdrop-blur-sm border-white/20 focus:border-blue-400 rounded-xl shadow-sm">
+                      <SelectValue placeholder="Select team member" />
+                    </SelectTrigger>
+                    <SelectContent className="bg-white/95 backdrop-blur-sm border-white/20 rounded-xl shadow-xl">
+                      {teamMembers.map(member => (
+                        <SelectItem key={member.id} value={member.id}>
+                          {member.first_name} {member.last_name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                )}
               </div>
-
             </div>
 
             <div className="space-y-3">
