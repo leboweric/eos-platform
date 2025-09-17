@@ -77,7 +77,7 @@ INSERT INTO meeting_section_configs (
   is_default
 )
 SELECT DISTINCT
-  organization_id,
+  o.id,
   NULL, -- org-wide default
   'weekly',
   '[
@@ -90,10 +90,10 @@ SELECT DISTINCT
     {"id": "conclude", "name": "Conclude", "duration": 5, "icon": "CheckCircle", "order": 7, "description": "Rate the meeting and cascade messages"}
   ]'::jsonb,
   true
-FROM organizations
+FROM organizations o
 WHERE NOT EXISTS (
   SELECT 1 FROM meeting_section_configs msc 
-  WHERE msc.organization_id = organizations.id 
+  WHERE msc.organization_id = o.id 
     AND msc.meeting_type = 'weekly'
     AND msc.is_default = true
 );
