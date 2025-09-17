@@ -194,6 +194,7 @@ const WeeklyAccountabilityMeetingPage = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [activeSection, setActiveSection] = useState('good-news');
+  const [completedSections, setCompletedSections] = useState(new Set()); // Track completed sections
   const [success, setSuccess] = useState(null);
   
   // Meeting data
@@ -2490,6 +2491,7 @@ const WeeklyAccountabilityMeetingPage = () => {
       setElapsedTime(0);
       setMeetingRating(null);
       setActiveSection('good-news');
+      setCompletedSections(new Set());
       
     } catch (error) {
       console.error('Failed to finish meeting:', error);
@@ -2686,6 +2688,13 @@ const WeeklyAccountabilityMeetingPage = () => {
   const handleSectionChange = async (sectionId) => {
     // Don't process if we're already on this section
     if (activeSection === sectionId) return;
+    
+    // Mark current section as completed when moving to next section
+    const currentIndex = agendaItems.findIndex(item => item.id === activeSection);
+    const nextIndex = agendaItems.findIndex(item => item.id === sectionId);
+    if (nextIndex > currentIndex) {
+      setCompletedSections(prev => new Set([...prev, activeSection]));
+    }
     
     // Track section transition timing (Phase 2)
     if (currentSectionStartTime && activeSection) {
@@ -2949,6 +2958,7 @@ const WeeklyAccountabilityMeetingPage = () => {
         setElapsedTime(0);
         setMeetingRating(null);
         setActiveSection('good-news');
+        setCompletedSections(new Set());
         
         // Clear sessionStorage
         sessionStorage.removeItem('meetingActive');
@@ -4822,6 +4832,7 @@ const WeeklyAccountabilityMeetingPage = () => {
                         setElapsedTime(0);
                         setIsPaused(false);
                         setTotalPausedTime(0);
+                        setCompletedSections(new Set());
                         sessionStorage.removeItem('meetingActive');
                         sessionStorage.removeItem('meetingStartTime');
                         
@@ -4926,6 +4937,7 @@ const WeeklyAccountabilityMeetingPage = () => {
             {agendaItems.map((item) => {
               const Icon = item.icon;
               const isActive = activeSection === item.id;
+              const isCompleted = completedSections.has(item.id);
               return (
                 <button
                   key={item.id}
@@ -4934,16 +4946,22 @@ const WeeklyAccountabilityMeetingPage = () => {
                     handleSectionChange(item.id);
                   }}
                   className={`
-                    flex items-center gap-2 px-4 py-2 rounded-lg font-medium text-sm transition-all whitespace-nowrap
+                    flex items-center gap-2 px-4 py-2 rounded-lg font-medium text-sm transition-all whitespace-nowrap relative
                     ${isActive 
                       ? 'bg-gradient-to-r from-blue-500 to-indigo-500 text-white shadow-md' 
+                      : isCompleted
+                      ? 'bg-green-50 text-green-700 border border-green-200'
                       : 'text-slate-600 hover:bg-slate-100'
                     }
                   `}
                 >
-                  <Icon className="h-4 w-4" />
+                  {isCompleted && !isActive && (
+                    <CheckCircle className="h-4 w-4 text-green-600" />
+                  )}
+                  {!isCompleted && <Icon className="h-4 w-4" />}
+                  {isActive && <Icon className="h-4 w-4" />}
                   <span>{item.label}</span>
-                  <span className={`text-xs ${isActive ? 'text-white/80' : 'text-slate-400'}`}>
+                  <span className={`text-xs ${isActive ? 'text-white/80' : isCompleted ? 'text-green-600' : 'text-slate-400'}`}>
                     {item.duration}m
                   </span>
                 </button>
