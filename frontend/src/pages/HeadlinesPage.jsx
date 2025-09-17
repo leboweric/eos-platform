@@ -41,6 +41,12 @@ const HeadlinesPage = () => {
   // Fetch headlines and messages when component mounts or team changes
   useEffect(() => {
     if (selectedTeamId) {
+      // Clear existing data and show loading state immediately
+      setLoading(true);
+      setHeadlines({ customer: [], employee: [] });
+      setCascadedMessages([]);
+      
+      // Fetch new data
       fetchHeadlines();
       fetchCascadedMessages();
     }
@@ -49,7 +55,10 @@ const HeadlinesPage = () => {
   const fetchHeadlines = async () => {
     try {
       const teamId = selectedTeamId || user?.teams?.[0]?.id; // Use selected team or default to first team
-      if (!teamId) return;
+      if (!teamId) {
+        setLoading(false);
+        return;
+      }
       
       const response = await headlinesService.getHeadlines(teamId, false);
       
@@ -65,6 +74,8 @@ const HeadlinesPage = () => {
       });
     } catch (error) {
       console.error('Failed to fetch headlines:', error);
+      setError('Failed to fetch headlines');
+      setTimeout(() => setError(null), 3000);
     } finally {
       setLoading(false);
     }
@@ -339,6 +350,7 @@ const HeadlinesPage = () => {
             {loading ? (
               <div className="flex items-center justify-center py-8">
                 <Loader2 className="h-6 w-6 animate-spin text-gray-400" />
+                <span className="ml-2 text-sm text-gray-500">Loading headlines...</span>
               </div>
             ) : headlines.customer.length > 0 ? (
               <div className="space-y-3">
