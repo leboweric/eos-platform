@@ -25,7 +25,7 @@ const FloatingTimer = ({
 }) => {
   const [isMinimized, setIsMinimized] = useState(false);
   const [dockPosition, setDockPosition] = useState(() => {
-    return localStorage.getItem('timerDockPosition') || 'bottom-left';
+    return localStorage.getItem('timerDockPosition') || 'top-left';
   });
 
   useEffect(() => {
