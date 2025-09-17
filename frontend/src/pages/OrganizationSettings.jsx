@@ -35,12 +35,7 @@ const OrganizationSettings = () => {
   const [logoPreview, setLogoPreview] = useState(null);
   const [selectedFile, setSelectedFile] = useState(null);
   const [uploadingLogo, setUploadingLogo] = useState(false);
-  const [logoSize, setLogoSize] = useState(() => {
-    // Get saved logo size from localStorage (organization-specific), default to 100%
-    const orgId = user?.organizationId || user?.organization_id;
-    const key = orgId ? `logoSize_${orgId}` : 'logoSize';
-    return parseInt(localStorage.getItem(key) || '100');
-  });
+  const [logoSize, setLogoSize] = useState(100); // Will be set from org data
   const [demoResetStatus, setDemoResetStatus] = useState(null);
   const [resettingDemo, setResettingDemo] = useState(false);
   const [demoResetError, setDemoResetError] = useState(null);
@@ -109,6 +104,11 @@ const OrganizationSettings = () => {
       setLoading(true);
       const orgData = await organizationService.getOrganization();
       setOrganizationData(orgData);
+      
+      // Set logo size from organization data
+      if (orgData.logo_size) {
+        setLogoSize(orgData.logo_size);
+      }
       
       // Set logo preview if logo exists
       if (orgData.logo_updated_at) {
@@ -222,15 +222,26 @@ const OrganizationSettings = () => {
     }
   };
 
-  const handleLogoSizeChange = (value) => {
+  const handleLogoSizeChange = async (value) => {
     const size = value[0]; // Slider returns array
     setLogoSize(size);
-    // Store with organization-specific key
-    const orgId = user?.organizationId || user?.organization_id;
-    const key = orgId ? `logoSize_${orgId}` : 'logoSize';
-    localStorage.setItem(key, size.toString());
-    // Trigger a custom event to update logo size in Layout (include orgId)
-    window.dispatchEvent(new CustomEvent('logoSizeChanged', { detail: { size, orgId } }));
+    
+    try {
+      // Save to database
+      await organizationService.updateOrganization({
+        name: organizationData?.name || '',
+        logoSize: size,
+        revenueMetricType: organizationData?.revenue_metric_type,
+        revenueMetricLabel: organizationData?.revenue_metric_label
+      });
+      
+      // Trigger a custom event to update logo size in Layout
+      const orgId = user?.organizationId || user?.organization_id;
+      window.dispatchEvent(new CustomEvent('logoSizeChanged', { detail: { size, orgId } }));
+    } catch (error) {
+      console.error('Failed to save logo size:', error);
+      setError('Failed to save logo size');
+    }
   };
 
   const handleExportData = async () => {

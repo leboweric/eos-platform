@@ -25,7 +25,7 @@ export const getOrganization = async (req, res) => {
     const { organizationId } = req.user;
 
     const result = await query(
-      'SELECT id, name, slug, logo_url, logo_mime_type, logo_updated_at, created_at, revenue_metric_type, revenue_metric_label, theme_primary_color, theme_secondary_color, theme_accent_color FROM organizations WHERE id = $1',
+      'SELECT id, name, slug, logo_url, logo_mime_type, logo_updated_at, logo_size, created_at, revenue_metric_type, revenue_metric_label, theme_primary_color, theme_secondary_color, theme_accent_color FROM organizations WHERE id = $1',
       [organizationId]
     );
 
@@ -47,7 +47,7 @@ export const getOrganization = async (req, res) => {
 export const updateOrganization = async (req, res) => {
   try {
     const { organizationId, role, is_consultant, id: userId } = req.user;
-    const { name, revenueMetricType, revenueMetricLabel, themePrimaryColor, themeSecondaryColor, themeAccentColor } = req.body;
+    const { name, revenueMetricType, revenueMetricLabel, logoSize, themePrimaryColor, themeSecondaryColor, themeAccentColor } = req.body;
 
     // Check permissions: admin or consultant with access to this organization
     let hasPermission = role === 'admin';
@@ -97,6 +97,17 @@ export const updateOrganization = async (req, res) => {
       values.push(revenueMetricLabel);
     }
 
+    // Add logo size if provided
+    if (logoSize !== undefined) {
+      // Validate logo size is between 25 and 200
+      if (logoSize < 25 || logoSize > 200) {
+        return res.status(400).json({ error: 'Logo size must be between 25 and 200' });
+      }
+      paramCount++;
+      updateFields.push(`logo_size = $${paramCount}`);
+      values.push(logoSize);
+    }
+
     // Add color theme fields if provided
     if (themePrimaryColor !== undefined) {
       paramCount++;
@@ -125,7 +136,7 @@ export const updateOrganization = async (req, res) => {
       `UPDATE organizations 
        SET ${updateFields.join(', ')}, updated_at = NOW() 
        WHERE id = $${paramCount} 
-       RETURNING id, name, slug, revenue_metric_type, revenue_metric_label, theme_primary_color, theme_secondary_color, theme_accent_color`,
+       RETURNING id, name, slug, revenue_metric_type, revenue_metric_label, logo_size, theme_primary_color, theme_secondary_color, theme_accent_color`,
       values
     );
 

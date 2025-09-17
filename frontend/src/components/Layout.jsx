@@ -81,11 +81,19 @@ const Layout = ({ children }) => {
       const savedTheme = getOrgTheme(orgId);
       if (savedTheme) {
         setThemeColors(savedTheme);
-      } else {
-        // Try to fetch from organization service
-        try {
-          const orgData = await organizationService.getOrganization();
-          if (orgData && orgData.theme_primary_color) {
+      }
+      
+      // Always fetch organization data to get logo size and latest theme
+      try {
+        const orgData = await organizationService.getOrganization();
+        if (orgData) {
+          // Set logo size from organization data
+          if (orgData.logo_size) {
+            setLogoSize(orgData.logo_size);
+          }
+          
+          // Update theme colors if they exist
+          if (orgData.theme_primary_color) {
             const theme = {
               primary: orgData.theme_primary_color || '#3B82F6',
               secondary: orgData.theme_secondary_color || '#1E40AF',
@@ -94,9 +102,9 @@ const Layout = ({ children }) => {
             setThemeColors(theme);
             saveOrgTheme(orgId, theme);
           }
-        } catch (error) {
-          console.error('Failed to fetch organization theme:', error);
         }
+      } catch (error) {
+        console.error('Failed to fetch organization data:', error);
       }
     };
     
@@ -114,18 +122,8 @@ const Layout = ({ children }) => {
     };
   }, [user]);
   
-  // Listen for logo size changes and load org-specific size
+  // Listen for logo size changes
   useEffect(() => {
-    // Load organization-specific logo size
-    const orgId = user?.organizationId || user?.organization_id;
-    if (orgId) {
-      const key = `logoSize_${orgId}`;
-      const savedSize = localStorage.getItem(key);
-      if (savedSize) {
-        setLogoSize(parseInt(savedSize));
-      }
-    }
-    
     const handleLogoSizeChange = (event) => {
       // Check if the event is for the current organization
       const { size, orgId: eventOrgId } = typeof event.detail === 'object' ? event.detail : { size: event.detail, orgId: null };
