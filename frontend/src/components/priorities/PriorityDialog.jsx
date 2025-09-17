@@ -240,7 +240,8 @@ const PriorityDialog = ({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[900px] w-full max-h-[90vh] overflow-hidden flex flex-col bg-white/95 dark:bg-gray-800/95 backdrop-blur-sm border border-white/20 dark:border-gray-700/50 shadow-2xl">
+      <DialogContent className="fixed right-0 top-0 left-auto translate-x-0 translate-y-0 h-screen w-[600px] max-w-[90vw] bg-white/95 dark:bg-gray-800/95 backdrop-blur-sm border-l border-white/20 dark:border-gray-700/50 shadow-2xl rounded-none data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:slide-out-to-right data-[state=open]:slide-in-from-right data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 duration-300">
+        <div className="h-full overflow-y-auto p-6 flex flex-col">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <Target className="h-5 w-5" style={{ color: themeColors.primary }} />
@@ -873,6 +874,7 @@ const PriorityDialog = ({
             )}
           </Button>
         </DialogFooter>
+        </div>
       </DialogContent>
     </Dialog>
   );
