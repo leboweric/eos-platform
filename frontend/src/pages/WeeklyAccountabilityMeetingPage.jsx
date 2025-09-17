@@ -4969,11 +4969,11 @@ const WeeklyAccountabilityMeetingPage = () => {
                     }
                   `}
                 >
-                  {isCompleted && !isActive && (
+                  {isCompleted && !isActive ? (
                     <CheckCircle className="h-4 w-4 text-green-600" />
+                  ) : (
+                    <Icon className="h-4 w-4" />
                   )}
-                  {!isCompleted && <Icon className="h-4 w-4" />}
-                  {isActive && <Icon className="h-4 w-4" />}
                   <span>{item.label}</span>
                   <span className={`text-xs ${isActive ? 'text-white/80' : isCompleted ? 'text-green-600' : 'text-slate-400'}`}>
                     {item.duration}m
