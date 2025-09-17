@@ -275,6 +275,115 @@ export const archiveCascadingMessages = async (req, res) => {
   }
 };
 
+// Update a cascading message
+export const updateCascadingMessage = async (req, res) => {
+  try {
+    // Check if cascading_messages table exists
+    const tableReady = await tableExists('cascading_messages');
+    if (!tableReady) {
+      return res.status(503).json({
+        success: false,
+        error: 'Cascading messages feature not yet available'
+      });
+    }
+
+    const { messageId } = req.params;
+    const { message } = req.body;
+    const userId = req.user.id;
+
+    if (!message || message.trim().length === 0) {
+      return res.status(400).json({
+        success: false,
+        error: 'Message text is required'
+      });
+    }
+
+    // Update the message
+    const result = await query(
+      `UPDATE cascading_messages 
+       SET message = $1, updated_at = CURRENT_TIMESTAMP
+       WHERE id = $2
+       RETURNING *`,
+      [message, messageId]
+    );
+
+    if (result.rows.length === 0) {
+      return res.status(404).json({
+        success: false,
+        error: 'Message not found'
+      });
+    }
+
+    res.json({
+      success: true,
+      data: result.rows[0]
+    });
+  } catch (error) {
+    console.error('Error updating cascading message:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Failed to update cascading message'
+    });
+  }
+};
+
+// Delete a cascading message
+export const deleteCascadingMessage = async (req, res) => {
+  try {
+    // Check if cascading_messages table exists
+    const tableReady = await tableExists('cascading_messages');
+    if (!tableReady) {
+      return res.status(503).json({
+        success: false,
+        error: 'Cascading messages feature not yet available'
+      });
+    }
+
+    const { messageId } = req.params;
+
+    // Start a transaction
+    await query('BEGIN');
+
+    try {
+      // Delete recipient records first
+      await query(
+        `DELETE FROM cascading_message_recipients WHERE message_id = $1`,
+        [messageId]
+      );
+
+      // Delete the message
+      const result = await query(
+        `DELETE FROM cascading_messages WHERE id = $1 RETURNING *`,
+        [messageId]
+      );
+
+      if (result.rows.length === 0) {
+        await query('ROLLBACK');
+        return res.status(404).json({
+          success: false,
+          error: 'Message not found'
+        });
+      }
+
+      await query('COMMIT');
+
+      res.json({
+        success: true,
+        message: 'Cascading message deleted successfully'
+      });
+    } catch (error) {
+      await query('ROLLBACK');
+      throw error;
+    }
+  } catch (error) {
+    console.error('Error deleting cascading message:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Failed to delete cascading message'
+    });
+  }
+};
+
 // Get all teams for selection
 export const getAvailableTeams = async (req, res) => {
   try {

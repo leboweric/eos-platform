@@ -5,7 +5,9 @@ import {
   getCascadingMessages,
   markMessageAsRead,
   getAvailableTeams,
-  archiveCascadingMessages
+  archiveCascadingMessages,
+  updateCascadingMessage,
+  deleteCascadingMessage
 } from '../controllers/cascadingMessagesController.js';
 
 const router = express.Router({ mergeParams: true });
@@ -27,5 +29,11 @@ router.post('/archive', archiveCascadingMessages);
 
 // Mark a message as read
 router.put('/:messageId/read', markMessageAsRead);
+
+// Update a cascading message
+router.put('/:messageId', updateCascadingMessage);
+
+// Delete a cascading message
+router.delete('/:messageId', deleteCascadingMessage);
 
 export default router;
