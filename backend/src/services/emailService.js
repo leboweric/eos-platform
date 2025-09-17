@@ -264,7 +264,17 @@ const templates = {
       <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
         <h2>${data.teamName} Meeting Summary</h2>
         <p>Hi Team,</p>
-        <p>Here's a summary of your ${data.teamName} meeting on ${data.meetingDate}:</p>
+        <p>Here's a summary of your ${data.meetingType || data.teamName + ' meeting'} on ${data.meetingDate}:</p>
+        
+        <!-- Meeting Details Section -->
+        <div style="background-color: #f8f9fa; padding: 15px; border-radius: 8px; margin: 20px 0;">
+          <p style="margin: 5px 0; color: #666;">
+            <strong>Duration:</strong> ${data.duration || 'Not recorded'}<br>
+            <strong>Concluded by:</strong> ${data.concludedBy || 'Unknown'}<br>
+            ${data.attendees && data.attendees.length > 0 ? `<strong>Attendees:</strong> ${data.attendees.join(', ')}<br>` : ''}
+            ${data.rockCompletionPercentage !== undefined ? `<strong>Rock Completion:</strong> ${data.rockCompletionPercentage}% (${data.completedRocks || 0} of ${data.totalRocks || 0} complete)<br>` : ''}
+          </p>
+        </div>
         
         ${data.rating ? `
           <div style="background-color: #f0f9ff; padding: 20px; border-radius: 8px; margin: 20px 0; border-left: 4px solid #3b82f6;">
@@ -278,10 +288,51 @@ const templates = {
           </div>
         ` : ''}
         
+        ${data.headlines && (data.headlines.customer?.length > 0 || data.headlines.employee?.length > 0) ? `
+          <h3 style="color: #1e40af; margin-top: 30px; border-bottom: 2px solid #f8f9fa; padding-bottom: 10px;">📰 Headlines</h3>
+          ${data.headlines.customer?.length > 0 ? `
+            <div style="margin-top: 15px;">
+              <h4 style="color: #059669; margin: 10px 0;">Customer Headlines:</h4>
+              <ul style="color: #333; line-height: 1.8;">
+                ${data.headlines.customer.map(h => `<li>${h.text || h}</li>`).join('')}
+              </ul>
+            </div>
+          ` : ''}
+          ${data.headlines.employee?.length > 0 ? `
+            <div style="margin-top: 15px;">
+              <h4 style="color: #7c3aed; margin: 10px 0;">Employee Headlines:</h4>
+              <ul style="color: #333; line-height: 1.8;">
+                ${data.headlines.employee.map(h => `<li>${h.text || h}</li>`).join('')}
+              </ul>
+            </div>
+          ` : ''}
+        ` : ''}
+        
+        ${data.metrics && Object.keys(data.metrics).length > 0 ? `
+          <h3 style="color: #0891b2; margin-top: 30px; border-bottom: 2px solid #f8f9fa; padding-bottom: 10px;">📊 Scorecard Updates</h3>
+          <ul style="color: #333; line-height: 1.8;">
+            ${Object.entries(data.metrics).map(([key, value]) => `<li><strong>${key}:</strong> ${value}</li>`).join('')}
+          </ul>
+        ` : ''}
+        
         ${data.resolvedIssues && data.resolvedIssues.length > 0 ? `
           <h3 style="color: #10b981; margin-top: 30px; border-bottom: 2px solid #f8f9fa; padding-bottom: 10px;">✅ Issues Resolved</h3>
           <ul style="color: #333; line-height: 1.8;">
             ${data.resolvedIssues.map(issue => `<li>${issue}</li>`).join('')}
+          </ul>
+        ` : ''}
+        
+        ${data.unresolvedIssues && data.unresolvedIssues.length > 0 ? `
+          <h3 style="color: #dc2626; margin-top: 30px; border-bottom: 2px solid #f8f9fa; padding-bottom: 10px;">❌ Unresolved Issues</h3>
+          <ul style="color: #333; line-height: 1.8;">
+            ${data.unresolvedIssues.map(issue => `<li>${issue}</li>`).join('')}
+          </ul>
+        ` : ''}
+        
+        ${data.completedItems && data.completedItems.length > 0 ? `
+          <h3 style="color: #059669; margin-top: 30px; border-bottom: 2px solid #f8f9fa; padding-bottom: 10px;">✔️ To-Dos Completed During Meeting</h3>
+          <ul style="color: #333; line-height: 1.8;">
+            ${data.completedItems.map(item => `<li>${item}</li>`).join('')}
           </ul>
         ` : ''}
         
@@ -318,7 +369,12 @@ const templates = {
       
       Here's a summary of your ${data.teamName} meeting on ${data.meetingDate}:
       
-      ${data.rating ? `MEETING RATING: ${data.rating}/10\n\n` : ''}${data.resolvedIssues && data.resolvedIssues.length > 0 ? `ISSUES RESOLVED:\n${data.resolvedIssues.map(i => `- ${i}`).join('\n')}\n\n` : ''}${data.openTodos && data.openTodos.length > 0 ? `OPEN TO-DOS:\n${data.openTodos.map(t => `- ${t.title} - Assigned to: ${t.assignee}${t.dueDate !== 'No due date' ? `, Due: ${t.dueDate}${t.isPastDue ? ' (PAST DUE)' : ''}` : ''}`).join('\n')}\n\n` : 'No open to-dos at this time.\n\n'}${data.cascadingMessages && data.cascadingMessages.length > 0 ? `CASCADING MESSAGES:\n${data.cascadingMessages.map(msg => `- ${msg.message}\n  → Sent to: ${msg.recipientTeams}`).join('\n\n')}\n\n` : ''}
+      MEETING DETAILS:
+      Duration: ${data.duration || 'Not recorded'}
+      Concluded by: ${data.concludedBy || 'Unknown'}
+      ${data.attendees && data.attendees.length > 0 ? `Attendees: ${data.attendees.join(', ')}\n` : ''}${data.rockCompletionPercentage !== undefined ? `Rock Completion: ${data.rockCompletionPercentage}% (${data.completedRocks || 0} of ${data.totalRocks || 0} complete)\n` : ''}
+      
+      ${data.rating ? `MEETING RATING: ${data.rating}/10\n\n` : ''}${data.headlines && (data.headlines.customer?.length > 0 || data.headlines.employee?.length > 0) ? `HEADLINES:\n${data.headlines.customer?.length > 0 ? `Customer Headlines:\n${data.headlines.customer.map(h => `- ${h.text || h}`).join('\n')}\n` : ''}${data.headlines.employee?.length > 0 ? `Employee Headlines:\n${data.headlines.employee.map(h => `- ${h.text || h}`).join('\n')}\n` : ''}\n` : ''}${data.metrics && Object.keys(data.metrics).length > 0 ? `SCORECARD UPDATES:\n${Object.entries(data.metrics).map(([key, value]) => `- ${key}: ${value}`).join('\n')}\n\n` : ''}${data.completedItems && data.completedItems.length > 0 ? `TO-DOS COMPLETED DURING MEETING:\n${data.completedItems.map(i => `- ${i}`).join('\n')}\n\n` : ''}${data.resolvedIssues && data.resolvedIssues.length > 0 ? `ISSUES RESOLVED:\n${data.resolvedIssues.map(i => `- ${i}`).join('\n')}\n\n` : ''}${data.unresolvedIssues && data.unresolvedIssues.length > 0 ? `UNRESOLVED ISSUES:\n${data.unresolvedIssues.map(i => `- ${i}`).join('\n')}\n\n` : ''}${data.openTodos && data.openTodos.length > 0 ? `OPEN TO-DOS:\n${data.openTodos.map(t => `- ${t.title} - Assigned to: ${t.assignee}${t.dueDate !== 'No due date' ? `, Due: ${t.dueDate}${t.isPastDue ? ' (PAST DUE)' : ''}` : ''}`).join('\n')}\n\n` : 'No open to-dos at this time.\n\n'}${data.cascadingMessages && data.cascadingMessages.length > 0 ? `CASCADING MESSAGES:\n${data.cascadingMessages.map(msg => `- ${msg.message}\n  → Sent to: ${msg.recipientTeams}`).join('\n\n')}\n\n` : ''}
       
       This summary was automatically generated by AXP.
     `

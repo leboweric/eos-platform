@@ -398,7 +398,13 @@ export const concludeMeeting = async (req, res) => {
       resolvedIssues: resolvedIssues, // Issues marked as solved
       unresolvedIssues: unresolvedIssues, // Issues still open
       cascadingMessages: cascadingMessages, // Add cascading messages
-      notes: notes || ''
+      notes: notes || '',
+      // Additional fields requested by client
+      attendees: attendeeNames,
+      rockCompletionPercentage: rockCompletionPercentage,
+      completedRocks: completedRocks,
+      totalRocks: totalRocks,
+      headlines: req.body.headlines || {} // Pass headlines from frontend
     };
 
     // SAFETY CHECK: Prevent mass email accidents
