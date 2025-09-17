@@ -76,8 +76,18 @@ const TodosList = ({
       let aValue, bValue;
       
       if (sortField === 'assignee') {
-        aValue = a.assigned_to ? `${a.assigned_to.first_name} ${a.assigned_to.last_name}`.toLowerCase() : 'zzz';
-        bValue = b.assigned_to ? `${b.assigned_to.first_name} ${b.assigned_to.last_name}`.toLowerCase() : 'zzz';
+        // Handle multi-assignee todos - use first assignee for sorting
+        if (a.assignees && a.assignees.length > 0) {
+          aValue = `${a.assignees[0].first_name} ${a.assignees[0].last_name}`.toLowerCase();
+        } else {
+          aValue = a.assigned_to ? `${a.assigned_to.first_name} ${a.assigned_to.last_name}`.toLowerCase() : 'zzz';
+        }
+        
+        if (b.assignees && b.assignees.length > 0) {
+          bValue = `${b.assignees[0].first_name} ${b.assignees[0].last_name}`.toLowerCase();
+        } else {
+          bValue = b.assigned_to ? `${b.assigned_to.first_name} ${b.assigned_to.last_name}`.toLowerCase() : 'zzz';
+        }
       } else if (sortField === 'dueDate') {
         aValue = a.due_date || '9999-12-31';
         bValue = b.due_date || '9999-12-31';
@@ -306,7 +316,19 @@ const TodosList = ({
               {/* Bottom info - very compact */}
               <div className="space-y-1">
                 {/* Assignee */}
-                {todo.assigned_to && (
+                {(todo.assignees && todo.assignees.length > 0) ? (
+                  <div className="flex items-center text-xs text-gray-500">
+                    <User className="h-3 w-3 mr-1" />
+                    <span className="truncate">
+                      {todo.assignees.map(a => `${a.first_name} ${a.last_name}`).join(', ')}
+                      {todo.isMultiAssignee && todo.allAssignees && (
+                        <span className="ml-1 text-blue-600">
+                          ({todo.allAssignees.length} people)
+                        </span>
+                      )}
+                    </span>
+                  </div>
+                ) : todo.assigned_to && (
                   <div className="flex items-center text-xs text-gray-500">
                     <User className="h-3 w-3 mr-1" />
                     <span className="truncate">

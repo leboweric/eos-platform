@@ -1343,22 +1343,39 @@ const DashboardClean = () => {
                 {(() => {
                   // Group todos by assignee
                   const groupedTodos = dashboardData.todos.reduce((groups, todo) => {
-                    // Get assignee name from various possible structures
-                    let assigneeName = 'Unassigned';
-                    if (todo.assignedTo) {
-                      assigneeName = todo.assignedTo.name || 
-                        `${todo.assignedTo.first_name || ''} ${todo.assignedTo.last_name || ''}`.trim() ||
-                        'Unassigned';
-                    } else if (todo.assigned_to) {
-                      assigneeName = todo.assigned_to.name || 
-                        `${todo.assigned_to.first_name || ''} ${todo.assigned_to.last_name || ''}`.trim() ||
-                        'Unassigned';
+                    // Handle multi-assignee todos
+                    if (todo.assignees && todo.assignees.length > 0) {
+                      // For multi-assignee todos, add to each assignee's group
+                      todo.assignees.forEach(assignee => {
+                        const assigneeName = `${assignee.first_name || ''} ${assignee.last_name || ''}`.trim() || 'Unassigned';
+                        
+                        if (!groups[assigneeName]) {
+                          groups[assigneeName] = [];
+                        }
+                        groups[assigneeName].push({
+                          ...todo,
+                          isMultiAssignee: true,
+                          allAssignees: todo.assignees
+                        });
+                      });
+                    } else {
+                      // Handle single assignee todos (backward compatibility)
+                      let assigneeName = 'Unassigned';
+                      if (todo.assignedTo) {
+                        assigneeName = todo.assignedTo.name || 
+                          `${todo.assignedTo.first_name || ''} ${todo.assignedTo.last_name || ''}`.trim() ||
+                          'Unassigned';
+                      } else if (todo.assigned_to) {
+                        assigneeName = todo.assigned_to.name || 
+                          `${todo.assigned_to.first_name || ''} ${todo.assigned_to.last_name || ''}`.trim() ||
+                          'Unassigned';
+                      }
+                      
+                      if (!groups[assigneeName]) {
+                        groups[assigneeName] = [];
+                      }
+                      groups[assigneeName].push(todo);
                     }
-                    
-                    if (!groups[assigneeName]) {
-                      groups[assigneeName] = [];
-                    }
-                    groups[assigneeName].push(todo);
                     return groups;
                   }, {});
                   
