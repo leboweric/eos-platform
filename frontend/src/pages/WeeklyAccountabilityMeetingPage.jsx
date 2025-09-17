@@ -4589,7 +4589,14 @@ const WeeklyAccountabilityMeetingPage = () => {
                                 {assignee} ({assigneeTodos.length})
                               </h5>
                               {assigneeTodos.map(todo => (
-                                <div key={todo.id} className="flex items-start gap-2 p-2 bg-slate-50 rounded-lg ml-2">
+                                <div 
+                                  key={todo.id} 
+                                  className="flex items-start gap-2 p-2 bg-slate-50 rounded-lg ml-2 cursor-pointer hover:bg-slate-100 transition-colors"
+                                  onClick={() => {
+                                    setEditingTodo(todo);
+                                    setShowTodoDialog(true);
+                                  }}
+                                >
                                   <div className="flex-1 min-w-0">
                                     <p className="text-sm font-medium text-slate-900">
                                       {todo.title}
@@ -4629,7 +4636,14 @@ const WeeklyAccountabilityMeetingPage = () => {
                     ) : (
                       <div className="space-y-2">
                         {sortedTodos.map(todo => (
-                          <div key={todo.id} className="flex items-start gap-2 p-2 bg-slate-50 rounded-lg">
+                          <div 
+                            key={todo.id} 
+                            className="flex items-start gap-2 p-2 bg-slate-50 rounded-lg cursor-pointer hover:bg-slate-100 transition-colors"
+                            onClick={() => {
+                              setEditingTodo(todo);
+                              setShowTodoDialog(true);
+                            }}
+                          >
                             <div className="flex-1 min-w-0">
                               <p className="text-sm font-medium text-slate-900">{todo.title}</p>
                               <div className="flex items-center gap-3 mt-1">
