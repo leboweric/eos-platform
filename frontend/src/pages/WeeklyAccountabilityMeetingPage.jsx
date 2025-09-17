@@ -248,6 +248,7 @@ const WeeklyAccountabilityMeetingPage = () => {
   const [addingMilestoneFor, setAddingMilestoneFor] = useState(null);
   const [newMilestone, setNewMilestone] = useState({ title: '', dueDate: '' });
   const [showAddPriority, setShowAddPriority] = useState(false);
+  const [todoSortBy, setTodoSortBy] = useState('due_date'); // For Conclude section todo sorting
   
   // Function to create issue directly from headline
   const createIssueFromHeadline = async (headline, type) => {
@@ -4469,20 +4470,117 @@ const WeeklyAccountabilityMeetingPage = () => {
               <div className="space-y-6">
                 {/* Open To-Dos Summary */}
                 <div className="border border-white/30 p-4 rounded-xl bg-white/60 backdrop-blur-sm shadow-sm">
-                  <h4 className="font-medium mb-3 text-slate-900 flex items-center gap-2">
-                    <ListTodo className="h-4 w-4" style={{ color: themeColors.primary }} />
-                    Open To-Dos Summary
-                  </h4>
+                  <div className="flex items-center justify-between mb-3">
+                    <h4 className="font-medium text-slate-900 flex items-center gap-2">
+                      <ListTodo className="h-4 w-4" style={{ color: themeColors.primary }} />
+                      Open To-Dos Summary
+                    </h4>
+                    {/* Sort Options */}
+                    <div className="flex items-center gap-2">
+                      <label className="text-xs text-slate-600">Sort by:</label>
+                      <select
+                        className="text-xs border border-slate-200 rounded px-2 py-1 bg-white"
+                        value={todoSortBy}
+                        onChange={(e) => setTodoSortBy(e.target.value)}
+                      >
+                        <option value="due_date">Due Date</option>
+                        <option value="assignee">Assignee</option>
+                        <option value="priority">Priority</option>
+                      </select>
+                    </div>
+                  </div>
                   <p className="text-sm text-slate-600 mb-3">
                     Review all open action items before concluding the meeting:
                   </p>
-                  {todos.filter(todo => todo.status !== 'complete' && todo.status !== 'completed' && todo.status !== 'cancelled').length === 0 ? (
-                    <p className="text-slate-500 text-sm">No open to-dos</p>
-                  ) : (
-                    <div className="space-y-2 max-h-64 overflow-y-auto">
-                      {todos
-                        .filter(todo => todo.status !== 'complete' && todo.status !== 'completed' && todo.status !== 'cancelled')
-                        .map(todo => (
+                  {(() => {
+                    const openTodos = todos.filter(todo => todo.status !== 'complete' && todo.status !== 'completed' && todo.status !== 'cancelled');
+                    
+                    // Sort todos based on selection
+                    const sortedTodos = [...openTodos].sort((a, b) => {
+                      if (todoSortBy === 'due_date') {
+                        if (!a.due_date && !b.due_date) return 0;
+                        if (!a.due_date) return 1;
+                        if (!b.due_date) return -1;
+                        return new Date(a.due_date) - new Date(b.due_date);
+                      } else if (todoSortBy === 'assignee') {
+                        const aName = a.assigned_to ? `${a.assigned_to.first_name} ${a.assigned_to.last_name}` : 'Unassigned';
+                        const bName = b.assigned_to ? `${b.assigned_to.first_name} ${b.assigned_to.last_name}` : 'Unassigned';
+                        return aName.localeCompare(bName);
+                      } else if (todoSortBy === 'priority') {
+                        const priorityOrder = { high: 0, medium: 1, low: 2 };
+                        return (priorityOrder[a.priority] || 3) - (priorityOrder[b.priority] || 3);
+                      }
+                      return 0;
+                    });
+                    
+                    // Group by assignee if sorting by assignee
+                    if (todoSortBy === 'assignee') {
+                      const todosByAssignee = sortedTodos.reduce((acc, todo) => {
+                        const assigneeName = todo.assigned_to ? 
+                          `${todo.assigned_to.first_name} ${todo.assigned_to.last_name}` : 
+                          'Unassigned';
+                        if (!acc[assigneeName]) {
+                          acc[assigneeName] = [];
+                        }
+                        acc[assigneeName].push(todo);
+                        return acc;
+                      }, {});
+                      
+                      return openTodos.length === 0 ? (
+                        <p className="text-slate-500 text-sm">No open to-dos</p>
+                      ) : (
+                        <div className="space-y-3 max-h-64 overflow-y-auto">
+                          {Object.entries(todosByAssignee).map(([assignee, assigneeTodos]) => (
+                            <div key={assignee} className="space-y-2">
+                              <h5 className="text-xs font-semibold text-slate-700 uppercase tracking-wider">
+                                {assignee} ({assigneeTodos.length})
+                              </h5>
+                              {assigneeTodos.map(todo => (
+                                <div key={todo.id} className="flex items-start gap-2 p-2 bg-slate-50 rounded-lg ml-2">
+                                  <div className="w-1 h-full rounded" style={{ 
+                                    backgroundColor: todo.priority === 'high' ? '#EF4444' : 
+                                                   todo.priority === 'medium' ? themeColors.primary : 
+                                                   '#10B981',
+                                    minHeight: '40px'
+                                  }} />
+                                  <div className="flex-1 min-w-0">
+                                    <p className="text-sm font-medium text-slate-900">{todo.title}</p>
+                                    <div className="flex items-center gap-3 mt-1">
+                                      {todo.due_date && (
+                                        <span className={`text-xs font-medium ${
+                                          new Date(todo.due_date) < new Date() ? 'text-red-600' :
+                                          new Date(todo.due_date) <= new Date(Date.now() + 7 * 24 * 60 * 60 * 1000) ? 'text-orange-600' :
+                                          'text-slate-600'
+                                        }`}>
+                                          Due: {format(new Date(todo.due_date), 'MMM d, yyyy')}
+                                          {new Date(todo.due_date) < new Date() && ' (Overdue)'}
+                                        </span>
+                                      )}
+                                      {todo.priority && (
+                                        <span className={`text-xs px-2 py-0.5 rounded-full ${
+                                          todo.priority === 'high' ? 'bg-red-100 text-red-700' :
+                                          todo.priority === 'medium' ? 'bg-yellow-100 text-yellow-700' :
+                                          'bg-green-100 text-green-700'
+                                        }`}>
+                                          {todo.priority}
+                                        </span>
+                                      )}
+                                    </div>
+                                  </div>
+                                </div>
+                              ))}
+                            </div>
+                          ))}
+                        </div>
+                      );
+                    }
+                    
+                    // Regular list view for other sort options
+                    return openTodos.length === 0 ? (
+                      <p className="text-slate-500 text-sm">No open to-dos</p>
+                    ) : (
+                      <div className="space-y-2 max-h-64 overflow-y-auto">
+                        {sortedTodos.map(todo => (
                           <div key={todo.id} className="flex items-start gap-2 p-2 bg-slate-50 rounded-lg">
                             <div className="w-1 h-full rounded" style={{ 
                               backgroundColor: todo.priority === 'high' ? '#EF4444' : 
@@ -4491,27 +4589,39 @@ const WeeklyAccountabilityMeetingPage = () => {
                               minHeight: '40px'
                             }} />
                             <div className="flex-1 min-w-0">
-                              <p className="text-sm font-medium text-slate-900 truncate">{todo.title}</p>
-                              <div className="flex items-center gap-2 mt-1">
+                              <p className="text-sm font-medium text-slate-900">{todo.title}</p>
+                              <div className="flex items-center gap-3 mt-1">
                                 {todo.assigned_to && (
-                                  <span className="text-xs text-slate-600">
+                                  <span className="text-xs text-slate-600 font-medium">
                                     {todo.assigned_to.first_name} {todo.assigned_to.last_name}
                                   </span>
                                 )}
                                 {todo.due_date && (
-                                  <>
-                                    {todo.assigned_to && <span className="text-xs text-slate-400">•</span>}
-                                    <span className="text-xs text-slate-600">
-                                      Due: {new Date(todo.due_date).toLocaleDateString()}
-                                    </span>
-                                  </>
+                                  <span className={`text-xs font-medium ${
+                                    new Date(todo.due_date) < new Date() ? 'text-red-600' :
+                                    new Date(todo.due_date) <= new Date(Date.now() + 7 * 24 * 60 * 60 * 1000) ? 'text-orange-600' :
+                                    'text-slate-600'
+                                  }`}>
+                                    Due: {format(new Date(todo.due_date), 'MMM d, yyyy')}
+                                    {new Date(todo.due_date) < new Date() && ' (Overdue)'}
+                                  </span>
+                                )}
+                                {todo.priority && (
+                                  <span className={`text-xs px-2 py-0.5 rounded-full ${
+                                    todo.priority === 'high' ? 'bg-red-100 text-red-700' :
+                                    todo.priority === 'medium' ? 'bg-yellow-100 text-yellow-700' :
+                                    'bg-green-100 text-green-700'
+                                  }`}>
+                                    {todo.priority}
+                                  </span>
                                 )}
                               </div>
                             </div>
                           </div>
                         ))}
-                    </div>
-                  )}
+                      </div>
+                    );
+                  })()}
                 </div>
 
                 {/* Meeting Rating */}
