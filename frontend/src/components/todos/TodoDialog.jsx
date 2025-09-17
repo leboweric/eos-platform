@@ -298,8 +298,9 @@ const TodoDialog = ({ open, onOpenChange, todo, todoFromIssue, teamMembers, onSa
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[600px] bg-white/95 dark:bg-gray-800/95 backdrop-blur-sm border border-white/20 dark:border-gray-700/50 shadow-2xl">
-        <form onSubmit={handleSubmit}>
+      <DialogContent className="fixed right-0 top-0 left-auto translate-x-0 translate-y-0 h-screen w-[500px] max-w-[90vw] bg-white/95 dark:bg-gray-800/95 backdrop-blur-sm border-l border-white/20 dark:border-gray-700/50 shadow-2xl rounded-none data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:slide-out-to-right data-[state=open]:slide-in-from-right data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 duration-300">
+        <div className="h-full overflow-y-auto p-6">
+        <form onSubmit={handleSubmit} className="h-full flex flex-col">
           <DialogHeader className="pb-6">
             <div className="flex items-center gap-3 mb-2">
               <div 
@@ -321,7 +322,7 @@ const TodoDialog = ({ open, onOpenChange, todo, todoFromIssue, teamMembers, onSa
             </div>
           </DialogHeader>
           
-          <div className="space-y-6 py-6">
+          <div className="flex-1 space-y-6 py-6 overflow-y-auto">
             {error && (
               <Alert className="border-red-200 dark:border-red-800 bg-red-50/80 dark:bg-red-900/20 backdrop-blur-sm rounded-xl">
                 <AlertCircle className="h-4 w-4 text-red-600" />
@@ -724,6 +725,7 @@ const TodoDialog = ({ open, onOpenChange, todo, todoFromIssue, teamMembers, onSa
             </div>
           </DialogFooter>
         </form>
+        </div>
       </DialogContent>
     </Dialog>
   );
