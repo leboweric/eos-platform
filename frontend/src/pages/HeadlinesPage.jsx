@@ -12,7 +12,7 @@ import { format } from 'date-fns';
 
 const HeadlinesPage = () => {
   const { user } = useAuthStore();
-  const { selectedTeam } = useTeam();
+  const { selectedTeamId, getSelectedTeam } = useTeam();
   const [showHeadlineDialog, setShowHeadlineDialog] = useState(false);
   const [showCascadingDialog, setShowCascadingDialog] = useState(false);
   const [success, setSuccess] = useState(null);
@@ -40,15 +40,15 @@ const HeadlinesPage = () => {
 
   // Fetch headlines and messages when component mounts or team changes
   useEffect(() => {
-    if (selectedTeam?.id) {
+    if (selectedTeamId) {
       fetchHeadlines();
       fetchCascadedMessages();
     }
-  }, [selectedTeam?.id]);
+  }, [selectedTeamId]);
 
   const fetchHeadlines = async () => {
     try {
-      const teamId = selectedTeam?.id || user?.teams?.[0]?.id; // Use selected team or default to first team
+      const teamId = selectedTeamId || user?.teams?.[0]?.id; // Use selected team or default to first team
       if (!teamId) return;
       
       const response = await headlinesService.getHeadlines(teamId, false);
@@ -72,7 +72,7 @@ const HeadlinesPage = () => {
 
   const fetchCascadedMessages = async () => {
     try {
-      const teamId = selectedTeam?.id || user?.teams?.[0]?.id; // Use selected team or default to first team
+      const teamId = selectedTeamId || user?.teams?.[0]?.id; // Use selected team or default to first team
       if (!teamId) return;
       
       const response = await cascadingMessagesService.getCascadingMessages(orgId, teamId);
@@ -87,7 +87,7 @@ const HeadlinesPage = () => {
     try {
       setCreatingIssueFromHeadline(headline.id);
       
-      const teamId = selectedTeam?.id || user?.teams?.[0]?.id;
+      const teamId = selectedTeamId || user?.teams?.[0]?.id;
       
       const issueData = {
         title: `Issue from Headline: ${headline.text.substring(0, 100)}`,
@@ -114,7 +114,7 @@ const HeadlinesPage = () => {
 
   const handleCreateHeadline = async (headlineData) => {
     try {
-      const teamId = selectedTeam?.id || user?.teams?.[0]?.id;
+      const teamId = selectedTeamId || user?.teams?.[0]?.id;
       await headlinesService.createHeadline({
         ...headlineData,
         teamId
@@ -165,7 +165,7 @@ const HeadlinesPage = () => {
 
   const handleUpdateMessage = async (messageId) => {
     try {
-      const teamId = selectedTeam?.id || user?.teams?.[0]?.id;
+      const teamId = selectedTeamId || user?.teams?.[0]?.id;
       await cascadingMessagesService.updateCascadingMessage(
         orgId,
         teamId,
@@ -190,7 +190,7 @@ const HeadlinesPage = () => {
     
     try {
       setDeletingMessageId(messageId);
-      const teamId = selectedTeam?.id || user?.teams?.[0]?.id;
+      const teamId = selectedTeamId || user?.teams?.[0]?.id;
       await cascadingMessagesService.deleteCascadingMessage(
         orgId,
         teamId,
@@ -209,7 +209,7 @@ const HeadlinesPage = () => {
 
   const handleCreateCascadingMessage = async (messageData) => {
     try {
-      const teamId = selectedTeam?.id || user?.teams?.[0]?.id;
+      const teamId = selectedTeamId || user?.teams?.[0]?.id;
       await cascadingMessagesService.createCascadingMessage(
         orgId, 
         teamId, 
