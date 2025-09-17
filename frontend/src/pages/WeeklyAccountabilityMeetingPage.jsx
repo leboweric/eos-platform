@@ -442,6 +442,7 @@ const WeeklyAccountabilityMeetingPage = () => {
   const [sectionTimings, setSectionTimings] = useState({});
   const [currentSectionStartTime, setCurrentSectionStartTime] = useState(null);
   const [sectionElapsedTime, setSectionElapsedTime] = useState(0);
+  const [sectionCumulativeTimes, setSectionCumulativeTimes] = useState({}); // Track cumulative time per section
   const [meetingPace, setMeetingPace] = useState('on-track');
   const [showFloatingTimer, setShowFloatingTimer] = useState(true);
   const [sectionConfig, setSectionConfig] = useState(null);
@@ -1246,10 +1247,11 @@ const WeeklyAccountabilityMeetingPage = () => {
         const activeElapsed = totalElapsed - totalPausedTime;
         setElapsedTime(activeElapsed);
         
-        // Update section elapsed time (Phase 2)
+        // Update section elapsed time (Phase 2) - Add to cumulative time
         if (currentSectionStartTime) {
-          const sectionElapsed = Math.floor((now - currentSectionStartTime) / 1000);
-          setSectionElapsedTime(sectionElapsed);
+          const sessionTime = Math.floor((now - currentSectionStartTime) / 1000);
+          const cumulativeTime = (sectionCumulativeTimes[activeSection] || 0) + sessionTime;
+          setSectionElapsedTime(cumulativeTime);
           
           // Calculate meeting pace based on accumulated timing
           const currentSectionConfig = agendaItems.find(item => item.id === activeSection);
@@ -1289,7 +1291,7 @@ const WeeklyAccountabilityMeetingPage = () => {
     return () => {
       if (timer) clearInterval(timer);
     };
-  }, [meetingStarted, meetingStartTime, isPaused, totalPausedTime, currentSectionStartTime, activeSection, agendaItems]);
+  }, [meetingStarted, meetingStartTime, isPaused, totalPausedTime, currentSectionStartTime, activeSection, agendaItems, sectionCumulativeTimes]);
   
   // Auto-save timer state every 30 seconds
   useEffect(() => {
@@ -1350,6 +1352,7 @@ const WeeklyAccountabilityMeetingPage = () => {
         setSectionConfig(firstSection);
         setCurrentSectionStartTime(now);
         setSectionElapsedTime(0);
+        setSectionCumulativeTimes({}); // Reset cumulative times for new meeting
         setSectionTimings({
           [firstSection.id]: {
             started_at: new Date().toISOString(),
@@ -2560,6 +2563,24 @@ const WeeklyAccountabilityMeetingPage = () => {
         setLoading(false);
       } else {
         console.log('5️⃣ Calling PAUSE API...');
+        
+        // Save current section's session time to cumulative before pausing
+        if (currentSectionStartTime && activeSection) {
+          const sessionTime = Math.floor((Date.now() - currentSectionStartTime) / 1000);
+          const previousCumulative = sectionCumulativeTimes[activeSection] || 0;
+          const newCumulative = previousCumulative + sessionTime;
+          
+          setSectionCumulativeTimes(prev => ({
+            ...prev,
+            [activeSection]: newCumulative
+          }));
+          
+          // Reset the start time so we don't double-count when resuming
+          setCurrentSectionStartTime(Date.now());
+          setSectionElapsedTime(newCumulative);
+          console.log(`⏸️ Pausing section ${activeSection} at ${newCumulative} seconds`);
+        }
+        
         // Pause the session
         const result = await meetingSessionsService.pauseSession(orgId, effectiveTeamId, sessionId);
         console.log('✅ Pause API Response:', result);
@@ -2635,41 +2656,59 @@ const WeeklyAccountabilityMeetingPage = () => {
   };
 
   const handleSectionChange = async (sectionId) => {
+    // Don't process if we're already on this section
+    if (activeSection === sectionId) return;
+    
     // Track section transition timing (Phase 2)
-    if (sessionId && currentSectionStartTime && activeSection !== sectionId) {
-      // End the current section
-      const currentSectionData = sectionTimings[activeSection] || {};
-      const sectionDuration = Math.floor((Date.now() - currentSectionStartTime) / 1000);
-      const currentSectionConfig = agendaItems.find(item => item.id === activeSection);
+    if (currentSectionStartTime && activeSection) {
+      // Save cumulative time for the current section
+      const sessionTime = Math.floor((Date.now() - currentSectionStartTime) / 1000);
+      const previousCumulative = sectionCumulativeTimes[activeSection] || 0;
+      const newCumulative = previousCumulative + sessionTime;
       
-      setSectionTimings(prev => ({
+      setSectionCumulativeTimes(prev => ({
         ...prev,
-        [activeSection]: {
-          ...currentSectionData,
-          ended_at: new Date().toISOString(),
-          actual: sectionDuration,
-          allocated: currentSectionConfig?.duration * 60 || 300,
-          overrun: sectionDuration > (currentSectionConfig?.duration * 60 || 300) 
-            ? sectionDuration - (currentSectionConfig?.duration * 60 || 300) 
-            : 0
-        }
+        [activeSection]: newCumulative
       }));
       
-      // Report section end to backend
-      try {
-        const orgId = user?.organizationId || user?.organization_id;
-        const effectiveTeamId = getEffectiveTeamId(teamId, user);
-        await meetingSessionsService.endSection(orgId, effectiveTeamId, sessionId, activeSection);
-      } catch (error) {
-        console.warn('Failed to record section end:', error);
+      // Update section timings
+      if (sessionId) {
+        const currentSectionConfig = agendaItems.find(item => item.id === activeSection);
+        const currentSectionData = sectionTimings[activeSection] || {};
+        
+        setSectionTimings(prev => ({
+          ...prev,
+          [activeSection]: {
+            ...currentSectionData,
+            ended_at: new Date().toISOString(),
+            actual: newCumulative, // Use cumulative time
+            allocated: currentSectionConfig?.duration * 60 || 300,
+            overrun: newCumulative > (currentSectionConfig?.duration * 60 || 300) 
+              ? newCumulative - (currentSectionConfig?.duration * 60 || 300) 
+              : 0
+          }
+        }));
+        
+        // Report section end to backend
+        try {
+          const orgId = user?.organizationId || user?.organization_id;
+          const effectiveTeamId = getEffectiveTeamId(teamId, user);
+          await meetingSessionsService.endSection(orgId, effectiveTeamId, sessionId, activeSection);
+        } catch (error) {
+          console.warn('Failed to record section end:', error);
+        }
       }
     }
     
-    // Start the new section
+    // Start or resume the new section
     setActiveSection(sectionId);
     setError(null);
     setCurrentSectionStartTime(Date.now());
-    setSectionElapsedTime(0);
+    
+    // Resume from previous cumulative time if returning to this section
+    const existingTime = sectionCumulativeTimes[sectionId] || 0;
+    setSectionElapsedTime(existingTime);
+    console.log(`📍 Resuming section ${sectionId} at ${existingTime} seconds`);
     
     // Initialize section timing data
     const newSectionConfig = agendaItems.find(item => item.id === sectionId);
