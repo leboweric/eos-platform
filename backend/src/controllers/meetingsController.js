@@ -369,8 +369,11 @@ export const concludeMeeting = async (req, res) => {
       todo.title || todo.todo || 'Untitled'
     );
 
-    // Format issues
-    const formattedIssues = (issues || []).map(issue => 
+    // Format issues - separate resolved vs unresolved
+    const resolvedIssues = (issues || []).filter(issue => issue.is_solved).map(issue => 
+      issue.title || issue.issue || 'Untitled issue'
+    );
+    const unresolvedIssues = (issues || []).filter(issue => !issue.is_solved).map(issue => 
       issue.title || issue.issue || 'Untitled issue'
     );
 
@@ -384,18 +387,16 @@ export const concludeMeeting = async (req, res) => {
       teamName,
       meetingDate: formattedDate,
       duration: formatDuration(duration || 0),
-      rating: rating || 'Not rated',
+      rating: typeof rating === 'number' ? rating : null,
       organizationName,
       concludedBy: userName,
       summary: summary || '',
       metrics: metrics || {},
-      rockCompletionPercentage,
-      completedRocks,
-      totalRocks,
       openTodos: openTodos, // Primary focus: all open todos
       completedItems: formattedCompletedItems,
       newTodos: formattedNewTodos,
-      issues: formattedIssues,
+      resolvedIssues: resolvedIssues, // Issues marked as solved
+      unresolvedIssues: unresolvedIssues, // Issues still open
       cascadingMessages: cascadingMessages, // Add cascading messages
       notes: notes || ''
     };
