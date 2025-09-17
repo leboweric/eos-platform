@@ -4881,6 +4881,7 @@ const WeeklyAccountabilityMeetingPage = () => {
                         }
                         
                         // Send email summary if requested
+                        let emailResult = null;
                         if (sendSummaryEmail) {
                           const orgId = user?.organizationId || user?.organization_id;
                           const effectiveTeamId = getEffectiveTeamId(teamId, user);
@@ -4888,17 +4889,34 @@ const WeeklyAccountabilityMeetingPage = () => {
                           // Combine all issues for the meeting summary
                           const allIssues = [...(shortTermIssues || []), ...(longTermIssues || [])];
                           
-                          await meetingsService.concludeMeeting(orgId, effectiveTeamId, {
-                            meetingType: 'weekly',
-                            rating: meetingRating,
-                            todos: todos.filter(t => t.status !== 'complete' && t.status !== 'completed'),
-                            issues: allIssues.filter(i => !i.is_solved),
-                            headlines: headlines,
-                            cascadeMessage: cascadeMessage.trim() ? cascadeMessage : null
-                          });
+                          try {
+                            emailResult = await meetingsService.concludeMeeting(orgId, effectiveTeamId, {
+                              meetingType: 'weekly',
+                              rating: meetingRating,
+                              todos: todos.filter(t => t.status !== 'complete' && t.status !== 'completed'),
+                              issues: allIssues.filter(i => !i.is_solved),
+                              headlines: headlines,
+                              cascadeMessage: cascadeMessage.trim() ? cascadeMessage : null
+                            });
+                            
+                            console.log('Email result:', emailResult);
+                          } catch (emailError) {
+                            console.error('Failed to send meeting summary email:', emailError);
+                            // Don't fail the whole operation if email fails
+                          }
                         }
                         
-                        const emailMessage = sendSummaryEmail ? 'Summary email sent to all participants.' : '';
+                        // Build success message based on what actually happened
+                        let emailMessage = '';
+                        if (sendSummaryEmail) {
+                          if (emailResult?.emailsSent > 0) {
+                            emailMessage = `Summary email sent to ${emailResult.emailsSent} participant${emailResult.emailsSent !== 1 ? 's' : ''}.`;
+                          } else if (emailResult?.error) {
+                            emailMessage = `Meeting concluded but email failed: ${emailResult.error}`;
+                          } else {
+                            emailMessage = 'Meeting concluded but no team members found for email.';
+                          }
+                        }
                         const archiveMessage = archiveCompleted ? 'Completed items archived.' : '';
                         const successMessage = `Meeting concluded successfully! ${emailMessage} ${archiveMessage}`.trim();
                         setSuccess(successMessage);
