@@ -480,13 +480,13 @@ const WeeklyAccountabilityMeetingPage = () => {
     if (isEOS) {
       // EOS Level 10 Meeting
       return [
-        { id: 'good-news', label: 'Segue (Good News)', icon: Smile, duration: 5 },
-        { id: 'scorecard', label: 'Scorecard Review', icon: BarChart, duration: 5 },
-        { id: 'priorities', label: 'Rock Review', icon: Target, duration: 5 },
-        { id: 'headlines', label: 'Headlines', icon: Newspaper, duration: 5 },
-        { id: 'todo-list', label: 'To-Do List', icon: ListTodo, duration: 5 },
-        { id: 'issues', label: 'IDS', icon: AlertTriangle, duration: 60 },
-        { id: 'conclude', label: 'Conclude', icon: CheckSquare, duration: 5 }
+        { id: 'good-news', label: 'Segue (Good News)', name: 'Segue', icon: Smile, duration: 5, description: 'Good news and wins from the past week' },
+        { id: 'scorecard', label: 'Scorecard Review', name: 'Scorecard', icon: BarChart, duration: 5, description: 'Review weekly metrics and KPIs' },
+        { id: 'priorities', label: 'Rock Review', name: 'Rock Review', icon: Target, duration: 5, description: 'Check progress on quarterly priorities' },
+        { id: 'headlines', label: 'Headlines', name: 'Headlines', icon: Newspaper, duration: 5, description: 'Share customer and employee headlines' },
+        { id: 'todo-list', label: 'To-Do List', name: 'To-Do Review', icon: ListTodo, duration: 5, description: 'Review last week\'s action items' },
+        { id: 'issues', label: 'IDS', name: 'IDS', icon: AlertTriangle, duration: 60, description: 'Identify, Discuss, and Solve issues' },
+        { id: 'conclude', label: 'Conclude', name: 'Conclude', icon: CheckSquare, duration: 5, description: 'Rate the meeting and cascade messages' }
       ];
     } else if (isOKR) {
       // OKRs Weekly Check-in
@@ -521,13 +521,13 @@ const WeeklyAccountabilityMeetingPage = () => {
     } else {
       // Default/Generic agenda
       return [
-        { id: 'good-news', label: 'Good News', icon: Smile, duration: 5 },
-        { id: 'scorecard', label: labels.scorecard_label || 'Scorecard', icon: BarChart, duration: 5 },
-        { id: 'priorities', label: labels.priorities_label || 'Priorities', icon: Target, duration: 5 },
-        { id: 'headlines', label: 'Headlines', icon: Newspaper, duration: 5 },
-        { id: 'todo-list', label: labels.todos_label || 'To-Do List', icon: ListTodo, duration: 5 },
-        { id: 'issues', label: labels.issues_label || 'Issues', icon: AlertTriangle, duration: 60 },
-        { id: 'conclude', label: 'Conclude', icon: CheckSquare, duration: 5 }
+        { id: 'good-news', label: 'Good News', name: 'Good News', icon: Smile, duration: 5, description: 'Share positive updates and wins' },
+        { id: 'scorecard', label: labels.scorecard_label || 'Scorecard', name: labels.scorecard_label || 'Scorecard', icon: BarChart, duration: 5, description: 'Review performance metrics' },
+        { id: 'priorities', label: labels.priorities_label || 'Priorities', name: labels.priorities_label || 'Priorities', icon: Target, duration: 5, description: 'Check progress on priorities' },
+        { id: 'headlines', label: 'Headlines', name: 'Headlines', icon: Newspaper, duration: 5, description: 'Share important updates' },
+        { id: 'todo-list', label: labels.todos_label || 'To-Do List', name: labels.todos_label || 'To-Do List', icon: ListTodo, duration: 5, description: 'Review action items' },
+        { id: 'issues', label: labels.issues_label || 'Issues', name: labels.issues_label || 'Issues', icon: AlertTriangle, duration: 60, description: 'Identify and solve issues' },
+        { id: 'conclude', label: 'Conclude', name: 'Conclude', icon: CheckSquare, duration: 5, description: 'Wrap up and cascade messages' }
       ];
     }
   };
@@ -1080,6 +1080,15 @@ const WeeklyAccountabilityMeetingPage = () => {
             setMeetingStarted(true);
             setMeetingStartTime(parseInt(startTime));
             
+            // Initialize section config when resuming (Phase 2)
+            const currentSectionId = activeSection || 'good-news';
+            const currentSection = agendaItems.find(item => item.id === currentSectionId) || agendaItems[0];
+            if (currentSection) {
+              setSectionConfig(currentSection);
+              setCurrentSectionStartTime(parseInt(startTime));
+              console.log('📌 Restored section config on resume:', currentSection);
+            }
+            
             // Enter full-screen mode when resuming
             sessionStorage.setItem('hideSidebarTemp', 'true');
             setIsFullScreen(true);
@@ -1334,6 +1343,10 @@ const WeeklyAccountabilityMeetingPage = () => {
       
       // Initialize section config for the first section (Phase 2)
       const firstSection = agendaItems[0];
+      console.log('🎯 Leader starting - Initializing section config:', {
+        firstSection,
+        agendaItems
+      });
       if (firstSection) {
         setSectionConfig(firstSection);
         setCurrentSectionStartTime(now);
@@ -1344,6 +1357,7 @@ const WeeklyAccountabilityMeetingPage = () => {
             allocated: firstSection.duration * 60
           }
         });
+        console.log('✅ Section config set to:', firstSection);
       }
       
       // Enter full-screen mode when meeting starts
@@ -4672,7 +4686,25 @@ const WeeklyAccountabilityMeetingPage = () => {
             </div>
             <div className="flex items-center gap-4">
               {/* Section Timer Component (Phase 2) */}
-              {meetingCode && meetingStarted && sectionConfig && (
+              {console.log('🎯 Section Timer Debug:', {
+                meetingStarted,
+                sectionConfig,
+                activeSection,
+                sectionElapsedTime,
+                isPaused,
+                meetingPace,
+                agendaItems: agendaItems.length,
+                shouldShow: !!(meetingStarted && sectionConfig),
+                sectionConfigDetails: sectionConfig ? {
+                  id: sectionConfig.id,
+                  label: sectionConfig.label,
+                  duration: sectionConfig.duration,
+                  icon: sectionConfig.icon ? 'Present' : 'Missing',
+                  name: sectionConfig.name,
+                  description: sectionConfig.description
+                } : null
+              })}
+              {meetingStarted && sectionConfig && (
                 <div className="mr-4">
                   <SectionTimer
                     section={activeSection}
