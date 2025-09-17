@@ -17,6 +17,7 @@ const HeadlinesPage = () => {
   const [error, setError] = useState(null);
   const [headlines, setHeadlines] = useState({ customer: [], employee: [] });
   const [cascadedMessages, setCascadedMessages] = useState([]);
+  const [sentMessages, setSentMessages] = useState([]);
   const [creatingIssueFromHeadline, setCreatingIssueFromHeadline] = useState(null);
   const [loading, setLoading] = useState(true);
   const [editingHeadlineId, setEditingHeadlineId] = useState(null);
@@ -579,106 +580,97 @@ const HeadlinesPage = () => {
               <div className="p-1 rounded" style={{ backgroundColor: `${themeColors.primary}20` }}>
                 <MessageSquare className="h-4 w-4" style={{ color: themeColors.primary }} />
               </div>
-              Cascaded Messages from Other Teams ({cascadedMessages.length})
+              Cascading Messages ({cascadedMessages.length})
             </h3>
             {cascadedMessages.length > 0 ? (
               <div className="space-y-3">
-                {cascadedMessages.map(message => {
-                  // Check if this message is from the current team (user can edit)
-                  const isOwnMessage = message.from_team_id === user?.teams?.[0]?.id || 
-                                      message.team_id === user?.teams?.[0]?.id;
-                  const canEdit = isOwnMessage && (message.created_by === user?.id || user?.role === 'admin');
-                  
-                  return (
-                    <div key={message.id} className="group relative p-4 bg-gradient-to-r from-blue-50 to-indigo-50 rounded-lg border border-blue-200 shadow-sm hover:shadow-md transition-shadow">
-                      {editingMessageId === message.id ? (
-                        <div className="flex items-center gap-2">
-                          <input
-                            type="text"
-                            value={editingMessageText}
-                            onChange={(e) => setEditingMessageText(e.target.value)}
-                            className="flex-1 px-2 py-1 text-sm border border-gray-300 rounded focus:outline-none focus:ring-2"
-                            style={{ focusBorderColor: themeColors.primary }}
-                            autoFocus
-                            onKeyDown={(e) => {
-                              if (e.key === 'Enter') {
-                                handleUpdateMessage(message.id);
-                              } else if (e.key === 'Escape') {
-                                setEditingMessageId(null);
-                                setEditingMessageText('');
-                              }
-                            }}
-                          />
-                          <button
-                            onClick={() => handleUpdateMessage(message.id)}
-                            className="p-1 text-green-600 hover:bg-green-50 rounded"
-                          >
-                            <Check className="h-4 w-4" />
-                          </button>
-                          <button
-                            onClick={() => {
+                {cascadedMessages.map(message => (
+                  <div key={message.id} className="group relative p-4 bg-gradient-to-r from-blue-50 to-indigo-50 rounded-lg border border-blue-200 shadow-sm hover:shadow-md transition-shadow">
+                    {editingMessageId === message.id ? (
+                      <div className="flex items-center gap-2">
+                        <input
+                          type="text"
+                          value={editingMessageText}
+                          onChange={(e) => setEditingMessageText(e.target.value)}
+                          className="flex-1 px-2 py-1 text-sm border border-gray-300 rounded focus:outline-none focus:ring-2"
+                          style={{ focusBorderColor: themeColors.primary }}
+                          autoFocus
+                          onKeyDown={(e) => {
+                            if (e.key === 'Enter') {
+                              handleUpdateMessage(message.id);
+                            } else if (e.key === 'Escape') {
                               setEditingMessageId(null);
                               setEditingMessageText('');
-                            }}
-                            className="p-1 text-red-600 hover:bg-red-50 rounded"
-                          >
-                            <X className="h-4 w-4" />
-                          </button>
-                        </div>
-                      ) : (
-                        <>
-                          <p 
-                            className={`text-sm font-medium text-slate-900 leading-relaxed ${canEdit ? 'cursor-pointer hover:bg-white/50 rounded px-2 py-1 -mx-2 -my-1' : ''}`}
-                            onClick={() => {
-                              if (canEdit) {
-                                setEditingMessageId(message.id);
-                                setEditingMessageText(message.message);
-                              }
-                            }}
-                            title={canEdit ? "Click to edit" : ""}
-                          >
-                            {message.message}
-                          </p>
-                          <p className="text-xs text-slate-600 mt-2 flex items-center gap-1">
-                            <ArrowDownLeft className="h-3 w-3 text-blue-600" />
-                            <span className="font-medium text-blue-900">{message.from_team_name || 'Your Team'}</span>
-                            <span className="text-slate-400">•</span>
-                            <span>{format(new Date(message.created_at), 'MMM d, h:mm a')}</span>
-                          </p>
-                        </>
-                      )}
-                      
-                      {/* Action buttons appear on hover - only for own messages */}
-                      {canEdit && editingMessageId !== message.id && (
-                        <div className="absolute top-3 right-3 flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                          <button
-                            className="p-1.5 rounded-lg hover:bg-gray-100"
-                            onClick={() => {
-                              setEditingMessageId(message.id);
-                              setEditingMessageText(message.message);
-                            }}
-                            title="Edit message"
-                          >
-                            <Edit2 className="h-3.5 w-3.5 text-gray-600" />
-                          </button>
-                          
-                          <button
-                            className="p-1.5 rounded-lg hover:bg-red-50 disabled:opacity-50"
-                            onClick={() => handleDeleteMessage(message.id)}
-                            disabled={deletingMessageId === message.id}
-                            title="Delete message"
-                          >
-                            {deletingMessageId === message.id ? (
-                              <Loader2 className="h-3.5 w-3.5 text-red-600 animate-spin" />
-                            ) : (
-                              <Trash2 className="h-3.5 w-3.5 text-red-600" />
-                            )}
-                          </button>
-                        </div>
-                      )}
-                    </div>
-                  );
-                })}
+                            }
+                          }}
+                        />
+                        <button
+                          onClick={() => handleUpdateMessage(message.id)}
+                          className="p-1 text-green-600 hover:bg-green-50 rounded"
+                        >
+                          <Check className="h-4 w-4" />
+                        </button>
+                        <button
+                          onClick={() => {
+                            setEditingMessageId(null);
+                            setEditingMessageText('');
+                          }}
+                          className="p-1 text-red-600 hover:bg-red-50 rounded"
+                        >
+                          <X className="h-4 w-4" />
+                        </button>
+                      </div>
+                    ) : (
+                      <>
+                        <p 
+                          className="text-sm font-medium text-slate-900 leading-relaxed pr-20 cursor-pointer hover:bg-white/50 rounded px-2 py-1 -mx-2 -my-1"
+                          onClick={() => {
+                            setEditingMessageId(message.id);
+                            setEditingMessageText(message.message);
+                          }}
+                          title="Click to edit"
+                        >
+                          {message.message}
+                        </p>
+                        <p className="text-xs text-slate-600 mt-2 flex items-center gap-1">
+                          <ArrowDownLeft className="h-3 w-3 text-blue-600" />
+                          <span className="font-medium text-blue-900">{message.from_team_name || 'Unknown Team'}</span>
+                          <span className="text-slate-400">•</span>
+                          <span>{format(new Date(message.created_at), 'MMM d, h:mm a')}</span>
+                        </p>
+                      </>
+                    )}
+                    
+                    {/* Action buttons appear on hover */}
+                    {editingMessageId !== message.id && (
+                      <div className="absolute top-3 right-3 flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                        <button
+                          className="p-1.5 rounded-lg hover:bg-gray-100"
+                          onClick={() => {
+                            setEditingMessageId(message.id);
+                            setEditingMessageText(message.message);
+                          }}
+                          title="Edit message"
+                        >
+                          <Edit2 className="h-3.5 w-3.5 text-gray-600" />
+                        </button>
+                        
+                        <button
+                          className="p-1.5 rounded-lg hover:bg-red-50 disabled:opacity-50"
+                          onClick={() => handleDeleteMessage(message.id)}
+                          disabled={deletingMessageId === message.id}
+                          title="Delete message"
+                        >
+                          {deletingMessageId === message.id ? (
+                            <Loader2 className="h-3.5 w-3.5 text-red-600 animate-spin" />
+                          ) : (
+                            <Trash2 className="h-3.5 w-3.5 text-red-600" />
+                          )}
+                        </button>
+                      </div>
+                    )}
+                  </div>
+                ))}
               </div>
             ) : (
               <p className="text-sm text-slate-500 italic">No cascaded messages from other teams</p>

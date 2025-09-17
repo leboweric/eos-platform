@@ -10,7 +10,7 @@ export const cascadingMessagesService = {
     return response.data;
   },
 
-  // Get cascading messages for a team
+  // Get cascading messages for a team (received messages)
   async getCascadingMessages(orgId, teamId, startDate = null, endDate = null) {
     const params = {};
     if (startDate) params.startDate = startDate;
@@ -19,6 +19,14 @@ export const cascadingMessagesService = {
     const response = await axios.get(
       `/organizations/${orgId}/teams/${teamId}/cascading-messages`,
       { params }
+    );
+    return response.data;
+  },
+
+  // Get messages sent by a team
+  async getSentMessages(orgId, teamId) {
+    const response = await axios.get(
+      `/organizations/${orgId}/teams/${teamId}/cascading-messages/sent`
     );
     return response.data;
   },
