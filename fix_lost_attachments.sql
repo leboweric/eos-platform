@@ -1,7 +1,7 @@
 -- IMPORTANT: Railway Deployment File Loss Issue
 -- ================================================
 -- Files uploaded on Aug 6, 2025 were stored on the filesystem
--- and are now LOST due to Railway's ephemeral storage.
+-- and are now LOST due to Railway's filesystem not persisting on redeploy.
 -- 
 -- Newer files (after Aug 14) are correctly stored in the database.
 

@@ -7,8 +7,8 @@ AXP (Adaptive Execution Platform) is the world's first execution platform that a
 
 ### ⚠️ NO LOCAL FILE STORAGE
 - **Documents MUST be stored in PostgreSQL** as bytea, NOT on filesystem
-- Railway deployments have ephemeral filesystems - local files are lost on redeploy
-- Use `file_content` column, NOT `file_path`
+- Railway deployments have persistent filesystems, not ephemeral
+- Use `file_content` column, NOT `file_path` for document storage
 
 ### ⚠️ Component Naming Convention
 **"Clean" Components are PRODUCTION Components!**
@@ -351,7 +351,7 @@ Added data recovery capability to critical tables:
 
 #### 1. Railway File Storage Issue (Data Loss!)
 - **Problem**: 3 attachments lost because stored on filesystem (`/app/uploads/`)
-- **Cause**: Railway has ephemeral filesystem - wiped on every deploy
+- **Cause**: Railway filesystem persistence issue - files lost on redeploy
 - **Solution**: Store in PostgreSQL `file_data` column (already fixed Aug 14+)
 - **Lost files**: Strategic Consulting needs to re-upload 3 documents from Aug 6
 

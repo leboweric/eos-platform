@@ -1,11 +1,13 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
-import { MessageSquare, Send, Plus } from 'lucide-react';
+import { MessageSquare, Send, Plus, Users, Users2, ArrowDownLeft, AlertCircle, Loader2 } from 'lucide-react';
 import { useAuthStore } from '../stores/authStore';
 import { headlinesService } from '../services/headlinesService';
 import { cascadingMessagesService } from '../services/cascadingMessagesService';
 import HeadlineDialog from '../components/headlines/HeadlineDialog';
 import CascadingMessageDialog from '../components/cascadingMessages/CascadingMessageDialog';
+import { issuesService } from '../services/issuesService';
+import { format } from 'date-fns';
 
 const HeadlinesPage = () => {
   const { user } = useAuthStore();
@@ -13,6 +15,10 @@ const HeadlinesPage = () => {
   const [showCascadingDialog, setShowCascadingDialog] = useState(false);
   const [success, setSuccess] = useState(null);
   const [error, setError] = useState(null);
+  const [headlines, setHeadlines] = useState({ customer: [], employee: [] });
+  const [cascadedMessages, setCascadedMessages] = useState([]);
+  const [creatingIssueFromHeadline, setCreatingIssueFromHeadline] = useState(null);
+  const [loading, setLoading] = useState(true);
 
   // Get theme colors
   const orgId = user?.organizationId || user?.organization_id;
@@ -23,12 +29,82 @@ const HeadlinesPage = () => {
     accent: '#60A5FA'
   };
 
+  // Fetch headlines and messages on mount
+  useEffect(() => {
+    fetchHeadlines();
+    fetchCascadedMessages();
+  }, []);
+
+  const fetchHeadlines = async () => {
+    try {
+      const teamId = user?.teams?.[0]?.id; // Default to first team
+      const response = await headlinesService.getHeadlines(teamId, false);
+      
+      const headlinesData = response.data || response || [];
+      
+      // Organize headlines by type
+      const customerHeadlines = headlinesData.filter(h => h.type === 'customer');
+      const employeeHeadlines = headlinesData.filter(h => h.type === 'employee');
+      
+      setHeadlines({
+        customer: customerHeadlines,
+        employee: employeeHeadlines
+      });
+    } catch (error) {
+      console.error('Failed to fetch headlines:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const fetchCascadedMessages = async () => {
+    try {
+      const teamId = user?.teams?.[0]?.id; // Default to first team
+      const response = await cascadingMessagesService.getCascadingMessages(orgId, teamId);
+      setCascadedMessages(response.data || []);
+    } catch (error) {
+      console.error('Failed to fetch cascaded messages:', error);
+    }
+  };
+
+  // Function to create issue from headline
+  const createIssueFromHeadline = async (headline, type) => {
+    try {
+      setCreatingIssueFromHeadline(headline.id);
+      
+      const teamId = user?.teams?.[0]?.id;
+      
+      const issueData = {
+        title: `Issue from Headline: ${headline.text.substring(0, 100)}`,
+        description: `This issue was created from a ${type} headline reported in the Weekly Meeting:\n\n**Headline:** ${headline.text}\n**Type:** ${type}\n**Reported by:** ${headline.createdBy || headline.created_by_name || 'Unknown'}\n**Date:** ${format(new Date(headline.created_at), 'MMM d, yyyy')}\n\n**Next steps:**\n- [ ] Investigate root cause\n- [ ] Determine action plan\n- [ ] Assign owner`,
+        teamId: teamId,
+        relatedHeadlineId: headline.id
+      };
+
+      await issuesService.createIssue(issueData);
+      
+      setSuccess(`Issue created from ${type} headline`);
+      setTimeout(() => setSuccess(null), 3000);
+      
+      // Refresh headlines to update the has_related_issue flag
+      fetchHeadlines();
+    } catch (error) {
+      console.error('Failed to create issue from headline:', error);
+      setError('Failed to create issue from headline');
+      setTimeout(() => setError(null), 3000);
+    } finally {
+      setCreatingIssueFromHeadline(null);
+    }
+  };
+
   const handleCreateHeadline = async (headlineData) => {
     try {
       await headlinesService.createHeadline(headlineData);
       setSuccess('Headline created successfully!');
       setShowHeadlineDialog(false);
       setTimeout(() => setSuccess(null), 3000);
+      // Refresh headlines to show the new one
+      fetchHeadlines();
     } catch (err) {
       setError('Failed to create headline');
       setTimeout(() => setError(null), 3000);
@@ -46,6 +122,8 @@ const HeadlinesPage = () => {
       setSuccess('Cascading message sent successfully!');
       setShowCascadingDialog(false);
       setTimeout(() => setSuccess(null), 3000);
+      // Refresh messages to show the new one
+      fetchCascadedMessages();
     } catch (err) {
       setError('Failed to send cascading message');
       setTimeout(() => setError(null), 3000);
@@ -154,13 +232,125 @@ const HeadlinesPage = () => {
           </div>
         </div>
 
-        {/* Optional: Recent Headlines Section (can be added later) */}
-        <div className="mt-12">
-          <h3 className="text-lg font-semibold text-gray-900 mb-4">Recent Activity</h3>
-          <div className="bg-white/60 backdrop-blur-sm rounded-xl p-6 border border-white/50">
-            <p className="text-gray-500 text-center">
-              Headlines and messages will appear here after creation
-            </p>
+        {/* Headlines and Messages Display */}
+        <div className="mt-12 space-y-8">
+          {/* Customer Headlines */}
+          <div className="bg-white/80 backdrop-blur-sm rounded-2xl p-6 shadow-lg border border-white/50">
+            <h3 className="text-lg font-semibold text-slate-900 mb-4 flex items-center gap-2">
+              <Users className="h-5 w-5 text-slate-600" />
+              Customer Headlines ({headlines.customer.length})
+            </h3>
+            {loading ? (
+              <div className="flex items-center justify-center py-8">
+                <Loader2 className="h-6 w-6 animate-spin text-gray-400" />
+              </div>
+            ) : headlines.customer.length > 0 ? (
+              <div className="space-y-3">
+                {headlines.customer.map(headline => (
+                  <div key={headline.id} className="group relative p-4 bg-white rounded-lg border-l-4 shadow-sm hover:shadow-md transition-shadow" 
+                       style={{ borderLeftColor: themeColors.primary }}>
+                    <p className="text-sm font-medium text-slate-900 leading-relaxed pr-8">{headline.text}</p>
+                    <div className="mt-2 flex items-center gap-2 text-xs text-slate-500">
+                      <span>{headline.created_by_name || 'Unknown'}</span>
+                      <span>•</span>
+                      <span>{format(new Date(headline.created_at), 'MMM d, yyyy')}</span>
+                    </div>
+                    
+                    {/* Action button appears on hover */}
+                    {!headline.has_related_issue && (
+                      <button
+                        className="absolute top-3 right-3 opacity-0 group-hover:opacity-100 
+                                 transition-opacity p-1.5 rounded-lg hover:bg-gray-100 disabled:opacity-50"
+                        onClick={() => createIssueFromHeadline(headline, 'Customer')}
+                        disabled={creatingIssueFromHeadline === headline.id}
+                        title="Create issue from headline"
+                      >
+                        {creatingIssueFromHeadline === headline.id ? (
+                          <Loader2 className="h-4 w-4 text-gray-600 animate-spin" />
+                        ) : (
+                          <AlertCircle className="h-4 w-4 text-gray-600" />
+                        )}
+                      </button>
+                    )}
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <p className="text-sm text-slate-500 italic">No customer headlines yet</p>
+            )}
+          </div>
+
+          {/* Employee Headlines */}
+          <div className="bg-white/80 backdrop-blur-sm rounded-2xl p-6 shadow-lg border border-white/50">
+            <h3 className="text-lg font-semibold text-slate-900 mb-4 flex items-center gap-2">
+              <Users2 className="h-5 w-5 text-slate-600" />
+              Employee Headlines ({headlines.employee.length})
+            </h3>
+            {loading ? (
+              <div className="flex items-center justify-center py-8">
+                <Loader2 className="h-6 w-6 animate-spin text-gray-400" />
+              </div>
+            ) : headlines.employee.length > 0 ? (
+              <div className="space-y-3">
+                {headlines.employee.map(headline => (
+                  <div key={headline.id} className="group relative p-4 bg-white rounded-lg border-l-4 shadow-sm hover:shadow-md transition-shadow" 
+                       style={{ borderLeftColor: themeColors.secondary }}>
+                    <p className="text-sm font-medium text-slate-900 leading-relaxed pr-8">{headline.text}</p>
+                    <div className="mt-2 flex items-center gap-2 text-xs text-slate-500">
+                      <span>{headline.created_by_name || 'Unknown'}</span>
+                      <span>•</span>
+                      <span>{format(new Date(headline.created_at), 'MMM d, yyyy')}</span>
+                    </div>
+                    
+                    {/* Action button appears on hover */}
+                    {!headline.has_related_issue && (
+                      <button
+                        className="absolute top-3 right-3 opacity-0 group-hover:opacity-100 
+                                 transition-opacity p-1.5 rounded-lg hover:bg-gray-100 disabled:opacity-50"
+                        onClick={() => createIssueFromHeadline(headline, 'Employee')}
+                        disabled={creatingIssueFromHeadline === headline.id}
+                        title="Create issue from headline"
+                      >
+                        {creatingIssueFromHeadline === headline.id ? (
+                          <Loader2 className="h-4 w-4 text-gray-600 animate-spin" />
+                        ) : (
+                          <AlertCircle className="h-4 w-4 text-gray-600" />
+                        )}
+                      </button>
+                    )}
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <p className="text-sm text-slate-500 italic">No employee headlines yet</p>
+            )}
+          </div>
+
+          {/* Cascading Messages */}
+          <div className="bg-white/80 backdrop-blur-sm rounded-2xl p-6 shadow-lg border border-white/50">
+            <h3 className="text-lg font-semibold text-slate-900 mb-4 flex items-center gap-2">
+              <div className="p-1 rounded" style={{ backgroundColor: `${themeColors.primary}20` }}>
+                <MessageSquare className="h-4 w-4" style={{ color: themeColors.primary }} />
+              </div>
+              Cascaded Messages from Other Teams ({cascadedMessages.length})
+            </h3>
+            {cascadedMessages.length > 0 ? (
+              <div className="space-y-3">
+                {cascadedMessages.map(message => (
+                  <div key={message.id} className="p-4 bg-gradient-to-r from-blue-50 to-indigo-50 rounded-lg border border-blue-200 shadow-sm hover:shadow-md transition-shadow">
+                    <p className="text-sm font-medium text-slate-900 leading-relaxed">{message.message}</p>
+                    <p className="text-xs text-slate-600 mt-2 flex items-center gap-1">
+                      <ArrowDownLeft className="h-3 w-3 text-blue-600" />
+                      <span className="font-medium text-blue-900">{message.from_team_name || 'Unknown Team'}</span>
+                      <span className="text-slate-400">•</span>
+                      <span>{format(new Date(message.created_at), 'MMM d, h:mm a')}</span>
+                    </p>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <p className="text-sm text-slate-500 italic">No cascaded messages from other teams</p>
+            )}
           </div>
         </div>
       </div>
