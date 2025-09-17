@@ -3777,7 +3777,10 @@ const WeeklyAccountabilityMeetingPage = () => {
                   {(headlines.customer.length > 0 || headlines.employee.length > 0) && (
                     <Button
                       variant="outline"
-                      className="bg-white/80 backdrop-blur-sm border-white/20 hover:bg-white/90"
+                      className="text-white border-0 hover:opacity-90 transition-opacity"
+                      style={{
+                        background: `linear-gradient(135deg, ${themeColors.primary} 0%, ${themeColors.secondary} 100%)`
+                      }}
                       onClick={async () => {
                         try {
                           const totalCount = headlines.customer.length + headlines.employee.length;
@@ -3862,7 +3865,10 @@ const WeeklyAccountabilityMeetingPage = () => {
                       <Button
                         variant="outline"
                         size="sm"
-                        className="bg-white/80 backdrop-blur-sm border-white/20 hover:bg-white/90"
+                        className="text-white border-0 hover:opacity-90 transition-opacity"
+                        style={{
+                          background: `linear-gradient(135deg, ${themeColors.primary} 0%, ${themeColors.secondary} 100%)`
+                        }}
                         onClick={async () => {
                           try {
                             const orgId = user?.organizationId || user?.organization_id;
@@ -3998,7 +4004,10 @@ const WeeklyAccountabilityMeetingPage = () => {
                       <div className="flex justify-end">
                         <Button 
                           variant="outline" 
-                          className="bg-white/80 backdrop-blur-sm border-white/20 hover:bg-white/90"
+                          className="text-white border-0 hover:opacity-90 transition-opacity"
+                          style={{
+                            background: `linear-gradient(135deg, ${themeColors.primary} 0%, ${themeColors.secondary} 100%)`
+                          }}
                           onClick={async () => {
                             try {
                               const count = completedCount;
@@ -4282,7 +4291,10 @@ const WeeklyAccountabilityMeetingPage = () => {
                       {closedCount > 0 && (
                         <Button 
                           variant="outline" 
-                          className="bg-white/80 backdrop-blur-sm border-white/20 hover:bg-white/90"
+                          className="text-white border-0 hover:opacity-90 transition-opacity"
+                          style={{
+                            background: `linear-gradient(135deg, ${themeColors.primary} 0%, ${themeColors.secondary} 100%)`
+                          }}
                           onClick={async () => {
                             try {
                               const count = closedCount;
