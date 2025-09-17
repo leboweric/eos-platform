@@ -1343,9 +1343,10 @@ const WeeklyAccountabilityMeetingPage = () => {
       setElapsedTime(0);
       
       // Initialize section config for the first section (Phase 2)
-      const firstSection = agendaItems[0];
+      const firstSection = agendaItems.find(item => item.id === 'good-news') || agendaItems[0];
       console.log('🎯 Leader starting - Initializing section config:', {
         firstSection,
+        activeSection,
         agendaItems
       });
       if (firstSection) {
@@ -1360,6 +1361,8 @@ const WeeklyAccountabilityMeetingPage = () => {
           }
         });
         console.log('✅ Section config set to:', firstSection);
+      } else {
+        console.error('❌ No first section found to initialize!');
       }
       
       // Enter full-screen mode when meeting starts
