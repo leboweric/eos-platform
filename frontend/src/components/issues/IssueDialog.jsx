@@ -309,7 +309,7 @@ const IssueDialog = ({
       <DialogContent className="fixed right-0 top-0 left-auto translate-x-0 translate-y-0 h-screen w-[600px] max-w-[90vw] bg-white/95 dark:bg-gray-800/95 backdrop-blur-sm border-l border-white/20 dark:border-gray-700/50 shadow-2xl rounded-none data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:slide-out-to-right data-[state=open]:slide-in-from-right data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 duration-300">
         <div className="h-full overflow-y-auto p-6">
         <form onSubmit={handleSubmit} className="h-full flex flex-col">
-          <DialogHeader className="pb-6">
+          <DialogHeader className="pb-4">
             <div className="flex items-center gap-3 mb-2">
               <div 
                 className="h-10 w-10 rounded-xl flex items-center justify-center"
@@ -327,7 +327,7 @@ const IssueDialog = ({
             </div>
           </DialogHeader>
 
-          <div className="flex-1 grid gap-6 py-6 overflow-y-auto">
+          <div className="flex-1 grid gap-4 py-4 overflow-y-auto">
             {error && (
               <Alert className="border-red-200 dark:border-red-800 bg-red-50/80 dark:bg-red-900/20 backdrop-blur-sm rounded-xl">
                 <AlertCircle className="h-4 w-4 text-red-600" />
@@ -337,7 +337,7 @@ const IssueDialog = ({
 
             {/* First row: Title takes 2/3, Owner takes 1/3 */}
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              <div className="grid gap-3 md:col-span-2">
+              <div className="space-y-3 md:col-span-2">
                 <Label htmlFor="title" className="text-sm font-semibold text-slate-700 dark:text-slate-300">
                   Issue Title <span className="text-red-500">*</span>
                 </Label>
@@ -357,7 +357,7 @@ const IssueDialog = ({
                 />
               </div>
 
-              <div className="grid gap-3">
+              <div className="space-y-3">
                 <Label htmlFor="owner" className="text-sm font-semibold text-slate-700 dark:text-slate-300">Owner</Label>
                 <Select
                 value={formData.ownerId || 'no-owner'}
@@ -394,7 +394,7 @@ const IssueDialog = ({
             </div>
 
             {/* Second row: Summary full width */}
-            <div className="grid gap-3">
+            <div className="space-y-3">
               <Label htmlFor="description" className="text-sm font-semibold text-slate-700 dark:text-slate-300">Summary</Label>
               <div className="max-h-[200px] overflow-y-auto border rounded-xl shadow-sm">
                 <RichTextEditor
@@ -408,7 +408,7 @@ const IssueDialog = ({
 
             {/* Third row: Updates - only show for existing issues */}
             {issue && (
-              <div className="grid gap-3">
+              <div className="space-y-3">
                 <div className="flex items-center justify-between">
                   <Label className="text-sm font-semibold text-slate-700 dark:text-slate-300 flex items-center gap-2">
                     <MessageSquare className="h-4 w-4" />
@@ -510,7 +510,7 @@ const IssueDialog = ({
             )}
 
             {/* Fourth row: Attachments */}
-            <div className="grid gap-3">
+            <div className="space-y-3">
               <Label htmlFor="attachments" className="text-sm font-semibold text-slate-700 dark:text-slate-300">Attachments</Label>
               <div className="space-y-2">
                 
