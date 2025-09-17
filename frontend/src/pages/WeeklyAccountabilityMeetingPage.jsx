@@ -1332,6 +1332,20 @@ const WeeklyAccountabilityMeetingPage = () => {
       setMeetingStarted(true);
       setElapsedTime(0);
       
+      // Initialize section config for the first section (Phase 2)
+      const firstSection = agendaItems[0];
+      if (firstSection) {
+        setSectionConfig(firstSection);
+        setCurrentSectionStartTime(now);
+        setSectionElapsedTime(0);
+        setSectionTimings({
+          [firstSection.id]: {
+            started_at: new Date().toISOString(),
+            allocated: firstSection.duration * 60
+          }
+        });
+      }
+      
       // Enter full-screen mode when meeting starts
       sessionStorage.setItem('hideSidebarTemp', 'true');
       setIsFullScreen(true);
@@ -2878,6 +2892,22 @@ const WeeklyAccountabilityMeetingPage = () => {
       if (startTime) {
         setMeetingStartTime(startTime); // Keep as number (milliseconds)
         setMeetingStarted(!isPaused);
+        
+        // Initialize section config when joining (Phase 2)
+        if (!sectionConfig) {
+          const firstSection = agendaItems[0];
+          if (firstSection) {
+            setSectionConfig(firstSection);
+            setCurrentSectionStartTime(startTime);
+            setSectionElapsedTime(0);
+            setSectionTimings({
+              [firstSection.id]: {
+                started_at: new Date(startTime).toISOString(),
+                allocated: firstSection.duration * 60
+              }
+            });
+          }
+        }
       }
     };
     
@@ -2921,6 +2951,14 @@ const WeeklyAccountabilityMeetingPage = () => {
       // Only follow if not the leader
       if (!isLeader) {
         setActiveSection(section);
+        
+        // Update section config when section changes (Phase 2)
+        const newSectionConfig = agendaItems.find(item => item.id === section);
+        if (newSectionConfig) {
+          setSectionConfig(newSectionConfig);
+          setCurrentSectionStartTime(Date.now());
+          setSectionElapsedTime(0);
+        }
       }
     };
     
