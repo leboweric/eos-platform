@@ -248,7 +248,7 @@ const WeeklyAccountabilityMeetingPage = () => {
   const [addingMilestoneFor, setAddingMilestoneFor] = useState(null);
   const [newMilestone, setNewMilestone] = useState({ title: '', dueDate: '' });
   const [showAddPriority, setShowAddPriority] = useState(false);
-  const [todoSortBy, setTodoSortBy] = useState('due_date'); // For Conclude section todo sorting
+  const [todoSortBy, setTodoSortBy] = useState('assignee'); // For Conclude section todo sorting - default to assignee/owner
   
   // Function to create issue directly from headline
   const createIssueFromHeadline = async (headline, type) => {
@@ -4514,8 +4514,8 @@ const WeeklyAccountabilityMeetingPage = () => {
                         value={todoSortBy}
                         onChange={(e) => setTodoSortBy(e.target.value)}
                       >
+                        <option value="assignee">Owner</option>
                         <option value="due_date">Due Date</option>
-                        <option value="assignee">Assignee</option>
                       </select>
                     </div>
                   </div>
@@ -4572,7 +4572,7 @@ const WeeklyAccountabilityMeetingPage = () => {
                       return openTodos.length === 0 ? (
                         <p className="text-slate-500 text-sm">No open to-dos</p>
                       ) : (
-                        <div className="space-y-3 max-h-64 overflow-y-auto">
+                        <div className="space-y-3">
                           {Object.entries(todosByAssignee).map(([assignee, assigneeTodos]) => (
                             <div key={assignee} className="space-y-2">
                               <h5 className="text-xs font-semibold text-slate-700 uppercase tracking-wider">
@@ -4617,7 +4617,7 @@ const WeeklyAccountabilityMeetingPage = () => {
                     return openTodos.length === 0 ? (
                       <p className="text-slate-500 text-sm">No open to-dos</p>
                     ) : (
-                      <div className="space-y-2 max-h-64 overflow-y-auto">
+                      <div className="space-y-2">
                         {sortedTodos.map(todo => (
                           <div key={todo.id} className="flex items-start gap-2 p-2 bg-slate-50 rounded-lg">
                             <div className="flex-1 min-w-0">
