@@ -34,7 +34,7 @@ ADD COLUMN IF NOT EXISTS section_timings JSONB DEFAULT '{}';
 -- Add column for tracking section order and progress
 ALTER TABLE meeting_sessions
 ADD COLUMN IF NOT EXISTS sections_completed TEXT[] DEFAULT '{}',
-ADD COLUMN IF NOT EXISTS total_allocated_time INTEGER DEFAULT 5400, -- 90 minutes in seconds
+ADD COLUMN IF NOT EXISTS total_allocated_time INTEGER DEFAULT 5400,
 ADD COLUMN IF NOT EXISTS meeting_pace VARCHAR(20) DEFAULT 'on-track' CHECK (
   meeting_pace IN ('on-track', 'ahead', 'behind', 'critical')
 );
@@ -78,7 +78,7 @@ INSERT INTO meeting_section_configs (
 )
 SELECT DISTINCT
   o.id,
-  NULL, -- org-wide default
+  NULL::UUID, -- org-wide default
   'weekly',
   '[
     {"id": "segue", "name": "Segue", "duration": 5, "icon": "Users", "order": 1, "description": "Good news and wins from the past week"},
