@@ -797,6 +797,26 @@ const WeeklyAccountabilityMeetingPage = () => {
               setMeetingStarted(true);
               console.log('⏱️ Starting timer as leader at:', now);
               
+              // Initialize section config for the first section (Phase 2)
+              const firstSection = agendaItems.find(item => item.id === 'good-news') || agendaItems[0];
+              console.log('🎯 Auto-join leader - Initializing section config:', {
+                firstSection,
+                activeSection,
+                agendaItems
+              });
+              if (firstSection) {
+                setSectionConfig(firstSection);
+                setCurrentSectionStartTime(now);
+                setSectionElapsedTime(0);
+                setSectionCumulativeTimes({}); // Reset cumulative times for new meeting
+                setSectionTimings({
+                  [firstSection.id]: {
+                    started_at: new Date().toISOString(),
+                    allocated: firstSection.duration * 60
+                  }
+                });
+              }
+              
               // Enter full-screen mode
               sessionStorage.setItem('hideSidebarTemp', 'true');
               setIsFullScreen(true);
@@ -889,6 +909,26 @@ const WeeklyAccountabilityMeetingPage = () => {
           setMeetingStartTime(now);
           setMeetingStarted(true);
           console.log('⏱️ Starting timer as leader at:', now);
+          
+          // Initialize section config for the first section (Phase 2)
+          const firstSection = agendaItems.find(item => item.id === 'good-news') || agendaItems[0];
+          console.log('🎯 Auto-join leader (immediate) - Initializing section config:', {
+            firstSection,
+            activeSection,
+            agendaItems
+          });
+          if (firstSection) {
+            setSectionConfig(firstSection);
+            setCurrentSectionStartTime(now);
+            setSectionElapsedTime(0);
+            setSectionCumulativeTimes({}); // Reset cumulative times for new meeting
+            setSectionTimings({
+              [firstSection.id]: {
+                started_at: new Date().toISOString(),
+                allocated: firstSection.duration * 60
+              }
+            });
+          }
           
           // Enter full-screen mode
           sessionStorage.setItem('hideSidebarTemp', 'true');
