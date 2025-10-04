@@ -29,6 +29,7 @@ CREATE TABLE organizations (
     stripe_subscription_id VARCHAR(255),
     subscription_status VARCHAR(50) DEFAULT 'active',
     billing_email VARCHAR(255),
+    has_active_subscription BOOLEAN DEFAULT TRUE,
     created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
     updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
@@ -46,6 +47,14 @@ CREATE TABLE users (
     avatar_url TEXT,
     settings JSONB DEFAULT '{}',
     last_login_at TIMESTAMP WITH TIME ZONE,
+    is_consultant BOOLEAN DEFAULT FALSE,
+    consultant_email VARCHAR(255),
+    terms_accepted_at TIMESTAMP WITH TIME ZONE,
+    privacy_accepted_at TIMESTAMP WITH TIME ZONE,
+    terms_version VARCHAR(20),
+    privacy_version VARCHAR(20),
+    agreement_ip_address INET,
+    agreement_user_agent TEXT,
     created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
     updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
@@ -177,11 +186,10 @@ CREATE TABLE scorecard_scores (
 CREATE TABLE password_reset_tokens (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
     user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
-    token VARCHAR(255) NOT NULL,
-    expires_at TIMESTAMP WITH TIME ZONE NOT NULL,
-    used_at TIMESTAMP WITH TIME ZONE,
-    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
-    UNIQUE(token)
+    token VARCHAR(255) NOT NULL UNIQUE,
+    expires_at TIMESTAMP NOT NULL,
+    used BOOLEAN DEFAULT FALSE,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
 -- Team Members (many-to-many relationship between users and teams)
