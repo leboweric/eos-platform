@@ -713,9 +713,16 @@ const WeeklyAccountabilityMeetingPage = () => {
       const orgId = user?.organizationId || user?.organization_id;
       // Handle "null" string from URL params
       const cleanTeamId = (teamId === 'null' || teamId === 'undefined') ? null : teamId;
-      
-      // FOR PRIORITIES: Use the raw teamId from URL to get the specific team's priorities
-      // Don't use getEffectiveTeamId which might change the team context
+      const effectiveTeamId = getEffectiveTeamId(cleanTeamId, user);
+
+      console.log('🔍 Team ID comparison:', {
+        urlTeamId: teamId,
+        cleanTeamId,
+        effectiveTeamId,
+        areTheSame: cleanTeamId === effectiveTeamId
+      });
+
+      // Then use cleanTeamId as the fix proposes
       const response = await quarterlyPrioritiesService.getCurrentPriorities(orgId, cleanTeamId);
       
       console.log('🚨 API Response for priorities:', response);
