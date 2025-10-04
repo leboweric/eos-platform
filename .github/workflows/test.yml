@@ -64,16 +64,26 @@ jobs:
         STRIPE_SECRET_KEY: ${{ secrets.STRIPE_TEST_KEY }}
         STRIPE_WEBHOOK_SECRET: whsec_test_secret_for_github_actions
         OPENAI_API_KEY: sk-fake-key-for-testing-only
+        # Microsoft OAuth (fake values for testing)
+        MICROSOFT_CLIENT_ID: fake-microsoft-client-id
+        MICROSOFT_CLIENT_SECRET: fake-microsoft-secret
+        MICROSOFT_TENANT_ID: fake-tenant-id
+        MICROSOFT_CALLBACK_URL: http://localhost:3001/api/v1/oauth/microsoft/callback
+        # Google OAuth (fake values for testing)
+        GOOGLE_CLIENT_ID: fake-google-client-id
+        GOOGLE_CLIENT_SECRET: fake-google-secret
+        GOOGLE_CALLBACK_URL: http://localhost:3001/api/v1/oauth/google/callback
+        # Email settings (fake values for testing)
         SENDGRID_API_KEY: fake-sendgrid-key
-        # Email settings (using test values)
+        SENDGRID_FROM_EMAIL: test@test.com
         EMAIL_SERVICE: smtp
         EMAIL_FROM: test@test.com
         SMTP_HOST: localhost
         SMTP_PORT: 1025
         SMTP_USER: test
         SMTP_PASS: test
-        # Other test environment variables
-        FRONTEND_URL: http://localhost:3000
+        # Frontend URL
+        FRONTEND_URL: http://localhost:5173
       run: |
         npm test
         
