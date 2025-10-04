@@ -1,4 +1,4 @@
-name: Run Backend Tests
+name: Backend Test Suite
 
 on:
   push:
