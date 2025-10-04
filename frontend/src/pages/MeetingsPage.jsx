@@ -437,80 +437,10 @@ const MeetingsPage = () => {
     setShowJoinDialog(false);
   };
 
-  // Check for active meetings across all user's teams
-  const userTeamIds = teams.map(t => t.id);
-  const userActiveMeetings = Object.entries(activeMeetings || {})
-    .filter(([code, meeting]) => {
-      // Check if the meeting code contains any of the user's team IDs
-      return userTeamIds.some(teamId => code.includes(teamId));
-    })
-    .map(([code, meeting]) => ({
-      ...meeting,
-      code,
-      teamId: userTeamIds.find(id => code.includes(id)),
-      meetingType: code.split('-').slice(1).join('-')
-    }));
-  
-  const handleDirectJoinMeeting = (meeting) => {
-    const { teamId, meetingType } = meeting;
-    
-    // Join the meeting
-    const meetingRoom = `${teamId}-${meetingType}`;
-    if (joinMeeting) {
-      joinMeeting(meetingRoom, false);
-    }
-    
-    // Navigate to the appropriate meeting page
-    if (meetingType === 'weekly-accountability') {
-      navigate(`/meetings/weekly-accountability/${teamId}`);
-    } else if (meetingType === 'quarterly-planning') {
-      navigate(`/meetings/quarterly-planning/${teamId}`);
-    }
-  };
-
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50/30 to-indigo-50/30 relative">
       {/* Background Pattern */}
       <div className="absolute inset-0 bg-grid-slate-100 [mask-image:linear-gradient(0deg,white,rgba(255,255,255,0.6))] -z-10"></div>
-      
-      {/* Active Meeting Banner */}
-      {userActiveMeetings.length > 0 && (
-        <div className="bg-gradient-to-r from-green-600 to-emerald-600 text-white shadow-lg">
-          <div className="max-w-7xl mx-auto px-8 py-4">
-            {userActiveMeetings.map((meeting) => {
-              const team = teams.find(t => t.id === meeting.teamId);
-              const meetingTypeLabel = meeting.meetingType === 'weekly-accountability' 
-                ? (labels.weekly_meeting_label || 'Weekly Accountability Meeting')
-                : meeting.meetingType === 'quarterly-planning'
-                ? (labels.quarterly_meeting_label || 'Quarterly Planning Meeting')
-                : 'Meeting';
-                
-              return (
-                <div key={meeting.code} className="flex items-center justify-between">
-                  <div className="flex items-center gap-3">
-                    <span className="relative flex h-4 w-4">
-                      <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-white opacity-75"></span>
-                      <span className="relative inline-flex rounded-full h-4 w-4 bg-white"></span>
-                    </span>
-                    <div>
-                      <p className="font-semibold text-lg">Meeting in Progress</p>
-                      <p className="text-green-100 text-sm">
-                        {team?.name || 'Team'} - {meetingTypeLabel} • {meeting.participantCount || 0} participant{meeting.participantCount !== 1 ? 's' : ''}
-                      </p>
-                    </div>
-                  </div>
-                  <Button
-                    onClick={() => handleDirectJoinMeeting(meeting)}
-                    className="bg-white text-green-600 hover:bg-green-50 font-semibold px-6"
-                  >
-                    Join Meeting Now
-                  </Button>
-                </div>
-              );
-            })}
-          </div>
-        </div>
-      )}
       
       <div className="max-w-7xl mx-auto p-8 space-y-8">
         <div className="mb-8">
@@ -548,7 +478,31 @@ const MeetingsPage = () => {
                 
                 return (
                   <Button
-                    onClick={() => setShowJoinDialog(true)}
+                    onClick={() => {
+                      if (hasActiveMeeting && userActiveMeetings.length > 0) {
+                        // Direct join for active meeting
+                        const meeting = userActiveMeetings[0];
+                        const meetingCode = meeting.code;
+                        const parts = meetingCode.split('-');
+                        const teamId = parts[0];
+                        const meetingType = parts.slice(1).join('-');
+                        
+                        // Join the meeting
+                        if (joinMeeting) {
+                          joinMeeting(meetingCode, false);
+                        }
+                        
+                        // Navigate directly to the meeting
+                        if (meetingType === 'weekly-accountability') {
+                          navigate(`/meetings/weekly-accountability/${teamId}`);
+                        } else if (meetingType === 'quarterly-planning') {
+                          navigate(`/meetings/quarterly-planning/${teamId}`);
+                        }
+                      } else {
+                        // Open dialog for new meeting
+                        setShowJoinDialog(true);
+                      }
+                    }}
                     className={`flex items-center gap-2 text-white shadow-lg hover:shadow-xl transition-all duration-200 transform hover:scale-[1.02] ${
                       hasActiveMeeting ? 'bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 animate-pulse' : ''
                     }`}
