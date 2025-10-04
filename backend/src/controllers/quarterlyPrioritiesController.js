@@ -156,19 +156,17 @@ export const getQuarterlyPriorities = async (req, res) => {
          LEFT JOIN priority_milestones m ON p.id = m.priority_id
          LEFT JOIN teams t ON p.team_id = t.id
          WHERE p.organization_id = $1::uuid 
-           AND p.quarter = $2::varchar(2)
-           AND p.year = $3::integer
            ${deletedAtClause}
            AND (
              -- NINETY.IO MODEL: Leadership sees ALL data, Departments see all departments (not Leadership)
              CASE
-               WHEN $4 = true THEN true  -- Leadership sees everything
+               WHEN $2 = true THEN true  -- Leadership sees everything
                ELSE (t.is_leadership_team IS NOT TRUE OR p.team_id IS NULL)  -- Departments exclude Leadership team priorities
              END
            )
          GROUP BY p.id, u.first_name, u.last_name, u.email, t.name, t.is_leadership_team
          ORDER BY p.created_at`,
-        [orgId, currentQuarter, currentYear, isLeadership]
+        [orgId, isLeadership]
       );
     } catch (queryError) {
       console.error('Priorities query error:', queryError);
