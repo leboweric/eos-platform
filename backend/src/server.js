@@ -1,3 +1,6 @@
+// Must be first imports for Sentry
+import Sentry, { initializeSentry } from './config/sentry.js';
+
 import express from 'express';
 import cors from 'cors';
 import helmet from 'helmet';
@@ -69,6 +72,9 @@ ensureUploadsDirectory();
 
 const app = express();
 const PORT = process.env.PORT || 3001;
+
+// Initialize Sentry (must be early - handles middleware automatically)
+const sentryInitialized = initializeSentry(app);
 
 // Trust proxy for Railway deployment
 app.set('trust proxy', true);
@@ -241,6 +247,8 @@ app.use('/api/v1', sharedMetricsRoutes);
 app.use('/api/v1', exportRoutes);
 app.use('/api/v1/daily-active-users', dailyActiveUsersRoutes);
 app.use('/api/v1/todo-reminders', todoReminderRoutes);
+
+// Sentry error handler is automatically added by setupExpressErrorHandler in config/sentry.js
 
 // Error handling middleware
 app.use(notFound);

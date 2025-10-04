@@ -1,4 +1,5 @@
 import React from 'react';
+import * as Sentry from '@sentry/react';
 import { AlertTriangle, RefreshCw } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 
@@ -16,6 +17,15 @@ class ErrorBoundary extends React.Component {
   componentDidCatch(error, errorInfo) {
     // Log error details to console for debugging
     console.error('Error caught by ErrorBoundary:', error, errorInfo);
+    
+    // Report to Sentry
+    Sentry.withScope((scope) => {
+      scope.setContext('errorBoundary', {
+        componentStack: errorInfo.componentStack,
+      });
+      Sentry.captureException(error);
+    });
+    
     this.setState({
       error: error,
       errorInfo: errorInfo

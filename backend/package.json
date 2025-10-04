@@ -25,6 +25,7 @@
     "@google-cloud/local-auth": "^3.0.1",
     "@microsoft/microsoft-graph-client": "^3.0.7",
     "@sendgrid/mail": "^8.1.5",
+    "@sentry/node": "^10.17.0",
     "axios": "^1.6.8",
     "bcryptjs": "^2.4.3",
     "cheerio": "^1.0.0-rc.12",

@@ -1,5 +1,6 @@
 import { create } from 'zustand';
 import axios from 'axios';
+import * as Sentry from '@sentry/react';
 
 const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3001/api/v1';
 
@@ -146,6 +147,13 @@ export const useAuthStore = create((set, get) => ({
         console.error('No organizationId found in user object:', user);
       }
       
+      // Set Sentry user context
+      Sentry.setUser({
+        id: user.id,
+        email: user.email,
+        organization_id: orgId
+      });
+      
       set({ user, isLoading: false, error: null });
       return { success: true };
     } catch (error) {
@@ -181,6 +189,13 @@ export const useAuthStore = create((set, get) => ({
         console.error('No organizationId found in user object:', user);
       }
       
+      // Set Sentry user context
+      Sentry.setUser({
+        id: user.id,
+        email: user.email,
+        organization_id: orgId
+      });
+      
       set({ user, isLoading: false, error: null });
       return { success: true };
     } catch (error) {
@@ -207,6 +222,10 @@ export const useAuthStore = create((set, get) => ({
           localStorage.removeItem(key);
         }
       });
+      
+      // Clear Sentry user context
+      Sentry.setUser(null);
+      
       set({ user: null, isLoading: false, error: null });
     }
   },
