@@ -3716,45 +3716,23 @@ const WeeklyAccountabilityMeetingPage = () => {
                                       <div className="ml-12 mr-4 mb-3 p-3 bg-slate-50 rounded-lg">
                                         {console.log('Expanded priority:', priority.id, 'Milestones:', priority.milestones)}
                                         <div className="space-y-2">
-                                          {(priority.milestones || []).map(milestone => {
-                                            console.log('🔥🔥🔥 RENDERING MILESTONE:', milestone.id, milestone.title);
-                                            return (
-                                            <div 
-                                              key={milestone.id} 
-                                              className="flex items-center gap-3"
-                                            >
-                                              <input
-                                                type="checkbox"
-                                                checked={!!milestone.completed}
-                                                onChange={async (e) => {
-                                                  const newChecked = e.target.checked;
-                                                  console.log('🔥🔥🔥 CHECKBOX CLICKED:', milestone.id);
-                                                  console.log('🔥🔥🔥 CHECKBOX DETAILS:', { 
-                                                    priorityId: priority.id, 
-                                                    milestoneId: milestone.id, 
-                                                    oldChecked: milestone.completed,
-                                                    newChecked 
-                                                  });
-                                                  await handleToggleMilestone(priority.id, milestone.id, newChecked);
+                                          {(priority.milestones || []).map(milestone => (
+                                            <div key={milestone.id} className="flex items-center gap-3">
+                                              <Checkbox
+                                                checked={milestone.completed}
+                                                onCheckedChange={async (checked) => {
+                                                  await handleToggleMilestone(priority.id, milestone.id, checked);
                                                 }}
-                                                className="rounded border-slate-300 text-green-600 focus:ring-green-500 cursor-pointer"
+                                                className="data-[state=checked]:bg-green-600 data-[state=checked]:border-green-600"
                                               />
-                                              <span 
-                                                className={`text-sm flex-1 cursor-pointer ${milestone.completed ? 'line-through text-slate-400' : 'text-slate-700'}`}
-                                                onClick={async () => {
-                                                  // Allow clicking on the text to toggle as well
-                                                  console.log('Milestone text clicked:', { priorityId: priority.id, milestoneId: milestone.id });
-                                                  await handleToggleMilestone(priority.id, milestone.id, !milestone.completed);
-                                                }}
-                                              >
+                                              <span className={`text-sm flex-1 ${milestone.completed ? 'line-through text-slate-400' : 'text-slate-700'}`}>
                                                 {milestone.title}
                                               </span>
                                               <span className="text-xs text-slate-500">
                                                 {milestone.dueDate ? format(new Date(milestone.dueDate), 'MMM d') : ''}
                                               </span>
                                             </div>
-                                            );
-                                          })}
+                                          ))}
                                           
                                           {/* Add milestone button section if no milestones */}
                                           {(priority.milestones || []).length === 0 && addingMilestoneFor !== priority.id ? (
