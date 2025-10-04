@@ -477,14 +477,11 @@ const PriorityDialog = ({
                   ) : (
                     <div className="flex items-center justify-between">
                       <div className="flex items-center gap-3">
-                        <Checkbox
+                        <input
+                          type="checkbox"
                           checked={milestone.completed}
-                          onCheckedChange={(checked) => onToggleMilestone?.(priority.id, milestone.id, checked)}
-                          className="flex-shrink-0 bg-white border-gray-300"
-                          style={{
-                            backgroundColor: milestone.completed ? themeColors.primary : undefined,
-                            borderColor: milestone.completed ? themeColors.primary : undefined
-                          }}
+                          onChange={(e) => onToggleMilestone?.(priority.id, milestone.id, e.target.checked)}
+                          className="flex-shrink-0 rounded border-gray-300 text-green-600 focus:ring-green-500 cursor-pointer"
                         />
                         <div>
                           <p className={`font-medium ${milestone.completed ? 'line-through text-gray-500' : ''}`}>
