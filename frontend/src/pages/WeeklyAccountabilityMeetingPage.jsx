@@ -3691,6 +3691,17 @@ const WeeklyAccountabilityMeetingPage = () => {
                                                 type="checkbox"
                                                 checked={milestone.completed}
                                                 onChange={(e) => {
+                                                  console.log('[MILESTONE CHECKBOX] Event fired:', {
+                                                    meetingContext: window.location.pathname.includes('meeting'),
+                                                    eventType: e.type,
+                                                    target: e.target,
+                                                    currentTarget: e.currentTarget,
+                                                    propagationStopped: e.isPropagationStopped?.(),
+                                                    defaultPrevented: e.defaultPrevented,
+                                                    priorityId: priority.id,
+                                                    milestoneId: milestone.id,
+                                                    checked: e.target.checked
+                                                  });
                                                   console.log('🔥 MILESTONE CHECKBOX CLICKED!', { priorityId: priority.id, milestoneId: milestone.id, checked: e.target.checked });
                                                   handleUpdateMilestone(priority.id, milestone.id, e.target.checked);
                                                 }}
