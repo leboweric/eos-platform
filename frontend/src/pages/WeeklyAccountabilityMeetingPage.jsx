@@ -3693,7 +3693,7 @@ const WeeklyAccountabilityMeetingPage = () => {
                                                   console.log('🔥 MILESTONE CHECKBOX CLICKED!', { priorityId: priority.id, milestoneId: milestone.id, checked: e.target.checked });
                                                   handleUpdateMilestone(priority.id, milestone.id, e.target.checked);
                                                 }}
-                                                className="rounded border-gray-300 focus:ring-2"
+                                                className="flex-shrink-0 rounded border-gray-300 text-green-600 focus:ring-green-500 cursor-pointer"
                                               />
                                               <span className={`text-sm flex-1 ${milestone.completed ? 'line-through text-slate-400' : 'text-slate-700'}`}>
                                                 {milestone.title}
