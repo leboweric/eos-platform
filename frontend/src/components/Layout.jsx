@@ -13,7 +13,6 @@ import DarkModeToggle from './DarkModeToggle';
 import HelpWidget from './help/HelpWidget';
 import { LogoText } from './Logo';
 import { getOrgTheme, saveOrgTheme } from '../utils/themeUtils';
-import useMeeting from '../hooks/useMeeting';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -61,7 +60,6 @@ const Layout = ({ children }) => {
   const navigate = useNavigate();
   const { user, logout, isOnLeadershipTeam } = useAuthStore();
   const { labels } = useTerminology();
-  const { activeMeetings, isEnabled: meetingsEnabled } = useMeeting();
 
   useEffect(() => {
     // Set logo URL if organization ID is available
@@ -214,19 +212,6 @@ const Layout = ({ children }) => {
     navigation.unshift({ name: 'Consultant Dashboard', href: '/consultant', icon: Briefcase });
   }
 
-  // Add "Join Meeting in Progress" if there's an active meeting
-  const hasActiveMeeting = meetingsEnabled && activeMeetings && Object.keys(activeMeetings).length > 0;
-  if (hasActiveMeeting) {
-    // Add at the beginning of navigation with a special flag
-    navigation.unshift({ 
-      name: 'Join Meeting in Progress', 
-      href: '/meetings',
-      icon: Users,
-      isActiveMeeting: true,
-      className: 'animate-pulse bg-green-50 dark:bg-green-900/20'
-    });
-  }
-
   const handleLogout = async () => {
     await logout();
     navigate('/login');
@@ -294,37 +279,6 @@ const Layout = ({ children }) => {
           <div className="space-y-1">
             {navigation.map((item) => {
               const isActive = location.pathname === item.href;
-              
-              // Special handling for active meeting item
-              if (item.isActiveMeeting) {
-                return (
-                  <button
-                    key={item.name}
-                    onClick={(e) => {
-                      e.preventDefault();
-                      e.stopPropagation();
-                      // Navigate first, then close sidebar
-                      navigate(item.href);
-                      // Use setTimeout to ensure navigation happens before closing
-                      setTimeout(() => setSidebarOpen(false), 0);
-                    }}
-                    className={`
-                      w-full flex items-center px-3 py-2 text-sm font-medium rounded-md transition-colors text-left
-                      ${item.className || ''}
-                      ${isActive
-                        ? 'bg-green-600 text-white'
-                        : 'text-green-700 dark:text-green-300 hover:bg-green-100 dark:hover:bg-green-900/50 hover:text-green-900 dark:hover:text-green-100'
-                      }
-                    `}
-                  >
-                    <span className="relative flex h-5 w-5 mr-3">
-                      <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span>
-                      <item.icon className="relative h-5 w-5" />
-                    </span>
-                    {item.name}
-                  </button>
-                );
-              }
               
               return (
                 <Link
