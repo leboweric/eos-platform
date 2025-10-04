@@ -3683,15 +3683,35 @@ const WeeklyAccountabilityMeetingPage = () => {
                                       <div className="ml-12 mr-4 mb-3 p-3 bg-slate-50 rounded-lg">
                                         <div className="space-y-2">
                                           {(priority.milestones || []).map(milestone => (
-                                            <div key={milestone.id} className="flex items-center gap-3">
+                                            <div 
+                                              key={milestone.id} 
+                                              className="flex items-center gap-3"
+                                              onClick={(e) => {
+                                                // Prevent event propagation that might interfere
+                                                e.stopPropagation();
+                                              }}
+                                            >
                                               <Checkbox
                                                 checked={milestone.completed}
                                                 onCheckedChange={async (checked) => {
+                                                  console.log('Milestone checkbox clicked:', { priorityId: priority.id, milestoneId: milestone.id, checked });
                                                   await handleToggleMilestone(priority.id, milestone.id, checked);
                                                 }}
                                                 className="data-[state=checked]:bg-green-600 data-[state=checked]:border-green-600"
+                                                onClick={(e) => {
+                                                  // Ensure click event is not blocked
+                                                  e.stopPropagation();
+                                                }}
                                               />
-                                              <span className={`text-sm flex-1 ${milestone.completed ? 'line-through text-slate-400' : 'text-slate-700'}`}>
+                                              <span 
+                                                className={`text-sm flex-1 cursor-pointer ${milestone.completed ? 'line-through text-slate-400' : 'text-slate-700'}`}
+                                                onClick={async (e) => {
+                                                  e.stopPropagation();
+                                                  // Allow clicking on the text to toggle as well
+                                                  console.log('Milestone text clicked:', { priorityId: priority.id, milestoneId: milestone.id });
+                                                  await handleToggleMilestone(priority.id, milestone.id, !milestone.completed);
+                                                }}
+                                              >
                                                 {milestone.title}
                                               </span>
                                               <span className="text-xs text-slate-500">
