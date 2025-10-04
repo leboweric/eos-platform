@@ -5,6 +5,9 @@
 CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
 
 -- Drop existing tables to ensure clean state
+DROP TABLE IF EXISTS password_reset_tokens CASCADE;
+DROP TABLE IF EXISTS team_members CASCADE;
+DROP TABLE IF EXISTS subscriptions CASCADE;
 DROP TABLE IF EXISTS user_organizations CASCADE;
 DROP TABLE IF EXISTS quarterly_priorities CASCADE;
 DROP TABLE IF EXISTS todos CASCADE;
@@ -170,6 +173,51 @@ CREATE TABLE scorecard_scores (
     UNIQUE(metric_id, week_ending)
 );
 
+-- Password Reset Tokens (required for password reset tests)
+CREATE TABLE password_reset_tokens (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    token VARCHAR(255) NOT NULL,
+    expires_at TIMESTAMP WITH TIME ZONE NOT NULL,
+    used_at TIMESTAMP WITH TIME ZONE,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+    UNIQUE(token)
+);
+
+-- Team Members (many-to-many relationship between users and teams)
+CREATE TABLE team_members (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    team_id UUID NOT NULL REFERENCES teams(id) ON DELETE CASCADE,
+    user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    role VARCHAR(50) DEFAULT 'member',
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+    UNIQUE(team_id, user_id)
+);
+
+-- Subscriptions (for billing tests)
+CREATE TABLE subscriptions (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    organization_id UUID NOT NULL REFERENCES organizations(id) ON DELETE CASCADE,
+    stripe_customer_id VARCHAR(255),
+    stripe_subscription_id VARCHAR(255),
+    status VARCHAR(50) DEFAULT 'active',
+    plan_type VARCHAR(50) DEFAULT 'professional',
+    billing_interval VARCHAR(20) DEFAULT 'monthly',
+    user_count INTEGER DEFAULT 1,
+    price_per_user DECIMAL(10,2),
+    last_payment_status VARCHAR(50),
+    last_payment_amount DECIMAL(10,2),
+    last_payment_date TIMESTAMP WITH TIME ZONE,
+    current_period_start TIMESTAMP WITH TIME ZONE,
+    current_period_end TIMESTAMP WITH TIME ZONE,
+    canceled_at TIMESTAMP WITH TIME ZONE,
+    trial_type VARCHAR(20) DEFAULT 'trial',
+    trial_converted_at TIMESTAMP WITH TIME ZONE,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
 -- Create indexes for better query performance
 CREATE INDEX idx_users_email ON users(email);
 CREATE INDEX idx_user_orgs_user ON user_organizations(user_id);
@@ -179,3 +227,9 @@ CREATE INDEX idx_priorities_org ON quarterly_priorities(organization_id);
 CREATE INDEX idx_todos_org ON todos(organization_id);
 CREATE INDEX idx_issues_org ON issues(organization_id);
 CREATE INDEX idx_metrics_org ON scorecard_metrics(organization_id);
+CREATE INDEX idx_reset_tokens_token ON password_reset_tokens(token);
+CREATE INDEX idx_reset_tokens_user ON password_reset_tokens(user_id);
+CREATE INDEX idx_team_members_team ON team_members(team_id);
+CREATE INDEX idx_team_members_user ON team_members(user_id);
+CREATE INDEX idx_subscriptions_org ON subscriptions(organization_id);
+CREATE INDEX idx_subscriptions_customer ON subscriptions(stripe_customer_id);
