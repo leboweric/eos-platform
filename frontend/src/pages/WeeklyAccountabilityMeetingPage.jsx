@@ -85,7 +85,7 @@ import { getEffectiveTeamId } from '../utils/teamUtils';
 import FloatingTimer from '../components/meetings/FloatingTimer';
 
 const WeeklyAccountabilityMeetingPage = () => {
-  console.log('🔥🔥🔥 MEETING PAGE COMPONENT LOADED 🔥🔥🔥');
+  console.log('🔥🔥🔥 MEETING PAGE COMPONENT LOADED - DEPLOYMENT TEST 123 🔥🔥🔥');
   const { user } = useAuthStore();
   const { teamId } = useParams();
   const navigate = useNavigate();
@@ -640,6 +640,7 @@ const WeeklyAccountabilityMeetingPage = () => {
   const loadInitialData = async () => {
     try {
       setLoading(true);
+      console.log('🚨 ABOUT TO CALL fetchPrioritiesData in loadInitialData');
       await Promise.all([
         fetchScorecardData(),
         fetchPrioritiesData(),
@@ -767,7 +768,9 @@ const WeeklyAccountabilityMeetingPage = () => {
   // Load data on mount and when teamId changes - SIMPLIFIED
   useEffect(() => {
     // Just call it if we have teamId, don't overcomplicate
+    console.log('🚨 useEffect triggered with teamId:', teamId);
     if (teamId) {
+      console.log('🚨 ABOUT TO CALL fetchPrioritiesData from useEffect');
       fetchTodosData();
       fetchIssuesData();
       fetchScorecardData();
