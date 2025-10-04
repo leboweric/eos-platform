@@ -414,6 +414,50 @@ const WeeklyAccountabilityMeetingPage = () => {
     }
   };
 
+  const handleToggleMilestone = async (priorityId, milestoneId, completed) => {
+    try {
+      const orgId = user?.organizationId || user?.organization_id;
+      const cleanTeamId = (teamId === 'null' || teamId === 'undefined') ? null : teamId;
+      const effectiveTeamId = getEffectiveTeamId(cleanTeamId, user);
+      
+      await quarterlyPrioritiesService.updateMilestone(orgId, effectiveTeamId, priorityId, milestoneId, { completed });
+      
+      // Update local state
+      setPriorities(prev => prev.map(p => 
+        p.id === priorityId 
+          ? {
+              ...p,
+              milestones: p.milestones?.map(m => 
+                m.id === milestoneId ? { ...m, completed } : m
+              ) || []
+            }
+          : p
+      ));
+      
+      // Update selected priority if it's the one being viewed
+      if (selectedPriority?.id === priorityId) {
+        setSelectedPriority(prev => ({
+          ...prev,
+          milestones: prev.milestones?.map(m => 
+            m.id === milestoneId ? { ...m, completed } : m
+          ) || []
+        }));
+      }
+
+      // Broadcast update to meeting participants
+      if (broadcastIssueListUpdate) {
+        broadcastIssueListUpdate({
+          action: 'milestone-toggled',
+          priorityId,
+          milestoneId,
+          completed
+        });
+      }
+    } catch (error) {
+      console.error('Failed to toggle milestone:', error);
+    }
+  };
+
   async function handleAddMilestone(priorityId) {
     if (!newMilestone.title.trim()) return;
     
@@ -3692,17 +3736,6 @@ const WeeklyAccountabilityMeetingPage = () => {
                                                 checked={milestone.completed}
                                                 onChange={(e) => {
                                                   e.stopPropagation(); // Prevent event bubbling to parent containers
-                                                  console.log('[MILESTONE CHECKBOX] Event fired:', {
-                                                    meetingContext: window.location.pathname.includes('meeting'),
-                                                    eventType: e.type,
-                                                    target: e.target,
-                                                    currentTarget: e.currentTarget,
-                                                    propagationStopped: e.isPropagationStopped?.(),
-                                                    defaultPrevented: e.defaultPrevented,
-                                                    priorityId: priority.id,
-                                                    milestoneId: milestone.id,
-                                                    checked: e.target.checked
-                                                  });
                                                   console.log('🔥 MILESTONE CHECKBOX CLICKED!', { priorityId: priority.id, milestoneId: milestone.id, checked: e.target.checked });
                                                   handleUpdateMilestone(priority.id, milestone.id, e.target.checked);
                                                 }}
@@ -5560,6 +5593,7 @@ const WeeklyAccountabilityMeetingPage = () => {
             }}
             priority={selectedPriority}
             teamMembers={teamMembers || []}
+            onToggleMilestone={handleToggleMilestone}
             onSave={async (priorityData) => {
               try {
                 if (selectedPriority) {
