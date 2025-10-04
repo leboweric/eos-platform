@@ -1,19 +1,20 @@
+// Sentry initialization for ES modules
+// This file must be imported BEFORE any other modules to properly instrument the app
+// See: https://docs.sentry.io/platforms/javascript/guides/express/install/esm/
+
 import * as Sentry from '@sentry/node';
 
-export const initializeSentry = (app) => {
-  // Only initialize if DSN is provided
-  if (!process.env.SENTRY_DSN) {
-    console.warn('Sentry DSN not found - error tracking disabled');
-    return false;
-  }
-
+// Only initialize if DSN is provided
+if (process.env.SENTRY_DSN) {
   Sentry.init({
     dsn: process.env.SENTRY_DSN,
     environment: process.env.NODE_ENV || 'development',
     
-    // Include Express integration
+    // Include Node.js integration (Express integration will be added in server.js)
     integrations: [
-      Sentry.expressIntegration({ app }),
+      Sentry.nodeContextIntegration(),
+      Sentry.localVariablesIntegration(),
+      Sentry.requestDataIntegration(),
     ],
     
     // Sample 10% of requests for performance monitoring
@@ -36,11 +37,7 @@ export const initializeSentry = (app) => {
     },
   });
 
-  // Setup Express error handler
-  Sentry.setupExpressErrorHandler(app);
-
-  console.log('✓ Sentry initialized for backend');
-  return true;
-};
-
-export default Sentry;
+  console.log('✓ Sentry initialized early for backend');
+} else {
+  console.warn('Sentry DSN not found - error tracking disabled');
+}

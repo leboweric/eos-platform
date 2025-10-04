@@ -1,5 +1,5 @@
-// Must be first imports for Sentry
-import Sentry, { initializeSentry } from './config/sentry.js';
+// Import Sentry for middleware (initialization happens in instrument.js)
+import * as Sentry from '@sentry/node';
 
 import express from 'express';
 import cors from 'cors';
@@ -73,8 +73,10 @@ ensureUploadsDirectory();
 const app = express();
 const PORT = process.env.PORT || 3001;
 
-// Initialize Sentry (must be early - handles middleware automatically)
-const sentryInitialized = initializeSentry(app);
+// Add Sentry Express integration (after app creation, before other middleware)
+if (process.env.SENTRY_DSN) {
+  Sentry.addIntegration(Sentry.expressIntegration({ app }));
+}
 
 // Trust proxy for Railway deployment
 app.set('trust proxy', true);
@@ -249,7 +251,10 @@ app.use('/api/v1', exportRoutes);
 app.use('/api/v1/daily-active-users', dailyActiveUsersRoutes);
 app.use('/api/v1/todo-reminders', todoReminderRoutes);
 
-// Sentry error handler is automatically added by setupExpressErrorHandler in config/sentry.js
+// Sentry error handler must be added before other error middleware
+if (process.env.SENTRY_DSN) {
+  Sentry.setupExpressErrorHandler(app);
+}
 
 // Error handling middleware
 app.use(notFound);
