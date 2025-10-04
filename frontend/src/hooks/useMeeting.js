@@ -441,9 +441,22 @@ const useMeeting = () => {
   
   // Broadcast rating
   const broadcastRating = useCallback((ratingData) => {
-    if (!socket || !meetingCode) return;
+    if (!socket || !meetingCode) {
+      console.error('❌ Cannot broadcast rating - missing socket or meetingCode:', {
+        hasSocket: !!socket,
+        socketConnected: socket?.connected,
+        meetingCode
+      });
+      return;
+    }
     
-    console.log('⭐ Broadcasting rating:', ratingData);
+    console.log('⭐ Broadcasting rating:', {
+      ratingData,
+      socketId: socket.id,
+      socketConnected: socket.connected,
+      meetingCode
+    });
+    
     socket.emit('submit-rating', {
       userId: ratingData.userId,
       userName: ratingData.userName,

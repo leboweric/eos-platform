@@ -133,6 +133,7 @@ app.use(helmet());
 // Configure CORS to accept multiple origins
 const allowedOrigins = [
   'http://localhost:5173',
+  'http://localhost:5174',  // Added for when 5173 is in use
   'https://eos-platform.netlify.app',
   'https://42vibes.com',
   'https://axplatform.app',

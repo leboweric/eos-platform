@@ -48,8 +48,8 @@ import {
   ThumbsUp,
   GripVertical,
   TrendingUp,
-  Mail,
   Share2,
+  Mail,
   Pause,
   Play,
 } from 'lucide-react';
@@ -433,7 +433,10 @@ const WeeklyAccountabilityMeetingPage = () => {
   const [isEditingNotes, setIsEditingNotes] = useState(false);
   const notesTimeoutRef = useRef(null);
   const [meetingRating, setMeetingRating] = useState(null);
-  const [participantRatings, setParticipantRatings] = useState({}); // Store ratings by participant
+  const [participantRatings, setParticipantRatings] = useState([]); // Store ratings by participant
+  const [ratingAverage, setRatingAverage] = useState(0);
+  const [showSendSummaryTimeout, setShowSendSummaryTimeout] = useState(false);
+  const [ratingTimeoutTimer, setRatingTimeoutTimer] = useState(null);
   const [cascadingMessage, setCascadingMessage] = useState('');
   
   // Pause/Resume state
@@ -3016,24 +3019,54 @@ const WeeklyAccountabilityMeetingPage = () => {
     };
     
     const handleRatingUpdate = (event) => {
-      const { userId, userName, rating } = event.detail;
-      console.log('⭐ Received rating from:', userName, 'Rating:', rating);
+      console.log('📥 Received rating event:', {
+        eventType: event.type,
+        eventDetail: event.detail,
+        hasDetail: !!event.detail
+      });
       
-      // Validate the rating is a valid number between 1 and 10
-      const validRating = parseInt(rating);
-      if (isNaN(validRating) || validRating < 1 || validRating > 10) {
-        console.error('Invalid rating received:', rating);
-        return;
+      const { userId, userName, rating, totalParticipants, totalRatings, averageRating, allRatings } = event.detail;
+      console.log('⭐ RATING UPDATE EVENT RECEIVED:', {
+        userId,
+        userName,
+        rating,
+        totalParticipants,
+        totalRatings,
+        averageRating,
+        allRatings,
+        allRatingsLength: allRatings?.length,
+        currentUserId: user?.id,
+        isLeader,
+        currentParticipants: participants
+      });
+      
+      // Update participant ratings from the server's complete list
+      if (allRatings) {
+        console.log('📊 Updating participant ratings:', allRatings);
+        setParticipantRatings(allRatings);
+      } else {
+        console.warn('⚠️ No allRatings in event');
       }
       
-      setParticipantRatings(prev => ({
-        ...prev,
-        [userId]: {
-          userId,
-          userName,
-          rating: validRating
+      // Update average rating
+      if (averageRating) {
+        setRatingAverage(parseFloat(averageRating));
+      }
+      
+      // Mark user's own rating as submitted
+      if (userId === user?.id) {
+        setMeetingRating(rating);
+      }
+      
+      // Check if all participants have rated (for facilitator)
+      if (totalRatings === totalParticipants && isLeader) {
+        // Clear timeout since everyone has rated
+        if (ratingTimeoutTimer) {
+          clearTimeout(ratingTimeoutTimer);
+          setRatingTimeoutTimer(null);
         }
-      }));
+        setShowSendSummaryTimeout(false);
+      }
     };
     
     const handleSectionChangeFromLeader = (event) => {
@@ -3074,8 +3107,12 @@ const WeeklyAccountabilityMeetingPage = () => {
       window.removeEventListener('meeting-presenter-changed', handlePresenterChange);
       window.removeEventListener('meeting-rating-update', handleRatingUpdate);
       window.removeEventListener('meeting-section-change', handleSectionChangeFromLeader);
+      // Cleanup rating timeout timer
+      if (ratingTimeoutTimer) {
+        clearTimeout(ratingTimeoutTimer);
+      }
     };
-  }, [user?.id, isLeader]);
+  }, [user?.id, isLeader, ratingTimeoutTimer]);
 
   const getNextSection = () => {
     const currentIndex = agendaItems.findIndex(item => item.id === activeSection);
@@ -4704,11 +4741,54 @@ const WeeklyAccountabilityMeetingPage = () => {
                 <div className="border border-white/30 p-4 rounded-xl bg-white/60 backdrop-blur-sm shadow-sm">
                   <h4 className="font-medium mb-2 text-slate-900">Rate this meeting</h4>
                   <p className="text-sm text-slate-600 mb-3">How productive was this meeting?</p>
-                  <div className="flex gap-2 justify-center">
+                  <div className="flex gap-2 justify-center mb-4">
                     {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map((rating) => (
                       <button
                         key={rating}
-                        onClick={() => setMeetingRating(rating)}
+                        onClick={() => {
+                          console.log('📊 Rating button clicked:', {
+                            rating,
+                            userId: user?.id,
+                            userName: `${user?.firstName} ${user?.lastName}`,
+                            meetingCode,
+                            hasBroadcastFunction: !!broadcastRating,
+                            isLeader,
+                            participantRatings
+                          });
+                          
+                          setMeetingRating(rating);
+                          // Broadcast rating if in collaborative meeting
+                          if (meetingCode && broadcastRating) {
+                            const ratingData = {
+                              userId: user?.id,
+                              userName: `${user?.firstName} ${user?.lastName}`,
+                              rating: rating
+                            };
+                            console.log('🎯 Submitting rating via socket:', {
+                              meetingCode,
+                              ratingData,
+                              userInfo: {
+                                id: user?.id,
+                                firstName: user?.firstName,
+                                lastName: user?.lastName
+                              }
+                            });
+                            broadcastRating(ratingData);
+                            
+                            // Start 2-minute timeout for facilitator if this is the first rating
+                            if (isLeader && participantRatings.length === 0 && !ratingTimeoutTimer) {
+                              const timer = setTimeout(() => {
+                                setShowSendSummaryTimeout(true);
+                              }, 120000); // 2 minutes
+                              setRatingTimeoutTimer(timer);
+                            }
+                          } else {
+                            console.warn('⚠️ Cannot broadcast rating:', {
+                              hasMeetingCode: !!meetingCode,
+                              hasBroadcastFunction: !!broadcastRating
+                            });
+                          }
+                        }}
                         className={`px-3 py-2 rounded-lg font-medium transition-all ${
                           meetingRating === rating
                             ? 'text-white shadow-md'
@@ -4717,14 +4797,74 @@ const WeeklyAccountabilityMeetingPage = () => {
                         style={meetingRating === rating ? {
                           background: `linear-gradient(135deg, ${themeColors.primary} 0%, ${themeColors.secondary} 100%)`
                         } : {}}
+                        disabled={meetingRating !== null}
                       >
                         {rating}
                       </button>
                     ))}
                   </div>
+                  
+                  {/* Participant Rating Status - Show to everyone in collaborative meeting */}
+                  {meetingCode && participants.length > 0 && (
+                    <div className="border-t border-slate-200 pt-3 mt-3">
+                      <div className="flex items-center justify-between mb-2">
+                        <h5 className="text-sm font-medium text-slate-700">
+                          Rating Status ({participantRatings.length} of {participants.length} completed)
+                        </h5>
+                        {isLeader && ratingAverage > 0 && (
+                          <span className="text-sm font-medium text-blue-600">
+                            Average: {ratingAverage}
+                          </span>
+                        )}
+                      </div>
+                      <div className="space-y-1">
+                        {participants.map((participant) => {
+                          // More flexible matching - check both userId and id fields
+                          const hasRated = participantRatings.some(r => 
+                            String(r.userId) === String(participant.id) || 
+                            String(r.userId) === String(participant.userId)
+                          );
+                          const rating = participantRatings.find(r => 
+                            String(r.userId) === String(participant.id) || 
+                            String(r.userId) === String(participant.userId)
+                          )?.rating;
+                          
+                          console.log('🔍 Participant rating check:', {
+                            participantId: participant.id,
+                            participantUserId: participant.userId,
+                            hasRated,
+                            rating,
+                            ratingsUserIds: participantRatings.map(r => r.userId)
+                          });
+                          
+                          return (
+                            <div key={participant.id} className="flex items-center justify-between py-1 px-2 rounded-md hover:bg-slate-50">
+                              <div className="flex items-center gap-2">
+                                {hasRated ? (
+                                  <CheckCircle className="h-4 w-4 text-green-500" />
+                                ) : (
+                                  <div className="h-4 w-4 rounded-full border-2 border-slate-300" />
+                                )}
+                                <span className="text-sm text-slate-600">
+                                  {participant.name}
+                                  {participant.id === currentLeader && (
+                                    <span className="ml-1 text-xs text-blue-600">(Facilitator)</span>
+                                  )}
+                                </span>
+                              </div>
+                              {isLeader && hasRated && (
+                                <span className="text-sm font-medium text-slate-700">{rating}/10</span>
+                              )}
+                            </div>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  )}
                 </div>
 
-                {/* Cascading Messages */}
+                {/* Cascading Messages - Only show to facilitator */}
+                {(!meetingCode || isLeader) ? (
                 <div className="border border-white/30 p-4 rounded-xl bg-white/60 backdrop-blur-sm shadow-sm">
                   <h4 className="font-medium mb-2 text-slate-900 flex items-center gap-2">
                     <Share2 className="h-4 w-4" style={{ color: themeColors.primary }} />
@@ -4803,8 +4943,10 @@ const WeeklyAccountabilityMeetingPage = () => {
                     </div>
                   )}
                 </div>
+                ) : null}
 
-                {/* Conclude Options */}
+                {/* Meeting Conclusion Options - Only show to facilitator */}
+                {(!meetingCode || isLeader) ? (
                 <div className="border border-white/30 p-4 rounded-xl bg-white/60 backdrop-blur-sm shadow-sm space-y-3">
                   <h4 className="font-medium text-slate-900 mb-3">Meeting Conclusion Options</h4>
                   
@@ -4832,15 +4974,32 @@ const WeeklyAccountabilityMeetingPage = () => {
                     </label>
                   </div>
                 </div>
+                ) : null}
 
-                {/* Conclude Meeting Button */}
+                {/* Conclude Meeting Button - Only for Facilitator */}
                 <div className="flex justify-center">
-                  <Button
-                    className="shadow-lg hover:shadow-xl transition-all duration-200 text-white font-medium py-3 px-6"
-                    style={{
-                      background: `linear-gradient(135deg, ${themeColors.primary} 0%, ${themeColors.secondary} 100%)`
-                    }}
-                    onClick={async () => {
+                  {console.log('🔍 Conclude button check:', {
+                    meetingCode,
+                    isLeader,
+                    currentLeader,
+                    userId: user?.id,
+                    shouldShowButton: !meetingCode || isLeader,
+                    participants
+                  })}
+                  {/* Show button if: no collaborative meeting OR user is the leader */}
+                  {!meetingCode || (meetingCode && isLeader) ? (
+                    <div className="text-center space-y-3">
+                      {showSendSummaryTimeout && isLeader && (
+                        <div className="text-sm text-amber-600 bg-amber-50 px-4 py-2 rounded-lg">
+                          Not all participants have rated. You can still send the summary.
+                        </div>
+                      )}
+                      <Button
+                        className="shadow-lg hover:shadow-xl transition-all duration-200 text-white font-medium py-3 px-6"
+                        style={{
+                          background: `linear-gradient(135deg, ${themeColors.primary} 0%, ${themeColors.secondary} 100%)`
+                        }}
+                        onClick={async () => {
                     if (window.confirm('Are you ready to conclude the meeting?')) {
                       try {
                         // Send cascading message if there is one
@@ -4890,9 +5049,21 @@ const WeeklyAccountabilityMeetingPage = () => {
                           const allIssues = [...(shortTermIssues || []), ...(longTermIssues || [])];
                           
                           try {
+                            // Include participant ratings and average in email
+                            const allParticipantRatings = meetingCode ? 
+                              participants.map(p => {
+                                const rating = participantRatings.find(r => r.userId === p.id);
+                                return {
+                                  userId: p.id,
+                                  userName: p.name,
+                                  rating: rating ? rating.rating : null
+                                };
+                              }) : [];
+                            
                             emailResult = await meetingsService.concludeMeeting(orgId, effectiveTeamId, {
                               meetingType: 'weekly',
-                              rating: meetingRating,
+                              rating: ratingAverage > 0 ? ratingAverage : meetingRating, // Use average if available
+                              individualRatings: allParticipantRatings, // Include all participant ratings
                               todos: todos.filter(t => t.status !== 'complete' && t.status !== 'completed'),
                               issues: allIssues.filter(i => !i.is_solved),
                               headlines: headlines,
@@ -4960,11 +5131,28 @@ const WeeklyAccountabilityMeetingPage = () => {
                         setError('Failed to conclude meeting. Please try again.');
                       }
                     }
-                  }}
-                  >
-                    <CheckSquare className="mr-2 h-5 w-5" />
-                    Conclude Meeting
-                  </Button>
+                        }}
+                      >
+                        <CheckSquare className="mr-2 h-5 w-5" />
+                        Conclude Meeting
+                      </Button>
+                    </div>
+                  ) : (
+                    <div className="text-center space-y-2">
+                      <div className="text-slate-600">
+                        {participants.find(p => p.id === currentLeader) && (
+                          <p>
+                            Waiting for <span className="font-medium">
+                              {participants.find(p => p.id === currentLeader).name}
+                            </span> to conclude the meeting...
+                          </p>
+                        )}
+                      </div>
+                      <div className="flex justify-center">
+                        <div className="animate-spin h-5 w-5 border-2 border-slate-400 border-t-transparent rounded-full" />
+                      </div>
+                    </div>
+                  )}
                 </div>
               </div>
             </CardContent>

@@ -67,6 +67,7 @@ class MeetingSocketService {
             code: meetingCode,
             leader: isLeader ? userId : null,
             participants: new Map(),
+            ratings: new Map(),  // Initialize ratings Map
             currentRoute: initialRoute,
             currentSection: null,
             scrollPosition: 0,
@@ -87,8 +88,8 @@ class MeetingSocketService {
           joinedAt: new Date()
         });
 
-        // Track user's socket
-        userSocketMap.set(socket.id, { userId, meetingCode });
+        // Track user's socket with full user info
+        userSocketMap.set(socket.id, { userId, userName, meetingCode });
 
         // Join socket room
         socket.join(meetingCode);
@@ -190,6 +191,7 @@ class MeetingSocketService {
               participantCount: meeting.participants.size,
               participants: Array.from(meeting.participants.values()).map(p => ({
                 id: p.id,
+                userId: p.id,  // Include userId field for consistency
                 name: p.name
               })),
               leader: meeting.leader,
@@ -342,20 +344,132 @@ class MeetingSocketService {
       
       // Handle participant rating submission
       socket.on('submit-rating', (data) => {
+        console.log('🎯 RATING SUBMISSION RECEIVED:', {
+          socketId: socket.id,
+          data,
+          hasUserData: userSocketMap.has(socket.id),
+          currentSocketRooms: Array.from(socket.rooms)
+        });
+        
+        const userData = userSocketMap.get(socket.id);
+        
+        if (!userData) {
+          console.error('❌ No user data found for socket:', socket.id);
+          console.log('📊 Current userSocketMap:', Array.from(userSocketMap.entries()));
+          return;
+        }
+        
+        const { meetingCode, userId: socketUserId } = userData;
+        console.log('💾 BEFORE SAVE - userData:', userData);
+        
+        const meeting = meetings.get(meetingCode);
+        console.log('💾 BEFORE SAVE - meeting.ratings:', meeting?.ratings ? Array.from(meeting.ratings.entries()) : 'No ratings Map yet');
+        
+        console.log('🔍 Meeting lookup:', {
+          meetingCode,
+          meetingExists: !!meeting,
+          participants: meeting ? Array.from(meeting.participants.values()) : [],
+          leader: meeting ? meeting.leader : null
+        });
+        
+        if (!meeting) {
+          console.error('❌ No meeting found for code:', meetingCode);
+          return;
+        }
+        
+        // Store the rating in the meeting object
+        if (!meeting.ratings) {
+          meeting.ratings = new Map();
+        }
+        
+        // Use the userId from socket data as primary, fall back to provided data
+        const ratingUserId = socketUserId || data.userId;
+        const ratingUserName = userData.userName || data.userName;
+        
+        console.log('💾 Storing rating:', {
+          ratingUserId,
+          ratingUserName,
+          rating: data.rating,
+          socketUserId,
+          dataUserId: data.userId
+        });
+        
+        meeting.ratings.set(ratingUserId, {
+          userId: ratingUserId,
+          userName: ratingUserName,
+          rating: data.rating,
+          submittedAt: new Date()
+        });
+        
+        console.log('💾 AFTER SAVE - meeting.ratings:', Array.from(meeting.ratings.entries()));
+        console.log('💾 AFTER SAVE - meeting.ratings.size:', meeting.ratings.size);
+        
+        // Calculate average rating
+        const allRatings = Array.from(meeting.ratings.values());
+        console.log('📡 All ratings to broadcast:', allRatings);
+        
+        const averageRating = allRatings.length > 0 
+          ? allRatings.reduce((sum, r) => sum + r.rating, 0) / allRatings.length 
+          : 0;
+        
+        const broadcastData = {
+          userId: ratingUserId,
+          userName: ratingUserName,
+          rating: data.rating,
+          totalParticipants: meeting.participants.size,
+          totalRatings: meeting.ratings.size,
+          averageRating: averageRating.toFixed(1),
+          allRatings: allRatings
+        };
+        
+        console.log('📤 BROADCASTING RATING:', {
+          to: meetingCode,
+          data: broadcastData,
+          socketsInRoom: this.io.sockets.adapter.rooms.get(meetingCode) ? 
+            Array.from(this.io.sockets.adapter.rooms.get(meetingCode)) : [],
+          socketIsInRoom: socket.rooms.has(meetingCode)
+        });
+        
+        // Ensure socket is in room before broadcasting
+        if (!socket.rooms.has(meetingCode)) {
+          console.warn('⚠️ Socket not in room, joining now...');
+          socket.join(meetingCode);
+        }
+        
+        // Broadcast rating to all participants including sender
+        this.io.to(meetingCode).emit('participant-rating', broadcastData);
+        console.log('📡 Emitted to room:', meetingCode);
+        
+        // Also send directly back to sender to ensure they receive it
+        socket.emit('participant-rating', broadcastData);
+        console.log('📡 Emitted directly to sender');
+        
+        console.log('✅ Rating broadcast complete');
+        console.log('📡 Final meeting.ratings:', Array.from(meeting.ratings.entries()));
+      });
+      
+      // Handle request for current ratings (for newly joined participants)
+      socket.on('request-ratings', () => {
         const userData = userSocketMap.get(socket.id);
         
         if (!userData) return;
         
         const { meetingCode } = userData;
+        const meeting = meetings.get(meetingCode);
         
-        // Broadcast rating to all participants
-        socket.to(meetingCode).emit('participant-rating', {
-          userId: data.userId,
-          userName: data.userName,
-          rating: data.rating
+        if (!meeting || !meeting.ratings) return;
+        
+        const allRatings = Array.from(meeting.ratings.values());
+        const averageRating = allRatings.length > 0 
+          ? allRatings.reduce((sum, r) => sum + r.rating, 0) / allRatings.length 
+          : 0;
+        
+        socket.emit('current-ratings', {
+          totalParticipants: meeting.participants.size,
+          totalRatings: meeting.ratings.size,
+          averageRating: averageRating.toFixed(1),
+          allRatings: allRatings
         });
-        
-        console.log('⭐ Broadcasting rating from:', data.userName, 'Rating:', data.rating, 'to meeting:', meetingCode);
       });
       
       // Handle disconnect
@@ -495,6 +609,38 @@ class MeetingSocketService {
         currentRoute: meeting.currentRoute
       }))
     };
+  }
+  
+  // Method to get meeting ratings (for meeting conclusion)
+  getMeetingRatings(meetingCode) {
+    const meeting = meetings.get(meetingCode);
+    
+    if (!meeting || !meeting.ratings) {
+      return {
+        ratings: [],
+        averageRating: 0,
+        totalParticipants: 0,
+        totalRatings: 0
+      };
+    }
+    
+    const allRatings = Array.from(meeting.ratings.values());
+    const averageRating = allRatings.length > 0 
+      ? allRatings.reduce((sum, r) => sum + r.rating, 0) / allRatings.length 
+      : 0;
+    
+    return {
+      ratings: allRatings,
+      averageRating: averageRating.toFixed(1),
+      totalParticipants: meeting.participants.size,
+      totalRatings: meeting.ratings.size
+    };
+  }
+  
+  // Method to get meeting creator/facilitator
+  getMeetingFacilitator(meetingCode) {
+    const meeting = meetings.get(meetingCode);
+    return meeting ? meeting.leader : null;
   }
 }
 

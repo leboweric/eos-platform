@@ -14,6 +14,7 @@ export const concludeMeeting = async (req, res) => {
       meetingType,
       duration,
       rating,
+      individualRatings, // Array of { userId, userName, rating }
       summary,
       attendees,
       metrics,
@@ -388,6 +389,7 @@ export const concludeMeeting = async (req, res) => {
       meetingDate: formattedDate,
       duration: formatDuration(duration || 0),
       rating: typeof rating === 'number' ? rating : null,
+      individualRatings: individualRatings || [], // Array of participant ratings
       organizationName,
       concludedBy: userName,
       summary: summary || '',
