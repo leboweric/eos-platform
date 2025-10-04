@@ -3029,11 +3029,6 @@ const WeeklyAccountabilityMeetingPage = () => {
         
         // Update UI
         window.dispatchEvent(new Event('meetingStateChanged'));
-        
-        // Use timeout to ensure state updates before leaving
-        setTimeout(() => {
-          window.location.reload(); // Reload to fully reset
-        }, 1000);
       } else if (action === 'refresh') {
         fetchIssuesData();
       }
