@@ -85,6 +85,7 @@ import { getEffectiveTeamId } from '../utils/teamUtils';
 import FloatingTimer from '../components/meetings/FloatingTimer';
 
 const WeeklyAccountabilityMeetingPage = () => {
+  console.log('🔥🔥🔥 MEETING PAGE COMPONENT LOADED 🔥🔥🔥');
   const { user } = useAuthStore();
   const { teamId } = useParams();
   const navigate = useNavigate();
@@ -735,6 +736,7 @@ const WeeklyAccountabilityMeetingPage = () => {
       console.log('🚨 All priorities being set:', allPriorities);
       console.log('🚨 First priority milestones:', allPriorities[0]?.milestones);
       
+      console.log('🔥🔥🔥 ABOUT TO RENDER PRIORITIES:', allPriorities);
       setPriorities(allPriorities);
       
       // Auto-expand all individual owner sections
@@ -3692,7 +3694,7 @@ const WeeklyAccountabilityMeetingPage = () => {
                                         {console.log('Expanded priority:', priority.id, 'Milestones:', priority.milestones)}
                                         <div className="space-y-2">
                                           {(priority.milestones || []).map(milestone => {
-                                            console.log('Rendering milestone:', milestone);
+                                            console.log('🔥🔥🔥 RENDERING MILESTONE:', milestone.id, milestone.title);
                                             return (
                                             <div 
                                               key={milestone.id} 
@@ -3703,7 +3705,8 @@ const WeeklyAccountabilityMeetingPage = () => {
                                                 checked={!!milestone.completed}
                                                 onChange={async (e) => {
                                                   const newChecked = e.target.checked;
-                                                  console.log('Milestone checkbox onChange:', { 
+                                                  console.log('🔥🔥🔥 CHECKBOX CLICKED:', milestone.id);
+                                                  console.log('🔥🔥🔥 CHECKBOX DETAILS:', { 
                                                     priorityId: priority.id, 
                                                     milestoneId: milestone.id, 
                                                     oldChecked: milestone.completed,
