@@ -2957,6 +2957,12 @@ const WeeklyAccountabilityMeetingPage = () => {
         console.log('📍 Meeting ended by presenter');
         setSuccess('Meeting has been concluded by the presenter');
         
+        // Leave the collaborative meeting
+        if (meetingCode && leaveMeeting) {
+          console.log('🚪 Leaving meeting after facilitator concluded');
+          leaveMeeting();
+        }
+        
         // Reset meeting state
         setMeetingStarted(false);
         setMeetingStartTime(null);
@@ -2968,6 +2974,11 @@ const WeeklyAccountabilityMeetingPage = () => {
         // Clear sessionStorage
         sessionStorage.removeItem('meetingActive');
         sessionStorage.removeItem('meetingStartTime');
+        
+        // Navigate to dashboard after a delay
+        setTimeout(() => {
+          navigate('/dashboard');
+        }, 2000);
         
         // Update UI
         window.dispatchEvent(new Event('meetingStateChanged'));
@@ -5098,9 +5109,21 @@ const WeeklyAccountabilityMeetingPage = () => {
                         setCascadeToAll(false);
                         setMeetingRating(null);
                         
+                        // Broadcast meeting end to all participants BEFORE leaving
+                        if (meetingCode && broadcastIssueListUpdate) {
+                          console.log('📢 Broadcasting meeting end to all participants');
+                          broadcastIssueListUpdate({
+                            action: 'meeting-ended',
+                            message: 'Meeting has been concluded by the facilitator'
+                          });
+                        }
+                        
                         // Leave the collaborative meeting if active
                         if (meetingCode && leaveMeeting) {
-                          leaveMeeting();
+                          // Small delay to ensure broadcast is sent
+                          setTimeout(() => {
+                            leaveMeeting();
+                          }, 100);
                         }
                         
                         // End the database session and wait for completion
