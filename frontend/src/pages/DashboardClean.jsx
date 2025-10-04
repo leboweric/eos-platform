@@ -891,16 +891,6 @@ const DashboardClean = () => {
       {/* Background Pattern */}
       <div className="absolute inset-0 bg-grid-slate-100 [mask-image:linear-gradient(0deg,white,rgba(255,255,255,0.6))] -z-10"></div>
       
-      {/* Temporary Sentry Test Button - REMOVE AFTER TESTING */}
-      <button
-        onClick={() => {
-          throw new Error('🔴 SENTRY TEST - Production monitoring is working!');
-        }}
-        className="fixed top-4 right-4 bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded shadow-lg z-50"
-      >
-        Test Sentry
-      </button>
-      
       {/* Success Message */}
       {success && (
         <div className="fixed top-4 right-4 z-50 bg-green-500 text-white px-6 py-3 rounded-lg shadow-lg flex items-center gap-2 animate-slide-in">
