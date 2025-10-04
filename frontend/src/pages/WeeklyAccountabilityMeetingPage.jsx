@@ -761,6 +761,7 @@ const WeeklyAccountabilityMeetingPage = () => {
   // Join meeting when page loads
   const hasJoinedRef = useRef(false);
   const hasCheckedMeetingsRef = useRef(false);
+  const meetingConcludedRef = useRef(false); // Prevent auto-join after meeting ends
   
   useEffect(() => {
     console.log('🔍 Meeting auto-join check:', {
@@ -772,7 +773,7 @@ const WeeklyAccountabilityMeetingPage = () => {
       user: !!user
     });
     
-    if (teamId && isConnected && joinMeeting && !meetingCode && !hasJoinedRef.current) {
+    if (teamId && isConnected && joinMeeting && !meetingCode && !hasJoinedRef.current && !meetingConcludedRef.current) {
       // Include organization ID in meeting code to prevent cross-org collisions
       // CRITICAL: Must match the orgId logic used throughout the rest of the file
       const orgId = user?.organizationId || user?.organization_id;
@@ -2957,6 +2958,10 @@ const WeeklyAccountabilityMeetingPage = () => {
         console.log('📍 Meeting ended by presenter');
         setSuccess('Meeting has been concluded by the presenter');
         
+        // Set flag to prevent auto-rejoin
+        meetingConcludedRef.current = true;
+        hasJoinedRef.current = true; // Keep this true to prevent auto-join
+        
         // Leave the collaborative meeting
         if (meetingCode && leaveMeeting) {
           console.log('🚪 Leaving meeting after facilitator concluded');
@@ -2975,10 +2980,9 @@ const WeeklyAccountabilityMeetingPage = () => {
         sessionStorage.removeItem('meetingActive');
         sessionStorage.removeItem('meetingStartTime');
         
-        // Navigate to dashboard after a delay
-        setTimeout(() => {
-          navigate('/dashboard');
-        }, 2000);
+        // Navigate to dashboard immediately
+        console.log('🏠 Navigating to dashboard...');
+        navigate('/dashboard');
         
         // Update UI
         window.dispatchEvent(new Event('meetingStateChanged'));
@@ -5117,6 +5121,9 @@ const WeeklyAccountabilityMeetingPage = () => {
                             message: 'Meeting has been concluded by the facilitator'
                           });
                         }
+                        
+                        // Mark meeting as concluded to prevent auto-rejoin
+                        meetingConcludedRef.current = true;
                         
                         // Leave the collaborative meeting if active
                         if (meetingCode && leaveMeeting) {
