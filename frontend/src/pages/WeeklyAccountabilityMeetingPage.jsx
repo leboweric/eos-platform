@@ -3689,11 +3689,16 @@ const WeeklyAccountabilityMeetingPage = () => {
                                             >
                                               <input
                                                 type="checkbox"
-                                                checked={milestone.completed}
+                                                checked={!!milestone.completed}
                                                 onChange={async (e) => {
-                                                  const checked = e.target.checked;
-                                                  console.log('Milestone checkbox clicked:', { priorityId: priority.id, milestoneId: milestone.id, checked });
-                                                  await handleToggleMilestone(priority.id, milestone.id, checked);
+                                                  const newChecked = e.target.checked;
+                                                  console.log('Milestone checkbox onChange:', { 
+                                                    priorityId: priority.id, 
+                                                    milestoneId: milestone.id, 
+                                                    oldChecked: milestone.completed,
+                                                    newChecked 
+                                                  });
+                                                  await handleToggleMilestone(priority.id, milestone.id, newChecked);
                                                 }}
                                                 className="rounded border-slate-300 text-green-600 focus:ring-green-500 cursor-pointer"
                                               />
