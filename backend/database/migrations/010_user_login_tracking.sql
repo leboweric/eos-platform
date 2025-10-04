@@ -15,10 +15,10 @@ CREATE TABLE IF NOT EXISTS user_login_tracking (
 );
 
 -- Create indexes for efficient querying
-CREATE INDEX idx_user_login_tracking_date ON user_login_tracking(login_date);
-CREATE INDEX idx_user_login_tracking_user_date ON user_login_tracking(user_id, login_date);
-CREATE INDEX idx_user_login_tracking_org_date ON user_login_tracking(organization_id, login_date);
-CREATE INDEX idx_user_login_tracking_timestamp ON user_login_tracking(login_timestamp);
+CREATE INDEX IF NOT EXISTS idx_user_login_tracking_date ON user_login_tracking(login_date);
+CREATE INDEX IF NOT EXISTS idx_user_login_tracking_user_date ON user_login_tracking(user_id, login_date);
+CREATE INDEX IF NOT EXISTS idx_user_login_tracking_org_date ON user_login_tracking(organization_id, login_date);
+CREATE INDEX IF NOT EXISTS idx_user_login_tracking_timestamp ON user_login_tracking(login_timestamp);
 
 -- Create a view for daily active users by organization
 CREATE OR REPLACE VIEW daily_active_users AS
