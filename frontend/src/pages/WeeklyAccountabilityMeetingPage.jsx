@@ -3691,17 +3691,16 @@ const WeeklyAccountabilityMeetingPage = () => {
                                                 e.stopPropagation();
                                               }}
                                             >
-                                              <Checkbox
+                                              <input
+                                                type="checkbox"
                                                 checked={milestone.completed}
-                                                onCheckedChange={async (checked) => {
+                                                onChange={async (e) => {
+                                                  e.stopPropagation();
+                                                  const checked = e.target.checked;
                                                   console.log('Milestone checkbox clicked:', { priorityId: priority.id, milestoneId: milestone.id, checked });
                                                   await handleToggleMilestone(priority.id, milestone.id, checked);
                                                 }}
-                                                className="data-[state=checked]:bg-green-600 data-[state=checked]:border-green-600"
-                                                onClick={(e) => {
-                                                  // Ensure click event is not blocked
-                                                  e.stopPropagation();
-                                                }}
+                                                className="rounded border-slate-300 text-green-600 focus:ring-green-500 cursor-pointer"
                                               />
                                               <span 
                                                 className={`text-sm flex-1 cursor-pointer ${milestone.completed ? 'line-through text-slate-400' : 'text-slate-700'}`}
