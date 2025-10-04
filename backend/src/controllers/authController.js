@@ -896,12 +896,12 @@ export const resetPassword = async (req, res) => {
     const hashedPassword = await bcrypt.hash(password, salt);
 
     // Begin transaction
-    await beginTransaction();
+    const client = await beginTransaction();
 
     try {
       // Update user password
       await query(
-        'UPDATE users SET password = $1, needs_password_change = false WHERE id = $2',
+        'UPDATE users SET password_hash = $1, updated_at = NOW() WHERE id = $2',
         [hashedPassword, resetToken.user_id]
       );
 
@@ -911,7 +911,7 @@ export const resetPassword = async (req, res) => {
         [resetToken.id]
       );
 
-      await commitTransaction();
+      await commitTransaction(client);
 
       res.json({
         success: true,
@@ -919,7 +919,7 @@ export const resetPassword = async (req, res) => {
       });
 
     } catch (error) {
-      await rollbackTransaction();
+      await rollbackTransaction(client);
       throw error;
     }
 
