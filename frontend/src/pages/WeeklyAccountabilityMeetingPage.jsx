@@ -710,11 +710,18 @@ const WeeklyAccountabilityMeetingPage = () => {
   };
 
   const fetchPrioritiesData = async () => {
+    console.log('🔥🔥🔥 FETCHPRIORITIESDATA FUNCTION START 🔥🔥🔥');
     try {
       const orgId = user?.organizationId || user?.organization_id;
+      console.log('🔥 orgId:', orgId);
+      console.log('🔥 teamId from URL:', teamId);
+      
       // Handle "null" string from URL params
       const cleanTeamId = (teamId === 'null' || teamId === 'undefined') ? null : teamId;
+      console.log('🔥 cleanTeamId after processing:', cleanTeamId);
+      
       const effectiveTeamId = getEffectiveTeamId(cleanTeamId, user);
+      console.log('🔥 effectiveTeamId from function:', effectiveTeamId);
 
       console.log('🔍 Team ID comparison:', {
         urlTeamId: teamId,
