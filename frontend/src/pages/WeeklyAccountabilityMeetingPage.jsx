@@ -3721,6 +3721,7 @@ const WeeklyAccountabilityMeetingPage = () => {
                                               <Checkbox
                                                 checked={milestone.completed}
                                                 onCheckedChange={async (checked) => {
+                                                  console.log('🔥 MILESTONE CHECKBOX CLICKED!', { priorityId: priority.id, milestoneId: milestone.id, checked });
                                                   await handleToggleMilestone(priority.id, milestone.id, checked);
                                                 }}
                                                 className="data-[state=checked]:bg-green-600 data-[state=checked]:border-green-600"
