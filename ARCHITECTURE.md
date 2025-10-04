@@ -51,6 +51,7 @@ AXP (Adaptive Execution Platform) is the world's first business execution platfo
 - **Payments**: stripe v16.12
 - **AI**: openai v4.72
 - **Security**: helmet v8.0, cors v2.8, express-rate-limit v7.4
+- **Monitoring**: @sentry/node v8.40 for error tracking
 
 ### Frontend
 - **Framework**: React 19.0 with Vite 6.0
@@ -78,11 +79,15 @@ AXP (Adaptive Execution Platform) is the world's first business execution platfo
 - **Domain Management**: Netlify DNS with custom subdomains
 - **SSL**: Automatic Let's Encrypt certificates
 - **Environment**: Multi-environment (development/staging/production)
-- **Monitoring**: Railway metrics + custom health checks
+- **Error Tracking**: Sentry for backend error monitoring and performance
+- **Uptime Monitoring**: Better Stack for service availability tracking
+- **Health Checks**: Railway metrics + custom health endpoints
 
 ### Third-party Services
 - **Stripe**: Payment processing and subscription management
 - **SendGrid**: Transactional email delivery
+- **Sentry**: Error tracking and performance monitoring
+- **Better Stack**: Uptime monitoring and incident management
 - **Google OAuth**: Enterprise SSO authentication
 - **Microsoft OAuth**: Office 365 authentication
 - **OpenAI**: AI-powered insights and suggestions
