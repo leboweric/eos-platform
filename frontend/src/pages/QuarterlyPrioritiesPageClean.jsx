@@ -216,9 +216,7 @@ const QuarterlyPrioritiesPageClean = () => {
         setTeamMembers([]);
       } else {
         // Use the selected department's ID as the teamId for the API call
-        console.log('🔥 MAIN PAGE API CALL PARAMETERS:', { orgId, teamId, pageName: 'QuarterlyPrioritiesPageClean' });
         const data = await quarterlyPrioritiesService.getCurrentPriorities(orgId, teamId);
-        console.log('🔥 MAIN PAGE API RESPONSE:', data);
         
         // Debug: Check if updates have IDs
         const allPriorities = [...(data.companyPriorities || [])];

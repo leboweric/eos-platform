@@ -819,10 +819,7 @@ const WeeklyAccountabilityMeetingPage = () => {
       console.log('🔍 Team ID comparison:', comparison);
 
       // Then use cleanTeamId as the fix proposes
-      console.log('🔥 MEETING PAGE API CALL PARAMETERS:', { orgId, teamId: cleanTeamId, pageName: 'WeeklyAccountabilityMeetingPage' });
       const response = await quarterlyPrioritiesService.getCurrentPriorities(orgId, cleanTeamId);
-      
-      console.log('🚨 API Response for priorities:', response);
       
       // Extract and flatten priorities
       const companyPriorities = response.companyPriorities || [];

@@ -1275,18 +1275,7 @@ const DashboardClean = () => {
                                 <input
                                   type="checkbox"
                                   checked={milestone.completed}
-                                  onChange={async (e) => {
-                                    console.log('[DASHBOARD MILESTONE CHECKBOX] Event fired:', {
-                                      meetingContext: window.location.pathname.includes('meeting'),
-                                      eventType: e.type,
-                                      target: e.target,
-                                      currentTarget: e.currentTarget,
-                                      propagationStopped: e.isPropagationStopped?.(),
-                                      defaultPrevented: e.defaultPrevented,
-                                      priorityId: priority.id,
-                                      milestoneId: milestone.id,
-                                      checked: !milestone.completed
-                                    });
+                                  onChange={async () => {
                                     await handleToggleMilestone(priority.id, milestone.id, !milestone.completed);
                                   }}
                                   className="rounded border-slate-300 text-green-600 focus:ring-green-500"
