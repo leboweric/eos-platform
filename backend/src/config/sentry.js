@@ -20,7 +20,10 @@ export const initializeSentry = (app) => {
     tracesSampleRate: 0.1,
     
     // Set release version (use git commit hash in production)
-    release: process.env.RAILWAY_GIT_COMMIT_SHA || 'development',
+    // Railway provides RAILWAY_GIT_COMMIT_SHA with the full git SHA
+    release: process.env.RAILWAY_GIT_COMMIT_SHA 
+      ? `axplatform-backend@${process.env.RAILWAY_GIT_COMMIT_SHA}`
+      : undefined, // Let Sentry auto-detect in development
     
     // Attach useful context
     beforeSend(event) {

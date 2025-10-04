@@ -20,8 +20,12 @@ if (import.meta.env.VITE_SENTRY_DSN) {
     replaysSessionSampleRate: 0.1, // 10% of sessions
     replaysOnErrorSampleRate: 1.0, // 100% of sessions with errors
     
-    // Set release version if available
-    release: import.meta.env.VITE_APP_VERSION || 'development',
+    // Set release version using Netlify's git commit SHA or let Sentry auto-detect
+    // Netlify provides COMMIT_REF environment variable with the git SHA
+    // In development, this will be undefined and Sentry will auto-detect from git
+    ...(import.meta.env.VITE_COMMIT_REF && { 
+      release: `axplatform-frontend@${import.meta.env.VITE_COMMIT_REF}` 
+    }),
     
     // Don't send events in development
     beforeSend(event) {
