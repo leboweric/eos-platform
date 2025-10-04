@@ -3691,6 +3691,7 @@ const WeeklyAccountabilityMeetingPage = () => {
                                                 type="checkbox"
                                                 checked={milestone.completed}
                                                 onChange={(e) => {
+                                                  e.stopPropagation(); // Prevent event bubbling to parent containers
                                                   console.log('[MILESTONE CHECKBOX] Event fired:', {
                                                     meetingContext: window.location.pathname.includes('meeting'),
                                                     eventType: e.type,
