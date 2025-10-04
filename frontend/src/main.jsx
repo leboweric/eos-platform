@@ -37,7 +37,7 @@ if (import.meta.env.VITE_SENTRY_DSN) {
     },
   });
   
-  console.log('✓ Sentry initialized for frontend');
+  console.log('✓ Sentry initialized for frontend with DSN:', import.meta.env.VITE_SENTRY_DSN?.substring(0, 20) + '...');
 } else {
   console.warn('Sentry DSN not found - error tracking disabled');
 }

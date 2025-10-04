@@ -105,8 +105,22 @@ export const useAuthStore = create((set, get) => ({
       }
       
       // Store organizationId for theme management
-      if (userData?.organizationId || userData?.organization_id) {
-        localStorage.setItem('organizationId', userData.organizationId || userData.organization_id);
+      const orgId = userData?.organizationId || userData?.organization_id;
+      if (orgId) {
+        localStorage.setItem('organizationId', orgId);
+      }
+      
+      // Set Sentry user context for session restoration
+      if (userData) {
+        console.log('Full user object from checkAuth:', userData);
+        const sentryUserContext = {
+          id: userData.id,
+          email: userData.email,
+          username: userData.email, // Sentry uses username for display
+          organization_id: orgId
+        };
+        console.log('Setting Sentry user context in checkAuth:', sentryUserContext);
+        Sentry.setUser(sentryUserContext);
       }
       
       set({ user: userData, isLoading: false, error: null });
@@ -148,11 +162,15 @@ export const useAuthStore = create((set, get) => ({
       }
       
       // Set Sentry user context
-      Sentry.setUser({
+      console.log('Full user object from login:', user);
+      const sentryUserContext = {
         id: user.id,
         email: user.email,
+        username: user.email, // Sentry uses username for display
         organization_id: orgId
-      });
+      };
+      console.log('Setting Sentry user context in login:', sentryUserContext);
+      Sentry.setUser(sentryUserContext);
       
       set({ user, isLoading: false, error: null });
       return { success: true };
@@ -190,11 +208,15 @@ export const useAuthStore = create((set, get) => ({
       }
       
       // Set Sentry user context
-      Sentry.setUser({
+      console.log('Full user object from registration:', user);
+      const sentryUserContext = {
         id: user.id,
         email: user.email,
+        username: user.email, // Sentry uses username for display
         organization_id: orgId
-      });
+      };
+      console.log('Setting Sentry user context in registration:', sentryUserContext);
+      Sentry.setUser(sentryUserContext);
       
       set({ user, isLoading: false, error: null });
       return { success: true };
