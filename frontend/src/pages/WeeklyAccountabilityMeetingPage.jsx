@@ -716,9 +716,14 @@ const WeeklyAccountabilityMeetingPage = () => {
       
       const response = await quarterlyPrioritiesService.getCurrentPriorities(orgId, effectiveTeamId);
       
+      console.log('🚨 API Response for priorities:', response);
+      
       // Extract and flatten priorities
       const companyPriorities = response.companyPriorities || [];
       const teamMemberPriorities = response.teamMemberPriorities || {};
+      
+      console.log('🚨 Company priorities:', companyPriorities);
+      console.log('🚨 Team member priorities:', teamMemberPriorities);
       
       const allPriorities = [
         ...companyPriorities.map(p => ({ ...p, priority_type: 'company' })),
@@ -726,6 +731,9 @@ const WeeklyAccountabilityMeetingPage = () => {
           (memberData.priorities || []).map(p => ({ ...p, priority_type: 'individual' }))
         )
       ];
+      
+      console.log('🚨 All priorities being set:', allPriorities);
+      console.log('🚨 First priority milestones:', allPriorities[0]?.milestones);
       
       setPriorities(allPriorities);
       
@@ -3681,6 +3689,7 @@ const WeeklyAccountabilityMeetingPage = () => {
                                     {/* Expanded Milestones Section - MOVED OUTSIDE ContextMenu */}
                                     {isExpanded && (
                                       <div className="ml-12 mr-4 mb-3 p-3 bg-slate-50 rounded-lg">
+                                        {console.log('Expanded priority:', priority.id, 'Milestones:', priority.milestones)}
                                         <div className="space-y-2">
                                           {(priority.milestones || []).map(milestone => {
                                             console.log('Rendering milestone:', milestone);
