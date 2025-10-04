@@ -17,13 +17,13 @@ const useProductionDB = process.env.NODE_ENV === 'production' ||
 const dbConfig = useProductionDB
   ? {
       connectionString: process.env.DATABASE_URL,
-      ssl: { rejectUnauthorized: false }, // Always use SSL for production/Railway
-      max: 10, // reduced pool size for Railway
+      ssl: process.env.NODE_ENV === 'production' ? { rejectUnauthorized: false } : false, // SSL only for production, not tests
+      max: process.env.NODE_ENV === 'test' ? 5 : 10, // reduced pool size for tests and Railway
       idleTimeoutMillis: 10000, // close idle connections after 10 seconds
       connectionTimeoutMillis: 5000, // increased timeout for Railway
-      // Railway-specific optimizations
-      keepAlive: true,
-      keepAliveInitialDelayMillis: 10000,
+      // Railway-specific optimizations (not needed for tests)
+      keepAlive: process.env.NODE_ENV !== 'test',
+      keepAliveInitialDelayMillis: process.env.NODE_ENV !== 'test' ? 10000 : undefined,
       // Handle connection drops gracefully
       allowExitOnIdle: true,
       // Retry logic
