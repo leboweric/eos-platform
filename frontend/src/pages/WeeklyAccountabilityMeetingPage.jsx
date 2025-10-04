@@ -723,12 +723,17 @@ const WeeklyAccountabilityMeetingPage = () => {
       const effectiveTeamId = getEffectiveTeamId(cleanTeamId, user);
       console.log('🔥 effectiveTeamId from function:', effectiveTeamId);
 
-      console.log('🔍 Team ID comparison:', {
+      console.log('🔥 ABOUT TO CREATE COMPARISON OBJECT');
+      
+      const comparison = {
         urlTeamId: teamId,
         cleanTeamId,
         effectiveTeamId,
         areTheSame: cleanTeamId === effectiveTeamId
-      });
+      };
+      
+      console.log('🔥 COMPARISON OBJECT CREATED:', comparison);
+      console.log('🔍 Team ID comparison:', comparison);
 
       // Then use cleanTeamId as the fix proposes
       const response = await quarterlyPrioritiesService.getCurrentPriorities(orgId, cleanTeamId);
