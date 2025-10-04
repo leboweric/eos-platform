@@ -3716,15 +3716,16 @@ const WeeklyAccountabilityMeetingPage = () => {
                                       <div className="ml-12 mr-4 mb-3 p-3 bg-slate-50 rounded-lg">
                                         {console.log('Expanded priority:', priority.id, 'Milestones:', priority.milestones)}
                                         <div className="space-y-2">
-                                          {(priority.milestones || []).map(milestone => (
-                                            <div key={milestone.id} className="flex items-center gap-3">
-                                              <Checkbox
+                                          {(priority.milestones || []).map((milestone) => (
+                                            <div key={milestone.id} className="group flex items-center gap-3 p-2 rounded-lg hover:bg-gray-50">
+                                              <input
+                                                type="checkbox"
                                                 checked={milestone.completed}
-                                                onCheckedChange={async (checked) => {
-                                                  console.log('🔥 MILESTONE CHECKBOX CLICKED!', { priorityId: priority.id, milestoneId: milestone.id, checked });
-                                                  await handleToggleMilestone(priority.id, milestone.id, checked);
+                                                onChange={(e) => {
+                                                  console.log('🔥 MILESTONE CHECKBOX CLICKED!', { priorityId: priority.id, milestoneId: milestone.id, checked: e.target.checked });
+                                                  handleToggleMilestone(priority.id, milestone.id, e.target.checked);
                                                 }}
-                                                className="data-[state=checked]:bg-green-600 data-[state=checked]:border-green-600"
+                                                className="rounded border-gray-300 focus:ring-2"
                                               />
                                               <span className={`text-sm flex-1 ${milestone.completed ? 'line-through text-slate-400' : 'text-slate-700'}`}>
                                                 {milestone.title}
