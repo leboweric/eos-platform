@@ -264,14 +264,17 @@ const server = createServer(app);
 // Initialize WebSocket service
 meetingSocketService.initialize(server);
 
-// Start server
-server.listen(PORT, () => {
-  console.log(`🚀 Server running on port ${PORT} - v1.1 with debug logging`);
-  console.log(`📊 Environment: ${process.env.NODE_ENV}`);
-  console.log(`🔗 Health check: http://localhost:${PORT}/health`);
-  if (process.env.ENABLE_MEETINGS === 'true') {
-    console.log(`🤝 Meeting mode enabled with WebSocket support`);
-  }
-});
+// Only start server when not in test mode
+// Tests use supertest which handles this internally
+if (process.env.NODE_ENV !== 'test') {
+  server.listen(PORT, () => {
+    console.log(`🚀 Server running on port ${PORT} - v1.1 with debug logging`);
+    console.log(`📊 Environment: ${process.env.NODE_ENV}`);
+    console.log(`🔗 Health check: http://localhost:${PORT}/health`);
+    if (process.env.ENABLE_MEETINGS === 'true') {
+      console.log(`🤝 Meeting mode enabled with WebSocket support`);
+    }
+  });
+}
 
 export default app;

@@ -7,9 +7,12 @@ dotenv.config({ path: '.env.test' });
 // Set test environment
 process.env.NODE_ENV = 'test';
 
-// Override DATABASE_URL with TEST_DATABASE_URL if it exists
+// Ensure we're using the test database
 if (process.env.TEST_DATABASE_URL) {
   process.env.DATABASE_URL = process.env.TEST_DATABASE_URL;
+  console.log('🔧 Using TEST_DATABASE_URL for tests');
+} else {
+  console.warn('⚠️  TEST_DATABASE_URL not set, using default DATABASE_URL');
 }
 
 // Global variable to hold database connection
