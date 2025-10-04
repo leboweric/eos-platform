@@ -3682,7 +3682,9 @@ const WeeklyAccountabilityMeetingPage = () => {
                                     {isExpanded && (
                                       <div className="ml-12 mr-4 mb-3 p-3 bg-slate-50 rounded-lg">
                                         <div className="space-y-2">
-                                          {(priority.milestones || []).map(milestone => (
+                                          {(priority.milestones || []).map(milestone => {
+                                            console.log('Rendering milestone:', milestone);
+                                            return (
                                             <div 
                                               key={milestone.id} 
                                               className="flex items-center gap-3"
@@ -3716,7 +3718,8 @@ const WeeklyAccountabilityMeetingPage = () => {
                                                 {milestone.dueDate ? format(new Date(milestone.dueDate), 'MMM d') : ''}
                                               </span>
                                             </div>
-                                          ))}
+                                            );
+                                          })}
                                           
                                           {/* Add milestone button section if no milestones */}
                                           {(priority.milestones || []).length === 0 && addingMilestoneFor !== priority.id ? (
