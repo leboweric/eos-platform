@@ -7,9 +7,12 @@ const { Pool } = pkg;
 
 // Database configuration
 // In production (Railway), always use their DATABASE_URL
+// In test mode, always use DATABASE_URL (which is set to TEST_DATABASE_URL in tests)
 // Locally, only use DATABASE_URL if explicitly set and not localhost
 const isLocalDatabase = process.env.DATABASE_URL?.includes('localhost') || process.env.DATABASE_URL?.includes('127.0.0.1');
-const useProductionDB = process.env.NODE_ENV === 'production' || (process.env.DATABASE_URL && !isLocalDatabase);
+const useProductionDB = process.env.NODE_ENV === 'production' || 
+                       process.env.NODE_ENV === 'test' || 
+                       (process.env.DATABASE_URL && !isLocalDatabase);
 
 const dbConfig = useProductionDB
   ? {

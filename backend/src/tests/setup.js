@@ -10,10 +10,13 @@ process.env.NODE_ENV = 'test';
 // Ensure we're using the test database
 if (process.env.TEST_DATABASE_URL) {
   process.env.DATABASE_URL = process.env.TEST_DATABASE_URL;
-  console.log('🔧 Using TEST_DATABASE_URL for tests');
+  console.log('🔧 Using TEST_DATABASE_URL for tests:', process.env.TEST_DATABASE_URL);
 } else {
-  console.warn('⚠️  TEST_DATABASE_URL not set, using default DATABASE_URL');
+  console.warn('⚠️  TEST_DATABASE_URL not set, using default DATABASE_URL:', process.env.DATABASE_URL);
 }
+
+console.log('🔍 Final DATABASE_URL:', process.env.DATABASE_URL);
+console.log('🔍 NODE_ENV:', process.env.NODE_ENV);
 
 // Global variable to hold database connection
 let db;
