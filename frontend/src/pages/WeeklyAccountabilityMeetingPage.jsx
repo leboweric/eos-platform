@@ -341,25 +341,64 @@ const WeeklyAccountabilityMeetingPage = () => {
     }
   }
 
-  async function handleToggleMilestone(priorityId, milestoneId, completed) {
+  const handleUpdateMilestone = async (priorityId, milestoneId, completed) => {
     try {
-      const orgId = user?.organizationId || user?.organization_id;
+      const orgId = user?.organizationId;
       const cleanTeamId = (teamId === 'null' || teamId === 'undefined') ? null : teamId;
       const effectiveTeamId = getEffectiveTeamId(cleanTeamId, user);
       
+      if (!orgId || !effectiveTeamId) {
+        throw new Error('Organization or department not found');
+      }
+      
+      // First update the milestone
       await quarterlyPrioritiesService.updateMilestone(orgId, effectiveTeamId, priorityId, milestoneId, { completed });
       
-      // Update local state
-      setPriorities(prev => prev.map(priority => 
-        priority.id === priorityId 
-          ? {
-              ...priority,
-              milestones: (priority.milestones || []).map(milestone =>
-                milestone.id === milestoneId ? { ...milestone, completed } : milestone
-              )
-            }
-          : priority
-      ));
+      // Update local state and recalculate progress
+      const updatePriorityWithProgress = (p) => {
+        if (p.id !== priorityId) return p;
+        
+        const updatedMilestones = p.milestones?.map(m => 
+          m.id === milestoneId ? { ...m, completed } : m
+        ) || [];
+        
+        // Calculate new progress based on completed milestones
+        const completedCount = updatedMilestones.filter(m => m.completed).length;
+        const totalCount = updatedMilestones.length;
+        const newProgress = totalCount > 0 ? Math.round((completedCount / totalCount) * 100) : 0;
+        
+        // Auto-update status based on milestone completion
+        let newStatus = p.status;
+        if (totalCount > 0) {
+          // Only set to complete if ALL milestones are actually checked (not just 100% progress)
+          if (completedCount === totalCount && totalCount > 0) {
+            // All milestones complete - mark as complete
+            newStatus = 'complete';
+          } else if (newStatus === 'complete' && completedCount < totalCount) {
+            // Was complete but unchecked a milestone - revert to on-track
+            newStatus = 'on-track';
+          }
+        }
+        
+        console.log('Milestone Progress Calculation:', {
+          priorityId,
+          completedCount,
+          totalCount,
+          newProgress,
+          newStatus,
+          previousStatus: p.status,
+          milestones: updatedMilestones.map(m => ({ id: m.id, title: m.title, completed: m.completed }))
+        });
+        
+        return { 
+          ...p, 
+          milestones: updatedMilestones,
+          progress: newProgress,
+          status: newStatus
+        };
+      };
+      
+      setPriorities(prev => prev.map(updatePriorityWithProgress));
       
       // Broadcast update to meeting participants
       if (broadcastIssueListUpdate) {
@@ -371,9 +410,9 @@ const WeeklyAccountabilityMeetingPage = () => {
         });
       }
     } catch (error) {
-      console.error('Failed to toggle milestone:', error);
+      console.error('Failed to update milestone:', error);
     }
-  }
+  };
 
   async function handleAddMilestone(priorityId) {
     if (!newMilestone.title.trim()) return;
@@ -2026,77 +2065,6 @@ const WeeklyAccountabilityMeetingPage = () => {
     }
   };
 
-  const handleUpdateMilestone = async (priorityId, milestoneId, completed) => {
-    try {
-      const orgId = user?.organizationId || user?.organization_id;
-      const teamId = getEffectiveTeamId(null, user);
-      
-      if (!orgId || !teamId) {
-        throw new Error('Organization or team not found');
-      }
-      
-      // First update the milestone
-      await quarterlyPrioritiesService.updateMilestone(orgId, teamId, priorityId, milestoneId, { completed });
-      
-      // Update local state and recalculate progress
-      const updatePriorityWithProgress = (p) => {
-        if (p.id !== priorityId) return p;
-        
-        const updatedMilestones = p.milestones?.map(m => 
-          m.id === milestoneId ? { ...m, completed } : m
-        ) || [];
-        
-        // Calculate new progress based on completed milestones
-        const completedCount = updatedMilestones.filter(m => m.completed).length;
-        const totalCount = updatedMilestones.length;
-        const newProgress = totalCount > 0 ? Math.round((completedCount / totalCount) * 100) : 0;
-        
-        // Auto-update status based on milestone completion
-        let newStatus = p.status;
-        if (totalCount > 0) {
-          // Only set to complete if ALL milestones are actually checked
-          if (completedCount === totalCount && totalCount > 0) {
-            newStatus = 'complete';
-          } else if (newStatus === 'complete' && completedCount < totalCount) {
-            // Was complete but unchecked a milestone - revert to on-track
-            newStatus = 'on-track';
-          }
-        }
-        
-        return { 
-          ...p, 
-          milestones: updatedMilestones,
-          progress: newProgress,
-          status: newStatus
-        };
-      };
-      
-      // Update priorities in state
-      setPriorities(prev => prev.map(updatePriorityWithProgress));
-      
-      // Update selectedPriority if this is the currently selected one
-      if (selectedPriority?.id === priorityId) {
-        setSelectedPriority(prev => updatePriorityWithProgress(prev));
-      }
-      
-      // Update progress and status on the backend
-      const currentPriority = priorities.find(p => p.id === priorityId);
-      if (currentPriority) {
-        const updatedPriority = updatePriorityWithProgress(currentPriority);
-        const updates = { progress: updatedPriority.progress };
-        if (updatedPriority.status !== currentPriority.status) {
-          updates.status = updatedPriority.status;
-        }
-        await quarterlyPrioritiesService.updatePriority(orgId, teamId, priorityId, updates);
-      }
-      
-      setSuccess('Milestone updated');
-      setTimeout(() => setSuccess(null), 3000);
-    } catch (error) {
-      console.error('Failed to update milestone:', error);
-      setError('Failed to update milestone');
-    }
-  };
 
 
   const handleCreateDiscussionIssue = async (priority) => {
@@ -3723,7 +3691,7 @@ const WeeklyAccountabilityMeetingPage = () => {
                                                 checked={milestone.completed}
                                                 onChange={(e) => {
                                                   console.log('🔥 MILESTONE CHECKBOX CLICKED!', { priorityId: priority.id, milestoneId: milestone.id, checked: e.target.checked });
-                                                  handleToggleMilestone(priority.id, milestone.id, e.target.checked);
+                                                  handleUpdateMilestone(priority.id, milestone.id, e.target.checked);
                                                 }}
                                                 className="rounded border-gray-300 focus:ring-2"
                                               />
