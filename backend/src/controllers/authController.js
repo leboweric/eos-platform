@@ -777,6 +777,13 @@ export const checkLegalAgreements = async (req, res) => {
 // @access  Public
 export const forgotPassword = async (req, res) => {
   try {
+    console.log('🔐 Password reset requested');
+    console.log('🔐 SendGrid configuration check:', {
+      hasApiKey: !!process.env.SENDGRID_API_KEY,
+      fromEmail: process.env.SENDGRID_FROM_EMAIL,
+      apiKeyFormat: process.env.SENDGRID_API_KEY?.substring(0, 10) + '...'
+    });
+    
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
       return res.status(400).json({
@@ -787,6 +794,7 @@ export const forgotPassword = async (req, res) => {
     }
 
     const { email } = req.body;
+    console.log('🔐 Password reset requested for:', email);
 
     // Find user by email
     const userResult = await query(
@@ -794,8 +802,11 @@ export const forgotPassword = async (req, res) => {
       [email]
     );
 
+    console.log('🔐 User found:', !!userResult.rows.length);
+
     // Always return success to prevent email enumeration
     if (userResult.rows.length === 0) {
+      console.log('🔐 User not found, returning success anyway for security');
       return res.json({
         success: true,
         message: 'If an account exists with this email, a password reset link has been sent.'
@@ -822,13 +833,24 @@ export const forgotPassword = async (req, res) => {
     const resetUrl = `${process.env.FRONTEND_URL}/reset-password?token=${resetToken}`;
 
     // Send email
+    console.log('🔐 Attempting to send password reset email...');
+    console.log('🔐 Reset URL:', resetUrl);
+    
     try {
+      console.log('🔐 Calling sendEmail function...');
       await sendEmail(user.email, 'passwordReset', {
         firstName: user.first_name,
         resetLink: resetUrl
       });
+      console.log('🔐 ✅ Email sent successfully via SendGrid');
     } catch (emailError) {
-      console.error('Error sending password reset email:', emailError);
+      console.error('🔐 ❌ Error sending password reset email:', emailError);
+      console.error('🔐 ❌ Email error details:', {
+        message: emailError.message,
+        code: emailError.code,
+        response: emailError.response?.body
+      });
+      
       // Delete the token if email fails
       await query('DELETE FROM password_reset_tokens WHERE token = $1', [hashedToken]);
       
@@ -838,13 +860,14 @@ export const forgotPassword = async (req, res) => {
       });
     }
 
+    console.log('🔐 ✅ Password reset process completed successfully');
     res.json({
       success: true,
       message: 'If an account exists with this email, a password reset link has been sent.'
     });
 
   } catch (error) {
-    console.error('Forgot password error:', error);
+    console.error('🔐 ❌ Forgot password error:', error);
     res.status(500).json({
       success: false,
       error: 'Server error while processing password reset request'
