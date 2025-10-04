@@ -3678,7 +3678,7 @@ const WeeklyAccountabilityMeetingPage = () => {
                                       </ContextMenuContent>
                                     </ContextMenu>
                                     
-                                    {/* Expanded Milestones Section */}
+                                    {/* Expanded Milestones Section - MOVED OUTSIDE ContextMenu */}
                                     {isExpanded && (
                                       <div className="ml-12 mr-4 mb-3 p-3 bg-slate-50 rounded-lg">
                                         <div className="space-y-2">
@@ -3686,16 +3686,11 @@ const WeeklyAccountabilityMeetingPage = () => {
                                             <div 
                                               key={milestone.id} 
                                               className="flex items-center gap-3"
-                                              onClick={(e) => {
-                                                // Prevent event propagation that might interfere
-                                                e.stopPropagation();
-                                              }}
                                             >
                                               <input
                                                 type="checkbox"
                                                 checked={milestone.completed}
                                                 onChange={async (e) => {
-                                                  e.stopPropagation();
                                                   const checked = e.target.checked;
                                                   console.log('Milestone checkbox clicked:', { priorityId: priority.id, milestoneId: milestone.id, checked });
                                                   await handleToggleMilestone(priority.id, milestone.id, checked);
@@ -3704,8 +3699,7 @@ const WeeklyAccountabilityMeetingPage = () => {
                                               />
                                               <span 
                                                 className={`text-sm flex-1 cursor-pointer ${milestone.completed ? 'line-through text-slate-400' : 'text-slate-700'}`}
-                                                onClick={async (e) => {
-                                                  e.stopPropagation();
+                                                onClick={async () => {
                                                   // Allow clicking on the text to toggle as well
                                                   console.log('Milestone text clicked:', { priorityId: priority.id, milestoneId: milestone.id });
                                                   await handleToggleMilestone(priority.id, milestone.id, !milestone.completed);
@@ -3719,7 +3713,7 @@ const WeeklyAccountabilityMeetingPage = () => {
                                             </div>
                                           ))}
                                           
-                                          {/* Milestones Section with Elegant Design */}
+                                          {/* Add milestone button section if no milestones */}
                                           {(priority.milestones || []).length === 0 && addingMilestoneFor !== priority.id ? (
                                             <div className="space-y-3">
                                               <div className="border border-slate-200 rounded-lg p-4 bg-white/50">
