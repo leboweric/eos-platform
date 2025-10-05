@@ -2798,7 +2798,7 @@ const QuarterlyPrioritiesPageClean = () => {
             };
             
             // Group priorities based on organization preference
-            const groupedRocks = groupRocksByPreference(allPriorities, rockDisplayPreference, users);
+            const groupedRocks = groupRocksByPreference(allPriorities, rockDisplayPreference, teamMembers);
             
             if (allPriorities.length === 0) {
               return (
