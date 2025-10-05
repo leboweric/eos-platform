@@ -13,14 +13,7 @@
  * @returns {Object} - Grouped rock data with display metadata
  */
 export const groupRocksByPreference = (rocks, preference, teamMembers = []) => {
-  console.log('🔧 groupRocksByPreference called with:', {
-    rocksCount: rocks?.length || 0,
-    preference,
-    teamMembersCount: teamMembers?.length || 0
-  });
-
   if (!rocks || rocks.length === 0) {
-    console.log('⚠️ No rocks provided, returning empty result');
     return {
       sections: [],
       byOwner: {},
@@ -29,11 +22,6 @@ export const groupRocksByPreference = (rocks, preference, teamMembers = []) => {
     };
   }
 
-  console.log('📊 All priorities:', rocks.length);
-  console.log('🔍 Sample priority object:', rocks[0]);
-  console.log('🏢 Company rocks:', rocks.filter(r => r.is_company_priority).length);
-  console.log('👤 Individual rocks:', rocks.filter(r => !r.is_company_priority).length);
-
   // Create owner lookup map
   const ownerLookup = teamMembers.reduce((acc, member) => {
     acc[member.id] = member.name || member.first_name + ' ' + member.last_name || 'Unknown';
@@ -41,16 +29,11 @@ export const groupRocksByPreference = (rocks, preference, teamMembers = []) => {
   }, {});
 
   if (preference === 'grouped_by_type') {
-    console.log('🎯 Using grouped_by_type mode');
     // Separate into Company Rocks and Individual Rocks
     const companyRocks = rocks.filter(r => r.is_company_priority);
     const individualRocks = rocks.filter(r => !r.is_company_priority);
     
-    console.log('🔍 Filtered results:');
-    console.log('  - Company rocks filtered:', companyRocks.length);
-    console.log('  - Individual rocks filtered:', individualRocks.length);
-    
-    const result = {
+    return {
       sections: [
         { 
           title: 'Company Rocks', 
@@ -68,16 +51,6 @@ export const groupRocksByPreference = (rocks, preference, teamMembers = []) => {
       displayMode: 'type',
       isEmpty: false
     };
-
-    console.log('📤 Grouped result for type mode:', result);
-    console.log('📤 Sections created:', result.sections.map(s => ({
-      title: s.title,
-      type: s.type,
-      isEmpty: s.isEmpty,
-      rocksCount: s.rocks.length
-    })));
-
-    return result;
   } else {
     // Group by owner (default: grouped_by_owner)
     const grouped = rocks.reduce((acc, rock) => {
