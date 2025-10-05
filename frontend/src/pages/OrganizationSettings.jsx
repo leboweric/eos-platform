@@ -31,7 +31,8 @@ const OrganizationSettings = () => {
     theme_primary_color: '#3B82F6',
     theme_secondary_color: '#1E40AF',
     theme_accent_color: '#60A5FA',
-    scorecard_time_period_preference: '13_week_rolling'
+    scorecard_time_period_preference: '13_week_rolling',
+    rock_display_preference: 'grouped_by_owner'
   });
   const [logoPreview, setLogoPreview] = useState(null);
   const [selectedFile, setSelectedFile] = useState(null);
@@ -134,7 +135,8 @@ const OrganizationSettings = () => {
         name: organizationData?.name || '',
         revenueMetricType: organizationData?.revenue_metric_type,
         revenueMetricLabel: organizationData?.revenue_metric_label,
-        scorecardTimePeriodPreference: organizationData?.scorecard_time_period_preference
+        scorecardTimePeriodPreference: organizationData?.scorecard_time_period_preference,
+        rockDisplayPreference: organizationData?.rock_display_preference
       });
 
       setSuccess('Organization updated successfully');
@@ -775,6 +777,64 @@ const OrganizationSettings = () => {
               <li><strong>13-Week Rolling:</strong> EOS standard - shows performance over the last 13 weeks</li>
               <li><strong>Current Quarter:</strong> Financial approach - shows Q1, Q2, Q3, or Q4 data</li>
               <li><strong>Last 4 Weeks:</strong> Short-term focus - shows recent 4-week performance</li>
+            </ul>
+          </div>
+
+          <div className="pt-2">
+            <Button 
+              onClick={handleSubmit}
+              disabled={saving}
+              className="bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white rounded-xl shadow-lg hover:shadow-xl transition-all duration-200 transform hover:scale-[1.02]"
+            >
+              {saving ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Saving...
+                </>
+              ) : (
+                <>
+                  <Save className="mr-2 h-4 w-4" />
+                  Save Preferences
+                </>
+              )}
+            </Button>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Rock Display Preferences Section */}
+      <Card className="bg-white/80 backdrop-blur-sm border border-white/50 rounded-2xl shadow-xl">
+        <CardHeader className="bg-gradient-to-r from-white/90 to-white/70 backdrop-blur-sm border-b border-white/20">
+          <CardTitle className="text-xl font-bold text-slate-900">Rock Display Preferences</CardTitle>
+          <CardDescription className="text-slate-600 font-medium">
+            Configure how quarterly priorities (rocks) are organized in meetings and priorities pages
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="space-y-2">
+            <Label htmlFor="rockDisplay">Organization Method</Label>
+            <Select
+              value={organizationData?.rock_display_preference || 'grouped_by_owner'}
+              onValueChange={(value) => setOrganizationData({ ...organizationData, rock_display_preference: value })}
+            >
+              <SelectTrigger id="rockDisplay" className="bg-white/80 backdrop-blur-sm border-white/20 rounded-xl shadow-sm">
+                <SelectValue placeholder="Select rock organization method" />
+              </SelectTrigger>
+              <SelectContent className="bg-white/95 backdrop-blur-sm border-white/20 rounded-xl shadow-xl">
+                <SelectItem value="grouped_by_owner">Grouped by Owner (Current View)</SelectItem>
+                <SelectItem value="grouped_by_type">Grouped by Type (Company then Individual)</SelectItem>
+              </SelectContent>
+            </Select>
+            <p className="text-sm text-slate-500">
+              Choose how your team prefers to see quarterly priorities organized during L10 meetings and on the priorities page.
+            </p>
+          </div>
+
+          <div className="bg-white/90 backdrop-blur-sm p-4 rounded-xl border border-blue-200/50 shadow-sm">
+            <h4 className="font-bold mb-2 text-slate-900">Organization Methods:</h4>
+            <ul className="text-sm text-slate-600 space-y-2 list-disc list-inside font-medium">
+              <li><strong>Grouped by Owner:</strong> All rocks organized by person with Company badge shown - emphasizes individual accountability</li>
+              <li><strong>Grouped by Type:</strong> Company Rocks section, then Individual Rocks section - emphasizes company priorities first (EOS pure)</li>
             </ul>
           </div>
 

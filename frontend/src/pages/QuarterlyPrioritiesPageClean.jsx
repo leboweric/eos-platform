@@ -10,6 +10,7 @@ import { getRevenueLabel, getRevenueLabelWithSuffix } from '../utils/revenueUtil
 import { useDepartment } from '../contexts/DepartmentContext';
 import { useTerminology } from '../contexts/TerminologyContext';
 import { getEffectiveTeamId } from '../utils/teamUtils';
+import { groupRocksByPreference, getSectionHeader } from '../utils/rockGroupingUtils';
 import PriorityDialog from '../components/priorities/PriorityDialog';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -106,6 +107,9 @@ const QuarterlyPrioritiesPageClean = () => {
   const { user, isOnLeadershipTeam } = useAuthStore();
   const { selectedDepartment, loading: departmentLoading } = useDepartment();
   const { labels } = useTerminology();
+  
+  // Default methodology - can be made configurable later when organization methodology is implemented
+  const methodology = 'eos';
   const [showArchived, setShowArchived] = useState(false);
   const [showAddPriority, setShowAddPriority] = useState(false);
   const [addPriorityMilestones, setAddPriorityMilestones] = useState([]);
@@ -120,6 +124,7 @@ const QuarterlyPrioritiesPageClean = () => {
     secondary: '#1E40AF',
     accent: '#60A5FA'
   });
+  const [rockDisplayPreference, setRockDisplayPreference] = useState('grouped_by_owner');
   
   // State for priorities data
   const [companyPriorities, setCompanyPriorities] = useState([]);
@@ -296,6 +301,9 @@ const QuarterlyPrioritiesPageClean = () => {
         };
         setThemeColors(theme);
         saveOrgTheme(orgId, theme);
+        
+        // Set rock display preference
+        setRockDisplayPreference(orgData.rock_display_preference || 'grouped_by_owner');
       }
     } catch (error) {
       console.error('Failed to fetch organization theme:', error);
@@ -2789,27 +2797,8 @@ const QuarterlyPrioritiesPageClean = () => {
               }));
             };
             
-            // Group all priorities by owner
-            const prioritiesByOwner = allPriorities.reduce((acc, priority) => {
-              const ownerId = priority.owner?.id || 'unassigned';
-              const ownerName = priority.owner?.name || 'Unassigned';
-              if (!acc[ownerId]) {
-                acc[ownerId] = {
-                  id: ownerId,
-                  name: ownerName,
-                  priorities: []
-                };
-              }
-              acc[ownerId].priorities.push(priority);
-              return acc;
-            }, {});
-            
-            // Convert to array and sort by name
-            const owners = Object.values(prioritiesByOwner).sort((a, b) => {
-              if (a.id === 'unassigned') return 1;
-              if (b.id === 'unassigned') return -1;
-              return a.name.localeCompare(b.name);
-            });
+            // Group priorities based on organization preference
+            const groupedRocks = groupRocksByPreference(allPriorities, rockDisplayPreference, users);
             
             if (allPriorities.length === 0) {
               return (
@@ -2831,7 +2820,74 @@ const QuarterlyPrioritiesPageClean = () => {
             
             return (
               <div className="space-y-6">
-                {owners.map(owner => (
+                {/* Render based on display preference */}
+                {groupedRocks.displayMode === 'type' ? (
+                  // Grouped by Type: Company Rocks, then Individual Rocks
+                  groupedRocks.sections.map(section => (
+                    !section.isEmpty && (
+                      <div key={section.type} className="space-y-4">
+                        <div className="flex items-center gap-3 mb-4">
+                          <div className="h-px bg-gradient-to-r from-slate-300 to-transparent flex-1"></div>
+                          <h3 className="text-lg font-bold text-slate-700 px-4 py-2 bg-white/80 rounded-xl border border-slate-200 shadow-sm">
+                            {getSectionHeader(section.type, methodology)}
+                          </h3>
+                          <div className="h-px bg-gradient-to-l from-slate-300 to-transparent flex-1"></div>
+                        </div>
+                        
+                        {section.rocks.map(priority => {
+                          const isComplete = priority.status === 'complete' || priority.status === 'completed';
+                          const isOnTrack = priority.status === 'on-track';
+                          const completedMilestones = (priority.milestones || []).filter(m => m.completed).length;
+                          const totalMilestones = (priority.milestones || []).length;
+                          const isExpanded = expandedPriorities[priority.id];
+                          const ownerName = priority.owner?.name || 'Unassigned';
+                          
+                          return (
+                            <Card key={priority.id} className="bg-white border-slate-200 shadow-md hover:shadow-lg transition-shadow">
+                              <CardContent className="p-6">
+                                <div className="flex items-center justify-between mb-4">
+                                  <div className="flex items-center gap-3 flex-1">
+                                    <button
+                                      onClick={(e) => togglePriorityExpansion(priority.id, e)}
+                                      className="p-1 hover:bg-gray-100 rounded transition-colors"
+                                    >
+                                      <ChevronDown className={`h-4 w-4 text-slate-400 transition-transform ${isExpanded ? 'rotate-180' : ''}`} />
+                                    </button>
+                                    
+                                    <div className={`w-3 h-3 rounded-full flex-shrink-0 ${
+                                      priority.status === 'cancelled' ? 'bg-gray-400' :
+                                      isComplete ? 'bg-green-500' : 
+                                      isOnTrack ? 'bg-yellow-500' : 'bg-red-500'
+                                    }`}></div>
+                                    
+                                    <div className="flex-1">
+                                      <div className="flex items-center gap-2">
+                                        <h4 className="font-semibold text-slate-900">{priority.title}</h4>
+                                        <span className="text-sm text-slate-500">({ownerName})</span>
+                                      </div>
+                                    </div>
+                                    
+                                    <div className="flex items-center gap-4 text-sm">
+                                      <div className="text-center">
+                                        <div className="font-medium">{completedMilestones}/{totalMilestones}</div>
+                                        <div className="text-xs text-slate-500">milestones</div>
+                                      </div>
+                                      <div className="text-right text-slate-600">
+                                        {priority.due_date ? format(new Date(priority.due_date), 'MMM d') : '-'}
+                                      </div>
+                                    </div>
+                                  </div>
+                                </div>
+                              </CardContent>
+                            </Card>
+                          );
+                        })}
+                      </div>
+                    )
+                  ))
+                ) : (
+                  // Grouped by Owner: Current behavior with Company badge
+                  Object.values(groupedRocks.byOwner || {}).sort((a, b) => a.name.localeCompare(b.name)).map(owner => (
                   <Card key={owner.id} className="bg-white border-slate-200 shadow-md hover:shadow-lg transition-shadow">
                     <CardHeader className="pb-3">
                       <div className="flex items-center justify-between">
@@ -2843,7 +2899,7 @@ const QuarterlyPrioritiesPageClean = () => {
                           </Avatar>
                           <div>
                             <h3 className="text-lg font-bold text-slate-900">{owner.name}</h3>
-                            <p className="text-sm text-slate-500">{owner.priorities.length} {labels?.priority_singular || 'Rock'}{owner.priorities.length !== 1 ? 's' : ''}</p>
+                            <p className="text-sm text-slate-500">{owner.rocks.length} {labels?.priority_singular || 'Rock'}{owner.rocks.length !== 1 ? 's' : ''}</p>
                           </div>
                         </div>
                         <ChevronDown className="h-5 w-5 text-slate-400" />
@@ -2862,7 +2918,7 @@ const QuarterlyPrioritiesPageClean = () => {
                         </div>
                         
                         {/* Rock Rows */}
-                        {owner.priorities.map(priority => {
+                        {owner.rocks.map(priority => {
                           const isComplete = priority.status === 'complete' || priority.status === 'completed';
                           const isOnTrack = priority.status === 'on-track';
                           const completedMilestones = (priority.milestones || []).filter(m => m.completed).length;
@@ -2995,7 +3051,7 @@ const QuarterlyPrioritiesPageClean = () => {
                                   <span className={`font-medium ${isComplete ? 'line-through text-slate-400' : 'text-slate-900'}`}>
                                     {priority.title}
                                   </span>
-                                  {priority.isCompanyPriority && (
+                                  {priority.is_company_rock && (
                                     <Badge variant="outline" className="ml-2 text-xs">Company</Badge>
                                   )}
                                 </div>
