@@ -471,6 +471,16 @@ const MeetingsPage = () => {
             const activeMeeting = activeMeetings?.[meetingCode];
             const isActive = !!activeMeeting;
             
+            // DEBUG: Log meeting detection logic
+            console.log(`🔍 Meeting Detection Debug for ${meeting.id}:`, {
+              selectedTeamId,
+              meetingId: meeting.id,
+              generatedMeetingCode: meetingCode,
+              activeMeetings: Object.keys(activeMeetings || {}),
+              activeMeeting,
+              isActive
+            });
+            
             return (
               <Card key={meeting.id} className={`relative overflow-hidden bg-white/80 backdrop-blur-sm border border-white/50 rounded-2xl transition-all duration-200 hover:shadow-xl hover:scale-[1.02] ${
                 meeting.comingSoon ? 'opacity-75' : ''
