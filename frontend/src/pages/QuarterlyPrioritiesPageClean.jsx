@@ -12,6 +12,7 @@ import { useTerminology } from '../contexts/TerminologyContext';
 import { getEffectiveTeamId } from '../utils/teamUtils';
 import { groupRocksByPreference, getSectionHeader } from '../utils/rockGroupingUtils';
 import PriorityDialog from '../components/priorities/PriorityDialog';
+import PriorityCardClean from '../components/priorities/PriorityCardClean';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
