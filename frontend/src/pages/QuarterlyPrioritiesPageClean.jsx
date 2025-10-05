@@ -2828,20 +2828,27 @@ const QuarterlyPrioritiesPageClean = () => {
                 {(() => {
                   console.log('🔧 Rendering rocks with displayMode:', groupedRocks.displayMode);
                   return groupedRocks.displayMode === 'type' ? (
-                    // Grouped by Type: Company Rocks, then Individual Rocks using original card component
+                    // Grouped by Type: Use exact same Card structure as "grouped by owner"
                     groupedRocks.sections.map(section => (
                       !section.isEmpty && (
-                        <div key={section.type} className="space-y-6">
-                          <div className="flex items-center gap-3">
-                            <div className="h-px bg-gradient-to-r from-slate-300 to-transparent flex-1"></div>
-                            <h3 className="text-xl font-semibold text-gray-900 px-4 py-2 bg-white rounded-lg">
-                              {getSectionHeader(section.type, methodology)}
-                            </h3>
-                            <div className="h-px bg-gradient-to-l from-slate-300 to-transparent flex-1"></div>
-                          </div>
-                          
-                          <Card className="bg-white border-slate-200 shadow-md hover:shadow-lg transition-shadow">
-                            <CardContent className="pt-6">
+                        <Card key={section.type} className="bg-white border-slate-200 shadow-md hover:shadow-lg transition-shadow">
+                          <CardHeader className="pb-3">
+                            <div className="flex items-center justify-between">
+                              <div className="flex items-center gap-3">
+                                <div className="h-10 w-10 border-2 border-slate-100 rounded-full bg-gradient-to-br from-slate-100 to-slate-200 flex items-center justify-center">
+                                  <span className="text-slate-700 font-semibold text-sm">
+                                    {section.type === 'company' ? '🏢' : '👤'}
+                                  </span>
+                                </div>
+                                <div>
+                                  <h3 className="text-lg font-bold text-slate-900">{getSectionHeader(section.type, methodology)}</h3>
+                                  <p className="text-sm text-slate-500">{section.rocks.length} {labels?.priority_singular || 'Rock'}{section.rocks.length !== 1 ? 's' : ''}</p>
+                                </div>
+                              </div>
+                              <ChevronDown className="h-5 w-5 text-slate-400" />
+                            </div>
+                          </CardHeader>
+                          <CardContent className="pt-0">
                               <div className="space-y-1">
                                 {/* Header Row */}
                                 <div className="flex items-center px-3 py-2 text-xs font-medium text-slate-500 uppercase tracking-wider border-b border-slate-100">
@@ -3158,7 +3165,6 @@ const QuarterlyPrioritiesPageClean = () => {
                               </div>
                             </CardContent>
                           </Card>
-                        </div>
                       )
                     ))
                 ) : (
