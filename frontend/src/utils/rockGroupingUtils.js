@@ -31,8 +31,8 @@ export const groupRocksByPreference = (rocks, preference, teamMembers = []) => {
 
   console.log('📊 All priorities:', rocks.length);
   console.log('🔍 Sample priority object:', rocks[0]);
-  console.log('🏢 Company rocks:', rocks.filter(r => r.is_company_rock).length);
-  console.log('👤 Individual rocks:', rocks.filter(r => !r.is_company_rock).length);
+  console.log('🏢 Company rocks:', rocks.filter(r => r.is_company_priority).length);
+  console.log('👤 Individual rocks:', rocks.filter(r => !r.is_company_priority).length);
 
   // Create owner lookup map
   const ownerLookup = teamMembers.reduce((acc, member) => {
@@ -43,8 +43,8 @@ export const groupRocksByPreference = (rocks, preference, teamMembers = []) => {
   if (preference === 'grouped_by_type') {
     console.log('🎯 Using grouped_by_type mode');
     // Separate into Company Rocks and Individual Rocks
-    const companyRocks = rocks.filter(r => r.is_company_rock);
-    const individualRocks = rocks.filter(r => !r.is_company_rock);
+    const companyRocks = rocks.filter(r => r.is_company_priority);
+    const individualRocks = rocks.filter(r => !r.is_company_priority);
     
     console.log('🔍 Filtered results:');
     console.log('  - Company rocks filtered:', companyRocks.length);
@@ -96,7 +96,7 @@ export const groupRocksByPreference = (rocks, preference, teamMembers = []) => {
       acc[ownerId].rocks.push(rock);
       
       // Track rock types for badges/statistics
-      if (rock.is_company_rock) {
+      if (rock.is_company_priority) {
         acc[ownerId].companyRockCount++;
       } else {
         acc[ownerId].individualRockCount++;
@@ -256,9 +256,9 @@ export const filterRocks = (rocks, filters = {}) => {
   // Filter by company vs individual
   if (filters.type && filters.type !== 'all') {
     if (filters.type === 'company') {
-      filtered = filtered.filter(rock => rock.is_company_rock);
+      filtered = filtered.filter(rock => rock.is_company_priority);
     } else if (filters.type === 'individual') {
-      filtered = filtered.filter(rock => !rock.is_company_rock);
+      filtered = filtered.filter(rock => !rock.is_company_priority);
     }
   }
   
