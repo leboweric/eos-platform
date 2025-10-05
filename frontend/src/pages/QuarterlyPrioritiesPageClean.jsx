@@ -3180,7 +3180,8 @@ const QuarterlyPrioritiesPageClean = () => {
                       </div>
                     </CardContent>
                   </Card>
-                ))}
+                ))
+                )}
               </div>
             );
           })()}

@@ -82,10 +82,10 @@ import { cascadingMessagesService } from '../services/cascadingMessagesService';
 import { teamsService } from '../services/teamsService';
 import { useTerminology } from '../contexts/TerminologyContext';
 import { getEffectiveTeamId } from '../utils/teamUtils';
-import { groupRocksByPreference, getSectionHeader } from '../utils/rockGroupingUtils';
 import FloatingTimer from '../components/meetings/FloatingTimer';
 
 const WeeklyAccountabilityMeetingPage = () => {
+  console.log('🔥🔥🔥 MEETING PAGE COMPONENT LOADED - DEPLOYMENT TEST 123 🔥🔥🔥');
   const { user } = useAuthStore();
   const { teamId } = useParams();
   const navigate = useNavigate();
@@ -109,6 +109,9 @@ const WeeklyAccountabilityMeetingPage = () => {
   }, [teamId, navigate]);
   
   // DEBUG: Log the raw teamId from URL params
+  console.log('🐛 [WeeklyAccountabilityMeeting] Raw teamId from useParams:', teamId);
+  console.log('🐛 [WeeklyAccountabilityMeeting] teamId length:', teamId?.length);
+  console.log('🐛 [WeeklyAccountabilityMeeting] teamId type:', typeof teamId);
   
   // Fetch current team information on mount
   useEffect(() => {
@@ -159,6 +162,10 @@ const WeeklyAccountabilityMeetingPage = () => {
   
   // Debug logging for participants
   useEffect(() => {
+    console.log('📊 Participants updated:', participants);
+    console.log('📊 Number of participants:', participants.length);
+    console.log('📊 Is Leader:', isLeader);
+    console.log('📊 Current Leader:', currentLeader);
   }, [participants, isLeader, currentLeader]);
   
   // Listen for timer pause/resume events from other participants
@@ -553,7 +560,6 @@ const WeeklyAccountabilityMeetingPage = () => {
     accent: '#60A5FA'
   });
   const [scorecardTimePeriodPreference, setScorecardTimePeriodPreference] = useState('13_week_rolling');
-  const [rockDisplayPreference, setRockDisplayPreference] = useState('grouped_by_owner');
 
   // Computed values
   const currentIssues = issueTimeline === 'short_term' ? shortTermIssues : longTermIssues;
@@ -667,6 +673,7 @@ const WeeklyAccountabilityMeetingPage = () => {
   };
 
   const fetchIssuesData = async () => {
+    console.log('🔥 FETCHING ISSUES - teamId:', teamId);
     try {
       const cleanTeamId = (teamId === 'null' || teamId === 'undefined') ? null : teamId;
       const effectiveTeamId = getEffectiveTeamId(cleanTeamId, user);
@@ -677,8 +684,10 @@ const WeeklyAccountabilityMeetingPage = () => {
         issuesService.getIssues('long_term', false, effectiveTeamId)
       ]);
       
+      console.log('📋 ISSUES RESPONSE:', shortTermResponse, longTermResponse);
       const shortTermList = shortTermResponse.data?.issues || [];
       const longTermList = longTermResponse.data?.issues || [];
+      console.log('✅ SETTING ISSUES:', shortTermList.length, 'short-term,', longTermList.length, 'long-term');
       
       setShortTermIssues(shortTermList);
       setLongTermIssues(longTermList);
@@ -718,6 +727,7 @@ const WeeklyAccountabilityMeetingPage = () => {
   const loadInitialData = async () => {
     try {
       setLoading(true);
+      console.log('🚨 ABOUT TO CALL fetchPrioritiesData in loadInitialData');
       await Promise.all([
         fetchScorecardData(),
         fetchPrioritiesData(),
@@ -787,14 +797,20 @@ const WeeklyAccountabilityMeetingPage = () => {
   };
 
   const fetchPrioritiesData = async () => {
+    console.log('🔥🔥🔥 FETCHPRIORITIESDATA FUNCTION START 🔥🔥🔥');
     try {
       const orgId = user?.organizationId || user?.organization_id;
+      console.log('🔥 orgId:', orgId);
+      console.log('🔥 teamId from URL:', teamId);
       
       // Handle "null" string from URL params
       const cleanTeamId = (teamId === 'null' || teamId === 'undefined') ? null : teamId;
+      console.log('🔥 cleanTeamId after processing:', cleanTeamId);
       
       const effectiveTeamId = getEffectiveTeamId(cleanTeamId, user);
+      console.log('🔥 effectiveTeamId from function:', effectiveTeamId);
 
+      console.log('🔥 ABOUT TO CREATE COMPARISON OBJECT');
       
       const comparison = {
         urlTeamId: teamId,
@@ -803,6 +819,8 @@ const WeeklyAccountabilityMeetingPage = () => {
         areTheSame: cleanTeamId === effectiveTeamId
       };
       
+      console.log('🔥 COMPARISON OBJECT CREATED:', comparison);
+      console.log('🔍 Team ID comparison:', comparison);
 
       // Then use cleanTeamId as the fix proposes
       const response = await quarterlyPrioritiesService.getCurrentPriorities(orgId, cleanTeamId);
@@ -811,6 +829,8 @@ const WeeklyAccountabilityMeetingPage = () => {
       const companyPriorities = response.companyPriorities || [];
       const teamMemberPriorities = response.teamMemberPriorities || {};
       
+      console.log('🚨 Company priorities:', companyPriorities);
+      console.log('🚨 Team member priorities:', teamMemberPriorities);
       
       const allPriorities = [
         ...companyPriorities.map(p => ({ ...p, priority_type: 'company' })),
@@ -819,7 +839,10 @@ const WeeklyAccountabilityMeetingPage = () => {
         )
       ];
       
+      console.log('🚨 All priorities being set:', allPriorities);
+      console.log('🚨 First priority milestones:', allPriorities[0]?.milestones);
       
+      console.log('🔥🔥🔥 ABOUT TO RENDER PRIORITIES:', allPriorities);
       setPriorities(allPriorities);
       
       // Auto-expand all individual owner sections
@@ -842,7 +865,9 @@ const WeeklyAccountabilityMeetingPage = () => {
   // Load data on mount and when teamId changes - SIMPLIFIED
   useEffect(() => {
     // Just call it if we have teamId, don't overcomplicate
+    console.log('🚨 useEffect triggered with teamId:', teamId);
     if (teamId) {
+      console.log('🚨 ABOUT TO CALL fetchPrioritiesData from useEffect');
       fetchTodosData();
       fetchIssuesData();
       fetchScorecardData();
@@ -857,7 +882,7 @@ const WeeklyAccountabilityMeetingPage = () => {
   const meetingConcludedRef = useRef(false); // Prevent auto-join after meeting ends
   
   useEffect(() => {
-    /*console.log('🔍 Meeting auto-join check:', {
+    console.log('🔍 Meeting auto-join check:', {
       teamId: !!teamId,
       isConnected,
       hasJoinMeeting: !!joinMeeting,
@@ -1181,9 +1206,6 @@ const WeeklyAccountabilityMeetingPage = () => {
         
         // Set scorecard time period preference
         setScorecardTimePeriodPreference(orgData.scorecard_time_period_preference || '13_week_rolling');
-        
-        // Set rock display preference
-        setRockDisplayPreference(orgData.rock_display_preference || 'grouped_by_owner');
       } else {
         const savedTheme = getOrgTheme(orgId);
         if (savedTheme) {
@@ -2535,15 +2557,43 @@ const WeeklyAccountabilityMeetingPage = () => {
 
   // Pause/Resume handlers
   const handlePauseResume = async () => {
+    console.log('🔴🔴🔴 PAUSE BUTTON CLICKED - DEEP DEBUG START 🔴🔴🔴');
+    console.log('1️⃣ Initial State:', {
+      sessionId,
+      sessionLoading,
+      isPaused,
+      meetingStarted,
+      loading,
+      elapsedTime,
+      meetingStartTime
+    });
+    
+    console.log('2️⃣ User & Team Info:', {
+      user: user ? {
+        id: user.id,
+        email: user.email,
+        organizationId: user.organizationId || user.organization_id
+      } : 'NO USER',
+      teamId,
+      effectiveTeamId: teamId ? getEffectiveTeamId(teamId, user) : 'NO TEAM'
+    });
     
     // Check if sessionId exists
     if (!sessionId) {
       console.error('❌ NO SESSION ID - Cannot pause/resume');
+      console.log('Session state:', { 
+        sessionId, 
+        sessionLoading,
+        meetingStarted,
+        'sessionStorage.meetingActive': sessionStorage.getItem('meetingActive'),
+        'sessionStorage.meetingStartTime': sessionStorage.getItem('meetingStartTime')
+      });
       setError('Meeting session not found. Please refresh the page.');
       return;
     }
     
     if (sessionLoading) {
+      console.warn('⚠️ Session is still loading, cannot pause/resume yet');
       return;
     }
     
@@ -3367,9 +3417,27 @@ const WeeklyAccountabilityMeetingPage = () => {
                     }));
                   };
                   
-                  // Group priorities based on organization preference
-                  const groupedRocks = groupRocksByPreference(allPriorities, rockDisplayPreference, teamMembers);
+                  // Group all priorities by owner
+                  const prioritiesByOwner = allPriorities.reduce((acc, priority) => {
+                    const ownerId = priority.owner?.id || 'unassigned';
+                    const ownerName = priority.owner?.name || 'Unassigned';
+                    if (!acc[ownerId]) {
+                      acc[ownerId] = {
+                        id: ownerId,
+                        name: ownerName,
+                        priorities: []
+                      };
+                    }
+                    acc[ownerId].priorities.push(priority);
+                    return acc;
+                  }, {});
                   
+                  // Convert to array and sort by name
+                  const owners = Object.values(prioritiesByOwner).sort((a, b) => {
+                    if (a.id === 'unassigned') return 1;
+                    if (b.id === 'unassigned') return -1;
+                    return a.name.localeCompare(b.name);
+                  });
                   
                   if (allPriorities.length === 0) {
                     return (
@@ -3405,74 +3473,8 @@ const WeeklyAccountabilityMeetingPage = () => {
                         </Button>
                       </div>
                       
-                      {/* Render based on display preference */}
-                      {groupedRocks.displayMode === 'type' ? (
-                        // Grouped by Type: Company Rocks, then Individual Rocks
-                        groupedRocks.sections.map(section => (
-                          !section.isEmpty && (
-                            <div key={section.type} className="space-y-4">
-                              <div className="flex items-center gap-3 mb-4">
-                                <div className="h-px bg-gradient-to-r from-slate-300 to-transparent flex-1"></div>
-                                <h3 className="text-lg font-bold text-slate-700 px-4 py-2 bg-white/80 rounded-xl border border-slate-200 shadow-sm">
-                                  {getSectionHeader(section.type, methodology)}
-                                </h3>
-                                <div className="h-px bg-gradient-to-l from-slate-300 to-transparent flex-1"></div>
-                              </div>
-                              
-                              {section.rocks.map(priority => {
-                                const isComplete = priority.status === 'complete' || priority.status === 'completed';
-                                const isOnTrack = priority.status === 'on-track';
-                                const completedMilestones = (priority.milestones || []).filter(m => m.completed).length;
-                                const totalMilestones = (priority.milestones || []).length;
-                                const isExpanded = expandedPriorities[priority.id];
-                                const ownerName = priority.owner?.name || 'Unassigned';
-                                
-                                return (
-                                  <Card key={priority.id} className="bg-white border-slate-200 shadow-md hover:shadow-lg transition-shadow">
-                                    <CardContent className="p-4">
-                                      <div className="flex items-center justify-between py-2">
-                                        <div className="flex items-center gap-3 flex-1">
-                                          <button
-                                            onClick={(e) => togglePriorityExpansion(priority.id, e)}
-                                            className="p-1 hover:bg-gray-100 rounded transition-colors"
-                                          >
-                                            <ChevronDown className={`h-4 w-4 text-slate-400 transition-transform ${isExpanded ? 'rotate-180' : ''}`} />
-                                          </button>
-                                          
-                                          <div className={`w-3 h-3 rounded-full flex-shrink-0 ${
-                                            isComplete ? 'bg-green-500' : 
-                                            isOnTrack ? 'bg-yellow-500' : 'bg-red-500'
-                                          }`}></div>
-                                          
-                                          <div className="flex-1">
-                                            <div className="flex items-center gap-2">
-                                              <h4 className="font-semibold text-slate-900">{priority.title}</h4>
-                                              <span className="text-sm text-slate-500">({ownerName})</span>
-                                            </div>
-                                          </div>
-                                          
-                                          <div className="flex items-center gap-4 text-sm">
-                                            <div className="text-center">
-                                              <div className="font-medium">{completedMilestones}/{totalMilestones}</div>
-                                              <div className="text-xs text-slate-500">milestones</div>
-                                            </div>
-                                            <div className="text-right text-slate-600">
-                                              {priority.due_date ? format(new Date(priority.due_date), 'MMM d') : '-'}
-                                            </div>
-                                          </div>
-                                        </div>
-                                      </div>
-                                    </CardContent>
-                                  </Card>
-                                );
-                              })}
-                            </div>
-                          )
-                        ))
-                      ) : (
-                        // Grouped by Owner: Current behavior with Company badge
-                        Object.values(groupedRocks.byOwner || {}).sort((a, b) => a.name.localeCompare(b.name)).map(owner => (
-                        <Card key={owner.id || owner.name} className="bg-white border-slate-200 shadow-md hover:shadow-lg transition-shadow">
+                      {owners.map(owner => (
+                        <Card key={owner.id} className="bg-white border-slate-200 shadow-md hover:shadow-lg transition-shadow">
                           <CardHeader className="pb-3">
                             <div className="flex items-center justify-between">
                               <div className="flex items-center gap-3">
@@ -3483,16 +3485,7 @@ const WeeklyAccountabilityMeetingPage = () => {
                                 </Avatar>
                                 <div>
                                   <h3 className="text-lg font-bold text-slate-900">{owner.name}</h3>
-                                  <p className="text-sm text-slate-500">
-                                    {owner.rocks.length} {labels?.priority_singular || 'Rock'}{owner.rocks.length !== 1 ? 's' : ''}
-                                    {owner.companyRockCount > 0 && (
-                                      <span className="ml-2">
-                                        <Badge variant="outline" className="text-xs bg-blue-50 text-blue-700 border-blue-200">
-                                          {owner.companyRockCount} Company
-                                        </Badge>
-                                      </span>
-                                    )}
-                                  </p>
+                                  <p className="text-sm text-slate-500">{owner.priorities.length} {labels?.priority_singular || 'Rock'}{owner.priorities.length !== 1 ? 's' : ''}</p>
                                 </div>
                               </div>
                               <ChevronDown className="h-5 w-5 text-slate-400" />
@@ -3511,7 +3504,7 @@ const WeeklyAccountabilityMeetingPage = () => {
                               </div>
                               
                               {/* Rock Rows */}
-                              {owner.rocks.map(priority => {
+                              {owner.priorities.map(priority => {
                                 const isComplete = priority.status === 'complete' || priority.status === 'completed';
                                 const isOnTrack = priority.status === 'on-track';
                                 const completedMilestones = (priority.milestones || []).filter(m => m.completed).length;
@@ -3519,59 +3512,6 @@ const WeeklyAccountabilityMeetingPage = () => {
                                 const isExpanded = expandedPriorities[priority.id];
                                 
                                 return (
-                                  <div key={priority.id} className="group">
-                                    <div className="flex items-center px-3 py-3 hover:bg-slate-50 rounded-lg transition-colors">
-                                      <button
-                                        onClick={(e) => togglePriorityExpansion(priority.id, e)}
-                                        className="p-1 hover:bg-gray-100 rounded transition-colors"
-                                      >
-                                        <ChevronDown className={`h-4 w-4 text-slate-400 transition-transform ${isExpanded ? 'rotate-180' : ''}`} />
-                                      </button>
-                                      
-                                      <div className={`w-3 h-3 rounded-full ml-2 flex-shrink-0 ${
-                                        isComplete ? 'bg-green-500' : 
-                                        isOnTrack ? 'bg-yellow-500' : 'bg-red-500'
-                                      }`}></div>
-                                      
-                                      <div className="flex-1 ml-3">
-                                        <div className="flex items-center gap-2">
-                                          <span className="font-medium text-slate-900">{priority.title}</span>
-                                          {priority.is_company_rock && (
-                                            <Badge variant="outline" className="text-xs bg-blue-50 text-blue-700 border-blue-200">
-                                              Company
-                                            </Badge>
-                                          )}
-                                        </div>
-                                      </div>
-                                      
-                                      <div className="w-40 text-center">
-                                        <div className="text-sm font-medium">{completedMilestones}/{totalMilestones}</div>
-                                        <div className="text-xs text-slate-500">milestones</div>
-                                      </div>
-                                      
-                                      <div className="w-20 text-right text-sm text-slate-600">
-                                        {priority.due_date ? format(new Date(priority.due_date), 'MMM d') : '-'}
-                                      </div>
-                                      
-                                      <div className="w-8"></div>
-                                    </div>
-                                  </div>
-                                );
-                              })}
-                            </div>
-                          </CardContent>
-                        </Card>
-                        ))
-                      )}
-                    </div>
-                  );
-                })()}
-              </div>
-            )}
-          </div>
-        );
-
-      case 'headlines':
                                   <div key={priority.id} className="border-b border-slate-100 last:border-0">
                                     {/* Main Rock Row */}
                                     <ContextMenu>
@@ -3705,7 +3645,7 @@ const WeeklyAccountabilityMeetingPage = () => {
                                         <span className={`font-medium ${isComplete ? 'line-through text-slate-400' : 'text-slate-900'}`}>
                                           {priority.title}
                                         </span>
-                                        {priority.is_company_rock && (
+                                        {priority.priority_type === 'company' && (
                                           <Badge variant="outline" className="ml-2 text-xs">Company</Badge>
                                         )}
                                       </div>
