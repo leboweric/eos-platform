@@ -14,6 +14,7 @@ import {
 import { useAuthStore } from '../../stores/authStore';
 import { organizationService } from '../../services/organizationService';
 import { getOrgTheme, saveOrgTheme } from '../../utils/themeUtils';
+import { getDateRange, calculateAverageInRange } from '../../utils/scorecardDateUtils';
 
 const ScorecardTableClean = ({ 
   metrics = [], 
@@ -36,7 +37,8 @@ const ScorecardTableClean = ({
   onAddIssue, // New prop for adding metric issues
   noWrapper = false, // Add prop to disable Card wrapper
   maxPeriods = 10, // Control how many weeks/months to show
-  meetingMode = false // New prop for meeting display mode
+  meetingMode = false, // New prop for meeting display mode
+  scorecardTimePeriodPreference = '13_week_rolling' // Organization's time period preference
 }) => {
   const { user } = useAuthStore();
   const [themeColors, setThemeColors] = useState({
@@ -376,7 +378,11 @@ const ScorecardTableClean = ({
                 
                 {showAverage ? (
                   <th className={'text-center font-medium text-gray-700 ' + (meetingMode ? 'px-2 py-2 text-sm bg-gray-100' : 'px-1 text-[10px] border-l border-gray-200')}>
-                    13w Avg
+                    {(() => {
+                      const { label } = getDateRange(scorecardTimePeriodPreference);
+                      // Shorten labels for column header
+                      return label.replace(' Average', '').replace('13-Week', '13w').replace('4-Week', '4w');
+                    })()}
                   </th>
                 ) : null}
                 
@@ -405,39 +411,12 @@ const ScorecardTableClean = ({
             </thead>
             <tbody>
               {metrics.map((metric, metricIndex) => {
-                // Calculate average based on last 13 weeks of data
-                const getLast13WeeksScores = () => {
-                  const thirteenWeekDates = [];
-                  const today = new Date();
-                  
-                  // Generate dates for the last 13 weeks
-                  for (let i = 12; i >= 0; i--) {
-                    const weekStart = new Date(today);
-                    weekStart.setDate(today.getDate() - (i * 7));
-                    const mondayOfWeek = getWeekStartDate(weekStart);
-                    thirteenWeekDates.push(mondayOfWeek.toISOString().split('T')[0]);
-                  }
-                  
-                  return thirteenWeekDates
-                    .map(date => {
-                      const scoreData = scores[metric.id]?.[date];
-                      return (typeof scoreData === 'object' && scoreData !== null) ? scoreData?.value : scoreData;
-                    })
-                    .filter(score => score !== undefined && score !== null && score !== '');
-                };
-                
-                const averageScores = type === 'weekly' ? getLast13WeeksScores() : 
-                  // For monthly, use visible periods for average
-                  periodDates
-                    .map(periodDate => {
-                      const scoreData = scores[metric.id]?.[periodDate];
-                      return (typeof scoreData === 'object' && scoreData !== null) ? scoreData?.value : scoreData;
-                    })
-                    .filter(score => score !== undefined && score !== null && score !== '');
-                
-                const average = averageScores.length > 0 
-                  ? averageScores.reduce((sum, score) => sum + parseFloat(score), 0) / averageScores.length 
-                  : null;
+                // Calculate average based on organization's time period preference
+                const average = (() => {
+                  const { startDate, endDate } = getDateRange(scorecardTimePeriodPreference);
+                  const metricScores = scores[metric.id] || {};
+                  return calculateAverageInRange(metricScores, startDate, endDate);
+                })();
                 
                 // For total, still use only visible periods
                 const visibleScores = periodDates

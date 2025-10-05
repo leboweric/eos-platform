@@ -27,7 +27,11 @@ const defaultTerminology = {
   year_label: 'Year',
   organization_label: 'Organization',
   team_label: 'Team',
-  department_label: 'Department'
+  department_label: 'Department',
+  // Scorecard time period labels (Adaptive Framework Technology)
+  scorecard_13_week_label: '13-Week Average',
+  scorecard_quarter_label: 'Quarter Average',
+  scorecard_4_week_label: '4-Week Average'
 };
 
 export const TerminologyProvider = ({ children }) => {
@@ -125,6 +129,20 @@ export const TerminologyProvider = ({ children }) => {
     return terminology[key] || defaultTerminology[key] || key;
   };
 
+  // Helper function to get scorecard time period label based on preference
+  const getScorecardTimePeriodLabel = (preference) => {
+    switch (preference) {
+      case '13_week_rolling':
+        return getTerm('scorecard_13_week_label');
+      case 'current_quarter':
+        return getTerm('scorecard_quarter_label');
+      case 'last_4_weeks':
+        return getTerm('scorecard_4_week_label');
+      default:
+        return getTerm('scorecard_13_week_label');
+    }
+  };
+
   const value = {
     terminology,
     loading,
@@ -134,6 +152,7 @@ export const TerminologyProvider = ({ children }) => {
     resetToDefaults,
     fetchTerminology,
     getTerm,
+    getScorecardTimePeriodLabel,
     // Convenience getters for common terms
     labels: {
       // Primary labels (used in code with these names)
@@ -159,6 +178,10 @@ export const TerminologyProvider = ({ children }) => {
       department_label: getTerm('department_label'),
       processes_label: getTerm('processes_label'),
       process_singular: getTerm('process_singular'),
+      // Scorecard time period labels
+      scorecard_13_week_label: getTerm('scorecard_13_week_label'),
+      scorecard_quarter_label: getTerm('scorecard_quarter_label'),
+      scorecard_4_week_label: getTerm('scorecard_4_week_label'),
       
       // Shortened aliases for backward compatibility
       priorities: getTerm('priorities_label'),

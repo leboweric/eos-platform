@@ -25,7 +25,7 @@ export const getOrganization = async (req, res) => {
     const { organizationId } = req.user;
 
     const result = await query(
-      'SELECT id, name, slug, logo_url, logo_mime_type, logo_updated_at, logo_size, created_at, revenue_metric_type, revenue_metric_label, theme_primary_color, theme_secondary_color, theme_accent_color FROM organizations WHERE id = $1',
+      'SELECT id, name, slug, logo_url, logo_mime_type, logo_updated_at, logo_size, created_at, revenue_metric_type, revenue_metric_label, theme_primary_color, theme_secondary_color, theme_accent_color, scorecard_time_period_preference FROM organizations WHERE id = $1',
       [organizationId]
     );
 
@@ -47,7 +47,7 @@ export const getOrganization = async (req, res) => {
 export const updateOrganization = async (req, res) => {
   try {
     const { organizationId, role, is_consultant, id: userId } = req.user;
-    const { name, revenueMetricType, revenueMetricLabel, logoSize, themePrimaryColor, themeSecondaryColor, themeAccentColor } = req.body;
+    const { name, revenueMetricType, revenueMetricLabel, logoSize, themePrimaryColor, themeSecondaryColor, themeAccentColor, scorecardTimePeriodPreference } = req.body;
 
     // Check permissions: admin or consultant with access to this organization
     let hasPermission = role === 'admin';
@@ -78,6 +78,12 @@ export const updateOrganization = async (req, res) => {
     // If custom type, require a label
     if (revenueMetricType === 'custom' && !revenueMetricLabel) {
       return res.status(400).json({ error: 'Custom revenue metric label is required' });
+    }
+
+    // Validate scorecard time period preference
+    const validTimePeriods = ['13_week_rolling', 'current_quarter', 'last_4_weeks'];
+    if (scorecardTimePeriodPreference && !validTimePeriods.includes(scorecardTimePeriodPreference)) {
+      return res.status(400).json({ error: 'Invalid scorecard time period preference. Must be one of: 13_week_rolling, current_quarter, last_4_weeks' });
     }
 
     // Build dynamic update query
@@ -127,6 +133,13 @@ export const updateOrganization = async (req, res) => {
       values.push(themeAccentColor);
     }
 
+    // Add scorecard time period preference if provided
+    if (scorecardTimePeriodPreference !== undefined) {
+      paramCount++;
+      updateFields.push(`scorecard_time_period_preference = $${paramCount}`);
+      values.push(scorecardTimePeriodPreference);
+    }
+
     // Add organization ID as last parameter
     paramCount++;
     values.push(organizationId);
@@ -136,7 +149,7 @@ export const updateOrganization = async (req, res) => {
       `UPDATE organizations 
        SET ${updateFields.join(', ')}, updated_at = NOW() 
        WHERE id = $${paramCount} 
-       RETURNING id, name, slug, revenue_metric_type, revenue_metric_label, logo_size, theme_primary_color, theme_secondary_color, theme_accent_color`,
+       RETURNING id, name, slug, revenue_metric_type, revenue_metric_label, logo_size, theme_primary_color, theme_secondary_color, theme_accent_color, scorecard_time_period_preference`,
       values
     );
 

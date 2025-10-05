@@ -30,7 +30,8 @@ const OrganizationSettings = () => {
     revenue_metric_label: '',
     theme_primary_color: '#3B82F6',
     theme_secondary_color: '#1E40AF',
-    theme_accent_color: '#60A5FA'
+    theme_accent_color: '#60A5FA',
+    scorecard_time_period_preference: '13_week_rolling'
   });
   const [logoPreview, setLogoPreview] = useState(null);
   const [selectedFile, setSelectedFile] = useState(null);
@@ -132,7 +133,8 @@ const OrganizationSettings = () => {
       const response = await organizationService.updateOrganization({
         name: organizationData?.name || '',
         revenueMetricType: organizationData?.revenue_metric_type,
-        revenueMetricLabel: organizationData?.revenue_metric_label
+        revenueMetricLabel: organizationData?.revenue_metric_label,
+        scorecardTimePeriodPreference: organizationData?.scorecard_time_period_preference
       });
 
       setSuccess('Organization updated successfully');
@@ -731,6 +733,66 @@ const OrganizationSettings = () => {
                 <>
                   <Download className="mr-2 h-4 w-4" />
                   Export to Excel
+                </>
+              )}
+            </Button>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Scorecard Display Preferences Section */}
+      <Card className="bg-white/80 backdrop-blur-sm border border-white/50 rounded-2xl shadow-xl">
+        <CardHeader className="bg-gradient-to-r from-white/90 to-white/70 backdrop-blur-sm border-b border-white/20">
+          <CardTitle className="text-xl font-bold text-slate-900">Scorecard Display Preferences</CardTitle>
+          <CardDescription className="text-slate-600 font-medium">
+            Configure how your team views scorecard metrics during meetings
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="space-y-2">
+            <Label htmlFor="scorecardTimePeriod">Time Period Display</Label>
+            <Select
+              value={organizationData?.scorecard_time_period_preference || '13_week_rolling'}
+              onValueChange={(value) => setOrganizationData({ ...organizationData, scorecard_time_period_preference: value })}
+            >
+              <SelectTrigger id="scorecardTimePeriod" className="bg-white/80 backdrop-blur-sm border-white/20 rounded-xl shadow-sm">
+                <SelectValue placeholder="Select time period preference" />
+              </SelectTrigger>
+              <SelectContent className="bg-white/95 backdrop-blur-sm border-white/20 rounded-xl shadow-xl">
+                <SelectItem value="13_week_rolling">13-Week Rolling Average (EOS Standard)</SelectItem>
+                <SelectItem value="current_quarter">Current Quarter</SelectItem>
+                <SelectItem value="last_4_weeks">Last 4 Weeks</SelectItem>
+              </SelectContent>
+            </Select>
+            <p className="text-sm text-slate-500">
+              Choose how your team thinks about scorecard metrics. This affects what data is shown during L10 meetings and scorecard views.
+            </p>
+          </div>
+
+          <div className="bg-white/90 backdrop-blur-sm p-4 rounded-xl border border-blue-200/50 shadow-sm">
+            <h4 className="font-bold mb-2 text-slate-900">Time Period Options:</h4>
+            <ul className="text-sm text-slate-600 space-y-1 list-disc list-inside font-medium">
+              <li><strong>13-Week Rolling:</strong> EOS standard - shows performance over the last 13 weeks</li>
+              <li><strong>Current Quarter:</strong> Financial approach - shows Q1, Q2, Q3, or Q4 data</li>
+              <li><strong>Last 4 Weeks:</strong> Short-term focus - shows recent 4-week performance</li>
+            </ul>
+          </div>
+
+          <div className="pt-2">
+            <Button 
+              onClick={handleSubmit}
+              disabled={saving}
+              className="bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white rounded-xl shadow-lg hover:shadow-xl transition-all duration-200 transform hover:scale-[1.02]"
+            >
+              {saving ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Saving...
+                </>
+              ) : (
+                <>
+                  <Save className="mr-2 h-4 w-4" />
+                  Save Preferences
                 </>
               )}
             </Button>

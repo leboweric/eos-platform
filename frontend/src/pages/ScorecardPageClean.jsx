@@ -6,6 +6,7 @@ import { organizationService } from '../services/organizationService';
 import { getOrgTheme, saveOrgTheme } from '../utils/themeUtils';
 import { useDepartment } from '../contexts/DepartmentContext';
 import { LEADERSHIP_TEAM_ID } from '../utils/teamUtils';
+import { getDateRange, calculateAverageInRange } from '../utils/scorecardDateUtils';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -53,6 +54,7 @@ const ScorecardPageClean = () => {
     secondary: '#1E40AF',
     accent: '#60A5FA'
   });
+  const [scorecardTimePeriodPreference, setScorecardTimePeriodPreference] = useState('13_week_rolling');
   
   // Scorecard data
   const [metrics, setMetrics] = useState([]);
@@ -209,6 +211,9 @@ const ScorecardPageClean = () => {
         };
         setThemeColors(theme);
         saveOrgTheme(orgId, theme);
+        
+        // Set scorecard time period preference
+        setScorecardTimePeriodPreference(orgData.scorecard_time_period_preference || '13_week_rolling');
       }
     } catch (error) {
       console.error('Failed to fetch organization theme:', error);
@@ -742,6 +747,7 @@ const ScorecardPageClean = () => {
                 onMetricUpdate={handleEditMetric}
                 onMetricDelete={handleDeleteMetric}
                 onMetricShare={handleMetricShare}
+                scorecardTimePeriodPreference={scorecardTimePeriodPreference}
               />
             )}
             </div>
@@ -794,6 +800,7 @@ const ScorecardPageClean = () => {
                 onMetricUpdate={handleEditMetric}
                 onMetricDelete={handleDeleteMetric}
                 onMetricShare={handleMetricShare}
+                scorecardTimePeriodPreference={scorecardTimePeriodPreference}
               />
             )}
             </div>

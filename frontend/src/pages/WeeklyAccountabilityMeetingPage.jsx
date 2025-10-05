@@ -556,6 +556,7 @@ const WeeklyAccountabilityMeetingPage = () => {
     secondary: '#1E40AF',
     accent: '#60A5FA'
   });
+  const [scorecardTimePeriodPreference, setScorecardTimePeriodPreference] = useState('13_week_rolling');
 
   // Computed values
   const currentIssues = issueTimeline === 'short_term' ? shortTermIssues : longTermIssues;
@@ -1199,6 +1200,9 @@ const WeeklyAccountabilityMeetingPage = () => {
         };
         setThemeColors(theme);
         saveOrgTheme(orgId, theme);
+        
+        // Set scorecard time period preference
+        setScorecardTimePeriodPreference(orgData.scorecard_time_period_preference || '13_week_rolling');
       } else {
         const savedTheme = getOrgTheme(orgId);
         if (savedTheme) {
@@ -3342,6 +3346,7 @@ const WeeklyAccountabilityMeetingPage = () => {
                   noWrapper={true}
                   maxPeriods={4}
                   meetingMode={true}
+                  scorecardTimePeriodPreference={scorecardTimePeriodPreference}
                 />
               </>
             )}
