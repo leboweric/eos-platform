@@ -82,6 +82,7 @@ import { cascadingMessagesService } from '../services/cascadingMessagesService';
 import { teamsService } from '../services/teamsService';
 import { useTerminology } from '../contexts/TerminologyContext';
 import { getEffectiveTeamId } from '../utils/teamUtils';
+import { groupRocksByPreference, getSectionHeader } from '../utils/rockGroupingUtils';
 import FloatingTimer from '../components/meetings/FloatingTimer';
 
 const WeeklyAccountabilityMeetingPage = () => {
@@ -560,6 +561,7 @@ const WeeklyAccountabilityMeetingPage = () => {
     accent: '#60A5FA'
   });
   const [scorecardTimePeriodPreference, setScorecardTimePeriodPreference] = useState('13_week_rolling');
+  const [rockDisplayPreference, setRockDisplayPreference] = useState('grouped_by_owner');
 
   // Computed values
   const currentIssues = issueTimeline === 'short_term' ? shortTermIssues : longTermIssues;
@@ -1206,6 +1208,9 @@ const WeeklyAccountabilityMeetingPage = () => {
         
         // Set scorecard time period preference
         setScorecardTimePeriodPreference(orgData.scorecard_time_period_preference || '13_week_rolling');
+        
+        // Set rock display preference
+        setRockDisplayPreference(orgData.rock_display_preference || 'grouped_by_owner');
       } else {
         const savedTheme = getOrgTheme(orgId);
         if (savedTheme) {
@@ -3417,27 +3422,8 @@ const WeeklyAccountabilityMeetingPage = () => {
                     }));
                   };
                   
-                  // Group all priorities by owner
-                  const prioritiesByOwner = allPriorities.reduce((acc, priority) => {
-                    const ownerId = priority.owner?.id || 'unassigned';
-                    const ownerName = priority.owner?.name || 'Unassigned';
-                    if (!acc[ownerId]) {
-                      acc[ownerId] = {
-                        id: ownerId,
-                        name: ownerName,
-                        priorities: []
-                      };
-                    }
-                    acc[ownerId].priorities.push(priority);
-                    return acc;
-                  }, {});
-                  
-                  // Convert to array and sort by name
-                  const owners = Object.values(prioritiesByOwner).sort((a, b) => {
-                    if (a.id === 'unassigned') return 1;
-                    if (b.id === 'unassigned') return -1;
-                    return a.name.localeCompare(b.name);
-                  });
+                  // Use the rock grouping utility to support both display modes
+                  const groupedRocks = groupRocksByPreference(allPriorities, rockDisplayPreference, teamMembers);
                   
                   if (allPriorities.length === 0) {
                     return (
@@ -3473,38 +3459,436 @@ const WeeklyAccountabilityMeetingPage = () => {
                         </Button>
                       </div>
                       
-                      {owners.map(owner => (
-                        <Card key={owner.id} className="bg-white border-slate-200 shadow-md hover:shadow-lg transition-shadow">
-                          <CardHeader className="pb-3">
-                            <div className="flex items-center justify-between">
-                              <div className="flex items-center gap-3">
-                                <Avatar className="h-10 w-10 border-2 border-slate-100">
-                                  <AvatarFallback className="bg-gradient-to-br from-slate-100 to-slate-200 text-slate-700 font-semibold">
-                                    {owner.name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2)}
-                                  </AvatarFallback>
-                                </Avatar>
-                                <div>
-                                  <h3 className="text-lg font-bold text-slate-900">{owner.name}</h3>
-                                  <p className="text-sm text-slate-500">{owner.priorities.length} {labels?.priority_singular || 'Rock'}{owner.priorities.length !== 1 ? 's' : ''}</p>
-                                </div>
-                              </div>
-                              <ChevronDown className="h-5 w-5 text-slate-400" />
-                            </div>
-                          </CardHeader>
-                          <CardContent className="pt-0">
-                            <div className="space-y-1">
-                              {/* Header Row */}
-                              <div className="flex items-center px-3 py-2 text-xs font-medium text-slate-500 uppercase tracking-wider border-b border-slate-100">
-                                <div className="w-8"></div>
-                                <div className="w-10 ml-2">Status</div>
-                                <div className="flex-1 ml-3">Title</div>
-                                <div className="w-40 text-center">Milestone Progress</div>
-                                <div className="w-20 text-right">Due By</div>
-                                <div className="w-8"></div>
-                              </div>
+                      {groupedRocks.displayMode === 'type' ? (
+                        // Grouped by Type: Hybrid Structure
+                        <div className="space-y-6">
+                          {/* Company Rocks: Single flat list with owner names */}
+                          {(() => {
+                            const companyRocks = groupedRocks.sections.find(s => s.type === 'company');
+                            if (!companyRocks || companyRocks.isEmpty) return null;
+                            
+                            // Create owner lookup for company rocks
+                            const ownerLookup = teamMembers.reduce((acc, member) => {
+                              acc[member.id] = member.name || member.first_name + ' ' + member.last_name || 'Unknown';
+                              return acc;
+                            }, {});
+                            
+                            return (
+                              <Card key="company-rocks" className="bg-white border-slate-200 shadow-md hover:shadow-lg transition-shadow">
+                                <CardHeader className="pb-3">
+                                  <div className="flex items-center justify-between">
+                                    <div className="flex items-center gap-3">
+                                      <div className="h-10 w-10 border-2 border-slate-100 rounded-full bg-gradient-to-br from-slate-100 to-slate-200 flex items-center justify-center">
+                                        <span className="text-slate-700 font-semibold text-sm">🏢</span>
+                                      </div>
+                                      <div>
+                                        <h3 className="text-lg font-bold text-slate-900">{getSectionHeader('company', 'eos')}</h3>
+                                        <p className="text-sm text-slate-500">{companyRocks.rocks.length} {labels?.priority_singular || 'Rock'}{companyRocks.rocks.length !== 1 ? 's' : ''}</p>
+                                      </div>
+                                    </div>
+                                    <ChevronDown className="h-5 w-5 text-slate-400" />
+                                  </div>
+                                </CardHeader>
+                                <CardContent className="pt-0">
+                                  <div className="space-y-1">
+                                    {/* Header Row */}
+                                    <div className="flex items-center px-3 py-2 text-xs font-medium text-slate-500 uppercase tracking-wider border-b border-slate-100">
+                                      <div className="w-8"></div>
+                                      <div className="w-10 ml-2">Status</div>
+                                      <div className="flex-1 ml-3">Title</div>
+                                      <div className="w-32 text-center">Owner</div>
+                                      <div className="w-40 text-center">Milestone Progress</div>
+                                      <div className="w-20 text-right">Due By</div>
+                                      <div className="w-8"></div>
+                                    </div>
+                                    
+                                    {/* Company Rock Rows */}
+                                    {companyRocks.rocks.map(priority => {
+                                      const isComplete = priority.status === 'complete' || priority.status === 'completed';
+                                      const isOnTrack = priority.status === 'on-track';
+                                      const completedMilestones = (priority.milestones || []).filter(m => m.completed).length;
+                                      const totalMilestones = (priority.milestones || []).length;
+                                      const isExpanded = expandedPriorities[priority.id];
+                                      const ownerName = ownerLookup[priority.owner?.id] || priority.owner?.name || 'Unassigned';
+                                      
+                                      return (
+                                        <div key={priority.id} className="border-b border-slate-100 last:border-0">
+                                          {/* Main Rock Row */}
+                                          <ContextMenu>
+                                            <ContextMenuTrigger asChild>
+                                              <div className="flex items-center px-3 py-3 hover:bg-slate-50 rounded-lg transition-colors group cursor-context-menu">
+                                                {/* Expand Arrow */}
+                                                <div className="w-8 flex items-center justify-center">
+                                                  {totalMilestones > 0 ? (
+                                                    <div 
+                                                      className="cursor-pointer"
+                                                      onClick={(e) => togglePriorityExpansion(priority.id, e)}
+                                                    >
+                                                      <ChevronRight 
+                                                        className={`h-4 w-4 text-slate-400 group-hover:text-slate-600 transition-transform duration-200 ${
+                                                          isExpanded ? 'rotate-90' : ''
+                                                        }`} 
+                                                      />
+                                                    </div>
+                                                  ) : (
+                                                    <div className="w-4 h-4" />
+                                                  )}
+                                                </div>
+                                                
+                                                {/* Status Indicator */}
+                                                <div className="w-10 ml-2 flex items-center relative status-dropdown">
+                                                  <div 
+                                                    className="flex items-center justify-center w-7 h-7 rounded-full cursor-pointer hover:scale-110 transition-transform"
+                                                    style={{
+                                                      backgroundColor: 
+                                                        priority.status === 'cancelled' ? '#6B728020' :
+                                                        isComplete ? themeColors.primary + '20' : 
+                                                        (isOnTrack ? '#10B98120' : '#EF444420'),
+                                                      border: `2px solid ${
+                                                        priority.status === 'cancelled' ? '#6B7280' :
+                                                        isComplete ? themeColors.primary : 
+                                                        (isOnTrack ? '#10B981' : '#EF4444')
+                                                      }`
+                                                    }}
+                                                    onClick={(e) => {
+                                                      e.stopPropagation();
+                                                      setOpenStatusDropdown(openStatusDropdown === priority.id ? null : priority.id);
+                                                    }}
+                                                  >
+                                                    {priority.status === 'cancelled' ? (
+                                                      <X className="h-4 w-4 text-gray-500" />
+                                                    ) : isComplete ? (
+                                                      <CheckCircle className="h-4 w-4" style={{ color: themeColors.primary }} />
+                                                    ) : isOnTrack ? (
+                                                      <Check className="h-4 w-4 text-green-600" />
+                                                    ) : (
+                                                      <X className="h-4 w-4 text-red-600" />
+                                                    )}
+                                                  </div>
+                                                </div>
+                                                
+                                                {/* Title */}
+                                                <div 
+                                                  className="flex-1 ml-3 cursor-pointer"
+                                                  onClick={() => {
+                                                    setSelectedPriority(priority);
+                                                    setShowPriorityDialog(true);
+                                                  }}
+                                                >
+                                                  <span className={`font-medium ${isComplete ? 'line-through text-slate-400' : 'text-slate-900'}`}>
+                                                    {priority.title}
+                                                  </span>
+                                                </div>
+                                                
+                                                {/* Owner */}
+                                                <div className="w-32 text-center">
+                                                  <span className="text-sm text-slate-600">{ownerName}</span>
+                                                </div>
+                                                
+                                                {/* Milestone Progress */}
+                                                <div className="w-40 flex items-center justify-center px-2">
+                                                  {totalMilestones > 0 ? (
+                                                    <div className="flex items-center gap-2 w-full">
+                                                      <div className="flex-1 bg-slate-200 rounded-full h-2 overflow-hidden">
+                                                        <div 
+                                                          className="h-full bg-green-500 rounded-full transition-all"
+                                                          style={{
+                                                            width: `${(completedMilestones / totalMilestones) * 100}%`
+                                                          }}
+                                                        />
+                                                      </div>
+                                                      <span className="text-xs text-slate-600 font-medium whitespace-nowrap">
+                                                        {completedMilestones}/{totalMilestones}
+                                                      </span>
+                                                    </div>
+                                                  ) : (
+                                                    <span className="text-sm text-slate-400">-</span>
+                                                  )}
+                                                </div>
+                                                
+                                                {/* Due Date */}
+                                                <div className="w-20 text-right">
+                                                  <span className="text-sm text-slate-600">
+                                                    {priority.dueDate ? format(new Date(priority.dueDate), 'MMM d') : '-'}
+                                                  </span>
+                                                </div>
+                                                
+                                                {/* Actions */}
+                                                <div className="w-8 flex items-center justify-center">
+                                                  <Button
+                                                    variant="ghost"
+                                                    size="sm"
+                                                    className="opacity-0 group-hover:opacity-100 transition-opacity"
+                                                    onClick={() => {
+                                                      setSelectedPriority(priority);
+                                                      setShowPriorityDialog(true);
+                                                    }}
+                                                  >
+                                                    <Edit className="h-4 w-4 text-slate-400" />
+                                                  </Button>
+                                                </div>
+                                              </div>
+                                            </ContextMenuTrigger>
+                                            <ContextMenuContent>
+                                              <ContextMenuItem onClick={() => {
+                                                setSelectedPriority(priority);
+                                                setShowPriorityDialog(true);
+                                              }}>
+                                                <Edit3 className="mr-2 h-4 w-4" />
+                                                Edit Priority
+                                              </ContextMenuItem>
+                                            </ContextMenuContent>
+                                          </ContextMenu>
+                                        </div>
+                                      );
+                                    })}
+                                  </div>
+                                </CardContent>
+                              </Card>
+                            );
+                          })()}
+                          
+                          {/* Individual Rocks: Person-grouped cards */}
+                          {(() => {
+                            const individualRocks = groupedRocks.sections.find(s => s.type === 'individual');
+                            if (!individualRocks || individualRocks.isEmpty) return null;
+                            
+                            // Create owner lookup and group individual rocks by owner
+                            const ownerLookup = teamMembers.reduce((acc, member) => {
+                              acc[member.id] = member.name || member.first_name + ' ' + member.last_name || 'Unknown';
+                              return acc;
+                            }, {});
+                            
+                            const grouped = individualRocks.rocks.reduce((acc, rock) => {
+                              const ownerId = rock.owner?.id || 'unassigned';
+                              const ownerName = ownerLookup[ownerId] || rock.owner?.name || 'Unassigned';
                               
-                              {/* Rock Rows */}
-                              {owner.priorities.map(priority => {
+                              if (!acc[ownerId]) {
+                                acc[ownerId] = {
+                                  id: ownerId,
+                                  name: ownerName,
+                                  priorities: []
+                                };
+                              }
+                              
+                              acc[ownerId].priorities.push(rock);
+                              return acc;
+                            }, {});
+                            
+                            const owners = Object.values(grouped).sort((a, b) => {
+                              if (a.id === 'unassigned') return 1;
+                              if (b.id === 'unassigned') return -1;
+                              return a.name.localeCompare(b.name);
+                            });
+                            
+                            return owners.map(owner => (
+                              <Card key={owner.id} className="bg-white border-slate-200 shadow-md hover:shadow-lg transition-shadow">
+                                <CardHeader className="pb-3">
+                                  <div className="flex items-center justify-between">
+                                    <div className="flex items-center gap-3">
+                                      <Avatar className="h-10 w-10 border-2 border-slate-100">
+                                        <AvatarFallback className="bg-gradient-to-br from-slate-100 to-slate-200 text-slate-700 font-semibold">
+                                          {owner.name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2)}
+                                        </AvatarFallback>
+                                      </Avatar>
+                                      <div>
+                                        <h3 className="text-lg font-bold text-slate-900">{owner.name}</h3>
+                                        <p className="text-sm text-slate-500">{owner.priorities.length} {labels?.priority_singular || 'Rock'}{owner.priorities.length !== 1 ? 's' : ''}</p>
+                                      </div>
+                                    </div>
+                                    <ChevronDown className="h-5 w-5 text-slate-400" />
+                                  </div>
+                                </CardHeader>
+                                <CardContent className="pt-0">
+                                  <div className="space-y-1">
+                                    {/* Header Row */}
+                                    <div className="flex items-center px-3 py-2 text-xs font-medium text-slate-500 uppercase tracking-wider border-b border-slate-100">
+                                      <div className="w-8"></div>
+                                      <div className="w-10 ml-2">Status</div>
+                                      <div className="flex-1 ml-3">Title</div>
+                                      <div className="w-40 text-center">Milestone Progress</div>
+                                      <div className="w-20 text-right">Due By</div>
+                                      <div className="w-8"></div>
+                                    </div>
+                                    
+                                    {/* Rock Rows */}
+                                    {owner.priorities.map(priority => {
+                                      const isComplete = priority.status === 'complete' || priority.status === 'completed';
+                                      const isOnTrack = priority.status === 'on-track';
+                                      const completedMilestones = (priority.milestones || []).filter(m => m.completed).length;
+                                      const totalMilestones = (priority.milestones || []).length;
+                                      const isExpanded = expandedPriorities[priority.id];
+                                      
+                                      return (
+                                        <div key={priority.id} className="border-b border-slate-100 last:border-0">
+                                          {/* Main Rock Row */}
+                                          <ContextMenu>
+                                            <ContextMenuTrigger asChild>
+                                              <div className="flex items-center px-3 py-3 hover:bg-slate-50 rounded-lg transition-colors group cursor-context-menu">
+                                                {/* Expand Arrow */}
+                                                <div className="w-8 flex items-center justify-center">
+                                                  {totalMilestones > 0 ? (
+                                                    <div 
+                                                      className="cursor-pointer"
+                                                      onClick={(e) => togglePriorityExpansion(priority.id, e)}
+                                                    >
+                                                      <ChevronRight 
+                                                        className={`h-4 w-4 text-slate-400 group-hover:text-slate-600 transition-transform duration-200 ${
+                                                          isExpanded ? 'rotate-90' : ''
+                                                        }`} 
+                                                      />
+                                                    </div>
+                                                  ) : (
+                                                    <div className="w-4 h-4" />
+                                                  )}
+                                                </div>
+                                                
+                                                {/* Status Indicator */}
+                                                <div className="w-10 ml-2 flex items-center relative status-dropdown">
+                                                  <div 
+                                                    className="flex items-center justify-center w-7 h-7 rounded-full cursor-pointer hover:scale-110 transition-transform"
+                                                    style={{
+                                                      backgroundColor: 
+                                                        priority.status === 'cancelled' ? '#6B728020' :
+                                                        isComplete ? themeColors.primary + '20' : 
+                                                        (isOnTrack ? '#10B98120' : '#EF444420'),
+                                                      border: `2px solid ${
+                                                        priority.status === 'cancelled' ? '#6B7280' :
+                                                        isComplete ? themeColors.primary : 
+                                                        (isOnTrack ? '#10B981' : '#EF4444')
+                                                      }`
+                                                    }}
+                                                    onClick={(e) => {
+                                                      e.stopPropagation();
+                                                      setOpenStatusDropdown(openStatusDropdown === priority.id ? null : priority.id);
+                                                    }}
+                                                  >
+                                                    {priority.status === 'cancelled' ? (
+                                                      <X className="h-4 w-4 text-gray-500" />
+                                                    ) : isComplete ? (
+                                                      <CheckCircle className="h-4 w-4" style={{ color: themeColors.primary }} />
+                                                    ) : isOnTrack ? (
+                                                      <Check className="h-4 w-4 text-green-600" />
+                                                    ) : (
+                                                      <X className="h-4 w-4 text-red-600" />
+                                                    )}
+                                                  </div>
+                                                </div>
+                                                
+                                                {/* Title */}
+                                                <div 
+                                                  className="flex-1 ml-3 cursor-pointer"
+                                                  onClick={() => {
+                                                    setSelectedPriority(priority);
+                                                    setShowPriorityDialog(true);
+                                                  }}
+                                                >
+                                                  <span className={`font-medium ${isComplete ? 'line-through text-slate-400' : 'text-slate-900'}`}>
+                                                    {priority.title}
+                                                  </span>
+                                                </div>
+                                                
+                                                {/* Milestone Progress */}
+                                                <div className="w-40 flex items-center justify-center px-2">
+                                                  {totalMilestones > 0 ? (
+                                                    <div className="flex items-center gap-2 w-full">
+                                                      <div className="flex-1 bg-slate-200 rounded-full h-2 overflow-hidden">
+                                                        <div 
+                                                          className="h-full bg-green-500 rounded-full transition-all"
+                                                          style={{
+                                                            width: `${(completedMilestones / totalMilestones) * 100}%`
+                                                          }}
+                                                        />
+                                                      </div>
+                                                      <span className="text-xs text-slate-600 font-medium whitespace-nowrap">
+                                                        {completedMilestones}/{totalMilestones}
+                                                      </span>
+                                                    </div>
+                                                  ) : (
+                                                    <span className="text-sm text-slate-400">-</span>
+                                                  )}
+                                                </div>
+                                                
+                                                {/* Due Date */}
+                                                <div className="w-20 text-right">
+                                                  <span className="text-sm text-slate-600">
+                                                    {priority.dueDate ? format(new Date(priority.dueDate), 'MMM d') : '-'}
+                                                  </span>
+                                                </div>
+                                                
+                                                {/* Actions */}
+                                                <div className="w-8 flex items-center justify-center">
+                                                  <Button
+                                                    variant="ghost"
+                                                    size="sm"
+                                                    className="opacity-0 group-hover:opacity-100 transition-opacity"
+                                                    onClick={() => {
+                                                      setSelectedPriority(priority);
+                                                      setShowPriorityDialog(true);
+                                                    }}
+                                                  >
+                                                    <Edit className="h-4 w-4 text-slate-400" />
+                                                  </Button>
+                                                </div>
+                                              </div>
+                                            </ContextMenuTrigger>
+                                            <ContextMenuContent>
+                                              <ContextMenuItem onClick={() => {
+                                                setSelectedPriority(priority);
+                                                setShowPriorityDialog(true);
+                                              }}>
+                                                <Edit3 className="mr-2 h-4 w-4" />
+                                                Edit Priority
+                                              </ContextMenuItem>
+                                            </ContextMenuContent>
+                                          </ContextMenu>
+                                        </div>
+                                      );
+                                    })}
+                                  </div>
+                                </CardContent>
+                              </Card>
+                            ));
+                          })()}
+                        </div>
+                      ) : (
+                        // Grouped by Owner: Use existing owner-based grouping
+                        Object.values(groupedRocks.byOwner || {}).sort((a, b) => {
+                          if (a.id === 'unassigned') return 1;
+                          if (b.id === 'unassigned') return -1;
+                          return a.name.localeCompare(b.name);
+                        }).map(owner => (
+                          <Card key={owner.id} className="bg-white border-slate-200 shadow-md hover:shadow-lg transition-shadow">
+                            <CardHeader className="pb-3">
+                              <div className="flex items-center justify-between">
+                                <div className="flex items-center gap-3">
+                                  <Avatar className="h-10 w-10 border-2 border-slate-100">
+                                    <AvatarFallback className="bg-gradient-to-br from-slate-100 to-slate-200 text-slate-700 font-semibold">
+                                      {owner.name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2)}
+                                    </AvatarFallback>
+                                  </Avatar>
+                                  <div>
+                                    <h3 className="text-lg font-bold text-slate-900">{owner.name}</h3>
+                                    <p className="text-sm text-slate-500">{owner.rocks.length} {labels?.priority_singular || 'Rock'}{owner.rocks.length !== 1 ? 's' : ''}</p>
+                                  </div>
+                                </div>
+                                <ChevronDown className="h-5 w-5 text-slate-400" />
+                              </div>
+                            </CardHeader>
+                            <CardContent className="pt-0">
+                              <div className="space-y-1">
+                                {/* Header Row */}
+                                <div className="flex items-center px-3 py-2 text-xs font-medium text-slate-500 uppercase tracking-wider border-b border-slate-100">
+                                  <div className="w-8"></div>
+                                  <div className="w-10 ml-2">Status</div>
+                                  <div className="flex-1 ml-3">Title</div>
+                                  <div className="w-40 text-center">Milestone Progress</div>
+                                  <div className="w-20 text-right">Due By</div>
+                                  <div className="w-8"></div>
+                                </div>
+                                
+                                {/* Rock Rows */}
+                                {owner.rocks.map(priority => {
                                 const isComplete = priority.status === 'complete' || priority.status === 'completed';
                                 const isOnTrack = priority.status === 'on-track';
                                 const completedMilestones = (priority.milestones || []).filter(m => m.completed).length;
