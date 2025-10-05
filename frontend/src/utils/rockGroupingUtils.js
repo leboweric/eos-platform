@@ -30,6 +30,7 @@ export const groupRocksByPreference = (rocks, preference, teamMembers = []) => {
   }
 
   console.log('📊 All priorities:', rocks.length);
+  console.log('🔍 Sample priority object:', rocks[0]);
   console.log('🏢 Company rocks:', rocks.filter(r => r.is_company_rock).length);
   console.log('👤 Individual rocks:', rocks.filter(r => !r.is_company_rock).length);
 
