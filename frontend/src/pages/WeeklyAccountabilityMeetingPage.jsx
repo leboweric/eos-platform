@@ -5902,61 +5902,6 @@ const WeeklyAccountabilityMeetingPage = () => {
                   <p className="font-semibold text-slate-900">{currentTeam.name}</p>
                 </div>
               )}
-              
-              {/* Adaptive Meeting Button */}
-              {isEnabled && isConnected && (() => {
-                // Check if any meeting is active for this team/organization
-                const teamMeetingRoom = `${user?.organizationId || user?.organization_id}-${getEffectiveTeamId(teamId, user)}`;
-                const hasActiveMeeting = activeMeetings && Object.keys(activeMeetings).some(roomCode => {
-                  const meeting = activeMeetings[roomCode];
-                  return meeting && meeting.participantCount > 0;
-                });
-                
-                const handleMeetingAction = () => {
-                  if (hasActiveMeeting) {
-                    // Join existing meeting
-                    const activeRoomCode = Object.keys(activeMeetings).find(roomCode => {
-                      const meeting = activeMeetings[roomCode];
-                      return meeting && meeting.participantCount > 0;
-                    });
-                    if (activeRoomCode) {
-                      joinMeeting(activeRoomCode, false); // Join as participant
-                    }
-                  } else {
-                    // Start new meeting
-                    const code = Math.random().toString(36).substring(2, 8).toUpperCase();
-                    joinMeeting(code, true); // Join as leader
-                  }
-                };
-                
-                // Don't show button if already in a meeting
-                if (meetingCode) return null;
-                
-                return (
-                  <Button
-                    onClick={handleMeetingAction}
-                    className={`
-                      transition-all duration-300 font-medium
-                      ${hasActiveMeeting 
-                        ? 'bg-green-500 hover:bg-green-600 text-white animate-pulse shadow-lg' 
-                        : 'bg-blue-500 hover:bg-blue-600 text-white'
-                      }
-                    `}
-                  >
-                    {hasActiveMeeting ? (
-                      <>
-                        <Video className="h-4 w-4 mr-2" />
-                        Join Meeting in Progress
-                      </>
-                    ) : (
-                      <>
-                        <Video className="h-4 w-4 mr-2" />
-                        Start Meeting
-                      </>
-                    )}
-                  </Button>
-                );
-              })()}
             </div>
           </div>
         </div>

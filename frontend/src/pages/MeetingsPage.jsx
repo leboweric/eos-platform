@@ -460,81 +460,7 @@ const MeetingsPage = () => {
               <p className="text-lg text-slate-600">Run effective meetings with structured agendas</p>
             </div>
             <div className="flex items-start gap-4">
-              {(() => {
-                // Check if any meetings are in progress for any team the user is part of
-                console.log('Socket connection status:', { isEnabled, isConnected });
-                if (!isEnabled) console.warn('⚠️ Meetings are disabled! Set VITE_ENABLE_MEETINGS=true');
-                if (!isConnected) console.warn('⚠️ Socket not connected!');
-                console.log('Active meetings:', activeMeetings);
-                console.log('Active meetings entries:', Object.entries(activeMeetings || {}));
-                
-                // Check if there are any active meetings for ANY of the user's teams
-                const userTeamIds = teams.map(t => t.id);
-                const userActiveMeetings = Object.values(activeMeetings || {}).filter(
-                  m => userTeamIds.some(teamId => m.code?.includes(teamId))
-                );
-                console.log('User active meetings found:', userActiveMeetings);
-                const hasActiveMeeting = userActiveMeetings.length > 0;
-                
-                return (
-                  <Button
-                    onClick={() => {
-                      if (hasActiveMeeting && userActiveMeetings.length > 0) {
-                        // Direct join for active meeting
-                        const meeting = userActiveMeetings[0];
-                        const meetingCode = meeting.code;
-                        const parts = meetingCode.split('-');
-                        const teamId = parts[0];
-                        const meetingType = parts.slice(1).join('-');
-                        
-                        // Join the meeting
-                        if (joinMeeting) {
-                          joinMeeting(meetingCode, false);
-                        }
-                        
-                        // Navigate directly to the meeting
-                        if (meetingType === 'weekly-accountability') {
-                          navigate(`/meetings/weekly-accountability/${teamId}`);
-                        } else if (meetingType === 'quarterly-planning') {
-                          navigate(`/meetings/quarterly-planning/${teamId}`);
-                        }
-                      } else {
-                        // Open dialog for new meeting
-                        setShowJoinDialog(true);
-                      }
-                    }}
-                    className={`flex items-center gap-2 text-white shadow-lg hover:shadow-xl transition-all duration-200 transform hover:scale-[1.02] ${
-                      hasActiveMeeting ? 'bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 animate-pulse' : ''
-                    }`}
-                    style={{
-                      ...(!hasActiveMeeting ? {
-                        background: `linear-gradient(135deg, ${themeColors.primary} 0%, ${themeColors.secondary} 100%)`
-                      } : {})
-                    }}
-                    onMouseEnter={(e) => {
-                      if (!hasActiveMeeting) {
-                        e.currentTarget.style.filter = 'brightness(1.1)';
-                      }
-                    }}
-                    onMouseLeave={(e) => {
-                      if (!hasActiveMeeting) {
-                        e.currentTarget.style.filter = 'brightness(1)';
-                      }
-                    }}
-                    disabled={teams.length === 0}
-                  >
-                    {hasActiveMeeting && (
-                      <span className="relative flex h-3 w-3">
-                        <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-white opacity-75"></span>
-                        <span className="relative inline-flex rounded-full h-3 w-3 bg-white"></span>
-                      </span>
-                    )}
-                    <Users className="h-4 w-4" />
-                    {hasActiveMeeting ? 'Join Meeting in Progress' : 'Join Team Meeting'}
-                  </Button>
-                );
-              })()}
-            </div>
+              </div>
           </div>
         </div>
 
@@ -629,7 +555,7 @@ const MeetingsPage = () => {
                         }
                       }}
                     >
-                      {meeting.comingSoon ? 'Coming Soon' : (isActive ? '🟢 Join Meeting' : 'Start Meeting')}
+                      {meeting.comingSoon ? 'Coming Soon' : (isActive ? 'Join Meeting in Progress' : 'Start Meeting')}
                       {!meeting.comingSoon && <ChevronRight className="ml-2 h-4 w-4" />}
                     </Button>
                   </div>
