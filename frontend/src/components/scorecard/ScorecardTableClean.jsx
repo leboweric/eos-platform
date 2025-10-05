@@ -571,10 +571,10 @@ const ScorecardTableClean = ({
                                     <TooltipTrigger asChild>
                                       <MessageSquare className="inline-block ml-1 h-3 w-3 opacity-70 cursor-help" />
                                     </TooltipTrigger>
-                                    <TooltipContent side="top" className="max-w-xs">
+                                    <TooltipContent side="top" className="max-w-xs bg-slate-900 text-white border border-slate-700">
                                       <div className="text-sm">
-                                        <div className="font-medium mb-1">Comment:</div>
-                                        <div className="text-gray-700">{noteValue}</div>
+                                        <div className="font-medium mb-1 text-slate-200">Comment:</div>
+                                        <div className="text-white">{noteValue}</div>
                                       </div>
                                     </TooltipContent>
                                   </Tooltip>
@@ -596,10 +596,10 @@ const ScorecardTableClean = ({
                                       <TooltipTrigger asChild>
                                         <MessageSquare className="inline-block ml-0.5 h-2.5 w-2.5 opacity-60 cursor-help" />
                                       </TooltipTrigger>
-                                      <TooltipContent side="top" className="max-w-xs">
+                                      <TooltipContent side="top" className="max-w-xs bg-slate-900 text-white border border-slate-700">
                                         <div className="text-sm">
-                                          <div className="font-medium mb-1">Comment:</div>
-                                          <div className="text-gray-700">{noteValue}</div>
+                                          <div className="font-medium mb-1 text-slate-200">Comment:</div>
+                                          <div className="text-white">{noteValue}</div>
                                         </div>
                                       </TooltipContent>
                                     </Tooltip>
