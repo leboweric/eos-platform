@@ -185,6 +185,9 @@ const WeeklyAccountabilityMeetingPage = () => {
     };
   }, [isLeader]);
   const { labels } = useTerminology();
+  
+  // Default methodology - can be made configurable later when organization methodology is implemented
+  const methodology = 'eos';
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [activeSection, setActiveSection] = useState('good-news');
@@ -3411,7 +3414,7 @@ const WeeklyAccountabilityMeetingPage = () => {
                               <div className="flex items-center gap-3 mb-4">
                                 <div className="h-px bg-gradient-to-r from-slate-300 to-transparent flex-1"></div>
                                 <h3 className="text-lg font-bold text-slate-700 px-4 py-2 bg-white/80 rounded-xl border border-slate-200 shadow-sm">
-                                  {getSectionHeader(section.type)}
+                                  {getSectionHeader(section.type, methodology)}
                                 </h3>
                                 <div className="h-px bg-gradient-to-l from-slate-300 to-transparent flex-1"></div>
                               </div>
@@ -3702,7 +3705,7 @@ const WeeklyAccountabilityMeetingPage = () => {
                                         <span className={`font-medium ${isComplete ? 'line-through text-slate-400' : 'text-slate-900'}`}>
                                           {priority.title}
                                         </span>
-                                        {priority.priority_type === 'company' && (
+                                        {priority.is_company_rock && (
                                           <Badge variant="outline" className="ml-2 text-xs">Company</Badge>
                                         )}
                                       </div>
