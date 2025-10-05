@@ -4229,9 +4229,7 @@ const WeeklyAccountabilityMeetingPage = () => {
                         ))
                       )}
                     </div>
-                  )}
-                    </div>
-                  );
+                  )
                 })()}
               </div>
             )}
