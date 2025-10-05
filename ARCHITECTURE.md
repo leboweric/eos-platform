@@ -80,6 +80,7 @@ AXP (Adaptive Execution Platform) is the world's first business execution platfo
 - **SSL**: Automatic Let's Encrypt certificates
 - **Environment**: Multi-environment (development/staging/production)
 - **Error Tracking**: Sentry for backend error monitoring and performance
+- **Sentry Initialization**: ES module compatible setup with --import flag for early instrumentation
 - **Uptime Monitoring**: Better Stack for service availability tracking
 - **Health Checks**: Railway metrics + custom health endpoints
 
@@ -182,7 +183,7 @@ AXP (Adaptive Execution Platform) is the world's first business execution platfo
 
 | Table | Description | Key Relationships |
 |-------|-------------|-------------------|
-| `organizations` | Tenant root with subscription info | Parent to all tenant data |
+| `organizations` | Tenant root with subscription info, scorecard display preferences, and rock grouping preferences | Parent to all tenant data |
 | `users` | User accounts with auth credentials | Many-to-many with organizations |
 | `user_organizations` | User-org membership and roles | Junction table with roles |
 | `teams` | Hierarchical team structure | Belongs to organization |
@@ -197,6 +198,9 @@ AXP (Adaptive Execution Platform) is the world's first business execution platfo
 | `meeting_participants` | Real-time participant tracking | Socket session management |
 | `process_documentation` | Core process docs | Organization procedures |
 | `universal_objectives` | Patent: Framework-agnostic storage | Adaptive methodology support |
+| `user_login_tracking` | User authentication audit log | Tracks login events by user/org |
+| `scorecard_time_period_preference` | Org setting in organizations table | Values: 13_week_rolling, current_quarter, last_4_weeks |
+| `rock_display_preference` | Org setting in organizations table | Values: grouped_by_type, grouped_by_owner |
 
 ### Important Relationships
 - **Organization Hierarchy**: organizations → teams → users (many-to-many)
@@ -307,7 +311,10 @@ AXP (Adaptive Execution Platform) is the world's first business execution platfo
 ✅ **Subscription Billing** - Stripe with v2 flat-rate pricing  
 ✅ **Mobile Responsive** - Full mobile/tablet support  
 ✅ **Real-time Collaboration** - Socket.io for meetings  
-✅ **Soft Delete Protection** - Data recovery capability  
+✅ **Soft Delete Protection** - Data recovery capability
+✅ **Configurable Scorecard Periods** - Organizations choose 13-week rolling, current quarter, or 4-week views
+✅ **Configurable Rock Display** - Groups by Company/Individual or by Owner preference
+✅ **Adaptive Meeting Buttons** - Single button adapts to start or join meetings based on state  
 
 ### Production Metrics
 - **Uptime**: 99.9% (August - October 2024)
@@ -319,14 +326,13 @@ AXP (Adaptive Execution Platform) is the world's first business execution platfo
 - **Meeting Concurrency**: Tested with 10+ simultaneous participants
 - **Document Storage**: 50+ documents in PostgreSQL
 
-### Recent Changes (Last Month)
-1. **Real-time Meeting Collaboration** - Complete Socket.io implementation
-2. **Meeting Summary Emails** - Automated SendGrid integration
-3. **Priority Drag & Drop** - Reordering with database persistence
-4. **Issue Dialog Enhancement** - Click-to-edit while preserving drag
-5. **Attachment Handling** - Fixed filename display issues
-6. **Soft Delete Implementation** - Added to 5 critical tables
-7. **UI Polish** - Consistent spacing and side panel dialogs
+### Recent Changes (October 2024)
+1. **Configurable Scorecard Time Periods** - Org-level setting for quarterly vs rolling views
+2. **Configurable Rock Grouping** - Display by Company/Individual or by Owner
+3. **Adaptive Meeting Join Button** - Eliminates duplicate meeting risk with state-aware UI
+4. **Database Schema Additions** - user_login_tracking table, scorecard org_id column
+5. **Sentry ES Module Fix** - Proper initialization with --import flag
+6. **Field Name Standardization** - is_company_priority used throughout for company rocks
 
 ## 7. File/Directory Structure
 
@@ -488,10 +494,9 @@ WHERE deleted_at IS NOT NULL;
    - Solution: Dynamic pool sizing
 
 ### Documentation Gaps
-1. **API Documentation**: No OpenAPI/Swagger docs
-2. **Component Storybook**: No component library docs
-3. **Deployment Runbook**: Missing disaster recovery procedures
-4. **Testing Guide**: No test writing guidelines
+1. **Component Storybook**: No component library docs
+2. **Deployment Runbook**: Missing disaster recovery procedures
+3. **Testing Guide**: No test writing guidelines
 
 ## 10. Immediate Roadmap
 
@@ -499,7 +504,7 @@ WHERE deleted_at IS NOT NULL;
 
 #### Month 1 (November 2024)
 - [ ] **Accountability Chart** - Organizational structure visualization
-- [ ] **Enhanced Reporting** - Executive dashboards
+- [x] **Enhanced Reporting** - Executive dashboards (scorecard preferences added)
 - [ ] **Bulk Operations** - Multi-select for priorities/issues
 - [ ] **Notification System** - In-app notifications
 
@@ -595,6 +600,11 @@ WHERE deleted_at IS NOT NULL;
 - **Volume**: ~500 emails/month
 - **Criticality**: High - affects user communication
 - **Breaking Change Risk**: Low - stable API
+
+#### Better Stack (Uptime Monitoring)
+- **Usage**: Service availability tracking and incident alerts
+- **Criticality**: Medium - visibility into production issues
+- **Breaking Change Risk**: Low - monitoring only
 
 #### Authentication (OAuth Providers)
 - **Google OAuth 2.0**: Enterprise SSO
