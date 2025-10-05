@@ -124,7 +124,8 @@ const QuarterlyPrioritiesPageClean = () => {
     secondary: '#1E40AF',
     accent: '#60A5FA'
   });
-  const [rockDisplayPreference, setRockDisplayPreference] = useState('grouped_by_owner');
+  // Get rock display preference from organization data
+  const rockDisplayPreference = organization?.rock_display_preference || 'grouped_by_owner';
   
   // State for priorities data
   const [companyPriorities, setCompanyPriorities] = useState([]);
@@ -2798,7 +2799,10 @@ const QuarterlyPrioritiesPageClean = () => {
             };
             
             // Group priorities based on organization preference
+            console.log('🔧 Rock display preference:', rockDisplayPreference);
+            console.log('🔧 Organization data:', organization);
             const groupedRocks = groupRocksByPreference(allPriorities, rockDisplayPreference, teamMembers);
+            console.log('🔧 Grouped rocks result:', groupedRocks);
             
             if (allPriorities.length === 0) {
               return (
@@ -2821,8 +2825,10 @@ const QuarterlyPrioritiesPageClean = () => {
             return (
               <div className="space-y-6">
                 {/* Render based on display preference */}
-                {groupedRocks.displayMode === 'type' ? (
-                  // Grouped by Type: Company Rocks, then Individual Rocks
+                {(() => {
+                  console.log('🔧 Rendering rocks with displayMode:', groupedRocks.displayMode);
+                  return groupedRocks.displayMode === 'type' ? (
+                    // Grouped by Type: Company Rocks, then Individual Rocks
                   groupedRocks.sections.map(section => (
                     !section.isEmpty && (
                       <div key={section.type} className="space-y-4">
@@ -3181,7 +3187,8 @@ const QuarterlyPrioritiesPageClean = () => {
                     </CardContent>
                   </Card>
                 ))
-                )}
+                  );
+                })()}
               </div>
             );
           })()}
