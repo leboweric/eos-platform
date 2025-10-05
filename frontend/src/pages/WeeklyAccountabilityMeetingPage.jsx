@@ -3955,6 +3955,119 @@ const WeeklyAccountabilityMeetingPage = () => {
                                               </ContextMenuItem>
                                             </ContextMenuContent>
                                           </ContextMenu>
+                                          
+                                          {/* Expanded Milestones Section */}
+                                          {isExpanded && (
+                                            <div className="ml-12 mr-4 mb-3 p-3 bg-slate-50 rounded-lg">
+                                              {console.log('Expanded priority:', priority.id, 'Milestones:', priority.milestones)}
+                                              <div className="space-y-2">
+                                                {(priority.milestones || []).map((milestone) => (
+                                                  <div key={milestone.id} className="group flex items-center gap-3 p-2 rounded-lg hover:bg-gray-50">
+                                                    <input
+                                                      type="checkbox"
+                                                      checked={milestone.completed}
+                                                      onChange={(e) => {
+                                                        e.stopPropagation(); // Prevent event bubbling to parent containers
+                                                        console.log('🔥 MILESTONE CHECKBOX CLICKED!', { priorityId: priority.id, milestoneId: milestone.id, checked: e.target.checked });
+                                                        handleUpdateMilestone(priority.id, milestone.id, e.target.checked);
+                                                      }}
+                                                      className="flex-shrink-0 rounded border-gray-300 text-green-600 focus:ring-green-500 cursor-pointer"
+                                                    />
+                                                    <span className={`text-sm flex-1 ${milestone.completed ? 'line-through text-slate-400' : 'text-slate-700'}`}>
+                                                      {milestone.title}
+                                                    </span>
+                                                    <span className="text-xs text-slate-500">
+                                                      {milestone.dueDate ? format(new Date(milestone.dueDate), 'MMM d') : ''}
+                                                    </span>
+                                                  </div>
+                                                ))}
+                                                
+                                                {/* Add milestone button section if no milestones */}
+                                                {(priority.milestones || []).length === 0 && addingMilestoneFor !== priority.id ? (
+                                                  <div className="space-y-3">
+                                                    <div className="border border-slate-200 rounded-lg p-4 bg-white/50">
+                                                      <p className="text-sm text-slate-500 text-center mb-3">No milestones added</p>
+                                                      <Button
+                                                        variant="outline"
+                                                        className="w-full border-slate-300 hover:border-slate-400 hover:bg-slate-50"
+                                                        onClick={() => {
+                                                          setAddingMilestoneFor(priority.id);
+                                                          setNewMilestone({ 
+                                                            title: '', 
+                                                            dueDate: format(addDays(new Date(), 30), 'yyyy-MM-dd')
+                                                          });
+                                                        }}
+                                                      >
+                                                        <Plus className="h-4 w-4 mr-2" />
+                                                        Add Milestone
+                                                      </Button>
+                                                    </div>
+                                                  </div>
+                                                ) : null}
+                                                
+                                                {/* Add Milestone Inline */}
+                                                {addingMilestoneFor === priority.id ? (
+                                                  <div className="flex items-center gap-2 mt-2">
+                                                    <Input
+                                                      value={newMilestone.title}
+                                                      onChange={(e) => setNewMilestone(prev => ({ ...prev, title: e.target.value }))}
+                                                      placeholder="Milestone description..."
+                                                      className="flex-1 h-8 text-sm"
+                                                      autoFocus
+                                                      onKeyDown={(e) => {
+                                                        if (e.key === 'Enter' && newMilestone.title.trim()) {
+                                                          handleAddMilestone(priority.id);
+                                                        }
+                                                        if (e.key === 'Escape') {
+                                                          setAddingMilestoneFor(null);
+                                                          setNewMilestone({ title: '', dueDate: '' });
+                                                        }
+                                                      }}
+                                                    />
+                                                    <Input
+                                                      type="date"
+                                                      value={newMilestone.dueDate}
+                                                      onChange={(e) => setNewMilestone(prev => ({ ...prev, dueDate: e.target.value }))}
+                                                      className="w-32 h-8 text-sm"
+                                                    />
+                                                    <Button
+                                                      size="sm"
+                                                      variant="ghost"
+                                                      className="h-8 w-8 p-0 hover:bg-green-100"
+                                                      onClick={() => handleAddMilestone(priority.id)}
+                                                    >
+                                                      <Check className="h-4 w-4 text-green-600" />
+                                                    </Button>
+                                                    <Button
+                                                      size="sm"
+                                                      variant="ghost"
+                                                      className="h-8 w-8 p-0 hover:bg-red-100"
+                                                      onClick={() => {
+                                                        setAddingMilestoneFor(null);
+                                                        setNewMilestone({ title: '', dueDate: '' });
+                                                      }}
+                                                    >
+                                                      <X className="h-4 w-4 text-red-600" />
+                                                    </Button>
+                                                  </div>
+                                                ) : (priority.milestones || []).length > 0 ? (
+                                                  <button
+                                                    className="text-sm text-slate-500 hover:text-slate-700 flex items-center gap-1 mt-2"
+                                                    onClick={() => {
+                                                      setAddingMilestoneFor(priority.id);
+                                                      setNewMilestone({ 
+                                                        title: '', 
+                                                        dueDate: format(addDays(new Date(), 30), 'yyyy-MM-dd')
+                                                      });
+                                                    }}
+                                                  >
+                                                    <Plus className="h-3 w-3" />
+                                                    Add Milestone
+                                                  </button>
+                                                ) : null}
+                                              </div>
+                                            </div>
+                                          )}
                                         </div>
                                       );
                                     })}
