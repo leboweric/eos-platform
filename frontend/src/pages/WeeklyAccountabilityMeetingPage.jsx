@@ -4226,10 +4226,8 @@ const WeeklyAccountabilityMeetingPage = () => {
                             </div>
                           </CardContent>
                         </Card>
-                      ))}
-                    </div>
-                  );
-                })()}
+                        ))
+                      )}
               </div>
             )}
           </div>
