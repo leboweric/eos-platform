@@ -2886,27 +2886,28 @@ const QuarterlyPrioritiesPageClean = () => {
                       </div>
                       
                       {/* Owner's Rocks as Cards */}
-                      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+                      <div className="space-y-4">
                         {owner.rocks.map(priority => (
-                          <PriorityCardClean 
-                            key={priority.id}
-                            priority={priority} 
-                            isCompany={priority.is_company_rock}
-                            onStatusChange={handlePriorityStatusChange}
-                            onUpdate={handleUpdatePriority}
-                            onDelete={handleDeletePriority}
-                            onMilestoneToggle={handleToggleMilestone}
-                            onAddMilestone={handleAddMilestone}
-                            expandedPriorities={expandedPriorities}
-                            toggleExpansion={togglePriorityExpansion}
-                            addingMilestoneFor={addingMilestoneFor}
-                            setAddingMilestoneFor={setAddingMilestoneFor}
-                            newMilestone={newMilestone}
-                            setNewMilestone={setNewMilestone}
-                            openStatusDropdown={openStatusDropdown}
-                            setOpenStatusDropdown={setOpenStatusDropdown}
-                            teamMembers={teamMembers}
-                          />
+                          <div key={priority.id} className="max-w-5xl">
+                            <PriorityCardClean 
+                              priority={priority} 
+                              isCompany={priority.is_company_rock}
+                              onStatusChange={handlePriorityStatusChange}
+                              onUpdate={handleUpdatePriority}
+                              onArchive={handleArchivePriority}
+                              onAddMilestone={handleCreateMilestone}
+                              onEditMilestone={handleEditMilestone}
+                              onToggleMilestone={handleUpdateMilestone}
+                              onDeleteMilestone={handleDeleteMilestone}
+                              onAddUpdate={handleAddUpdate}
+                              onEditUpdate={handleEditUpdate}
+                              onDeleteUpdate={handleDeleteUpdate}
+                              onUploadAttachment={handleUploadAttachment}
+                              onDownloadAttachment={handleDownloadAttachment}
+                              onDeleteAttachment={handleDeleteAttachment}
+                              teamMembers={teamMembers}
+                            />
+                          </div>
                         ))}
                       </div>
                     </div>
