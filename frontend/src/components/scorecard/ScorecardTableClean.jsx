@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { 
   Edit,
   BarChart3,
@@ -562,26 +563,64 @@ const ScorecardTableClean = ({
                               className={'inline-block px-2 py-0.5 rounded-full text-xs font-medium relative ' + 
                                 (scoreValue !== null && scoreValue !== undefined ? (goalMet ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800') : 'text-gray-400')
                               }
-                              title={hasNotes ? `Score: ${scoreValue}\nNotes: ${noteValue}` : ''}
                             >
                               {scoreValue !== null && scoreValue !== undefined ? formatValue(scoreValue, metric.value_type) : '-'}
                               {hasNotes && (
-                                <MessageSquare className="inline-block ml-1 h-3 w-3 opacity-70" />
+                                <TooltipProvider>
+                                  <Tooltip>
+                                    <TooltipTrigger asChild>
+                                      <MessageSquare className="inline-block ml-1 h-3 w-3 opacity-70 cursor-help" />
+                                    </TooltipTrigger>
+                                    <TooltipContent side="top" className="max-w-xs">
+                                      <div className="text-sm">
+                                        <div className="font-medium mb-1">Comment:</div>
+                                        <div className="text-gray-700">{noteValue}</div>
+                                      </div>
+                                    </TooltipContent>
+                                  </Tooltip>
+                                </TooltipProvider>
                               )}
                             </div>
                           ) : (
-                            <button
-                              onClick={() => onScoreEdit && onScoreEdit(metric, periodDate)}
-                              className={'w-full px-0.5 py-0.5 rounded text-[10px] font-medium transition-colors relative ' +
-                                (scoreValue !== null && scoreValue !== undefined ? (goalMet ? 'bg-green-50 text-green-700 border border-green-200' : 'bg-red-50 text-red-700 border border-red-200') : (isCurrentPeriod ? 'bg-gray-100 text-gray-700 hover:bg-gray-200' : 'bg-white border border-gray-200 text-gray-600 hover:bg-gray-50'))
-                              }
-                              title={hasNotes ? `Score: ${scoreValue}\nNotes: ${noteValue}` : ''}
-                            >
-                              <span>{scoreValue !== null && scoreValue !== undefined ? formatValue(scoreValue, metric.value_type) : '-'}</span>
-                              {hasNotes && (
-                                <MessageSquare className="inline-block ml-0.5 h-2.5 w-2.5 opacity-60" />
-                              )}
-                            </button>
+                            readOnly && !onScoreEdit ? (
+                              // Read-only mode without edit capability - show tooltip for comments
+                              <div 
+                                className={'w-full px-0.5 py-0.5 rounded text-[10px] font-medium relative ' +
+                                  (scoreValue !== null && scoreValue !== undefined ? (goalMet ? 'bg-green-50 text-green-700 border border-green-200' : 'bg-red-50 text-red-700 border border-red-200') : (isCurrentPeriod ? 'bg-gray-100 text-gray-700' : 'bg-white border border-gray-200 text-gray-600'))
+                                }
+                              >
+                                <span>{scoreValue !== null && scoreValue !== undefined ? formatValue(scoreValue, metric.value_type) : '-'}</span>
+                                {hasNotes && (
+                                  <TooltipProvider>
+                                    <Tooltip>
+                                      <TooltipTrigger asChild>
+                                        <MessageSquare className="inline-block ml-0.5 h-2.5 w-2.5 opacity-60 cursor-help" />
+                                      </TooltipTrigger>
+                                      <TooltipContent side="top" className="max-w-xs">
+                                        <div className="text-sm">
+                                          <div className="font-medium mb-1">Comment:</div>
+                                          <div className="text-gray-700">{noteValue}</div>
+                                        </div>
+                                      </TooltipContent>
+                                    </Tooltip>
+                                  </TooltipProvider>
+                                )}
+                              </div>
+                            ) : (
+                              // Normal edit mode - clickable button
+                              <button
+                                onClick={() => onScoreEdit && onScoreEdit(metric, periodDate)}
+                                className={'w-full px-0.5 py-0.5 rounded text-[10px] font-medium transition-colors relative ' +
+                                  (scoreValue !== null && scoreValue !== undefined ? (goalMet ? 'bg-green-50 text-green-700 border border-green-200' : 'bg-red-50 text-red-700 border border-red-200') : (isCurrentPeriod ? 'bg-gray-100 text-gray-700 hover:bg-gray-200' : 'bg-white border border-gray-200 text-gray-600 hover:bg-gray-50'))
+                                }
+                                title={hasNotes ? `Score: ${scoreValue}\nNotes: ${noteValue}` : ''}
+                              >
+                                <span>{scoreValue !== null && scoreValue !== undefined ? formatValue(scoreValue, metric.value_type) : '-'}</span>
+                                {hasNotes && (
+                                  <MessageSquare className="inline-block ml-0.5 h-2.5 w-2.5 opacity-60" />
+                                )}
+                              </button>
+                            )
                           )}
                         </td>
                       );
