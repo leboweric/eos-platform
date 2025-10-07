@@ -553,7 +553,7 @@ const ScorecardPageClean = () => {
       {/* Background Pattern */}
       <div className="absolute inset-0 bg-grid-slate-100 [mask-image:linear-gradient(0deg,white,rgba(255,255,255,0.6))] -z-10"></div>
       
-      <div className="max-w-full mx-auto p-6 space-y-6">
+      <div className="max-w-7xl mx-auto px-8 py-8 space-y-6">
         {/* Enhanced Header */}
         <div className="mb-8">
           <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4 mb-6">
