@@ -259,6 +259,15 @@ const WeeklyAccountabilityMeetingPage = () => {
   const [showAddPriority, setShowAddPriority] = useState(false);
   const [todoSortBy, setTodoSortBy] = useState('assignee'); // For Conclude section todo sorting - default to assignee/owner
   
+  // Toggle expansion for a priority
+  const togglePriorityExpansion = (priorityId, e) => {
+    e.stopPropagation();
+    setExpandedPriorities(prev => ({
+      ...prev,
+      [priorityId]: !prev[priorityId]
+    }));
+  };
+  
   // Function to create issue directly from headline
   const createIssueFromHeadline = async (headline, type) => {
     try {
@@ -3413,15 +3422,6 @@ const WeeklyAccountabilityMeetingPage = () => {
                 {(() => {
                   // Combine all priorities (company and individual)
                   const allPriorities = priorities;
-                  
-                  // Toggle expansion for a priority
-                  const togglePriorityExpansion = (priorityId, e) => {
-                    e.stopPropagation();
-                    setExpandedPriorities(prev => ({
-                      ...prev,
-                      [priorityId]: !prev[priorityId]
-                    }));
-                  };
                   
                   // Use the rock grouping utility to support both display modes
                   const groupedRocks = groupRocksByPreference(allPriorities, rockDisplayPreference, teamMembers);
