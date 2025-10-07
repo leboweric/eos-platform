@@ -470,19 +470,17 @@ const ScorecardPageClean = () => {
     return new Date(d.getFullYear(), quarter * 3 + 3, 0);
   };
 
-  // Get week labels for the current quarter
+  // Get week labels based on organization's time period preference
   const getWeekLabels = () => {
     const labels = [];
     const weekDates = [];
     const today = new Date();
     
-    // Get current quarter start and today
-    const quarterStart = getQuarterStart(today);
-    const quarterEnd = getQuarterEnd(today);
-    const endDate = today < quarterEnd ? today : quarterEnd;
+    // Get date range based on organization preference
+    const { startDate, endDate } = getDateRange(scorecardTimePeriodPreference, today);
     
-    // Generate all weeks from quarter start to current date
-    let currentWeek = getWeekStartDate(quarterStart);
+    // Generate all weeks from start date to end date
+    let currentWeek = getWeekStartDate(startDate);
     while (currentWeek <= endDate) {
       labels.push(formatWeekLabel(currentWeek));
       weekDates.push(currentWeek.toISOString().split('T')[0]);
@@ -492,7 +490,7 @@ const ScorecardPageClean = () => {
       currentWeek.setDate(currentWeek.getDate() + 7);
     }
     
-    console.log(`ScorecardPage - Showing Q${Math.floor(today.getMonth() / 3) + 1} weeks:`, weekDates);
+    console.log(`ScorecardPage - Showing ${scorecardTimePeriodPreference} weeks:`, weekDates);
     
     return { labels, weekDates };
   };
@@ -504,19 +502,18 @@ const ScorecardPageClean = () => {
     return `${months[date.getMonth()]} ${year}`;
   };
 
-  // Get month labels for the current quarter
+  // Get month labels based on organization's time period preference
   const getMonthLabels = () => {
     const labels = [];
     const monthDates = [];
     const today = new Date();
     
-    // Get current quarter start and today
-    const quarterStart = getQuarterStart(today);
-    const quarterEnd = getQuarterEnd(today);
+    // Get date range based on organization preference
+    const { startDate, endDate } = getDateRange(scorecardTimePeriodPreference, today);
     
-    // Generate all months in the current quarter up to current month
-    let currentMonth = new Date(quarterStart);
-    while (currentMonth <= today && currentMonth <= quarterEnd) {
+    // Generate all months from start date to end date
+    let currentMonth = new Date(startDate.getFullYear(), startDate.getMonth(), 1);
+    while (currentMonth <= endDate) {
       const monthDate = new Date(currentMonth.getFullYear(), currentMonth.getMonth(), 1);
       labels.push(formatMonthLabel(monthDate));
       monthDates.push(monthDate.toISOString().split('T')[0]);
@@ -525,13 +522,17 @@ const ScorecardPageClean = () => {
       currentMonth.setMonth(currentMonth.getMonth() + 1);
     }
     
-    console.log(`ScorecardPage - Showing Q${Math.floor(today.getMonth() / 3) + 1} months:`, monthDates);
+    console.log(`ScorecardPage - Showing ${scorecardTimePeriodPreference} months:`, monthDates);
     
     return { labels, monthDates };
   };
 
-  const { labels: weekLabels, weekDates } = getWeekLabels();
-  const { labels: monthLabels, monthDates } = getMonthLabels();
+  // Calculate date ranges dynamically based on current state
+  const getWeekData = () => getWeekLabels();
+  const getMonthData = () => getMonthLabels();
+  
+  const { labels: weekLabels, weekDates } = getWeekData();
+  const { labels: monthLabels, monthDates } = getMonthData();
 
 
   if (loading || departmentLoading || (!selectedDepartment && !isLeadershipMember)) {

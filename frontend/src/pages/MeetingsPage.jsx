@@ -164,24 +164,48 @@ const MeetingsPage = () => {
       
       // First, check if user has teams from their auth data
       if (user?.teams && user.teams.length > 0) {
-        setTeams(user.teams);
+        let allTeams = [...user.teams];
+        
+        // If we have a selected department that's not in the teams list, add it
+        if (selectedDepartment?.id && !allTeams.find(t => t.id === selectedDepartment.id)) {
+          allTeams.push({
+            id: selectedDepartment.id,
+            name: selectedDepartment.name,
+            is_leadership_team: false,
+            is_department_team: true
+          });
+          console.log('🏢 Added department to teams list:', selectedDepartment);
+        }
+        
+        setTeams(allTeams);
         
         // Try to select the appropriate team
         let teamToSelect = null;
         
-        // If there's a selected department, use it
+        // If there's a selected department, prioritize that
         if (selectedDepartment?.id) {
           teamToSelect = user.teams.find(t => t.id === selectedDepartment.id);
+          console.log('🏢 Selected department team:', teamToSelect);
+        }
+        
+        // If no department team found but we have a selected department,
+        // check if the department itself is a team (some orgs use departments as teams)
+        if (!teamToSelect && selectedDepartment?.id) {
+          // Try using the department ID directly as team ID
+          teamToSelect = { id: selectedDepartment.id, name: selectedDepartment.name };
+          console.log('🏢 Using department as team:', teamToSelect);
         }
         
         // Otherwise, look for the leadership team
         if (!teamToSelect) {
           teamToSelect = user.teams.find(t => t.is_leadership_team === true);
+          console.log('👑 Using leadership team:', teamToSelect);
         }
         
         // Fall back to first team if no leadership team found
         if (!teamToSelect) {
           teamToSelect = user.teams[0];
+          console.log('📋 Using first available team:', teamToSelect);
         }
         
         setSelectedTeamId(teamToSelect.id);
@@ -205,24 +229,48 @@ const MeetingsPage = () => {
           
           // If we have teams data, use it
           if (teamsData && teamsData.length > 0) {
-            setTeams(teamsData);
+            let allTeams = [...teamsData];
+            
+            // If we have a selected department that's not in the teams list, add it
+            if (selectedDepartment?.id && !allTeams.find(t => t.id === selectedDepartment.id)) {
+              allTeams.push({
+                id: selectedDepartment.id,
+                name: selectedDepartment.name,
+                is_leadership_team: false,
+                is_department_team: true
+              });
+              console.log('🏢 Added department to teams list (API):', selectedDepartment);
+            }
+            
+            setTeams(allTeams);
             
             // Try to select the appropriate team
             let teamToSelect = null;
             
-            // If there's a selected department, use it
+            // If there's a selected department, prioritize that
             if (selectedDepartment?.id) {
               teamToSelect = teamsData.find(t => t.id === selectedDepartment.id);
+              console.log('🏢 Selected department team (API):', teamToSelect);
+            }
+            
+            // If no department team found but we have a selected department,
+            // check if the department itself is a team (some orgs use departments as teams)
+            if (!teamToSelect && selectedDepartment?.id) {
+              // Try using the department ID directly as team ID
+              teamToSelect = { id: selectedDepartment.id, name: selectedDepartment.name };
+              console.log('🏢 Using department as team (API):', teamToSelect);
             }
             
             // Otherwise, look for the leadership team
             if (!teamToSelect) {
               teamToSelect = teamsData.find(t => t.is_leadership_team === true);
+              console.log('👑 Using leadership team (API):', teamToSelect);
             }
             
             // Fall back to first team if no leadership team found
             if (!teamToSelect) {
               teamToSelect = teamsData[0];
+              console.log('📋 Using first available team (API):', teamToSelect);
             }
             
             setSelectedTeamId(teamToSelect.id);
