@@ -285,7 +285,7 @@ const ScorecardPageClean = () => {
       setError(null);
       
       const orgId = user?.organizationId || user?.organization_id;
-      const teamId = selectedDepartment?.id;
+      const teamId = selectedDepartment?.id || LEADERSHIP_TEAM_ID;
       
       if (!teamId) {
         return;
@@ -343,7 +343,7 @@ const ScorecardPageClean = () => {
       setError(null);
       
       const orgId = user?.organizationId || user?.organization_id;
-      const teamId = selectedDepartment?.id;
+      const teamId = selectedDepartment?.id || LEADERSHIP_TEAM_ID;
       
       if (!teamId) {
         return;
@@ -404,7 +404,7 @@ const ScorecardPageClean = () => {
       setError(null);
       
       const orgId = user?.organizationId || user?.organization_id;
-      const teamId = selectedDepartment?.id;
+      const teamId = selectedDepartment?.id || LEADERSHIP_TEAM_ID;
       
       if (!orgId || !teamId) {
         return;
