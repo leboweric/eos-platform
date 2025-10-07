@@ -373,6 +373,15 @@ export const deleteMetric = async (req, res) => {
 export const updateScore = async (req, res) => {
   try {
     const { metricId, week, value, notes, scoreType = 'weekly' } = req.body;
+    const { orgId } = req.params;
+    
+    // Validate required fields
+    if (!orgId) {
+      return res.status(400).json({ 
+        success: false,
+        message: 'Organization ID is required' 
+      });
+    }
     
     // Convert week/month to proper date format
     const scoreDate = new Date(week).toISOString().split('T')[0];
@@ -381,18 +390,18 @@ export const updateScore = async (req, res) => {
     // Only use null if value is actually null or undefined
     const scoreValue = (value === null || value === undefined) ? null : value;
     
-    console.log('Backend updateScore - Received value:', value, 'Saving value:', scoreValue, 'Type:', typeof scoreValue);
+    console.log('Backend updateScore - Received value:', value, 'Saving value:', scoreValue, 'Type:', typeof scoreValue, 'OrgId:', orgId);
     
-    // Upsert the score with notes
+    // Upsert the score with notes and organization_id
     const query = `
-      INSERT INTO scorecard_scores (metric_id, week_date, value, notes)
-      VALUES ($1, $2, $3, $4)
+      INSERT INTO scorecard_scores (metric_id, week_date, value, notes, organization_id)
+      VALUES ($1, $2, $3, $4, $5)
       ON CONFLICT (metric_id, week_date)
-      DO UPDATE SET value = $3, notes = $4, updated_at = CURRENT_TIMESTAMP
-      RETURNING metric_id, week_date, value, notes
+      DO UPDATE SET value = EXCLUDED.value, notes = EXCLUDED.notes, updated_at = CURRENT_TIMESTAMP
+      RETURNING metric_id, week_date, value, notes, organization_id
     `;
     
-    const result = await db.query(query, [metricId, scoreDate, scoreValue, notes || null]);
+    const result = await db.query(query, [metricId, scoreDate, scoreValue, notes || null, orgId]);
     
     console.log('Backend updateScore - Database returned:', result.rows[0]);
     
