@@ -51,7 +51,7 @@ const FolderTree = ({
         if (visibilityOrder[a.visibility] !== visibilityOrder[b.visibility]) {
           return visibilityOrder[a.visibility] - visibilityOrder[b.visibility];
         }
-        return a.name.localeCompare(b.name);
+        return (a.name || '').localeCompare(b.name || '');
       });
     };
 

@@ -2048,7 +2048,7 @@ function QuarterlyPlanningMeetingPage() {
                   const owners = Object.values(prioritiesByOwner).sort((a, b) => {
                     if (a.id === 'unassigned') return 1;
                     if (b.id === 'unassigned') return -1;
-                    return a.name.localeCompare(b.name);
+                    return (a.name || '').localeCompare(b.name || '');
                   });
                   
                   return (
@@ -3129,7 +3129,7 @@ function QuarterlyPlanningMeetingPage() {
                   const owners = Object.values(prioritiesByOwner).sort((a, b) => {
                     if (a.id === 'unassigned') return 1;
                     if (b.id === 'unassigned') return -1;
-                    return a.name.localeCompare(b.name);
+                    return (a.name || '').localeCompare(b.name || '');
                   });
                   
                   if (allPriorities.length === 0) {

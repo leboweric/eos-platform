@@ -3805,7 +3805,7 @@ const WeeklyAccountabilityMeetingPage = () => {
                             const owners = Object.values(grouped).sort((a, b) => {
                               if (a.id === 'unassigned') return 1;
                               if (b.id === 'unassigned') return -1;
-                              return a.name.localeCompare(b.name);
+                              return (a.name || "").localeCompare(b.name || "");
                             });
                             
                             return owners.map(owner => (
@@ -4096,7 +4096,7 @@ const WeeklyAccountabilityMeetingPage = () => {
                         Object.values(groupedRocks.byOwner || {}).sort((a, b) => {
                           if (a.id === 'unassigned') return 1;
                           if (b.id === 'unassigned') return -1;
-                          return a.name.localeCompare(b.name);
+                          return (a.name || "").localeCompare(b.name || "");
                         }).map(owner => (
                           <Card key={owner.id} className="bg-white border-slate-200 shadow-md hover:shadow-lg transition-shadow">
                             <CardHeader className="pb-3">
@@ -4702,7 +4702,7 @@ const WeeklyAccountabilityMeetingPage = () => {
                 const assignees = Object.values(todosByAssignee).sort((a, b) => {
                   if (a.id === 'unassigned') return 1;
                   if (b.id === 'unassigned') return -1;
-                  return a.name.localeCompare(b.name);
+                  return (a.name || "").localeCompare(b.name || "");
                 });
                 
                 if (todos.length === 0) {
@@ -5296,7 +5296,7 @@ const WeeklyAccountabilityMeetingPage = () => {
                       } else if (todoSortBy === 'assignee') {
                         const aName = a.assigned_to ? `${a.assigned_to.first_name} ${a.assigned_to.last_name}` : 'Unassigned';
                         const bName = b.assigned_to ? `${b.assigned_to.first_name} ${b.assigned_to.last_name}` : 'Unassigned';
-                        return aName.localeCompare(bName);
+                        return (aName || "").localeCompare(bName || "");
                       }
                       return 0;
                     });
