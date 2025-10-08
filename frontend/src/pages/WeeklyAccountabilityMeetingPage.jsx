@@ -2494,7 +2494,20 @@ const WeeklyAccountabilityMeetingPage = () => {
       console.log('🐛 [concludeMeeting] Final effectiveTeamId being sent:', effectiveTeamId);
       
       // Calculate meeting duration in minutes
-      const durationMinutes = Math.floor(elapsedTime / 60);
+      // If no timer was started (elapsedTime = 0), calculate from meetingStartTime or fallback to reasonable estimate
+      let durationMinutes;
+      if (elapsedTime > 0) {
+        // Use timer if it was running
+        durationMinutes = Math.floor(elapsedTime / 60);
+      } else if (meetingStartTime) {
+        // Calculate from meeting start time if timer wasn't started
+        const now = Date.now();
+        const actualDuration = Math.floor((now - meetingStartTime) / 1000 / 60);
+        durationMinutes = actualDuration;
+      } else {
+        // Fallback: estimate based on typical meeting length (30 minutes)
+        durationMinutes = 30;
+      }
       
       // Send cascading message if provided
       if (cascadingMessage.trim()) {
