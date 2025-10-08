@@ -3206,7 +3206,12 @@ const QuarterlyPrioritiesPageClean = () => {
                           return acc;
                         }, {});
                         
-                        return Object.values(grouped).sort((a, b) => (a.name || '').localeCompare(b.name || '')).map(owner => (
+                        return Object.values(grouped).sort((a, b) => {
+                          const aName = String(a.name || '');
+                          const bName = String(b.name || '');
+                          console.log('🔍 Sorting owners:', aName, 'vs', bName);
+                          return aName.localeCompare(bName);
+                        }).map(owner => (
                           <Card key={owner.id} className="bg-white border-slate-200 shadow-md hover:shadow-lg transition-shadow">
                             <CardHeader className="pb-3">
                               <div className="flex items-center justify-between">
@@ -3542,7 +3547,12 @@ const QuarterlyPrioritiesPageClean = () => {
                     </div>
                 ) : (
                   // Grouped by Owner: Use exact L10 meeting design
-                  Object.values(groupedRocks.byOwner || {}).sort((a, b) => (a.name || '').localeCompare(b.name || '')).map(owner => (
+                  Object.values(groupedRocks.byOwner || {}).sort((a, b) => {
+                    const aName = String(a.name || '');
+                    const bName = String(b.name || '');
+                    console.log('🔍 Sorting byOwner:', aName, 'vs', bName);
+                    return aName.localeCompare(bName);
+                  }).map(owner => (
                     <Card key={owner.id} className="bg-white border-slate-200 shadow-md hover:shadow-lg transition-shadow">
                       <CardHeader className="pb-3">
                         <div className="flex items-center justify-between">

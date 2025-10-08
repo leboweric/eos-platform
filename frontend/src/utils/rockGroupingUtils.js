@@ -55,7 +55,35 @@ export const groupRocksByPreference = (rocks, preference, teamMembers = []) => {
     // Group by owner (default: grouped_by_owner)
     const grouped = rocks.reduce((acc, rock) => {
       const ownerId = rock.owner_id || rock.assignee_id || 'unassigned';
-      const ownerName = ownerLookup[ownerId] || rock.ownerName || rock.owner || 'Unassigned';
+      const rawOwnerName = ownerLookup[ownerId] || rock.ownerName || rock.owner || 'Unassigned';
+      
+      // 🔍 DEBUG: Log the owner name structure
+      console.log('🔍 DEBUG owner name:', {
+        ownerId,
+        rawOwnerName,
+        nameType: typeof rawOwnerName,
+        isObject: typeof rawOwnerName === 'object',
+        keys: typeof rawOwnerName === 'object' ? Object.keys(rawOwnerName) : null
+      });
+      
+      // Ensure ownerName is always a string
+      let ownerName = 'Unassigned';
+      if (rawOwnerName) {
+        if (typeof rawOwnerName === 'string') {
+          ownerName = rawOwnerName;
+        } else if (typeof rawOwnerName === 'object') {
+          // Handle object case - might be {firstName: 'John', lastName: 'Doe'}
+          if (rawOwnerName.name) {
+            ownerName = String(rawOwnerName.name);
+          } else if (rawOwnerName.firstName || rawOwnerName.lastName) {
+            ownerName = `${rawOwnerName.firstName || ''} ${rawOwnerName.lastName || ''}`.trim();
+          } else {
+            ownerName = String(rawOwnerName);
+          }
+        } else {
+          ownerName = String(rawOwnerName);
+        }
+      }
       
       if (!acc[ownerId]) {
         acc[ownerId] = {
