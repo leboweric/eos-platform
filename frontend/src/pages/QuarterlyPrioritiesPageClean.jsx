@@ -2802,7 +2802,7 @@ const QuarterlyPrioritiesPageClean = () => {
             console.log('🔧 Rock display preference:', rockDisplayPreference);
             console.log('🔧 Organization data:', organization);
             const groupedRocks = groupRocksByPreference(allPriorities, rockDisplayPreference, teamMembers);
-            console.log('🔧 Grouped rocks result:', groupedRocks);
+            console.log('🔧 Grouped rocks result (fixed null names):', groupedRocks);
             
             if (allPriorities.length === 0) {
               return (
