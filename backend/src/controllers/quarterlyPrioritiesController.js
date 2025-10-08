@@ -137,7 +137,7 @@ export const getQuarterlyPriorities = async (req, res) => {
       prioritiesResult = await query(
         `SELECT 
           p.*,
-          u.first_name || ' ' || u.last_name as owner_name,
+          COALESCE(u.first_name || ' ' || u.last_name, 'Unknown User') as owner_name,
           u.email as owner_email,
           t.name as team_name,
           t.is_leadership_team as priority_from_leadership_team,
@@ -1168,7 +1168,7 @@ export const getArchivedPriorities = async (req, res) => {
     const prioritiesResult = await query(
       `SELECT 
         p.*,
-        u.first_name || ' ' || u.last_name as owner_name,
+        COALESCE(u.first_name || ' ' || u.last_name, 'Unknown User') as owner_name,
         u.email as owner_email,
         t.is_leadership_team as priority_from_leadership_team,
         CASE 
@@ -1342,7 +1342,7 @@ export const getCurrentPriorities = async (req, res) => {
     const prioritiesQuery = `
       SELECT 
         p.*,
-        u.first_name || ' ' || u.last_name as owner_name,
+        COALESCE(u.first_name || ' ' || u.last_name, 'Unknown User') as owner_name,
         u.email as owner_email,
         u.first_name as owner_first_name,
         u.last_name as owner_last_name,

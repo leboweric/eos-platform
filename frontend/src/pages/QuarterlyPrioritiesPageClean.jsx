@@ -3206,7 +3206,7 @@ const QuarterlyPrioritiesPageClean = () => {
                           return acc;
                         }, {});
                         
-                        return Object.values(grouped).sort((a, b) => a.name.localeCompare(b.name)).map(owner => (
+                        return Object.values(grouped).sort((a, b) => (a.name || '').localeCompare(b.name || '')).map(owner => (
                           <Card key={owner.id} className="bg-white border-slate-200 shadow-md hover:shadow-lg transition-shadow">
                             <CardHeader className="pb-3">
                               <div className="flex items-center justify-between">
@@ -3217,7 +3217,7 @@ const QuarterlyPrioritiesPageClean = () => {
                                     </AvatarFallback>
                                   </Avatar>
                                   <div>
-                                    <h3 className="text-lg font-bold text-slate-900">{owner.name}</h3>
+                                    <h3 className="text-lg font-bold text-slate-900">{owner.name || 'Unknown User'}</h3>
                                     <p className="text-sm text-slate-500">{owner.rocks.length} {labels?.priority_singular || 'Rock'}{owner.rocks.length !== 1 ? 's' : ''}</p>
                                   </div>
                                 </div>
@@ -3542,18 +3542,18 @@ const QuarterlyPrioritiesPageClean = () => {
                     </div>
                 ) : (
                   // Grouped by Owner: Use exact L10 meeting design
-                  Object.values(groupedRocks.byOwner || {}).sort((a, b) => a.name.localeCompare(b.name)).map(owner => (
+                  Object.values(groupedRocks.byOwner || {}).sort((a, b) => (a.name || '').localeCompare(b.name || '')).map(owner => (
                     <Card key={owner.id} className="bg-white border-slate-200 shadow-md hover:shadow-lg transition-shadow">
                       <CardHeader className="pb-3">
                         <div className="flex items-center justify-between">
                           <div className="flex items-center gap-3">
                             <Avatar className="h-10 w-10 border-2 border-slate-100">
                               <AvatarFallback className="bg-gradient-to-br from-slate-100 to-slate-200 text-slate-700 font-semibold">
-                                {owner.name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2)}
+                                {(owner.name || 'Unknown').split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2)}
                               </AvatarFallback>
                             </Avatar>
                             <div>
-                              <h3 className="text-lg font-bold text-slate-900">{owner.name}</h3>
+                              <h3 className="text-lg font-bold text-slate-900">{owner.name || 'Unknown User'}</h3>
                               <p className="text-sm text-slate-500">{owner.rocks.length} {labels?.priority_singular || 'Rock'}{owner.rocks.length !== 1 ? 's' : ''}</p>
                             </div>
                           </div>
