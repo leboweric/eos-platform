@@ -5719,7 +5719,7 @@ const WeeklyAccountabilityMeetingPage = () => {
                           
                           // Archive solved issues
                           const solvedIssues = [...(shortTermIssues || []), ...(longTermIssues || [])]
-                            .filter(i => i.is_solved);
+                            .filter(i => i.status === 'closed' || i.status === 'resolved' || i.status === 'solved' || i.status === 'completed');
                           for (const issue of solvedIssues) {
                             try {
                               await issuesService.archiveIssue(issue.id);
@@ -5755,7 +5755,7 @@ const WeeklyAccountabilityMeetingPage = () => {
                               rating: ratingAverage > 0 ? ratingAverage : meetingRating, // Use average if available
                               individualRatings: allParticipantRatings, // Include all participant ratings
                               todos: todos.filter(t => t.status !== 'complete' && t.status !== 'completed'),
-                              issues: allIssues.filter(i => !i.is_solved),
+                              issues: allIssues.filter(i => i.status !== 'closed' && i.status !== 'resolved' && i.status !== 'solved' && i.status !== 'completed'),
                               headlines: headlines,
                               cascadeMessage: cascadeMessage.trim() ? cascadeMessage : null
                             });
