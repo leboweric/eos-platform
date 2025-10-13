@@ -2178,9 +2178,10 @@ const WeeklyAccountabilityMeetingPage = () => {
   const handleArchivePriority = async (priorityId) => {
     try {
       const orgId = user?.organizationId || user?.organization_id;
-      const teamId = getEffectiveTeamId(null, user);
+      const cleanTeamId = (teamId === 'null' || teamId === 'undefined') ? null : teamId;
+      const effectiveTeamId = getEffectiveTeamId(cleanTeamId, user);
       
-      await quarterlyPrioritiesService.archivePriority(orgId, teamId, priorityId);
+      await quarterlyPrioritiesService.archivePriority(orgId, effectiveTeamId, priorityId);
       
       // Remove from local state
       setPriorities(prev => prev.filter(p => p.id !== priorityId));
@@ -2193,9 +2194,10 @@ const WeeklyAccountabilityMeetingPage = () => {
   const handleEditMilestone = async (priorityId, milestoneId, updates) => {
     try {
       const orgId = user?.organizationId || user?.organization_id;
-      const teamId = getEffectiveTeamId(null, user);
+      const cleanTeamId = (teamId === 'null' || teamId === 'undefined') ? null : teamId;
+      const effectiveTeamId = getEffectiveTeamId(cleanTeamId, user);
       
-      await quarterlyPrioritiesService.updateMilestone(orgId, teamId, priorityId, milestoneId, updates);
+      await quarterlyPrioritiesService.updateMilestone(orgId, effectiveTeamId, priorityId, milestoneId, updates);
       await fetchPrioritiesData();
     } catch (error) {
       console.error('Failed to edit milestone:', error);
@@ -2205,13 +2207,14 @@ const WeeklyAccountabilityMeetingPage = () => {
   const handleDeleteMilestone = async (priorityId, milestoneId) => {
     try {
       const orgId = user?.organizationId || user?.organization_id;
-      const teamId = getEffectiveTeamId(null, user);
+      const cleanTeamId = (teamId === 'null' || teamId === 'undefined') ? null : teamId;
+      const effectiveTeamId = getEffectiveTeamId(cleanTeamId, user);
       
-      if (!orgId || !teamId) {
+      if (!orgId || !effectiveTeamId) {
         throw new Error('Organization or team not found');
       }
       
-      await quarterlyPrioritiesService.deleteMilestone(orgId, teamId, priorityId, milestoneId);
+      await quarterlyPrioritiesService.deleteMilestone(orgId, effectiveTeamId, priorityId, milestoneId);
       
       // Update local state instead of refetching
       const removeMilestone = (milestones) => 
@@ -2254,7 +2257,7 @@ const WeeklyAccountabilityMeetingPage = () => {
         if (newStatus !== currentPriority.status) {
           updates.status = newStatus;
         }
-        await quarterlyPrioritiesService.updatePriority(orgId, teamId, priorityId, updates);
+        await quarterlyPrioritiesService.updatePriority(orgId, effectiveTeamId, priorityId, updates);
         
         // Update local state with new progress and status
         setPriorities(prev => prev.map(p => 
@@ -2277,14 +2280,15 @@ const WeeklyAccountabilityMeetingPage = () => {
   const handleAddUpdate = async (priorityId, updateText, statusChange = null) => {
     try {
       const orgId = user?.organizationId || user?.organization_id;
-      const teamId = getEffectiveTeamId(null, user);
+      const cleanTeamId = (teamId === 'null' || teamId === 'undefined') ? null : teamId;
+      const effectiveTeamId = getEffectiveTeamId(cleanTeamId, user);
       
-      if (!orgId || !teamId) {
+      if (!orgId || !effectiveTeamId) {
         throw new Error('Organization or team not found');
       }
       
       // Fix: Use correct method name
-      const result = await quarterlyPrioritiesService.addPriorityUpdate(orgId, teamId, priorityId, updateText, statusChange);
+      const result = await quarterlyPrioritiesService.addPriorityUpdate(orgId, effectiveTeamId, priorityId, updateText, statusChange);
       
       // Ensure we have a valid result
       if (!result || !result.id) {
@@ -2328,14 +2332,15 @@ const WeeklyAccountabilityMeetingPage = () => {
       }
       
       const orgId = user?.organizationId || user?.organization_id;
-      const teamId = getEffectiveTeamId(null, user);
+      const cleanTeamId = (teamId === 'null' || teamId === 'undefined') ? null : teamId;
+      const effectiveTeamId = getEffectiveTeamId(cleanTeamId, user);
       
-      if (!orgId || !teamId) {
+      if (!orgId || !effectiveTeamId) {
         throw new Error('Organization or team not found');
       }
       
       // Fix: Use correct method name
-      await quarterlyPrioritiesService.editPriorityUpdate(orgId, teamId, priorityId, updateId, editText);
+      await quarterlyPrioritiesService.editPriorityUpdate(orgId, effectiveTeamId, priorityId, updateId, editText);
       
       // Update local state immediately
       const editUpdate = (updates) => 
@@ -2367,14 +2372,15 @@ const WeeklyAccountabilityMeetingPage = () => {
       }
       
       const orgId = user?.organizationId || user?.organization_id;
-      const teamId = getEffectiveTeamId(null, user);
+      const cleanTeamId = (teamId === 'null' || teamId === 'undefined') ? null : teamId;
+      const effectiveTeamId = getEffectiveTeamId(cleanTeamId, user);
       
-      if (!orgId || !teamId) {
+      if (!orgId || !effectiveTeamId) {
         throw new Error('Organization or team not found');
       }
       
       // Fix: Use correct method name
-      await quarterlyPrioritiesService.deletePriorityUpdate(orgId, teamId, priorityId, updateId);
+      await quarterlyPrioritiesService.deletePriorityUpdate(orgId, effectiveTeamId, priorityId, updateId);
       
       // Update local state immediately
       const removeUpdate = (updates) => 
@@ -2402,9 +2408,10 @@ const WeeklyAccountabilityMeetingPage = () => {
   const handleUploadAttachment = async (priorityId, file) => {
     try {
       const orgId = user?.organizationId || user?.organization_id;
-      const teamId = getEffectiveTeamId(null, user);
+      const cleanTeamId = (teamId === 'null' || teamId === 'undefined') ? null : teamId;
+      const effectiveTeamId = getEffectiveTeamId(cleanTeamId, user);
       
-      await quarterlyPrioritiesService.uploadAttachment(orgId, teamId, priorityId, file);
+      await quarterlyPrioritiesService.uploadAttachment(orgId, effectiveTeamId, priorityId, file);
       await fetchPrioritiesData();
     } catch (error) {
       console.error('Failed to upload attachment:', error);
@@ -2414,9 +2421,10 @@ const WeeklyAccountabilityMeetingPage = () => {
   const handleDeleteAttachment = async (priorityId, attachmentId) => {
     try {
       const orgId = user?.organizationId || user?.organization_id;
-      const teamId = getEffectiveTeamId(null, user);
+      const cleanTeamId = (teamId === 'null' || teamId === 'undefined') ? null : teamId;
+      const effectiveTeamId = getEffectiveTeamId(cleanTeamId, user);
       
-      await quarterlyPrioritiesService.deleteAttachment(orgId, teamId, priorityId, attachmentId);
+      await quarterlyPrioritiesService.deleteAttachment(orgId, effectiveTeamId, priorityId, attachmentId);
       await fetchPrioritiesData();
     } catch (error) {
       console.error('Failed to delete attachment:', error);
@@ -6226,12 +6234,16 @@ const WeeklyAccountabilityMeetingPage = () => {
             onToggleMilestone={handleToggleMilestone}
             onSave={async (priorityData) => {
               try {
+                const orgId = user?.organizationId || user?.organization_id;
+                const cleanTeamId = (teamId === 'null' || teamId === 'undefined') ? null : teamId;
+                const effectiveTeamId = getEffectiveTeamId(cleanTeamId, user);
+                
                 if (selectedPriority) {
-                  await quarterlyPrioritiesService.updatePriority(selectedPriority.id, priorityData);
+                  await quarterlyPrioritiesService.updatePriority(orgId, effectiveTeamId, selectedPriority.id, priorityData);
                 } else {
                   await quarterlyPrioritiesService.createPriority({
                     ...priorityData,
-                    teamId: teamId === 'null' || teamId === 'undefined' ? null : teamId
+                    teamId: effectiveTeamId
                   });
                 }
                 await fetchPrioritiesData();
