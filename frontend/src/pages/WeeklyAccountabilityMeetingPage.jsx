@@ -2657,10 +2657,15 @@ const WeeklyAccountabilityMeetingPage = () => {
           console.log('⏱️ Resetting timer to active duration:', result.session.active_duration_seconds);
         }
         
+        // Reset the section start time to NOW so section timer calculates correctly from resume point
+        setCurrentSectionStartTime(Date.now());
+        console.log('⏱️ Reset section start time to:', new Date().toISOString());
+        
         console.log('6️⃣ State updated after resume:', { 
           isPaused: false, 
           totalPausedTime: result.session.total_paused_duration,
-          elapsedTime: result.session.active_duration_seconds 
+          elapsedTime: result.session.active_duration_seconds,
+          currentSectionStartTime: new Date().toISOString()
         });
         
         // Broadcast resume to all participants
@@ -2689,8 +2694,8 @@ const WeeklyAccountabilityMeetingPage = () => {
             [activeSection]: newCumulative
           }));
           
-          // Reset the start time so we don't double-count when resuming
-          setCurrentSectionStartTime(Date.now());
+          // Set start time to null during pause to stop section timer calculation
+          setCurrentSectionStartTime(null);
           setSectionElapsedTime(newCumulative);
           console.log(`⏸️ Pausing section ${activeSection} at ${newCumulative} seconds`);
         }
