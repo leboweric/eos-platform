@@ -5752,6 +5752,21 @@ const WeeklyAccountabilityMeetingPage = () => {
                           const allIssues = [...(shortTermIssues || []), ...(longTermIssues || [])];
                           
                           try {
+                            // Calculate meeting duration
+                            let durationMinutes;
+                            if (elapsedTime > 0) {
+                              // Use timer if it was running
+                              durationMinutes = Math.floor(elapsedTime / 60);
+                            } else if (meetingStartTime) {
+                              // Calculate from meeting start time if timer wasn't started
+                              const now = Date.now();
+                              const actualDuration = Math.floor((now - meetingStartTime) / 1000 / 60);
+                              durationMinutes = actualDuration;
+                            } else {
+                              // Fallback: estimate based on typical meeting length (30 minutes)
+                              durationMinutes = 30;
+                            }
+                            
                             // Include participant ratings and average in email
                             const allParticipantRatings = meetingCode ? 
                               participants.map(p => {
@@ -5765,6 +5780,7 @@ const WeeklyAccountabilityMeetingPage = () => {
                             
                             emailResult = await meetingsService.concludeMeeting(orgId, effectiveTeamId, {
                               meetingType: 'weekly',
+                              duration: durationMinutes,  // Added duration field
                               rating: ratingAverage > 0 ? ratingAverage : meetingRating, // Use average if available
                               individualRatings: allParticipantRatings, // Include all participant ratings
                               todos: todos.filter(t => t.status !== 'complete' && t.status !== 'completed'),

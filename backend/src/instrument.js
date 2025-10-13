@@ -27,12 +27,26 @@ if (process.env.SENTRY_DSN) {
       : undefined, // Let Sentry auto-detect in development
     
     // Attach useful context
-    beforeSend(event) {
+    beforeSend(event, hint) {
       // Don't send errors in development
       if (process.env.NODE_ENV === 'development') {
         console.log('Sentry event (not sent in dev):', event);
         return null;
       }
+      
+      // Filter out bot scanner 404 errors
+      const error = hint.originalException;
+      if (error?.message?.includes('Not Found')) {
+        const url = error.message.split(' - ')[1] || '';
+        const isBotUrl = /\.(php|asp|aspx|cgi)$/i.test(url) ||
+                         /\/(wp-|admin|phpmyadmin|cgi-bin)/i.test(url);
+        
+        if (isBotUrl) {
+          // Don't send bot scanner 404s to Sentry
+          return null;
+        }
+      }
+      
       return event;
     },
   });

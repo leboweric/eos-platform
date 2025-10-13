@@ -259,15 +259,16 @@ export const concludeMeeting = async (req, res) => {
     let totalRocks = 0;
     
     try {
-      // Get current active priorities - no quarter filtering, just like the Rock Review page
+      // Get current active priorities for the specific team - filter by team_id
       const rocksQuery = `SELECT id, title, status, progress 
          FROM quarterly_priorities 
          WHERE organization_id = $1 
+         AND team_id = $2
          AND deleted_at IS NULL`;
       
       const rocksResult = await db.query(
         rocksQuery,
-        [organizationId]
+        [organizationId, teamId]
       );
       
       totalRocks = rocksResult.rows.length;
