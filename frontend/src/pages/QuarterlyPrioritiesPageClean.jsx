@@ -12,6 +12,7 @@ import { useTerminology } from '../contexts/TerminologyContext';
 import { getEffectiveTeamId } from '../utils/teamUtils';
 import { groupRocksByPreference, getSectionHeader } from '../utils/rockGroupingUtils';
 import PriorityDialog from '../components/priorities/PriorityDialog';
+import RockContextMenu from '../components/priorities/RockContextMenu';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -1112,6 +1113,76 @@ const QuarterlyPrioritiesPageClean = () => {
     } catch (err) {
       console.error('Failed to archive priority:', err);
       setError('Failed to archive item');
+    }
+  };
+
+  // Context Menu Handlers
+  const handleContextMenuEdit = (priority) => {
+    setSelectedPriority(priority);
+    setShowPriorityDialog(true);
+  };
+
+  const handleContextMenuChangeStatus = async (priority, newStatus) => {
+    try {
+      await handleUpdatePriority(priority.id, { status: newStatus });
+      setSuccess(`Priority marked as ${newStatus.replace('-', ' ')}`);
+    } catch (error) {
+      console.error('Failed to update status:', error);
+      setError('Failed to update priority status');
+    }
+  };
+
+  const handleContextMenuAddMilestone = (priority) => {
+    setSelectedPriority(priority);
+    setShowPriorityDialog(true);
+    // Could add a flag to auto-focus milestone tab if needed
+  };
+
+  const handleContextMenuArchive = async (priority) => {
+    await handleArchivePriority(priority.id);
+  };
+
+  const handleContextMenuDelete = async (priority) => {
+    // For now, archive is safer than delete
+    // If you want actual delete, implement the delete endpoint
+    await handleArchivePriority(priority.id);
+  };
+
+  const handleContextMenuDuplicate = async (priority) => {
+    try {
+      const priorityData = {
+        title: `${priority.title} (Copy)`,
+        description: priority.description,
+        ownerId: priority.owner_id || priority.ownerId,
+        dueDate: priority.due_date || priority.dueDate,
+        isCompanyPriority: priority.is_company_priority || priority.priority_type === 'company',
+        status: 'on-track',
+        progress: 0
+      };
+      
+      const orgId = user?.organizationId;
+      const teamId = selectedDepartment?.id;
+      
+      if (!orgId || !teamId) {
+        throw new Error('Organization or team not found');
+      }
+      
+      // Get current quarter and year
+      const now = new Date();
+      const currentQuarter = Math.floor((now.getMonth() / 3)) + 1;
+      const currentYear = now.getFullYear();
+      const quarter = `Q${currentQuarter}`;
+      
+      await quarterlyPrioritiesService.createPriority(orgId, teamId, {
+        ...priorityData,
+        quarter,
+        year: currentYear
+      });
+      await fetchQuarterlyData();
+      setSuccess('Priority duplicated successfully');
+    } catch (error) {
+      console.error('Failed to duplicate priority:', error);
+      setError('Failed to duplicate priority');
     }
   };
 
@@ -2886,7 +2957,16 @@ const QuarterlyPrioritiesPageClean = () => {
                                   return (
                                     <div key={priority.id} className="border-b border-slate-100 last:border-0">
                                       {/* Main Rock Row */}
-                                      <div className="flex items-center px-3 py-3 hover:bg-slate-50 rounded-lg transition-colors group">
+                                      <RockContextMenu
+                                        priority={priority}
+                                        onEdit={handleContextMenuEdit}
+                                        onChangeStatus={handleContextMenuChangeStatus}
+                                        onAddMilestone={handleContextMenuAddMilestone}
+                                        onArchive={handleContextMenuArchive}
+                                        onDelete={handleContextMenuDelete}
+                                        onDuplicate={handleContextMenuDuplicate}
+                                      >
+                                      <div className="flex items-center px-3 py-3 hover:bg-slate-50 rounded-lg transition-colors group cursor-context-menu">
                                         {/* Expand Arrow */}
                                         <div className="w-8 flex items-center justify-center">
                                           {totalMilestones > 0 ? (
@@ -3065,6 +3145,7 @@ const QuarterlyPrioritiesPageClean = () => {
                                           </Button>
                                         </div>
                                       </div>
+                                      </RockContextMenu>
                                       
                                       {/* Expanded Milestones Section */}
                                       {isExpanded && (
@@ -3257,7 +3338,16 @@ const QuarterlyPrioritiesPageClean = () => {
                                   return (
                                     <div key={priority.id} className="border-b border-slate-100 last:border-0">
                                       {/* Main Rock Row */}
-                                      <div className="flex items-center px-3 py-3 hover:bg-slate-50 rounded-lg transition-colors group">
+                                      <RockContextMenu
+                                        priority={priority}
+                                        onEdit={handleContextMenuEdit}
+                                        onChangeStatus={handleContextMenuChangeStatus}
+                                        onAddMilestone={handleContextMenuAddMilestone}
+                                        onArchive={handleContextMenuArchive}
+                                        onDelete={handleContextMenuDelete}
+                                        onDuplicate={handleContextMenuDuplicate}
+                                      >
+                                      <div className="flex items-center px-3 py-3 hover:bg-slate-50 rounded-lg transition-colors group cursor-context-menu">
                                         {/* Expand Arrow */}
                                         <div className="w-8 flex items-center justify-center">
                                           {totalMilestones > 0 ? (
@@ -3431,6 +3521,7 @@ const QuarterlyPrioritiesPageClean = () => {
                                           </Button>
                                         </div>
                                       </div>
+                                      </RockContextMenu>
                                       
                                       {/* Expanded Milestones Section */}
                                       {isExpanded && (
@@ -3598,7 +3689,16 @@ const QuarterlyPrioritiesPageClean = () => {
                             return (
                               <div key={priority.id} className="border-b border-slate-100 last:border-0">
                                 {/* Main Rock Row */}
-                                <div className="flex items-center px-3 py-3 hover:bg-slate-50 rounded-lg transition-colors group">
+                                <RockContextMenu
+                                  priority={priority}
+                                  onEdit={handleContextMenuEdit}
+                                  onChangeStatus={handleContextMenuChangeStatus}
+                                  onAddMilestone={handleContextMenuAddMilestone}
+                                  onArchive={handleContextMenuArchive}
+                                  onDelete={handleContextMenuDelete}
+                                  onDuplicate={handleContextMenuDuplicate}
+                                >
+                                <div className="flex items-center px-3 py-3 hover:bg-slate-50 rounded-lg transition-colors group cursor-context-menu">
                                   {/* Expand Arrow - Only show if there are milestones */}
                                   <div className="w-8 flex items-center justify-center">
                                     {totalMilestones > 0 ? (
@@ -3775,6 +3875,7 @@ const QuarterlyPrioritiesPageClean = () => {
                                     </Button>
                                   </div>
                                 </div>
+                                </RockContextMenu>
                                 
                                 {/* Expanded Milestones Section */}
                                 {isExpanded && (
