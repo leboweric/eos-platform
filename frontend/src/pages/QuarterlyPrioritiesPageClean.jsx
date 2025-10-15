@@ -116,6 +116,8 @@ const QuarterlyPrioritiesPageClean = () => {
   const [addPriorityMilestones, setAddPriorityMilestones] = useState([]);
   const [showAddMilestoneInDialog, setShowAddMilestoneInDialog] = useState(false);
   const [addMilestoneForm, setAddMilestoneForm] = useState({ title: '', dueDate: '', ownerId: null });
+  const [milestoneError, setMilestoneError] = useState('');
+  const [editMilestoneError, setEditMilestoneError] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [success, setSuccess] = useState(null);
@@ -3999,11 +4001,24 @@ const QuarterlyPrioritiesPageClean = () => {
                       {editingMilestoneIndex === index ? (
                         // Edit mode
                         <div className="flex-1 space-y-2">
+                          {editMilestoneError && (
+                            <div className="p-2 bg-red-50 border border-red-200 rounded flex items-start gap-2">
+                              <AlertCircle className="h-4 w-4 text-red-600 flex-shrink-0 mt-0.5" />
+                              <p className="text-xs text-red-700">{editMilestoneError}</p>
+                            </div>
+                          )}
                           <Input
                             value={editMilestoneForm.title}
-                            onChange={(e) => setEditMilestoneForm({ ...editMilestoneForm, title: e.target.value })}
+                            onChange={(e) => {
+                              setEditMilestoneForm({ ...editMilestoneForm, title: e.target.value });
+                              if (editMilestoneError) setEditMilestoneError('');
+                            }}
                             placeholder="Milestone title"
-                            className="bg-white"
+                            className={`bg-white ${
+                              editMilestoneError && !editMilestoneForm.title 
+                                ? 'border-red-300 focus:ring-red-500' 
+                                : ''
+                            }`}
                           />
                           <div className="flex gap-2">
                             <Select
@@ -4036,18 +4051,44 @@ const QuarterlyPrioritiesPageClean = () => {
                             <Input
                               type="date"
                               value={editMilestoneForm.dueDate}
-                              onChange={(e) => setEditMilestoneForm({ ...editMilestoneForm, dueDate: e.target.value })}
-                              className="bg-white flex-1"
+                              onChange={(e) => {
+                                setEditMilestoneForm({ ...editMilestoneForm, dueDate: e.target.value });
+                                if (editMilestoneError) setEditMilestoneError('');
+                              }}
+                              className={`bg-white flex-1 ${
+                                editMilestoneError && !editMilestoneForm.dueDate 
+                                  ? 'border-red-300 focus:ring-red-500' 
+                                  : ''
+                              }`}
                             />
                           </div>
                           <div className="flex gap-2">
                             <Button
                               size="sm"
                               onClick={() => {
+                                // Clear any previous errors
+                                setEditMilestoneError('');
+                                
+                                // Validate required fields
+                                if (!editMilestoneForm.title || editMilestoneForm.title.trim() === '') {
+                                  setEditMilestoneError('Milestone title is required');
+                                  return;
+                                }
+                                
+                                if (!editMilestoneForm.dueDate) {
+                                  setEditMilestoneError('Milestone due date is required');
+                                  return;
+                                }
+                                
+                                // All validation passed - save milestone
                                 const updatedMilestones = [...addPriorityMilestones];
-                                updatedMilestones[index] = { ...editMilestoneForm };
+                                updatedMilestones[index] = { 
+                                  ...editMilestoneForm,
+                                  title: editMilestoneForm.title.trim()
+                                };
                                 setAddPriorityMilestones(updatedMilestones);
                                 setEditingMilestoneIndex(null);
+                                setEditMilestoneError('');
                               }}
                               className="text-white"
                               style={{
@@ -4059,7 +4100,10 @@ const QuarterlyPrioritiesPageClean = () => {
                             <Button
                               size="sm"
                               variant="outline"
-                              onClick={() => setEditingMilestoneIndex(null)}
+                              onClick={() => {
+                                setEditingMilestoneIndex(null);
+                                setEditMilestoneError('');
+                              }}
                             >
                               Cancel
                             </Button>
@@ -4113,57 +4157,112 @@ const QuarterlyPrioritiesPageClean = () => {
               
               {showAddMilestoneInDialog && (
                 <div className="p-3 bg-blue-50 rounded-lg space-y-2">
-                  <Input
-                    placeholder="Milestone title"
-                    value={addMilestoneForm.title}
-                    onChange={(e) => setAddMilestoneForm({ ...addMilestoneForm, title: e.target.value })}
-                    autoFocus
-                    className="bg-white"
-                  />
-                  <div className="flex gap-2">
-                    <Select
-                      value={addMilestoneForm.ownerId || 'rock-owner-default'}
-                      onValueChange={(value) => setAddMilestoneForm({ 
-                        ...addMilestoneForm, 
-                        ownerId: value === 'rock-owner-default' ? null : value 
-                      })}
-                    >
-                      <SelectTrigger className="flex-1 bg-white">
-                        <SelectValue placeholder="Same as rock owner" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="rock-owner-default">Same as rock owner</SelectItem>
-                        {(teamMembers || []).length > 0 ? (
-                          teamMembers.filter(member => member.id).map(member => (
-                            <SelectItem key={member.id} value={member.id}>
-                              {member.name}
-                            </SelectItem>
-                          ))
-                        ) : (
-                          <SelectItem value={user?.id || 'current-user'}>
-                            {user?.firstName && user?.lastName 
-                              ? `${user.firstName} ${user.lastName}` 
-                              : user?.email || 'Current User'}
-                          </SelectItem>
-                        )}
-                      </SelectContent>
-                    </Select>
+                  {/* Error Alert */}
+                  {milestoneError && (
+                    <div className="mb-3 p-3 bg-red-50 border border-red-200 rounded-lg flex items-start gap-2">
+                      <AlertCircle className="h-5 w-5 text-red-600 flex-shrink-0 mt-0.5" />
+                      <p className="text-sm text-red-700">{milestoneError}</p>
+                    </div>
+                  )}
+                  
+                  <div>
+                    <Label className="text-sm font-medium">
+                      Title <span className="text-red-500">*</span>
+                    </Label>
                     <Input
-                      type="date"
-                      value={addMilestoneForm.dueDate}
-                      onChange={(e) => setAddMilestoneForm({ ...addMilestoneForm, dueDate: e.target.value })}
-                      className="bg-white flex-1"
+                      placeholder="Milestone title"
+                      value={addMilestoneForm.title}
+                      onChange={(e) => {
+                        setAddMilestoneForm({ ...addMilestoneForm, title: e.target.value });
+                        if (milestoneError) setMilestoneError('');
+                      }}
+                      autoFocus
+                      className={`bg-white mt-1 ${
+                        milestoneError && !addMilestoneForm.title 
+                          ? 'border-red-300 focus:ring-red-500' 
+                          : ''
+                      }`}
                     />
                   </div>
+                  
+                  <div className="flex gap-2">
+                    <div className="flex-1">
+                      <Label className="text-sm font-medium">Owner</Label>
+                      <Select
+                        value={addMilestoneForm.ownerId || 'rock-owner-default'}
+                        onValueChange={(value) => setAddMilestoneForm({ 
+                          ...addMilestoneForm, 
+                          ownerId: value === 'rock-owner-default' ? null : value 
+                        })}
+                      >
+                        <SelectTrigger className="bg-white mt-1">
+                          <SelectValue placeholder="Same as rock owner" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="rock-owner-default">Same as rock owner</SelectItem>
+                          {(teamMembers || []).length > 0 ? (
+                            teamMembers.filter(member => member.id).map(member => (
+                              <SelectItem key={member.id} value={member.id}>
+                                {member.name}
+                              </SelectItem>
+                            ))
+                          ) : (
+                            <SelectItem value={user?.id || 'current-user'}>
+                              {user?.firstName && user?.lastName 
+                                ? `${user.firstName} ${user.lastName}` 
+                                : user?.email || 'Current User'}
+                            </SelectItem>
+                          )}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    
+                    <div className="flex-1">
+                      <Label className="text-sm font-medium">
+                        Due Date <span className="text-red-500">*</span>
+                      </Label>
+                      <Input
+                        type="date"
+                        value={addMilestoneForm.dueDate}
+                        onChange={(e) => {
+                          setAddMilestoneForm({ ...addMilestoneForm, dueDate: e.target.value });
+                          if (milestoneError) setMilestoneError('');
+                        }}
+                        className={`bg-white mt-1 ${
+                          milestoneError && !addMilestoneForm.dueDate 
+                            ? 'border-red-300 focus:ring-red-500' 
+                            : ''
+                        }`}
+                      />
+                    </div>
+                  </div>
+                  
                   <div className="flex gap-2">
                     <Button
                       size="sm"
                       onClick={() => {
-                        if (addMilestoneForm.title.trim()) {
-                          setAddPriorityMilestones(prev => [...prev, { ...addMilestoneForm }]);
-                          setAddMilestoneForm({ title: '', dueDate: '', ownerId: null });
-                          setShowAddMilestoneInDialog(false);
+                        // Clear any previous errors
+                        setMilestoneError('');
+                        
+                        // Validate required fields
+                        if (!addMilestoneForm.title || addMilestoneForm.title.trim() === '') {
+                          setMilestoneError('Please enter a milestone title');
+                          return;
                         }
+                        
+                        if (!addMilestoneForm.dueDate) {
+                          setMilestoneError('Please select a due date for the milestone');
+                          return;
+                        }
+                        
+                        // All validation passed - create milestone
+                        setAddPriorityMilestones(prev => [...prev, { 
+                          ...addMilestoneForm,
+                          title: addMilestoneForm.title.trim()
+                        }]);
+                        setAddMilestoneForm({ title: '', dueDate: '', ownerId: null });
+                        setMilestoneError('');
+                        setShowAddMilestoneInDialog(false);
                       }}
                       className="text-white"
                       style={{
@@ -4177,6 +4276,7 @@ const QuarterlyPrioritiesPageClean = () => {
                       variant="outline"
                       onClick={() => {
                         setAddMilestoneForm({ title: '', dueDate: '', ownerId: null });
+                        setMilestoneError('');
                         setShowAddMilestoneInDialog(false);
                       }}
                     >
