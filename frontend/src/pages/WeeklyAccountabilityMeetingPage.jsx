@@ -4412,7 +4412,11 @@ const WeeklyAccountabilityMeetingPage = () => {
                                           Create Linked Headline
                                         </ContextMenuItem>
                                         <ContextMenuItem onClick={() => {
-                                          setEditingTodo({ 
+                                          // Don't set editingTodo for new todos
+                                          setEditingTodo(null);
+                                          // Set todo from priority for the dialog to use
+                                          setTodoFromIssue({
+                                            linkedPriorityId: priority.id,
                                             title: priority.title,
                                             description: `Related to ${labels.priority_singular || 'Rock'}: ${priority.title}`,
                                             dueDate: format(addDays(new Date(), 7), 'yyyy-MM-dd'),
@@ -5264,9 +5268,14 @@ const WeeklyAccountabilityMeetingPage = () => {
                                     </ContextMenuItem>
                                     <ContextMenuItem 
                                       onClick={() => {
-                                        setEditingTodo({ 
+                                        // Set null for creation, use todoFromIssue for initial data
+                                        setEditingTodo(null);
+                                        setTodoFromIssue({
+                                          linkedIssueId: issue.id,
                                           title: issue.title,
-                                          due_date: format(addDays(new Date(), 7), 'yyyy-MM-dd')
+                                          description: `Related to Issue: ${issue.title}`,
+                                          dueDate: format(addDays(new Date(), 7), 'yyyy-MM-dd'),
+                                          assignedToId: user.id
                                         });
                                         setShowTodoDialog(true);
                                       }}
