@@ -115,7 +115,7 @@ const QuarterlyPrioritiesPageClean = () => {
   const [showAddPriority, setShowAddPriority] = useState(false);
   const [addPriorityMilestones, setAddPriorityMilestones] = useState([]);
   const [showAddMilestoneInDialog, setShowAddMilestoneInDialog] = useState(false);
-  const [addMilestoneForm, setAddMilestoneForm] = useState({ title: '', dueDate: '', ownerId: '' });
+  const [addMilestoneForm, setAddMilestoneForm] = useState({ title: '', dueDate: '', ownerId: null });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [success, setSuccess] = useState(null);
@@ -154,7 +154,7 @@ const QuarterlyPrioritiesPageClean = () => {
     milestones: []
   });
   const [editingMilestoneIndex, setEditingMilestoneIndex] = useState(null);
-  const [editMilestoneForm, setEditMilestoneForm] = useState({ title: '', dueDate: '', ownerId: '' });
+  const [editMilestoneForm, setEditMilestoneForm] = useState({ title: '', dueDate: '', ownerId: null });
   const [newMilestoneForm, setNewMilestoneForm] = useState({
     title: '',
     dueDate: ''
@@ -168,7 +168,7 @@ const QuarterlyPrioritiesPageClean = () => {
   const [expandedPriorities, setExpandedPriorities] = useState({});
   const [openStatusDropdown, setOpenStatusDropdown] = useState(null);
   const [addingMilestoneFor, setAddingMilestoneFor] = useState(null);
-  const [newMilestone, setNewMilestone] = useState({ title: '', dueDate: '', ownerId: '' });
+  const [newMilestone, setNewMilestone] = useState({ title: '', dueDate: '', ownerId: null });
 
   // Close status dropdown when clicking outside
   useEffect(() => {
@@ -4007,14 +4007,17 @@ const QuarterlyPrioritiesPageClean = () => {
                           />
                           <div className="flex gap-2">
                             <Select
-                              value={editMilestoneForm.ownerId || ''}
-                              onValueChange={(value) => setEditMilestoneForm({ ...editMilestoneForm, ownerId: value })}
+                              value={editMilestoneForm.ownerId || 'rock-owner-default'}
+                              onValueChange={(value) => setEditMilestoneForm({ 
+                                ...editMilestoneForm, 
+                                ownerId: value === 'rock-owner-default' ? null : value 
+                              })}
                             >
                               <SelectTrigger className="flex-1 bg-white">
                                 <SelectValue placeholder="Same as rock owner" />
                               </SelectTrigger>
                               <SelectContent>
-                                <SelectItem value="">Same as rock owner</SelectItem>
+                                <SelectItem value="rock-owner-default">Same as rock owner</SelectItem>
                                 {(teamMembers || []).length > 0 ? (
                                   teamMembers.filter(member => member.id).map(member => (
                                     <SelectItem key={member.id} value={member.id}>
@@ -4119,14 +4122,17 @@ const QuarterlyPrioritiesPageClean = () => {
                   />
                   <div className="flex gap-2">
                     <Select
-                      value={addMilestoneForm.ownerId || ''}
-                      onValueChange={(value) => setAddMilestoneForm({ ...addMilestoneForm, ownerId: value })}
+                      value={addMilestoneForm.ownerId || 'rock-owner-default'}
+                      onValueChange={(value) => setAddMilestoneForm({ 
+                        ...addMilestoneForm, 
+                        ownerId: value === 'rock-owner-default' ? null : value 
+                      })}
                     >
                       <SelectTrigger className="flex-1 bg-white">
                         <SelectValue placeholder="Same as rock owner" />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="">Same as rock owner</SelectItem>
+                        <SelectItem value="rock-owner-default">Same as rock owner</SelectItem>
                         {(teamMembers || []).length > 0 ? (
                           teamMembers.filter(member => member.id).map(member => (
                             <SelectItem key={member.id} value={member.id}>
@@ -4155,7 +4161,7 @@ const QuarterlyPrioritiesPageClean = () => {
                       onClick={() => {
                         if (addMilestoneForm.title.trim()) {
                           setAddPriorityMilestones(prev => [...prev, { ...addMilestoneForm }]);
-                          setAddMilestoneForm({ title: '', dueDate: '', ownerId: '' });
+                          setAddMilestoneForm({ title: '', dueDate: '', ownerId: null });
                           setShowAddMilestoneInDialog(false);
                         }
                       }}
@@ -4170,7 +4176,7 @@ const QuarterlyPrioritiesPageClean = () => {
                       size="sm"
                       variant="outline"
                       onClick={() => {
-                        setAddMilestoneForm({ title: '', dueDate: '', ownerId: '' });
+                        setAddMilestoneForm({ title: '', dueDate: '', ownerId: null });
                         setShowAddMilestoneInDialog(false);
                       }}
                     >
