@@ -38,6 +38,7 @@ import {
   Clock,
   Edit,
   Trash2,
+  Pencil,
   ChevronDown,
   ChevronUp,
   Building2,
@@ -114,7 +115,7 @@ const QuarterlyPrioritiesPageClean = () => {
   const [showAddPriority, setShowAddPriority] = useState(false);
   const [addPriorityMilestones, setAddPriorityMilestones] = useState([]);
   const [showAddMilestoneInDialog, setShowAddMilestoneInDialog] = useState(false);
-  const [addMilestoneForm, setAddMilestoneForm] = useState({ title: '', dueDate: '' });
+  const [addMilestoneForm, setAddMilestoneForm] = useState({ title: '', dueDate: '', ownerId: '' });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [success, setSuccess] = useState(null);
@@ -152,6 +153,8 @@ const QuarterlyPrioritiesPageClean = () => {
     isCompanyPriority: false,
     milestones: []
   });
+  const [editingMilestoneIndex, setEditingMilestoneIndex] = useState(null);
+  const [editMilestoneForm, setEditMilestoneForm] = useState({ title: '', dueDate: '', ownerId: '' });
   const [newMilestoneForm, setNewMilestoneForm] = useState({
     title: '',
     dueDate: ''
@@ -165,7 +168,7 @@ const QuarterlyPrioritiesPageClean = () => {
   const [expandedPriorities, setExpandedPriorities] = useState({});
   const [openStatusDropdown, setOpenStatusDropdown] = useState(null);
   const [addingMilestoneFor, setAddingMilestoneFor] = useState(null);
-  const [newMilestone, setNewMilestone] = useState({ title: '', dueDate: '' });
+  const [newMilestone, setNewMilestone] = useState({ title: '', dueDate: '', ownerId: '' });
 
   // Close status dropdown when clicking outside
   useEffect(() => {
@@ -3993,23 +3996,113 @@ const QuarterlyPrioritiesPageClean = () => {
                 <div className="space-y-2">
                   {addPriorityMilestones.map((milestone, index) => (
                     <div key={index} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
-                      <div>
-                        <p className="font-medium">{milestone.title}</p>
-                        {milestone.dueDate && (
-                          <p className="text-sm text-gray-500">
-                            Due: {format(new Date(milestone.dueDate), 'MMM d, yyyy')}
-                          </p>
-                        )}
-                      </div>
-                      <Button
-                        size="sm"
-                        variant="ghost"
-                        onClick={() => {
-                          setAddPriorityMilestones(prev => prev.filter((_, i) => i !== index));
-                        }}
-                      >
-                        <Trash2 className="h-3 w-3" />
-                      </Button>
+                      {editingMilestoneIndex === index ? (
+                        // Edit mode
+                        <div className="flex-1 space-y-2">
+                          <Input
+                            value={editMilestoneForm.title}
+                            onChange={(e) => setEditMilestoneForm({ ...editMilestoneForm, title: e.target.value })}
+                            placeholder="Milestone title"
+                            className="bg-white"
+                          />
+                          <div className="flex gap-2">
+                            <Select
+                              value={editMilestoneForm.ownerId || ''}
+                              onValueChange={(value) => setEditMilestoneForm({ ...editMilestoneForm, ownerId: value })}
+                            >
+                              <SelectTrigger className="flex-1 bg-white">
+                                <SelectValue placeholder="Same as rock owner" />
+                              </SelectTrigger>
+                              <SelectContent>
+                                <SelectItem value="">Same as rock owner</SelectItem>
+                                {(teamMembers || []).length > 0 ? (
+                                  teamMembers.filter(member => member.id).map(member => (
+                                    <SelectItem key={member.id} value={member.id}>
+                                      {member.name}
+                                    </SelectItem>
+                                  ))
+                                ) : (
+                                  <SelectItem value={user?.id || 'current-user'}>
+                                    {user?.firstName && user?.lastName 
+                                      ? `${user.firstName} ${user.lastName}` 
+                                      : user?.email || 'Current User'}
+                                  </SelectItem>
+                                )}
+                              </SelectContent>
+                            </Select>
+                            <Input
+                              type="date"
+                              value={editMilestoneForm.dueDate}
+                              onChange={(e) => setEditMilestoneForm({ ...editMilestoneForm, dueDate: e.target.value })}
+                              className="bg-white flex-1"
+                            />
+                          </div>
+                          <div className="flex gap-2">
+                            <Button
+                              size="sm"
+                              onClick={() => {
+                                const updatedMilestones = [...addPriorityMilestones];
+                                updatedMilestones[index] = { ...editMilestoneForm };
+                                setAddPriorityMilestones(updatedMilestones);
+                                setEditingMilestoneIndex(null);
+                              }}
+                              className="text-white"
+                              style={{
+                                background: `linear-gradient(135deg, ${themeColors.primary} 0%, ${themeColors.secondary} 100%)`
+                              }}
+                            >
+                              Save
+                            </Button>
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              onClick={() => setEditingMilestoneIndex(null)}
+                            >
+                              Cancel
+                            </Button>
+                          </div>
+                        </div>
+                      ) : (
+                        // View mode
+                        <>
+                          <div>
+                            <p className="font-medium">{milestone.title}</p>
+                            <div className="flex items-center gap-3 text-sm text-gray-500">
+                              {milestone.ownerId && milestone.ownerId !== priorityForm.ownerId && (
+                                <span>
+                                  Owner: {teamMembers.find(m => m.id === milestone.ownerId)?.name || 'Unknown'}
+                                </span>
+                              )}
+                              {milestone.dueDate && (
+                                <span>
+                                  Due: {format(new Date(milestone.dueDate), 'MMM d, yyyy')}
+                                </span>
+                              )}
+                            </div>
+                          </div>
+                          <div className="flex gap-1">
+                            <Button
+                              size="sm"
+                              variant="ghost"
+                              onClick={() => {
+                                setEditingMilestoneIndex(index);
+                                setEditMilestoneForm({ ...milestone });
+                              }}
+                            >
+                              <Pencil className="h-3 w-3" />
+                            </Button>
+                            <Button
+                              size="sm"
+                              variant="ghost"
+                              onClick={() => {
+                                setAddPriorityMilestones(prev => prev.filter((_, i) => i !== index));
+                              }}
+                            >
+                              <Trash2 className="h-3 w-3" />
+                            </Button>
+                          </div>
+                        </>
+                      )}
                     </div>
                   ))}
                 </div>
@@ -4022,21 +4115,53 @@ const QuarterlyPrioritiesPageClean = () => {
                     value={addMilestoneForm.title}
                     onChange={(e) => setAddMilestoneForm({ ...addMilestoneForm, title: e.target.value })}
                     autoFocus
+                    className="bg-white"
                   />
-                  <Input
-                    type="date"
-                    value={addMilestoneForm.dueDate}
-                    onChange={(e) => setAddMilestoneForm({ ...addMilestoneForm, dueDate: e.target.value })}
-                  />
+                  <div className="flex gap-2">
+                    <Select
+                      value={addMilestoneForm.ownerId || ''}
+                      onValueChange={(value) => setAddMilestoneForm({ ...addMilestoneForm, ownerId: value })}
+                    >
+                      <SelectTrigger className="flex-1 bg-white">
+                        <SelectValue placeholder="Same as rock owner" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="">Same as rock owner</SelectItem>
+                        {(teamMembers || []).length > 0 ? (
+                          teamMembers.filter(member => member.id).map(member => (
+                            <SelectItem key={member.id} value={member.id}>
+                              {member.name}
+                            </SelectItem>
+                          ))
+                        ) : (
+                          <SelectItem value={user?.id || 'current-user'}>
+                            {user?.firstName && user?.lastName 
+                              ? `${user.firstName} ${user.lastName}` 
+                              : user?.email || 'Current User'}
+                          </SelectItem>
+                        )}
+                      </SelectContent>
+                    </Select>
+                    <Input
+                      type="date"
+                      value={addMilestoneForm.dueDate}
+                      onChange={(e) => setAddMilestoneForm({ ...addMilestoneForm, dueDate: e.target.value })}
+                      className="bg-white flex-1"
+                    />
+                  </div>
                   <div className="flex gap-2">
                     <Button
                       size="sm"
                       onClick={() => {
                         if (addMilestoneForm.title.trim()) {
                           setAddPriorityMilestones(prev => [...prev, { ...addMilestoneForm }]);
-                          setAddMilestoneForm({ title: '', dueDate: '' });
+                          setAddMilestoneForm({ title: '', dueDate: '', ownerId: '' });
                           setShowAddMilestoneInDialog(false);
                         }
+                      }}
+                      className="text-white"
+                      style={{
+                        background: `linear-gradient(135deg, ${themeColors.primary} 0%, ${themeColors.secondary} 100%)`
                       }}
                     >
                       Add
@@ -4045,7 +4170,7 @@ const QuarterlyPrioritiesPageClean = () => {
                       size="sm"
                       variant="outline"
                       onClick={() => {
-                        setAddMilestoneForm({ title: '', dueDate: '' });
+                        setAddMilestoneForm({ title: '', dueDate: '', ownerId: '' });
                         setShowAddMilestoneInDialog(false);
                       }}
                     >
