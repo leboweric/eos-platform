@@ -77,6 +77,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogD
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { ContextMenu, ContextMenuContent, ContextMenuItem, ContextMenuTrigger } from '@/components/ui/context-menu';
+import RockContextMenu from '../components/priorities/RockContextMenu';
 import { FileText, GitBranch } from 'lucide-react';
 import { useSelectedTodos } from '../contexts/SelectedTodosContext';
 import { cascadingMessagesService } from '../services/cascadingMessagesService';
@@ -2190,6 +2191,76 @@ const WeeklyAccountabilityMeetingPage = () => {
     }
   };
 
+  // Context Menu Handlers for Priorities
+  const handleContextMenuEditPriority = (priority) => {
+    setSelectedPriority(priority);
+    setShowPriorityDialog(true);
+  };
+
+  const handleContextMenuChangeStatus = async (priority, newStatus) => {
+    try {
+      await handleUpdatePriority(priority.id, { status: newStatus });
+      
+      // If marked off-track, optionally create an issue
+      if (newStatus === 'off-track' || newStatus === 'at-risk') {
+        handlePriorityStatusChange(priority.id, newStatus);
+      }
+    } catch (error) {
+      console.error('Failed to update status:', error);
+    }
+  };
+
+  const handleContextMenuAddMilestone = (priority) => {
+    setSelectedPriority(priority);
+    setShowPriorityDialog(true);
+    // Could add a flag to focus on milestone tab
+  };
+
+  const handleContextMenuArchive = async (priority) => {
+    if (!window.confirm(`Are you sure you want to archive "${priority.title}"?`)) {
+      return;
+    }
+    await handleArchivePriority(priority.id);
+  };
+
+  const handleContextMenuDelete = async (priority) => {
+    // For now, archive is safer than delete
+    await handleContextMenuArchive(priority);
+  };
+
+  const handleContextMenuDuplicate = async (priority) => {
+    try {
+      const orgId = user?.organizationId || user?.organization_id;
+      const cleanTeamId = (teamId === 'null' || teamId === 'undefined') ? null : teamId;
+      const effectiveTeamId = getEffectiveTeamId(cleanTeamId, user);
+      
+      const priorityData = {
+        title: `${priority.title} (Copy)`,
+        description: priority.description,
+        ownerId: priority.owner_id || priority.ownerId,
+        dueDate: priority.due_date || priority.dueDate,
+        isCompanyPriority: priority.is_company_priority || priority.priority_type === 'company',
+        status: 'on-track',
+        progress: 0
+      };
+      
+      // Get current quarter and year
+      const now = new Date();
+      const currentQuarter = Math.floor((now.getMonth() / 3)) + 1;
+      const currentYear = now.getFullYear();
+      const quarter = `Q${currentQuarter}`;
+      
+      await quarterlyPrioritiesService.createPriority(orgId, effectiveTeamId, {
+        ...priorityData,
+        quarter,
+        year: currentYear
+      });
+      await fetchPrioritiesData();
+    } catch (error) {
+      console.error('Failed to duplicate priority:', error);
+    }
+  };
+
 
   const handleEditMilestone = async (priorityId, milestoneId, updates) => {
     try {
@@ -3541,8 +3612,15 @@ const WeeklyAccountabilityMeetingPage = () => {
                                       return (
                                         <div key={priority.id} className="border-b border-slate-100 last:border-0">
                                           {/* Main Rock Row */}
-                                          <ContextMenu>
-                                            <ContextMenuTrigger asChild>
+                                          <RockContextMenu
+                                            priority={priority}
+                                            onEdit={handleContextMenuEditPriority}
+                                            onChangeStatus={handleContextMenuChangeStatus}
+                                            onAddMilestone={handleContextMenuAddMilestone}
+                                            onArchive={handleContextMenuArchive}
+                                            onDelete={handleContextMenuDelete}
+                                            onDuplicate={handleContextMenuDuplicate}
+                                          >
                                               <div className="flex items-center px-3 py-3 hover:bg-slate-50 rounded-lg transition-colors group cursor-context-menu">
                                                 {/* Expand Arrow */}
                                                 <div className="w-8 flex items-center justify-center">
@@ -3655,17 +3733,7 @@ const WeeklyAccountabilityMeetingPage = () => {
                                                   </Button>
                                                 </div>
                                               </div>
-                                            </ContextMenuTrigger>
-                                            <ContextMenuContent>
-                                              <ContextMenuItem onClick={() => {
-                                                setSelectedPriority(priority);
-                                                setShowPriorityDialog(true);
-                                              }}>
-                                                <Edit3 className="mr-2 h-4 w-4" />
-                                                Edit Priority
-                                              </ContextMenuItem>
-                                            </ContextMenuContent>
-                                          </ContextMenu>
+                                          </RockContextMenu>
                                           
                                           {/* Expanded Milestones Section */}
                                           {isExpanded && (
@@ -3862,8 +3930,15 @@ const WeeklyAccountabilityMeetingPage = () => {
                                       return (
                                         <div key={priority.id} className="border-b border-slate-100 last:border-0">
                                           {/* Main Rock Row */}
-                                          <ContextMenu>
-                                            <ContextMenuTrigger asChild>
+                                          <RockContextMenu
+                                            priority={priority}
+                                            onEdit={handleContextMenuEditPriority}
+                                            onChangeStatus={handleContextMenuChangeStatus}
+                                            onAddMilestone={handleContextMenuAddMilestone}
+                                            onArchive={handleContextMenuArchive}
+                                            onDelete={handleContextMenuDelete}
+                                            onDuplicate={handleContextMenuDuplicate}
+                                          >
                                               <div className="flex items-center px-3 py-3 hover:bg-slate-50 rounded-lg transition-colors group cursor-context-menu">
                                                 {/* Expand Arrow */}
                                                 <div className="w-8 flex items-center justify-center">
@@ -3971,17 +4046,7 @@ const WeeklyAccountabilityMeetingPage = () => {
                                                   </Button>
                                                 </div>
                                               </div>
-                                            </ContextMenuTrigger>
-                                            <ContextMenuContent>
-                                              <ContextMenuItem onClick={() => {
-                                                setSelectedPriority(priority);
-                                                setShowPriorityDialog(true);
-                                              }}>
-                                                <Edit3 className="mr-2 h-4 w-4" />
-                                                Edit Priority
-                                              </ContextMenuItem>
-                                            </ContextMenuContent>
-                                          </ContextMenu>
+                                          </RockContextMenu>
                                           
                                           {/* Expanded Milestones Section */}
                                           {isExpanded && (
