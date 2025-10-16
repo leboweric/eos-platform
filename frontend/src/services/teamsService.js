@@ -73,7 +73,7 @@ export const teamsService = {
     const orgId = getOrgId();
     
     try {
-      const response = await axios.post(`/api/teams`, {
+      const response = await axios.post(`/teams`, {
         ...teamData,
         organization_id: orgId
       });
@@ -89,7 +89,7 @@ export const teamsService = {
     const orgId = getOrgId();
     
     try {
-      const response = await axios.put(`/api/teams/${teamId}`, {
+      const response = await axios.put(`/teams/${teamId}`, {
         ...teamData,
         organization_id: orgId
       });
@@ -105,7 +105,7 @@ export const teamsService = {
     const orgId = getOrgId();
     
     try {
-      const response = await axios.delete(`/api/teams/${teamId}`, {
+      const response = await axios.delete(`/teams/${teamId}`, {
         params: { organization_id: orgId }
       });
       return response.data;
@@ -130,7 +130,7 @@ export const teamsService = {
     }
     
     try {
-      const response = await axios.get(`/api/teams/${actualTeamId}/members`, {
+      const response = await axios.get(`/teams/${actualTeamId}/members`, {
         params: { organization_id: orgId }
       });
       return response.data;
@@ -158,7 +158,7 @@ export const teamsService = {
     const orgId = getOrgId();
     
     try {
-      const response = await axios.post(`/api/teams/${teamId}/members`, {
+      const response = await axios.post(`/teams/${teamId}/members`, {
         user_id: userId,
         role,
         organization_id: orgId
@@ -175,7 +175,7 @@ export const teamsService = {
     const orgId = getOrgId();
     
     try {
-      const response = await axios.delete(`/api/teams/${teamId}/members/${userId}`, {
+      const response = await axios.delete(`/teams/${teamId}/members/${userId}`, {
         params: { organization_id: orgId }
       });
       return response.data;

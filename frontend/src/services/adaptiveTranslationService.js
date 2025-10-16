@@ -4,7 +4,7 @@
  * Patent Pending Serial No. 63/870,133
  */
 
-import api from './api';
+import api from './axiosConfig';
 
 class AdaptiveTranslationService {
   constructor() {
@@ -27,7 +27,7 @@ class AdaptiveTranslationService {
     }
 
     try {
-      const response = await api.post('/api/v1/adaptive/translate', {
+      const response = await api.post('/adaptive/translate', {
         objective: universalObjective,
         targetFramework,
         options: {
@@ -143,7 +143,7 @@ class AdaptiveTranslationService {
    */
   async getFrameworkRecommendation(organizationId) {
     try {
-      const response = await api.get(`/api/v1/adaptive/recommend/${organizationId}`);
+      const response = await api.get(`/adaptive/recommend/${organizationId}`);
       return response.data;
     } catch (error) {
       console.error('Recommendation service error:', error);
@@ -156,7 +156,7 @@ class AdaptiveTranslationService {
    */
   async bulkTranslate(objectives, targetFramework) {
     try {
-      const response = await api.post('/api/v1/adaptive/bulk-translate', {
+      const response = await api.post('/adaptive/bulk-translate', {
         objectives,
         targetFramework
       });
@@ -175,7 +175,7 @@ class AdaptiveTranslationService {
    */
   async switchFramework(organizationId, newFramework, options = {}) {
     try {
-      const response = await api.post('/api/v1/adaptive/switch-framework', {
+      const response = await api.post('/adaptive/switch-framework', {
         organizationId,
         newFramework,
         preserveHistory: options.preserveHistory !== false,
@@ -197,7 +197,7 @@ class AdaptiveTranslationService {
    */
   async getAvailableFrameworks() {
     try {
-      const response = await api.get('/api/v1/adaptive/frameworks');
+      const response = await api.get('/adaptive/frameworks');
       return response.data;
     } catch (error) {
       console.error('Get frameworks error:', error);
@@ -216,7 +216,7 @@ class AdaptiveTranslationService {
    */
   async previewTranslation(objectives, targetFramework) {
     try {
-      const response = await api.post('/api/v1/adaptive/preview', {
+      const response = await api.post('/adaptive/preview', {
         objectives,
         targetFramework
       });
