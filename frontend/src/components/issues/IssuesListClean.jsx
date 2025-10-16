@@ -32,7 +32,7 @@ import {
   Newspaper
 } from 'lucide-react';
 import { Textarea } from '@/components/ui/textarea';
-import { ContextMenu, ContextMenuContent, ContextMenuItem, ContextMenuTrigger } from '@/components/ui/context-menu';
+import { ContextMenu, ContextMenuContent, ContextMenuItem, ContextMenuSeparator, ContextMenuTrigger } from '@/components/ui/context-menu';
 import { issuesService } from '../../services/issuesService';
 import IssueDialog from './IssueDialog';
 
@@ -47,6 +47,8 @@ const IssuesListClean = ({
   onCreateTodo,
   onCreateHeadline,
   onSendCascadingMessage,
+  onDelete,  // New prop for deleting issues
+  onMarkSolved,  // New prop for marking issues as solved
   onReorder,  // New prop for handling reordering
   onSave,  // Callback for saving issue changes
   teamMembers = [],  // Team members for assignment
@@ -757,32 +759,88 @@ const IssuesListClean = ({
                 )}
                             </div>
                           </ContextMenuTrigger>
-                          <ContextMenuContent className="w-48">
-                            <ContextMenuItem 
-                              onClick={() => onCreateTodo && onCreateTodo({
+                          <ContextMenuContent className="w-56">
+                            {/* Edit */}
+                            <ContextMenuItem onClick={() => onEdit?.(issue)}>
+                              <Edit className="mr-2 h-4 w-4" />
+                              Edit Issue
+                            </ContextMenuItem>
+                            
+                            {/* Create Linked Todo */}
+                            {onCreateTodo && (
+                              <ContextMenuItem onClick={() => onCreateTodo({
                                 ...issue,
                                 due_date: format(addDays(new Date(), 7), 'yyyy-MM-dd')
-                              })}
-                            >
-                              <ListTodo className="mr-2 h-4 w-4" />
-                              Create Linked To-Do
-                            </ContextMenuItem>
+                              })}>
+                                <ListTodo className="mr-2 h-4 w-4" />
+                                Create Linked To-Do
+                              </ContextMenuItem>
+                            )}
+                            
+                            {/* Create Linked Headline */}
                             {onCreateHeadline && (
-                              <ContextMenuItem 
-                                onClick={() => onCreateHeadline(issue)}
-                              >
+                              <ContextMenuItem onClick={() => onCreateHeadline(issue)}>
                                 <Newspaper className="mr-2 h-4 w-4" />
                                 Create Linked Headline
                               </ContextMenuItem>
                             )}
+                            
+                            <ContextMenuSeparator />
+                            
+                            {/* Vote */}
+                            {onVote && (
+                              <ContextMenuItem onClick={() => onVote(issue.id, !issue.user_has_voted)}>
+                                <ThumbsUp className={`mr-2 h-4 w-4 ${issue.user_has_voted ? 'text-blue-600' : ''}`} />
+                                {issue.user_has_voted ? 'Remove Vote' : 'Vote on Issue'}
+                              </ContextMenuItem>
+                            )}
+                            
+                            {/* Mark Solved */}
+                            {onMarkSolved && issue.status !== 'closed' && (
+                              <ContextMenuItem onClick={() => onMarkSolved(issue)}>
+                                <CheckCircle className="mr-2 h-4 w-4 text-green-600" />
+                                Mark Solved
+                              </ContextMenuItem>
+                            )}
+                            
+                            <ContextMenuSeparator />
+                            
+                            {/* Move to Long-Term */}
+                            {issue.timeline === 'short_term' && onTimelineChange && (
+                              <ContextMenuItem onClick={() => onTimelineChange(issue.id, 'long_term')}>
+                                <Clock className="mr-2 h-4 w-4" />
+                                Move to Long-Term
+                              </ContextMenuItem>
+                            )}
+                            
+                            {/* Move to Short-Term */}
+                            {issue.timeline === 'long_term' && onTimelineChange && (
+                              <ContextMenuItem onClick={() => onTimelineChange(issue.id, 'short_term')}>
+                                <Clock className="mr-2 h-4 w-4" />
+                                Move to Short-Term
+                              </ContextMenuItem>
+                            )}
+                            
+                            {/* Archive */}
                             {onArchive && (
-                              <ContextMenuItem 
-                                onClick={() => onArchive(issue.id)}
-                                className="text-red-600 focus:text-red-600"
-                              >
+                              <ContextMenuItem onClick={() => onArchive(issue.id)}>
                                 <Archive className="mr-2 h-4 w-4" />
                                 Archive Issue
                               </ContextMenuItem>
+                            )}
+                            
+                            {/* Delete */}
+                            {onDelete && (
+                              <>
+                                <ContextMenuSeparator />
+                                <ContextMenuItem 
+                                  onClick={() => onDelete(issue)}
+                                  className="text-red-600 focus:text-red-600 focus:bg-red-50"
+                                >
+                                  <Trash2 className="mr-2 h-4 w-4" />
+                                  Delete Issue
+                                </ContextMenuItem>
+                              </>
                             )}
                           </ContextMenuContent>
                         </ContextMenu>
