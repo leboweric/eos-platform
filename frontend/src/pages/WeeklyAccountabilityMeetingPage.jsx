@@ -2118,64 +2118,20 @@ const WeeklyAccountabilityMeetingPage = () => {
   const handleMoveIssueToLongTerm = async (issue) => {
     try {
       console.log('🔄 Moving issue to long-term:', issue.title);
-      console.log('📦 Issue data:', issue);
       
-      const orgId = issue.organization_id || user?.organization_id || user?.organizationId;
+      // Simple approach: Update via API and refetch data (like working IssuesPage)
+      await issuesService.updateIssue(issue.id, { timeline: 'long_term' });
       
-      if (!orgId) {
-        console.error('❌ No organization ID found');
-        return;
-      }
+      console.log('✅ Issue moved to long-term, refreshing data...');
       
-      console.log('🏢 Using organization ID:', orgId);
-      
-      // 1. Optimistically remove from UI
-      setShortTermIssues(prev => {
-        const updated = prev.filter(i => i.id !== issue.id);
-        console.log('✅ Removed from UI. Remaining:', updated.length);
-        return updated;
-      });
-      
-      // 2. Call the API
-      console.log('📡 Calling API to update timeline to long_term');
-      
-      const response = await issuesService.updateIssue(issue.id, {
-        ...issue,
-        organizationId: orgId,
-        timeline: 'long_term'  // ✅ Use timeline field instead!
-      });
-      
-      console.log('✅ API call successful:', response);
-      console.log('🔍 Response timeline:', response.timeline);
-      
-      // 3. Add to long-term list directly from response
-      if (response.timeline === 'long_term') {
-        setLongTermIssues(prev => {
-          // Check if already in list
-          if (prev.some(i => i.id === response.id)) {
-            return prev;
-          }
-          console.log('✅ Adding to long-term list');
-          return [...prev, response];
-        });
-      } else {
-        // If backend didn't set timeline to long_term, fetch fresh data
-        console.warn('⚠️ Timeline not set to long_term, fetching fresh data');
-        await fetchIssuesData();
-      }
+      // Refetch all data to ensure consistency
+      await fetchIssuesData();
       
       console.log('✅ Issue successfully moved to long-term!');
       
     } catch (error) {
       console.error('❌ Failed to move issue:', error);
-      alert('Failed to move issue to long-term. Please try again.');
-      
-      // Rollback: refresh from backend
-      try {
-        await fetchIssuesData();
-      } catch (fetchError) {
-        console.error('Failed to refresh issues:', fetchError);
-      }
+      setError('Failed to move issue to long-term');
     }
   };
 
