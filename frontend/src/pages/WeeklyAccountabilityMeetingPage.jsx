@@ -2120,13 +2120,23 @@ const WeeklyAccountabilityMeetingPage = () => {
       const orgId = user?.organizationId || user?.organization_id;
       const effectiveTeamId = getEffectiveTeamId(teamId, user);
       
+      // Optimistic update - immediately update UI
+      setIssues(prevIssues => prevIssues.map(i => 
+        i.id === issue.id ? { ...i, is_long_term: true } : i
+      ));
+      
       await issuesService.updateIssue(issue.id, {
         ...issue,
         organization_id: orgId,
         department_id: effectiveTeamId,
         is_long_term: true
       });
+      
+      // Refresh data to ensure consistency
       await fetchIssuesData();
+      
+      // Show success notification
+      setSuccessMessage(`Issue "${issue.issue}" moved to long-term successfully`);
       
       // Broadcast issue update to other participants
       if (meetingCode && broadcastIssueListUpdate) {
@@ -2139,6 +2149,9 @@ const WeeklyAccountabilityMeetingPage = () => {
     } catch (error) {
       console.error('Failed to move issue:', error);
       setError('Failed to move issue to long-term');
+      
+      // Revert optimistic update on error
+      await fetchIssuesData();
     }
   };
 
