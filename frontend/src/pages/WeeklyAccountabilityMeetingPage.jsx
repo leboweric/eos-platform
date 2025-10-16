@@ -2118,11 +2118,20 @@ const WeeklyAccountabilityMeetingPage = () => {
   const handleMoveIssueToLongTerm = async (issue) => {
     try {
       console.log('🔄 Moving issue to long-term:', issue.title);
+      console.log('📦 Issue object:', issue);
+      
+      // Get organizationId from user context (same pattern used throughout file)
+      const orgId = user?.organizationId || user?.organization_id;
+      
+      if (!orgId) {
+        alert('Organization ID not found');
+        return;
+      }
       
       // Update the backend
       await issuesService.updateIssue(issue.id, {
         ...issue,
-        organizationId,
+        organizationId: orgId,
         is_long_term: true
       });
       
