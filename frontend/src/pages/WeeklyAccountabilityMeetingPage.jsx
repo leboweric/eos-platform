@@ -4456,8 +4456,15 @@ const WeeklyAccountabilityMeetingPage = () => {
                                 return (
                                   <div key={priority.id} className="border-b border-slate-100 last:border-0">
                                     {/* Main Rock Row */}
-                                    <ContextMenu>
-                                      <ContextMenuTrigger asChild>
+                                    <RockContextMenu
+                                      priority={priority}
+                                      onEdit={handleContextMenuEditPriority}
+                                      onChangeStatus={handleContextMenuChangeStatus}
+                                      onAddMilestone={handleContextMenuAddMilestone}
+                                      onArchive={handleContextMenuArchive}
+                                      onDelete={handleContextMenuDelete}
+                                      onDuplicate={handleContextMenuDuplicate}
+                                    >
                                         <div className="flex items-center px-3 py-3 hover:bg-slate-50 rounded-lg transition-colors group cursor-context-menu">
                                       {/* Expand Arrow - Only show if there are milestones */}
                                       <div className="w-8 flex items-center justify-center">
@@ -4635,40 +4642,7 @@ const WeeklyAccountabilityMeetingPage = () => {
                                         </Button>
                                       </div>
                                         </div>
-                                      </ContextMenuTrigger>
-                                      <ContextMenuContent className="w-48">
-                                        <ContextMenuItem onClick={() => handleCreateIssueFromPriority(priority)}>
-                                          <AlertTriangle className="mr-2 h-4 w-4" />
-                                          Create Linked Issue
-                                        </ContextMenuItem>
-                                        <ContextMenuItem onClick={() => {
-                                          setEditingHeadline({ 
-                                            headline: priority.title,
-                                            description: priority.title
-                                          });
-                                          setShowHeadlineDialog(true);
-                                        }}>
-                                          <Newspaper className="mr-2 h-4 w-4" />
-                                          Create Linked Headline
-                                        </ContextMenuItem>
-                                        <ContextMenuItem onClick={() => {
-                                          // Don't set editingTodo for new todos
-                                          setEditingTodo(null);
-                                          // Set todo from priority for the dialog to use
-                                          setTodoFromIssue({
-                                            linkedPriorityId: priority.id,
-                                            title: priority.title,
-                                            description: `Related to ${labels.priority_singular || 'Rock'}: ${priority.title}`,
-                                            dueDate: format(addDays(new Date(), 7), 'yyyy-MM-dd'),
-                                            assignedToId: user.id
-                                          });
-                                          setShowTodoDialog(true);
-                                        }}>
-                                          <ListTodo className="mr-2 h-4 w-4" />
-                                          Create Linked To-Do
-                                        </ContextMenuItem>
-                                      </ContextMenuContent>
-                                    </ContextMenu>
+                                    </RockContextMenu>
                                     
                                     {/* Expanded Milestones Section - MOVED OUTSIDE ContextMenu */}
                                     {isExpanded && (
