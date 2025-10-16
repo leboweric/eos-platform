@@ -35,6 +35,7 @@ import {
 import { issuesService } from '../../services/issuesService';
 import { getOrgTheme } from '../../utils/themeUtils';
 import { useAuthStore } from '../../stores/authStore';
+import TeamMemberSelect from '../shared/TeamMemberSelect';
 
 const IssueDialog = ({ 
   open, 
@@ -42,6 +43,7 @@ const IssueDialog = ({
   onSave, 
   issue, 
   teamMembers, 
+  teamId,
   timeline,
   onMoveToTeam,
   onCreateTodo,
@@ -359,37 +361,68 @@ const IssueDialog = ({
 
               <div className="space-y-3">
                 <Label htmlFor="owner" className="text-sm font-semibold text-slate-700 dark:text-slate-300">Owner</Label>
-                <Select
-                value={formData.ownerId || 'no-owner'}
-                onValueChange={(userId) => {
-                  if (userId === 'no-owner') {
-                    setFormData({ 
-                      ...formData, 
-                      ownerId: '',
-                      ownerName: ''
-                    });
-                  } else {
-                    const selectedUser = teamMembers.find(u => u.id === userId);
-                    setFormData({ 
-                      ...formData, 
-                      ownerId: userId,
-                      ownerName: selectedUser ? `${selectedUser.first_name} ${selectedUser.last_name}` : ''
-                    });
-                  }
-                }}
-              >
-                <SelectTrigger id="owner" className="bg-white/80 backdrop-blur-sm border-white/20 rounded-xl shadow-sm">
-                  <SelectValue placeholder="Select an owner (optional)" />
-                </SelectTrigger>
-                <SelectContent className="bg-white/95 backdrop-blur-sm border-white/20 rounded-xl shadow-xl">
-                  <SelectItem value="no-owner">No owner</SelectItem>
-                  {(teamMembers || []).map(member => (
-                    <SelectItem key={member.id} value={member.id}>
-                      {member.first_name} {member.last_name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+                {teamId ? (
+                  <TeamMemberSelect
+                    teamId={teamId}
+                    value={formData.ownerId}
+                    onValueChange={(userId) => {
+                      if (!userId) {
+                        setFormData({ 
+                          ...formData, 
+                          ownerId: '',
+                          ownerName: ''
+                        });
+                      } else {
+                        // Try to find user in teamMembers for backward compatibility
+                        const selectedUser = teamMembers?.find(u => u.id === userId);
+                        setFormData({ 
+                          ...formData, 
+                          ownerId: userId,
+                          ownerName: selectedUser ? `${selectedUser.first_name} ${selectedUser.last_name}` : ''
+                        });
+                      }
+                    }}
+                    placeholder="Select an owner (optional)"
+                    className="bg-white/80 backdrop-blur-sm border-white/20 rounded-xl shadow-sm"
+                    includeAllIfLeadership={true}
+                    allowUnassigned={true}
+                    unassignedLabel="No owner"
+                    showMemberCount={false}
+                  />
+                ) : (
+                  // Fallback to original Select if no teamId
+                  <Select
+                    value={formData.ownerId || 'no-owner'}
+                    onValueChange={(userId) => {
+                      if (userId === 'no-owner') {
+                        setFormData({ 
+                          ...formData, 
+                          ownerId: '',
+                          ownerName: ''
+                        });
+                      } else {
+                        const selectedUser = teamMembers?.find(u => u.id === userId);
+                        setFormData({ 
+                          ...formData, 
+                          ownerId: userId,
+                          ownerName: selectedUser ? `${selectedUser.first_name} ${selectedUser.last_name}` : ''
+                        });
+                      }
+                    }}
+                  >
+                    <SelectTrigger id="owner" className="bg-white/80 backdrop-blur-sm border-white/20 rounded-xl shadow-sm">
+                      <SelectValue placeholder="Select an owner (optional)" />
+                    </SelectTrigger>
+                    <SelectContent className="bg-white/95 backdrop-blur-sm border-white/20 rounded-xl shadow-xl">
+                      <SelectItem value="no-owner">No owner</SelectItem>
+                      {(teamMembers || []).map(member => (
+                        <SelectItem key={member.id} value={member.id}>
+                          {member.first_name} {member.last_name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                )}
               </div>
             </div>
 

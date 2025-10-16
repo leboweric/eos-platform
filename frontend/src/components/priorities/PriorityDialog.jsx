@@ -37,12 +37,14 @@ import { useAuthStore } from '../../stores/authStore';
 import { useTerminology } from '../../contexts/TerminologyContext';
 import { format } from 'date-fns';
 import { getOrgTheme } from '../../utils/themeUtils';
+import TeamMemberSelect from '../shared/TeamMemberSelect';
 
 const PriorityDialog = ({ 
   open, 
   onOpenChange, 
   priority, 
   teamMembers, 
+  teamId,
   onSave,
   onUpdate,
   onArchive,
@@ -372,21 +374,34 @@ const PriorityDialog = ({
                 <div className="grid grid-cols-2 gap-4">
                   <div>
                     <Label htmlFor="owner">Owner</Label>
-                    <Select 
-                      value={formData.ownerId} 
-                      onValueChange={(value) => setFormData({ ...formData, ownerId: value })}
-                    >
-                      <SelectTrigger id="owner" className="mt-1 bg-transparent dark:bg-gray-700/50">
-                        <SelectValue placeholder="Select owner" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {teamMembers?.map(member => (
-                          <SelectItem key={member.id} value={member.id}>
-                            {member.name || `${member.first_name} ${member.last_name}`}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
+                    {teamId ? (
+                      <TeamMemberSelect
+                        teamId={teamId}
+                        value={formData.ownerId}
+                        onValueChange={(value) => setFormData({ ...formData, ownerId: value })}
+                        placeholder="Select owner"
+                        className="mt-1 bg-transparent dark:bg-gray-700/50"
+                        includeAllIfLeadership={true}
+                        showMemberCount={false}
+                      />
+                    ) : (
+                      // Fallback to original Select if no teamId
+                      <Select 
+                        value={formData.ownerId} 
+                        onValueChange={(value) => setFormData({ ...formData, ownerId: value })}
+                      >
+                        <SelectTrigger id="owner" className="mt-1 bg-transparent dark:bg-gray-700/50">
+                          <SelectValue placeholder="Select owner" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {teamMembers?.map(member => (
+                            <SelectItem key={member.id} value={member.id}>
+                              {member.name || `${member.first_name} ${member.last_name}`}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    )}
                   </div>
 
                   <div>

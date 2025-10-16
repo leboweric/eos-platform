@@ -45,12 +45,22 @@ export const teamsService = {
     }
   },
 
-  // Get team details
-  getTeam: async (teamId) => {
-    const orgId = getOrgId();
+  // Get team details - accepts orgId as param for hook usage
+  getTeam: async (orgIdParam, teamId) => {
+    // Support both old signature (teamId only) and new (orgId, teamId)
+    let orgId, actualTeamId;
+    if (teamId === undefined) {
+      // Old signature: getTeam(teamId)
+      orgId = getOrgId();
+      actualTeamId = orgIdParam;
+    } else {
+      // New signature: getTeam(orgId, teamId)
+      orgId = orgIdParam;
+      actualTeamId = teamId;
+    }
     
     try {
-      const response = await axios.get(`/organizations/${orgId}/teams/${teamId}`);
+      const response = await axios.get(`/organizations/${orgId}/teams/${actualTeamId}`);
       return response.data;
     } catch (error) {
       console.error('Failed to fetch team:', error);
@@ -105,17 +115,40 @@ export const teamsService = {
     }
   },
 
-  // Get team members
-  getTeamMembers: async (teamId) => {
-    const orgId = getOrgId();
+  // Get team members - accepts orgId as param for hook usage
+  getTeamMembers: async (orgIdParam, teamId) => {
+    // Support both old signature (teamId only) and new (orgId, teamId)
+    let orgId, actualTeamId;
+    if (teamId === undefined) {
+      // Old signature: getTeamMembers(teamId)
+      orgId = getOrgId();
+      actualTeamId = orgIdParam;
+    } else {
+      // New signature: getTeamMembers(orgId, teamId)
+      orgId = orgIdParam;
+      actualTeamId = teamId;
+    }
     
     try {
-      const response = await axios.get(`/api/teams/${teamId}/members`, {
+      const response = await axios.get(`/api/teams/${actualTeamId}/members`, {
         params: { organization_id: orgId }
       });
       return response.data;
     } catch (error) {
       console.error('Failed to fetch team members:', error);
+      throw error;
+    }
+  },
+
+  // Get all organization users
+  getAllOrganizationUsers: async (orgIdParam) => {
+    const orgId = orgIdParam || getOrgId();
+    
+    try {
+      const response = await axios.get(`/organizations/${orgId}/users`);
+      return response.data;
+    } catch (error) {
+      console.error('Failed to fetch organization users:', error);
       throw error;
     }
   },

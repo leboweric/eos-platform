@@ -13,6 +13,7 @@ import { getEffectiveTeamId } from '../utils/teamUtils';
 import { groupRocksByPreference, getSectionHeader } from '../utils/rockGroupingUtils';
 import PriorityDialog from '../components/priorities/PriorityDialog';
 import RockContextMenu from '../components/priorities/RockContextMenu';
+import TeamMemberSelect from '../components/shared/TeamMemberSelect';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';

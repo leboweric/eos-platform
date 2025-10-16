@@ -6156,6 +6156,7 @@ const WeeklyAccountabilityMeetingPage = () => {
           }}
           issue={editingIssue}
           teamMembers={teamMembers || []}
+          teamId={teamId}
           onSave={async (issueData) => {
             try {
               const effectiveTeamId = getEffectiveTeamId(teamId, user);
@@ -6191,6 +6192,7 @@ const WeeklyAccountabilityMeetingPage = () => {
           todo={editingTodo}
           todoFromIssue={todoFromIssue}
           teamMembers={teamMembers || []}
+          teamId={teamId}
           onSave={async (todoData) => {
             try {
               const effectiveTeamId = getEffectiveTeamId(teamId, user);
@@ -6322,6 +6324,7 @@ const WeeklyAccountabilityMeetingPage = () => {
             }}
             priority={selectedPriority}
             teamMembers={teamMembers || []}
+            teamId={teamId}
             onToggleMilestone={handleToggleMilestone}
             onSave={async (priorityData) => {
               try {

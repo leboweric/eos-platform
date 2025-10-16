@@ -11,8 +11,9 @@ import { todosService } from '../../services/todosService';
 import { useAuthStore } from '../../stores/authStore';
 import { getDateDaysFromNow } from '../../utils/dateUtils';
 import { getOrgTheme } from '../../utils/themeUtils';
+import TeamMemberSelect from '../shared/TeamMemberSelect';
 
-const TodoDialog = ({ open, onOpenChange, todo, todoFromIssue, teamMembers, onSave, onCreateIssue }) => {
+const TodoDialog = ({ open, onOpenChange, todo, todoFromIssue, teamMembers, teamId, onSave, onCreateIssue }) => {
   const { user } = useAuthStore();
   const [formData, setFormData] = useState({
     title: '',
@@ -580,21 +581,34 @@ const TodoDialog = ({ open, onOpenChange, todo, todoFromIssue, teamMembers, onSa
                     )}
                   </div>
                 ) : (
-                  <Select 
-                    value={formData.assignedToId} 
-                    onValueChange={(value) => setFormData({ ...formData, assignedToId: value })}
-                  >
-                    <SelectTrigger className="bg-white/80 backdrop-blur-sm border-white/20 focus:border-blue-400 rounded-xl shadow-sm">
-                      <SelectValue placeholder="Select team member" />
-                    </SelectTrigger>
-                    <SelectContent className="bg-white/95 backdrop-blur-sm border-white/20 rounded-xl shadow-xl">
-                      {teamMembers.map(member => (
-                        <SelectItem key={member.id} value={member.id}>
-                          {member.first_name} {member.last_name}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
+                  teamId ? (
+                    <TeamMemberSelect
+                      teamId={teamId}
+                      value={formData.assignedToId}
+                      onValueChange={(value) => setFormData({ ...formData, assignedToId: value })}
+                      placeholder="Select team member"
+                      className="bg-white/80 backdrop-blur-sm border-white/20 focus:border-blue-400 rounded-xl shadow-sm"
+                      includeAllIfLeadership={true}
+                      showMemberCount={false}
+                    />
+                  ) : (
+                    // Fallback to original Select if no teamId (for backward compatibility)
+                    <Select 
+                      value={formData.assignedToId} 
+                      onValueChange={(value) => setFormData({ ...formData, assignedToId: value })}
+                    >
+                      <SelectTrigger className="bg-white/80 backdrop-blur-sm border-white/20 focus:border-blue-400 rounded-xl shadow-sm">
+                        <SelectValue placeholder="Select team member" />
+                      </SelectTrigger>
+                      <SelectContent className="bg-white/95 backdrop-blur-sm border-white/20 rounded-xl shadow-xl">
+                        {teamMembers && teamMembers.map(member => (
+                          <SelectItem key={member.id} value={member.id}>
+                            {member.first_name} {member.last_name}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  )
                 )}
               </div>
             </div>
