@@ -2120,11 +2120,6 @@ const WeeklyAccountabilityMeetingPage = () => {
       const orgId = user?.organizationId || user?.organization_id;
       const effectiveTeamId = getEffectiveTeamId(teamId, user);
       
-      // Optimistic update - immediately update UI
-      setIssues(prevIssues => prevIssues.map(i => 
-        i.id === issue.id ? { ...i, is_long_term: true } : i
-      ));
-      
       await issuesService.updateIssue(issue.id, {
         ...issue,
         organization_id: orgId,
@@ -2149,9 +2144,6 @@ const WeeklyAccountabilityMeetingPage = () => {
     } catch (error) {
       console.error('Failed to move issue:', error);
       setError('Failed to move issue to long-term');
-      
-      // Revert optimistic update on error
-      await fetchIssuesData();
     }
   };
 
