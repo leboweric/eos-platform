@@ -2070,15 +2070,9 @@ const WeeklyAccountabilityMeetingPage = () => {
 
   const handleMarkIssueSolved = async (issue) => {
     try {
-      const orgId = user?.organizationId || user?.organization_id;
-      const effectiveTeamId = getEffectiveTeamId(teamId, user);
-      
+      // Use 'closed' status - this is the correct value for solved issues
       await issuesService.updateIssue(issue.id, {
-        ...issue,
-        organization_id: orgId,
-        department_id: effectiveTeamId,
-        status: 'solved',
-        solved_at: new Date().toISOString()
+        status: 'closed'
       });
       await fetchIssuesData();
       
@@ -2087,7 +2081,7 @@ const WeeklyAccountabilityMeetingPage = () => {
         broadcastIssueListUpdate({
           action: 'solve',
           issueId: issue.id,
-          issue: { ...issue, status: 'solved' }
+          issue: { ...issue, status: 'closed' }
         });
       }
     } catch (error) {
