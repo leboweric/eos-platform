@@ -2148,6 +2148,11 @@ const WeeklyAccountabilityMeetingPage = () => {
       });
       
       console.log('✅ API call successful:', response);
+      console.log('🔍 Response is_long_term value:', response.is_long_term);
+      
+      // ✅ ADD DELAY: Wait for database transaction to commit
+      console.log('⏳ Waiting 500ms for database to commit...');
+      await new Promise(resolve => setTimeout(resolve, 500));
       
       // 3. Refresh issues data from backend to ensure sync
       console.log('🔄 Refreshing issues from backend...');
