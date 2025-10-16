@@ -37,7 +37,23 @@ export function useTeamMembers(teamId, options = {}) {
         // If no team context, show all org users as fallback
         if (!teamId) {
           console.warn('No team context provided, showing all org users');
-          const allOrgUsers = await teamsService.getAllOrganizationUsers(organizationId);
+          const allOrgResponse = await teamsService.getAllOrganizationUsers(organizationId);
+          console.log('📦 Fallback all org users API response:', allOrgResponse);
+          
+          // Handle different response formats defensively
+          let allOrgUsers = [];
+          if (Array.isArray(allOrgResponse)) {
+            allOrgUsers = allOrgResponse;
+          } else if (allOrgResponse?.data && Array.isArray(allOrgResponse.data)) {
+            allOrgUsers = allOrgResponse.data;
+          } else if (allOrgResponse?.users && Array.isArray(allOrgResponse.users)) {
+            allOrgUsers = allOrgResponse.users;
+          } else {
+            console.warn('⚠️ Unexpected fallback response format:', allOrgResponse);
+            allOrgUsers = [];
+          }
+          
+          console.log('✅ Parsed fallback org users:', allOrgUsers);
           setAllUsers(allOrgUsers);
           setTeamMembers(allOrgUsers);
           setIsLeadershipTeam(false);
@@ -46,7 +62,24 @@ export function useTeamMembers(teamId, options = {}) {
         }
         
         // Fetch team members
-        const members = await teamsService.getTeamMembers(organizationId, teamId);
+        console.log('🔍 Fetching team members for:', { teamId, organizationId });
+        const response = await teamsService.getTeamMembers(organizationId, teamId);
+        console.log('📦 Team members API response:', response);
+        
+        // Handle different response formats defensively
+        let members = [];
+        if (Array.isArray(response)) {
+          members = response;
+        } else if (response?.data && Array.isArray(response.data)) {
+          members = response.data;
+        } else if (response?.members && Array.isArray(response.members)) {
+          members = response.members;
+        } else {
+          console.warn('⚠️ Unexpected team members response format:', response);
+          members = [];
+        }
+        
+        console.log('✅ Parsed team members:', members);
         setTeamMembers(members);
         
         // Check if it's the leadership team
@@ -56,7 +89,24 @@ export function useTeamMembers(teamId, options = {}) {
         
         // If leadership team and includeAllIfLeadership, fetch all org users
         if (isLeadership && includeAllIfLeadership) {
-          const allOrgUsers = await teamsService.getAllOrganizationUsers(organizationId);
+          console.log('🔍 Fetching all organization users for leadership team');
+          const allOrgResponse = await teamsService.getAllOrganizationUsers(organizationId);
+          console.log('📦 All org users API response:', allOrgResponse);
+          
+          // Handle different response formats defensively
+          let allOrgUsers = [];
+          if (Array.isArray(allOrgResponse)) {
+            allOrgUsers = allOrgResponse;
+          } else if (allOrgResponse?.data && Array.isArray(allOrgResponse.data)) {
+            allOrgUsers = allOrgResponse.data;
+          } else if (allOrgResponse?.users && Array.isArray(allOrgResponse.users)) {
+            allOrgUsers = allOrgResponse.users;
+          } else {
+            console.warn('⚠️ Unexpected all org users response format:', allOrgResponse);
+            allOrgUsers = [];
+          }
+          
+          console.log('✅ Parsed all org users:', allOrgUsers);
           setAllUsers(allOrgUsers);
         }
 
@@ -81,14 +131,28 @@ export function useTeamMembers(teamId, options = {}) {
       ? allUsers
       : teamMembers;
 
+    // Defensive check: ensure baseList is always an array
+    const safeBaseList = Array.isArray(baseList) ? baseList : [];
+    console.log('🔍 useMemo processing:', {
+      isLeadershipTeam,
+      includeAllIfLeadership,
+      allUsersLength: Array.isArray(allUsers) ? allUsers.length : 'not-array',
+      teamMembersLength: Array.isArray(teamMembers) ? teamMembers.length : 'not-array',
+      baseListType: typeof baseList,
+      baseListIsArray: Array.isArray(baseList),
+      safeBaseListLength: safeBaseList.length
+    });
+
     // Filter active only if requested
     let filtered = activeOnly
-      ? baseList.filter(m => m.status === 'active' || m.status === undefined || m.status === null)
-      : baseList;
+      ? safeBaseList.filter(m => m && (m.status === 'active' || m.status === undefined || m.status === null))
+      : safeBaseList;
 
-    // Sort
+    // Sort with defensive checks
     if (sortBy === 'name') {
       filtered = [...filtered].sort((a, b) => {
+        // Defensive checks for objects
+        if (!a || !b) return 0;
         const nameA = `${a.first_name || ''} ${a.last_name || ''}`.trim().toLowerCase();
         const nameB = `${b.first_name || ''} ${b.last_name || ''}`.trim().toLowerCase();
         return nameA.localeCompare(nameB);
@@ -96,6 +160,8 @@ export function useTeamMembers(teamId, options = {}) {
     } else if (sortBy === 'role') {
       const roleOrder = { admin: 0, manager: 1, user: 2 };
       filtered = [...filtered].sort((a, b) => {
+        // Defensive checks for objects
+        if (!a || !b) return 0;
         const roleA = roleOrder[a.role] ?? 999;
         const roleB = roleOrder[b.role] ?? 999;
         if (roleA !== roleB) return roleA - roleB;

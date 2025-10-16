@@ -29,6 +29,21 @@ export function TeamMemberSelect({
     sortBy: 'name'
   });
 
+  // Defensive check: ensure members is always an array
+  const safeMembers = Array.isArray(members) ? members : [];
+  
+  // Enhanced logging for debugging
+  console.log('🎯 TeamMemberSelect render:', {
+    teamId,
+    loading,
+    error,
+    membersType: typeof members,
+    membersIsArray: Array.isArray(members),
+    membersLength: safeMembers.length,
+    members: safeMembers,
+    isLeadershipTeam
+  });
+
   if (loading) {
     return (
       <div className="flex items-center gap-2 px-3 py-2 border rounded-lg bg-gray-50">
@@ -47,7 +62,7 @@ export function TeamMemberSelect({
     );
   }
 
-  if (!members || members.length === 0) {
+  if (safeMembers.length === 0) {
     return (
       <div className="flex items-center gap-2 px-3 py-2 border rounded-lg bg-gray-50">
         <Users className="h-4 w-4 text-gray-400" />
@@ -112,12 +127,24 @@ export function TeamMemberSelect({
           )}
           
           {/* Member list */}
-          {members.map((member) => {
-            const memberId = member.id || member.user_id;
+          {safeMembers.map((member, index) => {
+            // Defensive checks for member object
+            if (!member || typeof member !== 'object') {
+              console.warn('⚠️ Invalid member object at index', index, ':', member);
+              return null;
+            }
+            
+            const memberId = member.id || member.user_id || `member-${index}`;
             const firstName = member.first_name || member.firstName || '';
             const lastName = member.last_name || member.lastName || '';
             const fullName = `${firstName} ${lastName}`.trim();
             const initials = `${firstName[0] || ''}${lastName[0] || ''}`.toUpperCase();
+            
+            // Skip members without valid ID
+            if (!memberId || memberId === `member-${index}`) {
+              console.warn('⚠️ Member without valid ID at index', index, ':', member);
+              return null;
+            }
             
             return (
               <SelectItem key={memberId} value={memberId}>
@@ -132,14 +159,14 @@ export function TeamMemberSelect({
                 </div>
               </SelectItem>
             );
-          })}
+          }).filter(Boolean)}
         </SelectContent>
       </Select>
       
       {/* Show member count */}
       {showMemberCount && (
         <p className="text-xs text-gray-500">
-          {members.length} member{members.length !== 1 ? 's' : ''} available
+          {safeMembers.length} member{safeMembers.length !== 1 ? 's' : ''} available
           {isLeadershipTeam && includeAllIfLeadership && ' (all organization)'}
         </p>
       )}
