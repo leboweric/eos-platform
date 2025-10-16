@@ -438,6 +438,34 @@ const IssuesPageClean = () => {
     setShowHeadlineDialog(true);
   };
 
+  const handleDeleteIssue = async (issue) => {
+    if (!window.confirm(`Delete "${issue.title}"?`)) return;
+    
+    try {
+      const orgId = user?.organizationId || user?.organization_id;
+      await issuesService.deleteIssue(issue.id, orgId);
+      setSuccess('Issue deleted successfully');
+      await fetchIssues();
+    } catch (error) {
+      console.error('Failed to delete issue:', error);
+      setError('Failed to delete issue');
+    }
+  };
+
+  const handleMarkIssueSolved = async (issue) => {
+    try {
+      // Use 'closed' status - this is the correct value for solved issues
+      await issuesService.updateIssue(issue.id, {
+        status: 'closed'
+      });
+      setSuccess('Issue marked as solved');
+      await fetchIssues();
+    } catch (error) {
+      console.error('Failed to mark issue as solved:', error);
+      setError('Failed to mark issue as solved');
+    }
+  };
+
   const handleSaveTodo = async (todoData) => {
     try {
       // Add reference to the issue in the description
@@ -697,6 +725,8 @@ const IssuesPageClean = () => {
                       onCreateTodo={handleCreateTodoFromIssue}
                       onCreateHeadline={handleCreateHeadlineFromIssue}
                       onSendCascadingMessage={handleSendCascadingMessage}
+                      onDelete={handleDeleteIssue}
+                      onMarkSolved={handleMarkIssueSolved}
                       getStatusColor={getStatusColor}
                       getStatusIcon={getStatusIcon}
                       showVoting={false} // Will be enabled during Weekly Accountability Meetings

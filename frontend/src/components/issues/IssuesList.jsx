@@ -11,12 +11,6 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog';
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu';
 import { Badge } from '@/components/ui/badge';
 import { 
   Edit,
@@ -25,9 +19,7 @@ import {
   Paperclip,
   ThumbsUp,
   Clock,
-  MoreVertical,
   CheckCircle,
-  Users,
   MessageSquare,
   Trash2,
   Plus
@@ -477,37 +469,7 @@ const IssuesList = ({
                     </div>
                   </div>
                   
-                  {/* Three-dot menu replaced by right-click context menu */}
-                  {!readOnly && onMoveToTeam && (
-                    <div 
-                      className="opacity-0 group-hover:opacity-100 transition-opacity"
-                      onClick={(e) => e.stopPropagation()}
-                    >
-                      <DropdownMenu>
-                        <DropdownMenuTrigger asChild>
-                          <Button 
-                            variant="ghost" 
-                            size="sm" 
-                            className="h-8 w-8 p-0 hover:bg-gray-100"
-                          >
-                            <MoreVertical className="h-4 w-4 text-gray-500" />
-                          </Button>
-                        </DropdownMenuTrigger>
-                        <DropdownMenuContent align="end" className="w-48">
-                          <DropdownMenuItem 
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              onMoveToTeam(issue);
-                            }}
-                            className="cursor-pointer"
-                          >
-                            <Users className="mr-2 h-4 w-4" />
-                            Move to Team
-                          </DropdownMenuItem>
-                        </DropdownMenuContent>
-                      </DropdownMenu>
-                    </div>
-                  )}
+                  {/* All actions now available via right-click context menu */}
                 </div>
               </div>
               </div>
