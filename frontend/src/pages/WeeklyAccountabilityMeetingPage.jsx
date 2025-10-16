@@ -2117,33 +2117,30 @@ const WeeklyAccountabilityMeetingPage = () => {
 
   const handleMoveIssueToLongTerm = async (issue) => {
     try {
-      const orgId = user?.organizationId || user?.organization_id;
-      const effectiveTeamId = getEffectiveTeamId(teamId, user);
-      
-      await issuesService.updateIssue(issue.id, {
+      await updateIssue(issue.id, {
         ...issue,
-        organization_id: orgId,
-        department_id: effectiveTeamId,
+        organizationId,
         is_long_term: true
       });
       
-      // Refresh data to ensure consistency
-      await fetchIssuesData();
+      // Just refresh the data
+      if (refreshMeetingData) {
+        await refreshMeetingData();
+      }
       
-      // Show success notification
-      setSuccessMessage(`Issue "${issue.issue}" moved to long-term successfully`);
-      
-      // Broadcast issue update to other participants
-      if (meetingCode && broadcastIssueListUpdate) {
-        broadcastIssueListUpdate({
-          action: 'move-long-term',
-          issueId: issue.id,
-          issue: { ...issue, is_long_term: true }
-        });
+      // If toast exists, show success
+      if (typeof toast !== 'undefined' && toast.success) {
+        toast.success('Issue moved to long-term list');
+      } else {
+        console.log('✅ Issue moved to long-term list');
       }
     } catch (error) {
       console.error('Failed to move issue:', error);
-      setError('Failed to move issue to long-term');
+      
+      // If toast exists, show error
+      if (typeof toast !== 'undefined' && toast.error) {
+        toast.error('Failed to move issue');
+      }
     }
   };
 
