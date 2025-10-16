@@ -17,6 +17,8 @@ import IssueDialog from '../components/issues/IssueDialog';
 import IssuesList from '../components/issues/IssuesList';
 import ArchivedIssuesList from '../components/issues/ArchivedIssuesList';
 import { MoveIssueDialog } from '../components/issues/MoveIssueDialog';
+import TodoDialog from '../components/todos/TodoDialog';
+import { todosService } from '../services/todosService';
 
 // Error Boundary Component
 class IssuesErrorBoundary extends Component {
@@ -80,6 +82,8 @@ const IssuesPageClean = () => {
   const [editingIssue, setEditingIssue] = useState(null);
   const [showMoveDialog, setShowMoveDialog] = useState(false);
   const [movingIssue, setMovingIssue] = useState(null);
+  const [showTodoDialog, setShowTodoDialog] = useState(false);
+  const [todoFromIssue, setTodoFromIssue] = useState(null);
 
   useEffect(() => {
     fetchIssues();
@@ -337,6 +341,64 @@ const IssuesPageClean = () => {
     }
   };
 
+  const handleDeleteIssue = async (issue) => {
+    if (!window.confirm(`Delete "${issue.title}"?`)) return;
+    
+    try {
+      const orgId = user?.organizationId || user?.organization_id;
+      await issuesService.deleteIssue(issue.id, orgId);
+      setSuccess('Issue deleted successfully');
+      await fetchIssues();
+    } catch (error) {
+      console.error('Failed to delete issue:', error);
+      setError('Failed to delete issue');
+    }
+  };
+
+  const handleMarkIssueSolved = async (issue) => {
+    try {
+      // Use 'closed' status - this is the correct value for solved issues
+      await issuesService.updateIssue(issue.id, {
+        status: 'closed'
+      });
+      setSuccess('Issue marked as solved');
+      await fetchIssues();
+    } catch (error) {
+      console.error('Failed to mark issue as solved:', error);
+      setError('Failed to mark issue as solved');
+    }
+  };
+
+  const handleCreateTodoFromIssue = (issue) => {
+    setTodoFromIssue(issue);
+    setShowTodoDialog(true);
+  };
+
+  const handleSaveTodo = async (todoData) => {
+    try {
+      let finalTodoData = { ...todoData };
+      
+      // If creating from an issue, add issue reference and department
+      if (todoFromIssue) {
+        finalTodoData = {
+          ...todoData,
+          title: todoData.title || `Follow up on: ${todoFromIssue.title}`,
+          description: todoData.description || `Created from issue: ${todoFromIssue.title}`,
+          issue_id: todoFromIssue.id,
+          department_id: selectedDepartment?.id
+        };
+      }
+      
+      await todosService.createTodo(finalTodoData);
+      setSuccess('To-Do created successfully');
+      setShowTodoDialog(false);
+      setTodoFromIssue(null);
+    } catch (error) {
+      console.error('Failed to save todo:', error);
+      throw error;
+    }
+  };
+
   const getStatusColor = (status) => {
     switch (status) {
       case 'open':
@@ -473,6 +535,9 @@ const IssuesPageClean = () => {
                   onArchive={handleArchive}
                   onVote={handleVote}
                   onMoveToTeam={handleMoveToTeam}
+                  onDelete={handleDeleteIssue}
+                  onMarkSolved={handleMarkIssueSolved}
+                  onCreateTodo={handleCreateTodoFromIssue}
                   getStatusColor={getStatusColor}
                   getStatusIcon={getStatusIcon}
                   showVoting={false} // Will be enabled during Weekly Accountability Meetings
@@ -506,6 +571,21 @@ const IssuesPageClean = () => {
           teamMembers={teamMembers}
           timeline={activeTab}
           onTimelineChange={handleTimelineChange}
+        />
+
+        {/* Todo Dialog for creating todos from issues */}
+        <TodoDialog
+          open={showTodoDialog}
+          onClose={() => {
+            setShowTodoDialog(false);
+            setTodoFromIssue(null);
+          }}
+          onSave={handleSaveTodo}
+          teamMembers={teamMembers}
+          defaultValues={todoFromIssue ? {
+            title: `Follow up on: ${todoFromIssue.title}`,
+            description: `Created from issue: ${todoFromIssue.title}`
+          } : undefined}
         />
       </div>
     </div>

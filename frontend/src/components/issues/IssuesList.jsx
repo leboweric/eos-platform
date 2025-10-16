@@ -4,6 +4,7 @@ import { organizationService } from '../../services/organizationService';
 import { getOrgTheme, saveOrgTheme, hexToRgba } from '../../utils/themeUtils';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Button } from '@/components/ui/button';
+import { IssueContextMenu } from '../IssueContextMenu';
 import {
   Dialog,
   DialogContent,
@@ -22,19 +23,14 @@ import {
   User,
   Calendar,
   Paperclip,
-  ArrowRight,
   ThumbsUp,
   Clock,
-  Archive,
   MoreVertical,
-  AlertCircle,
   CheckCircle,
   Users,
   MessageSquare,
   Trash2,
-  Plus,
-  ListTodo,
-  Send
+  Plus
 } from 'lucide-react';
 import { Textarea } from '@/components/ui/textarea';
 import { issuesService } from '../../services/issuesService';
@@ -49,6 +45,8 @@ const IssuesList = ({
   onMoveToTeam,
   onCreateTodo,
   onSendCascadingMessage,
+  onDelete,
+  onMarkSolved,
   getStatusColor, 
   getStatusIcon, 
   readOnly = false, 
@@ -218,28 +216,41 @@ const IssuesList = ({
     const isTopIssue = index === 0 && hasVotes && showVoting;
     
     return (
-      <div
-        className={`
-          group relative bg-white rounded-lg border transition-all duration-200 cursor-pointer h-full
-          ${issue.status === 'closed' ? 'opacity-60' : ''}
-          ${isTopIssue ? 'shadow-sm' : 'hover:shadow-sm'}
-        `}
-        style={{
-          borderColor: isTopIssue ? themeColors.accent : hexToRgba(themeColors.accent, 0.3),
-          borderWidth: isTopIssue ? '2px' : '1px'
-        }}
-        onMouseEnter={(e) => {
-          if (!isTopIssue && issue.status !== 'closed') {
-            e.currentTarget.style.borderColor = hexToRgba(themeColors.accent, 0.6);
-          }
-        }}
-        onMouseLeave={(e) => {
-          if (!isTopIssue && issue.status !== 'closed') {
-            e.currentTarget.style.borderColor = hexToRgba(themeColors.accent, 0.3);
-          }
-        }}
-        onClick={() => setSelectedIssue(issue)}
+      <IssueContextMenu
+        issue={issue}
+        onEdit={onEdit}
+        onDelete={onDelete}
+        onMarkSolved={onMarkSolved}
+        onCreateTodo={onCreateTodo}
+        onVote={onVote ? (issue) => onVote(issue.id, !issue.user_has_voted) : undefined}
+        onMoveToLongTerm={issue.timeline === 'short_term' ? (issue) => onTimelineChange(issue.id, 'long_term') : undefined}
+        onMoveToShortTerm={issue.timeline === 'long_term' ? (issue) => onTimelineChange(issue.id, 'short_term') : undefined}
+        onArchive={onArchive ? (issue) => onArchive(issue.id) : undefined}
+        currentUserId={user?.id}
+        disabled={readOnly}
       >
+        <div
+          className={`
+            group relative bg-white rounded-lg border transition-all duration-200 cursor-pointer h-full
+            ${issue.status === 'closed' ? 'opacity-60' : ''}
+            ${isTopIssue ? 'shadow-sm' : 'hover:shadow-sm'}
+          `}
+          style={{
+            borderColor: isTopIssue ? themeColors.accent : hexToRgba(themeColors.accent, 0.3),
+            borderWidth: isTopIssue ? '2px' : '1px'
+          }}
+          onMouseEnter={(e) => {
+            if (!isTopIssue && issue.status !== 'closed') {
+              e.currentTarget.style.borderColor = hexToRgba(themeColors.accent, 0.6);
+            }
+          }}
+          onMouseLeave={(e) => {
+            if (!isTopIssue && issue.status !== 'closed') {
+              e.currentTarget.style.borderColor = hexToRgba(themeColors.accent, 0.3);
+            }
+          }}
+          onClick={() => setSelectedIssue(issue)}
+        >
         {/* Status indicator - left border */}
         <div 
           className="absolute left-0 top-0 bottom-0 w-1 rounded-l-lg"
@@ -304,7 +315,8 @@ const IssuesList = ({
             </span>
           </div>
         </div>
-      </div>
+        </div>
+      </IssueContextMenu>
     );
   };
 
@@ -324,29 +336,42 @@ const IssuesList = ({
           const isTopIssue = index === 0 && hasVotes && showVoting;
           
           return (
-            <div
+            <IssueContextMenu
               key={issue.id}
-              className={`
-                group relative bg-white rounded-lg border transition-all duration-200 cursor-pointer
-                ${issue.status === 'closed' ? 'opacity-60' : ''}
-                ${isTopIssue ? 'shadow-sm' : 'hover:shadow-sm'}
-              `}
-              style={{
-                borderColor: isTopIssue ? themeColors.accent : hexToRgba(themeColors.accent, 0.4),
-                borderWidth: '2px'
-              }}
-              onMouseEnter={(e) => {
-                if (!isTopIssue && issue.status !== 'closed') {
-                  e.currentTarget.style.borderColor = hexToRgba(themeColors.accent, 0.7);
-                }
-              }}
-              onMouseLeave={(e) => {
-                if (!isTopIssue && issue.status !== 'closed') {
-                  e.currentTarget.style.borderColor = hexToRgba(themeColors.accent, 0.4);
-                }
-              }}
-              onClick={() => setSelectedIssue(issue)}
+              issue={issue}
+              onEdit={onEdit}
+              onDelete={onDelete}
+              onMarkSolved={onMarkSolved}
+              onCreateTodo={onCreateTodo}
+              onVote={onVote ? (issue) => onVote(issue.id, !issue.user_has_voted) : undefined}
+              onMoveToLongTerm={issue.timeline === 'short_term' ? (issue) => onTimelineChange(issue.id, 'long_term') : undefined}
+              onMoveToShortTerm={issue.timeline === 'long_term' ? (issue) => onTimelineChange(issue.id, 'short_term') : undefined}
+              onArchive={onArchive ? (issue) => onArchive(issue.id) : undefined}
+              currentUserId={user?.id}
+              disabled={readOnly}
             >
+              <div
+                className={`
+                  group relative bg-white rounded-lg border transition-all duration-200 cursor-pointer
+                  ${issue.status === 'closed' ? 'opacity-60' : ''}
+                  ${isTopIssue ? 'shadow-sm' : 'hover:shadow-sm'}
+                `}
+                style={{
+                  borderColor: isTopIssue ? themeColors.accent : hexToRgba(themeColors.accent, 0.4),
+                  borderWidth: '2px'
+                }}
+                onMouseEnter={(e) => {
+                  if (!isTopIssue && issue.status !== 'closed') {
+                    e.currentTarget.style.borderColor = hexToRgba(themeColors.accent, 0.7);
+                  }
+                }}
+                onMouseLeave={(e) => {
+                  if (!isTopIssue && issue.status !== 'closed') {
+                    e.currentTarget.style.borderColor = hexToRgba(themeColors.accent, 0.4);
+                  }
+                }}
+                onClick={() => setSelectedIssue(issue)}
+              >
               {/* Status indicator - subtle left border */}
               <div 
                 className="absolute left-0 top-0 bottom-0 w-1 rounded-l-lg"
@@ -452,8 +477,8 @@ const IssuesList = ({
                     </div>
                   </div>
                   
-                  {/* Actions menu - visible on hover */}
-                  {!readOnly && (
+                  {/* Three-dot menu replaced by right-click context menu */}
+                  {!readOnly && onMoveToTeam && (
                     <div 
                       className="opacity-0 group-hover:opacity-100 transition-opacity"
                       onClick={(e) => e.stopPropagation()}
@@ -472,91 +497,21 @@ const IssuesList = ({
                           <DropdownMenuItem 
                             onClick={(e) => {
                               e.stopPropagation();
-                              onEdit(issue);
+                              onMoveToTeam(issue);
                             }}
                             className="cursor-pointer"
                           >
-                            <Edit className="mr-2 h-4 w-4" />
-                            Edit
+                            <Users className="mr-2 h-4 w-4" />
+                            Move to Team
                           </DropdownMenuItem>
-                          {onCreateTodo && (
-                            <DropdownMenuItem 
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                onCreateTodo(issue);
-                              }}
-                              className="cursor-pointer"
-                            >
-                              <ListTodo className="mr-2 h-4 w-4" />
-                              Create To-Do
-                            </DropdownMenuItem>
-                          )}
-                          {onSendCascadingMessage && (
-                            <DropdownMenuItem 
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                onSendCascadingMessage(issue);
-                              }}
-                              className="cursor-pointer"
-                            >
-                              <Send className="mr-2 h-4 w-4" />
-                              Send Message
-                            </DropdownMenuItem>
-                          )}
-                          {issue.timeline === 'short_term' ? (
-                            <DropdownMenuItem 
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                onTimelineChange(issue.id, 'long_term');
-                              }}
-                              className="cursor-pointer"
-                            >
-                              <ArrowRight className="mr-2 h-4 w-4" />
-                              Move to Long Term
-                            </DropdownMenuItem>
-                          ) : (
-                            <DropdownMenuItem 
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                onTimelineChange(issue.id, 'short_term');
-                              }}
-                              className="cursor-pointer"
-                            >
-                              <ArrowRight className="mr-2 h-4 w-4" />
-                              Move to Short Term
-                            </DropdownMenuItem>
-                          )}
-                          {issue.status === 'closed' && (
-                            <DropdownMenuItem 
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                onArchive(issue.id);
-                              }}
-                              className="cursor-pointer text-red-600 focus:text-red-600"
-                            >
-                              <Archive className="mr-2 h-4 w-4" />
-                              Archive
-                            </DropdownMenuItem>
-                          )}
-                          {onMoveToTeam && (
-                            <DropdownMenuItem 
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                onMoveToTeam(issue);
-                              }}
-                              className="cursor-pointer"
-                            >
-                              <Users className="mr-2 h-4 w-4" />
-                              Move to Team
-                            </DropdownMenuItem>
-                          )}
                         </DropdownMenuContent>
                       </DropdownMenu>
                     </div>
                   )}
                 </div>
               </div>
-            </div>
+              </div>
+            </IssueContextMenu>
           );
         })}
         </div>
