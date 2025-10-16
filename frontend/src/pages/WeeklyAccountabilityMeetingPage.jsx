@@ -78,6 +78,8 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { ContextMenu, ContextMenuContent, ContextMenuItem, ContextMenuTrigger } from '@/components/ui/context-menu';
 import RockContextMenu from '../components/priorities/RockContextMenu';
+import { TodoContextMenu } from '../components/TodoContextMenu';
+import { IssueContextMenu } from '../components/IssueContextMenu';
 import { FileText, GitBranch } from 'lucide-react';
 import { useSelectedTodos } from '../contexts/SelectedTodosContext';
 import { cascadingMessagesService } from '../services/cascadingMessagesService';
@@ -1914,6 +1916,243 @@ const WeeklyAccountabilityMeetingPage = () => {
     // Don't set editingTodo for new todos - that's only for existing todos
     setEditingTodo(null);
     setShowTodoDialog(true);
+  };
+
+  // Todo context menu handlers
+  const handleEditTodo = (todo) => {
+    setEditingTodo(todo);
+    setShowTodoDialog(true);
+  };
+
+  const handleDeleteTodo = async (todo) => {
+    if (!window.confirm(`Delete "${todo.title}"?`)) return;
+    
+    try {
+      const orgId = user?.organizationId || user?.organization_id;
+      await todosService.deleteTodo(todo.id, orgId);
+      await fetchTodosData();
+      
+      // Broadcast todo deletion to other participants
+      if (meetingCode && broadcastTodoUpdate) {
+        broadcastTodoUpdate({
+          action: 'delete',
+          todoId: todo.id
+        });
+      }
+    } catch (error) {
+      console.error('Failed to delete todo:', error);
+      setError('Failed to delete to-do');
+    }
+  };
+
+  const handleToggleTodoComplete = async (todo) => {
+    try {
+      const orgId = user?.organizationId || user?.organization_id;
+      const effectiveTeamId = getEffectiveTeamId(teamId, user);
+      
+      await todosService.updateTodo(todo.id, {
+        ...todo,
+        organization_id: orgId,
+        department_id: effectiveTeamId,
+        completed: !todo.completed,
+        status: !todo.completed ? 'completed' : 'pending'
+      });
+      await fetchTodosData();
+      
+      // Broadcast todo status update to other participants
+      if (meetingCode && broadcastTodoUpdate) {
+        broadcastTodoUpdate({
+          action: 'status',
+          todoId: todo.id,
+          completed: !todo.completed,
+          status: !todo.completed ? 'completed' : 'pending'
+        });
+      }
+    } catch (error) {
+      console.error('Failed to toggle todo:', error);
+      setError('Failed to update to-do status');
+    }
+  };
+
+  const handleReassignTodo = (todo) => {
+    setEditingTodo(todo);
+    setShowTodoDialog(true);
+  };
+
+  const handleChangeTodoDueDate = (todo) => {
+    setEditingTodo(todo);
+    setShowTodoDialog(true);
+  };
+
+  const handleChangeTodoPriority = async (todo, newPriority) => {
+    try {
+      const orgId = user?.organizationId || user?.organization_id;
+      const effectiveTeamId = getEffectiveTeamId(teamId, user);
+      
+      await todosService.updateTodo(todo.id, {
+        ...todo,
+        organization_id: orgId,
+        department_id: effectiveTeamId,
+        priority: newPriority
+      });
+      await fetchTodosData();
+      
+      // Broadcast todo priority update to other participants
+      if (meetingCode && broadcastTodoUpdate) {
+        broadcastTodoUpdate({
+          action: 'update',
+          todoId: todo.id,
+          todo: { ...todo, priority: newPriority }
+        });
+      }
+    } catch (error) {
+      console.error('Failed to change priority:', error);
+      setError('Failed to update to-do priority');
+    }
+  };
+
+  const handleDuplicateTodo = async (todo) => {
+    try {
+      const orgId = user?.organizationId || user?.organization_id;
+      const effectiveTeamId = getEffectiveTeamId(teamId, user);
+      
+      await todosService.createTodo({
+        ...todo,
+        id: undefined,
+        title: `${todo.title} (Copy)`,
+        organization_id: orgId,
+        department_id: effectiveTeamId
+      });
+      await fetchTodosData();
+      
+      // No need to broadcast duplicate as it will be picked up by refresh
+    } catch (error) {
+      console.error('Failed to duplicate todo:', error);
+      setError('Failed to duplicate to-do');
+    }
+  };
+
+  // Issue context menu handlers
+  const handleDeleteIssue = async (issue) => {
+    if (!window.confirm(`Delete "${issue.title}"?`)) return;
+    
+    try {
+      const orgId = user?.organizationId || user?.organization_id;
+      await issuesService.deleteIssue(issue.id, orgId);
+      await fetchIssuesData();
+      
+      // Broadcast issue deletion to other participants
+      if (meetingCode && broadcastIssueListUpdate) {
+        broadcastIssueListUpdate({
+          action: 'delete',
+          issueId: issue.id
+        });
+      }
+    } catch (error) {
+      console.error('Failed to delete issue:', error);
+      setError('Failed to delete issue');
+    }
+  };
+
+  const handleMarkIssueSolved = async (issue) => {
+    try {
+      const orgId = user?.organizationId || user?.organization_id;
+      const effectiveTeamId = getEffectiveTeamId(teamId, user);
+      
+      await issuesService.updateIssue(issue.id, {
+        ...issue,
+        organization_id: orgId,
+        department_id: effectiveTeamId,
+        status: 'solved',
+        solved_at: new Date().toISOString()
+      });
+      await fetchIssuesData();
+      
+      // Broadcast issue update to other participants
+      if (meetingCode && broadcastIssueListUpdate) {
+        broadcastIssueListUpdate({
+          action: 'solve',
+          issueId: issue.id,
+          issue: { ...issue, status: 'solved' }
+        });
+      }
+    } catch (error) {
+      console.error('Failed to mark issue solved:', error);
+      setError('Failed to mark issue as solved');
+    }
+  };
+
+  const handleVoteOnIssue = async (issue) => {
+    try {
+      const orgId = user?.organizationId || user?.organization_id;
+      await issuesService.toggleIssueVote(issue.id, orgId);
+      await fetchIssuesData();
+      
+      // Broadcast vote update to other participants
+      if (meetingCode && broadcastIssueListUpdate) {
+        broadcastIssueListUpdate({
+          action: 'vote',
+          issueId: issue.id
+        });
+      }
+    } catch (error) {
+      console.error('Failed to vote on issue:', error);
+      setError('Failed to vote on issue');
+    }
+  };
+
+  const handleMoveIssueToLongTerm = async (issue) => {
+    try {
+      const orgId = user?.organizationId || user?.organization_id;
+      const effectiveTeamId = getEffectiveTeamId(teamId, user);
+      
+      await issuesService.updateIssue(issue.id, {
+        ...issue,
+        organization_id: orgId,
+        department_id: effectiveTeamId,
+        is_long_term: true
+      });
+      await fetchIssuesData();
+      
+      // Broadcast issue update to other participants
+      if (meetingCode && broadcastIssueListUpdate) {
+        broadcastIssueListUpdate({
+          action: 'move-long-term',
+          issueId: issue.id,
+          issue: { ...issue, is_long_term: true }
+        });
+      }
+    } catch (error) {
+      console.error('Failed to move issue:', error);
+      setError('Failed to move issue to long-term');
+    }
+  };
+
+  const handleArchiveIssue = async (issue) => {
+    try {
+      const orgId = user?.organizationId || user?.organization_id;
+      const effectiveTeamId = getEffectiveTeamId(teamId, user);
+      
+      await issuesService.updateIssue(issue.id, {
+        ...issue,
+        organization_id: orgId,
+        department_id: effectiveTeamId,
+        archived: true
+      });
+      await fetchIssuesData();
+      
+      // Broadcast issue archive to other participants
+      if (meetingCode && broadcastIssueListUpdate) {
+        broadcastIssueListUpdate({
+          action: 'archive',
+          issueId: issue.id,
+          issue: { ...issue, archived: true }
+        });
+      }
+    } catch (error) {
+      console.error('Failed to archive issue:', error);
+      setError('Failed to archive issue');
+    }
   };
 
   // Drag and drop handlers for issues
@@ -4869,122 +5108,98 @@ const WeeklyAccountabilityMeetingPage = () => {
                               const isExpanded = expandedPriorities[todo.id]; // Reuse expansion state
                               
                               return (
-                                <div key={todo.id} className="border-b border-slate-100 last:border-0">
-                                  {/* Main To-Do Row */}
-                                  <ContextMenu>
-                                    <ContextMenuTrigger asChild>
-                                      <div className="flex items-center px-3 py-3 hover:bg-slate-50 rounded-lg transition-colors group cursor-context-menu">
-                                    {/* Status Indicator */}
-                                    <div className="w-10 flex items-center relative">
+                                <TodoContextMenu
+                                  key={todo.id}
+                                  todo={todo}
+                                  onEdit={handleEditTodo}
+                                  onDelete={handleDeleteTodo}
+                                  onToggleComplete={handleToggleTodoComplete}
+                                  onReassign={handleReassignTodo}
+                                  onChangeDueDate={handleChangeTodoDueDate}
+                                  onChangePriority={handleChangeTodoPriority}
+                                  onDuplicate={handleDuplicateTodo}
+                                >
+                                  <div className="border-b border-slate-100 last:border-0 cursor-context-menu hover:bg-gray-50 transition-colors rounded">
+                                    {/* Main To-Do Row */}
+                                    <div className="flex items-center px-3 py-3 group">
+                                      {/* Status Indicator */}
+                                      <div className="w-10 flex items-center relative">
+                                        <div 
+                                          className="flex items-center justify-center w-7 h-7 rounded-full cursor-pointer hover:scale-110 transition-transform"
+                                          style={{
+                                            backgroundColor: isComplete ? '#10B981' : 
+                                                           todo.status === 'in-progress' ? themeColors.primary : 
+                                                           'transparent',
+                                            border: isComplete ? 'none' : '2px solid #E2E8F0' // Light border for incomplete
+                                          }}
+                                          onClick={async () => {
+                                            try {
+                                              const newStatus = isComplete ? 'incomplete' : 'complete';
+                                              await todosService.updateTodo(todo.id, { status: newStatus });
+                                              await fetchTodosData();
+                                            } catch (error) {
+                                              console.error('Failed to update todo status:', error);
+                                            }
+                                          }}
+                                        >
+                                          {isComplete ? (
+                                            <Check className="h-4 w-4 text-white" />
+                                          ) : (
+                                            <div className="w-4 h-4" /> /* Empty space - just the circle border */
+                                          )}
+                                        </div>
+                                      </div>
+                                      
+                                      {/* Title */}
                                       <div 
-                                        className="flex items-center justify-center w-7 h-7 rounded-full cursor-pointer hover:scale-110 transition-transform"
-                                        style={{
-                                          backgroundColor: isComplete ? '#10B981' : 
-                                                         todo.status === 'in-progress' ? themeColors.primary : 
-                                                         'transparent',
-                                          border: isComplete ? 'none' : '2px solid #E2E8F0' // Light border for incomplete
-                                        }}
-                                        onClick={async () => {
-                                          try {
-                                            const newStatus = isComplete ? 'incomplete' : 'complete';
-                                            await todosService.updateTodo(todo.id, { status: newStatus });
-                                            await fetchTodosData();
-                                          } catch (error) {
-                                            console.error('Failed to update todo status:', error);
-                                          }
-                                        }}
-                                      >
-                                        {isComplete ? (
-                                          <Check className="h-4 w-4 text-white" />
-                                        ) : (
-                                          <div className="w-4 h-4" /> /* Empty space - just the circle border */
-                                        )}
-                                      </div>
-                                    </div>
-                                    
-                                    {/* Title */}
-                                    <div 
-                                      className="flex-1 ml-3 cursor-pointer"
-                                      onClick={() => {
-                                        setEditingTodo(todo);
-                                        setShowTodoDialog(true);
-                                      }}
-                                    >
-                                      <div className={`font-semibold text-slate-900 leading-tight ${isComplete ? 'line-through opacity-75' : ''}`}>
-                                        {todo.title}
-                                        {todo.isMultiAssignee && (
-                                          <span className="ml-2 text-xs bg-blue-100 text-blue-700 px-2 py-0.5 rounded-full">
-                                            Also: {todo.allAssignees
-                                              .filter(a => (a.user_id || a.id) !== assignee.id)
-                                              .map(a => `${a.first_name} ${a.last_name[0]}.`)
-                                              .join(', ')}
-                                          </span>
-                                        )}
-                                      </div>
-                                      {todo.description && (
-                                        <p className="text-sm text-slate-600 mt-1 line-clamp-1">
-                                          {todo.description}
-                                        </p>
-                                      )}
-                                    </div>
-                                    
-                                    {/* Due Date */}
-                                    <div className="w-20 text-right">
-                                      {todo.due_date && (
-                                        <span className="text-sm text-slate-600">
-                                          {format(new Date(todo.due_date), 'MMM d')}
-                                        </span>
-                                      )}
-                                    </div>
-                                    
-                                    {/* Actions */}
-                                    <div className="w-8 flex items-center justify-center">
-                                      <button
-                                        className="opacity-0 group-hover:opacity-100 transition-opacity p-1 hover:bg-slate-200 rounded"
+                                        className="flex-1 ml-3 cursor-pointer"
                                         onClick={() => {
                                           setEditingTodo(todo);
                                           setShowTodoDialog(true);
                                         }}
                                       >
-                                        <Edit className="h-3 w-3 text-slate-600" />
-                                      </button>
-                                    </div>
+                                        <div className={`font-semibold text-slate-900 leading-tight ${isComplete ? 'line-through opacity-75' : ''}`}>
+                                          {todo.title}
+                                          {todo.isMultiAssignee && (
+                                            <span className="ml-2 text-xs bg-blue-100 text-blue-700 px-2 py-0.5 rounded-full">
+                                              Also: {todo.allAssignees
+                                                .filter(a => (a.user_id || a.id) !== assignee.id)
+                                                .map(a => `${a.first_name} ${a.last_name[0]}.`)
+                                                .join(', ')}
+                                            </span>
+                                          )}
+                                        </div>
+                                        {todo.description && (
+                                          <p className="text-sm text-slate-600 mt-1 line-clamp-1">
+                                            {todo.description}
+                                          </p>
+                                        )}
                                       </div>
-                                    </ContextMenuTrigger>
-                                    <ContextMenuContent className="w-48">
-                                      <ContextMenuItem onClick={() => handleCreateIssueFromTodo(todo)}>
-                                        <AlertTriangle className="mr-2 h-4 w-4" />
-                                        Create Linked Issue
-                                      </ContextMenuItem>
-                                      <ContextMenuItem onClick={() => {
-                                        setEditingHeadline({ 
-                                          headline: todo.title,
-                                          description: todo.title
-                                        });
-                                        setShowHeadlineDialog(true);
-                                      }}>
-                                        <Newspaper className="mr-2 h-4 w-4" />
-                                        Create Linked Headline
-                                      </ContextMenuItem>
-                                      <ContextMenuItem 
-                                        onClick={async () => {
-                                          try {
-                                            await todosService.deleteTodo(todo.id);
-                                            await fetchTodosData();
-                                            setSuccess('To-do archived successfully');
-                                          } catch (error) {
-                                            console.error('Failed to archive todo:', error);
-                                            setError('Failed to archive to-do');
-                                          }
-                                        }}
-                                        className="text-red-600 focus:text-red-600"
-                                      >
-                                        <Archive className="mr-2 h-4 w-4" />
-                                        Archive
-                                      </ContextMenuItem>
-                                    </ContextMenuContent>
-                                  </ContextMenu>
-                                </div>
+                                      
+                                      {/* Due Date */}
+                                      <div className="w-20 text-right">
+                                        {todo.due_date && (
+                                          <span className="text-sm text-slate-600">
+                                            {format(new Date(todo.due_date), 'MMM d')}
+                                          </span>
+                                        )}
+                                      </div>
+                                      
+                                      {/* Actions */}
+                                      <div className="w-8 flex items-center justify-center">
+                                        <button
+                                          className="opacity-0 group-hover:opacity-100 transition-opacity p-1 hover:bg-slate-200 rounded"
+                                          onClick={() => {
+                                            setEditingTodo(todo);
+                                            setShowTodoDialog(true);
+                                          }}
+                                        >
+                                          <Edit className="h-3 w-3 text-slate-600" />
+                                        </button>
+                                      </div>
+                                    </div>
+                                  </div>
+                                </TodoContextMenu>
                               );
                             })}
                           </div>
@@ -5144,176 +5359,138 @@ const WeeklyAccountabilityMeetingPage = () => {
                             const isDragOver = dragOverIndex === index;
                             
                             return (
-                              <div key={issue.id} className="border-b border-slate-100 last:border-0">
-                                {/* Main Issue Row with Context Menu */}
-                                <ContextMenu>
-                                  <ContextMenuTrigger>
-                                    <div 
-                                      className={`flex items-center px-3 py-3 hover:bg-slate-50 rounded-lg transition-colors group ${
-                                        isDragging ? 'opacity-50' : ''
-                                      } ${isDragOver ? 'ring-2 ring-blue-400' : ''}`}
-                                      onDragOver={handleDragOver}
-                                      onDragEnter={(e) => handleDragEnter(e, index)}
-                                      onDrop={(e) => handleDrop(e, index)}
-                                    >
-                                  {/* Drag Handle */}
+                              <IssueContextMenu
+                                key={issue.id}
+                                issue={issue}
+                                onEdit={handleEditIssue}
+                                onDelete={handleDeleteIssue}
+                                onMarkSolved={handleMarkIssueSolved}
+                                onCreateTodo={handleCreateTodoFromIssue}
+                                onVote={handleVoteOnIssue}
+                                onMoveToLongTerm={handleMoveIssueToLongTerm}
+                                onArchive={handleArchiveIssue}
+                                currentUserId={user?.id}
+                              >
+                                <div className="border-b border-slate-100 last:border-0 cursor-context-menu hover:bg-gray-50 transition-colors rounded">
+                                  {/* Main Issue Row */}
                                   <div 
-                                    className="w-8 flex items-center justify-center cursor-move opacity-0 group-hover:opacity-100 transition-opacity"
-                                    draggable="true"
-                                    onDragStart={(e) => handleDragStart(e, issue, index)}
-                                    onDragEnd={handleDragEnd}
+                                    className={`flex items-center px-3 py-3 group ${
+                                      isDragging ? 'opacity-50' : ''
+                                    } ${isDragOver ? 'ring-2 ring-blue-400' : ''}`}
+                                    onDragOver={handleDragOver}
+                                    onDragEnter={(e) => handleDragEnter(e, index)}
+                                    onDrop={(e) => handleDrop(e, index)}
                                   >
-                                    <GripVertical className="h-4 w-4 text-slate-400" />
-                                  </div>
-                                  
-                                  {/* Status Checkbox */}
-                                  <div className="w-10 ml-2 flex items-center relative">
+                                    {/* Drag Handle */}
                                     <div 
-                                      className="flex items-center justify-center w-7 h-7 rounded-full cursor-pointer hover:scale-110 transition-transform"
-                                      style={{
-                                        backgroundColor: isSolved ? '#10B981' : 'transparent',
-                                        border: isSolved ? 'none' : '2px solid #E2E8F0'
-                                      }}
-                                      onClick={async () => {
-                                        try {
-                                          const newStatus = isSolved ? 'open' : 'closed';
-                                          await handleStatusChange(issue.id, newStatus);
-                                        } catch (error) {
-                                          console.error('Failed to update issue status:', error);
-                                        }
-                                      }}
+                                      className="w-8 flex items-center justify-center cursor-move opacity-0 group-hover:opacity-100 transition-opacity"
+                                      draggable="true"
+                                      onDragStart={(e) => handleDragStart(e, issue, index)}
+                                      onDragEnd={handleDragEnd}
                                     >
-                                      {isSolved ? (
-                                        <Check className="h-4 w-4 text-white" />
-                                      ) : null}
+                                      <GripVertical className="h-4 w-4 text-slate-400" />
                                     </div>
-                                  </div>
-                                  
-                                  {/* Issue Number */}
-                                  <div className="w-8 ml-2 text-sm font-medium text-slate-600">
-                                    {index + 1}.
-                                  </div>
-                                  
-                                  {/* Issue Title */}
-                                  <div className="flex-1 ml-3">
-                                    <div className="flex items-center">
+                                    
+                                    {/* Status Checkbox */}
+                                    <div className="w-10 ml-2 flex items-center relative">
                                       <div 
-                                        className={`flex-1 font-semibold text-slate-900 leading-tight cursor-pointer hover:text-blue-600 transition-colors ${
-                                          isSolved ? 'line-through opacity-75' : ''
-                                        }`}
-                                        onClick={() => {
-                                          setEditingIssue(issue);
-                                          setShowIssueDialog(true);
+                                        className="flex items-center justify-center w-7 h-7 rounded-full cursor-pointer hover:scale-110 transition-transform"
+                                        style={{
+                                          backgroundColor: isSolved ? '#10B981' : 'transparent',
+                                          border: isSolved ? 'none' : '2px solid #E2E8F0'
+                                        }}
+                                        onClick={async () => {
+                                          try {
+                                            const newStatus = isSolved ? 'open' : 'closed';
+                                            await handleStatusChange(issue.id, newStatus);
+                                          } catch (error) {
+                                            console.error('Failed to update issue status:', error);
+                                          }
                                         }}
                                       >
-                                        {issue.title}
-                                        {issue.attachments && issue.attachments.length > 0 && (
-                                          <Paperclip className="h-4 w-4 inline ml-2 text-slate-400" />
+                                        {isSolved ? (
+                                          <Check className="h-4 w-4 text-white" />
+                                        ) : null}
+                                      </div>
+                                    </div>
+                                    
+                                    {/* Issue Number */}
+                                    <div className="w-8 ml-2 text-sm font-medium text-slate-600">
+                                      {index + 1}.
+                                    </div>
+                                    
+                                    {/* Issue Title */}
+                                    <div className="flex-1 ml-3">
+                                      <div className="flex items-center">
+                                        <div 
+                                          className={`flex-1 font-semibold text-slate-900 leading-tight cursor-pointer hover:text-blue-600 transition-colors ${
+                                            isSolved ? 'line-through opacity-75' : ''
+                                          }`}
+                                          onClick={() => {
+                                            setEditingIssue(issue);
+                                            setShowIssueDialog(true);
+                                          }}
+                                        >
+                                          {issue.title}
+                                          {issue.attachments && issue.attachments.length > 0 && (
+                                            <Paperclip className="h-4 w-4 inline ml-2 text-slate-400" />
+                                          )}
+                                        </div>
+                                        {issue.description && (
+                                          <button
+                                            onClick={(e) => {
+                                              e.stopPropagation();
+                                              togglePriorityExpansion(issue.id, e);
+                                            }}
+                                            className="ml-2 p-1 hover:bg-slate-100 rounded transition-colors"
+                                          >
+                                            <ChevronRight className={`h-4 w-4 text-slate-400 transition-transform ${isExpanded ? 'rotate-90' : ''}`} />
+                                          </button>
                                         )}
                                       </div>
-                                      {issue.description && (
-                                        <button
-                                          onClick={(e) => {
-                                            e.stopPropagation();
-                                            togglePriorityExpansion(issue.id, e);
-                                          }}
-                                          className="ml-2 p-1 hover:bg-slate-100 rounded transition-colors"
-                                        >
-                                          <ChevronRight className={`h-4 w-4 text-slate-400 transition-transform ${isExpanded ? 'rotate-90' : ''}`} />
-                                        </button>
-                                      )}
                                     </div>
-                                  </div>
-                                  
-                                  {/* Owner */}
-                                  <div className="w-32 text-center">
-                                    <span className="text-sm text-slate-600">
-                                      {issue.owner_name || issue.owner || 'Unassigned'}
-                                    </span>
-                                  </div>
-                                  
-                                  {/* Voting */}
-                                  <div className="w-20 text-center">
-                                    <button
-                                      className="flex items-center gap-1 px-2 py-1 rounded-full bg-slate-100 hover:bg-slate-200 transition-colors mx-auto"
-                                      onClick={() => handleVote(issue.id, !issue.user_has_voted)}
-                                    >
-                                      <ThumbsUp className="h-3 w-3 text-slate-600" />
-                                      <span className="text-xs font-medium text-slate-700">
-                                        {issue.vote_count || 0}
+                                    
+                                    {/* Owner */}
+                                    <div className="w-32 text-center">
+                                      <span className="text-sm text-slate-600">
+                                        {issue.owner_name || issue.owner || 'Unassigned'}
                                       </span>
-                                    </button>
+                                    </div>
+                                    
+                                    {/* Voting */}
+                                    <div className="w-20 text-center">
+                                      <button
+                                        className="flex items-center gap-1 px-2 py-1 rounded-full bg-slate-100 hover:bg-slate-200 transition-colors mx-auto"
+                                        onClick={() => handleVote(issue.id, !issue.user_has_voted)}
+                                      >
+                                        <ThumbsUp className="h-3 w-3 text-slate-600" />
+                                        <span className="text-xs font-medium text-slate-700">
+                                          {issue.vote_count || 0}
+                                        </span>
+                                      </button>
+                                    </div>
+                                    
+                                    {/* Actions */}
+                                    <div className="w-8 flex items-center justify-center">
+                                      <button
+                                        className="opacity-0 group-hover:opacity-100 transition-opacity p-1 hover:bg-slate-200 rounded"
+                                        onClick={() => handleEditIssue(issue)}
+                                      >
+                                        <Edit className="h-3 w-3 text-slate-600" />
+                                      </button>
+                                    </div>
                                   </div>
                                   
-                                  {/* Actions */}
-                                  <div className="w-8 flex items-center justify-center">
-                                    <button
-                                      className="opacity-0 group-hover:opacity-100 transition-opacity p-1 hover:bg-slate-200 rounded"
-                                      onClick={() => handleEditIssue(issue)}
-                                    >
-                                      <Edit className="h-3 w-3 text-slate-600" />
-                                    </button>
-                                  </div>
+                                  {/* Expanded Details */}
+                                  {isExpanded && issue.description && (
+                                    <div className="px-16 pb-3">
+                                      <p className="text-sm text-slate-700 bg-slate-50 p-3 rounded-lg">
+                                        {issue.description}
+                                      </p>
                                     </div>
-                                  </ContextMenuTrigger>
-                                  <ContextMenuContent className="w-48">
-                                    <ContextMenuItem 
-                                      onClick={() => {
-                                        setEditingIssue(issue);
-                                        setShowIssueDialog(true);
-                                      }}
-                                    >
-                                      <Edit3 className="mr-2 h-4 w-4" />
-                                      Edit Issue
-                                    </ContextMenuItem>
-                                    <ContextMenuItem 
-                                      onClick={() => {
-                                        // Set null for creation, use todoFromIssue for initial data
-                                        setEditingTodo(null);
-                                        setTodoFromIssue({
-                                          linkedIssueId: issue.id,
-                                          title: issue.title,
-                                          description: `Related to Issue: ${issue.title}`,
-                                          dueDate: format(addDays(new Date(), 7), 'yyyy-MM-dd'),
-                                          assignedToId: user.id
-                                        });
-                                        setShowTodoDialog(true);
-                                      }}
-                                    >
-                                      <ListTodo className="mr-2 h-4 w-4" />
-                                      Create Linked To-Do
-                                    </ContextMenuItem>
-                                    <ContextMenuItem 
-                                      onClick={() => {
-                                        setEditingHeadline({ 
-                                          headline: issue.title,
-                                          description: issue.title
-                                        });
-                                        setShowHeadlineDialog(true);
-                                      }}
-                                    >
-                                      <Newspaper className="mr-2 h-4 w-4" />
-                                      Create Linked Headline
-                                    </ContextMenuItem>
-                                    <ContextMenuItem 
-                                      onClick={() => handleArchive(issue.id)}
-                                      className="text-red-600 focus:text-red-600"
-                                    >
-                                      <Archive className="mr-2 h-4 w-4" />
-                                      Archive Issue
-                                    </ContextMenuItem>
-                                  </ContextMenuContent>
-                                </ContextMenu>
-                                
-                                {/* Expanded Details */}
-                                {isExpanded && issue.description && (
-                                  <div className="px-16 pb-3">
-                                    <p className="text-sm text-slate-700 bg-slate-50 p-3 rounded-lg">
-                                      {issue.description}
-                                    </p>
-                                  </div>
-                                )}
-                              </div>
+                                  )}
+                                </div>
+                              </IssueContextMenu>
                             );
                           })}
                         </div>

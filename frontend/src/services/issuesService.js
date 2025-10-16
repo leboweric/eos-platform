@@ -199,6 +199,16 @@ export const issuesService = {
     return response.data;
   },
 
+  // Toggle vote for an issue (convenience function)
+  toggleIssueVote: async (issueId, organizationId) => {
+    const orgId = organizationId || getOrgId();
+    
+    const response = await axios.post(
+      `/organizations/${orgId}/issues/${issueId}/vote`
+    );
+    return response.data;
+  },
+
   // Get user's votes
   getUserVotes: async () => {
     const orgId = getOrgId();
