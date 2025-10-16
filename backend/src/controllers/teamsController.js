@@ -305,6 +305,207 @@ export const isUserOnLeadershipTeam = async (userId, organizationId) => {
   }
 };
 
+// @desc    Get team members
+// @route   GET /api/v1/organizations/:orgId/teams/:teamId/members
+// @access  Private
+export const getTeamMembers = async (req, res) => {
+  const { orgId, teamId } = req.params;
+
+  try {
+    // Verify the team belongs to the organization
+    const teamQuery = `
+      SELECT id, is_leadership_team
+      FROM teams
+      WHERE id = $1 AND organization_id = $2
+    `;
+
+    const teamResult = await db.query(teamQuery, [teamId, orgId]);
+
+    if (teamResult.rows.length === 0) {
+      return res.status(404).json({
+        success: false,
+        error: 'Team not found'
+      });
+    }
+
+    // Get team members with their roles
+    const membersQuery = `
+      SELECT 
+        u.id,
+        u.first_name,
+        u.last_name,
+        u.email,
+        u.profile_image_url,
+        tm.role,
+        tm.joined_at
+      FROM team_members tm
+      JOIN users u ON tm.user_id = u.id
+      WHERE tm.team_id = $1
+      ORDER BY u.first_name, u.last_name
+    `;
+
+    const membersResult = await db.query(membersQuery, [teamId]);
+
+    res.json({
+      success: true,
+      data: membersResult.rows
+    });
+  } catch (error) {
+    console.error('Error fetching team members:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Server error'
+    });
+  }
+};
+
+// @desc    Add team member
+// @route   POST /api/v1/organizations/:orgId/teams/:teamId/members
+// @access  Private
+export const addTeamMember = async (req, res) => {
+  const { orgId, teamId } = req.params;
+  const { user_id, role = 'member' } = req.body;
+
+  try {
+    // Verify the team belongs to the organization
+    const teamQuery = `
+      SELECT id
+      FROM teams
+      WHERE id = $1 AND organization_id = $2
+    `;
+
+    const teamResult = await db.query(teamQuery, [teamId, orgId]);
+
+    if (teamResult.rows.length === 0) {
+      return res.status(404).json({
+        success: false,
+        error: 'Team not found'
+      });
+    }
+
+    // Verify the user belongs to the organization
+    const userQuery = `
+      SELECT id
+      FROM users
+      WHERE id = $1 AND organization_id = $2
+    `;
+
+    const userResult = await db.query(userQuery, [user_id, orgId]);
+
+    if (userResult.rows.length === 0) {
+      return res.status(404).json({
+        success: false,
+        error: 'User not found in organization'
+      });
+    }
+
+    // Check if user is already a member
+    const existingMemberQuery = `
+      SELECT id
+      FROM team_members
+      WHERE team_id = $1 AND user_id = $2
+    `;
+
+    const existingResult = await db.query(existingMemberQuery, [teamId, user_id]);
+
+    if (existingResult.rows.length > 0) {
+      return res.status(400).json({
+        success: false,
+        error: 'User is already a member of this team'
+      });
+    }
+
+    // Add team member
+    const insertQuery = `
+      INSERT INTO team_members (team_id, user_id, role)
+      VALUES ($1, $2, $3)
+      RETURNING *
+    `;
+
+    const result = await db.query(insertQuery, [teamId, user_id, role]);
+
+    // Get the user details for the response
+    const memberQuery = `
+      SELECT 
+        u.id,
+        u.first_name,
+        u.last_name,
+        u.email,
+        u.profile_image_url,
+        tm.role,
+        tm.joined_at
+      FROM team_members tm
+      JOIN users u ON tm.user_id = u.id
+      WHERE tm.team_id = $1 AND tm.user_id = $2
+    `;
+
+    const memberResult = await db.query(memberQuery, [teamId, user_id]);
+
+    res.status(201).json({
+      success: true,
+      data: memberResult.rows[0]
+    });
+  } catch (error) {
+    console.error('Error adding team member:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Server error'
+    });
+  }
+};
+
+// @desc    Remove team member
+// @route   DELETE /api/v1/organizations/:orgId/teams/:teamId/members/:userId
+// @access  Private
+export const removeTeamMember = async (req, res) => {
+  const { orgId, teamId, userId } = req.params;
+
+  try {
+    // Verify the team belongs to the organization
+    const teamQuery = `
+      SELECT id
+      FROM teams
+      WHERE id = $1 AND organization_id = $2
+    `;
+
+    const teamResult = await db.query(teamQuery, [teamId, orgId]);
+
+    if (teamResult.rows.length === 0) {
+      return res.status(404).json({
+        success: false,
+        error: 'Team not found'
+      });
+    }
+
+    // Remove team member
+    const deleteQuery = `
+      DELETE FROM team_members
+      WHERE team_id = $1 AND user_id = $2
+      RETURNING *
+    `;
+
+    const result = await db.query(deleteQuery, [teamId, userId]);
+
+    if (result.rows.length === 0) {
+      return res.status(404).json({
+        success: false,
+        error: 'Team member not found'
+      });
+    }
+
+    res.json({
+      success: true,
+      data: {}
+    });
+  } catch (error) {
+    console.error('Error removing team member:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Server error'
+    });
+  }
+};
+
 // Utility function to check if a team is a leadership team
 export const isLeadershipTeam = async (teamId) => {
   try {

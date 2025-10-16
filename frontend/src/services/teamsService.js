@@ -73,7 +73,7 @@ export const teamsService = {
     const orgId = getOrgId();
     
     try {
-      const response = await axios.post(`/teams`, {
+      const response = await axios.post(`/organizations/${orgId}/teams`, {
         ...teamData,
         organization_id: orgId
       });
@@ -89,7 +89,7 @@ export const teamsService = {
     const orgId = getOrgId();
     
     try {
-      const response = await axios.put(`/teams/${teamId}`, {
+      const response = await axios.put(`/organizations/${orgId}/teams/${teamId}`, {
         ...teamData,
         organization_id: orgId
       });
@@ -105,9 +105,7 @@ export const teamsService = {
     const orgId = getOrgId();
     
     try {
-      const response = await axios.delete(`/teams/${teamId}`, {
-        params: { organization_id: orgId }
-      });
+      const response = await axios.delete(`/organizations/${orgId}/teams/${teamId}`);
       return response.data;
     } catch (error) {
       console.error('Failed to delete team:', error);
@@ -130,9 +128,7 @@ export const teamsService = {
     }
     
     try {
-      const response = await axios.get(`/teams/${actualTeamId}/members`, {
-        params: { organization_id: orgId }
-      });
+      const response = await axios.get(`/organizations/${orgId}/teams/${actualTeamId}/members`);
       return response.data;
     } catch (error) {
       console.error('Failed to fetch team members:', error);
@@ -158,7 +154,7 @@ export const teamsService = {
     const orgId = getOrgId();
     
     try {
-      const response = await axios.post(`/teams/${teamId}/members`, {
+      const response = await axios.post(`/organizations/${orgId}/teams/${teamId}/members`, {
         user_id: userId,
         role,
         organization_id: orgId
@@ -175,9 +171,7 @@ export const teamsService = {
     const orgId = getOrgId();
     
     try {
-      const response = await axios.delete(`/teams/${teamId}/members/${userId}`, {
-        params: { organization_id: orgId }
-      });
+      const response = await axios.delete(`/organizations/${orgId}/teams/${teamId}/members/${userId}`);
       return response.data;
     } catch (error) {
       console.error('Failed to remove team member:', error);
