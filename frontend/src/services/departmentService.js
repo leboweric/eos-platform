@@ -19,27 +19,40 @@ export const departmentService = {
     }
   },
 
-  // Get single department
+  // Get single department (actually a team)
   async getDepartment(id) {
-    const response = await axios.get(`/departments/${id}`);
+    const user = useAuthStore.getState().user;
+    const orgId = user?.organizationId || user?.organization_id;
+    
+    const response = await axios.get(`/organizations/${orgId}/teams/${id}`);
     return response.data;
   },
 
-  // Create new department
+  // Create new department (actually a team)
   async createDepartment(departmentData) {
-    const response = await axios.post('/departments', departmentData);
+    const user = useAuthStore.getState().user;
+    const orgId = user?.organizationId || user?.organization_id;
+    
+    const response = await axios.post(`/organizations/${orgId}/teams`, departmentData);
     return response.data;
   },
 
-  // Update department
+  // Update department (actually a team)
   async updateDepartment(id, departmentData) {
-    const response = await axios.put(`/departments/${id}`, departmentData);
+    const user = useAuthStore.getState().user;
+    const orgId = user?.organizationId || user?.organization_id;
+    
+    // Use the teams endpoint since departments are implemented as teams
+    const response = await axios.put(`/organizations/${orgId}/teams/${id}`, departmentData);
     return response.data;
   },
 
-  // Delete department
+  // Delete department (actually a team)
   async deleteDepartment(id) {
-    const response = await axios.delete(`/departments/${id}`);
+    const user = useAuthStore.getState().user;
+    const orgId = user?.organizationId || user?.organization_id;
+    
+    const response = await axios.delete(`/organizations/${orgId}/teams/${id}`);
     return response.data;
   }
 };
