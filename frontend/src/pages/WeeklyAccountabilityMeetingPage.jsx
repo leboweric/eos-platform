@@ -2137,20 +2137,19 @@ const WeeklyAccountabilityMeetingPage = () => {
       });
       
       // 2. Call the API
-      console.log('📡 Calling API to update issue...');
-      console.log('🔍 Sending is_long_term: true');
+      console.log('📡 Calling API to update timeline to long_term');
       
       const response = await issuesService.updateIssue(issue.id, {
         ...issue,
         organizationId: orgId,
-        is_long_term: true  // Make sure this is boolean true
+        timeline: 'long_term'  // ✅ Use timeline field instead!
       });
       
       console.log('✅ API call successful:', response);
-      console.log('🔍 Response is_long_term value:', response.is_long_term);
+      console.log('🔍 Response timeline:', response.timeline);
       
       // 3. Add to long-term list directly from response
-      if (response.is_long_term === true) {
+      if (response.timeline === 'long_term') {
         setLongTermIssues(prev => {
           // Check if already in list
           if (prev.some(i => i.id === response.id)) {
@@ -2160,8 +2159,8 @@ const WeeklyAccountabilityMeetingPage = () => {
           return [...prev, response];
         });
       } else {
-        // If backend didn't set it to long-term, fetch fresh data
-        console.warn('⚠️ Backend did not set is_long_term=true, fetching fresh data');
+        // If backend didn't set timeline to long_term, fetch fresh data
+        console.warn('⚠️ Timeline not set to long_term, fetching fresh data');
         await fetchIssuesData();
       }
       
