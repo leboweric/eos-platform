@@ -2117,33 +2117,19 @@ const WeeklyAccountabilityMeetingPage = () => {
 
   const handleMoveIssueToLongTerm = async (issue) => {
     try {
-      console.log('🔄 Moving issue to long-term:', issue.title);
-      console.log('📦 Issue object:', issue);
-      
-      // Get organizationId from user context (same pattern used throughout file)
-      const orgId = user?.organizationId || user?.organization_id;
-      
-      if (!orgId) {
-        alert('Organization ID not found');
-        return;
-      }
-      
-      // Update the backend
+      // Get org ID from the issue itself (it already has it)
       await issuesService.updateIssue(issue.id, {
         ...issue,
-        organizationId: orgId,
+        organizationId: issue.organization_id,  // Already on the issue object
         is_long_term: true
       });
-      
-      console.log('✅ Backend updated successfully');
-      
-      // Reload the entire page to refresh all data
-      window.location.reload();
-      
     } catch (error) {
-      console.error('❌ Failed to move issue:', error);
-      alert('Failed to move issue to long-term');
+      console.error('Failed:', error);
     }
+    
+    // ALWAYS reload, even if there was an error
+    // This ensures the UI matches the backend state
+    window.location.reload();
   };
 
   const handleArchiveIssue = async (issue) => {
