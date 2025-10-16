@@ -2047,26 +2047,6 @@ const WeeklyAccountabilityMeetingPage = () => {
   };
 
   // Issue context menu handlers
-  const handleDeleteIssue = async (issue) => {
-    if (!window.confirm(`Delete "${issue.title}"?`)) return;
-    
-    try {
-      const orgId = user?.organizationId || user?.organization_id;
-      await issuesService.deleteIssue(issue.id, orgId);
-      await fetchIssuesData();
-      
-      // Broadcast issue deletion to other participants
-      if (meetingCode && broadcastIssueListUpdate) {
-        broadcastIssueListUpdate({
-          action: 'delete',
-          issueId: issue.id
-        });
-      }
-    } catch (error) {
-      console.error('Failed to delete issue:', error);
-      setError('Failed to delete issue');
-    }
-  };
 
   const handleMarkIssueSolved = async (issue) => {
     try {
@@ -5384,7 +5364,6 @@ const WeeklyAccountabilityMeetingPage = () => {
                                 key={issue.id}
                                 issue={issue}
                                 onEdit={handleEditIssue}
-                                onDelete={handleDeleteIssue}
                                 onMarkSolved={handleMarkIssueSolved}
                                 onCreateTodo={handleCreateTodoFromIssue}
                                 onVote={handleVoteOnIssue}

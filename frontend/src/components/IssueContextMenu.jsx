@@ -8,7 +8,6 @@ import {
 } from "@/components/ui/context-menu";
 import { 
   Edit, 
-  Trash2, 
   CheckCircle,
   Plus,
   ThumbsUp,
@@ -20,7 +19,6 @@ export function IssueContextMenu({
   children, 
   issue, 
   onEdit, 
-  onDelete, 
   onMarkSolved,
   onCreateTodo,
   onVote,
@@ -102,15 +100,6 @@ export function IssueContextMenu({
           </ContextMenuItem>
         )}
         
-        {/* Delete */}
-        <ContextMenuSeparator />
-        <ContextMenuItem 
-          onClick={() => onDelete?.(issue)}
-          className="text-red-600 focus:text-red-600 focus:bg-red-50"
-        >
-          <Trash2 className="mr-2 h-4 w-4" />
-          Delete Issue
-        </ContextMenuItem>
       </ContextMenuContent>
     </ContextMenu>
   );

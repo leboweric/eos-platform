@@ -20,7 +20,6 @@ import {
   CheckCircle,
   Users,
   MessageSquare,
-  Trash2,
   Plus,
   ListTodo,
   Send,
@@ -47,7 +46,6 @@ const IssuesListClean = ({
   onCreateTodo,
   onCreateHeadline,
   onSendCascadingMessage,
-  onDelete,  // New prop for deleting issues
   onMarkSolved,  // New prop for marking issues as solved
   onReorder,  // New prop for handling reordering
   onSave,  // Callback for saving issue changes
@@ -829,19 +827,6 @@ const IssuesListClean = ({
                               </ContextMenuItem>
                             )}
                             
-                            {/* Delete */}
-                            {onDelete && (
-                              <>
-                                <ContextMenuSeparator />
-                                <ContextMenuItem 
-                                  onClick={() => onDelete(issue)}
-                                  className="text-red-600 focus:text-red-600 focus:bg-red-50"
-                                >
-                                  <Trash2 className="mr-2 h-4 w-4" />
-                                  Delete Issue
-                                </ContextMenuItem>
-                              </>
-                            )}
                           </ContextMenuContent>
                         </ContextMenu>
                       );

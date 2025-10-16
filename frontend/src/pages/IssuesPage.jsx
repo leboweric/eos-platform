@@ -341,19 +341,6 @@ const IssuesPageClean = () => {
     }
   };
 
-  const handleDeleteIssue = async (issue) => {
-    if (!window.confirm(`Delete "${issue.title}"?`)) return;
-    
-    try {
-      const orgId = user?.organizationId || user?.organization_id;
-      await issuesService.deleteIssue(issue.id, orgId);
-      setSuccess('Issue deleted successfully');
-      await fetchIssues();
-    } catch (error) {
-      console.error('Failed to delete issue:', error);
-      setError('Failed to delete issue');
-    }
-  };
 
   const handleMarkIssueSolved = async (issue) => {
     try {
@@ -535,7 +522,6 @@ const IssuesPageClean = () => {
                   onArchive={handleArchive}
                   onVote={handleVote}
                   onMoveToTeam={handleMoveToTeam}
-                  onDelete={handleDeleteIssue}
                   onMarkSolved={handleMarkIssueSolved}
                   onCreateTodo={handleCreateTodoFromIssue}
                   getStatusColor={getStatusColor}
