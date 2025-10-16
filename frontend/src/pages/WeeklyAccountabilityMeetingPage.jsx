@@ -2117,19 +2117,55 @@ const WeeklyAccountabilityMeetingPage = () => {
 
   const handleMoveIssueToLongTerm = async (issue) => {
     try {
-      // Get org ID from the issue itself (it already has it)
-      await issuesService.updateIssue(issue.id, {
+      console.log('🔄 Moving issue to long-term:', issue.title);
+      console.log('📦 Issue data:', issue);
+      
+      // Get the organization ID from the user or issue
+      const orgId = issue.organization_id || user?.organization_id || user?.organizationId;
+      
+      if (!orgId) {
+        console.error('❌ No organization ID found');
+        alert('Error: Organization ID not found');
+        return;
+      }
+      
+      console.log('🏢 Using organization ID:', orgId);
+      
+      // 1. Optimistically update UI - remove from short-term list immediately
+      setShortTermIssues(prev => {
+        const updated = prev.filter(i => i.id !== issue.id);
+        console.log('✅ Removed from UI. Remaining:', updated.length);
+        return updated;
+      });
+      
+      // 2. Call the API
+      console.log('📡 Calling API to update issue...');
+      
+      const response = await issuesService.updateIssue(issue.id, {
         ...issue,
-        organizationId: issue.organization_id,  // Already on the issue object
+        organizationId: orgId,
         is_long_term: true
       });
+      
+      console.log('✅ API call successful:', response);
+      
+      // 3. Refresh issues data from backend to ensure sync
+      console.log('🔄 Refreshing issues from backend...');
+      await fetchIssuesData();
+      
+      console.log('✅ Issue successfully moved to long-term!');
+      
     } catch (error) {
-      console.error('Failed:', error);
+      console.error('❌ Failed to move issue:', error);
+      alert('Failed to move issue to long-term. Please try again.');
+      
+      // Rollback: refresh issues to restore correct state
+      try {
+        await fetchIssuesData();
+      } catch (fetchError) {
+        console.error('Failed to refresh issues:', fetchError);
+      }
     }
-    
-    // ALWAYS reload, even if there was an error
-    // This ensures the UI matches the backend state
-    window.location.reload();
   };
 
   const handleArchiveIssue = async (issue) => {
