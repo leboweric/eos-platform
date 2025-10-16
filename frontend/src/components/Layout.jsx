@@ -141,12 +141,25 @@ const Layout = ({ children }) => {
     };
   }, [user]);
   
-  // Check for temporary sidebar hide flag
+  // Check for temporary sidebar hide flag and manage route-based visibility
   useEffect(() => {
+    // Determine if sidebar should be hidden based on current route
+    const isMeetingPage = location.pathname.includes('/meetings/');
+    
     const checkHideSidebar = () => {
       const shouldHide = sessionStorage.getItem('hideSidebarTemp') === 'true';
-      console.log('Layout: Checking hideSidebar:', shouldHide);
-      setHideSidebar(shouldHide);
+      console.log('Layout: Checking hideSidebar:', shouldHide, 'isMeetingPage:', isMeetingPage, 'pathname:', location.pathname);
+      
+      // Auto-hide sidebar on meeting pages
+      if (isMeetingPage) {
+        setHideSidebar(true);
+      } else {
+        // Always show sidebar on non-meeting pages
+        setHideSidebar(false);
+        // Clear any sessionStorage that might persist the hidden state
+        console.log('🔧 Layout: Clearing hideSidebarTemp for non-meeting page');
+        sessionStorage.removeItem('hideSidebarTemp');
+      }
     };
     
     // Check on mount and path changes

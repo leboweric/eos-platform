@@ -34,6 +34,12 @@ import { format } from 'date-fns';
 const DashboardClean = () => {
   const { user, isOnLeadershipTeam } = useAuthStore();
   const navigate = useNavigate();
+
+  // Ensure sidebar is visible on dashboard (safety check after leaving meetings)
+  useEffect(() => {
+    console.log('📊 Dashboard mounted - ensuring sidebar is visible');
+    sessionStorage.removeItem('hideSidebarTemp');
+  }, []);
   const [loading, setLoading] = useState(true);
   const [organization, setOrganization] = useState(null);
   const [showTodoDialog, setShowTodoDialog] = useState(false);

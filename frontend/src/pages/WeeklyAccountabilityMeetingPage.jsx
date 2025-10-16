@@ -112,6 +112,20 @@ const WeeklyAccountabilityMeetingPage = () => {
       return;
     }
   }, [teamId, navigate]);
+
+  // Cleanup sidebar state when leaving meeting
+  useEffect(() => {
+    return () => {
+      console.log('🚪 Leaving L10 meeting - ensuring sidebar will be visible on next page');
+      sessionStorage.removeItem('hideSidebarTemp');
+      
+      // Also ensure full screen mode is disabled
+      const isFullScreen = sessionStorage.getItem('fullScreenMode') === 'true';
+      if (isFullScreen) {
+        sessionStorage.removeItem('fullScreenMode');
+      }
+    };
+  }, []);
   
   // DEBUG: Log the raw teamId from URL params
   console.log('🐛 [WeeklyAccountabilityMeeting] Raw teamId from useParams:', teamId);
