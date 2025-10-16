@@ -2117,26 +2117,23 @@ const WeeklyAccountabilityMeetingPage = () => {
 
   const handleMoveIssueToLongTerm = async (issue) => {
     try {
-      console.log('🔄 Moving issue to long-term:', issue.title || issue.issue);
+      console.log('🔄 Moving issue to long-term:', issue.title);
       
-      await updateIssue(issue.id, {
+      // Update the backend
+      await issuesService.updateIssue(issue.id, {
         ...issue,
         organizationId,
         is_long_term: true
       });
       
-      console.log('✅ Backend updated');
+      console.log('✅ Backend updated successfully');
       
-      // Refresh all issues data
-      await fetchIssuesData();
+      // Reload the entire page to refresh all data
+      window.location.reload();
       
-      console.log('✅ Issues refreshed - issue should be gone from short-term');
-      
-      // Show success message
-      setSuccessMessage('Issue moved to long-term list');
     } catch (error) {
       console.error('❌ Failed to move issue:', error);
-      setError('Failed to move issue to long-term');
+      alert('Failed to move issue to long-term');
     }
   };
 
