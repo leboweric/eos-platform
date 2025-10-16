@@ -54,7 +54,6 @@ export const getIssues = async (req, res) => {
         i.priority_rank,
         i.status,
         i.timeline,
-        i.is_long_term,
         i.resolution_notes,
         i.resolved_at,
         i.created_at,
@@ -256,7 +255,7 @@ export const createIssue = async (req, res) => {
 export const updateIssue = async (req, res) => {
   try {
     const { orgId, issueId } = req.params;
-    const { title, description, ownerId, status, timeline, is_long_term, resolutionNotes } = req.body;
+    const { title, description, ownerId, status, timeline, resolutionNotes } = req.body;
     
     let updateFields = [];
     let values = [];
@@ -281,10 +280,6 @@ export const updateIssue = async (req, res) => {
     if (timeline !== undefined) {
       updateFields.push(`timeline = $${paramCount++}`);
       values.push(timeline);
-    }
-    if (is_long_term !== undefined) {
-      updateFields.push(`is_long_term = $${paramCount++}`);
-      values.push(is_long_term);
     }
     if (resolutionNotes !== undefined) {
       updateFields.push(`resolution_notes = $${paramCount++}`);
