@@ -6362,6 +6362,7 @@ const WeeklyAccountabilityMeetingPage = () => {
           issue={editingIssue}
           teamMembers={teamMembers || []}
           teamId={teamId}
+          onTimelineChange={handleTimelineChange}
           onSave={async (issueData) => {
             try {
               const effectiveTeamId = getEffectiveTeamId(teamId, user);
