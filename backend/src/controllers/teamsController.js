@@ -335,7 +335,6 @@ export const getTeamMembers = async (req, res) => {
         u.first_name,
         u.last_name,
         u.email,
-        u.profile_image_url,
         tm.role,
         tm.joined_at
       FROM team_members tm
@@ -431,7 +430,6 @@ export const addTeamMember = async (req, res) => {
         u.first_name,
         u.last_name,
         u.email,
-        u.profile_image_url,
         tm.role,
         tm.joined_at
       FROM team_members tm
