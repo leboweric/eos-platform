@@ -25,6 +25,7 @@ export function IssueContextMenu({
   onCreateTodo,
   onVote,
   onMoveToLongTerm,
+  onMoveToShortTerm,
   onArchive,
   currentUserId,
   disabled = false 
@@ -82,6 +83,14 @@ export function IssueContextMenu({
           <ContextMenuItem onClick={() => onMoveToLongTerm(issue)}>
             <Clock className="mr-2 h-4 w-4" />
             Move to Long-Term
+          </ContextMenuItem>
+        )}
+        
+        {/* Move to Short-Term */}
+        {onMoveToShortTerm && (
+          <ContextMenuItem onClick={() => onMoveToShortTerm(issue)}>
+            <Clock className="mr-2 h-4 w-4" />
+            Move to Short-Term
           </ContextMenuItem>
         )}
         

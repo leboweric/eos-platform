@@ -2135,6 +2135,26 @@ const WeeklyAccountabilityMeetingPage = () => {
     }
   };
 
+  const handleMoveIssueToShortTerm = async (issue) => {
+    try {
+      console.log('🔄 Moving issue to short-term:', issue.title);
+      
+      // Simple approach: Update via API and refetch data (like working IssuesPage)
+      await issuesService.updateIssue(issue.id, { timeline: 'short_term' });
+      
+      console.log('✅ Issue moved to short-term, refreshing data...');
+      
+      // Refetch all data to ensure consistency
+      await fetchIssuesData();
+      
+      console.log('✅ Issue successfully moved to short-term!');
+      
+    } catch (error) {
+      console.error('❌ Failed to move issue:', error);
+      setError('Failed to move issue to short-term');
+    }
+  };
+
   const handleArchiveIssue = async (issue) => {
     try {
       const orgId = user?.organizationId || user?.organization_id;
@@ -5374,7 +5394,8 @@ const WeeklyAccountabilityMeetingPage = () => {
                                 onMarkSolved={handleMarkIssueSolved}
                                 onCreateTodo={handleCreateTodoFromIssue}
                                 onVote={handleVoteOnIssue}
-                                onMoveToLongTerm={handleMoveIssueToLongTerm}
+                                onMoveToLongTerm={issueTimeline === 'short_term' ? handleMoveIssueToLongTerm : undefined}
+                                onMoveToShortTerm={issueTimeline === 'long_term' ? handleMoveIssueToShortTerm : undefined}
                                 onArchive={handleArchiveIssue}
                                 currentUserId={user?.id}
                               >
