@@ -6189,6 +6189,7 @@ const WeeklyAccountabilityMeetingPage = () => {
           open={showTodoDialog}
           onOpenChange={setShowTodoDialog}
           todo={editingTodo}
+          todoFromIssue={todoFromIssue}
           teamMembers={teamMembers || []}
           onSave={async (todoData) => {
             try {

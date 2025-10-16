@@ -20,7 +20,9 @@ const TodoDialog = ({ open, onOpenChange, todo, todoFromIssue, teamMembers, onSa
     assignedToId: '',
     assignedToIds: [], // For multi-assignment
     isMultiAssignee: false,
-    dueDate: ''
+    dueDate: '',
+    linkedIssueId: null,
+    linkedPriorityId: null
   });
   const [showAssigneeDropdown, setShowAssigneeDropdown] = useState(false);
   const dropdownRef = useRef(null);
@@ -85,7 +87,9 @@ const TodoDialog = ({ open, onOpenChange, todo, todoFromIssue, teamMembers, onSa
         assignedToId: !isMulti ? (todo.assigned_to_id || todo.assignee_id || todo.assignedToId || '') : '',
         assignedToIds: isMulti ? assigneeIds : [],
         isMultiAssignee: isMulti,
-        dueDate: todo.due_date ? todo.due_date.split('T')[0] : '' // Use date string directly, don't convert
+        dueDate: todo.due_date ? todo.due_date.split('T')[0] : '', // Use date string directly, don't convert
+        linkedIssueId: todo.linked_issue_id || todo.linkedIssueId || null,
+        linkedPriorityId: todo.linked_priority_id || todo.linkedPriorityId || null
       });
       
       // Load existing attachments and updates
@@ -101,7 +105,9 @@ const TodoDialog = ({ open, onOpenChange, todo, todoFromIssue, teamMembers, onSa
         assignedToId: '',
         assignedToIds: [],
         isMultiAssignee: false,
-        dueDate: getDateDaysFromNow(7)
+        dueDate: getDateDaysFromNow(7),
+        linkedIssueId: null,
+        linkedPriorityId: null
       });
       setExistingAttachments([]);
     }
@@ -112,14 +118,16 @@ const TodoDialog = ({ open, onOpenChange, todo, todoFromIssue, teamMembers, onSa
   useEffect(() => {
     if (open && !todo) {
       if (todoFromIssue) {
-        // Pre-populate from issue
+        // Pre-populate from issue/priority - using data passed from the context menu
         setFormData({
-          title: `Follow up: ${todoFromIssue.title}`,
-          description: `Related to issue: ${todoFromIssue.title}`,
-          assignedToId: todoFromIssue.owner_id || user?.id || '',
+          title: todoFromIssue.title || '',
+          description: todoFromIssue.description || '',
+          assignedToId: todoFromIssue.assignedToId || todoFromIssue.owner_id || user?.id || '',
           assignedToIds: [],
           isMultiAssignee: false,
-          dueDate: getDateDaysFromNow(7)
+          dueDate: todoFromIssue.dueDate || getDateDaysFromNow(7),
+          linkedIssueId: todoFromIssue.linkedIssueId || null,
+          linkedPriorityId: todoFromIssue.linkedPriorityId || null
         });
       } else {
         // Clear form
@@ -129,7 +137,9 @@ const TodoDialog = ({ open, onOpenChange, todo, todoFromIssue, teamMembers, onSa
           assignedToId: '',
           assignedToIds: [],
           isMultiAssignee: false,
-          dueDate: getDateDaysFromNow(7)
+          dueDate: getDateDaysFromNow(7),
+          linkedIssueId: null,
+          linkedPriorityId: null
         });
       }
       setFiles([]);
@@ -323,6 +333,23 @@ const TodoDialog = ({ open, onOpenChange, todo, todoFromIssue, teamMembers, onSa
           </DialogHeader>
           
           <div className="flex-1 space-y-6 py-6 overflow-y-auto">
+            {/* Show linked item indicator */}
+            {(todoFromIssue?.linkedIssueId || todoFromIssue?.linkedPriorityId) && (
+              <div className="bg-blue-50 border border-blue-200 rounded-lg p-3">
+                <div className="flex items-start gap-2">
+                  <Link className="h-4 w-4 text-blue-600 mt-0.5 flex-shrink-0" />
+                  <div className="flex-1">
+                    <p className="text-sm font-medium text-blue-900">
+                      {todoFromIssue.linkedIssueId ? 'Linked to Issue:' : 'Linked to Rock:'}
+                    </p>
+                    <p className="text-sm text-blue-700">
+                      {todoFromIssue.title}
+                    </p>
+                  </div>
+                </div>
+              </div>
+            )}
+            
             {error && (
               <Alert className="border-red-200 dark:border-red-800 bg-red-50/80 dark:bg-red-900/20 backdrop-blur-sm rounded-xl">
                 <AlertCircle className="h-4 w-4 text-red-600" />
