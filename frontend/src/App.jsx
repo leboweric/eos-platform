@@ -193,6 +193,7 @@ function App() {
           <Route path="/accept-invitation" element={<AcceptInvitationPage />} />
           <Route path="/auth/success" element={<OAuthCallback />} />
           <Route path="/auth/callback" element={<OAuthCallback />} />
+          <Route path="/login/auth/callback" element={<OAuthCallback />} />
           
           {/* Protected routes */}
           <Route path="/dashboard" element={user ? <Layout><Dashboard /></Layout> : <Navigate to="/login" />} />
