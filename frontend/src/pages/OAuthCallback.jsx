@@ -11,34 +11,51 @@ const OAuthCallback = () => {
   useEffect(() => {
     const handleOAuthCallback = async () => {
       const token = searchParams.get('token');
+      const provider = searchParams.get('provider');
       const error = searchParams.get('error');
+
+      console.log('🔵 OAuth callback received');
+      console.log('📦 Parameters:', { 
+        token: token ? 'present' : 'missing',
+        provider,
+        error 
+      });
 
       if (error) {
         // OAuth failed
-        console.error('OAuth error:', error);
+        console.error('❌ OAuth error:', error);
         navigate('/login?error=' + error);
         return;
       }
 
       if (token) {
         try {
+          console.log('✅ OAuth callback received token from:', provider || 'unknown provider');
+          
           // Store the token
           localStorage.setItem('token', token);
           
           // Decode the token to get user info (you might want to make an API call instead)
           const payload = JSON.parse(atob(token.split('.')[1]));
+          console.log('👤 User info from token:', { 
+            id: payload.id,
+            email: payload.email,
+            organizationId: payload.organizationId 
+          });
           
           // Log the user in
           await login(payload.email, null, token);
           
+          console.log('🔄 Redirecting to dashboard...');
           // Redirect to dashboard
           navigate('/dashboard');
         } catch (err) {
-          console.error('Failed to process OAuth token:', err);
+          console.error('❌ Failed to process OAuth token:', err);
           navigate('/login?error=oauth_failed');
         }
       } else {
         // No token or error - something went wrong
+        console.error('❌ No token received in OAuth callback');
         navigate('/login?error=oauth_failed');
       }
     };
