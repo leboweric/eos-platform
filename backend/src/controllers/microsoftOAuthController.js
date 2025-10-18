@@ -189,9 +189,13 @@ export const handleMicrosoftCallback = async (req, res) => {
         );
         
         if (orgResult.rows.length === 0) {
-          // No organization exists - redirect to register
+          // No organization exists - redirect to register with clean URL
+          let baseUrl = 'https://axplatform.app';
+          if (state && state.includes('myboyum')) {
+            baseUrl = 'https://myboyum.axplatform.app';
+          }
           return res.redirect(
-            `${state || 'https://axplatform.app'}/register?email=${encodeURIComponent(email)}&name=${encodeURIComponent(microsoftUser.displayName || '')}`
+            `${baseUrl}/register?email=${encodeURIComponent(email)}&name=${encodeURIComponent(microsoftUser.displayName || '')}`
           );
         }
         
@@ -252,14 +256,14 @@ export const handleMicrosoftCallback = async (req, res) => {
     const token = generateToken(user);
     console.log('✅ JWT token generated');
     
-    // Determine redirect URL based on original domain
-    let redirectUrl = state || 'https://axplatform.app';
+    // Determine base URL for redirect (handle subdomains)
+    let baseUrl = 'https://axplatform.app';
     if (state && state.includes('myboyum')) {
-      redirectUrl = 'https://myboyum.axplatform.app';
+      baseUrl = 'https://myboyum.axplatform.app';
     }
     
-    // Redirect to frontend with token
-    const redirectWithToken = `${redirectUrl}/auth/callback?token=${token}&provider=microsoft`;
+    // ALWAYS redirect to the correct path: /login/auth/callback
+    const redirectWithToken = `${baseUrl}/login/auth/callback?token=${token}&provider=microsoft`;
     console.log('🔄 Redirecting to:', redirectWithToken);
     
     res.redirect(redirectWithToken);
@@ -268,9 +272,12 @@ export const handleMicrosoftCallback = async (req, res) => {
     console.error('❌ Microsoft OAuth callback error:', error);
     console.error('Stack:', error.stack);
     
-    // Redirect to login with error
-    const redirectUrl = req.query.state || 'https://axplatform.app';
-    res.redirect(`${redirectUrl}/login?error=oauth_failed`);
+    // Redirect to login with error - use clean base URL
+    let baseUrl = 'https://axplatform.app';
+    if (req.query.state && req.query.state.includes('myboyum')) {
+      baseUrl = 'https://myboyum.axplatform.app';
+    }
+    res.redirect(`${baseUrl}/login?error=oauth_failed`);
   }
 };
 
