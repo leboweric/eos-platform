@@ -23,21 +23,38 @@ const OAuthCallback = () => {
     
     if (token) {
       try {
-        // Store token
-        localStorage.setItem('token', token);
-        console.log('✅ Token stored in localStorage');
+        // Validate token format (must be a JWT with 3 parts)
+        const parts = token.split('.');
+        if (parts.length !== 3) {
+          console.error('❌ Invalid token format - not a valid JWT');
+          navigate('/login?error=invalid_token');
+          return;
+        }
         
-        // Decode token for logging (optional)
+        // Try to decode token to validate it
         try {
-          const payload = JSON.parse(atob(token.split('.')[1]));
+          const payload = JSON.parse(atob(parts[1]));
           console.log('👤 User info from token:', { 
             id: payload.id,
             email: payload.email,
             organizationId: payload.organizationId 
           });
+          
+          // Validate required fields
+          if (!payload.id || !payload.email) {
+            console.error('❌ Token missing required fields');
+            navigate('/login?error=invalid_token');
+            return;
+          }
         } catch (e) {
-          console.log('Could not decode token for logging');
+          console.error('❌ Failed to decode token:', e);
+          navigate('/login?error=invalid_token');
+          return;
         }
+        
+        // Store valid token
+        localStorage.setItem('token', token);
+        console.log('✅ Valid token stored in localStorage');
         
         // Force full page reload to reinitialize auth
         console.log('🔄 Reloading to dashboard...');
