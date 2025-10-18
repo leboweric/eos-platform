@@ -52,9 +52,22 @@ const OAuthCallback = () => {
           return;
         }
         
-        // Store valid token
-        localStorage.setItem('token', token);
-        console.log('✅ Valid token stored in localStorage');
+        // Store valid token (using the correct key name for this app)
+        localStorage.setItem('accessToken', token);
+        // OAuth doesn't provide a refresh token, so we'll use the access token
+        localStorage.setItem('refreshToken', token);
+        console.log('✅ Valid token stored in localStorage as accessToken');
+        
+        // Store organization ID if present
+        try {
+          const payload = JSON.parse(atob(parts[1]));
+          if (payload.organizationId) {
+            localStorage.setItem('organizationId', payload.organizationId);
+            console.log('✅ Organization ID stored:', payload.organizationId);
+          }
+        } catch (e) {
+          console.log('Could not extract organization ID');
+        }
         
         // Force full page reload to reinitialize auth
         console.log('🔄 Reloading to dashboard...');
