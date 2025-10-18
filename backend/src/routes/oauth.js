@@ -20,7 +20,7 @@ router.post('/google/link', authenticate, linkGoogleAccount);
 
 // Microsoft OAuth routes
 router.get('/microsoft', getMicrosoftAuthUrl);
-router.post('/microsoft/callback', handleMicrosoftCallback);
+router.get('/microsoft/callback', handleMicrosoftCallback);
 router.post('/microsoft/link', authenticate, linkMicrosoftAccount);
 
 export default router;

@@ -43,16 +43,28 @@ const generateToken = (user) => {
 // Get Microsoft OAuth URL
 export const getMicrosoftAuthUrl = async (req, res) => {
   try {
+    const state = req.query.redirect_url || req.headers.referer || 'https://axplatform.app';
+    
+    console.log('🔵 Generating Microsoft OAuth URL');
+    console.log('📍 Redirect URL (state):', state);
+    console.log('📍 Callback URL:', process.env.MICROSOFT_CALLBACK_URL);
+    
     const authCodeUrlParameters = {
       scopes: ['user.read', 'email', 'profile', 'openid'],
       redirectUri: process.env.MICROSOFT_CALLBACK_URL,
-      state: req.headers.referer || 'https://axplatform.app'
+      state: state
     };
 
     const authUrl = await msalClient.getAuthCodeUrl(authCodeUrlParameters);
-    res.json({ authUrl });
+    
+    console.log('✅ Auth URL generated:', authUrl.substring(0, 100) + '...');
+    
+    res.json({ 
+      success: true,
+      authUrl 
+    });
   } catch (error) {
-    console.error('Error generating Microsoft auth URL:', error);
+    console.error('❌ Error generating Microsoft auth URL:', error);
     res.status(500).json({ 
       success: false, 
       message: 'Failed to generate authentication URL' 
@@ -62,9 +74,33 @@ export const getMicrosoftAuthUrl = async (req, res) => {
 
 // Handle Microsoft OAuth callback
 export const handleMicrosoftCallback = async (req, res) => {
-  const { code, state } = req.body;
-
   try {
+    // Get code from query params (Microsoft sends it in the URL)
+    const { code, state, error, error_description } = req.query;
+    
+    console.log('🔵 Microsoft callback received');
+    console.log('📦 Query params:', { 
+      code: code ? 'present' : 'missing', 
+      state,
+      error 
+    });
+    
+    // Handle Microsoft errors
+    if (error) {
+      console.error('❌ Microsoft OAuth error:', error, error_description);
+      const redirectUrl = state || 'https://axplatform.app';
+      return res.redirect(`${redirectUrl}/login?error=${error}`);
+    }
+    
+    // Validate code
+    if (!code) {
+      console.error('❌ No authorization code provided');
+      const redirectUrl = state || 'https://axplatform.app';
+      return res.redirect(`${redirectUrl}/login?error=no_code`);
+    }
+    
+    console.log('🔄 Exchanging code for tokens...');
+    
     // Exchange code for tokens
     const tokenRequest = {
       code: code,
@@ -74,7 +110,12 @@ export const handleMicrosoftCallback = async (req, res) => {
 
     const tokenResponse = await msalClient.acquireTokenByCode(tokenRequest);
     
+    console.log('✅ Token acquired successfully');
+    console.log('🔍 Access token:', tokenResponse.accessToken ? 'present' : 'missing');
+    
     // Get user info from Microsoft Graph API
+    console.log('📡 Fetching user profile from Microsoft Graph...');
+    
     const graphResponse = await fetch('https://graph.microsoft.com/v1.0/me', {
       headers: {
         Authorization: `Bearer ${tokenResponse.accessToken}`
@@ -83,16 +124,28 @@ export const handleMicrosoftCallback = async (req, res) => {
 
     const microsoftUser = await graphResponse.json();
     
+    console.log('✅ Microsoft user profile retrieved:', {
+      id: microsoftUser.id,
+      displayName: microsoftUser.displayName,
+      email: microsoftUser.mail || microsoftUser.userPrincipalName
+    });
+    
     // Extract email (Microsoft uses different fields)
     const email = microsoftUser.mail || microsoftUser.userPrincipalName || microsoftUser.email;
     
     if (!email) {
-      throw new Error('No email found in Microsoft account');
+      console.error('❌ No email found in Microsoft user profile');
+      const redirectUrl = state || 'https://axplatform.app';
+      return res.redirect(`${redirectUrl}/login?error=no_email`);
     }
     
+    console.log('📧 Email extracted:', email);
+    
     // Check if user already exists
+    console.log('🔍 Looking for existing user with email:', email);
+    
     let userResult = await db.query(
-      'SELECT * FROM users WHERE email = $1',
+      'SELECT * FROM users WHERE LOWER(email) = LOWER($1)',
       [email]
     );
 
@@ -101,14 +154,17 @@ export const handleMicrosoftCallback = async (req, res) => {
     if (userResult.rows.length > 0) {
       // Existing user - update their Microsoft ID if not set
       user = userResult.rows[0];
+      console.log('✅ Existing user found:', user.id);
       
       if (!user.microsoft_id) {
         await db.query(
-          'UPDATE users SET microsoft_id = $1, updated_at = NOW() WHERE id = $2',
-          [microsoftUser.id, user.id]
+          'UPDATE users SET microsoft_id = $1, oauth_provider = $2, updated_at = NOW() WHERE id = $3',
+          [microsoftUser.id, 'microsoft', user.id]
         );
+        console.log('✅ Updated user with Microsoft ID');
       }
     } else {
+      console.log('👤 Creating new user for Microsoft account');
       // New user - create account
       // Check if there's an organization with this email domain
       const emailDomain = email.split('@')[1];
@@ -172,6 +228,7 @@ export const handleMicrosoftCallback = async (req, res) => {
       );
       
       user = newUserResult.rows[0];
+      console.log('✅ User created:', user.id);
       
       // NOTE: Team assignment should be handled by organization admin
       // Not auto-assigning to any team for security reasons
@@ -193,21 +250,26 @@ export const handleMicrosoftCallback = async (req, res) => {
 
     // Generate JWT token
     const token = generateToken(user);
+    console.log('✅ JWT token generated');
     
     // Determine redirect URL based on original domain
-    let redirectUrl = 'https://axplatform.app';
+    let redirectUrl = state || 'https://axplatform.app';
     if (state && state.includes('myboyum')) {
       redirectUrl = 'https://myboyum.axplatform.app';
     }
     
     // Redirect to frontend with token
-    res.redirect(`${redirectUrl}/auth/success?token=${token}`);
+    const redirectWithToken = `${redirectUrl}/auth/callback?token=${token}&provider=microsoft`;
+    console.log('🔄 Redirecting to:', redirectWithToken);
+    
+    res.redirect(redirectWithToken);
     
   } catch (error) {
-    console.error('Microsoft OAuth callback error:', error);
+    console.error('❌ Microsoft OAuth callback error:', error);
+    console.error('Stack:', error.stack);
     
     // Redirect to login with error
-    const redirectUrl = state || 'https://axplatform.app';
+    const redirectUrl = req.query.state || 'https://axplatform.app';
     res.redirect(`${redirectUrl}/login?error=oauth_failed`);
   }
 };
