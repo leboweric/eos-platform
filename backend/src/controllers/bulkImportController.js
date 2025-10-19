@@ -1,6 +1,7 @@
 import XLSX from 'xlsx';
-import { query } from '../config/database.js';
+import db from '../config/database.js';
 import { v4 as uuidv4 } from 'uuid';
+import { parseUserImportFile, checkExistingUsers, getOrCreateDepartments } from '../services/bulkUserImportService.js';
 
 // Generate Excel template for bulk user import
 export const downloadTemplate = async (req, res) => {
@@ -81,127 +82,74 @@ export const previewImport = async (req, res) => {
     
     const organizationId = req.user.organization_id;
     
-    // Parse Excel file
-    const workbook = XLSX.read(req.file.buffer, { type: 'buffer' });
-    const sheetName = workbook.SheetNames[0];
-    const worksheet = workbook.Sheets[sheetName];
-    
-    // Parse with options to handle empty rows and missing values
-    const jsonData = XLSX.utils.sheet_to_json(worksheet, {
-      defval: '',  // Default value for empty cells
-      blankrows: false  // Skip blank rows (including empty first row)
-    });
-    
-    // Debug: Log first row to see what columns we got
-    if (jsonData.length > 0) {
-      console.log('First parsed row columns:', Object.keys(jsonData[0]));
-      console.log('First row data:', jsonData[0]);
+    if (!organizationId) {
+      return res.status(400).json({
+        success: false,
+        error: 'Organization ID required'
+      });
     }
-    
-    // Validate and process data
-    const validationResults = [];
-    const departments = new Set();
-    const emails = new Set();
-    const warnings = [];
-    
-    // Check existing emails in database
-    const existingEmailsResult = await query(
-      'SELECT email FROM users WHERE organization_id = $1',
+
+    console.log('📤 Processing bulk import preview for org:', organizationId);
+    console.log('📄 File:', req.file.originalname, `(${req.file.size} bytes)`);
+
+    // Use the service to parse the Excel file
+    const { users, summary } = await parseUserImportFile(req.file.buffer);
+
+    // Check which users already exist
+    const existingEmails = await checkExistingUsers(users, organizationId, db);
+    const existingEmailSet = new Set(existingEmails);
+
+    // Mark users as duplicates if they already exist
+    const usersWithStatus = users.map(user => ({
+      ...user,
+      isDuplicate: existingEmailSet.has(user.email),
+      status: !user.isValid ? 'Invalid' 
+            : existingEmailSet.has(user.email) ? 'Duplicate' 
+            : 'Ready'
+    }));
+
+    // Get existing departments
+    const existingDepartments = await db.query(
+      `SELECT LOWER(name) as name FROM teams 
+       WHERE organization_id = $1 
+       AND deleted_at IS NULL`,
       [organizationId]
     );
-    const existingEmails = new Set(existingEmailsResult.rows.map(r => r.email.toLowerCase()));
-    
-    jsonData.forEach((row, index) => {
-      // Row 1 is headers (parsed as column names), Row 2+ is data
-      const rowNum = index + 2; // Excel rows start at 1, plus header row
-      const result = {
-        row: rowNum,
-        firstName: row['First Name']?.toString().trim(),
-        lastName: row['Last Name']?.toString().trim(),
-        email: row['Email']?.toString().trim().toLowerCase(),
-        role: row['Role']?.toString().trim().toLowerCase(),
-        department: row['Department Name']?.toString().trim(),
-        valid: true,
-        errors: []
-      };
-      
-      // Validate required fields
-      if (!result.firstName) {
-        result.valid = false;
-        result.errors.push('First name is required');
-      }
-      
-      if (!result.lastName) {
-        result.valid = false;
-        result.errors.push('Last name is required');
-      }
-      
-      if (!result.email) {
-        result.valid = false;
-        result.errors.push('Email is required');
-      } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(result.email)) {
-        result.valid = false;
-        result.errors.push('Invalid email format');
-      } else if (existingEmails.has(result.email)) {
-        result.valid = false;
-        result.errors.push('Email already exists in the system');
-      } else if (emails.has(result.email)) {
-        result.valid = false;
-        result.errors.push('Duplicate email in spreadsheet');
-      }
-      
-      if (!result.role) {
-        result.valid = false;
-        result.errors.push('Role is required');
-      } else if (!['member', 'admin'].includes(result.role)) {
-        result.valid = false;
-        result.errors.push('Invalid role (must be: member or admin)');
-      }
-      
-      // Track departments and emails
-      if (result.department) {
-        departments.add(result.department);
-      }
-      if (result.email) {
-        emails.add(result.email);
-      }
-      
-      validationResults.push(result);
-    });
-    
-    // Check existing departments
-    const departmentList = Array.from(departments);
-    const existingDepts = departmentList.length > 0 ? await query(
-      'SELECT name FROM teams WHERE organization_id = $1 AND name = ANY($2)',
-      [organizationId, departmentList]
-    ) : { rows: [] };
-    
-    const existingDeptNames = new Set(existingDepts.rows.map(d => d.name));
-    const newDepartments = departmentList.filter(d => !existingDeptNames.has(d));
-    
-    // Summary
-    const validUsers = validationResults.filter(r => r.valid);
-    const invalidUsers = validationResults.filter(r => !r.valid);
-    
+    const existingDeptSet = new Set(existingDepartments.rows.map(d => d.name));
+
+    // Identify new departments
+    const newDepartments = summary.departments.filter(
+      dept => dept && !existingDeptSet.has(dept.toLowerCase())
+    );
+
+    // Separate valid and invalid users
+    const validUsers = usersWithStatus.filter(u => u.status === 'Ready');
+    const invalidUsers = usersWithStatus.filter(u => u.status === 'Invalid');
+    const duplicateUsers = usersWithStatus.filter(u => u.status === 'Duplicate');
+
     res.json({
       success: true,
       preview: {
-        totalRows: validationResults.length,
-        validUsers: validUsers.length,
-        invalidUsers: invalidUsers.length,
-        newDepartments: newDepartments.length,
-        existingDepartments: existingDeptNames.size,
-        users: validationResults,
+        valid: validUsers,
+        invalid: invalidUsers,
+        duplicates: duplicateUsers,
+        summary: {
+          total: users.length,
+          valid: validUsers.length,
+          invalid: invalidUsers.length,
+          duplicates: duplicateUsers.length,
+          users: users.length
+        },
         departments: {
           new: newDepartments,
-          existing: Array.from(existingDeptNames)
+          existing: Array.from(existingDeptSet)
         },
         canImport: validUsers.length > 0
       }
     });
     
   } catch (error) {
-    console.error('Error previewing import:', error);
+    console.error('❌ Preview error:', error);
     res.status(500).json({
       success: false,
       error: 'Failed to preview import: ' + error.message
@@ -211,6 +159,8 @@ export const previewImport = async (req, res) => {
 
 // Perform bulk import
 export const bulkImport = async (req, res) => {
+  const client = await db.connect();
+  
   try {
     if (!req.file) {
       return res.status(400).json({
@@ -221,18 +171,34 @@ export const bulkImport = async (req, res) => {
     
     const organizationId = req.user.organization_id;
     const importedBy = req.user.id;
+    const skipDuplicates = req.body.skipDuplicates !== false; // Default to true
     
-    // Parse Excel file
-    const workbook = XLSX.read(req.file.buffer, { type: 'buffer' });
-    const sheetName = workbook.SheetNames[0];
-    const worksheet = workbook.Sheets[sheetName];
-    
-    // Parse with options to handle empty rows and missing values
-    const jsonData = XLSX.utils.sheet_to_json(worksheet, {
-      defval: '',  // Default value for empty cells
-      blankrows: false  // Skip blank rows (including empty first row)
-    });
-    
+    if (!organizationId) {
+      return res.status(400).json({
+        success: false,
+        error: 'Organization ID required'
+      });
+    }
+
+    console.log('🚀 Executing bulk import for org:', organizationId);
+
+    await client.query('BEGIN');
+
+    // Parse file using the service
+    const { users } = await parseUserImportFile(req.file.buffer);
+
+    // Check existing users
+    const existingEmails = await checkExistingUsers(users, organizationId, client);
+    const existingEmailSet = new Set(existingEmails);
+
+    // Filter out invalid and duplicate users
+    let usersToImport = users.filter(u => u.isValid);
+    if (skipDuplicates) {
+      usersToImport = usersToImport.filter(u => !existingEmailSet.has(u.email));
+    }
+
+    console.log('👥 Importing', usersToImport.length, 'users');
+
     // Track results
     const results = {
       usersCreated: 0,
@@ -243,155 +209,91 @@ export const bulkImport = async (req, res) => {
       warnings: [],
       createdUsers: []
     };
-    
-    // Map to store department name -> id
-    const departmentMap = new Map();
-    
-    // Get existing departments
-    const existingDepts = await query(
-      'SELECT id, name FROM teams WHERE organization_id = $1',
-      [organizationId]
-    );
-    existingDepts.rows.forEach(dept => {
-      departmentMap.set(dept.name, dept.id);
-    });
-    
-    // Get existing users to skip duplicates
-    const existingUsersResult = await query(
-      'SELECT email FROM users WHERE organization_id = $1',
-      [organizationId]
-    );
-    const existingEmails = new Set(
-      existingUsersResult.rows.map(u => u.email.toLowerCase())
-    );
-    
-    // Process each row
-    for (const [index, row] of jsonData.entries()) {
-      // Row 1 is headers (parsed as column names), Row 2+ is data
-      const rowNum = index + 2; // Excel rows start at 1, plus header row
-      
+
+    // Get or create departments
+    const uniqueDepartments = [...new Set(usersToImport.map(u => u.department).filter(d => d))];
+    const departmentMap = await getOrCreateDepartments(uniqueDepartments, organizationId, client);
+    results.departmentsCreated = Object.keys(departmentMap).length;
+
+    // Import each user
+    for (const user of usersToImport) {
       try {
-        const firstName = row['First Name']?.toString().trim();
-        const lastName = row['Last Name']?.toString().trim();
-        const email = row['Email']?.toString().trim().toLowerCase();
-        const role = row['Role']?.toString().trim().toLowerCase();
-        const departmentName = row['Department Name']?.toString().trim();
-        
-        // Skip invalid rows
-        if (!firstName || !lastName || !email || !role) {
-          results.errors.push(`Row ${rowNum}: Missing required fields`);
-          results.usersFailed++;
-          continue;
-        }
-        
-        // Validate email format
-        if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
-          results.errors.push(`Row ${rowNum}: Invalid email format`);
-          results.usersFailed++;
-          continue;
-        }
-        
-        // Validate role
-        if (!['member', 'admin'].includes(role)) {
-          results.errors.push(`Row ${rowNum}: Invalid role (must be: member or admin)`);
-          results.usersFailed++;
-          continue;
-        }
-        
-        // Check if user already exists - skip instead of fail
-        if (existingEmails.has(email)) {
-          results.warnings.push(`Row ${rowNum}: User ${email} already exists - skipped`);
-          results.usersSkipped++;
-          continue;
-        }
-        
-        // Create department if needed
-        let departmentId = null;
-        if (departmentName && !departmentMap.has(departmentName)) {
-          const deptResult = await query(
-            `INSERT INTO teams (id, organization_id, name, is_leadership_team, created_at, updated_at)
-             VALUES ($1, $2, $3, false, NOW(), NOW())
-             RETURNING id`,
-            [uuidv4(), organizationId, departmentName]
-          );
-          departmentId = deptResult.rows[0].id;
-          departmentMap.set(departmentName, departmentId);
-          results.departmentsCreated++;
-          console.log(`Created department: ${departmentName}`);
-        } else if (departmentName) {
-          departmentId = departmentMap.get(departmentName);
-        }
-        
-        // Create user
+        // Generate user ID
         const userId = uuidv4();
-        await query(
-          `INSERT INTO users (
-            id,
-            organization_id,
-            email,
-            first_name,
-            last_name,
-            role,
-            password_hash,
-            oauth_provider,
-            email_verified,
-            created_at,
-            updated_at
-          ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, NOW(), NOW())`,
-          [
-            userId,
-            organizationId,
-            email,
-            firstName,
-            lastName,
-            role,
-            null, // No password for OAuth users
-            'microsoft',
-            true, // Pre-verified for OAuth
-            
-          ]
-        );
         
-        // Add user to department if specified
-        if (departmentId) {
-          await query(
-            `INSERT INTO team_members (id, team_id, user_id, role, created_at, updated_at)
-             VALUES ($1, $2, $3, 'member', NOW(), NOW())`,
-            [uuidv4(), departmentId, userId]
+        // Create user record
+        await client.query(
+          `INSERT INTO users (
+            id, first_name, last_name, email, 
+            organization_id, is_oauth_only, created_at
+          ) VALUES ($1, $2, $3, $4, $5, true, NOW())`,
+          [userId, user.firstName, user.lastName, user.email, organizationId]
+        );
+
+        // Add to user_organizations with role
+        await client.query(
+          `INSERT INTO user_organizations (
+            user_id, organization_id, role, created_at
+          ) VALUES ($1, $2, $3, NOW())`,
+          [userId, organizationId, user.role]
+        );
+
+        // Add to department/team if specified
+        if (user.department && departmentMap[user.department]) {
+          await client.query(
+            `INSERT INTO team_members (
+              team_id, user_id, created_at
+            ) VALUES ($1, $2, NOW())`,
+            [departmentMap[user.department], userId]
           );
         }
-        
-        results.usersCreated++;
+
         results.createdUsers.push({
-          email,
-          firstName,
-          lastName,
-          department: departmentName
+          email: user.email,
+          name: `${user.firstName} ${user.lastName}`,
+          department: user.department
         });
+        results.usersCreated++;
+
+      } catch (userError) {
+        console.error(`❌ Failed to import ${user.email}:`, userError.message);
         
-        console.log(`Created user: ${email}`);
-        
-      } catch (error) {
-        console.error(`Error processing row ${rowNum}:`, error);
-        if (error.code === '23505') {
-          results.errors.push(`Row ${rowNum}: Email ${row['Email']} already exists`);
+        // Check if it's a duplicate key error
+        if (userError.code === '23505') {
+          results.warnings.push(`${user.email}: Already exists (duplicate key)`);
+          results.usersSkipped++;
         } else {
-          results.errors.push(`Row ${rowNum}: ${error.message}`);
+          results.errors.push(`Row ${user.rowNumber} (${user.email}): ${userError.message}`);
+          results.usersFailed++;
         }
-        results.usersFailed++;
       }
     }
+
+    // Add skipped invalid users to the count
+    results.usersSkipped += users.filter(u => !u.isValid).length;
     
+    // Add skipped duplicate users to the count (if skipDuplicates is true)
+    if (skipDuplicates) {
+      results.usersSkipped += users.filter(u => u.isValid && existingEmailSet.has(u.email)).length;
+    }
+
+    await client.query('COMMIT');
+
+    console.log('✅ Import complete:', results.usersCreated, 'created,', results.usersFailed, 'failed,', results.usersSkipped, 'skipped');
+
     res.json({
       success: true,
       results
     });
-    
+
   } catch (error) {
-    console.error('Error performing bulk import:', error);
+    await client.query('ROLLBACK');
+    console.error('❌ Import execution error:', error);
     res.status(500).json({
       success: false,
       error: 'Failed to import users: ' + error.message
     });
+  } finally {
+    client.release();
   }
 };
