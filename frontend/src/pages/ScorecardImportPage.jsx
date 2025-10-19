@@ -36,6 +36,7 @@ const ScorecardImportPage = () => {
   // Wizard state
   const [currentStep, setCurrentStep] = useState(1);
   const [isLoading, setIsLoading] = useState(false);
+  const [isInitializing, setIsInitializing] = useState(true); // Add initial loading state
   const [error, setError] = useState(null);
 
   // Step 1: File upload
@@ -67,10 +68,15 @@ const ScorecardImportPage = () => {
   const fetchTeams = async () => {
     try {
       const response = await teamsService.getTeams(organizationId);
-      setTeams(response.teams || response);
+      // Ensure we always set an array
+      const teamsData = response?.teams || response || [];
+      setTeams(Array.isArray(teamsData) ? teamsData : []);
     } catch (error) {
       console.error('Error fetching teams:', error);
       setError('Failed to load teams');
+      setTeams([]); // Ensure teams is an empty array on error
+    } finally {
+      setIsInitializing(false); // Mark initialization as complete
     }
   };
 
@@ -180,7 +186,7 @@ const ScorecardImportPage = () => {
                 <SelectValue placeholder="Choose a team for this scorecard" />
               </SelectTrigger>
               <SelectContent>
-                {teams.map(team => (
+                {(teams || []).map(team => (
                   <SelectItem key={team.id} value={team.id}>
                     {team.name}
                     {team.is_leadership_team && (
@@ -330,7 +336,7 @@ const ScorecardImportPage = () => {
             <div className="space-y-4">
               <h3 className="font-semibold">Map Metric Owners</h3>
               <div className="space-y-3">
-                {previewData.unmappedOwners.map(ownerName => (
+                {(previewData?.unmappedOwners || []).map(ownerName => (
                   <div key={ownerName} className="flex items-center gap-4">
                     <span className="text-sm w-32">{ownerName}:</span>
                     <Select 
@@ -342,7 +348,7 @@ const ScorecardImportPage = () => {
                       </SelectTrigger>
                       <SelectContent>
                         <SelectItem value="">No owner</SelectItem>
-                        {previewData.availableUsers.map(user => (
+                        {(previewData?.availableUsers || []).map(user => (
                           <SelectItem key={user.id} value={user.id}>
                             {user.name} ({user.email})
                           </SelectItem>
@@ -493,10 +499,10 @@ const ScorecardImportPage = () => {
                   <AlertDescription>
                     <p className="font-semibold mb-2">Some items failed to import:</p>
                     <ul className="list-disc list-inside text-sm">
-                      {importResults.errors.slice(0, 5).map((error, idx) => (
+                      {(importResults?.errors || []).slice(0, 5).map((error, idx) => (
                         <li key={idx}>{error}</li>
                       ))}
-                      {importResults.errors.length > 5 && (
+                      {(importResults?.errors?.length || 0) > 5 && (
                         <li>...and {importResults.errors.length - 5} more</li>
                       )}
                     </ul>
@@ -528,6 +534,18 @@ const ScorecardImportPage = () => {
       </Card>
     </div>
   );
+
+  // Show loading state while initializing
+  if (isInitializing) {
+    return (
+      <div className="container mx-auto px-4 py-8 max-w-4xl">
+        <div className="flex items-center justify-center py-12">
+          <Loader2 className="h-8 w-8 animate-spin text-gray-500" />
+          <span className="ml-2 text-gray-600">Loading...</span>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="container mx-auto px-4 py-8 max-w-4xl">
