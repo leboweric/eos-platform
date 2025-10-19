@@ -1,5 +1,5 @@
-import { useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { useState, useEffect } from 'react';
+import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
@@ -34,7 +34,10 @@ const loginSchema = z.object({
 
 const LoginPage = () => {
   const [showPassword, setShowPassword] = useState(false);
+  const [urlError, setUrlError] = useState(null);
+  const [urlMessage, setUrlMessage] = useState(null);
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const { login, isLoading, error, clearError } = useAuthStore();
 
   const {
@@ -48,8 +51,25 @@ const LoginPage = () => {
 
   const emailValue = watch('email', '');
 
+  // Check for OAuth error messages in URL parameters
+  useEffect(() => {
+    const errorParam = searchParams.get('error');
+    const messageParam = searchParams.get('message');
+    
+    if (errorParam) {
+      setUrlError(errorParam);
+      setUrlMessage(messageParam);
+      
+      // Clear URL parameters after reading them
+      const newUrl = window.location.pathname;
+      window.history.replaceState({}, document.title, newUrl);
+    }
+  }, [searchParams]);
+
   const onSubmit = async (data) => {
     clearError();
+    setUrlError(null);
+    setUrlMessage(null);
     const result = await login(data.email, data.password);
     if (result.success) {
       navigate('/dashboard');
@@ -177,8 +197,60 @@ const LoginPage = () => {
               </div>
             )}
 
-            {/* Error Alert */}
-            {error && (
+            {/* OAuth Error Alert from URL Parameters */}
+            {urlError && (
+              <Alert variant="destructive" className="mb-6">
+                <AlertDescription>
+                  {urlError === 'user_not_found' && (
+                    <div>
+                      <p className="font-semibold mb-1">Account Not Found</p>
+                      <p className="text-sm">
+                        {urlMessage || 'Your account has not been created yet. Please contact your administrator to set up your AXP account.'}
+                      </p>
+                    </div>
+                  )}
+                  {urlError === 'oauth_failed' && (
+                    <div>
+                      <p className="font-semibold mb-1">Authentication Failed</p>
+                      <p className="text-sm">There was a problem with Microsoft authentication. Please try again.</p>
+                    </div>
+                  )}
+                  {urlError === 'invalid_token' && (
+                    <div>
+                      <p className="font-semibold mb-1">Invalid Authentication</p>
+                      <p className="text-sm">The authentication token was invalid. Please try signing in again.</p>
+                    </div>
+                  )}
+                  {urlError === 'no_token' && (
+                    <div>
+                      <p className="font-semibold mb-1">Authentication Incomplete</p>
+                      <p className="text-sm">The authentication process did not complete. Please try again.</p>
+                    </div>
+                  )}
+                  {urlError === 'invalid_user' && (
+                    <div>
+                      <p className="font-semibold mb-1">User Account Error</p>
+                      <p className="text-sm">There was a problem with your user account. Please contact support.</p>
+                    </div>
+                  )}
+                  {urlError === 'auth_failed' && (
+                    <div>
+                      <p className="font-semibold mb-1">Login Failed</p>
+                      <p className="text-sm">{urlMessage || 'Please try again or contact support.'}</p>
+                    </div>
+                  )}
+                  {!['user_not_found', 'oauth_failed', 'invalid_token', 'no_token', 'invalid_user', 'auth_failed'].includes(urlError) && (
+                    <div>
+                      <p className="font-semibold mb-1">Authentication Error</p>
+                      <p className="text-sm">{urlMessage || 'An error occurred during authentication. Please try again.'}</p>
+                    </div>
+                  )}
+                </AlertDescription>
+              </Alert>
+            )}
+            
+            {/* Regular Error Alert */}
+            {error && !urlError && (
               <Alert variant="destructive" className="mb-6">
                 <AlertDescription>{error}</AlertDescription>
               </Alert>
