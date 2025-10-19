@@ -33,7 +33,10 @@ export const authenticate = async (req, res, next) => {
         });
       }
       decoded = jwt.verify(token, process.env.JWT_SECRET);
-      console.log('Token verified successfully for user:', decoded.userId);
+      // OAuth tokens use 'id' field, not 'userId'
+      const userId = decoded.id || decoded.userId;
+      console.log('Token verified successfully for user:', userId);
+      console.log('Decoded token fields:', Object.keys(decoded));
     } catch (jwtError) {
       console.error('JWT verification error:', jwtError.message);
       return res.status(401).json({
@@ -42,10 +45,11 @@ export const authenticate = async (req, res, next) => {
       });
     }
     
-    // Get user from database
+    // Get user from database (use 'id' field from OAuth tokens or 'userId' from regular tokens)
+    const userId = decoded.id || decoded.userId;
     const result = await query(
       'SELECT id, email, first_name, last_name, role, organization_id, is_consultant FROM users WHERE id = $1',
-      [decoded.userId]
+      [userId]
     );
 
     if (result.rows.length === 0) {
