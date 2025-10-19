@@ -62,14 +62,23 @@ const ScorecardImportPage = () => {
   ];
 
   useEffect(() => {
-    fetchTeams();
-  }, []);
+    // Only fetch teams if organizationId is available
+    if (organizationId) {
+      fetchTeams();
+    } else {
+      // Mark as initialized even if no orgId yet
+      setIsInitializing(false);
+    }
+  }, [organizationId]);
 
   const fetchTeams = async () => {
     try {
-      const response = await teamsService.getTeams(organizationId);
-      // Ensure we always set an array
-      const teamsData = response?.teams || response || [];
+      // Don't pass organizationId - teamsService gets it internally
+      const response = await teamsService.getTeams();
+      console.log('Teams response:', response);
+      // Handle different response formats
+      const teamsData = response?.data?.teams || response?.teams || response?.data || response || [];
+      console.log('Teams data:', teamsData);
       setTeams(Array.isArray(teamsData) ? teamsData : []);
     } catch (error) {
       console.error('Error fetching teams:', error);
@@ -186,14 +195,20 @@ const ScorecardImportPage = () => {
                 <SelectValue placeholder="Choose a team for this scorecard" />
               </SelectTrigger>
               <SelectContent>
-                {(teams || []).map(team => (
-                  <SelectItem key={team.id} value={team.id}>
-                    {team.name}
-                    {team.is_leadership_team && (
-                      <Badge variant="secondary" className="ml-2">Leadership</Badge>
-                    )}
+                {teams && teams.length > 0 ? (
+                  teams.map(team => (
+                    <SelectItem key={team.id} value={team.id}>
+                      {team.name}
+                      {team.is_leadership_team && (
+                        <Badge variant="secondary" className="ml-2">Leadership</Badge>
+                      )}
+                    </SelectItem>
+                  ))
+                ) : (
+                  <SelectItem value="" disabled>
+                    No teams available
                   </SelectItem>
-                ))}
+                )}
               </SelectContent>
             </Select>
           </div>
