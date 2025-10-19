@@ -28,7 +28,7 @@ export const preview = async (req, res) => {
     // Get existing metrics to check for conflicts
     // DEDUPLICATION: Match by organization_id + team_id + name (case-insensitive)
     const existingMetrics = await db.query(
-      `SELECT id, name, title, external_id, group_id
+      `SELECT id, name, external_id, group_id
        FROM scorecard_metrics
        WHERE organization_id = $1 AND team_id = $2 AND deleted_at IS NULL`,
       [organizationId, teamId]
@@ -67,7 +67,7 @@ export const preview = async (req, res) => {
     // Process each metric
     for (const metric of transformedData.metrics) {
       // DEDUPLICATION: Match by name field
-      const existing = existingByName.get(metric.title.toLowerCase());
+      const existing = existingByName.get(metric.name.toLowerCase());
       
       if (existing) {
         analysis.existingMetrics.push({
@@ -210,7 +210,7 @@ export const execute = async (req, res) => {
       try {
         // DEDUPLICATION: Use helper method for consistent matching
         const existing = await NinetyImportService.findExistingMetric(
-          metric.title,
+          metric.name,
           teamId,
           organizationId,
           client
@@ -295,15 +295,15 @@ export const execute = async (req, res) => {
           metricId = existing.id;
           results.metricsUpdated++;
         } else if (!existing) {
-          // Create new metric with both 'name' and 'title' fields
+          // Create new metric - only use 'name' field (no 'title' in DB)
           const newMetric = await client.query(
             `INSERT INTO scorecard_metrics (
               id, organization_id, team_id, group_id,
-              name, title, description, goal, goal_operator, goal_direction,
+              name, description, goal, goal_operator, goal_direction,
               format, cadence, owner_id, import_source, external_id,
               created_at, updated_at
             ) VALUES (
-              $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15,
+              $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14,
               NOW(), NOW()
             ) RETURNING id`,
             [
@@ -311,8 +311,7 @@ export const execute = async (req, res) => {
               organizationId,
               teamId,
               groupId,
-              metric.title,  // Use title for 'name' field
-              metric.title,  // Also use for 'title' field
+              metric.name,  // CSV 'Title' mapped to DB 'name' field
               metric.description,
               metric.goal,
               metric.goal_operator,
@@ -361,8 +360,8 @@ export const execute = async (req, res) => {
           }
         }
       } catch (error) {
-        console.error(`Error processing metric "${metric.title}":`, error);
-        results.errors.push(`Failed to import "${metric.title}": ${error.message}`);
+        console.error(`Error processing metric "${metric.name}":`, error);
+        results.errors.push(`Failed to import "${metric.name}": ${error.message}`);
       }
     }
 
