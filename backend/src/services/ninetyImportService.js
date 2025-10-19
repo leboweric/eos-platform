@@ -83,7 +83,6 @@ class NinetyImportService {
       }
       
       const metric = {
-        group_name: groupName,
         name: title,  // Map CSV 'Title' to DB 'name' column
         description: description || '',
         owner_name: owner,
@@ -95,7 +94,6 @@ class NinetyImportService {
         import_source: 'ninety.io',
         external_id: `ninety_${Date.now()}_${i}`,
         scores,
-        status,
         average: this.parseNumericValue(average)
       };
       
