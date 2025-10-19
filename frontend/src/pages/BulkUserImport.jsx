@@ -184,19 +184,19 @@ const BulkUserImport = () => {
             <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
               <div className="bg-blue-50 p-4 rounded-lg">
                 <p className="text-sm text-blue-600 font-medium">Total Rows</p>
-                <p className="text-2xl font-bold text-blue-900">{preview.totalRows}</p>
+                <p className="text-2xl font-bold text-blue-900">{preview.summary?.total || 0}</p>
               </div>
               <div className="bg-green-50 p-4 rounded-lg">
                 <p className="text-sm text-green-600 font-medium">Valid Users</p>
-                <p className="text-2xl font-bold text-green-900">{preview.validUsers}</p>
+                <p className="text-2xl font-bold text-green-900">{preview.summary?.valid || 0}</p>
               </div>
               <div className="bg-red-50 p-4 rounded-lg">
                 <p className="text-sm text-red-600 font-medium">Invalid Users</p>
-                <p className="text-2xl font-bold text-red-900">{preview.invalidUsers}</p>
+                <p className="text-2xl font-bold text-red-900">{preview.summary?.invalid || 0}</p>
               </div>
               <div className="bg-purple-50 p-4 rounded-lg">
                 <p className="text-sm text-purple-600 font-medium">New Departments</p>
-                <p className="text-2xl font-bold text-purple-900">{preview.newDepartments}</p>
+                <p className="text-2xl font-bold text-purple-900">{preview.departments?.new?.length || 0}</p>
               </div>
             </div>
 
@@ -245,9 +245,9 @@ const BulkUserImport = () => {
                   </tr>
                 </thead>
                 <tbody className="bg-white divide-y divide-gray-200">
-                  {preview.users.slice(0, 10).map((user) => (
-                    <tr key={user.row} className={user.valid ? '' : 'bg-red-50'}>
-                      <td className="px-4 py-2 text-sm text-gray-900">{user.row}</td>
+                  {(preview.valid || []).concat(preview.invalid || []).slice(0, 10).map((user) => (
+                    <tr key={user.rowNumber || user.row || user.email} className={(user.isValid !== false && user.valid !== false) ? '' : 'bg-red-50'}>
+                      <td className="px-4 py-2 text-sm text-gray-900">{user.rowNumber || user.row}</td>
                       <td className="px-4 py-2 text-sm text-gray-900">
                         {user.firstName} {user.lastName}
                       </td>
@@ -259,13 +259,13 @@ const BulkUserImport = () => {
                       </td>
                       <td className="px-4 py-2 text-sm text-gray-900">{user.department || '-'}</td>
                       <td className="px-4 py-2 text-sm">
-                        {user.valid ? (
+                        {(user.isValid !== false && user.valid !== false) ? (
                           <CheckCircle className="h-5 w-5 text-green-500" />
                         ) : (
                           <div className="flex items-center gap-2">
                             <XCircle className="h-5 w-5 text-red-500" />
                             <div className="text-xs text-red-600">
-                              {user.errors.join(', ')}
+                              {user.errors || (Array.isArray(user.errors) ? user.errors.join(', ') : 'Invalid')}
                             </div>
                           </div>
                         )}
@@ -274,9 +274,9 @@ const BulkUserImport = () => {
                   ))}
                 </tbody>
               </table>
-              {preview.users.length > 10 && (
+              {((preview.valid?.length || 0) + (preview.invalid?.length || 0)) > 10 && (
                 <p className="text-sm text-gray-500 mt-2 px-4">
-                  Showing first 10 rows of {preview.users.length} total
+                  Showing first 10 rows of {(preview.valid?.length || 0) + (preview.invalid?.length || 0)} total
                 </p>
               )}
             </div>
@@ -297,7 +297,7 @@ const BulkUserImport = () => {
                   ) : (
                     <>
                       <Users className="h-4 w-4" />
-                      Import {preview.validUsers} Users
+                      Import {preview.summary?.valid || 0} Users
                     </>
                   )}
                 </Button>
