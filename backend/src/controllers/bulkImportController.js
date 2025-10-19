@@ -212,7 +212,7 @@ export const bulkImport = async (req, res) => {
 
     // Get or create departments
     const uniqueDepartments = [...new Set(usersToImport.map(u => u.department).filter(d => d))];
-    const departmentMap = await getOrCreateDepartments(uniqueDepartments, organizationId, client);
+    const { departmentMap, departmentMapLower } = await getOrCreateDepartments(uniqueDepartments, organizationId, client);
     results.departmentsCreated = Object.keys(departmentMap).length;
 
     // Generate password hash ONCE for all imported users
@@ -236,14 +236,28 @@ export const bulkImport = async (req, res) => {
           [userId, user.firstName, user.lastName, user.email, organizationId, user.role, passwordHash]
         );
 
-        // Add to department/team if specified
-        if (user.department && departmentMap[user.department]) {
-          await client.query(
-            `INSERT INTO team_members (
-              team_id, user_id
-            ) VALUES ($1, $2)`,
-            [departmentMap[user.department], userId]
-          );
+        // Assign to department with case-insensitive matching
+        if (user.department) {
+          const deptName = user.department.trim();
+          
+          // Try exact match first, then case-insensitive
+          const teamId = departmentMap[deptName] || departmentMapLower[deptName.toLowerCase()];
+          
+          if (teamId) {
+            await client.query(
+              `INSERT INTO team_members (
+                team_id, user_id
+              ) VALUES ($1, $2)`,
+              [teamId, userId]
+            );
+            console.log(`✅ ${user.email} → ${deptName}`);
+          } else {
+            console.warn(`⚠️  No team found for department "${deptName}" for ${user.email}`);
+            results.warnings.push(`${user.email}: Department "${deptName}" not found`);
+            // Still count as imported, just without department
+          }
+        } else {
+          console.log(`ℹ️  ${user.email} imported without department`);
         }
 
         results.createdUsers.push({

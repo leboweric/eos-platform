@@ -173,6 +173,7 @@ export async function checkExistingUsers(users, organizationId, dbOrClient) {
  */
 export async function getOrCreateDepartments(departmentNames, organizationId, client) {
   const departmentMap = {};
+  const departmentMapLower = {}; // Add case-insensitive lookup
 
   try {
     // No need to BEGIN/COMMIT - the caller handles the transaction
@@ -180,30 +181,37 @@ export async function getOrCreateDepartments(departmentNames, organizationId, cl
     for (const deptName of departmentNames) {
       if (!deptName) continue;
 
-      // Check if department exists
+      const cleanName = deptName.trim();
+
+      // Check if department exists (case-insensitive)
       const existing = await client.query(
         `SELECT id, name FROM teams 
          WHERE organization_id = $1 
          AND LOWER(name) = LOWER($2)`,
-        [organizationId, deptName]
+        [organizationId, cleanName]
       );
 
       if (existing.rows.length > 0) {
-        departmentMap[deptName] = existing.rows[0].id;
+        const team = existing.rows[0];
+        departmentMap[team.name] = team.id; // Use actual DB name
+        departmentMapLower[team.name.toLowerCase()] = team.id; // Lowercase key
+        console.log(`📂 Found existing department: ${team.name}`);
       } else {
         // Create new department
         const newDept = await client.query(
           `INSERT INTO teams (id, organization_id, name, is_leadership_team, created_at, updated_at)
            VALUES (gen_random_uuid(), $1, $2, false, NOW(), NOW())
-           RETURNING id`,
-          [organizationId, deptName]
+           RETURNING id, name`,
+          [organizationId, cleanName]
         );
-        departmentMap[deptName] = newDept.rows[0].id;
-        console.log('🆕 Created new department:', deptName);
+        const team = newDept.rows[0];
+        departmentMap[team.name] = team.id;
+        departmentMapLower[team.name.toLowerCase()] = team.id;
+        console.log(`🆕 Created new department: ${team.name}`);
       }
     }
 
-    return departmentMap;
+    return { departmentMap, departmentMapLower };
 
   } catch (error) {
     // Don't handle transaction here - let the caller handle it
