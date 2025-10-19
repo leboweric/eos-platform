@@ -92,6 +92,12 @@ export const previewImport = async (req, res) => {
       blankrows: false  // Skip blank rows (including empty first row)
     });
     
+    // Debug: Log first row to see what columns we got
+    if (jsonData.length > 0) {
+      console.log('First parsed row columns:', Object.keys(jsonData[0]));
+      console.log('First row data:', jsonData[0]);
+    }
+    
     // Validate and process data
     const validationResults = [];
     const departments = new Set();
@@ -106,8 +112,8 @@ export const previewImport = async (req, res) => {
     const existingEmails = new Set(existingEmailsResult.rows.map(r => r.email.toLowerCase()));
     
     jsonData.forEach((row, index) => {
-      // With empty first row: Row 1 (empty), Row 2 (headers), Row 3+ (data)
-      const rowNum = index + 3; // Accounting for empty row, header row, and 1-based indexing
+      // Row 1 is headers (parsed as column names), Row 2+ is data
+      const rowNum = index + 2; // Excel rows start at 1, plus header row
       const result = {
         row: rowNum,
         firstName: row['First Name']?.toString().trim(),
@@ -261,8 +267,8 @@ export const bulkImport = async (req, res) => {
     
     // Process each row
     for (const [index, row] of jsonData.entries()) {
-      // With empty first row: Row 1 (empty), Row 2 (headers), Row 3+ (data)
-      const rowNum = index + 3; // Accounting for empty row, header row, and 1-based indexing
+      // Row 1 is headers (parsed as column names), Row 2+ is data
+      const rowNum = index + 2; // Excel rows start at 1, plus header row
       
       try {
         const firstName = row['First Name']?.toString().trim();
