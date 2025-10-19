@@ -165,6 +165,57 @@ export const preview = async (req, res) => {
 };
 
 /**
+ * Map operator symbols to database constraint values
+ */
+function mapOperatorToDbValue(operator) {
+  const operatorMap = {
+    '>=': 'greater_equal',
+    '>': 'greater',
+    '<=': 'less_equal',
+    '<': 'less',
+    '=': 'equal',
+    '==': 'equal'
+  };
+  
+  return operatorMap[operator] || 'greater_equal'; // Default to greater_equal
+}
+
+/**
+ * Extract just the numeric value from a goal string
+ * e.g., ">= 1" → "1", ">= $3" → "3", "100" → "100"
+ */
+function extractGoalValue(goalStr) {
+  if (!goalStr) return null;
+  
+  const normalized = goalStr.trim();
+  let valueStr = normalized;
+  
+  // Remove operator if present
+  if (normalized.startsWith('>=')) {
+    valueStr = normalized.substring(2).trim();
+  } else if (normalized.startsWith('<=')) {
+    valueStr = normalized.substring(2).trim();
+  } else if (normalized.startsWith('>')) {
+    valueStr = normalized.substring(1).trim();
+  } else if (normalized.startsWith('<')) {
+    valueStr = normalized.substring(1).trim();
+  } else if (normalized.startsWith('=')) {
+    valueStr = normalized.substring(1).trim();
+  }
+  
+  // Remove currency symbols and commas but keep the numeric value
+  valueStr = valueStr.replace(/[$,]/g, '');
+  
+  // Remove percentage sign if present
+  if (valueStr.endsWith('%')) {
+    valueStr = valueStr.slice(0, -1);
+  }
+  
+  // Return the cleaned numeric string
+  return valueStr || null;
+}
+
+/**
  * Execute the actual import
  * CRITICAL: Supports incremental re-imports with proper deduplication
  */
@@ -300,11 +351,11 @@ export const execute = async (req, res) => {
             WHERE id = $7`,
             [
               groupId,
-              metric.goal,
+              extractGoalValue(metric.goal),  // Extract just the numeric value
               metric.owner_name || ownerId,  // Use owner_name or matched user ID
               metric.description,
               metric.format === 'currency' ? 'currency' : metric.format === 'percentage' ? 'percentage' : 'number',
-              metric.goal_operator || '>=',  // Map to comparison_operator
+              mapOperatorToDbValue(metric.goal_operator || '>='),  // Map to database values
               existing.id
             ]
           );
@@ -329,11 +380,11 @@ export const execute = async (req, res) => {
               groupId,
               metric.name,  // CSV 'Title' mapped to DB 'name' field
               metric.description,
-              metric.goal,
+              extractGoalValue(metric.goal),  // Extract just the numeric value
               metric.owner_name || ownerId,  // Use owner_name or matched user ID
               metric.cadence === 'monthly' ? 'monthly' : 'weekly',  // Map cadence to type
               metric.format === 'currency' ? 'currency' : metric.format === 'percentage' ? 'percentage' : 'number',
-              metric.goal_operator || '>='
+              mapOperatorToDbValue(metric.goal_operator || '>=')  // Map to database values
             ]
           );
           metricId = newMetric.rows[0].id;
