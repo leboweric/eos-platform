@@ -63,7 +63,7 @@ class NinetyImportService {
         });
       }
       
-      // Parse goal
+      // Parse goal - but also preserve the original string
       const goalData = this.parseGoal(goalStr);
       
       // Parse scores for each date column
@@ -87,10 +87,10 @@ class NinetyImportService {
         name: title,  // Map CSV 'Title' to DB 'name' column
         description: description || '',
         owner_name: owner,
-        goal: goalData.value,
+        goal: goalStr?.trim() || null,  // PRESERVE the original goal string with operators and currency
         goal_operator: goalData.operator,
         goal_direction: goalData.direction,
-        format: goalData.isPercentage ? 'percentage' : 'number',
+        format: goalData.hasCurrency ? 'currency' : goalData.isPercentage ? 'percentage' : 'number',
         cadence: 'weekly',
         import_source: 'ninety.io',
         external_id: `ninety_${Date.now()}_${i}`,
@@ -142,10 +142,14 @@ class NinetyImportService {
       remainingStr = normalized.substring(1);
     }
     
-    // Parse value and check for percentage
+    // Parse value and check for percentage or currency
     remainingStr = remainingStr.trim();
     const isPercentage = remainingStr.endsWith('%');
     let valueStr = isPercentage ? remainingStr.slice(0, -1) : remainingStr;
+    
+    // Remove currency symbols for parsing
+    const hasCurrency = valueStr.includes('$');
+    valueStr = valueStr.replace(/[$,]/g, ''); // Remove $ and commas
     
     // Parse numeric value
     let value = parseFloat(valueStr) || 0;
@@ -160,7 +164,8 @@ class NinetyImportService {
       operator,
       value,
       direction,
-      isPercentage
+      isPercentage,
+      hasCurrency
     };
   }
 
