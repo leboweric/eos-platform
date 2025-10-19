@@ -46,10 +46,11 @@ router.delete('/invitations/:invitationId', cancelInvitation);
 // Update user information (admin only)
 router.put('/:userId', [
   param('userId').isUUID().withMessage('Invalid user ID'),
-  body('firstName').notEmpty().withMessage('First name is required'),
-  body('lastName').notEmpty().withMessage('Last name is required'),
-  body('role').isIn(['admin', 'member']).withMessage('Invalid role'),
-  body('teamId').optional({ nullable: true }).isUUID().withMessage('Invalid team ID')
+  body('firstName').optional().notEmpty().withMessage('First name cannot be empty'),
+  body('lastName').optional().notEmpty().withMessage('Last name cannot be empty'),
+  body('role').optional().isIn(['admin', 'member']).withMessage('Invalid role'),
+  body('teamId').optional({ nullable: true }).isUUID().withMessage('Invalid team ID'),
+  body('is_active').optional().isBoolean().withMessage('is_active must be a boolean')
 ], validateRequest, updateUser);
 
 // Remove user from organization (admin only)

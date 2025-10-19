@@ -560,6 +560,14 @@ export const updateUser = async (req, res) => {
       paramCount++;
     }
     
+    // If no fields to update (except updated_at), at least update the timestamp
+    if (updateFields.length === 0 && is_active === undefined) {
+      return res.json({
+        success: true,
+        message: 'No changes to update'
+      });
+    }
+    
     // Always update the updated_at timestamp
     updateFields.push('updated_at = NOW()');
     
