@@ -1,5 +1,5 @@
 import NinetyImportService from '../services/ninetyImportService.js';
-import { pool } from '../config/database.js';
+import db from '../config/database.js';
 import { v4 as uuidv4 } from 'uuid';
 
 /**
@@ -24,7 +24,7 @@ export const preview = async (req, res) => {
     
     // Get existing metrics to check for conflicts
     // DEDUPLICATION: Match by organization_id + team_id + name (case-insensitive)
-    const existingMetrics = await pool.query(
+    const existingMetrics = await db.query(
       `SELECT id, name, title, external_id, group_id
        FROM scorecard_metrics
        WHERE organization_id = $1 AND team_id = $2 AND deleted_at IS NULL`,
@@ -37,7 +37,7 @@ export const preview = async (req, res) => {
     );
 
     // Get all users in organization for owner mapping
-    const users = await pool.query(
+    const users = await db.query(
       `SELECT id, first_name, last_name, email
        FROM users
        WHERE organization_id = $1
@@ -81,7 +81,7 @@ export const preview = async (req, res) => {
         const matchedUserId = await NinetyImportService.matchOwnerToUser(
           metric.owner_name,
           organizationId,
-          pool
+          db
         );
         
         if (matchedUserId) {
@@ -128,7 +128,7 @@ export const preview = async (req, res) => {
  * CRITICAL: Supports incremental re-imports with proper deduplication
  */
 export const execute = async (req, res) => {
-  const client = await pool.connect();
+  const client = await db.connect();
   
   try {
     if (!req.file) {
@@ -409,7 +409,7 @@ export const getHistory = async (req, res) => {
   try {
     const { organizationId } = req.params;
     
-    const history = await pool.query(
+    const history = await db.query(
       `SELECT 
         si.*,
         u.first_name || ' ' || u.last_name as imported_by_name,
