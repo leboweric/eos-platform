@@ -224,8 +224,8 @@ export const bulkImport = async (req, res) => {
         await client.query(
           `INSERT INTO users (
             id, first_name, last_name, email, 
-            organization_id, is_oauth_only, created_at
-          ) VALUES ($1, $2, $3, $4, $5, true, NOW())`,
+            organization_id, created_at
+          ) VALUES ($1, $2, $3, $4, $5, NOW())`,
           [userId, user.firstName, user.lastName, user.email, organizationId]
         );
 
