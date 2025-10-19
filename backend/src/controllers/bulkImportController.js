@@ -227,21 +227,13 @@ export const bulkImport = async (req, res) => {
         // Generate user ID
         const userId = uuidv4();
         
-        // Create user record with test password
+        // Create user record with test password and role
         await client.query(
           `INSERT INTO users (
             id, first_name, last_name, email, 
-            organization_id, password_hash, created_at
-          ) VALUES ($1, $2, $3, $4, $5, $6, NOW())`,
-          [userId, user.firstName, user.lastName, user.email, organizationId, passwordHash]
-        );
-
-        // Add to user_organizations with role
-        await client.query(
-          `INSERT INTO user_organizations (
-            user_id, organization_id, role, created_at
-          ) VALUES ($1, $2, $3, NOW())`,
-          [userId, organizationId, user.role]
+            organization_id, role, password_hash, created_at
+          ) VALUES ($1, $2, $3, $4, $5, $6, $7, NOW())`,
+          [userId, user.firstName, user.lastName, user.email, organizationId, user.role, passwordHash]
         );
 
         // Add to department/team if specified
