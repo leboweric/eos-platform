@@ -23,29 +23,59 @@ export const getOrganizationUsers = async (req, res) => {
       impersonatedOrgId: req.user.organizationId
     });
     
-    const result = await query(
-      `SELECT 
-        u.id, 
-        u.email, 
-        u.first_name, 
-        u.last_name, 
-        u.role, 
-        u.created_at, 
-        u.last_login_at,
-        u.is_active,
-        STRING_AGG(t.name, ', ' ORDER BY t.name) as departments,
-        -- Get all team_ids as an array for multi-select support
-        ARRAY_AGG(tm.team_id) FILTER (WHERE tm.team_id IS NOT NULL) as team_ids,
-        -- Keep single team_id for backward compatibility
-        (SELECT tm2.team_id FROM team_members tm2 WHERE tm2.user_id = u.id LIMIT 1) as team_id
-       FROM users u
-       LEFT JOIN team_members tm ON u.id = tm.user_id
-       LEFT JOIN teams t ON tm.team_id = t.id
-       WHERE u.organization_id = $1
-       GROUP BY u.id, u.email, u.first_name, u.last_name, u.role, u.created_at, u.last_login_at, u.is_active
-       ORDER BY u.created_at DESC`,
-      [organizationId]
-    );
+    // Try to query with is_active first, fall back if column doesn't exist
+    let result;
+    try {
+      result = await query(
+        `SELECT 
+          u.id, 
+          u.email, 
+          u.first_name, 
+          u.last_name, 
+          u.role, 
+          u.created_at, 
+          u.last_login_at,
+          u.is_active,
+          STRING_AGG(t.name, ', ' ORDER BY t.name) as departments,
+          -- Get all team_ids as an array for multi-select support
+          ARRAY_AGG(tm.team_id) FILTER (WHERE tm.team_id IS NOT NULL) as team_ids,
+          -- Keep single team_id for backward compatibility
+          (SELECT tm2.team_id FROM team_members tm2 WHERE tm2.user_id = u.id LIMIT 1) as team_id
+         FROM users u
+         LEFT JOIN team_members tm ON u.id = tm.user_id
+         LEFT JOIN teams t ON tm.team_id = t.id
+         WHERE u.organization_id = $1
+         GROUP BY u.id, u.email, u.first_name, u.last_name, u.role, u.created_at, u.last_login_at, u.is_active
+         ORDER BY u.created_at DESC`,
+        [organizationId]
+      );
+    } catch (error) {
+      // If is_active column doesn't exist, query without it
+      console.log('is_active column not found, querying without it');
+      result = await query(
+        `SELECT 
+          u.id, 
+          u.email, 
+          u.first_name, 
+          u.last_name, 
+          u.role, 
+          u.created_at, 
+          u.last_login_at,
+          true as is_active,
+          STRING_AGG(t.name, ', ' ORDER BY t.name) as departments,
+          -- Get all team_ids as an array for multi-select support
+          ARRAY_AGG(tm.team_id) FILTER (WHERE tm.team_id IS NOT NULL) as team_ids,
+          -- Keep single team_id for backward compatibility
+          (SELECT tm2.team_id FROM team_members tm2 WHERE tm2.user_id = u.id LIMIT 1) as team_id
+         FROM users u
+         LEFT JOIN team_members tm ON u.id = tm.user_id
+         LEFT JOIN teams t ON tm.team_id = t.id
+         WHERE u.organization_id = $1
+         GROUP BY u.id, u.email, u.first_name, u.last_name, u.role, u.created_at, u.last_login_at
+         ORDER BY u.created_at DESC`,
+        [organizationId]
+      );
+    }
 
     res.json({
       success: true,
