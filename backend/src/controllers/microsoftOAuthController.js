@@ -155,6 +155,12 @@ export const handleMicrosoftCallback = async (req, res) => {
       // Existing user - update their Microsoft ID if not set
       user = userResult.rows[0];
       console.log('✅ Existing user found:', user.id);
+      console.log('📊 User data from database:', {
+        id: user.id,
+        email: user.email,
+        organization_id: user.organization_id,
+        microsoft_id: user.microsoft_id
+      });
       
       if (!user.microsoft_id) {
         await db.query(
@@ -233,6 +239,12 @@ export const handleMicrosoftCallback = async (req, res) => {
       
       user = newUserResult.rows[0];
       console.log('✅ User created:', user.id);
+      console.log('📊 New user data from database:', {
+        id: user.id,
+        email: user.email,
+        organization_id: user.organization_id,
+        user_exists: !!user
+      });
       
       // NOTE: Team assignment should be handled by organization admin
       // Not auto-assigning to any team for security reasons
@@ -252,9 +264,35 @@ export const handleMicrosoftCallback = async (req, res) => {
       [user.id, user.organization_id, req.ip, req.get('user-agent'), 'microsoft']
     ).catch(err => console.error('Failed to track login:', err));
 
+    // Ensure we have a valid user object
+    if (!user || !user.id) {
+      console.error('❌ Invalid user object:', user);
+      let baseUrl = 'https://axplatform.app';
+      if (state && state.includes('myboyum')) {
+        baseUrl = 'https://myboyum.axplatform.app';
+      }
+      return res.redirect(`${baseUrl}/login?error=invalid_user`);
+    }
+    
     // Generate JWT token
+    console.log('🔑 User object before token generation:', {
+      id: user.id,
+      email: user.email,
+      organization_id: user.organization_id,
+      has_user: !!user,
+      user_keys: user ? Object.keys(user) : []
+    });
+    
     const token = generateToken(user);
     console.log('✅ JWT token generated');
+    
+    // Decode and log the token payload for debugging
+    try {
+      const payload = JSON.parse(Buffer.from(token.split('.')[1], 'base64').toString());
+      console.log('🎫 Token payload:', payload);
+    } catch (e) {
+      console.error('Failed to decode token for logging');
+    }
     
     // Determine base URL for redirect (handle subdomains)
     let baseUrl = 'https://axplatform.app';
