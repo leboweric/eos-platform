@@ -13,7 +13,8 @@ import {
   Users,
   Search,
   Loader2,
-  AlertCircle
+  AlertCircle,
+  Trash2
 } from 'lucide-react';
 import { Textarea } from '@/components/ui/textarea';
 import { departmentService } from '../services/departmentService';
@@ -28,6 +29,9 @@ const DepartmentsPage = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [saving, setSaving] = useState(false);
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [departmentToDelete, setDepartmentToDelete] = useState(null);
+  const [deleting, setDeleting] = useState(false);
   const { user } = useAuthStore();
   
   const [formData, setFormData] = useState({
@@ -136,6 +140,39 @@ const DepartmentsPage = () => {
     } catch (error) {
       console.error('Error toggling department status:', error);
       setError(error.response?.data?.error || 'Failed to update department status');
+    }
+  };
+
+  const handleDeleteClick = (dept) => {
+    setDepartmentToDelete(dept);
+    setDeleteDialogOpen(true);
+  };
+
+  const handleConfirmDelete = async () => {
+    if (!departmentToDelete) return;
+    
+    try {
+      setDeleting(true);
+      setError(null);
+      await departmentService.deleteDepartment(departmentToDelete.id);
+      
+      // Update local state
+      setDepartments(departments.filter(d => d.id !== departmentToDelete.id));
+      
+      // Close dialog and reset
+      setDeleteDialogOpen(false);
+      setDepartmentToDelete(null);
+    } catch (error) {
+      console.error('Error deleting department:', error);
+      const errorMessage = error.response?.data?.error || 'Failed to delete department';
+      setError(errorMessage);
+      
+      // If the error is about existing data, keep the dialog open to show the message
+      if (!errorMessage.includes('existing data')) {
+        setDeleteDialogOpen(false);
+      }
+    } finally {
+      setDeleting(false);
     }
   };
 
@@ -313,14 +350,25 @@ const DepartmentsPage = () => {
                         </div>
                       </td>
                       <td className="py-3 px-4 text-right">
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => handleOpenDialog(dept)}
-                          title="Edit department"
-                        >
-                          <Edit className="h-4 w-4" />
-                        </Button>
+                        <div className="flex items-center justify-end gap-1">
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => handleOpenDialog(dept)}
+                            title="Edit department"
+                          >
+                            <Edit className="h-4 w-4" />
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => handleDeleteClick(dept)}
+                            title="Delete department"
+                            className="text-red-600 hover:text-red-700 hover:bg-red-50"
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
+                        </div>
                       </td>
                     </tr>
                   ))}
@@ -404,6 +452,74 @@ const DepartmentsPage = () => {
               )}
             </Button>
           </DialogFooter>
+          </DialogContent>
+        </Dialog>
+
+        {/* Delete Confirmation Dialog */}
+        <Dialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+          <DialogContent className="bg-white/95 backdrop-blur-sm border border-white/20 shadow-2xl">
+            <DialogHeader>
+              <DialogTitle>Delete Department</DialogTitle>
+              <DialogDescription>
+                Are you sure you want to delete <span className="font-semibold">{departmentToDelete?.name}</span>?
+              </DialogDescription>
+            </DialogHeader>
+            <div className="py-4">
+              <Alert className="border-yellow-200 bg-yellow-50">
+                <AlertCircle className="h-4 w-4 text-yellow-600" />
+                <AlertDescription>
+                  <p className="text-sm text-yellow-800">
+                    This action cannot be undone. The department will be permanently deleted.
+                  </p>
+                  {departmentToDelete?.member_count > 0 && (
+                    <p className="text-sm text-yellow-800 mt-2">
+                      <strong>Warning:</strong> This department has {departmentToDelete.member_count} member(s).
+                      You may need to reassign them before deletion.
+                    </p>
+                  )}
+                </AlertDescription>
+              </Alert>
+              {error && error.includes('existing data') && (
+                <Alert className="mt-3 border-red-200 bg-red-50">
+                  <AlertCircle className="h-4 w-4 text-red-600" />
+                  <AlertDescription>
+                    <p className="text-sm text-red-800">
+                      {error}
+                    </p>
+                    <p className="text-sm text-red-800 mt-1">
+                      Please remove or reassign all related data before deleting this department.
+                    </p>
+                  </AlertDescription>
+                </Alert>
+              )}
+            </div>
+            <DialogFooter>
+              <Button 
+                variant="outline" 
+                onClick={() => {
+                  setDeleteDialogOpen(false);
+                  setDepartmentToDelete(null);
+                  setError(null);
+                }} 
+                disabled={deleting}
+              >
+                Cancel
+              </Button>
+              <Button 
+                variant="destructive"
+                onClick={handleConfirmDelete} 
+                disabled={deleting}
+              >
+                {deleting ? (
+                  <>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    Deleting...
+                  </>
+                ) : (
+                  'Delete Department'
+                )}
+              </Button>
+            </DialogFooter>
           </DialogContent>
         </Dialog>
       </div>
