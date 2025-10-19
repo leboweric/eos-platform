@@ -48,6 +48,7 @@ import processDocumentationRoutes from './routes/processDocumentation.js';
 import healthRoutes from './routes/healthRoutes.js';
 import todoReminderRoutes from './routes/todoReminders.js';
 import meetingSessionsRoutes from './routes/meetingSessions.js';
+import adminRoutes from './routes/admin.js';
 
 // Import middleware
 import { errorHandler } from './middleware/errorHandler.js';
@@ -213,6 +214,7 @@ app.use('/api/v1/*', (req, res, next) => {
 // API Routes with specific rate limiters
 app.use('/api/v1/auth', authLimiter, authRoutes);
 app.use('/api/v1/auth', authLimiter, oauthRoutes); // OAuth routes
+app.use('/api/v1/admin', adminRoutes); // Admin routes
 app.use('/api/v1/users', userRoutes);
 app.use('/api/v1/organizations/:orgId/users', userRoutes); // For org-scoped user operations
 // Apply logo limiter to logo endpoints specifically
