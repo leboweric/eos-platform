@@ -42,7 +42,8 @@ import {
   Cloud,
   GitBranch,
   FileText,
-  TrendingUp
+  TrendingUp,
+  Upload
 } from 'lucide-react';
 
 const Layout = ({ children }) => {
@@ -191,6 +192,7 @@ const Layout = ({ children }) => {
     { name: 'Document Repository', href: '/documents', icon: FileText },
     { name: 'Departments', href: '/departments', icon: Building2, requiresAdmin: true },
     { name: 'Users', href: '/users', icon: Users, requiresAdmin: true },
+    { name: 'Bulk Import Users', href: '/admin/bulk-import', icon: Upload, requiresAdmin: true },
     { name: 'Organization', href: '/organization-settings', icon: Settings, requiresAdmin: true },
     { name: 'Storage Config', href: '/organization-settings/storage', icon: Cloud, requiresAdmin: true },
     { name: 'Terminology', href: '/terminology-settings', icon: Settings, requiresAdmin: true },
