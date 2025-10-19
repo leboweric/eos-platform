@@ -115,7 +115,7 @@ const BulkUserImport = () => {
             <p className="font-semibold mb-2">Template Instructions:</p>
             <ul className="list-disc list-inside space-y-1">
               <li>Required fields: First Name, Last Name, Email, Role</li>
-              <li>Role options: user, manager, admin</li>
+              <li>Role options: member, admin</li>
               <li>Department Name is optional - departments will be created if they don't exist</li>
               <li>All users will be set up for Microsoft OAuth authentication</li>
               <li>Email addresses must be unique and match their Microsoft accounts</li>

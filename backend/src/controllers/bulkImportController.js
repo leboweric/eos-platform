@@ -11,8 +11,8 @@ export const downloadTemplate = async (req, res) => {
     // Sample data with headers
     const wsData = [
       ['First Name', 'Last Name', 'Email', 'Role', 'Department Name'],
-      ['John', 'Doe', 'john.doe@example.com', 'user', 'Sales'],
-      ['Jane', 'Smith', 'jane.smith@example.com', 'manager', 'Marketing'],
+      ['John', 'Doe', 'john.doe@example.com', 'member', 'Sales'],
+      ['Jane', 'Smith', 'jane.smith@example.com', 'member', 'Marketing'],
       ['Example', 'User', 'example@example.com', 'admin', 'Executive'],
     ];
     
@@ -37,7 +37,7 @@ export const downloadTemplate = async (req, res) => {
       [''],
       ['1. Fill in the Users sheet with your user data'],
       ['2. Required fields: First Name, Last Name, Email, Role'],
-      ['3. Role options: user, manager, admin'],
+      ['3. Role options: member, admin'],
       ['4. Department Name is optional - departments will be created if they don\'t exist'],
       ['5. All users will be set up for Microsoft OAuth authentication (no passwords needed)'],
       ['6. Email addresses must be unique'],
@@ -141,9 +141,9 @@ export const previewImport = async (req, res) => {
       if (!result.role) {
         result.valid = false;
         result.errors.push('Role is required');
-      } else if (!['user', 'manager', 'admin'].includes(result.role)) {
+      } else if (!['member', 'admin'].includes(result.role)) {
         result.valid = false;
-        result.errors.push('Invalid role (must be: user, manager, or admin)');
+        result.errors.push('Invalid role (must be: member or admin)');
       }
       
       // Track departments and emails
@@ -263,8 +263,8 @@ export const bulkImport = async (req, res) => {
         }
         
         // Validate role
-        if (!['user', 'manager', 'admin'].includes(role)) {
-          results.errors.push(`Row ${rowNum}: Invalid role`);
+        if (!['member', 'admin'].includes(role)) {
+          results.errors.push(`Row ${rowNum}: Invalid role (must be: member or admin)`);
           results.usersFailed++;
           continue;
         }
