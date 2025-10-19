@@ -220,7 +220,7 @@ const ScorecardImportPage = () => {
               <ul className="list-disc list-inside space-y-1 text-sm">
                 <li>Columns: Group Name, Status, Title, Description, Owner, Goal, Average, [Date Columns]</li>
                 <li>Date format: "Oct 13 - Oct 19" for weekly data</li>
-                <li>Goal format: "> 0", "<= 10", ">= 50%" etc.</li>
+                <li>Goal format: "&gt; 0", "&lt;= 10", "&gt;= 50%" etc.</li>
                 <li>Values can be numbers or percentages</li>
               </ul>
             </AlertDescription>
