@@ -32,6 +32,7 @@ export const getOrganizationUsers = async (req, res) => {
         u.role, 
         u.created_at, 
         u.last_login_at,
+        u.is_active,
         STRING_AGG(t.name, ', ' ORDER BY t.name) as departments,
         -- Get all team_ids as an array for multi-select support
         ARRAY_AGG(tm.team_id) FILTER (WHERE tm.team_id IS NOT NULL) as team_ids,
@@ -41,7 +42,7 @@ export const getOrganizationUsers = async (req, res) => {
        LEFT JOIN team_members tm ON u.id = tm.user_id
        LEFT JOIN teams t ON tm.team_id = t.id
        WHERE u.organization_id = $1
-       GROUP BY u.id, u.email, u.first_name, u.last_name, u.role, u.created_at, u.last_login_at
+       GROUP BY u.id, u.email, u.first_name, u.last_name, u.role, u.created_at, u.last_login_at, u.is_active
        ORDER BY u.created_at DESC`,
       [organizationId]
     );
@@ -484,7 +485,7 @@ export const cancelInvitation = async (req, res) => {
 export const updateUser = async (req, res) => {
   try {
     const { userId } = req.params;
-    const { firstName, lastName, role, teamId, teamIds } = req.body; // Support both single teamId and multiple teamIds
+    const { firstName, lastName, role, teamId, teamIds, is_active } = req.body; // Support both single teamId and multiple teamIds
     const organizationId = req.params.orgId || req.user.organizationId || req.user.organization_id;
 
     // Check if user can update (must be admin or consultant)
@@ -502,12 +503,45 @@ export const updateUser = async (req, res) => {
       return res.status(404).json({ error: 'User not found in organization' });
     }
 
+    // Build update query dynamically based on provided fields
+    const updateFields = [];
+    const updateValues = [];
+    let paramCount = 1;
+
+    // Only update fields that were provided
+    if (firstName !== undefined) {
+      updateFields.push(`first_name = $${paramCount}`);
+      updateValues.push(firstName);
+      paramCount++;
+    }
+    if (lastName !== undefined) {
+      updateFields.push(`last_name = $${paramCount}`);
+      updateValues.push(lastName);
+      paramCount++;
+    }
+    if (role !== undefined) {
+      updateFields.push(`role = $${paramCount}`);
+      updateValues.push(role);
+      paramCount++;
+    }
+    if (is_active !== undefined) {
+      updateFields.push(`is_active = $${paramCount}`);
+      updateValues.push(is_active);
+      paramCount++;
+    }
+    
+    // Always update the updated_at timestamp
+    updateFields.push('updated_at = NOW()');
+    
+    // Add userId and organizationId as the last parameters
+    updateValues.push(userId, organizationId);
+
     // Update user information
     await query(
       `UPDATE users 
-       SET first_name = $1, last_name = $2, role = $3, updated_at = NOW()
-       WHERE id = $4 AND organization_id = $5`,
-      [firstName, lastName, role, userId, organizationId]
+       SET ${updateFields.join(', ')}
+       WHERE id = $${paramCount} AND organization_id = $${paramCount + 1}`,
+      updateValues
     );
 
     // Handle team assignment - support both single teamId and multiple teamIds
