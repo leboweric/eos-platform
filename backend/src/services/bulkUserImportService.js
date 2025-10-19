@@ -193,8 +193,8 @@ export async function getOrCreateDepartments(departmentNames, organizationId, cl
       } else {
         // Create new department
         const newDept = await client.query(
-          `INSERT INTO teams (id, organization_id, name, type, created_at, updated_at)
-           VALUES (gen_random_uuid(), $1, $2, 'department', NOW(), NOW())
+          `INSERT INTO teams (id, organization_id, name, is_leadership_team, created_at, updated_at)
+           VALUES (gen_random_uuid(), $1, $2, false, NOW(), NOW())
            RETURNING id`,
           [organizationId, deptName]
         );
