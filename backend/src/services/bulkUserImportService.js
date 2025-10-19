@@ -179,8 +179,7 @@ export async function getOrCreateDepartments(departmentNames, organizationId, po
       const existing = await client.query(
         `SELECT id, name FROM teams 
          WHERE organization_id = $1 
-         AND LOWER(name) = LOWER($2)
-         AND deleted_at IS NULL`,
+         AND LOWER(name) = LOWER($2)`,
         [organizationId, deptName]
       );
 

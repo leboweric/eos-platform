@@ -111,8 +111,7 @@ export const previewImport = async (req, res) => {
     // Get existing departments
     const existingDepartments = await db.query(
       `SELECT LOWER(name) as name FROM teams 
-       WHERE organization_id = $1 
-       AND deleted_at IS NULL`,
+       WHERE organization_id = $1`,
       [organizationId]
     );
     const existingDeptSet = new Set(existingDepartments.rows.map(d => d.name));
