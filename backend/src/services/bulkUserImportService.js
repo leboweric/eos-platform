@@ -144,15 +144,18 @@ export async function parseUserImportFile(fileBuffer) {
 
 /**
  * Check which users already exist in the organization
+ * @param {Array} users - Array of user objects with email property
+ * @param {string} organizationId - Organization UUID
+ * @param {Object} dbOrClient - Database pool or client
  */
-export async function checkExistingUsers(users, organizationId, pool) {
+export async function checkExistingUsers(users, organizationId, dbOrClient) {
   const emails = users.map(u => u.email).filter(e => e);
   
   if (emails.length === 0) {
     return [];
   }
 
-  const result = await pool.query(
+  const result = await dbOrClient.query(
     `SELECT email FROM users 
      WHERE organization_id = $1 
      AND email = ANY($2)`,
@@ -164,14 +167,16 @@ export async function checkExistingUsers(users, organizationId, pool) {
 
 /**
  * Get or create departments (teams) for the organization
+ * @param {Array} departmentNames - Array of department names to create
+ * @param {string} organizationId - Organization UUID
+ * @param {Object} client - Database client (already connected)
  */
-export async function getOrCreateDepartments(departmentNames, organizationId, pool) {
-  const client = await pool.connect();
+export async function getOrCreateDepartments(departmentNames, organizationId, client) {
   const departmentMap = {};
 
   try {
-    await client.query('BEGIN');
-
+    // No need to BEGIN/COMMIT - the caller handles the transaction
+    
     for (const deptName of departmentNames) {
       if (!deptName) continue;
 
@@ -198,13 +203,11 @@ export async function getOrCreateDepartments(departmentNames, organizationId, po
       }
     }
 
-    await client.query('COMMIT');
     return departmentMap;
 
   } catch (error) {
-    await client.query('ROLLBACK');
+    // Don't handle transaction here - let the caller handle it
     throw error;
-  } finally {
-    client.release();
   }
+  // Don't release the client - the caller owns it
 }
