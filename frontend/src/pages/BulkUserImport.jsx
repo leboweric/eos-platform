@@ -24,6 +24,7 @@ const BulkUserImport = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [importResults, setImportResults] = useState(null);
   const [error, setError] = useState(null);
+  const [statusFilter, setStatusFilter] = useState('all');
 
   const handleDownloadTemplate = async () => {
     try {
@@ -231,54 +232,169 @@ const BulkUserImport = () => {
               </div>
             )}
 
+            {/* Validation Alerts */}
+            {preview.invalid && preview.invalid.length > 0 && (
+              <Alert variant="destructive" className="mb-4">
+                <AlertCircle className="h-4 w-4" />
+                <AlertDescription>
+                  <span className="font-semibold">{preview.invalid.length} user(s) have validation errors.</span> Click the "Invalid" tab below to see details.
+                </AlertDescription>
+              </Alert>
+            )}
+            
+            {preview.duplicates && preview.duplicates.length > 0 && (
+              <Alert className="mb-4 border-yellow-200 bg-yellow-50">
+                <AlertCircle className="h-4 w-4 text-yellow-600" />
+                <AlertDescription className="text-yellow-800">
+                  <span className="font-semibold">{preview.duplicates.length} duplicate user(s) found.</span> These users already exist and will be skipped.
+                </AlertDescription>
+              </Alert>
+            )}
+
+            {/* Status Filter Tabs */}
+            <div className="flex gap-2 mb-4 border-b">
+              <Button 
+                variant={statusFilter === 'all' ? 'default' : 'ghost'}
+                onClick={() => setStatusFilter('all')}
+                className="rounded-b-none"
+              >
+                All ({preview.summary?.total || 0})
+              </Button>
+              <Button 
+                variant={statusFilter === 'ready' ? 'default' : 'ghost'}
+                onClick={() => setStatusFilter('ready')}
+                className="rounded-b-none"
+              >
+                <CheckCircle className="h-4 w-4 mr-1" />
+                Ready ({preview.valid?.length || 0})
+              </Button>
+              <Button 
+                variant={statusFilter === 'duplicate' ? 'default' : 'ghost'}
+                onClick={() => setStatusFilter('duplicate')}
+                className="rounded-b-none"
+              >
+                <AlertCircle className="h-4 w-4 mr-1 text-yellow-600" />
+                Duplicates ({preview.duplicates?.length || 0})
+              </Button>
+              <Button 
+                variant={statusFilter === 'invalid' ? 'default' : 'ghost'}
+                onClick={() => setStatusFilter('invalid')}
+                className="rounded-b-none"
+              >
+                <XCircle className="h-4 w-4 mr-1 text-red-600" />
+                Invalid ({preview.invalid?.length || 0})
+              </Button>
+            </div>
+
             {/* User Preview Table */}
             <div className="overflow-x-auto">
               <table className="min-w-full divide-y divide-gray-200">
                 <thead className="bg-gray-50">
                   <tr>
                     <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Row</th>
+                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Status</th>
                     <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Name</th>
                     <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Email</th>
                     <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Role</th>
                     <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Department</th>
-                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Status</th>
+                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Issue</th>
                   </tr>
                 </thead>
                 <tbody className="bg-white divide-y divide-gray-200">
-                  {(preview.valid || []).concat(preview.invalid || []).slice(0, 10).map((user) => (
-                    <tr key={user.rowNumber || user.row || user.email} className={(user.isValid !== false && user.valid !== false) ? '' : 'bg-red-50'}>
-                      <td className="px-4 py-2 text-sm text-gray-900">{user.rowNumber || user.row}</td>
-                      <td className="px-4 py-2 text-sm text-gray-900">
-                        {user.firstName} {user.lastName}
-                      </td>
-                      <td className="px-4 py-2 text-sm text-gray-900">{user.email}</td>
-                      <td className="px-4 py-2 text-sm">
-                        <Badge variant={user.role === 'admin' ? 'destructive' : 'secondary'}>
-                          {user.role}
-                        </Badge>
-                      </td>
-                      <td className="px-4 py-2 text-sm text-gray-900">{user.department || '-'}</td>
-                      <td className="px-4 py-2 text-sm">
-                        {(user.isValid !== false && user.valid !== false) ? (
-                          <CheckCircle className="h-5 w-5 text-green-500" />
-                        ) : (
-                          <div className="flex items-center gap-2">
-                            <XCircle className="h-5 w-5 text-red-500" />
+                  {(() => {
+                    // Combine all users and filter based on selected status
+                    const allUsers = [
+                      ...(preview.valid || []).map(u => ({...u, status: 'Ready'})),
+                      ...(preview.invalid || []).map(u => ({...u, status: 'Invalid'})),
+                      ...(preview.duplicates || []).map(u => ({...u, status: 'Duplicate'}))
+                    ];
+                    
+                    const filteredUsers = statusFilter === 'all' 
+                      ? allUsers
+                      : allUsers.filter(u => {
+                          if (statusFilter === 'ready') return u.status === 'Ready';
+                          if (statusFilter === 'duplicate') return u.status === 'Duplicate';
+                          if (statusFilter === 'invalid') return u.status === 'Invalid';
+                          return true;
+                        });
+                    
+                    return filteredUsers.slice(0, 20).map((user) => (
+                      <tr key={user.rowNumber || user.row || user.email} 
+                          className={
+                            user.status === 'Invalid' ? 'bg-red-50' : 
+                            user.status === 'Duplicate' ? 'bg-yellow-50' : 
+                            ''
+                          }>
+                        <td className="px-4 py-2 text-sm text-gray-900">{user.rowNumber || user.row}</td>
+                        <td className="px-4 py-2 text-sm">
+                          {user.status === 'Ready' && (
+                            <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                              <CheckCircle className="h-3 w-3 mr-1" />
+                              Ready
+                            </span>
+                          )}
+                          {user.status === 'Duplicate' && (
+                            <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800">
+                              <AlertCircle className="h-3 w-3 mr-1" />
+                              Duplicate
+                            </span>
+                          )}
+                          {user.status === 'Invalid' && (
+                            <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-red-100 text-red-800">
+                              <XCircle className="h-3 w-3 mr-1" />
+                              Invalid
+                            </span>
+                          )}
+                        </td>
+                        <td className="px-4 py-2 text-sm text-gray-900">
+                          {user.firstName} {user.lastName}
+                        </td>
+                        <td className="px-4 py-2 text-sm text-gray-900">{user.email}</td>
+                        <td className="px-4 py-2 text-sm">
+                          <Badge variant={user.role === 'admin' ? 'destructive' : 'secondary'}>
+                            {user.role}
+                          </Badge>
+                        </td>
+                        <td className="px-4 py-2 text-sm text-gray-900">{user.department || '-'}</td>
+                        <td className="px-4 py-2 text-sm">
+                          {user.status === 'Invalid' && user.errors && (
                             <div className="text-xs text-red-600">
-                              {user.errors || (Array.isArray(user.errors) ? user.errors.join(', ') : 'Invalid')}
+                              {typeof user.errors === 'string' ? user.errors : user.errors}
                             </div>
-                          </div>
-                        )}
-                      </td>
-                    </tr>
-                  ))}
+                          )}
+                          {user.status === 'Duplicate' && (
+                            <div className="text-xs text-yellow-700">
+                              User already exists
+                            </div>
+                          )}
+                        </td>
+                      </tr>
+                    ));
+                  })()}
                 </tbody>
               </table>
-              {((preview.valid?.length || 0) + (preview.invalid?.length || 0)) > 10 && (
-                <p className="text-sm text-gray-500 mt-2 px-4">
-                  Showing first 10 rows of {(preview.valid?.length || 0) + (preview.invalid?.length || 0)} total
-                </p>
-              )}
+              
+              <div className="px-4 py-2 bg-gray-50 text-sm text-gray-500">
+                {(() => {
+                  const allUsers = [
+                    ...(preview.valid || []),
+                    ...(preview.invalid || []),
+                    ...(preview.duplicates || [])
+                  ];
+                  const filteredCount = statusFilter === 'all' 
+                    ? allUsers.length
+                    : statusFilter === 'ready' ? (preview.valid?.length || 0)
+                    : statusFilter === 'duplicate' ? (preview.duplicates?.length || 0)
+                    : (preview.invalid?.length || 0);
+                  
+                  return (
+                    <span>
+                      Showing {Math.min(20, filteredCount)} of {filteredCount} 
+                      {statusFilter !== 'all' && ` ${statusFilter}`} users
+                    </span>
+                  );
+                })()}
+              </div>
             </div>
 
             {/* Import Button */}
