@@ -1,6 +1,7 @@
 import XLSX from 'xlsx';
 import db from '../config/database.js';
 import { v4 as uuidv4 } from 'uuid';
+import bcrypt from 'bcryptjs';
 import { parseUserImportFile, checkExistingUsers, getOrCreateDepartments } from '../services/bulkUserImportService.js';
 
 // Generate Excel template for bulk user import
@@ -214,19 +215,25 @@ export const bulkImport = async (req, res) => {
     const departmentMap = await getOrCreateDepartments(uniqueDepartments, organizationId, client);
     results.departmentsCreated = Object.keys(departmentMap).length;
 
+    // Generate password hash ONCE for all imported users
+    // Use environment variable or default test password
+    const testPassword = process.env.BULK_IMPORT_PASSWORD || 'Welcome2024!';
+    const passwordHash = await bcrypt.hash(testPassword, 10);
+    console.log('📝 Using test password for imported users:', testPassword);
+
     // Import each user
     for (const user of usersToImport) {
       try {
         // Generate user ID
         const userId = uuidv4();
         
-        // Create user record
+        // Create user record with test password
         await client.query(
           `INSERT INTO users (
             id, first_name, last_name, email, 
-            organization_id, created_at
-          ) VALUES ($1, $2, $3, $4, $5, NOW())`,
-          [userId, user.firstName, user.lastName, user.email, organizationId]
+            organization_id, password_hash, created_at
+          ) VALUES ($1, $2, $3, $4, $5, $6, NOW())`,
+          [userId, user.firstName, user.lastName, user.email, organizationId, passwordHash]
         );
 
         // Add to user_organizations with role
