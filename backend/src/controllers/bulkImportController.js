@@ -85,7 +85,12 @@ export const previewImport = async (req, res) => {
     const workbook = XLSX.read(req.file.buffer, { type: 'buffer' });
     const sheetName = workbook.SheetNames[0];
     const worksheet = workbook.Sheets[sheetName];
-    const jsonData = XLSX.utils.sheet_to_json(worksheet);
+    
+    // Parse with options to handle empty rows and missing values
+    const jsonData = XLSX.utils.sheet_to_json(worksheet, {
+      defval: '',  // Default value for empty cells
+      blankrows: false  // Skip blank rows (including empty first row)
+    });
     
     // Validate and process data
     const validationResults = [];
@@ -101,7 +106,8 @@ export const previewImport = async (req, res) => {
     const existingEmails = new Set(existingEmailsResult.rows.map(r => r.email.toLowerCase()));
     
     jsonData.forEach((row, index) => {
-      const rowNum = index + 2; // Excel rows start at 1, plus header row
+      // With empty first row: Row 1 (empty), Row 2 (headers), Row 3+ (data)
+      const rowNum = index + 3; // Accounting for empty row, header row, and 1-based indexing
       const result = {
         row: rowNum,
         firstName: row['First Name']?.toString().trim(),
@@ -214,7 +220,12 @@ export const bulkImport = async (req, res) => {
     const workbook = XLSX.read(req.file.buffer, { type: 'buffer' });
     const sheetName = workbook.SheetNames[0];
     const worksheet = workbook.Sheets[sheetName];
-    const jsonData = XLSX.utils.sheet_to_json(worksheet);
+    
+    // Parse with options to handle empty rows and missing values
+    const jsonData = XLSX.utils.sheet_to_json(worksheet, {
+      defval: '',  // Default value for empty cells
+      blankrows: false  // Skip blank rows (including empty first row)
+    });
     
     // Track results
     const results = {
@@ -250,7 +261,8 @@ export const bulkImport = async (req, res) => {
     
     // Process each row
     for (const [index, row] of jsonData.entries()) {
-      const rowNum = index + 2;
+      // With empty first row: Row 1 (empty), Row 2 (headers), Row 3+ (data)
+      const rowNum = index + 3; // Accounting for empty row, header row, and 1-based indexing
       
       try {
         const firstName = row['First Name']?.toString().trim();
