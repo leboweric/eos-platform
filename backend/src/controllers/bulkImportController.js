@@ -240,8 +240,8 @@ export const bulkImport = async (req, res) => {
         if (user.department && departmentMap[user.department]) {
           await client.query(
             `INSERT INTO team_members (
-              team_id, user_id, created_at
-            ) VALUES ($1, $2, NOW())`,
+              team_id, user_id
+            ) VALUES ($1, $2)`,
             [departmentMap[user.department], userId]
           );
         }
