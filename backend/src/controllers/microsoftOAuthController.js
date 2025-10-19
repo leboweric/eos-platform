@@ -170,85 +170,22 @@ export const handleMicrosoftCallback = async (req, res) => {
         console.log('✅ Updated user with Microsoft ID');
       }
     } else {
-      console.log('👤 Creating new user for Microsoft account');
-      // New user - create account
-      // Check if there's an organization with this email domain
-      const emailDomain = email.split('@')[1];
+      // 🔒 SECURITY FIX: OAuth only works for pre-created users
+      // New users must be manually created by administrators first
       
-      // For Boyum specifically
-      let organizationId;
-      if (emailDomain === 'myboyum.com') {
-        // Find Boyum's organization
-        const orgResult = await db.query(
-          "SELECT id FROM organizations WHERE slug = 'boyum-barenscheer' OR name LIKE '%Boyum%' LIMIT 1"
-        );
-        
-        if (orgResult.rows.length > 0) {
-          organizationId = orgResult.rows[0].id;
-        }
+      console.log('🔒 User not found in database:', email);
+      console.log('❌ OAuth login denied - user must be created by administrator first');
+      
+      // Determine base URL for error redirect
+      let baseUrl = 'https://axplatform.app';
+      if (state && state.includes('myboyum')) {
+        baseUrl = 'https://myboyum.axplatform.app';
       }
       
-      // If no specific org found, try to find any organization
-      if (!organizationId) {
-        const orgResult = await db.query(
-          'SELECT id FROM organizations LIMIT 1'
-        );
-        
-        if (orgResult.rows.length === 0) {
-          // No organization exists - redirect to register with clean URL
-          let baseUrl = 'https://axplatform.app';
-          if (state && state.includes('myboyum')) {
-            baseUrl = 'https://myboyum.axplatform.app';
-          }
-          return res.redirect(
-            `${baseUrl}/register?email=${encodeURIComponent(email)}&name=${encodeURIComponent(microsoftUser.displayName || '')}`
-          );
-        }
-        
-        organizationId = orgResult.rows[0].id;
-      }
-      
-      // Create new user
-      const newUserResult = await db.query(
-        `INSERT INTO users (
-          email, 
-          first_name, 
-          last_name, 
-          password_hash,
-          organization_id, 
-          role,
-          microsoft_id,
-          oauth_provider,
-          email_verified,
-          created_at, 
-          updated_at
-        ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, NOW(), NOW()) 
-        RETURNING *`,
-        [
-          email,
-          microsoftUser.givenName || microsoftUser.displayName?.split(' ')[0] || '',
-          microsoftUser.surname || microsoftUser.displayName?.split(' ')[1] || '',
-          await bcrypt.hash(Math.random().toString(36), 10), // Random password for OAuth users
-          organizationId,
-          'member', // Default role
-          microsoftUser.id,
-          'microsoft',
-          true // Microsoft emails are pre-verified
-        ]
+      // Redirect with clear error message
+      return res.redirect(
+        `${baseUrl}/login?error=user_not_found&message=${encodeURIComponent('Your account has not been created yet. Please contact your administrator to set up your account.')}`
       );
-      
-      user = newUserResult.rows[0];
-      console.log('✅ User created:', user.id);
-      console.log('📊 New user data from database:', {
-        id: user.id,
-        email: user.email,
-        organization_id: user.organization_id,
-        user_exists: !!user
-      });
-      
-      // NOTE: Team assignment should be handled by organization admin
-      // Not auto-assigning to any team for security reasons
-      // Previously this tried to assign to a hardcoded UUID that doesn't exist
     }
 
     // Update last login and track for daily active users
