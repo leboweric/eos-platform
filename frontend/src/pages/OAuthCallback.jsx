@@ -52,11 +52,9 @@ const OAuthCallback = () => {
           return;
         }
         
-        // Store valid token (using the correct key name for this app)
+        // Store the access token from OAuth
         localStorage.setItem('accessToken', token);
-        // OAuth doesn't provide a refresh token, so we'll use the access token
-        localStorage.setItem('refreshToken', token);
-        console.log('✅ Valid token stored in localStorage as accessToken');
+        console.log('✅ Access token stored in localStorage');
         
         // Store organization ID if present
         try {
