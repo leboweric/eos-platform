@@ -286,46 +286,40 @@ export const execute = async (req, res) => {
         let metricId;
         
         if (existing && conflictStrategy !== 'skip') {
-          // MERGE STRATEGY: Update goal, operator, direction, owner, description
+          // MERGE STRATEGY: Update goal, owner, description
           // Keep: existing metric_id, created_at
           await client.query(
             `UPDATE scorecard_metrics SET
               group_id = COALESCE($1, group_id),
               goal = $2,
-              goal_operator = $3,
-              goal_direction = $4,
-              format = $5,
-              owner_id = COALESCE($6, owner_id),
-              description = COALESCE($7, description),
-              import_source = $8,
-              external_id = $9,
+              owner = COALESCE($3, owner),
+              description = COALESCE($4, description),
+              value_type = $5,
+              comparison_operator = $6,
               updated_at = NOW()
-            WHERE id = $10`,
+            WHERE id = $7`,
             [
               groupId,
               metric.goal,
-              metric.goal_operator,
-              metric.goal_direction,
-              metric.format,
-              ownerId,
+              metric.owner_name || ownerId,  // Use owner_name or matched user ID
               metric.description,
-              metric.import_source,
-              metric.external_id,
+              metric.format === 'currency' ? 'currency' : metric.format === 'percentage' ? 'percentage' : 'number',
+              metric.goal_operator || '>=',  // Map to comparison_operator
               existing.id
             ]
           );
           metricId = existing.id;
           results.metricsUpdated++;
         } else if (!existing) {
-          // Create new metric - only use 'name' field (no 'title' in DB)
+          // Create new metric - only use columns that exist in DB
           const newMetric = await client.query(
             `INSERT INTO scorecard_metrics (
               id, organization_id, team_id, group_id,
-              name, description, goal, goal_operator, goal_direction,
-              format, cadence, owner_id, import_source, external_id,
+              name, description, goal, owner,
+              type, value_type, comparison_operator,
               created_at, updated_at
             ) VALUES (
-              $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14,
+              $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11,
               NOW(), NOW()
             ) RETURNING id`,
             [
@@ -336,13 +330,10 @@ export const execute = async (req, res) => {
               metric.name,  // CSV 'Title' mapped to DB 'name' field
               metric.description,
               metric.goal,
-              metric.goal_operator,
-              metric.goal_direction,
-              metric.format,
-              metric.cadence,
-              ownerId,
-              metric.import_source,
-              metric.external_id
+              metric.owner_name || ownerId,  // Use owner_name or matched user ID
+              metric.cadence === 'monthly' ? 'monthly' : 'weekly',  // Map cadence to type
+              metric.format === 'currency' ? 'currency' : metric.format === 'percentage' ? 'percentage' : 'number',
+              metric.goal_operator || '>='
             ]
           );
           metricId = newMetric.rows[0].id;
@@ -368,13 +359,12 @@ export const execute = async (req, res) => {
             // Only INSERT new scores
             await client.query(
               `INSERT INTO scorecard_scores (
-                id, metric_id, week_ending, period_start, value, created_at, updated_at
-              ) VALUES ($1, $2, $3, $4, $5, NOW(), NOW())`,
+                id, metric_id, week_date, value, created_at, updated_at
+              ) VALUES ($1, $2, $3, $4, NOW(), NOW())`,
               [
                 uuidv4(),
                 metricId,
-                score.week_ending,
-                score.week_ending, // Use week_ending as period_start
+                score.week_ending,  // Map week_ending to week_date
                 score.value
               ]
             );

@@ -342,7 +342,7 @@ class NinetyImportService {
    */
   static async findExistingMetric(name, teamId, organizationId, client) {
     const result = await client.query(
-      `SELECT id, name, goal, goal_operator, goal_direction, owner_id, description
+      `SELECT id, name, goal, comparison_operator, owner, description
        FROM scorecard_metrics 
        WHERE organization_id = $1 
        AND team_id = $2 
@@ -358,12 +358,12 @@ class NinetyImportService {
    * Check if score already exists for metric + period
    * DEDUPLICATION: Prevent duplicate scores on re-import
    */
-  static async scoreExists(metricId, periodStart, client) {
+  static async scoreExists(metricId, weekDate, client) {
     const result = await client.query(
       `SELECT id FROM scorecard_scores 
        WHERE metric_id = $1 
-       AND period_start = $2`,
-      [metricId, periodStart]
+       AND week_date = $2`,
+      [metricId, weekDate]
     );
     
     return result.rows.length > 0;
