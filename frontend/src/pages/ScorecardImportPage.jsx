@@ -313,6 +313,98 @@ const ScorecardImportPage = () => {
             </div>
           </div>
 
+          {/* Detailed Metrics Table */}
+          {previewData && previewData.metrics && previewData.metrics.length > 0 && (
+            <div className="mt-6">
+              <h3 className="text-lg font-semibold mb-4">Metrics to Import</h3>
+              
+              <div className="overflow-x-auto">
+                <table className="w-full border-collapse border border-gray-200">
+                  <thead className="bg-gray-50">
+                    <tr>
+                      <th className="border border-gray-200 px-4 py-2 text-left">Group</th>
+                      <th className="border border-gray-200 px-4 py-2 text-left">Status</th>
+                      <th className="border border-gray-200 px-4 py-2 text-left">Metric Name</th>
+                      <th className="border border-gray-200 px-4 py-2 text-left">Owner</th>
+                      <th className="border border-gray-200 px-4 py-2 text-left">Goal</th>
+                      <th className="border border-gray-200 px-4 py-2 text-left">Avg</th>
+                      <th className="border border-gray-200 px-4 py-2 text-left">Recent Scores (5 weeks)</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {previewData.metrics.map((metric, idx) => (
+                      <tr key={idx} className="hover:bg-gray-50">
+                        <td className="border border-gray-200 px-4 py-2">
+                          {metric.group_name || '-'}
+                        </td>
+                        <td className="border border-gray-200 px-4 py-2">
+                          <span className={`px-2 py-1 rounded text-xs ${
+                            metric.status === 'Active' 
+                              ? 'bg-green-100 text-green-800' 
+                              : 'bg-gray-100 text-gray-800'
+                          }`}>
+                            {metric.status || 'Active'}
+                          </span>
+                        </td>
+                        <td className="border border-gray-200 px-4 py-2 font-medium">
+                          {metric.name}
+                        </td>
+                        <td className="border border-gray-200 px-4 py-2">
+                          {metric.owner_name}
+                          {metric.owner_id ? (
+                            <span className="ml-2 text-xs text-green-600">✓ Found</span>
+                          ) : (
+                            <span className="ml-2 text-xs text-yellow-600">⚠ Will create</span>
+                          )}
+                        </td>
+                        <td className="border border-gray-200 px-4 py-2">
+                          {metric.goal || '-'}
+                        </td>
+                        <td className="border border-gray-200 px-4 py-2">
+                          {metric.average || '-'}
+                        </td>
+                        <td className="border border-gray-200 px-4 py-2">
+                          <div className="flex gap-2 text-sm">
+                            {metric.recent_scores && metric.recent_scores.slice(0, 5).map((score, i) => (
+                              <span key={i} className="px-2 py-1 bg-blue-50 rounded">
+                                {score.value}
+                              </span>
+                            ))}
+                          </div>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+
+              {/* Show any warnings or issues */}
+              {previewData.warnings && previewData.warnings.length > 0 && (
+                <div className="mt-4 p-4 bg-yellow-50 border border-yellow-200 rounded">
+                  <h4 className="font-semibold text-yellow-800 mb-2">Warnings:</h4>
+                  <ul className="list-disc list-inside text-sm text-yellow-700">
+                    {previewData.warnings.map((warning, idx) => (
+                      <li key={idx}>{warning}</li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+
+              {/* Show database mapping info */}
+              <div className="mt-4 p-4 bg-blue-50 border border-blue-200 rounded">
+                <h4 className="font-semibold text-blue-800 mb-2">Database Mapping:</h4>
+                <div className="grid grid-cols-2 gap-2 text-sm">
+                  <div><span className="font-medium">CSV "Title"</span> → DB "name"</div>
+                  <div><span className="font-medium">CSV "Owner"</span> → DB "owner_id" (user lookup)</div>
+                  <div><span className="font-medium">CSV "Goal"</span> → DB "goal"</div>
+                  <div><span className="font-medium">CSV "Description"</span> → DB "description"</div>
+                  <div><span className="font-medium">CSV "Status"</span> → DB "is_active"</div>
+                  <div><span className="font-medium">CSV Date columns</span> → DB "scorecard_scores" table</div>
+                </div>
+              </div>
+            </div>
+          )}
+
           {/* Conflict Strategy */}
           {previewData?.conflicts?.length > 0 && (
             <div className="space-y-4 mb-6">

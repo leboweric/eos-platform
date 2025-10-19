@@ -95,6 +95,42 @@ export const preview = async (req, res) => {
       }
     }
 
+    // Prepare detailed metrics data for display
+    const detailedMetrics = transformedData.metrics.map(metric => ({
+      name: metric.name,
+      description: metric.description,
+      owner_name: metric.owner_name,
+      owner_id: analysis.ownerMappings[metric.owner_name] || null,
+      goal: metric.goal,
+      goal_operator: metric.goal_operator,
+      goal_direction: metric.goal_direction,
+      average: metric.average,
+      group_name: metric.group_name,
+      status: metric.status,
+      format: metric.format,
+      // Get most recent 5 scores
+      recent_scores: metric.scores
+        .sort((a, b) => {
+          const dateA = new Date(a.week_ending || a.dateLabel);
+          const dateB = new Date(b.week_ending || b.dateLabel);
+          return dateB - dateA; // Sort descending
+        })
+        .slice(0, 5)
+        .map(s => ({
+          date: s.dateLabel || s.week_ending,
+          value: s.value
+        }))
+    }));
+
+    // Collect any warnings
+    const warnings = [];
+    if (analysis.unmappedOwners.size > 0) {
+      warnings.push(`${analysis.unmappedOwners.size} owners need to be mapped to users`);
+    }
+    if (analysis.existingMetrics.length > 0) {
+      warnings.push(`${analysis.existingMetrics.length} metrics already exist and will be updated based on conflict strategy`);
+    }
+
     res.json({
       success: true,
       preview: {
@@ -109,6 +145,8 @@ export const preview = async (req, res) => {
             count: analysis.dateColumns.length
           }
         },
+        metrics: detailedMetrics, // Add detailed metrics
+        warnings: warnings, // Add warnings
         groups: analysis.groups,
         newMetrics: analysis.newMetrics,
         conflicts: analysis.existingMetrics,
