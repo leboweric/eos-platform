@@ -194,24 +194,8 @@ export const execute = async (req, res) => {
 
     await client.query('BEGIN');
 
-    // Create import record
-    const importRecord = await client.query(
-      `INSERT INTO scorecard_imports (
-        id, organization_id, team_id, imported_by, import_source,
-        file_name, status, created_at
-      ) VALUES ($1, $2, $3, $4, $5, $6, $7, NOW())
-      RETURNING id`,
-      [
-        uuidv4(),
-        organizationId,
-        teamId,
-        userId,
-        'ninety.io',
-        req.file.originalname,
-        'processing'
-      ]
-    );
-    const importId = importRecord.rows[0].id;
+    // Note: Import tracking removed - not essential for core functionality
+    // Can be added back later if import history is needed
 
     // Parse and transform data
     const parseResults = NinetyImportService.parseCSV(req.file.buffer);
@@ -220,7 +204,7 @@ export const execute = async (req, res) => {
     // Get existing metrics
     // DEDUPLICATION: Fetch by name for proper matching
     const existingMetrics = await client.query(
-      `SELECT id, name, title, external_id
+      `SELECT id, name, external_id
        FROM scorecard_metrics
        WHERE organization_id = $1 AND team_id = $2 AND deleted_at IS NULL`,
       [organizationId, teamId]
@@ -403,26 +387,8 @@ export const execute = async (req, res) => {
       }
     }
 
-    // LOGGING: Track detailed results in scorecard_imports
-    await client.query(
-      `UPDATE scorecard_imports SET
-        status = 'completed',
-        metrics_imported = $1,
-        metrics_created = $2,
-        metrics_updated = $3,
-        metrics_skipped = $4,
-        scores_imported = $5,
-        completed_at = NOW()
-      WHERE id = $6`,
-      [
-        results.metricsCreated + results.metricsUpdated,
-        results.metricsCreated,
-        results.metricsUpdated,
-        results.metricsSkipped,
-        results.scoresImported,
-        importId
-      ]
-    );
+    // Note: Import tracking removed - not essential for core functionality
+    // The import stats are already returned in the response
 
     await client.query('COMMIT');
 
