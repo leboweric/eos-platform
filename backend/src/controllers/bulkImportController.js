@@ -219,9 +219,11 @@ export const bulkImport = async (req, res) => {
     // Track results
     const results = {
       usersCreated: 0,
+      usersSkipped: 0,
       usersFailed: 0,
       departmentsCreated: 0,
       errors: [],
+      warnings: [],
       createdUsers: []
     };
     
@@ -236,6 +238,15 @@ export const bulkImport = async (req, res) => {
     existingDepts.rows.forEach(dept => {
       departmentMap.set(dept.name, dept.id);
     });
+    
+    // Get existing users to skip duplicates
+    const existingUsersResult = await query(
+      'SELECT email FROM users WHERE organization_id = $1',
+      [organizationId]
+    );
+    const existingEmails = new Set(
+      existingUsersResult.rows.map(u => u.email.toLowerCase())
+    );
     
     // Process each row
     for (const [index, row] of jsonData.entries()) {
@@ -266,6 +277,13 @@ export const bulkImport = async (req, res) => {
         if (!['member', 'admin'].includes(role)) {
           results.errors.push(`Row ${rowNum}: Invalid role (must be: member or admin)`);
           results.usersFailed++;
+          continue;
+        }
+        
+        // Check if user already exists - skip instead of fail
+        if (existingEmails.has(email)) {
+          results.warnings.push(`Row ${rowNum}: User ${email} already exists - skipped`);
+          results.usersSkipped++;
           continue;
         }
         

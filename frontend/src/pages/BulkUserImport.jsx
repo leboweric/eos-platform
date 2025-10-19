@@ -317,11 +317,17 @@ const BulkUserImport = () => {
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-4">
               <div className="bg-green-50 p-4 rounded-lg">
                 <p className="text-sm text-green-600 font-medium">Users Created</p>
                 <p className="text-2xl font-bold text-green-900">{importResults.usersCreated}</p>
               </div>
+              {importResults.usersSkipped > 0 && (
+                <div className="bg-yellow-50 p-4 rounded-lg">
+                  <p className="text-sm text-yellow-600 font-medium">Skipped (Existing)</p>
+                  <p className="text-2xl font-bold text-yellow-900">{importResults.usersSkipped}</p>
+                </div>
+              )}
               {importResults.departmentsCreated > 0 && (
                 <div className="bg-blue-50 p-4 rounded-lg">
                   <p className="text-sm text-blue-600 font-medium">Departments Created</p>
@@ -335,6 +341,25 @@ const BulkUserImport = () => {
                 </div>
               )}
             </div>
+            
+            {importResults.warnings && importResults.warnings.length > 0 && (
+              <Alert className="mb-4 border-yellow-200 bg-yellow-50">
+                <AlertCircle className="h-4 w-4 text-yellow-600" />
+                <AlertDescription>
+                  <p className="font-semibold mb-2 text-yellow-800">Skipped Users:</p>
+                  <ul className="list-disc list-inside">
+                    {importResults.warnings.slice(0, 5).map((warn, idx) => (
+                      <li key={idx} className="text-sm text-yellow-700">{warn}</li>
+                    ))}
+                    {importResults.warnings.length > 5 && (
+                      <li className="text-sm text-yellow-700 italic">
+                        ...and {importResults.warnings.length - 5} more
+                      </li>
+                    )}
+                  </ul>
+                </AlertDescription>
+              </Alert>
+            )}
             
             {importResults.errors && importResults.errors.length > 0 && (
               <Alert variant="destructive">
