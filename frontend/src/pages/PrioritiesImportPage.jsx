@@ -5,6 +5,7 @@ import { prioritiesImportService } from '../services/prioritiesImportService';
 import { organizationService } from '../services/organizationService';
 import { useAuthStore } from '../stores/authStore';
 import { useDepartment } from '../contexts/DepartmentContext';
+import axios from '../services/axiosConfig';
 import OwnerMappingSection from '../components/import/OwnerMappingSection';
 import RocksPreviewTable from '../components/import/RocksPreviewTable';
 import ImportSummary from '../components/import/ImportSummary';
@@ -24,6 +25,10 @@ const PrioritiesImportPage = () => {
   // File Upload State
   const [selectedFile, setSelectedFile] = useState(null);
   const [dragActive, setDragActive] = useState(false);
+  
+  // Team Selection State
+  const [teams, setTeams] = useState([]);
+  const [selectedTeamId, setSelectedTeamId] = useState(null);
   
   // Import Data State
   const [template, setTemplate] = useState(null);
@@ -53,9 +58,27 @@ const PrioritiesImportPage = () => {
       }
     };
     
+    const fetchTeams = async () => {
+      try {
+        const response = await axios.get('/teams');
+        setTeams(response.data.data || []);
+        
+        // Auto-select the first team if available, or the selectedDepartment if it exists
+        if (selectedDepartment?.id) {
+          setSelectedTeamId(selectedDepartment.id);
+        } else if (response.data.data && response.data.data.length > 0) {
+          setSelectedTeamId(response.data.data[0].id);
+        }
+      } catch (error) {
+        console.error('Failed to fetch teams:', error);
+        setError('Failed to fetch teams');
+      }
+    };
+    
     loadTemplate();
     fetchOrganization();
-  }, []);
+    fetchTeams();
+  }, [selectedDepartment]);
 
   // File upload handlers
   const handleFileSelect = (file) => {
@@ -113,7 +136,7 @@ const PrioritiesImportPage = () => {
 
   // Preview the import
   const handlePreview = async () => {
-    if (!selectedFile || !selectedDepartment || !organization) return;
+    if (!selectedFile || !selectedTeamId || !organization) return;
     
     setIsLoading(true);
     setError('');
@@ -122,7 +145,7 @@ const PrioritiesImportPage = () => {
       const formData = new FormData();
       formData.append('file', selectedFile);
       formData.append('organizationId', organization.id);
-      formData.append('teamId', selectedDepartment.id);
+      formData.append('teamId', selectedTeamId);
       
       const preview = await prioritiesImportService.previewImport(formData);
       setPreviewData(preview);
@@ -145,7 +168,7 @@ const PrioritiesImportPage = () => {
 
   // Execute the import
   const handleExecute = async () => {
-    if (!selectedFile || !selectedDepartment || !organization) return;
+    if (!selectedFile || !selectedTeamId || !organization) return;
     
     setIsLoading(true);
     setError('');
@@ -154,7 +177,7 @@ const PrioritiesImportPage = () => {
       const formData = new FormData();
       formData.append('file', selectedFile);
       formData.append('organizationId', organization.id);
-      formData.append('teamId', selectedDepartment.id);
+      formData.append('teamId', selectedTeamId);
       formData.append('conflictStrategy', conflictStrategy);
       formData.append('assigneeMappings', JSON.stringify(assigneeMappings));
       
@@ -354,7 +377,30 @@ const PrioritiesImportPage = () => {
                       </div>
                     </div>
 
-                    {selectedFile && (
+                    {/* Team Selection */}
+                    <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                      <label className="block text-sm font-medium text-blue-800 mb-2">
+                        Select Team/Department *
+                      </label>
+                      <select
+                        value={selectedTeamId || ''}
+                        onChange={(e) => setSelectedTeamId(e.target.value)}
+                        className="w-full border border-blue-200 rounded-md px-3 py-2 bg-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                        required
+                      >
+                        <option value="">Choose a team...</option>
+                        {teams.map(team => (
+                          <option key={team.id} value={team.id}>
+                            {team.name}
+                          </option>
+                        ))}
+                      </select>
+                      <p className="text-blue-600 text-sm mt-1">
+                        Priorities will be imported to the selected team
+                      </p>
+                    </div>
+
+                    {selectedFile && selectedTeamId && (
                       <div className="flex justify-end">
                         <button
                           onClick={handlePreview}
@@ -577,6 +623,7 @@ const PrioritiesImportPage = () => {
                       onClick={() => {
                         setStep('upload');
                         setSelectedFile(null);
+                        setSelectedTeamId(teams.length > 0 ? teams[0].id : null);
                         setPreviewData(null);
                         setImportResults(null);
                         setError('');
