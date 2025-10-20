@@ -153,6 +153,9 @@ class NinetyPrioritiesImportService {
           quarter: quarter,
           year: parseInt(year),
           is_company_priority: isCompanyPriority,
+          // Frontend display fields (not stored in DB)
+          priority_level: 'Medium', // For frontend preview display only
+          type: isCompanyPriority ? 'Company' : 'Individual', // For frontend preview display only
           // Metadata for reference
           ninety_status: row['Status'] || null,
           ninety_level: level || null,
