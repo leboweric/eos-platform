@@ -286,12 +286,23 @@ export const execute = async (req, res) => {
     for (const metric of transformedData.metrics) {
       try {
         // DEDUPLICATION: Use helper method for consistent matching
+        console.log(`\n🔍 DEDUP CHECK: Looking for existing metric "${metric.name}"`);
+        console.log(`   - Organization: ${organizationId}`);
+        console.log(`   - Team: ${teamId}`);
+        console.log(`   - Conflict Strategy: ${conflictStrategy}`);
+        
         const existing = await NinetyImportService.findExistingMetric(
           metric.name,
           teamId,
           organizationId,
           client
         );
+        
+        if (existing) {
+          console.log(`✅ FOUND EXISTING: "${existing.name}" (ID: ${existing.id})`);
+        } else {
+          console.log(`❌ NOT FOUND: Will create new metric "${metric.name}"`);
+        }
         
         // MERGE STRATEGY BEHAVIOR for incremental imports
         if (existing) {
@@ -367,14 +378,15 @@ export const execute = async (req, res) => {
           results.metricsUpdated++;
         } else if (!existing) {
           // Create new metric - only use columns that exist in DB
+          console.log(`➕ CREATING NEW METRIC: "${metric.name}"`);
           const newMetric = await client.query(
             `INSERT INTO scorecard_metrics (
               id, organization_id, team_id, group_id,
               name, description, goal, owner,
               type, value_type, comparison_operator,
-              created_at, updated_at
+              import_source, created_at, updated_at
             ) VALUES (
-              $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11,
+              $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12,
               NOW(), NOW()
             ) RETURNING id`,
             [
@@ -388,10 +400,12 @@ export const execute = async (req, res) => {
               metric.owner_name || ownerId,  // Use owner_name or matched user ID
               metric.cadence === 'monthly' ? 'monthly' : 'weekly',  // Map cadence to type
               metric.format === 'currency' ? 'currency' : metric.format === 'percentage' ? 'percentage' : 'number',
-              mapOperatorToDbValue(metric.goal_operator || '>=')  // Map to database values
+              mapOperatorToDbValue(metric.goal_operator || '>='),  // Map to database values
+              'ninety.io'  // Add import source for tracking
             ]
           );
           metricId = newMetric.rows[0].id;
+          console.log(`✅ CREATED METRIC: "${metric.name}" (ID: ${metricId})`);
           results.metricsCreated++;
         }
 

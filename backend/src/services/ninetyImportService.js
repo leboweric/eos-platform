@@ -347,15 +347,26 @@ class NinetyImportService {
    * DEDUPLICATION: Core matching logic for incremental imports
    */
   static async findExistingMetric(name, teamId, organizationId, client) {
+    console.log(`   🔍 DB QUERY: Searching for metric`);
+    console.log(`      - Name: "${name}" (length: ${name.length})`);
+    console.log(`      - Team ID: ${teamId}`);
+    console.log(`      - Org ID: ${organizationId}`);
+    
     const result = await client.query(
-      `SELECT id, name, goal, comparison_operator, owner, description
+      `SELECT id, name, goal, comparison_operator, owner, description, import_source
        FROM scorecard_metrics 
        WHERE organization_id = $1 
        AND team_id = $2 
-       AND LOWER(name) = LOWER($3)
+       AND TRIM(LOWER(name)) = TRIM(LOWER($3))
        AND deleted_at IS NULL`,
       [organizationId, teamId, name]
     );
+    
+    console.log(`   📊 QUERY RESULT: Found ${result.rows.length} matches`);
+    if (result.rows.length > 0) {
+      console.log(`      - Existing: "${result.rows[0].name}" (ID: ${result.rows[0].id})`);
+      console.log(`      - Import Source: ${result.rows[0].import_source}`);
+    }
     
     return result.rows[0] || null;
   }
