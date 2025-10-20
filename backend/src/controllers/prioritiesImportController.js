@@ -348,6 +348,11 @@ export const execute = async (req, res) => {
           }
         }
 
+        // If no owner mapped, use the importing user as default
+        if (!ownerId) {
+          ownerId = userId;
+        }
+
         let priorityId;
         
         if (existing && conflictStrategy !== 'skip') {
@@ -358,8 +363,8 @@ export const execute = async (req, res) => {
               owner_id = COALESCE($2, owner_id),
               due_date = COALESCE($3, due_date),
               status = $4,
-              priority_level = $5,
-              is_company = $6,
+              progress = $5,
+              is_company_priority = $6,
               updated_at = NOW()
             WHERE id = $7`,
             [
@@ -367,8 +372,8 @@ export const execute = async (req, res) => {
               ownerId,
               priority.due_date,
               priority.status,
-              priority.priority_level,
-              priority.is_company,
+              priority.progress || 0,
+              priority.is_company_priority || false,
               existing.id
             ]
           );
@@ -380,7 +385,7 @@ export const execute = async (req, res) => {
             `INSERT INTO quarterly_priorities (
               id, organization_id, team_id, quarter, year,
               title, description, owner_id, due_date, status,
-              priority_level, is_company, created_by,
+              progress, is_company_priority, created_by,
               created_at, updated_at
             ) VALUES (
               $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13,
@@ -397,8 +402,8 @@ export const execute = async (req, res) => {
               ownerId,
               priority.due_date,
               priority.status,
-              priority.priority_level,
-              priority.is_company,
+              priority.progress || 0,
+              priority.is_company_priority || false,
               userId
             ]
           );
@@ -406,15 +411,7 @@ export const execute = async (req, res) => {
           results.prioritiesCreated++;
         }
 
-        // Create milestones if any
-        if (priority.milestones.length > 0) {
-          const createdMilestones = await NinetyPrioritiesImportService.createMilestones(
-            priorityId,
-            priority.milestones,
-            client
-          );
-          results.milestonesCreated += createdMilestones.length;
-        }
+        // Note: Ninety.io exports don't include milestone data
 
       } catch (error) {
         console.error(`Error processing priority "${priority.title}":`, error);

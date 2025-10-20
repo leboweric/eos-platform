@@ -89,23 +89,24 @@ class NinetyPrioritiesImportService {
           return null;
         };
 
-        // Helper function to convert Ninety status to AXP status and percentage
+        // Helper function to convert Ninety status to AXP status and progress
         const convertStatus = (ninetyStatus, completedOn) => {
           if (!ninetyStatus) {
-            return { status: 'not_started', percentage: 0 };
+            return { status: 'on-track', progress: 0 };
           }
 
           const statusLower = ninetyStatus.toLowerCase();
           
+          // Ninety statuses: "On-Track", "Off-Track", "Done"
           if (statusLower === 'done' || completedOn) {
-            return { status: 'completed', percentage: 100 };
+            return { status: 'completed', progress: 100 };
           } else if (statusLower === 'on-track') {
-            return { status: 'in_progress', percentage: 50 };
+            return { status: 'on-track', progress: 50 };
           } else if (statusLower === 'off-track') {
-            return { status: 'at_risk', percentage: 25 };
+            return { status: 'off-track', progress: 25 };
           }
           
-          return { status: 'not_started', percentage: 0 };
+          return { status: 'on-track', progress: 0 };
         };
 
         // Helper function to safely trim strings
@@ -134,35 +135,32 @@ class NinetyPrioritiesImportService {
         }
 
         // Convert status
-        const { status, percentage } = convertStatus(row['Status'], completedOn);
+        const { status, progress } = convertStatus(row['Status'], completedOn);
+
+        // Determine if company priority based on Level
+        const isCompanyPriority = level.toLowerCase() === 'company';
 
         const priority = {
           title: title,
           description: description || '',
-          owner_name: ownerName || null,
+          owner_name: ownerName || null, // Will be mapped to owner_id later
           due_date: dueDate ? dueDate.toISOString().split('T')[0] : null,
-          completion_percentage: percentage,
-          status: status,
-          priority_level: 'medium', // Default priority level for Ninety imports
-          is_company: false, // Default to individual rock, can be updated later
-          milestones: [], // Ninety.io exports don't include milestone data
+          progress: progress, // 0-100 integer
+          status: status, // 'on-track', 'off-track', 'completed'
           team_id: teamId,
           organization_id: organizationId,
           quarter: quarter,
-          year: year,
-          // Additional metadata
+          year: parseInt(year),
+          is_company_priority: isCompanyPriority,
+          // Metadata for reference
           ninety_status: row['Status'] || null,
           ninety_level: level || null,
           ninety_team: team || null,
           ninety_link: ninetyLink || null,
-          completed_at: completedOn ? completedOn.toISOString() : null,
-          // Import tracking
-          imported_from: 'ninety',
-          import_date: new Date().toISOString(),
-          original_row_number: index + 1
+          completed_on: completedOn ? completedOn.toISOString().split('T')[0] : null
         };
 
-        console.log(`✅ Row ${index + 1}: "${title}" - ${row['Status']} (${percentage}%)`);
+        console.log(`✅ Row ${index + 1}: "${title}" - ${row['Status']} → ${status} (${progress}%)`);
         return priority;
 
       } catch (error) {
