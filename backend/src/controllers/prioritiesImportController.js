@@ -8,7 +8,7 @@ import { v4 as uuidv4 } from 'uuid';
 export const getTemplate = async (req, res) => {
   try {
     const template = {
-      format: 'CSV',
+      format: 'Excel',
       required_columns: [
         'Title'
       ],
@@ -93,7 +93,7 @@ export const preview = async (req, res) => {
     const userId = req.user.id;
 
     // Parse CSV
-    const parseResults = NinetyPrioritiesImportService.parseCSV(req.file.buffer);
+    const parseResults = NinetyPrioritiesImportService.parseExcel(req.file.buffer);
     const transformedData = NinetyPrioritiesImportService.transformNinetyPriorities(parseResults);
     
     // Get existing priorities to check for conflicts
@@ -233,7 +233,7 @@ export const execute = async (req, res) => {
     await client.query('BEGIN');
 
     // Parse and transform data
-    const parseResults = NinetyPrioritiesImportService.parseCSV(req.file.buffer);
+    const parseResults = NinetyPrioritiesImportService.parseExcel(req.file.buffer);
     const transformedData = NinetyPrioritiesImportService.transformNinetyPriorities(parseResults);
     
     console.log('Transformed priorities data summary:');

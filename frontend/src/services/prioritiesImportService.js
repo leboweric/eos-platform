@@ -15,7 +15,7 @@ export const prioritiesImportService = {
   },
 
   /**
-   * Preview CSV import without saving
+   * Preview Excel import without saving
    * @param {FormData} formData - Contains file, organizationId, teamId
    */
   async previewImport(formData) {
@@ -51,15 +51,16 @@ export const prioritiesImportService = {
   },
 
   /**
-   * Validate CSV file before upload
-   * @param {File} file - The CSV file to validate
+   * Validate Excel file before upload
+   * @param {File} file - The Excel file to validate
    */
-  validateCSVFile(file) {
+  validateExcelFile(file) {
     const errors = [];
     
     // Check file type
-    if (!file.name.toLowerCase().endsWith('.csv')) {
-      errors.push('File must be a CSV file');
+    const fileName = file.name.toLowerCase();
+    if (!fileName.endsWith('.xlsx') && !fileName.endsWith('.xls')) {
+      errors.push('File must be an Excel file (.xlsx or .xls)');
     }
     
     // Check file size (10MB limit)
@@ -79,96 +80,7 @@ export const prioritiesImportService = {
     };
   },
 
-  /**
-   * Parse CSV content for client-side validation
-   * @param {File} file - The CSV file to parse
-   */
-  async parseCSVFile(file) {
-    return new Promise((resolve, reject) => {
-      const reader = new FileReader();
-      
-      reader.onload = (e) => {
-        try {
-          const text = e.target.result;
-          const lines = text.split('\n');
-          
-          if (lines.length < 2) {
-            reject(new Error('CSV file must contain at least a header row and one data row'));
-            return;
-          }
-          
-          // Parse header
-          const header = lines[0].split(',').map(col => col.trim().replace(/"/g, ''));
-          
-          // Parse first few rows for preview
-          const rows = [];
-          for (let i = 1; i < Math.min(lines.length, 11); i++) {
-            if (lines[i].trim()) {
-              const values = lines[i].split(',').map(val => val.trim().replace(/"/g, ''));
-              const row = {};
-              header.forEach((col, index) => {
-                row[col] = values[index] || '';
-              });
-              rows.push(row);
-            }
-          }
-          
-          resolve({
-            headers: header,
-            rows: rows,
-            totalRows: lines.length - 1
-          });
-        } catch (error) {
-          reject(new Error('Failed to parse CSV file: ' + error.message));
-        }
-      };
-      
-      reader.onerror = () => {
-        reject(new Error('Failed to read file'));
-      };
-      
-      reader.readAsText(file);
-    });
-  },
 
-  /**
-   * Generate CSV template content
-   * @param {Object} template - Template data from API
-   */
-  generateCSVTemplate(template) {
-    if (!template) return '';
-    
-    const headers = [...template.required_columns, ...template.optional_columns];
-    const csvContent = [
-      // Headers
-      headers.join(','),
-      // Example data
-      ...template.example_data.map(row => 
-        headers.map(col => `"${row[col] || ''}"`).join(',')
-      )
-    ].join('\n');
-    
-    return csvContent;
-  },
-
-  /**
-   * Download CSV template
-   * @param {Object} template - Template data from API
-   * @param {string} filename - Optional filename
-   */
-  downloadTemplate(template, filename = 'priorities-import-template.csv') {
-    const csvContent = this.generateCSVTemplate(template);
-    const blob = new Blob([csvContent], { type: 'text/csv' });
-    const url = window.URL.createObjectURL(blob);
-    
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = filename;
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-    window.URL.revokeObjectURL(url);
-  },
 
   /**
    * Format import results for display

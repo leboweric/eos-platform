@@ -1,25 +1,40 @@
-import Papa from 'papaparse';
+import XLSX from 'xlsx';
 import { v4 as uuidv4 } from 'uuid';
 
 class NinetyPrioritiesImportService {
   /**
-   * Parse CSV file buffer using PapaParse
+   * Parse Excel file buffer using XLSX
    */
-  static parseCSV(fileBuffer) {
-    const csvString = fileBuffer.toString('utf-8');
-    
-    const parseResults = Papa.parse(csvString, {
-      header: true,
-      skipEmptyLines: true,
-      trimHeaders: true,
-      transformHeader: (header) => header.trim()
+  static parseExcel(fileBuffer) {
+    // Parse Excel file
+    const workbook = XLSX.read(fileBuffer, {
+      cellStyles: true,
+      cellDates: true,
+      defval: ''
     });
 
-    if (parseResults.errors.length > 0) {
-      console.warn('CSV parsing warnings:', parseResults.errors);
+    // Get first sheet (assuming priorities data is on first sheet)
+    const sheetName = workbook.SheetNames[0];
+    const sheet = workbook.Sheets[sheetName];
+
+    console.log('📄 Parsing sheet:', sheetName);
+
+    // Convert sheet to JSON
+    const data = XLSX.utils.sheet_to_json(sheet, {
+      blankrows: false,
+      defval: ''
+    });
+
+    if (!data || data.length === 0) {
+      throw new Error('Excel file is empty or has no data');
     }
 
-    return parseResults;
+    console.log('📊 Total rows in Excel:', data.length);
+
+    return {
+      data: data,
+      errors: [] // XLSX doesn't provide parsing errors like PapaParse
+    };
   }
 
   /**
@@ -27,7 +42,7 @@ class NinetyPrioritiesImportService {
    */
   static transformNinetyPriorities(parseResults) {
     const data = parseResults.data;
-    console.log('Raw CSV data rows:', data.length);
+    console.log('Raw Excel data rows:', data.length);
     
     const priorities = [];
     const assignees = new Set();
