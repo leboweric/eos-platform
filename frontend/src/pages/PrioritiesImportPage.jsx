@@ -58,27 +58,34 @@ const PrioritiesImportPage = () => {
       }
     };
     
-    const fetchTeams = async () => {
-      try {
-        const response = await axios.get('/teams');
-        setTeams(response.data.data || []);
-        
-        // Auto-select the first team if available, or the selectedDepartment if it exists
-        if (selectedDepartment?.id) {
-          setSelectedTeamId(selectedDepartment.id);
-        } else if (response.data.data && response.data.data.length > 0) {
-          setSelectedTeamId(response.data.data[0].id);
-        }
-      } catch (error) {
-        console.error('Failed to fetch teams:', error);
-        setError('Failed to fetch teams');
-      }
-    };
     
     loadTemplate();
     fetchOrganization();
-    fetchTeams();
-  }, [selectedDepartment]);
+  }, []);
+
+  // Fetch teams when organization is available
+  useEffect(() => {
+    if (organization?.id) {
+      const fetchTeams = async () => {
+        try {
+          const response = await axios.get(`/organizations/${organization.id}/teams`);
+          setTeams(response.data.data || []);
+          
+          // Auto-select the first team if available, or the selectedDepartment if it exists
+          if (selectedDepartment?.id) {
+            setSelectedTeamId(selectedDepartment.id);
+          } else if (response.data.data && response.data.data.length > 0) {
+            setSelectedTeamId(response.data.data[0].id);
+          }
+        } catch (error) {
+          console.error('Failed to fetch teams:', error);
+          setError('Failed to fetch teams');
+        }
+      };
+      
+      fetchTeams();
+    }
+  }, [organization, selectedDepartment]);
 
   // File upload handlers
   const handleFileSelect = (file) => {
