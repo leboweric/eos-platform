@@ -61,8 +61,9 @@ const PrioritiesImportPage = () => {
   const handleFileSelect = (file) => {
     if (!file) return;
     
-    if (!file.name.toLowerCase().endsWith('.csv')) {
-      setError('Please select a CSV file');
+    const fileName = file.name.toLowerCase();
+    if (!fileName.endsWith('.xlsx') && !fileName.endsWith('.xls')) {
+      setError('Please select an Excel file (.xlsx or .xls)');
       return;
     }
     
@@ -173,30 +174,16 @@ const PrioritiesImportPage = () => {
   const handleDownloadTemplate = () => {
     if (!template) return;
     
-    const csvContent = [
-      // Headers
-      [...template.required_columns, ...template.optional_columns].join(','),
-      // Example data
-      ...template.example_data.map(row => 
-        [...template.required_columns, ...template.optional_columns]
-          .map(col => `"${row[col] || ''}"`)
-          .join(',')
-      )
-    ].join('\n');
-    
-    const blob = new Blob([csvContent], { type: 'text/csv' });
-    const url = window.URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = 'priorities-import-template.csv';
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-    window.URL.revokeObjectURL(url);
+    // For Excel template, we'll trigger a backend download since creating Excel files in browser is complex
+    const baseURL = import.meta.env.VITE_API_URL || 'http://localhost:3001/api/v1';
+    const link = document.createElement('a');
+    link.href = `${baseURL}/priorities/import/template?format=excel`;
+    link.download = 'priorities-import-template.xlsx';
+    link.click();
   };
 
   const stepTitles = {
-    upload: 'Upload CSV File',
+    upload: 'Upload Excel File',
     preview: 'Preview Import',
     mapping: 'Map Assignees',
     execute: 'Execute Import',
@@ -204,7 +191,7 @@ const PrioritiesImportPage = () => {
   };
 
   const stepDescriptions = {
-    upload: 'Select your Ninety.io priorities export CSV file',
+    upload: 'Select your Ninety.io priorities export Excel file',
     preview: 'Review the priorities that will be imported',
     mapping: 'Map assignee names to users in your organization',
     execute: 'Configure import settings and execute',
@@ -300,7 +287,7 @@ const PrioritiesImportPage = () => {
                         <div className="flex-1">
                           <h3 className="font-medium text-blue-800">Download Template</h3>
                           <p className="text-blue-700 text-sm mt-1">
-                            Download our CSV template to see the required format and example data.
+                            Download our Excel template with the required format. Contains two sheets: Rocks and Milestones.
                           </p>
                           <button
                             onClick={handleDownloadTemplate}
@@ -343,7 +330,7 @@ const PrioritiesImportPage = () => {
                         ) : (
                           <div>
                             <p className="text-gray-600 font-medium">
-                              Drag and drop your CSV file here, or click to browse
+                              Drag and drop your Excel file here, or click to browse
                             </p>
                             <p className="text-gray-500 text-sm">
                               Maximum file size: 10MB
@@ -352,7 +339,7 @@ const PrioritiesImportPage = () => {
                         )}
                         <input
                           type="file"
-                          accept=".csv"
+                          accept=".xlsx,.xls"
                           onChange={handleFileInputChange}
                           className="hidden"
                           id="file-upload"
@@ -383,7 +370,16 @@ const PrioritiesImportPage = () => {
                   {/* Template Info */}
                   {template && (
                     <div className="bg-gray-50 rounded-lg p-4">
-                      <h3 className="font-medium text-gray-900 mb-3">CSV Format Requirements</h3>
+                      <h3 className="font-medium text-gray-900 mb-3">Excel Format Requirements</h3>
+                      <div className="mb-4 p-3 bg-blue-50 border border-blue-200 rounded-md">
+                        <p className="text-sm text-blue-800">
+                          <strong>Two Sheets Required:</strong>
+                        </p>
+                        <ul className="text-sm text-blue-700 mt-1 ml-4">
+                          <li>• <strong>Rocks</strong> - Contains all priority/rock data</li>
+                          <li>• <strong>Milestones</strong> - Contains milestone data linked to rocks</li>
+                        </ul>
+                      </div>
                       <div className="grid md:grid-cols-2 gap-4 text-sm">
                         <div>
                           <h4 className="font-medium text-gray-700 mb-2">Required Columns</h4>
