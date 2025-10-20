@@ -1,4 +1,4 @@
-import { api } from './api';
+import axios from './axiosConfig';
 
 export const prioritiesImportService = {
   /**
@@ -6,7 +6,7 @@ export const prioritiesImportService = {
    */
   async getTemplate() {
     try {
-      const response = await api.get('/priorities/import/template');
+      const response = await axios.get('/priorities/import/template');
       return response.data.template;
     } catch (error) {
       console.error('Failed to get import template:', error);
@@ -20,7 +20,7 @@ export const prioritiesImportService = {
    */
   async previewImport(formData) {
     try {
-      const response = await api.post('/priorities/import/preview', formData, {
+      const response = await axios.post('/priorities/import/preview', formData, {
         headers: {
           'Content-Type': 'multipart/form-data',
         },
@@ -38,7 +38,7 @@ export const prioritiesImportService = {
    */
   async executeImport(formData) {
     try {
-      const response = await api.post('/priorities/import/execute', formData, {
+      const response = await axios.post('/priorities/import/execute', formData, {
         headers: {
           'Content-Type': 'multipart/form-data',
         },
