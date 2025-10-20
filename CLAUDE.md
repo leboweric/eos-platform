@@ -161,6 +161,174 @@ style={{
 7. **Respect organization theme colors** in UI
 8. **Update existing files** rather than creating new versions
 
+## Ninety.io Scorecard Import System
+
+### Overview
+Comprehensive import system for migrating scorecards from Ninety.io CSV exports to AXP. Handles metrics, scores, groups, and owner mapping with intelligent deduplication.
+
+### Architecture
+- **Files**: `backend/src/controllers/scorecardImportController.js` + `backend/src/services/ninetyImportService.js`
+- **Route**: `POST /api/v1/scorecard/import/monthly`
+- **Frontend**: `ScorecardImportPage.jsx`
+- **Process**: Preview → Owner Mapping → Execute → Verification
+
+### Key Features
+
+#### ✅ Intelligent Deduplication
+```javascript
+// Finds existing metrics by organization + team + name (case-insensitive)
+const existing = await NinetyImportService.findExistingMetric(
+  metric.name, teamId, organizationId, client
+);
+
+// Conflict strategies:
+// - 'merge': Add new scores to existing metrics (DEFAULT)
+// - 'update': Replace all scores in existing metrics  
+// - 'skip': Skip existing metrics entirely
+```
+
+#### ✅ Correct Date Handling
+**CRITICAL**: CSV date ranges end on Sunday, but scorecard uses Monday as week-ending.
+```javascript
+// CSV: "Oct 06 - Oct 12" (ends Sunday Oct 12)
+// AXP: Stores as Monday Oct 13 for proper alignment
+const weekEndingDate = new Date(endDate);
+weekEndingDate.setDate(weekEndingDate.getDate() + 1); // Sunday → Monday
+```
+
+#### ✅ Dynamic Average Calculation
+- **Import**: Ignores CSV "Average" column completely
+- **Storage**: Only individual scores stored in `scorecard_scores`
+- **Display**: Frontend calculates averages dynamically using `calculateAverageInRange()`
+- **Database**: NO `average` column in `scorecard_metrics` table
+
+#### ✅ Year Detection
+- **Current Year**: Uses `new Date().getFullYear()` for date parsing
+- **Import Logic**: "Oct 13 - Oct 19" → `2025-10-20` (current year + Monday)
+- **Historical Fix**: Run SQL to update incorrectly imported 2024 dates to 2025
+
+### CSV Format Expected
+```csv
+Group,Status,Title,Description,Owner,Goal,Average,Oct 06 - Oct 12,Oct 13 - Oct 19,...
+Sales,,LinkedIn Posts,Daily posts,John,>= 5,4.2,3,5,4,6,2
+```
+
+### Import Process
+
+1. **Upload & Preview**
+   - Parse CSV using PapaParse
+   - Transform Ninety.io format to AXP format
+   - Detect conflicts with existing metrics
+   - Show metrics summary and date range
+
+2. **Owner Mapping**
+   - Auto-match owner names to AXP users
+   - Manual mapping for unmatched owners
+   - Fuzzy matching by name and email
+
+3. **Execute Import**
+   - Create/update metrics with deduplication
+   - Import all score values with correct Monday dates
+   - Create scorecard groups if needed
+   - Preserve goal operators and value types
+
+4. **Verification**
+   - Display import summary (created/updated/skipped)
+   - Navigate to scorecard to verify data
+   - Automatic date range expansion for historical data
+
+### Critical Fixes Applied (October 2025)
+
+#### Date Range Display Issue
+**Problem**: Scorecard only showed Q4 2025, imported 2024 data was hidden.
+**Solution**: `ScorecardTableClean.jsx` now auto-detects historical data and expands date range.
+```javascript
+// Auto-detects scores older than current quarter
+if (showHistoricalData && sortedDates.length > 0) {
+  const earliestDataDate = new Date(sortedDates[0]);
+  if (earliestDataDate < quarterStart) {
+    effectiveStartDate = earliestDataDate; // Show historical data
+  }
+}
+```
+
+#### Year Parsing Bug
+**Problem**: Import hardcoded to 2024, causing "Oct 13" → `2024-10-13` instead of `2025-10-13`.
+**Solution**: Changed to `new Date().getFullYear()` for current year detection.
+
+#### Week-Ending Date Alignment
+**Problem**: CSV "Oct 06 - Oct 12" imported as Sunday `2025-10-12`.
+**Solution**: Add 1 day to get Monday `2025-10-13` for scorecard alignment.
+
+### Database Schema
+```sql
+-- Metrics (metadata only, no averages stored)
+scorecard_metrics:
+  - id, name, description, goal, owner
+  - import_source = 'ninety.io' (for tracking)
+  - value_type, comparison_operator
+  - NO average column (calculated dynamically)
+
+-- Scores (individual data points)
+scorecard_scores:
+  - metric_id, week_date (Monday), value, notes
+  - week_date format: YYYY-MM-DD (Monday dates)
+```
+
+### Troubleshooting
+
+#### Duplicate Metrics Created
+- Check `conflictStrategy` is set to 'merge' (default)
+- Verify metric names match exactly (case-insensitive, trimmed)
+- Check organization_id and team_id are correct
+- Review deduplication logs for match details
+
+#### Missing Historical Data
+- Ensure dates were updated from 2024 to 2025 via SQL
+- Check `showHistoricalData` prop is true (default)
+- Verify date range calculation includes historical dates
+
+#### Incorrect Averages
+- Verify no `average` column exists in `scorecard_metrics`
+- Check frontend uses `calculateAverageInRange()` utility
+- Ensure individual scores are properly imported
+
+#### Wrong Week Dates
+- Verify dates are Mondays (day-of-week = 1)
+- Check import adds 1 day to CSV Sunday end dates
+- Run SQL to fix existing Sunday dates to Monday
+
+### SQL Maintenance Scripts
+```sql
+-- Fix 2024 dates to 2025
+UPDATE scorecard_scores 
+SET week_date = week_date + INTERVAL '1 year'
+WHERE metric_id IN (SELECT id FROM scorecard_metrics WHERE import_source = 'ninety.io')
+AND week_date >= '2024-07-01' AND week_date <= '2024-12-31';
+
+-- Fix Sunday dates to Monday  
+UPDATE scorecard_scores
+SET week_date = week_date + INTERVAL '1 day'
+WHERE metric_id IN (SELECT id FROM scorecard_metrics WHERE import_source = 'ninety.io')
+AND EXTRACT(DOW FROM week_date) = 0; -- Sunday
+
+-- Verify import results
+SELECT sm.name, COUNT(ss.id) as scores, 
+       MIN(ss.week_date) as earliest, MAX(ss.week_date) as latest
+FROM scorecard_metrics sm
+LEFT JOIN scorecard_scores ss ON sm.id = ss.metric_id
+WHERE sm.import_source = 'ninety.io'
+GROUP BY sm.name;
+```
+
+### Best Practices
+1. **Always use 'merge' strategy** for incremental imports
+2. **Map owners before import** for proper attribution
+3. **Verify date alignment** - expect Monday week-ending dates
+4. **Check scorecard display** after import for proper data visibility
+5. **Run maintenance SQL** if dates need adjustment
+6. **Use import_source = 'ninety.io'** for tracking imported metrics
+
 ## Common Fixes & Patterns
 
 ### Logo Management
