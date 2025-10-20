@@ -303,6 +303,7 @@ AXP (Adaptive Execution Platform) is the world's first business execution platfo
 ✅ **Quarterly Priorities** - Goal tracking with milestones  
 ✅ **Scorecard Metrics** - KPI monitoring with charts  
 ✅ **Scorecard Import** - Ninety.io CSV import with deduplication  
+✅ **Priorities Import** - Ninety.io Excel import with dual-sheet processing  
 ✅ **Meeting Facilitation** - 5 meeting types with real-time sync  
 ✅ **Issues Management** - IDS with voting and prioritization  
 ✅ **Task Management** - Todo tracking with assignments  
@@ -338,6 +339,7 @@ AXP (Adaptive Execution Platform) is the world's first business execution platfo
 8. **Database Column Fixes** - Fixed scorecard_metrics/scores schema mismatches
 9. **Context Menu Updates** - Removed delete buttons from Issues, unified Rock review menus
 10. **Import Data Validation** - Comprehensive column mapping and constraint validation
+11. **Ninety.io Priorities Import** - Complete Excel import system with dual-sheet processing
 
 ## 7. File/Directory Structure
 
@@ -661,6 +663,18 @@ WHERE deleted_at IS NOT NULL;
 
 ### Major Enhancements Completed
 
+#### Ninety.io Priorities Import System
+- **Comprehensive Import**: Full Excel import from Ninety.io with dual-sheet processing
+- **Files**: `prioritiesImportController.js`, `ninetyPrioritiesImportService.js`, `PrioritiesImportPage.jsx`
+- **Key Features**:
+  - Dual-sheet Excel parsing (Rocks + Milestones sheets)
+  - Proper priority matching by title + owner + quarter + year
+  - Milestone parent-child linking via Rock title matching
+  - Team selection and user mapping
+  - Conflict resolution strategies (merge/update/skip)
+  - Excel data type handling (Date objects, serial numbers)
+  - Status conversion from Ninety format to AXP format
+
 #### Ninety.io Scorecard Import System
 - **Comprehensive Import**: Full CSV import from Ninety.io with intelligent deduplication
 - **Files**: `scorecardImportController.js`, `ninetyImportService.js`, `ScorecardImportPage.jsx`
@@ -671,11 +685,15 @@ WHERE deleted_at IS NOT NULL;
   - Date range parsing with year detection
   - Dynamic average calculation (no database storage)
 
-#### Critical Date Handling Fixes
-1. **CSV Date Parsing**: Fixed hardcoded 2024 → current year detection
-2. **Week-Ending Alignment**: CSV Sunday dates → Monday scorecard dates (+1 day)
-3. **Historical Data Display**: Auto-detection of imported historical data
-4. **Date Range Expansion**: Scorecard shows historical data when present
+#### Critical Excel/Date Handling Fixes
+1. **Excel Data Type Processing**: Fixed `.trim()` calls on non-string values (Date objects, numbers)
+2. **Ninety.io Format Discovery**: Changed from generic "Rock"/"% Complete" to actual "Title"/"Status" columns
+3. **Priority Matching Logic**: Fixed cross-contamination by matching title + owner + quarter + year
+4. **Database Schema Alignment**: Fixed column references ('assignee' → 'owner_id', 'completed' → 'complete')
+5. **CSV Date Parsing**: Fixed hardcoded 2024 → current year detection
+6. **Week-Ending Alignment**: CSV Sunday dates → Monday scorecard dates (+1 day)
+7. **Historical Data Display**: Auto-detection of imported historical data
+8. **Date Range Expansion**: Scorecard shows historical data when present
 
 #### Frontend Scorecard Improvements
 - **Historical Data Support**: `ScorecardTableClean.jsx` auto-detects and includes historical scores
@@ -704,7 +722,11 @@ if (showHistoricalData && sortedDates.length > 0) {
 ```
 
 #### Import System Architecture
-- **Deduplication Strategy**: Match by organization_id + team_id + name (case-insensitive)
+- **Excel Processing**: XLSX library with proper data type handling (Date objects, serial numbers)
+- **Dual-Sheet Support**: Parse both Rocks and Milestones sheets from Ninety.io exports
+- **Priority Deduplication**: Match by organization_id + team_id + title + owner_id + quarter + year
+- **Milestone Linking**: Parent-child relationships via Rock title matching in priority mapping
+- **Scorecard Deduplication**: Match by organization_id + team_id + name (case-insensitive)
 - **Conflict Resolution**: Default to 'merge' strategy for incremental imports
 - **Data Integrity**: No average storage in database, always calculate dynamically
 - **Import Source Tracking**: Mark imported metrics with `import_source = 'ninety.io'`
@@ -717,6 +739,9 @@ if (showHistoricalData && sortedDates.length > 0) {
 
 ### Database Schema Updates
 - **Scorecard Metrics**: Added `import_source` column for tracking
+- **Priority Milestones**: Confirmed schema without `description` or `organization_id` columns
+- **Quarterly Priorities**: Uses `owner_id` column, not `assignee`
+- **Status Values**: Database expects 'complete' not 'completed'
 - **Date Storage**: Confirmed `week_date` as YYYY-MM-DD format (Monday dates)
 - **No Average Column**: Verified averages are calculated dynamically, not stored
 
@@ -726,6 +751,26 @@ if (showHistoricalData && sortedDates.length > 0) {
 - **Date Range Queries**: Optimized to handle historical data without performance impact
 
 ### Fixed Issues & Solutions
+
+#### Excel Data Type Errors (Priorities Import)
+- **Issue**: Service crashed with "Cannot read property 'trim' of undefined"
+- **Root Cause**: Calling `.trim()` on Excel Date objects and numbers
+- **Solution**: Added comprehensive data type handling with safeTrim() helper
+
+#### Wrong Column Names (Priorities Import)  
+- **Issue**: Service looked for "Rock"/"% Complete" but Ninety exports "Title"/"Status"
+- **Root Cause**: Assumed generic import format instead of analyzing actual export
+- **Solution**: Analyzed real Ninety.io export file and updated all column references
+
+#### Cross-User Rock Contamination (Critical)
+- **Issue**: Import updating wrong person's rocks when titles matched
+- **Root Cause**: Priority matching by title only, not considering owner
+- **Solution**: Enhanced matching to use title + owner_id + quarter + year
+
+#### Database Schema Mismatches (Priorities Import)
+- **Issue**: INSERT errors for non-existent columns ('assignee', 'description')
+- **Root Cause**: Code referenced wrong database schema
+- **Solution**: Aligned all queries with actual table schemas
 
 #### Scorecard Display Problems
 - **Issue**: Imported scores not visible despite being in database

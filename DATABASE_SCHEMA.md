@@ -155,13 +155,15 @@ Goals and objectives (formerly Rocks).
 | organization_id | UUID | FOREIGN KEY | References organizations(id) |
 | team_id | UUID | FOREIGN KEY | References teams(id) |
 | owner_id | UUID | FOREIGN KEY | References users(id) |
+| created_by | UUID | FOREIGN KEY | References users(id) |
 | title | VARCHAR(500) | NOT NULL | Priority title |
 | description | TEXT | | Detailed description |
 | quarter | VARCHAR(2) | | 'Q1', 'Q2', 'Q3', 'Q4' or '1', '2', '3', '4' |
 | year | INTEGER | | Year of the quarter |
-| status | VARCHAR(50) | DEFAULT 'on_track' | 'on_track', 'off_track', 'at_risk', 'complete' |
-| completion_percentage | INTEGER | DEFAULT 0 | 0-100 completion |
+| status | VARCHAR(50) | DEFAULT 'on_track' | 'on-track', 'off-track', 'at-risk', 'complete' |
+| progress | INTEGER | DEFAULT 0 | 0-100 completion percentage |
 | is_company_priority | BOOLEAN | DEFAULT false | Company-wide vs individual |
+| due_date | DATE | | Target completion date |
 | priority_order | INTEGER | | Display order |
 | meeting_rating | INTEGER | | 1-10 rating from meetings |
 | prediction | VARCHAR(50) | | Success prediction |
@@ -176,14 +178,17 @@ Sub-goals and checkpoints for quarterly priorities.
 |--------|------|-------------|-------------|
 | id | UUID | PRIMARY KEY | |
 | priority_id | UUID | FOREIGN KEY | References quarterly_priorities(id) |
-| owner_id | UUID | FOREIGN KEY | References users(id) |
 | title | TEXT | NOT NULL | Milestone description |
 | due_date | DATE | | Target completion date |
 | completed | BOOLEAN | DEFAULT false | Completion status |
 | completed_at | TIMESTAMP WITH TIME ZONE | | Completion timestamp |
-| display_order | INTEGER | DEFAULT 0 | Sort order |
 | created_at | TIMESTAMP WITH TIME ZONE | DEFAULT NOW() | |
 | updated_at | TIMESTAMP WITH TIME ZONE | DEFAULT NOW() | |
+
+**Important Notes**:
+- No `owner_id` column (milestones inherit owner from parent priority)
+- No `description` column (only title)
+- No `organization_id` column (linked via priority)
 
 ## Performance Tracking
 
@@ -203,6 +208,7 @@ KPI definitions and targets.
 | type | VARCHAR(50) | DEFAULT 'weekly' | 'weekly', 'monthly', 'quarterly' |
 | value_type | VARCHAR(20) | DEFAULT 'number' | 'number', 'currency', 'percentage' |
 | comparison_operator | VARCHAR(20) | DEFAULT 'greater_equal' | 'equal', 'greater', 'greater_equal', 'less', 'less_equal' |
+| import_source | VARCHAR(50) | | 'ninety.io', 'manual', 'api' - tracks origin |
 | display_order | INTEGER | DEFAULT 0 | Sort order |
 | created_at | TIMESTAMP WITH TIME ZONE | DEFAULT NOW() | |
 | updated_at | TIMESTAMP WITH TIME ZONE | DEFAULT NOW() | |
@@ -539,11 +545,20 @@ CHECK (status IN ('open', 'in_discussion', 'solved', 'archived'))
 
 ### Recent Schema Changes (October 2024 - October 2025)
 
+#### Scorecard System Updates
 - Added `organization_id` to `scorecard_scores` for better isolation
 - Fixed column types: `owner` is VARCHAR not UUID in scorecard_metrics
 - Standardized date column: `week_date` not `week_ending` in scorecard_scores
+- Added `import_source` column to scorecard_metrics for tracking
 - Added soft delete (`deleted_at`) to critical business tables
-- Removed non-existent columns from code (goal_direction, import_source, external_id)
+
+#### Priorities Import System Schema
+- Confirmed `quarterly_priorities` uses `owner_id` column (not `assignee`)
+- Confirmed `priority_milestones` has minimal schema (no owner_id, description, organization_id)
+- Updated `status` values: 'complete' not 'completed' for database constraints
+- Added `created_by` column to quarterly_priorities for import tracking
+- Added `progress` column (replaces completion_percentage)
+- Added `due_date` column for deadline tracking
 
 ## Best Practices
 
@@ -582,11 +597,18 @@ DO UPDATE SET value = EXCLUDED.value;
 4. **Cascade deletes** - Foreign keys cascade to prevent orphans
 5. **Timestamp everything** - created_at and updated_at on all tables
 
-## October 2025 Updates & Scorecard Import Lessons
+## October 2025 Updates - Import System Lessons
 
 ### Critical Discoveries
 
-#### Average Calculation Architecture
+#### Ninety.io Priorities Import Schema Insights
+- **Dual-Sheet Processing**: Excel files contain "Rocks" and "Milestones" sheets with parent-child relationships
+- **Priority Matching**: Must match by organization_id + team_id + title + owner_id + quarter + year to prevent cross-contamination
+- **Status Mapping**: Ninety "Done" → AXP "complete", "On-Track" → "on-track", "Off-Track" → "off-track"
+- **Data Types**: Excel exports contain Date objects, serial numbers requiring careful type checking
+- **Column Names**: Ninety exports use "Title"/"Status" not generic "Rock"/"% Complete"
+
+#### Scorecard Import Architecture
 - **NO AVERAGE COLUMN**: scorecard_metrics table does NOT store averages
 - **Dynamic Calculation**: Frontend calculates averages using `calculateAverageInRange()`
 - **Import Behavior**: CSV "Average" column is ignored during import
@@ -600,7 +622,26 @@ DO UPDATE SET value = EXCLUDED.value;
 
 #### Import System Database Patterns
 ```sql
---- Deduplication query for imports
+--- Priorities deduplication (critical for preventing cross-contamination)
+SELECT id, title, owner_id, quarter, year 
+FROM quarterly_priorities 
+WHERE organization_id = $1 
+AND team_id = $2 
+AND TRIM(LOWER(title)) = TRIM(LOWER($3))
+AND owner_id = $4
+AND quarter = $5
+AND year = $6
+AND deleted_at IS NULL;
+
+--- Milestone insertion (minimal schema)
+INSERT INTO priority_milestones (
+  id, priority_id, title, due_date, completed, completed_at,
+  created_at, updated_at
+) VALUES (
+  $1, $2, $3, $4, $5, $6, NOW(), NOW()
+);
+
+--- Scorecard metrics deduplication
 SELECT id, name FROM scorecard_metrics 
 WHERE organization_id = $1 
 AND team_id = $2 

@@ -66,6 +66,7 @@ const BulkUserImport = lazy(() => import('./pages/BulkUserImport'));
 const AdminToolsPage = lazy(() => import('./pages/AdminToolsPage'));
 const ScorecardImportPage = lazy(() => import('./pages/ScorecardImportPage'));
 const PrioritiesImportPage = lazy(() => import('./pages/PrioritiesImportPage'));
+const IssuesImportPage = lazy(() => import('./pages/IssuesImportPage'));
 
 // Department Components
 const DepartmentLayout = lazy(() => import('./components/DepartmentLayout'));
@@ -208,6 +209,7 @@ function App() {
           <Route path="/quarterly-priorities-original" element={user ? <Layout><QuarterlyPrioritiesPageOriginal /></Layout> : <Navigate to="/login" />} />
           <Route path="/quarterly-priorities-redesigned" element={user ? <Layout><QuarterlyPrioritiesPageRedesigned /></Layout> : <Navigate to="/login" />} />
           <Route path="/priorities/import" element={user ? <Layout><PrioritiesImportPage /></Layout> : <Navigate to="/login" />} />
+          <Route path="/issues/import" element={user ? <Layout><IssuesImportPage /></Layout> : <Navigate to="/login" />} />
           <Route path="/comparison" element={<ComparisonPage />} />
           <Route path="/dashboard-comparison" element={<DashboardComparison />} />
           <Route path="/scorecard-comparison" element={<ScorecardComparison />} />
