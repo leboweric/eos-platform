@@ -410,13 +410,14 @@ export const execute = async (req, res) => {
             // Only INSERT new scores
             await client.query(
               `INSERT INTO scorecard_scores (
-                id, metric_id, week_date, value, created_at, updated_at
-              ) VALUES ($1, $2, $3, $4, NOW(), NOW())`,
+                id, metric_id, week_date, value, organization_id, created_at, updated_at
+              ) VALUES ($1, $2, $3, $4, $5, NOW(), NOW())`,
               [
                 uuidv4(),
                 metricId,
                 score.week_ending,  // Map week_ending to week_date
-                score.value
+                score.value,
+                organizationId  // Add organization_id from parent context
               ]
             );
             results.scoresImported++;
@@ -639,11 +640,11 @@ export const importMonthlyScorecard = async (req, res) => {
 
           // Insert or update score
           await db.query(
-            `INSERT INTO scorecard_scores (metric_id, week_date, value)
-             VALUES ($1, $2, $3)
+            `INSERT INTO scorecard_scores (metric_id, week_date, value, organization_id)
+             VALUES ($1, $2, $3, $4)
              ON CONFLICT (metric_id, week_date)
              DO UPDATE SET value = EXCLUDED.value, updated_at = CURRENT_TIMESTAMP`,
-            [metricId, monthDate, scoreValue]
+            [metricId, monthDate, scoreValue, orgId]
           );
 
           importedScores.push({
