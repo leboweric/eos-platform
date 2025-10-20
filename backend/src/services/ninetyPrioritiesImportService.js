@@ -99,7 +99,7 @@ class NinetyPrioritiesImportService {
           
           // Ninety statuses: "On-Track", "Off-Track", "Done"
           if (statusLower === 'done' || completedOn) {
-            return { status: 'completed', progress: 100 };
+            return { status: 'complete', progress: 100 };
           } else if (statusLower === 'on-track') {
             return { status: 'on-track', progress: 50 };
           } else if (statusLower === 'off-track') {
