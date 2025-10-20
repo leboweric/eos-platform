@@ -59,7 +59,8 @@ import {
   Brain,
   Sparkles,
   Activity,
-  Zap
+  Zap,
+  Upload
 } from 'lucide-react';
 
 // Error Boundary Component
@@ -2658,6 +2659,14 @@ const QuarterlyPrioritiesPageClean = () => {
                   >
                     <Brain className="mr-2 h-4 w-4 text-gray-400" />
                     SMART Assistant (Testing)
+                  </Button>
+                  <Button 
+                    variant="outline"
+                    onClick={() => navigate('/priorities/import')}
+                    className="bg-white/80 backdrop-blur-sm border border-gray-200 hover:bg-gray-50 rounded-lg transition-all"
+                  >
+                    <Upload className="mr-2 h-4 w-4" />
+                    Import from Ninety.io
                   </Button>
                   <Button 
                     onClick={() => {
