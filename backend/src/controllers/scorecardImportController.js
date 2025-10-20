@@ -251,6 +251,10 @@ export const execute = async (req, res) => {
     // Parse and transform data
     const parseResults = NinetyImportService.parseCSV(req.file.buffer);
     const transformedData = NinetyImportService.transformNinetyData(parseResults);
+    
+    console.log('Transformed data summary:');
+    console.log(`- Metrics found: ${transformedData.metrics.length}`);
+    console.log(`- Date columns: ${transformedData.dateColumns?.length || 0}`);
 
     // Get existing metrics
     // DEDUPLICATION: Fetch by name for proper matching
@@ -392,8 +396,12 @@ export const execute = async (req, res) => {
         }
 
         // Add scores - CRITICAL for incremental imports
-        for (const score of metric.scores) {
-          if (score.value !== null) {
+        console.log(`Processing ${metric.scores?.length || 0} scores for metric "${metric.name}"`);
+        
+        for (const score of metric.scores || []) {
+          if (score.value !== null && score.value !== undefined) {
+            console.log(`  Checking score: week_date=${score.week_ending}, value=${score.value}`);
+            
             // DEDUPLICATION: Check if score already exists for this metric + period
             const scoreExists = await NinetyImportService.scoreExists(
               metricId, 
@@ -403,24 +411,32 @@ export const execute = async (req, res) => {
             
             if (scoreExists) {
               // MERGE STRATEGY: Skip existing scores (don't overwrite)
+              console.log(`    Score already exists, skipping`);
               results.scoresSkipped++;
               continue;
             }
 
             // Only INSERT new scores
-            await client.query(
-              `INSERT INTO scorecard_scores (
-                id, metric_id, week_date, value, organization_id, created_at, updated_at
-              ) VALUES ($1, $2, $3, $4, $5, NOW(), NOW())`,
-              [
-                uuidv4(),
-                metricId,
-                score.week_ending,  // Map week_ending to week_date
-                score.value,
-                organizationId  // Add organization_id from parent context
-              ]
-            );
-            results.scoresImported++;
+            try {
+              const scoreResult = await client.query(
+                `INSERT INTO scorecard_scores (
+                  id, metric_id, week_date, value, organization_id, created_at, updated_at
+                ) VALUES ($1, $2, $3, $4, $5, NOW(), NOW())
+                RETURNING id`,
+                [
+                  uuidv4(),
+                  metricId,
+                  score.week_ending,  // Map week_ending to week_date
+                  score.value,
+                  organizationId  // Add organization_id from parent context
+                ]
+              );
+              console.log(`    Score inserted successfully: ${scoreResult.rows[0].id}`);
+              results.scoresImported++;
+            } catch (scoreError) {
+              console.error(`    Error inserting score:`, scoreError.message);
+              throw scoreError;
+            }
           }
         }
       } catch (error) {

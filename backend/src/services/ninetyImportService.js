@@ -36,6 +36,8 @@ class NinetyImportService {
     const averageIndex = headers.findIndex(h => h === 'Average');
     const dateColumns = headers.slice(averageIndex + 1);
     
+    console.log('Found date columns:', dateColumns.length, dateColumns);
+    
     const metrics = [];
     const groups = new Map();
     
@@ -72,15 +74,22 @@ class NinetyImportService {
         const dateStr = dateColumns[j];
         const value = row[averageIndex + 1 + j];
         
-        if (dateStr && value !== '' && value !== undefined) {
+        if (dateStr && value !== '' && value !== undefined && value !== null) {
           const dateRange = this.parseDateRange(dateStr);
-          scores.push({
-            week_ending: dateRange.endDate,
-            value: this.parseNumericValue(value),
-            dateLabel: dateStr
-          });
+          const parsedValue = this.parseNumericValue(value);
+          
+          if (parsedValue !== null) {
+            scores.push({
+              week_ending: dateRange.endDate,
+              value: parsedValue,
+              dateLabel: dateStr
+            });
+            console.log(`  Score for ${dateStr}: ${value} → ${parsedValue}`);
+          }
         }
       }
+      
+      console.log(`Metric "${title}" has ${scores.length} scores`);
       
       const metric = {
         name: title,  // Map CSV 'Title' to DB 'name' column
@@ -93,8 +102,8 @@ class NinetyImportService {
         cadence: 'weekly',
         import_source: 'ninety.io',
         external_id: `ninety_${Date.now()}_${i}`,
-        scores,
-        average: this.parseNumericValue(average)
+        scores
+        // Note: Removed 'average' - should be calculated dynamically, not imported
       };
       
       metrics.push(metric);
@@ -177,7 +186,8 @@ class NinetyImportService {
     const parts = dateRangeStr.split(' - ');
     if (parts.length !== 2) return { startDate: null, endDate: null };
     
-    const currentYear = new Date().getFullYear();
+    // Use 2024 as the base year for this import (data is from 2024)
+    const currentYear = 2024;
     
     // Parse start date
     const startParts = parts[0].trim().split(' ');
@@ -194,18 +204,14 @@ class NinetyImportService {
     let endYear = currentYear;
     
     if (endMonth < startMonth) {
-      // Crosses year boundary
-      if (new Date().getMonth() < 6) {
-        // We're in first half of year, so start was last year
-        startYear = currentYear - 1;
-      } else {
-        // We're in second half of year, so end is next year
-        endYear = currentYear + 1;
-      }
+      // Crosses year boundary - end date is in next year
+      endYear = currentYear + 1;
     }
     
     const startDate = new Date(startYear, startMonth - 1, startDay);
     const endDate = new Date(endYear, endMonth - 1, endDay);
+    
+    console.log(`  Date range: "${dateRangeStr}" → ${endDate.toISOString().split('T')[0]}`);
     
     return {
       startDate: startDate.toISOString().split('T')[0],
