@@ -328,7 +328,7 @@ class NinetyPrioritiesImportService {
    */
   static async findExistingPriority(title, teamId, organizationId, client) {
     const result = await client.query(
-      `SELECT id, title, status, assignee, due_date, description
+      `SELECT id, title, status, owner_id, due_date, description
        FROM quarterly_priorities 
        WHERE organization_id = $1 
        AND team_id = $2 
