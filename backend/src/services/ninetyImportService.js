@@ -54,7 +54,7 @@ class NinetyImportService {
       const description = row[4];
       const owner = row[5];
       const goalStr = row[6];
-      const average = row[7];
+      // const average = row[7]; // REMOVED - averages calculated dynamically on frontend
       
       // Track groups
       if (!groups.has(groupName)) {

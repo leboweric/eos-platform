@@ -104,7 +104,7 @@ export const preview = async (req, res) => {
       goal: metric.goal,
       goal_operator: metric.goal_operator,
       goal_direction: metric.goal_direction,
-      average: metric.average,
+      // average: metric.average, // REMOVED - averages calculated dynamically on frontend
       group_name: metric.group_name,
       status: metric.status,
       format: metric.format,
