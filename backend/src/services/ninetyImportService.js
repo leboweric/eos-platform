@@ -186,8 +186,8 @@ class NinetyImportService {
     const parts = dateRangeStr.split(' - ');
     if (parts.length !== 2) return { startDate: null, endDate: null };
     
-    // Use 2024 as the base year for this import (data is from 2024)
-    const currentYear = 2024;
+    // Use current year as the base year for imports
+    const currentYear = new Date().getFullYear();
     
     // Parse start date
     const startParts = parts[0].trim().split(' ');
