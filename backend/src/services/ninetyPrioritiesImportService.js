@@ -432,17 +432,20 @@ class NinetyPrioritiesImportService {
   }
 
   /**
-   * Find existing priority by organization_id + team_id + title (case-insensitive)
+   * Find existing priority by organization_id + team_id + title + owner_id + quarter + year
    */
-  static async findExistingPriority(title, teamId, organizationId, client) {
+  static async findExistingPriority(title, ownerId, teamId, organizationId, quarter, year, client) {
     const result = await client.query(
       `SELECT id, title, status, owner_id, due_date, description
        FROM quarterly_priorities 
        WHERE organization_id = $1 
        AND team_id = $2 
        AND TRIM(LOWER(title)) = TRIM(LOWER($3))
+       AND owner_id = $4
+       AND quarter = $5
+       AND year = $6
        AND deleted_at IS NULL`,
-      [organizationId, teamId, title]
+      [organizationId, teamId, title, ownerId, quarter, year]
     );
     
     return result.rows[0] || null;

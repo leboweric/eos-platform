@@ -328,26 +328,7 @@ export const execute = async (req, res) => {
     
     for (const priority of transformedPriorities) {
       try {
-        // Find existing priority
-        const existing = await NinetyPrioritiesImportService.findExistingPriority(
-          priority.title,
-          teamId,
-          organizationId,
-          client
-        );
-        
-        // Handle conflict strategy
-        if (existing) {
-          if (conflictStrategy === 'skip') {
-            results.prioritiesSkipped++;
-            continue;
-          } else if (conflictStrategy === 'update') {
-            // Delete old milestones
-            await NinetyPrioritiesImportService.deleteMilestones(existing.id, client);
-          }
-        }
-
-        // Determine owner (assignee)
+        // Determine owner (assignee) FIRST
         let ownerId = null;
         if (priority.owner_name) {
           if (mappings && mappings[priority.owner_name]) {
@@ -365,6 +346,28 @@ export const execute = async (req, res) => {
         // If no owner mapped, use the importing user as default
         if (!ownerId) {
           ownerId = userId;
+        }
+
+        // Find existing priority (now with ownerId determined)
+        const existing = await NinetyPrioritiesImportService.findExistingPriority(
+          priority.title,
+          ownerId,
+          teamId,
+          organizationId,
+          currentQuarter,
+          currentYear,
+          client
+        );
+        
+        // Handle conflict strategy
+        if (existing) {
+          if (conflictStrategy === 'skip') {
+            results.prioritiesSkipped++;
+            continue;
+          } else if (conflictStrategy === 'update') {
+            // Delete old milestones
+            await NinetyPrioritiesImportService.deleteMilestones(existing.id, client);
+          }
         }
 
         let priorityId;
