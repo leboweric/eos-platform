@@ -523,9 +523,9 @@ const GroupedScorecardView = ({
             <BarChart3 className="h-4 w-4" style={{ color: themeColors.primary }} />
           </Button>
         </td>
-        <td className="text-center p-2 w-20 font-semibold text-gray-700 text-sm">{formatGoal(metric.goal, metric.value_type, metric.comparison_operator)}</td>
+        <td className="text-center p-2 w-28 font-semibold text-gray-700 text-sm">{formatGoal(metric.goal, metric.value_type, metric.comparison_operator)}</td>
         {/* Average column */}
-        <td className="p-2 text-center bg-white border-l border-gray-200 font-semibold text-sm w-20">
+        <td className="p-2 text-center bg-white border-l border-gray-200 font-semibold text-sm w-28">
           {(() => {
             // Include zeros in average calculation
             const scoreValues = Object.values(scores).filter(v => v !== '' && v !== null && v !== undefined && (v === 0 || v === '0' || v));
@@ -586,10 +586,10 @@ const GroupedScorecardView = ({
           });
           
           return (
-            <td key={period.value} className={`p-2 text-center w-20 ${isCurrentPeriod ? 'bg-gray-50 border-2 border-gray-300' : ''}`}>
+            <td key={period.value} className={`p-2 text-center w-28 ${isCurrentPeriod ? 'bg-gray-50 border-2 border-gray-300' : ''}`}>
               <button
                 onClick={() => onScoreUpdate(metric, period.value, value)}
-                className={`w-full px-2 py-1 rounded text-sm font-medium transition-colors relative
+                className={`w-full px-2 py-1 rounded text-sm font-medium transition-colors relative whitespace-nowrap
                   ${value !== null && value !== undefined ? (isOnTrack ? 'bg-green-50 text-green-700 border border-green-200' : 'bg-red-50 text-red-700 border border-red-200') : (isCurrentPeriod ? 'bg-gray-100 text-gray-700 hover:bg-gray-200' : 'bg-white border border-gray-200 text-gray-600 hover:bg-gray-50')}`}
                 title={hasNotes ? `Score: ${value}\nNotes: ${noteValue}` : ''}
               >
@@ -602,7 +602,7 @@ const GroupedScorecardView = ({
           );
         })}
         {showTotal && (
-          <td className="p-2 text-center font-semibold w-20 bg-white border-l border-gray-200">
+          <td className="p-2 text-center font-semibold w-28 bg-white border-l border-gray-200">
             {Math.round(Object.values(scores).reduce((sum, val) => {
               // Explicitly handle 0 as valid value in sum
               const numVal = val === 0 || val === '0' ? 0 : parseFloat(val);
@@ -663,8 +663,8 @@ const GroupedScorecardView = ({
           <th className="text-center p-2 font-semibold text-gray-700 w-16">Owner</th>
           <th className="text-left p-2 font-semibold text-gray-700 w-48">Metric</th>
           <th className="text-center p-2 font-semibold text-gray-700 w-12">Chart</th>
-          <th className="text-center p-2 font-semibold text-gray-700 w-20">Goal</th>
-          <th className="text-center p-2 font-semibold text-gray-700 w-20 border-l border-gray-200">Average</th>
+          <th className="text-center p-2 font-semibold text-gray-700 w-28">Goal</th>
+          <th className="text-center p-2 font-semibold text-gray-700 w-28 border-l border-gray-200">Average</th>
           {labels.map((option, index) => {
             // Get current date
             const now = new Date();
@@ -678,7 +678,7 @@ const GroupedScorecardView = ({
             const isCurrentPeriod = currentValue && option.value === currentValue
             
             return (
-              <th key={option.value} className={`text-center p-2 font-semibold text-xs w-20 ${
+              <th key={option.value} className={`text-center p-2 font-semibold text-xs w-28 ${
                 isCurrentPeriod ? 'text-gray-900 bg-gray-50 border-2 border-gray-300' : 'text-gray-700'
               }`}>
                 <div className="flex flex-col items-center">
@@ -690,7 +690,7 @@ const GroupedScorecardView = ({
               </th>
             );
           })}
-          {showTotal && <th className="text-center p-2 font-semibold text-gray-700 w-20 border-l border-gray-200">Total</th>}
+          {showTotal && <th className="text-center p-2 font-semibold text-gray-700 w-28 border-l border-gray-200">Total</th>}
           <th className="text-center p-2 font-semibold text-gray-700 w-12">Actions</th>
         </tr>
       </thead>
