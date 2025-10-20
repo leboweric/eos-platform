@@ -657,8 +657,109 @@ WHERE deleted_at IS NOT NULL;
 4. **Version Pinning**: Pin critical dependencies
 5. **Deprecation Monitoring**: Track provider announcements
 
+## 13. Recent Updates & Lessons Learned (October 2025)
+
+### Major Enhancements Completed
+
+#### Ninety.io Scorecard Import System
+- **Comprehensive Import**: Full CSV import from Ninety.io with intelligent deduplication
+- **Files**: `scorecardImportController.js`, `ninetyImportService.js`, `ScorecardImportPage.jsx`
+- **Key Features**:
+  - Conflict resolution strategies (merge/update/skip)
+  - Owner mapping and user matching
+  - Group creation and metric organization
+  - Date range parsing with year detection
+  - Dynamic average calculation (no database storage)
+
+#### Critical Date Handling Fixes
+1. **CSV Date Parsing**: Fixed hardcoded 2024 → current year detection
+2. **Week-Ending Alignment**: CSV Sunday dates → Monday scorecard dates (+1 day)
+3. **Historical Data Display**: Auto-detection of imported historical data
+4. **Date Range Expansion**: Scorecard shows historical data when present
+
+#### Frontend Scorecard Improvements
+- **Historical Data Support**: `ScorecardTableClean.jsx` auto-detects and includes historical scores
+- **Group View Cell Width**: Fixed truncation of large numbers (w-20 → w-28)
+- **Enhanced Debugging**: Comprehensive logging for import and display issues
+- **Average Calculation**: Confirmed dynamic calculation vs database storage
+
+### Critical Lessons Learned
+
+#### Date Handling Best Practices
+```javascript
+// ✅ CORRECT: Use current year for imports
+const currentYear = new Date().getFullYear();
+
+// ✅ CORRECT: Convert Sunday CSV end dates to Monday scorecard dates
+const weekEndingDate = new Date(endDate);
+weekEndingDate.setDate(weekEndingDate.getDate() + 1);
+
+// ✅ CORRECT: Auto-detect historical data
+if (showHistoricalData && sortedDates.length > 0) {
+  const earliestDataDate = new Date(sortedDates[0]);
+  if (earliestDataDate < quarterStart) {
+    effectiveStartDate = earliestDataDate;
+  }
+}
+```
+
+#### Import System Architecture
+- **Deduplication Strategy**: Match by organization_id + team_id + name (case-insensitive)
+- **Conflict Resolution**: Default to 'merge' strategy for incremental imports
+- **Data Integrity**: No average storage in database, always calculate dynamically
+- **Import Source Tracking**: Mark imported metrics with `import_source = 'ninety.io'`
+
+#### UI/UX Insights
+- **Cell Width Requirements**: 7-digit numbers need minimum w-28 (112px) in Tailwind
+- **Whitespace Control**: Use `whitespace-nowrap` to prevent number wrapping
+- **Historical Data UX**: Auto-expansion of date ranges improves user experience
+- **Debug Logging**: Comprehensive logging essential for complex import debugging
+
+### Database Schema Updates
+- **Scorecard Metrics**: Added `import_source` column for tracking
+- **Date Storage**: Confirmed `week_date` as YYYY-MM-DD format (Monday dates)
+- **No Average Column**: Verified averages are calculated dynamically, not stored
+
+### Performance Optimizations
+- **Frontend Bundle**: Maintained under 750KB gzipped
+- **Import Processing**: Efficient batch operations with progress tracking
+- **Date Range Queries**: Optimized to handle historical data without performance impact
+
+### Fixed Issues & Solutions
+
+#### Scorecard Display Problems
+- **Issue**: Imported scores not visible despite being in database
+- **Root Cause**: Date filtering showing current quarter only, excluding 2024 imports
+- **Solution**: Auto-detection and inclusion of historical data dates
+
+#### Import Date Misalignment
+- **Issue**: CSV "Oct 06 - Oct 12" imported as wrong year and wrong day-of-week
+- **Root Cause**: Hardcoded 2024 year + Sunday end dates vs Monday expected
+- **Solution**: Current year detection + 1-day adjustment for Monday alignment
+
+#### Group View Number Truncation
+- **Issue**: Large numbers like $4,085,379 truncated in Group View
+- **Root Cause**: Cell width too narrow (w-20 = 80px)
+- **Solution**: Increased to w-28 (112px) with whitespace-nowrap
+
+#### Duplicate Metric Creation
+- **Issue**: Import creating duplicates instead of updating existing
+- **Root Cause**: Enhanced debugging revealed the existing deduplication was working correctly
+- **Solution**: Confirmed conflict strategy and improved logging for transparency
+
+### Documentation Improvements
+- **CLAUDE.md**: Added comprehensive Ninety.io import system documentation
+- **Troubleshooting Guides**: SQL scripts for common data fixes
+- **Best Practices**: Import strategies and date handling guidelines
+
+### Future Considerations
+- **Import Source Support**: Framework ready for additional import sources
+- **Date Range Preferences**: Consider user-configurable date range display
+- **Large Number Display**: Monitor for other UI areas needing width adjustments
+- **Import Validation**: Enhanced pre-import validation for better UX
+
 ---
 
-**Last Updated**: October 2025
+**Last Updated**: October 20, 2025
 
-*This architecture documentation represents the current state of the AXP platform as of October 2025. The system is in active development with regular updates and improvements. For specific implementation details, refer to the codebase and inline documentation.*
+*This architecture documentation represents the current state of the AXP platform as of October 2025. The system is in active development with regular updates and improvements. Major updates in October 2025 focused on scorecard import functionality, date handling, and UI improvements for large number display.*

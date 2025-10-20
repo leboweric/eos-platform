@@ -582,6 +582,81 @@ DO UPDATE SET value = EXCLUDED.value;
 4. **Cascade deletes** - Foreign keys cascade to prevent orphans
 5. **Timestamp everything** - created_at and updated_at on all tables
 
+## October 2025 Updates & Scorecard Import Lessons
+
+### Critical Discoveries
+
+#### Average Calculation Architecture
+- **NO AVERAGE COLUMN**: scorecard_metrics table does NOT store averages
+- **Dynamic Calculation**: Frontend calculates averages using `calculateAverageInRange()`
+- **Import Behavior**: CSV "Average" column is ignored during import
+- **Database Query**: Only individual scores stored in scorecard_scores
+
+#### Date Handling Requirements
+- **Monday Alignment**: week_date MUST be Monday for proper scorecard display
+- **Import Conversion**: CSV "Oct 06 - Oct 12" (Sunday) → 2025-10-13 (Monday)
+- **Historical Support**: Database supports multi-year date ranges
+- **Current Year**: Import logic uses `new Date().getFullYear()` not hardcoded year
+
+#### Import System Database Patterns
+```sql
+--- Deduplication query for imports
+SELECT id, name FROM scorecard_metrics 
+WHERE organization_id = $1 
+AND team_id = $2 
+AND TRIM(LOWER(name)) = TRIM(LOWER($3))
+AND deleted_at IS NULL;
+
+--- Dynamic average calculation (frontend pattern)
+SELECT 
+  sm.name,
+  COUNT(ss.value) as score_count,
+  AVG(ss.value)::numeric(10,2) as calculated_average
+FROM scorecard_metrics sm
+LEFT JOIN scorecard_scores ss ON sm.id = ss.metric_id
+WHERE sm.organization_id = $1
+AND ss.week_date >= $2 AND ss.week_date <= $3
+GROUP BY sm.id, sm.name;
+
+--- Fix Sunday dates to Monday (post-import correction)
+UPDATE scorecard_scores
+SET week_date = week_date + INTERVAL '1 day'
+WHERE metric_id IN (
+    SELECT id FROM scorecard_metrics 
+    WHERE import_source = 'ninety.io'
+)
+AND EXTRACT(DOW FROM week_date) = 0; -- Convert Sunday to Monday
+
+--- Verify date alignment
+SELECT 
+    sm.name,
+    ss.week_date,
+    EXTRACT(DOW FROM ss.week_date) as day_of_week,
+    CASE EXTRACT(DOW FROM ss.week_date)
+        WHEN 1 THEN 'Monday ✅'
+        WHEN 0 THEN 'Sunday ❌'
+        ELSE 'Other Day ❌'
+    END as alignment_status
+FROM scorecard_scores ss
+JOIN scorecard_metrics sm ON sm.id = ss.metric_id
+WHERE sm.import_source = 'ninety.io'
+ORDER BY ss.week_date;
+```
+
+### Import Source Tracking
+- **New Column**: `import_source` in scorecard_metrics
+- **Values**: 'ninety.io', 'manual', 'api', etc.
+- **Purpose**: Track origin for deduplication and debugging
+- **Migration**: Added in October 2025 for import system
+
+### UI Data Requirements
+- **Frontend Calculation**: All averages calculated in `scorecardDateUtils.js`
+- **Historical Display**: Frontend auto-detects and shows historical data
+- **Date Range Logic**: Expands from current quarter to include imported dates
+- **Cell Width**: Group View requires w-28 (112px) minimum for 7-digit numbers
+
 ---
 
-*This database schema documentation is current as of October 2025. The schema continues to evolve with new features. Always check migration files for the latest changes.*
+**Last Updated**: October 20, 2025
+
+*This database schema documentation reflects the production system as of October 2025, including major scorecard import functionality and critical date handling requirements. The schema is stable with only additive changes planned.*
