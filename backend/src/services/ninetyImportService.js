@@ -211,11 +211,17 @@ class NinetyImportService {
     const startDate = new Date(startYear, startMonth - 1, startDay);
     const endDate = new Date(endYear, endMonth - 1, endDay);
     
-    console.log(`  Date range: "${dateRangeStr}" → ${endDate.toISOString().split('T')[0]}`);
+    // IMPORTANT: Scorecard uses Monday as week-ending date
+    // CSV ranges end on Sunday (e.g., "Oct 06 - Oct 12" ends on Sunday Oct 12)
+    // Add 1 day to get Monday as the week-ending date for scorecard storage
+    const weekEndingDate = new Date(endDate);
+    weekEndingDate.setDate(weekEndingDate.getDate() + 1);
+    
+    console.log(`  Date range: "${dateRangeStr}" → Sunday ${endDate.toISOString().split('T')[0]} → Monday ${weekEndingDate.toISOString().split('T')[0]}`);
     
     return {
       startDate: startDate.toISOString().split('T')[0],
-      endDate: endDate.toISOString().split('T')[0]
+      endDate: weekEndingDate.toISOString().split('T')[0]  // Return Monday, not Sunday
     };
   }
 
