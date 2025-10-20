@@ -143,6 +143,9 @@ class NinetyPrioritiesImportService {
           due_date: dueDate ? dueDate.toISOString().split('T')[0] : null,
           completion_percentage: percentage,
           status: status,
+          priority_level: 'medium', // Default priority level for Ninety imports
+          is_company: false, // Default to individual rock, can be updated later
+          milestones: [], // Ninety.io exports don't include milestone data
           team_id: teamId,
           organization_id: organizationId,
           quarter: quarter,

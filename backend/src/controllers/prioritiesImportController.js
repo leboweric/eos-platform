@@ -206,7 +206,7 @@ export const preview = async (req, res) => {
           totalMilestones: analysis.totalMilestones,
           unmappedAssignees: analysis.unmappedAssignees.size
         },
-        priorities: transformedData.priorities.slice(0, 10), // Show first 10 for preview
+        priorities: transformedData.slice(0, 10), // Show first 10 for preview
         warnings: warnings,
         newPriorities: analysis.newPriorities,
         conflicts: analysis.existingPriorities,
@@ -313,8 +313,8 @@ export const execute = async (req, res) => {
 
         // Determine assignee
         let assigneeId = null;
-        if (priority.assignee_name && mappings[priority.assignee_name]) {
-          assigneeId = mappings[priority.assignee_name];
+        if (priority.owner_name && mappings[priority.owner_name]) {
+          assigneeId = mappings[priority.owner_name];
         }
 
         let priorityId;
@@ -333,7 +333,7 @@ export const execute = async (req, res) => {
             WHERE id = $7`,
             [
               priority.description || null,
-              assigneeId || priority.assignee_name,
+              assigneeId || priority.owner_name,
               priority.due_date,
               priority.status,
               priority.priority_level,
@@ -359,11 +359,11 @@ export const execute = async (req, res) => {
               uuidv4(),
               organizationId,
               teamId,
-              quarter,
-              year,
+              currentQuarter,
+              currentYear,
               priority.title,
               priority.description,
-              assigneeId || priority.assignee_name,
+              assigneeId || priority.owner_name,
               priority.due_date,
               priority.status,
               priority.priority_level,
@@ -400,9 +400,9 @@ export const execute = async (req, res) => {
       success: true,
       results: {
         ...results,
-        totalProcessed: transformedData.priorities.length,
-        quarter,
-        year
+        totalProcessed: transformedData.length,
+        quarter: currentQuarter,
+        year: currentYear
       }
     });
   } catch (error) {
