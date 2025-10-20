@@ -12,13 +12,16 @@ const upload = multer({
     fileSize: 10 * 1024 * 1024, // 10MB limit
   },
   fileFilter: (req, file, cb) => {
-    // Accept CSV files
-    if (file.mimetype === 'text/csv' || 
-        file.mimetype === 'application/csv' ||
-        file.originalname.toLowerCase().endsWith('.csv')) {
+    // Accept Excel files only
+    const allowedMimes = [
+      'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet', // .xlsx
+      'application/vnd.ms-excel' // .xls
+    ];
+    
+    if (allowedMimes.includes(file.mimetype)) {
       cb(null, true);
     } else {
-      cb(new Error('Only CSV files are allowed'), false);
+      cb(new Error('Only Excel files (.xlsx, .xls) are allowed'), false);
     }
   }
 });
