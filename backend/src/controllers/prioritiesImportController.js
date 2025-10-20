@@ -92,9 +92,30 @@ export const preview = async (req, res) => {
     const { organizationId, teamId } = req.body;
     const userId = req.user.id;
 
-    // Parse CSV
+    // Parse Excel file
     const parseResults = NinetyPrioritiesImportService.parseExcel(req.file.buffer);
-    const transformedData = NinetyPrioritiesImportService.transformNinetyPriorities(parseResults);
+    
+    // Validate format
+    const validation = NinetyPrioritiesImportService.validateNinetyFormat(parseResults.data);
+    if (!validation.valid) {
+      return res.status(400).json({
+        success: false,
+        error: validation.error
+      });
+    }
+    
+    // Transform data (pass current quarter/year)
+    const currentDate = new Date();
+    const currentQuarter = Math.ceil((currentDate.getMonth() + 1) / 3).toString();
+    const currentYear = currentDate.getFullYear();
+    
+    const transformedData = NinetyPrioritiesImportService.transformNinetyPriorities(
+      parseResults.data, 
+      teamId, 
+      organizationId, 
+      currentQuarter, 
+      currentYear
+    );
     
     // Get existing priorities to check for conflicts
     const existingPriorities = await db.query(
@@ -119,7 +140,7 @@ export const preview = async (req, res) => {
 
     // Analyze priorities for conflicts and assignee mapping
     const analysis = {
-      totalPriorities: transformedData.priorities.length,
+      totalPriorities: transformedData.length,
       newPriorities: [],
       existingPriorities: [],
       assigneeMappings: {},
@@ -133,7 +154,7 @@ export const preview = async (req, res) => {
     };
 
     // Process each priority
-    for (const priority of transformedData.priorities) {
+    for (const priority of transformedData) {
       // Check for existing priority
       const existing = existingByTitle.get(priority.title.toLowerCase());
       
@@ -147,21 +168,21 @@ export const preview = async (req, res) => {
         analysis.newPriorities.push(priority);
       }
 
-      // Count milestones
-      analysis.totalMilestones += priority.milestones.length;
+      // Note: Ninety.io exports don't include milestones in this format
+      // analysis.totalMilestones += 0;
 
       // Try to match assignee
-      if (priority.assignee_name) {
+      if (priority.owner_name) {
         const matchedUserId = await NinetyPrioritiesImportService.matchAssigneeToUser(
-          priority.assignee_name,
+          priority.owner_name,
           organizationId,
           db
         );
         
         if (matchedUserId) {
-          analysis.assigneeMappings[priority.assignee_name] = matchedUserId;
+          analysis.assigneeMappings[priority.owner_name] = matchedUserId;
         } else {
-          analysis.unmappedAssignees.add(priority.assignee_name);
+          analysis.unmappedAssignees.add(priority.owner_name);
         }
       }
     }
@@ -234,10 +255,32 @@ export const execute = async (req, res) => {
 
     // Parse and transform data
     const parseResults = NinetyPrioritiesImportService.parseExcel(req.file.buffer);
-    const transformedData = NinetyPrioritiesImportService.transformNinetyPriorities(parseResults);
+    
+    // Validate format
+    const validation = NinetyPrioritiesImportService.validateNinetyFormat(parseResults.data);
+    if (!validation.valid) {
+      await client.query('ROLLBACK');
+      return res.status(400).json({
+        success: false,
+        error: validation.error
+      });
+    }
+    
+    // Transform data (pass current quarter/year)
+    const currentDate = new Date();
+    const currentQuarter = Math.ceil((currentDate.getMonth() + 1) / 3).toString();
+    const currentYear = currentDate.getFullYear();
+    
+    const transformedData = NinetyPrioritiesImportService.transformNinetyPriorities(
+      parseResults.data, 
+      teamId, 
+      organizationId, 
+      currentQuarter, 
+      currentYear
+    );
     
     console.log('Transformed priorities data summary:');
-    console.log(`- Priorities found: ${transformedData.priorities.length}`);
+    console.log(`- Priorities found: ${transformedData.length}`);
 
     const results = {
       prioritiesCreated: 0,
@@ -246,10 +289,8 @@ export const execute = async (req, res) => {
       milestonesCreated: 0,
       errors: []
     };
-
-    const { quarter, year } = NinetyPrioritiesImportService.getCurrentQuarter();
     
-    for (const priority of transformedData.priorities) {
+    for (const priority of transformedData) {
       try {
         // Find existing priority
         const existing = await NinetyPrioritiesImportService.findExistingPriority(
