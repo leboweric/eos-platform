@@ -6,35 +6,48 @@ class NinetyPrioritiesImportService {
    * Parse Excel file buffer using XLSX
    */
   static parseExcel(fileBuffer) {
-    // Parse Excel file
-    const workbook = XLSX.read(fileBuffer, {
-      cellStyles: true,
-      cellDates: true,
-      defval: ''
-    });
+    try {
+      // Parse Excel file
+      const workbook = XLSX.read(fileBuffer, {
+        cellStyles: true,
+        cellDates: true, // Parse dates as Date objects
+        defval: ''
+      });
 
-    // Get first sheet (assuming priorities data is on first sheet)
-    const sheetName = workbook.SheetNames[0];
-    const sheet = workbook.Sheets[sheetName];
+      console.log('📄 Available sheets:', workbook.SheetNames);
 
-    console.log('📄 Parsing sheet:', sheetName);
+      // Look for the "Rocks" sheet first, then fall back to first sheet
+      let sheetName = 'Rocks';
+      if (!workbook.SheetNames.includes('Rocks')) {
+        console.warn('⚠️  "Rocks" sheet not found, using first sheet:', workbook.SheetNames[0]);
+        sheetName = workbook.SheetNames[0];
+      }
 
-    // Convert sheet to JSON
-    const data = XLSX.utils.sheet_to_json(sheet, {
-      blankrows: false,
-      defval: ''
-    });
+      const sheet = workbook.Sheets[sheetName];
+      console.log('📄 Parsing sheet:', sheetName);
 
-    if (!data || data.length === 0) {
-      throw new Error('Excel file is empty or has no data');
+      // Convert sheet to JSON
+      const data = XLSX.utils.sheet_to_json(sheet, {
+        blankrows: false,
+        defval: ''
+      });
+
+      if (!data || data.length === 0) {
+        throw new Error('Excel file is empty or has no data');
+      }
+
+      console.log('📊 Total rows in Excel:', data.length);
+      console.log('📋 Available columns:', Object.keys(data[0] || {}));
+
+      return {
+        data: data,
+        sheetName: sheetName,
+        errors: [] // XLSX doesn't provide parsing errors like PapaParse
+      };
+    } catch (error) {
+      console.error('Error parsing Excel file:', error);
+      throw new Error(`Failed to parse Excel file: ${error.message}`);
     }
-
-    console.log('📊 Total rows in Excel:', data.length);
-
-    return {
-      data: data,
-      errors: [] // XLSX doesn't provide parsing errors like PapaParse
-    };
   }
 
   /**
@@ -45,13 +58,13 @@ class NinetyPrioritiesImportService {
     
     // Log sample row to understand data types
     if (rows.length > 0) {
-      console.log('📊 Sample row data types:', {
+      console.log('📊 Sample row structure:', {
+        columns: Object.keys(rows[0]),
+        owner: typeof rows[0]?.['Owner'],
+        title: typeof rows[0]?.['Title'],
         dueDate: typeof rows[0]?.['Due Date'],
-        dueDateValue: rows[0]?.['Due Date'],
-        percentComplete: typeof rows[0]?.['% Complete'],
-        percentValue: rows[0]?.['% Complete'],
-        rock: typeof rows[0]?.['Rock'],
-        owner: typeof rows[0]?.['Owner']
+        dueDateIsDate: rows[0]?.['Due Date'] instanceof Date,
+        status: rows[0]?.['Status']
       });
     }
 
@@ -62,15 +75,12 @@ class NinetyPrioritiesImportService {
           if (!value) return null;
           
           if (value instanceof Date) {
-            // Already a Date object from Excel parser
             return value;
           } else if (typeof value === 'number') {
-            // Excel serial date number - convert to JS Date
-            // Excel dates are days since 1900-01-01 (with leap year bug accounted for)
+            // Excel serial date number
             const excelEpoch = new Date(1900, 0, 1);
             return new Date(excelEpoch.getTime() + (value - 2) * 86400000);
           } else if (typeof value === 'string') {
-            // String date - try to parse
             const trimmed = value.trim();
             if (!trimmed) return null;
             const parsed = new Date(trimmed);
@@ -79,20 +89,23 @@ class NinetyPrioritiesImportService {
           return null;
         };
 
-        // Helper function to parse percentage
-        const parsePercentage = (value) => {
-          if (value === null || value === undefined || value === '') return 0;
-          
-          if (typeof value === 'number') {
-            // If it's already a number, check if it's 0-1 or 0-100
-            return value <= 1 ? Math.round(value * 100) : Math.round(value);
-          } else if (typeof value === 'string') {
-            // Remove % sign and parse
-            const cleaned = value.trim().replace('%', '');
-            const parsed = parseFloat(cleaned);
-            return isNaN(parsed) ? 0 : Math.round(parsed);
+        // Helper function to convert Ninety status to AXP status and percentage
+        const convertStatus = (ninetyStatus, completedOn) => {
+          if (!ninetyStatus) {
+            return { status: 'not_started', percentage: 0 };
           }
-          return 0;
+
+          const statusLower = ninetyStatus.toLowerCase();
+          
+          if (statusLower === 'done' || completedOn) {
+            return { status: 'completed', percentage: 100 };
+          } else if (statusLower === 'on-track') {
+            return { status: 'in_progress', percentage: 50 };
+          } else if (statusLower === 'off-track') {
+            return { status: 'at_risk', percentage: 25 };
+          }
+          
+          return { status: 'not_started', percentage: 0 };
         };
 
         // Helper function to safely trim strings
@@ -101,41 +114,52 @@ class NinetyPrioritiesImportService {
           return typeof value === 'string' ? value.trim() : String(value).trim();
         };
 
-        // Parse due date
+        // Parse dates
         const dueDate = parseExcelDate(row['Due Date']);
-
-        // Parse completion percentage
-        const percentComplete = parsePercentage(row['% Complete']);
+        const completedOn = parseExcelDate(row['Completed On']);
+        const createdDate = parseExcelDate(row['Created Date']);
 
         // Extract and clean text fields
-        const title = safeTrim(row['Rock']);
+        const title = safeTrim(row['Title']);
+        const description = safeTrim(row['Description']);
         const ownerName = safeTrim(row['Owner']);
+        const team = safeTrim(row['Team']);
+        const level = safeTrim(row['Level']);
+        const ninetyLink = safeTrim(row['Link']);
         
         // Validate required fields
         if (!title) {
-          console.warn(`⚠️  Row ${index + 1}: Missing Rock title, skipping`);
+          console.warn(`⚠️  Row ${index + 1}: Missing Title, skipping`);
           return null;
         }
 
+        // Convert status
+        const { status, percentage } = convertStatus(row['Status'], completedOn);
+
         const priority = {
           title: title,
-          description: '', // Ninety doesn't export descriptions
+          description: description || '',
           owner_name: ownerName || null,
-          due_date: dueDate ? dueDate.toISOString().split('T')[0] : null, // Format as YYYY-MM-DD
-          completion_percentage: percentComplete,
+          due_date: dueDate ? dueDate.toISOString().split('T')[0] : null,
+          completion_percentage: percentage,
+          status: status,
           team_id: teamId,
           organization_id: organizationId,
           quarter: quarter,
           year: year,
-          status: percentComplete === 100 ? 'completed' : 
-                  percentComplete > 0 ? 'in_progress' : 'not_started',
-          // Metadata for tracking import
+          // Additional metadata
+          ninety_status: row['Status'] || null,
+          ninety_level: level || null,
+          ninety_team: team || null,
+          ninety_link: ninetyLink || null,
+          completed_at: completedOn ? completedOn.toISOString() : null,
+          // Import tracking
           imported_from: 'ninety',
           import_date: new Date().toISOString(),
           original_row_number: index + 1
         };
 
-        console.log(`✅ Row ${index + 1}: "${title}" - ${percentComplete}% complete`);
+        console.log(`✅ Row ${index + 1}: "${title}" - ${row['Status']} (${percentage}%)`);
         return priority;
 
       } catch (error) {
@@ -164,21 +188,21 @@ class NinetyPrioritiesImportService {
       };
     }
 
-    // Check for required Ninety columns
-    const requiredColumns = ['Rock', 'Due Date', '% Complete', 'Owner'];
+    // Check for required Ninety columns (updated to match actual export)
+    const requiredColumns = ['Title', 'Owner', 'Due Date', 'Status'];
     const firstRow = rows[0];
     const missingColumns = requiredColumns.filter(col => !(col in firstRow));
 
     if (missingColumns.length > 0) {
       return {
         valid: false,
-        error: `Missing required columns: ${missingColumns.join(', ')}. Expected columns: ${requiredColumns.join(', ')}`
+        error: `Missing required columns: ${missingColumns.join(', ')}. This doesn't appear to be a Ninety.io Rocks export. Expected columns: ${requiredColumns.join(', ')}`
       };
     }
 
     // Check if we have at least some data
     const rocksWithTitles = rows.filter(row => {
-      const title = row['Rock'];
+      const title = row['Title'];
       return title && (typeof title === 'string' ? title.trim() : String(title).trim());
     });
 
@@ -191,7 +215,12 @@ class NinetyPrioritiesImportService {
 
     return {
       valid: true,
-      rowCount: rocksWithTitles.length
+      rowCount: rocksWithTitles.length,
+      preview: {
+        sampleTitle: firstRow['Title'],
+        sampleOwner: firstRow['Owner'],
+        sampleStatus: firstRow['Status']
+      }
     };
   }
 
