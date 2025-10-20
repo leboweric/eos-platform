@@ -50,6 +50,7 @@ import todoReminderRoutes from './routes/todoReminders.js';
 import meetingSessionsRoutes from './routes/meetingSessions.js';
 import adminRoutes from './routes/admin.js';
 import scorecardImportRoutes from './routes/scorecardImport.js';
+import prioritiesImportRoutes from './routes/priorities-import.js';
 
 // Import middleware
 import { errorHandler } from './middleware/errorHandler.js';
@@ -217,6 +218,7 @@ app.use('/api/v1/auth', authLimiter, authRoutes);
 app.use('/api/v1/auth', authLimiter, oauthRoutes); // OAuth routes
 app.use('/api/v1/admin', adminRoutes); // Admin routes
 app.use('/api/v1/scorecard/import', scorecardImportRoutes); // Scorecard import routes
+app.use('/api/v1/priorities/import', prioritiesImportRoutes); // Priorities import routes
 app.use('/api/v1/users', userRoutes);
 app.use('/api/v1/organizations/:orgId/users', userRoutes); // For org-scoped user operations
 // Apply logo limiter to logo endpoints specifically
