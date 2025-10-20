@@ -2,8 +2,9 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Upload, Download, ArrowLeft, AlertCircle, CheckCircle, FileText, Users, Target } from 'lucide-react';
 import { prioritiesImportService } from '../services/prioritiesImportService';
-import { useAuth } from '../contexts/AuthContext';
-import { useTeam } from '../contexts/TeamContext';
+import { organizationService } from '../services/organizationService';
+import { useAuthStore } from '../stores/authStore';
+import { useDepartment } from '../contexts/DepartmentContext';
 import OwnerMappingSection from '../components/import/OwnerMappingSection';
 import RocksPreviewTable from '../components/import/RocksPreviewTable';
 import ImportSummary from '../components/import/ImportSummary';
@@ -11,14 +12,15 @@ import Layout from '../components/layout/Layout';
 
 const PrioritiesImportPage = () => {
   const navigate = useNavigate();
-  const { user } = useAuth();
-  const { currentTeam, organization } = useTeam();
+  const { user } = useAuthStore();
+  const { selectedDepartment } = useDepartment();
   
   // UI State
   const [step, setStep] = useState('upload'); // upload, preview, mapping, execute, complete
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
+  const [organization, setOrganization] = useState(null);
   
   // File Upload State
   const [selectedFile, setSelectedFile] = useState(null);
@@ -31,7 +33,7 @@ const PrioritiesImportPage = () => {
   const [conflictStrategy, setConflictStrategy] = useState('merge');
   const [importResults, setImportResults] = useState(null);
 
-  // Load template on mount
+  // Load template and organization on mount
   useEffect(() => {
     const loadTemplate = async () => {
       try {
@@ -43,7 +45,17 @@ const PrioritiesImportPage = () => {
       }
     };
     
+    const fetchOrganization = async () => {
+      try {
+        const orgData = await organizationService.getOrganization();
+        setOrganization(orgData);
+      } catch (error) {
+        console.error('Failed to fetch organization:', error);
+      }
+    };
+    
     loadTemplate();
+    fetchOrganization();
   }, []);
 
   // File upload handlers
@@ -101,7 +113,7 @@ const PrioritiesImportPage = () => {
 
   // Preview the import
   const handlePreview = async () => {
-    if (!selectedFile || !currentTeam || !organization) return;
+    if (!selectedFile || !selectedDepartment || !organization) return;
     
     setIsLoading(true);
     setError('');
@@ -110,7 +122,7 @@ const PrioritiesImportPage = () => {
       const formData = new FormData();
       formData.append('file', selectedFile);
       formData.append('organizationId', organization.id);
-      formData.append('teamId', currentTeam.id);
+      formData.append('teamId', selectedDepartment.id);
       
       const preview = await prioritiesImportService.previewImport(formData);
       setPreviewData(preview);
@@ -133,7 +145,7 @@ const PrioritiesImportPage = () => {
 
   // Execute the import
   const handleExecute = async () => {
-    if (!selectedFile || !currentTeam || !organization) return;
+    if (!selectedFile || !selectedDepartment || !organization) return;
     
     setIsLoading(true);
     setError('');
@@ -142,7 +154,7 @@ const PrioritiesImportPage = () => {
       const formData = new FormData();
       formData.append('file', selectedFile);
       formData.append('organizationId', organization.id);
-      formData.append('teamId', currentTeam.id);
+      formData.append('teamId', selectedDepartment.id);
       formData.append('conflictStrategy', conflictStrategy);
       formData.append('assigneeMappings', JSON.stringify(assigneeMappings));
       
