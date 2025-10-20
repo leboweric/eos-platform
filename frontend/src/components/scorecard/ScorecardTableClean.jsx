@@ -38,7 +38,8 @@ const ScorecardTableClean = ({
   noWrapper = false, // Add prop to disable Card wrapper
   maxPeriods = 10, // Control how many weeks/months to show
   meetingMode = false, // New prop for meeting display mode
-  scorecardTimePeriodPreference = '13_week_rolling' // Organization's time period preference
+  scorecardTimePeriodPreference = '13_week_rolling', // Organization's time period preference
+  showHistoricalData = true // Show historical imported data (default true)
 }) => {
   const { user } = useAuthStore();
   const [themeColors, setThemeColors] = useState({
@@ -132,22 +133,62 @@ const ScorecardTableClean = ({
     // Check if we should show current quarter (for non-meeting mode or when showQuarterToDate is true)
     const showQuarterToDate = !meetingMode; // Show QTD in normal scorecard view
     
+    // 🚨 DEBUG: Check what dates actually exist in the scores data
+    const allScoreDates = new Set();
+    if (weeklyScores) {
+      Object.values(weeklyScores).forEach(metricScores => {
+        if (metricScores) {
+          Object.keys(metricScores).forEach(date => {
+            allScoreDates.add(date);
+          });
+        }
+      });
+    }
+    const sortedDates = Array.from(allScoreDates).sort();
+    
+    if (sortedDates.length > 0) {
+      console.log('📊 SCORECARD DEBUG: Found score dates in data:', {
+        earliestDate: sortedDates[0],
+        latestDate: sortedDates[sortedDates.length - 1],
+        totalUniqueDates: sortedDates.length,
+        sampleDates: sortedDates.slice(0, 5),
+        todayDate: today.toISOString().split('T')[0]
+      });
+    }
+    
     if (showQuarterToDate) {
       // Get current quarter start and today
       const quarterStart = getQuarterStart(today);
       const quarterEnd = getQuarterEnd(today);
       const endDate = today < quarterEnd ? today : quarterEnd;
       
+      // Check if we have historical data that predates current quarter
+      let effectiveStartDate = quarterStart;
+      if (showHistoricalData && sortedDates.length > 0) {
+        const earliestDataDate = new Date(sortedDates[0] + 'T12:00:00');
+        if (earliestDataDate < quarterStart) {
+          console.log('⚠️ SCORECARD: Historical data found before current quarter!', {
+            currentQuarterStart: quarterStart.toISOString().split('T')[0],
+            earliestData: sortedDates[0],
+            action: 'Using earliest data date as start',
+            showHistoricalData
+          });
+          effectiveStartDate = earliestDataDate;
+        }
+      }
+      
       console.log('Quarter calculation:', {
         today: today.toISOString().split('T')[0],
         quarter: Math.floor(today.getMonth() / 3) + 1,
         quarterStart: quarterStart.toISOString().split('T')[0],
         quarterEnd: quarterEnd.toISOString().split('T')[0],
-        endDate: endDate.toISOString().split('T')[0]
+        endDate: endDate.toISOString().split('T')[0],
+        effectiveStartDate: effectiveStartDate.toISOString().split('T')[0],
+        hasHistoricalData: effectiveStartDate < quarterStart
       });
       
-      // Generate all weeks from quarter start to current date
-      let currentWeek = getWeekStartDate(quarterStart);
+      // Generate all weeks from effective start date to current date
+      let currentWeek = getWeekStartDate(effectiveStartDate);
       while (currentWeek <= endDate) {
         labels.push(formatWeekLabel(currentWeek));
         weekDates.push(currentWeek.toISOString().split('T')[0]);
@@ -157,15 +198,16 @@ const ScorecardTableClean = ({
         currentWeek.setDate(currentWeek.getDate() + 7);
       }
       
-      // For quarter view, don't trim - show all weeks in the quarter
-      // Only trim if we somehow have more than 13 weeks (a quarter can't have more than that)
-      if (weekDates.length > 13) {
-        console.warn('Quarter has more than 13 weeks, trimming to 13');
-        labels.splice(0, weekDates.length - 13);
-        weekDates.splice(0, weekDates.length - 13);
+      // For historical data view, we may have many weeks - limit to reasonable amount
+      // Show most recent 26 weeks (half year) if we have more than that
+      if (weekDates.length > 26) {
+        console.warn(`Too many weeks (${weekDates.length}), trimming to most recent 26`);
+        const trimCount = weekDates.length - 26;
+        labels.splice(0, trimCount);
+        weekDates.splice(0, trimCount);
       }
       
-      console.log(`Showing Q${Math.floor(today.getMonth() / 3) + 1} weeks:`, weekDates);
+      console.log(`📊 SCORECARD: Showing ${weekDates.length} weeks from ${weekDates[0]} to ${weekDates[weekDates.length-1]}`);
     } else {
       // Meeting mode - Use actual dates from the data instead of generating them
       const weeksToShow = Math.min(maxPeriods, 10);
@@ -198,6 +240,15 @@ const ScorecardTableClean = ({
         console.log('Meeting mode - No data found, using generated dates:', weekDates);
       }
     }
+    
+    // Final debug output
+    console.log('📊 SCORECARD: Final week configuration:', {
+      mode: meetingMode ? 'meeting' : 'scorecard',
+      weekCount: weekDates.length,
+      dateRange: weekDates.length > 0 ? `${weekDates[0]} to ${weekDates[weekDates.length-1]}` : 'no dates',
+      hasScores: sortedDates.length > 0,
+      scoreCount: sortedDates.length
+    });
     
     if (meetingMode) {
       console.log('WeeklyMeeting - Generated week dates:', weekDates);

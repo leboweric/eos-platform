@@ -302,6 +302,7 @@ AXP (Adaptive Execution Platform) is the world's first business execution platfo
 ✅ **Strategic Planning** - Business blueprints with core values  
 ✅ **Quarterly Priorities** - Goal tracking with milestones  
 ✅ **Scorecard Metrics** - KPI monitoring with charts  
+✅ **Scorecard Import** - Ninety.io CSV import with deduplication  
 ✅ **Meeting Facilitation** - 5 meeting types with real-time sync  
 ✅ **Issues Management** - IDS with voting and prioritization  
 ✅ **Task Management** - Todo tracking with assignments  
@@ -326,13 +327,17 @@ AXP (Adaptive Execution Platform) is the world's first business execution platfo
 - **Meeting Concurrency**: Tested with 10+ simultaneous participants
 - **Document Storage**: 50+ documents in PostgreSQL
 
-### Recent Changes (October 2024)
+### Recent Changes (October 2024 - October 2025)
 1. **Configurable Scorecard Time Periods** - Org-level setting for quarterly vs rolling views
 2. **Configurable Rock Grouping** - Display by Company/Individual or by Owner
 3. **Adaptive Meeting Join Button** - Eliminates duplicate meeting risk with state-aware UI
 4. **Database Schema Additions** - user_login_tracking table, scorecard org_id column
 5. **Sentry ES Module Fix** - Proper initialization with --import flag
 6. **Field Name Standardization** - is_company_priority used throughout for company rocks
+7. **Scorecard Import Feature** - Complete Ninety.io CSV import with deduplication
+8. **Database Column Fixes** - Fixed scorecard_metrics/scores schema mismatches
+9. **Context Menu Updates** - Removed delete buttons from Issues, unified Rock review menus
+10. **Import Data Validation** - Comprehensive column mapping and constraint validation
 
 ## 7. File/Directory Structure
 
@@ -654,6 +659,6 @@ WHERE deleted_at IS NOT NULL;
 
 ---
 
-**Last Updated**: October 2024
+**Last Updated**: October 2025
 
-*This architecture documentation represents the current state of the AXP platform as of October 2024. The system is in active development with regular updates and improvements. For specific implementation details, refer to the codebase and inline documentation.*
+*This architecture documentation represents the current state of the AXP platform as of October 2025. The system is in active development with regular updates and improvements. For specific implementation details, refer to the codebase and inline documentation.*
