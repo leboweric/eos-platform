@@ -8,7 +8,6 @@ import { useDepartment } from '../contexts/DepartmentContext';
 import OwnerMappingSection from '../components/import/OwnerMappingSection';
 import RocksPreviewTable from '../components/import/RocksPreviewTable';
 import ImportSummary from '../components/import/ImportSummary';
-import Layout from '../components/layout/Layout';
 
 const PrioritiesImportPage = () => {
   const navigate = useNavigate();
@@ -213,8 +212,7 @@ const PrioritiesImportPage = () => {
   };
 
   return (
-    <Layout>
-      <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50/30 to-indigo-50/30">
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50/30 to-indigo-50/30">
         <div className="max-w-6xl mx-auto p-6">
           {/* Header */}
           <div className="mb-8">
@@ -605,7 +603,6 @@ const PrioritiesImportPage = () => {
           </div>
         </div>
       </div>
-    </Layout>
   );
 };
 
