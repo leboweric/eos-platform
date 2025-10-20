@@ -143,7 +143,8 @@ class NinetyPrioritiesImportService {
         const priority = {
           title: title,
           description: description || '',
-          owner_name: ownerName || null, // Will be mapped to owner_id later
+          owner_name: ownerName || null, // Used for user mapping in controller
+          assignee: ownerName || null,    // Used for display in frontend preview
           due_date: dueDate ? dueDate.toISOString().split('T')[0] : null,
           progress: progress, // 0-100 integer
           status: status, // 'on-track', 'off-track', 'completed'
