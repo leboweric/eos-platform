@@ -456,10 +456,10 @@ export const execute = async (req, res) => {
         await client.query(
           `INSERT INTO priority_milestones (
             id, priority_id, title, due_date,
-            completed, completed_at, organization_id,
+            completed, completed_at,
             created_at, updated_at
           ) VALUES (
-            $1, $2, $3, $4, $5, $6, $7, NOW(), NOW()
+            $1, $2, $3, $4, $5, $6, NOW(), NOW()
           )`,
           [
             uuidv4(),
@@ -467,8 +467,7 @@ export const execute = async (req, res) => {
             milestone.title,
             milestone.due_date,
             milestone.completed,
-            milestone.completed_at,
-            organizationId
+            milestone.completed_at
           ]
         );
 
