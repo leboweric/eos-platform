@@ -48,11 +48,11 @@ const AdminToolsPage = () => {
       description: 'Bulk import quarterly priorities and rocks from external systems',
       icon: Target,
       color: 'purple',
-      href: '/admin/import-priorities',
-      available: false,
+      href: '/priorities/import',
+      available: true,
       stats: {
-        label: 'Coming Soon',
-        value: 'Q1 2025'
+        label: 'Source',
+        value: 'Ninety.io'
       }
     },
     {
