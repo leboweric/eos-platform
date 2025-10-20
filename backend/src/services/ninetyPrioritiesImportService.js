@@ -16,38 +16,143 @@ class NinetyPrioritiesImportService {
 
       console.log('📄 Available sheets:', workbook.SheetNames);
 
-      // Look for the "Rocks" sheet first, then fall back to first sheet
-      let sheetName = 'Rocks';
+      // Parse Rocks sheet
+      let rocksSheetName = 'Rocks';
       if (!workbook.SheetNames.includes('Rocks')) {
         console.warn('⚠️  "Rocks" sheet not found, using first sheet:', workbook.SheetNames[0]);
-        sheetName = workbook.SheetNames[0];
+        rocksSheetName = workbook.SheetNames[0];
       }
 
-      const sheet = workbook.Sheets[sheetName];
-      console.log('📄 Parsing sheet:', sheetName);
+      const rocksSheet = workbook.Sheets[rocksSheetName];
+      console.log('📄 Parsing Rocks sheet:', rocksSheetName);
 
-      // Convert sheet to JSON
-      const data = XLSX.utils.sheet_to_json(sheet, {
+      const rocksData = XLSX.utils.sheet_to_json(rocksSheet, {
         blankrows: false,
         defval: ''
       });
 
-      if (!data || data.length === 0) {
-        throw new Error('Excel file is empty or has no data');
+      if (!rocksData || rocksData.length === 0) {
+        throw new Error('Rocks sheet is empty or has no data');
       }
 
-      console.log('📊 Total rows in Excel:', data.length);
-      console.log('📋 Available columns:', Object.keys(data[0] || {}));
+      console.log('📊 Total rocks in Excel:', rocksData.length);
+      console.log('📋 Rocks columns:', Object.keys(rocksData[0] || {}));
+
+      // Parse Milestones sheet (optional)
+      let milestonesData = [];
+      if (workbook.SheetNames.includes('Milestones')) {
+        const milestonesSheet = workbook.Sheets['Milestones'];
+        console.log('📄 Parsing Milestones sheet');
+
+        milestonesData = XLSX.utils.sheet_to_json(milestonesSheet, {
+          blankrows: false,
+          defval: ''
+        });
+
+        console.log('📊 Total milestones in Excel:', milestonesData.length);
+        if (milestonesData.length > 0) {
+          console.log('📋 Milestones columns:', Object.keys(milestonesData[0] || {}));
+        }
+      } else {
+        console.log('ℹ️  No Milestones sheet found - priorities will be imported without milestones');
+      }
 
       return {
-        data: data,
-        sheetName: sheetName,
-        errors: [] // XLSX doesn't provide parsing errors like PapaParse
+        rocksData: rocksData,
+        milestonesData: milestonesData,
+        sheetNames: { rocks: rocksSheetName, milestones: 'Milestones' },
+        errors: []
       };
     } catch (error) {
       console.error('Error parsing Excel file:', error);
       throw new Error(`Failed to parse Excel file: ${error.message}`);
     }
+  }
+
+  /**
+   * Transform Ninety.io milestones to AXP format
+   */
+  static transformNinetyMilestones(milestonesData, organizationId) {
+    if (!milestonesData || milestonesData.length === 0) {
+      console.log('ℹ️  No milestones data to transform');
+      return [];
+    }
+
+    console.log(`🔄 Transforming ${milestonesData.length} milestones from Ninety format`);
+
+    const transformed = milestonesData.map((row, index) => {
+      try {
+        // Helper: Parse Excel dates
+        const parseExcelDate = (value) => {
+          if (!value) return null;
+          
+          if (value instanceof Date) {
+            return value;
+          } else if (typeof value === 'number') {
+            const excelEpoch = new Date(1900, 0, 1);
+            return new Date(excelEpoch.getTime() + (value - 2) * 86400000);
+          } else if (typeof value === 'string') {
+            const trimmed = value.trim();
+            if (!trimmed) return null;
+            const parsed = new Date(trimmed);
+            return isNaN(parsed.getTime()) ? null : parsed;
+          }
+          return null;
+        };
+
+        // Helper: Safe trim
+        const safeTrim = (value) => {
+          if (!value) return '';
+          return typeof value === 'string' ? value.trim() : String(value).trim();
+        };
+
+        // Extract milestone data based on Ninety export structure
+        const title = safeTrim(row['Title']);
+        const description = safeTrim(row['Description']);
+        const rocksName = safeTrim(row['Rocks Name']); // This links to parent priority
+        const owner = safeTrim(row['Owner']);
+        const dueDate = parseExcelDate(row['Due Date']);
+        const completedOn = parseExcelDate(row['Completed On']);
+
+        // Validate required fields
+        if (!title) {
+          console.warn(`⚠️  Milestone row ${index + 1}: Missing Title, skipping`);
+          return null;
+        }
+
+        if (!rocksName) {
+          console.warn(`⚠️  Milestone row ${index + 1}: Missing Rocks Name (parent link), skipping`);
+          return null;
+        }
+
+        const milestone = {
+          title: title,
+          description: description || '',
+          rocks_name: rocksName, // Used to link to parent priority
+          owner_name: owner || null,
+          due_date: dueDate ? dueDate.toISOString().split('T')[0] : null,
+          completed: !!completedOn,
+          completed_at: completedOn ? completedOn.toISOString().split('T')[0] : null,
+          organization_id: organizationId,
+          // Metadata
+          ninety_link: safeTrim(row['Link']) || null
+        };
+
+        console.log(`✅ Milestone ${index + 1}: "${title}" for rock "${rocksName}"`);
+        return milestone;
+
+      } catch (error) {
+        console.error(`❌ Error transforming milestone row ${index + 1}:`, error.message);
+        console.error('Row data:', row);
+        return null;
+      }
+    });
+
+    const validMilestones = transformed.filter(m => m !== null);
+    
+    console.log(`✅ Successfully transformed ${validMilestones.length} of ${milestonesData.length} milestones`);
+    
+    return validMilestones;
   }
 
   /**
@@ -185,17 +290,19 @@ class NinetyPrioritiesImportService {
   /**
    * Validate Ninety.io export format
    */
-  static validateNinetyFormat(rows) {
-    if (!rows || rows.length === 0) {
+  static validateNinetyFormat(parseResults) {
+    const { rocksData, milestonesData } = parseResults;
+    
+    if (!rocksData || rocksData.length === 0) {
       return {
         valid: false,
-        error: 'No data rows found in file'
+        error: 'No rocks data found in file'
       };
     }
 
     // Check for required Ninety columns (updated to match actual export)
     const requiredColumns = ['Title', 'Owner', 'Due Date', 'Status'];
-    const firstRow = rows[0];
+    const firstRow = rocksData[0];
     const missingColumns = requiredColumns.filter(col => !(col in firstRow));
 
     if (missingColumns.length > 0) {
@@ -206,7 +313,7 @@ class NinetyPrioritiesImportService {
     }
 
     // Check if we have at least some data
-    const rocksWithTitles = rows.filter(row => {
+    const rocksWithTitles = rocksData.filter(row => {
       const title = row['Title'];
       return title && (typeof title === 'string' ? title.trim() : String(title).trim());
     });
@@ -220,7 +327,8 @@ class NinetyPrioritiesImportService {
 
     return {
       valid: true,
-      rowCount: rocksWithTitles.length,
+      rocksCount: rocksWithTitles.length,
+      milestonesCount: milestonesData ? milestonesData.length : 0,
       preview: {
         sampleTitle: firstRow['Title'],
         sampleOwner: firstRow['Owner'],

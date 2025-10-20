@@ -118,7 +118,7 @@ export const preview = async (req, res) => {
     const parseResults = NinetyPrioritiesImportService.parseExcel(req.file.buffer);
     
     // Validate format
-    const validation = NinetyPrioritiesImportService.validateNinetyFormat(parseResults.data);
+    const validation = NinetyPrioritiesImportService.validateNinetyFormat(parseResults);
     if (!validation.valid) {
       return res.status(400).json({
         success: false,
@@ -131,12 +131,17 @@ export const preview = async (req, res) => {
     const currentQuarter = Math.ceil((currentDate.getMonth() + 1) / 3).toString();
     const currentYear = currentDate.getFullYear();
     
-    const transformedData = NinetyPrioritiesImportService.transformNinetyPriorities(
-      parseResults.data, 
+    const transformedPriorities = NinetyPrioritiesImportService.transformNinetyPriorities(
+      parseResults.rocksData, 
       teamId, 
       organizationId, 
       currentQuarter, 
       currentYear
+    );
+    
+    const transformedMilestones = NinetyPrioritiesImportService.transformNinetyMilestones(
+      parseResults.milestonesData,
+      organizationId
     );
     
     // Get existing priorities to check for conflicts
@@ -162,7 +167,7 @@ export const preview = async (req, res) => {
 
     // Analyze priorities for conflicts and assignee mapping
     const analysis = {
-      totalPriorities: transformedData.length,
+      totalPriorities: transformedPriorities.length,
       newPriorities: [],
       existingPriorities: [],
       assigneeMappings: {},
@@ -172,11 +177,11 @@ export const preview = async (req, res) => {
         name: `${u.first_name} ${u.last_name}`,
         email: u.email
       })),
-      totalMilestones: 0
+      totalMilestones: transformedMilestones.length
     };
 
     // Process each priority
-    for (const priority of transformedData) {
+    for (const priority of transformedPriorities) {
       // Check for existing priority
       const existing = existingByTitle.get(priority.title.toLowerCase());
       
@@ -228,7 +233,7 @@ export const preview = async (req, res) => {
           totalMilestones: analysis.totalMilestones,
           unmappedAssignees: analysis.unmappedAssignees.size
         },
-        priorities: transformedData.slice(0, 10), // Show first 10 for preview
+        priorities: transformedPriorities.slice(0, 10), // Show first 10 for preview
         warnings: warnings,
         newPriorities: analysis.newPriorities,
         conflicts: analysis.existingPriorities,
@@ -279,7 +284,7 @@ export const execute = async (req, res) => {
     const parseResults = NinetyPrioritiesImportService.parseExcel(req.file.buffer);
     
     // Validate format
-    const validation = NinetyPrioritiesImportService.validateNinetyFormat(parseResults.data);
+    const validation = NinetyPrioritiesImportService.validateNinetyFormat(parseResults);
     if (!validation.valid) {
       await client.query('ROLLBACK');
       return res.status(400).json({
@@ -293,16 +298,22 @@ export const execute = async (req, res) => {
     const currentQuarter = Math.ceil((currentDate.getMonth() + 1) / 3).toString();
     const currentYear = currentDate.getFullYear();
     
-    const transformedData = NinetyPrioritiesImportService.transformNinetyPriorities(
-      parseResults.data, 
+    const transformedPriorities = NinetyPrioritiesImportService.transformNinetyPriorities(
+      parseResults.rocksData, 
       teamId, 
       organizationId, 
       currentQuarter, 
       currentYear
     );
     
-    console.log('Transformed priorities data summary:');
-    console.log(`- Priorities found: ${transformedData.length}`);
+    const transformedMilestones = NinetyPrioritiesImportService.transformNinetyMilestones(
+      parseResults.milestonesData,
+      organizationId
+    );
+    
+    console.log('Transformed data summary:');
+    console.log(`- Priorities found: ${transformedPriorities.length}`);
+    console.log(`- Milestones found: ${transformedMilestones.length}`);
 
     const results = {
       prioritiesCreated: 0,
@@ -312,7 +323,10 @@ export const execute = async (req, res) => {
       errors: []
     };
     
-    for (const priority of transformedData) {
+    // Create mapping of priority titles to IDs for milestone linking
+    const priorityTitleToId = new Map();
+    
+    for (const priority of transformedPriorities) {
       try {
         // Find existing priority
         const existing = await NinetyPrioritiesImportService.findExistingPriority(
@@ -411,12 +425,61 @@ export const execute = async (req, res) => {
           results.prioritiesCreated++;
         }
 
-        // Note: Ninety.io exports don't include milestone data
+        // Store priority ID for milestone linking
+        if (priorityId) {
+          priorityTitleToId.set(priority.title, priorityId);
+        }
 
       } catch (error) {
         console.error(`Error processing priority "${priority.title}":`, error);
         results.errors.push({
           priority: priority.title,
+          error: error.message
+        });
+      }
+    }
+
+    // Now import milestones and link them to priorities
+    console.log(`🔗 Importing ${transformedMilestones.length} milestones...`);
+    
+    for (const milestone of transformedMilestones) {
+      try {
+        // Find the parent priority by rock name
+        const parentPriorityId = priorityTitleToId.get(milestone.rocks_name);
+        
+        if (!parentPriorityId) {
+          console.warn(`⚠️  Could not find parent priority for milestone "${milestone.title}" (rock: "${milestone.rocks_name}")`);
+          continue;
+        }
+
+        // Insert milestone
+        await client.query(
+          `INSERT INTO priority_milestones (
+            id, priority_id, title, description, due_date,
+            completed, completed_at, organization_id,
+            created_at, updated_at
+          ) VALUES (
+            $1, $2, $3, $4, $5, $6, $7, $8, NOW(), NOW()
+          )`,
+          [
+            uuidv4(),
+            parentPriorityId,
+            milestone.title,
+            milestone.description,
+            milestone.due_date,
+            milestone.completed,
+            milestone.completed_at,
+            organizationId
+          ]
+        );
+
+        results.milestonesCreated++;
+        console.log(`✅ Created milestone: "${milestone.title}" for "${milestone.rocks_name}"`);
+
+      } catch (error) {
+        console.error(`❌ Error importing milestone "${milestone.title}":`, error.message);
+        results.errors.push({
+          milestone: milestone.title,
           error: error.message
         });
       }
@@ -428,7 +491,7 @@ export const execute = async (req, res) => {
       success: true,
       results: {
         ...results,
-        totalProcessed: transformedData.length,
+        totalProcessed: transformedPriorities.length,
         quarter: currentQuarter,
         year: currentYear
       }
