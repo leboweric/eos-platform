@@ -3,6 +3,28 @@ import db from '../config/database.js';
 import { v4 as uuidv4 } from 'uuid';
 
 /**
+ * Helper function to find user by name
+ */
+async function findUserByName(client, fullName, organizationId) {
+  if (!fullName) return null;
+  
+  const nameParts = fullName.trim().split(' ');
+  const firstName = nameParts[0];
+  const lastName = nameParts.slice(1).join(' ');
+
+  const query = `
+    SELECT id FROM users 
+    WHERE organization_id = $1 
+    AND LOWER(first_name) = LOWER($2)
+    AND LOWER(last_name) = LOWER($3)
+    LIMIT 1
+  `;
+
+  const result = await client.query(query, [organizationId, firstName, lastName]);
+  return result.rows[0]?.id || null;
+}
+
+/**
  * Get import template information
  */
 export const getTemplate = async (req, res) => {
@@ -311,10 +333,19 @@ export const execute = async (req, res) => {
           }
         }
 
-        // Determine assignee
-        let assigneeId = null;
-        if (priority.owner_name && mappings[priority.owner_name]) {
-          assigneeId = mappings[priority.owner_name];
+        // Determine owner (assignee)
+        let ownerId = null;
+        if (priority.owner_name) {
+          if (mappings && mappings[priority.owner_name]) {
+            // Use explicit mapping if provided
+            ownerId = mappings[priority.owner_name];
+          } else {
+            // Auto-match by name if no explicit mapping
+            ownerId = await findUserByName(client, priority.owner_name, organizationId);
+            if (!ownerId) {
+              console.warn(`⚠️  Could not find user for: ${priority.owner_name}`);
+            }
+          }
         }
 
         let priorityId;
@@ -324,7 +355,7 @@ export const execute = async (req, res) => {
           await client.query(
             `UPDATE quarterly_priorities SET
               description = COALESCE($1, description),
-              assignee = COALESCE($2, assignee),
+              owner_id = COALESCE($2, owner_id),
               due_date = COALESCE($3, due_date),
               status = $4,
               priority_level = $5,
@@ -333,7 +364,7 @@ export const execute = async (req, res) => {
             WHERE id = $7`,
             [
               priority.description || null,
-              assigneeId || priority.owner_name,
+              ownerId,
               priority.due_date,
               priority.status,
               priority.priority_level,
@@ -348,7 +379,7 @@ export const execute = async (req, res) => {
           const newPriority = await client.query(
             `INSERT INTO quarterly_priorities (
               id, organization_id, team_id, quarter, year,
-              title, description, assignee, due_date, status,
+              title, description, owner_id, due_date, status,
               priority_level, is_company, created_by,
               created_at, updated_at
             ) VALUES (
@@ -363,7 +394,7 @@ export const execute = async (req, res) => {
               currentYear,
               priority.title,
               priority.description,
-              assigneeId || priority.owner_name,
+              ownerId,
               priority.due_date,
               priority.status,
               priority.priority_level,
