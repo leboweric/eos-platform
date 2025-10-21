@@ -2,40 +2,48 @@ import pool from '../config/database.js';
 
 // Start a new meeting session
 export const startSession = async (req, res) => {
-  console.log('🚨🚨🚨 START SESSION FUNCTION CALLED 🚨🚨🚨');
-  console.log('🚨 Request method:', req.method);
-  console.log('🚨 Request URL:', req.url);
-  console.log('🚨 Request params:', req.params);
-  console.log('🚨 Request body:', req.body);
+  const { team_id: teamId, organization_id: orgId, meeting_type } = req.body;
+  const userId = req.user.id || req.user.userId;
+  
+  console.log('🚨 === MEETING START REQUEST DEBUG ===');
+  console.log(`🚨 User ID: ${userId}`);
+  console.log(`🚨 Team ID from request: ${teamId}`);
+  console.log(`🚨 Meeting Type: ${meeting_type}`);
+  console.log(`🚨 Full request body:`, JSON.stringify(req.body, null, 2));
   
   const client = await pool.connect();
   try {
-    const { organization_id, team_id, meeting_type } = req.body;
-    const user_id = req.user.id || req.user.userId;
-
-    console.log(`🔐 CRITICAL TEAM MEMBERSHIP CHECK`);
-    console.log(`🔐 User ID: ${user_id}`);
-    console.log(`🔐 Team ID: ${team_id} (from req.body.team_id)`);
-    console.log(`🔐 Organization ID: ${organization_id}`);
-
-    // 🔒 VERIFY USER IS A MEMBER OF THIS TEAM
-    const memberCheck = await client.query(`
-      SELECT 1 FROM team_members 
-      WHERE user_id = $1 AND team_id = $2
-    `, [user_id, team_id]);
+    // Look up what team this actually is
+    const teamInfo = await client.query(
+      `SELECT id, name, is_leadership_team FROM teams WHERE id = $1`,
+      [teamId]
+    );
     
-    console.log(`🔐 Member check query result: ${memberCheck.rows.length} rows found`);
+    console.log(`🚨 Team from database:`, JSON.stringify(teamInfo.rows[0], null, 2));
+    
+    // Now check membership
+    const memberCheck = await client.query(
+      `SELECT user_id, team_id, role
+       FROM team_members 
+       WHERE user_id = $1 AND team_id = $2`,
+      [userId, teamId]
+    );
+    
+    console.log(`🚨 Membership check returned ${memberCheck.rows.length} rows`);
+    if (memberCheck.rows.length > 0) {
+      console.log(`🚨 Membership data:`, JSON.stringify(memberCheck.rows[0], null, 2));
+    }
     
     if (memberCheck.rows.length === 0) {
-      console.log(`❌ BLOCKED: User ${user_id} is NOT a member of team ${team_id}`);
+      console.log(`❌ BLOCKED: User ${userId} is NOT a member of team ${teamId}`);
       return res.status(403).json({
         success: false,
         error: 'TEAM_MEMBERSHIP_REQUIRED',
         message: 'You cannot start a meeting for a team you are not a member of.'
       });
     }
-
-    console.log(`✅ ALLOWED: User ${user_id} IS a member of team ${team_id}`);
+    
+    console.log(`✅ ALLOWED: User ${userId} IS a member of team ${teamId}`);
 
     // Check if there's already an active session for this team
     const existingSession = await client.query(`
@@ -48,7 +56,7 @@ export const startSession = async (req, res) => {
         AND ms.is_active = true
       ORDER BY ms.created_at DESC
       LIMIT 1
-    `, [team_id, meeting_type]);
+    `, [teamId, meeting_type]);
 
     if (existingSession.rows.length > 0) {
       // Return existing session with full details
@@ -72,7 +80,7 @@ export const startSession = async (req, res) => {
         total_paused_duration
       ) VALUES ($1, $2, $3, $4, NOW(), true, false, 0)
       RETURNING *
-    `, [organization_id, team_id, meeting_type, user_id]);
+    `, [orgId, teamId, meeting_type, userId]);
 
     res.status(201).json({
       session: result.rows[0],
