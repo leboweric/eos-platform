@@ -253,5 +253,18 @@ export const quarterlyPrioritiesService = {
       console.error('Download failed:', error);
       throw error;
     }
+  },
+
+  // Archive all completed priorities for a team
+  async archiveCompletedPriorities(orgId, teamId) {
+    try {
+      const response = await axios.put(
+        `/organizations/${orgId}/teams/${teamId}/quarterly-priorities/archive-completed`
+      );
+      return response.data;
+    } catch (error) {
+      console.error('Error archiving completed priorities:', error);
+      throw error;
+    }
   }
 };

@@ -56,6 +56,9 @@ router.get('/current', getCurrentPriorities);
 // Get archived priorities
 router.get('/archived', getArchivedPriorities);
 
+// Archive completed priorities (bulk operation)
+router.put('/archive-completed', archivePriority);
+
 // Priority CRUD
 router.post('/priorities', createPriority);
 router.put('/priorities/:priorityId', updatePriority);

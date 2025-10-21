@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
+import toast from 'react-hot-toast';
 import { useParams } from 'react-router-dom';
 import { useAuthStore } from '../stores/authStore';
 import { format, addDays } from 'date-fns';
@@ -230,6 +231,7 @@ const WeeklyAccountabilityMeetingPage = () => {
   const [monthlyNotes, setMonthlyNotes] = useState({});
   const [priorities, setPriorities] = useState([]);
   const [quarterlyPriorities, setQuarterlyPriorities] = useState([]);
+  const [completedPrioritiesCount, setCompletedPrioritiesCount] = useState(0);
   const [shortTermIssues, setShortTermIssues] = useState([]);
   const [longTermIssues, setLongTermIssues] = useState([]);
   const [issueTimeline, setIssueTimeline] = useState('short_term');
@@ -3776,16 +3778,47 @@ const WeeklyAccountabilityMeetingPage = () => {
                       </CardTitle>
                       <CardDescription className="mt-2 text-slate-600 font-medium">Check progress on quarterly priorities</CardDescription>
                     </div>
-                    {priorities.length > 0 && (
-                      <div className="text-center bg-white/50 rounded-xl px-4 py-2 border border-white/30">
-                        <span className="text-3xl font-bold bg-gradient-to-r from-slate-900 to-slate-700 bg-clip-text text-transparent">
-                          {Math.round((priorities.filter(p => p.status === 'complete' || p.status === 'completed').length / priorities.length) * 100)}%
-                        </span>
-                        <p className="text-sm text-slate-600 font-medium">
-                          {priorities.filter(p => p.status === 'complete' || p.status === 'completed').length} of {priorities.length} complete
-                        </p>
-                      </div>
-                    )}
+                    <div className="flex items-center gap-4">
+                      {priorities.length > 0 && (
+                        <div className="text-center bg-white/50 rounded-xl px-4 py-2 border border-white/30">
+                          <span className="text-3xl font-bold bg-gradient-to-r from-slate-900 to-slate-700 bg-clip-text text-transparent">
+                            {Math.round((priorities.filter(p => p.status === 'complete' || p.status === 'completed').length / priorities.length) * 100)}%
+                          </span>
+                          <p className="text-sm text-slate-600 font-medium">
+                            {priorities.filter(p => p.status === 'complete' || p.status === 'completed').length} of {priorities.length} complete
+                          </p>
+                        </div>
+                      )}
+                      {(() => {
+                        const completedCount = priorities.filter(p => p.status === 'complete' || p.status === 'completed').length;
+                        return completedCount > 0 && (
+                          <Button 
+                            variant="outline"
+                            size="sm"
+                            onClick={async () => {
+                              if (!window.confirm(`Archive ${completedCount} completed ${completedCount === 1 ? 'priority' : 'priorities'}?`)) {
+                                return;
+                              }
+                              try {
+                                const orgId = user?.organizationId || user?.organization_id;
+                                const cleanTeamId = (teamId === 'null' || teamId === 'undefined') ? null : teamId;
+                                const effectiveTeamId = getEffectiveTeamId(cleanTeamId, user);
+                                await quarterlyPrioritiesService.archiveCompletedPriorities(orgId, effectiveTeamId);
+                                toast.success(`Successfully archived ${completedCount} completed ${completedCount === 1 ? 'priority' : 'priorities'}`);
+                                await fetchPrioritiesData();
+                              } catch (error) {
+                                console.error('Error archiving completed priorities:', error);
+                                toast.error('Failed to archive completed priorities');
+                              }
+                            }}
+                            className="bg-white/80 backdrop-blur-sm border border-orange-200 hover:bg-orange-50 hover:border-orange-300 transition-all"
+                          >
+                            <Archive className="mr-2 h-4 w-4 text-orange-600" />
+                            Archive Completed ({completedCount})
+                          </Button>
+                        );
+                      })()}
+                    </div>
                   </div>
                   <div className="text-sm text-slate-600 bg-white/80 backdrop-blur-sm px-4 py-2 rounded-full border border-white/30 shadow-sm font-medium">
                     5 minutes

@@ -1,6 +1,7 @@
 import { useState, useEffect, Component } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { format, addMonths, startOfQuarter, endOfQuarter, addDays } from 'date-fns';
+import toast from 'react-hot-toast';
 import { useAuthStore } from '../stores/authStore';
 import { quarterlyPrioritiesService } from '../services/quarterlyPrioritiesService';
 import { organizationService } from '../services/organizationService';
@@ -138,6 +139,7 @@ const QuarterlyPrioritiesPageClean = () => {
   const [teamMemberPriorities, setTeamMemberPriorities] = useState({});
   const [teamMembers, setTeamMembers] = useState([]);
   const [archivedQuarters, setArchivedQuarters] = useState({});
+  const [completedNotArchivedCount, setCompletedNotArchivedCount] = useState(0);
   
   // Expansion states for collapsible sections
   const [expandedSections, setExpandedSections] = useState({
@@ -275,6 +277,64 @@ const QuarterlyPrioritiesPageClean = () => {
       setCompanyPriorities([]);
       setTeamMembers([]);
       setTeamMemberPriorities({});
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Calculate completed but not archived count
+  useEffect(() => {
+    const calculateCompletedCount = () => {
+      let completedCount = 0;
+      
+      // Count completed company priorities
+      companyPriorities.forEach(priority => {
+        if (priority.status === 'completed' || priority.completion_percentage === 100) {
+          completedCount++;
+        }
+      });
+      
+      // Count completed team member priorities
+      Object.values(teamMemberPriorities).forEach(memberPriorities => {
+        memberPriorities.forEach(priority => {
+          if (priority.status === 'completed' || priority.completion_percentage === 100) {
+            completedCount++;
+          }
+        });
+      });
+      
+      setCompletedNotArchivedCount(completedCount);
+    };
+    
+    if (!showArchived) {
+      calculateCompletedCount();
+    }
+  }, [companyPriorities, teamMemberPriorities, showArchived]);
+
+  const handleArchiveCompleted = async () => {
+    if (completedNotArchivedCount === 0) {
+      toast.error('No completed priorities to archive');
+      return;
+    }
+    
+    if (!window.confirm(`Archive ${completedNotArchivedCount} completed ${completedNotArchivedCount === 1 ? 'priority' : 'priorities'}?`)) {
+      return;
+    }
+    
+    try {
+      setLoading(true);
+      const orgId = organization?.id || localStorage.getItem('organizationId');
+      const teamId = getEffectiveTeamId(selectedDepartment, user);
+      
+      await quarterlyPrioritiesService.archiveCompletedPriorities(orgId, teamId);
+      
+      toast.success(`Successfully archived ${completedNotArchivedCount} completed ${completedNotArchivedCount === 1 ? 'priority' : 'priorities'}`);
+      
+      // Refresh data
+      await fetchQuarterlyData();
+    } catch (error) {
+      console.error('Error archiving completed priorities:', error);
+      toast.error('Failed to archive completed priorities');
     } finally {
       setLoading(false);
     }
@@ -2648,6 +2708,17 @@ const QuarterlyPrioritiesPageClean = () => {
               >
                 {showArchived ? 'View Current' : 'View Archive'}
               </Button>
+              {!showArchived && completedNotArchivedCount > 0 && (
+                <Button 
+                  variant="outline"
+                  onClick={handleArchiveCompleted}
+                  disabled={loading}
+                  className="bg-white/80 backdrop-blur-sm border border-orange-200 hover:bg-orange-50 hover:border-orange-300 hover:scale-[1.02] transition-all rounded-lg"
+                >
+                  <Archive className="mr-2 h-4 w-4 text-orange-600" />
+                  Archive Completed ({completedNotArchivedCount})
+                </Button>
+              )}
               {!showArchived && (
                 <>
                   <Button 
