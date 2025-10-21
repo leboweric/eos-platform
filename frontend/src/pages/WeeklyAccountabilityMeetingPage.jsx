@@ -53,6 +53,9 @@ import {
   Pause,
   Play,
   Video,
+  FileText,
+  GitBranch,
+  BarChart3,
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import meetingSessionsService from '../services/meetingSessionsService';
