@@ -125,4 +125,51 @@ router.delete('/:todoId/updates/:updateId', [
   param('updateId').isUUID()
 ], deleteTodoUpdate);
 
+// Import routes
+import { getImportTemplate, previewTodosImport, executeTodosImport } from '../controllers/todosImportController.js';
+
+// Configure multer for Excel import (separate from file attachments)
+const importUpload = multer({
+  storage: multer.memoryStorage(),
+  limits: {
+    fileSize: 10 * 1024 * 1024 // 10MB limit
+  },
+  fileFilter: (req, file, cb) => {
+    // Accept Excel files
+    const allowedMimes = [
+      'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet', // .xlsx
+      'application/vnd.ms-excel', // .xls
+      'text/csv', // .csv
+      'application/octet-stream' // Sometimes Excel files come as this
+    ];
+    
+    const allowedExtensions = ['.xlsx', '.xls', '.csv'];
+    const fileExtension = file.originalname.toLowerCase().slice(file.originalname.lastIndexOf('.'));
+    
+    if (allowedMimes.includes(file.mimetype) || allowedExtensions.includes(fileExtension)) {
+      cb(null, true);
+    } else {
+      cb(new Error('Invalid file type. Please upload an Excel (.xlsx, .xls) or CSV file'), false);
+    }
+  }
+});
+
+/**
+ * GET /api/v1/todos/import/template
+ * Get the import template information
+ */
+router.get('/import/template', getImportTemplate);
+
+/**
+ * POST /api/v1/todos/import/preview
+ * Preview Excel import without saving
+ */
+router.post('/import/preview', importUpload.single('file'), previewTodosImport);
+
+/**
+ * POST /api/v1/todos/import/execute
+ * Execute the actual import
+ */
+router.post('/import/execute', importUpload.single('file'), executeTodosImport);
+
 export default router;

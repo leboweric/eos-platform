@@ -7,6 +7,7 @@ import {
   FileSpreadsheet,
   Target,
   AlertTriangle,
+  CheckSquare,
   Upload,
   Lock,
   ArrowRight
@@ -67,6 +68,19 @@ const AdminToolsPage = () => {
         label: 'Source',
         value: 'Ninety.io'
       }
+    },
+    {
+      id: 'import-todos',
+      title: 'Import To-Dos',
+      description: 'Import tasks and to-do items from Ninety.io or other systems',
+      icon: CheckSquare,
+      color: 'teal',
+      href: '/admin/import-todos',
+      available: true,
+      stats: {
+        label: 'Source',
+        value: 'Ninety.io'
+      }
     }
   ];
 
@@ -99,6 +113,13 @@ const AdminToolsPage = () => {
           icon: 'bg-orange-100',
           iconText: 'text-orange-600',
           button: 'bg-orange-600 hover:bg-orange-700'
+        };
+      case 'teal':
+        return {
+          bg: 'bg-teal-50',
+          icon: 'bg-teal-100',
+          iconText: 'text-teal-600',
+          button: 'bg-teal-600 hover:bg-teal-700'
         };
       default:
         return {
