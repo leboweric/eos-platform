@@ -80,7 +80,7 @@ import { ContextMenu, ContextMenuContent, ContextMenuItem, ContextMenuTrigger } 
 import RockContextMenu from '../components/priorities/RockContextMenu';
 import { TodoContextMenu } from '../components/TodoContextMenu';
 import { IssueContextMenu } from '../components/IssueContextMenu';
-import { FileText, GitBranch } from 'lucide-react';
+import { FileText, GitBranch, BarChart3, CheckSquare, AlertCircle, Target } from 'lucide-react';
 import { useSelectedTodos } from '../contexts/SelectedTodosContext';
 import { cascadingMessagesService } from '../services/cascadingMessagesService';
 import { teamsService } from '../services/teamsService';
@@ -3695,18 +3695,19 @@ const WeeklyAccountabilityMeetingPage = () => {
             )}
             
             {scorecardMetrics.length === 0 ? (
-              <Card>
-                <CardContent className="text-center py-8">
-                  <p className="text-gray-500">No scorecard metrics found. Set up your scorecard to track key metrics.</p>
-                  <Button 
-                    variant="outline" 
-                    className="mt-4"
-                    onClick={() => navigate('/scorecard')}
-                  >
-                    Go to Scorecard
-                  </Button>
-                </CardContent>
-              </Card>
+              <div className="flex flex-col items-center justify-center py-12 px-6 text-center bg-gray-50 rounded-lg border-2 border-dashed border-gray-300">
+                <BarChart3 className="w-12 h-12 text-gray-400 mb-3" />
+                <h3 className="text-lg font-semibold text-gray-700 mb-2">No Scorecard Metrics</h3>
+                <p className="text-sm text-gray-500 mb-4 max-w-md">
+                  This team hasn't created any scorecard metrics yet. Scorecard metrics help track key performance indicators during meetings.
+                </p>
+                <button 
+                  onClick={() => window.open(`/scorecard/${teamId}`, '_blank')}
+                  className="px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700 transition-colors"
+                >
+                  Create Scorecard Metrics
+                </button>
+              </div>
             ) : (
               <>
               {console.log('Level 10 Scorecard - Passing data to ScorecardTableClean:', {
@@ -3777,18 +3778,19 @@ const WeeklyAccountabilityMeetingPage = () => {
               </CardHeader>
             </Card>
             {priorities.length === 0 ? (
-              <Card className="bg-white/80 backdrop-blur-sm border border-white/50 rounded-2xl shadow-xl">
-                <CardContent className="text-center py-8">
-                  <p className="text-slate-500 font-medium">No priorities found for this quarter.</p>
-                  <Button 
-                    variant="outline" 
-                    className="mt-4 bg-white/80 backdrop-blur-sm border-white/20 hover:bg-white/90 rounded-xl shadow-sm transition-all duration-200"
-                    onClick={() => navigate('/quarterly-priorities')}
-                  >
-                    Go to {labels.priorities_label || 'Quarterly Priorities'}
-                  </Button>
-                </CardContent>
-              </Card>
+              <div className="flex flex-col items-center justify-center py-12 px-6 text-center bg-gray-50 rounded-lg border-2 border-dashed border-gray-300">
+                <Target className="w-12 h-12 text-gray-400 mb-3" />
+                <h3 className="text-lg font-semibold text-gray-700 mb-2">No Quarterly Priorities</h3>
+                <p className="text-sm text-gray-500 mb-4 max-w-md">
+                  This team hasn't set any quarterly priorities yet. These are the most important goals for the quarter.
+                </p>
+                <button 
+                  onClick={() => window.open(`/priorities?team=${teamId}`, '_blank')}
+                  className="px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700 transition-colors"
+                >
+                  Create Priorities
+                </button>
+              </div>
             ) : (
               <div className="space-y-6">
                 {(() => {
@@ -3800,19 +3802,25 @@ const WeeklyAccountabilityMeetingPage = () => {
                   
                   if (allPriorities.length === 0) {
                     return (
-                      <Card className="bg-white/80 backdrop-blur-sm border border-white/50 rounded-2xl shadow-xl">
-                        <CardContent className="text-center py-8">
-                          <p className="text-slate-500 font-medium">No {labels.priorities_label?.toLowerCase() || 'priorities'} found for this quarter.</p>
-                          <Button 
-                            variant="outline" 
-                            className="mt-4"
-                            onClick={() => setShowAddPriority(true)}
-                          >
-                            <Plus className="mr-2 h-4 w-4" />
-                            Add {labels.priority || 'Priority'}
-                          </Button>
-                        </CardContent>
-                      </Card>
+                      <div className="flex flex-col items-center justify-center py-12 px-6 text-center bg-gray-50 rounded-lg border-2 border-dashed border-gray-300">
+                        <Target className="w-12 h-12 text-gray-400 mb-3" />
+                        <h3 className="text-lg font-semibold text-gray-700 mb-2">No {labels.priorities_label || 'Quarterly Priorities'}</h3>
+                        <p className="text-sm text-gray-500 mb-4 max-w-md">
+                          This team hasn't set any {labels.priorities_label?.toLowerCase() || 'quarterly priorities'} yet. These are the most important goals for the quarter.
+                        </p>
+                        <button 
+                          onClick={() => window.open(`/priorities?team=${teamId}`, '_blank')}
+                          className="px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700 transition-colors mr-3"
+                        >
+                          Create {labels.priorities_label || 'Priorities'}
+                        </button>
+                        <button 
+                          onClick={() => setShowAddPriority(true)}
+                          className="px-4 py-2 bg-purple-600 text-white text-sm font-medium rounded-lg hover:bg-purple-700 transition-colors"
+                        >
+                          Add {labels.priority || 'Priority'} Now
+                        </button>
+                      </div>
                     );
                   }
                   
@@ -5038,19 +5046,25 @@ const WeeklyAccountabilityMeetingPage = () => {
                 
                 if (todos.length === 0) {
                   return (
-                    <Card className="bg-white/80 backdrop-blur-sm border border-white/50 rounded-2xl shadow-xl">
-                      <CardContent className="text-center py-8">
-                        <p className="text-slate-500 font-medium">No to-dos found for this week.</p>
-                        <Button 
-                          variant="outline" 
-                          className="mt-4"
-                          onClick={() => setShowTodoDialog(true)}
-                        >
-                          <Plus className="mr-2 h-4 w-4" />
-                          Add To-Do
-                        </Button>
-                      </CardContent>
-                    </Card>
+                    <div className="flex flex-col items-center justify-center py-12 px-6 text-center bg-gray-50 rounded-lg border-2 border-dashed border-gray-300">
+                      <CheckSquare className="w-12 h-12 text-gray-400 mb-3" />
+                      <h3 className="text-lg font-semibold text-gray-700 mb-2">No To-Dos</h3>
+                      <p className="text-sm text-gray-500 mb-4 max-w-md">
+                        This team doesn't have any to-dos yet. To-dos are action items that need to be completed.
+                      </p>
+                      <button 
+                        onClick={() => window.open(`/todos?team=${teamId}`, '_blank')}
+                        className="px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700 transition-colors mr-3"
+                      >
+                        Create To-Dos
+                      </button>
+                      <button 
+                        onClick={() => setShowTodoDialog(true)}
+                        className="px-4 py-2 bg-green-600 text-white text-sm font-medium rounded-lg hover:bg-green-700 transition-colors"
+                      >
+                        Add To-Do Now
+                      </button>
+                    </div>
                   );
                 }
                 
@@ -5294,19 +5308,25 @@ const WeeklyAccountabilityMeetingPage = () => {
 
                 if (issues.length === 0) {
                   return (
-                    <Card className="bg-white/80 backdrop-blur-sm border border-white/50 rounded-2xl shadow-xl">
-                      <CardContent className="text-center py-8">
-                        <p className="text-slate-500 font-medium">No issues found for this team.</p>
-                        <Button 
-                          variant="outline" 
-                          className="mt-4"
-                          onClick={() => setShowIssueDialog(true)}
-                        >
-                          <Plus className="mr-2 h-4 w-4" />
-                          Add Issue
-                        </Button>
-                      </CardContent>
-                    </Card>
+                    <div className="flex flex-col items-center justify-center py-12 px-6 text-center bg-gray-50 rounded-lg border-2 border-dashed border-gray-300">
+                      <AlertCircle className="w-12 h-12 text-gray-400 mb-3" />
+                      <h3 className="text-lg font-semibold text-gray-700 mb-2">No Issues</h3>
+                      <p className="text-sm text-gray-500 mb-4 max-w-md">
+                        This team doesn't have any issues to discuss. Issues are problems or challenges that need to be identified, discussed, and solved.
+                      </p>
+                      <button 
+                        onClick={() => window.open(`/issues?team=${teamId}`, '_blank')}
+                        className="px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700 transition-colors mr-3"
+                      >
+                        Create Issues
+                      </button>
+                      <button 
+                        onClick={() => setShowIssueDialog(true)}
+                        className="px-4 py-2 bg-orange-600 text-white text-sm font-medium rounded-lg hover:bg-orange-700 transition-colors"
+                      >
+                        Add Issue Now
+                      </button>
+                    </div>
                   );
                 }
 
