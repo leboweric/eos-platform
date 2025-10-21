@@ -53,21 +53,23 @@ function mapNinetyStatus(row) {
 }
 
 /**
- * Map Ninety.io priority to AXP priority
+ * Map Ninety.io priority to AXP database priority_level
+ * Database constraint only allows: 'low', 'normal', 'high'
  */
 function mapPriority(priority) {
-  if (!priority) return 'medium';
+  if (!priority) return 'normal';
   
   const priorityLower = priority.toLowerCase();
   const priorityMap = {
     'low': 'low',
-    'medium': 'medium', 
+    'medium': 'normal',
+    'normal': 'normal', 
     'high': 'high',
-    'critical': 'critical',
-    'urgent': 'critical'
+    'critical': 'high',
+    'urgent': 'high'
   };
   
-  return priorityMap[priorityLower] || 'medium';
+  return priorityMap[priorityLower] || 'normal';
 }
 
 class NinetyIssuesImportService {
