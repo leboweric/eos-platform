@@ -16,11 +16,16 @@ import {
   CheckCircle,
   AlertTriangle,
   Archive,
-  Clock
+  Clock,
+  ChevronUp,
+  ChevronDown,
+  X
 } from 'lucide-react';
 
 const ArchivedIssuesList = ({ issues, onUnarchive, getStatusColor, getStatusIcon }) => {
   const [selectedIssue, setSelectedIssue] = useState(null);
+  const [sortField, setSortField] = useState(null);
+  const [sortDirection, setSortDirection] = useState('asc');
 
   const formatDate = (dateString) => {
     const date = new Date(dateString);
@@ -31,8 +36,106 @@ const ArchivedIssuesList = ({ issues, onUnarchive, getStatusColor, getStatusIcon
     });
   };
 
+  const handleSort = (field) => {
+    if (sortField === field) {
+      setSortDirection(sortDirection === 'asc' ? 'desc' : 'asc');
+    } else {
+      setSortField(field);
+      setSortDirection('asc');
+    }
+  };
+
+  const getSortIcon = (field) => {
+    if (sortField !== field) return null;
+    return sortDirection === 'asc' ? <ChevronUp className="h-3 w-3 ml-1" /> : <ChevronDown className="h-3 w-3 ml-1" />;
+  };
+
+  const sortedIssues = [...(issues || [])].sort((a, b) => {
+    if (!sortField) return 0;
+    
+    let aValue, bValue;
+    
+    switch (sortField) {
+      case 'title':
+        aValue = a.title?.toLowerCase() || '';
+        bValue = b.title?.toLowerCase() || '';
+        break;
+      case 'owner':
+        aValue = a.owner_name?.toLowerCase() || '';
+        bValue = b.owner_name?.toLowerCase() || '';
+        break;
+      case 'archived':
+        aValue = new Date(a.archived_at);
+        bValue = new Date(b.archived_at);
+        break;
+      default:
+        return 0;
+    }
+    
+    if (sortField === 'archived') {
+      // For dates, handle the comparison differently
+      if (sortDirection === 'asc') {
+        return aValue - bValue;
+      } else {
+        return bValue - aValue;
+      }
+    } else {
+      // For strings
+      if (sortDirection === 'asc') {
+        return aValue.localeCompare(bValue);
+      } else {
+        return bValue.localeCompare(aValue);
+      }
+    }
+  });
+
   return (
     <>
+      {/* Sort Controls */}
+      <div className="mb-4">
+        <div className="flex items-center gap-2 text-sm">
+          <span className="text-gray-600 font-medium">Sort by:</span>
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => handleSort('title')}
+            className={`h-7 px-3 py-1 text-xs font-medium hover:bg-gray-200 ${sortField === 'title' ? 'bg-gray-200 text-gray-900' : 'text-gray-600'}`}
+          >
+            Issue {getSortIcon('title')}
+          </Button>
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => handleSort('owner')}
+            className={`h-7 px-3 py-1 text-xs font-medium hover:bg-gray-200 ${sortField === 'owner' ? 'bg-gray-200 text-gray-900' : 'text-gray-600'}`}
+          >
+            Owner {getSortIcon('owner')}
+          </Button>
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => handleSort('archived')}
+            className={`h-7 px-3 py-1 text-xs font-medium hover:bg-gray-200 ${sortField === 'archived' ? 'bg-gray-200 text-gray-900' : 'text-gray-600'}`}
+          >
+            Date Archived {getSortIcon('archived')}
+          </Button>
+          {sortField && (
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => {
+                setSortField(null);
+                setSortDirection('asc');
+              }}
+              className="h-7 px-3 py-1 ml-2 text-xs font-medium text-red-600 hover:bg-red-50"
+            >
+              <X className="h-3 w-3 mr-1" />
+              Clear
+            </Button>
+          )}
+        </div>
+      </div>
+
       <div className="bg-white rounded-lg shadow-sm border">
         <Table>
           <TableHeader>
@@ -44,7 +147,7 @@ const ArchivedIssuesList = ({ issues, onUnarchive, getStatusColor, getStatusIcon
             </TableRow>
           </TableHeader>
           <TableBody>
-            {(issues || []).map((issue, index) => (
+            {sortedIssues.map((issue, index) => (
               <TableRow 
                 key={issue.id} 
                 className="cursor-pointer hover:bg-green-50"
