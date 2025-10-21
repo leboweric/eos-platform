@@ -7,6 +7,19 @@ export const startSession = async (req, res) => {
     const { organization_id, team_id, meeting_type } = req.body;
     const user_id = req.user.id;
 
+    // Verify user is a member of the team
+    const memberCheck = await client.query(`
+      SELECT 1 FROM team_members 
+      WHERE user_id = $1 AND team_id = $2
+    `, [user_id, team_id]);
+    
+    if (memberCheck.rows.length === 0) {
+      return res.status(403).json({
+        success: false,
+        error: 'You cannot start a meeting for a team you are not a member of.'
+      });
+    }
+
     // Check if there's already an active session for this team
     const existingSession = await client.query(`
       SELECT 

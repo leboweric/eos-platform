@@ -213,77 +213,8 @@ const MeetingsPage = () => {
         return;
       }
       
-      // If no teams on user object, try to fetch all teams for the organization
-      try {
-        const response = await fetch(
-          `${import.meta.env.VITE_API_URL}/organizations/${organizationId}/teams`,
-          {
-            headers: {
-              'Authorization': `Bearer ${localStorage.getItem('token')}`
-            }
-          }
-        );
-        
-        if (response.ok) {
-          const teamsData = await response.json();
-          
-          // If we have teams data, use it
-          if (teamsData && teamsData.length > 0) {
-            let allTeams = [...teamsData];
-            
-            // If we have a selected department that's not in the teams list, add it
-            if (selectedDepartment?.id && !allTeams.find(t => t.id === selectedDepartment.id)) {
-              allTeams.push({
-                id: selectedDepartment.id,
-                name: selectedDepartment.name,
-                is_leadership_team: false,
-                is_department_team: true
-              });
-              console.log('🏢 Added department to teams list (API):', selectedDepartment);
-            }
-            
-            setTeams(allTeams);
-            
-            // Try to select the appropriate team
-            let teamToSelect = null;
-            
-            // If there's a selected department, prioritize that
-            if (selectedDepartment?.id) {
-              teamToSelect = teamsData.find(t => t.id === selectedDepartment.id);
-              console.log('🏢 Selected department team (API):', teamToSelect);
-            }
-            
-            // If no department team found but we have a selected department,
-            // check if the department itself is a team (some orgs use departments as teams)
-            if (!teamToSelect && selectedDepartment?.id) {
-              // Try using the department ID directly as team ID
-              teamToSelect = { id: selectedDepartment.id, name: selectedDepartment.name };
-              console.log('🏢 Using department as team (API):', teamToSelect);
-            }
-            
-            // Otherwise, look for the leadership team
-            if (!teamToSelect) {
-              teamToSelect = teamsData.find(t => t.is_leadership_team === true);
-              console.log('👑 Using leadership team (API):', teamToSelect);
-            }
-            
-            // Fall back to first team if no leadership team found
-            if (!teamToSelect) {
-              teamToSelect = teamsData[0];
-              console.log('📋 Using first available team (API):', teamToSelect);
-            }
-            
-            setSelectedTeamId(teamToSelect.id);
-            setLoadingTeams(false);
-            return;
-          }
-        }
-      } catch (error) {
-        console.error('Failed to fetch teams from API:', error);
-      }
-      
-      // No teams found at all
-      console.error('No teams found for user');
+      // No teams available - user is not a member of any teams
+      console.log('⚠️ User has no team memberships');
       setTeams([]);
       setSelectedTeamId(null);
     } catch (error) {

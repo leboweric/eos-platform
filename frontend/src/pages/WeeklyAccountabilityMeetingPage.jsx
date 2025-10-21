@@ -1061,7 +1061,10 @@ const WeeklyAccountabilityMeetingPage = () => {
                     user,
                     teamId
                   });
-                  // Don't show error immediately, timer still works locally
+                  // Show error for permission issues, but allow meeting to continue locally for other errors
+                  if (err.message && err.message.includes('permission')) {
+                    setError(err.message);
+                  }
                 } finally {
                   console.log('🟡 Setting sessionLoading to false, session creation complete');
                   setSessionLoading(false);
@@ -1170,7 +1173,10 @@ const WeeklyAccountabilityMeetingPage = () => {
                 user,
                 teamId
               });
-              // Don't show error immediately, timer still works locally
+              // Show error for permission issues, but allow meeting to continue locally for other errors
+              if (err.message && err.message.includes('permission')) {
+                setError(err.message);
+              }
             } finally {
               console.log('🟡 Setting sessionLoading to false (immediate), session creation complete');
               setSessionLoading(false);
@@ -1405,6 +1411,10 @@ const WeeklyAccountabilityMeetingPage = () => {
             }
           } catch (err) {
             console.error('Failed to initialize session (fallback):', err);
+            // Show error for permission issues
+            if (err.message && err.message.includes('permission')) {
+              setError(err.message);
+            }
           } finally {
             setSessionLoading(false);
           }
@@ -1611,6 +1621,7 @@ const WeeklyAccountabilityMeetingPage = () => {
               setSessionId(result.session.id);
             } catch (err) {
               console.error('Failed to create session for leader:', err);
+              setError(err.message || 'Failed to start meeting session');
             } finally {
               setSessionLoading(false);
             }
