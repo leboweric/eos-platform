@@ -25,11 +25,17 @@ const IssuesImportPage = () => {
   // Results
   const [importResults, setImportResults] = useState(null);
 
-  // Load template and teams on component mount
+  // Load template on component mount
   useEffect(() => {
     loadTemplate();
-    loadTeams();
   }, []);
+
+  // Load teams when user is available
+  useEffect(() => {
+    if (user?.currentOrganization?.id) {
+      loadTeams();
+    }
+  }, [user?.currentOrganization?.id]);
 
   const loadTemplate = async () => {
     try {
@@ -42,6 +48,11 @@ const IssuesImportPage = () => {
   };
 
   const loadTeams = async () => {
+    if (!user?.currentOrganization?.id) {
+      console.warn('User or organization not available for loading teams');
+      return;
+    }
+    
     try {
       const response = await fetch(`/api/v1/organizations/${user.currentOrganization.id}/teams`, {
         headers: {
