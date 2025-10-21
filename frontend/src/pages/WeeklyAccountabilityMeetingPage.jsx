@@ -698,6 +698,8 @@ const WeeklyAccountabilityMeetingPage = () => {
       setTodos(fetchedTodos);
     } catch (error) {
       console.error('❌ Failed to fetch todos:', error);
+      // Ensure empty state if fetch fails - prevents stale data
+      setTodos([]);
     }
   };
 
@@ -723,6 +725,10 @@ const WeeklyAccountabilityMeetingPage = () => {
       setTeamMembers(shortTermResponse.data?.teamMembers || []);
     } catch (error) {
       console.error('❌ Failed to fetch issues:', error);
+      // Ensure empty state if fetch fails - prevents stale data
+      setShortTermIssues([]);
+      setLongTermIssues([]);
+      setTeamMembers([]);
     }
   };
 
@@ -750,6 +756,9 @@ const WeeklyAccountabilityMeetingPage = () => {
       });
     } catch (error) {
       console.error('Failed to fetch headlines:', error);
+      // Ensure empty state if fetch fails - prevents stale data
+      setGoodNewsHeadlines([]);
+      setStuckHeadlines([]);
     }
   };
 
@@ -822,6 +831,12 @@ const WeeklyAccountabilityMeetingPage = () => {
       }
     } catch (error) {
       console.error('Failed to fetch scorecard:', error);
+      // Ensure empty state if fetch fails - prevents stale data
+      setScorecardMetrics([]);
+      setWeeklyScores({});
+      setWeeklyNotes({});
+      setMonthlyScores({});
+      setMonthlyNotes({});
     }
   };
 
@@ -888,15 +903,35 @@ const WeeklyAccountabilityMeetingPage = () => {
       }));
     } catch (error) {
       console.error('Failed to fetch priorities:', error);
+      // Ensure empty state if fetch fails - prevents stale data
+      setQuarterlyPriorities([]);
     }
   };
 
-  // Load data on mount and when teamId changes - SIMPLIFIED
+  // Load data on mount and when teamId changes - CLEAR STATE FIRST
   useEffect(() => {
-    // Just call it if we have teamId, don't overcomplicate
     console.log('🚨 useEffect triggered with teamId:', teamId);
     if (teamId) {
-      console.log('🚨 ABOUT TO CALL fetchPrioritiesData from useEffect');
+      console.log('🚨 CLEARING ALL STATE before fetching new team data');
+      
+      // CLEAR ALL STATE IMMEDIATELY when teamId changes
+      // This prevents stale data from previous team being displayed
+      setScorecardMetrics([]);
+      setWeeklyScores({});
+      setWeeklyNotes({});
+      setMonthlyScores({});
+      setMonthlyNotes({});
+      setTodos([]);
+      setShortTermIssues([]);
+      setLongTermIssues([]);
+      setQuarterlyPriorities([]);
+      setGoodNewsHeadlines([]);
+      setStuckHeadlines([]);
+      setTeamMembers([]);
+      
+      console.log('🚨 ABOUT TO CALL fetch functions with cleared state');
+      
+      // Then fetch new data for the team
       fetchTodosData();
       fetchIssuesData();
       fetchScorecardData();
