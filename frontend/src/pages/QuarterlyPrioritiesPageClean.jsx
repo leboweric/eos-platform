@@ -554,14 +554,36 @@ const QuarterlyPrioritiesPageClean = () => {
         throw new Error('Organization or department not found');
       }
       
+      // Update local state immediately for smooth transitions
+      const updatePriorityInArray = (priorities) => 
+        priorities.map(p => p.id === priorityId ? { ...p, ...updates } : p);
+      
+      // Update company priorities
+      setCompanyPriorities(prev => updatePriorityInArray(prev));
+      
+      // Update team member priorities
+      setTeamMemberPriorities(prev => {
+        const updated = { ...prev };
+        Object.keys(updated).forEach(memberId => {
+          if (updated[memberId].priorities) {
+            updated[memberId] = {
+              ...updated[memberId],
+              priorities: updatePriorityInArray(updated[memberId].priorities)
+            };
+          }
+        });
+        return updated;
+      });
+      
+      // Then call API
       await quarterlyPrioritiesService.updatePriority(orgId, teamId, priorityId, updates);
       
-      // Refresh data
-      await fetchQuarterlyData();
       setEditingPriority(null);
     } catch (err) {
       console.error('Failed to update priority:', err);
       setError('Failed to save changes: ' + err.message);
+      // On error, refresh data to ensure consistency
+      await fetchQuarterlyData();
     }
   };
 
