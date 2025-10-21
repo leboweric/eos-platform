@@ -83,7 +83,6 @@ import { ContextMenu, ContextMenuContent, ContextMenuItem, ContextMenuTrigger } 
 import RockContextMenu from '../components/priorities/RockContextMenu';
 import { TodoContextMenu } from '../components/TodoContextMenu';
 import { IssueContextMenu } from '../components/IssueContextMenu';
-import { FileText, GitBranch, BarChart3, CheckSquare, AlertCircle, Target } from 'lucide-react';
 import { useSelectedTodos } from '../contexts/SelectedTodosContext';
 import { cascadingMessagesService } from '../services/cascadingMessagesService';
 import { teamsService } from '../services/teamsService';
