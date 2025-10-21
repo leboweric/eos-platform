@@ -323,7 +323,7 @@ const QuarterlyPrioritiesPageClean = () => {
       return;
     }
     
-    if (!window.confirm(`Archive ${completedNotArchivedCount} completed ${completedNotArchivedCount === 1 ? 'priority' : 'priorities'}?`)) {
+    if (!window.confirm(`Best Practice is to Archive priorities at the Quarterly Review Meeting.\n\nAre you sure you want to archive ${completedNotArchivedCount} completed ${completedNotArchivedCount === 1 ? 'priority' : 'priorities'}?`)) {
       return;
     }
     

@@ -3796,7 +3796,7 @@ const WeeklyAccountabilityMeetingPage = () => {
                             variant="outline"
                             size="sm"
                             onClick={async () => {
-                              if (!window.confirm(`Archive ${completedCount} completed ${completedCount === 1 ? 'priority' : 'priorities'}?`)) {
+                              if (!window.confirm(`Best Practice is to Archive priorities at the Quarterly Review Meeting.\n\nAre you sure you want to archive ${completedCount} completed ${completedCount === 1 ? 'priority' : 'priorities'}?`)) {
                                 return;
                               }
                               try {
