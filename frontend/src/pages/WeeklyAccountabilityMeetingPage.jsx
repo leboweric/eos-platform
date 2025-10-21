@@ -275,7 +275,12 @@ const WeeklyAccountabilityMeetingPage = () => {
   const [creatingIssueFromHeadline, setCreatingIssueFromHeadline] = useState(null);
   const [currentTeam, setCurrentTeam] = useState(null);
   const [showArchiveDialog, setShowArchiveDialog] = useState(false);
-  const [archiveData, setArchiveData] = useState({ priorityId: null, priorityTitle: null });
+  const [archiveData, setArchiveData] = useState({ 
+    priorityId: null, 
+    priorityTitle: null, 
+    isBulk: false, 
+    count: 0 
+  });
   
   // Additional state for new priorities display pattern
   const [expandedPriorities, setExpandedPriorities] = useState({});
@@ -2518,10 +2523,27 @@ const WeeklyAccountabilityMeetingPage = () => {
   };
 
   const confirmArchivePriority = async () => {
-    const { priorityId } = archiveData;
+    const { priorityId, isBulk, count } = archiveData;
     setShowArchiveDialog(false);
-    setArchiveData({ priorityId: null, priorityTitle: null });
-    await handleArchivePriority(priorityId);
+    setArchiveData({ priorityId: null, priorityTitle: null, isBulk: false, count: 0 });
+    
+    if (isBulk) {
+      // Handle bulk archive
+      try {
+        const orgId = user?.organizationId || user?.organization_id;
+        const cleanTeamId = (teamId === 'null' || teamId === 'undefined') ? null : teamId;
+        const effectiveTeamId = getEffectiveTeamId(cleanTeamId, user);
+        await quarterlyPrioritiesService.archiveCompletedPriorities(orgId, effectiveTeamId);
+        toast.success(`Successfully archived ${count} completed ${count === 1 ? 'priority' : 'priorities'}`);
+        await fetchPrioritiesData();
+      } catch (error) {
+        console.error('Error archiving completed priorities:', error);
+        toast.error('Failed to archive completed priorities');
+      }
+    } else {
+      // Handle single priority archive
+      await handleArchivePriority(priorityId);
+    }
   };
 
   const handleContextMenuDelete = async (priority) => {
@@ -3797,21 +3819,15 @@ const WeeklyAccountabilityMeetingPage = () => {
                           <Button 
                             variant="outline"
                             size="sm"
-                            onClick={async () => {
-                              if (!window.confirm(`Best Practice is to Archive priorities at the Quarterly Review Meeting.\n\nAre you sure you want to archive ${completedCount} completed ${completedCount === 1 ? 'priority' : 'priorities'}?`)) {
-                                return;
-                              }
-                              try {
-                                const orgId = user?.organizationId || user?.organization_id;
-                                const cleanTeamId = (teamId === 'null' || teamId === 'undefined') ? null : teamId;
-                                const effectiveTeamId = getEffectiveTeamId(cleanTeamId, user);
-                                await quarterlyPrioritiesService.archiveCompletedPriorities(orgId, effectiveTeamId);
-                                toast.success(`Successfully archived ${completedCount} completed ${completedCount === 1 ? 'priority' : 'priorities'}`);
-                                await fetchPrioritiesData();
-                              } catch (error) {
-                                console.error('Error archiving completed priorities:', error);
-                                toast.error('Failed to archive completed priorities');
-                              }
+                            onClick={() => {
+                              // Set archive data for bulk operation and show confirmation dialog
+                              setArchiveData({ 
+                                priorityId: null, 
+                                priorityTitle: null, 
+                                isBulk: true, 
+                                count: completedCount 
+                              });
+                              setShowArchiveDialog(true);
                             }}
                             className="bg-white/80 backdrop-blur-sm border border-orange-200 hover:bg-orange-50 hover:border-orange-300 transition-all"
                           >
@@ -6625,9 +6641,11 @@ const WeeklyAccountabilityMeetingPage = () => {
                   Best Practice is to Archive priorities at the Quarterly Review Meeting.
                 </p>
                 <p className="text-sm text-gray-700">
-                  {archiveData.priorityTitle 
-                    ? `Are you sure you want to archive "${archiveData.priorityTitle}"?`
-                    : 'Are you sure you want to archive this priority?'
+                  {archiveData.isBulk 
+                    ? `Are you sure you want to archive ${archiveData.count} completed ${archiveData.count === 1 ? 'priority' : 'priorities'}?`
+                    : archiveData.priorityTitle 
+                      ? `Are you sure you want to archive "${archiveData.priorityTitle}"?`
+                      : 'Are you sure you want to archive this priority?'
                   }
                 </p>
               </div>
@@ -6638,7 +6656,7 @@ const WeeklyAccountabilityMeetingPage = () => {
               variant="outline"
               onClick={() => {
                 setShowArchiveDialog(false);
-                setArchiveData({ priorityId: null, priorityTitle: null });
+                setArchiveData({ priorityId: null, priorityTitle: null, isBulk: false, count: 0 });
               }}
             >
               Cancel

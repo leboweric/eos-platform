@@ -170,7 +170,12 @@ const QuarterlyPrioritiesPageClean = () => {
   const [selectedPriority, setSelectedPriority] = useState(null);
   const [showPriorityDialog, setShowPriorityDialog] = useState(false);
   const [showArchiveDialog, setShowArchiveDialog] = useState(false);
-  const [archiveData, setArchiveData] = useState({ priorityId: null, priorityTitle: null });
+  const [archiveData, setArchiveData] = useState({ 
+    priorityId: null, 
+    priorityTitle: null, 
+    isBulk: false, 
+    count: 0 
+  });
   
   // Employee-centric design states
   const [expandedPriorities, setExpandedPriorities] = useState({});
@@ -324,9 +329,17 @@ const QuarterlyPrioritiesPageClean = () => {
       return;
     }
     
-    if (!window.confirm(`Best Practice is to Archive priorities at the Quarterly Review Meeting.\n\nAre you sure you want to archive ${completedNotArchivedCount} completed ${completedNotArchivedCount === 1 ? 'priority' : 'priorities'}?`)) {
-      return;
-    }
+    // Set archive data for bulk operation and show confirmation dialog
+    setArchiveData({ 
+      priorityId: null, 
+      priorityTitle: null, 
+      isBulk: true, 
+      count: completedNotArchivedCount 
+    });
+    setShowArchiveDialog(true);
+  };
+
+  const performBulkArchive = async () => {
     
     try {
       setLoading(true);
@@ -1191,27 +1204,32 @@ const QuarterlyPrioritiesPageClean = () => {
   };
 
   const confirmArchivePriority = async () => {
-    const { priorityId, priorityTitle } = archiveData;
+    const { priorityId, isBulk } = archiveData;
     
-    try {
-      const orgId = user?.organizationId;
-      const teamId = selectedDepartment?.id;
-      
-      if (!orgId || !teamId) {
-        throw new Error('Organization or department not found');
+    setShowArchiveDialog(false);
+    setArchiveData({ priorityId: null, priorityTitle: null, isBulk: false, count: 0 });
+    
+    if (isBulk) {
+      // Handle bulk archive
+      await performBulkArchive();
+    } else {
+      // Handle single priority archive
+      try {
+        const orgId = user?.organizationId;
+        const teamId = selectedDepartment?.id;
+        
+        if (!orgId || !teamId) {
+          throw new Error('Organization or department not found');
+        }
+        
+        await quarterlyPrioritiesService.archivePriority(orgId, teamId, priorityId);
+        
+        // Refresh data
+        await fetchQuarterlyData();
+      } catch (err) {
+        console.error('Failed to archive priority:', err);
+        setError('Failed to archive item');
       }
-      
-      await quarterlyPrioritiesService.archivePriority(orgId, teamId, priorityId);
-      
-      // Refresh data
-      await fetchQuarterlyData();
-      setShowArchiveDialog(false);
-      setArchiveData({ priorityId: null, priorityTitle: null });
-    } catch (err) {
-      console.error('Failed to archive priority:', err);
-      setError('Failed to archive item');
-      setShowArchiveDialog(false);
-      setArchiveData({ priorityId: null, priorityTitle: null });
     }
   };
 
@@ -4519,9 +4537,11 @@ const QuarterlyPrioritiesPageClean = () => {
                   Best Practice is to Archive priorities at the Quarterly Review Meeting.
                 </p>
                 <p className="text-sm text-gray-700">
-                  {archiveData.priorityTitle 
-                    ? `Are you sure you want to archive "${archiveData.priorityTitle}"?`
-                    : 'Are you sure you want to archive this priority?'
+                  {archiveData.isBulk 
+                    ? `Are you sure you want to archive ${archiveData.count} completed ${archiveData.count === 1 ? 'priority' : 'priorities'}?`
+                    : archiveData.priorityTitle 
+                      ? `Are you sure you want to archive "${archiveData.priorityTitle}"?`
+                      : 'Are you sure you want to archive this priority?'
                   }
                 </p>
               </div>
@@ -4532,7 +4552,7 @@ const QuarterlyPrioritiesPageClean = () => {
               variant="outline"
               onClick={() => {
                 setShowArchiveDialog(false);
-                setArchiveData({ priorityId: null, priorityTitle: null });
+                setArchiveData({ priorityId: null, priorityTitle: null, isBulk: false, count: 0 });
               }}
             >
               Cancel
