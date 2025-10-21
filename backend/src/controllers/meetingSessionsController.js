@@ -13,19 +13,21 @@ export const startSession = async (req, res) => {
     const { organization_id, team_id, meeting_type } = req.body;
     const user_id = req.user.id || req.user.userId;
 
-    console.log(`🔍 TEAM MEMBERSHIP CHECK - User: ${user_id}, Team: ${team_id}`);
-    console.log(`🔍 Full req.user object:`, req.user);
+    console.log(`🔐 CRITICAL TEAM MEMBERSHIP CHECK`);
+    console.log(`🔐 User ID: ${user_id}`);
+    console.log(`🔐 Team ID: ${team_id} (from req.body.team_id)`);
+    console.log(`🔐 Organization ID: ${organization_id}`);
 
-    // Verify user is a member of the team
+    // 🔒 VERIFY USER IS A MEMBER OF THIS TEAM
     const memberCheck = await client.query(`
       SELECT 1 FROM team_members 
       WHERE user_id = $1 AND team_id = $2
     `, [user_id, team_id]);
     
-    console.log(`🔍 Member check result: ${memberCheck.rows.length} rows found`);
+    console.log(`🔐 Member check query result: ${memberCheck.rows.length} rows found`);
     
     if (memberCheck.rows.length === 0) {
-      console.log(`❌ User ${user_id} attempted to start meeting for team ${team_id} but is not a member`);
+      console.log(`❌ BLOCKED: User ${user_id} is NOT a member of team ${team_id}`);
       return res.status(403).json({
         success: false,
         error: 'TEAM_MEMBERSHIP_REQUIRED',
@@ -33,7 +35,7 @@ export const startSession = async (req, res) => {
       });
     }
 
-    console.log(`✅ User ${user_id} verified as member of team ${team_id}`);
+    console.log(`✅ ALLOWED: User ${user_id} IS a member of team ${team_id}`);
 
     // Check if there's already an active session for this team
     const existingSession = await client.query(`
