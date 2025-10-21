@@ -229,6 +229,7 @@ const WeeklyAccountabilityMeetingPage = () => {
   const [monthlyScores, setMonthlyScores] = useState({});
   const [monthlyNotes, setMonthlyNotes] = useState({});
   const [priorities, setPriorities] = useState([]);
+  const [quarterlyPriorities, setQuarterlyPriorities] = useState([]);
   const [shortTermIssues, setShortTermIssues] = useState([]);
   const [longTermIssues, setLongTermIssues] = useState([]);
   const [issueTimeline, setIssueTimeline] = useState('short_term');
@@ -244,6 +245,8 @@ const WeeklyAccountabilityMeetingPage = () => {
   const [todaysTodos, setTodaysTodos] = useState([]);
   const [goodNews, setGoodNews] = useState([]);
   const [headlines, setHeadlines] = useState({ customer: [], employee: [] });
+  const [goodNewsHeadlines, setGoodNewsHeadlines] = useState([]);
+  const [stuckHeadlines, setStuckHeadlines] = useState([]);
   const [cascadedMessages, setCascadedMessages] = useState([]);
   
   // Dialog states
