@@ -91,6 +91,14 @@ export const todosService = {
     return response.data;
   },
 
+  // Unarchive a specific todo
+  unarchiveTodo: async (todoId) => {
+    const orgId = getOrgId();
+    
+    const response = await axios.put(`/organizations/${orgId}/todos/${todoId}/unarchive`);
+    return response.data;
+  },
+
   // Upload attachment
   uploadAttachment: async (todoId, file) => {
     const orgId = getOrgId();

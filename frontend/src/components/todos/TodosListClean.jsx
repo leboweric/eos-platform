@@ -9,7 +9,8 @@ import {
   ArrowUp,
   ArrowDown,
   List,
-  Archive
+  Archive,
+  ArchiveRestore
 } from 'lucide-react';
 import { format } from 'date-fns';
 import { todosService } from '../../services/todosService';
@@ -24,6 +25,7 @@ const TodosListClean = ({
   onUpdate,
   onStatusChange,
   onConvertToIssue,
+  onUnarchive,
   showCompleted = true,
   hideViewToggle = false,
   hideSortOptions = false,
@@ -173,6 +175,23 @@ const TodosListClean = ({
     } catch (error) {
       console.error('Error formatting archive date:', error);
       return null;
+    }
+  };
+
+  const handleUnarchive = async (todoId, e) => {
+    e.stopPropagation(); // Prevent triggering the todo edit
+    try {
+      if (onUnarchive) {
+        await onUnarchive(todoId);
+      } else {
+        // Fallback to direct service call
+        await todosService.unarchiveTodo(todoId);
+        if (onUpdate) {
+          onUpdate();
+        }
+      }
+    } catch (error) {
+      console.error('Failed to unarchive todo:', error);
     }
   };
   
@@ -334,13 +353,25 @@ const TodosListClean = ({
               
               {/* Date info - show archive date for archived todos, due date for others */}
               {todo.archived ? (
-                // Show archive date for archived todos
-                formatArchivedDate(todo) && (
-                  <span className="flex items-center gap-1 text-sm text-gray-500">
-                    <Archive className="h-3 w-3" />
-                    Archived {formatArchivedDate(todo)}
-                  </span>
-                )
+                // Show archive date and unarchive button for archived todos
+                <div className="flex items-center gap-2">
+                  {formatArchivedDate(todo) && (
+                    <span className="flex items-center gap-1 text-sm text-gray-500">
+                      <Archive className="h-3 w-3" />
+                      Archived {formatArchivedDate(todo)}
+                    </span>
+                  )}
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={(e) => handleUnarchive(todo.id, e)}
+                    className="h-6 px-2 text-xs text-blue-600 border-blue-200 hover:bg-blue-50 hover:border-blue-300"
+                    title="Move back to active todos"
+                  >
+                    <ArchiveRestore className="h-3 w-3 mr-1" />
+                    Unarchive
+                  </Button>
+                </div>
               ) : (
                 // Show due date for non-archived todos
                 todo.due_date && (
@@ -423,13 +454,25 @@ const TodosListClean = ({
                   <div className="mt-2 flex flex-wrap items-center gap-2 text-xs">
                     {/* Date info - show archive date for archived todos, due date for others */}
                     {todo.archived ? (
-                      // Show archive date for archived todos
-                      formatArchivedDate(todo) && (
-                        <span className="flex items-center gap-1.5 text-gray-500">
-                          <Archive className="h-3.5 w-3.5" />
-                          Archived {formatArchivedDate(todo)}
-                        </span>
-                      )
+                      // Show archive date and unarchive button for archived todos
+                      <div className="flex flex-wrap items-center gap-2">
+                        {formatArchivedDate(todo) && (
+                          <span className="flex items-center gap-1.5 text-gray-500">
+                            <Archive className="h-3.5 w-3.5" />
+                            Archived {formatArchivedDate(todo)}
+                          </span>
+                        )}
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={(e) => handleUnarchive(todo.id, e)}
+                          className="h-6 px-2 text-xs text-blue-600 border-blue-200 hover:bg-blue-50 hover:border-blue-300"
+                          title="Move back to active todos"
+                        >
+                          <ArchiveRestore className="h-3 w-3 mr-1" />
+                          Unarchive
+                        </Button>
+                      </div>
                     ) : (
                       // Show due date for non-archived todos
                       todo.due_date && (

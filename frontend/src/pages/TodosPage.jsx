@@ -235,6 +235,17 @@ const TodosPage = () => {
     }
   };
 
+  const handleUnarchive = async (todoId) => {
+    try {
+      await todosService.unarchiveTodo(todoId);
+      setSuccess(`${labels.todos_label.slice(0, -1)} moved back to active list`);
+      await fetchTodos();
+    } catch (error) {
+      console.error('Failed to unarchive todo:', error);
+      setError(`Failed to move ${labels.todos_label.slice(0, -1).toLowerCase()} back to active list`);
+    }
+  };
+
   const handleConvertToIssue = async (todo) => {
     if (!window.confirm(`Convert "${todo.title}" to an issue? This will cancel the to-do.`)) {
       return;
@@ -516,6 +527,7 @@ const TodosPage = () => {
                 onUpdate={fetchTodos}
                 onStatusChange={handleStatusChange}
                 onConvertToIssue={handleConvertToIssue}
+                onUnarchive={handleUnarchive}
                 showCompleted={true}
               />
             </div>
