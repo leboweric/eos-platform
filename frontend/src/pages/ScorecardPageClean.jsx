@@ -470,27 +470,51 @@ const ScorecardPageClean = () => {
     return new Date(d.getFullYear(), quarter * 3 + 3, 0);
   };
 
-  // Get week labels based on organization's time period preference
+  // Get week labels based on actual data dates, not calculated from today
   const getWeekLabels = () => {
     const labels = [];
     const weekDates = [];
-    const today = new Date();
     
-    // Get date range based on organization preference
-    const { startDate, endDate } = getDateRange(scorecardTimePeriodPreference, today);
+    // Get all unique dates where we have actual score data
+    const allScoreDates = [...new Set(
+      metrics.flatMap(metric => Object.keys(weeklyScores[metric.id] || {}))
+    )].sort();
     
-    // Generate all weeks from start date to end date
-    let currentWeek = getWeekStartDate(startDate);
-    while (currentWeek <= endDate) {
-      labels.push(formatWeekLabel(currentWeek));
-      weekDates.push(currentWeek.toISOString().split('T')[0]);
-      
-      // Move to next week
-      currentWeek = new Date(currentWeek);
-      currentWeek.setDate(currentWeek.getDate() + 7);
+    if (allScoreDates.length === 0) {
+      console.log('ScorecardPage - No score data available, showing empty weeks');
+      return { labels: [], weekDates: [] };
     }
     
-    console.log(`ScorecardPage - Showing ${scorecardTimePeriodPreference} weeks:`, weekDates);
+    // For 13-week rolling, show the last 13 weeks that have data
+    let displayDates;
+    if (scorecardTimePeriodPreference === '13_week_rolling') {
+      displayDates = allScoreDates.slice(-13);
+    } else {
+      // For other preferences, still use the existing logic but ensure we have data
+      const today = new Date();
+      const { startDate, endDate } = getDateRange(scorecardTimePeriodPreference, today);
+      
+      // Filter actual dates to only those in the calculated range
+      displayDates = allScoreDates.filter(dateStr => {
+        const date = new Date(dateStr);
+        return date >= startDate && date <= endDate;
+      });
+    }
+    
+    // Convert dates to labels and week start dates
+    displayDates.forEach(dateStr => {
+      const date = new Date(dateStr);
+      const weekStart = getWeekStartDate(date);
+      const weekStartStr = weekStart.toISOString().split('T')[0];
+      
+      // Avoid duplicate weeks
+      if (!weekDates.includes(weekStartStr)) {
+        labels.push(formatWeekLabel(weekStart));
+        weekDates.push(weekStartStr);
+      }
+    });
+    
+    console.log(`ScorecardPage - Showing ${scorecardTimePeriodPreference} weeks with actual data:`, weekDates);
     
     return { labels, weekDates };
   };
@@ -502,27 +526,52 @@ const ScorecardPageClean = () => {
     return `${months[date.getMonth()]} ${year}`;
   };
 
-  // Get month labels based on organization's time period preference
+  // Get month labels based on actual data dates, not calculated from today
   const getMonthLabels = () => {
     const labels = [];
     const monthDates = [];
-    const today = new Date();
     
-    // Get date range based on organization preference
-    const { startDate, endDate } = getDateRange(scorecardTimePeriodPreference, today);
+    // Get all unique dates where we have actual score data
+    const allScoreDates = [...new Set(
+      metrics.flatMap(metric => Object.keys(weeklyScores[metric.id] || {}))
+    )].sort();
     
-    // Generate all months from start date to end date
-    let currentMonth = new Date(startDate.getFullYear(), startDate.getMonth(), 1);
-    while (currentMonth <= endDate) {
-      const monthDate = new Date(currentMonth.getFullYear(), currentMonth.getMonth(), 1);
-      labels.push(formatMonthLabel(monthDate));
-      monthDates.push(monthDate.toISOString().split('T')[0]);
-      
-      // Move to next month
-      currentMonth.setMonth(currentMonth.getMonth() + 1);
+    if (allScoreDates.length === 0) {
+      console.log('ScorecardPage - No score data available, showing empty months');
+      return { labels: [], monthDates: [] };
     }
     
-    console.log(`ScorecardPage - Showing ${scorecardTimePeriodPreference} months:`, monthDates);
+    // For 13-week rolling, show months from the last 13 weeks of data
+    let displayDates;
+    if (scorecardTimePeriodPreference === '13_week_rolling') {
+      displayDates = allScoreDates.slice(-13);
+    } else {
+      // For other preferences, still use the existing logic but ensure we have data
+      const today = new Date();
+      const { startDate, endDate } = getDateRange(scorecardTimePeriodPreference, today);
+      
+      // Filter actual dates to only those in the calculated range
+      displayDates = allScoreDates.filter(dateStr => {
+        const date = new Date(dateStr);
+        return date >= startDate && date <= endDate;
+      });
+    }
+    
+    // Convert dates to month labels and avoid duplicates
+    const monthsSet = new Set();
+    displayDates.forEach(dateStr => {
+      const date = new Date(dateStr);
+      const monthStart = new Date(date.getFullYear(), date.getMonth(), 1);
+      const monthStartStr = monthStart.toISOString().split('T')[0];
+      
+      if (!monthsSet.has(monthStartStr)) {
+        monthsSet.add(monthStartStr);
+        labels.push(formatMonthLabel(monthStart));
+        monthDates.push(monthStartStr);
+      }
+    });
+    
+    console.log(`ScorecardPage - Showing ${scorecardTimePeriodPreference} months with actual data:`, monthDates);
     
     return { labels, monthDates };
   };
