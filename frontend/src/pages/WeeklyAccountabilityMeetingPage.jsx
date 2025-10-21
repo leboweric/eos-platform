@@ -6063,9 +6063,9 @@ const WeeklyAccountabilityMeetingPage = () => {
                     </div>
                   )}
                 </div>
-              </CardContent>
-            </Card>
-          </div>
+              </div>
+            </CardContent>
+          </Card>
         );
 
       default:
