@@ -303,14 +303,13 @@ const MeetingHistoryPageClean = () => {
               <div className="space-y-2">
                 <Label htmlFor="team">Team</Label>
                 <Select
-                  value={filters.team_id}
-                  onValueChange={(value) => handleFilterChange('team_id', value)}
+                  value={filters.team_id || undefined}
+                  onValueChange={(value) => handleFilterChange('team_id', value || '')}
                 >
                   <SelectTrigger>
                     <SelectValue placeholder="All teams" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="">All teams</SelectItem>
                     {teams.map((team) => (
                       <SelectItem key={team.id} value={team.id}>
                         {team.name}
@@ -324,14 +323,13 @@ const MeetingHistoryPageClean = () => {
               <div className="space-y-2">
                 <Label htmlFor="type">Meeting Type</Label>
                 <Select
-                  value={filters.meeting_type}
-                  onValueChange={(value) => handleFilterChange('meeting_type', value)}
+                  value={filters.meeting_type || undefined}
+                  onValueChange={(value) => handleFilterChange('meeting_type', value || '')}
                 >
                   <SelectTrigger>
                     <SelectValue placeholder="All types" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="">All types</SelectItem>
                     <SelectItem value="weekly_accountability">Weekly Accountability</SelectItem>
                     <SelectItem value="quarterly_planning">Quarterly Planning</SelectItem>
                     <SelectItem value="annual_planning">Annual Planning</SelectItem>
