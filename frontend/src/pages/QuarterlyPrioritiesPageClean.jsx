@@ -290,6 +290,12 @@ const QuarterlyPrioritiesPageClean = () => {
       // Count completed company priorities
       if (Array.isArray(companyPriorities)) {
         companyPriorities.forEach(priority => {
+          console.log('🔍 Company Priority:', { 
+            title: priority.title?.substring(0, 30) + '...', 
+            status: priority.status, 
+            completion_percentage: priority.completion_percentage,
+            isCompleted: priority.status === 'completed' || priority.completion_percentage === 100
+          });
           if (priority.status === 'completed' || priority.completion_percentage === 100) {
             completedCount++;
           }
@@ -301,6 +307,12 @@ const QuarterlyPrioritiesPageClean = () => {
         Object.values(teamMemberPriorities).forEach(memberPriorities => {
           if (Array.isArray(memberPriorities)) {
             memberPriorities.forEach(priority => {
+              console.log('🔍 Team Priority:', { 
+                title: priority.title?.substring(0, 30) + '...', 
+                status: priority.status, 
+                completion_percentage: priority.completion_percentage,
+                isCompleted: priority.status === 'completed' || priority.completion_percentage === 100
+              });
               if (priority.status === 'completed' || priority.completion_percentage === 100) {
                 completedCount++;
               }
