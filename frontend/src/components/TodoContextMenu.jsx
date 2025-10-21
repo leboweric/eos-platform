@@ -27,7 +27,9 @@ export function TodoContextMenu({
   onChangeDueDate,
   onChangePriority,
   onDuplicate,
-  disabled = false 
+  disabled = false,
+  hidePriorityOptions = false,
+  hideDeleteOption = false
 }) {
   if (disabled) {
     return children;
@@ -90,7 +92,7 @@ export function TodoContextMenu({
         )}
         
         {/* Priority */}
-        {onChangePriority && (
+        {onChangePriority && !hidePriorityOptions && (
           <>
             <ContextMenuSeparator />
             <ContextMenuItem onClick={() => onChangePriority(todo, 'high')}>
@@ -109,14 +111,18 @@ export function TodoContextMenu({
         )}
         
         {/* Delete */}
-        <ContextMenuSeparator />
-        <ContextMenuItem 
-          onClick={() => onDelete?.(todo)}
-          className="text-red-600 focus:text-red-600 focus:bg-red-50"
-        >
-          <Trash2 className="mr-2 h-4 w-4" />
-          Delete To-Do
-        </ContextMenuItem>
+        {!hideDeleteOption && (
+          <>
+            <ContextMenuSeparator />
+            <ContextMenuItem 
+              onClick={() => onDelete?.(todo)}
+              className="text-red-600 focus:text-red-600 focus:bg-red-50"
+            >
+              <Trash2 className="mr-2 h-4 w-4" />
+              Delete To-Do
+            </ContextMenuItem>
+          </>
+        )}
       </ContextMenuContent>
     </ContextMenu>
   );

@@ -5209,6 +5209,8 @@ const WeeklyAccountabilityMeetingPage = () => {
                                   onChangeDueDate={handleChangeTodoDueDate}
                                   onChangePriority={handleChangeTodoPriority}
                                   onDuplicate={handleDuplicateTodo}
+                                  hidePriorityOptions={true}
+                                  hideDeleteOption={true}
                                 >
                                   <div className="border-b border-slate-100 last:border-0 cursor-context-menu hover:bg-gray-50 transition-colors rounded">
                                     {/* Main To-Do Row */}
