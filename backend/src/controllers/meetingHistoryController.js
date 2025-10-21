@@ -1,0 +1,511 @@
+import db from '../config/database.js';
+import { v4 as uuidv4 } from 'uuid';
+
+// Get paginated list of archived meetings
+export const getMeetingHistory = async (req, res) => {
+  try {
+    const { orgId } = req.params;
+    const { 
+      team_id, 
+      meeting_type, 
+      start_date, 
+      end_date, 
+      search_query, 
+      limit = 50, 
+      offset = 0 
+    } = req.query;
+
+    // Ensure user has access to this organization
+    if (req.user.organization_id !== orgId) {
+      return res.status(403).json({ error: 'Access denied to this organization' });
+    }
+
+    let query = `
+      SELECT 
+        ms.id,
+        ms.meeting_id,
+        ms.team_id,
+        ms.meeting_type,
+        ms.meeting_date,
+        ms.duration_minutes,
+        ms.average_rating,
+        ms.snapshot_data,
+        ms.created_at,
+        t.name as team_name,
+        u.first_name || ' ' || u.last_name as facilitator_name,
+        COUNT(*) OVER() as total_count
+      FROM meeting_snapshots ms
+      JOIN teams t ON ms.team_id = t.id
+      LEFT JOIN users u ON ms.facilitator_id = u.id
+      WHERE ms.organization_id = $1
+    `;
+
+    const params = [orgId];
+    let paramCount = 2;
+
+    // Filter by team
+    if (team_id) {
+      query += ` AND ms.team_id = $${paramCount}`;
+      params.push(team_id);
+      paramCount++;
+    }
+
+    // Filter by meeting type
+    if (meeting_type) {
+      query += ` AND ms.meeting_type = $${paramCount}`;
+      params.push(meeting_type);
+      paramCount++;
+    }
+
+    // Filter by start date
+    if (start_date) {
+      query += ` AND ms.meeting_date >= $${paramCount}`;
+      params.push(start_date);
+      paramCount++;
+    }
+
+    // Filter by end date
+    if (end_date) {
+      query += ` AND ms.meeting_date <= $${paramCount}`;
+      params.push(end_date);
+      paramCount++;
+    }
+
+    // Search in snapshot data (notes, titles, etc.)
+    if (search_query) {
+      query += ` AND ms.snapshot_data::text ILIKE $${paramCount}`;
+      params.push(`%${search_query}%`);
+      paramCount++;
+    }
+
+    // Order and pagination
+    query += ` ORDER BY ms.meeting_date DESC LIMIT $${paramCount} OFFSET $${paramCount + 1}`;
+    params.push(parseInt(limit), parseInt(offset));
+
+    console.log('Meeting history query:', query);
+    console.log('Meeting history params:', params);
+
+    const result = await db.query(query, params);
+
+    res.json({
+      meetings: result.rows,
+      total: result.rows.length > 0 ? parseInt(result.rows[0].total_count) : 0,
+      limit: parseInt(limit),
+      offset: parseInt(offset)
+    });
+
+  } catch (error) {
+    console.error('Failed to get meeting history:', error);
+    res.status(500).json({ error: 'Failed to get meeting history' });
+  }
+};
+
+// Get detailed snapshot for specific meeting
+export const getMeetingSnapshot = async (req, res) => {
+  try {
+    const { orgId, id } = req.params;
+
+    // Ensure user has access to this organization
+    if (req.user.organization_id !== orgId) {
+      return res.status(403).json({ error: 'Access denied to this organization' });
+    }
+
+    const query = `
+      SELECT 
+        ms.*,
+        t.name as team_name,
+        u.first_name || ' ' || u.last_name as facilitator_name
+      FROM meeting_snapshots ms
+      JOIN teams t ON ms.team_id = t.id
+      LEFT JOIN users u ON ms.facilitator_id = u.id
+      WHERE ms.id = $1 AND ms.organization_id = $2
+    `;
+
+    const result = await db.query(query, [id, orgId]);
+
+    if (result.rows.length === 0) {
+      return res.status(404).json({ error: 'Meeting snapshot not found' });
+    }
+
+    res.json(result.rows[0]);
+
+  } catch (error) {
+    console.error('Failed to get meeting snapshot:', error);
+    res.status(500).json({ error: 'Failed to get meeting snapshot' });
+  }
+};
+
+// Create snapshot when meeting concludes
+export const createMeetingSnapshot = async (req, res) => {
+  const client = await db.getClient();
+  
+  try {
+    const { orgId, meetingId } = req.params;
+
+    // Ensure user has access to this organization
+    if (req.user.organization_id !== orgId) {
+      return res.status(403).json({ error: 'Access denied to this organization' });
+    }
+
+    await client.query('BEGIN');
+
+    // Get meeting details
+    const meetingQuery = `
+      SELECT 
+        m.*,
+        t.name as team_name
+      FROM meetings m
+      JOIN teams t ON m.team_id = t.id
+      WHERE m.id = $1 AND m.organization_id = $2
+    `;
+    
+    const meetingResult = await client.query(meetingQuery, [meetingId, orgId]);
+    
+    if (meetingResult.rows.length === 0) {
+      await client.query('ROLLBACK');
+      return res.status(404).json({ error: 'Meeting not found' });
+    }
+
+    const meeting = meetingResult.rows[0];
+
+    // Check if snapshot already exists
+    const existingSnapshot = await client.query(
+      'SELECT id FROM meeting_snapshots WHERE meeting_id = $1 AND organization_id = $2',
+      [meetingId, orgId]
+    );
+
+    if (existingSnapshot.rows.length > 0) {
+      await client.query('ROLLBACK');
+      return res.status(409).json({ error: 'Meeting snapshot already exists' });
+    }
+
+    // Calculate duration and meeting timeframe
+    const now = new Date();
+    const startTime = new Date(meeting.started_at);
+    const duration = Math.round((now - startTime) / (1000 * 60)); // minutes
+
+    // Get attendees with ratings
+    const attendeesQuery = `
+      SELECT 
+        mp.user_id,
+        u.first_name || ' ' || u.last_name as name,
+        mp.rating,
+        mp.joined_at IS NOT NULL as attended
+      FROM meeting_participants mp
+      JOIN users u ON mp.user_id = u.id
+      WHERE mp.meeting_id = $1
+    `;
+    const attendeesResult = await client.query(attendeesQuery, [meetingId]);
+
+    // Calculate average rating
+    const ratingsWithValues = attendeesResult.rows.filter(a => a.rating !== null);
+    const averageRating = ratingsWithValues.length > 0 
+      ? ratingsWithValues.reduce((sum, a) => sum + a.rating, 0) / ratingsWithValues.length
+      : null;
+
+    // Get issues created during meeting
+    const issuesCreatedQuery = `
+      SELECT id, title, priority_rank as priority, created_by_id as created_by
+      FROM issues
+      WHERE meeting_id = $1 AND organization_id = $2 AND deleted_at IS NULL
+    `;
+    const issuesCreated = await client.query(issuesCreatedQuery, [meetingId, orgId]);
+
+    // Get issues discussed (from junction table if it exists, otherwise approximate)
+    const issuesDiscussedQuery = `
+      SELECT i.id, i.title, i.status
+      FROM issues i
+      WHERE i.team_id = $1 
+        AND i.organization_id = $2 
+        AND i.updated_at BETWEEN $3 AND $4
+        AND i.deleted_at IS NULL
+        AND i.meeting_id IS NULL
+    `;
+    const issuesDiscussed = await client.query(issuesDiscussedQuery, [
+      meeting.team_id, orgId, startTime, now
+    ]);
+
+    // Get issues solved during meeting
+    const issuesSolvedQuery = `
+      SELECT id, title, resolution_notes as solution, resolved_at as solved_at
+      FROM issues
+      WHERE status = 'closed' 
+        AND resolved_at BETWEEN $1 AND $2
+        AND team_id = $3
+        AND organization_id = $4
+        AND deleted_at IS NULL
+    `;
+    const issuesSolved = await client.query(issuesSolvedQuery, [
+      startTime, now, meeting.team_id, orgId
+    ]);
+
+    // Get todos created during meeting
+    const todosCreatedQuery = `
+      SELECT 
+        t.id, 
+        t.title, 
+        t.assigned_to_id as assignee_id,
+        u.first_name || ' ' || u.last_name as assignee_name,
+        t.due_date
+      FROM todos t
+      LEFT JOIN users u ON t.assigned_to_id = u.id
+      WHERE t.meeting_id = $1 AND t.organization_id = $2 AND t.deleted_at IS NULL
+    `;
+    const todosCreated = await client.query(todosCreatedQuery, [meetingId, orgId]);
+
+    // Get todos completed during meeting
+    const todosCompletedQuery = `
+      SELECT id, title, assigned_to_id as completed_by
+      FROM todos
+      WHERE status = 'complete' 
+        AND updated_at BETWEEN $1 AND $2
+        AND team_id = $3
+        AND organization_id = $4
+        AND deleted_at IS NULL
+    `;
+    const todosCompleted = await client.query(todosCompletedQuery, [
+      startTime, now, meeting.team_id, orgId
+    ]);
+
+    // Build snapshot data
+    const snapshotData = {
+      attendees: attendeesResult.rows,
+      notes: meeting.notes || '',
+      issues: {
+        created: issuesCreated.rows,
+        discussed: issuesDiscussed.rows,
+        solved: issuesSolved.rows
+      },
+      todos: {
+        created: todosCreated.rows,
+        completed: todosCompleted.rows
+      },
+      conclusions: {
+        key_decisions: [],
+        next_steps: [],
+        parking_lot: []
+      }
+    };
+
+    // Create snapshot record
+    const snapshotQuery = `
+      INSERT INTO meeting_snapshots (
+        id,
+        meeting_id,
+        organization_id,
+        team_id,
+        facilitator_id,
+        meeting_type,
+        meeting_date,
+        duration_minutes,
+        average_rating,
+        snapshot_data
+      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
+      RETURNING *
+    `;
+
+    const snapshotId = uuidv4();
+    const snapshotValues = [
+      snapshotId,
+      meetingId,
+      orgId,
+      meeting.team_id,
+      meeting.facilitator_id,
+      meeting.meeting_type,
+      meeting.started_at,
+      duration,
+      averageRating,
+      JSON.stringify(snapshotData)
+    ];
+
+    const snapshotResult = await client.query(snapshotQuery, snapshotValues);
+
+    // Update meeting record
+    const updateMeetingQuery = `
+      UPDATE meetings 
+      SET 
+        is_archived = true,
+        archived_at = NOW(),
+        completed_at = NOW(),
+        updated_at = NOW()
+      WHERE id = $1 AND organization_id = $2
+    `;
+    
+    await client.query(updateMeetingQuery, [meetingId, orgId]);
+
+    await client.query('COMMIT');
+
+    res.status(201).json({
+      message: 'Meeting snapshot created successfully',
+      snapshot: snapshotResult.rows[0]
+    });
+
+  } catch (error) {
+    await client.query('ROLLBACK');
+    console.error('Failed to create meeting snapshot:', error);
+    res.status(500).json({ error: 'Failed to create meeting snapshot' });
+  } finally {
+    client.release();
+  }
+};
+
+// Update notes in meeting snapshot
+export const updateMeetingNotes = async (req, res) => {
+  try {
+    const { orgId, id } = req.params;
+    const { notes } = req.body;
+
+    // Ensure user has access to this organization
+    if (req.user.organization_id !== orgId) {
+      return res.status(403).json({ error: 'Access denied to this organization' });
+    }
+
+    const query = `
+      UPDATE meeting_snapshots
+      SET 
+        snapshot_data = jsonb_set(
+          snapshot_data, 
+          '{notes}', 
+          $3
+        ),
+        updated_at = NOW()
+      WHERE id = $1 AND organization_id = $2
+      RETURNING *
+    `;
+
+    const result = await db.query(query, [id, orgId, JSON.stringify(notes)]);
+
+    if (result.rows.length === 0) {
+      return res.status(404).json({ error: 'Meeting snapshot not found' });
+    }
+
+    res.json({
+      message: 'Notes updated successfully',
+      snapshot: result.rows[0]
+    });
+
+  } catch (error) {
+    console.error('Failed to update meeting notes:', error);
+    res.status(500).json({ error: 'Failed to update meeting notes' });
+  }
+};
+
+// Export meeting history to CSV
+export const exportMeetingHistoryCSV = async (req, res) => {
+  try {
+    const { orgId } = req.params;
+    const { 
+      team_id, 
+      meeting_type, 
+      start_date, 
+      end_date, 
+      search_query 
+    } = req.query;
+
+    // Ensure user has access to this organization
+    if (req.user.organization_id !== orgId) {
+      return res.status(403).json({ error: 'Access denied to this organization' });
+    }
+
+    // Use same filtering logic as getMeetingHistory but without pagination
+    let query = `
+      SELECT 
+        ms.meeting_date,
+        t.name as team_name,
+        ms.meeting_type,
+        ms.duration_minutes,
+        ms.average_rating,
+        u.first_name || ' ' || u.last_name as facilitator_name,
+        ms.snapshot_data
+      FROM meeting_snapshots ms
+      JOIN teams t ON ms.team_id = t.id
+      LEFT JOIN users u ON ms.facilitator_id = u.id
+      WHERE ms.organization_id = $1
+    `;
+
+    const params = [orgId];
+    let paramCount = 2;
+
+    // Apply same filters as getMeetingHistory
+    if (team_id) {
+      query += ` AND ms.team_id = $${paramCount}`;
+      params.push(team_id);
+      paramCount++;
+    }
+
+    if (meeting_type) {
+      query += ` AND ms.meeting_type = $${paramCount}`;
+      params.push(meeting_type);
+      paramCount++;
+    }
+
+    if (start_date) {
+      query += ` AND ms.meeting_date >= $${paramCount}`;
+      params.push(start_date);
+      paramCount++;
+    }
+
+    if (end_date) {
+      query += ` AND ms.meeting_date <= $${paramCount}`;
+      params.push(end_date);
+      paramCount++;
+    }
+
+    if (search_query) {
+      query += ` AND ms.snapshot_data::text ILIKE $${paramCount}`;
+      params.push(`%${search_query}%`);
+      paramCount++;
+    }
+
+    query += ` ORDER BY ms.meeting_date DESC`;
+
+    const result = await db.query(query, params);
+
+    // Build CSV content
+    const headers = [
+      'Date',
+      'Team', 
+      'Type',
+      'Duration (min)',
+      'Rating',
+      'Facilitator',
+      'Issues Created',
+      'Issues Solved',
+      'Todos Created', 
+      'Todos Completed'
+    ];
+
+    let csvContent = headers.join(',') + '\n';
+
+    result.rows.forEach(row => {
+      const snapshotData = typeof row.snapshot_data === 'string' 
+        ? JSON.parse(row.snapshot_data) 
+        : row.snapshot_data;
+
+      const csvRow = [
+        new Date(row.meeting_date).toLocaleDateString(),
+        `"${row.team_name || ''}"`,
+        `"${row.meeting_type || ''}"`,
+        row.duration_minutes || 0,
+        row.average_rating || '',
+        `"${row.facilitator_name || ''}"`,
+        snapshotData?.issues?.created?.length || 0,
+        snapshotData?.issues?.solved?.length || 0,
+        snapshotData?.todos?.created?.length || 0,
+        snapshotData?.todos?.completed?.length || 0
+      ];
+
+      csvContent += csvRow.join(',') + '\n';
+    });
+
+    // Set CSV headers
+    res.setHeader('Content-Type', 'text/csv');
+    res.setHeader('Content-Disposition', 'attachment; filename="meeting-history.csv"');
+    
+    res.send(csvContent);
+
+  } catch (error) {
+    console.error('Failed to export meeting history:', error);
+    res.status(500).json({ error: 'Failed to export meeting history' });
+  }
+};
