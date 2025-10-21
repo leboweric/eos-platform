@@ -378,3 +378,40 @@ export const saveTimerState = async (req, res) => {
     client.release();
   }
 };
+
+// Check if user can start a meeting for a specific team
+export const canStartMeetingForTeam = async (req, res) => {
+  const client = await pool.connect();
+  try {
+    const { teamId } = req.params;
+    const userId = req.user.id || req.user.userId;
+
+    // Check if user is explicit member of this specific team
+    const membershipQuery = `
+      SELECT tm.id, tm.role
+      FROM team_members tm
+      WHERE tm.user_id = $1 
+      AND tm.team_id = $2
+      AND tm.deleted_at IS NULL
+    `;
+
+    const result = await client.query(membershipQuery, [userId, teamId]);
+    
+    const canStart = result.rows.length > 0;
+
+    res.json({ 
+      canStart,
+      teamId,
+      membership: result.rows[0] || null
+    });
+
+  } catch (error) {
+    console.error('Error checking meeting start permission:', error);
+    res.status(500).json({ 
+      error: 'Failed to check permissions',
+      canStart: false 
+    });
+  } finally {
+    client.release();
+  }
+};

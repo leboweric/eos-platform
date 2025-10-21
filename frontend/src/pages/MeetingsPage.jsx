@@ -29,6 +29,7 @@ import {
   Sparkles
 } from 'lucide-react';
 import { teamsService } from '../services/teamsService';
+import meetingSessionsService from '../services/meetingSessionsService';
 
 const MeetingsPage = () => {
   const navigate = useNavigate();
@@ -59,6 +60,8 @@ const MeetingsPage = () => {
   const [showTeamSelectionDialog, setShowTeamSelectionDialog] = useState(false);
   const [pendingMeetingId, setPendingMeetingId] = useState(null);
   const [teamForMeeting, setTeamForMeeting] = useState(null);
+  const [meetingPermissions, setMeetingPermissions] = useState({});
+  const [checkingPermissions, setCheckingPermissions] = useState(false);
 
   const meetings = [
     {
@@ -130,6 +133,43 @@ const MeetingsPage = () => {
   useEffect(() => {
     console.log('🔄 teamForMeeting state changed to:', teamForMeeting);
   }, [teamForMeeting]);
+
+  // Check meeting permissions when selectedTeamId changes
+  useEffect(() => {
+    const checkMeetingPermissions = async () => {
+      if (!selectedTeamId || !user?.organization_id) {
+        return;
+      }
+
+      setCheckingPermissions(true);
+      
+      try {
+        const permissionResult = await meetingSessionsService.canStartMeetingForTeam(selectedTeamId);
+        
+        setMeetingPermissions(prev => ({
+          ...prev,
+          [selectedTeamId]: permissionResult.canStart
+        }));
+        
+        console.log('Meeting start permission check:', {
+          teamId: selectedTeamId,
+          canStart: permissionResult.canStart
+        });
+        
+      } catch (error) {
+        console.error('Failed to check meeting permissions:', error);
+        // Default to false if check fails
+        setMeetingPermissions(prev => ({
+          ...prev,
+          [selectedTeamId]: false
+        }));
+      } finally {
+        setCheckingPermissions(false);
+      }
+    };
+
+    checkMeetingPermissions();
+  }, [selectedTeamId, user?.organization_id]);
   
   const fetchOrganizationTheme = async () => {
     try {
@@ -228,6 +268,14 @@ const MeetingsPage = () => {
 
   const handleStartMeeting = (meetingId) => {
     console.log('🎯 handleStartMeeting called with:', { meetingId, selectedTeamId });
+    
+    // PRE-FLIGHT PERMISSION CHECK
+    const canStart = meetingPermissions[selectedTeamId];
+    
+    if (canStart === false) {
+      alert('You must be a member of this team to start meetings.');
+      return; // STOP HERE
+    }
     
     // CRITICAL VALIDATION: Never allow meeting start without valid team ID
     if (!selectedTeamId || selectedTeamId === 'null' || selectedTeamId === 'undefined') {
@@ -514,7 +562,13 @@ const MeetingsPage = () => {
 
                     <Button 
                       onClick={() => handleStartMeeting(meeting.id)}
-                      disabled={meeting.comingSoon || !selectedTeamId || loadingTeams}
+                      disabled={
+                        meeting.comingSoon || 
+                        !selectedTeamId || 
+                        loadingTeams ||
+                        checkingPermissions || 
+                        meetingPermissions[selectedTeamId] === false
+                      }
                       className={`w-full text-white transition-all duration-200 shadow-lg hover:shadow-xl transform hover:scale-[1.02] ${
                         meeting.comingSoon ? 'bg-gradient-to-r from-gray-400 to-gray-500 cursor-not-allowed' : 
                         (isActive ? 'bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 animate-pulse ring-2 ring-green-400 ring-offset-2' : '')
@@ -535,9 +589,18 @@ const MeetingsPage = () => {
                         }
                       }}
                     >
-                      {meeting.comingSoon ? 'Coming Soon' : (isActive ? 'Join Meeting in Progress' : 'Start Meeting')}
+                      {checkingPermissions ? 'Checking...' : 
+                       meeting.comingSoon ? 'Coming Soon' : 
+                       (isActive ? 'Join Meeting in Progress' : 'Start Meeting')}
                       {!meeting.comingSoon && <ChevronRight className="ml-2 h-4 w-4" />}
                     </Button>
+                    
+                    {/* Add helpful message below button if no permission */}
+                    {meetingPermissions[selectedTeamId] === false && !checkingPermissions && (
+                      <p className="text-xs text-red-600 mt-2 text-center">
+                        Team membership required
+                      </p>
+                    )}
                   </div>
                 </CardContent>
               </Card>

@@ -318,6 +318,17 @@ class MeetingSessionsService {
       throw error;
     }
   }
+
+  // Check if user can start a meeting for a specific team
+  async canStartMeetingForTeam(teamId) {
+    try {
+      const response = await axios.get(`/meeting-sessions/teams/${teamId}/can-start-meeting`);
+      return response.data;
+    } catch (error) {
+      console.error('Error checking meeting start permission:', error);
+      return { canStart: false };
+    }
+  }
 }
 
 export default new MeetingSessionsService();

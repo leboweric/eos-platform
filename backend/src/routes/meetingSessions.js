@@ -8,7 +8,8 @@ import {
   updateSessionSection,
   endSession,
   getActiveSession,
-  saveTimerState
+  saveTimerState,
+  canStartMeetingForTeam
 } from '../controllers/meetingSessionsController.js';
 import {
   startSection,
@@ -32,6 +33,9 @@ router.post('/start', (req, res, next) => {
 
 // Get active session for a team
 router.get('/active', getActiveSession);
+
+// Check if user can start meeting for team
+router.get('/teams/:teamId/can-start-meeting', canStartMeetingForTeam);
 
 // Pause a session
 router.post('/:id/pause', pauseSession);
