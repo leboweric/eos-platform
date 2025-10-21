@@ -2,27 +2,12 @@ import pool from '../config/database.js';
 
 // Start a new meeting session
 export const startSession = async (req, res) => {
-  console.log('🔥🔥🔥 STARTESSION FUNCTION DEFINITELY CALLED! 🔥🔥🔥');
   const { team_id: teamId, organization_id: orgId, meeting_type } = req.body;
   const userId = req.user.id || req.user.userId;
   
-  console.log('🚨 === MEETING START REQUEST DEBUG ===');
-  console.log(`🚨 User ID: ${userId}`);
-  console.log(`🚨 Team ID from request: ${teamId}`);
-  console.log(`🚨 Meeting Type: ${meeting_type}`);
-  console.log(`🚨 Full request body:`, JSON.stringify(req.body, null, 2));
-  
   const client = await pool.connect();
   try {
-    // Look up what team this actually is
-    const teamInfo = await client.query(
-      `SELECT id, name, is_leadership_team FROM teams WHERE id = $1`,
-      [teamId]
-    );
-    
-    console.log(`🚨 Team from database:`, JSON.stringify(teamInfo.rows[0], null, 2));
-    
-    // Now check membership
+    // Check team membership
     const memberCheck = await client.query(
       `SELECT user_id, team_id, role
        FROM team_members 
@@ -30,21 +15,14 @@ export const startSession = async (req, res) => {
       [userId, teamId]
     );
     
-    console.log(`🚨 Membership check returned ${memberCheck.rows.length} rows`);
-    if (memberCheck.rows.length > 0) {
-      console.log(`🚨 Membership data:`, JSON.stringify(memberCheck.rows[0], null, 2));
-    }
-    
     if (memberCheck.rows.length === 0) {
-      console.log(`❌ BLOCKED: User ${userId} is NOT a member of team ${teamId}`);
+      console.log(`Access denied: User ${userId} not member of team ${teamId}`);
       return res.status(403).json({
         success: false,
         error: 'TEAM_MEMBERSHIP_REQUIRED',
         message: 'You cannot start a meeting for a team you are not a member of.'
       });
     }
-    
-    console.log(`✅ ALLOWED: User ${userId} IS a member of team ${teamId}`);
 
     // Check if there's already an active session for this team
     const existingSession = await client.query(`
