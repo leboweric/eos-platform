@@ -61,11 +61,11 @@ const AdminToolsPage = () => {
       description: 'Import issues and IDS items from other platforms',
       icon: AlertTriangle,
       color: 'orange',
-      href: '/admin/import-issues',
-      available: false,
+      href: '/issues/import',
+      available: true,
       stats: {
-        label: 'Coming Soon',
-        value: 'Q1 2025'
+        label: 'Source',
+        value: 'Ninety.io'
       }
     }
   ];
