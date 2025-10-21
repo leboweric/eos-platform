@@ -1,6 +1,6 @@
 import express from 'express';
 import multer from 'multer';
-import { authenticateToken, requireRole } from '../middleware/auth.js';
+import { authenticate, authorize } from '../middleware/auth.js';
 import { getTemplate, preview, execute } from '../controllers/issuesImportController.js';
 
 const router = express.Router();
@@ -31,7 +31,7 @@ const upload = multer({
 });
 
 // Apply authentication to all routes
-router.use(authenticateToken);
+router.use(authenticate);
 
 /**
  * GET /api/v1/issues/import/template
@@ -45,7 +45,7 @@ router.get('/template', getTemplate);
  * Requires: manager role or higher
  */
 router.post('/preview', 
-  requireRole(['admin', 'manager']),
+  authorize(['admin', 'manager']),
   upload.single('file'),
   preview
 );
@@ -56,7 +56,7 @@ router.post('/preview',
  * Requires: manager role or higher
  */
 router.post('/execute',
-  requireRole(['admin', 'manager']),
+  authorize(['admin', 'manager']),
   upload.single('file'),
   execute
 );
