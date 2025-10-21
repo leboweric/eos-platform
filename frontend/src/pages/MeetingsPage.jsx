@@ -30,6 +30,7 @@ import {
 } from 'lucide-react';
 import { teamsService } from '../services/teamsService';
 import meetingSessionsService from '../services/meetingSessionsService';
+import { toast } from 'react-hot-toast';
 
 const MeetingsPage = () => {
   const navigate = useNavigate();
@@ -267,16 +268,23 @@ const MeetingsPage = () => {
     }
   };
 
-  const handleStartMeeting = (meetingId) => {
-    console.log('🎯 handleStartMeeting called with:', { meetingId, selectedTeamId });
-    
-    // PRE-FLIGHT PERMISSION CHECK
-    const canStart = meetingPermissions[selectedTeamId];
-    
-    if (canStart === false) {
-      alert('You must be a member of this team to start meetings.');
-      return; // STOP HERE
-    }
+  const handleStartMeeting = async (meetingId) => {
+    try {
+      console.log('🎯 handleStartMeeting called with:', { meetingId, selectedTeamId });
+      
+      // Check if permissions are still being verified
+      if (checkingPermissions) {
+        toast.info('Checking permissions...');
+        return;
+      }
+
+      // PRE-FLIGHT PERMISSION CHECK - must be explicitly true
+      const canStart = meetingPermissions[selectedTeamId];
+      
+      if (canStart !== true) {  // Changed from === false
+        toast.error('You must be a member of this team to start meetings.');
+        return;
+      }
     
     // CRITICAL VALIDATION: Never allow meeting start without valid team ID
     if (!selectedTeamId || selectedTeamId === 'null' || selectedTeamId === 'undefined') {
@@ -323,8 +331,12 @@ const MeetingsPage = () => {
       return;
     }
     
-    // If single team, proceed directly
-    proceedWithMeeting(meetingId, selectedTeamId);
+      // If single team, proceed directly
+      proceedWithMeeting(meetingId, selectedTeamId);
+    } catch (error) {
+      console.error('Error in handleStartMeeting:', error);
+      toast.error('Failed to start meeting. Please try again.');
+    }
   };
   
   const proceedWithMeeting = (meetingId, teamId) => {
@@ -568,7 +580,7 @@ const MeetingsPage = () => {
                         !selectedTeamId || 
                         loadingTeams ||
                         checkingPermissions || 
-                        meetingPermissions[selectedTeamId] === false
+                        meetingPermissions[selectedTeamId] !== true
                       }
                       className={`w-full text-white transition-all duration-200 shadow-lg hover:shadow-xl transform hover:scale-[1.02] ${
                         meeting.comingSoon ? 'bg-gradient-to-r from-gray-400 to-gray-500 cursor-not-allowed' : 
@@ -597,7 +609,8 @@ const MeetingsPage = () => {
                     </Button>
                     
                     {/* Add helpful message below button if no permission */}
-                    {meetingPermissions[selectedTeamId] === false && !checkingPermissions && (
+                    {(meetingPermissions[selectedTeamId] === false || 
+                      (meetingPermissions[selectedTeamId] === undefined && !checkingPermissions)) && (
                       <p className="text-xs text-red-600 mt-2 text-center">
                         Team membership required
                       </p>
