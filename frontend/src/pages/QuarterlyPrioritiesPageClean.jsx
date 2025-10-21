@@ -1182,8 +1182,12 @@ const QuarterlyPrioritiesPageClean = () => {
     }
   };
 
-  const handleArchivePriority = async (priorityId) => {
-    if (!window.confirm('Are you sure you want to archive this priority?')) {
+  const handleArchivePriority = async (priorityId, priorityTitle = null) => {
+    const message = priorityTitle 
+      ? `Best Practice is to Archive priorities at the Quarterly Review Meeting.\n\nAre you sure you want to archive "${priorityTitle}"?`
+      : 'Are you sure you want to archive this priority?';
+      
+    if (!window.confirm(message)) {
       return;
     }
     
@@ -1228,13 +1232,13 @@ const QuarterlyPrioritiesPageClean = () => {
   };
 
   const handleContextMenuArchive = async (priority) => {
-    await handleArchivePriority(priority.id);
+    await handleArchivePriority(priority.id, priority.title);
   };
 
   const handleContextMenuDelete = async (priority) => {
     // For now, archive is safer than delete
     // If you want actual delete, implement the delete endpoint
-    await handleArchivePriority(priority.id);
+    await handleArchivePriority(priority.id, priority.title);
   };
 
   const handleContextMenuDuplicate = async (priority) => {
@@ -2116,7 +2120,7 @@ const QuarterlyPrioritiesPageClean = () => {
                       <Button 
                         variant="ghost" 
                         size="sm" 
-                        onClick={() => handleArchivePriority(priority.id)}
+                        onClick={() => handleArchivePriority(priority.id, priority.title)}
                         className="h-8 w-8 p-0 hover:bg-orange-100"
                       >
                         <Archive className="h-4 w-4 text-orange-600" />
@@ -4482,7 +4486,7 @@ const QuarterlyPrioritiesPageClean = () => {
           }}
           onUpdate={handleUpdatePriority}
           onArchive={async (priorityId) => {
-            await handleArchivePriority(priorityId);
+            await handleArchivePriority(priorityId, selectedPriority?.title);
             setShowPriorityDialog(false);
           }}
           onAddMilestone={handleCreateMilestone}

@@ -2510,7 +2510,7 @@ const WeeklyAccountabilityMeetingPage = () => {
   };
 
   const handleContextMenuArchive = async (priority) => {
-    if (!window.confirm(`Are you sure you want to archive "${priority.title}"?`)) {
+    if (!window.confirm(`Best Practice is to Archive priorities at the Quarterly Review Meeting.\n\nAre you sure you want to archive "${priority.title}"?`)) {
       return;
     }
     await handleArchivePriority(priority.id);
