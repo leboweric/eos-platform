@@ -3719,12 +3719,6 @@ const WeeklyAccountabilityMeetingPage = () => {
                 <p className="text-sm text-gray-500 mb-4 max-w-md">
                   This team hasn't created any scorecard metrics yet. Scorecard metrics help track key performance indicators during meetings.
                 </p>
-                <button 
-                  onClick={() => window.open(`/scorecard/${teamId}`, '_blank')}
-                  className="px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700 transition-colors"
-                >
-                  Create Scorecard Metrics
-                </button>
               </div>
             ) : (
               <>
@@ -3833,12 +3827,6 @@ const WeeklyAccountabilityMeetingPage = () => {
                 <p className="text-sm text-gray-500 mb-4 max-w-md">
                   This team hasn't set any quarterly priorities yet. These are the most important goals for the quarter.
                 </p>
-                <button 
-                  onClick={() => window.open(`/priorities?team=${teamId}`, '_blank')}
-                  className="px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700 transition-colors"
-                >
-                  Create Priorities
-                </button>
               </div>
             ) : (
               <div className="space-y-6">
@@ -3857,18 +3845,6 @@ const WeeklyAccountabilityMeetingPage = () => {
                         <p className="text-sm text-gray-500 mb-4 max-w-md">
                           This team hasn't set any {labels.priorities_label?.toLowerCase() || 'quarterly priorities'} yet. These are the most important goals for the quarter.
                         </p>
-                        <button 
-                          onClick={() => window.open(`/priorities?team=${teamId}`, '_blank')}
-                          className="px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700 transition-colors mr-3"
-                        >
-                          Create {labels.priorities_label || 'Priorities'}
-                        </button>
-                        <button 
-                          onClick={() => setShowAddPriority(true)}
-                          className="px-4 py-2 bg-purple-600 text-white text-sm font-medium rounded-lg hover:bg-purple-700 transition-colors"
-                        >
-                          Add {labels.priority || 'Priority'} Now
-                        </button>
                       </div>
                     );
                   }
@@ -5099,18 +5075,6 @@ const WeeklyAccountabilityMeetingPage = () => {
                       <p className="text-sm text-gray-500 mb-4 max-w-md">
                         This team doesn't have any to-dos yet. To-dos are action items that need to be completed.
                       </p>
-                      <button 
-                        onClick={() => window.open(`/todos?team=${teamId}`, '_blank')}
-                        className="px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700 transition-colors mr-3"
-                      >
-                        Create To-Dos
-                      </button>
-                      <button 
-                        onClick={() => setShowTodoDialog(true)}
-                        className="px-4 py-2 bg-green-600 text-white text-sm font-medium rounded-lg hover:bg-green-700 transition-colors"
-                      >
-                        Add To-Do Now
-                      </button>
                     </div>
                   );
                 }
@@ -5361,18 +5325,6 @@ const WeeklyAccountabilityMeetingPage = () => {
                       <p className="text-sm text-gray-500 mb-4 max-w-md">
                         This team doesn't have any issues to discuss. Issues are problems or challenges that need to be identified, discussed, and solved.
                       </p>
-                      <button 
-                        onClick={() => window.open(`/issues?team=${teamId}`, '_blank')}
-                        className="px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700 transition-colors mr-3"
-                      >
-                        Create Issues
-                      </button>
-                      <button 
-                        onClick={() => setShowIssueDialog(true)}
-                        className="px-4 py-2 bg-orange-600 text-white text-sm font-medium rounded-lg hover:bg-orange-700 transition-colors"
-                      >
-                        Add Issue Now
-                      </button>
                     </div>
                   );
                 }
