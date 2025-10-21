@@ -6205,33 +6205,6 @@ const WeeklyAccountabilityMeetingPage = () => {
       setError('Failed to conclude meeting. Please try again.');
     }
   };
-                    </div>
-                  ) : (
-                    <div className="text-center space-y-2">
-                      <div className="text-slate-600">
-                        {participants.find(p => p.id === currentLeader) && (
-                          <p>
-                            Waiting for <span className="font-medium">
-                              {participants.find(p => p.id === currentLeader).name}
-                            </span> to conclude the meeting...
-                          </p>
-                        )}
-                      </div>
-                      <div className="flex justify-center">
-                        <div className="animate-spin h-5 w-5 border-2 border-slate-400 border-t-transparent rounded-full" />
-                      </div>
-                    </div>
-                  )}
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        );
-        
-      default:
-        return null;
-    }
-  };
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50/30 to-indigo-50/30">
