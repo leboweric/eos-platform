@@ -478,7 +478,9 @@ const GroupedScorecardView = ({
     const isWeekly = metric.type === 'weekly';
     const scores = isWeekly ? weeklyScores[metric.id] || {} : monthlyScores[metric.id] || {};
     const notes = isWeekly ? weeklyNotes?.[metric.id] || {} : monthlyNotes?.[metric.id] || {};
-    const periodsOriginal = isWeekly ? selectedWeeks : selectedMonths;
+    
+    // Use the same data-driven dates as headers
+    const { dates: periodsOriginal } = getDataDrivenDates();
     const periods = isRTL ? [...periodsOriginal].reverse() : periodsOriginal;
     
     // LOG SCORES FROM PROPS
@@ -542,11 +544,11 @@ const GroupedScorecardView = ({
             );
           })()}
         </td>
-        {periods.map((period, periodIndex) => {
-          const rawValue = scores[period.value];
+        {periods.map((periodDate, periodIndex) => {
+          const rawValue = scores[periodDate];
           
           // DEEP LOGGING FOR ZERO TRACKING
-          console.log(`🔍 ZERO DEBUG [${metric.name}][${period.value}]:`, {
+          console.log(`🔍 ZERO DEBUG [${metric.name}][${periodDate}]:`, {
             rawValue,
             rawValueType: typeof rawValue,
             isZero: rawValue === 0,
@@ -565,16 +567,14 @@ const GroupedScorecardView = ({
             willDisplay: value === 0 ? 'YES - ZERO' : (value !== null && value !== undefined ? 'YES - OTHER' : 'NO - DASH')
           });
           
-          const noteValue = notes[period.value] || '';
+          const noteValue = notes[periodDate] || '';
           const hasNotes = noteValue && noteValue.length > 0;
           const goal = parseFloat(metric.goal) || 0;
           const actual = value === 0 ? 0 : (value !== null && value !== undefined ? parseFloat(value) : null);
           const isOnTrack = isGoalMet(actual, metric.goal, metric.comparison_operator);
           
-          // Check if this is the current period based on original order
-          const originalOptions = isWeekly ? weekOptionsOriginal : monthOptionsOriginal;
-          const currentValue = originalOptions && originalOptions.length > 0 ? originalOptions[originalOptions.length - 1].value : null;
-          const isCurrentPeriod = currentValue && period.value === currentValue;
+          // Check if this is the current period (most recent date)
+          const isCurrentPeriod = periodIndex === (isRTL ? 0 : periodsOriginal.length - 1);
           
           // Calculate what will be displayed
           const displayValue = value === 0 ? formatValue(0, metric.value_type) : (value !== null && value !== undefined ? formatValue(value, metric.value_type) : '-');
@@ -586,9 +586,9 @@ const GroupedScorecardView = ({
           });
           
           return (
-            <td key={period.value} className={`p-2 text-center w-28 ${isCurrentPeriod ? 'bg-gray-50 border-2 border-gray-300' : ''}`}>
+            <td key={periodDate} className={`p-2 text-center w-28 ${isCurrentPeriod ? 'bg-gray-50 border-2 border-gray-300' : ''}`}>
               <button
-                onClick={() => onScoreUpdate(metric, period.value, value)}
+                onClick={() => onScoreUpdate(metric, periodDate, value)}
                 className={`w-full px-2 py-1 rounded text-sm font-medium transition-colors relative whitespace-nowrap
                   ${value !== null && value !== undefined ? (isOnTrack ? 'bg-green-50 text-green-700 border border-green-200' : 'bg-red-50 text-red-700 border border-red-200') : (isCurrentPeriod ? 'bg-gray-100 text-gray-700 hover:bg-gray-200' : 'bg-white border border-gray-200 text-gray-600 hover:bg-gray-50')}`}
                 title={hasNotes ? `Score: ${value}\nNotes: ${noteValue}` : ''}
@@ -649,12 +649,121 @@ const GroupedScorecardView = ({
     return <div>Loading groups...</div>;
   }
 
+  // Get week start date for a given date
+  const getWeekStartDate = (date) => {
+    const d = new Date(date);
+    const day = d.getDay();
+    const diff = d.getDate() - day + (day === 0 ? -6 : 1);
+    return new Date(d.setDate(diff));
+  };
+
+  // Format date as "MMM D"
+  const formatWeekLabel = (date) => {
+    const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+    return `${months[date.getMonth()]} ${date.getDate()}`;
+  };
+
+  // Get the start of the current quarter
+  const getQuarterStart = (date) => {
+    const d = new Date(date);
+    const quarter = Math.floor(d.getMonth() / 3);
+    return new Date(d.getFullYear(), quarter * 3, 1);
+  };
+
+  // Get the end of the current quarter  
+  const getQuarterEnd = (date) => {
+    const d = new Date(date);
+    const quarter = Math.floor(d.getMonth() / 3);
+    return new Date(d.getFullYear(), quarter * 3 + 3, 0);
+  };
+
+  // Get actual date ranges from score data (same logic as ScorecardTableClean)
+  const getDataDrivenDates = () => {
+    const isWeekly = type === 'weekly';
+    const scores = isWeekly ? weeklyScores : monthlyScores;
+    const today = new Date();
+    
+    // Get all unique dates where we have actual score data
+    const allScoreDates = new Set();
+    if (scores) {
+      Object.values(scores).forEach(metricScores => {
+        if (metricScores) {
+          Object.keys(metricScores).forEach(date => {
+            allScoreDates.add(date);
+          });
+        }
+      });
+    }
+    const sortedDates = Array.from(allScoreDates).sort();
+    
+    console.log('🔧 GroupedView: Found score dates in data:', {
+      type: isWeekly ? 'weekly' : 'monthly',
+      earliestDate: sortedDates[0],
+      latestDate: sortedDates[sortedDates.length - 1],
+      totalUniqueDates: sortedDates.length
+    });
+
+    if (isWeekly) {
+      // For weekly - get current quarter dates or use actual data dates
+      const quarterStart = getQuarterStart(today);
+      const quarterEnd = getQuarterEnd(today);
+      const endDate = today < quarterEnd ? today : quarterEnd;
+      
+      let effectiveStartDate = quarterStart;
+      if (sortedDates.length > 0) {
+        const earliestDataDate = new Date(sortedDates[0] + 'T12:00:00');
+        if (earliestDataDate < quarterStart) {
+          effectiveStartDate = earliestDataDate;
+        }
+      }
+      
+      // Generate all weeks from effective start date to current date
+      const labels = [];
+      const dates = [];
+      let currentWeek = getWeekStartDate(effectiveStartDate);
+      while (currentWeek <= endDate) {
+        labels.push(formatWeekLabel(currentWeek));
+        dates.push(currentWeek.toISOString().split('T')[0]);
+        currentWeek = new Date(currentWeek);
+        currentWeek.setDate(currentWeek.getDate() + 7);
+      }
+      
+      // Limit to reasonable amount (26 weeks = half year)
+      if (dates.length > 26) {
+        const trimCount = dates.length - 26;
+        labels.splice(0, trimCount);
+        dates.splice(0, trimCount);
+      }
+      
+      console.log(`🔧 GroupedView: Using ${dates.length} weeks from ${dates[0]} to ${dates[dates.length-1]}`);
+      return { labels, dates };
+    } else {
+      // For monthly - get current quarter months
+      const quarterStart = getQuarterStart(today);
+      const quarterEnd = getQuarterEnd(today);
+      
+      const labels = [];
+      const dates = [];
+      let currentMonth = new Date(quarterStart);
+      while (currentMonth <= today && currentMonth <= quarterEnd) {
+        const date = new Date(currentMonth.getFullYear(), currentMonth.getMonth(), 1);
+        const monthLabel = date.toLocaleString('default', { month: 'short' }).toUpperCase();
+        const yearLabel = date.getFullYear().toString().slice(-2);
+        labels.push(`${monthLabel} ${yearLabel}`);
+        dates.push(date.toISOString().split('T')[0]);
+        currentMonth.setMonth(currentMonth.getMonth() + 1);
+      }
+      
+      console.log(`🔧 GroupedView: Using Q${Math.floor(today.getMonth() / 3) + 1} months:`, dates);
+      return { labels, dates };
+    }
+  };
+
   // Helper to render column headers
   const renderHeaders = () => {
-    const isWeekly = type === 'weekly';
-    const periods = isWeekly ? selectedWeeks : selectedMonths;
-    const labelsOriginal = isWeekly ? weekOptions : monthOptions;
+    const { labels: labelsOriginal, dates: datesOriginal } = getDataDrivenDates();
     const labels = isRTL ? [...labelsOriginal].reverse() : labelsOriginal;
+    const dates = isRTL ? [...datesOriginal].reverse() : datesOriginal;
     
     return (
       <thead className="bg-white border-b border-gray-200">
@@ -665,27 +774,19 @@ const GroupedScorecardView = ({
           <th className="text-center p-2 font-semibold text-gray-700 w-12">Chart</th>
           <th className="text-center p-2 font-semibold text-gray-700 w-28">Goal</th>
           <th className="text-center p-2 font-semibold text-gray-700 w-28 border-l border-gray-200">Average</th>
-          {labels.map((option, index) => {
-            // Get current date
-            const now = new Date();
-            const currentMonth = now.toLocaleString('default', { month: 'short' }).toUpperCase();
-            const currentYear = now.getFullYear().toString().slice(-2);
-            const currentMonthLabel = `${currentMonth} ${currentYear}`;
-            
-            // Check if this is the current period based on original order
-            const originalOptions = isWeekly ? weekOptionsOriginal : monthOptionsOriginal;
-            const currentValue = originalOptions && originalOptions.length > 0 ? originalOptions[originalOptions.length - 1].value : null;
-            const isCurrentPeriod = currentValue && option.value === currentValue
+          {labels.map((label, index) => {
+            // Check if this is the current period based on original order (most recent)
+            const isCurrentPeriod = index === (isRTL ? 0 : labelsOriginal.length - 1);
             
             return (
-              <th key={option.value} className={`text-center p-2 font-semibold text-xs w-28 ${
+              <th key={dates[index]} className={`text-center p-2 font-semibold text-xs w-28 ${
                 isCurrentPeriod ? 'text-gray-900 bg-gray-50 border-2 border-gray-300' : 'text-gray-700'
               }`}>
                 <div className="flex flex-col items-center">
                   <span className="text-xs font-normal text-gray-500 mb-1">
                     {isCurrentPeriod ? 'Current' : ''}
                   </span>
-                  <span>{option.label}</span>
+                  <span>{label}</span>
                 </div>
               </th>
             );
