@@ -2,6 +2,12 @@ import pool from '../config/database.js';
 
 // Start a new meeting session
 export const startSession = async (req, res) => {
+  console.log('🚨🚨🚨 START SESSION FUNCTION CALLED 🚨🚨🚨');
+  console.log('🚨 Request method:', req.method);
+  console.log('🚨 Request URL:', req.url);
+  console.log('🚨 Request params:', req.params);
+  console.log('🚨 Request body:', req.body);
+  
   const client = await pool.connect();
   try {
     const { organization_id, team_id, meeting_type } = req.body;
