@@ -30,7 +30,7 @@ import {
 } from 'lucide-react';
 import { teamsService } from '../services/teamsService';
 import meetingSessionsService from '../services/meetingSessionsService';
-import { toast } from 'react-hot-toast';
+import toast, { Toaster } from 'react-hot-toast';
 
 const MeetingsPage = () => {
   const navigate = useNavigate();
@@ -479,6 +479,7 @@ const MeetingsPage = () => {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50/30 to-indigo-50/30 relative">
+      <Toaster position="top-right" />
       {/* Background Pattern */}
       <div className="absolute inset-0 bg-grid-slate-100 [mask-image:linear-gradient(0deg,white,rgba(255,255,255,0.6))] -z-10"></div>
       
