@@ -2,7 +2,6 @@ import express from 'express';
 import { body, param, query } from 'express-validator';
 import { authenticate } from '../middleware/auth.js';
 import multer from 'multer';
-import XLSX from 'xlsx';
 import path from 'path';
 import fs from 'fs';
 import { fileURLToPath } from 'url';
@@ -126,79 +125,6 @@ router.delete('/:todoId/updates/:updateId', [
   param('updateId').isUUID()
 ], deleteTodoUpdate);
 
-// Import routes
-import { getImportTemplate, previewTodosImport, executeTodosImport } from '../controllers/todosImportController.js';
-
-// Configure multer for Excel import (separate from file attachments)
-const importUpload = multer({
-  storage: multer.memoryStorage(),
-  limits: {
-    fileSize: 10 * 1024 * 1024 // 10MB limit
-  },
-  fileFilter: (req, file, cb) => {
-    // Accept Excel files
-    const allowedMimes = [
-      'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet', // .xlsx
-      'application/vnd.ms-excel', // .xls
-      'text/csv', // .csv
-      'application/octet-stream' // Sometimes Excel files come as this
-    ];
-    
-    const allowedExtensions = ['.xlsx', '.xls', '.csv'];
-    const fileExtension = file.originalname.toLowerCase().slice(file.originalname.lastIndexOf('.'));
-    
-    if (allowedMimes.includes(file.mimetype) || allowedExtensions.includes(fileExtension)) {
-      cb(null, true);
-    } else {
-      cb(new Error('Invalid file type. Please upload an Excel (.xlsx, .xls) or CSV file'), false);
-    }
-  }
-});
-
-/**
- * GET /api/v1/todos/import/template
- * Get the import template information
- */
-router.get('/import/template', getImportTemplate);
-
-/**
- * GET /api/v1/todos/import/template/download
- * Download import template Excel file
- */
-router.get('/import/template/download', async (req, res) => {
-  try {
-    const workbook = XLSX.utils.book_new();
-    
-    const templateData = [
-      ['Title', 'Owner', 'Description', 'Due Date', 'Completed On', 'Team', 'Priority'],
-      ['Update website content', 'John Smith', 'Review and update the homepage copy', '2025-12-01', '', 'Marketing', 'Medium'],
-      ['Prepare quarterly report', 'Jane Doe', 'Compile Q4 performance metrics', '2025-12-01', '2025-11-28', 'Finance', 'High']
-    ];
-    
-    const worksheet = XLSX.utils.aoa_to_sheet(templateData);
-    XLSX.utils.book_append_sheet(workbook, worksheet, 'Todos');
-    
-    const buffer = XLSX.write(workbook, { type: 'buffer', bookType: 'xlsx' });
-    
-    res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
-    res.setHeader('Content-Disposition', 'attachment; filename=todos_import_template.xlsx');
-    res.send(buffer);
-  } catch (error) {
-    console.error('Error generating template:', error);
-    res.status(500).json({ success: false, message: 'Failed to generate template' });
-  }
-});
-
-/**
- * POST /api/v1/todos/import/preview
- * Preview Excel import without saving
- */
-router.post('/import/preview', importUpload.single('file'), previewTodosImport);
-
-/**
- * POST /api/v1/todos/import/execute
- * Execute the actual import
- */
-router.post('/import/execute', importUpload.single('file'), executeTodosImport);
+// Note: Import routes are now handled by the separate todos-import.js router
 
 export default router;

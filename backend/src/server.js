@@ -52,6 +52,7 @@ import adminRoutes from './routes/admin.js';
 import scorecardImportRoutes from './routes/scorecardImport.js';
 import prioritiesImportRoutes from './routes/priorities-import.js';
 import issuesImportRoutes from './routes/issues-import.js';
+import todosImportRoutes from './routes/todos-import.js';
 
 // Import middleware
 import { errorHandler } from './middleware/errorHandler.js';
@@ -221,6 +222,7 @@ app.use('/api/v1/admin', adminRoutes); // Admin routes
 app.use('/api/v1/scorecard/import', scorecardImportRoutes); // Scorecard import routes
 app.use('/api/v1/priorities/import', prioritiesImportRoutes); // Priorities import routes
 app.use('/api/v1/issues/import', issuesImportRoutes); // Issues import routes
+app.use('/api/v1/todos/import', todosImportRoutes); // Todos import routes
 app.use('/api/v1/users', userRoutes);
 app.use('/api/v1/organizations/:orgId/users', userRoutes); // For org-scoped user operations
 // Apply logo limiter to logo endpoints specifically
