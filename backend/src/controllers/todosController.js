@@ -671,6 +671,58 @@ export const archiveDoneTodos = async (req, res) => {
   }
 };
 
+// @desc    Unarchive a specific todo
+// @route   PUT /api/v1/organizations/:orgId/todos/:todoId/unarchive
+// @access  Private
+export const unarchiveTodo = async (req, res) => {
+  try {
+    const { orgId, todoId } = req.params;
+    const userId = req.user.id;
+
+    // First check if the todo exists and belongs to the organization
+    const existingTodo = await query(
+      `SELECT id, title, archived 
+       FROM todos 
+       WHERE id = $1 AND organization_id = $2 AND deleted_at IS NULL`,
+      [todoId, orgId]
+    );
+
+    if (existingTodo.rows.length === 0) {
+      return res.status(404).json({
+        success: false,
+        error: 'Todo not found'
+      });
+    }
+
+    if (!existingTodo.rows[0].archived) {
+      return res.status(400).json({
+        success: false,
+        error: 'Todo is not archived'
+      });
+    }
+
+    // Unarchive the todo
+    const result = await query(
+      `UPDATE todos 
+       SET archived = false, updated_at = NOW()
+       WHERE id = $1 AND organization_id = $2
+       RETURNING id, title, archived`,
+      [todoId, orgId]
+    );
+
+    res.json({
+      success: true,
+      data: result.rows[0]
+    });
+  } catch (error) {
+    console.error('Unarchive todo error:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Failed to unarchive todo'
+    });
+  }
+};
+
 // @desc    Get updates for a todo
 // @route   GET /api/v1/todos/:todoId/updates
 // @access  Private
@@ -810,6 +862,7 @@ export default {
   updateTodo,
   deleteTodo,
   archiveDoneTodos,
+  unarchiveTodo,
   uploadTodoAttachment,
   getTodoAttachments,
   downloadTodoAttachment,

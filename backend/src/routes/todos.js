@@ -12,6 +12,7 @@ import {
   updateTodo,
   deleteTodo,
   archiveDoneTodos,
+  unarchiveTodo,
   uploadTodoAttachment,
   getTodoAttachments,
   deleteTodoAttachment,
@@ -72,6 +73,11 @@ router.post('/', [
 
 // Archive done todos - MUST come before /:todoId routes
 router.put('/archive-done', archiveDoneTodos);
+
+// Unarchive a specific todo - MUST come before /:todoId routes  
+router.put('/:todoId/unarchive', [
+  param('todoId').isUUID()
+], unarchiveTodo);
 
 // Update a todo
 router.put('/:todoId', [
