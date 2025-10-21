@@ -26,6 +26,7 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import ConfirmationDialog from '@/components/ui/ConfirmationDialog';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { 
   CheckSquare, 
@@ -177,11 +178,33 @@ const QuarterlyPrioritiesPageClean = () => {
     count: 0 
   });
   
+  // Confirmation dialog states
+  const [confirmDialog, setConfirmDialog] = useState({
+    open: false,
+    type: 'delete',
+    title: '',
+    message: '',
+    onConfirm: null,
+    loading: false
+  });
+  
   // Employee-centric design states
   const [expandedPriorities, setExpandedPriorities] = useState({});
   const [openStatusDropdown, setOpenStatusDropdown] = useState(null);
   const [addingMilestoneFor, setAddingMilestoneFor] = useState(null);
   const [newMilestone, setNewMilestone] = useState({ title: '', dueDate: '', ownerId: null });
+
+  // Helper function to show confirmation dialogs
+  const showConfirmation = (type, title, message, onConfirm) => {
+    setConfirmDialog({
+      open: true,
+      type,
+      title,
+      message,
+      onConfirm,
+      loading: false
+    });
+  };
 
   // Close status dropdown when clicking outside
   useEffect(() => {
@@ -955,15 +978,16 @@ const QuarterlyPrioritiesPageClean = () => {
   };
 
   const handleDeleteUpdate = async (priorityId, updateId) => {
-    try {
-      console.log('Attempting to delete update:', { priorityId, updateId });
-      
-      if (!window.confirm('Are you sure you want to delete this update?')) {
-        return;
-      }
-      
-      const orgId = user?.organizationId;
-      const teamId = selectedDepartment?.id;
+    showConfirmation(
+      'delete',
+      'Delete Update',
+      'Are you sure you want to delete this update? This action cannot be undone.',
+      async () => {
+        try {
+          console.log('Attempting to delete update:', { priorityId, updateId });
+          
+          const orgId = user?.organizationId;
+          const teamId = selectedDepartment?.id;
       
       console.log('Delete params:', { orgId, teamId, priorityId, updateId });
       
@@ -1009,12 +1033,14 @@ const QuarterlyPrioritiesPageClean = () => {
         }));
       }
       
-      setSuccess('Update deleted successfully');
-    } catch (err) {
-      console.error('Failed to delete update:', err);
-      console.error('Error details:', err.response?.data || err.message);
-      setError(`Failed to delete update: ${err.response?.data?.error || err.message}`);
-    }
+          setSuccess('Update deleted successfully');
+        } catch (err) {
+          console.error('Failed to delete update:', err);
+          console.error('Error details:', err.response?.data || err.message);
+          setError(`Failed to delete update: ${err.response?.data?.error || err.message}`);
+        }
+      }
+    );
   };
 
   const handleEditUpdate = async (priorityId, updateId, newText) => {
@@ -1376,19 +1402,20 @@ const QuarterlyPrioritiesPageClean = () => {
   };
 
   const handleDeleteAttachment = async (priorityId, attachmentId) => {
-    if (!window.confirm('Are you sure you want to delete this attachment?')) {
-      return;
-    }
-    
-    try {
-      const orgId = user?.organizationId || user?.organization_id;
-      const teamId = getEffectiveTeamId(selectedDepartment?.id, user);
-      
-      if (!orgId || !teamId) {
-        throw new Error('Organization or team not found');
-      }
-      
-      await quarterlyPrioritiesService.deleteAttachment(orgId, teamId, priorityId, attachmentId);
+    showConfirmation(
+      'delete',
+      'Delete Attachment',
+      'Are you sure you want to delete this attachment? This action cannot be undone.',
+      async () => {
+        try {
+          const orgId = user?.organizationId || user?.organization_id;
+          const teamId = getEffectiveTeamId(selectedDepartment?.id, user);
+          
+          if (!orgId || !teamId) {
+            throw new Error('Organization or team not found');
+          }
+          
+          await quarterlyPrioritiesService.deleteAttachment(orgId, teamId, priorityId, attachmentId);
       
       // Update local state instead of refetching
       const removeAttachment = (attachments) => 
@@ -1416,11 +1443,13 @@ const QuarterlyPrioritiesPageClean = () => {
         return updated;
       });
       
-      setSuccess('Attachment deleted successfully');
-    } catch (error) {
-      console.error('Failed to delete attachment:', error);
-      setError('Failed to delete attachment');
-    }
+          setSuccess('Attachment deleted successfully');
+        } catch (error) {
+          console.error('Failed to delete attachment:', error);
+          setError('Failed to delete attachment');
+        }
+      }
+    );
   };
 
   const handlePriorityStatusChange = async (priorityId, newStatus) => {
@@ -1826,22 +1855,25 @@ const QuarterlyPrioritiesPageClean = () => {
     };
 
     const handleDeleteAttachment = async (attachmentId) => {
-      if (!window.confirm('Are you sure you want to delete this attachment?')) {
-        return;
-      }
-
-      try {
-        const orgId = user?.organizationId;
-        const teamId = selectedDepartment?.id;
-        
-        if (orgId && teamId) {
-          await quarterlyPrioritiesService.deleteAttachment(orgId, teamId, priority.id, attachmentId);
-          await loadAttachments(); // Reload attachments
+      showConfirmation(
+        'delete',
+        'Delete Attachment',
+        'Are you sure you want to delete this attachment? This action cannot be undone.',
+        async () => {
+          try {
+            const orgId = user?.organizationId;
+            const teamId = selectedDepartment?.id;
+            
+            if (orgId && teamId) {
+              await quarterlyPrioritiesService.deleteAttachment(orgId, teamId, priority.id, attachmentId);
+              await loadAttachments(); // Reload attachments
+            }
+          } catch (error) {
+            console.error('Failed to delete attachment:', error);
+            setAttachmentError('Failed to delete attachment');
+          }
         }
-      } catch (error) {
-        console.error('Failed to delete attachment:', error);
-        setAttachmentError('Failed to delete attachment');
-      }
+      );
     };
 
     const handleDownloadAttachment = async (attachment) => {
@@ -4567,6 +4599,17 @@ const QuarterlyPrioritiesPageClean = () => {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+      
+      {/* Confirmation Dialog for Delete/Remove actions */}
+      <ConfirmationDialog
+        open={confirmDialog.open}
+        onOpenChange={(open) => setConfirmDialog(prev => ({ ...prev, open }))}
+        type={confirmDialog.type}
+        title={confirmDialog.title}
+        message={confirmDialog.message}
+        onConfirm={confirmDialog.onConfirm}
+        loading={confirmDialog.loading}
+      />
     </div>
     </div>
   );

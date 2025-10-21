@@ -78,6 +78,7 @@ import { todosService } from '../services/todosService';
 import { headlinesService } from '../services/headlinesService';
 import HeadlineDialog from '../components/headlines/HeadlineDialog';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from '@/components/ui/dialog';
+import ConfirmationDialog from '@/components/ui/ConfirmationDialog';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { ContextMenu, ContextMenuContent, ContextMenuItem, ContextMenuTrigger } from '@/components/ui/context-menu';
@@ -283,6 +284,16 @@ const WeeklyAccountabilityMeetingPage = () => {
   });
   const [showConcludeDialog, setShowConcludeDialog] = useState(false);
   
+  // Confirmation dialog states
+  const [confirmDialog, setConfirmDialog] = useState({
+    open: false,
+    type: 'delete',
+    title: '',
+    message: '',
+    onConfirm: null,
+    loading: false
+  });
+  
   // Additional state for new priorities display pattern
   const [expandedPriorities, setExpandedPriorities] = useState({});
   const [openStatusDropdown, setOpenStatusDropdown] = useState(null);
@@ -290,6 +301,18 @@ const WeeklyAccountabilityMeetingPage = () => {
   const [newMilestone, setNewMilestone] = useState({ title: '', dueDate: '' });
   const [showAddPriority, setShowAddPriority] = useState(false);
   const [todoSortBy, setTodoSortBy] = useState('assignee'); // For Conclude section todo sorting - default to assignee/owner
+  
+  // Helper function to show confirmation dialogs
+  const showConfirmation = (type, title, message, onConfirm) => {
+    setConfirmDialog({
+      open: true,
+      type,
+      title,
+      message,
+      onConfirm,
+      loading: false
+    });
+  };
   
   // Toggle expansion for a priority
   const togglePriorityExpansion = (priorityId, e) => {
@@ -2000,12 +2023,15 @@ const WeeklyAccountabilityMeetingPage = () => {
   };
 
   const handleDeleteTodo = async (todo) => {
-    if (!window.confirm(`Delete "${todo.title}"?`)) return;
-    
-    try {
-      const orgId = user?.organizationId || user?.organization_id;
-      await todosService.deleteTodo(todo.id, orgId);
-      await fetchTodosData();
+    showConfirmation(
+      'delete',
+      'Delete To-Do',
+      `Are you sure you want to delete "${todo.title}"? This action cannot be undone.`,
+      async () => {
+        try {
+          const orgId = user?.organizationId || user?.organization_id;
+          await todosService.deleteTodo(todo.id, orgId);
+          await fetchTodosData();
       
       // Broadcast todo deletion to other participants
       if (meetingCode && broadcastTodoUpdate) {
@@ -2013,11 +2039,13 @@ const WeeklyAccountabilityMeetingPage = () => {
           action: 'delete',
           todoId: todo.id
         });
+        }
+        } catch (error) {
+          console.error('Failed to delete todo:', error);
+          setError('Failed to delete to-do');
+        }
       }
-    } catch (error) {
-      console.error('Failed to delete todo:', error);
-      setError('Failed to delete to-do');
-    }
+    );
   };
 
   const handleToggleTodoComplete = async (todo) => {
@@ -2761,21 +2789,22 @@ const WeeklyAccountabilityMeetingPage = () => {
   };
 
   const handleDeleteUpdate = async (priorityId, updateId) => {
-    try {
-      if (!window.confirm('Are you sure you want to delete this update?')) {
-        return;
-      }
-      
-      const orgId = user?.organizationId || user?.organization_id;
-      const cleanTeamId = (teamId === 'null' || teamId === 'undefined') ? null : teamId;
-      const effectiveTeamId = getEffectiveTeamId(cleanTeamId, user);
-      
-      if (!orgId || !effectiveTeamId) {
-        throw new Error('Organization or team not found');
-      }
-      
-      // Fix: Use correct method name
-      await quarterlyPrioritiesService.deletePriorityUpdate(orgId, effectiveTeamId, priorityId, updateId);
+    showConfirmation(
+      'delete',
+      'Delete Update',
+      'Are you sure you want to delete this update? This action cannot be undone.',
+      async () => {
+        try {
+          const orgId = user?.organizationId || user?.organization_id;
+          const cleanTeamId = (teamId === 'null' || teamId === 'undefined') ? null : teamId;
+          const effectiveTeamId = getEffectiveTeamId(cleanTeamId, user);
+          
+          if (!orgId || !effectiveTeamId) {
+            throw new Error('Organization or team not found');
+          }
+          
+          // Fix: Use correct method name
+          await quarterlyPrioritiesService.deletePriorityUpdate(orgId, effectiveTeamId, priorityId, updateId);
       
       // Update local state immediately
       const removeUpdate = (updates) => 
@@ -2794,10 +2823,12 @@ const WeeklyAccountabilityMeetingPage = () => {
         p.id === priorityId 
           ? { ...p, updates: removeUpdate(p.updates) }
           : p
-      ));
-    } catch (error) {
-      console.error('Failed to delete update:', error);
-    }
+        ));
+        } catch (error) {
+          console.error('Failed to delete update:', error);
+        }
+      }
+    );
   };
 
   const handleUploadAttachment = async (priorityId, file) => {
@@ -6724,6 +6755,17 @@ const WeeklyAccountabilityMeetingPage = () => {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+      
+      {/* Confirmation Dialog for Delete/Remove actions */}
+      <ConfirmationDialog
+        open={confirmDialog.open}
+        onOpenChange={(open) => setConfirmDialog(prev => ({ ...prev, open }))}
+        type={confirmDialog.type}
+        title={confirmDialog.title}
+        message={confirmDialog.message}
+        onConfirm={confirmDialog.onConfirm}
+        loading={confirmDialog.loading}
+      />
     </div>
   );
 }; 
