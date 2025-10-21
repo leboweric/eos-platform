@@ -286,7 +286,7 @@ export const previewTodosImport = async (req, res) => {
  * Execute the actual import
  */
 export const executeTodosImport = async (req, res) => {
-  const client = await db.getClient();
+  const client = await db.connect();
   
   try {
     await client.query('BEGIN');
