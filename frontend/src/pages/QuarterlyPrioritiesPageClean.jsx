@@ -288,20 +288,26 @@ const QuarterlyPrioritiesPageClean = () => {
       let completedCount = 0;
       
       // Count completed company priorities
-      companyPriorities.forEach(priority => {
-        if (priority.status === 'completed' || priority.completion_percentage === 100) {
-          completedCount++;
-        }
-      });
-      
-      // Count completed team member priorities
-      Object.values(teamMemberPriorities).forEach(memberPriorities => {
-        memberPriorities.forEach(priority => {
+      if (Array.isArray(companyPriorities)) {
+        companyPriorities.forEach(priority => {
           if (priority.status === 'completed' || priority.completion_percentage === 100) {
             completedCount++;
           }
         });
-      });
+      }
+      
+      // Count completed team member priorities
+      if (teamMemberPriorities && typeof teamMemberPriorities === 'object') {
+        Object.values(teamMemberPriorities).forEach(memberPriorities => {
+          if (Array.isArray(memberPriorities)) {
+            memberPriorities.forEach(priority => {
+              if (priority.status === 'completed' || priority.completion_percentage === 100) {
+                completedCount++;
+              }
+            });
+          }
+        });
+      }
       
       setCompletedNotArchivedCount(completedCount);
     };
