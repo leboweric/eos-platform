@@ -368,14 +368,12 @@ export const executeTodosImport = async (req, res) => {
             description,
             due_date,
             status,
+            completed_at,
             is_private,
             archived,
-            is_multi_assignee,
-            completed_at,
-            created_at,
-            updated_at
+            is_multi_assignee
           ) VALUES (
-            $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, NOW(), NOW()
+            $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13
           )
           RETURNING id
         `;
@@ -390,10 +388,10 @@ export const executeTodosImport = async (req, res) => {
           todo.description || '',                      // $7 - description
           todo.due_date,                               // $8 - due_date
           todo.status,                                 // $9 - status
-          false,                                       // $10 - is_private
-          false,                                       // $11 - archived
-          true,                                        // $12 - is_multi_assignee
-          todo.completed_date ? new Date(todo.completed_date) : null  // $13 - completed_at
+          todo.completed_date ? new Date(todo.completed_date) : null,  // $10 - completed_at
+          false,                                       // $11 - is_private
+          false,                                       // $12 - archived
+          true                                         // $13 - is_multi_assignee
         ]);
 
         console.log(`✅ Created: "${todo.title}"`);
