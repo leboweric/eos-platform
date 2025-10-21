@@ -281,6 +281,7 @@ const WeeklyAccountabilityMeetingPage = () => {
     isBulk: false, 
     count: 0 
   });
+  const [showConcludeDialog, setShowConcludeDialog] = useState(false);
   
   // Additional state for new priorities display pattern
   const [expandedPriorities, setExpandedPriorities] = useState({});
@@ -6006,9 +6007,44 @@ const WeeklyAccountabilityMeetingPage = () => {
                         style={{
                           background: `linear-gradient(135deg, ${themeColors.primary} 0%, ${themeColors.secondary} 100%)`
                         }}
-                        onClick={async () => {
-                    if (window.confirm('Are you ready to conclude the meeting?')) {
-                      try {
+                        onClick={() => {
+                          setShowConcludeDialog(true);
+                        }}
+                      >
+                        <CheckSquare className="mr-2 h-5 w-5" />
+                        Conclude Meeting
+                      </Button>
+                    </div>
+                  ) : (
+                    <div className="text-center space-y-2">
+                      <div className="text-slate-600">
+                        {participants.find(p => p.id === currentLeader) && (
+                          <p>
+                            Waiting for <span className="font-medium">
+                              {participants.find(p => p.id === currentLeader).name}
+                            </span> to conclude the meeting...
+                          </p>
+                        )}
+                      </div>
+                      <div className="flex justify-center">
+                        <div className="animate-spin h-5 w-5 border-2 border-slate-400 border-t-transparent rounded-full" />
+                      </div>
+                    </div>
+                  )}
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+        );
+
+      default:
+        return null;
+    }
+  };
+
+  const confirmConcludeMeeting = async () => {
+    setShowConcludeDialog(false);
+    try {
                         // Send cascading message if there is one
                         if (cascadeMessage.trim() && (cascadeToAll || selectedTeams.length > 0)) {
                           const orgId = user?.organizationId || user?.organization_id;
@@ -6164,16 +6200,11 @@ const WeeklyAccountabilityMeetingPage = () => {
                         setTimeout(() => {
                           navigate('/dashboard');
                         }, 1500); // Brief delay to show success message
-                      } catch (error) {
-                        console.error('Failed to conclude meeting:', error);
-                        setError('Failed to conclude meeting. Please try again.');
-                      }
-                    }
-                        }}
-                      >
-                        <CheckSquare className="mr-2 h-5 w-5" />
-                        Conclude Meeting
-                      </Button>
+    } catch (error) {
+      console.error('Failed to conclude meeting:', error);
+      setError('Failed to conclude meeting. Please try again.');
+    }
+  };
                     </div>
                   ) : (
                     <div className="text-center space-y-2">
@@ -6667,6 +6698,55 @@ const WeeklyAccountabilityMeetingPage = () => {
             >
               <Archive className="mr-2 h-4 w-4" />
               Archive Priority
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Conclude Meeting Dialog */}
+      <Dialog open={showConcludeDialog} onOpenChange={setShowConcludeDialog}>
+        <DialogContent className="sm:max-w-[425px]">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2 text-green-600">
+              <CheckSquare className="h-5 w-5" />
+              Conclude Meeting
+            </DialogTitle>
+            <DialogDescription className="pt-2">
+              <div className="space-y-3">
+                <p className="text-sm text-gray-700">
+                  Are you ready to conclude the meeting? This will end the session for all participants.
+                </p>
+                {(cascadeMessage.trim() && (cascadeToAll || selectedTeams.length > 0)) && (
+                  <p className="text-sm text-blue-600 bg-blue-50 p-3 rounded-lg border border-blue-200">
+                    📢 Your cascading message will be sent to selected teams.
+                  </p>
+                )}
+                {archiveCompleted && (
+                  <p className="text-sm text-orange-600 bg-orange-50 p-3 rounded-lg border border-orange-200">
+                    📦 Completed items will be archived.
+                  </p>
+                )}
+                {sendSummaryEmail && (
+                  <p className="text-sm text-purple-600 bg-purple-50 p-3 rounded-lg border border-purple-200">
+                    📧 Meeting summary will be emailed to participants.
+                  </p>
+                )}
+              </div>
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter className="flex gap-2 sm:gap-2">
+            <Button
+              variant="outline"
+              onClick={() => setShowConcludeDialog(false)}
+            >
+              Cancel
+            </Button>
+            <Button
+              onClick={confirmConcludeMeeting}
+              className="bg-green-600 hover:bg-green-700 text-white"
+            >
+              <CheckSquare className="mr-2 h-4 w-4" />
+              Conclude Meeting
             </Button>
           </DialogFooter>
         </DialogContent>
