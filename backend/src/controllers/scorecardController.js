@@ -41,7 +41,8 @@ async function getTeamMembers(orgId) {
 export const getScorecard = async (req, res) => {
   try {
     const { orgId, teamId } = req.params;
-    console.log('Scorecard API Version: 2024-08-12-FIXED'); // Version check
+    const { department_id } = req.query; // Get department_id from query params
+    console.log('Scorecard API Version: 2024-10-21-MEETING-FIX'); // Version check
     const userId = req.user.id;
     
     // Get user's team context
@@ -71,8 +72,17 @@ export const getScorecard = async (req, res) => {
       selectColumns += ', sm.group_id, sm.display_order';
     }
     
-    // Filter by specific team ID from request
-    const teamFilter = teamId ? 'AND sm.team_id = $2' : '';
+    // Prioritize department_id from query params over teamId from URL
+    // This fixes the meeting data scoping bug where Finance meetings show Leadership data
+    const effectiveTeamId = department_id || teamId;
+    const teamFilter = effectiveTeamId ? 'AND sm.team_id = $2' : '';
+    
+    console.log('🔍 Scorecard Team Filter Debug:', { 
+      teamIdFromURL: teamId,
+      departmentIdFromQuery: department_id,
+      effectiveTeamId,
+      willFilter: !!effectiveTeamId
+    });
     
     // Get all metrics for the team (excluding soft deleted)
     const metricsQuery = `
@@ -82,7 +92,7 @@ export const getScorecard = async (req, res) => {
       WHERE sm.organization_id = $1 AND sm.deleted_at IS NULL ${teamFilter}
       ORDER BY sm.display_order ASC, sm.created_at ASC
     `;
-    const queryParams = teamId ? [orgId, teamId] : [orgId];
+    const queryParams = effectiveTeamId ? [orgId, effectiveTeamId] : [orgId];
     const metrics = await db.query(metricsQuery, queryParams);
     
     // Get all scores for these metrics
