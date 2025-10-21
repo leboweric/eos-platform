@@ -4,6 +4,7 @@ import { useParams } from 'react-router-dom';
 import { useAuthStore } from '../stores/authStore';
 import { format, addDays } from 'date-fns';
 import { meetingsService } from '../services/meetingsService';
+import meetingHistoryService from '../services/meetingHistoryService';
 import { organizationService } from '../services/organizationService';
 import MeetingBar from '../components/meeting/MeetingBar';
 import useMeeting from '../hooks/useMeeting';
@@ -2968,6 +2969,18 @@ const WeeklyAccountabilityMeetingPage = () => {
         issuesDiscussed: selectedIssueIds.length,
         todosAssigned: selectedTodoIds.length
       });
+      
+      // Create meeting snapshot for history
+      try {
+        // Note: We don't have the meetingId here, so the snapshot creation will happen
+        // in the backend after the meeting is concluded. This is just a placeholder
+        // for when we have access to the meeting record.
+        console.log('Meeting concluded successfully - snapshot will be created by backend');
+      } catch (snapshotError) {
+        // Don't fail the meeting conclusion if snapshot creation fails
+        console.error('Failed to create meeting snapshot:', snapshotError);
+        // Continue with normal flow
+      }
       
       setSuccess('Meeting concluded and summary sent!');
       

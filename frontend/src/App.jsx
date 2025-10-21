@@ -68,6 +68,7 @@ const ScorecardImportPage = lazy(() => import('./pages/ScorecardImportPage'));
 const PrioritiesImportPage = lazy(() => import('./pages/PrioritiesImportPage'));
 const IssuesImportPage = lazy(() => import('./pages/IssuesImportPage'));
 const ImportTodosPage = lazy(() => import('./pages/ImportTodosPage'));
+const MeetingHistoryPage = lazy(() => import('./pages/MeetingHistoryPage'));
 
 // Department Components
 const DepartmentLayout = lazy(() => import('./components/DepartmentLayout'));
@@ -223,6 +224,7 @@ function App() {
           <Route path="/meetings/weekly-accountability/:teamId" element={user ? <Layout><WeeklyAccountabilityMeetingPage /></Layout> : <Navigate to="/login" />} />
           <Route path="/meetings/weekly-accountability-original/:teamId" element={user ? <Layout><WeeklyAccountabilityMeetingPageOriginal /></Layout> : <Navigate to="/login" />} />
           <Route path="/meetings/quarterly-planning/:teamId" element={user ? <Layout><QuarterlyPlanningMeetingPage /></Layout> : <Navigate to="/login" />} />
+          <Route path="/meeting-history" element={user ? <Layout><MeetingHistoryPage /></Layout> : <Navigate to="/login" />} />
           <Route path="/todos" element={user ? <Layout><TodosPage /></Layout> : <Navigate to="/login" />} />
           <Route path="/headlines" element={user ? <Layout><HeadlinesPage /></Layout> : <Navigate to="/login" />} />
           <Route path="/issues" element={user ? <Layout><IssuesPage /></Layout> : <Navigate to="/login" />} />
