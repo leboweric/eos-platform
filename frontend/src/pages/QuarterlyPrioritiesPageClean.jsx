@@ -298,9 +298,9 @@ const QuarterlyPrioritiesPageClean = () => {
       
       // Count completed team member priorities
       if (teamMemberPriorities && typeof teamMemberPriorities === 'object') {
-        Object.values(teamMemberPriorities).forEach(memberPriorities => {
-          if (Array.isArray(memberPriorities)) {
-            memberPriorities.forEach(priority => {
+        Object.values(teamMemberPriorities).forEach(member => {
+          if (member && member.priorities && Array.isArray(member.priorities)) {
+            member.priorities.forEach(priority => {
               if (priority.status === 'complete' || priority.status === 'completed' || priority.completion_percentage === 100) {
                 completedCount++;
               }
