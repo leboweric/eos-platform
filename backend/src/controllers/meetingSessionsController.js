@@ -392,7 +392,6 @@ export const canStartMeetingForTeam = async (req, res) => {
       FROM team_members tm
       WHERE tm.user_id = $1 
       AND tm.team_id = $2
-      AND tm.deleted_at IS NULL
     `;
 
     const result = await client.query(membershipQuery, [userId, teamId]);
