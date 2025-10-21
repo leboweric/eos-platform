@@ -23,7 +23,12 @@ const router = express.Router();
 router.use(authenticate);
 
 // Start a new meeting session
-router.post('/start', startSession);
+router.post('/start', (req, res, next) => {
+  console.log('🚀🚀🚀 ROUTE /start HIT! 🚀🚀🚀');
+  console.log('Route params:', req.params);
+  console.log('Route body:', req.body);
+  startSession(req, res, next);
+});
 
 // Get active session for a team
 router.get('/active', getActiveSession);
