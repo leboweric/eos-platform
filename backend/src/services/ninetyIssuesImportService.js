@@ -1,6 +1,5 @@
 import XLSX from 'xlsx';
 import db from '../config/database.js';
-import { v4 as uuidv4 } from 'uuid';
 
 /**
  * Helper: Safely trim values (handles Date objects and numbers)
@@ -266,7 +265,7 @@ class NinetyIssuesImportService {
    */
   static async findExistingIssue(organizationId, teamId, title, timeline, client) {
     const query = `
-      SELECT id, title, status, assigned_to, timeline
+      SELECT id, title, status, owner_id, timeline
       FROM issues
       WHERE organization_id = $1
       AND team_id = $2
@@ -443,9 +442,9 @@ class NinetyIssuesImportService {
             const updateQuery = `
               UPDATE issues
               SET status = $1,
-                  assigned_to = $2,
+                  owner_id = $2,
                   description = COALESCE($3, description),
-                  priority = $4,
+                  priority_level = $4,
                   updated_at = NOW()
               WHERE id = $5
               RETURNING id
@@ -455,7 +454,7 @@ class NinetyIssuesImportService {
               issue.status,
               assignedToId,
               issue.description || null,
-              issue.priority,
+              issue.priority || 'normal',
               existing.id
             ]);
             
@@ -469,33 +468,39 @@ class NinetyIssuesImportService {
               id,
               organization_id,
               team_id,
+              created_by_id,
+              owner_id,
               title,
               description,
-              assigned_to,
-              created_by,
               status,
-              priority,
               timeline,
+              priority_level,
+              priority_rank,
               created_at,
-              updated_at
+              updated_at,
+              created_via,
+              external_id
             ) VALUES (
+              gen_random_uuid(),
               $1, $2, $3, $4, $5, $6, $7, $8, $9, $10,
-              NOW(), NOW()
+              NOW(), NOW(), $11, $12
             )
             RETURNING id
           `;
           
           await client.query(insertQuery, [
-            uuidv4(),
-            organizationId,
-            teamId,
-            issue.title,
-            issue.description || '',
-            assignedToId,
-            userId,
-            issue.status,
-            issue.priority,
-            issue.timeline
+            organizationId,           // $1
+            teamId,                   // $2
+            userId,                   // $3 - created_by_id (user doing the import)
+            assignedToId,             // $4 - owner_id (owner from Excel)
+            issue.title,              // $5
+            issue.description || '',  // $6
+            issue.status,             // $7
+            issue.timeline,           // $8
+            issue.priority || 'normal', // $9 - priority_level
+            0,                        // $10 - priority_rank (default)
+            'import',                 // $11 - created_via
+            issue.link || null        // $12 - external_id (Ninety.io link)
           ]);
           
           console.log(`✅ Created: "${issue.title}"`);
