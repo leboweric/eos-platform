@@ -267,6 +267,15 @@ AXP (Adaptive Execution Platform) is the world's first business execution platfo
 - **Dependencies**: Socket.io, team membership
 - **Status**: Complete with Ninety.io-style collaboration
 
+### Meeting Permission System (October 2025)
+- **Pre-flight Permission Checks**: Leadership team members cannot start meetings for departments they're not explicitly members of
+- **Race Condition Prevention**: Button disabled until permission verification completes
+- **User Feedback**: Clear messaging with toast notifications and inline error text
+- **API Endpoint**: `GET /api/v1/organizations/:orgId/teams/:teamId/meeting-sessions/teams/:teamId/can-start-meeting`
+- **Files Modified**: 
+  - Backend: `meetingSessionsController.js`, `meetingSessions.js` routes
+  - Frontend: `MeetingsPage.jsx`, `meetingSessionsService.js`
+
 ### Issues Management (IDS)
 - **Purpose**: Issue identification, discussion, and resolution
 - **Key Files**:
@@ -340,6 +349,7 @@ AXP (Adaptive Execution Platform) is the world's first business execution platfo
 9. **Context Menu Updates** - Removed delete buttons from Issues, unified Rock review menus
 10. **Import Data Validation** - Comprehensive column mapping and constraint validation
 11. **Ninety.io Priorities Import** - Complete Excel import system with dual-sheet processing
+12. **Meeting Permission System** - Pre-flight permission checks prevent leadership team members from starting department meetings they're not explicitly members of
 
 ## 7. File/Directory Structure
 
