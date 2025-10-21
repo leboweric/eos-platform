@@ -2682,28 +2682,6 @@ const QuarterlyPrioritiesPageClean = () => {
               )}
             </div>
             <div className="flex flex-wrap items-center gap-2 sm:gap-3">
-              {!showArchived && (
-                <>
-                  <Button 
-                    variant="outline"
-                    size="sm"
-                    onClick={expandAll}
-                    className="bg-white/80 backdrop-blur-sm border border-slate-200 hover:shadow-md hover:scale-[1.02] transition-all rounded-lg"
-                  >
-                    <ChevronDown className="mr-2 h-4 w-4" style={{ color: themeColors.primary }} />
-                    Expand All
-                  </Button>
-                  <Button 
-                    variant="outline"
-                    size="sm"
-                    onClick={collapseAll}
-                    className="bg-white/80 backdrop-blur-sm border border-slate-200 hover:shadow-md hover:scale-[1.02] transition-all rounded-lg"
-                  >
-                    <ChevronRight className="mr-2 h-4 w-4" style={{ color: themeColors.primary }} />
-                    Collapse All
-                  </Button>
-                </>
-              )}
               <Button 
                 variant={showArchived ? "default" : "outline"}
                 onClick={() => setShowArchived(!showArchived)}
@@ -2736,14 +2714,6 @@ const QuarterlyPrioritiesPageClean = () => {
                   >
                     <Brain className="mr-2 h-4 w-4 text-gray-400" />
                     SMART Assistant (Testing)
-                  </Button>
-                  <Button 
-                    variant="outline"
-                    onClick={() => navigate('/priorities/import')}
-                    className="bg-white/80 backdrop-blur-sm border border-gray-200 hover:bg-gray-50 rounded-lg transition-all"
-                  >
-                    <Upload className="mr-2 h-4 w-4" />
-                    Import from Ninety.io
                   </Button>
                   <Button 
                     onClick={() => {
