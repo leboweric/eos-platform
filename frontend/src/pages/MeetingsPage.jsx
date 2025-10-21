@@ -144,7 +144,8 @@ const MeetingsPage = () => {
       setCheckingPermissions(true);
       
       try {
-        const permissionResult = await meetingSessionsService.canStartMeetingForTeam(selectedTeamId);
+        const orgId = user.organization_id || user.organizationId;
+        const permissionResult = await meetingSessionsService.canStartMeetingForTeam(orgId, selectedTeamId);
         
         setMeetingPermissions(prev => ({
           ...prev,

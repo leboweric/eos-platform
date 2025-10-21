@@ -320,9 +320,11 @@ class MeetingSessionsService {
   }
 
   // Check if user can start a meeting for a specific team
-  async canStartMeetingForTeam(teamId) {
+  async canStartMeetingForTeam(orgId, teamId) {
     try {
-      const response = await axios.get(`/meeting-sessions/teams/${teamId}/can-start-meeting`);
+      const response = await axios.get(
+        `/organizations/${orgId}/teams/${teamId}/meeting-sessions/teams/${teamId}/can-start-meeting`
+      );
       return response.data;
     } catch (error) {
       console.error('Error checking meeting start permission:', error);
