@@ -40,7 +40,6 @@ import {
   CheckCircle,
   Clock,
   Edit,
-  Trash2,
   Pencil,
   ChevronDown,
   ChevronUp,
@@ -2337,18 +2336,6 @@ const QuarterlyPrioritiesPageClean = () => {
                             >
                               <Edit className="h-3 w-3" style={{ color: themeColors.primary }} />
                             </Button>
-                            <Button
-                              size="sm"
-                              variant="ghost"
-                              onClick={() => {
-                                if (window.confirm('Are you sure you want to delete this milestone?')) {
-                                  handleDeleteMilestone(priority.id, milestone.id);
-                                }
-                              }}
-                              className="h-7 w-7 p-0 hover:bg-red-100"
-                            >
-                              <Trash2 className="h-3 w-3 text-red-600" />
-                            </Button>
                           </div>
                         </>
                       )}
@@ -2549,14 +2536,6 @@ const QuarterlyPrioritiesPageClean = () => {
                               onMouseLeave={(e) => e.target.style.backgroundColor = 'transparent'}
                             >
                               <Download className="h-4 w-4" style={{ color: themeColors.primary }} />
-                            </Button>
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              onClick={() => handleDeleteAttachment(attachment.id)}
-                              className="h-7 w-7 p-0 hover:bg-red-100"
-                            >
-                              <Trash2 className="h-4 w-4 text-red-600" />
                             </Button>
                           </div>
                         </div>
@@ -3020,7 +2999,6 @@ const QuarterlyPrioritiesPageClean = () => {
                                         onChangeStatus={handleContextMenuChangeStatus}
                                         onAddMilestone={handleContextMenuAddMilestone}
                                         onArchive={handleContextMenuArchive}
-                                        onDelete={handleContextMenuDelete}
                                         onDuplicate={handleContextMenuDuplicate}
                                       >
                                       <div className="flex items-center px-3 py-3 hover:bg-slate-50 rounded-lg transition-colors group cursor-context-menu">
@@ -3401,7 +3379,6 @@ const QuarterlyPrioritiesPageClean = () => {
                                         onChangeStatus={handleContextMenuChangeStatus}
                                         onAddMilestone={handleContextMenuAddMilestone}
                                         onArchive={handleContextMenuArchive}
-                                        onDelete={handleContextMenuDelete}
                                         onDuplicate={handleContextMenuDuplicate}
                                       >
                                       <div className="flex items-center px-3 py-3 hover:bg-slate-50 rounded-lg transition-colors group cursor-context-menu">
@@ -4489,13 +4466,10 @@ const QuarterlyPrioritiesPageClean = () => {
           onAddMilestone={handleCreateMilestone}
           onEditMilestone={handleEditMilestone}
           onToggleMilestone={handleUpdateMilestone}
-          onDeleteMilestone={handleDeleteMilestone}
           onAddUpdate={handleAddUpdate}
           onEditUpdate={handleEditUpdate}
-          onDeleteUpdate={handleDeleteUpdate}
           onUploadAttachment={handleUploadAttachment}
           onDownloadAttachment={handleDownloadAttachment}
-          onDeleteAttachment={handleDeleteAttachment}
         />
       )}
     </div>

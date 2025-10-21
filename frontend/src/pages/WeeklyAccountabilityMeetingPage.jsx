@@ -3950,7 +3950,6 @@ const WeeklyAccountabilityMeetingPage = () => {
                                             onChangeStatus={handleContextMenuChangeStatus}
                                             onAddMilestone={handleContextMenuAddMilestone}
                                             onArchive={handleContextMenuArchive}
-                                            onDelete={handleContextMenuDelete}
                                             onDuplicate={handleContextMenuDuplicate}
                                           >
                                               <div className="flex items-center px-3 py-3 hover:bg-slate-50 rounded-lg transition-colors group cursor-context-menu">
@@ -4268,7 +4267,6 @@ const WeeklyAccountabilityMeetingPage = () => {
                                             onChangeStatus={handleContextMenuChangeStatus}
                                             onAddMilestone={handleContextMenuAddMilestone}
                                             onArchive={handleContextMenuArchive}
-                                            onDelete={handleContextMenuDelete}
                                             onDuplicate={handleContextMenuDuplicate}
                                           >
                                               <div className="flex items-center px-3 py-3 hover:bg-slate-50 rounded-lg transition-colors group cursor-context-menu">

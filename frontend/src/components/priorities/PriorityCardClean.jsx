@@ -22,7 +22,6 @@ import {
   Building2,
   MessageSquare,
   Plus,
-  Trash2,
   CheckCircle,
   TrendingUp,
   AlertTriangle,
@@ -46,15 +45,12 @@ const PriorityCardClean = ({
   onArchive,
   onAddMilestone,
   onEditMilestone,
-  onDeleteMilestone,
   onToggleMilestone,
   onAddUpdate,
   onEditUpdate,
-  onDeleteUpdate,
   onStatusChange,
   onUploadAttachment,
   onDownloadAttachment,
-  onDeleteAttachment,
   onCreateDiscussionIssue,
   teamMembers = [],
   readOnly = false
@@ -839,16 +835,6 @@ const PriorityCardClean = ({
                           >
                             <Edit2 className="h-3 w-3" style={{ color: themeColors.primary }} />
                           </Button>
-                          {onDeleteMilestone && (
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              onClick={() => onDeleteMilestone(priority.id, milestone.id)}
-                              className="h-6 w-6 p-0 opacity-0 group-hover:opacity-100"
-                            >
-                              <Trash2 className="h-3 w-3" style={{ color: themeColors.secondary }} />
-                            </Button>
-                          )}
                         </>
                       )}
                     </div>
@@ -1017,21 +1003,6 @@ const PriorityCardClean = ({
                                   <Edit2 className="h-3 w-3" style={{ color: themeColors.primary }} />
                                 </Button>
                               )}
-                              {onDeleteUpdate && (
-                                <Button
-                                  variant="ghost"
-                                  size="sm"
-                                  onClick={() => {
-                                    console.log('Delete update clicked:', { priorityId: priority.id, updateId: update.id });
-                                    onDeleteUpdate(priority.id, update.id);
-                                  }}
-                                  className="h-6 w-6 p-0 transition-colors"
-                                  onMouseEnter={(e) => e.currentTarget.style.backgroundColor = themeColors.secondary + '15'}
-                                  onMouseLeave={(e) => e.currentTarget.style.backgroundColor = ''}
-                                >
-                                  <Trash2 className="h-3 w-3" style={{ color: themeColors.secondary }} />
-                                </Button>
-                              )}
                             </div>
                           )}
                         </div>
@@ -1124,16 +1095,6 @@ const PriorityCardClean = ({
                           className="h-6 w-6 p-0 opacity-0 group-hover:opacity-100 ml-2"
                         >
                           <Download className="h-3 w-3 text-blue-600" />
-                        </Button>
-                      )}
-                      {onDeleteAttachment && (
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => onDeleteAttachment(priority.id, attachment.id)}
-                          className="h-6 w-6 p-0 opacity-0 group-hover:opacity-100"
-                        >
-                          <Trash2 className="h-3 w-3" style={{ color: themeColors.secondary }} />
                         </Button>
                       )}
                     </div>

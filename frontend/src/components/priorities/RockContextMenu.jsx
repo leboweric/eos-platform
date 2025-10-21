@@ -8,7 +8,6 @@ import {
 } from "@/components/ui/context-menu";
 import { 
   Edit3, 
-  Trash2, 
   CheckCircle, 
   AlertCircle, 
   XCircle,
@@ -23,7 +22,6 @@ export function RockContextMenu({
   rock, 
   priority, // Support both naming conventions
   onEdit, 
-  onDelete, 
   onChangeStatus,
   onAddMilestone,
   onViewDetails,
@@ -124,23 +122,6 @@ export function RockContextMenu({
           </>
         )}
         
-        {/* Delete - separated with warning color */}
-        {onDelete && (
-          <>
-            <ContextMenuSeparator />
-            <ContextMenuItem 
-              onClick={() => {
-                if (window.confirm(`Are you sure you want to delete "${item.title}"? This action cannot be undone.`)) {
-                  onDelete(item);
-                }
-              }}
-              className="text-red-600 focus:text-red-600 focus:bg-red-50"
-            >
-              <Trash2 className="mr-2 h-4 w-4" />
-              Delete Priority
-            </ContextMenuItem>
-          </>
-        )}
       </ContextMenuContent>
     </ContextMenu>
   );
