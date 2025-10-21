@@ -8,7 +8,8 @@ import {
   ArrowUpDown,
   ArrowUp,
   ArrowDown,
-  List
+  List,
+  Archive
 } from 'lucide-react';
 import { format } from 'date-fns';
 import { todosService } from '../../services/todosService';
@@ -159,6 +160,20 @@ const TodosListClean = ({
     if (days > 1 && days <= 7) return `Due in ${days} days`;
     
     return format(parseDateAsLocal(todo.due_date), 'MMM d');
+  };
+
+  const formatArchivedDate = (todo) => {
+    // Check for archived_at field first, then fall back to updated_at if archived
+    const archiveDate = todo.archived_at || (todo.archived ? todo.updated_at : null);
+    if (!archiveDate) return null;
+    
+    try {
+      const date = new Date(archiveDate);
+      return format(date, 'MMM d, yyyy');
+    } catch (error) {
+      console.error('Error formatting archive date:', error);
+      return null;
+    }
   };
   
   const handleSort = (field) => {
@@ -317,18 +332,29 @@ const TodosListClean = ({
                 </span>
               )}
               
-              {/* Due date */}
-              {todo.due_date && (
-                <span className={`
-                  flex items-center gap-1 text-sm
-                  ${overdue ? 'text-red-600 font-medium' : 
-                    daysUntilDue === 0 ? 'text-orange-600' :
-                    daysUntilDue === 1 ? 'text-yellow-600' :
-                    'text-gray-500'}
-                `}>
-                  <Calendar className="h-3 w-3" />
-                  {formatDueDate(todo)}
-                </span>
+              {/* Date info - show archive date for archived todos, due date for others */}
+              {todo.archived ? (
+                // Show archive date for archived todos
+                formatArchivedDate(todo) && (
+                  <span className="flex items-center gap-1 text-sm text-gray-500">
+                    <Archive className="h-3 w-3" />
+                    Archived {formatArchivedDate(todo)}
+                  </span>
+                )
+              ) : (
+                // Show due date for non-archived todos
+                todo.due_date && (
+                  <span className={`
+                    flex items-center gap-1 text-sm
+                    ${overdue ? 'text-red-600 font-medium' : 
+                      daysUntilDue === 0 ? 'text-orange-600' :
+                      daysUntilDue === 1 ? 'text-yellow-600' :
+                      'text-gray-500'}
+                  `}>
+                    <Calendar className="h-3 w-3" />
+                    {formatDueDate(todo)}
+                  </span>
+                )
               )}
               
             </div>
@@ -395,23 +421,34 @@ const TodosListClean = ({
                   
                   {/* Metadata - compact */}
                   <div className="mt-2 flex flex-wrap items-center gap-2 text-xs">
-                    {/* Due date */}
-                    {todo.due_date && (
-                      <span className={`
-                        flex items-center gap-1.5
-                        ${overdue ? 'text-red-600 font-medium' : 
-                          daysUntilDue === 0 ? 'text-orange-600 font-medium' :
-                          daysUntilDue === 1 ? 'text-yellow-600' :
-                          'text-gray-500'}
-                      `}>
-                        {overdue && <AlertCircle className="h-3.5 w-3.5" />}
-                        <Calendar className="h-3.5 w-3.5" />
-                        {formatDueDate(todo)}
-                      </span>
+                    {/* Date info - show archive date for archived todos, due date for others */}
+                    {todo.archived ? (
+                      // Show archive date for archived todos
+                      formatArchivedDate(todo) && (
+                        <span className="flex items-center gap-1.5 text-gray-500">
+                          <Archive className="h-3.5 w-3.5" />
+                          Archived {formatArchivedDate(todo)}
+                        </span>
+                      )
+                    ) : (
+                      // Show due date for non-archived todos
+                      todo.due_date && (
+                        <span className={`
+                          flex items-center gap-1.5
+                          ${overdue ? 'text-red-600 font-medium' : 
+                            daysUntilDue === 0 ? 'text-orange-600 font-medium' :
+                            daysUntilDue === 1 ? 'text-yellow-600' :
+                            'text-gray-500'}
+                        `}>
+                          {overdue && <AlertCircle className="h-3.5 w-3.5" />}
+                          <Calendar className="h-3.5 w-3.5" />
+                          {formatDueDate(todo)}
+                        </span>
+                      )
                     )}
                     
                     {/* Separator */}
-                    {todo.due_date && todo.assigned_to && (
+                    {((todo.archived && formatArchivedDate(todo)) || (!todo.archived && todo.due_date)) && todo.assigned_to && (
                       <span className="text-gray-300">•</span>
                     )}
                     
