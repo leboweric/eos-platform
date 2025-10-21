@@ -290,13 +290,7 @@ const QuarterlyPrioritiesPageClean = () => {
       // Count completed company priorities
       if (Array.isArray(companyPriorities)) {
         companyPriorities.forEach(priority => {
-          console.log('🔍 Company Priority:', { 
-            title: priority.title?.substring(0, 30) + '...', 
-            status: priority.status, 
-            completion_percentage: priority.completion_percentage,
-            isCompleted: priority.status === 'completed' || priority.completion_percentage === 100
-          });
-          if (priority.status === 'completed' || priority.completion_percentage === 100) {
+          if (priority.status === 'complete' || priority.status === 'completed' || priority.completion_percentage === 100) {
             completedCount++;
           }
         });
@@ -307,13 +301,7 @@ const QuarterlyPrioritiesPageClean = () => {
         Object.values(teamMemberPriorities).forEach(memberPriorities => {
           if (Array.isArray(memberPriorities)) {
             memberPriorities.forEach(priority => {
-              console.log('🔍 Team Priority:', { 
-                title: priority.title?.substring(0, 30) + '...', 
-                status: priority.status, 
-                completion_percentage: priority.completion_percentage,
-                isCompleted: priority.status === 'completed' || priority.completion_percentage === 100
-              });
-              if (priority.status === 'completed' || priority.completion_percentage === 100) {
+              if (priority.status === 'complete' || priority.status === 'completed' || priority.completion_percentage === 100) {
                 completedCount++;
               }
             });
@@ -322,9 +310,6 @@ const QuarterlyPrioritiesPageClean = () => {
       }
       
       setCompletedNotArchivedCount(completedCount);
-      console.log('📊 Archive Debug: Completed count calculated:', completedCount);
-      console.log('📊 Archive Debug: Company priorities:', companyPriorities?.length || 0);
-      console.log('📊 Archive Debug: Team member priorities:', Object.keys(teamMemberPriorities || {}).length);
     };
     
     if (!showArchived) {
@@ -2729,24 +2714,17 @@ const QuarterlyPrioritiesPageClean = () => {
               >
                 {showArchived ? 'View Current' : 'View Archive'}
               </Button>
-              {(() => {
-                console.log('🔍 Archive Button Debug:', { 
-                  showArchived, 
-                  completedNotArchivedCount, 
-                  shouldShow: !showArchived && completedNotArchivedCount > 0 
-                });
-                return !showArchived && completedNotArchivedCount > 0 && (
-                  <Button 
-                    variant="outline"
-                    onClick={handleArchiveCompleted}
-                    disabled={loading}
-                    className="bg-white/80 backdrop-blur-sm border border-orange-200 hover:bg-orange-50 hover:border-orange-300 hover:scale-[1.02] transition-all rounded-lg"
-                  >
-                    <Archive className="mr-2 h-4 w-4 text-orange-600" />
-                    Archive Completed ({completedNotArchivedCount})
-                  </Button>
-                );
-              })()}
+              {!showArchived && completedNotArchivedCount > 0 && (
+                <Button 
+                  variant="outline"
+                  onClick={handleArchiveCompleted}
+                  disabled={loading}
+                  className="bg-white/80 backdrop-blur-sm border border-orange-200 hover:bg-orange-50 hover:border-orange-300 hover:scale-[1.02] transition-all rounded-lg"
+                >
+                  <Archive className="mr-2 h-4 w-4 text-orange-600" />
+                  Archive Completed ({completedNotArchivedCount})
+                </Button>
+              )}
               {!showArchived && (
                 <>
                   <Button 
