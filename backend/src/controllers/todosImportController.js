@@ -126,13 +126,7 @@ export const getImportTemplate = async (req, res) => {
         'Open': 'Has no Completed On date',
         'Complete': 'Has Completed On date'
       },
-      priority_options: [
-        'Low',
-        'Medium', 
-        'High'
-      ],
       default_values: {
-        'Priority': 'Medium',
         'Status': 'Open (unless Completed On has a date)',
         'Owner': 'Importing user (if Owner not found or empty)'
       },
@@ -141,7 +135,6 @@ export const getImportTemplate = async (req, res) => {
         'Status is determined by the Completed On field',
         'Owner will be matched to existing users by name or email',
         'To-dos without valid owners will be assigned to the importing user',
-        'Priority defaults to Medium if not specified',
         'Due Date should be in YYYY-MM-DD format or Excel date'
       ]
     };
@@ -210,22 +203,11 @@ export const previewTodosImport = async (req, res) => {
         const description = safeTrim(row['Description']);
         const dueDate = parseExcelDate(row['Due Date']);
         const completedDate = parseExcelDate(row['Completed On']);
-        const priority = safeTrim(row['Priority']) || 'Medium';
         
         if (!title) {
           console.warn(`⚠️ Row ${index + 1}: Missing title, skipping`);
           return null;
         }
-
-        // Map priority to valid values
-        const priorityMap = {
-          'low': 'Medium',
-          'medium': 'Medium',
-          'normal': 'Medium',
-          'high': 'Medium',
-          'critical': 'Medium'
-        };
-        const mappedPriority = priorityMap[priority.toLowerCase()] || 'Medium';
 
         const todo = {
           title,
@@ -234,7 +216,6 @@ export const previewTodosImport = async (req, res) => {
           due_date: dueDate ? dueDate.toISOString().split('T')[0] : null,
           completed_date: completedDate ? completedDate.toISOString().split('T')[0] : null,
           status: completedDate ? 'complete' : 'open',
-          priority: mappedPriority,
           attachment_names: safeTrim(row['Attachment Names']) || null,
           link: safeTrim(row['Link']) || null,
           raw_data: row
@@ -323,7 +304,6 @@ export const executeTodosImport = async (req, res) => {
         const description = safeTrim(row['Description']);
         const dueDate = parseExcelDate(row['Due Date']);
         const completedDate = parseExcelDate(row['Completed On']);
-        const priority = safeTrim(row['Priority']) || 'Medium';
         
         if (!title) return null;
 
@@ -334,7 +314,6 @@ export const executeTodosImport = async (req, res) => {
           due_date: dueDate ? dueDate.toISOString().split('T')[0] : null,
           completed_date: completedDate ? completedDate.toISOString().split('T')[0] : null,
           status: completedDate ? 'complete' : 'open',
-          priority: 'Medium', // Always use Medium for now
           raw_data: row
         };
       } catch (error) {
@@ -389,7 +368,6 @@ export const executeTodosImport = async (req, res) => {
             description,
             due_date,
             status,
-            priority,
             is_private,
             archived,
             is_multi_assignee,
@@ -397,7 +375,7 @@ export const executeTodosImport = async (req, res) => {
             created_at,
             updated_at
           ) VALUES (
-            $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, NOW(), NOW()
+            $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, NOW(), NOW()
           )
           RETURNING id
         `;
@@ -412,11 +390,10 @@ export const executeTodosImport = async (req, res) => {
           todo.description || '',                      // $7 - description
           todo.due_date,                               // $8 - due_date
           todo.status,                                 // $9 - status
-          todo.priority,                               // $10 - priority
-          false,                                       // $11 - is_private
-          false,                                       // $12 - archived
-          true,                                        // $13 - is_multi_assignee
-          todo.completed_date ? new Date(todo.completed_date) : null  // $14 - completed_at
+          false,                                       // $10 - is_private
+          false,                                       // $11 - archived
+          true,                                        // $12 - is_multi_assignee
+          todo.completed_date ? new Date(todo.completed_date) : null  // $13 - completed_at
         ]);
 
         console.log(`✅ Created: "${todo.title}"`);
