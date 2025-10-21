@@ -274,6 +274,8 @@ const WeeklyAccountabilityMeetingPage = () => {
   const [selectedPriority, setSelectedPriority] = useState(null);
   const [creatingIssueFromHeadline, setCreatingIssueFromHeadline] = useState(null);
   const [currentTeam, setCurrentTeam] = useState(null);
+  const [showArchiveDialog, setShowArchiveDialog] = useState(false);
+  const [archiveData, setArchiveData] = useState({ priorityId: null, priorityTitle: null });
   
   // Additional state for new priorities display pattern
   const [expandedPriorities, setExpandedPriorities] = useState({});
@@ -2510,10 +2512,16 @@ const WeeklyAccountabilityMeetingPage = () => {
   };
 
   const handleContextMenuArchive = async (priority) => {
-    if (!window.confirm(`Best Practice is to Archive priorities at the Quarterly Review Meeting.\n\nAre you sure you want to archive "${priority.title}"?`)) {
-      return;
-    }
-    await handleArchivePriority(priority.id);
+    // Set archive data and show confirmation dialog
+    setArchiveData({ priorityId: priority.id, priorityTitle: priority.title });
+    setShowArchiveDialog(true);
+  };
+
+  const confirmArchivePriority = async () => {
+    const { priorityId } = archiveData;
+    setShowArchiveDialog(false);
+    setArchiveData({ priorityId: null, priorityTitle: null });
+    await handleArchivePriority(priorityId);
   };
 
   const handleContextMenuDelete = async (priority) => {
@@ -6602,6 +6610,49 @@ const WeeklyAccountabilityMeetingPage = () => {
           }}
         />
       )}
+
+      {/* Archive Confirmation Dialog */}
+      <Dialog open={showArchiveDialog} onOpenChange={setShowArchiveDialog}>
+        <DialogContent className="sm:max-w-[425px]">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2 text-orange-600">
+              <Archive className="h-5 w-5" />
+              Warning
+            </DialogTitle>
+            <DialogDescription className="pt-2">
+              <div className="space-y-3">
+                <p className="text-sm text-gray-600 font-medium">
+                  Best Practice is to Archive priorities at the Quarterly Review Meeting.
+                </p>
+                <p className="text-sm text-gray-700">
+                  {archiveData.priorityTitle 
+                    ? `Are you sure you want to archive "${archiveData.priorityTitle}"?`
+                    : 'Are you sure you want to archive this priority?'
+                  }
+                </p>
+              </div>
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter className="flex gap-2 sm:gap-2">
+            <Button
+              variant="outline"
+              onClick={() => {
+                setShowArchiveDialog(false);
+                setArchiveData({ priorityId: null, priorityTitle: null });
+              }}
+            >
+              Cancel
+            </Button>
+            <Button
+              onClick={confirmArchivePriority}
+              className="bg-orange-600 hover:bg-orange-700 text-white"
+            >
+              <Archive className="mr-2 h-4 w-4" />
+              Archive Priority
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }; 
