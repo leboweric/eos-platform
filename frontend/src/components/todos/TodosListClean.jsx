@@ -29,7 +29,8 @@ const TodosListClean = ({
   showCompleted = true,
   hideViewToggle = false,
   hideSortOptions = false,
-  hideAssignee = false
+  hideAssignee = false,
+  showingArchived = false
 }) => {
   const { selectedTodoIds, toggleTodo, isSelected } = useSelectedTodos();
   const [themeColors, setThemeColors] = useState({
@@ -83,8 +84,15 @@ const TodosListClean = ({
         aValue = a.assigned_to ? `${a.assigned_to.first_name} ${a.assigned_to.last_name}`.toLowerCase() : 'zzz';
         bValue = b.assigned_to ? `${b.assigned_to.first_name} ${b.assigned_to.last_name}`.toLowerCase() : 'zzz';
       } else if (sortField === 'dueDate') {
-        aValue = a.due_date || '9999-12-31';
-        bValue = b.due_date || '9999-12-31';
+        if (showingArchived) {
+          // For archived todos, sort by archive date
+          aValue = a.archived_at || a.updated_at || '0000-01-01';
+          bValue = b.archived_at || b.updated_at || '0000-01-01';
+        } else {
+          // For non-archived todos, sort by due date
+          aValue = a.due_date || '9999-12-31';
+          bValue = b.due_date || '9999-12-31';
+        }
       } else if (sortField === 'title') {
         aValue = a.title.toLowerCase();
         bValue = b.title.toLowerCase();
@@ -249,7 +257,7 @@ const TodosListClean = ({
             onClick={() => handleSort('dueDate')}
             className={`h-7 px-3 py-1 text-xs font-medium hover:bg-gray-200 ${sortField === 'dueDate' ? 'bg-gray-200 text-gray-900' : 'text-gray-600'}`}
           >
-            Due Date {getSortIcon('dueDate')}
+            {showingArchived ? 'Date Archived' : 'Due Date'} {getSortIcon('dueDate')}
           </Button>
           {sortField && (
             <Button

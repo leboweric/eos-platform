@@ -529,6 +529,7 @@ const TodosPage = () => {
                 onConvertToIssue={handleConvertToIssue}
                 onUnarchive={handleUnarchive}
                 showCompleted={true}
+                showingArchived={activeTab === 'archived'}
               />
             </div>
           )}
