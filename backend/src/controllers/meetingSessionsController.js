@@ -5,7 +5,10 @@ export const startSession = async (req, res) => {
   const client = await pool.connect();
   try {
     const { organization_id, team_id, meeting_type } = req.body;
-    const user_id = req.user.id;
+    const user_id = req.user.id || req.user.userId;
+
+    console.log(`🔍 TEAM MEMBERSHIP CHECK - User: ${user_id}, Team: ${team_id}`);
+    console.log(`🔍 Full req.user object:`, req.user);
 
     // Verify user is a member of the team
     const memberCheck = await client.query(`
@@ -13,12 +16,18 @@ export const startSession = async (req, res) => {
       WHERE user_id = $1 AND team_id = $2
     `, [user_id, team_id]);
     
+    console.log(`🔍 Member check result: ${memberCheck.rows.length} rows found`);
+    
     if (memberCheck.rows.length === 0) {
+      console.log(`❌ User ${user_id} attempted to start meeting for team ${team_id} but is not a member`);
       return res.status(403).json({
         success: false,
-        error: 'You cannot start a meeting for a team you are not a member of.'
+        error: 'TEAM_MEMBERSHIP_REQUIRED',
+        message: 'You cannot start a meeting for a team you are not a member of.'
       });
     }
+
+    console.log(`✅ User ${user_id} verified as member of team ${team_id}`);
 
     // Check if there's already an active session for this team
     const existingSession = await client.query(`
