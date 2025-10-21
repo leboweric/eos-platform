@@ -79,9 +79,10 @@ export const getUserTeamId = (user) => {
  * 
  * @param {string} preferredTeamId - Preferred team ID (from URL or selection)
  * @param {Object} user - The user object from auth store
+ * @param {boolean} allowFallback - Whether to fall back to user's default team if not a member (default: true)
  * @returns {string|null} The effective team ID
  */
-export const getEffectiveTeamId = (preferredTeamId, user) => {
+export const getEffectiveTeamId = (preferredTeamId, user, allowFallback = true) => {
   console.log('🔍 getEffectiveTeamId called with:', {
     preferredTeamId,
     userTeams: user?.teams?.map(t => ({ id: t.id, name: t.name, is_leadership: t.is_leadership_team }))
@@ -106,14 +107,25 @@ export const getEffectiveTeamId = (preferredTeamId, user) => {
       return cleanId;
     } else {
       console.log('⚠️ Team ID not found in user teams, user teams are:', user?.teams);
+      // If allowFallback is false, use the requested team even if user isn't a member
+      // Let the backend validate and return 403 if unauthorized
+      if (!allowFallback) {
+        console.log('🚫 allowFallback=false, using requested team for backend validation:', cleanId);
+        return cleanId;
+      }
     }
   } else {
     console.log('❌ No valid cleanId. cleanId:', cleanId, 'LEADERSHIP_TEAM_ID:', LEADERSHIP_TEAM_ID);
   }
 
-  // Otherwise get the user's actual team
-  console.log('⚠️ Falling back to getUserTeamId');
-  const fallbackId = getUserTeamId(user);
-  console.log('📍 Fallback team ID:', fallbackId);
-  return fallbackId;
+  // Only fall back if allowFallback is true
+  if (allowFallback) {
+    console.log('⚠️ Falling back to getUserTeamId');
+    const fallbackId = getUserTeamId(user);
+    console.log('📍 Fallback team ID:', fallbackId);
+    return fallbackId;
+  } else {
+    console.log('🚫 allowFallback=false, returning null instead of fallback');
+    return null;
+  }
 };

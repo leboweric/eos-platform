@@ -1024,7 +1024,7 @@ const WeeklyAccountabilityMeetingPage = () => {
             
             // Initialize database session for ALL users (both leaders and participants)
             const orgId = user?.organizationId || user?.organization_id;
-            const effectiveTeamId = getEffectiveTeamId(teamId, user);
+            const effectiveTeamId = getEffectiveTeamId(teamId, user, false); // Don't fallback - let backend validate
             
             // Start session immediately and await result (only if not already loading)
             if (orgId && effectiveTeamId && !sessionId && !sessionLoading) {
@@ -1136,7 +1136,7 @@ const WeeklyAccountabilityMeetingPage = () => {
         
         // Initialize database session for ALL users (both leaders and participants)
         const orgId = user?.organizationId || user?.organization_id;
-        const effectiveTeamId = getEffectiveTeamId(teamId, user);
+        const effectiveTeamId = getEffectiveTeamId(teamId, user, false); // Don't fallback - let backend validate
         
         // Start session immediately and await result (only if not already loading)
         if (orgId && effectiveTeamId && !sessionId && !sessionLoading) {
@@ -1308,7 +1308,7 @@ const WeeklyAccountabilityMeetingPage = () => {
       if (isActive === 'true' && startTime) {
         // Check if there's an active database session
         const orgId = user?.organizationId || user?.organization_id;
-        const effectiveTeamId = getEffectiveTeamId(teamId, user);
+        const effectiveTeamId = getEffectiveTeamId(teamId, user, false); // Don't fallback - let backend validate
         
         if (orgId && effectiveTeamId) {
           const activeSession = await meetingSessionsService.getActiveSession(orgId, effectiveTeamId, 'weekly');
@@ -1379,7 +1379,7 @@ const WeeklyAccountabilityMeetingPage = () => {
     
     if (meetingStarted && !sessionId && !sessionLoading && user && teamId) {
       const orgId = user?.organizationId || user?.organization_id;
-      const effectiveTeamId = getEffectiveTeamId(teamId, user);
+      const effectiveTeamId = getEffectiveTeamId(teamId, user, false); // Don't fallback - let backend validate
       
       console.log('📍 Session init IDs:', {
         orgId,
@@ -1427,7 +1427,7 @@ const WeeklyAccountabilityMeetingPage = () => {
   useEffect(() => {
     if (user && teamId && !sessionId && !sessionLoading) {
       const orgId = user?.organizationId || user?.organization_id;
-      const effectiveTeamId = getEffectiveTeamId(teamId, user);
+      const effectiveTeamId = getEffectiveTeamId(teamId, user, false); // Don't fallback - let backend validate
       
       if (orgId && effectiveTeamId) {
         console.log('🔥 IMMEDIATE session initialization on mount');
@@ -1609,7 +1609,7 @@ const WeeklyAccountabilityMeetingPage = () => {
       // Create session if needed when starting as leader
       if (!sessionId && !sessionLoading) {
         const orgId = user?.organizationId || user?.organization_id;
-        const effectiveTeamId = getEffectiveTeamId(teamId, user);
+        const effectiveTeamId = getEffectiveTeamId(teamId, user, false); // Don't fallback - let backend validate
         
         if (orgId && effectiveTeamId) {
           console.log('🎯 Creating session for leader start');
