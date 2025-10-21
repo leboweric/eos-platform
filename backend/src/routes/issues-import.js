@@ -1,6 +1,6 @@
 import express from 'express';
 import multer from 'multer';
-import { authenticate, authorize } from '../middleware/auth.js';
+import { authenticate } from '../middleware/auth.js';
 import { getTemplate, preview, execute } from '../controllers/issuesImportController.js';
 
 const router = express.Router();
@@ -42,24 +42,14 @@ router.get('/template', getTemplate);
 /**
  * POST /api/v1/issues/import/preview
  * Preview Excel import without saving
- * Requires: manager role or higher
  */
-router.post('/preview', 
-  authorize(['admin', 'manager']),
-  upload.single('file'),
-  preview
-);
+router.post('/preview', upload.single('file'), preview);
 
 /**
  * POST /api/v1/issues/import/execute
  * Execute the actual import
- * Requires: manager role or higher
  */
-router.post('/execute',
-  authorize(['admin', 'manager']),
-  upload.single('file'),
-  execute
-);
+router.post('/execute', upload.single('file'), execute);
 
 // Error handler for multer
 router.use((error, req, res, next) => {
