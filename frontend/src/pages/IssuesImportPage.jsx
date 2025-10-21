@@ -3,6 +3,8 @@ import { useNavigate } from 'react-router-dom';
 import { ArrowLeft, Upload, Download, AlertTriangle, CheckCircle, XCircle, FileText, Users, Target } from 'lucide-react';
 import { useAuthStore } from '../stores/authStore';
 import { issuesImportService } from '../services/issuesImportService';
+import { organizationService } from '../services/organizationService';
+import axios from '../services/axiosConfig';
 
 const IssuesImportPage = () => {
   const navigate = useNavigate();
@@ -12,6 +14,7 @@ const IssuesImportPage = () => {
   const [selectedFile, setSelectedFile] = useState(null);
   const [selectedTeam, setSelectedTeam] = useState('');
   const [teams, setTeams] = useState([]);
+  const [organization, setOrganization] = useState(null);
   const [dragOver, setDragOver] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
@@ -25,17 +28,18 @@ const IssuesImportPage = () => {
   // Results
   const [importResults, setImportResults] = useState(null);
 
-  // Load template on component mount
+  // Load template and organization on component mount
   useEffect(() => {
     loadTemplate();
+    fetchOrganization();
   }, []);
 
-  // Load teams when user is available
+  // Load teams when organization is available
   useEffect(() => {
-    if (user?.currentOrganization?.id) {
+    if (organization?.id) {
       loadTeams();
     }
-  }, [user?.currentOrganization?.id]);
+  }, [organization?.id]);
 
   const loadTemplate = async () => {
     try {
@@ -47,33 +51,31 @@ const IssuesImportPage = () => {
     }
   };
 
-  const loadTeams = async () => {
-    if (!user?.currentOrganization?.id) {
-      console.warn('User or organization not available for loading teams');
-      return;
-    }
-    
+  const fetchOrganization = async () => {
     try {
-      const response = await fetch(`/api/v1/organizations/${user.currentOrganization.id}/teams`, {
-        headers: {
-          'Authorization': `Bearer ${localStorage.getItem('accessToken')}`,
-        },
-      });
-      
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
-      }
-      
-      const data = await response.json();
-      setTeams(data.teams || []);
+      const orgData = await organizationService.getOrganization();
+      setOrganization(orgData);
+      console.log('✅ Organization loaded:', orgData);
+    } catch (error) {
+      console.error('❌ Failed to fetch organization:', error);
+    }
+  };
+
+  const loadTeams = async () => {
+    try {
+      const response = await axios.get(`/organizations/${organization.id}/teams`);
+      const teams = response.data.data || [];
+      setTeams(teams);
+      console.log('✅ Teams loaded:', teams);
       
       // Auto-select leadership team if available
-      const leadershipTeam = data.teams?.find(team => team.is_leadership_team);
+      const leadershipTeam = teams.find(team => team.is_leadership_team);
       if (leadershipTeam) {
         setSelectedTeam(leadershipTeam.id);
+        console.log('✅ Auto-selected leadership team:', leadershipTeam.name);
       }
     } catch (error) {
-      console.error('Failed to load teams:', error);
+      console.error('❌ Failed to load teams:', error);
       setError('Failed to load teams');
     }
   };
@@ -148,7 +150,7 @@ const IssuesImportPage = () => {
     try {
       const formData = new FormData();
       formData.append('file', selectedFile);
-      formData.append('organizationId', user.currentOrganization.id);
+      formData.append('organizationId', organization.id);
       formData.append('teamId', selectedTeam);
 
       const preview = await issuesImportService.previewImport(formData);
@@ -176,7 +178,7 @@ const IssuesImportPage = () => {
     try {
       const formData = new FormData();
       formData.append('file', selectedFile);
-      formData.append('organizationId', user.currentOrganization.id);
+      formData.append('organizationId', organization.id);
       formData.append('teamId', selectedTeam);
       formData.append('conflictStrategy', conflictStrategy);
       
