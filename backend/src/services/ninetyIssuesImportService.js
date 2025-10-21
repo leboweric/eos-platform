@@ -289,9 +289,8 @@ class NinetyIssuesImportService {
     const exactMatch = await pool.query(
       `SELECT u.id, u.first_name, u.last_name, u.email 
        FROM users u
-       JOIN user_organizations uo ON u.id = uo.user_id
-       WHERE uo.organization_id = $1 
-       AND uo.is_active = true
+       WHERE u.organization_id = $1 
+       AND u.is_active = true
        AND (
          LOWER(CONCAT(u.first_name, ' ', u.last_name)) = LOWER($2)
          OR LOWER(u.first_name) = LOWER($2)
@@ -309,9 +308,8 @@ class NinetyIssuesImportService {
     const partialMatch = await pool.query(
       `SELECT u.id, u.first_name, u.last_name, u.email 
        FROM users u
-       JOIN user_organizations uo ON u.id = uo.user_id
-       WHERE uo.organization_id = $1 
-       AND uo.is_active = true
+       WHERE u.organization_id = $1 
+       AND u.is_active = true
        AND (
          LOWER(CONCAT(u.first_name, ' ', u.last_name)) LIKE LOWER($2)
          OR LOWER(u.email) LIKE LOWER($2)
@@ -338,9 +336,8 @@ class NinetyIssuesImportService {
         u.email,
         u.first_name || ' ' || u.last_name as full_name
       FROM users u
-      JOIN user_organizations uo ON u.id = uo.user_id
-      WHERE uo.organization_id = $1
-      AND uo.is_active = true
+      WHERE u.organization_id = $1
+      AND u.is_active = true
       ORDER BY u.first_name, u.last_name
     `;
     
