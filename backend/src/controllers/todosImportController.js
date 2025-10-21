@@ -123,11 +123,11 @@ export const getImportTemplate = async (req, res) => {
         }
       ],
       status_mapping: {
-        'Open': 'Has no Completed On date',
+        'Incomplete': 'Has no Completed On date',
         'Complete': 'Has Completed On date'
       },
       default_values: {
-        'Status': 'Open (unless Completed On has a date)',
+        'Status': 'Incomplete (unless Completed On has a date)',
         'Owner': 'Importing user (if Owner not found or empty)'
       },
       notes: [
@@ -215,7 +215,7 @@ export const previewTodosImport = async (req, res) => {
           owner_name: owner || null,
           due_date: dueDate ? dueDate.toISOString().split('T')[0] : null,
           completed_date: completedDate ? completedDate.toISOString().split('T')[0] : null,
-          status: completedDate ? 'complete' : 'open',
+          status: completedDate ? 'complete' : 'incomplete',
           attachment_names: safeTrim(row['Attachment Names']) || null,
           link: safeTrim(row['Link']) || null,
           raw_data: row
@@ -313,7 +313,7 @@ export const executeTodosImport = async (req, res) => {
           owner_name: owner || null,
           due_date: dueDate ? dueDate.toISOString().split('T')[0] : null,
           completed_date: completedDate ? completedDate.toISOString().split('T')[0] : null,
-          status: completedDate ? 'complete' : 'open',
+          status: completedDate ? 'complete' : 'incomplete',
           raw_data: row
         };
       } catch (error) {
