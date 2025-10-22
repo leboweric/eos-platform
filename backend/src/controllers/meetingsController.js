@@ -143,7 +143,33 @@ export const concludeMeeting = async (req, res) => {
       `, [specificMeetingId, organizationId, teamId]);
       logger.info('🎯 Targeted specific meeting:', specificMeetingId);
     } else {
-      // Fallback: Target latest in-progress meeting for the team (legacy behavior)
+      // Improved: First find the meeting ID, then update it specifically
+      // This gives us better control and debugging
+      const findMeetingResult = await db.query(`
+        SELECT id, created_at, team_id, organization_id
+        FROM meetings
+        WHERE organization_id = $1 
+          AND team_id = $2
+          AND status = 'in-progress'
+        ORDER BY created_at DESC
+        LIMIT 1
+      `, [organizationId, teamId]);
+      
+      if (findMeetingResult.rows.length === 0) {
+        logger.error('❌ No in-progress meeting found for conclude operation');
+        logger.error('Search criteria:', { organizationId, teamId });
+        return res.status(404).json({
+          success: false,
+          error: 'No active meeting found to conclude',
+          details: `No in-progress meeting found for team ${teamId} in organization ${organizationId}`,
+          debug: { organizationId, teamId, searchCriteria: 'organization_id + team_id + status=in-progress' }
+        });
+      }
+      
+      const targetMeetingId = findMeetingResult.rows[0].id;
+      logger.info('🎯 Found target meeting:', targetMeetingId);
+      
+      // Now update the specific meeting
       meetingUpdateResult = await db.query(`
         UPDATE meetings
         SET 
@@ -151,18 +177,9 @@ export const concludeMeeting = async (req, res) => {
           completed_at = NOW(),
           actual_end_time = NOW(),
           updated_at = NOW()
-        WHERE id = (
-          SELECT id 
-          FROM meetings
-          WHERE organization_id = $1 
-            AND team_id = $2
-            AND status = 'in-progress'
-          ORDER BY created_at DESC
-          LIMIT 1
-        )
+        WHERE id = $1
         RETURNING id
-      `, [organizationId, teamId]);
-      logger.info('🎯 Targeted latest in-progress meeting for team');
+      `, [targetMeetingId]);
     }
     
     // CRITICAL: Check if the UPDATE actually found and updated a meeting
