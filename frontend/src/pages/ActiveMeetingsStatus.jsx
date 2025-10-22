@@ -43,6 +43,9 @@ export default function ActiveMeetingsStatus() {
       }
       
       const data = await response.json();
+      console.log('🔍 [Dashboard] Full API response:', data);
+      console.log('🔍 [Dashboard] Meetings array:', data.meetings);
+      console.log('🔍 [Dashboard] First meeting:', data.meetings?.[0]);
       setMeetings(data.meetings || []);
       setLastUpdate(new Date());
     } catch (error) {
@@ -53,9 +56,18 @@ export default function ActiveMeetingsStatus() {
     }
   };
 
-  const activeMeetingsCount = meetings.filter(m => m.status === 'in-progress').length;
+  // FIXED: Backend now returns status: true (boolean) instead of 'in-progress' (string)
+  const activeMeetingsCount = meetings.filter(m => m.status === true || m.status === 'in-progress').length;
   const activeRecordingsCount = meetings.filter(m => m.has_active_recording).length;
   const safeToDeploy = activeMeetingsCount === 0;
+  
+  console.log('🔍 [Dashboard] Filtering results:', {
+    totalMeetings: meetings.length,
+    activeMeetingsCount,
+    activeRecordingsCount,
+    safeToDeploy,
+    meetingStatuses: meetings.map(m => ({ id: m.id, status: m.status, type: typeof m.status }))
+  });
 
   const formatDuration = (startedAt) => {
     const start = new Date(startedAt);
@@ -172,7 +184,7 @@ export default function ActiveMeetingsStatus() {
               </div>
             ) : (
               <div className="space-y-4">
-                {meetings.filter(m => m.status === 'in-progress').map((meeting) => (
+                {meetings.filter(m => m.status === true || m.status === 'in-progress').map((meeting) => (
                   <div
                     key={meeting.id}
                     className={`border-l-4 rounded-lg p-6 bg-gradient-to-r from-white to-gray-50 hover:shadow-md transition-all duration-200 ${
