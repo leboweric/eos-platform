@@ -55,6 +55,7 @@ import issuesImportRoutes from './routes/issues-import.js';
 import todosImportRoutes from './routes/todos-import.js';
 import meetingHistoryRoutes from './routes/meetingHistory.js';
 import aiMeetingRoutes from './routes/aiMeeting.js';
+import transcriptionRoutes from './routes/transcription.js';
 
 // Import middleware
 import { errorHandler } from './middleware/errorHandler.js';
@@ -238,6 +239,7 @@ app.use('/api/v1/organizations/:orgId/teams/:teamId/meetings', meetingRoutes);
 app.use('/api/v1/organizations/:orgId/teams/:teamId/meeting-sessions', meetingSessionsRoutes);
 app.use('/api/v1/organizations/:orgId/meeting-history', meetingHistoryRoutes);
 app.use('/api/v1/ai', aiMeetingRoutes);
+app.use('/api/v1/transcription', transcriptionRoutes);
 app.use('/api/v1/organizations/:orgId/teams/:teamId/cascading-messages', cascadingMessagesRoutes);
 app.use('/api/v1/organizations/:orgId/teams/:teamId/issues', issueRoutes);
 app.use('/api/v1/organizations/:orgId/todos', todoRoutes);

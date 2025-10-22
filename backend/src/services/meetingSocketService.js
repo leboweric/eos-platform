@@ -2,6 +2,8 @@
 // This is ADDITIVE - does not modify any existing functionality
 
 import { Server as SocketIOServer } from 'socket.io';
+import transcriptionService from './transcriptionService.js';
+import aiSummaryService from './aiSummaryService.js';
 
 // Feature flag - can be disabled instantly via environment variable
 const ENABLE_MEETINGS = process.env.ENABLE_MEETINGS === 'true';
@@ -475,6 +477,162 @@ class MeetingSocketService {
       // Handle disconnect
       socket.on('disconnect', () => {
         this.handleUserDisconnect(socket);
+      });
+
+      // === AI TRANSCRIPTION AUDIO STREAMING HANDLERS ===
+      
+      // Handle starting AI recording
+      socket.on('start-ai-recording', async (data) => {
+        try {
+          const { meetingId, organizationId, transcriptId } = data;
+          
+          if (!transcriptId) {
+            socket.emit('ai-recording-error', { message: 'Transcript ID required' });
+            return;
+          }
+
+          console.log(`🎙️ Starting AI recording for meeting ${meetingId}, transcript ${transcriptId}`);
+
+          // Start real-time transcription with AssemblyAI
+          const session = await transcriptionService.startRealtimeTranscription(transcriptId, organizationId);
+
+          // Store transcription info in meeting data
+          const userData = userSocketMap.get(socket.id);
+          if (userData) {
+            const meeting = meetings.get(userData.meetingCode);
+            if (meeting) {
+              meeting.transcription = {
+                transcriptId,
+                meetingId,
+                organizationId,
+                startedAt: new Date(),
+                status: 'recording'
+              };
+            }
+          }
+
+          // Notify all meeting participants
+          const userData2 = userSocketMap.get(socket.id);
+          if (userData2) {
+            this.io.to(userData2.meetingCode).emit('ai-recording-started', {
+              transcriptId,
+              sessionId: session.sessionId,
+              status: 'recording'
+            });
+          }
+
+          console.log(`✅ AI recording started for transcript ${transcriptId}`);
+        } catch (error) {
+          console.error('❌ Failed to start AI recording:', error);
+          socket.emit('ai-recording-error', { 
+            message: 'Failed to start AI recording',
+            error: error.message 
+          });
+        }
+      });
+
+      // Handle audio data chunks from frontend
+      socket.on('audio-chunk', async (data) => {
+        try {
+          const { transcriptId, audioData } = data;
+          
+          if (!transcriptId || !audioData) {
+            return; // Silently ignore invalid chunks
+          }
+
+          // Convert base64 audio data to buffer
+          const audioBuffer = Buffer.from(audioData, 'base64');
+
+          // Send to AssemblyAI via transcription service
+          const success = await transcriptionService.sendAudioData(transcriptId, audioBuffer);
+          
+          if (!success) {
+            console.warn(`⚠️ Failed to send audio chunk for transcript ${transcriptId}`);
+          }
+
+        } catch (error) {
+          console.error('❌ Error processing audio chunk:', error);
+        }
+      });
+
+      // Handle stopping AI recording
+      socket.on('stop-ai-recording', async (data) => {
+        try {
+          const { transcriptId, meetingId } = data;
+          
+          if (!transcriptId) {
+            socket.emit('ai-recording-error', { message: 'Transcript ID required' });
+            return;
+          }
+
+          console.log(`🛑 Stopping AI recording for transcript ${transcriptId}`);
+
+          // Stop real-time transcription
+          const transcriptData = await transcriptionService.stopRealtimeTranscription(transcriptId);
+
+          // Update meeting data
+          const userData = userSocketMap.get(socket.id);
+          if (userData) {
+            const meeting = meetings.get(userData.meetingCode);
+            if (meeting && meeting.transcription) {
+              meeting.transcription.status = 'processing_ai';
+              meeting.transcription.endedAt = new Date();
+            }
+          }
+
+          // Notify all meeting participants
+          if (userData) {
+            this.io.to(userData.meetingCode).emit('ai-recording-stopped', {
+              transcriptId,
+              status: 'processing_ai',
+              message: 'Processing transcript and generating AI summary...'
+            });
+          }
+
+          // Trigger AI summary generation (async)
+          if (transcriptData && transcriptData.fullTranscript) {
+            aiSummaryService.generateAISummary(transcriptId, transcriptData.fullTranscript)
+              .then(() => {
+                console.log(`✅ AI summary completed for transcript ${transcriptId}`);
+                
+                // Notify participants that AI summary is ready
+                if (userData) {
+                  this.io.to(userData.meetingCode).emit('ai-summary-ready', {
+                    transcriptId,
+                    meetingId,
+                    status: 'completed'
+                  });
+                }
+              })
+              .catch(error => {
+                console.error(`❌ AI summary failed for transcript ${transcriptId}:`, error);
+                
+                if (userData) {
+                  this.io.to(userData.meetingCode).emit('ai-recording-error', {
+                    message: 'Failed to generate AI summary',
+                    transcriptId
+                  });
+                }
+              });
+          }
+
+          console.log(`✅ AI recording stopped for transcript ${transcriptId}`);
+        } catch (error) {
+          console.error('❌ Failed to stop AI recording:', error);
+          socket.emit('ai-recording-error', { 
+            message: 'Failed to stop AI recording',
+            error: error.message 
+          });
+        }
+      });
+
+      // Handle transcript chunk broadcasts (called by transcriptionService)
+      socket.on('broadcast-transcript-update', (data) => {
+        const userData = userSocketMap.get(socket.id);
+        if (userData) {
+          // Broadcast transcript update to all meeting participants
+          this.io.to(userData.meetingCode).emit('transcript-update', data);
+        }
       });
     });
   }
