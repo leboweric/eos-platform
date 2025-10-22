@@ -93,23 +93,32 @@ export const startTranscription = async (req, res) => {
         
         console.log('🔍 [Transcription] Composite meetingId detected:', { teamId, timestamp });
         
-        // Find or create meeting for this team
-        const meetingResult = await client.query(`
-          SELECT m.*, t.name as team_name
-          FROM meetings m
-          INNER JOIN teams t ON m.team_id = t.id
-          WHERE m.team_id = $1 
-          AND m.organization_id = $2 
-          AND m.status = 'in-progress'
-          ORDER BY m.created_at DESC 
-          LIMIT 1
+        // Always create a NEW meeting for each AI recording session
+        // This prevents zombie meetings and ensures proper lifecycle management
+        console.log('🎬 [Transcription] Creating NEW meeting for AI recording session');
+        
+        // Safety measure: Auto-conclude any meetings older than 2 hours
+        console.log('🧹 [Transcription] Cleaning up old zombie meetings...');
+        const zombieCleanupResult = await client.query(`
+          UPDATE meetings 
+          SET status = 'completed', 
+              completed_at = NOW(),
+              actual_end_time = NOW(),
+              updated_at = NOW()
+          WHERE team_id = $1 
+            AND organization_id = $2 
+            AND status = 'in-progress'
+            AND created_at < NOW() - INTERVAL '2 hours'
+          RETURNING id, title, created_at
         `, [teamId, organizationId]);
         
-        if (meetingResult.rows.length > 0) {
-          actualMeetingId = meetingResult.rows[0].id;
-          meeting = meetingResult.rows[0];
-          console.log('✅ [Transcription] Found active meeting:', actualMeetingId);
+        if (zombieCleanupResult.rows.length > 0) {
+          console.log('🧹 [Transcription] Auto-concluded zombie meetings:', zombieCleanupResult.rows);
         } else {
+          console.log('✅ [Transcription] No zombie meetings found');
+        }
+        
+        {
           // Create new meeting record with required fields
           // First create a meeting agenda for this AI recording session
           const agendaResult = await client.query(`
@@ -238,6 +247,7 @@ export const startTranscription = async (req, res) => {
         const responsePayload = {
           success: true,
           transcript_id: transcriptId, // This must be the actual database ID
+          meeting_id: actualMeetingId, // The actual meeting ID for conclude
           session_id: session.sessionId,
           status: 'started',
           message: 'Transcription started successfully'

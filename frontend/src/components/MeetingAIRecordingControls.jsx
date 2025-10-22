@@ -22,6 +22,7 @@ export const MeetingAIRecordingControls = ({
   const [transcriptionStatus, setTranscriptionStatus] = useState('not_started');
   const [isProcessing, setIsProcessing] = useState(false);
   const [error, setError] = useState(null);
+  const [currentMeetingId, setCurrentMeetingId] = useState(null);
   
   // Refs for PCM audio service
   const audioServiceRef = useRef(null);
@@ -128,6 +129,7 @@ export const MeetingAIRecordingControls = ({
 
       console.log('✅ [AI Recording] Transcription started:', transcriptionResponse.data);
       transcriptIdRef.current = transcriptionResponse.data.transcript_id;
+      setCurrentMeetingId(transcriptionResponse.data.meeting_id); // Store actual meeting ID
 
       // Connect to WebSocket for real-time audio streaming - MUST use correct path!
       const socketUrl = process.env.NODE_ENV === 'production' 
@@ -310,6 +312,53 @@ export const MeetingAIRecordingControls = ({
     }
   };
 
+  // New function: Conclude the specific meeting created for this recording
+  const handleConcludeMeeting = async () => {
+    if (!currentMeetingId) {
+      console.error('❌ No meeting ID to conclude');
+      toast.error('No active recording session to conclude');
+      return;
+    }
+
+    try {
+      console.log('🏁 [AI Recording] Concluding meeting:', currentMeetingId);
+      
+      // Use the meetings service to conclude the specific meeting
+      const token = localStorage.getItem('accessToken');
+      const teamIdFromComposite = meetingId.split('-')[0]; // Extract teamId from composite
+      const response = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:3001/api/v1'}/organizations/${organizationId}/teams/${teamIdFromComposite}/meetings/conclude`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+          specificMeetingId: currentMeetingId, // Target the specific meeting
+          meetingType: 'ai-recording',
+          duration: Math.floor(recordingTime / 60), // Convert seconds to minutes
+          rating: 5, // Default good rating for AI recordings
+          notes: 'AI Recording Session'
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to conclude meeting');
+      }
+
+      const result = await response.json();
+      console.log('✅ [AI Recording] Meeting concluded successfully:', result);
+      
+      // Clear the current meeting
+      setCurrentMeetingId(null);
+      
+      toast.success('Meeting concluded! AI summary email will be sent shortly.');
+      
+    } catch (error) {
+      console.error('❌ [AI Recording] Failed to conclude meeting:', error);
+      toast.error('Failed to conclude meeting: ' + error.message);
+    }
+  };
+
 
   if (!aiEnabled) {
     return null;
@@ -380,6 +429,23 @@ export const MeetingAIRecordingControls = ({
             </>
           )}
 
+          {transcriptionStatus === 'stopped' && currentMeetingId && (
+            <Button
+              onClick={handleConcludeMeeting}
+              disabled={isProcessing}
+              variant="default"
+              className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700"
+            >
+              {isProcessing ? (
+                <Loader2 className="h-4 w-4 animate-spin" />
+              ) : (
+                <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+              )}
+              Conclude Meeting & Send Summary
+            </Button>
+          )}
 
           {transcriptionStatus === 'completed' && (
             <div className="flex items-center gap-2 text-green-600">

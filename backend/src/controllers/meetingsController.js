@@ -90,20 +90,75 @@ export const concludeMeeting = async (req, res) => {
 
     console.log('🏁 [Conclude] Starting conclude process for meeting');
     
-    // 1. Update meeting status to completed
-    const meetingUpdateResult = await db.query(`
-      UPDATE meetings
-      SET 
-        status = 'completed',
-        completed_at = NOW(),
-        actual_end_time = NOW(),
-        updated_at = NOW()
-      WHERE organization_id = $1 
-        AND (team_id = $2 OR EXISTS (
-          SELECT 1 FROM teams WHERE id = $2 AND organization_id = $1
-        ))
-      RETURNING id
-    `, [organizationId, teamId]);
+    // 1. Update meeting status to completed - target specific meeting or latest in-progress
+    const { specificMeetingId } = req.body; // New: allow specific meeting targeting
+    
+    let meetingUpdateResult;
+    if (specificMeetingId) {
+      // Target specific meeting by ID (for AI recordings)
+      // First validate the meeting exists and is in a valid state
+      const meetingValidation = await db.query(`
+        SELECT id, status, created_at, title
+        FROM meetings
+        WHERE id = $1 AND organization_id = $2 AND team_id = $3
+      `, [specificMeetingId, organizationId, teamId]);
+      
+      if (meetingValidation.rows.length === 0) {
+        return res.status(404).json({
+          success: false,
+          error: 'Meeting not found or access denied'
+        });
+      }
+      
+      const meeting = meetingValidation.rows[0];
+      const meetingAge = Date.now() - new Date(meeting.created_at).getTime();
+      const eightHours = 8 * 60 * 60 * 1000; // 8 hours in milliseconds
+      
+      if (meeting.status !== 'in-progress') {
+        return res.status(400).json({
+          success: false,
+          error: `Meeting is already ${meeting.status}`,
+          details: 'This meeting has already been concluded'
+        });
+      }
+      
+      if (meetingAge > eightHours) {
+        return res.status(400).json({
+          success: false,
+          error: 'Meeting too old to conclude',
+          details: 'Meetings older than 8 hours cannot be manually concluded'
+        });
+      }
+      
+      meetingUpdateResult = await db.query(`
+        UPDATE meetings
+        SET 
+          status = 'completed',
+          completed_at = NOW(),
+          actual_end_time = NOW(),
+          updated_at = NOW()
+        WHERE id = $1 AND organization_id = $2 AND team_id = $3
+        RETURNING id
+      `, [specificMeetingId, organizationId, teamId]);
+      console.log('🎯 [Conclude] Targeted specific meeting:', specificMeetingId);
+    } else {
+      // Fallback: Target latest in-progress meeting for the team (legacy behavior)
+      meetingUpdateResult = await db.query(`
+        UPDATE meetings
+        SET 
+          status = 'completed',
+          completed_at = NOW(),
+          actual_end_time = NOW(),
+          updated_at = NOW()
+        WHERE organization_id = $1 
+          AND team_id = $2
+          AND status = 'in-progress'
+        ORDER BY created_at DESC
+        LIMIT 1
+        RETURNING id
+      `, [organizationId, teamId]);
+      console.log('🎯 [Conclude] Targeted latest in-progress meeting for team');
+    }
     
     console.log('✅ [Conclude] Meeting marked as completed');
 
