@@ -8,19 +8,12 @@ class PCMProcessor extends AudioWorkletProcessor {
     this.bufferSize = 4096;
     this.buffer = new Float32Array(this.bufferSize);
     this.bufferIndex = 0;
+    this.bufferCount = 0;
+    console.log('🎤 PCM AudioWorklet processor initialized');
   }
 
   process(inputs, outputs, parameters) {
-    console.log('🎤 AudioWorklet processing audio');
-    
     const input = inputs[0];
-    
-    console.log('🔍 [AudioWorklet] Input details:', {
-      hasInput: input.length > 0,
-      channelCount: input.length,
-      firstChannelLength: input[0]?.length || 0,
-      bufferIndex: this.bufferIndex
-    });
     
     if (input.length > 0) {
       const inputChannel = input[0];
@@ -31,21 +24,16 @@ class PCMProcessor extends AudioWorkletProcessor {
         
         // When buffer is full, convert to PCM and send
         if (this.bufferIndex >= this.bufferSize) {
-          console.log('📤 AudioWorklet buffer full, sending PCM data');
           this.sendPCMData();
           this.bufferIndex = 0;
         }
       }
-    } else {
-      console.warn('⚠️ [AudioWorklet] No audio input available');
     }
     
     return true; // Keep processor alive
   }
   
   sendPCMData() {
-    console.log('🔄 [AudioWorklet] Converting PCM data');
-    
     // Convert Float32Array to Int16Array (PCM S16LE)
     const pcmData = new Int16Array(this.bufferSize);
     for (let i = 0; i < this.bufferSize; i++) {
@@ -54,15 +42,17 @@ class PCMProcessor extends AudioWorkletProcessor {
       pcmData[i] = Math.floor(sample * 32767);
     }
     
-    console.log('📤 AudioWorklet posted message');
-    
     // Send PCM data to main thread
     this.port.postMessage({
       type: 'pcm-data',
       data: pcmData.buffer
     });
     
-    console.log('✅ [AudioWorklet] Message posted successfully');
+    this.bufferCount++;
+    // Optional: Log every 100 buffers (~1 second of audio)
+    if (this.bufferCount % 100 === 0) {
+      console.log(`📤 PCM buffers sent: ${this.bufferCount}`);
+    }
   }
 }
 

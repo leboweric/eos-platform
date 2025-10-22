@@ -44,17 +44,8 @@ class ModernAudioService {
 
       // Listen for PCM data from worklet
       this.workletNode.port.onmessage = (event) => {
-        console.log('📥 Main thread received PCM data:', event.data);
-        console.log('📨 [AudioService] Message details:', {
-          type: event.data.type,
-          isCapturing: this.isCapturing,
-          hasCallback: !!this.onAudioData,
-          dataSize: event.data.data ? event.data.data.byteLength : 'no data'
-        });
-        
         if (event.data.type === 'pcm-data' && this.isCapturing) {
           const base64Audio = arrayBufferToBase64(event.data.data);
-          console.log('📤 Sending to backend');
           
           if (this.onAudioData) {
             this.onAudioData(base64Audio);
@@ -134,12 +125,6 @@ class LegacyAudioService {
 
       // Process audio data
       this.scriptProcessor.onaudioprocess = (e) => {
-        console.log('🎤 [ScriptProcessor] Processing audio:', {
-          isCapturing: this.isCapturing,
-          hasCallback: !!this.onAudioData,
-          inputLength: e.inputBuffer.getChannelData(0).length
-        });
-        
         if (!this.isCapturing) return;
 
         const inputBuffer = e.inputBuffer;
@@ -155,12 +140,6 @@ class LegacyAudioService {
         
         // Convert to base64 and send
         const base64Audio = arrayBufferToBase64(pcmData.buffer);
-        
-        console.log('📤 [ScriptProcessor] Sending audio chunk:', {
-          dataLength: base64Audio.length,
-          pcmDataLength: pcmData.length
-        });
-        
         this.onAudioData(base64Audio);
       };
 
