@@ -358,6 +358,16 @@ class TranscriptionService {
    * Save transcript content to database
    */
   async saveTranscriptContent(transcriptId, data) {
+    console.log('[SAVE] 🆔 Saving transcript ID:', transcriptId);
+    console.log('[SAVE] 🆔 Content data:', {
+      transcriptId,
+      wordCount: data.wordCount,
+      durationSeconds: data.durationSeconds,
+      hasRawTranscript: !!data.rawTranscript,
+      rawTranscriptLength: data.rawTranscript?.length,
+      timestamp: new Date().toISOString()
+    });
+    
     const client = await getClient();
     try {
       await client.query(`
@@ -382,7 +392,13 @@ class TranscriptionService {
       
       // Trigger AI analysis if transcript has content
       if (data.rawTranscript && data.rawTranscript.trim().length > 50) {
-        console.log(`🤖 [TranscriptionService] Triggering AI analysis for ${transcriptId}`);
+        console.log('[AI-TRIGGER] 🆔 Triggering AI analysis for transcript ID:', transcriptId);
+        console.log('[AI-TRIGGER] 🆔 Context:', {
+          transcriptId,
+          transcriptLength: data.rawTranscript.length,
+          wordCount: data.wordCount,
+          timestamp: new Date().toISOString()
+        });
         
         // Import AI service and trigger analysis (async, don't block)
         this.triggerAIAnalysis(transcriptId, data.rawTranscript).catch(error => {
@@ -450,6 +466,13 @@ class TranscriptionService {
    * Trigger AI analysis for completed transcript
    */
   async triggerAIAnalysis(transcriptId, rawTranscript) {
+    console.log('[AI-START] 🆔 Analyzing transcript ID:', transcriptId);
+    console.log('[AI-START] 🆔 Context:', {
+      transcriptId,
+      rawTranscriptLength: rawTranscript?.length,
+      startTime: new Date().toISOString()
+    });
+    
     const client = await getClient();
     try {
       console.log(`🤖 [TranscriptionService] Starting AI analysis for ${transcriptId}`);
@@ -544,6 +567,15 @@ Please provide a JSON response with the following structure:
         console.error('[AIAnalysis] NULL parameters detected:', parameters.map((p, i) => `$${i+1}: ${p}`));
         throw new Error('NULL parameters not allowed in AI summary insert');
       }
+      
+      console.log('[AI-INSERT] 🆔 Inserting for transcript ID:', transcriptId);
+      console.log('[AI-INSERT] 🆔 Parameters:', {
+        summaryId: parameters[0],
+        meetingId: parameters[1],
+        transcriptId: parameters[2],  // Should match!
+        organizationId: parameters[3],
+        timestamp: new Date().toISOString()
+      });
       
       console.log('[AIAnalysis] About to insert with parameters:', {
         paramCount: parameters.length,

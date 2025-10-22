@@ -191,7 +191,13 @@ export const startTranscription = async (req, res) => {
       // Create new transcript record
       console.log('🔍 [Transcription] Step 6: Creating transcript record...');
       const transcriptId = uuidv4();
-      console.log('🔍 [Transcription] Generated transcript ID:', transcriptId);
+      console.log('[START] 🆔 Created transcript ID:', transcriptId);
+      console.log('[START] 🆔 Context:', {
+        transcriptId,
+        meetingId: actualMeetingId,
+        organizationId,
+        timestamp: new Date().toISOString()
+      });
       
       await client.query(`
         INSERT INTO meeting_transcripts (
@@ -316,6 +322,15 @@ export const stopTranscription = async (req, res) => {
       }
 
       const transcript = transcriptResult.rows[0];
+      
+      console.log('[STOP] 🆔 Stopping transcript ID:', transcript.id);
+      console.log('[STOP] 🆔 Context:', {
+        transcriptId: transcript.id,
+        meetingId: actualMeetingId,
+        organizationId,
+        status: transcript.status,
+        timestamp: new Date().toISOString()
+      });
 
       if (transcript.status !== 'processing') {
         return res.status(400).json({
