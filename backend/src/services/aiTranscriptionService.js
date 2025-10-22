@@ -1,7 +1,7 @@
 import { AssemblyAI } from 'assemblyai';
 import OpenAI from 'openai';
 import { v4 as uuidv4 } from 'uuid';
-import db from '../config/database.js';
+import { getClient } from '../config/database.js';
 
 let assemblyAI;
 let openai;
@@ -27,7 +27,7 @@ class AITranscriptionService {
 
   // Create a new transcript record
   async createTranscriptRecord(meetingId, organizationId, consentUserIds = []) {
-    const client = await db.getClient();
+    const client = await getClient();
     
     // Log connection details
     console.log('🔍 DATABASE CONNECTION:', {
@@ -258,7 +258,7 @@ Focus on:
 
   // Update transcript status
   async updateTranscriptStatus(transcriptId, status, metadata = {}) {
-    const client = await db.getClient();
+    const client = await getClient();
     try {
       await client.query('BEGIN');
       
@@ -296,7 +296,7 @@ Focus on:
 
   // Update transcript content
   async updateTranscriptContent(transcriptId, rawTranscript, structuredTranscript) {
-    const client = await db.getClient();
+    const client = await getClient();
     try {
       await client.query('BEGIN');
       
@@ -325,7 +325,7 @@ Focus on:
 
   // Store AI summary
   async storeAISummary(transcriptId, aiSummary, processingTime, estimatedCost) {
-    const client = await db.getClient();
+    const client = await getClient();
     try {
       await client.query('BEGIN');
       
@@ -402,7 +402,7 @@ Focus on:
 
   // Get transcript by meeting ID
   async getTranscriptByMeetingId(meetingId, organizationId) {
-    const client = await db.getClient();
+    const client = await getClient();
     try {
       const result = await client.query(`
         SELECT mt.*, mas.* 
@@ -421,7 +421,7 @@ Focus on:
 
   // Search transcripts
   async searchTranscripts(organizationId, query, filters = {}) {
-    const client = await db.getClient();
+    const client = await getClient();
     try {
       let whereClause = 'mt.organization_id = $1 AND mt.deleted_at IS NULL';
       let params = [organizationId];
@@ -479,7 +479,7 @@ Focus on:
 
   // Delete transcript (compliance)
   async deleteTranscript(transcriptId, organizationId, hardDelete = false) {
-    const client = await db.getClient();
+    const client = await getClient();
     try {
       await client.query('BEGIN');
 
@@ -512,7 +512,7 @@ Focus on:
 
   // Log transcript access (audit trail)
   async logTranscriptAccess(transcriptId, userId, organizationId, accessType, ipAddress, userAgent) {
-    const client = await db.getClient();
+    const client = await getClient();
     try {
       await client.query(`
         INSERT INTO transcript_access_log (
@@ -543,7 +543,7 @@ Focus on:
 
   // Create todos from AI action items
   async createTodosFromActionItems(meetingId, organizationId, actionItemIds, userId) {
-    const client = await db.getClient();
+    const client = await getClient();
     try {
       await client.query('BEGIN');
 
@@ -609,7 +609,7 @@ Focus on:
 
   // Create issues from AI detected issues
   async createIssuesFromAIDetection(meetingId, organizationId, issueIds, userId) {
-    const client = await db.getClient();
+    const client = await getClient();
     try {
       await client.query('BEGIN');
 
