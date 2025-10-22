@@ -46,10 +46,31 @@ class TranscriptionService {
     try {
       console.log(`🎙️ [TranscriptionService] Starting real-time transcription for transcript ${transcriptId}`);
 
+      // Create temporary token for WebSocket connection
+      console.log('[TranscriptionService] Creating temporary token...');
+      const tokenResponse = await this.assemblyAI.realtime.createTemporaryToken({
+        expires_in: 3600, // 1 hour
+      });
+      
+      console.log('[TranscriptionService] Token created:', {
+        hasToken: !!tokenResponse.token,
+        tokenLength: tokenResponse.token?.length,
+        expiresIn: 3600,
+        timestamp: new Date().toISOString()
+      });
+
       // Create real-time transcriber with Universal Streaming (simplified config)
-      // Force fresh build - updated for Universal Streaming API  
-      console.log('🔍 [TranscriptionService] Creating Universal Streaming transcriber...');
+      console.log('[TranscriptionService] Creating transcriber with config:', {
+        sample_rate: 16000,
+        encoding: 'pcm_s16le',
+        enable_extra_session_information: true,
+        punctuate: true,
+        format_text: true,
+        hasToken: !!tokenResponse.token
+      });
+      
       const realtimeTranscriber = this.assemblyAI.realtime.transcriber({
+        token: tokenResponse.token,
         sample_rate: 16000,
         encoding: 'pcm_s16le',
         // Required for Universal Streaming API
@@ -62,6 +83,8 @@ class TranscriptionService {
         // - speaker_labels (not supported in real-time)
         // - boost_param (might cause issues)
       });
+      
+      console.log('[TranscriptionService] Transcriber created, attempting connection...');
 
       console.log('✅ [TranscriptionService] Real-time transcriber created');
 
@@ -160,9 +183,17 @@ class TranscriptionService {
       });
     });
 
-    // Handle errors
+    // Handle errors with detailed logging
     transcriber.on('error', (error) => {
-      console.error(`❌ Transcription error for ${transcriptId}:`, error);
+      console.error('[TranscriptionService] DETAILED ERROR:', {
+        transcriptId,
+        message: error.message,
+        code: error.code,
+        name: error.name,
+        stack: error.stack,
+        timestamp: new Date().toISOString(),
+        fullError: error
+      });
       connection.isActive = false;
       
       this.emitTranscriptUpdate(transcriptId, {
@@ -171,9 +202,15 @@ class TranscriptionService {
       });
     });
 
-    // Handle connection close
+    // Handle connection close with detailed logging
     transcriber.on('close', (code, reason) => {
-      console.log(`🔌 Transcription connection closed for ${transcriptId}:`, code, reason);
+      console.error('[TranscriptionService] CONNECTION CLOSED:', {
+        transcriptId,
+        code,
+        reason: reason || 'No reason provided',
+        timestamp: new Date().toISOString(),
+        wasActive: connection.isActive
+      });
       connection.isActive = false;
     });
   }
