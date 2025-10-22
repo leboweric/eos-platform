@@ -61,29 +61,90 @@ export const startTranscription = async (req, res) => {
     const client = await getClient();
     try {
       console.log('✅ [Transcription] Step 3: Database client acquired');
-      console.log('🔍 [Transcription] Step 4: Checking meeting existence...');
+      console.log('🔍 [Transcription] Step 4: Parsing and finding meeting...');
       
-      const meetingResult = await client.query(`
-        SELECT m.*, t.name as team_name
-        FROM meetings m
-        INNER JOIN teams t ON m.team_id = t.id
-        WHERE m.id = $1 AND m.organization_id = $2
-      `, [meetingId, organizationId]);
+      // Parse meetingId which may be in format: teamId-timestamp
+      const meetingIdParts = meetingId.split('-');
+      let actualMeetingId;
+      let meeting;
 
-      console.log('🔍 [Transcription] Meeting query result:', { 
-        rowCount: meetingResult.rows.length,
-        meeting: meetingResult.rows[0] ? { id: meetingResult.rows[0].id, team_name: meetingResult.rows[0].team_name } : null
+      console.log('🔍 [Transcription] MeetingId parts:', { 
+        original: meetingId, 
+        parts: meetingIdParts.length,
+        isComposite: meetingIdParts.length > 5 
       });
 
-      if (meetingResult.rows.length === 0) {
-        console.error('❌ [Transcription] Step 4 FAILED: Meeting not found');
-        return res.status(404).json({
-          success: false,
-          error: 'Meeting not found'
-        });
+      if (meetingIdParts.length > 5) {
+        // Composite format: extract teamId
+        const timestamp = meetingIdParts[meetingIdParts.length - 1];
+        const teamId = meetingIdParts.slice(0, -1).join('-');
+        
+        console.log('🔍 [Transcription] Composite meetingId detected:', { teamId, timestamp });
+        
+        // Find or create meeting for this team
+        const meetingResult = await client.query(`
+          SELECT m.*, t.name as team_name
+          FROM meetings m
+          INNER JOIN teams t ON m.team_id = t.id
+          WHERE m.team_id = $1 
+          AND m.organization_id = $2 
+          AND m.status = 'in-progress'
+          ORDER BY m.created_at DESC 
+          LIMIT 1
+        `, [teamId, organizationId]);
+        
+        if (meetingResult.rows.length > 0) {
+          actualMeetingId = meetingResult.rows[0].id;
+          meeting = meetingResult.rows[0];
+          console.log('✅ [Transcription] Found active meeting:', actualMeetingId);
+        } else {
+          // Create new meeting record
+          const newMeetingResult = await client.query(`
+            INSERT INTO meetings (organization_id, team_id, meeting_type, status, started_at) 
+            VALUES ($1, $2, 'weekly-accountability', 'in-progress', NOW()) 
+            RETURNING *
+          `, [organizationId, teamId]);
+          
+          // Get the team name for the created meeting
+          const teamResult = await client.query(`
+            SELECT name FROM teams WHERE id = $1
+          `, [teamId]);
+          
+          actualMeetingId = newMeetingResult.rows[0].id;
+          meeting = {
+            ...newMeetingResult.rows[0],
+            team_name: teamResult.rows[0]?.name || 'Unknown Team'
+          };
+          console.log('✅ [Transcription] Created new meeting:', actualMeetingId);
+        }
+      } else {
+        // Already a proper UUID - use original lookup
+        actualMeetingId = meetingId;
+        console.log('✅ [Transcription] Using provided meetingId as UUID:', actualMeetingId);
+        
+        const meetingResult = await client.query(`
+          SELECT m.*, t.name as team_name
+          FROM meetings m
+          INNER JOIN teams t ON m.team_id = t.id
+          WHERE m.id = $1 AND m.organization_id = $2
+        `, [actualMeetingId, organizationId]);
+
+        if (meetingResult.rows.length === 0) {
+          console.error('❌ [Transcription] Step 4 FAILED: Meeting not found');
+          return res.status(404).json({
+            success: false,
+            error: 'Meeting not found'
+          });
+        }
+        
+        meeting = meetingResult.rows[0];
       }
 
-      console.log('✅ [Transcription] Step 4: Meeting found');
+      console.log('🔍 [Transcription] Final meeting result:', { 
+        actualMeetingId,
+        team_name: meeting.team_name
+      });
+      console.log('✅ [Transcription] Step 4: Meeting resolved');
 
       // Check if transcription already exists
       console.log('🔍 [Transcription] Step 5: Checking for existing transcripts...');
@@ -91,7 +152,7 @@ export const startTranscription = async (req, res) => {
         SELECT id, status FROM meeting_transcripts 
         WHERE meeting_id = $1 AND organization_id = $2 AND deleted_at IS NULL
         ORDER BY created_at DESC LIMIT 1
-      `, [meetingId, organizationId]);
+      `, [actualMeetingId, organizationId]);
 
       console.log('🔍 [Transcription] Existing transcript check:', { 
         existingCount: existingResult.rows.length,
@@ -120,7 +181,7 @@ export const startTranscription = async (req, res) => {
           transcription_service, processing_started_at, created_at
         )
         VALUES ($1, $2, $3, 'processing', 'assemblyai', NOW(), NOW())
-      `, [transcriptId, meetingId, organizationId]);
+      `, [transcriptId, actualMeetingId, organizationId]);
 
       console.log('✅ [Transcription] Step 6: Transcript record created');
 
@@ -131,7 +192,7 @@ export const startTranscription = async (req, res) => {
         const session = await transcriptionService.startRealtimeTranscription(transcriptId, organizationId);
         
         console.log('✅ [Transcription] Step 7: Real-time transcription started successfully');
-        console.log(`🎙️ Started transcription for meeting ${meetingId}, transcript ID: ${transcriptId}`);
+        console.log(`🎙️ Started transcription for meeting ${actualMeetingId}, transcript ID: ${transcriptId}`);
 
         res.json({
           success: true,
@@ -194,12 +255,40 @@ export const stopTranscription = async (req, res) => {
 
     const client = await getClient();
     try {
+      // Parse meetingId to get actual meeting ID (same logic as startTranscription)
+      const meetingIdParts = meetingId.split('-');
+      let actualMeetingId;
+
+      if (meetingIdParts.length > 5) {
+        // Composite format: extract teamId and find meeting
+        const teamId = meetingIdParts.slice(0, -1).join('-');
+        console.log('🔍 [Stop Transcription] Composite meetingId detected:', { teamId });
+        
+        const meetingResult = await client.query(`
+          SELECT id FROM meetings 
+          WHERE team_id = $1 AND organization_id = $2 
+          ORDER BY created_at DESC LIMIT 1
+        `, [teamId, organizationId]);
+        
+        if (meetingResult.rows.length === 0) {
+          return res.status(404).json({
+            success: false,
+            error: 'No meeting found for transcription stop'
+          });
+        }
+        
+        actualMeetingId = meetingResult.rows[0].id;
+        console.log('✅ [Stop Transcription] Found meeting:', actualMeetingId);
+      } else {
+        actualMeetingId = meetingId;
+      }
+
       // Get active transcript
       const transcriptResult = await client.query(`
         SELECT id, status FROM meeting_transcripts 
         WHERE meeting_id = $1 AND organization_id = $2 AND deleted_at IS NULL
         ORDER BY created_at DESC LIMIT 1
-      `, [meetingId, organizationId]);
+      `, [actualMeetingId, organizationId]);
 
       if (transcriptResult.rows.length === 0) {
         return res.status(404).json({
@@ -221,7 +310,7 @@ export const stopTranscription = async (req, res) => {
       try {
         const transcriptData = await transcriptionService.stopRealtimeTranscription(transcript.id);
         
-        console.log(`🛑 Stopped transcription for meeting ${meetingId}, processing AI summary...`);
+        console.log(`🛑 Stopped transcription for meeting ${actualMeetingId}, processing AI summary...`);
 
         // Trigger AI summary generation (async - don't wait for it)
         if (transcriptData && transcriptData.fullTranscript) {
