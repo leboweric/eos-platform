@@ -169,7 +169,7 @@ export const concludeMeeting = async (req, res) => {
     // 2. Check if AI recording is active or recently completed
     console.log('[Meeting] Checking for active or recent AI recordings...');
     const transcriptCheck = await db.query(
-      `SELECT mt.id, mt.status, mt.meeting_id, mt.completed_at
+      `SELECT mt.id, mt.status, mt.meeting_id, mt.created_at, mt.updated_at
        FROM meeting_transcripts mt
        LEFT JOIN meetings m ON mt.meeting_id = m.id  
        WHERE (m.organization_id = $1 OR mt.organization_id = $1)
@@ -177,7 +177,7 @@ export const concludeMeeting = async (req, res) => {
            mt.status IN ('processing', 'processing_ai') 
            OR (
              mt.status = 'completed' 
-             AND mt.completed_at > NOW() - INTERVAL '5 minutes'
+             AND mt.updated_at > NOW() - INTERVAL '5 minutes'
            )
          )
        ORDER BY mt.created_at DESC 
