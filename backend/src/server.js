@@ -269,6 +269,24 @@ app.use('/api/v1', exportRoutes);
 app.use('/api/v1/daily-active-users', dailyActiveUsersRoutes);
 app.use('/api/v1/todo-reminders', todoReminderRoutes);
 
+// TEMPORARY: Log all unmatched transcription requests to debug route issues
+app.use((req, res, next) => {
+  if (req.url.includes('transcription')) {
+    console.log('🚨 TRANSCRIPTION REQUEST RECEIVED:', {
+      method: req.method,
+      url: req.url,
+      originalUrl: req.originalUrl,
+      path: req.path,
+      baseUrl: req.baseUrl,
+      headers: {
+        authorization: req.headers.authorization ? 'Bearer ***' : 'NONE',
+        'content-type': req.headers['content-type']
+      }
+    });
+  }
+  next();
+});
+
 // Sentry error handler must be added before other error middleware
 if (process.env.SENTRY_DSN) {
   Sentry.setupExpressErrorHandler(app);

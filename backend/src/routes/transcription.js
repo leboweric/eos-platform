@@ -15,6 +15,12 @@ const router = express.Router();
 
 console.log('🔍 [TranscriptionRoutes] Transcription routes file loaded');
 
+// Simple ping endpoint for testing route accessibility (no auth required)
+router.get('/ping', (req, res) => {
+  console.log('🏓 PING endpoint hit!');
+  res.json({ message: 'pong', timestamp: new Date().toISOString() });
+});
+
 // Health check endpoint (no auth required for monitoring)
 router.get('/health', healthCheck);
 
