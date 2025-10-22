@@ -24,15 +24,69 @@ export const MeetingAISummaryPanel = ({ meetingId, organizationId, onClose }) =>
   const [loading, setLoading] = useState(true);
   const [creating, setCreating] = useState(false);
   const [error, setError] = useState(null);
+  const [summaryStatus, setSummaryStatus] = useState('processing'); // processing, completed, failed
 
   useEffect(() => {
-    loadSummaryAndTranscript();
+    pollForSummary();
   }, [meetingId, organizationId]);
 
-  const loadSummaryAndTranscript = async () => {
+  const pollForSummary = async () => {
+    const maxAttempts = 40; // 40 attempts x 3 seconds = 2 minutes
+    
+    setLoading(true);
+    setSummaryStatus('processing');
+    
+    for (let i = 0; i < maxAttempts; i++) {
+      try {
+        console.log(`🔍 Polling for AI summary completion (attempt ${i + 1}/${maxAttempts})`);
+        
+        // First check transcript status
+        const statusResponse = await aiMeetingService.getTranscriptionStatus(meetingId);
+        console.log('📊 Transcript status:', statusResponse);
+        
+        if (statusResponse.status === 'completed') {
+          // AI processing is complete, load the summary
+          console.log('✅ AI processing complete, loading summary...');
+          await loadCompletedSummary();
+          return;
+        }
+        
+        if (statusResponse.status === 'failed') {
+          console.log('❌ AI processing failed');
+          setSummaryStatus('failed');
+          setError('AI summary generation failed');
+          setLoading(false);
+          return;
+        }
+        
+        // Still processing, wait and try again
+        console.log('⏳ Still processing, waiting 3 seconds...');
+        await new Promise(resolve => setTimeout(resolve, 3000));
+        
+      } catch (error) {
+        console.error('Polling error:', error);
+        // Continue polling on error unless it's the last attempt
+        if (i === maxAttempts - 1) {
+          setSummaryStatus('failed');
+          setError('Failed to load AI summary after timeout');
+          setLoading(false);
+          return;
+        }
+        
+        // Wait before retrying
+        await new Promise(resolve => setTimeout(resolve, 3000));
+      }
+    }
+    
+    // Timeout after 2 minutes
+    console.log('⏰ Polling timeout reached');
+    setSummaryStatus('failed');
+    setError('AI summary generation timed out');
+    setLoading(false);
+  };
+
+  const loadCompletedSummary = async () => {
     try {
-      setLoading(true);
-      
       const [summaryData, transcriptData] = await Promise.all([
         aiMeetingService.getAISummary(meetingId),
         aiMeetingService.getTranscript(meetingId)
@@ -40,13 +94,20 @@ export const MeetingAISummaryPanel = ({ meetingId, organizationId, onClose }) =>
 
       setSummary(summaryData);
       setTranscript(transcriptData);
+      setSummaryStatus('completed');
       setError(null);
     } catch (err) {
-      console.error('Error loading AI summary:', err);
-      setError('Failed to load AI summary');
+      console.error('Error loading completed AI summary:', err);
+      setSummaryStatus('failed');
+      setError('Failed to load completed AI summary');
     } finally {
       setLoading(false);
     }
+  };
+
+  const loadSummaryAndTranscript = async () => {
+    // Legacy function for retry button - restart polling
+    await pollForSummary();
   };
 
   const handleCreateTodos = async (actionItemIds = []) => {
@@ -91,20 +152,38 @@ export const MeetingAISummaryPanel = ({ meetingId, organizationId, onClose }) =>
     }
   };
 
-  if (loading) {
+  if (loading && summaryStatus === 'processing') {
     return (
-      <div className="flex items-center justify-center p-8">
-        <Loader2 className="h-8 w-8 animate-spin text-blue-600" />
-        <span className="ml-2">Loading AI summary...</span>
+      <div className="flex flex-col items-center justify-center p-8">
+        <Loader2 className="h-8 w-8 animate-spin text-blue-600 mb-4" />
+        <span className="text-lg font-medium text-gray-700">Processing transcript & generating AI summary...</span>
+        <span className="text-sm text-gray-500 mt-2">This may take 15-30 seconds</span>
+        <div className="mt-4 text-xs text-gray-400 text-center">
+          <p>🎤 Transcription complete</p>
+          <p>🤖 AI analysis in progress...</p>
+        </div>
       </div>
     );
   }
 
-  if (error || !summary) {
+  if (summaryStatus === 'failed' || error) {
     return (
       <div className="p-8 text-center">
         <AlertCircle className="h-12 w-12 text-red-500 mx-auto mb-4" />
-        <p className="text-gray-600">{error || 'No AI summary available'}</p>
+        <p className="text-gray-600 font-medium">{error || 'AI summary generation failed'}</p>
+        <p className="text-sm text-gray-500 mt-2">The transcription was successful, but AI analysis encountered an issue.</p>
+        <Button onClick={loadSummaryAndTranscript} className="mt-4">
+          Try Again
+        </Button>
+      </div>
+    );
+  }
+
+  if (!summary) {
+    return (
+      <div className="p-8 text-center">
+        <AlertCircle className="h-12 w-12 text-gray-500 mx-auto mb-4" />
+        <p className="text-gray-600">No AI summary available</p>
         <Button onClick={loadSummaryAndTranscript} className="mt-4">
           Try Again
         </Button>
