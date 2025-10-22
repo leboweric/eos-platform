@@ -97,8 +97,8 @@ export const startTranscription = async (req, res) => {
         // This prevents zombie meetings and ensures proper lifecycle management
         console.log('🎬 [Transcription] Creating NEW meeting for AI recording session');
         
-        // Safety measure: Auto-conclude any meetings older than 2 hours
-        console.log('🧹 [Transcription] Cleaning up old zombie meetings...');
+        // Safety measure: Auto-conclude any meetings older than 24 hours (was 2 hours - too aggressive!)
+        console.log('🧹 [Transcription] Cleaning up old zombie meetings (24+ hours old)...');
         const zombieCleanupResult = await client.query(`
           UPDATE meetings 
           SET status = 'completed', 
@@ -108,7 +108,7 @@ export const startTranscription = async (req, res) => {
           WHERE team_id = $1 
             AND organization_id = $2 
             AND status = 'in-progress'
-            AND created_at < NOW() - INTERVAL '2 hours'
+            AND created_at < NOW() - INTERVAL '24 hours'
           RETURNING id, title, created_at
         `, [teamId, organizationId]);
         

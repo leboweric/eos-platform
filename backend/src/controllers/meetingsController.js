@@ -23,7 +23,8 @@ export const concludeMeeting = async (req, res) => {
       todos,
       issues,
       notes,
-      cascadingMessage
+      cascadingMessage,
+      sendEmail = true // Default to true for backward compatibility
     } = req.body;
 
     const userId = req.user.id;
@@ -590,34 +591,41 @@ export const concludeMeeting = async (req, res) => {
       }
     }
     
-    // Send email to attendees (with safety limit applied)
-    if (attendeeEmails.length > 0) {
-      try {
-        console.log('Attempting to send email to', attendeeEmails.length, 'recipients');
-        console.log('Recipients:', attendeeEmails);
-        
-        // Send to each email address
-        for (const email of attendeeEmails) {
-          await emailService.sendEmail(email, 'meetingSummary', emailData);
-        }
-        
-        console.log('Meeting summary emails sent successfully');
-      } catch (emailError) {
-        console.error('Failed to send meeting summary email:', emailError);
-        console.error('Email error details:', emailError.message, emailError.stack);
-        // Continue with successful conclusion even if email fails
-        // Record meeting conclusion for reminder scheduling
-        await recordMeetingConclusion(organizationId, teamId, meetingType);
+    // Send email to attendees only if requested (sendEmail parameter)
+    let emailsSent = 0;
+    if (sendEmail) {
+      console.log('🔍 [Backend] Email requested, proceeding with email sending...');
+      if (attendeeEmails.length > 0) {
+        try {
+          console.log('Attempting to send email to', attendeeEmails.length, 'recipients');
+          console.log('Recipients:', attendeeEmails);
+          
+          // Send to each email address
+          for (const email of attendeeEmails) {
+            await emailService.sendEmail(email, 'meetingSummary', emailData);
+          }
+          
+          emailsSent = attendeeEmails.length;
+          console.log('Meeting summary emails sent successfully');
+        } catch (emailError) {
+          console.error('Failed to send meeting summary email:', emailError);
+          console.error('Email error details:', emailError.message, emailError.stack);
+          // Continue with successful conclusion even if email fails
+          // Record meeting conclusion for reminder scheduling
+          await recordMeetingConclusion(organizationId, teamId, meetingType);
 
-        return res.json({
-          success: true,
-          message: 'Meeting concluded successfully (email delivery failed)',
-          error: `Email failed: ${emailError.message}`,
-          emailsSent: 0
-        });
+          return res.json({
+            success: true,
+            message: 'Meeting concluded successfully (email delivery failed)',
+            error: `Email failed: ${emailError.message}`,
+            emailsSent: 0
+          });
+        }
+      } else {
+        console.warn('No email addresses found for team members');
       }
     } else {
-      console.warn('No email addresses found for team members');
+      console.log('🔍 [Backend] Email not requested, skipping email sending');
     }
 
     // Record meeting conclusion for reminder scheduling
@@ -626,7 +634,7 @@ export const concludeMeeting = async (req, res) => {
     res.json({
       success: true,
       message: 'Meeting concluded successfully',
-      emailsSent: attendeeEmails.length
+      emailsSent: emailsSent
     });
 
   } catch (error) {

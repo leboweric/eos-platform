@@ -6351,58 +6351,60 @@ const WeeklyAccountabilityMeetingPage = () => {
                           }
                         }
                         
-                        // Send email summary if requested
+                        // CRITICAL FIX: Always conclude meeting in database, regardless of email option
+                        console.log('🔍 [Frontend] About to conclude meeting in database...');
+                        const orgId = user?.organizationId || user?.organization_id;
+                        const effectiveTeamId = getEffectiveTeamId(teamId, user);
+                        
+                        // Combine all issues for the meeting summary
+                        const allIssues = [...(shortTermIssues || []), ...(longTermIssues || [])];
+                        
+                        // Calculate meeting duration
+                        let durationMinutes;
+                        if (elapsedTime > 0) {
+                          // Use timer if it was running
+                          durationMinutes = Math.floor(elapsedTime / 60);
+                        } else if (meetingStartTime) {
+                          // Calculate from meeting start time if timer wasn't started
+                          const now = Date.now();
+                          const actualDuration = Math.floor((now - meetingStartTime) / 1000 / 60);
+                          durationMinutes = actualDuration;
+                        } else {
+                          // Fallback: estimate based on typical meeting length (30 minutes)
+                          durationMinutes = 30;
+                        }
+                        
+                        // Include participant ratings and average
+                        const allParticipantRatings = meetingCode ? 
+                          participants.map(p => {
+                            const rating = participantRatings.find(r => r.userId === p.id);
+                            return {
+                              userId: p.id,
+                              userName: p.name,
+                              rating: rating ? rating.rating : null
+                            };
+                          }) : [];
+                        
+                        // ALWAYS conclude the meeting in database
                         let emailResult = null;
-                        if (sendSummaryEmail) {
-                          const orgId = user?.organizationId || user?.organization_id;
-                          const effectiveTeamId = getEffectiveTeamId(teamId, user);
-                          
-                          // Combine all issues for the meeting summary
-                          const allIssues = [...(shortTermIssues || []), ...(longTermIssues || [])];
-                          
-                          try {
-                            // Calculate meeting duration
-                            let durationMinutes;
-                            if (elapsedTime > 0) {
-                              // Use timer if it was running
-                              durationMinutes = Math.floor(elapsedTime / 60);
-                            } else if (meetingStartTime) {
-                              // Calculate from meeting start time if timer wasn't started
-                              const now = Date.now();
-                              const actualDuration = Math.floor((now - meetingStartTime) / 1000 / 60);
-                              durationMinutes = actualDuration;
-                            } else {
-                              // Fallback: estimate based on typical meeting length (30 minutes)
-                              durationMinutes = 30;
-                            }
-                            
-                            // Include participant ratings and average in email
-                            const allParticipantRatings = meetingCode ? 
-                              participants.map(p => {
-                                const rating = participantRatings.find(r => r.userId === p.id);
-                                return {
-                                  userId: p.id,
-                                  userName: p.name,
-                                  rating: rating ? rating.rating : null
-                                };
-                              }) : [];
-                            
-                            emailResult = await meetingsService.concludeMeeting(orgId, effectiveTeamId, {
-                              meetingType: 'weekly',
-                              duration: durationMinutes,  // Added duration field
-                              rating: ratingAverage > 0 ? ratingAverage : meetingRating, // Use average if available
-                              individualRatings: allParticipantRatings, // Include all participant ratings
-                              todos: todos.filter(t => t.status !== 'complete' && t.status !== 'completed'),
-                              issues: allIssues.filter(i => i.status !== 'closed' && i.status !== 'resolved' && i.status !== 'solved' && i.status !== 'completed'),
-                              headlines: headlines,
-                              cascadeMessage: cascadeMessage.trim() ? cascadeMessage : null
-                            });
-                            
-                            console.log('Email result:', emailResult);
-                          } catch (emailError) {
-                            console.error('Failed to send meeting summary email:', emailError);
-                            // Don't fail the whole operation if email fails
-                          }
+                        try {
+                          console.log('🔍 [Frontend] Calling meetingsService.concludeMeeting...');
+                          emailResult = await meetingsService.concludeMeeting(orgId, effectiveTeamId, {
+                            meetingType: 'weekly',
+                            duration: durationMinutes,
+                            rating: ratingAverage > 0 ? ratingAverage : meetingRating,
+                            individualRatings: allParticipantRatings,
+                            todos: todos.filter(t => t.status !== 'complete' && t.status !== 'completed'),
+                            issues: allIssues.filter(i => i.status !== 'closed' && i.status !== 'resolved' && i.status !== 'solved' && i.status !== 'completed'),
+                            headlines: headlines,
+                            cascadeMessage: cascadeMessage.trim() ? cascadeMessage : null,
+                            sendEmail: sendSummaryEmail // Pass email preference to backend
+                          });
+                          console.log('✅ [Frontend] Meeting concluded successfully:', emailResult);
+                        } catch (emailError) {
+                          console.error('❌ [Frontend] Failed to conclude meeting:', emailError);
+                          // Re-throw to handle in outer catch
+                          throw emailError;
                         }
                         
                         // Build success message based on what actually happened
