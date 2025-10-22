@@ -1,12 +1,12 @@
 import { v4 as uuidv4 } from 'uuid';
-import db from '../config/database.js';
+import { getClient } from '../config/database.js';
 import transcriptionService from '../services/transcriptionService.js';
 import aiSummaryService from '../services/aiSummaryService.js';
 
 export const healthCheck = async (req, res) => {
   try {
     // Test database connection
-    const client = await db.getClient();
+    const client = await getClient();
     try {
       await client.query('SELECT 1');
     } finally {
@@ -58,7 +58,7 @@ export const startTranscription = async (req, res) => {
 
     // Verify meeting exists and user has access
     console.log('🔍 [Transcription] Step 3: Getting database client...');
-    const client = await db.getClient();
+    const client = await getClient();
     try {
       console.log('✅ [Transcription] Step 3: Database client acquired');
       console.log('🔍 [Transcription] Step 4: Checking meeting existence...');
@@ -192,7 +192,7 @@ export const stopTranscription = async (req, res) => {
       });
     }
 
-    const client = await db.getClient();
+    const client = await getClient();
     try {
       // Get active transcript
       const transcriptResult = await client.query(`
@@ -283,7 +283,7 @@ export const getTranscript = async (req, res) => {
       });
     }
 
-    const client = await db.getClient();
+    const client = await getClient();
     try {
       const result = await client.query(`
         SELECT mt.*, mas.executive_summary, mas.key_decisions, 
@@ -348,7 +348,7 @@ export const getTranscriptStatus = async (req, res) => {
       });
     }
 
-    const client = await db.getClient();
+    const client = await getClient();
     try {
       const result = await client.query(`
         SELECT id, status, processing_started_at, processing_completed_at, word_count
@@ -475,7 +475,7 @@ export const getAISummary = async (req, res) => {
   try {
     const { transcriptId } = req.params;
 
-    const client = await db.getClient();
+    const client = await getClient();
     try {
       const result = await client.query(`
         SELECT 
