@@ -46,10 +46,12 @@ class TranscriptionService {
     try {
       console.log(`🎙️ [TranscriptionService] Starting real-time transcription for transcript ${transcriptId}`);
 
-      // Create temporary token for WebSocket connection
-      console.log('[TranscriptionService] Creating temporary token...');
+      // Create temporary token for WebSocket connection (Universal Streaming)
+      console.log('[TranscriptionService] Creating temporary token for Universal Streaming...');
       const tokenResponse = await this.assemblyAI.realtime.createTemporaryToken({
         expires_in: 3600, // 1 hour
+        // Explicitly request Universal Streaming model (not deprecated best model)
+        language_code: 'en', // Required for Universal Streaming
       });
       
       console.log('[TranscriptionService] Token created:', {
@@ -73,11 +75,14 @@ class TranscriptionService {
         token: tokenResponse.token,
         sample_rate: 16000,
         encoding: 'pcm_s16le',
-        // Required for Universal Streaming API
+        // Universal Streaming specific parameters
         enable_extra_session_information: true,
-        // Basic formatting
         punctuate: true,
-        format_text: true
+        format_text: true,
+        // Explicitly specify language for Universal Streaming
+        language_code: 'en',
+        // Use Universal Streaming model explicitly
+        model: 'universal-1'
         // Removed potentially problematic parameters:
         // - word_boost (might not be supported in streaming)
         // - speaker_labels (not supported in real-time)
