@@ -131,17 +131,36 @@ class AITranscriptionService {
   async getOrCreateTranscript(meetingId, organizationId, consentUserIds = []) {
     console.log('🔍 [getOrCreateTranscript] Checking for existing transcript...', {
       meetingId,
-      organizationId
+      organizationId,
+      lookingFor: 'status=processing AND created_at>2hrs AND not deleted'
     });
     
     const client = await getClient();
     try {
-      // Check for existing transcript
+      // First check what transcripts exist (for debugging)
+      const allExisting = await client.query(
+        `SELECT id, status, created_at FROM meeting_transcripts 
+         WHERE meeting_id = $1 AND organization_id = $2 AND deleted_at IS NULL
+         ORDER BY created_at DESC`,
+        [meetingId, organizationId]
+      );
+      
+      console.log('🔍 [getOrCreateTranscript] All existing transcripts for this meeting:', {
+        count: allExisting.rows.length,
+        transcripts: allExisting.rows.map(row => ({
+          id: row.id,
+          status: row.status,
+          created_at: row.created_at,
+          age_hours: Math.round((Date.now() - new Date(row.created_at).getTime()) / (1000 * 60 * 60))
+        }))
+      });
+      // Check for existing ACTIVE transcript (not stuck ones)
       const existing = await client.query(
         `SELECT id, status FROM meeting_transcripts 
          WHERE meeting_id = $1 
          AND organization_id = $2
-         AND status IN ('processing', 'processing_ai')
+         AND status = 'processing'
+         AND created_at > NOW() - INTERVAL '2 hours'
          AND deleted_at IS NULL
          ORDER BY created_at DESC 
          LIMIT 1`,
@@ -150,16 +169,21 @@ class AITranscriptionService {
       
       if (existing.rows.length > 0) {
         const existingId = existing.rows[0].id;
-        console.log('📌 [getOrCreateTranscript] Using existing transcript:', {
+        console.log('📌 [getOrCreateTranscript] Found ACTIVE transcript to reuse:', {
           transcriptId: existingId,
           status: existing.rows[0].status,
-          action: 'REUSE_EXISTING'
+          action: 'REUSE_EXISTING_ACTIVE',
+          reason: 'Found recent processing transcript'
         });
         return { id: existingId, meeting_id: meetingId, organization_id: organizationId, status: existing.rows[0].status };
       }
       
       // Create new if none exists
-      console.log('🆕 [getOrCreateTranscript] No existing transcript, creating new...');
+      console.log('🆕 [getOrCreateTranscript] No active transcript found, creating new...', {
+        reason: 'No recent processing transcripts found',
+        action: 'CREATE_NEW',
+        willIgnore: 'stuck processing_ai transcripts and old transcripts'
+      });
       const result = await this.createTranscriptRecord(meetingId, organizationId, consentUserIds);
       
       console.log('✅ [getOrCreateTranscript] Created new transcript:', {
