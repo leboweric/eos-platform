@@ -187,15 +187,6 @@ Analyze this transcript and provide a comprehensive JSON response with the follo
       "next_steps": "Next steps discussed for this Rock"
     }
   ],
-  "scorecard_metrics": [
-    {
-      "metric_name": "Name of the metric discussed",
-      "current_value": "Current value if mentioned", 
-      "target_value": "Target/goal value",
-      "trend": "improving|declining|stable|unknown",
-      "discussion": "What was discussed about this metric"
-    }
-  ],
   "discussion_topics": [
     {
       "topic": "Topic name/category",
@@ -235,7 +226,6 @@ Analyze this transcript and provide a comprehensive JSON response with the follo
   ],
   "meeting_sentiment": "positive|neutral|negative|mixed",
   "meeting_energy_score": 1-10,
-  "productivity_score": 1-10,
   "effectiveness_rating": {
     "score": 1-10,
     "rationale": "Why this score was given"
@@ -281,15 +271,15 @@ Be thorough but concise. If information is not available in the transcript, mark
         INSERT INTO meeting_ai_summaries (
           id, meeting_id, transcript_id, organization_id,
           executive_summary, key_decisions, discussion_topics,
-          action_items, issues_discussed, rocks_mentioned,
-          scorecard_metrics, notable_quotes, team_dynamics,
+          action_items, issues_discussed, rocks_priorities,
+          notable_quotes, team_dynamics,
           eos_adherence, next_meeting_preparation,
-          meeting_sentiment, meeting_energy_score, productivity_score,
+          meeting_sentiment, meeting_energy_score,
           effectiveness_rating, improvement_suggestions,
           ai_model, ai_prompt_version, ai_processing_time_seconds, ai_cost_usd,
           created_at
         )
-        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21, $22, $23, $24, NOW())
+        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21, $22, NOW())
       `, [
         summaryId, meeting_id, transcriptId, organization_id,
         aiSummary.executive_summary,
@@ -297,15 +287,13 @@ Be thorough but concise. If information is not available in the transcript, mark
         JSON.stringify(aiSummary.discussion_topics),
         JSON.stringify(aiSummary.action_items),
         JSON.stringify(aiSummary.issues_discussed),
-        JSON.stringify(aiSummary.rocks_mentioned),
-        JSON.stringify(aiSummary.scorecard_metrics),
+        JSON.stringify(aiSummary.rocks_mentioned || []),
         JSON.stringify(aiSummary.notable_quotes),
         JSON.stringify(aiSummary.team_dynamics),
         JSON.stringify(aiSummary.eos_adherence),
         JSON.stringify(aiSummary.next_meeting_preparation),
         aiSummary.meeting_sentiment,
         aiSummary.meeting_energy_score,
-        aiSummary.productivity_score,
         JSON.stringify(aiSummary.effectiveness_rating),
         JSON.stringify(aiSummary.improvement_suggestions),
         aiSummary.ai_model,
