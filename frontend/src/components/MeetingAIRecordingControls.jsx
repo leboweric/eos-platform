@@ -10,7 +10,8 @@ export const MeetingAIRecordingControls = ({
   meetingId, 
   organizationId,
   onTranscriptionStarted,
-  onTranscriptionStopped 
+  onTranscriptionStopped,
+  onRecordingStateChange
 }) => {
   console.log('🎙️ AI Recording Controls rendered', { meetingId, organizationId });
   
@@ -41,6 +42,18 @@ export const MeetingAIRecordingControls = ({
       if (interval) clearInterval(interval);
     };
   }, [isRecording]);
+
+  // Notify parent component when recording state changes
+  useEffect(() => {
+    if (onRecordingStateChange) {
+      onRecordingStateChange({
+        isRecording,
+        transcriptId: transcriptIdRef.current,
+        recordingTime,
+        transcriptionStatus
+      });
+    }
+  }, [isRecording, recordingTime, transcriptionStatus, onRecordingStateChange]);
 
   // Format recording time
   const formatTime = (seconds) => {

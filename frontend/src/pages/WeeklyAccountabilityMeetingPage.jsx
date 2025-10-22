@@ -292,6 +292,14 @@ const WeeklyAccountabilityMeetingPage = () => {
   });
   const [showConcludeDialog, setShowConcludeDialog] = useState(false);
   
+  // AI Recording state
+  const [aiRecordingState, setAiRecordingState] = useState({
+    isRecording: false,
+    transcriptId: null,
+    recordingTime: 0,
+    transcriptionStatus: 'not_started'
+  });
+  
   // Confirmation dialog states
   const [confirmDialog, setConfirmDialog] = useState({
     open: false,
@@ -6056,16 +6064,29 @@ const WeeklyAccountabilityMeetingPage = () => {
                         </div>
                       )}
                       <Button
-                        className="shadow-lg hover:shadow-xl transition-all duration-200 text-white font-medium py-3 px-6"
+                        className={`shadow-lg hover:shadow-xl transition-all duration-200 text-white font-medium py-3 px-6 ${
+                          aiRecordingState.isRecording ? "bg-purple-600 hover:bg-purple-700" : ""
+                        }`}
                         style={{
-                          background: `linear-gradient(135deg, ${themeColors.primary} 0%, ${themeColors.secondary} 100%)`
+                          background: aiRecordingState.isRecording 
+                            ? undefined 
+                            : `linear-gradient(135deg, ${themeColors.primary} 0%, ${themeColors.secondary} 100%)`
                         }}
                         onClick={() => {
                           setShowConcludeDialog(true);
                         }}
                       >
-                        <CheckSquare className="mr-2 h-5 w-5" />
-                        Conclude Meeting
+                        {aiRecordingState.isRecording ? (
+                          <>
+                            <Sparkles className="mr-2 h-5 w-5" />
+                            Conclude & Generate AI Summary
+                          </>
+                        ) : (
+                          <>
+                            <CheckSquare className="mr-2 h-5 w-5" />
+                            Conclude Meeting
+                          </>
+                        )}
                       </Button>
                     </div>
                   ) : (
@@ -6098,6 +6119,21 @@ const WeeklyAccountabilityMeetingPage = () => {
   const confirmConcludeMeeting = async () => {
     setShowConcludeDialog(false);
     try {
+      // Handle AI recording if active - fire and forget for background processing
+      if (aiRecordingState.isRecording && aiRecordingState.transcriptId) {
+        console.log('🎙️ Stopping AI recording in background during meeting conclusion');
+        
+        // Fire and forget - let it process in background
+        import('../services/axiosConfig').then(({ default: api }) => {
+          api.post('/transcription/stop', {
+            meetingId: `${teamId}-${Date.now()}`,
+            transcriptId: aiRecordingState.transcriptId
+          }).catch(error => {
+            console.error('Background AI processing error:', error);
+            // Silent failure - user has already moved on
+          });
+        });
+      }
                         // Send cascading message if there is one
                         if (cascadeMessage.trim() && (cascadeToAll || selectedTeams.length > 0)) {
                           const orgId = user?.organizationId || user?.organization_id;
@@ -6200,9 +6236,18 @@ const WeeklyAccountabilityMeetingPage = () => {
                             emailMessage = 'Meeting concluded but no team members found for email.';
                           }
                         }
+                        // Show toast with appropriate message based on AI recording state
                         const archiveMessage = archiveCompleted ? 'Completed items archived.' : '';
-                        const successMessage = `Meeting concluded successfully! ${emailMessage} ${archiveMessage}`.trim();
-                        setSuccess(successMessage);
+                        const baseMessage = `Meeting concluded successfully! ${emailMessage} ${archiveMessage}`.trim();
+                        
+                        toast.success(aiRecordingState.isRecording 
+                          ? "Meeting concluded - AI summary generating!" 
+                          : baseMessage, {
+                          description: aiRecordingState.isRecording
+                            ? "Your AI summary will be ready in Meeting History in about 30 seconds"
+                            : "Great job! All data has been saved.",
+                          duration: 5000
+                        });
                         
                         // Clear form after success
                         setCascadeMessage('');
@@ -6351,6 +6396,7 @@ const WeeklyAccountabilityMeetingPage = () => {
                 setTranscriptionCompleted(true);
                 setShowAISummary(true);
               }}
+              onRecordingStateChange={setAiRecordingState}
             />
           </div>
         )}
