@@ -447,7 +447,7 @@ const PriorityDialog = ({
                       />
                       <div className="flex gap-2">
                         <Select
-                          value={editingMilestone.ownerId || milestone.owner_id || formData.ownerId || priority?.owner?.id}
+                          value={editingMilestone.ownerId || milestone.owner_id || priority?.owner?.id}
                           onValueChange={(value) => setEditingMilestone({ ...editingMilestone, ownerId: value })}
                         >
                           <SelectTrigger className="flex-1 bg-white">
@@ -503,7 +503,7 @@ const PriorityDialog = ({
                             {milestone.title}
                           </p>
                           <div className="flex items-center gap-3 text-sm">
-                            {milestone.owner_name && milestone.owner_id !== priority?.owner?.id && (
+                            {milestone.owner_name && (
                               <div 
                                 className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full border"
                                 style={{
@@ -512,7 +512,12 @@ const PriorityDialog = ({
                                 }}
                               >
                                 <User className="h-3 w-3" style={{ color: themeColors.primary }} />
-                                <span className="font-medium" style={{ color: themeColors.primary }}>{milestone.owner_name}</span>
+                                <span className="font-medium" style={{ color: themeColors.primary }}>
+                                  {milestone.owner_id === priority?.owner?.id ? 
+                                    `${milestone.owner_name} (Rock Owner)` : 
+                                    milestone.owner_name
+                                  }
+                                </span>
                               </div>
                             )}
                             {milestone.dueDate && (
@@ -563,7 +568,7 @@ const PriorityDialog = ({
                   />
                   <div className="flex gap-2">
                     <Select
-                      value={newMilestone.ownerId || formData.ownerId || priority?.owner?.id}
+                      value={newMilestone.ownerId || priority?.owner?.id}
                       onValueChange={(value) => setNewMilestone({ ...newMilestone, ownerId: value })}
                     >
                       <SelectTrigger className="flex-1 bg-white">
