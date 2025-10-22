@@ -379,6 +379,16 @@ class TranscriptionService {
       ]);
 
       console.log(`💾 Saved transcript content for ${transcriptId}`);
+      
+      // Trigger AI analysis if transcript has content
+      if (data.rawTranscript && data.rawTranscript.trim().length > 50) {
+        console.log(`🤖 [TranscriptionService] Triggering AI analysis for ${transcriptId}`);
+        
+        // Import AI service and trigger analysis (async, don't block)
+        this.triggerAIAnalysis(transcriptId, data.rawTranscript).catch(error => {
+          console.error(`❌ [TranscriptionService] AI analysis failed for ${transcriptId}:`, error);
+        });
+      }
     } finally {
       client.release();
     }
@@ -434,6 +444,126 @@ class TranscriptionService {
     }).catch(error => {
       console.error('Error importing meetingSocketService:', error);
     });
+  }
+
+  /**
+   * Trigger AI analysis for completed transcript
+   */
+  async triggerAIAnalysis(transcriptId, rawTranscript) {
+    const client = await getClient();
+    try {
+      console.log(`🤖 [TranscriptionService] Starting AI analysis for ${transcriptId}`);
+      
+      // Get transcript details for meetingId and organizationId
+      const transcriptQuery = await client.query(`
+        SELECT mt.*, m.organization_id as meeting_organization_id
+        FROM meeting_transcripts mt
+        LEFT JOIN meetings m ON mt.meeting_id = m.id
+        WHERE mt.id = $1
+      `, [transcriptId]);
+      
+      if (transcriptQuery.rows.length === 0) {
+        throw new Error(`Transcript ${transcriptId} not found`);
+      }
+      
+      const transcript = transcriptQuery.rows[0];
+      const meetingId = transcript.meeting_id;
+      const organizationId = transcript.organization_id || transcript.meeting_organization_id;
+      
+      console.log(`🔍 [TranscriptionService] Processing transcript for meeting ${meetingId}, org ${organizationId}`);
+      
+      // Import OpenAI for analysis
+      const { OpenAI } = await import('openai');
+      const openai = new OpenAI({
+        apiKey: process.env.OPENAI_API_KEY
+      });
+      
+      // AI analysis prompt
+      const prompt = `Analyze this meeting transcript and extract key information in JSON format:
+
+TRANSCRIPT:
+${rawTranscript}
+
+Please provide a JSON response with the following structure:
+{
+  "executive_summary": "2-3 paragraph summary of the meeting",
+  "key_decisions": ["Decision 1", "Decision 2"],
+  "action_items": ["Action item 1", "Action item 2"],
+  "issues_discussed": ["Issue 1", "Issue 2"],
+  "meeting_sentiment": "positive/neutral/negative",
+  "effectiveness_rating": 8.5
+}`;
+
+      console.log(`🧠 [TranscriptionService] Sending to GPT-4 for analysis...`);
+      
+      const response = await openai.chat.completions.create({
+        model: 'gpt-4',
+        messages: [{ role: 'user', content: prompt }],
+        temperature: 0.3,
+        max_tokens: 2000
+      });
+      
+      const analysisText = response.choices[0].message.content.trim();
+      let analysis;
+      
+      try {
+        // Extract JSON from response
+        const jsonMatch = analysisText.match(/\{[\s\S]*\}/);
+        if (jsonMatch) {
+          analysis = JSON.parse(jsonMatch[0]);
+        } else {
+          throw new Error('No valid JSON found in response');
+        }
+      } catch (parseError) {
+        console.error('Failed to parse AI analysis JSON:', parseError);
+        throw new Error('Invalid AI analysis response format');
+      }
+      
+      console.log(`✅ [TranscriptionService] AI analysis completed successfully`);
+      
+      // Save to database with CORRECT column names
+      const { v4: uuidv4 } = await import('uuid');
+      const summaryId = uuidv4();
+      
+      await client.query(`
+        INSERT INTO meeting_ai_summaries (
+          id, transcript_id, meeting_id, organization_id,
+          executive_summary, key_decisions, action_items, issues_discussed,
+          meeting_sentiment, effectiveness_rating,
+          ai_model, created_at, updated_at
+        )
+        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, NOW(), NOW())
+      `, [
+        summaryId,
+        transcriptId,
+        meetingId,
+        organizationId,
+        analysis.executive_summary || 'No summary provided',
+        JSON.stringify(analysis.key_decisions || []),
+        JSON.stringify(analysis.action_items || []),
+        JSON.stringify(analysis.issues_discussed || []),
+        analysis.meeting_sentiment || 'neutral',
+        analysis.effectiveness_rating || 5.0,
+        'gpt-4'
+      ]);
+      
+      // Update transcript status to completed
+      await this.updateTranscriptStatus(transcriptId, 'completed');
+      
+      console.log(`🎉 [TranscriptionService] AI analysis saved for ${transcriptId}`);
+      
+    } catch (error) {
+      console.error(`❌ [TranscriptionService] AI analysis failed for ${transcriptId}:`, error);
+      
+      // Update transcript status to failed
+      await this.updateTranscriptStatus(transcriptId, 'failed', {
+        error_message: `AI analysis failed: ${error.message}`
+      });
+      
+      throw error;
+    } finally {
+      client.release();
+    }
   }
 
   /**
