@@ -6332,17 +6332,18 @@ const WeeklyAccountabilityMeetingPage = () => {
 
         {/* AI Meeting Assistant Controls */}
         {(() => {
+          const orgId = user?.organizationId || user?.organization_id;
           console.log('🔍 AI Controls Check:', { 
-            currentOrganizationId: currentOrganization?.id, 
+            currentOrganizationId: orgId, 
             teamId: teamId,
-            shouldRender: !!(currentOrganization?.id && teamId)
+            shouldRender: !!(orgId && teamId)
           });
-          return currentOrganization?.id && teamId;
+          return orgId && teamId;
         })() && (
           <div className="mb-6">
             <MeetingAIRecordingControls
               meetingId={`${teamId}-${Date.now()}`} // Generate a meeting ID - in real app this would come from backend
-              organizationId={currentOrganization.id}
+              organizationId={user?.organizationId || user?.organization_id}
               onTranscriptionStarted={() => {
                 console.log('AI transcription started');
               }}
@@ -6807,7 +6808,7 @@ const WeeklyAccountabilityMeetingPage = () => {
         <DialogContent className="max-w-5xl max-h-[90vh] overflow-y-auto">
           <MeetingAISummaryPanel
             meetingId={`${teamId}-${Date.now()}`} // Same meeting ID as used in controls
-            organizationId={currentOrganization?.id}
+            organizationId={user?.organizationId || user?.organization_id}
             onClose={() => setShowAISummary(false)}
           />
         </DialogContent>
