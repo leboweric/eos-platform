@@ -1,4 +1,75 @@
 import sgMail from '@sendgrid/mail';
+import db from '../config/database.js';
+
+// Function to fetch AI summary for meeting emails
+async function getAISummaryForMeeting(meetingId, organizationId) {
+  try {
+    const result = await db.query(`
+      SELECT 
+        mas.executive_summary,
+        mas.action_items,
+        mas.key_decisions,
+        mas.issues_discussed,
+        mt.word_count,
+        mt.meeting_id
+      FROM meeting_ai_summaries mas
+      JOIN meeting_transcripts mt ON mas.transcript_id = mt.id
+      WHERE mt.organization_id = $1
+        AND mt.status = 'completed'
+        AND mt.created_at >= NOW() - INTERVAL '24 hours'
+      ORDER BY mas.created_at DESC
+      LIMIT 1
+    `, [organizationId]);
+    
+    if (result.rows.length > 0) {
+      const summary = result.rows[0];
+      
+      // Parse JSON fields if they're strings
+      let actionItems = summary.action_items;
+      let keyDecisions = summary.key_decisions;
+      let issuesDiscussed = summary.issues_discussed;
+      
+      if (typeof actionItems === 'string') {
+        try {
+          actionItems = JSON.parse(actionItems);
+        } catch (e) {
+          actionItems = [];
+        }
+      }
+      
+      if (typeof keyDecisions === 'string') {
+        try {
+          keyDecisions = JSON.parse(keyDecisions);
+        } catch (e) {
+          keyDecisions = [];
+        }
+      }
+      
+      if (typeof issuesDiscussed === 'string') {
+        try {
+          issuesDiscussed = JSON.parse(issuesDiscussed);
+        } catch (e) {
+          issuesDiscussed = [];
+        }
+      }
+      
+      return {
+        executive_summary: summary.executive_summary,
+        action_items: actionItems || [],
+        key_decisions: keyDecisions || [],
+        issues_discussed: issuesDiscussed || [],
+        word_count: summary.word_count,
+        meeting_id: summary.meeting_id
+      };
+    }
+    
+    return null;
+    
+  } catch (error) {
+    console.error('Error fetching AI summary for email:', error);
+    return null;
+  }
+}
 
 // Email templates
 const templates = {
@@ -261,106 +332,374 @@ const templates = {
   meetingSummary: (data) => ({
     subject: `${data.teamName} Meeting Summary - ${data.organizationName}`,
     html: `
-      <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
-        <h2>${data.teamName} Meeting Summary</h2>
-        <p>Hi Team,</p>
-        <p>Here's a summary of your ${data.meetingType || data.teamName + ' meeting'} on ${data.meetingDate}:</p>
-        
-        <!-- Meeting Details Section -->
-        <div style="background-color: #f8f9fa; padding: 15px; border-radius: 8px; margin: 20px 0;">
-          <p style="margin: 5px 0; color: #666;">
-            <strong>Duration:</strong> ${data.duration || 'Not recorded'}<br>
-            <strong>Concluded by:</strong> ${data.concludedBy || 'Unknown'}<br>
-            ${data.attendees && data.attendees.length > 0 ? `<strong>Attendees:</strong> ${data.attendees.join(', ')}<br>` : ''}
-            ${data.rockCompletionPercentage !== undefined ? `<strong>Rock Completion:</strong> ${data.rockCompletionPercentage}% (${data.completedRocks || 0} of ${data.totalRocks || 0} complete)<br>` : ''}
-          </p>
-        </div>
-        
-        ${data.rating ? `
-          <div style="background-color: #f0f9ff; padding: 20px; border-radius: 8px; margin: 20px 0; border-left: 4px solid #3b82f6;">
-            <h3 style="color: #1e40af; margin: 0 0 10px 0; font-size: 18px;">⭐ Meeting Rating</h3>
-            <div style="font-size: 24px; font-weight: bold; color: ${data.rating >= 8 ? '#10b981' : data.rating >= 5 ? '#f59e0b' : '#ef4444'};">
-              ${data.rating}/10
-            </div>
-            <div style="color: #666; font-size: 14px; margin-top: 5px;">
-              ${data.rating >= 8 ? 'Great meeting!' : data.rating >= 5 ? 'Good meeting' : 'Room for improvement'}
-            </div>
+      <html>
+      <head>
+        <style>
+          body { 
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-serif;
+            line-height: 1.6; 
+            color: #1f2937;
+            background: #f9fafb;
+            margin: 0;
+            padding: 0;
+          }
+          .container { 
+            max-width: 600px; 
+            margin: 0 auto; 
+            background: white;
+          }
+          .header { 
+            background: linear-gradient(135deg, #3B82F6 0%, #2563EB 100%);
+            color: white; 
+            padding: 32px 24px;
+            text-align: center;
+          }
+          .header h1 {
+            margin: 0;
+            font-size: 28px;
+            font-weight: 700;
+          }
+          .header p {
+            margin: 8px 0 0 0;
+            opacity: 0.95;
+            font-size: 16px;
+          }
+          
+          /* AI Summary Section - Purple Theme */
+          .ai-section { 
+            background: linear-gradient(to bottom, #faf5ff 0%, #f3e8ff 100%);
+            padding: 24px;
+            border-left: 4px solid #9333ea;
+            margin: 0;
+          }
+          .ai-section h2 {
+            color: #6b21a8;
+            margin: 0 0 16px 0;
+            font-size: 20px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+          }
+          .ai-badge {
+            background: #9333ea;
+            color: white;
+            padding: 4px 10px;
+            border-radius: 12px;
+            font-size: 11px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+          }
+          .ai-summary-text {
+            font-size: 15px;
+            line-height: 1.7;
+            color: #4b5563;
+            margin: 0 0 20px 0;
+          }
+          .ai-subsection {
+            margin: 16px 0;
+          }
+          .ai-subsection-title {
+            font-weight: 600;
+            color: #6b21a8;
+            margin: 0 0 8px 0;
+            font-size: 14px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+          }
+          .ai-list {
+            margin: 0;
+            padding-left: 20px;
+          }
+          .ai-list li {
+            margin: 8px 0;
+            color: #374151;
+            line-height: 1.6;
+          }
+          .ai-footer-note {
+            margin-top: 20px;
+            padding-top: 16px;
+            border-top: 1px solid #e9d5ff;
+            font-size: 13px;
+            color: #6b7280;
+            font-style: italic;
+          }
+          .view-transcript-btn {
+            display: inline-block;
+            background: #9333ea;
+            color: white;
+            padding: 10px 20px;
+            border-radius: 6px;
+            text-decoration: none;
+            font-weight: 600;
+            margin-top: 12px;
+            font-size: 14px;
+          }
+          .view-transcript-btn:hover {
+            background: #7e22ce;
+          }
+          
+          /* Standard Sections */
+          .section { 
+            padding: 24px;
+            border-bottom: 1px solid #e5e7eb;
+          }
+          .section h2 {
+            color: #1f2937;
+            margin: 0 0 16px 0;
+            font-size: 18px;
+            font-weight: 600;
+          }
+          .section-content {
+            color: #4b5563;
+            font-size: 14px;
+          }
+          
+          /* Meeting Info Grid */
+          .info-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 12px;
+            margin: 16px 0;
+          }
+          .info-item {
+            font-size: 14px;
+          }
+          .info-label {
+            color: #6b7280;
+            font-weight: 500;
+          }
+          .info-value {
+            color: #1f2937;
+            font-weight: 600;
+          }
+          
+          /* Rating */
+          .rating {
+            display: inline-block;
+            background: #10b981;
+            color: white;
+            padding: 8px 16px;
+            border-radius: 8px;
+            font-size: 24px;
+            font-weight: 700;
+          }
+          
+          /* Lists */
+          .simple-list {
+            margin: 0;
+            padding-left: 20px;
+          }
+          .simple-list li {
+            margin: 10px 0;
+            color: #374151;
+            line-height: 1.5;
+          }
+          .overdue {
+            color: #dc2626;
+            font-weight: 600;
+          }
+          
+          /* Footer */
+          .footer { 
+            text-align: center; 
+            color: #6b7280; 
+            font-size: 13px; 
+            padding: 24px;
+            background: #f9fafb;
+          }
+          .footer a {
+            color: #3B82F6;
+            text-decoration: none;
+          }
+        </style>
+      </head>
+      <body>
+        <div class="container">
+          
+          <!-- Header -->
+          <div class="header">
+            <h1>📊 ${data.teamName} Meeting Summary</h1>
+            <p>${data.meetingDate} • ${data.duration || 'Duration not recorded'}</p>
           </div>
-        ` : ''}
-        
-        ${data.headlines && (data.headlines.customer?.length > 0 || data.headlines.employee?.length > 0) ? `
-          <h3 style="color: #1e40af; margin-top: 30px; border-bottom: 2px solid #f8f9fa; padding-bottom: 10px;">📰 Headlines</h3>
-          ${data.headlines.customer?.length > 0 ? `
-            <div style="margin-top: 15px;">
-              <h4 style="color: #059669; margin: 10px 0;">Customer Headlines:</h4>
-              <ul style="color: #333; line-height: 1.8;">
-                ${data.headlines.customer.map(h => `<li>${h.text || h}</li>`).join('')}
-              </ul>
-            </div>
-          ` : ''}
-          ${data.headlines.employee?.length > 0 ? `
-            <div style="margin-top: 15px;">
-              <h4 style="color: #7c3aed; margin: 10px 0;">Employee Headlines:</h4>
-              <ul style="color: #333; line-height: 1.8;">
-                ${data.headlines.employee.map(h => `<li>${h.text || h}</li>`).join('')}
-              </ul>
-            </div>
-          ` : ''}
-        ` : ''}
-        
-        ${data.metrics && Object.keys(data.metrics).length > 0 ? `
-          <h3 style="color: #0891b2; margin-top: 30px; border-bottom: 2px solid #f8f9fa; padding-bottom: 10px;">📊 Scorecard Updates</h3>
-          <ul style="color: #333; line-height: 1.8;">
-            ${Object.entries(data.metrics).map(([key, value]) => `<li><strong>${key}:</strong> ${value}</li>`).join('')}
-          </ul>
-        ` : ''}
-        
-        ${data.resolvedIssues && data.resolvedIssues.length > 0 ? `
-          <h3 style="color: #10b981; margin-top: 30px; border-bottom: 2px solid #f8f9fa; padding-bottom: 10px;">✅ Issues Resolved</h3>
-          <ul style="color: #333; line-height: 1.8;">
-            ${data.resolvedIssues.map(issue => `<li>${issue}</li>`).join('')}
-          </ul>
-        ` : ''}
-        
-        ${data.unresolvedIssues && data.unresolvedIssues.length > 0 ? `
-          <h3 style="color: #dc2626; margin-top: 30px; border-bottom: 2px solid #f8f9fa; padding-bottom: 10px;">❌ Unresolved Issues</h3>
-          <ul style="color: #333; line-height: 1.8;">
-            ${data.unresolvedIssues.map(issue => `<li>${issue}</li>`).join('')}
-          </ul>
-        ` : ''}
-        
-        ${data.completedItems && data.completedItems.length > 0 ? `
-          <h3 style="color: #059669; margin-top: 30px; border-bottom: 2px solid #f8f9fa; padding-bottom: 10px;">✔️ To-Dos Completed During Meeting</h3>
-          <ul style="color: #333; line-height: 1.8;">
-            ${data.completedItems.map(item => `<li>${item}</li>`).join('')}
-          </ul>
-        ` : ''}
-        
-        ${data.openTodos && data.openTodos.length > 0 ? `
-          <h3 style="color: #d97706; margin-top: 30px; border-bottom: 2px solid #f8f9fa; padding-bottom: 10px;">📋 Open To-Dos</h3>
-          <ul style="color: #333; line-height: 1.8;">
-            ${data.openTodos.map(todo => `<li><strong>${todo.title}</strong> - Assigned to: ${todo.assignee}${todo.dueDate !== 'No due date' ? `, Due: <span style="${todo.isPastDue ? 'color: #dc2626; font-weight: bold;' : ''}">${todo.dueDate}${todo.isPastDue ? ' (PAST DUE)' : ''}</span>` : ''}</li>`).join('')}
-          </ul>
-        ` : `
-          <p style="color: #666; margin-top: 30px;">No open to-dos at this time.</p>
-        `}
-        
-        ${data.cascadingMessages && data.cascadingMessages.length > 0 ? `
-          <h3 style="color: #7c3aed; margin-top: 30px; border-bottom: 2px solid #f8f9fa; padding-bottom: 10px;">📢 Cascading Messages</h3>
-          <div style="background-color: #faf5ff; padding: 20px; border-radius: 8px; margin: 10px 0; border-left: 4px solid #7c3aed;">
-            ${data.cascadingMessages.map(msg => `
-              <div style="margin-bottom: 15px; padding-bottom: 15px; border-bottom: 1px solid #e9d5ff; ${data.cascadingMessages.indexOf(msg) === data.cascadingMessages.length - 1 ? 'border-bottom: none;' : ''}">
-                <p style="color: #333; margin: 0 0 8px 0; line-height: 1.6;">${msg.message}</p>
-                <p style="color: #9333ea; font-size: 13px; margin: 0; font-weight: 500;">→ Sent to: ${msg.recipientTeams}</p>
+          
+          <!-- AI SUMMARY SECTION (NEW!) -->
+          ${data.aiSummary ? `
+            <div class="ai-section">
+              <h2>
+                🤖 AI Meeting Summary
+                <span class="ai-badge">NEW</span>
+              </h2>
+              
+              <p class="ai-summary-text">
+                ${data.aiSummary.executive_summary || 'The meeting focused on reviewing key business metrics, addressing open issues, and planning action items for the upcoming period.'}
+              </p>
+              
+              <!-- Key Decisions -->
+              ${data.aiSummary.key_decisions && data.aiSummary.key_decisions.length > 0 ? `
+                <div class="ai-subsection">
+                  <div class="ai-subsection-title">🎯 Key Decisions Made</div>
+                  <ul class="ai-list">
+                    ${data.aiSummary.key_decisions.map(decision => `<li>${decision}</li>`).join('')}
+                  </ul>
+                </div>
+              ` : ''}
+              
+              <!-- Action Items -->
+              ${data.aiSummary.action_items && data.aiSummary.action_items.length > 0 ? `
+                <div class="ai-subsection">
+                  <div class="ai-subsection-title">📋 Action Items Identified</div>
+                  <ul class="ai-list">
+                    ${data.aiSummary.action_items.map(item => `
+                      <li><strong>${item.assignee || 'Team'}:</strong> ${item.task || item}${item.due_date ? ` - Due: ${item.due_date}` : ''}</li>
+                    `).join('')}
+                  </ul>
+                </div>
+              ` : ''}
+              
+              <!-- Issues Discussed -->
+              ${data.aiSummary.issues_discussed && data.aiSummary.issues_discussed.length > 0 ? `
+                <div class="ai-subsection">
+                  <div class="ai-subsection-title">⚠️ Key Issues Discussed</div>
+                  <ul class="ai-list">
+                    ${data.aiSummary.issues_discussed.slice(0, 3).map(issue => `<li>${issue.issue || issue}</li>`).join('')}
+                  </ul>
+                </div>
+              ` : ''}
+              
+              <div class="ai-footer-note">
+                This summary was automatically generated by AI from your ${data.aiSummary.word_count || 'meeting'}-word meeting transcript.
+                <br>
+                <a href="${process.env.FRONTEND_URL || 'https://axplatform.app'}/meeting-history" class="view-transcript-btn">
+                  📄 View Full Transcript & Insights
+                </a>
               </div>
-            `).join('')}
+            </div>
+          ` : ''}
+          
+          <!-- Meeting Details -->
+          <div class="section">
+            <h2>📌 Meeting Details</h2>
+            <div class="info-grid">
+              <div class="info-item">
+                <div class="info-label">Duration</div>
+                <div class="info-value">${data.duration || 'Not recorded'}</div>
+              </div>
+              <div class="info-item">
+                <div class="info-label">Concluded By</div>
+                <div class="info-value">${data.concludedBy || 'Unknown'}</div>
+              </div>
+              <div class="info-item">
+                <div class="info-label">Rock Completion</div>
+                <div class="info-value">${data.rockCompletionPercentage !== undefined ? data.rockCompletionPercentage : 'N/A'}% (${data.completedRocks || 0} of ${data.totalRocks || 0} complete)</div>
+              </div>
+              <div class="info-item">
+                <div class="info-label">Attendees</div>
+                <div class="info-value">${data.attendees && data.attendees.length > 0 ? data.attendees.length + ' people' : 'Not recorded'}</div>
+              </div>
+            </div>
+            ${data.attendees && data.attendees.length > 0 ? `
+              <p style="margin: 12px 0 0 0; color: #6b7280; font-size: 13px;">
+                ${data.attendees.join(', ')}
+              </p>
+            ` : ''}
           </div>
-        ` : ''}
-        
-        <p style="color: #666; font-size: 14px; margin-top: 30px;">
-          This summary was automatically generated by AXP.
-        </p>
-      </div>
+          
+          <!-- Meeting Rating -->
+          ${data.rating ? `
+            <div class="section">
+              <h2>⭐ Meeting Rating</h2>
+              <div class="rating" style="background: ${data.rating >= 8 ? '#10b981' : data.rating >= 5 ? '#f59e0b' : '#ef4444'};">${data.rating}/10</div>
+              <p style="margin: 12px 0 0 0; color: #374151; font-style: italic;">
+                "${data.rating >= 8 ? 'Great meeting!' : data.rating >= 5 ? 'Good meeting' : 'Room for improvement'}"
+              </p>
+            </div>
+          ` : ''}
+          
+          <!-- Headlines -->
+          ${data.headlines && (data.headlines.customer?.length > 0 || data.headlines.employee?.length > 0) ? `
+            <div class="section">
+              <h2>📰 Headlines</h2>
+              ${data.headlines.customer?.length > 0 ? `
+                <div style="margin-top: 15px;">
+                  <h4 style="color: #059669; margin: 10px 0;">Customer Headlines:</h4>
+                  <ul class="simple-list">
+                    ${data.headlines.customer.map(h => `<li>${h.text || h}</li>`).join('')}
+                  </ul>
+                </div>
+              ` : ''}
+              ${data.headlines.employee?.length > 0 ? `
+                <div style="margin-top: 15px;">
+                  <h4 style="color: #7c3aed; margin: 10px 0;">Employee Headlines:</h4>
+                  <ul class="simple-list">
+                    ${data.headlines.employee.map(h => `<li>${h.text || h}</li>`).join('')}
+                  </ul>
+                </div>
+              ` : ''}
+            </div>
+          ` : ''}
+          
+          <!-- Unresolved Issues -->
+          ${data.unresolvedIssues && data.unresolvedIssues.length > 0 ? `
+            <div class="section">
+              <h2>❌ Unresolved Issues (${data.unresolvedIssues.length})</h2>
+              <ul class="simple-list">
+                ${data.unresolvedIssues.map(issue => `<li>${issue}</li>`).join('')}
+              </ul>
+            </div>
+          ` : ''}
+          
+          <!-- Open To-Dos -->
+          ${data.openTodos && data.openTodos.length > 0 ? `
+            <div class="section">
+              <h2>📋 Open To-Dos (${data.openTodos.length})</h2>
+              <ul class="simple-list">
+                ${data.openTodos.map(todo => `
+                  <li>
+                    <strong>${todo.title}</strong>
+                    <br>
+                    <span style="color: #6b7280; font-size: 13px;">
+                      Assigned to: ${todo.assignee} • Due: ${todo.dueDate}${todo.isPastDue ? '<span class="overdue"> (OVERDUE)</span>' : ''}
+                    </span>
+                  </li>
+                `).join('')}
+              </ul>
+            </div>
+          ` : ''}
+          
+          <!-- Cascading Messages -->
+          ${data.cascadingMessages && data.cascadingMessages.length > 0 ? `
+            <div class="section">
+              <h2>📢 Cascading Messages</h2>
+              <div style="background-color: #faf5ff; padding: 20px; border-radius: 8px; margin: 10px 0; border-left: 4px solid #7c3aed;">
+                ${data.cascadingMessages.map(msg => `
+                  <div style="margin-bottom: 15px; padding-bottom: 15px; border-bottom: 1px solid #e9d5ff; ${data.cascadingMessages.indexOf(msg) === data.cascadingMessages.length - 1 ? 'border-bottom: none;' : ''}">
+                    <p style="color: #333; margin: 0 0 8px 0; line-height: 1.6;">${msg.message}</p>
+                    <p style="color: #9333ea; font-size: 13px; margin: 0; font-weight: 500;">→ Sent to: ${msg.recipientTeams}</p>
+                  </div>
+                `).join('')}
+              </div>
+            </div>
+          ` : ''}
+          
+          <!-- Footer -->
+          <div class="footer">
+            <p>
+              <a href="${process.env.FRONTEND_URL || 'https://axplatform.app'}/meetings">View all meetings</a>
+              •
+              <a href="${process.env.FRONTEND_URL || 'https://axplatform.app'}/meeting-history">Meeting history</a>
+              •
+              <a href="${process.env.FRONTEND_URL || 'https://axplatform.app'}/settings">Email preferences</a>
+            </p>
+            <p style="margin-top: 12px;">
+              This email was automatically generated by AXP Platform<br>
+              © 2025 AXP. All rights reserved.
+            </p>
+          </div>
+          
+        </div>
+      </body>
+      </html>
     `,
     text: `
       ${data.teamName} Meeting Summary
@@ -402,6 +741,25 @@ export const sendEmail = async (to, templateName, data) => {
         html: data.htmlContent,
         text: data.textContent
       };
+    } else if (templateName === 'meetingSummary') {
+      // Special handling for meeting summary emails - fetch AI summary
+      console.log('🤖 Fetching AI summary for meeting email...');
+      
+      // Try to fetch AI summary for this organization
+      const aiSummary = await getAISummaryForMeeting(data.meetingId, data.organizationId);
+      
+      if (aiSummary) {
+        console.log('✅ AI summary found, including in email');
+        data.aiSummary = aiSummary;
+      } else {
+        console.log('⚠️ No AI summary found, sending email without AI section');
+      }
+      
+      const template = templates[templateName];
+      if (!template) {
+        throw new Error(`Email template '${templateName}' not found`);
+      }
+      emailContent = template(data);
     } else {
       const template = templates[templateName];
       if (!template) {

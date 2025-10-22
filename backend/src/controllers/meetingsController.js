@@ -422,6 +422,7 @@ export const concludeMeeting = async (req, res) => {
       rating: typeof rating === 'number' ? rating : null,
       individualRatings: individualRatings || [], // Array of participant ratings
       organizationName,
+      organizationId: organizationId, // Add organization ID for AI summary lookup
       concludedBy: userName,
       summary: summary || '',
       metrics: metrics || {},
