@@ -25,7 +25,8 @@ export const getActiveMeetings = async (req, res) => {
     
     logger.info('🔍 Recent meetings (last hour):', debugResult.rows);
     
-    // Main query - look for active meetings (try multiple status values)
+    // Main query - look for active meetings 
+    // ALSO include recent "completed" meetings (data inconsistency detection)
     const result = await db.query(`
       SELECT 
         m.id,
@@ -35,11 +36,17 @@ export const getActiveMeetings = async (req, res) => {
         m.team_id,
         COALESCE(o.name, 'Unknown Organization') as organization_name,
         COALESCE(t.name, 'Unknown Team') as team_name,
-        false as has_active_recording
+        false as has_active_recording,
+        CASE 
+          WHEN m.status = 'completed' AND m.created_at > NOW() - INTERVAL '2 hours'
+          THEN true 
+          ELSE false 
+        END as possibly_incorrect_status
       FROM meetings m
       LEFT JOIN organizations o ON m.organization_id = o.id
       LEFT JOIN teams t ON m.team_id = t.id
       WHERE m.status IN ('in-progress', 'active', 'started', 'ongoing')
+         OR (m.status = 'completed' AND m.created_at > NOW() - INTERVAL '2 hours')
       ORDER BY m.created_at DESC
     `);
 
