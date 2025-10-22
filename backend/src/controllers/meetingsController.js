@@ -88,7 +88,26 @@ export const concludeMeeting = async (req, res) => {
 
     console.log('Concluding meeting with VALIDATED teamId:', { meetingType, duration, rating, organizationId, teamId });
 
-    // Check for active AI recording and auto-stop it
+    console.log('🏁 [Conclude] Starting conclude process for meeting');
+    
+    // 1. Update meeting status to completed
+    const meetingUpdateResult = await db.query(`
+      UPDATE meetings
+      SET 
+        status = 'completed',
+        completed_at = NOW(),
+        actual_end_time = NOW(),
+        updated_at = NOW()
+      WHERE organization_id = $1 
+        AND (team_id = $2 OR EXISTS (
+          SELECT 1 FROM teams WHERE id = $2 AND organization_id = $1
+        ))
+      RETURNING id
+    `, [organizationId, teamId]);
+    
+    console.log('✅ [Conclude] Meeting marked as completed');
+
+    // 2. Check if AI recording is active
     console.log('[Meeting] Checking for active AI recordings...');
     const transcriptCheck = await db.query(
       `SELECT mt.id, mt.status, mt.meeting_id
@@ -101,14 +120,22 @@ export const concludeMeeting = async (req, res) => {
       [organizationId]
     );
 
+    let aiSummary = null;
     if (transcriptCheck.rows.length > 0) {
       const transcript = transcriptCheck.rows[0];
+      console.log('🎤 [Conclude] AI recording detected, stopping transcription');
       console.log('[Meeting] Active recording detected:', transcript.id);
-      console.log('[Meeting] Auto-stopping transcription before concluding...');
       
       try {
+        // Stop the recording
         await transcriptionService.stopRealtimeTranscription(transcript.id);
         console.log('[Meeting] ✅ Recording stopped successfully');
+        
+        console.log('⏳ [Conclude] Waiting up to 10 minutes for AI summary...');
+        
+        // Wait for AI summary (up to 10 minutes)
+        aiSummary = await waitForAISummary(transcript.id, 10);
+        
       } catch (stopError) {
         console.error('[Meeting] ⚠️ Error stopping recording:', stopError);
         // Continue with conclude anyway - don't block meeting conclusion
@@ -423,6 +450,7 @@ export const concludeMeeting = async (req, res) => {
       individualRatings: individualRatings || [], // Array of participant ratings
       organizationName,
       organizationId: organizationId, // Add organization ID for AI summary lookup
+      aiSummary: aiSummary, // Include AI summary if available
       concludedBy: userName,
       summary: summary || '',
       metrics: metrics || {},
@@ -507,3 +535,65 @@ export const concludeMeeting = async (req, res) => {
     });
   }
 };
+
+// Helper function to wait for AI summary
+async function waitForAISummary(transcriptId, maxMinutes = 10) {
+  const checkIntervalSeconds = 5;
+  const maxAttempts = (maxMinutes * 60) / checkIntervalSeconds;
+  
+  console.log(`⏳ [WaitAI] Checking every ${checkIntervalSeconds}s for up to ${maxMinutes} minutes`);
+  
+  for (let attempt = 1; attempt <= maxAttempts; attempt++) {
+    const aiSummary = await getAISummaryForTranscript(transcriptId);
+    
+    if (aiSummary) {
+      const elapsedSeconds = attempt * checkIntervalSeconds;
+      console.log(`✅ [WaitAI] AI summary ready after ${elapsedSeconds} seconds`);
+      return aiSummary;
+    }
+    
+    // Log progress every minute
+    if (attempt % 12 === 0) {
+      const elapsedMinutes = Math.floor(attempt / 12);
+      console.log(`⏳ [WaitAI] Still waiting... ${elapsedMinutes} minute(s) elapsed`);
+    }
+    
+    // Wait before next check
+    await new Promise(resolve => setTimeout(resolve, checkIntervalSeconds * 1000));
+  }
+  
+  console.log(`⚠️ [WaitAI] AI summary not ready after ${maxMinutes} minutes. Proceeding without it.`);
+  return null;
+}
+
+// Helper function to get AI summary for transcript
+async function getAISummaryForTranscript(transcriptId) {
+  try {
+    const result = await db.query(`
+      SELECT 
+        mas.id,
+        mas.executive_summary,
+        mas.action_items,
+        mas.key_decisions,
+        mas.issues_discussed,
+        mt.word_count,
+        mt.status as transcript_status
+      FROM meeting_ai_summaries mas
+      JOIN meeting_transcripts mt ON mas.transcript_id = mt.id
+      WHERE mt.id = $1
+        AND mt.status = 'completed'
+      ORDER BY mas.created_at DESC
+      LIMIT 1
+    `, [transcriptId]);
+    
+    if (result.rows.length > 0) {
+      return result.rows[0];
+    }
+    
+    return null;
+    
+  } catch (error) {
+    console.error('Error fetching AI summary:', error);
+    return null;
+  }
+}

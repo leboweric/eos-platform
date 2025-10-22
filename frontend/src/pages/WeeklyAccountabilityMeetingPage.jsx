@@ -6119,21 +6119,7 @@ const WeeklyAccountabilityMeetingPage = () => {
   const confirmConcludeMeeting = async () => {
     setShowConcludeDialog(false);
     try {
-      // Handle AI recording if active - fire and forget for background processing
-      if (aiRecordingState.isRecording && aiRecordingState.transcriptId) {
-        console.log('🎙️ Stopping AI recording in background during meeting conclusion');
-        
-        // Fire and forget - let it process in background
-        import('../services/axiosConfig').then(({ default: api }) => {
-          api.post('/transcription/stop', {
-            meetingId: `${teamId}-${Date.now()}`,
-            transcriptId: aiRecordingState.transcriptId
-          }).catch(error => {
-            console.error('Background AI processing error:', error);
-            // Silent failure - user has already moved on
-          });
-        });
-      }
+      // Note: AI recording stop is now handled automatically by the backend during meeting conclusion
                         // Send cascading message if there is one
                         if (cascadeMessage.trim() && (cascadeToAll || selectedTeams.length > 0)) {
                           const orgId = user?.organizationId || user?.organization_id;
@@ -6241,10 +6227,10 @@ const WeeklyAccountabilityMeetingPage = () => {
                         const baseMessage = `Meeting concluded successfully! ${emailMessage} ${archiveMessage}`.trim();
                         
                         toast.success(aiRecordingState.isRecording 
-                          ? "Meeting concluded - AI summary generating!" 
+                          ? "Meeting concluded - AI summary included!" 
                           : baseMessage, {
                           description: aiRecordingState.isRecording
-                            ? "Your AI summary will be ready in Meeting History in about 30 seconds"
+                            ? "Your AI summary has been included in the meeting recap email"
                             : "Great job! All data has been saved.",
                           duration: 5000
                         });

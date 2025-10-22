@@ -733,17 +733,13 @@ export const sendEmail = async (to, templateName, data) => {
         text: data.textContent
       };
     } else if (templateName === 'meetingSummary') {
-      // Special handling for meeting summary emails - fetch AI summary
-      console.log('🤖 Fetching AI summary for meeting email...');
+      // Meeting summary emails - AI summary is now passed from controller
+      console.log('📧 [Email] Building meeting summary email');
       
-      // Try to fetch AI summary for this organization
-      const aiSummary = await getAISummaryForMeeting(data.meetingId, data.organizationId);
-      
-      if (aiSummary) {
-        console.log('✅ AI summary found, including in email');
-        data.aiSummary = aiSummary;
+      if (data.aiSummary) {
+        console.log('✅ [Email] AI summary included from meeting conclusion');
       } else {
-        console.log('⚠️ No AI summary found, sending email without AI section');
+        console.log('⚠️ [Email] No AI summary available - meeting concluded without AI recording');
       }
       
       const template = templates[templateName];
