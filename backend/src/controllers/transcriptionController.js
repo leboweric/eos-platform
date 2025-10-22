@@ -221,7 +221,9 @@ export const startTranscription = async (req, res) => {
       console.log('🔍 [Transcription] Step 7: Starting real-time transcription...');
       try {
         console.log('🔍 [Transcription] Calling transcriptionService.startRealtimeTranscription...');
+        console.log('🚀 About to start AssemblyAI WebSocket for transcript:', transcriptId);
         const session = await transcriptionService.startRealtimeTranscription(transcriptId, organizationId);
+        console.log('✅ AssemblyAI WebSocket started successfully');
         
         console.log('✅ [Transcription] Step 7: Real-time transcription started successfully');
         console.log(`🎙️ Started transcription for meeting ${actualMeetingId}, transcript ID: ${transcriptId}`);
@@ -268,6 +270,13 @@ export const startTranscription = async (req, res) => {
       } catch (transcriptionError) {
         console.error('❌ [Transcription] Step 7 FAILED: Real-time transcription error:', transcriptionError.message);
         console.error('❌ [Transcription] Error stack:', transcriptionError.stack);
+        console.error('❌ [WEBSOCKET-FAILED] startRealtimeTranscription() threw an error:', {
+          transcriptId,
+          organizationId,
+          errorName: transcriptionError.name,
+          errorCode: transcriptionError.code,
+          fullError: transcriptionError
+        });
         
         // Update database status to failed
         await client.query(
