@@ -108,12 +108,22 @@ class TranscriptionService {
           // Configure the session for AssemblyAI v2 realtime API
           const sessionConfig = {
             sample_rate: 16000,
-            encoding: 'pcm_s16le'
+            encoding: 'pcm_s16le',
+            language_code: 'en',
+            punctuate: true,
+            format_text: true
           };
           const configString = JSON.stringify(sessionConfig);
           console.log('📤 [WebSocket] Sending session config:', sessionConfig);
           console.log('📤 [WebSocket] JSON stringified config:', configString);
           console.log('📤 [WebSocket] Config string length:', configString.length);
+          
+          // Ensure we're sending as JSON string, not object
+          if (typeof configString !== 'string') {
+            console.error('❌ [WebSocket] Config is not a string!', typeof configString);
+            throw new Error('Session config must be JSON string');
+          }
+          
           ws.send(configString);
           
           console.log('🔧 [TranscriptionService] Session configuration sent');
@@ -228,6 +238,9 @@ class TranscriptionService {
             console.error('🔍 [WebSocket] Code 1002 - Protocol error');
           } else if (code === 1003) {
             console.error('🔍 [WebSocket] Code 1003 - Unsupported data type');
+          } else if (code === 3005) {
+            console.error('🔍 [WebSocket] Code 3005 - Invalid Message Type (session config format issue)');
+            console.error('🔍 [WebSocket] This indicates the session configuration was sent in wrong format');
           } else if (code === 4000) {
             console.error('🔍 [WebSocket] Code 4000 - AssemblyAI specific error');
           }
