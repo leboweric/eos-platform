@@ -6380,7 +6380,7 @@ const WeeklyAccountabilityMeetingPage = () => {
               }}
               onTranscriptionStopped={() => {
                 setTranscriptionCompleted(true);
-                setShowAISummary(true);
+                // Don't auto-open modal - let user click button when ready
               }}
               onRecordingStateChange={setAiRecordingState}
             />

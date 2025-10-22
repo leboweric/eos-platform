@@ -105,29 +105,9 @@ export const MeetingAISummaryPanel = ({ meetingId, organizationId, onClose }) =>
 
   // Skip processing modal entirely - go straight to trying to load summary
 
-  if (summaryStatus === 'failed' || error) {
-    return (
-      <div className="p-8 text-center">
-        <AlertCircle className="h-12 w-12 text-red-500 mx-auto mb-4" />
-        <p className="text-gray-600 font-medium">{error || 'AI summary generation failed'}</p>
-        <p className="text-sm text-gray-500 mt-2">The transcription was successful, but AI analysis encountered an issue.</p>
-        <Button onClick={loadSummaryAndTranscript} className="mt-4">
-          Try Again
-        </Button>
-      </div>
-    );
-  }
-
-  if (!summary) {
-    return (
-      <div className="p-8 text-center">
-        <AlertCircle className="h-12 w-12 text-gray-500 mx-auto mb-4" />
-        <p className="text-gray-600">No AI summary available</p>
-        <Button onClick={loadSummaryAndTranscript} className="mt-4">
-          Try Again
-        </Button>
-      </div>
-    );
+  // Skip all error/empty modals - if no summary, don't show this component at all
+  if (summaryStatus === 'failed' || error || !summary) {
+    return null; // Don't render anything if summary isn't ready
   }
 
   return (
