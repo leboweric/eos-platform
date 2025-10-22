@@ -6331,7 +6331,14 @@ const WeeklyAccountabilityMeetingPage = () => {
         )}
 
         {/* AI Meeting Assistant Controls */}
-        {currentOrganization?.id && teamId && (
+        {(() => {
+          console.log('🔍 AI Controls Check:', { 
+            currentOrganizationId: currentOrganization?.id, 
+            teamId: teamId,
+            shouldRender: !!(currentOrganization?.id && teamId)
+          });
+          return currentOrganization?.id && teamId;
+        })() && (
           <div className="mb-6">
             <MeetingAIRecordingControls
               meetingId={`${teamId}-${Date.now()}`} // Generate a meeting ID - in real app this would come from backend

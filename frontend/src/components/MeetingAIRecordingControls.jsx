@@ -11,6 +11,8 @@ export const MeetingAIRecordingControls = ({
   onTranscriptionStarted,
   onTranscriptionStopped 
 }) => {
+  console.log('🎙️ AI Recording Controls rendered', { meetingId, organizationId });
+  
   const [transcriptionStatus, setTranscriptionStatus] = useState('not_started');
   const [isProcessing, setIsProcessing] = useState(false);
   const [error, setError] = useState(null);
