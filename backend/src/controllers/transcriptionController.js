@@ -2,7 +2,7 @@ import { v4 as uuidv4 } from 'uuid';
 import { getClient } from '../config/database.js';
 import transcriptionService from '../services/transcriptionService.js';
 import aiSummaryService from '../services/aiSummaryService.js';
-import AITranscriptionService from '../services/aiTranscriptionService.js';
+import aiTranscriptionService from '../services/aiTranscriptionService.js';
 
 export const healthCheck = async (req, res) => {
   try {
@@ -203,7 +203,6 @@ export const startTranscription = async (req, res) => {
       // Create new transcript record using proper service
       console.log('🔍 [Transcription] Step 6: Creating transcript record...');
       
-      const aiTranscriptionService = new AITranscriptionService();
       const transcriptResult = await aiTranscriptionService.createTranscriptRecord(actualMeetingId, organizationId);
       const transcriptId = transcriptResult.id;
       
