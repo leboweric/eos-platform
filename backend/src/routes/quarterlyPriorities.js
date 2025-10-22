@@ -13,6 +13,7 @@ import {
   updatePriority,
   deletePriority,
   archivePriority,
+  archiveCompletedPriorities,
   getArchivedPriorities,
   updatePredictions,
   createMilestone,
@@ -57,7 +58,7 @@ router.get('/current', getCurrentPriorities);
 router.get('/archived', getArchivedPriorities);
 
 // Archive completed priorities (bulk operation)
-router.put('/archive-completed', archivePriority);
+router.put('/archive-completed', archiveCompletedPriorities);
 
 // Priority CRUD
 router.post('/priorities', createPriority);

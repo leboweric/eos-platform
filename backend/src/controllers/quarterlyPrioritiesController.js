@@ -645,6 +645,46 @@ export const archivePriority = async (req, res) => {
   }
 };
 
+// Archive all completed priorities for a team (bulk operation)
+export const archiveCompletedPriorities = async (req, res) => {
+  try {
+    const { orgId, teamId } = req.params;
+    
+    // Check if deleted_at column exists
+    const hasDeletedAt = await checkDeletedAtColumn();
+    
+    if (!hasDeletedAt) {
+      return res.status(500).json({ error: 'Archive functionality not available - deleted_at column missing' });
+    }
+    
+    // Archive all completed priorities for this team that aren't already archived
+    const result = await query(
+      `UPDATE quarterly_priorities 
+       SET deleted_at = NOW()
+       WHERE organization_id = $1 
+         AND team_id = $2 
+         AND status = 'complete' 
+         AND deleted_at IS NULL
+       RETURNING id, title`,
+      [orgId, teamId]
+    );
+    
+    const archivedCount = result.rows.length;
+    
+    res.json({
+      success: true,
+      message: `Successfully archived ${archivedCount} completed ${archivedCount === 1 ? 'priority' : 'priorities'}`,
+      data: {
+        archivedCount,
+        archivedPriorities: result.rows
+      }
+    });
+  } catch (error) {
+    console.error('Archive completed priorities error:', error);
+    res.status(500).json({ error: 'Failed to archive completed priorities' });
+  }
+};
+
 // Update predictions
 export const updatePredictions = async (req, res) => {
   try {
