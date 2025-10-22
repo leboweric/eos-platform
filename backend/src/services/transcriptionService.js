@@ -42,9 +42,11 @@ class TranscriptionService {
     try {
       console.log(`🎙️ [TranscriptionService] Starting direct WebSocket transcription for transcript ${transcriptId}`);
       
-      // Connect directly to streaming.assemblyai.com (bypass SDK IP issue)
-      const wsUrl = 'wss://api.assemblyai.com/v2/realtime/ws?sample_rate=16000';
-      console.log('🔍 [TranscriptionService] Connecting to:', wsUrl);
+      // Connect to Universal Streaming API (v3) - new endpoint
+      const sampleRate = 16000;
+      const encoding = 'pcm_s16le';
+      const wsUrl = `wss://streaming.assemblyai.com/v3/ws?sample_rate=${sampleRate}&encoding=${encoding}&token=${process.env.ASSEMBLYAI_API_KEY}`;
+      console.log('🔍 [TranscriptionService] Connecting to Universal Streaming API v3:', wsUrl.replace(process.env.ASSEMBLYAI_API_KEY, 'xxx...xxx'));
       
       console.log('🔗 [WebSocket] Creating connection:', {
         url: wsUrl,
@@ -52,11 +54,8 @@ class TranscriptionService {
         apiKeyPreview: process.env.ASSEMBLYAI_API_KEY ? `${process.env.ASSEMBLYAI_API_KEY.substring(0, 8)}...` : 'NONE'
       });
       
-      const ws = new WebSocket(wsUrl, {
-        headers: {
-          Authorization: process.env.ASSEMBLYAI_API_KEY
-        }
-      });
+      // Universal Streaming API uses token in URL, no headers needed
+      const ws = new WebSocket(wsUrl);
       
       console.log('🔍 [WebSocket] Created with readyState:', {
         transcriptId,
@@ -105,28 +104,8 @@ class TranscriptionService {
             connectionExists: this.activeConnections.has(transcriptId)
           });
           
-          // Configure the session for AssemblyAI v2 realtime API
-          const sessionConfig = {
-            sample_rate: 16000,
-            encoding: 'pcm_s16le',
-            language_code: 'en',
-            punctuate: true,
-            format_text: true
-          };
-          const configString = JSON.stringify(sessionConfig);
-          console.log('📤 [WebSocket] Sending session config:', sessionConfig);
-          console.log('📤 [WebSocket] JSON stringified config:', configString);
-          console.log('📤 [WebSocket] Config string length:', configString.length);
-          
-          // Ensure we're sending as JSON string, not object
-          if (typeof configString !== 'string') {
-            console.error('❌ [WebSocket] Config is not a string!', typeof configString);
-            throw new Error('Session config must be JSON string');
-          }
-          
-          ws.send(configString);
-          
-          console.log('🔧 [TranscriptionService] Session configuration sent');
+          // Universal Streaming API v3 - no session config needed, parameters are in URL
+          console.log('🔧 [TranscriptionService] Universal Streaming API connected - ready to receive audio');
           
           resolve({
             sessionId: transcriptId,
@@ -243,6 +222,9 @@ class TranscriptionService {
             console.error('🔍 [WebSocket] This indicates the session configuration was sent in wrong format');
           } else if (code === 4000) {
             console.error('🔍 [WebSocket] Code 4000 - AssemblyAI specific error');
+          } else if (code === 4105) {
+            console.error('🔍 [WebSocket] Code 4105 - Model deprecated. Using Universal Streaming API v3 now.');
+            console.error('🔍 [WebSocket] The old v2/realtime endpoint is no longer supported');
           }
         });
       });
