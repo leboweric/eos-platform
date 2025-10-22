@@ -483,14 +483,14 @@ Focus on:
           ai_processing_time_seconds,
           ai_cost_usd
         )
-        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16)
+        VALUES ($1, $2, $3, $4, $5::jsonb, $6::jsonb, $7::jsonb, $8::jsonb, $9::jsonb, $10::jsonb, $11, $12, $13, $14, $15, $16)
         RETURNING id
       `, [
         meeting_id,
         transcriptId,
         organization_id,
         aiSummary.executive_summary,
-        aiSummary.key_decisions,
+        JSON.stringify(aiSummary.key_decisions || []),
         JSON.stringify(aiSummary.discussion_topics),
         JSON.stringify(aiSummary.action_items),
         JSON.stringify(aiSummary.issues_discussed),

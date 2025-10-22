@@ -252,7 +252,7 @@ Be thorough but concise. If information is not available in the transcript, mark
           ai_model, ai_prompt_version, ai_processing_time_seconds, ai_cost_usd,
           created_at
         )
-        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, NOW())
+        VALUES ($1, $2, $3, $4, $5, $6::jsonb, $7::jsonb, $8::jsonb, $9::jsonb, $10::jsonb, $11::jsonb, $12, $13, $14, $15, $16, $17, NOW())
       `, [
         summaryId, meeting_id, transcriptId, organization_id,
         aiSummary.executive_summary,
