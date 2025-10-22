@@ -72,6 +72,8 @@ class TranscriptionService {
         websocket: ws,
         organizationId,
         transcriptChunks: [],
+        latestTranscriptText: '', // Store latest transcript for v3 API partial transcripts
+        latestTurnOrder: 0,
         startTime: new Date(),
         isActive: false, // Will be set to true when connected
         sessionId: null
@@ -144,6 +146,11 @@ class TranscriptionService {
                 isFormatted: message.turn_is_formatted
               });
               
+              // CRITICAL: Store the latest transcript text (partial or final)
+              // This ensures we capture content even if end_of_turn never comes
+              connectionData.latestTranscriptText = message.transcript;
+              connectionData.latestTurnOrder = message.turn_order;
+              
               if (isPartial) {
                 // Emit partial updates for real-time display
                 this.emitTranscriptUpdate(transcriptId, {
@@ -152,7 +159,7 @@ class TranscriptionService {
                   speaker: 'Speaker'
                 });
               } else {
-                // Final transcript - store it
+                // Final transcript - store it in chunks AND update latest
                 connectionData.transcriptChunks.push({
                   text: message.transcript,
                   confidence: message.confidence || 0.9, // v3 doesn't always provide confidence
@@ -170,6 +177,9 @@ class TranscriptionService {
                   speaker: 'Speaker',
                   confidence: message.confidence
                 });
+                
+                // Clear latest text since it's now in chunks
+                connectionData.latestTranscriptText = '';
               }
             }
           } catch (parseError) {
@@ -403,11 +413,30 @@ class TranscriptionService {
       const durationSeconds = Math.round((endTime - connection.startTime) / 1000);
 
       // Combine all transcript chunks
-      const fullTranscript = connection.transcriptChunks
+      let fullTranscript = connection.transcriptChunks
         .map(chunk => `${chunk.speaker}: ${chunk.text}`)
         .join('\n');
 
-      const wordCount = fullTranscript.split(' ').length;
+      // CRITICAL: Include latest transcript text if no chunks were saved
+      // This handles the case where we only received partial transcripts
+      if (fullTranscript.length === 0 && connection.latestTranscriptText) {
+        fullTranscript = `Speaker: ${connection.latestTranscriptText}`;
+        console.log('📝 [StopTranscription] Using latest transcript text (no final chunks saved):', {
+          transcriptId,
+          textLength: connection.latestTranscriptText.length,
+          textPreview: connection.latestTranscriptText.substring(0, 100) + '...'
+        });
+      } else if (connection.latestTranscriptText && fullTranscript.length > 0) {
+        // Append any remaining latest text to existing chunks
+        fullTranscript += `\nSpeaker: ${connection.latestTranscriptText}`;
+        console.log('📝 [StopTranscription] Appending latest transcript text to chunks:', {
+          transcriptId,
+          chunksCount: connection.transcriptChunks.length,
+          latestTextLength: connection.latestTranscriptText.length
+        });
+      }
+
+      const wordCount = fullTranscript.length > 0 ? fullTranscript.split(' ').length : 0;
 
       // Save transcript to database
       await this.saveTranscriptContent(transcriptId, {
