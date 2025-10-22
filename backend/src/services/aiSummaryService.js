@@ -240,7 +240,7 @@ Be thorough but concise. If information is not available in the transcript, mark
         INSERT INTO meeting_ai_summaries (
           id, meeting_id, transcript_id, organization_id,
           executive_summary, key_decisions, discussion_topics,
-          action_items, issues_discussed, rocks_mentioned,
+          action_items, issues_discussed, rocks_priorities,
           notable_quotes, meeting_sentiment, meeting_energy_score,
           ai_model, ai_prompt_version, ai_processing_time_seconds, ai_cost_usd,
           created_at

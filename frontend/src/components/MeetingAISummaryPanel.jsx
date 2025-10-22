@@ -44,19 +44,27 @@ export const MeetingAISummaryPanel = ({ meetingId, organizationId, onClose }) =>
         const statusResponse = await aiMeetingService.getTranscriptionStatus(meetingId);
         console.log('📊 Transcript status:', statusResponse);
         
-        if (statusResponse.status === 'completed') {
-          // AI processing is complete, load the summary
-          console.log('✅ AI processing complete, loading summary...');
+        if (statusResponse.status === 'completed' || statusResponse.has_ai_summary) {
+          // AI processing is complete OR summary exists, load the summary
+          console.log('✅ AI processing complete or summary exists, loading summary...');
           await loadCompletedSummary();
           return;
         }
         
+        // For failed status, try to load summary anyway in case it exists
         if (statusResponse.status === 'failed') {
-          console.log('❌ AI processing failed');
-          setSummaryStatus('failed');
-          setError('AI summary generation failed');
-          setLoading(false);
-          return;
+          console.log('⚠️ Transcript failed, but checking if AI summary exists...');
+          try {
+            await loadCompletedSummary();
+            console.log('✅ Found existing AI summary despite failed status');
+            return;
+          } catch (summaryError) {
+            console.log('❌ No AI summary available for failed transcript');
+            setSummaryStatus('failed');
+            setError('AI summary generation failed');
+            setLoading(false);
+            return;
+          }
         }
         
         // Still processing, wait and try again
