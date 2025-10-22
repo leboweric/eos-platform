@@ -395,7 +395,7 @@ const PriorityDialog = ({
                         </SelectTrigger>
                         <SelectContent>
                           {teamMembers?.map(member => (
-                            <SelectItem key={member.id} value={member.id}>
+                            <SelectItem key={member.id} value={String(member.id)}>
                               {member.name || `${member.first_name} ${member.last_name}`}
                             </SelectItem>
                           ))}
@@ -447,7 +447,7 @@ const PriorityDialog = ({
                       />
                       <div className="flex gap-2">
                         <Select
-                          value={editingMilestone.ownerId || milestone.owner_id || priority?.owner?.id}
+                          value={editingMilestone.ownerId !== '' ? String(editingMilestone.ownerId) : String(milestone.owner_id || priority?.owner?.id || '')}
                           onValueChange={(value) => setEditingMilestone({ ...editingMilestone, ownerId: value })}
                         >
                           <SelectTrigger className="flex-1 bg-white">
@@ -455,7 +455,7 @@ const PriorityDialog = ({
                           </SelectTrigger>
                           <SelectContent>
                             {teamMembers?.map(member => (
-                              <SelectItem key={member.id} value={member.id}>
+                              <SelectItem key={member.id} value={String(member.id)}>
                                 {member.name || `${member.first_name} ${member.last_name}`}
                               </SelectItem>
                             ))}
@@ -568,7 +568,7 @@ const PriorityDialog = ({
                   />
                   <div className="flex gap-2">
                     <Select
-                      value={newMilestone.ownerId || priority?.owner?.id}
+                      value={newMilestone.ownerId !== '' ? String(newMilestone.ownerId) : String(priority?.owner?.id || '')}
                       onValueChange={(value) => setNewMilestone({ ...newMilestone, ownerId: value })}
                     >
                       <SelectTrigger className="flex-1 bg-white">
@@ -576,7 +576,7 @@ const PriorityDialog = ({
                       </SelectTrigger>
                       <SelectContent>
                         {teamMembers?.map(member => (
-                          <SelectItem key={member.id} value={member.id}>
+                          <SelectItem key={member.id} value={String(member.id)}>
                             {member.name || `${member.first_name} ${member.last_name}`}
                           </SelectItem>
                         ))}
