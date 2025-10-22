@@ -589,7 +589,7 @@ const templates = {
           }
           .section-content {
             color: #4b5563;
-            font-size: 14px;
+            font-size: 15px;
           }
           
           /* Meeting Info Grid */
@@ -637,6 +637,19 @@ const templates = {
             font-weight: 600;
           }
           
+          /* Collapsible Content */
+          .collapsible-section {
+            background: #f8fafc;
+            border-radius: 8px;
+            margin: 16px 0;
+            padding: 20px;
+          }
+          .section-summary {
+            font-size: 14px;
+            color: #6b7280;
+            margin-bottom: 12px;
+          }
+          
           /* Footer */
           .footer { 
             text-align: center; 
@@ -646,181 +659,212 @@ const templates = {
             background: #f9fafb;
           }
           .footer a {
-            color: #3B82F6;
+            color: #2563eb;
             text-decoration: none;
+          }
+          
+          /* Mobile Responsiveness */
+          @media only screen and (max-width: 600px) {
+            .container {
+              margin: 0 !important;
+            }
+            .header {
+              padding: 20px 16px !important;
+            }
+            .header h1 {
+              font-size: 20px !important;
+            }
+            .ai-hero {
+              margin: 16px !important;
+              padding: 20px !important;
+            }
+            .metrics-grid {
+              grid-template-columns: 1fr !important;
+              margin: 16px !important;
+              gap: 12px !important;
+            }
+            .info-grid {
+              grid-template-columns: 1fr !important;
+            }
+            .primary-cta {
+              margin: 16px !important;
+              padding: 20px !important;
+              font-size: 18px !important;
+            }
+            .section {
+              padding: 16px !important;
+            }
+            .action-items-card {
+              margin: 16px !important;
+              padding: 16px !important;
+            }
+            .ai-hero-header {
+              flex-direction: column !important;
+              align-items: flex-start !important;
+              gap: 16px !important;
+            }
+            .sentiment-badge {
+              margin-left: 0 !important;
+            }
           }
         </style>
       </head>
       <body>
         <div class="container">
           
-          <!-- Header -->
+          <!-- Simplified Header -->
           <div class="header">
             <h1>📊 ${data.teamName} Meeting Summary</h1>
             <p>${data.meetingDate} • ${data.duration || 'Duration not recorded'}</p>
           </div>
           
-          <!-- AI SUMMARY SECTION (NEW!) -->
+          <!-- Hero AI Summary Section -->
           ${data.aiSummary ? `
-            <div class="ai-section">
-              <h2>
-                🤖 AI Meeting Summary
-                <span class="ai-badge">NEW</span>
-              </h2>
+            <div class="ai-hero">
+              <div class="ai-hero-header">
+                <div class="ai-icon">🤖</div>
+                <h2>AI Meeting Summary</h2>
+                <span class="sentiment-badge">😊 Positive</span>
+              </div>
               
               <p class="ai-summary-text">
                 ${data.aiSummary.executive_summary || 'The meeting focused on reviewing key business metrics, addressing open issues, and planning action items for the upcoming period.'}
               </p>
               
-              <!-- Key Decisions -->
+              <!-- Key Insights in Cards -->
               ${data.aiSummary.key_decisions && data.aiSummary.key_decisions.length > 0 ? `
                 <div class="ai-subsection">
                   <div class="ai-subsection-title">🎯 Key Decisions Made</div>
                   <ul class="ai-list">
-                    ${data.aiSummary.key_decisions.map(decision => `<li>${decision}</li>`).join('')}
+                    ${data.aiSummary.key_decisions.slice(0, 3).map(decision => `<li>${decision}</li>`).join('')}
                   </ul>
                 </div>
               ` : ''}
               
-              <!-- Action Items -->
-              ${data.aiSummary.action_items && data.aiSummary.action_items.length > 0 ? `
-                <div class="ai-subsection">
-                  <div class="ai-subsection-title">📋 Action Items Identified</div>
-                  <ul class="ai-list">
-                    ${data.aiSummary.action_items.map(item => `
-                      <li><strong>${item.assignee || 'Team'}:</strong> ${item.task || item}${item.due_date ? ` - Due: ${item.due_date}` : ''}</li>
-                    `).join('')}
-                  </ul>
-                </div>
-              ` : ''}
-              
-              <!-- Issues Discussed -->
               ${data.aiSummary.issues_discussed && data.aiSummary.issues_discussed.length > 0 ? `
                 <div class="ai-subsection">
                   <div class="ai-subsection-title">⚠️ Key Issues Discussed</div>
                   <ul class="ai-list">
-                    ${data.aiSummary.issues_discussed.slice(0, 3).map(issue => `<li>${issue.issue || issue}</li>`).join('')}
+                    ${data.aiSummary.issues_discussed.slice(0, 2).map(issue => `<li>${issue.issue || issue}</li>`).join('')}
                   </ul>
                 </div>
               ` : ''}
               
-              <div class="ai-footer-note">
-                This summary was automatically generated by AI from your ${data.aiSummary.word_count || 'meeting'}-word meeting transcript.
-                <br>
-                <a href="${process.env.FRONTEND_URL || 'https://axplatform.app'}/meeting-history" class="view-transcript-btn">
-                  📄 View Full Transcript & Insights
-                </a>
-              </div>
+              <a href="${process.env.FRONTEND_URL || 'https://axplatform.app'}/meeting-history" class="secondary-cta">
+                📄 View Full Transcript & AI Insights →
+              </a>
             </div>
           ` : ''}
           
-          <!-- Meeting Details -->
-          <div class="section">
-            <h2>📌 Meeting Details</h2>
-            <div class="info-grid">
-              <div class="info-item">
-                <div class="info-label">Duration</div>
-                <div class="info-value">${data.duration || 'Not recorded'}</div>
-              </div>
-              <div class="info-item">
-                <div class="info-label">Concluded By</div>
-                <div class="info-value">${data.concludedBy || 'Unknown'}</div>
-              </div>
-              <div class="info-item">
-                <div class="info-label">Rock Completion</div>
-                <div class="info-value">${data.rockCompletionPercentage !== undefined ? data.rockCompletionPercentage : 'N/A'}% (${data.completedRocks || 0} of ${data.totalRocks || 0} complete)</div>
-              </div>
-              <div class="info-item">
-                <div class="info-label">Attendees</div>
-                <div class="info-value">${data.attendees && data.attendees.length > 0 ? data.attendees.length + ' people' : 'Not recorded'}</div>
-              </div>
+          <!-- Metrics Dashboard -->
+          <div class="metrics-grid">
+            <div class="metric-card ${data.duration && parseInt(data.duration) < 5 ? 'success' : 'warning'}">
+              <div class="metric-icon">⏱️</div>
+              <div class="metric-value">${data.duration ? data.duration.replace(/\s*(minutes?|mins?|hours?|hrs?)/i, '').trim() : '?'}</div>
+              <div class="metric-label">Minutes</div>
             </div>
-            ${data.attendees && data.attendees.length > 0 ? `
-              <p style="margin: 12px 0 0 0; color: #6b7280; font-size: 13px;">
-                ${data.attendees.join(', ')}
-              </p>
-            ` : ''}
+            
+            <div class="metric-card">
+              <div class="metric-icon">👥</div>
+              <div class="metric-value">${data.attendees && data.attendees.length > 0 ? data.attendees.length : '?'}</div>
+              <div class="metric-label">Attendees</div>
+            </div>
+            
+            <div class="metric-card ${data.rockCompletionPercentage >= 80 ? 'success' : data.rockCompletionPercentage >= 60 ? 'warning' : 'danger'}">
+              <div class="metric-icon">✅</div>
+              <div class="metric-value">${data.rockCompletionPercentage !== undefined ? data.rockCompletionPercentage + '%' : 'N/A'}</div>
+              <div class="metric-label">Rocks Complete</div>
+            </div>
           </div>
           
-          <!-- Meeting Rating -->
+          <!-- Meeting Rating (if provided) -->
           ${data.rating ? `
-            <div class="section">
-              <h2>⭐ Meeting Rating</h2>
+            <div style="margin: 24px; padding: 20px; background: #f8fafc; border-radius: 8px; text-align: center;">
+              <h3 style="margin: 0 0 12px 0; color: #1f2937; font-size: 16px;">Meeting Rating</h3>
               <div class="rating" style="background: ${data.rating >= 8 ? '#10b981' : data.rating >= 5 ? '#f59e0b' : '#ef4444'};">${data.rating}/10</div>
-              <p style="margin: 12px 0 0 0; color: #374151; font-style: italic;">
+              <p style="margin: 12px 0 0 0; color: #6b7280; font-style: italic; font-size: 14px;">
                 "${data.rating >= 8 ? 'Great meeting!' : data.rating >= 5 ? 'Good meeting' : 'Room for improvement'}"
               </p>
             </div>
           ` : ''}
           
-          <!-- Headlines -->
-          ${data.headlines && (data.headlines.customer?.length > 0 || data.headlines.employee?.length > 0) ? `
-            <div class="section">
-              <h2>📰 Headlines</h2>
-              ${data.headlines.customer?.length > 0 ? `
-                <div style="margin-top: 15px;">
-                  <h4 style="color: #059669; margin: 10px 0;">Customer Headlines:</h4>
-                  <ul class="simple-list">
-                    ${data.headlines.customer.map(h => `<li>${h.text || h}</li>`).join('')}
-                  </ul>
+          
+          <!-- Action Items Card (Prominent if overdue items exist) -->
+          ${data.openTodos && data.openTodos.length > 0 ? `
+            <div class="action-items-card">
+              <div class="card-header">
+                <h3>📋 Action Items</h3>
+                ${data.openTodos.some(todo => todo.isPastDue) ? '<span class="badge urgent">Overdue Items</span>' : ''}
+              </div>
+              
+              ${data.openTodos.slice(0, 3).map(todo => `
+                <div class="action-item ${todo.isPastDue ? 'overdue' : ''}">
+                  <div class="action-checkbox">${todo.isPastDue ? '⚠️' : '📋'}</div>
+                  <div class="action-content">
+                    <div class="action-title">${todo.title}</div>
+                    <div class="action-meta">${todo.assignee} • Due: ${todo.dueDate}</div>
+                  </div>
                 </div>
+              `).join('')}
+              
+              ${data.openTodos.length > 3 ? `
+                <a href="${process.env.FRONTEND_URL || 'https://axplatform.app'}/meetings" class="view-all-link">
+                  View All ${data.openTodos.length} Action Items →
+                </a>
+              ` : ''}
+            </div>
+          ` : ''}
+          
+          <!-- Key Highlights (Collapsible) -->
+          ${data.headlines && (data.headlines.customer?.length > 0 || data.headlines.employee?.length > 0) ? `
+            <div class="collapsible-section" style="margin: 24px;">
+              <div class="section-summary">
+                📰 ${(data.headlines.customer?.length || 0) + (data.headlines.employee?.length || 0)} headlines shared during the meeting
+              </div>
+              ${data.headlines.customer?.length > 0 ? `
+                <h4 style="color: #059669; margin: 10px 0; font-size: 14px;">Customer Headlines:</h4>
+                <ul style="margin: 0; padding-left: 20px; font-size: 14px;">
+                  ${data.headlines.customer.slice(0, 2).map(h => `<li style="margin: 6px 0;">${h.text || h}</li>`).join('')}
+                </ul>
               ` : ''}
               ${data.headlines.employee?.length > 0 ? `
-                <div style="margin-top: 15px;">
-                  <h4 style="color: #7c3aed; margin: 10px 0;">Employee Headlines:</h4>
-                  <ul class="simple-list">
-                    ${data.headlines.employee.map(h => `<li>${h.text || h}</li>`).join('')}
-                  </ul>
-                </div>
+                <h4 style="color: #7c3aed; margin: 10px 0; font-size: 14px;">Employee Headlines:</h4>
+                <ul style="margin: 0; padding-left: 20px; font-size: 14px;">
+                  ${data.headlines.employee.slice(0, 2).map(h => `<li style="margin: 6px 0;">${h.text || h}</li>`).join('')}
+                </ul>
               ` : ''}
             </div>
           ` : ''}
           
-          
-          <!-- Open To-Dos -->
-          ${data.openTodos && data.openTodos.length > 0 ? `
-            <div class="section">
-              <h2>📋 Open To-Dos (${data.openTodos.length})</h2>
-              <ul class="simple-list">
-                ${data.openTodos.map(todo => `
-                  <li>
-                    <strong>${todo.title}</strong>
-                    <br>
-                    <span style="color: #6b7280; font-size: 13px;">
-                      Assigned to: ${todo.assignee} • Due: ${todo.dueDate}${todo.isPastDue ? '<span class="overdue"> (OVERDUE)</span>' : ''}
-                    </span>
-                  </li>
-                `).join('')}
-              </ul>
-            </div>
-          ` : ''}
-          
-          <!-- Cascading Messages -->
+          <!-- Cascading Messages (if any) -->
           ${data.cascadingMessages && data.cascadingMessages.length > 0 ? `
-            <div class="section">
-              <h2>📢 Cascading Messages</h2>
-              <div style="background-color: #faf5ff; padding: 20px; border-radius: 8px; margin: 10px 0; border-left: 4px solid #7c3aed;">
-                ${data.cascadingMessages.map(msg => `
-                  <div style="margin-bottom: 15px; padding-bottom: 15px; border-bottom: 1px solid #e9d5ff; ${data.cascadingMessages.indexOf(msg) === data.cascadingMessages.length - 1 ? 'border-bottom: none;' : ''}">
-                    <p style="color: #333; margin: 0 0 8px 0; line-height: 1.6;">${msg.message}</p>
-                    <p style="color: #9333ea; font-size: 13px; margin: 0; font-weight: 500;">→ Sent to: ${msg.recipientTeams}</p>
-                  </div>
-                `).join('')}
+            <div class="collapsible-section" style="margin: 24px;">
+              <div class="section-summary">
+                📢 ${data.cascadingMessages.length} message${data.cascadingMessages.length > 1 ? 's' : ''} sent to other teams
               </div>
+              ${data.cascadingMessages.slice(0, 2).map(msg => `
+                <div style="margin: 8px 0; padding: 12px; background: white; border-radius: 6px; border-left: 3px solid #2563eb;">
+                  <p style="margin: 0 0 4px 0; font-size: 14px; color: #374151;">${msg.message}</p>
+                  <p style="margin: 0; font-size: 12px; color: #6b7280;">→ ${msg.recipientTeams}</p>
+                </div>
+              `).join('')}
             </div>
           ` : ''}
+          
+          <!-- Primary CTA -->
+          <a href="${process.env.FRONTEND_URL || 'https://axplatform.app'}/meetings" class="primary-cta">
+            📊 View Full Meeting Details
+          </a>
           
           <!-- Footer -->
           <div class="footer">
             <p>
-              <a href="${process.env.FRONTEND_URL || 'https://axplatform.app'}/meetings">View all meetings</a>
+              <a href="${process.env.FRONTEND_URL || 'https://axplatform.app'}/meeting-history">Meeting History</a>
               •
-              <a href="${process.env.FRONTEND_URL || 'https://axplatform.app'}/meeting-history">Meeting history</a>
-              •
-              <a href="${process.env.FRONTEND_URL || 'https://axplatform.app'}/settings">Email preferences</a>
+              <a href="${process.env.FRONTEND_URL || 'https://axplatform.app'}/settings">Email Preferences</a>
             </p>
-            <p style="margin-top: 12px;">
-              This email was automatically generated by AXP Platform<br>
+            <p style="margin-top: 12px; font-size: 12px; color: #9ca3af;">
+              This summary was automatically generated by AXP Platform<br>
               © 2025 AXP. All rights reserved.
             </p>
           </div>
