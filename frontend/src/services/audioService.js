@@ -44,7 +44,8 @@ class ModernAudioService {
 
       // Listen for PCM data from worklet
       this.workletNode.port.onmessage = (event) => {
-        console.log('📨 [AudioService] Received message from AudioWorklet:', {
+        console.log('📥 Main thread received PCM data:', event.data);
+        console.log('📨 [AudioService] Message details:', {
           type: event.data.type,
           isCapturing: this.isCapturing,
           hasCallback: !!this.onAudioData,
@@ -53,10 +54,7 @@ class ModernAudioService {
         
         if (event.data.type === 'pcm-data' && this.isCapturing) {
           const base64Audio = arrayBufferToBase64(event.data.data);
-          console.log('📤 [AudioService] Sending audio chunk to callback:', {
-            base64Length: base64Audio.length,
-            hasCallback: !!this.onAudioData
-          });
+          console.log('📤 Sending to backend');
           
           if (this.onAudioData) {
             this.onAudioData(base64Audio);

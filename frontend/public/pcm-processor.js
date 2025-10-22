@@ -11,17 +11,16 @@ class PCMProcessor extends AudioWorkletProcessor {
   }
 
   process(inputs, outputs, parameters) {
+    console.log('🎤 AudioWorklet processing audio');
+    
     const input = inputs[0];
     
-    // DEBUG: Log input availability (throttle to avoid spam)
-    if (this.bufferIndex === 0) {
-      console.log('🎤 [AudioWorklet] Process called:', {
-        hasInput: input.length > 0,
-        channelCount: input.length,
-        firstChannelLength: input[0]?.length || 0,
-        timestamp: new Date().toISOString()
-      });
-    }
+    console.log('🔍 [AudioWorklet] Input details:', {
+      hasInput: input.length > 0,
+      channelCount: input.length,
+      firstChannelLength: input[0]?.length || 0,
+      bufferIndex: this.bufferIndex
+    });
     
     if (input.length > 0) {
       const inputChannel = input[0];
@@ -32,21 +31,21 @@ class PCMProcessor extends AudioWorkletProcessor {
         
         // When buffer is full, convert to PCM and send
         if (this.bufferIndex >= this.bufferSize) {
+          console.log('📤 AudioWorklet buffer full, sending PCM data');
           this.sendPCMData();
           this.bufferIndex = 0;
         }
       }
     } else {
-      // DEBUG: Log when no input is available
-      if (this.bufferIndex === 0) {
-        console.warn('⚠️ [AudioWorklet] No audio input available');
-      }
+      console.warn('⚠️ [AudioWorklet] No audio input available');
     }
     
     return true; // Keep processor alive
   }
   
   sendPCMData() {
+    console.log('🔄 [AudioWorklet] Converting PCM data');
+    
     // Convert Float32Array to Int16Array (PCM S16LE)
     const pcmData = new Int16Array(this.bufferSize);
     for (let i = 0; i < this.bufferSize; i++) {
@@ -55,19 +54,15 @@ class PCMProcessor extends AudioWorkletProcessor {
       pcmData[i] = Math.floor(sample * 32767);
     }
     
-    // DEBUG: Log AudioWorklet sending data
-    console.log('🔊 [AudioWorklet] Sending PCM data:', {
-      bufferSize: this.bufferSize,
-      dataSize: pcmData.buffer.byteLength,
-      firstSample: pcmData[0],
-      timestamp: new Date().toISOString()
-    });
+    console.log('📤 AudioWorklet posted message');
     
     // Send PCM data to main thread
     this.port.postMessage({
       type: 'pcm-data',
       data: pcmData.buffer
     });
+    
+    console.log('✅ [AudioWorklet] Message posted successfully');
   }
 }
 
