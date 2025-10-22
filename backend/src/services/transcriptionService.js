@@ -167,9 +167,10 @@ class TranscriptionService {
                 this.emitTranscriptUpdate(transcriptId, {
                   type: 'transcript_chunk',
                   text: message.transcript,
-                speaker: 'Speaker',
-                confidence: message.confidence
-              });
+                  speaker: 'Speaker',
+                  confidence: message.confidence
+                });
+              }
             }
           } catch (parseError) {
             console.error('❌ [WebSocket] Failed to parse message:', {
