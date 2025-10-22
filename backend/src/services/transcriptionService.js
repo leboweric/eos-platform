@@ -46,10 +46,10 @@ class TranscriptionService {
       const wsUrl = 'wss://streaming.assemblyai.com/v3/ws?sample_rate=16000';
       console.log('🔍 [TranscriptionService] Connecting to:', wsUrl);
       
-      console.log('🔍 [TranscriptionService] Creating WebSocket with options:', {
+      console.log('🔗 [WebSocket] Creating connection:', {
         url: wsUrl,
-        hasAuth: !!process.env.ASSEMBLYAI_API_KEY,
-        authPreview: process.env.ASSEMBLYAI_API_KEY ? `${process.env.ASSEMBLYAI_API_KEY.substring(0, 8)}...` : 'NONE'
+        hasApiKey: !!process.env.ASSEMBLYAI_API_KEY,
+        apiKeyPreview: process.env.ASSEMBLYAI_API_KEY ? `${process.env.ASSEMBLYAI_API_KEY.substring(0, 8)}...` : 'NONE'
       });
       
       const ws = new WebSocket(wsUrl, {
@@ -58,8 +58,13 @@ class TranscriptionService {
         }
       });
       
-      console.log('✅ [TranscriptionService] WebSocket created successfully:', {
+      console.log('🔍 [WebSocket] Created with readyState:', {
+        transcriptId,
         readyState: ws.readyState,
+        CONNECTING: WebSocket.CONNECTING,
+        OPEN: WebSocket.OPEN,
+        CLOSING: WebSocket.CLOSING,
+        CLOSED: WebSocket.CLOSED,
         url: ws.url
       });
       
@@ -90,23 +95,26 @@ class TranscriptionService {
         
         ws.on('open', () => {
           clearTimeout(timeout);
+          console.log('✅ [WebSocket] OPEN event fired for transcript:', transcriptId);
           console.log('✅ [TranscriptionService] Connected to streaming.assemblyai.com');
           
           connectionData.isActive = true;
-          console.log('🟢 [TranscriptionService] Connection marked as ACTIVE for transcript:', {
+          console.log('🟢 [WebSocket] Connection marked as ACTIVE:', {
             transcriptId,
             isActive: connectionData.isActive,
             connectionExists: this.activeConnections.has(transcriptId)
           });
           
           // Configure the session
-          ws.send(JSON.stringify({
+          const sessionConfig = {
             sample_rate: 16000,
             encoding: 'pcm_s16le',
             language_code: 'en',
             punctuate: true,
             format_text: true
-          }));
+          };
+          console.log('📤 [WebSocket] Sending session config:', sessionConfig);
+          ws.send(JSON.stringify(sessionConfig));
           
           console.log('🔧 [TranscriptionService] Session configuration sent');
           
@@ -119,13 +127,25 @@ class TranscriptionService {
         ws.on('message', (data) => {
           try {
             const message = JSON.parse(data.toString());
-            console.log('📨 [TranscriptionService] Message received:', message.message_type);
+            console.log('📨 [WebSocket] MESSAGE event fired:', {
+              transcriptId,
+              messageType: message.message_type,
+              messagePreview: JSON.stringify(message).substring(0, 100)
+            });
             
             if (message.message_type === 'SessionBegins') {
-              console.log('🎬 [TranscriptionService] Session started:', message.session_id);
+              console.log('🎬 [WebSocket] SessionBegins received:', {
+                transcriptId,
+                sessionId: message.session_id,
+                expires_at: message.expires_at
+              });
               connectionData.sessionId = message.session_id;
             } else if (message.message_type === 'PartialTranscript') {
-              console.log('🔄 [TranscriptionService] Partial transcript:', message.text);
+              console.log('🔄 [WebSocket] PartialTranscript:', {
+                transcriptId,
+                text: message.text?.substring(0, 50) + '...',
+                confidence: message.confidence
+              });
               
               // Emit partial updates for real-time display
               this.emitTranscriptUpdate(transcriptId, {
@@ -134,7 +154,11 @@ class TranscriptionService {
                 speaker: 'Speaker'
               });
             } else if (message.message_type === 'FinalTranscript') {
-              console.log('📝 [TranscriptionService] Final transcript:', message.text);
+              console.log('📝 [WebSocket] FinalTranscript:', {
+                transcriptId,
+                text: message.text?.substring(0, 50) + '...',
+                confidence: message.confidence
+              });
               
               connectionData.transcriptChunks.push({
                 text: message.text,
@@ -154,16 +178,23 @@ class TranscriptionService {
               });
             }
           } catch (parseError) {
-            console.error('❌ [TranscriptionService] Failed to parse message:', parseError);
+            console.error('❌ [WebSocket] Failed to parse message:', {
+              transcriptId,
+              error: parseError.message,
+              rawData: data.toString().substring(0, 200)
+            });
           }
         });
         
         ws.on('error', (error) => {
           clearTimeout(timeout);
-          console.error('❌ [TranscriptionService] WebSocket error:', {
+          console.error('❌ [WebSocket] ERROR event fired:', {
+            transcriptId,
             message: error.message,
             code: error.code,
-            errno: error.errno
+            errno: error.errno,
+            type: error.type,
+            fullError: error
           });
           
           connectionData.isActive = false;
@@ -180,17 +211,25 @@ class TranscriptionService {
         
         ws.on('close', (code, reason) => {
           clearTimeout(timeout);
-          console.log('🔌 [TranscriptionService] WebSocket closed:', {
+          console.log('🔌 [WebSocket] CLOSE event fired:', {
+            transcriptId,
             code,
             reason: reason?.toString(),
-            wasActive: connectionData.isActive
+            wasClean: code === 1000,
+            wasActive: connectionData.isActive,
+            readyState: ws.readyState
           });
           
           connectionData.isActive = false;
           
           if (code === 1006) {
-            console.error('🔍 [TranscriptionService] Code 1006 - This was the TLS certificate issue!');
-            console.error('🎯 [TranscriptionService] Should be fixed with direct hostname connection');
+            console.error('🔍 [WebSocket] Code 1006 - Abnormal closure (possible TLS/network issue)');
+          } else if (code === 1002) {
+            console.error('🔍 [WebSocket] Code 1002 - Protocol error');
+          } else if (code === 1003) {
+            console.error('🔍 [WebSocket] Code 1003 - Unsupported data type');
+          } else if (code === 4000) {
+            console.error('🔍 [WebSocket] Code 4000 - AssemblyAI specific error');
           }
         });
       });
