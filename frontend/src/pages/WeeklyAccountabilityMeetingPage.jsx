@@ -6880,18 +6880,6 @@ const WeeklyAccountabilityMeetingPage = () => {
         </DialogContent>
       </Dialog>
 
-      {/* View AI Summary Button - shown after transcription completes */}
-      {transcriptionCompleted && (
-        <div className="fixed bottom-6 right-6 z-50">
-          <Button
-            onClick={() => setShowAISummary(true)}
-            className="bg-gradient-to-r from-blue-600 to-purple-600 text-white shadow-lg hover:shadow-xl transform hover:scale-105 transition-all duration-200 flex items-center gap-2"
-          >
-            <Sparkles className="h-4 w-4" />
-            View AI Summary
-          </Button>
-        </div>
-      )}
 
       {/* Confirmation Dialog for Delete/Remove actions */}
       <ConfirmationDialog
