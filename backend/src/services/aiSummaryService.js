@@ -256,7 +256,7 @@ Be thorough but concise. If information is not available in the transcript, mark
       `, [
         summaryId, meeting_id, transcriptId, organization_id,
         aiSummary.executive_summary,
-        aiSummary.key_decisions || [], // TEXT[] array - pass as array
+        JSON.stringify(aiSummary.key_decisions || []), // JSONB
         JSON.stringify(aiSummary.discussion_topics || []), // JSONB
         JSON.stringify(aiSummary.action_items || []), // JSONB
         JSON.stringify(aiSummary.issues_discussed || []), // JSONB
