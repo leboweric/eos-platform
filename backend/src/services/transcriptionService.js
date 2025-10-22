@@ -493,6 +493,14 @@ class TranscriptionService {
       const meetingId = transcript.meeting_id;
       const organizationId = transcript.organization_id || transcript.meeting_organization_id;
       
+      console.log('[DEBUG] 🆔 Variable assignments:', {
+        inputTranscriptId: transcriptId,
+        extractedMeetingId: meetingId,
+        extractedOrgId: organizationId,
+        transcriptRecordId: transcript.id,
+        transcriptMeetingId: transcript.meeting_id
+      });
+      
       console.log(`🔍 [TranscriptionService] Processing transcript for meeting ${meetingId}, org ${organizationId}`);
       
       // Import OpenAI for analysis
@@ -548,11 +556,20 @@ Please provide a JSON response with the following structure:
       const { v4: uuidv4 } = await import('uuid');
       const summaryId = uuidv4();
       
+      // DOUBLE CHECK: Ensure we have the right IDs
+      console.log('[DEBUG] 🆔 Final ID validation before INSERT:', {
+        originalTranscriptId: transcriptId,
+        extractedMeetingId: meetingId,
+        extractedOrgId: organizationId,
+        summaryId: summaryId,
+        schemaOrder: 'id, meeting_id, transcript_id, organization_id...'
+      });
+      
       // Build parameters array with CORRECT column order (meeting_id before transcript_id!)
       const parameters = [
         summaryId,                                          // $1: id
-        meetingId,                                          // $2: meeting_id (SWAPPED!)
-        transcriptId,                                       // $3: transcript_id (SWAPPED!)
+        meetingId,                                          // $2: meeting_id 
+        transcriptId,                                       // $3: transcript_id (MUST be original transcript ID!)
         organizationId,                                     // $4: organization_id
         analysis.executive_summary || 'No summary provided', // $5: executive_summary
         JSON.stringify(analysis.key_decisions || []),       // $6: key_decisions
