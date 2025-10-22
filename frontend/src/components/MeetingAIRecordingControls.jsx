@@ -130,10 +130,30 @@ export const MeetingAIRecordingControls = ({
       audioServiceRef.current = new AudioService();
       
       const onAudioData = (base64PCM) => {
+        console.log('🔊 [Frontend] onAudioData callback triggered:', {
+          hasSocket: !!socketRef.current,
+          socketConnected: socketRef.current?.connected,
+          hasTranscriptId: !!transcriptIdRef.current,
+          transcriptId: transcriptIdRef.current,
+          dataLength: base64PCM.length,
+          timestamp: new Date().toISOString()
+        });
+        
         if (socketRef.current && transcriptIdRef.current) {
+          console.log('📤 [Frontend] Sending audio chunk to backend:', {
+            transcriptId: transcriptIdRef.current,
+            dataSize: base64PCM.length,
+            socketId: socketRef.current.id
+          });
+          
           socketRef.current.emit('audio-chunk', {
             transcriptId: transcriptIdRef.current,
             audioData: base64PCM
+          });
+        } else {
+          console.warn('⚠️ [Frontend] Cannot send audio - missing socket or transcript ID:', {
+            hasSocket: !!socketRef.current,
+            hasTranscriptId: !!transcriptIdRef.current
           });
         }
       };

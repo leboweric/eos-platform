@@ -44,14 +44,31 @@ class ModernAudioService {
 
       // Listen for PCM data from worklet
       this.workletNode.port.onmessage = (event) => {
+        console.log('📨 [AudioService] Received message from AudioWorklet:', {
+          type: event.data.type,
+          isCapturing: this.isCapturing,
+          hasCallback: !!this.onAudioData,
+          dataSize: event.data.data ? event.data.data.byteLength : 'no data'
+        });
+        
         if (event.data.type === 'pcm-data' && this.isCapturing) {
           const base64Audio = arrayBufferToBase64(event.data.data);
-          this.onAudioData(base64Audio);
+          console.log('📤 [AudioService] Sending audio chunk to callback:', {
+            base64Length: base64Audio.length,
+            hasCallback: !!this.onAudioData
+          });
+          
+          if (this.onAudioData) {
+            this.onAudioData(base64Audio);
+          } else {
+            console.error('❌ [AudioService] No onAudioData callback defined!');
+          }
         }
       };
 
-      // Connect audio nodes
+      // Connect audio nodes - IMPORTANT: AudioWorklet needs destination connection to process audio
       this.mediaStreamSource.connect(this.workletNode);
+      this.workletNode.connect(this.audioContext.destination);
       
       console.log('✅ [AudioService] Modern Web Audio API initialized successfully');
       return true;
@@ -119,6 +136,12 @@ class LegacyAudioService {
 
       // Process audio data
       this.scriptProcessor.onaudioprocess = (e) => {
+        console.log('🎤 [ScriptProcessor] Processing audio:', {
+          isCapturing: this.isCapturing,
+          hasCallback: !!this.onAudioData,
+          inputLength: e.inputBuffer.getChannelData(0).length
+        });
+        
         if (!this.isCapturing) return;
 
         const inputBuffer = e.inputBuffer;
@@ -134,6 +157,12 @@ class LegacyAudioService {
         
         // Convert to base64 and send
         const base64Audio = arrayBufferToBase64(pcmData.buffer);
+        
+        console.log('📤 [ScriptProcessor] Sending audio chunk:', {
+          dataLength: base64Audio.length,
+          pcmDataLength: pcmData.length
+        });
+        
         this.onAudioData(base64Audio);
       };
 
