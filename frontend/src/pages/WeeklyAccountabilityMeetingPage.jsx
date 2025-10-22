@@ -6069,19 +6069,38 @@ const WeeklyAccountabilityMeetingPage = () => {
                     currentLeader,
                     userId: user?.id,
                     shouldShowButton: !meetingCode || isLeader,
-                    participants
+                    participants,
+                    isRecording: aiRecordingState.isRecording  // Add this for debugging
                   })}
                   {/* Show button if: no collaborative meeting OR user is the leader */}
                   {!meetingCode || (meetingCode && isLeader) ? (
                     <div className="text-center space-y-3">
+                      {/* Warning message when recording is active */}
+                      {aiRecordingState.isRecording && (
+                        <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4 mb-4">
+                          <div className="flex items-center gap-2 text-yellow-800 font-medium mb-1">
+                            <svg className="h-5 w-5" fill="currentColor" viewBox="0 0 20 20">
+                              <path fillRule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
+                            </svg>
+                            Recording is still active
+                          </div>
+                          <p className="text-yellow-700 text-sm">
+                            Please click "Stop Recording" first to generate the AI summary and include it in your meeting recap.
+                          </p>
+                        </div>
+                      )}
+                      
                       {showSendSummaryTimeout && isLeader && (
                         <div className="text-sm text-amber-600 bg-amber-50 px-4 py-2 rounded-lg">
                           Not all participants have rated. You can still send the summary.
                         </div>
                       )}
+                      
                       <Button
                         className={`shadow-lg hover:shadow-xl transition-all duration-200 text-white font-medium py-3 px-6 ${
-                          aiRecordingState.isRecording ? "bg-purple-600 hover:bg-purple-700" : ""
+                          aiRecordingState.isRecording 
+                            ? "bg-gray-400 cursor-not-allowed opacity-50" 
+                            : ""
                         }`}
                         style={{
                           background: aiRecordingState.isRecording 
@@ -6089,13 +6108,18 @@ const WeeklyAccountabilityMeetingPage = () => {
                             : `linear-gradient(135deg, ${themeColors.primary} 0%, ${themeColors.secondary} 100%)`
                         }}
                         onClick={() => {
-                          setShowConcludeDialog(true);
+                          if (!aiRecordingState.isRecording) {
+                            setShowConcludeDialog(true);
+                          }
                         }}
+                        disabled={aiRecordingState.isRecording}
                       >
                         {aiRecordingState.isRecording ? (
                           <>
-                            <Sparkles className="mr-2 h-5 w-5" />
-                            Conclude & Generate AI Summary
+                            <svg className="mr-2 h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+                            </svg>
+                            Stop Recording First
                           </>
                         ) : (
                           <>
