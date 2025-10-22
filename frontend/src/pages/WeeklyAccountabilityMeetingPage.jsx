@@ -8,6 +8,8 @@ import meetingHistoryService from '../services/meetingHistoryService';
 import { organizationService } from '../services/organizationService';
 import MeetingBar from '../components/meeting/MeetingBar';
 import useMeeting from '../hooks/useMeeting';
+import { MeetingAIRecordingControls } from '../components/MeetingAIRecordingControls';
+import { MeetingAISummaryPanel } from '../components/MeetingAISummaryPanel';
 import { getOrgTheme, saveOrgTheme, hexToRgba } from '../utils/themeUtils';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -24,6 +26,7 @@ import {
   ChevronRight,
   ChevronLeft,
   Smile,
+  Sparkles,
   BarChart,
   Target,
   Newspaper,
@@ -96,7 +99,7 @@ import FloatingTimer from '../components/meetings/FloatingTimer';
 
 const WeeklyAccountabilityMeetingPage = () => {
   console.log('🔥🔥🔥 MEETING PAGE COMPONENT LOADED - DEPLOYMENT TEST 123 🔥🔥🔥');
-  const { user } = useAuthStore();
+  const { user, currentOrganization } = useAuthStore();
   const { teamId } = useParams();
   const navigate = useNavigate();
   
@@ -224,6 +227,10 @@ const WeeklyAccountabilityMeetingPage = () => {
   const [activeSection, setActiveSection] = useState('good-news');
   const [completedSections, setCompletedSections] = useState(new Set()); // Track completed sections
   const [success, setSuccess] = useState(null);
+  
+  // AI Meeting Assistant state
+  const [showAISummary, setShowAISummary] = useState(false);
+  const [transcriptionCompleted, setTranscriptionCompleted] = useState(false);
   
   // Meeting data
   const [scorecardMetrics, setScorecardMetrics] = useState([]);
@@ -6323,6 +6330,23 @@ const WeeklyAccountabilityMeetingPage = () => {
           />
         )}
 
+        {/* AI Meeting Assistant Controls */}
+        {currentOrganization?.id && teamId && (
+          <div className="mb-6">
+            <MeetingAIRecordingControls
+              meetingId={`${teamId}-${Date.now()}`} // Generate a meeting ID - in real app this would come from backend
+              organizationId={currentOrganization.id}
+              onTranscriptionStarted={() => {
+                console.log('AI transcription started');
+              }}
+              onTranscriptionStopped={() => {
+                setTranscriptionCompleted(true);
+                setShowAISummary(true);
+              }}
+            />
+          </div>
+        )}
+
         {/* Navigation Tabs */}
         <div className="mb-8 bg-white/80 backdrop-blur-sm rounded-2xl border border-white/50 shadow-sm p-2">
           <div className="flex space-x-1 overflow-x-auto">
@@ -6771,6 +6795,30 @@ const WeeklyAccountabilityMeetingPage = () => {
         </DialogContent>
       </Dialog>
       
+      {/* AI Summary Dialog */}
+      <Dialog open={showAISummary} onOpenChange={setShowAISummary}>
+        <DialogContent className="max-w-5xl max-h-[90vh] overflow-y-auto">
+          <MeetingAISummaryPanel
+            meetingId={`${teamId}-${Date.now()}`} // Same meeting ID as used in controls
+            organizationId={currentOrganization?.id}
+            onClose={() => setShowAISummary(false)}
+          />
+        </DialogContent>
+      </Dialog>
+
+      {/* View AI Summary Button - shown after transcription completes */}
+      {transcriptionCompleted && (
+        <div className="fixed bottom-6 right-6 z-50">
+          <Button
+            onClick={() => setShowAISummary(true)}
+            className="bg-gradient-to-r from-blue-600 to-purple-600 text-white shadow-lg hover:shadow-xl transform hover:scale-105 transition-all duration-200 flex items-center gap-2"
+          >
+            <Sparkles className="h-4 w-4" />
+            View AI Summary
+          </Button>
+        </div>
+      )}
+
       {/* Confirmation Dialog for Delete/Remove actions */}
       <ConfirmationDialog
         open={confirmDialog.open}
