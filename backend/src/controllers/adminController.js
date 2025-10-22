@@ -5,12 +5,12 @@ export const getActiveMeetings = async (req, res) => {
   try {
     logger.debug('Fetching active meetings for admin dashboard');
     
-    // Use a safer query that doesn't assume all table relationships exist
+    // Use a safer query with the correct column names
     const result = await db.query(`
       SELECT 
         m.id,
         m.status,
-        m.started_at,
+        m.created_at as started_at,
         m.organization_id,
         COALESCE(o.name, 'Unknown Organization') as organization_name,
         COALESCE(t.name, 'Unknown Team') as team_name,
@@ -19,7 +19,7 @@ export const getActiveMeetings = async (req, res) => {
       LEFT JOIN organizations o ON m.organization_id = o.id
       LEFT JOIN teams t ON m.team_id = t.id
       WHERE m.status = 'in-progress'
-      ORDER BY m.started_at DESC
+      ORDER BY m.created_at DESC
     `);
 
     const activeMeetings = result.rows;
