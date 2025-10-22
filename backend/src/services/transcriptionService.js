@@ -1,5 +1,6 @@
 import WebSocket from 'ws';
 import { getClient } from '../config/database.js';
+import aiTranscriptionService from './aiTranscriptionService.js';
 
 class TranscriptionService {
   constructor() {
@@ -400,9 +401,11 @@ class TranscriptionService {
           timestamp: new Date().toISOString()
         });
         
-        // Import AI service and trigger analysis (async, don't block)
-        this.triggerAIAnalysis(transcriptId, data.rawTranscript).catch(error => {
-          console.error(`❌ [TranscriptionService] AI analysis failed for ${transcriptId}:`, error);
+        // Trigger AI analysis using the proper service (async, don't block)
+        console.log(`🤖 [TranscriptionService] Triggering AI analysis for ${transcriptId}`);
+        aiTranscriptionService.processTranscriptWithAI(transcriptId, data.rawTranscript, data.structuredTranscript).catch(error => {
+          console.error(`❌ [TranscriptionService] Error triggering AI analysis: ${error.message}`);
+          console.error(`❌ [TranscriptionService] Full error:`, error);
         });
       }
     } finally {
