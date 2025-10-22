@@ -101,7 +101,7 @@ export const startTranscription = async (req, res) => {
           // Create new meeting record with required fields
           // First create a meeting agenda for this AI recording session
           const agendaResult = await client.query(`
-            INSERT INTO meeting_agendas (organization_id, team_id, title)
+            INSERT INTO meeting_agendas (organization_id, team_id, name)
             VALUES ($1, $2, 'AI Recording Session Agenda')
             RETURNING id
           `, [organizationId, teamId]);
