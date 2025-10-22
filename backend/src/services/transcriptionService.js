@@ -358,7 +358,7 @@ class TranscriptionService {
    * Save transcript content to database
    */
   async saveTranscriptContent(transcriptId, data) {
-    const client = await db.getClient();
+    const client = await getClient();
     try {
       await client.query(`
         UPDATE meeting_transcripts 
@@ -388,7 +388,7 @@ class TranscriptionService {
    * Update transcript status
    */
   async updateTranscriptStatus(transcriptId, status, metadata = {}) {
-    const client = await db.getClient();
+    const client = await getClient();
     try {
       const updateFields = ['status = $2'];
       const values = [transcriptId, status];
