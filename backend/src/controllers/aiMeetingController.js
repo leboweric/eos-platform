@@ -132,14 +132,8 @@ export const stopTranscription = async (req, res) => {
     // Update transcript status to processing AI summary
     await aiTranscriptionService.updateTranscriptStatus(transcript.id, 'processing_ai');
 
-    // Process transcript with AI (async)
-    aiTranscriptionService.processTranscriptWithAI(
-      transcript.id,
-      final_transcript,
-      structured_transcript
-    ).catch(error => {
-      console.error('Failed to process transcript with AI:', error);
-    });
+    // AI processing is now handled automatically by transcriptionService.triggerAIAnalysis()
+    console.log('[aiMeetingController] AI processing handled by transcriptionService - skipping duplicate analysis');
 
     res.json({
       status: 'processing',
