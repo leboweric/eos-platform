@@ -98,12 +98,30 @@ export const startTranscription = async (req, res) => {
           meeting = meetingResult.rows[0];
           console.log('✅ [Transcription] Found active meeting:', actualMeetingId);
         } else {
-          // Create new meeting record
-          const newMeetingResult = await client.query(`
-            INSERT INTO meetings (organization_id, team_id, meeting_type, status, started_at) 
-            VALUES ($1, $2, 'weekly-accountability', 'in-progress', NOW()) 
-            RETURNING *
+          // Create new meeting record with required fields
+          // First create a meeting agenda for this AI recording session
+          const agendaResult = await client.query(`
+            INSERT INTO meeting_agendas (organization_id, team_id, title)
+            VALUES ($1, $2, 'AI Recording Session Agenda')
+            RETURNING id
           `, [organizationId, teamId]);
+          
+          const agendaId = agendaResult.rows[0].id;
+          
+          const newMeetingResult = await client.query(`
+            INSERT INTO meetings (
+              organization_id, 
+              team_id, 
+              agenda_id,
+              facilitator_id,
+              title,
+              scheduled_date,
+              actual_start_time,
+              status
+            ) 
+            VALUES ($1, $2, $3, $4, 'AI Recording Session', NOW(), NOW(), 'in-progress') 
+            RETURNING *
+          `, [organizationId, teamId, agendaId, userId]);
           
           // Get the team name for the created meeting
           const teamResult = await client.query(`
