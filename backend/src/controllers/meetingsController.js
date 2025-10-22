@@ -166,14 +166,20 @@ export const concludeMeeting = async (req, res) => {
     
     console.log('✅ [Conclude] Meeting marked as completed');
 
-    // 2. Check if AI recording is active
-    console.log('[Meeting] Checking for active AI recordings...');
+    // 2. Check if AI recording is active or recently completed
+    console.log('[Meeting] Checking for active or recent AI recordings...');
     const transcriptCheck = await db.query(
-      `SELECT mt.id, mt.status, mt.meeting_id
+      `SELECT mt.id, mt.status, mt.meeting_id, mt.completed_at
        FROM meeting_transcripts mt
        LEFT JOIN meetings m ON mt.meeting_id = m.id  
        WHERE (m.organization_id = $1 OR mt.organization_id = $1)
-         AND mt.status IN ('processing', 'processing_ai')
+         AND (
+           mt.status IN ('processing', 'processing_ai') 
+           OR (
+             mt.status = 'completed' 
+             AND mt.completed_at > NOW() - INTERVAL '5 minutes'
+           )
+         )
        ORDER BY mt.created_at DESC 
        LIMIT 1`,
       [organizationId]
@@ -182,25 +188,32 @@ export const concludeMeeting = async (req, res) => {
     let aiSummary = null;
     if (transcriptCheck.rows.length > 0) {
       const transcript = transcriptCheck.rows[0];
-      console.log('🎤 [Conclude] AI recording detected, stopping transcription');
-      console.log('[Meeting] Active recording detected:', transcript.id);
+      console.log('🎤 [Conclude] AI recording found:', transcript.id, 'Status:', transcript.status);
       
-      try {
-        // Stop the recording
-        await transcriptionService.stopRealtimeTranscription(transcript.id);
-        console.log('[Meeting] ✅ Recording stopped successfully');
+      if (transcript.status === 'completed') {
+        console.log('[Meeting] Recording already completed, checking for AI summary...');
+        // Skip stopping, go straight to waiting for AI summary
+        aiSummary = await waitForAISummary(transcript.id, 2); // Shorter wait for completed recordings
+      } else {
+        console.log('[Meeting] Active recording detected, stopping transcription');
         
-        console.log('⏳ [Conclude] Waiting up to 10 minutes for AI summary...');
-        
-        // Wait for AI summary (up to 10 minutes)
-        aiSummary = await waitForAISummary(transcript.id, 10);
-        
-      } catch (stopError) {
-        console.error('[Meeting] ⚠️ Error stopping recording:', stopError);
-        // Continue with conclude anyway - don't block meeting conclusion
+        try {
+          // Stop the recording
+          await transcriptionService.stopRealtimeTranscription(transcript.id);
+          console.log('[Meeting] ✅ Recording stopped successfully');
+          
+          console.log('⏳ [Conclude] Waiting up to 10 minutes for AI summary...');
+          
+          // Wait for AI summary (up to 10 minutes)
+          aiSummary = await waitForAISummary(transcript.id, 10);
+          
+        } catch (stopError) {
+          console.error('[Meeting] ⚠️ Error stopping recording:', stopError);
+          // Continue with conclude anyway - don't block meeting conclusion
+        }
       }
     } else {
-      console.log('[Meeting] No active recording to stop');
+      console.log('[Meeting] No active or recent recording found');
     }
 
     // Get organization details
