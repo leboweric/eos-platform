@@ -3017,15 +3017,12 @@ const WeeklyAccountabilityMeetingPage = () => {
         }
       });
       
-      await meetingsService.concludeMeeting(orgId, effectiveTeamId, {
-        meetingType: 'weekly',
-        duration: durationMinutes,
-        rating: averageRating,
-        individualRatings: participantRatings, // Include individual ratings
-        cascadingMessage: cascadingMessage,
-        issuesDiscussed: selectedIssueIds.length,
-        todosAssigned: selectedTodoIds.length
-      });
+      // FIXED: Now using sessionId instead of meeting data
+      if (!sessionId) {
+        throw new Error('No active session ID found - cannot conclude meeting');
+      }
+      
+      await meetingsService.concludeMeeting(orgId, effectiveTeamId, sessionId, false); // sendEmail = false
       
       console.log('✅ [concludeMeeting] meetingsService.concludeMeeting completed successfully');
       
@@ -6385,21 +6382,17 @@ const WeeklyAccountabilityMeetingPage = () => {
                             };
                           }) : [];
                         
-                        // ALWAYS conclude the meeting in database
+                        // ALWAYS conclude the meeting session in database
                         let emailResult = null;
                         try {
                           console.log('🔍 [Frontend] Calling meetingsService.concludeMeeting...');
-                          emailResult = await meetingsService.concludeMeeting(orgId, effectiveTeamId, {
-                            meetingType: 'weekly',
-                            duration: durationMinutes,
-                            rating: ratingAverage > 0 ? ratingAverage : meetingRating,
-                            individualRatings: allParticipantRatings,
-                            todos: todos.filter(t => t.status !== 'complete' && t.status !== 'completed'),
-                            issues: allIssues.filter(i => i.status !== 'closed' && i.status !== 'resolved' && i.status !== 'solved' && i.status !== 'completed'),
-                            headlines: headlines,
-                            cascadeMessage: cascadeMessage.trim() ? cascadeMessage : null,
-                            sendEmail: sendSummaryEmail // Pass email preference to backend
-                          });
+                          console.log('🔍 [Frontend] sessionId:', sessionId, 'sendSummaryEmail:', sendSummaryEmail);
+                          
+                          if (!sessionId) {
+                            throw new Error('No active session ID found - cannot conclude meeting');
+                          }
+                          
+                          emailResult = await meetingsService.concludeMeeting(orgId, effectiveTeamId, sessionId, sendSummaryEmail);
                           console.log('✅ [Frontend] Meeting concluded successfully:', emailResult);
                         } catch (emailError) {
                           console.error('❌ [Frontend] Failed to conclude meeting:', emailError);

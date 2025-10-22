@@ -414,3 +414,45 @@ export const canStartMeetingForTeam = async (req, res) => {
     client.release();
   }
 };
+
+// Update a meeting session (for concluding meetings)
+export const updateMeetingSession = async (req, res) => {
+  const client = await pool.connect();
+  try {
+    const { id: sessionId } = req.params;
+    const { is_active, sendEmail } = req.body;
+    
+    console.log('🏁 [Conclude] Updating meeting session:', sessionId);
+    console.log('🏁 [Conclude] is_active:', is_active, 'sendEmail:', sendEmail);
+    
+    // Update the meeting session
+    const result = await client.query(
+      `UPDATE meeting_sessions 
+       SET is_active = $1, updated_at = NOW() 
+       WHERE id = $2 
+       RETURNING *`,
+      [is_active, sessionId]
+    );
+    
+    if (result.rows.length === 0) {
+      console.log('❌ [Conclude] Meeting session not found:', sessionId);
+      return res.status(404).json({ error: 'Meeting session not found' });
+    }
+    
+    console.log('✅ [Conclude] Meeting session updated successfully');
+    
+    // TODO: If sendEmail is true and is_active is false, trigger email sending here
+    // For now, we'll just conclude the session
+    
+    res.json({ 
+      success: true, 
+      data: result.rows[0],
+      message: 'Meeting session concluded successfully'
+    });
+  } catch (error) {
+    console.error('❌ [Conclude] Error updating meeting session:', error);
+    res.status(500).json({ error: 'Failed to update meeting session' });
+  } finally {
+    client.release();
+  }
+};

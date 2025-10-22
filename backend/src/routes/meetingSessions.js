@@ -9,7 +9,8 @@ import {
   endSession,
   getActiveSession,
   saveTimerState,
-  canStartMeetingForTeam
+  canStartMeetingForTeam,
+  updateMeetingSession
 } from '../controllers/meetingSessionsController.js';
 import {
   startSection,
@@ -59,6 +60,9 @@ router.post('/:id/sections/pause-update', updateSectionPause);
 
 // Get section configuration
 router.get('/config/:organizationId/:teamId', getSectionConfig);
+
+// Update a meeting session (for concluding meetings)
+router.put('/:id', updateMeetingSession);
 
 // End a session
 router.post('/:id/end', endSession);
