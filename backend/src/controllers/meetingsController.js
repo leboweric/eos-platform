@@ -2,6 +2,7 @@ import db from '../config/database.js';
 import emailService from '../services/emailService.js';
 import { recordMeetingConclusion } from '../services/todoReminderService.js';
 import { isZeroUUID, isLeadershipTeam } from '../utils/teamUtils.js';
+import transcriptionService from '../services/transcriptionService.js';
 
 // Conclude a meeting and send summary email
 export const concludeMeeting = async (req, res) => {
@@ -86,6 +87,35 @@ export const concludeMeeting = async (req, res) => {
     }
 
     console.log('Concluding meeting with VALIDATED teamId:', { meetingType, duration, rating, organizationId, teamId });
+
+    // Check for active AI recording and auto-stop it
+    console.log('[Meeting] Checking for active AI recordings...');
+    const transcriptCheck = await db.query(
+      `SELECT mt.id, mt.status, mt.meeting_id
+       FROM meeting_transcripts mt
+       LEFT JOIN meetings m ON mt.meeting_id = m.id  
+       WHERE (m.organization_id = $1 OR mt.organization_id = $1)
+         AND mt.status IN ('processing', 'processing_ai')
+       ORDER BY mt.created_at DESC 
+       LIMIT 1`,
+      [organizationId]
+    );
+
+    if (transcriptCheck.rows.length > 0) {
+      const transcript = transcriptCheck.rows[0];
+      console.log('[Meeting] Active recording detected:', transcript.id);
+      console.log('[Meeting] Auto-stopping transcription before concluding...');
+      
+      try {
+        await transcriptionService.stopRealtimeTranscription(transcript.id);
+        console.log('[Meeting] ✅ Recording stopped successfully');
+      } catch (stopError) {
+        console.error('[Meeting] ⚠️ Error stopping recording:', stopError);
+        // Continue with conclude anyway - don't block meeting conclusion
+      }
+    } else {
+      console.log('[Meeting] No active recording to stop');
+    }
 
     // Get organization details
     const orgResult = await db.query(
