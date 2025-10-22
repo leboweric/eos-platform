@@ -142,13 +142,8 @@ Analyze this transcript and provide a comprehensive JSON response with the follo
   "executive_summary": "2-3 paragraph summary focusing on key outcomes, decisions, and next steps",
   "meeting_type_analysis": "Analysis of how well this meeting followed EOS Level 10 structure (if applicable)",
   "key_decisions": [
-    {
-      "decision": "Description of the decision made",
-      "rationale": "Why this decision was made",
-      "impact": "Expected impact on the organization/team",
-      "decision_maker": "Person who made the decision (if mentioned)",
-      "confidence": "high|medium|low"
-    }
+    "Clear description of decision made during the meeting",
+    "Another important decision if any"
   ],
   "action_items": [
     {
@@ -254,12 +249,12 @@ Be thorough but concise. If information is not available in the transcript, mark
       `, [
         summaryId, meeting_id, transcriptId, organization_id,
         aiSummary.executive_summary,
-        JSON.stringify(aiSummary.key_decisions || []),
-        JSON.stringify(aiSummary.discussion_topics || []),
-        JSON.stringify(aiSummary.action_items || []),
-        JSON.stringify(aiSummary.issues_discussed || []),
-        JSON.stringify(aiSummary.rocks_mentioned || []),
-        JSON.stringify(aiSummary.notable_quotes || []),
+        aiSummary.key_decisions || [], // TEXT[] array - pass as array
+        JSON.stringify(aiSummary.discussion_topics || []), // JSONB
+        JSON.stringify(aiSummary.action_items || []), // JSONB
+        JSON.stringify(aiSummary.issues_discussed || []), // JSONB
+        JSON.stringify(aiSummary.rocks_mentioned || []), // JSONB
+        JSON.stringify(aiSummary.notable_quotes || []), // JSONB
         aiSummary.meeting_sentiment,
         aiSummary.meeting_energy_score,
         aiSummary.ai_model,
