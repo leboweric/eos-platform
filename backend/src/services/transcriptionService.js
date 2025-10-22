@@ -186,9 +186,58 @@ class TranscriptionService {
 
       console.log('✅ [TranscriptionService] Event handlers set up');
 
-      // Connect to AssemblyAI
-      console.log('🔍 [TranscriptionService] Connecting to AssemblyAI...');
-      await realtimeTranscriber.connect();
+      // Test token validity before attempting connection
+      console.log('🔍 [TranscriptionService] Testing token validity...');
+      try {
+        // Decode JWT token to inspect contents (without verification)
+        const tokenParts = tokenResponse.token.split('.');
+        if (tokenParts.length === 3) {
+          const payload = JSON.parse(Buffer.from(tokenParts[1], 'base64').toString());
+          console.log('🔍 [TranscriptionService] Token payload:', {
+            exp: payload.exp,
+            iat: payload.iat,
+            isExpired: payload.exp ? (Date.now() / 1000) > payload.exp : 'unknown',
+            timeUntilExpiry: payload.exp ? Math.round(payload.exp - (Date.now() / 1000)) : 'unknown',
+            hasRequiredFields: !!(payload.exp && payload.iat)
+          });
+        }
+      } catch (tokenDecodeError) {
+        console.warn('⚠️ [TranscriptionService] Could not decode token:', tokenDecodeError.message);
+      }
+
+      // Connect to AssemblyAI with detailed error handling
+      console.log('🔍 [TranscriptionService] Attempting WebSocket connection to AssemblyAI...');
+      console.log('🔍 [TranscriptionService] Connection details:', {
+        hasTranscriber: !!realtimeTranscriber,
+        transcriberType: typeof realtimeTranscriber,
+        connectMethod: typeof realtimeTranscriber.connect,
+        tokenLength: tokenResponse.token?.length
+      });
+      
+      try {
+        await realtimeTranscriber.connect();
+        console.log('✅ [TranscriptionService] WebSocket connection established successfully!');
+      } catch (connectError) {
+        console.error('❌ [TranscriptionService] WebSocket connection failed:', {
+          message: connectError.message,
+          code: connectError.code,
+          name: connectError.name,
+          stack: connectError.stack,
+          wsCode: connectError.code, // WebSocket error codes
+          tokenValid: !!tokenResponse.token,
+          apiKeyValid: !!process.env.ASSEMBLYAI_API_KEY
+        });
+        
+        // Add specific guidance for common WebSocket error codes
+        if (connectError.code === 1006) {
+          console.error('🔍 [TranscriptionService] Code 1006 (Abnormal Closure) suggests:');
+          console.error('   - Invalid token or API key');
+          console.error('   - Network connectivity issue');
+          console.error('   - AssemblyAI service rejection');
+        }
+        
+        throw connectError;
+      }
 
       console.log(`✅ [TranscriptionService] Real-time transcription started for transcript ${transcriptId}`);
       return {
