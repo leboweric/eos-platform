@@ -46,28 +46,28 @@ class TranscriptionService {
     try {
       console.log(`🎙️ [TranscriptionService] Starting real-time transcription for transcript ${transcriptId}`);
 
-      // Create real-time transcriber with EOS-optimized settings
-      console.log('🔍 [TranscriptionService] Creating real-time transcriber...');
+      // Create real-time transcriber with Universal Streaming (new API)
+      console.log('🔍 [TranscriptionService] Creating Universal Streaming transcriber...');
       const realtimeTranscriber = this.assemblyAI.realtime.transcriber({
-        sampleRate: 16000,
+        sample_rate: 16000,
         encoding: 'pcm_s16le',
-        // Enable speaker identification
-        speaker_labels: true,
-        // Custom vocabulary for EOS terms
-        custom_vocabulary: [
-          'EOS', 'Rock', 'Rocks', 'IDS', 'VTO', 'V/TO', 'Scorecard', 
-          'Level 10', 'L10', 'Segue', 'Traction', 'Quarterly', 'Priorities',
-          'Accountability', 'Measurable', 'Specific', 'Attainable', 'Relevant',
-          'Timely', 'Action Items', 'To-Do', 'ToDo', 'Issues List'
+        // Required for Universal Streaming
+        enable_extra_session_information: true,
+        // Core transcription features
+        punctuate: true,
+        format_text: true,
+        // Speaker identification (if supported in streaming)
+        speaker_labels: false, // Often not supported in real-time streaming
+        // Custom vocabulary for EOS terms (simplified for streaming)
+        word_boost: [
+          'EOS', 'Rock', 'Rocks', 'IDS', 'VTO', 'Scorecard', 
+          'Level 10', 'L10', 'Traction', 'Quarterly', 'Priorities',
+          'Accountability', 'Action Items', 'Todo', 'Issues'
         ],
-        // Boost accuracy for business meetings
-        boost_param: 'high',
-        // Enable auto-chapters for meeting sections
-        auto_chapters: true,
-        // Enable entity detection for names and dates
-        entity_detection: true,
-        // Enable sentiment analysis
-        sentiment_analysis: true
+        // Boost accuracy 
+        boost_param: 'default'
+        // Note: auto_chapters, entity_detection, sentiment_analysis 
+        // are typically for batch processing, not real-time streaming
       });
 
       console.log('✅ [TranscriptionService] Real-time transcriber created');
