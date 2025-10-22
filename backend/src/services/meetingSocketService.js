@@ -25,10 +25,24 @@ class MeetingSocketService {
 
     console.log('🟢 Initializing meeting WebSocket service...');
     
+    const allowedOrigins = [
+      'https://axplatform.app',              // Production domain
+      'https://www.axplatform.app',          // WWW variant
+      'https://eos-platform.netlify.app',   // Legacy Netlify domain
+      'http://localhost:5173',               // Vite dev server
+      'http://localhost:3000',               // Alternative dev server
+      'http://localhost:5174',               // Backup dev server
+      process.env.FRONTEND_URL               // Environment-specific URL
+    ].filter(Boolean); // Remove any undefined values
+    
+    console.log('🔌 Socket.IO CORS allowed origins:', allowedOrigins);
+    console.log('🔍 Environment FRONTEND_URL:', process.env.FRONTEND_URL);
+    
     this.io = new SocketIOServer(server, {
       cors: {
-        origin: process.env.FRONTEND_URL || 'http://localhost:5173',
-        credentials: true
+        origin: allowedOrigins,
+        credentials: true,
+        methods: ['GET', 'POST']
       },
       // Namespace to isolate meeting sockets from any future socket usage
       path: '/meeting-socket'
