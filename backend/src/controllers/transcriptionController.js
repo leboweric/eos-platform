@@ -59,6 +59,15 @@ export const startTranscription = async (req, res) => {
     // Verify meeting exists and user has access
     console.log('🔍 [Transcription] Step 3: Getting database client...');
     const client = await getClient();
+    
+    // Log connection details
+    console.log('🔍 DATABASE CONNECTION:', {
+      database: client.database,
+      host: client.host,
+      port: client.port,
+      user: client.user
+    });
+    
     try {
       console.log('✅ [Transcription] Step 3: Database client acquired');
       console.log('🔍 [Transcription] Step 4: Parsing and finding meeting...');

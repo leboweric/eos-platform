@@ -28,6 +28,15 @@ class AITranscriptionService {
   // Create a new transcript record
   async createTranscriptRecord(meetingId, organizationId, consentUserIds = []) {
     const client = await db.getClient();
+    
+    // Log connection details
+    console.log('🔍 DATABASE CONNECTION:', {
+      database: client.database,
+      host: client.host,
+      port: client.port,
+      user: client.user
+    });
+    
     try {
       await client.query('BEGIN');
       
