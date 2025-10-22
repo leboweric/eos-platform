@@ -1,249 +1,172 @@
-import { AssemblyAI, RealtimeTranscriber } from 'assemblyai';
-import db from '../config/database.js';
+import WebSocket from 'ws';
+import { getClient } from '../config/database.js';
 
 class TranscriptionService {
   constructor() {
-    this.assemblyAI = null;
-    this.activeConnections = new Map(); // Store active transcription sessions
-    this.initializeAssemblyAI();
+    this.activeConnections = new Map(); // Store active WebSocket connections
+    this.initializeService();
   }
 
-  initializeAssemblyAI() {
-    console.log('🔍 [TranscriptionService] Initializing AssemblyAI...');
+  initializeService() {
+    console.log('🔍 [TranscriptionService] Initializing Direct WebSocket Service...');
     console.log('🔍 [TranscriptionService] Environment check:', {
       hasAssemblyAIKey: !!process.env.ASSEMBLYAI_API_KEY,
       keyPreview: process.env.ASSEMBLYAI_API_KEY ? `${process.env.ASSEMBLYAI_API_KEY.substring(0, 8)}...` : 'NOT_SET'
     });
     
     if (process.env.ASSEMBLYAI_API_KEY) {
-      try {
-        this.assemblyAI = new AssemblyAI({
-          apiKey: process.env.ASSEMBLYAI_API_KEY,
-        });
-        
-        console.log('✅ [TranscriptionService] AssemblyAI service initialized successfully');
-        
-        // Debug: Check what methods are available on the client
-        console.log('🔍 [TranscriptionService] Available methods on client:', {
-          hasRealtime: !!this.assemblyAI.realtime,
-          realtimeType: typeof this.assemblyAI.realtime,
-          realtimeMethods: this.assemblyAI.realtime ? Object.getOwnPropertyNames(this.assemblyAI.realtime) : 'N/A',
-          clientMethods: Object.getOwnPropertyNames(this.assemblyAI).slice(0, 10) // First 10 methods
-        });
-        
-      } catch (error) {
-        console.error('❌ [TranscriptionService] Failed to initialize AssemblyAI:', error.message);
-        throw error;
-      }
+      console.log('✅ [TranscriptionService] Direct WebSocket service initialized successfully');
     } else {
       console.warn('⚠️ [TranscriptionService] ASSEMBLYAI_API_KEY not configured - transcription disabled');
     }
   }
 
   /**
-   * Start real-time transcription session
+   * Start real-time transcription session using direct WebSocket connection
    */
   async startRealtimeTranscription(transcriptId, organizationId) {
     console.log(`🔍 [TranscriptionService] startRealtimeTranscription called for transcript ${transcriptId}`);
     console.log(`🔍 [TranscriptionService] organizationId: ${organizationId}`);
-    console.log(`🔍 [TranscriptionService] assemblyAI instance:`, !!this.assemblyAI);
     
-    if (!this.assemblyAI) {
-      console.error('❌ [TranscriptionService] AssemblyAI not configured');
-      throw new Error('AssemblyAI not configured');
+    if (!process.env.ASSEMBLYAI_API_KEY) {
+      console.error('❌ [TranscriptionService] ASSEMBLYAI_API_KEY not configured');
+      throw new Error('AssemblyAI API key not configured');
     }
 
     try {
-      console.log(`🎙️ [TranscriptionService] Starting real-time transcription for transcript ${transcriptId}`);
-
-      // Create temporary token for WebSocket connection (Universal Streaming)
-      console.log('[TranscriptionService] Creating temporary token for Universal Streaming...');
+      console.log(`🎙️ [TranscriptionService] Starting direct WebSocket transcription for transcript ${transcriptId}`);
       
-      // Debug: Check if realtime methods exist
-      console.log('🔍 [TranscriptionService] Checking realtime API:', {
-        hasRealtime: !!this.assemblyAI.realtime,
-        hasCreateTemporaryToken: !!(this.assemblyAI.realtime && this.assemblyAI.realtime.createTemporaryToken),
-        realtimePrototype: this.assemblyAI.realtime ? Object.getOwnPropertyNames(Object.getPrototypeOf(this.assemblyAI.realtime)) : 'N/A'
-      });
+      // Connect directly to streaming.assemblyai.com (bypass SDK IP issue)
+      const wsUrl = 'wss://streaming.assemblyai.com/v3/ws?sample_rate=16000';
+      console.log('🔍 [TranscriptionService] Connecting to:', wsUrl);
       
-      const tokenResponse = await this.assemblyAI.realtime.createTemporaryToken({
-        expires_in: 3600, // 1 hour
-        // Explicitly request Universal Streaming model (not deprecated best model)
-        language_code: 'en', // Required for Universal Streaming
-      });
-      
-      console.log('[TranscriptionService] Token created:', {
-        hasToken: !!tokenResponse.token,
-        tokenLength: tokenResponse.token?.length,
-        expiresIn: 3600,
-        timestamp: new Date().toISOString()
-      });
-      
-      // Token validation debugging
-      console.log('[TranscriptionService] Token validation:', {
-        tokenType: typeof tokenResponse.token,
-        tokenStart: tokenResponse.token?.substring(0, 20),
-        apiKeyStart: process.env.ASSEMBLYAI_API_KEY?.substring(0, 20),
-        fullTokenResponse: tokenResponse
-      });
-
-      // Create real-time transcriber with Universal Streaming (simplified config)
-      console.log('[TranscriptionService] Creating transcriber with config:', {
-        sample_rate: 16000,
-        encoding: 'pcm_s16le',
-        enable_extra_session_information: true,
-        punctuate: true,
-        format_text: true,
-        hasToken: !!tokenResponse.token
-      });
-      
-      // Try multiple approaches for Universal Streaming (SDK v4.18.2)
-      let realtimeTranscriber;
-      
-      console.log('[TranscriptionService] Attempting method 1: createTranscriber...');
-      try {
-        // Method 1: createTranscriber (newer SDK pattern)
-        realtimeTranscriber = this.assemblyAI.realtime.createTranscriber({
-          token: tokenResponse.token,
-          sampleRate: 16000,  // camelCase
-          encoding: 'pcm_s16le',
-          enableExtraSessionInformation: true,  // camelCase
-          punctuate: true,
-          formatText: true,  // camelCase
-          languageCode: 'en',  // camelCase
-          model: 'universal-1'
-        });
-        console.log('✅ [TranscriptionService] Method 1 (createTranscriber) succeeded');
-      } catch (error1) {
-        console.log('❌ [TranscriptionService] Method 1 failed:', error1.message);
-        
-        console.log('[TranscriptionService] Attempting method 2: transcriber...');
-        try {
-          // Method 2: transcriber (original pattern with snake_case)
-          realtimeTranscriber = this.assemblyAI.realtime.transcriber({
-            token: tokenResponse.token,
-            sample_rate: 16000,  // snake_case
-            encoding: 'pcm_s16le',
-            enable_extra_session_information: true,  // snake_case
-            punctuate: true,
-            format_text: true,  // snake_case
-            language_code: 'en',  // snake_case
-            model: 'universal-1'
-          });
-          
-          // Debug transcriber object
-          console.log('[TranscriptionService] Transcriber object created:', {
-            hasConnect: typeof realtimeTranscriber.connect === 'function',
-            hasOn: typeof realtimeTranscriber.on === 'function',
-            hasSendAudio: typeof realtimeTranscriber.sendAudio === 'function',
-            hasClose: typeof realtimeTranscriber.close === 'function',
-            methods: Object.getOwnPropertyNames(realtimeTranscriber).slice(0, 10),
-            transcriber: !!realtimeTranscriber
-          });
-          
-          console.log('✅ [TranscriptionService] Method 2 (transcriber) succeeded');
-        } catch (error2) {
-          console.log('❌ [TranscriptionService] Method 2 failed:', error2.message);
-          console.log('❌ [TranscriptionService] Method 2 full error:', {
-            name: error2.name,
-            message: error2.message,
-            stack: error2.stack,
-            code: error2.code
-          });
-          
-          console.log('[TranscriptionService] Attempting method 3: RealtimeTranscriber...');
-          // Method 3: Direct RealtimeTranscriber class
-          realtimeTranscriber = new RealtimeTranscriber({
-            token: tokenResponse.token,
-            apiKey: process.env.ASSEMBLYAI_API_KEY,
-            sampleRate: 16000,
-            encoding: 'pcm_s16le',
-            model: 'universal-1'
-          });
-          console.log('✅ [TranscriptionService] Method 3 (RealtimeTranscriber) succeeded');
+      const ws = new WebSocket(wsUrl, {
+        headers: {
+          Authorization: process.env.ASSEMBLYAI_API_KEY
         }
-      }
+      });
       
-      console.log('[TranscriptionService] Transcriber created, attempting connection...');
-
-      console.log('✅ [TranscriptionService] Real-time transcriber created');
-
-      // Store the connection
-      console.log('🔍 [TranscriptionService] Storing connection in activeConnections...');
-      this.activeConnections.set(transcriptId, {
-        transcriber: realtimeTranscriber,
+      // Store connection details
+      const connectionData = {
+        websocket: ws,
         organizationId,
         transcriptChunks: [],
         startTime: new Date(),
-        isActive: true
-      });
-
-      console.log('✅ [TranscriptionService] Connection stored');
-
-      // Set up event handlers
-      console.log('🔍 [TranscriptionService] Setting up transcriber events...');
-      this.setupTranscriberEvents(realtimeTranscriber, transcriptId);
-
-      console.log('✅ [TranscriptionService] Event handlers set up');
-
-      // Test token validity before attempting connection
-      console.log('🔍 [TranscriptionService] Testing token validity...');
-      try {
-        // Decode JWT token to inspect contents (without verification)
-        const tokenParts = tokenResponse.token.split('.');
-        if (tokenParts.length === 3) {
-          const payload = JSON.parse(Buffer.from(tokenParts[1], 'base64').toString());
-          console.log('🔍 [TranscriptionService] Token payload:', {
-            exp: payload.exp,
-            iat: payload.iat,
-            isExpired: payload.exp ? (Date.now() / 1000) > payload.exp : 'unknown',
-            timeUntilExpiry: payload.exp ? Math.round(payload.exp - (Date.now() / 1000)) : 'unknown',
-            hasRequiredFields: !!(payload.exp && payload.iat)
-          });
-        }
-      } catch (tokenDecodeError) {
-        console.warn('⚠️ [TranscriptionService] Could not decode token:', tokenDecodeError.message);
-      }
-
-      // Connect to AssemblyAI with detailed error handling
-      console.log('🔍 [TranscriptionService] Attempting WebSocket connection to AssemblyAI...');
-      console.log('🔍 [TranscriptionService] Connection details:', {
-        hasTranscriber: !!realtimeTranscriber,
-        transcriberType: typeof realtimeTranscriber,
-        connectMethod: typeof realtimeTranscriber.connect,
-        tokenLength: tokenResponse.token?.length
-      });
+        isActive: false, // Will be set to true when connected
+        sessionId: null
+      };
       
-      try {
-        await realtimeTranscriber.connect();
-        console.log('✅ [TranscriptionService] WebSocket connection established successfully!');
-      } catch (connectError) {
-        console.error('❌ [TranscriptionService] WebSocket connection failed:', {
-          message: connectError.message,
-          code: connectError.code,
-          name: connectError.name,
-          stack: connectError.stack,
-          wsCode: connectError.code, // WebSocket error codes
-          tokenValid: !!tokenResponse.token,
-          apiKeyValid: !!process.env.ASSEMBLYAI_API_KEY
+      this.activeConnections.set(transcriptId, connectionData);
+      
+      // Return a Promise that resolves when connection is established
+      return new Promise((resolve, reject) => {
+        const timeout = setTimeout(() => {
+          ws.close();
+          this.activeConnections.delete(transcriptId);
+          reject(new Error('WebSocket connection timeout after 10 seconds'));
+        }, 10000);
+        
+        ws.on('open', () => {
+          clearTimeout(timeout);
+          console.log('✅ [TranscriptionService] Connected to streaming.assemblyai.com');
+          
+          connectionData.isActive = true;
+          
+          // Configure the session
+          ws.send(JSON.stringify({
+            sample_rate: 16000,
+            encoding: 'pcm_s16le',
+            language_code: 'en',
+            punctuate: true,
+            format_text: true
+          }));
+          
+          console.log('🔧 [TranscriptionService] Session configuration sent');
+          
+          resolve({
+            sessionId: transcriptId,
+            status: 'connected'
+          });
         });
         
-        // Add specific guidance for common WebSocket error codes
-        if (connectError.code === 1006) {
-          console.error('🔍 [TranscriptionService] Code 1006 (Abnormal Closure) suggests:');
-          console.error('   - Invalid token or API key');
-          console.error('   - Network connectivity issue');
-          console.error('   - AssemblyAI service rejection');
-        }
+        ws.on('message', (data) => {
+          try {
+            const message = JSON.parse(data.toString());
+            console.log('📨 [TranscriptionService] Message received:', message.message_type);
+            
+            if (message.message_type === 'SessionBegins') {
+              console.log('🎬 [TranscriptionService] Session started:', message.session_id);
+              connectionData.sessionId = message.session_id;
+            } else if (message.message_type === 'PartialTranscript') {
+              console.log('🔄 [TranscriptionService] Partial transcript:', message.text);
+              
+              // Emit partial updates for real-time display
+              this.emitTranscriptUpdate(transcriptId, {
+                type: 'partial_transcript',
+                text: message.text,
+                speaker: 'Speaker'
+              });
+            } else if (message.message_type === 'FinalTranscript') {
+              console.log('📝 [TranscriptionService] Final transcript:', message.text);
+              
+              connectionData.transcriptChunks.push({
+                text: message.text,
+                confidence: message.confidence,
+                speaker: 'Speaker',
+                timestamp: new Date().toISOString(),
+                start_time: message.audio_start,
+                end_time: message.audio_end
+              });
+              
+              // Emit final transcript chunk
+              this.emitTranscriptUpdate(transcriptId, {
+                type: 'transcript_chunk',
+                text: message.text,
+                speaker: 'Speaker',
+                confidence: message.confidence
+              });
+            }
+          } catch (parseError) {
+            console.error('❌ [TranscriptionService] Failed to parse message:', parseError);
+          }
+        });
         
-        throw connectError;
-      }
-
-      console.log(`✅ [TranscriptionService] Real-time transcription started for transcript ${transcriptId}`);
-      return {
-        sessionId: transcriptId,
-        status: 'connected'
-      };
+        ws.on('error', (error) => {
+          clearTimeout(timeout);
+          console.error('❌ [TranscriptionService] WebSocket error:', {
+            message: error.message,
+            code: error.code,
+            errno: error.errno
+          });
+          
+          connectionData.isActive = false;
+          
+          this.emitTranscriptUpdate(transcriptId, {
+            type: 'error',
+            message: 'Transcription connection error'
+          });
+          
+          if (ws.readyState === WebSocket.CONNECTING) {
+            reject(error);
+          }
+        });
+        
+        ws.on('close', (code, reason) => {
+          clearTimeout(timeout);
+          console.log('🔌 [TranscriptionService] WebSocket closed:', {
+            code,
+            reason: reason?.toString(),
+            wasActive: connectionData.isActive
+          });
+          
+          connectionData.isActive = false;
+          
+          if (code === 1006) {
+            console.error('🔍 [TranscriptionService] Code 1006 - This was the TLS certificate issue!');
+            console.error('🎯 [TranscriptionService] Should be fixed with direct hostname connection');
+          }
+        });
+      });
 
     } catch (error) {
       console.error(`❌ [TranscriptionService] Failed to start real-time transcription:`, error.message);
@@ -345,7 +268,7 @@ class TranscriptionService {
   }
 
   /**
-   * Send audio data to AssemblyAI
+   * Send audio data to AssemblyAI via direct WebSocket
    */
   async sendAudioData(transcriptId, audioBuffer) {
     const connection = this.activeConnections.get(transcriptId);
@@ -356,9 +279,14 @@ class TranscriptionService {
     }
 
     try {
-      // Send audio data to AssemblyAI
-      connection.transcriber.sendAudio(audioBuffer);
-      return true;
+      // Send audio data directly via WebSocket
+      if (connection.websocket && connection.websocket.readyState === WebSocket.OPEN) {
+        connection.websocket.send(audioBuffer);
+        return true;
+      } else {
+        console.warn(`⚠️ WebSocket not ready for transcript ${transcriptId}`);
+        return false;
+      }
     } catch (error) {
       console.error(`❌ Failed to send audio data for ${transcriptId}:`, error);
       return false;
@@ -382,9 +310,10 @@ class TranscriptionService {
       // Mark as inactive
       connection.isActive = false;
 
-      // Close the transcriber connection
-      if (connection.transcriber) {
-        await connection.transcriber.close();
+      // Close the WebSocket connection
+      if (connection.websocket) {
+        connection.websocket.send(JSON.stringify({ terminate_session: true }));
+        connection.websocket.close();
       }
 
       // Calculate duration
@@ -532,7 +461,7 @@ class TranscriptionService {
     return {
       activeSessions,
       totalSessions: this.activeConnections.size,
-      assemblyAIConfigured: !!this.assemblyAI
+      assemblyAIConfigured: !!process.env.ASSEMBLYAI_API_KEY
     };
   }
 
@@ -546,10 +475,12 @@ class TranscriptionService {
       if (!connection.isActive || connection.startTime < cutoffTime) {
         console.log(`🧹 Cleaning up inactive connection for transcript ${transcriptId}`);
         
-        if (connection.transcriber) {
-          connection.transcriber.close().catch(err => 
-            console.error(`Error closing transcriber for ${transcriptId}:`, err)
-          );
+        if (connection.websocket) {
+          try {
+            connection.websocket.close();
+          } catch (err) {
+            console.error(`Error closing WebSocket for ${transcriptId}:`, err);
+          }
         }
         
         this.activeConnections.delete(transcriptId);
