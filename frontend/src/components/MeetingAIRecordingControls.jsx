@@ -107,7 +107,7 @@ export const MeetingAIRecordingControls = ({
 
       // Start backend transcription
       console.log('📡 [AI Recording] Starting transcription via API...');
-      const transcriptionResponse = await api.post('/transcription/start', {
+      const transcriptionResponse = await api.post('/api/v1/transcription/start', {
         meetingId,
         organizationId
       });
@@ -261,7 +261,7 @@ export const MeetingAIRecordingControls = ({
 
       // Stop backend transcription and trigger AI summary
       console.log('📡 [AI Recording] Stopping transcription via API...');
-      const stopResponse = await api.post('/transcription/stop', {
+      const stopResponse = await api.post('/api/v1/transcription/stop', {
         meetingId,
         organizationId
       });
@@ -289,7 +289,7 @@ export const MeetingAIRecordingControls = ({
     if (transcriptionStatus === 'processing') {
       const interval = setInterval(async () => {
         try {
-          const response = await api.get(`/transcription/${meetingId}/status?organizationId=${organizationId}`);
+          const response = await api.get(`/api/v1/transcription/${meetingId}/status?organizationId=${organizationId}`);
           const status = response.data;
           
           if (status.status === 'completed') {
