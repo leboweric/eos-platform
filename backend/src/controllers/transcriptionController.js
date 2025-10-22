@@ -202,6 +202,8 @@ export const startTranscription = async (req, res) => {
       });
       
       try {
+        await client.query('BEGIN');
+        
         await client.query(`
           INSERT INTO meeting_transcripts (
             id, meeting_id, organization_id, status, 
@@ -209,7 +211,12 @@ export const startTranscription = async (req, res) => {
           )
           VALUES ($1, $2, $3, 'processing', 'assemblyai', NOW(), NOW())
         `, [transcriptId, actualMeetingId, organizationId]);
+        
+        await client.query('COMMIT');
+        console.log('[START] ✅ Transcript creation transaction committed');
+        
       } catch (insertError) {
+        await client.query('ROLLBACK');
         console.error('[START] ❌ INSERT INTO meeting_transcripts failed:', {
           error: insertError.message,
           code: insertError.code,
@@ -321,8 +328,8 @@ export const stopTranscription = async (req, res) => {
       let actualMeetingId;
 
       if (meetingIdParts.length > 5) {
-        // Composite format: extract teamId and find meeting
-        const teamId = meetingIdParts.slice(0, -1).join('-');
+        // Composite format: extract teamId (first 5 parts = UUID)
+        const teamId = meetingIdParts.slice(0, 5).join('-');
         console.log('🔍 [Stop Transcription] Composite meetingId detected:', { teamId });
         
         const meetingResult = await client.query(`

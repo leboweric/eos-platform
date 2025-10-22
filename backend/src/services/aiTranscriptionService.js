@@ -28,6 +28,8 @@ class AITranscriptionService {
   async createTranscriptRecord(meetingId, organizationId, consentUserIds = []) {
     const client = await db.getClient();
     try {
+      await client.query('BEGIN');
+      
       const result = await client.query(`
         INSERT INTO meeting_transcripts (
           meeting_id, 
@@ -42,7 +44,14 @@ class AITranscriptionService {
         RETURNING *
       `, [meetingId, organizationId, consentUserIds.length > 0, consentUserIds]);
       
+      await client.query('COMMIT');
+      console.log('✅ Transcript record transaction committed');
+      
       return result.rows[0];
+    } catch (error) {
+      await client.query('ROLLBACK');
+      console.error('❌ Transcript record transaction rolled back:', error.message);
+      throw error;
     } finally {
       client.release();
     }
@@ -214,6 +223,8 @@ Focus on:
   async updateTranscriptStatus(transcriptId, status, metadata = {}) {
     const client = await db.getClient();
     try {
+      await client.query('BEGIN');
+      
       const updateFields = ['status = $2'];
       const values = [transcriptId, status];
       let paramCount = 2;
@@ -233,6 +244,14 @@ Focus on:
         SET ${updateFields.join(', ')}, updated_at = NOW()
         WHERE id = $1
       `, values);
+      
+      await client.query('COMMIT');
+      console.log('✅ Transcript status update transaction committed');
+      
+    } catch (error) {
+      await client.query('ROLLBACK');
+      console.error('❌ Transcript status update transaction rolled back:', error.message);
+      throw error;
     } finally {
       client.release();
     }
@@ -242,6 +261,8 @@ Focus on:
   async updateTranscriptContent(transcriptId, rawTranscript, structuredTranscript) {
     const client = await db.getClient();
     try {
+      await client.query('BEGIN');
+      
       const wordCount = rawTranscript.split(' ').length;
       
       await client.query(`
@@ -252,6 +273,14 @@ Focus on:
             updated_at = NOW()
         WHERE id = $1
       `, [transcriptId, rawTranscript, JSON.stringify(structuredTranscript), wordCount]);
+      
+      await client.query('COMMIT');
+      console.log('✅ Transcript content update transaction committed');
+      
+    } catch (error) {
+      await client.query('ROLLBACK');
+      console.error('❌ Transcript content update transaction rolled back:', error.message);
+      throw error;
     } finally {
       client.release();
     }
@@ -261,6 +290,8 @@ Focus on:
   async storeAISummary(transcriptId, aiSummary, processingTime, estimatedCost) {
     const client = await db.getClient();
     try {
+      await client.query('BEGIN');
+      
       // Get meeting and organization info
       const transcriptResult = await client.query(
         'SELECT meeting_id, organization_id FROM meeting_transcripts WHERE id = $1',
@@ -311,6 +342,14 @@ Focus on:
         processingTime,
         estimatedCost
       ]);
+      
+      await client.query('COMMIT');
+      console.log('✅ AI summary transaction committed successfully');
+      
+    } catch (error) {
+      await client.query('ROLLBACK');
+      console.error('❌ AI summary transaction rolled back:', error.message);
+      throw error;
     } finally {
       client.release();
     }
