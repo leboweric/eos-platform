@@ -49,7 +49,8 @@ AXP (Adaptive Execution Platform) is the world's first business execution platfo
 - **Email**: @sendgrid/mail v8.1
 - **File Processing**: multer v1.4.5, sharp v0.33
 - **Payments**: stripe v16.12
-- **AI**: openai v4.72
+- **AI**: openai v4.72 for meeting summarization
+- **Audio Processing**: Native MediaRecorder API, WebSocket streaming
 - **Security**: helmet v8.0, cors v2.8, express-rate-limit v7.4
 - **Monitoring**: @sentry/node v8.40 for error tracking
 
@@ -302,6 +303,26 @@ AXP (Adaptive Execution Platform) is the world's first business execution platfo
 - **Dependencies**: Terminology mappings, UI adaptations
 - **Status**: In development - foundation complete
 
+### AI Meeting Assistant (October 2025)
+- **Purpose**: Real-time transcription, AI summarization, and automated action item extraction
+- **Key Files**:
+  - `frontend/src/services/aiMeetingService.js` - API service layer
+  - `frontend/src/hooks/useAudioRecording.js` - Audio capture and WebSocket management
+  - `frontend/src/components/MeetingAIRecordingControls.jsx` - Recording controls UI
+  - `frontend/src/components/MeetingAISummaryPanel.jsx` - AI summary display
+  - `frontend/src/pages/WeeklyAccountabilityMeetingPage.jsx` - Integrated AI controls
+- **Dependencies**: WebRTC API, WebSocket connections, OpenAI GPT-4, AssemblyAI
+- **Features**:
+  - Real-time audio recording with MediaRecorder API
+  - Live transcription with speaker identification
+  - WebSocket streaming for real-time transcript updates
+  - AI-powered meeting summarization with GPT-4
+  - Automatic action item and issue extraction
+  - Meeting history attachment with searchable transcripts
+  - Consent management and microphone permissions
+  - Multi-format transcript downloads
+- **Status**: Frontend complete, backend API layer ready for integration
+
 ## 6. Current State
 
 ### Implemented Features
@@ -325,7 +346,8 @@ AXP (Adaptive Execution Platform) is the world's first business execution platfo
 ✅ **Soft Delete Protection** - Data recovery capability
 ✅ **Configurable Scorecard Periods** - Organizations choose 13-week rolling, current quarter, or 4-week views
 ✅ **Configurable Rock Display** - Groups by Company/Individual or by Owner preference
-✅ **Adaptive Meeting Buttons** - Single button adapts to start or join meetings based on state  
+✅ **Adaptive Meeting Buttons** - Single button adapts to start or join meetings based on state
+✅ **AI Meeting Assistant** - Real-time transcription, AI summarization, and automated action item extraction  
 
 ### Production Metrics
 - **Uptime**: 99.9% (August - October 2024)
@@ -350,6 +372,7 @@ AXP (Adaptive Execution Platform) is the world's first business execution platfo
 10. **Import Data Validation** - Comprehensive column mapping and constraint validation
 11. **Ninety.io Priorities Import** - Complete Excel import system with dual-sheet processing
 12. **Meeting Permission System** - Pre-flight permission checks prevent leadership team members from starting department meetings they're not explicitly members of
+13. **AI Meeting Assistant** - Real-time transcription, AI summarization, and action item extraction for meetings
 
 ## 7. File/Directory Structure
 
@@ -359,11 +382,11 @@ eos-platform/
 ├── frontend/                 # React SPA application
 │   ├── src/
 │   │   ├── pages/           # Route-level components (59 files)
-│   │   ├── components/      # Reusable UI components (36 files)
+│   │   ├── components/      # Reusable UI components (38 files)
 │   │   ├── stores/          # Zustand state management (5 stores)
-│   │   ├── hooks/           # Custom React hooks (5 hooks)
+│   │   ├── hooks/           # Custom React hooks (6 hooks)
 │   │   ├── contexts/        # React context providers (7 contexts)
-│   │   ├── services/        # API service layer (29 services)
+│   │   ├── services/        # API service layer (30 services)
 │   │   ├── utils/           # Utility functions (12 utilities)
 │   │   └── App.jsx          # Main app component with routing
 │   ├── public/              # Static assets
@@ -815,6 +838,6 @@ if (showHistoricalData && sortedDates.length > 0) {
 
 ---
 
-**Last Updated**: October 20, 2025
+**Last Updated**: October 21, 2025
 
-*This architecture documentation represents the current state of the AXP platform as of October 2025. The system is in active development with regular updates and improvements. Major updates in October 2025 focused on scorecard import functionality, date handling, and UI improvements for large number display.*
+*This architecture documentation represents the current state of the AXP platform as of October 2025. The system is in active development with regular updates and improvements. Major updates in October 2025 focused on scorecard import functionality, AI Meeting Assistant implementation, date handling, and UI improvements for large number display.*

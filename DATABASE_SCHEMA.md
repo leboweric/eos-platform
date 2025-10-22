@@ -16,11 +16,12 @@ The AXP platform uses PostgreSQL 16+ as its primary database with a multi-tenant
 3. [Strategic Planning](#strategic-planning)
 4. [Performance Tracking](#performance-tracking)
 5. [Meeting Management](#meeting-management)
-6. [Task & Issue Management](#task--issue-management)
-7. [Document Management](#document-management)
-8. [Audit & Tracking](#audit--tracking)
-9. [Relationships & Constraints](#relationships--constraints)
-10. [Migration History](#migration-history)
+6. [AI Meeting Assistant](#ai-meeting-assistant)
+7. [Task & Issue Management](#task--issue-management)
+8. [Document Management](#document-management)
+9. [Audit & Tracking](#audit--tracking)
+10. [Relationships & Constraints](#relationships--constraints)
+11. [Migration History](#migration-history)
 
 ## Core Tables
 
@@ -297,6 +298,56 @@ Pre-defined agenda items for meetings.
 | completed | BOOLEAN | DEFAULT false | |
 | notes | TEXT | | |
 
+### meeting_transcripts
+AI-powered meeting transcription records.
+
+| Column | Type | Constraints | Description |
+|--------|------|-------------|-------------|
+| id | UUID | PRIMARY KEY | |
+| meeting_id | UUID | FOREIGN KEY | References meetings(id) |
+| organization_id | UUID | FOREIGN KEY | References organizations(id) |
+| transcription_status | VARCHAR(50) | DEFAULT 'not_started' | 'not_started', 'recording', 'processing', 'completed', 'failed' |
+| transcript_text | TEXT | | Full meeting transcript |
+| structured_transcript | JSONB | | Structured transcript with speakers and timestamps |
+| audio_duration_seconds | INTEGER | | Total recording duration |
+| processing_started_at | TIMESTAMP WITH TIME ZONE | | When AI processing began |
+| processing_completed_at | TIMESTAMP WITH TIME ZONE | | When AI processing finished |
+| ai_summary | TEXT | | AI-generated meeting summary |
+| ai_action_items | JSONB | | Extracted action items array |
+| ai_issues_identified | JSONB | | Identified issues array |
+| ai_key_decisions | JSONB | | Key decisions made array |
+| consent_user_ids | JSONB | | Array of user IDs who consented to recording |
+| created_at | TIMESTAMP WITH TIME ZONE | DEFAULT NOW() | |
+| updated_at | TIMESTAMP WITH TIME ZONE | DEFAULT NOW() | |
+| deleted_at | TIMESTAMP WITH TIME ZONE | | Soft delete |
+
+### meeting_transcript_chunks
+Real-time transcript chunks for streaming display.
+
+| Column | Type | Constraints | Description |
+|--------|------|-------------|-------------|
+| id | UUID | PRIMARY KEY | |
+| transcript_id | UUID | FOREIGN KEY | References meeting_transcripts(id) |
+| speaker | VARCHAR(255) | | Speaker identification |
+| text | TEXT | NOT NULL | Transcript chunk text |
+| timestamp | TIMESTAMP WITH TIME ZONE | | When spoken |
+| confidence | DECIMAL(3,2) | | AI confidence score (0.00-1.00) |
+| sequence_number | INTEGER | | Order in transcript |
+| created_at | TIMESTAMP WITH TIME ZONE | DEFAULT NOW() | |
+
+## AI Meeting Assistant
+
+The AI Meeting Assistant provides real-time transcription, AI-powered summarization, and automated extraction of action items and issues from meeting conversations. This system captures everything discussed in meetings with proper consent management and speaker identification.
+
+**Key Features:**
+- Real-time audio recording and transcription
+- WebSocket streaming for live transcript updates  
+- AI-powered meeting summaries with GPT-4
+- Automatic action item and issue extraction
+- Speaker identification and structured transcript
+- Consent management for recording compliance
+- Searchable meeting history and transcript archive
+
 ## Task & Issue Management
 
 ### issues
@@ -474,6 +525,8 @@ scorecard_metrics → scorecard_scores (one-to-many)
 -- Meeting relationships
 meetings → meeting_participants (one-to-many)
 meetings → meeting_agenda_items (one-to-many)
+meetings → meeting_transcripts (one-to-many)
+meeting_transcripts → meeting_transcript_chunks (one-to-many)
 
 -- Document hierarchy
 document_folders → documents (one-to-many)
@@ -504,6 +557,10 @@ CHECK (rock_display_preference IN ('grouped_by_type', 'grouped_by_owner'))
 -- Issues
 CHECK (priority IN ('low', 'medium', 'high', 'critical'))
 CHECK (status IN ('open', 'in_discussion', 'solved', 'archived'))
+
+-- AI Meeting Assistant
+CHECK (transcription_status IN ('not_started', 'recording', 'processing', 'completed', 'failed'))
+CHECK (confidence >= 0.00 AND confidence <= 1.00)
 ```
 
 ## Migration History
@@ -542,6 +599,12 @@ CHECK (status IN ('open', 'in_discussion', 'solved', 'archived'))
    - Universal objectives table
    - Framework translation support
    - Terminology mappings
+
+8. **070+**: AI Meeting Assistant (October 2025)
+   - meeting_transcripts table for AI-powered transcription
+   - meeting_transcript_chunks for real-time streaming
+   - JSONB columns for structured AI outputs
+   - Consent management and audio processing
 
 ### Recent Schema Changes (October 2024 - October 2025)
 
@@ -698,6 +761,6 @@ ORDER BY ss.week_date;
 
 ---
 
-**Last Updated**: October 20, 2025
+**Last Updated**: October 21, 2025
 
-*This database schema documentation reflects the production system as of October 2025, including major scorecard import functionality and critical date handling requirements. The schema is stable with only additive changes planned.*
+*This database schema documentation reflects the production system as of October 2025, including major scorecard import functionality, AI Meeting Assistant transcription tables, and critical date handling requirements. The schema is stable with only additive changes planned.*
