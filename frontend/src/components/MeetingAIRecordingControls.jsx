@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { AudioService } from '../services/audioService';
 import { io } from 'socket.io-client';
+import toast from 'react-hot-toast';
 
 export const MeetingAIRecordingControls = ({ 
   meetingId, 
@@ -239,7 +240,7 @@ export const MeetingAIRecordingControls = ({
   };
 
   /**
-   * Handle stop recording
+   * Handle stop recording - NON-BLOCKING VERSION
    */
   const handleStopRecording = async () => {
     console.log('🛑 [AI Recording] Stopping PCM recording...');
@@ -272,55 +273,43 @@ export const MeetingAIRecordingControls = ({
         console.log('🔌 [AI Recording] WebSocket disconnected');
       }
 
-      // Stop backend transcription and trigger AI summary
+      // Stop backend transcription (fire and forget - no blocking)
       console.log('📡 [AI Recording] Stopping transcription via API...');
-      const stopResponse = await api.post('/transcription/stop', {
+      await api.post('/transcription/stop', {
         meetingId,
         organizationId
       });
 
-      console.log('✅ [AI Recording] Transcription stopped:', stopResponse.data);
-      
-      setTranscriptionStatus('processing');
+      // Update state immediately - no waiting for processing
+      setTranscriptionStatus('stopped');
       setIsRecording(false);
+      setIsProcessing(false);
 
       if (onTranscriptionStopped) {
         onTranscriptionStopped();
       }
 
+      // Show simple toast - no blocking modal
+      toast.success("Recording stopped", {
+        description: "AI summary will be generated when you conclude the meeting",
+        duration: 4000
+      });
+
       console.log('✅ [AI Recording] PCM recording stopped successfully');
-      setIsProcessing(false);
+      
     } catch (err) {
       console.error('❌ [AI Recording] Error stopping recording:', err);
       setError(err.message || 'Failed to stop recording');
       setIsProcessing(false);
+      
+      // Show error toast
+      toast.error("Error stopping recording", {
+        description: err.message || 'Failed to stop recording',
+        duration: 4000
+      });
     }
   };
 
-  // Poll for transcription status
-  useEffect(() => {
-    if (transcriptionStatus === 'processing') {
-      const interval = setInterval(async () => {
-        try {
-          const response = await api.get(`/transcription/${meetingId}/status?organizationId=${organizationId}`);
-          const status = response.data;
-          
-          if (status.status === 'completed') {
-            setTranscriptionStatus('completed');
-            clearInterval(interval);
-          } else if (status.status === 'failed') {
-            setTranscriptionStatus('failed');
-            setError('Transcription failed');
-            clearInterval(interval);
-          }
-        } catch (err) {
-          console.error('Error checking status:', err);
-        }
-      }, 3000); // Check every 3 seconds
-
-      return () => clearInterval(interval);
-    }
-  }, [transcriptionStatus, meetingId, organizationId]);
 
   if (!aiEnabled) {
     return null;
@@ -391,12 +380,6 @@ export const MeetingAIRecordingControls = ({
             </>
           )}
 
-          {transcriptionStatus === 'processing' && (
-            <div className="flex items-center gap-2 text-blue-600">
-              <Loader2 className="h-4 w-4 animate-spin" />
-              <span className="font-medium">Processing transcript & generating AI summary...</span>
-            </div>
-          )}
 
           {transcriptionStatus === 'completed' && (
             <div className="flex items-center gap-2 text-green-600">
