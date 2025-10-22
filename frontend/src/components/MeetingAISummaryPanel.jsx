@@ -40,30 +40,44 @@ export const MeetingAISummaryPanel = ({ meetingId, organizationId, onClose }) =>
       try {
         console.log(`🔍 Polling for AI summary completion (attempt ${i + 1}/${maxAttempts})`);
         
-        // First check transcript status
+        // STEP 1: Try to load the summary directly (most reliable check)
+        try {
+          const summaryResponse = await aiMeetingService.getAISummary(meetingId);
+          
+          if (summaryResponse && summaryResponse.executive_summary) {
+            // SUCCESS! Summary exists and has content
+            console.log('✅ Found AI summary with content, loading...');
+            setSummary(summaryResponse);
+            setSummaryStatus('completed');
+            setLoading(false);
+            return;
+          }
+        } catch (summaryError) {
+          // Summary doesn't exist yet, continue to status check
+          console.log('📝 No summary available yet, checking status...');
+        }
+        
+        // STEP 2: Check transcript status for processing state
         const statusResponse = await aiMeetingService.getTranscriptionStatus(meetingId);
         console.log('📊 Transcript status:', statusResponse);
         
-        if (statusResponse.status === 'completed' || statusResponse.has_ai_summary) {
-          // AI processing is complete OR summary exists, load the summary
-          console.log('✅ AI processing complete or summary exists, loading summary...');
-          await loadCompletedSummary();
+        if (statusResponse.status === 'failed') {
+          // Actually failed - no summary was generated
+          console.log('❌ Transcript failed and no summary exists');
+          setSummaryStatus('failed');
+          setError('AI summary generation failed');
+          setLoading(false);
           return;
         }
         
-        // For failed status, try to load summary anyway in case it exists
-        if (statusResponse.status === 'failed') {
-          console.log('⚠️ Transcript failed, but checking if AI summary exists...');
+        if (statusResponse.status === 'completed') {
+          // Status says completed but no summary found - try one more time
+          console.log('🔄 Status completed but no summary yet, trying once more...');
           try {
             await loadCompletedSummary();
-            console.log('✅ Found existing AI summary despite failed status');
             return;
           } catch (summaryError) {
-            console.log('❌ No AI summary available for failed transcript');
-            setSummaryStatus('failed');
-            setError('AI summary generation failed');
-            setLoading(false);
-            return;
+            console.log('⚠️ Status completed but still no summary available');
           }
         }
         

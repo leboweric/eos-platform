@@ -44,9 +44,16 @@ class AISummaryService {
 
       // Save AI summary to database
       await this.saveAISummary(transcriptId, aiSummary, processingTime, estimatedCost);
+      console.log(`💾 Successfully saved AI summary for transcript ${transcriptId}`);
 
-      // Mark transcript as completed
-      await this.updateTranscriptStatus(transcriptId, 'completed');
+      // Mark transcript as completed - CRITICAL: This must succeed
+      try {
+        await this.updateTranscriptStatus(transcriptId, 'completed');
+        console.log(`✅ Transcript ${transcriptId} marked as completed`);
+      } catch (statusError) {
+        console.error(`❌ Failed to update transcript status to completed:`, statusError);
+        // Don't throw - AI summary was saved successfully, just log the status update failure
+      }
 
       console.log(`✅ AI summary generated for transcript ${transcriptId} in ${processingTime}s`);
 
