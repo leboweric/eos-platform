@@ -47,6 +47,7 @@ class TranscriptionService {
       console.log(`🎙️ [TranscriptionService] Starting real-time transcription for transcript ${transcriptId}`);
 
       // Create real-time transcriber with Universal Streaming (new API)
+      // Force fresh build - updated for Universal Streaming API
       console.log('🔍 [TranscriptionService] Creating Universal Streaming transcriber...');
       const realtimeTranscriber = this.assemblyAI.realtime.transcriber({
         sample_rate: 16000,
