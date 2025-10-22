@@ -335,6 +335,64 @@ AXP (Adaptive Execution Platform) is the world's first business execution platfo
   - Live transcript broadcasting to meeting participants
   - Real-time AI summary completion notifications
   - Dynamic audio level visualization
+
+#### Critical Debugging & Production Fixes (October 2025)
+
+**Root Cause Analysis**: AI summaries were being generated successfully but transcript status was incorrectly marked as 'failed', causing frontend polling to timeout and frustrate users.
+
+**Issues Identified & Fixed**:
+
+1. **Database Column Mismatch** (Fixed in commit a9026e4):
+   - Problem: INSERT statement used `rocks_mentioned` but actual column was `rocks_priorities`
+   - Impact: SQL errors during AI summary save triggered catch block, marking transcript as 'failed'
+   - Solution: Corrected column name in `aiSummaryService.js:243`
+   ```sql
+   -- ❌ WRONG
+   INSERT INTO meeting_ai_summaries (..., rocks_mentioned, ...)
+   -- ✅ FIXED  
+   INSERT INTO meeting_ai_summaries (..., rocks_priorities, ...)
+   ```
+
+2. **Status Update Failure** (Fixed in commit 2c2e345):
+   - Problem: Status update errors prevented successful completion marking
+   - Impact: AI summaries existed but status remained 'failed'
+   - Solution: Separated status updates from AI processing success
+   ```javascript
+   // Enhanced error handling - don't let status failures affect AI success
+   try {
+     await this.updateTranscriptStatus(transcriptId, 'completed');
+   } catch (statusError) {
+     console.error('Status update failed but AI summary succeeded');
+     // Don't throw - AI summary was saved successfully
+   }
+   ```
+
+3. **Frontend Polling Logic** (Fixed in commit 2c2e345):
+   - Problem: Polling relied on status field which could be incorrect
+   - Impact: Users saw "Failed to load AI summary" even when summary existed
+   - Solution: Check for summary existence first, then fallback to status
+   ```javascript
+   // STEP 1: Try to load summary directly (most reliable)
+   const summaryResponse = await aiMeetingService.getAISummary(meetingId);
+   if (summaryResponse && summaryResponse.executive_summary) {
+     // SUCCESS! Summary exists regardless of status field
+     return;
+   }
+   // STEP 2: Only check status if no summary found
+   ```
+
+**Lessons Learned**:
+- Database schema alignment is critical - code must match exact column names
+- Error boundaries should prevent partial failures from affecting overall success
+- Frontend polling should check data existence before trusting status fields
+- Comprehensive logging is essential for debugging production issues
+- User experience must be resilient to backend inconsistencies
+
+**Production Monitoring**:
+- Added detailed logging throughout AI processing pipeline
+- Status update failures are logged but don't prevent AI success
+- Frontend gracefully handles both broken and fixed states
+- Polling timeout reduced user frustration
 - **EOS-Optimized Features**:
   - Custom vocabulary for EOS terminology (Rocks, VTO, L10, IDS, etc.)
   - Comprehensive GPT-4 prompts for business meeting analysis
@@ -865,6 +923,6 @@ if (showHistoricalData && sortedDates.length > 0) {
 
 ---
 
-**Last Updated**: October 21, 2025
+**Last Updated**: October 22, 2025
 
-*This architecture documentation represents the current state of the AXP platform as of October 2025. The system is in active development with regular updates and improvements. Major updates in October 2025 focused on scorecard import functionality, AI Meeting Assistant implementation, date handling, and UI improvements for large number display.*
+*This architecture documentation represents the current state of the AXP platform as of October 2025. The system is in active development with regular updates and improvements. Major updates in October 2025 focused on scorecard import functionality, AI Meeting Assistant implementation, critical production debugging and fixes, database schema alignment, frontend polling robustness, and comprehensive error handling improvements.*

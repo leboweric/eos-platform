@@ -336,22 +336,56 @@ Comprehensive AI analysis results with GPT-4 powered insights.
 | discussion_topics | JSONB | | Topics with duration, sentiment, energy level |
 | action_items | JSONB | | Extracted action items with assignee, due date, priority, category |
 | issues_discussed | JSONB | | Issues with status, solution, impact level, timeline |
-| rocks_mentioned | JSONB | | Rock/priority updates with status, progress, obstacles |
-| scorecard_metrics | JSONB | | Metrics discussed with current/target values, trends |
+| rocks_priorities | JSONB | | Rock/priority updates with status, progress, obstacles |
 | notable_quotes | JSONB | | Significant quotes with speaker and context |
-| team_dynamics | JSONB | | Participation, collaboration quality, conflict resolution |
-| eos_adherence | JSONB | | Level 10 structure compliance, time management, focus |
-| next_meeting_preparation | JSONB | | Items to prepare with owners and deadlines |
 | meeting_sentiment | VARCHAR(20) | | 'positive', 'neutral', 'negative', 'mixed' |
 | meeting_energy_score | INTEGER | | Energy level 1-10 |
-| productivity_score | INTEGER | | Productivity assessment 1-10 |
-| effectiveness_rating | JSONB | | Score with rationale |
-| improvement_suggestions | JSONB | | Array of specific improvement recommendations |
 | ai_model | VARCHAR(100) | | AI model used (e.g., 'gpt-4-turbo-preview') |
 | ai_prompt_version | VARCHAR(20) | | Prompt version for tracking improvements |
 | ai_processing_time_seconds | DECIMAL(10,3) | | Time taken for AI analysis |
 | ai_cost_usd | DECIMAL(10,4) | | Estimated cost of AI processing |
 | created_at | TIMESTAMP WITH TIME ZONE | DEFAULT NOW() | |
+| updated_at | TIMESTAMP WITH TIME ZONE | DEFAULT NOW() | |
+
+#### Critical Schema Debugging (October 2025)
+
+**Production Issue**: AI Summary generation was failing due to code/schema mismatches.
+
+**Root Cause**: Documentation and code referenced columns that didn't exist or had different names in production database.
+
+**Schema Corrections Made**:
+
+1. **Column Name Mismatch** - `meeting_ai_summaries`:
+   ```sql
+   -- ❌ WRONG (documented but doesn't exist)
+   rocks_mentioned JSONB
+   
+   -- ✅ CORRECT (actual production column)
+   rocks_priorities JSONB
+   ```
+
+2. **Removed Non-Existent Columns** from documentation:
+   - `scorecard_metrics` - Not implemented in production
+   - `team_dynamics` - Not implemented in production  
+   - `eos_adherence` - Not implemented in production
+   - `next_meeting_preparation` - Not implemented in production
+   - `productivity_score` - Not implemented in production
+   - `effectiveness_rating` - Not implemented in production
+   - `improvement_suggestions` - Not implemented in production
+
+3. **Key Column Data Types** - Confirmed correct:
+   - `key_decisions`: TEXT[] (PostgreSQL array, not JSONB)
+   - `discussion_topics`: JSONB
+   - `action_items`: JSONB
+   - `issues_discussed`: JSONB
+   - `rocks_priorities`: JSONB
+   - `notable_quotes`: JSONB
+
+**Lessons Learned**:
+- Schema documentation must exactly match production database
+- Code must use actual column names, not documented assumptions
+- Database introspection should verify schema before major releases
+- Missing columns cause SQL errors, not graceful degradation
 
 ### transcript_access_log
 Audit trail for transcript access and modifications (compliance).
@@ -849,6 +883,6 @@ ORDER BY ss.week_date;
 
 ---
 
-**Last Updated**: October 21, 2025
+**Last Updated**: October 22, 2025
 
-*This database schema documentation reflects the production system as of October 2025, including major scorecard import functionality, AI Meeting Assistant transcription tables, and critical date handling requirements. The schema is stable with only additive changes planned.*
+*This database schema documentation reflects the production system as of October 2025, including major scorecard import functionality, AI Meeting Assistant transcription tables, critical schema debugging and corrections, and exact column name alignment with production database. Documentation now accurately matches the production schema after extensive debugging and testing.*
