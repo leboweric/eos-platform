@@ -2975,6 +2975,20 @@ const WeeklyAccountabilityMeetingPage = () => {
         : meetingRating || 8;
       
       // Send meeting summary with individual and average ratings
+      console.log('🏁 [concludeMeeting] About to call meetingsService.concludeMeeting with:', {
+        orgId,
+        effectiveTeamId,
+        meetingData: {
+          meetingType: 'weekly',
+          duration: durationMinutes,
+          rating: averageRating,
+          individualRatings: participantRatings,
+          cascadingMessage: cascadingMessage,
+          issuesDiscussed: selectedIssueIds.length,
+          todosAssigned: selectedTodoIds.length
+        }
+      });
+      
       await meetingsService.concludeMeeting(orgId, effectiveTeamId, {
         meetingType: 'weekly',
         duration: durationMinutes,
@@ -2984,6 +2998,8 @@ const WeeklyAccountabilityMeetingPage = () => {
         issuesDiscussed: selectedIssueIds.length,
         todosAssigned: selectedTodoIds.length
       });
+      
+      console.log('✅ [concludeMeeting] meetingsService.concludeMeeting completed successfully');
       
       // Create meeting snapshot for history
       try {
