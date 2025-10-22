@@ -78,6 +78,14 @@ class TranscriptionService {
         expiresIn: 3600,
         timestamp: new Date().toISOString()
       });
+      
+      // Token validation debugging
+      console.log('[TranscriptionService] Token validation:', {
+        tokenType: typeof tokenResponse.token,
+        tokenStart: tokenResponse.token?.substring(0, 20),
+        apiKeyStart: process.env.ASSEMBLYAI_API_KEY?.substring(0, 20),
+        fullTokenResponse: tokenResponse
+      });
 
       // Create real-time transcriber with Universal Streaming (simplified config)
       console.log('[TranscriptionService] Creating transcriber with config:', {
@@ -122,9 +130,26 @@ class TranscriptionService {
             language_code: 'en',  // snake_case
             model: 'universal-1'
           });
+          
+          // Debug transcriber object
+          console.log('[TranscriptionService] Transcriber object created:', {
+            hasConnect: typeof realtimeTranscriber.connect === 'function',
+            hasOn: typeof realtimeTranscriber.on === 'function',
+            hasSendAudio: typeof realtimeTranscriber.sendAudio === 'function',
+            hasClose: typeof realtimeTranscriber.close === 'function',
+            methods: Object.getOwnPropertyNames(realtimeTranscriber).slice(0, 10),
+            transcriber: !!realtimeTranscriber
+          });
+          
           console.log('✅ [TranscriptionService] Method 2 (transcriber) succeeded');
         } catch (error2) {
           console.log('❌ [TranscriptionService] Method 2 failed:', error2.message);
+          console.log('❌ [TranscriptionService] Method 2 full error:', {
+            name: error2.name,
+            message: error2.message,
+            stack: error2.stack,
+            code: error2.code
+          });
           
           console.log('[TranscriptionService] Attempting method 3: RealtimeTranscriber...');
           // Method 3: Direct RealtimeTranscriber class
