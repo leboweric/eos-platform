@@ -14,14 +14,7 @@ export const getActiveMeetings = async (req, res) => {
         o.name as organization_name,
         t.id as team_id,
         t.name as team_name,
-        CASE 
-          WHEN EXISTS (
-            SELECT 1 FROM meeting_transcripts mt 
-            WHERE mt.meeting_id = m.id 
-            AND mt.status IN ('processing', 'processing_ai')
-          ) THEN true 
-          ELSE false 
-        END as has_active_recording
+        false as has_active_recording
       FROM meetings m
       LEFT JOIN organizations o ON m.organization_id = o.id
       LEFT JOIN teams t ON m.team_id = t.id
