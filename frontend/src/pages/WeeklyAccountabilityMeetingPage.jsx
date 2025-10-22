@@ -4077,6 +4077,73 @@ const WeeklyAccountabilityMeetingPage = () => {
                                                       <X className="h-4 w-4 text-red-600" />
                                                     )}
                                                   </div>
+                                                  
+                                                  {/* Status Dropdown */}
+                                                  {openStatusDropdown === priority.id && (
+                                                    <div className="absolute top-8 left-0 z-50 bg-white rounded-lg shadow-lg border border-slate-200 py-1 min-w-[140px]">
+                                                      <button
+                                                        className="w-full px-3 py-2 text-left text-sm hover:bg-slate-50 flex items-center gap-2"
+                                                        onClick={async (e) => {
+                                                          e.stopPropagation();
+                                                          await handleUpdatePriority(priority.id, { status: 'on-track' });
+                                                          setOpenStatusDropdown(null);
+                                                        }}
+                                                      >
+                                                        <div className="w-4 h-4 rounded-full bg-green-100 border-2 border-green-500 flex items-center justify-center">
+                                                          {priority.status === 'on-track' && <Check className="h-3 w-3 text-green-600" />}
+                                                        </div>
+                                                        <span className={priority.status === 'on-track' ? 'font-medium' : ''}>On Track</span>
+                                                      </button>
+                                                      
+                                                      <button
+                                                        className="w-full px-3 py-2 text-left text-sm hover:bg-slate-50 flex items-center gap-2"
+                                                        onClick={async (e) => {
+                                                          e.stopPropagation();
+                                                          await handleUpdatePriority(priority.id, { status: 'off-track' });
+                                                          setOpenStatusDropdown(null);
+                                                        }}
+                                                      >
+                                                        <div className="w-4 h-4 rounded-full bg-red-100 border-2 border-red-500 flex items-center justify-center">
+                                                          {priority.status === 'off-track' && <X className="h-3 w-3 text-red-600" />}
+                                                        </div>
+                                                        <span className={priority.status === 'off-track' ? 'font-medium' : ''}>Off Track</span>
+                                                      </button>
+                                                      
+                                                      <button
+                                                        className="w-full px-3 py-2 text-left text-sm hover:bg-slate-50 flex items-center gap-2"
+                                                        onClick={async (e) => {
+                                                          e.stopPropagation();
+                                                          await handleUpdatePriority(priority.id, { status: 'complete' });
+                                                          setOpenStatusDropdown(null);
+                                                        }}
+                                                      >
+                                                        <div className="w-4 h-4 rounded-full border-2 flex items-center justify-center"
+                                                             style={{ 
+                                                               backgroundColor: themeColors.primary + '20',
+                                                               borderColor: themeColors.primary 
+                                                             }}>
+                                                          {priority.status === 'complete' && <CheckCircle className="h-3 w-3" style={{ color: themeColors.primary }} />}
+                                                        </div>
+                                                        <span className={priority.status === 'complete' ? 'font-medium' : ''}>Complete</span>
+                                                      </button>
+                                                      
+                                                      <div className="border-t border-slate-100 my-1"></div>
+                                                      
+                                                      <button
+                                                        className="w-full px-3 py-2 text-left text-sm hover:bg-slate-50 flex items-center gap-2"
+                                                        onClick={async (e) => {
+                                                          e.stopPropagation();
+                                                          await handleUpdatePriority(priority.id, { status: 'cancelled' });
+                                                          setOpenStatusDropdown(null);
+                                                        }}
+                                                      >
+                                                        <div className="w-4 h-4 rounded-full bg-gray-100 border-2 border-gray-500 flex items-center justify-center">
+                                                          {priority.status === 'cancelled' && <X className="h-3 w-3 text-gray-500" />}
+                                                        </div>
+                                                        <span className={priority.status === 'cancelled' ? 'font-medium' : ''}>Cancelled</span>
+                                                      </button>
+                                                    </div>
+                                                  )}
                                                 </div>
                                                 
                                                 {/* Title */}
@@ -4394,6 +4461,73 @@ const WeeklyAccountabilityMeetingPage = () => {
                                                       <X className="h-4 w-4 text-red-600" />
                                                     )}
                                                   </div>
+                                                  
+                                                  {/* Status Dropdown */}
+                                                  {openStatusDropdown === priority.id && (
+                                                    <div className="absolute top-8 left-0 z-50 bg-white rounded-lg shadow-lg border border-slate-200 py-1 min-w-[140px]">
+                                                      <button
+                                                        className="w-full px-3 py-2 text-left text-sm hover:bg-slate-50 flex items-center gap-2"
+                                                        onClick={async (e) => {
+                                                          e.stopPropagation();
+                                                          await handleUpdatePriority(priority.id, { status: 'on-track' });
+                                                          setOpenStatusDropdown(null);
+                                                        }}
+                                                      >
+                                                        <div className="w-4 h-4 rounded-full bg-green-100 border-2 border-green-500 flex items-center justify-center">
+                                                          {priority.status === 'on-track' && <Check className="h-3 w-3 text-green-600" />}
+                                                        </div>
+                                                        <span className={priority.status === 'on-track' ? 'font-medium' : ''}>On Track</span>
+                                                      </button>
+                                                      
+                                                      <button
+                                                        className="w-full px-3 py-2 text-left text-sm hover:bg-slate-50 flex items-center gap-2"
+                                                        onClick={async (e) => {
+                                                          e.stopPropagation();
+                                                          await handleUpdatePriority(priority.id, { status: 'off-track' });
+                                                          setOpenStatusDropdown(null);
+                                                        }}
+                                                      >
+                                                        <div className="w-4 h-4 rounded-full bg-red-100 border-2 border-red-500 flex items-center justify-center">
+                                                          {priority.status === 'off-track' && <X className="h-3 w-3 text-red-600" />}
+                                                        </div>
+                                                        <span className={priority.status === 'off-track' ? 'font-medium' : ''}>Off Track</span>
+                                                      </button>
+                                                      
+                                                      <button
+                                                        className="w-full px-3 py-2 text-left text-sm hover:bg-slate-50 flex items-center gap-2"
+                                                        onClick={async (e) => {
+                                                          e.stopPropagation();
+                                                          await handleUpdatePriority(priority.id, { status: 'complete' });
+                                                          setOpenStatusDropdown(null);
+                                                        }}
+                                                      >
+                                                        <div className="w-4 h-4 rounded-full border-2 flex items-center justify-center"
+                                                             style={{ 
+                                                               backgroundColor: themeColors.primary + '20',
+                                                               borderColor: themeColors.primary 
+                                                             }}>
+                                                          {priority.status === 'complete' && <CheckCircle className="h-3 w-3" style={{ color: themeColors.primary }} />}
+                                                        </div>
+                                                        <span className={priority.status === 'complete' ? 'font-medium' : ''}>Complete</span>
+                                                      </button>
+                                                      
+                                                      <div className="border-t border-slate-100 my-1"></div>
+                                                      
+                                                      <button
+                                                        className="w-full px-3 py-2 text-left text-sm hover:bg-slate-50 flex items-center gap-2"
+                                                        onClick={async (e) => {
+                                                          e.stopPropagation();
+                                                          await handleUpdatePriority(priority.id, { status: 'cancelled' });
+                                                          setOpenStatusDropdown(null);
+                                                        }}
+                                                      >
+                                                        <div className="w-4 h-4 rounded-full bg-gray-100 border-2 border-gray-500 flex items-center justify-center">
+                                                          {priority.status === 'cancelled' && <X className="h-3 w-3 text-gray-500" />}
+                                                        </div>
+                                                        <span className={priority.status === 'cancelled' ? 'font-medium' : ''}>Cancelled</span>
+                                                      </button>
+                                                    </div>
+                                                  )}
                                                 </div>
                                                 
                                                 {/* Title */}
