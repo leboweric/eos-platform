@@ -424,7 +424,7 @@ export const MeetingAIRecordingControls = ({
                 ) : (
                   <Square className="h-4 w-4" />
                 )}
-                Stop & Generate Summary
+                Stop Recording
               </Button>
             </>
           )}
