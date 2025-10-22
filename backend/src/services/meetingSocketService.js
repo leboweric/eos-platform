@@ -543,6 +543,15 @@ class MeetingSocketService {
           // Convert base64 audio data to buffer
           const audioBuffer = Buffer.from(audioData, 'base64');
 
+          // DEBUG: Log audio format details
+          console.log('[AUDIO-DEBUG] Received audio chunk:', {
+            size: audioBuffer.length,
+            first4Bytes: audioBuffer.slice(0, 4).toString('hex'),
+            first8Bytes: audioBuffer.slice(0, 8).toString('hex'),
+            isLikelyPCM: audioBuffer.length % 2 === 0, // PCM S16LE should be even-sized
+            timestamp: new Date().toISOString()
+          });
+
           // Send to AssemblyAI via transcription service
           const success = await transcriptionService.sendAudioData(transcriptId, audioBuffer);
           
