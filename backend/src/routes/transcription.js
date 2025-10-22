@@ -57,4 +57,85 @@ router.post('/:transcriptId/create-todos', createTodosFromAI);
 // Create issues from AI-detected issues
 router.post('/:transcriptId/create-issues', createIssuesFromAI);
 
+// Emergency cleanup endpoint (protected - authenticated users only)
+router.post('/cleanup', async (req, res) => {
+  try {
+    const { forceAll, minutesThreshold = 10, action = 'stuck' } = req.body;
+    
+    console.log('🧹 [Cleanup] Admin cleanup endpoint called:', { 
+      action, 
+      forceAll, 
+      minutesThreshold,
+      user: req.user?.email 
+    });
+    
+    // Import cleanup utility dynamically
+    const cleanup = await import('../utils/transcriptionCleanup.js');
+    
+    let result;
+    
+    switch (action) {
+      case 'force':
+      case 'all':
+        // Nuclear option - clear all active sessions
+        result = await cleanup.forceCleanupAllSessions();
+        break;
+        
+      case 'old':
+        // Clean up old completed sessions (default 30 days)
+        const daysOld = req.body.daysOld || 30;
+        result = await cleanup.cleanupOldSessions(daysOld);
+        break;
+        
+      case 'stats':
+        // Just get statistics
+        result = await cleanup.getSessionStats();
+        break;
+        
+      case 'stuck':
+      default:
+        // Clean up sessions stuck longer than threshold
+        result = await cleanup.cleanupStuckSessions(minutesThreshold);
+        break;
+    }
+    
+    console.log('✅ [Cleanup] Cleanup completed:', result);
+    
+    res.json({
+      success: true,
+      action,
+      timestamp: new Date().toISOString(),
+      ...result
+    });
+    
+  } catch (error) {
+    console.error('❌ [Cleanup] Cleanup error:', error);
+    res.status(500).json({ 
+      success: false, 
+      error: error.message,
+      action: req.body.action || 'stuck'
+    });
+  }
+});
+
+// Get cleanup statistics (read-only)
+router.get('/cleanup/stats', async (req, res) => {
+  try {
+    const cleanup = await import('../utils/transcriptionCleanup.js');
+    const stats = await cleanup.getSessionStats();
+    
+    res.json({
+      success: true,
+      stats
+    });
+    
+  } catch (error) {
+    console.error('❌ [Cleanup] Stats error:', error);
+    res.status(500).json({ 
+      success: false, 
+      error: error.message 
+    });
+  }
+});
+
 export default router;

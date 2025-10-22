@@ -300,6 +300,27 @@ app.use(errorHandler);
 initializeSubscriptionJobs();
 initializeScheduledJobs();
 
+// Clean up any stuck transcription sessions from previous crashes
+const cleanupStuckTranscriptions = async () => {
+  try {
+    console.log('🧹 [Startup] Checking for stuck transcription sessions from previous crashes...');
+    const cleanup = await import('./utils/transcriptionCleanup.js');
+    const result = await cleanup.default.cleanupStuckSessions(5); // 5 minute threshold on startup
+    
+    if (result.cleaned > 0) {
+      console.log(`✅ [Startup] Cleaned up ${result.cleaned} stuck transcription session(s)`);
+    } else {
+      console.log('✅ [Startup] No stuck transcription sessions found');
+    }
+  } catch (error) {
+    console.error('❌ [Startup] Error during transcription cleanup:', error.message);
+    // Don't fail server startup if cleanup fails
+  }
+};
+
+// Run cleanup async (don't block server startup)
+cleanupStuckTranscriptions();
+
 // Create HTTP server for Socket.io
 const server = createServer(app);
 
