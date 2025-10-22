@@ -118,50 +118,55 @@ class TranscriptionService {
             const message = JSON.parse(data.toString());
             console.log('📨 [WebSocket] MESSAGE event fired:', {
               transcriptId,
-              messageType: message.message_type,
-              messagePreview: JSON.stringify(message).substring(0, 100)
+              messageType: message.type || 'transcript',
+              messagePreview: JSON.stringify(message).substring(0, 100),
+              hasTranscript: !!message.transcript,
+              endOfTurn: message.end_of_turn
             });
             
-            if (message.message_type === 'SessionBegins') {
-              console.log('🎬 [WebSocket] SessionBegins received:', {
+            // Universal Streaming API v3 format
+            if (message.type === 'Begin') {
+              console.log('🎬 [WebSocket] Session Begin received:', {
                 transcriptId,
-                sessionId: message.session_id,
+                sessionId: message.id,
                 expires_at: message.expires_at
               });
-              connectionData.sessionId = message.session_id;
-            } else if (message.message_type === 'PartialTranscript') {
-              console.log('🔄 [WebSocket] PartialTranscript:', {
+              connectionData.sessionId = message.id;
+            } else if (message.transcript) {
+              // v3 API provides transcript in every message
+              const isPartial = !message.end_of_turn;
+              
+              console.log(`${isPartial ? '🔄' : '📝'} [WebSocket] ${isPartial ? 'Partial' : 'Final'}Transcript:`, {
                 transcriptId,
-                text: message.text?.substring(0, 50) + '...',
-                confidence: message.confidence
+                text: message.transcript?.substring(0, 50) + '...',
+                turnOrder: message.turn_order,
+                endOfTurn: message.end_of_turn,
+                isFormatted: message.turn_is_formatted
               });
               
-              // Emit partial updates for real-time display
-              this.emitTranscriptUpdate(transcriptId, {
-                type: 'partial_transcript',
-                text: message.text,
-                speaker: 'Speaker'
-              });
-            } else if (message.message_type === 'FinalTranscript') {
-              console.log('📝 [WebSocket] FinalTranscript:', {
-                transcriptId,
-                text: message.text?.substring(0, 50) + '...',
-                confidence: message.confidence
-              });
-              
-              connectionData.transcriptChunks.push({
-                text: message.text,
-                confidence: message.confidence,
-                speaker: 'Speaker',
-                timestamp: new Date().toISOString(),
-                start_time: message.audio_start,
-                end_time: message.audio_end
-              });
-              
-              // Emit final transcript chunk
-              this.emitTranscriptUpdate(transcriptId, {
-                type: 'transcript_chunk',
-                text: message.text,
+              if (isPartial) {
+                // Emit partial updates for real-time display
+                this.emitTranscriptUpdate(transcriptId, {
+                  type: 'partial_transcript',
+                  text: message.transcript,
+                  speaker: 'Speaker'
+                });
+              } else {
+                // Final transcript - store it
+                connectionData.transcriptChunks.push({
+                  text: message.transcript,
+                  confidence: message.confidence || 0.9, // v3 doesn't always provide confidence
+                  speaker: 'Speaker',
+                  timestamp: new Date().toISOString(),
+                  turn_order: message.turn_order,
+                  start_time: message.audio_start,
+                  end_time: message.audio_end
+                });
+                
+                // Emit final transcript chunk
+                this.emitTranscriptUpdate(transcriptId, {
+                  type: 'transcript_chunk',
+                  text: message.transcript,
                 speaker: 'Speaker',
                 confidence: message.confidence
               });
