@@ -6275,7 +6275,9 @@ const WeeklyAccountabilityMeetingPage = () => {
                         
                         // Broadcast meeting end to all participants BEFORE leaving
                         if (meetingCode && broadcastIssueListUpdate) {
-                          console.log('📢 Broadcasting meeting end to all participants');
+                          if (process.env.NODE_ENV === 'development') {
+                            console.log('📢 Broadcasting meeting end to all participants');
+                          }
                           broadcastIssueListUpdate({
                             action: 'meeting-ended',
                             message: 'Meeting has been concluded by the facilitator'

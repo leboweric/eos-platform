@@ -69,6 +69,7 @@ const PrioritiesImportPage = lazy(() => import('./pages/PrioritiesImportPage'));
 const IssuesImportPage = lazy(() => import('./pages/IssuesImportPage'));
 const ImportTodosPage = lazy(() => import('./pages/ImportTodosPage'));
 const MeetingHistoryPage = lazy(() => import('./pages/MeetingHistoryPage'));
+const ActiveMeetingsStatus = lazy(() => import('./pages/ActiveMeetingsStatus'));
 
 // Department Components
 const DepartmentLayout = lazy(() => import('./components/DepartmentLayout'));
@@ -246,6 +247,7 @@ function App() {
           <Route path="/users" element={user ? <Layout><UsersPage /></Layout> : <Navigate to="/login" />} />
           <Route path="/admin/bulk-import" element={user && user.role === 'admin' ? <Layout><BulkUserImport /></Layout> : <Navigate to="/dashboard" />} />
           <Route path="/admin/tools" element={user && user.role === 'admin' ? <Layout><AdminToolsPage /></Layout> : <Navigate to="/dashboard" />} />
+          <Route path="/admin/active-meetings" element={user && user.role === 'admin' ? <Layout><ActiveMeetingsStatus /></Layout> : <Navigate to="/dashboard" />} />
           <Route path="/admin/import-scorecard" element={user && user.role === 'admin' ? <Layout><ScorecardImportPage /></Layout> : <Navigate to="/dashboard" />} />
           <Route path="/admin/import-todos" element={user && user.role === 'admin' ? <Layout><ImportTodosPage /></Layout> : <Navigate to="/dashboard" />} />
           <Route path="/consultant" element={user ? <Layout><ConsultantDashboard /></Layout> : <Navigate to="/login" />} />
