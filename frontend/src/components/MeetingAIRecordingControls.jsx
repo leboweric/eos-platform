@@ -1,8 +1,10 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Mic, Square, Loader2, AlertCircle } from 'lucide-react';
 import api from '../services/axiosConfig';
 import { Button } from '@/components/ui/button';
 import { Alert, AlertDescription } from '@/components/ui/alert';
+import { AudioService } from '../services/audioService';
+import { io } from 'socket.io-client';
 
 export const MeetingAIRecordingControls = ({ 
   meetingId, 
@@ -18,6 +20,11 @@ export const MeetingAIRecordingControls = ({
   const [transcriptionStatus, setTranscriptionStatus] = useState('not_started');
   const [isProcessing, setIsProcessing] = useState(false);
   const [error, setError] = useState(null);
+  
+  // Refs for PCM audio service
+  const audioServiceRef = useRef(null);
+  const socketRef = useRef(null);
+  const transcriptIdRef = useRef(null);
 
   // Check if AI is enabled for this org (from context or props)
   const aiEnabled = true; // TODO: Get from organization settings
@@ -42,9 +49,22 @@ export const MeetingAIRecordingControls = ({
     return `${minutes}:${secs.toString().padStart(2, '0')}`;
   };
 
-  // Cleanup audio stream on unmount
+  // Cleanup all resources on unmount
   useEffect(() => {
     return () => {
+      // Cleanup PCM audio service
+      if (audioServiceRef.current) {
+        audioServiceRef.current.cleanup();
+        audioServiceRef.current = null;
+      }
+      
+      // Cleanup WebSocket
+      if (socketRef.current) {
+        socketRef.current.disconnect();
+        socketRef.current = null;
+      }
+      
+      // Cleanup audio stream
       if (audioStream) {
         audioStream.getTracks().forEach(track => track.stop());
       }
@@ -55,7 +75,7 @@ export const MeetingAIRecordingControls = ({
    * Handle start recording - EXACTLY like the successful manual test
    */
   const handleStartRecording = async () => {
-    console.log('🎙️ [AI Recording] Button clicked - requesting microphone access...');
+    console.log('🎙️ [AI Recording] Starting PCM audio recording...');
     console.log('🔍 [AI Recording] Using organizationId:', organizationId);
     console.log('🔍 [AI Recording] Using meetingId:', meetingId);
     
@@ -72,18 +92,20 @@ export const MeetingAIRecordingControls = ({
         throw new Error('Meeting ID is required for AI recording');
       }
 
-      // Request microphone access - this will show the browser permission popup
+      // Request microphone access with specific audio constraints
       const stream = await navigator.mediaDevices.getUserMedia({ 
-        audio: true  // Start simple, just like the test that worked
+        audio: {
+          sampleRate: 16000,  // AssemblyAI requirement
+          channelCount: 1,    // Mono audio
+          echoCancellation: true,
+          noiseSuppression: true
+        }
       });
       
       console.log('✅ [AI Recording] Microphone access granted!', stream);
-      console.log('🎤 [AI Recording] Audio tracks:', stream.getAudioTracks());
-      
-      // Store the stream
       setAudioStream(stream);
 
-      // Start backend transcription using the new API endpoint
+      // Start backend transcription
       console.log('📡 [AI Recording] Starting transcription via API...');
       const transcriptionResponse = await api.post('/transcription/start', {
         meetingId,
@@ -91,6 +113,41 @@ export const MeetingAIRecordingControls = ({
       });
 
       console.log('✅ [AI Recording] Transcription started:', transcriptionResponse.data);
+      transcriptIdRef.current = transcriptionResponse.data.transcript_id;
+
+      // Connect to WebSocket for real-time audio streaming
+      const socketUrl = process.env.NODE_ENV === 'production' 
+        ? 'https://api.axplatform.app' 
+        : 'http://localhost:3001';
+        
+      socketRef.current = io(socketUrl);
+      
+      socketRef.current.on('connect', () => {
+        console.log('✅ [AI Recording] Socket connected for real-time audio');
+      });
+
+      // Initialize PCM Audio Service
+      audioServiceRef.current = new AudioService();
+      
+      const onAudioData = (base64PCM) => {
+        if (socketRef.current && transcriptIdRef.current) {
+          socketRef.current.emit('audio-chunk', {
+            transcriptId: transcriptIdRef.current,
+            audioData: base64PCM
+          });
+        }
+      };
+
+      const audioInitialized = await audioServiceRef.current.initialize(stream, onAudioData);
+      
+      if (!audioInitialized) {
+        throw new Error('Failed to initialize PCM audio capture');
+      }
+
+      // Start PCM audio capture
+      audioServiceRef.current.startCapture();
+      
+      console.log(`🎙️ [AI Recording] Using ${audioServiceRef.current.getImplementationType()} for PCM capture`);
       
       setTranscriptionStatus('recording');
       setIsRecording(true);
@@ -100,13 +157,13 @@ export const MeetingAIRecordingControls = ({
         onTranscriptionStarted();
       }
 
-      console.log('🔴 [AI Recording] Started successfully');
+      console.log('✅ [AI Recording] PCM recording started successfully');
       setIsProcessing(false);
 
     } catch (error) {
-      console.error('❌ [AI Recording] Failed to access microphone:', error);
+      console.error('❌ [AI Recording] Failed to start recording:', error);
       
-      let errorMessage = 'Could not access microphone';
+      let errorMessage = 'Could not start AI recording';
       
       if (error.name === 'NotAllowedError') {
         errorMessage = 'Microphone access denied. Please click "Allow" when prompted.';
@@ -115,12 +172,22 @@ export const MeetingAIRecordingControls = ({
       } else if (error.name === 'NotReadableError') {
         errorMessage = 'Microphone is in use by another application.';
       } else {
-        errorMessage = `Microphone error: ${error.message}`;
+        errorMessage = `Recording error: ${error.message}`;
       }
       
       setError(errorMessage);
       setIsRecording(false);
       setIsProcessing(false);
+      
+      // Cleanup on error
+      if (audioServiceRef.current) {
+        audioServiceRef.current.cleanup();
+        audioServiceRef.current = null;
+      }
+      if (socketRef.current) {
+        socketRef.current.disconnect();
+        socketRef.current = null;
+      }
     }
   };
 
@@ -128,11 +195,19 @@ export const MeetingAIRecordingControls = ({
    * Handle stop recording
    */
   const handleStopRecording = async () => {
-    console.log('🛑 [AI Recording] Stopping...');
+    console.log('🛑 [AI Recording] Stopping PCM recording...');
     
     try {
       setError(null);
       setIsProcessing(true);
+
+      // Stop PCM audio capture
+      if (audioServiceRef.current) {
+        audioServiceRef.current.stopCapture();
+        audioServiceRef.current.cleanup();
+        audioServiceRef.current = null;
+        console.log('🔇 [AI Recording] PCM audio service stopped');
+      }
 
       // Stop audio stream
       if (audioStream) {
@@ -141,6 +216,13 @@ export const MeetingAIRecordingControls = ({
           console.log('🔇 [AI Recording] Stopped track:', track.label);
         });
         setAudioStream(null);
+      }
+
+      // Disconnect WebSocket
+      if (socketRef.current) {
+        socketRef.current.disconnect();
+        socketRef.current = null;
+        console.log('🔌 [AI Recording] WebSocket disconnected');
       }
 
       // Stop backend transcription and trigger AI summary
@@ -159,10 +241,10 @@ export const MeetingAIRecordingControls = ({
         onTranscriptionStopped();
       }
 
-      console.log('✅ [AI Recording] Stopped successfully');
+      console.log('✅ [AI Recording] PCM recording stopped successfully');
       setIsProcessing(false);
     } catch (err) {
-      console.error('Error stopping recording:', err);
+      console.error('❌ [AI Recording] Error stopping recording:', err);
       setError(err.message || 'Failed to stop recording');
       setIsProcessing(false);
     }
