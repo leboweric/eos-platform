@@ -20,7 +20,17 @@ class TranscriptionService {
         this.assemblyAI = new AssemblyAI({
           apiKey: process.env.ASSEMBLYAI_API_KEY,
         });
+        
         console.log('✅ [TranscriptionService] AssemblyAI service initialized successfully');
+        
+        // Debug: Check what methods are available on the client
+        console.log('🔍 [TranscriptionService] Available methods on client:', {
+          hasRealtime: !!this.assemblyAI.realtime,
+          realtimeType: typeof this.assemblyAI.realtime,
+          realtimeMethods: this.assemblyAI.realtime ? Object.getOwnPropertyNames(this.assemblyAI.realtime) : 'N/A',
+          clientMethods: Object.getOwnPropertyNames(this.assemblyAI).slice(0, 10) // First 10 methods
+        });
+        
       } catch (error) {
         console.error('❌ [TranscriptionService] Failed to initialize AssemblyAI:', error.message);
         throw error;
@@ -48,6 +58,14 @@ class TranscriptionService {
 
       // Create temporary token for WebSocket connection (Universal Streaming)
       console.log('[TranscriptionService] Creating temporary token for Universal Streaming...');
+      
+      // Debug: Check if realtime methods exist
+      console.log('🔍 [TranscriptionService] Checking realtime API:', {
+        hasRealtime: !!this.assemblyAI.realtime,
+        hasCreateTemporaryToken: !!(this.assemblyAI.realtime && this.assemblyAI.realtime.createTemporaryToken),
+        realtimePrototype: this.assemblyAI.realtime ? Object.getOwnPropertyNames(Object.getPrototypeOf(this.assemblyAI.realtime)) : 'N/A'
+      });
+      
       const tokenResponse = await this.assemblyAI.realtime.createTemporaryToken({
         expires_in: 3600, // 1 hour
         // Explicitly request Universal Streaming model (not deprecated best model)
