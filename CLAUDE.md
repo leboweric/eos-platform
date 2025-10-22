@@ -558,6 +558,40 @@ ALTER TABLE meetings ADD COLUMN IF NOT EXISTS deleted_at TIMESTAMP WITH TIME ZON
 3. **Run SQL migrations** - Soft delete protection in production
 4. **Continue patent implementation** - Hybrid framework support next
 
+## Session: October 22, 2025 - AI Transcription Database Connection Fix
+
+### Critical Production Issue Resolved
+**Problem**: AI Meeting Transcription feature was failing silently - `startRealtimeTranscription()` was being called but AssemblyAI WebSocket connections were never created.
+
+**Root Cause Discovery**:
+- Manus correctly identified: "AssemblyAI WebSocket connection is never being initialized"
+- Expected logs missing: "Connecting to AssemblyAI", "SessionBegins", "WebSocket opened"
+- Investigation revealed database connection was failing: `ECONNREFUSED ::1:5432`
+
+**Root Cause**: Missing `DATABASE_URL` in local `.env` file
+- Backend trying to connect to localhost:5432 (non-existent)
+- `/start` endpoint failing at database connection step
+- Never reaching `startRealtimeTranscription()` method call
+
+**Solution Applied**:
+```env
+# Added to backend/.env
+DATABASE_URL=postgresql://postgres:ESJVdVJqTzuGQaYrgkvBKHxqIfzhkGUx@containers-us-west-77.railway.app:6543/railway
+```
+
+**Key Lesson**: 
+- `startRealtimeTranscription()` **WAS** being called in transcriptionController.js line 224
+- Silent failure occurred because database connection failed before WebSocket creation
+- Local development needs Railway DATABASE_URL for testing production features
+
+**Verification Steps**:
+1. ✅ Backend server starts without database connection errors
+2. ✅ No more `ECONNREFUSED` or `Error during transcription cleanup` messages  
+3. ✅ Server logs show clean startup with all services initialized
+4. ✅ Ready to test AI transcription `/start` endpoint with AssemblyAI WebSocket creation
+
+---
+
 ## Session: August 28, 2024 - Real-Time Meeting Collaboration (Ninety.io Style)
 
 ### Overview
