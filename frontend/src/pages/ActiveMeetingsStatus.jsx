@@ -31,7 +31,7 @@ export default function ActiveMeetingsStatus() {
 
     try {
       setError(null);
-      const response = await fetch(`${import.meta.env.VITE_API_URL}/api/v1/admin/active-meetings`, {
+      const response = await fetch(`${import.meta.env.VITE_API_URL}/admin/active-meetings`, {
         headers: {
           'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json'
