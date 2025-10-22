@@ -203,9 +203,16 @@ export const startTranscription = async (req, res) => {
       // Get or create transcript record (prevents dual creation)
       console.log('🔍 [Transcription] Step 6: Getting or creating transcript record...');
       
-      const transcriptResult = await aiTranscriptionService.getOrCreateTranscript(actualMeetingId, organizationId);
+      // Add timeout to prevent hanging
+      const transcriptResult = await Promise.race([
+        aiTranscriptionService.getOrCreateTranscript(actualMeetingId, organizationId),
+        new Promise((_, reject) => 
+          setTimeout(() => reject(new Error('getOrCreateTranscript timeout after 10 seconds')), 10000)
+        )
+      ]);
       const transcriptId = transcriptResult.id;
       
+      console.log('✅ [Transcription] Step 7: Transcript obtained:', transcriptId);
       console.log('🆔🆔🆔 [START-ENDPOINT] CRITICAL ID TRACKING:', {
         createdTranscriptId: transcriptId,
         actualMeetingId,
