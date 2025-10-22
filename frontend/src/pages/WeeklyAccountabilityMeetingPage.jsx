@@ -544,17 +544,35 @@ const WeeklyAccountabilityMeetingPage = () => {
   };
 
   async function handleAddMilestone(priorityId) {
-    if (!newMilestone.title.trim()) return;
+    if (!newMilestone.title.trim()) {
+      toast.error('Please enter a milestone description');
+      return;
+    }
     
     try {
       const orgId = user?.organizationId || user?.organization_id;
       const cleanTeamId = (teamId === 'null' || teamId === 'undefined') ? null : teamId;
       const effectiveTeamId = getEffectiveTeamId(cleanTeamId, user);
       
+      console.log('🔧 [Milestone] Creating milestone with params:', {
+        orgId,
+        teamId: cleanTeamId,
+        effectiveTeamId,
+        priorityId,
+        title: newMilestone.title,
+        dueDate: newMilestone.dueDate
+      });
+      
+      if (!orgId || !effectiveTeamId) {
+        throw new Error('Missing organization ID or team ID');
+      }
+      
       const milestone = await quarterlyPrioritiesService.createMilestone(orgId, effectiveTeamId, priorityId, {
         title: newMilestone.title,
         dueDate: newMilestone.dueDate || format(addDays(new Date(), 30), 'yyyy-MM-dd')
       });
+      
+      console.log('✅ [Milestone] Created milestone:', milestone);
       
       // Update local state
       setPriorities(prev => prev.map(priority => 
@@ -570,6 +588,9 @@ const WeeklyAccountabilityMeetingPage = () => {
       setNewMilestone({ title: '', dueDate: '' });
       setAddingMilestoneFor(null);
       
+      // Success feedback
+      toast.success('Milestone added successfully');
+      
       // Broadcast update to meeting participants
       if (broadcastIssueListUpdate) {
         broadcastIssueListUpdate({
@@ -579,7 +600,8 @@ const WeeklyAccountabilityMeetingPage = () => {
         });
       }
     } catch (error) {
-      console.error('Failed to add milestone:', error);
+      console.error('❌ [Milestone] Failed to add milestone:', error);
+      toast.error(`Failed to add milestone: ${error.message}`);
     }
   }
 
@@ -942,6 +964,12 @@ const WeeklyAccountabilityMeetingPage = () => {
       
       console.log('🔥🔥🔥 ABOUT TO RENDER PRIORITIES:', allPriorities);
       setPriorities(allPriorities);
+      
+      // Update team members from priorities API - this ensures we get team-specific members
+      if (response.teamMembers && response.teamMembers.length > 0) {
+        console.log('👥 Updating team members from priorities API:', response.teamMembers.length);
+        setTeamMembers(response.teamMembers);
+      }
       
       // Auto-expand all individual owner sections
       const individualPriorities = allPriorities.filter(p => p.priority_type === 'individual');
@@ -6839,6 +6867,54 @@ const WeeklyAccountabilityMeetingPage = () => {
             teamMembers={teamMembers || []}
             teamId={teamId}
             onToggleMilestone={handleToggleMilestone}
+            onAddMilestone={async (priorityId, milestoneData) => {
+              try {
+                console.log('🔧 [Modal Milestone] Adding milestone:', { priorityId, milestoneData });
+                const orgId = user?.organizationId || user?.organization_id;
+                const cleanTeamId = (teamId === 'null' || teamId === 'undefined') ? null : teamId;
+                const effectiveTeamId = getEffectiveTeamId(cleanTeamId, user);
+                
+                if (!orgId || !effectiveTeamId) {
+                  throw new Error('Missing organization ID or team ID');
+                }
+                
+                const milestone = await quarterlyPrioritiesService.createMilestone(orgId, effectiveTeamId, priorityId, {
+                  title: milestoneData.title,
+                  dueDate: milestoneData.dueDate || format(addDays(new Date(), 30), 'yyyy-MM-dd'),
+                  ownerId: milestoneData.ownerId
+                });
+                
+                console.log('✅ [Modal Milestone] Created milestone:', milestone);
+                
+                // Update local state
+                setPriorities(prev => prev.map(priority => 
+                  priority.id === priorityId 
+                    ? {
+                        ...priority,
+                        milestones: [...(priority.milestones || []), milestone]
+                      }
+                    : priority
+                ));
+                
+                // Success feedback
+                toast.success('Milestone added successfully');
+                
+                // Broadcast update to meeting participants
+                if (broadcastIssueListUpdate) {
+                  broadcastIssueListUpdate({
+                    action: 'milestone-added',
+                    priorityId,
+                    milestone
+                  });
+                }
+                
+                return milestone;
+              } catch (error) {
+                console.error('❌ [Modal Milestone] Failed to add milestone:', error);
+                toast.error(`Failed to add milestone: ${error.message}`);
+                throw error;
+              }
+            }}
             onSave={async (priorityData) => {
               try {
                 const orgId = user?.organizationId || user?.organization_id;
