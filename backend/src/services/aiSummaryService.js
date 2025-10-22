@@ -205,34 +205,8 @@ Analyze this transcript and provide a comprehensive JSON response with the follo
       "timestamp": "Time when said"
     }
   ],
-  "team_dynamics": {
-    "participation_level": "high|medium|low",
-    "collaboration_quality": "excellent|good|fair|poor",
-    "conflict_resolution": "Any conflicts and how they were handled",
-    "leadership_effectiveness": "Assessment of meeting leadership"
-  },
-  "eos_adherence": {
-    "level_10_structure": "How well did this follow Level 10 format",
-    "time_management": "Was the meeting well-timed",
-    "focus_level": "Did the team stay focused on agenda",
-    "accountability": "Level of accountability demonstrated"
-  },
-  "next_meeting_preparation": [
-    {
-      "item": "What should be prepared for next meeting",
-      "owner": "Who is responsible",
-      "deadline": "When it should be ready"
-    }
-  ],
   "meeting_sentiment": "positive|neutral|negative|mixed",
-  "meeting_energy_score": 1-10,
-  "effectiveness_rating": {
-    "score": 1-10,
-    "rationale": "Why this score was given"
-  },
-  "improvement_suggestions": [
-    "Specific suggestions for improving future meetings"
-  ]
+  "meeting_energy_score": 1-10
 }
 
 Focus specifically on:
@@ -271,31 +245,23 @@ Be thorough but concise. If information is not available in the transcript, mark
         INSERT INTO meeting_ai_summaries (
           id, meeting_id, transcript_id, organization_id,
           executive_summary, key_decisions, discussion_topics,
-          action_items, issues_discussed, rocks_priorities,
-          notable_quotes, team_dynamics,
-          eos_adherence, next_meeting_preparation,
-          meeting_sentiment, meeting_energy_score,
-          effectiveness_rating, improvement_suggestions,
+          action_items, issues_discussed, rocks_mentioned,
+          notable_quotes, meeting_sentiment, meeting_energy_score,
           ai_model, ai_prompt_version, ai_processing_time_seconds, ai_cost_usd,
           created_at
         )
-        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21, $22, NOW())
+        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, NOW())
       `, [
         summaryId, meeting_id, transcriptId, organization_id,
         aiSummary.executive_summary,
-        JSON.stringify(aiSummary.key_decisions),
-        JSON.stringify(aiSummary.discussion_topics),
-        JSON.stringify(aiSummary.action_items),
-        JSON.stringify(aiSummary.issues_discussed),
+        JSON.stringify(aiSummary.key_decisions || []),
+        JSON.stringify(aiSummary.discussion_topics || []),
+        JSON.stringify(aiSummary.action_items || []),
+        JSON.stringify(aiSummary.issues_discussed || []),
         JSON.stringify(aiSummary.rocks_mentioned || []),
-        JSON.stringify(aiSummary.notable_quotes),
-        JSON.stringify(aiSummary.team_dynamics),
-        JSON.stringify(aiSummary.eos_adherence),
-        JSON.stringify(aiSummary.next_meeting_preparation),
+        JSON.stringify(aiSummary.notable_quotes || []),
         aiSummary.meeting_sentiment,
         aiSummary.meeting_energy_score,
-        JSON.stringify(aiSummary.effectiveness_rating),
-        JSON.stringify(aiSummary.improvement_suggestions),
         aiSummary.ai_model,
         aiSummary.ai_prompt_version,
         processingTime,
