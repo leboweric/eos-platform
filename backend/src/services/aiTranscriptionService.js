@@ -553,7 +553,30 @@ Focus on:
     const client = await getClient();
     try {
       const result = await client.query(`
-        SELECT mt.*, mas.* 
+        SELECT 
+          mt.*,
+          mas.id as ai_summary_id,
+          mas.executive_summary,
+          mas.key_decisions,
+          mas.action_items,
+          mas.issues_discussed,
+          mas.rocks_mentioned,
+          mas.discussion_topics,
+          mas.scorecard_metrics,
+          mas.notable_quotes,
+          mas.team_dynamics,
+          mas.eos_adherence,
+          mas.next_meeting_preparation,
+          mas.meeting_sentiment,
+          mas.meeting_energy_score,
+          mas.productivity_score,
+          mas.effectiveness_rating,
+          mas.improvement_suggestions,
+          mas.ai_model,
+          mas.ai_prompt_version,
+          mas.ai_processing_time_seconds,
+          mas.ai_cost_usd,
+          mas.created_at as ai_summary_created_at
         FROM meeting_transcripts mt
         LEFT JOIN meeting_ai_summaries mas ON mt.id = mas.transcript_id
         WHERE mt.meeting_id = $1 AND mt.organization_id = $2 AND mt.deleted_at IS NULL
