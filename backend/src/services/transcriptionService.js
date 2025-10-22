@@ -1,4 +1,4 @@
-import { AssemblyAI } from 'assemblyai';
+import { AssemblyAI, RealtimeTranscriber } from 'assemblyai';
 import db from '../config/database.js';
 
 class TranscriptionService {
@@ -71,23 +71,55 @@ class TranscriptionService {
         hasToken: !!tokenResponse.token
       });
       
-      const realtimeTranscriber = this.assemblyAI.realtime.transcriber({
-        token: tokenResponse.token,
-        sample_rate: 16000,
-        encoding: 'pcm_s16le',
-        // Universal Streaming specific parameters
-        enable_extra_session_information: true,
-        punctuate: true,
-        format_text: true,
-        // Explicitly specify language for Universal Streaming
-        language_code: 'en',
-        // Use Universal Streaming model explicitly
-        model: 'universal-1'
-        // Removed potentially problematic parameters:
-        // - word_boost (might not be supported in streaming)
-        // - speaker_labels (not supported in real-time)
-        // - boost_param (might cause issues)
-      });
+      // Try multiple approaches for Universal Streaming (SDK v4.18.2)
+      let realtimeTranscriber;
+      
+      console.log('[TranscriptionService] Attempting method 1: createTranscriber...');
+      try {
+        // Method 1: createTranscriber (newer SDK pattern)
+        realtimeTranscriber = this.assemblyAI.realtime.createTranscriber({
+          token: tokenResponse.token,
+          sampleRate: 16000,  // camelCase
+          encoding: 'pcm_s16le',
+          enableExtraSessionInformation: true,  // camelCase
+          punctuate: true,
+          formatText: true,  // camelCase
+          languageCode: 'en',  // camelCase
+          model: 'universal-1'
+        });
+        console.log('✅ [TranscriptionService] Method 1 (createTranscriber) succeeded');
+      } catch (error1) {
+        console.log('❌ [TranscriptionService] Method 1 failed:', error1.message);
+        
+        console.log('[TranscriptionService] Attempting method 2: transcriber...');
+        try {
+          // Method 2: transcriber (original pattern with snake_case)
+          realtimeTranscriber = this.assemblyAI.realtime.transcriber({
+            token: tokenResponse.token,
+            sample_rate: 16000,  // snake_case
+            encoding: 'pcm_s16le',
+            enable_extra_session_information: true,  // snake_case
+            punctuate: true,
+            format_text: true,  // snake_case
+            language_code: 'en',  // snake_case
+            model: 'universal-1'
+          });
+          console.log('✅ [TranscriptionService] Method 2 (transcriber) succeeded');
+        } catch (error2) {
+          console.log('❌ [TranscriptionService] Method 2 failed:', error2.message);
+          
+          console.log('[TranscriptionService] Attempting method 3: RealtimeTranscriber...');
+          // Method 3: Direct RealtimeTranscriber class
+          realtimeTranscriber = new RealtimeTranscriber({
+            token: tokenResponse.token,
+            apiKey: process.env.ASSEMBLYAI_API_KEY,
+            sampleRate: 16000,
+            encoding: 'pcm_s16le',
+            model: 'universal-1'
+          });
+          console.log('✅ [TranscriptionService] Method 3 (RealtimeTranscriber) succeeded');
+        }
+      }
       
       console.log('[TranscriptionService] Transcriber created, attempting connection...');
 
