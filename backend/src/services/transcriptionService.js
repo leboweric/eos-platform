@@ -525,6 +525,40 @@ Please provide a JSON response with the following structure:
       const { v4: uuidv4 } = await import('uuid');
       const summaryId = uuidv4();
       
+      // Build parameters array with careful validation
+      const parameters = [
+        summaryId,                                          // $1
+        transcriptId,                                       // $2  
+        meetingId,                                          // $3
+        organizationId,                                     // $4
+        analysis.executive_summary || 'No summary provided', // $5
+        JSON.stringify(analysis.key_decisions || []),       // $6
+        JSON.stringify(analysis.action_items || []),        // $7
+        JSON.stringify(analysis.issues_discussed || []),    // $8
+        analysis.meeting_sentiment || 'neutral',            // $9
+        parseFloat(analysis.effectiveness_rating || 5.0),   // $10 (ensure numeric)
+        'gpt-4'                                             // $11
+      ];
+      
+      // Validate all parameters are non-null
+      const hasNullParams = parameters.some((p, i) => p === null || p === undefined);
+      if (hasNullParams) {
+        console.error('[AIAnalysis] NULL parameters detected:', parameters.map((p, i) => `$${i+1}: ${p}`));
+        throw new Error('NULL parameters not allowed in AI summary insert');
+      }
+      
+      console.log('[AIAnalysis] About to insert with parameters:', {
+        paramCount: parameters.length,
+        expectedParams: 11,
+        transcriptId,
+        meetingId,
+        organizationId,
+        hasSummary: !!analysis.executive_summary,
+        hasDecisions: !!(analysis.key_decisions && analysis.key_decisions.length),
+        hasActionItems: !!(analysis.action_items && analysis.action_items.length),
+        parameters: parameters.map((p, i) => `$${i+1}: ${typeof p} (${String(p).substring(0, 50)}...)`)
+      });
+      
       await client.query(`
         INSERT INTO meeting_ai_summaries (
           id, transcript_id, meeting_id, organization_id,
@@ -533,19 +567,7 @@ Please provide a JSON response with the following structure:
           ai_model, created_at, updated_at
         )
         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, NOW(), NOW())
-      `, [
-        summaryId,
-        transcriptId,
-        meetingId,
-        organizationId,
-        analysis.executive_summary || 'No summary provided',
-        JSON.stringify(analysis.key_decisions || []),
-        JSON.stringify(analysis.action_items || []),
-        JSON.stringify(analysis.issues_discussed || []),
-        analysis.meeting_sentiment || 'neutral',
-        analysis.effectiveness_rating || 5.0,
-        'gpt-4'
-      ]);
+      `, parameters);
       
       // Update transcript status to completed
       await this.updateTranscriptStatus(transcriptId, 'completed');
