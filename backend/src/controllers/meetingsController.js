@@ -150,11 +150,15 @@ export const concludeMeeting = async (req, res) => {
           completed_at = NOW(),
           actual_end_time = NOW(),
           updated_at = NOW()
-        WHERE organization_id = $1 
-          AND team_id = $2
-          AND status = 'in-progress'
-        ORDER BY created_at DESC
-        LIMIT 1
+        WHERE id = (
+          SELECT id 
+          FROM meetings
+          WHERE organization_id = $1 
+            AND team_id = $2
+            AND status = 'in-progress'
+          ORDER BY created_at DESC
+          LIMIT 1
+        )
         RETURNING id
       `, [organizationId, teamId]);
       console.log('🎯 [Conclude] Targeted latest in-progress meeting for team');
