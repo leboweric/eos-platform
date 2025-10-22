@@ -557,14 +557,24 @@ class MeetingSocketService {
           // Convert base64 audio data to buffer
           const audioBuffer = Buffer.from(audioData, 'base64');
 
+          // Check if buffer contains actual audio data (not all zeros or near-silent)
+          const hasAudioContent = this.validateAudioContent(audioBuffer);
+
           // DEBUG: Log audio format details
           console.log('[AUDIO-DEBUG] Received audio chunk:', {
             size: audioBuffer.length,
             first4Bytes: audioBuffer.slice(0, 4).toString('hex'),
             first8Bytes: audioBuffer.slice(0, 8).toString('hex'),
             isLikelyPCM: audioBuffer.length % 2 === 0, // PCM S16LE should be even-sized
+            hasAudioContent: hasAudioContent,
             timestamp: new Date().toISOString()
           });
+
+          // Skip empty/silent audio chunks to prevent AssemblyAI error 3005
+          if (!hasAudioContent) {
+            console.log('[AUDIO-DEBUG] Skipping empty/silent audio chunk');
+            return;
+          }
 
           // Send to AssemblyAI via transcription service
           const success = await transcriptionService.sendAudioData(transcriptId, audioBuffer);
@@ -822,6 +832,44 @@ class MeetingSocketService {
   getMeetingFacilitator(meetingCode) {
     const meeting = meetings.get(meetingCode);
     return meeting ? meeting.leader : null;
+  }
+
+  /**
+   * Validate audio content to prevent sending empty/silent chunks to AssemblyAI
+   * @param {Buffer} audioBuffer - PCM audio data buffer
+   * @returns {boolean} - True if buffer contains meaningful audio content
+   */
+  validateAudioContent(audioBuffer) {
+    // Check for minimum buffer size (avoid processing tiny chunks)
+    if (audioBuffer.length < 128) {
+      return false;
+    }
+
+    // Convert buffer to 16-bit PCM samples for analysis
+    const samples = [];
+    for (let i = 0; i < Math.min(audioBuffer.length, 1024); i += 2) {
+      // Read 16-bit signed integer (little-endian)
+      const sample = audioBuffer.readInt16LE(i);
+      samples.push(sample);
+    }
+
+    // Check if all samples are zero (completely silent)
+    const allZeros = samples.every(sample => sample === 0);
+    if (allZeros) {
+      return false;
+    }
+
+    // Calculate RMS (Root Mean Square) to detect low-amplitude audio
+    const sumSquares = samples.reduce((sum, sample) => sum + (sample * sample), 0);
+    const rms = Math.sqrt(sumSquares / samples.length);
+    
+    // Set minimum RMS threshold (adjust based on testing)
+    // Typical speech should have RMS > 100, silence/noise < 50
+    const minRmsThreshold = 50;
+    
+    console.log(`[AUDIO-VALIDATION] RMS: ${rms.toFixed(2)}, threshold: ${minRmsThreshold}, valid: ${rms > minRmsThreshold}`);
+    
+    return rms > minRmsThreshold;
   }
 }
 
