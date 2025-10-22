@@ -1,5 +1,5 @@
 import express from 'express';
-import { authenticateToken } from '../middleware/auth.js';
+import { authenticate } from '../middleware/auth.js';
 import {
   startTranscription,
   stopTranscription,
@@ -16,7 +16,7 @@ import {
 const router = express.Router();
 
 // All routes require authentication
-router.use(authenticateToken);
+router.use(authenticate);
 
 // Start AI transcription for a meeting
 router.post('/organizations/:orgId/meetings/:meetingId/transcription/start', startTranscription);
