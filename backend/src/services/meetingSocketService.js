@@ -560,19 +560,19 @@ class MeetingSocketService {
           // Check if buffer contains actual audio data (not all zeros or near-silent)
           const hasAudioContent = this.validateAudioContent(audioBuffer);
 
-          // DEBUG: Log audio format details
-          console.log('[AUDIO-DEBUG] Received audio chunk:', {
-            size: audioBuffer.length,
-            first4Bytes: audioBuffer.slice(0, 4).toString('hex'),
-            first8Bytes: audioBuffer.slice(0, 8).toString('hex'),
-            isLikelyPCM: audioBuffer.length % 2 === 0, // PCM S16LE should be even-sized
-            hasAudioContent: hasAudioContent,
-            timestamp: new Date().toISOString()
-          });
+          // DEBUG: Log audio format details (DISABLED for log clarity)
+          // console.log('[AUDIO-DEBUG] Received audio chunk:', {
+          //   size: audioBuffer.length,
+          //   first4Bytes: audioBuffer.slice(0, 4).toString('hex'),
+          //   first8Bytes: audioBuffer.slice(0, 8).toString('hex'),
+          //   isLikelyPCM: audioBuffer.length % 2 === 0, // PCM S16LE should be even-sized
+          //   hasAudioContent: hasAudioContent,
+          //   timestamp: new Date().toISOString()
+          // });
 
           // Skip empty/silent audio chunks to prevent AssemblyAI error 3005
           if (!hasAudioContent) {
-            console.log('[AUDIO-DEBUG] Skipping empty/silent audio chunk');
+            // Disabled for log clarity: console.log('[AUDIO-DEBUG] Skipping empty/silent audio chunk');
             return;
           }
 
@@ -867,7 +867,7 @@ class MeetingSocketService {
     // Typical speech should have RMS > 100, silence/noise < 50
     const minRmsThreshold = 50;
     
-    console.log(`[AUDIO-VALIDATION] RMS: ${rms.toFixed(2)}, threshold: ${minRmsThreshold}, valid: ${rms > minRmsThreshold}`);
+    // Disabled for log clarity: console.log(`[AUDIO-VALIDATION] RMS: ${rms.toFixed(2)}, threshold: ${minRmsThreshold}, valid: ${rms > minRmsThreshold}`);
     
     return rms > minRmsThreshold;
   }
