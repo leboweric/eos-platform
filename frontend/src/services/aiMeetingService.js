@@ -1,8 +1,9 @@
 import api from './axiosConfig';
+import { useAuthStore } from '../stores/authStore';
 
 const getOrgId = () => {
-  const authStore = JSON.parse(localStorage.getItem('auth-store') || '{}');
-  return authStore?.state?.currentOrganization?.id;
+  const user = useAuthStore.getState().user;
+  return user?.organizationId || user?.organization_id;
 };
 
 export const aiMeetingService = {
