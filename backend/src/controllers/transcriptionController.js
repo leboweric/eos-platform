@@ -200,10 +200,10 @@ export const startTranscription = async (req, res) => {
 
       console.log('✅ [Transcription] Step 5: No existing transcription found');
 
-      // Create new transcript record using proper service
-      console.log('🔍 [Transcription] Step 6: Creating transcript record...');
+      // Get or create transcript record (prevents dual creation)
+      console.log('🔍 [Transcription] Step 6: Getting or creating transcript record...');
       
-      const transcriptResult = await aiTranscriptionService.createTranscriptRecord(actualMeetingId, organizationId);
+      const transcriptResult = await aiTranscriptionService.getOrCreateTranscript(actualMeetingId, organizationId);
       const transcriptId = transcriptResult.id;
       
       console.log('🆔🆔🆔 [START-ENDPOINT] CRITICAL ID TRACKING:', {

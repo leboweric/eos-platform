@@ -43,21 +43,15 @@ export const startTranscription = async (req, res) => {
       client.release();
     }
 
-    // Check if transcription is already active for this meeting
-    const existingTranscript = await aiTranscriptionService.getTranscriptByMeetingId(meetingId, orgId);
-    if (existingTranscript && existingTranscript.status === 'processing') {
-      return res.status(400).json({ 
-        message: 'Transcription already in progress for this meeting',
-        transcript_id: existingTranscript.id
-      });
-    }
-
-    // Create transcript record
-    const transcript = await aiTranscriptionService.createTranscriptRecord(
+    // Get or create transcript record (handles existing check + creation atomically)
+    console.log('🔍 [AI-Meeting] Getting or creating transcript record...');
+    const transcript = await aiTranscriptionService.getOrCreateTranscript(
       meetingId, 
       orgId, 
       consent_user_ids
     );
+    
+    console.log('🆔 [AI-Meeting] Using transcript ID:', transcript.id);
 
     // Start real-time transcription
     const realtimeTranscriber = await aiTranscriptionService.startRealtimeTranscription(transcript.id);

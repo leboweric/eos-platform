@@ -127,6 +127,53 @@ class AITranscriptionService {
     }
   }
 
+  // Get existing transcript or create new one (prevents dual creation)
+  async getOrCreateTranscript(meetingId, organizationId, consentUserIds = []) {
+    console.log('🔍 [getOrCreateTranscript] Checking for existing transcript...', {
+      meetingId,
+      organizationId
+    });
+    
+    const client = await getClient();
+    try {
+      // Check for existing transcript
+      const existing = await client.query(
+        `SELECT id, status FROM meeting_transcripts 
+         WHERE meeting_id = $1 
+         AND organization_id = $2
+         AND status IN ('processing', 'processing_ai')
+         AND deleted_at IS NULL
+         ORDER BY created_at DESC 
+         LIMIT 1`,
+        [meetingId, organizationId]
+      );
+      
+      if (existing.rows.length > 0) {
+        const existingId = existing.rows[0].id;
+        console.log('📌 [getOrCreateTranscript] Using existing transcript:', {
+          transcriptId: existingId,
+          status: existing.rows[0].status,
+          action: 'REUSE_EXISTING'
+        });
+        return { id: existingId, meeting_id: meetingId, organization_id: organizationId, status: existing.rows[0].status };
+      }
+      
+      // Create new if none exists
+      console.log('🆕 [getOrCreateTranscript] No existing transcript, creating new...');
+      const result = await this.createTranscriptRecord(meetingId, organizationId, consentUserIds);
+      
+      console.log('✅ [getOrCreateTranscript] Created new transcript:', {
+        transcriptId: result.id,
+        action: 'CREATE_NEW'
+      });
+      
+      return result;
+      
+    } finally {
+      client.release();
+    }
+  }
+
   // Start real-time transcription session
   async startRealtimeTranscription(transcriptId) {
     if (!assemblyAI) {
