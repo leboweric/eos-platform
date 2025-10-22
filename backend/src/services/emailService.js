@@ -639,15 +639,6 @@ const templates = {
             </div>
           ` : ''}
           
-          <!-- Unresolved Issues -->
-          ${data.unresolvedIssues && data.unresolvedIssues.length > 0 ? `
-            <div class="section">
-              <h2>❌ Unresolved Issues (${data.unresolvedIssues.length})</h2>
-              <ul class="simple-list">
-                ${data.unresolvedIssues.map(issue => `<li>${issue}</li>`).join('')}
-              </ul>
-            </div>
-          ` : ''}
           
           <!-- Open To-Dos -->
           ${data.openTodos && data.openTodos.length > 0 ? `
