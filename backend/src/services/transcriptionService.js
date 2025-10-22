@@ -43,7 +43,7 @@ class TranscriptionService {
       console.log(`🎙️ [TranscriptionService] Starting direct WebSocket transcription for transcript ${transcriptId}`);
       
       // Connect directly to streaming.assemblyai.com (bypass SDK IP issue)
-      const wsUrl = 'wss://streaming.assemblyai.com/v3/ws?sample_rate=16000';
+      const wsUrl = 'wss://api.assemblyai.com/v2/realtime/ws?sample_rate=16000';
       console.log('🔍 [TranscriptionService] Connecting to:', wsUrl);
       
       console.log('🔗 [WebSocket] Creating connection:', {
@@ -105,16 +105,16 @@ class TranscriptionService {
             connectionExists: this.activeConnections.has(transcriptId)
           });
           
-          // Configure the session
+          // Configure the session for AssemblyAI v2 realtime API
           const sessionConfig = {
             sample_rate: 16000,
-            encoding: 'pcm_s16le',
-            language_code: 'en',
-            punctuate: true,
-            format_text: true
+            encoding: 'pcm_s16le'
           };
+          const configString = JSON.stringify(sessionConfig);
           console.log('📤 [WebSocket] Sending session config:', sessionConfig);
-          ws.send(JSON.stringify(sessionConfig));
+          console.log('📤 [WebSocket] JSON stringified config:', configString);
+          console.log('📤 [WebSocket] Config string length:', configString.length);
+          ws.send(configString);
           
           console.log('🔧 [TranscriptionService] Session configuration sent');
           
