@@ -325,6 +325,13 @@ Focus on:
 
   // Store AI summary
   async storeAISummary(transcriptId, aiSummary, processingTime, estimatedCost) {
+    console.log('🆔🆔🆔 [AI-ANALYSIS] CRITICAL ID TRACKING:', {
+      receivedTranscriptId: transcriptId,
+      willLookupMeetingInfo: true,
+      willInsertAISummary: true,
+      mustExistInDatabase: true
+    });
+    
     const client = await db.getClient();
     try {
       await client.query('BEGIN');
