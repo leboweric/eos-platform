@@ -1,6 +1,6 @@
 import { AssemblyAI } from 'assemblyai';
 import OpenAI from 'openai';
-import db from '../database/db.js';
+import db from '../config/database.js';
 
 let assemblyAI;
 let openai;

@@ -1,5 +1,5 @@
 import aiTranscriptionService from '../services/aiTranscriptionService.js';
-import db from '../database/db.js';
+import db from '../config/database.js';
 
 export const startTranscription = async (req, res) => {
   try {
