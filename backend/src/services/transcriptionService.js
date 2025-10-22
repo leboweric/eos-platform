@@ -74,6 +74,11 @@ class TranscriptionService {
       };
       
       this.activeConnections.set(transcriptId, connectionData);
+      console.log('🔑 [TranscriptionService] Connection stored for transcript:', {
+        transcriptId,
+        totalConnections: this.activeConnections.size,
+        connectionStored: this.activeConnections.has(transcriptId)
+      });
       
       // Return a Promise that resolves when connection is established
       return new Promise((resolve, reject) => {
@@ -88,6 +93,11 @@ class TranscriptionService {
           console.log('✅ [TranscriptionService] Connected to streaming.assemblyai.com');
           
           connectionData.isActive = true;
+          console.log('🟢 [TranscriptionService] Connection marked as ACTIVE for transcript:', {
+            transcriptId,
+            isActive: connectionData.isActive,
+            connectionExists: this.activeConnections.has(transcriptId)
+          });
           
           // Configure the session
           ws.send(JSON.stringify({
@@ -288,10 +298,25 @@ class TranscriptionService {
    * Send audio data to AssemblyAI via direct WebSocket
    */
   async sendAudioData(transcriptId, audioBuffer) {
+    console.log('🔍 [sendAudioData] Looking for connection:', {
+      transcriptId,
+      totalConnections: this.activeConnections.size,
+      allConnectionIds: Array.from(this.activeConnections.keys()),
+      hasThisConnection: this.activeConnections.has(transcriptId)
+    });
+    
     const connection = this.activeConnections.get(transcriptId);
     
     if (!connection || !connection.isActive) {
-      console.warn(`⚠️ No active connection for transcript ${transcriptId}`);
+      console.warn(`⚠️ No active connection for transcript ${transcriptId}`, {
+        connectionExists: !!connection,
+        isActive: connection?.isActive,
+        allConnections: Array.from(this.activeConnections.entries()).map(([id, conn]) => ({
+          id,
+          isActive: conn.isActive,
+          hasWebSocket: !!conn.websocket
+        }))
+      });
       return false;
     }
 
