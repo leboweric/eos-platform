@@ -115,15 +115,28 @@ export const MeetingAIRecordingControls = ({
       console.log('✅ [AI Recording] Transcription started:', transcriptionResponse.data);
       transcriptIdRef.current = transcriptionResponse.data.transcript_id;
 
-      // Connect to WebSocket for real-time audio streaming
+      // Connect to WebSocket for real-time audio streaming - MUST use correct path!
       const socketUrl = process.env.NODE_ENV === 'production' 
         ? 'https://api.axplatform.app' 
         : 'http://localhost:3001';
         
-      socketRef.current = io(socketUrl);
+      console.log('🔌 [AI Recording] Connecting to meeting socket:', socketUrl);
+      socketRef.current = io(socketUrl, {
+        path: '/meeting-socket',  // CRITICAL: Backend uses custom path
+        reconnection: true,
+        reconnectionDelay: 1000,
+        reconnectionAttempts: 5
+      });
       
       socketRef.current.on('connect', () => {
-        console.log('✅ [AI Recording] Socket connected for real-time audio');
+        console.log('✅ [AI Recording] Socket connected for real-time audio:', {
+          socketId: socketRef.current.id,
+          path: '/meeting-socket'
+        });
+      });
+
+      socketRef.current.on('connect_error', (error) => {
+        console.error('❌ [AI Recording] Socket connection error:', error);
       });
 
       // Initialize PCM Audio Service
