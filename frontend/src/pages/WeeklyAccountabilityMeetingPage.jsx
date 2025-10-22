@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import toast from 'react-hot-toast';
 import { useParams } from 'react-router-dom';
 import { useAuthStore } from '../stores/authStore';
@@ -733,7 +733,7 @@ const WeeklyAccountabilityMeetingPage = () => {
   };
 
   // Data fetching functions
-  const fetchTodosData = async () => {
+  const fetchTodosData = useCallback(async () => {
     console.log('🔥 FETCHING TODOS - teamId:', teamId);
     try {
       const cleanTeamId = (teamId === 'null' || teamId === 'undefined') ? null : teamId;
@@ -755,9 +755,9 @@ const WeeklyAccountabilityMeetingPage = () => {
       // Ensure empty state if fetch fails - prevents stale data
       setTodos([]);
     }
-  };
+  }, [teamId, user]);
 
-  const fetchIssuesData = async () => {
+  const fetchIssuesData = useCallback(async () => {
     console.log('🔥 FETCHING ISSUES - teamId:', teamId);
     try {
       const cleanTeamId = (teamId === 'null' || teamId === 'undefined') ? null : teamId;
@@ -784,7 +784,7 @@ const WeeklyAccountabilityMeetingPage = () => {
       setLongTermIssues([]);
       setTeamMembers([]);
     }
-  };
+  }, [teamId, user]);
 
   const fetchHeadlines = async () => {
     try {
@@ -836,7 +836,7 @@ const WeeklyAccountabilityMeetingPage = () => {
     }
   };
 
-  const fetchScorecardData = async () => {
+  const fetchScorecardData = useCallback(async () => {
     try {
       const orgId = user?.organizationId || user?.organization_id;
       // Handle "null" string from URL params
@@ -892,9 +892,9 @@ const WeeklyAccountabilityMeetingPage = () => {
       setMonthlyScores({});
       setMonthlyNotes({});
     }
-  };
+  }, [teamId, user]);
 
-  const fetchPrioritiesData = async () => {
+  const fetchPrioritiesData = useCallback(async () => {
     console.log('🔥🔥🔥 FETCHPRIORITIESDATA FUNCTION START 🔥🔥🔥');
     try {
       const orgId = user?.organizationId || user?.organization_id;
@@ -960,7 +960,7 @@ const WeeklyAccountabilityMeetingPage = () => {
       // Ensure empty state if fetch fails - prevents stale data
       setQuarterlyPriorities([]);
     }
-  };
+  }, [teamId, user]);
 
   // Load data on mount and when teamId changes - CLEAR STATE FIRST
   useEffect(() => {
@@ -992,7 +992,7 @@ const WeeklyAccountabilityMeetingPage = () => {
       fetchPrioritiesData();
       fetchHeadlines();
     }
-  }, [teamId]);
+  }, [teamId, user]);
 
   // Join meeting when page loads
   const hasJoinedRef = useRef(false);
