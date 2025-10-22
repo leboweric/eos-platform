@@ -64,6 +64,8 @@ export const startTranscription = async (req, res) => {
       console.log('🔍 [Transcription] Step 4: Parsing and finding meeting...');
       
       // Parse meetingId which may be in format: teamId-timestamp
+      // UUID format: 8-4-4-4-12 characters = 5 parts when split by '-'
+      // Composite format: uuid-timestamp = 6 parts when split by '-'
       const meetingIdParts = meetingId.split('-');
       let actualMeetingId;
       let meeting;
@@ -75,9 +77,9 @@ export const startTranscription = async (req, res) => {
       });
 
       if (meetingIdParts.length > 5) {
-        // Composite format: extract teamId
-        const timestamp = meetingIdParts[meetingIdParts.length - 1];
-        const teamId = meetingIdParts.slice(0, -1).join('-');
+        // Composite format: extract teamId (first 5 parts = UUID)
+        const teamId = meetingIdParts.slice(0, 5).join('-');
+        const timestamp = meetingIdParts.slice(5).join('-'); // Everything after UUID
         
         console.log('🔍 [Transcription] Composite meetingId detected:', { teamId, timestamp });
         
