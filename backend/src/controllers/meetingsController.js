@@ -165,7 +165,20 @@ export const concludeMeeting = async (req, res) => {
       logger.info('🎯 Targeted latest in-progress meeting for team');
     }
     
-    logger.info('✅ Meeting marked as completed');
+    // CRITICAL: Check if the UPDATE actually found and updated a meeting
+    if (meetingUpdateResult.rows.length === 0) {
+      logger.error('❌ No meeting was updated! This is the root cause of the bug.');
+      logger.error('Debug info:', { organizationId, teamId, specificMeetingId });
+      return res.status(404).json({
+        success: false,
+        error: 'No active meeting found to conclude',
+        details: `No in-progress meeting found for team ${teamId} in organization ${organizationId}`,
+        debug: { organizationId, teamId, specificMeetingId }
+      });
+    }
+    
+    const updatedMeetingId = meetingUpdateResult.rows[0].id;
+    logger.info('✅ Meeting marked as completed:', updatedMeetingId);
 
     // 2. Check if AI recording is active or recently completed
     logger.debug('Checking for active or recent AI recordings...');
