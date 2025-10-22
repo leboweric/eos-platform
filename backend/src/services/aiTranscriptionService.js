@@ -560,6 +560,7 @@ Focus on:
           mas.key_decisions,
           mas.action_items,
           mas.issues_discussed,
+          mas.rocks_mentioned,
           mas.discussion_topics,
           mas.notable_quotes,
           mas.meeting_sentiment,
