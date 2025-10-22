@@ -5,24 +5,35 @@ export const getActiveMeetings = async (req, res) => {
   try {
     logger.debug('Fetching active meetings for admin dashboard');
     
-    // Start with a simple query to test if meetings table exists
+    // Use a safer query that doesn't assume all table relationships exist
     const result = await db.query(`
-      SELECT COUNT(*) as meeting_count FROM meetings WHERE status = 'in-progress'
+      SELECT 
+        m.id,
+        m.status,
+        m.started_at,
+        m.organization_id,
+        COALESCE(o.name, 'Unknown Organization') as organization_name,
+        COALESCE(t.name, 'Unknown Team') as team_name,
+        false as has_active_recording
+      FROM meetings m
+      LEFT JOIN organizations o ON m.organization_id = o.id
+      LEFT JOIN teams t ON m.team_id = t.id
+      WHERE m.status = 'in-progress'
+      ORDER BY m.started_at DESC
     `);
 
-    const count = parseInt(result.rows[0].meeting_count) || 0;
+    const activeMeetings = result.rows;
+    const activeRecordings = 0; // No active recordings for now
     
-    logger.info(`Admin dashboard: ${count} active meetings found`);
+    logger.info(`Admin dashboard: ${activeMeetings.length} active meetings found`);
 
-    // Return simplified response for now
     res.json({
       success: true,
-      meetings: [],
-      count: count,
-      activeRecordingsCount: 0,
-      safeToDeploy: count === 0,
-      timestamp: new Date().toISOString(),
-      message: count === 0 ? 'No active meetings' : `${count} active meetings detected`
+      meetings: activeMeetings,
+      count: activeMeetings.length,
+      activeRecordingsCount: activeRecordings,
+      safeToDeploy: activeMeetings.length === 0,
+      timestamp: new Date().toISOString()
     });
   } catch (error) {
     logger.error('Error fetching active meetings:', error);
