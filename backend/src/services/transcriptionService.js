@@ -525,19 +525,17 @@ Please provide a JSON response with the following structure:
       const { v4: uuidv4 } = await import('uuid');
       const summaryId = uuidv4();
       
-      // Build parameters array with careful validation
+      // Build parameters array with CORRECT column order (meeting_id before transcript_id!)
       const parameters = [
-        summaryId,                                          // $1
-        transcriptId,                                       // $2  
-        meetingId,                                          // $3
-        organizationId,                                     // $4
-        analysis.executive_summary || 'No summary provided', // $5
-        JSON.stringify(analysis.key_decisions || []),       // $6
-        JSON.stringify(analysis.action_items || []),        // $7
-        JSON.stringify(analysis.issues_discussed || []),    // $8
-        analysis.meeting_sentiment || 'neutral',            // $9
-        parseFloat(analysis.effectiveness_rating || 5.0),   // $10 (ensure numeric)
-        'gpt-4'                                             // $11
+        summaryId,                                          // $1: id
+        meetingId,                                          // $2: meeting_id (SWAPPED!)
+        transcriptId,                                       // $3: transcript_id (SWAPPED!)
+        organizationId,                                     // $4: organization_id
+        analysis.executive_summary || 'No summary provided', // $5: executive_summary
+        JSON.stringify(analysis.key_decisions || []),       // $6: key_decisions
+        JSON.stringify(analysis.action_items || []),        // $7: action_items
+        JSON.stringify(analysis.issues_discussed || []),    // $8: issues_discussed
+        'gpt-4'                                             // $9: ai_model
       ];
       
       // Validate all parameters are non-null
@@ -549,7 +547,7 @@ Please provide a JSON response with the following structure:
       
       console.log('[AIAnalysis] About to insert with parameters:', {
         paramCount: parameters.length,
-        expectedParams: 11,
+        expectedParams: 9,
         transcriptId,
         meetingId,
         organizationId,
@@ -561,12 +559,11 @@ Please provide a JSON response with the following structure:
       
       await client.query(`
         INSERT INTO meeting_ai_summaries (
-          id, transcript_id, meeting_id, organization_id,
+          id, meeting_id, transcript_id, organization_id,
           executive_summary, key_decisions, action_items, issues_discussed,
-          meeting_sentiment, effectiveness_rating,
           ai_model, created_at, updated_at
         )
-        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, NOW(), NOW())
+        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, NOW(), NOW())
       `, parameters);
       
       // Update transcript status to completed
