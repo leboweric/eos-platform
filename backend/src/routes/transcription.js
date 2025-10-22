@@ -13,6 +13,8 @@ import {
 
 const router = express.Router();
 
+console.log('🔍 [TranscriptionRoutes] Transcription routes file loaded');
+
 // Health check endpoint (no auth required for monitoring)
 router.get('/health', healthCheck);
 
@@ -20,7 +22,16 @@ router.get('/health', healthCheck);
 router.use(authenticate);
 
 // Start AI transcription for a meeting
-router.post('/start', startTranscription);
+router.post('/start', (req, res, next) => {
+  console.log('🎙️ [TranscriptionRoutes] POST /start route hit');
+  console.log('🔍 [TranscriptionRoutes] Request method:', req.method);
+  console.log('🔍 [TranscriptionRoutes] Request path:', req.path);
+  console.log('🔍 [TranscriptionRoutes] Request body preview:', { 
+    meetingId: req.body?.meetingId, 
+    organizationId: req.body?.organizationId 
+  });
+  startTranscription(req, res, next);
+});
 
 // Stop AI transcription and trigger AI processing
 router.post('/stop', stopTranscription);

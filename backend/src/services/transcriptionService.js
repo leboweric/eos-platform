@@ -9,13 +9,24 @@ class TranscriptionService {
   }
 
   initializeAssemblyAI() {
+    console.log('🔍 [TranscriptionService] Initializing AssemblyAI...');
+    console.log('🔍 [TranscriptionService] Environment check:', {
+      hasAssemblyAIKey: !!process.env.ASSEMBLYAI_API_KEY,
+      keyPreview: process.env.ASSEMBLYAI_API_KEY ? `${process.env.ASSEMBLYAI_API_KEY.substring(0, 8)}...` : 'NOT_SET'
+    });
+    
     if (process.env.ASSEMBLYAI_API_KEY) {
-      this.assemblyAI = new AssemblyAI({
-        apiKey: process.env.ASSEMBLYAI_API_KEY,
-      });
-      console.log('✅ AssemblyAI service initialized');
+      try {
+        this.assemblyAI = new AssemblyAI({
+          apiKey: process.env.ASSEMBLYAI_API_KEY,
+        });
+        console.log('✅ [TranscriptionService] AssemblyAI service initialized successfully');
+      } catch (error) {
+        console.error('❌ [TranscriptionService] Failed to initialize AssemblyAI:', error.message);
+        throw error;
+      }
     } else {
-      console.warn('⚠️ ASSEMBLYAI_API_KEY not configured - transcription disabled');
+      console.warn('⚠️ [TranscriptionService] ASSEMBLYAI_API_KEY not configured - transcription disabled');
     }
   }
 
@@ -23,14 +34,20 @@ class TranscriptionService {
    * Start real-time transcription session
    */
   async startRealtimeTranscription(transcriptId, organizationId) {
+    console.log(`🔍 [TranscriptionService] startRealtimeTranscription called for transcript ${transcriptId}`);
+    console.log(`🔍 [TranscriptionService] organizationId: ${organizationId}`);
+    console.log(`🔍 [TranscriptionService] assemblyAI instance:`, !!this.assemblyAI);
+    
     if (!this.assemblyAI) {
+      console.error('❌ [TranscriptionService] AssemblyAI not configured');
       throw new Error('AssemblyAI not configured');
     }
 
     try {
-      console.log(`🎙️ Starting real-time transcription for transcript ${transcriptId}`);
+      console.log(`🎙️ [TranscriptionService] Starting real-time transcription for transcript ${transcriptId}`);
 
       // Create real-time transcriber with EOS-optimized settings
+      console.log('🔍 [TranscriptionService] Creating real-time transcriber...');
       const realtimeTranscriber = this.assemblyAI.realtime.transcriber({
         sampleRate: 16000,
         encoding: 'pcm_s16le',
@@ -53,7 +70,10 @@ class TranscriptionService {
         sentiment_analysis: true
       });
 
+      console.log('✅ [TranscriptionService] Real-time transcriber created');
+
       // Store the connection
+      console.log('🔍 [TranscriptionService] Storing connection in activeConnections...');
       this.activeConnections.set(transcriptId, {
         transcriber: realtimeTranscriber,
         organizationId,
@@ -62,25 +82,43 @@ class TranscriptionService {
         isActive: true
       });
 
+      console.log('✅ [TranscriptionService] Connection stored');
+
       // Set up event handlers
+      console.log('🔍 [TranscriptionService] Setting up transcriber events...');
       this.setupTranscriberEvents(realtimeTranscriber, transcriptId);
 
+      console.log('✅ [TranscriptionService] Event handlers set up');
+
       // Connect to AssemblyAI
+      console.log('🔍 [TranscriptionService] Connecting to AssemblyAI...');
       await realtimeTranscriber.connect();
 
-      console.log(`✅ Real-time transcription started for transcript ${transcriptId}`);
+      console.log(`✅ [TranscriptionService] Real-time transcription started for transcript ${transcriptId}`);
       return {
         sessionId: transcriptId,
         status: 'connected'
       };
 
     } catch (error) {
-      console.error(`❌ Failed to start real-time transcription:`, error);
+      console.error(`❌ [TranscriptionService] Failed to start real-time transcription:`, error.message);
+      console.error(`❌ [TranscriptionService] Error stack:`, error.stack);
+      console.error(`❌ [TranscriptionService] Error details:`, {
+        name: error.name,
+        code: error.code,
+        errno: error.errno,
+        syscall: error.syscall
+      });
       
       // Update transcript status to failed
-      await this.updateTranscriptStatus(transcriptId, 'failed', {
-        error_message: error.message
-      });
+      try {
+        await this.updateTranscriptStatus(transcriptId, 'failed', {
+          error_message: error.message
+        });
+        console.log('✅ [TranscriptionService] Updated transcript status to failed');
+      } catch (updateError) {
+        console.error('❌ [TranscriptionService] Failed to update transcript status:', updateError.message);
+      }
 
       throw error;
     }

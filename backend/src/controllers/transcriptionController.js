@@ -31,20 +31,38 @@ export const healthCheck = async (req, res) => {
 };
 
 export const startTranscription = async (req, res) => {
+  console.log('🎙️ [Transcription] START endpoint called');
+  console.log('🔍 [Transcription] Request body:', { meetingId: req.body?.meetingId, organizationId: req.body?.organizationId });
+  console.log('🔍 [Transcription] User:', { userId: req.user?.id, email: req.user?.email });
+  console.log('🔍 [Transcription] Environment check:', {
+    hasAssemblyAI: !!process.env.ASSEMBLYAI_API_KEY,
+    hasOpenAI: !!process.env.OPENAI_API_KEY,
+    nodeEnv: process.env.NODE_ENV
+  });
+
   try {
     const { meetingId, organizationId } = req.body;
     const userId = req.user?.id;
 
+    console.log('✅ [Transcription] Step 1: Extracted parameters');
+
     if (!meetingId || !organizationId) {
+      console.error('❌ [Transcription] Step 1 FAILED: Missing required parameters');
       return res.status(400).json({
         success: false,
         error: 'Meeting ID and Organization ID are required'
       });
     }
 
+    console.log('✅ [Transcription] Step 2: Parameter validation passed');
+
     // Verify meeting exists and user has access
+    console.log('🔍 [Transcription] Step 3: Getting database client...');
     const client = await db.getClient();
     try {
+      console.log('✅ [Transcription] Step 3: Database client acquired');
+      console.log('🔍 [Transcription] Step 4: Checking meeting existence...');
+      
       const meetingResult = await client.query(`
         SELECT m.*, t.name as team_name
         FROM meetings m
@@ -52,21 +70,36 @@ export const startTranscription = async (req, res) => {
         WHERE m.id = $1 AND m.organization_id = $2
       `, [meetingId, organizationId]);
 
+      console.log('🔍 [Transcription] Meeting query result:', { 
+        rowCount: meetingResult.rows.length,
+        meeting: meetingResult.rows[0] ? { id: meetingResult.rows[0].id, team_name: meetingResult.rows[0].team_name } : null
+      });
+
       if (meetingResult.rows.length === 0) {
+        console.error('❌ [Transcription] Step 4 FAILED: Meeting not found');
         return res.status(404).json({
           success: false,
           error: 'Meeting not found'
         });
       }
 
+      console.log('✅ [Transcription] Step 4: Meeting found');
+
       // Check if transcription already exists
+      console.log('🔍 [Transcription] Step 5: Checking for existing transcripts...');
       const existingResult = await client.query(`
         SELECT id, status FROM meeting_transcripts 
         WHERE meeting_id = $1 AND organization_id = $2 AND deleted_at IS NULL
         ORDER BY created_at DESC LIMIT 1
       `, [meetingId, organizationId]);
 
+      console.log('🔍 [Transcription] Existing transcript check:', { 
+        existingCount: existingResult.rows.length,
+        existing: existingResult.rows[0] ? { id: existingResult.rows[0].id, status: existingResult.rows[0].status } : null
+      });
+
       if (existingResult.rows.length > 0 && existingResult.rows[0].status === 'processing') {
+        console.error('❌ [Transcription] Step 5 FAILED: Transcription already in progress');
         return res.status(400).json({
           success: false,
           error: 'Transcription already in progress',
@@ -74,8 +107,13 @@ export const startTranscription = async (req, res) => {
         });
       }
 
+      console.log('✅ [Transcription] Step 5: No existing transcription found');
+
       // Create new transcript record
+      console.log('🔍 [Transcription] Step 6: Creating transcript record...');
       const transcriptId = uuidv4();
+      console.log('🔍 [Transcription] Generated transcript ID:', transcriptId);
+      
       await client.query(`
         INSERT INTO meeting_transcripts (
           id, meeting_id, organization_id, status, 
@@ -84,10 +122,15 @@ export const startTranscription = async (req, res) => {
         VALUES ($1, $2, $3, 'processing', 'assemblyai', NOW(), NOW())
       `, [transcriptId, meetingId, organizationId]);
 
+      console.log('✅ [Transcription] Step 6: Transcript record created');
+
       // Start real-time transcription with AssemblyAI
+      console.log('🔍 [Transcription] Step 7: Starting real-time transcription...');
       try {
+        console.log('🔍 [Transcription] Calling transcriptionService.startRealtimeTranscription...');
         const session = await transcriptionService.startRealtimeTranscription(transcriptId, organizationId);
         
+        console.log('✅ [Transcription] Step 7: Real-time transcription started successfully');
         console.log(`🎙️ Started transcription for meeting ${meetingId}, transcript ID: ${transcriptId}`);
 
         res.json({
@@ -98,7 +141,8 @@ export const startTranscription = async (req, res) => {
           message: 'Transcription started successfully'
         });
       } catch (transcriptionError) {
-        console.error('Failed to start real-time transcription:', transcriptionError);
+        console.error('❌ [Transcription] Step 7 FAILED: Real-time transcription error:', transcriptionError.message);
+        console.error('❌ [Transcription] Error stack:', transcriptionError.stack);
         
         // Update database status to failed
         await client.query(
@@ -109,7 +153,8 @@ export const startTranscription = async (req, res) => {
         return res.status(500).json({
           success: false,
           error: 'Failed to start real-time transcription',
-          transcript_id: transcriptId
+          transcript_id: transcriptId,
+          debug_error: transcriptionError.message
         });
       }
 
@@ -118,10 +163,20 @@ export const startTranscription = async (req, res) => {
     }
 
   } catch (error) {
-    console.error('Failed to start transcription:', error);
+    console.error('❌ [Transcription] FATAL ERROR in startTranscription:', error.message);
+    console.error('❌ [Transcription] Error stack:', error.stack);
+    console.error('❌ [Transcription] Error details:', {
+      name: error.name,
+      code: error.code,
+      errno: error.errno,
+      syscall: error.syscall
+    });
+    
     res.status(500).json({
       success: false,
-      error: 'Failed to start transcription'
+      error: 'Failed to start transcription',
+      debug_error: error.message,
+      debug_type: error.name
     });
   }
 };
