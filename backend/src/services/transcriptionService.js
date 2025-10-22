@@ -28,6 +28,11 @@ class TranscriptionService {
   async startRealtimeTranscription(transcriptId, organizationId) {
     console.log(`🔍 [TranscriptionService] startRealtimeTranscription called for transcript ${transcriptId}`);
     console.log(`🔍 [TranscriptionService] organizationId: ${organizationId}`);
+    console.log('🔍 [TranscriptionService] WebSocket availability check:', {
+      WebSocketClass: typeof WebSocket,
+      WebSocketConstructor: !!WebSocket,
+      nodeVersion: process.version
+    });
     
     if (!process.env.ASSEMBLYAI_API_KEY) {
       console.error('❌ [TranscriptionService] ASSEMBLYAI_API_KEY not configured');
@@ -41,10 +46,21 @@ class TranscriptionService {
       const wsUrl = 'wss://streaming.assemblyai.com/v3/ws?sample_rate=16000';
       console.log('🔍 [TranscriptionService] Connecting to:', wsUrl);
       
+      console.log('🔍 [TranscriptionService] Creating WebSocket with options:', {
+        url: wsUrl,
+        hasAuth: !!process.env.ASSEMBLYAI_API_KEY,
+        authPreview: process.env.ASSEMBLYAI_API_KEY ? `${process.env.ASSEMBLYAI_API_KEY.substring(0, 8)}...` : 'NONE'
+      });
+      
       const ws = new WebSocket(wsUrl, {
         headers: {
           Authorization: process.env.ASSEMBLYAI_API_KEY
         }
+      });
+      
+      console.log('✅ [TranscriptionService] WebSocket created successfully:', {
+        readyState: ws.readyState,
+        url: ws.url
       });
       
       // Store connection details
