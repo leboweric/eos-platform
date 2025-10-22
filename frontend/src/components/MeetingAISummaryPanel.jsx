@@ -27,109 +27,38 @@ export const MeetingAISummaryPanel = ({ meetingId, organizationId, onClose }) =>
   const [summaryStatus, setSummaryStatus] = useState('processing'); // processing, completed, failed
 
   useEffect(() => {
-    pollForSummary();
+    loadSummaryAndTranscript();
   }, [meetingId, organizationId]);
 
-  const pollForSummary = async () => {
-    const maxAttempts = 40; // 40 attempts x 3 seconds = 2 minutes
-    
-    setLoading(true);
-    setSummaryStatus('processing');
-    
-    for (let i = 0; i < maxAttempts; i++) {
-      try {
-        console.log(`🔍 Polling for AI summary completion (attempt ${i + 1}/${maxAttempts})`);
-        
-        // STEP 1: Try to load the summary directly (most reliable check)
-        try {
-          const summaryResponse = await aiMeetingService.getAISummary(meetingId);
-          
-          if (summaryResponse && summaryResponse.executive_summary) {
-            // SUCCESS! Summary exists and has content
-            console.log('✅ Found AI summary with content, loading...');
-            setSummary(summaryResponse);
-            setSummaryStatus('completed');
-            setLoading(false);
-            return;
-          }
-        } catch (summaryError) {
-          // Summary doesn't exist yet, continue to status check
-          console.log('📝 No summary available yet, checking status...');
-        }
-        
-        // STEP 2: Check transcript status for processing state
-        const statusResponse = await aiMeetingService.getTranscriptionStatus(meetingId);
-        console.log('📊 Transcript status:', statusResponse);
-        
-        if (statusResponse.status === 'failed') {
-          // Actually failed - no summary was generated
-          console.log('❌ Transcript failed and no summary exists');
-          setSummaryStatus('failed');
-          setError('AI summary generation failed');
-          setLoading(false);
-          return;
-        }
-        
-        if (statusResponse.status === 'completed') {
-          // Status says completed but no summary found - try one more time
-          console.log('🔄 Status completed but no summary yet, trying once more...');
-          try {
-            await loadCompletedSummary();
-            return;
-          } catch (summaryError) {
-            console.log('⚠️ Status completed but still no summary available');
-          }
-        }
-        
-        // Still processing, wait and try again
-        console.log('⏳ Still processing, waiting 3 seconds...');
-        await new Promise(resolve => setTimeout(resolve, 3000));
-        
-      } catch (error) {
-        console.error('Polling error:', error);
-        // Continue polling on error unless it's the last attempt
-        if (i === maxAttempts - 1) {
-          setSummaryStatus('failed');
-          setError('Failed to load AI summary after timeout');
-          setLoading(false);
-          return;
-        }
-        
-        // Wait before retrying
-        await new Promise(resolve => setTimeout(resolve, 3000));
-      }
-    }
-    
-    // Timeout after 2 minutes
-    console.log('⏰ Polling timeout reached');
-    setSummaryStatus('failed');
-    setError('AI summary generation timed out');
-    setLoading(false);
-  };
+  // Polling logic removed - backend now handles waiting for AI summary
 
-  const loadCompletedSummary = async () => {
+  // loadCompletedSummary function removed - now handled by loadSummaryAndTranscript
+
+  const loadSummaryAndTranscript = async () => {
     try {
+      setLoading(true);
+      setError(null);
+      
       const [summaryData, transcriptData] = await Promise.all([
         aiMeetingService.getAISummary(meetingId),
         aiMeetingService.getTranscript(meetingId)
       ]);
 
-      setSummary(summaryData);
-      setTranscript(transcriptData);
-      setSummaryStatus('completed');
-      setError(null);
+      if (summaryData && summaryData.executive_summary) {
+        setSummary(summaryData);
+        setTranscript(transcriptData);
+        setSummaryStatus('completed');
+      } else {
+        setSummaryStatus('failed');
+        setError('AI summary not yet available. Please try again in a few minutes.');
+      }
     } catch (err) {
-      console.error('Error loading completed AI summary:', err);
+      console.error('Error loading AI summary:', err);
       setSummaryStatus('failed');
-      setError('Failed to load completed AI summary');
+      setError('AI summary not yet available. Please try again in a few minutes.');
     } finally {
       setLoading(false);
     }
-  };
-
-  const loadSummaryAndTranscript = async () => {
-    // Legacy function for retry button - restart polling
-    await pollForSummary();
   };
 
   const handleCreateTodos = async (actionItemIds = []) => {
@@ -174,19 +103,7 @@ export const MeetingAISummaryPanel = ({ meetingId, organizationId, onClose }) =>
     }
   };
 
-  if (loading && summaryStatus === 'processing') {
-    return (
-      <div className="flex flex-col items-center justify-center p-8">
-        <Loader2 className="h-8 w-8 animate-spin text-blue-600 mb-4" />
-        <span className="text-lg font-medium text-gray-700">Processing transcript & generating AI summary...</span>
-        <span className="text-sm text-gray-500 mt-2">This may take 15-30 seconds</span>
-        <div className="mt-4 text-xs text-gray-400 text-center">
-          <p>🎤 Transcription complete</p>
-          <p>🤖 AI analysis in progress...</p>
-        </div>
-      </div>
-    );
-  }
+  // Skip processing modal entirely - go straight to trying to load summary
 
   if (summaryStatus === 'failed' || error) {
     return (
