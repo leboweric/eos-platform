@@ -447,8 +447,24 @@ const PriorityDialog = ({
                       />
                       <div className="flex gap-2">
                         <Select
-                          value={editingMilestone.ownerId !== '' ? String(editingMilestone.ownerId) : String(milestone.owner_id || priority?.owner?.id || '')}
-                          onValueChange={(value) => setEditingMilestone({ ...editingMilestone, ownerId: value })}
+                          value={(() => {
+                            const currentValue = editingMilestone.ownerId !== '' ? String(editingMilestone.ownerId) : String(milestone.owner_id || priority?.owner?.id || '');
+                            console.log('Select value prop:', { 
+                              editingOwnerId: editingMilestone.ownerId,
+                              milestoneOwnerId: milestone.owner_id,
+                              finalValue: currentValue,
+                              milestoneId: milestone.id
+                            });
+                            return currentValue;
+                          })()}
+                          onValueChange={(value) => {
+                            console.log('Milestone owner change:', { 
+                              from: editingMilestone.ownerId, 
+                              to: value,
+                              milestoneId: milestone.id 
+                            });
+                            setEditingMilestone({ ...editingMilestone, ownerId: value });
+                          }}
                         >
                           <SelectTrigger className="flex-1 bg-white">
                             <SelectValue placeholder="Assign to..." />
@@ -538,7 +554,7 @@ const PriorityDialog = ({
                             setEditingMilestone({
                               title: milestone.title,
                               dueDate: milestone.dueDate?.split('T')[0] || '',
-                              ownerId: milestone.owner_id || priority?.owner?.id || ''
+                              ownerId: String(milestone.owner_id || priority?.owner?.id || '')
                             });
                           }}
                         >
