@@ -430,21 +430,10 @@ export const MeetingAIRecordingControls = ({
           )}
 
           {transcriptionStatus === 'stopped' && currentMeetingId && (
-            <Button
-              onClick={handleConcludeMeeting}
-              disabled={isProcessing}
-              variant="default"
-              className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700"
-            >
-              {isProcessing ? (
-                <Loader2 className="h-4 w-4 animate-spin" />
-              ) : (
-                <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-                </svg>
-              )}
-              Conclude Meeting & Send Summary
-            </Button>
+            <div className="flex items-center gap-2 px-4 py-2 bg-blue-50 border border-blue-200 rounded-md">
+              <Loader2 className="h-4 w-4 animate-spin text-blue-600" />
+              <span className="text-blue-700 font-medium">Your AI Meeting Summary is processing</span>
+            </div>
           )}
 
           {transcriptionStatus === 'completed' && (
