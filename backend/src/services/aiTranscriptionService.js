@@ -632,7 +632,6 @@ Focus on:
           mt.id as transcript_id,
           mt.meeting_id,
           m.meeting_date,
-          m.meeting_type,
           t.name as team_name,
           mt.raw_transcript,
           mas.executive_summary,

@@ -68,7 +68,7 @@ class AISummaryService {
     try {
       const result = await client.query(`
         SELECT 
-          m.meeting_type, m.meeting_date,
+          m.meeting_date,
           t.name as team_name,
           o.name as organization_name,
           mt.meeting_id, mt.organization_id
@@ -128,7 +128,7 @@ class AISummaryService {
 You are analyzing an EOS (Entrepreneurial Operating System) business meeting transcript. Extract comprehensive insights following EOS methodology.
 
 MEETING CONTEXT:
-- Meeting Type: ${context.meeting_type || 'Unknown'}
+- Meeting Type: Weekly EOS Meeting
 - Team: ${context.team_name || 'Unknown'}
 - Organization: ${context.organization_name || 'Unknown'}
 - Date: ${context.meeting_date || 'Unknown'}
